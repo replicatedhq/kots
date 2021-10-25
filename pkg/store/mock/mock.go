@@ -1468,6 +1468,20 @@ func (mr *MockStoreMockRecorder) UpdateAppLicense(appID, sequence, archiveDir, n
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppLicense", reflect.TypeOf((*MockStore)(nil).UpdateAppLicense), appID, sequence, archiveDir, newLicense, originalLicenseData, failOnVersionCreate, gitops, renderer)
 }
 
+// UpdateAppLicenseSyncNow mocks base method.
+func (m *MockStore) UpdateAppLicenseSyncNow(appID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateAppLicenseSyncNow", appID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateAppLicenseSyncNow indicates an expected call of UpdateAppLicenseSyncNow.
+func (mr *MockStoreMockRecorder) UpdateAppLicenseSyncNow(appID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppLicenseSyncNow", reflect.TypeOf((*MockStore)(nil).UpdateAppLicenseSyncNow), appID)
+}
+
 // UpdateAppVersionInstallationSpec mocks base method.
 func (m *MockStore) UpdateAppVersionInstallationSpec(appID string, sequence int64, spec v1beta1.Installation) error {
 	m.ctrl.T.Helper()
@@ -3238,6 +3252,20 @@ func (m *MockLicenseStore) UpdateAppLicense(appID string, sequence int64, archiv
 func (mr *MockLicenseStoreMockRecorder) UpdateAppLicense(appID, sequence, archiveDir, newLicense, originalLicenseData, failOnVersionCreate, gitops, renderer interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppLicense", reflect.TypeOf((*MockLicenseStore)(nil).UpdateAppLicense), appID, sequence, archiveDir, newLicense, originalLicenseData, failOnVersionCreate, gitops, renderer)
+}
+
+// UpdateAppLicenseSyncNow mocks base method.
+func (m *MockLicenseStore) UpdateAppLicenseSyncNow(appID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateAppLicenseSyncNow", appID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateAppLicenseSyncNow indicates an expected call of UpdateAppLicenseSyncNow.
+func (mr *MockLicenseStoreMockRecorder) UpdateAppLicenseSyncNow(appID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppLicenseSyncNow", reflect.TypeOf((*MockLicenseStore)(nil).UpdateAppLicenseSyncNow), appID)
 }
 
 // MockUserStore is a mock of UserStore interface.

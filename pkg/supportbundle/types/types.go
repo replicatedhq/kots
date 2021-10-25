@@ -21,6 +21,7 @@ type SupportBundle struct {
 	CreatedAt  time.Time             `json:"createdAt"`
 	UpdatedAt  *time.Time            `json:"updatedAt"`
 	UploadedAt *time.Time            `json:"uploadedAt"`
+	SharedAt   *time.Time            `json:"sharedAt"`
 	IsArchived bool                  `json:"isArchived"`
 	Progress   SupportBundleProgress `json:"progress"`
 	URI        string                `json:"uri"`

@@ -11,7 +11,6 @@ import (
 
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/kustomize"
 )
 
 var (
@@ -44,7 +43,7 @@ func escapeGoTemplates(content []byte) []byte {
 	return goTemplateRegex.ReplaceAllFunc(content, replace)
 }
 
-func renderChartsArchive(deployedVersionArchive string, name string, version string) ([]byte, error) {
+func renderChartsArchive(deployedVersionArchive string, name string, kustomizeBinPath string) ([]byte, error) {
 	archiveChartDir := filepath.Join(deployedVersionArchive, "overlays", "downstreams", name, "charts")
 	_, err := os.Stat(archiveChartDir)
 	if err != nil {
@@ -88,7 +87,7 @@ func renderChartsArchive(deployedVersionArchive string, name string, version str
 			}
 
 			if info.Name() == "kustomization.yaml" {
-				archiveChartOutput, err := exec.Command(kustomize.GetKustomizePath(version), "build", filepath.Dir(path)).Output()
+				archiveChartOutput, err := exec.Command(kustomizeBinPath, "build", filepath.Dir(path)).Output()
 				if err != nil {
 					if ee, ok := err.(*exec.ExitError); ok {
 						err = fmt.Errorf("kustomize %s: %q", path, string(ee.Stderr))

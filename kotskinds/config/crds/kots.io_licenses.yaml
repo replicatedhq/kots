@@ -67,9 +67,13 @@ spec:
                 type: boolean
               isGitOpsSupported:
                 type: boolean
+              isSupportBundleUploadSupported:
+                type: boolean
               isIdentityServiceSupported:
                 type: boolean
               isSnapshotSupported:
+                type: boolean
+              isSupportBundleUploadEnabled:
                 type: boolean
               licenseID:
                 type: string

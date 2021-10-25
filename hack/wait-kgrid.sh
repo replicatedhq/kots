@@ -20,20 +20,20 @@ while true; do
 
   if [ "$RUN_RESULT" == "\"Pass\"" ]; then
     echo "Passed"
-    cat outcome.json
+    cat outcome.json | jq .
     exit 0
   fi
 
   if [ "$RUN_RESULT" == "\"Fail\"" ]; then
     echo "Failed"
-    cat outcome.json
+    cat outcome.json | jq .
     exit 1
   fi
 
   touch kgrid_now
   if test kgrid_now -nt kgrid_timeout; then
     echo "Timed out"
-    cat outcome.json
+    cat outcome.json | jq .
     exit 1
   fi
 

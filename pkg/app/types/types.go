@@ -32,4 +32,5 @@ type App struct {
 	UpdateCheckerSpec     string         `json:"updateCheckerSpec"`
 	IsGitOps              bool           `json:"isGitOps"`
 	InstallState          string         `json:"installState"`
+	LastLicenseSync       string         `json:"lastLicenseSync"`
 }

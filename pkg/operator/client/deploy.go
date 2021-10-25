@@ -11,11 +11,11 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/operator/applier"
 	operatortypes "github.com/replicatedhq/kots/pkg/operator/types"
-	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/yaml/v3"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -115,9 +115,13 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 	}
 
 	// now remove anything that's in previous but not in current
-	kubectl, err := util.FindKubectlVersion(deployArgs.KubectlVersion)
+	kubectl, err := binaries.GetKubectlPathForVersion(deployArgs.KubectlVersion)
 	if err != nil {
 		return errors.Wrap(err, "failed to find kubectl")
+	}
+	kustomize, err := binaries.GetKustomizePathForVersion(deployArgs.KustomizeVersion)
+	if err != nil {
+		return errors.Wrap(err, "failed to find kustomize")
 	}
 	config, err := k8sutil.GetClusterConfig()
 	if err != nil {
@@ -126,7 +130,7 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 
 	// this is pretty raw, and required kubectl...  we should
 	// consider some other options here?
-	kubernetesApplier := applier.NewKubectl(kubectl, config)
+	kubernetesApplier := applier.NewKubectl(kubectl, kustomize, config)
 
 	allPVCs := make([]string, 0)
 	for k, previous := range decodedPreviousMap {
@@ -260,7 +264,7 @@ func (c *Client) ensureResourcesPresent(deployArgs operatortypes.DeployAppArgs) 
 		targetNamespace = deployArgs.Namespace
 	}
 
-	kubernetesApplier, err := c.getApplier(deployArgs.KubectlVersion)
+	kubernetesApplier, err := c.getApplier(deployArgs.KubectlVersion, deployArgs.KustomizeVersion)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get applier")
 	}
@@ -469,7 +473,7 @@ func (c *Client) clearNamespace(slug string, namespace string, isRestore bool, r
 }
 
 func (c *Client) installWithHelm(helmDir string, targetNamespace string) (*commandResult, error) {
-	version := "3.4.2"
+	version := "3"
 	chartsDir := filepath.Join(helmDir, "charts")
 	dirs, err := ioutil.ReadDir(chartsDir)
 	if err != nil {
@@ -526,7 +530,7 @@ func (c *Client) installWithHelm(helmDir string, targetNamespace string) (*comma
 }
 
 func (c *Client) uninstallWithHelm(helmDir string, targetNamespace string, charts []string) error {
-	version := "3.4.2"
+	version := "3"
 
 	for _, chart := range charts {
 		args := []string{"uninstall", chart}

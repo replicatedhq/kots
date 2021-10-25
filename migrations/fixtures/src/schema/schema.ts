@@ -183,6 +183,7 @@ export class Schema {
         registry_password,
         namespace,
         last_registry_sync,
+        last_license_sync
         install_state
         ) VALUES (
           %L, %L, %L, %L, %L, %L, ${app.current_sequence}, %L, %L, %L, %L, %L, %L, %L, %L, %L, %L)`,
@@ -201,6 +202,7 @@ export class Schema {
         app.registry_password,
         app.namespace,
         app.last_registry_sync,
+        app.last_license_sync,
         app.install_state
       )
     );

@@ -81,6 +81,15 @@ export function getBuildVersion() {
   return window.env.KOTSADM_BUILD_VERSION;
 }
 
+/**
+ * @param {Array} - the features flag array
+ * @param {String} - name of feature to check
+ */
+ export function isFeatureEnabled(featureArr, featureName) {
+   if (!featureArr || featureArr.length === 0) return false;
+  return featureArr.includes(featureName);
+}
+
 export function parseIconUri(uri) {
   const splitUri = uri.split("?");
   if (splitUri.length < 2) {
@@ -452,6 +461,24 @@ export function isVeleroCorrectVersion (snapshotSettings) {
      return true
   }
   return false
+}
+
+/**
+ * Get readable label for a snapshot storage destination
+ * @param {String} provider - storage provider string
+ * @return {String}
+ */
+export function getSnapshotDestinationLabel(provider) {
+  const DESTINATIONS = {
+      aws: "Amazon S3",
+      azure: "Azure Blob Storage",
+      gcp: "Google Cloud Storage",
+      other: "Other S3-Compatible Storage",
+      internal: "Internal Storage (Default)",
+      nfs: "Network File System (NFS)",
+      hostpath: "Host Path"
+    };
+    return DESTINATIONS[provider] || "Unknown storage provider";
 }
 
 export const Utilities = {

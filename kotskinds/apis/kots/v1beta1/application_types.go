@@ -57,6 +57,7 @@ type ApplicationSpec struct {
 	AdditionalNamespaces         []string          `json:"additionalNamespaces,omitempty"`
 	RequireMinimalRBACPrivileges bool              `json:"requireMinimalRBACPrivileges,omitempty"`
 	ProxyPublicImages            bool              `json:"proxyPublicImages,omitempty"`
+	ConsoleFeatureFlags          []string          `json:"consoleFeatureFlags,omitempty"`
 }
 
 type ApplicationPort struct {

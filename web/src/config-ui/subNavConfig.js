@@ -9,7 +9,7 @@ import { rbacRoles } from "@src/constants/rbac";
 export default [
   {
     tabName: "app",
-    displayName: "Application",
+    displayName: "Dashboard",
     to: (slug) => `/app/${slug}`,
     displayRule: watch => {
       return isHelmChart(watch) || !watch.cluster;

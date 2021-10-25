@@ -22,12 +22,36 @@ export class SupportBundleAnalysis extends React.Component {
       loading: false,
       downloadBundleErrMsg: "",
       getSupportBundleErrMsg: "",
+      sendingBundle: false,
+      sendingBundleErrMsg: "",
       displayErrorModal: false
     };
   }
 
+  sendBundleToVendor = async () => {
+    this.setState({ sendingBundle: true, sendingBundleErrMsg: "", downloadBundleErrMsg: "" });
+    fetch(`${window.env.API_ENDPOINT}/troubleshoot/app/${this.props.match.params.slug}/supportbundle/${this.props.match.params.bundleSlug}/share`, {
+      method: "POST",
+      headers: {
+        "Authorization": Utilities.getToken(),
+      }
+    })
+      .then(async (result) => {
+        if (!result.ok) {
+          this.setState({ sendingBundle: false, sendingBundleErrMsg: `Unable to send bundle to vendor: Status ${result.status}, please try again.` });
+          return;
+        }
+        await this.getSupportBundle();
+        this.setState({ sendingBundle: false, sendingBundleErrMsg: "" });
+      })
+      .catch(err => {
+        console.log(err);
+        this.setState({ sendingBundle: false, sendingBundleErrMsg: err ? `Unable to send bundle to vendor: ${err.message}` : "Something went wrong, please try again." });
+      })
+  }
+
   downloadBundle = async (bundle) => {
-    this.setState({ downloadingBundle: true, downloadBundleErrMsg: "" });
+    this.setState({ downloadingBundle: true, downloadBundleErrMsg: "", sendingBundleErrMsg: "" });
     fetch(`${window.env.API_ENDPOINT}/troubleshoot/supportbundle/${bundle.id}/download`, {
       method: "GET",
       headers: {
@@ -136,6 +160,8 @@ export class SupportBundleAnalysis extends React.Component {
     const fileTreeUrl = `/app/:slug/troubleshoot/analyze/:bundleSlug/contents/*`;
     const redactorUrl = `/app/:slug/troubleshoot/analyze/:bundleSlug/redactor/report`;
 
+    const showSendSupportBundleBtn = watch.isSupportBundleUploadSupported && !watch.isAirgap;
+
     return (
       <div className="container u-marginTop--20 u-paddingBottom--30 flex1 flex-column">
         <div className="flex1 flex-column">
@@ -159,11 +185,21 @@ export class SupportBundleAnalysis extends React.Component {
                     </div>
                   </div>
                   <div className="flex flex-auto alignItems--center justifyContent--flexEnd">
-                    {this.state.downloadBundleErrMsg &&
-                      <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginRight--10">{this.state.downloadBundleErrMsg}</p>}
+                    {this.state.downloadBundleErrMsg && <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginRight--10">{this.state.downloadBundleErrMsg}</p>}
+                    {this.state.sendingBundleErrMsg && <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginRight--10">{this.state.sendingBundleErrMsg}</p>}
+                    {showSendSupportBundleBtn && (
+                      this.state.sendingBundle
+                        ? <Loader className="u-marginRight--10" size="30" />
+                        : !bundle.sharedAt
+                            ? <button className="btn primary lightBlue u-marginRight--10" onClick={this.sendBundleToVendor}>Send bundle to vendor</button>
+                            : <div className="sentToVendorWrapper flex alignItems--flexEnd u-paddingLeft--10 u-paddingRight--10 u-marginRight--10">
+                                <span style={{ marginRight: 7 }} className="icon send-icon" />
+                                <span className="u-fontWeight--bold u-fontSize--small u-color--mutedteal">Sent to vendor on {Utilities.dateFormat(bundle.sharedAt, "MM/DD/YYYY")}</span>
+                              </div>
+                    )}
                     {this.state.downloadingBundle ?
                       <Loader size="30" /> :
-                      <button className="btn primary lightBlue" onClick={() => this.downloadBundle(bundle)}> Download bundle </button>
+                      <button className={`btn ${showSendSupportBundleBtn ? "secondary blue" : "primary lightBlue"}`} onClick={() => this.downloadBundle(bundle)}> Download bundle </button>
                     }
                   </div>
                 </div>

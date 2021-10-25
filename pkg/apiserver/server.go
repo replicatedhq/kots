@@ -13,6 +13,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/automation"
+	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/handlers"
 	"github.com/replicatedhq/kots/pkg/informers"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -71,6 +72,16 @@ func Start(params *APIServerParams) {
 	}
 
 	store.GetStore().RunMigrations()
+
+	if err := binaries.InitKubectl(); err != nil {
+		log.Println("error initializing kubectl binaries package")
+		panic(err)
+	}
+
+	if err := binaries.InitKustomize(); err != nil {
+		log.Println("error initializing kustomize binaries package")
+		panic(err)
+	}
 
 	if err := operator.Start(params.AutocreateClusterToken); err != nil {
 		log.Println("error starting the operator")
@@ -148,7 +159,7 @@ func Start(params *APIServerParams) {
 	loggingRouter.HandleFunc("/api/v1/login", handler.Login)
 	loggingRouter.HandleFunc("/api/v1/login/info", handler.GetLoginInfo)
 	loggingRouter.HandleFunc("/api/v1/logout", handler.Logout) // this route uses its own auth
-	loggingRouter.Path("/api/v1/metadata").Methods("GET").HandlerFunc(handler.Metadata)
+	loggingRouter.Path("/api/v1/metadata").Methods("GET").HandlerFunc(handlers.GetMetadataHandler(handlers.GetMetaDataConfig))
 
 	loggingRouter.HandleFunc("/api/v1/oidc/login", handler.OIDCLogin)
 	loggingRouter.HandleFunc("/api/v1/oidc/login/callback", handler.OIDCLoginCallback)

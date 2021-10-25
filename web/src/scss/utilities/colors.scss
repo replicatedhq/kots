@@ -1,13 +1,28 @@
 @import "../variables.scss";
 
 .u-color--primary {
-  color: $primary-color;
+  background-color: $primary-color;
 }
 .u-color--secondary {
-  color: $sub-nav-color;
+  background-color: $sub-nav-color;
 }
 .u-color--accent {
-  color: $accent-color;
+  background-color: $accent-color;
+}
+.u-color--error {
+  background-color: $error-color;
+}
+.u-color--success {
+  background-color: $success-color;
+}
+.u-color--warning {
+  background-color: $warning-color;
+}
+.u-color--bodyCopy {
+  background-color: $text-color-body-copy;
+}
+.u-color--taupe {
+  background-color: $light-taupe;
 }
 
 
@@ -16,6 +31,9 @@
 }
 .u-textColor--secondary {
   color: $text-color-secondary;
+}
+.u-textColor--header {
+  color: $text-color-header
 }
 .u-textColor--bodyCopy {
   color: $text-color-body-copy;
@@ -44,3 +62,4 @@
 
 .u-color--white { color: #FFFFFF; }
 .u-color--mutedteal { color: #577981; }
+.u-color--lightteal { color: #E1F0F1; }

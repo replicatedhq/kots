@@ -105,7 +105,7 @@ class AirgapUploadProgress extends React.Component {
       percentage = (progress * 100).toFixed(2) + "%";
       progressBar = (
         <div className={`progressbar ${smallSize ? "small" : ""}`}>
-          <div className={`progressbar-meter ${uploadComplete ? "complete" : ""}`} style={{ width: `${(progress) * (smallSize ? 100 : 600)}px` }} />
+          <div className={`progressbar-meter ${uploadComplete ? "complete" : ""}`} style={{ width: `${(progress) * (smallSize ? 355 : 600)}px` }} />
         </div>
       );
     } else {
@@ -149,7 +149,7 @@ class AirgapUploadProgress extends React.Component {
       statusDiv = statusMsg && (
         <div
           className={`u-marginTop--10 u-paddingRight--30 u-textColor--bodyCopy u-fontWeight--bold u-lineHeight--medium u-textAlign--center`}
-          style={{ maxWidth: 200 }}
+          style={{ maxWidth: "355px" }}
         >
           {statusMsg.substring(0, 30) + "..."}
         </div>

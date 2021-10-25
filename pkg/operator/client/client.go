@@ -19,6 +19,7 @@ import (
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/appstate"
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
+	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/operator/applier"
@@ -448,10 +449,15 @@ func (c *Client) setAppStatus(newAppStatus appstatetypes.AppStatus) error {
 	return nil
 }
 
-func (c *Client) getApplier(kubectlVersion string) (*applier.Kubectl, error) {
-	kubectl, err := util.FindKubectlVersion(kubectlVersion)
+func (c *Client) getApplier(kubectlVersion, kustomizeVersion string) (*applier.Kubectl, error) {
+	kubectl, err := binaries.GetKubectlPathForVersion(kubectlVersion)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find kubectl")
+	}
+
+	kustomize, err := binaries.GetKustomizePathForVersion(kustomizeVersion)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to find kustomize")
 	}
 
 	config, err := k8sutil.GetClusterConfig()
@@ -459,5 +465,5 @@ func (c *Client) getApplier(kubectlVersion string) (*applier.Kubectl, error) {
 		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
 
-	return applier.NewKubectl(kubectl, config), nil
+	return applier.NewKubectl(kubectl, kustomize, config), nil
 }

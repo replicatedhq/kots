@@ -9,13 +9,10 @@ import find from "lodash/find";
 import Loader from "../shared/Loader";
 import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
-import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
-import UpdateCheckerModal from "@src/components/modals/UpdateCheckerModal";
 import ShowDetailsModal from "@src/components/modals/ShowDetailsModal";
 import ShowLogsModal from "@src/components/modals/ShowLogsModal";
 import ErrorModal from "../modals/ErrorModal";
 import AppVersionHistoryRow from "@src/components/apps/AppVersionHistoryRow";
-import AppVersionHistoryHeader from "./AppVersionHistoryHeader";
 import DeployWarningModal from "../shared/modals/DeployWarningModal";
 import SkipPreflightsModal from "../shared/modals/SkipPreflightsModal";
 import { Utilities, isAwaitingResults, secondsAgo, getPreflightResultState, getGitProviderDiffUrl, getCommitHashFromUrl } from "../../utilities/utilities";
@@ -57,7 +54,6 @@ class AppVersionHistory extends Component {
     uploadProgress: 0,
     uploadSize: 0,
     uploadResuming: false,
-    showUpdateCheckerModal: false,
     displayShowDetailsModal: false,
     yamlErrorDetails: [],
     deployView: false,
@@ -75,12 +71,7 @@ class AppVersionHistory extends Component {
   }
 
   componentDidMount() {
-    if (this.props.app?.isAirgap && !this.state.airgapUploader) {
-      this.getAirgapConfig()
-    }
-
     this.fetchKotsDownstreamHistory();
-    this.state.updateChecker.start(this.updateStatus, 1000);
 
     const url = window.location.pathname;
     if (url.includes("/diff")) {
@@ -92,31 +83,6 @@ class AppVersionHistory extends Component {
       }
     }
   }
-
-  getAirgapConfig = async () => {
-    const { app } = this.props;
-    const configUrl = `${window.env.API_ENDPOINT}/app/${app.slug}/airgap/config`;
-    let simultaneousUploads = 3;
-    try {
-      let res = await fetch(configUrl, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": Utilities.getToken(),
-        }
-      });
-      if (res.ok) {
-        const response = await res.json();
-        simultaneousUploads = response.simultaneousUploads;
-      }
-    } catch {
-      // no-op
-    }
-
-    this.setState({
-      airgapUploader: new AirgapUploader(true, app.slug, this.onDropBundle, simultaneousUploads),
-    });
-}
 
   componentDidUpdate = async (lastProps) => {
     if (lastProps.match.params.slug !== this.props.match.params.slug || lastProps.app.id !== this.props.app.id) {
@@ -212,23 +178,18 @@ class AppVersionHistory extends Component {
     });
   }
 
-  hideUpdateCheckerModal = () => {
-    this.setState({
-      showUpdateCheckerModal: false
-    });
-  }
-
-  showUpdateCheckerModal = () => {
-    this.setState({
-      showUpdateCheckerModal: true
-    });
-  }
-
   toggleDiffErrModal = (release) => {
     this.setState({
       showDiffErrModal: !this.state.showDiffErrModal,
       releaseWithErr: !this.state.showDiffErrModal ? release : {}
     })
+  }
+
+  toggleNoChangesModal = (version) => {
+    this.setState({
+      showNoChangesModal: !this.state.showNoChangesModal,
+      releaseWithNoChanges: !this.state.showNoChangesModal ? version: {}
+    });
   }
 
   getVersionDiffSummary = version => {
@@ -251,39 +212,71 @@ class AppVersionHistory extends Component {
     if (hasDiffSummaryError) {
       return (
         <div className="flex flex1 alignItems--center">
-          <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-textColor--bodyCopy">Cannot generate diff <span className="replicated-link" onClick={() => this.toggleDiffErrModal(version)}>Why?</span></span>
+          <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-textColor--bodyCopy">Unable to generate diff <span className="replicated-link" onClick={() => this.toggleDiffErrModal(version)}>Why?</span></span>
+        </div>
+      );
+    } else if (version.source === "Online Install") {
+      return (
+        <div className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal">
+          <span>Online Install</span>
         </div>
       );
     } else {
       return (
-        <div>
+        <div className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal">
           {diffSummary ?
             (diffSummary.filesChanged > 0 ?
-              <div
-                className="DiffSummary u-cursor--pointer u-marginRight--10"
-                onClick={() => {
-                  if (!downstream.gitops?.enabled) {
-                    this.setState({
-                      showDiffOverlay: true,
-                      firstSequence: version.parentSequence - 1,
-                      secondSequence: version.parentSequence
-                    });
-                  }
-                }}
-              >
+              <div className="DiffSummary u-marginRight--10">
                 <span className="files">{diffSummary.filesChanged} files changed </span>
-                <span className="lines-added">+{diffSummary.linesAdded} </span>
-                <span className="lines-removed">-{diffSummary.linesRemoved}</span>
+                {!downstream.gitops?.enabled &&
+                  <span className="u-fontSize--small replicated-link u-marginLeft--5" onClick={() => this.setState({ showDiffOverlay: true, firstSequence: version.parentSequence - 1, secondSequence: version.parentSequence})}>View diff</span>
+                }
               </div>
               :
               <div className="DiffSummary">
-                <span className="files">No changes</span>
+                <span className="files">No changes to show. <span className="replicated-link" onClick={() => this.toggleNoChangesModal(version)}>Why?</span></span>
               </div>
             )
             : <span>&nbsp;</span>}
         </div>
       );
     }
+    // if (hasDiffSummaryError) {
+    //   return (
+    //     <div className="flex flex1 alignItems--center">
+    //       <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-textColor--bodyCopy">Cannot generate diff <span className="replicated-link" onClick={() => this.toggleDiffErrModal(version)}>Why?</span></span>
+    //     </div>
+    //   );
+    // } else {
+    //   return (
+    //     <div>
+    //       {diffSummary ?
+    //         (diffSummary.filesChanged > 0 ?
+    //           <div
+    //             className="DiffSummary u-cursor--pointer u-marginRight--10"
+    //             onClick={() => {
+    //               if (!downstream.gitops?.enabled) {
+    //                 this.setState({
+    //                   showDiffOverlay: true,
+    //                   firstSequence: version.parentSequence - 1,
+    //                   secondSequence: version.parentSequence
+    //                 });
+    //               }
+    //             }}
+    //           >
+    //             <span className="files">{diffSummary.filesChanged} files changed </span>
+    //             <span className="lines-added">+{diffSummary.linesAdded} </span>
+    //             <span className="lines-removed">-{diffSummary.linesRemoved}</span>
+    //           </div>
+    //           :
+    //           <div className="DiffSummary">
+    //             <span className="files">No changes</span>
+    //           </div>
+    //         )
+    //         : <span>&nbsp;</span>}
+    //     </div>
+    //   );
+    // }
   }
 
   renderLogsTabs = () => {
@@ -484,171 +477,6 @@ class AppVersionHistory extends Component {
     }
   }
 
-  updateStatus = () => {
-    const { app } = this.props;
-
-    return new Promise((resolve, reject) => {
-      fetch(`${window.env.API_ENDPOINT}/app/${app?.slug}/task/updatedownload`, {
-        headers: {
-          "Authorization": Utilities.getToken(),
-          "Content-Type": "application/json",
-        },
-        method: "GET",
-      })
-        .then(async (res) => {
-          const response = await res.json();
-
-          if (response.status !== "running" && !this.props.isBundleUploading) {
-            this.state.updateChecker.stop();
-
-            this.setState({
-              checkingForUpdates: false,
-              checkingUpdateMessage: response.currentMessage,
-              checkingForUpdateError: response.status === "failed"
-            });
-
-            if (this.props.updateCallback) {
-              this.props.updateCallback();
-            }
-            this.fetchKotsDownstreamHistory();
-          } else {
-            this.setState({
-              checkingForUpdates: true,
-              checkingUpdateMessage: response.currentMessage,
-            });
-          }
-          resolve();
-        }).catch((err) => {
-          console.log("failed to get rewrite status", err);
-          reject();
-        });
-    });
-  }
-
-  onCheckForUpdates = async () => {
-    const { app } = this.props;
-
-    this.setState({
-      checkingForUpdates: true,
-      checkingForUpdateError: false,
-      errorCheckingUpdate: false,
-      checkingUpdateMessage: "",
-    });
-
-    fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/updatecheck`, {
-      headers: {
-        "Authorization": Utilities.getToken(),
-        "Content-Type": "application/json",
-      },
-      method: "POST",
-    })
-      .then(async (res) => {
-        if (!res.ok) {
-          const text = await res.text();
-          this.setState({
-            errorCheckingUpdate: true,
-            checkingForUpdates: false,
-            checkingUpdateMessage: text
-          });
-          return;
-        }
-        this.props.refreshAppData();
-        const response = await res.json();
-
-        if (response.availableUpdates === 0) {
-          if (!find(this.state.versionHistory, { parentSequence: response.currentAppSequence })) {
-            // version history list is out of sync - most probably because of automatic updates happening in the background - refetch list
-            this.fetchKotsDownstreamHistory();
-            this.setState({ checkingForUpdates: false });
-          } else {
-            this.setState({
-              checkingForUpdates: false,
-              noUpdateAvailiableText: "There are no updates available",
-            });
-            setTimeout(() => {
-              this.setState({
-                noUpdateAvailiableText: null,
-              });
-            }, 3000);
-          }
-        } else {
-          this.state.updateChecker.start(this.updateStatus, 1000);
-        }
-      })
-      .catch((err) => {
-        this.setState({
-          errorCheckingUpdate: true,
-          checkingForUpdates: false,
-          checkingUpdateMessage: String(err),
-        });
-      });
-  }
-
-  onDropBundle = async () => {
-    this.setState({
-      uploadingAirgapFile: true,
-      checkingForUpdates: true,
-      airgapUploadError: null,
-      checkingForUpdateError: false,
-      checkingUpdateMessage: ""
-    });
-
-    this.props.toggleIsBundleUploading(true);
-
-    const params = {
-      appId: this.props.app.id,
-    };
-    this.state.airgapUploader.upload(params, this.onUploadProgress, this.onUploadError, this.onUploadComplete);
-  }
-
-  onUploadProgress = (progress, size, resuming = false) => {
-    this.setState({
-      uploadProgress: progress,
-      uploadSize: size,
-      uploadResuming: resuming,
-    });
-  }
-
-  onUploadError = message => {
-    this.setState({
-      uploadingAirgapFile: false,
-      checkingForUpdates: false,
-      uploadProgress: 0,
-      uploadSize: 0,
-      uploadResuming: false,
-      airgapUploadError: message || "Error uploading bundle, please try again"
-    });
-    this.props.toggleIsBundleUploading(false);
-  }
-
-  onUploadComplete = () => {
-    this.state.updateChecker.start(this.updateStatus, 1000);
-    this.setState({
-      uploadingAirgapFile: false,
-      uploadProgress: 0,
-      uploadSize: 0,
-      uploadResuming: false,
-    });
-    this.props.toggleIsBundleUploading(false);
-  }
-
-  onProgressError = async (airgapUploadError) => {
-    Object.entries(COMMON_ERRORS).forEach(([errorString, message]) => {
-      if (airgapUploadError.includes(errorString)) {
-        airgapUploadError = message;
-      }
-    });
-    this.setState({
-      uploadingAirgapFile: false,
-      airgapUploadError,
-      checkingForUpdates: false,
-      uploadProgress: 0,
-      uploadSize: 0,
-      uploadResuming: false,
-    });
-    this.props.toggleIsBundleUploading(false);
-  }
-
   renderDiffBtn = () => {
     const { app } = this.props;
     const {
@@ -765,7 +593,6 @@ class AppVersionHistory extends Component {
     const {
       app,
       match,
-      isBundleUploading,
       makingCurrentVersionErrMsg,
       redeployVersionErrMsg
     } = this.props;
@@ -781,20 +608,9 @@ class AppVersionHistory extends Component {
       downstreamReleaseNotes,
       selectedDiffReleases,
       checkedReleasesToDiff,
-      checkingForUpdates,
-      checkingUpdateMessage,
-      checkingForUpdateError,
-      errorCheckingUpdate,
-      airgapUploadError,
       showDiffOverlay,
       firstSequence,
       secondSequence,
-      uploadingAirgapFile,
-      uploadProgress,
-      uploadSize,
-      uploadResuming,
-      noUpdateAvailiableText,
-      showUpdateCheckerModal,
       loadingVersionHistory,
       versionHistory,
       errorTitle,
@@ -806,23 +622,6 @@ class AppVersionHistory extends Component {
       return null;
     }
 
-    let checkingUpdateText = checkingUpdateMessage;
-    try {
-      const jsonMessage = JSON.parse(checkingUpdateText);
-      const type = get(jsonMessage, "type");
-      if (type === "progressReport") {
-        checkingUpdateText = jsonMessage.compatibilityMessage;
-        // TODO: handle image upload progress here
-      }
-    } catch {
-      // empty
-    }
-
-    let checkingUpdateTextShort = checkingUpdateText;
-    if (!checkingForUpdateError && checkingUpdateTextShort && checkingUpdateTextShort.length > 30) {
-      checkingUpdateTextShort = checkingUpdateTextShort.slice(0, 30) + "...";
-    }
-
     // only render loader if there is no app yet to avoid flickering
     if (loadingVersionHistory && !versionHistory?.length) {
       return (
@@ -832,56 +631,12 @@ class AppVersionHistory extends Component {
       );
     }
 
-    const errorText = checkingUpdateMessage ? checkingUpdateMessage : "Error checking for updates, please try again";
-    let updateText;
-    if (airgapUploadError) {
-      updateText = <p className="u-marginTop--10 u-fontSize--small u-textColor--error u-fontWeight--medium">{airgapUploadError}</p>;
-    } else if (uploadingAirgapFile) {
-      updateText = (
-        <AirgapUploadProgress
-          appSlug={app.slug}
-          total={uploadSize}
-          progress={uploadProgress}
-          resuming={uploadResuming}
-          onProgressError={this.onProgressError}
-          smallSize={true}
-        />
-      );
-    } else if (isBundleUploading) {
-      updateText = (
-        <AirgapUploadProgress
-          appSlug={app.slug}
-          unkownProgress={true}
-          onProgressError={this.onProgressError}
-          smallSize={true}
-        />);
-    } else if (errorCheckingUpdate || checkingForUpdateError) {
-      updateText = <p className="u-marginTop--10 u-fontSize--small u-textColor--error u-fontWeight--medium">{errorText}</p>
-    } else if (checkingForUpdates) {
-      updateText = <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium">{checkingUpdateTextShort}</p>
-    } else if (app.lastUpdateCheckAt && !noUpdateAvailiableText) {
-      updateText = <p className="u-marginTop--10 u-fontSize--small u-textColor--info u-fontWeight--medium">Last checked {dayjs(app.lastUpdateCheckAt).fromNow()}</p>;
-    } else if (!app.lastUpdateCheckat) {
-      updateText = null;
-    }
-
-    let noUpdateAvailiableMsg;
-    if (noUpdateAvailiableText) {
-      noUpdateAvailiableMsg = <p className="u-marginTop--10 u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium">{noUpdateAvailiableText}</p>
-    } else {
-      noUpdateAvailiableMsg = null;
-    }
-
-    const showAirgapUI = app.isAirgap && !isBundleUploading;
-    const showOnlineUI = !app.isAirgap && !checkingForUpdates;
     const downstream = app.downstreams.length && app.downstreams[0];
     const gitopsEnabled = downstream.gitops?.enabled;
-    const currentDownstreamVersion = downstream?.currentVersion;
 
     // This is kinda hacky. This finds the equivalent downstream version because the midstream
     // version type does not contain metadata like version label or release notes.
     const currentMidstreamVersion = versionHistory.find(version => version.parentSequence === app.currentVersion.sequence) || app.currentVersion;
-    const pendingVersions = downstream?.pendingVersions;
 
     return (
       <div className="flex flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
@@ -893,23 +648,6 @@ class AppVersionHistory extends Component {
             <span className={`icon gitopsService--${downstream.gitops?.provider} u-marginRight--10`}/>Gitops is enabled for this application. Versions are tracked {app.isAirgap ? "at" : "on"}&nbsp;<a target="_blank" rel="noopener noreferrer" href={downstream.gitops?.uri} className="replicated-link">{app.isAirgap ? downstream.gitops?.uri : Utilities.toTitleCase(downstream.gitops?.provider)}</a>
           </div>
         }
-        <AppVersionHistoryHeader
-          app={app}
-          slug={this.props.match.params.slug}
-          currentDownstreamVersion={currentDownstreamVersion}
-          showDownstreamReleaseNotes={this.showDownstreamReleaseNotes}
-          handleViewLogs={this.handleViewLogs}
-          checkingForUpdates={checkingForUpdates}
-          isBundleUploading={isBundleUploading}
-          airgapUploader={this.state.airgapUploader}
-          pendingVersions={pendingVersions}
-          showOnlineUI={showOnlineUI}
-          showAirgapUI={showAirgapUI}
-          noUpdateAvailiableMsg={noUpdateAvailiableMsg}
-          updateText={updateText}
-          onCheckForUpdates={this.onCheckForUpdates}
-          showUpdateCheckerModal={this.showUpdateCheckerModal}
-        />
         <div className="flex-column flex1">
           <div className="flex flex1">
             <div className="flex1 flex-column alignItems--center">
@@ -931,33 +669,29 @@ class AppVersionHistory extends Component {
                 </div>
               }
 
-              <div className="TableDiff--Wrapper flex-column flex1">
+              <div className={`TableDiff--Wrapper flex-column ${gitopsEnabled ? "gitops-enabled" : ""}`}>
                 <div className={`flex-column flex1 ${showDiffOverlay ? "u-visibility--hidden" : ""}`}>
-                  <div className="flex justifyContent--spaceBetween u-borderBottom--gray darker u-paddingBottom--10">
-                    <p className="u-fontSize--larger u-fontWeight--bold u-textColor--primary u-lineHeight--normal">All versions</p>
-                    {versionHistory.length > 1 && this.renderDiffBtn()}
-                  </div>
-                  {/* Downstream version history */}
-                  {versionHistory.length >= 1 ? versionHistory.map((version) => {
-                    const isChecked = !!checkedReleasesToDiff.find(diffRelease => diffRelease.parentSequence === version.parentSequence);
-                    const isNew = secondsAgo(version.createdOn) < 10;
-                    const nothingToCommit = gitopsEnabled && !version.commitUrl;
-                    const yamlErrorsDetails = this.yamlErrorsDetails(downstream, version);
-                    return (
+                {versionHistory.length >= 1 ?
+                  <div>
+                    <div className="u-marginBottom--30">
+                      <div className="flex justifyContent--spaceBetween u-marginBottom--15">
+                        <p className="u-fontSize--normal u-fontWeight--medium u-textColor--header">Latest version</p>
+                        {versionHistory.length > 1 && this.renderDiffBtn()}
+                      </div>
                       <AppVersionHistoryRow
-                        key={version.sequence}
+                        key={versionHistory[0].sequence}
                         app={this.props.app}
                         match={this.props.match}
                         history={this.props.history}
-                        version={version}
+                        version={versionHistory[0]}
                         latestVersion={versionHistory[0]}
                         selectedDiffReleases={selectedDiffReleases}
-                        nothingToCommit={nothingToCommit}
-                        isChecked={isChecked}
-                        isNew={isNew}
+                        nothingToCommit={gitopsEnabled && !versionHistory[0].commitUrl}
+                        isChecked={!!checkedReleasesToDiff.find(diffRelease => diffRelease.parentSequence === versionHistory[0].parentSequence)}
+                        isNew={secondsAgo(versionHistory[0].createdOn) < 10}
                         showDownstreamReleaseNotes={this.showDownstreamReleaseNotes}
                         renderSourceAndDiff={this.renderSourceAndDiff}
-                        yamlErrorsDetails={yamlErrorsDetails}
+                        yamlErrorsDetails={this.yamlErrorsDetails(downstream, versionHistory[0])}
                         toggleShowDetailsModal={this.toggleShowDetailsModal}
                         gitopsEnabled={gitopsEnabled}
                         deployVersion={this.deployVersion}
@@ -965,12 +699,46 @@ class AppVersionHistory extends Component {
                         handleSelectReleasesToDiff={this.handleSelectReleasesToDiff}
                         redeployVersion={this.redeployVersion}
                       />
-                    );
-                  }) :
-                    <div className="flex-column flex1 alignItems--center justifyContent--center">
-                      <p className="u-fontSize--large u-fontWeight--bold u-textColor--primary">No versions have been deployed.</p>
                     </div>
-                  }
+
+                    <div className="flex u-marginBottom--15">
+                      <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy">Older versions</p>
+                    </div>
+                    {versionHistory.filter((i, idx) => idx !== 0).map((version) => {
+                      const isChecked = !!checkedReleasesToDiff.find(diffRelease => diffRelease.parentSequence === version.parentSequence);
+                      const isNew = secondsAgo(version.createdOn) < 10;
+                      const nothingToCommit = gitopsEnabled && !version.commitUrl;
+                      const yamlErrorsDetails = this.yamlErrorsDetails(downstream, version);
+                      return (
+                        <AppVersionHistoryRow
+                          key={version.sequence}
+                          app={this.props.app}
+                          match={this.props.match}
+                          history={this.props.history}
+                          version={version}
+                          latestVersion={versionHistory[0]}
+                          selectedDiffReleases={selectedDiffReleases}
+                          nothingToCommit={nothingToCommit}
+                          isChecked={isChecked}
+                          isNew={isNew}
+                          showDownstreamReleaseNotes={this.showDownstreamReleaseNotes}
+                          renderSourceAndDiff={this.renderSourceAndDiff}
+                          yamlErrorsDetails={yamlErrorsDetails}
+                          toggleShowDetailsModal={this.toggleShowDetailsModal}
+                          gitopsEnabled={gitopsEnabled}
+                          deployVersion={this.deployVersion}
+                          handleViewLogs={this.handleViewLogs}
+                          handleSelectReleasesToDiff={this.handleSelectReleasesToDiff}
+                          redeployVersion={this.redeployVersion}
+                        />
+                      );
+                    })}
+                  </div>
+                :
+                <div className="flex-column flex1 alignItems--center justifyContent--center">
+                  <p className="u-fontSize--large u-fontWeight--bold u-textColor--primary">No versions have been deployed.</p>
+                </div>
+                }
                 </div>
 
                 {/* Diff overlay */}
@@ -1088,19 +856,6 @@ class AppVersionHistory extends Component {
           </Modal>
         }
 
-        {showUpdateCheckerModal &&
-          <UpdateCheckerModal
-            isOpen={showUpdateCheckerModal}
-            onRequestClose={this.hideUpdateCheckerModal}
-            updateCheckerSpec={app.updateCheckerSpec}
-            appSlug={app.slug}
-            gitopsEnabled={gitopsEnabled}
-            onUpdateCheckerSpecSubmitted={() => {
-              this.hideUpdateCheckerModal();
-              this.props.refreshAppData();
-            }}
-          />
-        }
         {this.state.displayShowDetailsModal &&
           <ShowDetailsModal
             displayShowDetailsModal={this.state.displayShowDetailsModal}
@@ -1121,6 +876,23 @@ class AppVersionHistory extends Component {
             errMsg={errorMsg}
             appSlug={this.props.match.params.slug}
           />}
+          {this.state.showNoChangesModal &&
+            <Modal
+              isOpen={true}
+              onRequestClose={this.toggleNoChangesModal}
+              contentLabel="No Changes"
+              ariaHideApp={false}
+              className="Modal DefaultSize"
+            >
+              <div className="Modal-body">
+                <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">No changes to show</p>
+                <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">The <span className="u-fontWeight--bold">Upstream {this.state.releaseWithNoChanges.versionLabel}, Sequence {this.state.releaseWithNoChanges.sequence}</span> release was unable to generate a diff because the changes made do not affect any manifests that will be deployed. Only changes affecting the application manifest will be included in a diff.</p>
+                <div className="flex u-paddingTop--10">
+                  <button className="btn primary" onClick={this.toggleNoChangesModal}>Ok, got it!</button>
+                </div>
+              </div>
+            </Modal>
+          }
       </div>
     );
   }

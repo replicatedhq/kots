@@ -11,21 +11,21 @@ import (
 
 	"github.com/marccampbell/yaml-toolbox/pkg/splitter"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
-	"github.com/replicatedhq/kots/pkg/kustomize"
 	"github.com/replicatedhq/kots/pkg/logger"
 	rest "k8s.io/client-go/rest"
 )
 
 type Kubectl struct {
-	kubectl string
-	config  *rest.Config
+	kubectl   string
+	kustomize string
+	config    *rest.Config
 }
 
-func NewKubectl(kubectl string, config *rest.Config) *Kubectl {
+func NewKubectl(kubectl, kustomize string, config *rest.Config) *Kubectl {
 	return &Kubectl{
-		kubectl: kubectl,
-		config:  config,
+		kubectl:   kubectl,
+		kustomize: kustomize,
+		config:    config,
 	}
 }
 
@@ -196,7 +196,7 @@ commonAnnotations:
 		return nil, nil, errors.Wrapf(err, "failed to write %s", kustomizationPath)
 	}
 
-	renderedManifest, err := exec.Command(kustomize.GetKustomizePath(kotsutil.KotsKustomizeVersion), "build", tmp).Output()
+	renderedManifest, err := exec.Command(c.kustomize, "build", tmp).Output()
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to run kustomize build")
 	}

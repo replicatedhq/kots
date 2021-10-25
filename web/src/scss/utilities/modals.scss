@@ -48,6 +48,15 @@
       width: 100%;
       max-width: 533px;
     }
+    &.DiffViewerModal {
+      width: 90%;
+      max-height: 90%;
+      padding: 15px;
+
+      .DiffOverlay {
+        position: relative;
+      }
+    }
     
     .Modal-header {
       padding: 20px 25px 0;

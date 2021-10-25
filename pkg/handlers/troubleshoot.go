@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
 	"github.com/replicatedhq/kots/pkg/supportbundle/types"
@@ -30,6 +31,7 @@ type GetSupportBundleResponse struct {
 	CreatedAt  time.Time                    `json:"createdAt"`
 	UploadedAt *time.Time                   `json:"uploadedAt"`
 	UpdatedAt  *time.Time                   `json:"updatedAt"`
+	SharedAt   *time.Time                   `json:"sharedAt"`
 	IsArchived bool                         `json:"isArchived"`
 	Analysis   *types.SupportBundleAnalysis `json:"analysis"`
 	Progress   *types.SupportBundleProgress `json:"progress"`
@@ -109,6 +111,7 @@ func (h *Handler) GetSupportBundle(w http.ResponseWriter, r *http.Request) {
 		CreatedAt:  bundle.CreatedAt,
 		UpdatedAt:  bundle.UpdatedAt,
 		UploadedAt: bundle.UploadedAt,
+		SharedAt:   bundle.SharedAt,
 		IsArchived: bundle.IsArchived,
 		Analysis:   analysis,
 		Progress:   &bundle.Progress,
@@ -278,6 +281,115 @@ func (h *Handler) DownloadSupportBundle(w http.ResponseWriter, r *http.Request) 
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
 	w.WriteHeader(http.StatusOK)
 	io.Copy(w, f)
+}
+
+func (h *Handler) ShareSupportBundle(w http.ResponseWriter, r *http.Request) {
+	appSlug := mux.Vars(r)["appSlug"]
+	bundleID := mux.Vars(r)["bundleId"]
+
+	app, err := store.GetStore().GetAppFromSlug(appSlug)
+	if err != nil {
+		logger.Error(err)
+		JSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if app.IsAirgap {
+		logger.Error(errors.New("Support bundle sharing is not supported for airgapped installations."))
+		JSON(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	license, err := store.GetStore().GetLatestLicenseForApp(app.ID)
+	if err != nil {
+		logger.Error(err)
+		JSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if !license.Spec.IsSupportBundleUploadSupported {
+		logger.Errorf("License does not have support bundle sharing enabled")
+		JSON(w, http.StatusForbidden, nil)
+		return
+	}
+
+	bundle, err := store.GetStore().GetSupportBundle(bundleID)
+	if err != nil {
+		logger.Error(err)
+		JSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	bundleArchive, err := store.GetStore().GetSupportBundleArchive(bundle.ID)
+	if err != nil {
+		logger.Error(err)
+		JSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+	defer os.RemoveAll(bundleArchive)
+
+	f, err := os.Open(bundleArchive)
+	if err != nil {
+		logger.Error(err)
+		JSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+	defer f.Close()
+
+	fileStat, err := f.Stat()
+	if err != nil {
+		logger.Error(err)
+		JSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	endpoint := fmt.Sprintf("%s/supportbundle/upload/%s", license.Spec.Endpoint, license.Spec.AppSlug)
+
+	req, err := http.NewRequest("POST", endpoint, f)
+	if err != nil {
+		logger.Error(err)
+		JSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	reportingInfo := reporting.GetReportingInfo(app.ID)
+	reporting.InjectReportingInfoHeaders(req, reportingInfo)
+
+	req.Header.Set("Content-Type", "application/tar+gzip")
+	req.Header.Set("X-Replicated-SupportBundle-CollectedAt", bundle.CreatedAt.Format(time.RFC3339))
+
+	req.ContentLength = fileStat.Size()
+
+	req.SetBasicAuth(license.Spec.LicenseID, license.Spec.LicenseID)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		logger.Error(err)
+		JSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		body, err := io.ReadAll(resp.Body)
+		if err == nil {
+			logger.Errorf("Failed to share support bundle: %d: %s", resp.StatusCode, string(body))
+		} else {
+			logger.Errorf("Failed to share support bundle: %d", resp.StatusCode)
+		}
+		JSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	now := time.Now()
+	bundle.SharedAt = &now
+	if err := store.GetStore().UpdateSupportBundle(bundle); err != nil {
+		logger.Error(errors.Wrap(err, "failed to update support bundle"))
+		JSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	JSON(w, http.StatusOK, "")
 }
 
 func (h *Handler) CollectSupportBundle(w http.ResponseWriter, r *http.Request) {

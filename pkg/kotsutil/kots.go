@@ -14,8 +14,10 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
@@ -34,10 +36,6 @@ func init() {
 	velerov1.AddToScheme(scheme.Scheme)
 	applicationv1beta1.AddToScheme(scheme.Scheme)
 }
-
-const (
-	KotsKustomizeVersion = "3.5.4"
-)
 
 // KotsKinds are all of the special "client-side" kinds that are packaged in
 // an application. These should be pointers because they are all optional.
@@ -171,10 +169,15 @@ func (k *KotsKinds) HasPreflights() bool {
 	return len(k.Preflight.Spec.Analyzers) > 0
 }
 
-// KustomizeVersion will return the kustomize version to use for this application
+// GetKustomizeBinaryPath will return the kustomize binary version to use for this application
 // applying the default, if there is one, for the current version of kots
-func (k KotsKinds) KustomizeVersion() string {
-	return KotsKustomizeVersion
+func (k KotsKinds) GetKustomizeBinaryPath() string {
+	path, err := binaries.GetKustomizePathForVersion(k.KotsApplication.Spec.KustomizeVersion)
+	if err != nil {
+		logger.Infof("Failed to get kustomize path: %v", err)
+		return "kustomize"
+	}
+	return path
 }
 
 func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {

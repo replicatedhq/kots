@@ -31,3 +31,7 @@ func (s *OCIStore) GetAllAppLicenses() ([]*kotsv1beta1.License, error) {
 func (s *OCIStore) UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *kotsv1beta1.License, originalLicenseData string, failOnVersionCreate bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error) {
 	return int64(0), ErrNotImplemented
 }
+
+func (s *OCIStore) UpdateAppLicenseSyncNow(appID string) error {
+	return ErrNotImplemented
+}
