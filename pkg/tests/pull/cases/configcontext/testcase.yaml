@@ -1,0 +1,14 @@
+Name: test helm pull
+PullOptions:
+  ExcludeAdminConsole: true
+  IsAirgap: true
+  Silent: true
+  LocalPath: cases/configcontext/upstream
+  RootDir: cases/configcontext/results
+  SharedPassword: dummy-pass
+  RewriteImages: true
+  RewriteImageOptions:
+    Host: proxy.replicated.com
+    Username: test
+    Password: fake-pass
+    IsReadOnly: true

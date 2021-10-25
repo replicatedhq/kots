@@ -1,0 +1,10 @@
+apiVersion: kots.io/v1beta1
+kind: Installation
+metadata:
+  creationTimestamp: null
+  name: replicated-kots-app
+spec:
+  channelID: 1vusIYZLAVxMG6q760OJmRKj5i5
+  channelName: My Channel
+  encryptionKey: /npGkMBvdjdPU6kkWIKwYji/Du7hMuCizBQVWAgS+S6QVmQV
+status: {}

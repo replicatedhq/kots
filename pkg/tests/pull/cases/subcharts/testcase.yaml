@@ -1,0 +1,14 @@
+Name: test subcharts pull
+PullOptions:
+  ExcludeAdminConsole: true
+  IsAirgap: true
+  Silent: true
+  LocalPath: cases/subcharts/upstream
+  RootDir: cases/subcharts/results
+  SharedPassword: dummy-pass
+  RewriteImages: true
+  RewriteImageOptions:
+    Host: fake-docker-proxy
+    Username: test
+    Password: fake-pass
+    IsReadOnly: true
