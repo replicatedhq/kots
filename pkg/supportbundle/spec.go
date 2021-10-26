@@ -494,13 +494,19 @@ func getDefaultDynamicAnalyzers(app *apptypes.App) []*troubleshootv1beta2.Analyz
 	analyzers = append(analyzers, &troubleshootv1beta2.Analyze{
 		ClusterPodStatuses: &troubleshootv1beta2.ClusterPodStatuses{
 			AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
-				CheckName: "Pod {{ .Namespace }}/{{ .Name }} is not healthy",
+				CheckName: "Pod {{ .Namespace }}/{{ .Name }} is unhealthy",
 			},
 			Outcomes: []*troubleshootv1beta2.Outcome{
 				{
 					Fail: &troubleshootv1beta2.SingleOutcome{
 						When:    "== Failed",
-						Message: "Pod {{ .Namespace }}/{{ .Name }} status is {{ .Status.Phase }}",
+						Message: "Status: {{ .Status.Reason }}",
+					},
+				},
+				{
+					Fail: &troubleshootv1beta2.SingleOutcome{
+						When:    "== Pending",
+						Message: "Status: {{ .Status.Reason }}",
 					},
 				},
 			},
