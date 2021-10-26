@@ -241,6 +241,7 @@ func injectDefaults(app *apptypes.App, b *troubleshootv1beta2.SupportBundle, opt
 func populateNamespaces(supportBundle *troubleshootv1beta2.SupportBundle, minimalRBACNamespaces []string) *troubleshootv1beta2.SupportBundle {
 	next := supportBundle.DeepCopy()
 
+	// collectors
 	var collects []*troubleshootv1beta2.Collect
 	for _, collect := range next.Spec.Collectors {
 		if collect.Secret != nil && collect.Secret.Namespace == "" {
@@ -262,18 +263,25 @@ func populateNamespaces(supportBundle *troubleshootv1beta2.SupportBundle, minima
 			collect.Copy.Namespace = util.PodNamespace
 		}
 		if len(minimalRBACNamespaces) > 0 {
-			if collect.ClusterResources != nil && len(collect.ClusterResources.Namespaces) == 0 &&  {
+			if collect.ClusterResources != nil && len(collect.ClusterResources.Namespaces) == 0 {
 				collect.ClusterResources.Namespaces = minimalRBACNamespaces
-			}
-			if collect.UnhealthyPods != nil && len(collect.UnhealthyPods.Namespaces) == 0 &&  {
-				collect.UnhealthyPods.Namespaces = minimalRBACNamespaces
 			}
 		}
 		collects = append(collects, collect)
 	}
 	next.Spec.Collectors = collects
 
-	// no analyzers need to be populated
+	// analyzers
+	var analyzers []*troubleshootv1beta2.Analyze
+	for _, analyzer := range next.Spec.Analyzers {
+		if len(minimalRBACNamespaces) > 0 {
+			if analyzer.ClusterPodStatuses != nil && len(analyzer.ClusterPodStatuses.Namespaces) == 0 {
+				analyzer.ClusterPodStatuses.Namespaces = minimalRBACNamespaces
+			}
+		}
+		analyzers = append(analyzers, analyzer)
+	}
+	next.Spec.Analyzers = analyzers
 
 	return next
 }
@@ -483,24 +491,21 @@ func getDefaultDynamicAnalyzers(app *apptypes.App) []*troubleshootv1beta2.Analyz
 	analyzers := make([]*troubleshootv1beta2.Analyze, 0)
 
 	analyzers = append(analyzers, makeAPIReplicaAnalyzer())
-	analyzers = append(analyzers,
-	&troubleshootv1beta2.Analyze{
-		&troubleshootv1beta2.Analyze{
-			UnhealthyPods: &troubleshootv1beta2.SysctlAnalyze{
-				AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
-					CheckName: "Pod {{ .Name }} is not healthy",
-				},
-				Outcomes: []*troubleshootv1beta2.Outcome{
-					{
-						Fail: &troubleshootv1beta2.SingleOutcome{
-							When:    "!= Running",
-							Message: "Pod {{ .Name }} status is {{ .Status }}",
-						},
+	analyzers = append(analyzers, &troubleshootv1beta2.Analyze{
+		ClusterPodStatuses: &troubleshootv1beta2.ClusterPodStatuses{
+			AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
+				CheckName: "Pod {{ .Namespace }}/{{ .Name }} is not healthy",
+			},
+			Outcomes: []*troubleshootv1beta2.Outcome{
+				{
+					Fail: &troubleshootv1beta2.SingleOutcome{
+						When:    "== Failed",
+						Message: "Pod {{ .Namespace }}/{{ .Name }} status is {{ .Status.Phase }}",
 					},
 				},
 			},
 		},
-	)
+	})
 
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
