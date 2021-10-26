@@ -228,6 +228,10 @@ spec:
               message: A supported container runtime is present on all nodes
     - cephStatus: {}
     - longhorn: {}
+    - statefulsetStatus: {}
+    - deploymentStatus: {}
+    - jobStatus: {}
+    - replicasetStatus: {}
     - weaveReport:
         reportFileGlob: kots/kurl/weave/kube-system/*/weave-report-stdout.txt
     - textAnalyze:
