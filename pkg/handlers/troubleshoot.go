@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -18,6 +19,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	redact2 "github.com/replicatedhq/troubleshoot/pkg/redact"
+	corev1 "k8s.io/api/core/v1"
 )
 
 type GetSupportBundleResponse struct {
@@ -76,6 +78,15 @@ type CollectSupportBundlesResponse struct {
 
 type GetSupportBundleRedactionsResponse struct {
 	Redactions redact2.RedactionList `json:"redactions"`
+
+	Success bool   `json:"success"`
+	Error   string `json:"error,omitempty"`
+}
+
+type GetPodDetailsFromSupportBundleResponse struct {
+	PodDefinition corev1.Pod        `json:"podsDefinition"`
+	PodEvents     []corev1.Event    `json:"podsEvents"`
+	PodContainers map[string]string `json:"podsContainers"`
 
 	Success bool   `json:"success"`
 	Error   string `json:"error,omitempty"`
@@ -480,6 +491,64 @@ func (h *Handler) GetSupportBundleRedactions(w http.ResponseWriter, r *http.Requ
 	getSupportBundleRedactionsResponse.Redactions = redactions
 
 	JSON(w, http.StatusOK, getSupportBundleRedactionsResponse)
+}
+
+func (h *Handler) GetPodDetailsFromSupportBundle(w http.ResponseWriter, r *http.Request) {
+	getPodDetailsFromSupportBundleResponse := GetPodDetailsFromSupportBundleResponse{
+		Success: false,
+	}
+
+	bundleID := mux.Vars(r)["bundleId"]
+	podName := r.URL.Query().Get("podName")
+	podNamespace := r.URL.Query().Get("podNamespace")
+
+	nsPodsFilePath := filepath.Join("cluster-resources", "pods", fmt.Sprintf("%s.json", podNamespace))
+	nsEventsFilePath := filepath.Join("cluster-resources", "events", fmt.Sprintf("%s.json", podNamespace))
+
+	files, err := supportbundle.GetFilesContents(bundleID, []string{nsPodsFilePath, nsEventsFilePath})
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get files contents"))
+		getPodDetailsFromSupportBundleResponse.Error = fmt.Sprintf("failed to get file %s", nsPodsFilePath)
+		JSON(w, 500, getPodDetailsFromSupportBundleResponse)
+		return
+	}
+
+	var nsEvents []corev1.Event
+	if err := json.Unmarshal(files[nsEventsFilePath], &nsEvents); err != nil {
+		logger.Error(errors.Wrap(err, "failed to unmarshal events"))
+		getPodDetailsFromSupportBundleResponse.Error = "failed to unmarshal namespace events"
+		JSON(w, 500, getPodDetailsFromSupportBundleResponse)
+		return
+	}
+	podEvents := []corev1.Event{}
+	for _, event := range nsEvents {
+		if event.InvolvedObject.Kind == "Pod" && event.InvolvedObject.Name == podName && event.InvolvedObject.Namespace == podNamespace {
+			podEvents = append(podEvents, event)
+		}
+	}
+	getPodDetailsFromSupportBundleResponse.PodEvents = podEvents
+
+	var podsArr []corev1.Pod
+	if err := json.Unmarshal(files[nsPodsFilePath], &podsArr); err != nil {
+		logger.Error(errors.Wrap(err, "failed to unmarshal pods"))
+		getPodDetailsFromSupportBundleResponse.Error = "failed to unmarshal namespace pods"
+		JSON(w, 500, getPodDetailsFromSupportBundleResponse)
+		return
+	}
+	for _, pod := range podsArr {
+		if pod.Name == podName && pod.Namespace == podNamespace {
+			getPodDetailsFromSupportBundleResponse.PodDefinition = pod
+			getPodDetailsFromSupportBundleResponse.PodContainers = map[string]string{}
+			for _, c := range pod.Spec.Containers {
+				getPodDetailsFromSupportBundleResponse.PodContainers[c.Name] = filepath.Join("cluster-resources", "pods", "logs", pod.Namespace, pod.Name, fmt.Sprintf("%s-logs-errors.log", c.Name))
+			}
+			break
+		}
+	}
+
+	getPodDetailsFromSupportBundleResponse.Success = true
+
+	JSON(w, http.StatusOK, getPodDetailsFromSupportBundleResponse)
 }
 
 // SetSupportBundleRedactions route is UNAUTHENTICATED

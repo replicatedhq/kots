@@ -587,10 +587,11 @@ func insightsFromResults(results []byte) ([]types.SupportBundleInsight, error) {
 		DesiredPosition string `json:"desiredPosition"`
 	}
 	type DBInsight struct {
-		Name     string  `json:"name"`
-		Severity string  `json:"severity"`
-		Insight  Insight `json:"insight"`
-		Labels   Labels  `json:"labels"`
+		Name           string                  `json:"name"`
+		Severity       string                  `json:"severity"`
+		Insight        Insight                 `json:"insight"`
+		Labels         Labels                  `json:"labels"`
+		InvolvedObject *corev1.ObjectReference `json:"involvedObject,omitempty"`
 	}
 
 	dbInsights := []DBInsight{}
@@ -610,6 +611,7 @@ func insightsFromResults(results []byte) ([]types.SupportBundleInsight, error) {
 			Icon:            dbInsight.Labels.IconUri,
 			IconKey:         dbInsight.Labels.IconKey,
 			DesiredPosition: desiredPosition,
+			InvolvedObject:  dbInsight.InvolvedObject,
 		}
 		insights = append(insights, insight)
 	}

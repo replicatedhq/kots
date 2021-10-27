@@ -3,7 +3,7 @@ import Loader from "../shared/Loader";
 import isEmpty from "lodash/isEmpty";
 import filter from "lodash/filter";
 import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
-import { sortAnalyzers, parseIconUri } from "../../utilities/utilities";
+import { sortAnalyzers, parseIconUri, Utilities } from "../../utilities/utilities";
 
 export class AnalyzerInsights extends React.Component {
   constructor(props) {
@@ -35,6 +35,7 @@ export class AnalyzerInsights extends React.Component {
   }
 
   componentDidMount() {
+    this.testApi();
     let isError, isWarn;
     if (this.props.insights) {
       isError = this.props.insights.some(i => i.severity === "error");
@@ -49,6 +50,22 @@ export class AnalyzerInsights extends React.Component {
     }
 
     this.checkBundleStatus();
+  }
+
+  testApi = async () => {
+    this.setState({ sendingBundle: true, sendingBundleErrMsg: "", downloadBundleErrMsg: "" });
+      fetch(`${window.env.API_ENDPOINT}/troubleshoot/app/qakots/supportbundle/2041y5f3xzi5ewauoaiqogyccme/pod?podNamespace=default&podName=sqs-7449b544fc-mw4dx`, {
+        method: "GET",
+        headers: {
+          "Authorization": Utilities.getToken(),
+        }
+      })
+        .then(async (result) => {
+          console.log(result)
+        })
+        .catch(err => {
+          console.log(err);
+        })
   }
 
   checkBundleStatus = () => {

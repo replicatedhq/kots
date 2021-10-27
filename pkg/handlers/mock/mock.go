@@ -658,6 +658,18 @@ func (mr *MockKOTSHandlerMockRecorder) GetPendingApp(w, r interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingApp", reflect.TypeOf((*MockKOTSHandler)(nil).GetPendingApp), w, r)
 }
 
+// GetPodDetailsFromSupportBundle mocks base method.
+func (m *MockKOTSHandler) GetPodDetailsFromSupportBundle(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetPodDetailsFromSupportBundle", w, r)
+}
+
+// GetPodDetailsFromSupportBundle indicates an expected call of GetPodDetailsFromSupportBundle.
+func (mr *MockKOTSHandlerMockRecorder) GetPodDetailsFromSupportBundle(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPodDetailsFromSupportBundle", reflect.TypeOf((*MockKOTSHandler)(nil).GetPodDetailsFromSupportBundle), w, r)
+}
+
 // GetPreflightCommand mocks base method.
 func (m *MockKOTSHandler) GetPreflightCommand(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
