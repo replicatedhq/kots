@@ -539,8 +539,11 @@ func (h *Handler) GetPodDetailsFromSupportBundle(w http.ResponseWriter, r *http.
 		if pod.Name == podName && pod.Namespace == podNamespace {
 			getPodDetailsFromSupportBundleResponse.PodDefinition = pod
 			getPodDetailsFromSupportBundleResponse.PodContainers = map[string]string{}
+			// for _, i := range pod.Spec.InitContainers {
+			// 	getPodDetailsFromSupportBundleResponse.PodInitContainers[i.Name] = filepath.Join("cluster-resources", "pods", pod.Namespace, "logs", pod.Name, fmt.Sprintf("%s.log", c.Name))
+			// }
 			for _, c := range pod.Spec.Containers {
-				getPodDetailsFromSupportBundleResponse.PodContainers[c.Name] = filepath.Join("cluster-resources", "pods", "logs", pod.Namespace, pod.Name, fmt.Sprintf("%s-logs-errors.log", c.Name))
+				getPodDetailsFromSupportBundleResponse.PodContainers[c.Name] = filepath.Join("cluster-resources", "pods", pod.Namespace, "logs", pod.Name, fmt.Sprintf("%s.log", c.Name))
 			}
 			break
 		}
