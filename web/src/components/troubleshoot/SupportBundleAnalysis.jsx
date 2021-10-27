@@ -27,7 +27,7 @@ export class SupportBundleAnalysis extends React.Component {
       sendingBundle: false,
       sendingBundleErrMsg: "",
       displayErrorModal: false,
-      showPodAnalyzerDetailsModal: true,
+      showPodAnalyzerDetailsModal: false,
       selectedPod: {
         name: "kotsadm-web"
       }
