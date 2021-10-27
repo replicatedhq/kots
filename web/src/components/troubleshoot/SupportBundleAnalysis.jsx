@@ -1,11 +1,13 @@
 import * as React from "react";
 import { withRouter, Switch, Route, Link } from "react-router-dom";
 import dayjs from "dayjs";
+import Modal from "react-modal";
 
 import Loader from "../shared/Loader";
 import AnalyzerInsights from "./AnalyzerInsights";
 import AnalyzerFileTree from "./AnalyzerFileTree";
 import AnalyzerRedactorReport from "./AnalyzerRedactorReport";
+import PodAnalyzerDetails from "./PodAnalyzerDetails";
 import ErrorModal from "../modals/ErrorModal";
 import { Utilities } from "../../utilities/utilities";
 import "../../scss/components/troubleshoot/SupportBundleAnalysis.scss";
@@ -24,8 +26,16 @@ export class SupportBundleAnalysis extends React.Component {
       getSupportBundleErrMsg: "",
       sendingBundle: false,
       sendingBundleErrMsg: "",
-      displayErrorModal: false
+      displayErrorModal: false,
+      showPodAnalyzerDetailsModal: true,
+      selectedPod: {
+        name: "kotsadm-web"
+      }
     };
+  }
+
+  togglePodDetailsModal = (selectedPod) => {
+    this.setState({ selectedPod });
   }
 
   sendBundleToVendor = async () => {
@@ -262,6 +272,20 @@ export class SupportBundleAnalysis extends React.Component {
             loading={this.state.loading}
             appSlug={this.props.match.params.slug}
           />}
+        {this.state.showPodAnalyzerDetailsModal &&
+          <Modal
+            isOpen={true}
+            shouldReturnFocusAfterClose={false}
+            onRequestClose={() => this.togglePodDetailsModal({})}
+            ariaHideApp={false}
+            contentLabel="Modal"
+            className="Modal PodAnalyzerDetailsModal LargeSize"
+          >
+            <div className="Modal-body">
+              <PodAnalyzerDetails pod={this.state.selectedPod} />
+            </div>
+          </Modal>
+        }
       </div>
     );
   }
