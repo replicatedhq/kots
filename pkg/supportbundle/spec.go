@@ -499,13 +499,7 @@ func getDefaultDynamicAnalyzers(app *apptypes.App) []*troubleshootv1beta2.Analyz
 			Outcomes: []*troubleshootv1beta2.Outcome{
 				{
 					Fail: &troubleshootv1beta2.SingleOutcome{
-						When:    "== Failed",
-						Message: "Status: {{ .Status.Reason }}",
-					},
-				},
-				{
-					Fail: &troubleshootv1beta2.SingleOutcome{
-						When:    "== Pending",
+						When:    "!= Healthy",
 						Message: "Status: {{ .Status.Reason }}",
 					},
 				},
