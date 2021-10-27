@@ -19,6 +19,7 @@ type KOTSHandler interface {
 	DownloadSupportBundle(w http.ResponseWriter, r *http.Request)      // TODO: appSlug
 	CollectSupportBundle(w http.ResponseWriter, r *http.Request)
 	ShareSupportBundle(w http.ResponseWriter, r *http.Request)
+	GetPodDetailsFromSupportBundle(w http.ResponseWriter, r *http.Request)
 
 	// redactor routes
 	UpdateRedact(w http.ResponseWriter, r *http.Request)
