@@ -2,6 +2,8 @@ package types
 
 import (
 	"time"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 type ByCreated []*SupportBundle
@@ -49,13 +51,14 @@ type SupportBundleAnalysis struct {
 }
 
 type SupportBundleInsight struct {
-	Key             string  `json:"key"`
-	Severity        string  `json:"severity"`
-	Primary         string  `json:"primary"`
-	Detail          string  `json:"detail"`
-	Icon            string  `json:"icon"`
-	IconKey         string  `json:"iconKey"`
-	DesiredPosition float64 `json:"desiredPosition"`
+	Key             string                  `json:"key"`
+	Severity        string                  `json:"severity"`
+	Primary         string                  `json:"primary"`
+	Detail          string                  `json:"detail"`
+	Icon            string                  `json:"icon"`
+	IconKey         string                  `json:"iconKey"`
+	DesiredPosition float64                 `json:"desiredPosition"`
+	InvolvedObject  *corev1.ObjectReference `json:"involvedObject"`
 }
 
 type FileTree struct {
