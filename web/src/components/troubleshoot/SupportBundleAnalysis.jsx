@@ -28,14 +28,11 @@ export class SupportBundleAnalysis extends React.Component {
       sendingBundleErrMsg: "",
       displayErrorModal: false,
       showPodAnalyzerDetailsModal: false,
-      selectedPod: {
-        name: "kotsadm-web"
-      }
     };
   }
 
   togglePodDetailsModal = (selectedPod) => {
-    this.setState({ selectedPod });
+    this.setState({ showPodAnalyzerDetailsModal: !this.state.showPodAnalyzerDetailsModal, selectedPod });
   }
 
   sendBundleToVendor = async () => {
@@ -240,6 +237,7 @@ export class SupportBundleAnalysis extends React.Component {
                           status={bundle.status}
                           refetchSupportBundle={this.getSupportBundle}
                           insights={bundle.analysis?.insights}
+                          openPodDetailsModal={this.togglePodDetailsModal}
                         />
                       } />
                       <Route exact path={fileTreeUrl} render={() =>
@@ -283,6 +281,9 @@ export class SupportBundleAnalysis extends React.Component {
           >
             <div className="Modal-body">
               <PodAnalyzerDetails pod={this.state.selectedPod} />
+              <div className="u-marginTop--10">
+                <button type="button" className="btn primary blue" onClick={() => this.togglePodDetailsModal({})}>Ok, got it!</button>
+              </div>
             </div>
           </Modal>
         }

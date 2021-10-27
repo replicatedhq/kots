@@ -176,6 +176,7 @@ export class AnalyzerInsights extends React.Component {
                           <MarkdownRenderer id={`markdown-wrapper-${i}`} className={tile.severity === "debug" ? "u-textColor--bodyCopy u-fontSize--smaller u-fontWeight--medium u-marginTop--5" : "u-textColor--accent u-fontSize--smaller u-fontWeight--medium u-marginTop--5"}>
                             {tile.detail}
                           </MarkdownRenderer>
+                          {tile.key.includes("pod.") && <div><span className="replicated-link u-fontSize--small u-marginTop--5" onClick={() => this.props.openPodDetailsModal(tile)}>See details</span></div>}
                         </div>
                       </div>
                     )
