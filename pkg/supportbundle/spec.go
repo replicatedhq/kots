@@ -241,6 +241,7 @@ func injectDefaults(app *apptypes.App, b *troubleshootv1beta2.SupportBundle, opt
 func populateNamespaces(supportBundle *troubleshootv1beta2.SupportBundle, minimalRBACNamespaces []string) *troubleshootv1beta2.SupportBundle {
 	next := supportBundle.DeepCopy()
 
+	// collectors
 	var collects []*troubleshootv1beta2.Collect
 	for _, collect := range next.Spec.Collectors {
 		if collect.Secret != nil && collect.Secret.Namespace == "" {
@@ -261,14 +262,26 @@ func populateNamespaces(supportBundle *troubleshootv1beta2.SupportBundle, minima
 		if collect.Copy != nil && collect.Copy.Namespace == "" {
 			collect.Copy.Namespace = util.PodNamespace
 		}
-		if collect.ClusterResources != nil && len(collect.ClusterResources.Namespaces) == 0 && len(minimalRBACNamespaces) > 0 {
-			collect.ClusterResources.Namespaces = minimalRBACNamespaces
+		if len(minimalRBACNamespaces) > 0 {
+			if collect.ClusterResources != nil && len(collect.ClusterResources.Namespaces) == 0 {
+				collect.ClusterResources.Namespaces = minimalRBACNamespaces
+			}
 		}
 		collects = append(collects, collect)
 	}
 	next.Spec.Collectors = collects
 
-	// no analyzers need to be populated
+	// analyzers
+	var analyzers []*troubleshootv1beta2.Analyze
+	for _, analyzer := range next.Spec.Analyzers {
+		if len(minimalRBACNamespaces) > 0 {
+			if analyzer.ClusterPodStatuses != nil && len(analyzer.ClusterPodStatuses.Namespaces) == 0 {
+				analyzer.ClusterPodStatuses.Namespaces = minimalRBACNamespaces
+			}
+		}
+		analyzers = append(analyzers, analyzer)
+	}
+	next.Spec.Analyzers = analyzers
 
 	return next
 }
@@ -478,26 +491,42 @@ func getDefaultDynamicAnalyzers(app *apptypes.App) []*troubleshootv1beta2.Analyz
 	analyzers := make([]*troubleshootv1beta2.Analyze, 0)
 
 	analyzers = append(analyzers, makeAPIReplicaAnalyzer())
+	analyzers = append(analyzers, &troubleshootv1beta2.Analyze{
+		ClusterPodStatuses: &troubleshootv1beta2.ClusterPodStatuses{
+			AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
+				CheckName: "Pod {{ .Namespace }}/{{ .Name }} is unhealthy",
+			},
+			Outcomes: []*troubleshootv1beta2.Outcome{
+				{
+					Fail: &troubleshootv1beta2.SingleOutcome{
+						When:    "!= Healthy",
+						Message: "Status: {{ .Status.Reason }}",
+					},
+				},
+			},
+		},
+	})
 
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		logger.Errorf("Failed to get clientset for dynamic kurl analyzers: %v", err)
 	} else if kotsutil.IsKurl(clientset) {
-		analyzers = append(analyzers, &troubleshootv1beta2.Analyze{
-			Sysctl: &troubleshootv1beta2.SysctlAnalyze{
-				AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
-					CheckName: "IP forwarding not enabled",
-				},
-				Outcomes: []*troubleshootv1beta2.Outcome{
-					{
-						Fail: &troubleshootv1beta2.SingleOutcome{
-							When:    "net.ipv4.ip_forward = 0",
-							Message: "IP forwarding not enabled",
+		analyzers = append(analyzers,
+			&troubleshootv1beta2.Analyze{
+				Sysctl: &troubleshootv1beta2.SysctlAnalyze{
+					AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
+						CheckName: "IP forwarding not enabled",
+					},
+					Outcomes: []*troubleshootv1beta2.Outcome{
+						{
+							Fail: &troubleshootv1beta2.SingleOutcome{
+								When:    "net.ipv4.ip_forward = 0",
+								Message: "IP forwarding not enabled",
+							},
 						},
 					},
 				},
 			},
-		},
 			&troubleshootv1beta2.Analyze{
 				Sysctl: &troubleshootv1beta2.SysctlAnalyze{
 					AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
@@ -512,7 +541,8 @@ func getDefaultDynamicAnalyzers(app *apptypes.App) []*troubleshootv1beta2.Analyz
 						},
 					},
 				},
-			})
+			},
+		)
 	}
 
 	return analyzers
