@@ -18,6 +18,8 @@ import (
 	"github.com/replicatedhq/kots/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	redact2 "github.com/replicatedhq/troubleshoot/pkg/redact"
+	tsupportbundle "github.com/replicatedhq/troubleshoot/pkg/supportbundle"
+	tsupportbundletypes "github.com/replicatedhq/troubleshoot/pkg/supportbundle/types"
 )
 
 type GetSupportBundleResponse struct {
@@ -81,6 +83,19 @@ type GetSupportBundleRedactionsResponse struct {
 	Error   string `json:"error,omitempty"`
 }
 
+type GetPodDetailsFromSupportBundleResponse struct {
+	tsupportbundletypes.PodDetails `json:",inline"`
+
+	Success bool   `json:"success"`
+	Error   string `json:"error,omitempty"`
+}
+
+type PodContainer struct {
+	Name            string `json:"name"`
+	LogsFilePath    string `json:"logsFilePath"`
+	IsInitContainer bool   `json:"isInitContainer"`
+}
+
 type PutSupportBundleRedactions struct {
 	Redactions redact2.RedactionList `json:"redactions"`
 }
@@ -128,11 +143,20 @@ func (h *Handler) GetSupportBundleFiles(w http.ResponseWriter, r *http.Request) 
 	bundleID := mux.Vars(r)["bundleId"]
 	filenames := r.URL.Query()["filename"]
 
-	files, err := supportbundle.GetFilesContents(bundleID, filenames)
+	bundleArchive, err := store.GetStore().GetSupportBundleArchive(bundleID)
 	if err != nil {
-		logger.Error(err)
+		logger.Error(errors.Wrap(err, "failed to get support bundle archive"))
+		getSupportBundleFilesResponse.Error = "failed to get support bundle archive"
+		JSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+	defer os.RemoveAll(bundleArchive)
+
+	files, err := tsupportbundle.GetFilesContents(bundleArchive, filenames)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get files"))
 		getSupportBundleFilesResponse.Error = "failed to get files"
-		JSON(w, 500, getSupportBundleFilesResponse)
+		JSON(w, http.StatusInternalServerError, getSupportBundleFilesResponse)
 		return
 	}
 
@@ -480,6 +504,37 @@ func (h *Handler) GetSupportBundleRedactions(w http.ResponseWriter, r *http.Requ
 	getSupportBundleRedactionsResponse.Redactions = redactions
 
 	JSON(w, http.StatusOK, getSupportBundleRedactionsResponse)
+}
+
+func (h *Handler) GetPodDetailsFromSupportBundle(w http.ResponseWriter, r *http.Request) {
+	getPodDetailsFromSupportBundleResponse := GetPodDetailsFromSupportBundleResponse{
+		Success: false,
+	}
+
+	bundleID := mux.Vars(r)["bundleId"]
+	podName := r.URL.Query().Get("podName")
+	podNamespace := r.URL.Query().Get("podNamespace")
+
+	bundleArchive, err := store.GetStore().GetSupportBundleArchive(bundleID)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get support bundle archive"))
+		JSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+	defer os.RemoveAll(bundleArchive)
+
+	podDetails, err := tsupportbundle.GetPodDetails(bundleArchive, podNamespace, podName)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get pod details"))
+		getPodDetailsFromSupportBundleResponse.Error = "failed to get pod details"
+		JSON(w, http.StatusInternalServerError, getPodDetailsFromSupportBundleResponse)
+		return
+	}
+
+	getPodDetailsFromSupportBundleResponse.PodDetails = *podDetails
+	getPodDetailsFromSupportBundleResponse.Success = true
+
+	JSON(w, http.StatusOK, getPodDetailsFromSupportBundleResponse)
 }
 
 // SetSupportBundleRedactions route is UNAUTHENTICATED
