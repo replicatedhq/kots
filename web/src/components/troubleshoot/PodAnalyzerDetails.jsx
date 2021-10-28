@@ -6,67 +6,6 @@ import Loader from "../shared/Loader";
 import yaml from "js-yaml";
 import { Utilities } from "../../utilities/utilities";
 
-const POD_LOGS = `2021/10/04 21:42:06 kotsadm version v1.52.0
-2021/10/04 21:42:06 Starting monitor loop
-Starting Admin Console API on port 3000...
-{"level":"error","ts":"2021-10-04T21:42:22Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:42:27Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:42:32Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:42:37Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:42:42Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:42:47Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:42:52Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:42:57Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:43:02Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:43:07Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:43:12Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:43:17Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:43:22Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:43:28Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:43:33Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:43:38Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:43:43Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:43:48Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:43:53Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:43:58Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:44:03Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:44:08Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:44:13Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:44:18Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:44:23Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:44:28Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:44:33Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:44:38Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:44:43Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:44:48Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:44:53Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:44:58Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:45:03Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:45:08Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:45:13Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:45:18Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:45:23Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:45:28Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:45:33Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:45:38Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:45:43Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:45:48Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:45:53Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:45:58Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:46:03Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:46:08Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:46:13Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:46:18Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:46:23Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:46:28Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:46:33Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:46:38Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:46:43Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:46:49Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:46:54Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-{"level":"error","ts":"2021-10-04T21:46:59Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
-`;
-
 export class PodAnalyzerDetails extends React.Component {
 
   state = {
@@ -75,6 +14,7 @@ export class PodAnalyzerDetails extends React.Component {
     podEvents: "",
     podDefinition: "",
     selectedContainer: {},
+    selectedContainerLogs: "",
     loading: false,
     errMsg: "",
   }
@@ -97,8 +37,7 @@ export class PodAnalyzerDetails extends React.Component {
     const { pod } = this.props;
     this.setState({ loading: true, errMsg: "" });
     
-    // fetch(`${window.env.API_ENDPOINT}/troubleshoot/app/qakots/supportbundle/${this.props.bundleId}/pod?podNamespace=${pod.involvedObject?.namespace}&podName=${pod.involvedObject?.name}`, {
-    fetch(`${window.env.API_ENDPOINT}/troubleshoot/app/qakots/supportbundle/2041y5f3xzi5ewauoaiqogyccme/pod?podNamespace=default&podName=sqs-7449b544fc-mw4dx`, {
+    fetch(`${window.env.API_ENDPOINT}/troubleshoot/app/qakots/supportbundle/${this.props.bundleId}/pod?podNamespace=${pod.namespace}&podName=${pod.name}`, {
       method: "GET",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -107,20 +46,13 @@ export class PodAnalyzerDetails extends React.Component {
     .then(async (result) => {
       const data = await result.json();
 
-      const podContainers = [];
-      for (const containerName in data.podContainers) {
-        podContainers.push({
-          name: containerName,
-          logsFilePath: data.podContainers[containerName],
-        });
-      }
-
       let selectedContainer = {};
-      if (podContainers.length > 0) {
-        selectedContainer = podContainers[0];
+      if (data.podContainers?.length > 0) {
+        selectedContainer = data.podContainers[0];
       }
 
-      this.setState({ loading: false, podContainers, selectedContainer, podDefinition: yaml.dump(data.podDefinition), podEvents: yaml.dump(data.podEvents) });
+      this.onSelectedContainerChange(selectedContainer);
+      this.setState({ loading: false, podContainers: data.podContainers, podDefinition: yaml.dump(data.podDefinition), podEvents: yaml.dump(data.podEvents) });
     })
     .catch(err => {
       this.setState({
@@ -147,8 +79,8 @@ export class PodAnalyzerDetails extends React.Component {
     })
     .then(async (result) => {
       const data = await result.json();
-      console.log(data)
-      this.setState({ loading: false });
+      const decodedLogs = Buffer.from(data.files[selectedContainer.logsFilePath], 'base64').toString();
+      this.setState({ loading: false, selectedContainerLogs: decodedLogs });
     })
     .catch(err => {
       this.setState({
@@ -163,7 +95,7 @@ export class PodAnalyzerDetails extends React.Component {
     case "podDefinition":
       return (
         <div className="flex1 u-border--gray">
-          {this.renderEditor(this.state.podDefinition, "yaml")}
+          {this.renderEditor(this.state.podDefinition, "yaml", "Definition not found")}
         </div>
       )
     case "podLogs":
@@ -183,14 +115,14 @@ export class PodAnalyzerDetails extends React.Component {
             />
           </div>
           <div className="flex1 u-border--gray">
-            {this.renderEditor(POD_LOGS, "text")}
+            {this.renderEditor(this.state.selectedContainerLogs, "text", "No logs found")}
           </div>
         </div>
       )
     case "podEvents":
       return (
         <div className="flex1 u-border--gray">
-          {this.renderEditor(this.state.podEvents, "yaml")}
+          {this.renderEditor(this.state.podEvents, "yaml", "No events found")}
         </div>
       )
     default:
@@ -198,11 +130,21 @@ export class PodAnalyzerDetails extends React.Component {
     }
   }
 
-  renderEditor = (content, mode) => {
+  renderEditor = (content, mode, emptyMsg) => {
+    const editorHeight = 500;
+
     if (this.state.loading) {
       return (
-        <div style={{ height: 500 }} className="flex-column flex1 alignItems--center justifyContent--center">
+        <div style={{ height: editorHeight }} className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
+        </div>
+      );
+    }
+
+    if (!content) {
+      return (
+        <div style={{ height: editorHeight }} className="flex-column flex1 alignItems--center justifyContent--center">
+          <p className="u-fontSize--large u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--more">{emptyMsg}</p>
         </div>
       );
     }
@@ -215,7 +157,7 @@ export class PodAnalyzerDetails extends React.Component {
         className="flex1 flex"
         readOnly={true}
         value={content}
-        height="500px"
+        height={`${editorHeight}px`}
         width="100%"
         editorProps={{
           $blockScrolling: Infinity,
@@ -234,7 +176,7 @@ export class PodAnalyzerDetails extends React.Component {
     const { pod } = this.props;
     return (
         <div className="flex1 flex-column">
-          <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--more">Details for {pod.primary}</p>
+          <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--more">Details for Pod: {pod.namespace}/{pod.name}</p>
           <div className="SupportBundleTabs--wrapper flex-column flex1">
             <div className="flex tab-items">
               <span className={`${this.state.activeTab === "podDefinition" ? "is-active" : ""} tab-item blue`} onClick={() => this.togglePodDetailView("podDefinition")}>Pod definition</span>

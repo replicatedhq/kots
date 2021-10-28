@@ -84,12 +84,18 @@ type GetSupportBundleRedactionsResponse struct {
 }
 
 type GetPodDetailsFromSupportBundleResponse struct {
-	PodDefinition corev1.Pod        `json:"podDefinition"`
-	PodEvents     []corev1.Event    `json:"podEvents"`
-	PodContainers map[string]string `json:"podContainers"`
+	PodDefinition corev1.Pod     `json:"podDefinition"`
+	PodEvents     []corev1.Event `json:"podEvents"`
+	PodContainers []PodContainer `json:"podContainers"`
 
 	Success bool   `json:"success"`
 	Error   string `json:"error,omitempty"`
+}
+
+type PodContainer struct {
+	Name            string `json:"name"`
+	LogsFilePath    string `json:"logsFilePath"`
+	IsInitContainer bool   `json:"isInitContainer"`
 }
 
 type PutSupportBundleRedactions struct {
@@ -538,13 +544,20 @@ func (h *Handler) GetPodDetailsFromSupportBundle(w http.ResponseWriter, r *http.
 	for _, pod := range podsArr {
 		if pod.Name == podName && pod.Namespace == podNamespace {
 			getPodDetailsFromSupportBundleResponse.PodDefinition = pod
-			getPodDetailsFromSupportBundleResponse.PodContainers = map[string]string{}
-			// for _, i := range pod.Spec.InitContainers {
-			// 	getPodDetailsFromSupportBundleResponse.PodInitContainers[i.Name] = filepath.Join("cluster-resources", "pods", pod.Namespace, "logs", pod.Name, fmt.Sprintf("%s.log", c.Name))
-			// }
+			getPodDetailsFromSupportBundleResponse.PodContainers = []PodContainer{}
+			for _, i := range pod.Spec.InitContainers {
+				getPodDetailsFromSupportBundleResponse.PodContainers = append(getPodDetailsFromSupportBundleResponse.PodContainers, PodContainer{
+					Name:            i.Name,
+					LogsFilePath:    filepath.Join("cluster-resources", "pods", "logs", pod.Namespace, pod.Name, fmt.Sprintf("%s.log", i.Name)),
+					IsInitContainer: true,
+				})
+			}
 			for _, c := range pod.Spec.Containers {
-				// getPodDetailsFromSupportBundleResponse.PodContainers[c.Name] = filepath.Join("cluster-resources", "pods", pod.Namespace, "logs", pod.Name, fmt.Sprintf("%s.log", c.Name))
-				getPodDetailsFromSupportBundleResponse.PodContainers[c.Name] = filepath.Join("cluster-resources", "pods", "logs", pod.Namespace, pod.Name, fmt.Sprintf("%s.log", c.Name))
+				getPodDetailsFromSupportBundleResponse.PodContainers = append(getPodDetailsFromSupportBundleResponse.PodContainers, PodContainer{
+					Name:            c.Name,
+					LogsFilePath:    filepath.Join("cluster-resources", "pods", "logs", pod.Namespace, pod.Name, fmt.Sprintf("%s.log", c.Name)),
+					IsInitContainer: false,
+				})
 			}
 			break
 		}
