@@ -66,7 +66,7 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 	}
 
 	// we need to find the gvk+names that are present in the previous, but not in the current and then remove them
-	// namespaces that were remoed from YAML and added to additionalNamespaces should not be removed
+	// namespaces that were removed from YAML and added to additionalNamespaces should not be removed
 	decodedPreviousStrings := strings.Split(string(decodedPrevious), "\n---\n")
 
 	type previousObject struct {

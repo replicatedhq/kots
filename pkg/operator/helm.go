@@ -22,8 +22,8 @@ func init() {
 }
 
 // When saving templated file back into a chart, we need to escape Go templates so second Helm pass would ignore them.
-// These are appication templates that maybe used in application config files and Helm should ignore them.
-// For example, origianl chart has this:
+// These are application templates that maybe used in application config files and Helm should ignore them.
+// For example, original chart has this:
 //		"legendFormat": "{{`{{`}} value {{`}}`}}",
 // Rendered chart becomes:
 //		"legendFormat": "{{ value }}",
