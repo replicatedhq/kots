@@ -5,6 +5,7 @@ import Select from "react-select";
 import Loader from "../shared/Loader";
 import yaml from "js-yaml";
 import { Utilities } from "../../utilities/utilities";
+import "brace/ext/searchbox";
 
 export class PodAnalyzerDetails extends React.Component {
 
