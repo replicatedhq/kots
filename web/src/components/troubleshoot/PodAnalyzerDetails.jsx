@@ -2,285 +2,10 @@ import * as React from "react";
 import { withRouter } from "react-router-dom";
 import AceEditor from "react-ace";
 import Select from "react-select";
+import Loader from "../shared/Loader";
+import yaml from "js-yaml";
+import { Utilities } from "../../utilities/utilities";
 
-const POD_DEFINITION = `[
-  {
-    "metadata": {
-      "name": "kotsadm-ff9f58888-gxwbc",
-      "generateName": "kotsadm-ff9f58888-",
-      "namespace": "default",
-      "uid": "ff59f30f-5336-43d3-9748-2e8706bb8e2b",
-      "resourceVersion": "37828",
-      "creationTimestamp": "2021-10-04T21:23:15Z",
-      "labels": {
-        "app": "kotsadm",
-        "app.kubernetes.io/managed-by": "skaffold",
-        "app.kubernetes.io/name": "kotsadm",
-        "kots.io/backup": "velero",
-        "kots.io/kotsadm": "true",
-        "pod-template-hash": "ff9f58888",
-        "skaffold.dev/run-id": "bd888987-b230-4766-9686-f3a567d09721"
-      },
-      "annotations": {
-        "backup.velero.io/backup-volumes": "backup",
-        "pre.hook.backup.velero.io/command": "[\"/bin/bash\", \"-c\", \"PGPASSWORD=password pg_dump -U kotsadm -h kotsadm-postgres \u003e /backup/kotsadm-postgres.sql\"]",
-        "pre.hook.backup.velero.io/timeout": "3m"
-      },
-      "ownerReferences": [
-        {
-          "apiVersion": "apps/v1",
-          "kind": "ReplicaSet",
-          "name": "kotsadm-ff9f58888",
-          "uid": "49e99dd8-6462-40b5-97f2-95300aca1e6f",
-          "controller": true,
-          "blockOwnerDeletion": true
-        }
-      ],
-      "managedFields": [
-        {
-          "manager": "k3s",
-          "operation": "Update",
-          "apiVersion": "v1",
-          "time": "2021-10-04T21:23:20Z",
-          "fieldsType": "FieldsV1",
-          "fieldsV1": {
-            "f:metadata": {
-              "f:annotations": {
-                ".": {},
-                "f:backup.velero.io/backup-volumes": {},
-                "f:pre.hook.backup.velero.io/command": {},
-                "f:pre.hook.backup.velero.io/timeout": {}
-              },
-              "f:generateName": {},
-              "f:labels": {
-                ".": {},
-                "f:app": {},
-                "f:app.kubernetes.io/managed-by": {},
-                "f:app.kubernetes.io/name": {},
-                "f:kots.io/backup": {},
-                "f:kots.io/kotsadm": {},
-                "f:pod-template-hash": {},
-                "f:skaffold.dev/run-id": {}
-              },
-              "f:ownerReferences": {
-                ".": {},
-                "k:{\"uid\":\"49e99dd8-6462-40b5-97f2-95300aca1e6f\"}": {
-                  ".": {},
-                  "f:apiVersion": {},
-                  "f:blockOwnerDeletion": {},
-                  "f:controller": {},
-                  "f:kind": {},
-                  "f:name": {},
-                  "f:uid": {}
-                }
-              }
-            },
-            "f:spec": {
-              "f:containers": {
-                "k:{\"name\":\"kotsadm\"}": {
-                  ".": {},
-                  "f:env": {
-                    ".": {},
-                    "k:{\"name\":\"AIRGAP_UPLOAD_PARALLELISM\"}": {
-                      ".": {},
-                      "f:name": {},
-                      "f:value": {}
-                    },
-                    "k:{\"name\":\"API_ADVERTISE_ENDPOINT\"}": {
-                      ".": {},
-                      "f:name": {},
-                      "f:value": {}
-                    },
-                    "k:{\"name\":\"API_ENCRYPTION_KEY\"}": {
-                      ".": {},
-                      "f:name": {},
-                      "f:value": {}
-                    },
-                    "k:{\"name\":\"API_ENDPOINT\"}": {
-                      ".": {},
-                      "f:name": {},
-                      "f:value": {}
-                    },
-                    "k:{\"name\":\"AUTO_CREATE_CLUSTER\"}": {
-                      ".": {},
-                      "f:name": {},
-                      "f:value": {}
-                    },
-                    "k:{\"name\":\"AUTO_CREATE_CLUSTER_NAME\"}": {
-                      ".": {},
-                      "f:name": {},
-                      "f:value": {}
-                    },
-                    "k:{\"name\":\"AUTO_CREATE_CLUSTER_TOKEN\"}": {
-                      ".": {},
-                      "f:name": {},
-                      "f:value": {}
-                    },
-                    "k:{\"name\":\"DEBUG\"}": {
-                      ".": {},
-                      "f:name": {},
-                      "f:value": {}
-                    },
-                    "k:{\"name\":\"DEX_PGPASSWORD\"}": {
-                      ".": {},
-                      "f:name": {},
-                      "f:valueFrom": {
-                        ".": {},
-                        "f:secretKeyRef": {
-                          ".": {},
-                          "f:key": {},
-                          "f:name": {}
-                        }
-                      }
-                    },
-                    "k:{\"name\":\"DISABLE_SPA_SERVING\"}": {
-                      ".": {},
-                      "f:name": {},
-                      "f:value": {}
-                    },
-                    "k:{\"name\":\"ENABLE_WEB_PROXY\"}": {
-                      ".": {},
-                      "f:name": {},
-                      "f:value": {}
-                    },
-                    "k:{\"name\":\"KOTSADM_ENV\"}": {
-                      ".": {},
-                      "f:name": {},
-                      "f:value": {}
-                    },
-                    "k:{\"name\":\"KOTSADM_LOG_LEVEL\"}": {
-                      ".": {},
-                      "f:name": {},
-                      "f:value": {}
-                    },
-                    "k:{\"name\":\"KOTSADM_TARGET_NAMESPACE\"}": {
-                      ".": {},
-                      "f:name": {},
-                      "f:value": {}
-                    },
-                    "k:{\"name\":\"KOTS_INSTALL_ID\"}": {
-                      ".": {},
-                      "f:name": {},
-                      "f:value": {}
-                    },
-                    "k:{\"name\":\"KURL_PROXY_TLS_CERT_PATH\"}": {
-                      ".": {},
-                      "f:name": {},
-                      "f:value": {}
-                    },
-                    "k:{\"name\":\"POD_NAMESPACE\"}": {
-                      ".": {},
-                      "f:name": {},
-                      "f:valueFrom": {
-                        ".": {},
-                        "f:fieldRef": {
-                          ".": {},
-                          "f:apiVersion": {},
-                          "f:fieldPath": {}
-                        }
-                      }
-                    },
-                    "k:{\"name\":\"POD_OWNER_KIND\"}": {
-                      ".": {},
-                      "f:name": {},
-                      "f:value": {}
-                    },
-                    "k:{\"name\":\"POSTGRES_URI\"}": {
-                      ".": {},
-                      "f:name": {},
-                      "f:valueFrom": {
-                        ".": {},
-                        "f:secretKeyRef": {
-                          ".": {},
-                          "f:key": {},
-                          "f:name": {}
-                        }
-                      }
-                    },
-                    "k:{\"name\":\"REPLICATED_API_ENDPOINT\"}": {
-                      ".": {},
-                      "f:name": {},
-                      "f:value": {}
-                    },
-                    "k:{\"name\":\"S3_ACCESS_KEY_ID\"}": {
-                      ".": {},
-                      "f:name": {},
-                      "f:value": {}
-                    },
-                    "k:{\"name\":\"S3_BUCKET_ENDPOINT\"}": {
-                      ".": {},
-                      "f:name": {},
-                      "f:value": {}
-                    },
-                    "k:{\"name\":\"S3_BUCKET_NAME\"}": {
-                      ".": {},
-                      "f:name": {},
-                      "f:value": {}
-                    },
-                    "k:{\"name\":\"S3_ENDPOINT\"}": {
-                      ".": {},
-                      "f:name": {},
-                      "f:value": {}
-                    },
-                    "k:{\"name\":\"S3_SECRET_ACCESS_KEY\"}": {
-                      ".": {},
-                      "f:name": {},
-                      "f:value": {}
-                    },
-                    "k:{\"name\":\"SESSION_KEY\"}": {
-                      ".": {},
-                      "f:name": {},
-                      "f:value": {}
-                    },
-                    "k:{\"name\":\"SHARED_PASSWORD_BCRYPT\"}": {
-                      ".": {},
-                      "f:name": {},
-                      "f:value": {}
-                    }
-                  },
-                  "f:image": {},
-                  "f:imagePullPolicy": {},
-                  "f:name": {},
-                  "f:ports": {
-                    ".": {},
-                    "k:{\"containerPort\":3000,\"protocol\":\"TCP\"}": {
-                      ".": {},
-                      "f:containerPort": {},
-                      "f:name": {},
-                      "f:protocol": {}
-                    },
-                    "k:{\"containerPort\":9229,\"protocol\":\"TCP\"}": {
-                      ".": {},
-                      "f:containerPort": {},
-                      "f:name": {},
-                      "f:protocol": {}
-                    }
-                  },
-                  "f:resources": {
-                    ".": {},
-                    "f:limits": {
-                      ".": {},
-                      "f:cpu": {},
-                      "f:memory": {}
-                    },
-                    "f:requests": {
-                      ".": {},
-                      "f:cpu": {},
-                      "f:memory": {}
-                    }
-                  },
-                  "f:terminationMessagePath": {},
-                  "f:terminationMessagePolicy": {}
-                }
-              }
-            }
-          }
-        }
-      ]
-    }
-  }
-]
-`;
 const POD_LOGS = `2021/10/04 21:42:06 kotsadm version v1.52.0
 2021/10/04 21:42:06 Starting monitor loop
 Starting Admin Console API on port 3000...
@@ -341,147 +66,96 @@ Starting Admin Console API on port 3000...
 {"level":"error","ts":"2021-10-04T21:46:54Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
 {"level":"error","ts":"2021-10-04T21:46:59Z","msg":"failed to get service to check status, namespace = discourse: services \"discourse-svc\" not found"}
 `;
-const POD_EVENTS = `[
-  {
-    "metadata": {
-      "name": "kotsadm.16aaf0083f33c33f",
-      "namespace": "default",
-      "uid": "d7c0f9db-d20e-47f0-b45e-9d81aad50f68",
-      "resourceVersion": "36964",
-      "creationTimestamp": "2021-10-04T21:08:53Z",
-      "managedFields": [
-        {
-          "manager": "k3s",
-          "operation": "Update",
-          "apiVersion": "v1",
-          "time": "2021-10-04T21:08:53Z",
-          "fieldsType": "FieldsV1",
-          "fieldsV1": {
-            "f:count": {},
-            "f:firstTimestamp": {},
-            "f:involvedObject": {
-              "f:apiVersion": {},
-              "f:kind": {},
-              "f:name": {},
-              "f:namespace": {},
-              "f:resourceVersion": {},
-              "f:uid": {}
-            },
-            "f:lastTimestamp": {},
-            "f:message": {},
-            "f:reason": {},
-            "f:source": {
-              "f:component": {}
-            },
-            "f:type": {}
-          }
-        }
-      ]
-    },
-    "involvedObject": {
-      "kind": "Deployment",
-      "namespace": "default",
-      "name": "kotsadm",
-      "uid": "a2311d9b-67e4-4cb3-a93e-8f5c73914a38",
-      "apiVersion": "apps/v1",
-      "resourceVersion": "36961"
-    },
-    "reason": "ScalingReplicaSet",
-    "message": "Scaled up replica set kotsadm-7f8c74b8db to 1",
-    "source": {
-      "component": "deployment-controller"
-    },
-    "firstTimestamp": "2021-10-04T21:08:53Z",
-    "lastTimestamp": "2021-10-04T21:08:53Z",
-    "count": 1,
-    "type": "Normal",
-    "eventTime": null,
-    "reportingComponent": "",
-    "reportingInstance": ""
-  },
-  {
-    "metadata": {
-      "name": "kotsadm-web.16aaf0083fa525a6",
-      "namespace": "default",
-      "uid": "eb2b8209-f9e8-4dc5-beaa-4d7c75f74631",
-      "resourceVersion": "36967",
-      "creationTimestamp": "2021-10-04T21:08:53Z",
-      "managedFields": [
-        {
-          "manager": "k3s",
-          "operation": "Update",
-          "apiVersion": "v1",
-          "time": "2021-10-04T21:08:53Z",
-          "fieldsType": "FieldsV1",
-          "fieldsV1": {
-            "f:count": {},
-            "f:firstTimestamp": {},
-            "f:involvedObject": {
-              "f:apiVersion": {},
-              "f:kind": {},
-              "f:name": {},
-              "f:namespace": {},
-              "f:resourceVersion": {},
-              "f:uid": {}
-            },
-            "f:lastTimestamp": {},
-            "f:message": {},
-            "f:reason": {},
-            "f:source": {
-              "f:component": {}
-            },
-            "f:type": {}
-          }
-        }
-      ]
-    },
-    "involvedObject": {
-      "kind": "Deployment",
-      "namespace": "default",
-      "name": "kotsadm-web",
-      "uid": "975a5412-eb21-4c69-92c8-119febc67849",
-      "apiVersion": "apps/v1",
-      "resourceVersion": "36963"
-    },
-    "reason": "ScalingReplicaSet",
-    "message": "Scaled up replica set kotsadm-web-5cb5565c7d to 1",
-    "source": {
-      "component": "deployment-controller"
-    },
-    "firstTimestamp": "2021-10-04T21:08:53Z",
-    "lastTimestamp": "2021-10-04T21:08:53Z",
-    "count": 1,
-    "type": "Normal",
-    "eventTime": null,
-    "reportingComponent": "",
-    "reportingInstance": ""
-  }
-]
-`;
 
 export class PodAnalyzerDetails extends React.Component {
 
   state = {
     activeTab: "podDefinition",
-    containersDropdownOptions: [
-      { value: "container-1", name: "container-97361-hfg2s" },
-      { value: "container-2", name: "container-12984-sdf23" }
-    ],
-    selectedAction: { value: "container-1", name: "container-97361-hfg2s" }
+    podContainers: [],
+    podEvents: "",
+    podDefinition: "",
+    selectedContainer: {},
+    loading: false,
+    errMsg: "",
   }
   
   togglePodDetailView = (active) => {
     this.setState({ activeTab: active });
   }
 
-  componentDidUpdate(lastProps, lastState) {
+  componentDidMount() {
+    this.getPodDetails();
+  }
+
+  componentDidUpdate(_, lastState) {
     if (this.state.activeTab !== lastState.activeTab && this.aceEditor) {
       this.aceEditor.editor.resize(true);
     }
   }
 
-  onActionChange = (selectedOption) => {
-    this.setState({ selectedAction: selectedOption });
+  getPodDetails = async () => {
+    const { pod } = this.props;
+    this.setState({ loading: true, errMsg: "" });
+    
+    // fetch(`${window.env.API_ENDPOINT}/troubleshoot/app/qakots/supportbundle/${this.props.bundleId}/pod?podNamespace=${pod.involvedObject?.namespace}&podName=${pod.involvedObject?.name}`, {
+    fetch(`${window.env.API_ENDPOINT}/troubleshoot/app/qakots/supportbundle/2041y5f3xzi5ewauoaiqogyccme/pod?podNamespace=default&podName=sqs-7449b544fc-mw4dx`, {
+      method: "GET",
+      headers: {
+        "Authorization": Utilities.getToken(),
+      }
+    })
+    .then(async (result) => {
+      const data = await result.json();
+
+      const podContainers = [];
+      for (const containerName in data.podContainers) {
+        podContainers.push({
+          name: containerName,
+          logsFilePath: data.podContainers[containerName],
+        });
+      }
+
+      let selectedContainer = {};
+      if (podContainers.length > 0) {
+        selectedContainer = podContainers[0];
+      }
+
+      this.setState({ loading: false, podContainers, selectedContainer, podDefinition: yaml.dump(data.podDefinition), podEvents: yaml.dump(data.podEvents) });
+    })
+    .catch(err => {
+      this.setState({
+        loading: false,
+        errMsg: err,
+      });
+    });
+  }
+
+  onSelectedContainerChange = (selectedContainer) => {
+    this.setState({ selectedContainer: selectedContainer });
+
+    this.setState({
+      loading: true,
+      errMsg: "",
+    });
+
+    fetch(`${window.env.API_ENDPOINT}/troubleshoot/supportbundle/${this.props.bundleId}/files?filename=${encodeURIComponent(selectedContainer.logsFilePath)}`, {
+      method: "GET",
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+    })
+    .then(async (result) => {
+      const data = await result.json();
+      console.log(data)
+      this.setState({ loading: false });
+    })
+    .catch(err => {
+      this.setState({
+        loading: false,
+        errMsg: err,
+      });
+    });
   }
 
   renderPodDetailView = () => {
@@ -489,25 +163,7 @@ export class PodAnalyzerDetails extends React.Component {
     case "podDefinition":
       return (
         <div className="flex1 u-border--gray">
-          <AceEditor
-            ref={el => (this.aceEditor = el)}
-            mode="json"
-            theme="chrome"
-            className="flex1 flex"
-            readOnly={true}
-            value={POD_DEFINITION}
-            height="500px"
-            width="100%"
-            editorProps={{
-              $blockScrolling: Infinity,
-              useSoftTabs: true,
-              tabSize: 2,
-            }}
-            setOptions={{
-              scrollPastEnd: false,
-              showGutter: true,
-            }}
-          />
+          {this.renderEditor(this.state.podDefinition, "yaml")}
         </div>
       )
     case "podLogs":
@@ -518,64 +174,60 @@ export class PodAnalyzerDetails extends React.Component {
             <Select
               className="replicated-select-container"
               classNamePrefix="replicated-select"
-              options={this.state.containersDropdownOptions}
-              getOptionLabel={(option) => option.name}
-              getOptionValue={(option) => option.value}
-              value={this.state.selectedAction}
-              onChange={this.onActionChange}
-              isOptionSelected={(option) => { option.value === this.state.selectedAction.value }}
+              options={this.state.podContainers}
+              getOptionLabel={(container) => container.name}
+              getOptionValue={(container) => container.logsFilePath}
+              value={this.state.selectedContainer}
+              onChange={this.onSelectedContainerChange}
+              isOptionSelected={(container) => { container.name === this.state.selectedContainer.name }}
             />
           </div>
           <div className="flex1 u-border--gray">
-            <AceEditor
-              ref={el => (this.aceEditor = el)}
-              mode="text"
-              theme="chrome"
-              className="flex1 flex"
-              readOnly={true}
-              value={POD_LOGS}
-              height="500px"
-              width="100%"
-              editorProps={{
-                $blockScrolling: Infinity,
-                useSoftTabs: true,
-                tabSize: 2,
-              }}
-              setOptions={{
-                scrollPastEnd: false,
-                showGutter: true,
-              }}
-            />
+            {this.renderEditor(POD_LOGS, "text")}
           </div>
         </div>
       )
     case "podEvents":
       return (
         <div className="flex1 u-border--gray">
-          <AceEditor
-            ref={el => (this.aceEditor = el)}
-            mode="json"
-            theme="chrome"
-            className="flex1 flex"
-            readOnly={true}
-            value={POD_EVENTS}
-            height="500px"
-            width="100%"
-            editorProps={{
-              $blockScrolling: Infinity,
-              useSoftTabs: true,
-              tabSize: 2,
-            }}
-            setOptions={{
-              scrollPastEnd: false,
-              showGutter: true,
-            }}
-          />
+          {this.renderEditor(this.state.podEvents, "yaml")}
         </div>
       )
     default:
       return <div>nothing selected</div>
     }
+  }
+
+  renderEditor = (content, mode) => {
+    if (this.state.loading) {
+      return (
+        <div style={{ height: 500 }} className="flex-column flex1 alignItems--center justifyContent--center">
+          <Loader size="60" />
+        </div>
+      );
+    }
+
+    return (
+      <AceEditor
+        ref={el => (this.aceEditor = el)}
+        mode={mode}
+        theme="chrome"
+        className="flex1 flex"
+        readOnly={true}
+        value={content}
+        height="500px"
+        width="100%"
+        editorProps={{
+          $blockScrolling: Infinity,
+          useSoftTabs: true,
+          tabSize: 2,
+        }}
+        setOptions={{
+          scrollPastEnd: false,
+          showGutter: true,
+        }}
+      />
+    )
   }
 
   render() {

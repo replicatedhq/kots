@@ -280,7 +280,7 @@ export class SupportBundleAnalysis extends React.Component {
             className="Modal PodAnalyzerDetailsModal LargeSize"
           >
             <div className="Modal-body">
-              <PodAnalyzerDetails pod={this.state.selectedPod} />
+              <PodAnalyzerDetails bundleId={bundle.id} pod={this.state.selectedPod} />
               <div className="u-marginTop--10">
                 <button type="button" className="btn primary blue" onClick={() => this.togglePodDetailsModal({})}>Ok, got it!</button>
               </div>

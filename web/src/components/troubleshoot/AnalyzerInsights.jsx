@@ -35,7 +35,6 @@ export class AnalyzerInsights extends React.Component {
   }
 
   componentDidMount() {
-    this.testApi();
     let isError, isWarn;
     if (this.props.insights) {
       isError = this.props.insights.some(i => i.severity === "error");
@@ -50,22 +49,6 @@ export class AnalyzerInsights extends React.Component {
     }
 
     this.checkBundleStatus();
-  }
-
-  testApi = async () => {
-    this.setState({ sendingBundle: true, sendingBundleErrMsg: "", downloadBundleErrMsg: "" });
-      fetch(`${window.env.API_ENDPOINT}/troubleshoot/app/qakots/supportbundle/2041y5f3xzi5ewauoaiqogyccme/pod?podNamespace=default&podName=sqs-7449b544fc-mw4dx`, {
-        method: "GET",
-        headers: {
-          "Authorization": Utilities.getToken(),
-        }
-      })
-        .then(async (result) => {
-          console.log(result)
-        })
-        .catch(err => {
-          console.log(err);
-        })
   }
 
   checkBundleStatus = () => {
@@ -176,6 +159,7 @@ export class AnalyzerInsights extends React.Component {
                           <MarkdownRenderer id={`markdown-wrapper-${i}`} className={tile.severity === "debug" ? "u-textColor--bodyCopy u-fontSize--smaller u-fontWeight--medium u-marginTop--5" : "u-textColor--accent u-fontSize--smaller u-fontWeight--medium u-marginTop--5"}>
                             {tile.detail}
                           </MarkdownRenderer>
+                          {/* {!!tile.involvedObject && <div><span className="replicated-link u-fontSize--small u-marginTop--5" onClick={() => this.props.openPodDetailsModal(tile)}>See details</span></div>} */}
                           {tile.key.includes("pod.") && <div><span className="replicated-link u-fontSize--small u-marginTop--5" onClick={() => this.props.openPodDetailsModal(tile)}>See details</span></div>}
                         </div>
                       </div>

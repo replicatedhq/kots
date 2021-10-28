@@ -84,9 +84,9 @@ type GetSupportBundleRedactionsResponse struct {
 }
 
 type GetPodDetailsFromSupportBundleResponse struct {
-	PodDefinition corev1.Pod        `json:"podsDefinition"`
-	PodEvents     []corev1.Event    `json:"podsEvents"`
-	PodContainers map[string]string `json:"podsContainers"`
+	PodDefinition corev1.Pod        `json:"podDefinition"`
+	PodEvents     []corev1.Event    `json:"podEvents"`
+	PodContainers map[string]string `json:"podContainers"`
 
 	Success bool   `json:"success"`
 	Error   string `json:"error,omitempty"`
@@ -543,7 +543,8 @@ func (h *Handler) GetPodDetailsFromSupportBundle(w http.ResponseWriter, r *http.
 			// 	getPodDetailsFromSupportBundleResponse.PodInitContainers[i.Name] = filepath.Join("cluster-resources", "pods", pod.Namespace, "logs", pod.Name, fmt.Sprintf("%s.log", c.Name))
 			// }
 			for _, c := range pod.Spec.Containers {
-				getPodDetailsFromSupportBundleResponse.PodContainers[c.Name] = filepath.Join("cluster-resources", "pods", pod.Namespace, "logs", pod.Name, fmt.Sprintf("%s.log", c.Name))
+				// getPodDetailsFromSupportBundleResponse.PodContainers[c.Name] = filepath.Join("cluster-resources", "pods", pod.Namespace, "logs", pod.Name, fmt.Sprintf("%s.log", c.Name))
+				getPodDetailsFromSupportBundleResponse.PodContainers[c.Name] = filepath.Join("cluster-resources", "pods", "logs", pod.Namespace, pod.Name, fmt.Sprintf("%s.log", c.Name))
 			}
 			break
 		}
