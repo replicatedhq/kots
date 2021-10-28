@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -19,7 +18,8 @@ import (
 	"github.com/replicatedhq/kots/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	redact2 "github.com/replicatedhq/troubleshoot/pkg/redact"
-	corev1 "k8s.io/api/core/v1"
+	tsupportbundle "github.com/replicatedhq/troubleshoot/pkg/supportbundle"
+	tsupportbundletypes "github.com/replicatedhq/troubleshoot/pkg/supportbundle/types"
 )
 
 type GetSupportBundleResponse struct {
@@ -84,9 +84,7 @@ type GetSupportBundleRedactionsResponse struct {
 }
 
 type GetPodDetailsFromSupportBundleResponse struct {
-	PodDefinition corev1.Pod     `json:"podDefinition"`
-	PodEvents     []corev1.Event `json:"podEvents"`
-	PodContainers []PodContainer `json:"podContainers"`
+	tsupportbundletypes.PodDetails `json:",inline"`
 
 	Success bool   `json:"success"`
 	Error   string `json:"error,omitempty"`
@@ -145,11 +143,20 @@ func (h *Handler) GetSupportBundleFiles(w http.ResponseWriter, r *http.Request) 
 	bundleID := mux.Vars(r)["bundleId"]
 	filenames := r.URL.Query()["filename"]
 
-	files, err := supportbundle.GetFilesContents(bundleID, filenames)
+	bundleArchive, err := store.GetStore().GetSupportBundleArchive(bundleID)
 	if err != nil {
-		logger.Error(err)
+		logger.Error(errors.Wrap(err, "failed to get support bundle archive"))
+		getSupportBundleFilesResponse.Error = "failed to get support bundle archive"
+		JSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+	defer os.RemoveAll(bundleArchive)
+
+	files, err := tsupportbundle.GetFilesContents(bundleArchive, filenames)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get files"))
 		getSupportBundleFilesResponse.Error = "failed to get files"
-		JSON(w, 500, getSupportBundleFilesResponse)
+		JSON(w, http.StatusInternalServerError, getSupportBundleFilesResponse)
 		return
 	}
 
@@ -508,61 +515,23 @@ func (h *Handler) GetPodDetailsFromSupportBundle(w http.ResponseWriter, r *http.
 	podName := r.URL.Query().Get("podName")
 	podNamespace := r.URL.Query().Get("podNamespace")
 
-	nsPodsFilePath := filepath.Join("cluster-resources", "pods", fmt.Sprintf("%s.json", podNamespace))
-	nsEventsFilePath := filepath.Join("cluster-resources", "events", fmt.Sprintf("%s.json", podNamespace))
-
-	files, err := supportbundle.GetFilesContents(bundleID, []string{nsPodsFilePath, nsEventsFilePath})
+	bundleArchive, err := store.GetStore().GetSupportBundleArchive(bundleID)
 	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to get files contents"))
-		getPodDetailsFromSupportBundleResponse.Error = fmt.Sprintf("failed to get file %s", nsPodsFilePath)
-		JSON(w, 500, getPodDetailsFromSupportBundleResponse)
+		logger.Error(errors.Wrap(err, "failed to get support bundle archive"))
+		JSON(w, http.StatusInternalServerError, nil)
+		return
+	}
+	defer os.RemoveAll(bundleArchive)
+
+	podDetails, err := tsupportbundle.GetPodDetails(bundleArchive, podNamespace, podName)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get pod details"))
+		getPodDetailsFromSupportBundleResponse.Error = "failed to get pod details"
+		JSON(w, http.StatusInternalServerError, getPodDetailsFromSupportBundleResponse)
 		return
 	}
 
-	var nsEvents []corev1.Event
-	if err := json.Unmarshal(files[nsEventsFilePath], &nsEvents); err != nil {
-		logger.Error(errors.Wrap(err, "failed to unmarshal events"))
-		getPodDetailsFromSupportBundleResponse.Error = "failed to unmarshal namespace events"
-		JSON(w, 500, getPodDetailsFromSupportBundleResponse)
-		return
-	}
-	podEvents := []corev1.Event{}
-	for _, event := range nsEvents {
-		if event.InvolvedObject.Kind == "Pod" && event.InvolvedObject.Name == podName && event.InvolvedObject.Namespace == podNamespace {
-			podEvents = append(podEvents, event)
-		}
-	}
-	getPodDetailsFromSupportBundleResponse.PodEvents = podEvents
-
-	var podsArr []corev1.Pod
-	if err := json.Unmarshal(files[nsPodsFilePath], &podsArr); err != nil {
-		logger.Error(errors.Wrap(err, "failed to unmarshal pods"))
-		getPodDetailsFromSupportBundleResponse.Error = "failed to unmarshal namespace pods"
-		JSON(w, 500, getPodDetailsFromSupportBundleResponse)
-		return
-	}
-	for _, pod := range podsArr {
-		if pod.Name == podName && pod.Namespace == podNamespace {
-			getPodDetailsFromSupportBundleResponse.PodDefinition = pod
-			getPodDetailsFromSupportBundleResponse.PodContainers = []PodContainer{}
-			for _, i := range pod.Spec.InitContainers {
-				getPodDetailsFromSupportBundleResponse.PodContainers = append(getPodDetailsFromSupportBundleResponse.PodContainers, PodContainer{
-					Name:            i.Name,
-					LogsFilePath:    filepath.Join("cluster-resources", "pods", "logs", pod.Namespace, pod.Name, fmt.Sprintf("%s.log", i.Name)),
-					IsInitContainer: true,
-				})
-			}
-			for _, c := range pod.Spec.Containers {
-				getPodDetailsFromSupportBundleResponse.PodContainers = append(getPodDetailsFromSupportBundleResponse.PodContainers, PodContainer{
-					Name:            c.Name,
-					LogsFilePath:    filepath.Join("cluster-resources", "pods", "logs", pod.Namespace, pod.Name, fmt.Sprintf("%s.log", c.Name)),
-					IsInitContainer: false,
-				})
-			}
-			break
-		}
-	}
-
+	getPodDetailsFromSupportBundleResponse.PodDetails = *podDetails
 	getPodDetailsFromSupportBundleResponse.Success = true
 
 	JSON(w, http.StatusOK, getPodDetailsFromSupportBundleResponse)

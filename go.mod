@@ -24,7 +24,6 @@ require (
 	github.com/dexidp/dex v0.0.0-20210802203454-3fac2ab6bc3b
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/docker/go-units v0.4.0
-	github.com/dsnet/compress v0.0.1 // indirect
 	github.com/fatih/color v1.12.0
 	github.com/frankban/quicktest v1.13.0 // indirect
 	github.com/garyburd/redigo v1.6.0 // indirect
@@ -51,20 +50,18 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.8
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/mitchellh/hashstructure v1.1.0
-	github.com/nwaples/rardecode v1.0.0 // indirect
 	github.com/open-policy-agent/opa v0.24.0
 	github.com/opencontainers/image-spec v1.0.2-0.20190823105129-775207bd45b6
 	github.com/openshift/api v0.0.0-20210513192832-efee9960e6fd // indirect
 	github.com/openshift/client-go v0.0.0-20210503124028-ac0910aac9fa
 	github.com/otiai10/copy v1.0.2
 	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2
-	github.com/pierrec/lz4 v2.2.6+incompatible // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/pquerna/cachecontrol v0.0.0-20180517163645-1555304b9b35 // indirect
 	github.com/rancher/wrangler v0.8.3
 	github.com/replicatedhq/kurl v0.0.0-20210414162418-8d6211901244
-	github.com/replicatedhq/troubleshoot v0.18.0
+	github.com/replicatedhq/troubleshoot v0.19.0
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/robfig/cron v1.2.0
 	github.com/robfig/cron/v3 v3.0.1
@@ -77,7 +74,6 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/tj/go-spin v1.1.0
 	github.com/vmware-tanzu/velero v1.5.4
-	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/yvasiyarov/go-metrics v0.0.0-20150112132944-c25f46c4b940 // indirect
 	github.com/yvasiyarov/gorelic v0.0.7 // indirect
 	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20160601141957-9c099fbc30e9 // indirect; indirect=

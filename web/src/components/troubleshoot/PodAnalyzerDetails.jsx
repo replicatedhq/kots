@@ -107,7 +107,7 @@ export class PodAnalyzerDetails extends React.Component {
     case "podDefinition":
       return (
         <div className="flex1 u-border--gray">
-          {this.renderEditor(this.state.podDefinition, "yaml", "Definition not found")}
+          {this.renderEditor("definition", this.state.podDefinition, "yaml", "Definition not found")}
         </div>
       )
     case "podLogs":
@@ -130,17 +130,17 @@ export class PodAnalyzerDetails extends React.Component {
                 </div>
               </div>
             :
-            <p className="u-fontSize--normal u-fontWeight--medium u-textColor--header u-lineHeight--normal u-marginBottom--10">Viewing logs for the {this.state.podContainers.length > 0 && this.state.podContainers[0]?.options[0].isInitContainer ? "Init container)" : "Container"} {this.state.podContainers[0]?.options[0].name}</p>
+            <p className="u-fontSize--normal u-fontWeight--medium u-textColor--header u-lineHeight--normal u-marginBottom--10">Viewing logs for the "{this.state.podContainers[0]?.options[0].name}" {this.state.podContainers.length > 0 && this.state.podContainers[0]?.options[0]?.isInitContainer ? "init container)" : "container"}</p>
           }
           <div className="flex1 u-border--gray">
-            {this.renderEditor(this.state.selectedContainerLogs, "text", "No logs found")}
+            {this.renderEditor("logs", this.state.selectedContainerLogs, "text", "No logs found")}
           </div>
         </div>
       )
     case "podEvents":
       return (
         <div className="flex1 u-border--gray">
-          {this.renderEditor(this.state.podEvents, "yaml", "No events found")}
+          {this.renderEditor("events", this.state.podEvents, "yaml", "No events found")}
         </div>
       )
     default:
@@ -148,7 +148,7 @@ export class PodAnalyzerDetails extends React.Component {
     }
   }
 
-  renderEditor = (content, mode, emptyMsg) => {
+  renderEditor = (key, content, mode, emptyMsg) => {
     const editorHeight = 500;
 
     if (this.state.loading) {
@@ -170,6 +170,7 @@ export class PodAnalyzerDetails extends React.Component {
     return (
       <AceEditor
         ref={el => (this.aceEditor = el)}
+        key={key}
         mode={mode}
         theme="chrome"
         className="flex1 flex"
@@ -197,9 +198,9 @@ export class PodAnalyzerDetails extends React.Component {
           <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--more">Details for Pod: {pod.namespace}/{pod.name}</p>
           <div className="SupportBundleTabs--wrapper flex-column flex1">
             <div className="flex tab-items">
-              <span className={`${this.state.activeTab === "podDefinition" ? "is-active" : ""} tab-item blue`} onClick={() => this.togglePodDetailView("podDefinition")}>Pod definition</span>
               <span className={`${this.state.activeTab === "podLogs" ? "is-active" : ""} tab-item blue`} onClick={() => this.togglePodDetailView("podLogs")}>Pod logs</span>
               <span className={`${this.state.activeTab === "podEvents" ? "is-active" : ""} tab-item blue`} onClick={() => this.togglePodDetailView("podEvents")}>Pod events</span>
+              <span className={`${this.state.activeTab === "podDefinition" ? "is-active" : ""} tab-item blue`} onClick={() => this.togglePodDetailView("podDefinition")}>Pod definition</span>
             </div>
             <div className="flex flex1 action-content">
               <div className="flex1 flex-column file-contents-wrapper u-position--relative">
