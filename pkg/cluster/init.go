@@ -28,7 +28,7 @@ import (
 
 const (
 	KotsKubeVersion      = "1.22.1"
-	KotsKustomizeVersion = "3.10.0"
+	KotsKustomizeVersion = "3.8.10"
 )
 
 var (
