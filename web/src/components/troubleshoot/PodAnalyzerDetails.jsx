@@ -9,7 +9,7 @@ import { Utilities } from "../../utilities/utilities";
 export class PodAnalyzerDetails extends React.Component {
 
   state = {
-    activeTab: "podDefinition",
+    activeTab: "podLogs",
     podContainers: [],
     podEvents: "",
     podDefinition: "",
@@ -47,12 +47,24 @@ export class PodAnalyzerDetails extends React.Component {
       const data = await result.json();
 
       let selectedContainer = {};
-      if (data.podContainers?.length > 0) {
-        selectedContainer = data.podContainers[0];
+      let groupedPodOptions = [];
+      const initContainers = data.podContainers.filter(c => c.isInitContainer);
+      const regContainers = data.podContainers.filter(c => !c.isInitContainer);
+      if (initContainers.length > 0) {
+        groupedPodOptions.push({
+          label: "Init containers",
+          options: initContainers
+        });
       }
-
+      if (regContainers.length > 0) {
+        groupedPodOptions.push({
+          label: "Containers",
+          options: regContainers
+        })
+      }
+      selectedContainer = groupedPodOptions[0].options[0];
       this.onSelectedContainerChange(selectedContainer);
-      this.setState({ loading: false, podContainers: data.podContainers, podDefinition: yaml.dump(data.podDefinition), podEvents: yaml.dump(data.podEvents) });
+      this.setState({ loading: false, podContainers: groupedPodOptions, podDefinition: yaml.dump(data.podDefinition), podEvents: yaml.dump(data.podEvents) });
     })
     .catch(err => {
       this.setState({
@@ -101,19 +113,25 @@ export class PodAnalyzerDetails extends React.Component {
     case "podLogs":
       return (
         <div>
-          <p className="u-fontSize--normal u-fontWeight--medium u-textColor--header u-lineHeight--normal u-marginBottom--10">Which container logs would you like to view?</p>
-          <div className="u-marginBottom--10 flex-auto">
-            <Select
-              className="replicated-select-container"
-              classNamePrefix="replicated-select"
-              options={this.state.podContainers}
-              getOptionLabel={(container) => container.name}
-              getOptionValue={(container) => container.logsFilePath}
-              value={this.state.selectedContainer}
-              onChange={this.onSelectedContainerChange}
-              isOptionSelected={(container) => { container.name === this.state.selectedContainer.name }}
-            />
-          </div>
+          {this.state.podContainers && this.state.podContainers.length > 1 ?
+            <div className="flex flex1 alignItems--center u-marginBottom--15">
+              <p className="u-fontSize--normal u-fontWeight--medium u-textColor--header u-lineHeight--normal u-marginRight--10">Which container logs would you like to view?</p>
+              <div className="flex-auto">
+                <Select
+                  className="replicated-select-container app"
+                  classNamePrefix="replicated-select"
+                  options={this.state.podContainers}
+                  getOptionLabel={(container) => container.name}
+                  getOptionValue={(container) => container.logsFilePath}
+                  value={this.state.selectedContainer}
+                  onChange={this.onSelectedContainerChange}
+                  isOptionSelected={(container) => { container.name === this.state.selectedContainer.name }}
+                />
+                </div>
+              </div>
+            :
+            <p className="u-fontSize--normal u-fontWeight--medium u-textColor--header u-lineHeight--normal u-marginBottom--10">Viewing logs for the {this.state.podContainers.length > 0 && this.state.podContainers[0]?.options[0].isInitContainer ? "Init container)" : "Container"} {this.state.podContainers[0]?.options[0].name}</p>
+          }
           <div className="flex1 u-border--gray">
             {this.renderEditor(this.state.selectedContainerLogs, "text", "No logs found")}
           </div>
