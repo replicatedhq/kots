@@ -1,19 +1,20 @@
 import * as React from "react";
 import { withRouter } from "react-router-dom";
-import ReactTooltip from "react-tooltip"
 import Loader from "../shared/Loader";
 import dayjs from "dayjs";
 import filter from "lodash/filter";
-import sortBy from "lodash/sortBy";
 import isEmpty from "lodash/isEmpty";
-import { Utilities, parseIconUri } from "../../utilities/utilities";
+import { Utilities } from "../../utilities/utilities";
 import download from "downloadjs";
 // import { VendorUtilities } from "../../utilities/VendorUtilities";
 
 class SupportBundleRow extends React.Component {
   state = {
     downloadingBundle: false,
-    downloadBundleErrMsg: ""
+    downloadBundleErrMsg: "",
+    errorInsights: [],
+    warningInsights: [],
+    otherInsights: []
   }
 
   renderSharedContext = () => {
@@ -31,6 +32,12 @@ class SupportBundleRow extends React.Component {
     //   shareContext = <span className="u-marginLeft--normal u-fontSize--normal u-fontWeight--medium u-textColor--secondary">Shared with Replicated</span>
     // }
     // return shareContext;
+  }
+
+  componentDidMount() {
+    if (this.props.bundle) {
+      this.buildInsights();
+    }
   }
 
   handleBundleClick = (bundle) => {
@@ -72,21 +79,46 @@ class SupportBundleRow extends React.Component {
       })
   }
 
-  renderInsightIcon = (bundle, i, insight) => {
-    if (insight.icon) {
-      const iconObj = parseIconUri(insight.icon);
-      return (
-        <div className="tile-icon" style={{ backgroundImage: `url(${iconObj.uri})`, width: `${iconObj.dimensions?.w}px`, height: `${iconObj.dimensions?.h}px` }} data-tip={`${bundle.id}-${i}-${insight.key}`} data-for={`${bundle.id}-${i}-${insight.key}`}></div>
-      )
-    } else {
-      return (
-        <span className={`icon clickable analysis-${insight.icon_key}`} data-tip={`${bundle.id}-${i}-${insight.key}`} data-for={`${bundle.id}-${i}-${insight.key}`}></span>
-      )
-    }
+  sendBundleToVendor = async (bundleSlug) => {
+    this.setState({ sendingBundle: true, sendingBundleErrMsg: "", downloadBundleErrMsg: "" });
+    fetch(`${window.env.API_ENDPOINT}/troubleshoot/app/${this.props.match.params.slug}/supportbundle/${bundleSlug}/share`, {
+      method: "POST",
+      headers: {
+        "Authorization": Utilities.getToken(),
+      }
+    })
+      .then(async (result) => {
+        if (!result.ok) {
+          this.setState({ sendingBundle: false, sendingBundleErrMsg: `Unable to send bundle to vendor: Status ${result.status}, please try again.` });
+          return;
+        }
+        await this.props.refetchBundleList();
+        this.setState({ sendingBundle: false, sendingBundleErrMsg: "" });
+      })
+      .catch(err => {
+        console.log(err);
+        this.setState({ sendingBundle: false, sendingBundleErrMsg: err ? `Unable to send bundle to vendor: ${err.message}` : "Something went wrong, please try again." });
+      })
+  }
+
+  buildInsights = () => {
+    const { bundle } = this.props;
+    if (!bundle || !bundle.analysis.insights) return;
+    const errorInsights = filter(bundle.analysis.insights, ["severity", "error"]);
+    const warningInsights = filter(bundle.analysis.insights, ["severity", "warn"]);
+    const otherInsights = filter(bundle.analysis.insights, (item) => {
+      return item.severity === null || item.severity === "info" || item.severity === "debug"
+    });
+    this.setState({
+      errorInsights,
+      warningInsights,
+      otherInsights
+    });
   }
 
   render() {
     const { bundle } = this.props;
+    const { errorInsights, warningInsights, otherInsights } = this.state;
 
     if (!bundle) {
       return null;
@@ -129,19 +161,24 @@ class SupportBundleRow extends React.Component {
                     }
                   </div>
                 </div>
-                <div className="flex u-marginTop--10">
+                <div className="flex u-marginTop--15">
                   {bundle?.analysis?.insights?.length ?
-                    <div className="flex flex1 u-marginRight--5 alignItems--center">
-                      {sortBy(filter(bundle?.analysis?.insights, (i) => i.severity !== "debug"), ["desiredPosition"]).map((insight, i) => {
-                        return (
-                          <div key={i} className="analysis-icon-wrapper">
-                            {this.renderInsightIcon(bundle, i, insight)}
-                            <ReactTooltip id={`${bundle.id}-${i}-${insight.key}`} effect="solid" className="replicated-tooltip">
-                              <span>{insight.detail}</span>
-                            </ReactTooltip>
-                          </div>
-                        )
-                      })}
+                    <div className="flex flex1 alignItems--center">
+                      {errorInsights.length > 0 &&
+                        <span className="flex alignItems--center u-marginRight--30 u-fontSize--small u-fontWeight--medium u-textColor--error">
+                          <span className="icon u-bundleInsightErrIcon u-marginRight--5"/>{errorInsights.length} error{errorInsights.length > 1 ? "s" : ""} found
+                        </span>
+                      }
+                      {warningInsights.length > 0 &&
+                        <span className="flex alignItems--center u-marginRight--30 u-fontSize--small u-fontWeight--medium u-textColor--warning">
+                          <span className="icon u-bundleInsightWarningIcon u-marginRight--5"/>{warningInsights.length} warning{warningInsights.length > 1 ? "s" : ""} found
+                        </span>
+                      }
+                      {otherInsights.length > 0 &&
+                        <span className="flex alignItems--center u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy">
+                          <span className="icon u-bundleInsightOtherIcon u-marginRight--5"/>{otherInsights.length} informational and debugging insight{otherInsights.length > 1 ? "s" : ""} found
+                        </span>
+                      }
                     </div>
                     :
                     noInsightsMessage
@@ -149,12 +186,23 @@ class SupportBundleRow extends React.Component {
                 </div>
               </div>
               <div className="flex flex-auto alignItems--center justifyContent--flexEnd">
+                {this.state.sendingBundleErrMsg && <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginRight--10">{this.state.sendingBundleErrMsg}</p>}
+                {this.props.bundle.sharedAt ?
+                  <div className="sentToVendorWrapper flex alignItems--flexEnd u-paddingLeft--10 u-paddingRight--10 u-marginRight--10">
+                    <span className="icon send-icon u-marginRight--5" />
+                    <span className="u-fontWeight--bold u-fontSize--small u-color--mutedteal">Sent to vendor on {Utilities.dateFormat(bundle.sharedAt, "MM/DD/YYYY")}</span>
+                  </div>
+                : this.state.sendingBundle ?
+                  <Loader size="30" className="u-marginRight--10" />
+                :
+                  <span className="u-fontSize--small u-marginRight--10 u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover u-paddingRight--10 u-borderRight--gray" onClick={() => this.sendBundleToVendor(this.props.bundle.slug)}>Send bundle to vendor</span>
+                }
                 {this.state.downloadBundleErrMsg &&
                   <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginRight--10">{this.state.downloadBundleErrMsg}</p>}
                 {this.state.downloadingBundle ?
                   <Loader size="30" />
                   :
-                  <span className="u-fontSize--small u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover u-marginRight--normal" onClick={() => this.downloadBundle(bundle)}>Download bundle</span>
+                  <span className="u-fontSize--small u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover" onClick={() => this.downloadBundle(bundle)}>Download bundle</span>
                 }
               </div>
             </div>

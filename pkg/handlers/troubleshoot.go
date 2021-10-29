@@ -58,6 +58,7 @@ type ResponseSupportBundle struct {
 	Status     string                       `json:"status"`
 	CreatedAt  time.Time                    `json:"createdAt"`
 	UploadedAt *time.Time                   `json:"uploadedAt"`
+	SharedAt   *time.Time                   `json:"sharedAt"`
 	IsArchived bool                         `json:"isArchived"`
 	Analysis   *types.SupportBundleAnalysis `json:"analysis"`
 }
@@ -200,6 +201,7 @@ func (h *Handler) ListSupportBundles(w http.ResponseWriter, r *http.Request) {
 			CreatedAt:  bundle.CreatedAt,
 			UploadedAt: bundle.UploadedAt,
 			IsArchived: bundle.IsArchived,
+			SharedAt:   bundle.SharedAt,
 			Analysis:   analysis,
 		}
 
