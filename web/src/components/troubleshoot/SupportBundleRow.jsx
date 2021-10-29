@@ -79,9 +79,9 @@ class SupportBundleRow extends React.Component {
       })
   }
 
-  sendBundleToVendor = async () => {
+  sendBundleToVendor = async (bundleSlug) => {
     this.setState({ sendingBundle: true, sendingBundleErrMsg: "", downloadBundleErrMsg: "" });
-    fetch(`${window.env.API_ENDPOINT}/troubleshoot/app/${this.props.match.params.slug}/supportbundle/${this.props.match.params.bundleSlug}/share`, {
+    fetch(`${window.env.API_ENDPOINT}/troubleshoot/app/${this.props.match.params.slug}/supportbundle/${bundleSlug}/share`, {
       method: "POST",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -92,7 +92,7 @@ class SupportBundleRow extends React.Component {
           this.setState({ sendingBundle: false, sendingBundleErrMsg: `Unable to send bundle to vendor: Status ${result.status}, please try again.` });
           return;
         }
-        await this.getSupportBundle();
+        await this.props.refetchBundleList();
         this.setState({ sendingBundle: false, sendingBundleErrMsg: "" });
       })
       .catch(err => {
@@ -161,7 +161,7 @@ class SupportBundleRow extends React.Component {
                     }
                   </div>
                 </div>
-                <div className="flex u-marginTop--10">
+                <div className="flex u-marginTop--15">
                   {bundle?.analysis?.insights?.length ?
                     <div className="flex flex1 alignItems--center">
                       {errorInsights.length > 0 &&
@@ -188,14 +188,14 @@ class SupportBundleRow extends React.Component {
               <div className="flex flex-auto alignItems--center justifyContent--flexEnd">
                 {this.state.sendingBundleErrMsg && <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginRight--10">{this.state.sendingBundleErrMsg}</p>}
                 {this.props.bundle.sharedAt ?
-                <div className="sentToVendorWrapper flex alignItems--flexEnd u-paddingLeft--10 u-paddingRight--10 u-marginRight--10">
-                  <span className="icon send-icon u-marginRight--5" />
-                  <span className="u-fontWeight--bold u-fontSize--small u-color--mutedteal">Sent to vendor on {Utilities.dateFormat(bundle.sharedAt, "MM/DD/YYYY")}</span>
-                </div>
-                : this.state.sharingBundle ?
+                  <div className="sentToVendorWrapper flex alignItems--flexEnd u-paddingLeft--10 u-paddingRight--10 u-marginRight--10">
+                    <span className="icon send-icon u-marginRight--5" />
+                    <span className="u-fontWeight--bold u-fontSize--small u-color--mutedteal">Sent to vendor on {Utilities.dateFormat(bundle.sharedAt, "MM/DD/YYYY")}</span>
+                  </div>
+                : this.state.sendingBundle ?
                   <Loader size="30" className="u-marginRight--10" />
                 :
-                  <span className="u-fontSize--small u-marginRight--10 u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover" onClick={this.sendBundleToVendor}>Send bundle to vendor</span>
+                  <span className="u-fontSize--small u-marginRight--10 u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover u-paddingRight--10 u-borderRight--gray" onClick={() => this.sendBundleToVendor(this.props.bundle.slug)}>Send bundle to vendor</span>
                 }
                 {this.state.downloadBundleErrMsg &&
                   <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginRight--10">{this.state.downloadBundleErrMsg}</p>}
