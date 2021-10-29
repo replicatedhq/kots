@@ -274,5 +274,5 @@ spec:
           - fail:
               when: "nodeCondition(Ready) == False"
               message: "Not all nodes are online."
-
-
+          - pass:
+              message: "All nodes are online."
