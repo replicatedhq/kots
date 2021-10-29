@@ -45,7 +45,12 @@ export class SupportBundleAnalysis extends React.Component {
     })
       .then(async (result) => {
         if (!result.ok) {
-          this.setState({ sendingBundle: false, sendingBundleErrMsg: `Unable to send bundle to vendor: Status ${result.status}, please try again.` });
+          const text = await result.text();
+          let msg = `Unable to send bundle to vendor: Status ${result.status}, please try again.`;
+          if (text) {
+            msg = `Unable to send bundle to vendor: ${text}`;
+          }
+          this.setState({ sendingBundle: false, sendingBundleErrMsg: msg });
           return;
         }
         await this.getSupportBundle();
