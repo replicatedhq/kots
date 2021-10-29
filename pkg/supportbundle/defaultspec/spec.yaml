@@ -237,6 +237,7 @@ spec:
     - textAnalyze:
         checkName: Weave Status
         exclude: ""
+        ignoreIfNoFiles: true
         fileName: kots/kurl/weave/kube-system/weave-net-*/weave-status-stdout.txt
         outcomes:
           - fail:
@@ -247,6 +248,7 @@ spec:
     - textAnalyze:
         checkName: Weave Report
         exclude: ""
+        ignoreIfNoFiles: true
         fileName: kots/kurl/weave/kube-system/weave-net-*/weave-report-stdout.txt
         outcomes:
           - fail:
@@ -257,6 +259,7 @@ spec:
     - textAnalyze:
         checkName: Inter-pod Networking
         exclude: ""
+        ignoreIfNoFiles: true
         fileName: kots/goldpinger/*/kotsadm-*/goldpinger-statistics-stdout.txt
         outcomes:
           - fail:
