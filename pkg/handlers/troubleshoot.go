@@ -401,7 +401,7 @@ func (h *Handler) ShareSupportBundle(w http.ResponseWriter, r *http.Request) {
 		} else {
 			logger.Errorf("Failed to share support bundle: %d", resp.StatusCode)
 		}
-		JSON(w, http.StatusInternalServerError, nil)
+		JSON(w, http.StatusInternalServerError, string(body))
 		return
 	}
 
