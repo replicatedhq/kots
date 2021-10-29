@@ -83,7 +83,7 @@ RUN curl -fsSLO "${KUBECTL_1_21_URL}" \
 # KOTS can be configured to use a specific version of kustomize by setting kustomizeVersion in the
 # kots.io/v1beta1.Application spec. The github.com/replicatedhq/kots/pkg/binaries package will
 # discover all kustomize binaries in the KOTS_KUSTOMIZE_BIN_DIR directory for use by KOTS.
-# CURRENNTLY ONLY ONE VERSION IS SHIPPED BELOW
+# CURRENTLY ONLY ONE VERSION IS SHIPPED BELOW
 
 ENV KOTS_KUSTOMIZE_BIN_DIR=/usr/local/bin
 
