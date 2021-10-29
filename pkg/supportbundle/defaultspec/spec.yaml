@@ -265,3 +265,11 @@ spec:
           - pass:
               message: Goldpinger can communicate properly
         regexGroups: '"OK": ?(?P<OK>\w+)'
+    - nodeResources:
+        checkName: Node status check
+        outcomes:
+          - fail:
+              when: "nodeCondition(Ready) == False"
+              message: "Not all nodes are online."
+
+
