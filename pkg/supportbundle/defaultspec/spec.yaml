@@ -228,6 +228,11 @@ spec:
               message: A supported container runtime is present on all nodes
     - cephStatus: {}
     - longhorn: {}
+    - clusterPodStatuses:
+        outcomes:
+          - fail:
+              when: "!= Healthy"
+              message: "Status: {{ .Status.Reason }}"
     - statefulsetStatus: {}
     - deploymentStatus: {}
     - jobStatus: {}
