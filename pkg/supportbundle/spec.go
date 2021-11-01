@@ -489,23 +489,7 @@ func getDefaultDynamicCollectors(app *apptypes.App, imageName string, pullSecret
 
 func getDefaultDynamicAnalyzers(app *apptypes.App) []*troubleshootv1beta2.Analyze {
 	analyzers := make([]*troubleshootv1beta2.Analyze, 0)
-
 	analyzers = append(analyzers, makeAPIReplicaAnalyzer())
-	analyzers = append(analyzers, &troubleshootv1beta2.Analyze{
-		ClusterPodStatuses: &troubleshootv1beta2.ClusterPodStatuses{
-			AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
-				CheckName: "Pod {{ .Namespace }}/{{ .Name }} is unhealthy",
-			},
-			Outcomes: []*troubleshootv1beta2.Outcome{
-				{
-					Fail: &troubleshootv1beta2.SingleOutcome{
-						When:    "!= Healthy",
-						Message: "Status: {{ .Status.Reason }}",
-					},
-				},
-			},
-		},
-	})
 
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
