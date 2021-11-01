@@ -3,7 +3,7 @@ import Loader from "../shared/Loader";
 import isEmpty from "lodash/isEmpty";
 import filter from "lodash/filter";
 import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
-import { sortAnalyzers, parseIconUri, Utilities } from "../../utilities/utilities";
+import { sortAnalyzers, parseIconUri } from "../../utilities/utilities";
 
 export class AnalyzerInsights extends React.Component {
   constructor(props) {
@@ -11,22 +11,14 @@ export class AnalyzerInsights extends React.Component {
     this.state = {
       insights: [],
       analyzing: false,
-      filterTiles: "0",
+      filterTiles: false,
     };
   }
 
   componentDidUpdate(lastProps) {
-    let isError, isWarn;
     if (this.props.insights !== lastProps.insights && this.props.insights) {
-      isError = this.props.insights.some(i => i.severity === "error");
-      isWarn = this.props.insights.some(i => i.severity === "warn");
-      this.setState({
-        insights: sortAnalyzers(this.props.insights),
-      });
-      if (isWarn || isError) {
-        const insights = filter(this.props.insights, (i) => { return i.severity !== "debug" && i.severity !== "info" });
-        this.setState({ filterTiles: "1", insights: insights })
-      }
+      const hasProblems = this.props.insights.some(i => i.severity === "warn" || i.severity === "error");
+      this.handleFilterTiles(hasProblems);
     }
 
     if (this.props.insights) {
@@ -35,17 +27,9 @@ export class AnalyzerInsights extends React.Component {
   }
 
   componentDidMount() {
-    let isError, isWarn;
     if (this.props.insights) {
-      isError = this.props.insights.some(i => i.severity === "error");
-      isWarn = this.props.insights.some(i => i.severity === "warn");
-      this.setState({
-        insights: sortAnalyzers(this.props.insights),
-      });
-      if (isError || isWarn) {
-        const insights = filter(this.props.insights, (i) => { return i.severity !== "debug" && i.severity !== "info" });
-        this.setState({ filterTiles: "1", insights: insights })
-      }
+      const hasProblems = this.props.insights.some(i => i.severity === "warn" || i.severity === "error");
+      this.handleFilterTiles(hasProblems);
     }
 
     this.checkBundleStatus();
@@ -67,23 +51,20 @@ export class AnalyzerInsights extends React.Component {
     clearInterval(this.interval);
   }
 
-  handleFilterTiles = (field, e) => {
-    let nextState = {};
-    const val = e.target.checked ? "1" : "0";
-    nextState[field] = val;
+  handleFilterTiles = (checked) => {
     let insights = sortAnalyzers(this.props.insights);
-    if (val === "1") {
-      insights = filter(insights, (i) => { return i.severity !== "debug" && i.severity !== "info" });
+    if (checked) {
+      insights = filter(insights, i => i.severity === "error" || i.severity === "warn");
     }
     this.setState({
-      ...nextState,
+      filterTiles: checked,
       insights
     });
   }
 
   render() {
     const { insights, status } = this.props;
-    const { filterTiles, analyzing } = this.state;
+    const { filterTiles } = this.state;
     const filteredInsights = this.state.insights;
 
     let noInsightsNode;
@@ -118,14 +99,12 @@ export class AnalyzerInsights extends React.Component {
                   type="checkbox"
                   className="filter-tiles-checkbox"
                   id="filterTiles"
-                  checked={filterTiles === "1"}
-                  value={filterTiles}
-                  onChange={(e) => { this.handleFilterTiles("filterTiles", e) }}
+                  checked={filterTiles}
+                  onChange={(e) => { this.handleFilterTiles(e.target.checked) }}
                 />
                 <label htmlFor="filterTiles" className="flex1 u-width--full u-position--relative u-marginLeft--5 u-cursor--pointer">
                   <div className="flex-column">
                     <span className="u-fontWeight--medium u-textColor--primary u-fontSize--normal u-marginBottom--5 u-lineHeight--normal u-userSelect--none">Only show errors and warnings</span>
-                    <span className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--normal u-lineHeight--normal u-userSelect--none">By default we show you everything that was analyzed but you can choose to see only errors and warnings.</span>
                   </div>
                 </label>
               </div>
