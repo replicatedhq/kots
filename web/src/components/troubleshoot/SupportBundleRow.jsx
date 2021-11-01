@@ -103,7 +103,7 @@ class SupportBundleRow extends React.Component {
 
   buildInsights = () => {
     const { bundle } = this.props;
-    if (!bundle || !bundle.analysis.insights) return;
+    if (!bundle?.analysis?.insights) return;
     const errorInsights = filter(bundle.analysis.insights, ["severity", "error"]);
     const warningInsights = filter(bundle.analysis.insights, ["severity", "warn"]);
     const otherInsights = filter(bundle.analysis.insights, (item) => {
