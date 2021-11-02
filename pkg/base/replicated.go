@@ -232,6 +232,7 @@ func renderReplicatedHelmChart(kotsHelmChart *kotsv1beta1.HelmChart, upstreamFil
 		HelmValues:        helmValues,
 		ExcludeKotsKinds:  renderOptions.ExcludeKotsKinds,
 		Log:               nil,
+		UseHelmInstall:    kotsHelmChart.Spec.UseHelmInstall,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to render helm chart in upstream")

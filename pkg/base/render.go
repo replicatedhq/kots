@@ -21,6 +21,7 @@ type RenderOptions struct {
 	AppSlug                 string
 	Sequence                int64
 	IsAirgap                bool
+	UseHelmInstall          bool
 	Log                     *logger.CLILogger
 }
 
