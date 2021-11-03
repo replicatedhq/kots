@@ -10,7 +10,6 @@ import (
 
 	rspb "helm.sh/helm/v3/pkg/release"
 	"helm.sh/helm/v3/pkg/storage"
-	"helm.sh/helm/v3/pkg/time"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -41,7 +40,8 @@ func newSecretsObject(rls *rspb.Release) (*v1.Secret, error) {
 	}
 
 	lbs := map[string]string{
-		"createdAt": strconv.Itoa(int(time.Now().Unix())),
+		//"createdAt": strconv.Itoa(int(time.Now().Unix())),
+		"createdAt": strconv.Itoa(1), // make a constant so that there aren't spurious diffs
 		"version":   strconv.Itoa(rls.Version),
 		"status":    rls.Info.Status.String(),
 		"owner":     owner,

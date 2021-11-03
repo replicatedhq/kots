@@ -6,12 +6,14 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/util"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	rspb "helm.sh/helm/v3/pkg/release"
+	helmtime "helm.sh/helm/v3/pkg/time"
 	k8syaml "sigs.k8s.io/yaml"
 )
 
@@ -89,6 +91,10 @@ func renderHelmV3(chartName string, chartPath string, vals map[string]interface{
 			rel.Namespace = namespace()
 		}
 		rel.Info.Status = rspb.StatusDeployed
+
+		// override deployed times to avoid spurious diffs
+		rel.Info.FirstDeployed, _ = helmtime.Parse(time.RFC3339, "1970-01-01T01:00:00")
+		rel.Info.LastDeployed, _ = helmtime.Parse(time.RFC3339, "1970-01-01T01:00:00")
 
 		helmReleaseSecretObj, err := newSecretsObject(rel)
 		if err != nil {
