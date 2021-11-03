@@ -598,7 +598,7 @@ jobs:
           ./${{ matrix.test.terraform_script }} destroy
 
       - name: Notify Slack
-        if: always()
+        if: failure()
         uses: 8398a7/action-slack@v3
         with:
           status: custom
@@ -607,7 +607,7 @@ jobs:
             {
               attachments: [{
                 color: '${{ job.status }}' === 'success' ? 'good' : '${{ job.status }}' === 'failure' ? 'danger' : 'warning',
-                text: `Cleaning up: ${{ matrix.test.name }}.\nStatus: ${{ job.status }}. Workflow: ${process.env.AS_WORKFLOW}. Repo: ${process.env.AS_REPO}. Ref: ${process.env.AS_REF}`,
+                text: `Clean up: ${{ matrix.test.name }}.\nStatus: ${{ job.status }}. Workflow: ${process.env.AS_WORKFLOW}. Repo: ${process.env.AS_REPO}.\nRef: ${process.env.AS_REF}`,
               }]
             }
         env:
@@ -643,7 +643,7 @@ jobs:
           terraform destroy --auto-approve
 
       - name: Notify Slack
-        if: always()
+        if: failure()
         uses: 8398a7/action-slack@v3
         with:
           status: custom
@@ -652,7 +652,7 @@ jobs:
             {
               attachments: [{
                 color: '${{ job.status }}' === 'success' ? 'good' : '${{ job.status }}' === 'failure' ? 'danger' : 'warning',
-                text: `Destroying jumpbox: ${{ job.status }}. Workflow: ${process.env.AS_WORKFLOW}. Repo: ${process.env.AS_REPO}. Ref: ${process.env.AS_REF}`,
+                text: `Destroy jumpbox: ${{ job.status }}. Workflow: ${process.env.AS_WORKFLOW}. Repo: ${process.env.AS_REPO}.\nRef: ${process.env.AS_REF}`,
               }]
             }
         env:
@@ -703,7 +703,7 @@ jobs:
           path: automation/jumpbox/ssh.pem.enc
 
       - name: Notify Slack
-        if: always()
+        if: failure()
         uses: 8398a7/action-slack@v3
         with:
           status: custom
@@ -712,7 +712,7 @@ jobs:
             {
               attachments: [{
                 color: '${{ job.status }}' === 'success' ? 'good' : '${{ job.status }}' === 'failure' ? 'danger' : 'warning',
-                text: `Creating jumpbox: ${{ job.status }}. Workflow: ${process.env.AS_WORKFLOW}. Repo: ${process.env.AS_REPO}. Ref: ${process.env.AS_REF}`,
+                text: `Create jumpbox: ${{ job.status }}. Workflow: ${process.env.AS_WORKFLOW}. Repo: ${process.env.AS_REPO}.\nRef: ${process.env.AS_REF}`,
               }]
             }
         env:
@@ -841,7 +841,7 @@ jobs:
           ./${{ matrix.test.terraform_script }} apply
 
       - name: Notify Slack
-        if: always()
+        if: failure()
         uses: 8398a7/action-slack@v3
         with:
           status: custom
@@ -850,7 +850,7 @@ jobs:
             {
               attachments: [{
                 color: '${{ job.status }}' === 'success' ? 'good' : '${{ job.status }}' === 'failure' ? 'danger' : 'warning',
-                text: `Setting up: ${{ matrix.test.name }}.\nStatus: ${{ job.status }}. Workflow: ${process.env.AS_WORKFLOW}. Repo: ${process.env.AS_REPO}. Ref: ${process.env.AS_REF}`,
+                text: `Setting up: ${{ matrix.test.name }}.\nStatus: ${{ job.status }}. Workflow: ${process.env.AS_WORKFLOW}. Repo: ${process.env.AS_REPO}.\nRef: ${process.env.AS_REF}`,
               }]
             }
         env:
@@ -979,7 +979,7 @@ jobs:
             {
               attachments: [{
                 color: '${{ job.status }}' === 'success' ? 'good' : '${{ job.status }}' === 'failure' ? 'danger' : 'warning',
-                text: `Test name: ${{ matrix.test.name }}.\nStatus: ${{ job.status }}. Workflow: ${process.env.AS_WORKFLOW}. Repo: ${process.env.AS_REPO}. Ref: ${process.env.AS_REF}`,
+                text: `Test name: ${{ matrix.test.name }}.\nStatus: ${{ job.status }}. Workflow: ${process.env.AS_WORKFLOW}. Repo: ${process.env.AS_REPO}.\nRef: ${process.env.AS_REF}`,
               }]
             }
         env:
