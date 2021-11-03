@@ -148,7 +148,9 @@ func getDownstreamInfo(appID string) (*types.DownstreamInfo, error) {
 		if len(deployedKotsKinds.HelmCharts) > 0 {
 			for _, chart := range deployedKotsKinds.HelmCharts {
 				if chart.Spec.UseHelmInstall {
-					di.IsNativeHelm = true
+					di.NativeHelmInstalls++
+				} else {
+					di.ReplHelmInstalls++
 				}
 			}
 		}
