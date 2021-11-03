@@ -59,7 +59,7 @@ mock:
 
 .PHONY: kotsadm
 kotsadm:
-	go build ${LDFLAGS} -o bin/kotsadm $(BUILDFLAGS) ./cmd/kotsadm
+	go build ${LDFLAGS} ${GCFLAGS} -o bin/kotsadm $(BUILDFLAGS) ./cmd/kotsadm
 
 .PHONY: build-ttl.sh
 build-ttl.sh:
