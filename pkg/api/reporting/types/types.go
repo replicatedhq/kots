@@ -10,7 +10,8 @@ type ReportingInfo struct {
 }
 
 type DownstreamInfo struct {
-	Cursor      string
-	ChannelID   string
-	ChannelName string
+	Cursor       string
+	ChannelID    string
+	ChannelName  string
+	IsNativeHelm bool
 }
