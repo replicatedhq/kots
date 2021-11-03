@@ -44,7 +44,7 @@ func init() {
 type KotsKinds struct {
 	KotsApplication kotsv1beta1.Application
 	Application     *applicationv1beta1.Application
-	HelmChart       *kotsv1beta1.HelmChart
+	HelmCharts      []*kotsv1beta1.HelmChart
 
 	Collector     *troubleshootv1beta2.Collector
 	Preflight     *troubleshootv1beta2.Preflight
@@ -419,7 +419,7 @@ func LoadKotsKindsFromPath(fromDir string) (*KotsKinds, error) {
 				case "kots.io/v1beta1, Kind=Installation":
 					kotsKinds.Installation = *decoded.(*kotsv1beta1.Installation)
 				case "kots.io/v1beta1, Kind=HelmChart":
-					kotsKinds.HelmChart = decoded.(*kotsv1beta1.HelmChart)
+					kotsKinds.HelmCharts = append(kotsKinds.HelmCharts, decoded.(*kotsv1beta1.HelmChart))
 				case "troubleshoot.sh/v1beta2, Kind=Collector":
 					kotsKinds.Collector = decoded.(*troubleshootv1beta2.Collector)
 				case "troubleshoot.sh/v1beta2, Kind=Analyzer":
