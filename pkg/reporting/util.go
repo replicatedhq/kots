@@ -20,8 +20,8 @@ func InjectReportingInfoHeaders(req *http.Request, reportingInfo *types.Reportin
 	req.Header.Set("X-Replicated-AppStatus", reportingInfo.AppStatus)
 	req.Header.Set("X-Replicated-ClusterID", reportingInfo.ClusterID)
 	req.Header.Set("X-Replicated-InstanceID", reportingInfo.InstanceID)
-	req.Header.Set("X-Replicated-ReplHelmInstalls", fmt.Sprint(reportingInfo.Downstream.ReplHelmInstalls))
-	req.Header.Set("X-Replicated-NativeHelmInstalls", fmt.Sprint(reportingInfo.Downstream.NativeHelmInstalls))
+	req.Header.Set("X-Replicated-ReplHelmInstalls", fmt.Sprintf("%d", reportingInfo.Downstream.ReplHelmInstalls))
+	req.Header.Set("X-Replicated-NativeHelmInstalls", fmt.Sprintf("%d", reportingInfo.Downstream.NativeHelmInstalls))
 
 	if reportingInfo.Downstream.Cursor != "" {
 		req.Header.Set("X-Replicated-DownstreamChannelSequence", reportingInfo.Downstream.Cursor)
