@@ -16,7 +16,7 @@ spec:
         command:
           - pg_dump
         containerName: kotsadm-postgres
-        name: kots/admin_console
+        name: kots/admin-console
         selector:
           - app=kotsadm-postgres
         timeout: 10s
@@ -27,7 +27,7 @@ spec:
         command:
           - curl
         containerName: kotsadm
-        name: kots/admin_console
+        name: kots/admin-console
         selector:
           - app=kotsadm
         timeout: 10s
@@ -38,48 +38,48 @@ spec:
         command:
           - curl
         containerName: kotsadm-operator
-        name: kots/admin_console
+        name: kots/admin-console
         selector:
           - app=kotsadm-operator
         timeout: 10s
     - logs:
         collectorName: kotsadm-postgres-db
-        name: kots/admin_console
+        name: kots/admin-console
         selector:
           - app=kotsadm-postgres
     - logs:
         collectorName: kotsadm-api
-        name: kots/admin_console
+        name: kots/admin-console
         selector:
           - app=kotsadm-api
     - logs:
         collectorName: kotsadm-operator
-        name: kots/admin_console
+        name: kots/admin-console
         selector:
           - app=kotsadm-operator
     - logs:
         collectorName: kotsadm
-        name: kots/admin_console
+        name: kots/admin-console
         selector:
           - app=kotsadm
     - logs:
         collectorName: kurl-proxy-kotsadm
-        name: kots/admin_console
+        name: kots/admin-console
         selector:
           - app=kurl-proxy-kotsadm
     - logs:
         collectorName: kotsadm-dex
-        name: kots/admin_console
+        name: kots/admin-console
         selector:
           - app=kotsadm-dex
     - logs:
         collectorName: kotsadm-fs-minio
-        name: kots/admin_console
+        name: kots/admin-console
         selector:
           - app=kotsadm-fs-minio
     - logs:
         collectorName: kotsadm-s3-ops
-        name: kots/admin_console
+        name: kots/admin-console
         selector:
           - app=kotsadm-s3-ops
     - logs:
