@@ -175,6 +175,12 @@ spec:
         selector:
           - name=weave-net
         timeout: 10s
+    - logs:
+        collectorName: weave-net
+        selector:
+          - name=weave-net
+        namespace: kube-system
+        name: kots/kurl/weave
     - exec:
         args:
           - "http://goldpinger.kurl.svc.cluster.local:80/check_all"
