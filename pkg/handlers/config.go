@@ -1,8 +1,11 @@
 package handlers
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -255,6 +258,68 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		configGroups = renderedConfig.Spec.Groups
 	}
 
+	// MARK (dans): debug
+	var rootPEM, certPEM, keyPEM string
+
+	for _, group := range configGroups {
+		if group.Name == "cert settings" {
+			for _, item := range group.Items {
+				if item.Name == "tls_ca" {
+					rootPEM = item.Default.String()
+				}
+				if item.Name == "tls_cert" {
+					certPEM = item.Default.String()
+				}
+				if item.Name == "tls_key" {
+					keyPEM = item.Default.String()
+				}
+			}
+		}
+	}
+
+	if rootPEM != "" && certPEM != "" && keyPEM != "" {
+		roots := x509.NewCertPool()
+		ok := roots.AppendCertsFromPEM([]byte(rootPEM))
+		if !ok {
+			logger.Error(errors.New("failed to parse root certificate"))
+			goto end
+		}
+
+		block, _ := pem.Decode([]byte(certPEM))
+		if block == nil {
+			logger.Error(errors.New("failed to parse certificate PEM"))
+			goto end
+		}
+
+		cert, err := x509.ParseCertificate(block.Bytes)
+		if err != nil {
+			logger.Error(errors.New("failed to parse certificate: " + err.Error()))
+			goto end
+		}
+
+		opts := x509.VerifyOptions{
+			Roots: roots,
+		}
+
+		if _, err := cert.Verify(opts); err != nil {
+			logger.Error(errors.New("failed to verify certificate: " + err.Error()))
+			goto end
+		}
+
+		_, err = tls.X509KeyPair([]byte(certPEM), []byte(keyPEM))
+		if err != nil {
+			logger.Error(errors.New("CERTS DON'T MATCH"))
+			goto end
+		}
+
+		logger.Info("\n\n****^^^^THE CERTS MATCH IN LIVE CONFIG ^^^^*******\n\n")
+
+	} else {
+		logger.Error(errors.New("could not find cert pair"))
+	}
+	// end
+
+end:
 	JSON(w, http.StatusOK, LiveAppConfigResponse{Success: true, ConfigGroups: configGroups})
 }
 
