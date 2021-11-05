@@ -104,49 +104,49 @@ spec:
         selector:
           - app=rook-ceph-agent
         namespace: rook-ceph
-        name: kots/rook
+        name: kots/kurl/rook
     - logs:
         collectorName: rook-ceph-mgr
         selector:
           - app=rook-ceph-mgr
         namespace: rook-ceph
-        name: kots/rook
+        name: kots/kurl/rook
     - logs:
         collectorName: rook-ceph-mon
         selector:
           - app=rook-ceph-mon
         namespace: rook-ceph
-        name: kots/rook
+        name: kots/kurl/rook
     - logs:
         collectorName: rook-ceph-operator
         selector:
           - app=rook-ceph-operator
         namespace: rook-ceph
-        name: kots/rook
+        name: kots/kurl/rook
     - logs:
         collectorName: rook-ceph-osd
         selector:
           - app=rook-ceph-osd
         namespace: rook-ceph
-        name: kots/rook
+        name: kots/kurl/rook
     - logs:
         collectorName: rook-ceph-osd-prepare
         selector:
           - app=rook-ceph-osd-prepare
         namespace: rook-ceph
-        name: kots/rook
+        name: kots/kurl/rook
     - logs:
         collectorName: rook-ceph-rgw
         selector:
           - app=rook-ceph-rgw
         namespace: rook-ceph
-        name: kots/rook
+        name: kots/kurl/rook
     - logs:
         collectorName: rook-discover
         selector:
           - app=rook-discover
         namespace: rook-ceph
-        name: kots/rook
+        name: kots/kurl/rook
     - exec:
         collectorName: weave-status
         command:
@@ -182,7 +182,7 @@ spec:
         command:
           - curl
         containerName: kotsadm
-        name: kots/goldpinger
+        name: kots/kurl/goldpinger
         selector:
           - app=kotsadm
         timeout: 10s
@@ -265,7 +265,7 @@ spec:
         checkName: Inter-pod Networking
         exclude: ""
         ignoreIfNoFiles: true
-        fileName: kots/goldpinger/*/kotsadm-*/goldpinger-statistics-stdout.txt
+        fileName: kots/kurl/goldpinger/*/kotsadm-*/goldpinger-statistics-stdout.txt
         outcomes:
           - fail:
               when: "OK = false"
