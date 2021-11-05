@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -84,6 +85,8 @@ func renderHelmV3(chartName string, chartPath string, vals map[string]interface{
 		})
 	}
 
+	baseFiles = removeCommonPrefix(baseFiles)
+
 	// this secret should only be generated for installs that rely on us rendering yaml internally - not native helm installs
 	// those generate their own secret
 	if !renderOptions.UseHelmInstall {
@@ -117,8 +120,12 @@ func renderHelmV3(chartName string, chartPath string, vals map[string]interface{
 		return nil, errors.Wrap(err, "failed to insert helm namespace")
 	}
 
-	// maintain order
-	return mergeBaseFiles(baseFiles), nil
+	// ensure order
+	merged := mergeBaseFiles(baseFiles)
+	sort.Slice(merged, func(i, j int) bool {
+		return 0 > strings.Compare(merged[i].Path, merged[j].Path)
+	})
+	return merged, nil
 }
 
 func mergeBaseFiles(baseFiles []BaseFile) []BaseFile {

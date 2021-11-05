@@ -148,11 +148,14 @@ func TestKotsPull(t *testing.T) {
 					wantPath := strings.Replace(path, "results", "wantResults", 1)
 
 					wantContents, err := ioutil.ReadFile(wantPath)
+					if err != nil {
+						fmt.Printf("unable to open file %s\n", path)
+					}
 					require.NoError(t, err)
 
 					contentsString := string(contents)
 					wantContentsString := string(wantContents)
-					require.Equal(t, contentsString, wantContentsString)
+					require.Equal(t, wantContentsString, contentsString)
 
 					return nil
 				})
