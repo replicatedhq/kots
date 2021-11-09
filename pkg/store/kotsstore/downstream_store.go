@@ -3,7 +3,9 @@ package kotsstore
 import (
 	"database/sql"
 	"encoding/base64"
+	"sort"
 
+	"github.com/blang/semver"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
@@ -244,8 +246,8 @@ func (s *KOTSStore) GetStatusForVersion(appID string, clusterID string, sequence
 	return types.DownstreamVersionStatus(versionStatus), nil
 }
 
-func (s *KOTSStore) GetPendingVersions(appID string, clusterID string) ([]downstreamtypes.DownstreamVersion, error) {
-	currentSequence, err := s.GetCurrentSequence(appID, clusterID)
+func (s *KOTSStore) GetPendingVersions(appID string, clusterID string) (downstreamtypes.DownstreamVersions, error) {
+	currentVersion, err := s.GetCurrentVersion(appID, clusterID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get current sequence")
 	}
@@ -281,18 +283,17 @@ func (s *KOTSStore) GetPendingVersions(appID string, clusterID string) ([]downst
 	 adv.app_id = ado.app_id AND adv.cluster_id = ado.cluster_id AND adv.sequence = ado.downstream_sequence
  WHERE
 	 adv.app_id = $1 AND
-	 adv.cluster_id = $2 AND
-	 adv.sequence > $3
+	 adv.cluster_id = $2
  ORDER BY
 	 adv.sequence DESC`
 
-	rows, err := db.Query(query, appID, clusterID, currentSequence)
+	rows, err := db.Query(query, appID, clusterID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query")
 	}
 	defer rows.Close()
 
-	versions := []downstreamtypes.DownstreamVersion{}
+	versions := downstreamtypes.DownstreamVersions{}
 	for rows.Next() {
 		v, err := downstreamVersionFromRow(appID, rows)
 		if err != nil {
@@ -300,19 +301,32 @@ func (s *KOTSStore) GetPendingVersions(appID string, clusterID string) ([]downst
 		}
 		if v != nil {
 			versions = append(versions, *v)
+		}
+	}
+
+	sort.Sort(sort.Reverse(versions))
+
+	if currentVersion == nil {
+		return versions, nil
+	}
+
+	for i, v := range versions {
+		if v.Sequence == currentVersion.Sequence {
+			versions = versions[:i]
+			break
 		}
 	}
 
 	return versions, nil
 }
 
-func (s *KOTSStore) GetPastVersions(appID string, clusterID string) ([]downstreamtypes.DownstreamVersion, error) {
-	currentSequence, err := s.GetCurrentSequence(appID, clusterID)
+func (s *KOTSStore) GetPastVersions(appID string, clusterID string) (downstreamtypes.DownstreamVersions, error) {
+	currentVersion, err := s.GetCurrentVersion(appID, clusterID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get current sequence")
 	}
-	if currentSequence == -1 {
-		return []downstreamtypes.DownstreamVersion{}, nil
+	if currentVersion == nil {
+		return downstreamtypes.DownstreamVersions{}, nil
 	}
 
 	db := persistence.MustGetDBSession()
@@ -346,18 +360,17 @@ func (s *KOTSStore) GetPastVersions(appID string, clusterID string) ([]downstrea
 	 adv.app_id = ado.app_id AND adv.cluster_id = ado.cluster_id AND adv.sequence = ado.downstream_sequence
  WHERE
 	 adv.app_id = $1 AND
-	 adv.cluster_id = $2 AND
-	 adv.sequence < $3
+	 adv.cluster_id = $2
  ORDER BY
 	 adv.sequence DESC`
 
-	rows, err := db.Query(query, appID, clusterID, currentSequence)
+	rows, err := db.Query(query, appID, clusterID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query")
 	}
 	defer rows.Close()
 
-	versions := []downstreamtypes.DownstreamVersion{}
+	versions := downstreamtypes.DownstreamVersions{}
 	for rows.Next() {
 		v, err := downstreamVersionFromRow(appID, rows)
 		if err != nil {
@@ -365,6 +378,14 @@ func (s *KOTSStore) GetPastVersions(appID string, clusterID string) ([]downstrea
 		}
 		if v != nil {
 			versions = append(versions, *v)
+		}
+	}
+
+	sort.Sort(sort.Reverse(versions))
+	for i, v := range versions {
+		if v.Sequence == currentVersion.Sequence {
+			versions = versions[i+1:]
+			break
 		}
 	}
 
@@ -416,7 +437,13 @@ func downstreamVersionFromRow(appID string, row scannable) (*downstreamtypes.Dow
 	if createdOn.Valid {
 		v.CreatedOn = &createdOn.Time
 	}
+
 	v.VersionLabel = versionLabel.String
+	sv, err := semver.ParseTolerant(v.VersionLabel)
+	if err == nil {
+		v.Semver = &sv
+	}
+
 	v.Status = getDownstreamVersionStatus(types.DownstreamVersionStatus(status.String), hasError)
 	v.ParentSequence = parentSequence.Int64
 
