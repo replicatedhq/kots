@@ -3,6 +3,7 @@ package types
 import (
 	"time"
 
+	"github.com/blang/semver"
 	v1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 )
@@ -18,6 +19,7 @@ type Downstream struct {
 
 type DownstreamVersion struct {
 	VersionLabel             string                             `json:"versionLabel"`
+	Semver                   *semver.Version                    `json:"semver,omitempty"`
 	Status                   storetypes.DownstreamVersionStatus `json:"status"`
 	CreatedOn                *time.Time                         `json:"createdOn"`
 	ParentSequence           int64                              `json:"parentSequence"`
@@ -34,6 +36,29 @@ type DownstreamVersion struct {
 	GitDeployable            bool                               `json:"gitDeployable,omitempty"`
 	UpstreamReleasedAt       *time.Time                         `json:"upstreamReleasedAt,omitempty"`
 	YamlErrors               []v1beta1.InstallationYAMLError    `json:"yamlErrors,omitempty"`
+}
+
+type DownstreamVersions []DownstreamVersion
+
+func (d DownstreamVersions) Len() int { return len(d) }
+
+func (d DownstreamVersions) Less(i, j int) bool {
+	if d[i].Semver == nil && d[j].Semver == nil {
+		return d[i].Sequence < d[j].Sequence
+	}
+	if d[i].Semver == nil {
+		return true
+	}
+	if d[j].Semver == nil {
+		return false
+	}
+	return d[i].Semver.Compare(*d[j].Semver) == -1
+}
+
+func (d DownstreamVersions) Swap(i, j int) {
+	tmp := d[i]
+	d[i] = d[j]
+	d[j] = tmp
 }
 
 type DownstreamOutput struct {
