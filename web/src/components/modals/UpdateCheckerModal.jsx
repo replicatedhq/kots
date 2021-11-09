@@ -26,6 +26,24 @@ const SCHEDULES = [
     label: "Custom",
   },
 ];
+const AUTO_INSTALL_OPTIONS = [
+  {
+    value: "none",
+    label: "Do not automatically install new versions",
+  },
+  {
+    value: "patch",
+    label: "Automatically install new patch versions",
+  },
+  {
+    value: "minor-patch",
+    label: "Automatically install new patch and minor versions",
+  },
+  {
+    value: "minor-patch-major",
+    label: "Automatically install new path, minor, and major versions",
+  }
+];
 
 export default class UpdateCheckerModal extends React.Component {
   constructor(props) {
@@ -34,6 +52,11 @@ export default class UpdateCheckerModal extends React.Component {
     let selectedSchedule = find(SCHEDULES, { value: props.updateCheckerSpec });
     if (!selectedSchedule) {
       selectedSchedule = find(SCHEDULES, { value: "custom" });
+    }
+
+    let selectedInstallOption = find(AUTO_INSTALL_OPTIONS, ["value", props.autoInstallOption]);
+    if (!selectedInstallOption) {
+      selectedInstallOption = find(AUTO_INSTALL_OPTIONS, ["value", "none"])
     }
 
     this.state = {
@@ -112,9 +135,16 @@ export default class UpdateCheckerModal extends React.Component {
     });
   }
 
+  handleInstallOptionChange = selectedInstallOption => {
+    this.setState({
+      selectedInstallOption,
+      selectedInstallOptionValue: selectedInstallOption.value,
+    });
+  }
+
   render() {
     const { isOpen, onRequestClose, gitopsEnabled } = this.props;
-    const { updateCheckerSpec, selectedSchedule, submitUpdateCheckerSpecErr } = this.state;
+    const { updateCheckerSpec, selectedSchedule, selectedInstallOption, submitUpdateCheckerSpecErr } = this.state;
 
     const humanReadableCron = this.getReadableCronExpression(updateCheckerSpec);
 
@@ -125,7 +155,7 @@ export default class UpdateCheckerModal extends React.Component {
         shouldReturnFocusAfterClose={false}
         contentLabel="Update Checker"
         ariaHideApp={false}
-        className="Modal SmallSize"
+        className="Modal SmallSize ConfigureUpdatesModal"
       >
         <div className="u-position--relative flex-column u-padding--20">
           <span className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-marginBottom--15">Configure automatic update checks</span>
@@ -138,12 +168,7 @@ export default class UpdateCheckerModal extends React.Component {
               Configure how often you would like to automatically check for updates.<br/>This will only download updates, not deploy them.
             </p>
           }
-          <div className="info-box u-marginBottom--20">
-            <span className="u-fontSize--small">
-              You can enter <span className="u-fontWeight--bold u-textColor--primary">@never</span> to disable scheduled update checks
-            </span>
-          </div>
-          <div className="flex-column flex1 u-paddingLeft--5">
+          <div className="flex-column flex1">
             <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Cron expression</p>
             <div className="flex flex1">
               <Select
@@ -156,7 +181,6 @@ export default class UpdateCheckerModal extends React.Component {
                 value={selectedSchedule}
                 onChange={this.handleScheduleChange}
                 isOptionSelected={(option) => { option.value === selectedSchedule }}
-                menuPlacement="top"
               />
               <div className="flex-column flex2 u-marginLeft--10">
                 <input
@@ -181,6 +205,25 @@ export default class UpdateCheckerModal extends React.Component {
               </div>
             </div>
             {submitUpdateCheckerSpecErr && <span className="u-textColor--error u-fontSize--small u-fontWeight--bold u-marginTop--15">Error: {submitUpdateCheckerSpecErr}</span>}
+            <div className="info-box u-marginTop--15">
+              <span className="u-fontSize--small">
+                You can enter <span className="u-fontWeight--bold u-textColor--primary">@never</span> to disable scheduled update checks
+              </span>
+            </div>
+          </div>
+          <div className="flex-column flex1 u-marginTop--15">
+            <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Automatically install new versions</p>
+            <Select
+              className="replicated-select-container flex1"
+              classNamePrefix="replicated-select"
+              placeholder="Automatically install new versions"
+              options={AUTO_INSTALL_OPTIONS}
+              isSearchable={false}
+              getOptionValue={(option) => option.label}
+              value={selectedInstallOption}
+              onChange={this.handleInstallOptionChange}
+              isOptionSelected={(option) => { option.value === selectedInstallOption }}
+            />
           </div>
           <div className="flex u-marginTop--20">
             <button className="btn primary blue" onClick={this.onSubmitUpdateCheckerSpec}>Update</button>
