@@ -640,10 +640,10 @@ func (mr *MockStoreMockRecorder) GetParentSequenceForSequence(appID, clusterID, 
 }
 
 // GetPastVersions mocks base method.
-func (m *MockStore) GetPastVersions(appID, clusterID string) ([]types0.DownstreamVersion, error) {
+func (m *MockStore) GetPastVersions(appID, clusterID string) (types0.DownstreamVersions, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPastVersions", appID, clusterID)
-	ret0, _ := ret[0].([]types0.DownstreamVersion)
+	ret0, _ := ret[0].(types0.DownstreamVersions)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -685,10 +685,10 @@ func (mr *MockStoreMockRecorder) GetPendingInstallationStatus() *gomock.Call {
 }
 
 // GetPendingVersions mocks base method.
-func (m *MockStore) GetPendingVersions(appID, clusterID string) ([]types0.DownstreamVersion, error) {
+func (m *MockStore) GetPendingVersions(appID, clusterID string) (types0.DownstreamVersions, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPendingVersions", appID, clusterID)
-	ret0, _ := ret[0].([]types0.DownstreamVersion)
+	ret0, _ := ret[0].(types0.DownstreamVersions)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -2749,10 +2749,10 @@ func (mr *MockDownstreamStoreMockRecorder) GetParentSequenceForSequence(appID, c
 }
 
 // GetPastVersions mocks base method.
-func (m *MockDownstreamStore) GetPastVersions(appID, clusterID string) ([]types0.DownstreamVersion, error) {
+func (m *MockDownstreamStore) GetPastVersions(appID, clusterID string) (types0.DownstreamVersions, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPastVersions", appID, clusterID)
-	ret0, _ := ret[0].([]types0.DownstreamVersion)
+	ret0, _ := ret[0].(types0.DownstreamVersions)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -2764,10 +2764,10 @@ func (mr *MockDownstreamStoreMockRecorder) GetPastVersions(appID, clusterID inte
 }
 
 // GetPendingVersions mocks base method.
-func (m *MockDownstreamStore) GetPendingVersions(appID, clusterID string) ([]types0.DownstreamVersion, error) {
+func (m *MockDownstreamStore) GetPendingVersions(appID, clusterID string) (types0.DownstreamVersions, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPendingVersions", appID, clusterID)
-	ret0, _ := ret[0].([]types0.DownstreamVersion)
+	ret0, _ := ret[0].(types0.DownstreamVersions)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
