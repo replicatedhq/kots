@@ -117,7 +117,7 @@ ENV KOTS_KUSTOMIZE_BIN_DIR=/usr/local/bin
 
 # Install kustomize 3
 ENV KUSTOMIZE3_VERSION=3.8.10
-ENV KUSTOMIZE3_URL=https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${KUSTOMIZE3_VERSION}/kustomize_v${KUSTOMIZE3_VERSION}_linux_amd64.tar.gz
+ENV KUSTOMIZE3_URL=https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v${KUSTOMIZE3_VERSION}/kustomize_v${KUSTOMIZE3_VERSION}_linux_amd64.tar.gz
 ENV KUSTOMIZE3_SHA256SUM=10281b6cd16a50fcbb4a762652bf5ab333633d37035fc7f76ee7b941b50b511d
 RUN curl -fsSL -o kustomize.tar.gz "${KUSTOMIZE3_URL}" \
   && echo "${KUSTOMIZE3_SHA256SUM} kustomize.tar.gz" | sha256sum -c - \
