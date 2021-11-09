@@ -132,8 +132,9 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 	var restoreInProgressName sql.NullString
 	var restoreUndeployStatus sql.NullString
 	var updateCheckerSpec sql.NullString
+	var semverAutoDeploy sql.NullString
 
-	if err := row.Scan(&app.ID, &app.Name, &licenseStr, &upstreamURI, &iconURI, &createdAt, &updatedAt, &app.Slug, &currentSequence, &lastUpdateCheckAt, &lastLicenseSync, &app.IsAirgap, &snapshotTTLNew, &snapshotSchedule, &restoreInProgressName, &restoreUndeployStatus, &updateCheckerSpec, &app.InstallState); err != nil {
+	if err := row.Scan(&app.ID, &app.Name, &licenseStr, &upstreamURI, &iconURI, &createdAt, &updatedAt, &app.Slug, &currentSequence, &lastUpdateCheckAt, &lastLicenseSync, &app.IsAirgap, &snapshotTTLNew, &snapshotSchedule, &restoreInProgressName, &restoreUndeployStatus, &updateCheckerSpec, &semverAutoDeploy, &app.InstallState); err != nil {
 		return nil, errors.Wrap(err, "failed to scan app")
 	}
 
@@ -148,6 +149,7 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 	app.RestoreInProgressName = restoreInProgressName.String
 	app.RestoreUndeployStatus = apptypes.UndeployStatus(restoreUndeployStatus.String)
 	app.UpdateCheckerSpec = updateCheckerSpec.String
+	app.SemverAutoDeploy = apptypes.SemverAutoDeploy(semverAutoDeploy.String)
 
 	if updatedAt.Valid {
 		app.UpdatedAt = &updatedAt.Time
@@ -375,6 +377,20 @@ func (s *KOTSStore) SetUpdateCheckerSpec(appID string, updateCheckerSpec string)
 	db := persistence.MustGetDBSession()
 	query := `update app set update_checker_spec = $1 where id = $2`
 	_, err := db.Exec(query, updateCheckerSpec, appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to exec db query")
+	}
+
+	return nil
+}
+
+func (s *KOTSStore) SetSemverAutoDeploy(appID string, semverAutoDeploy apptypes.SemverAutoDeploy) error {
+	logger.Debug("setting update checker spec",
+		zap.String("appID", appID))
+
+	db := persistence.MustGetDBSession()
+	query := `update app set semver_auto_deploy = $1 where id = $2`
+	_, err := db.Exec(query, semverAutoDeploy, appID)
 	if err != nil {
 		return errors.Wrap(err, "failed to exec db query")
 	}

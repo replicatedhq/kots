@@ -284,6 +284,7 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		HasPreflight:                   a.HasPreflight,
 		IsConfigurable:                 a.IsConfigurable,
 		UpdateCheckerSpec:              a.UpdateCheckerSpec,
+		SemverAutoDeploy:               a.SemverAutoDeploy,
 		IsGitOpsSupported:              license.Spec.IsGitOpsSupported,
 		IsIdentityServiceSupported:     license.Spec.IsIdentityServiceSupported,
 		IsAppIdentityServiceSupported:  isAppIdentityServiceSupported,

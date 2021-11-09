@@ -30,6 +30,7 @@ type ResponseApp struct {
 	HasPreflight      bool       `json:"hasPreflight"`
 	IsConfigurable    bool       `json:"isConfigurable"`
 	UpdateCheckerSpec string     `json:"updateCheckerSpec"`
+	SemverAutoDeploy  string     `json:"semverAutoDeploy"`
 
 	IsGitOpsSupported              bool                     `json:"isGitOpsSupported"`
 	IsIdentityServiceSupported     bool                     `json:"isIdentityServiceSupported"`

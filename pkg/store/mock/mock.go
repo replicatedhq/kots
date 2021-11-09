@@ -1383,6 +1383,20 @@ func (mr *MockStoreMockRecorder) SetRedactions(bundleID, redacts interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRedactions", reflect.TypeOf((*MockStore)(nil).SetRedactions), bundleID, redacts)
 }
 
+// SetSemverAutoDeploy mocks base method.
+func (m *MockStore) SetSemverAutoDeploy(appID string, semverAutoDeploy types2.SemverAutoDeploy) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetSemverAutoDeploy", appID, semverAutoDeploy)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetSemverAutoDeploy indicates an expected call of SetSemverAutoDeploy.
+func (mr *MockStoreMockRecorder) SetSemverAutoDeploy(appID, semverAutoDeploy interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetSemverAutoDeploy", reflect.TypeOf((*MockStore)(nil).SetSemverAutoDeploy), appID, semverAutoDeploy)
+}
+
 // SetSnapshotSchedule mocks base method.
 func (m *MockStore) SetSnapshotSchedule(appID, snapshotSchedule string) error {
 	m.ctrl.T.Helper()
@@ -2562,6 +2576,20 @@ func (m *MockAppStore) SetAppInstallState(appID, state string) error {
 func (mr *MockAppStoreMockRecorder) SetAppInstallState(appID, state interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAppInstallState", reflect.TypeOf((*MockAppStore)(nil).SetAppInstallState), appID, state)
+}
+
+// SetSemverAutoDeploy mocks base method.
+func (m *MockAppStore) SetSemverAutoDeploy(appID string, semverAutoDeploy types2.SemverAutoDeploy) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetSemverAutoDeploy", appID, semverAutoDeploy)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetSemverAutoDeploy indicates an expected call of SetSemverAutoDeploy.
+func (mr *MockAppStoreMockRecorder) SetSemverAutoDeploy(appID, semverAutoDeploy interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetSemverAutoDeploy", reflect.TypeOf((*MockAppStore)(nil).SetSemverAutoDeploy), appID, semverAutoDeploy)
 }
 
 // SetSnapshotSchedule mocks base method.

@@ -126,6 +126,7 @@ type AppStore interface {
 	GetDownstream(clusterID string) (*downstreamtypes.Downstream, error)
 	IsGitOpsEnabledForApp(appID string) (bool, error)
 	SetUpdateCheckerSpec(appID string, updateCheckerSpec string) error
+	SetSemverAutoDeploy(appID string, semverAutoDeploy apptypes.SemverAutoDeploy) error
 	SetSnapshotTTL(appID string, snapshotTTL string) error
 	SetSnapshotSchedule(appID string, snapshotSchedule string) error
 	RemoveApp(appID string) error
