@@ -385,7 +385,7 @@ func (s *KOTSStore) SetUpdateCheckerSpec(appID string, updateCheckerSpec string)
 }
 
 func (s *KOTSStore) SetSemverAutoDeploy(appID string, semverAutoDeploy apptypes.SemverAutoDeploy) error {
-	logger.Debug("setting update checker spec",
+	logger.Debug("setting semver auto deploy",
 		zap.String("appID", appID))
 
 	db := persistence.MustGetDBSession()
