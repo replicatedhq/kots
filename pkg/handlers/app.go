@@ -300,7 +300,7 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 }
 
 type GetAppVersionsResponse struct {
-	VersionHistory []downstreamtypes.DownstreamVersion `json:"versionHistory"`
+	VersionHistory downstreamtypes.DownstreamVersions `json:"versionHistory"`
 }
 
 func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
@@ -354,7 +354,7 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := GetAppVersionsResponse{
-		VersionHistory: []downstreamtypes.DownstreamVersion{},
+		VersionHistory: downstreamtypes.DownstreamVersions{},
 	}
 	response.VersionHistory = append(response.VersionHistory, pendingVersions...)
 	if currentVersion != nil {
