@@ -211,7 +211,7 @@ export default class UpdateCheckerModal extends React.Component {
           </div>
           <div className="flex-column flex1 u-marginTop--15">
             <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal">Automatically deploy new versions</p>
-            <span className="u-marginTop--5 u-marginBottom--15 u-fontSize--small u-textColor--info u-fontWeight--medium">Releases without a valid <a href="https://semver.org/" className="replicated-link" target="_blank" rel="noopener noreferrer">semver</a> will <span className="u-fontWeight--bold">not</span> be automatically deployed.</span>
+            <span className="u-marginTop--5 u-marginBottom--15 u-fontSize--small u-textColor--info u-fontWeight--medium">Releases without a valid <a href="https://semver.org/" className="replicated-link" target="_blank" rel="noopener noreferrer">semantic version</a> will <span className="u-fontWeight--bold">not</span> be automatically deployed.</span>
             <Select
               className="replicated-select-container flex1"
               classNamePrefix="replicated-select"
