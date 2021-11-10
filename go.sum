@@ -1632,14 +1632,6 @@ github.com/replicatedhq/kurl v0.0.0-20210414162418-8d6211901244 h1:aSORttMXeqRXg
 github.com/replicatedhq/kurl v0.0.0-20210414162418-8d6211901244/go.mod h1:SoROyLOtkt95R1COPVzdCi5FZbMmATPHohQQzW9V9ds=
 github.com/replicatedhq/termui/v3 v3.1.1-0.20200811145416-f40076d26851/go.mod h1:JDxG6+uubnk9/BZ2yUsyAJJwlptjrnmB2MPF5d2Xe/8=
 github.com/replicatedhq/troubleshoot v0.10.18/go.mod h1:8oFRnMJlFjzJ490eq72iLEN7DGJjkgLx22Z1vX6WwU0=
-github.com/replicatedhq/troubleshoot v0.19.1-0.20211102182300-230459ab530a h1:NQmiA7UfSpSveg4m/ndCFUe1E7gNb256DWcLXKbrWvo=
-github.com/replicatedhq/troubleshoot v0.19.1-0.20211102182300-230459ab530a/go.mod h1:aWhykK6xiTpfbLMjPpqnonih34avLwEag52Y9CYzb/Y=
-github.com/replicatedhq/troubleshoot v0.19.1-0.20211102185020-88deff468cca h1:J6iwyuqPueSe+daSaG24HznTQoHxTMzBpL9+i3obKoo=
-github.com/replicatedhq/troubleshoot v0.19.1-0.20211102185020-88deff468cca/go.mod h1:aWhykK6xiTpfbLMjPpqnonih34avLwEag52Y9CYzb/Y=
-github.com/replicatedhq/troubleshoot v0.19.1-0.20211102190931-797a49edbc14 h1:9GLVlZBq3rb2HCtK/wGKn2GfFM10YtN402XaOFfNmHg=
-github.com/replicatedhq/troubleshoot v0.19.1-0.20211102190931-797a49edbc14/go.mod h1:aWhykK6xiTpfbLMjPpqnonih34avLwEag52Y9CYzb/Y=
-github.com/replicatedhq/troubleshoot v0.22.0 h1:eve5I1dYZJWZs31bS07mE/UY/iL5ukRgEyPWPd3aV9M=
-github.com/replicatedhq/troubleshoot v0.22.0/go.mod h1:aWhykK6xiTpfbLMjPpqnonih34avLwEag52Y9CYzb/Y=
 github.com/replicatedhq/troubleshoot v0.22.1 h1:WjrJ4Mkj0h/0wBlBJrrl2EIGls9EseVC0b0LBOY9OxI=
 github.com/replicatedhq/troubleshoot v0.22.1/go.mod h1:aWhykK6xiTpfbLMjPpqnonih34avLwEag52Y9CYzb/Y=
 github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq h1:PwPggruelq2336c1Ayg5STFqgbn/QB1tWLQwrVlU7ZQ=

@@ -8,12 +8,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
-type Update struct {
-	Cursor       string `json:"cursor"`
-	VersionLabel string `json:"versionLabel"`
-}
-
-func GetUpdatesUpstream(upstreamURI string, fetchOptions *types.FetchOptions) ([]Update, error) {
+func GetUpdatesUpstream(upstreamURI string, fetchOptions *types.FetchOptions) ([]types.Update, error) {
 	versions, err := getUpdatesUpstream(upstreamURI, fetchOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "download upstream failed")
@@ -22,7 +17,7 @@ func GetUpdatesUpstream(upstreamURI string, fetchOptions *types.FetchOptions) ([
 	return versions, nil
 }
 
-func getUpdatesUpstream(upstreamURI string, fetchOptions *types.FetchOptions) ([]Update, error) {
+func getUpdatesUpstream(upstreamURI string, fetchOptions *types.FetchOptions) ([]types.Update, error) {
 	if !util.IsURL(upstreamURI) {
 		return nil, errors.New("not implemented")
 	}
