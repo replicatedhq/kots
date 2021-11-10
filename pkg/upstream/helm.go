@@ -24,7 +24,7 @@ import (
 	"helm.sh/helm/v3/pkg/repo"
 )
 
-func getUpdatesHelm(u *url.URL, repoURI string) ([]Update, error) {
+func getUpdatesHelm(u *url.URL, repoURI string) ([]types.Update, error) {
 	repoName, chartName, _, err := parseHelmURL(u)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse helm uri")
@@ -41,13 +41,13 @@ func getUpdatesHelm(u *url.URL, repoURI string) ([]Update, error) {
 		return nil, errors.Wrap(err, "failed to load helm repositories")
 	}
 
-	var updates []Update
+	var updates []types.Update
 	for _, result := range i.All() {
 		if result.Chart.Name != chartName {
 			continue
 		}
 
-		updates = append(updates, Update{Cursor: result.Chart.Version})
+		updates = append(updates, types.Update{Cursor: result.Chart.Version})
 	}
 	return updates, nil
 }
