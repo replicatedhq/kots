@@ -171,7 +171,8 @@ export default class UpdateCheckerModal extends React.Component {
             </p>
           }
           <div className="flex-column flex1">
-            <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Cron expression</p>
+            <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal">Cron expression</p>
+            <span className="u-fontSize--small u-marginTop--5 u-textColor--info u-marginBottom--15">You can enter <span className="u-fontWeight--bold u-textColor--primary">@never</span> to disable scheduled update checks</span>
             <div className="flex flex1">
               <Select
                 className="replicated-select-container flex1"
@@ -207,14 +208,10 @@ export default class UpdateCheckerModal extends React.Component {
               </div>
             </div>
             {submitUpdateCheckerSpecErr && <span className="u-textColor--error u-fontSize--small u-fontWeight--bold u-marginTop--15">Error: {submitUpdateCheckerSpecErr}</span>}
-            <div className="info-box u-marginTop--15">
-              <span className="u-fontSize--small">
-                You can enter <span className="u-fontWeight--bold u-textColor--primary">@never</span> to disable scheduled update checks
-              </span>
-            </div>
           </div>
           <div className="flex-column flex1 u-marginTop--15">
-            <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Automatically deploy new versions</p>
+            <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal">Automatically deploy new versions</p>
+            <span className="u-marginTop--5 u-marginBottom--15 u-fontSize--small u-textColor--info u-fontWeight--medium">Releases without a valid semver will <span className="u-fontWeight--bold">not</span> be automatically installed.</span>
             <Select
               className="replicated-select-container flex1"
               classNamePrefix="replicated-select"
