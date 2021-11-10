@@ -26,22 +26,23 @@ const SCHEDULES = [
     label: "Custom",
   },
 ];
-const AUTO_INSTALL_OPTIONS = [
+
+const SEMVER_AUTO_DEPLOY_OPTIONS = [
   {
-    value: "none",
-    label: "Do not automatically install new versions",
+    value: "disabled",
+    label: "Do not automatically deploy new versions",
   },
   {
     value: "patch",
-    label: "Automatically install new patch versions",
+    label: "Automatically deploy new patch versions",
   },
   {
     value: "minor-patch",
-    label: "Automatically install new patch and minor versions",
+    label: "Automatically deploy new patch and minor versions",
   },
   {
-    value: "minor-patch-major",
-    label: "Automatically install new path, minor, and major versions",
+    value: "major-minor-patch",
+    label: "Automatically deploy new patch, minor, and major versions",
   }
 ];
 
@@ -54,20 +55,21 @@ export default class UpdateCheckerModal extends React.Component {
       selectedSchedule = find(SCHEDULES, { value: "custom" });
     }
 
-    let selectedInstallOption = find(AUTO_INSTALL_OPTIONS, ["value", props.autoInstallOption]);
-    if (!selectedInstallOption) {
-      selectedInstallOption = find(AUTO_INSTALL_OPTIONS, ["value", "none"])
+    let selectedSemverAutoDeploy = find(SEMVER_AUTO_DEPLOY_OPTIONS, ["value", props.semverAutoDeploy]);
+    if (!selectedSemverAutoDeploy) {
+      selectedSemverAutoDeploy = find(SEMVER_AUTO_DEPLOY_OPTIONS, ["value", "disabled"])
     }
 
     this.state = {
       updateCheckerSpec: props.updateCheckerSpec,
       submitUpdateCheckerSpecErr: "",
       selectedSchedule,
+      selectedSemverAutoDeploy,
     };
   }
 
   onSubmitUpdateCheckerSpec = () => {
-    const { updateCheckerSpec } = this.state;
+    const { updateCheckerSpec, selectedSemverAutoDeploy } = this.state;
     const { appSlug } = this.props;
 
     this.setState({
@@ -82,6 +84,7 @@ export default class UpdateCheckerModal extends React.Component {
       method: "PUT",
       body: JSON.stringify({
         updateCheckerSpec: updateCheckerSpec,
+        semverAutoDeploy: selectedSemverAutoDeploy.value,
       })
     })
       .then(async (res) => {
@@ -135,16 +138,15 @@ export default class UpdateCheckerModal extends React.Component {
     });
   }
 
-  handleInstallOptionChange = selectedInstallOption => {
+  handleSemverAutoDeployOptionChange = selectedSemverAutoDeploy => {
     this.setState({
-      selectedInstallOption,
-      selectedInstallOptionValue: selectedInstallOption.value,
+      selectedSemverAutoDeploy: { ...selectedSemverAutoDeploy },
     });
   }
 
   render() {
     const { isOpen, onRequestClose, gitopsEnabled } = this.props;
-    const { updateCheckerSpec, selectedSchedule, selectedInstallOption, submitUpdateCheckerSpecErr } = this.state;
+    const { updateCheckerSpec, selectedSchedule, selectedSemverAutoDeploy, submitUpdateCheckerSpecErr } = this.state;
 
     const humanReadableCron = this.getReadableCronExpression(updateCheckerSpec);
 
@@ -212,17 +214,17 @@ export default class UpdateCheckerModal extends React.Component {
             </div>
           </div>
           <div className="flex-column flex1 u-marginTop--15">
-            <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Automatically install new versions</p>
+            <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Automatically deploy new versions</p>
             <Select
               className="replicated-select-container flex1"
               classNamePrefix="replicated-select"
-              placeholder="Automatically install new versions"
-              options={AUTO_INSTALL_OPTIONS}
+              placeholder="Automatically deploy new versions"
+              options={SEMVER_AUTO_DEPLOY_OPTIONS}
               isSearchable={false}
               getOptionValue={(option) => option.label}
-              value={selectedInstallOption}
-              onChange={this.handleInstallOptionChange}
-              isOptionSelected={(option) => { option.value === selectedInstallOption }}
+              value={selectedSemverAutoDeploy}
+              onChange={this.handleSemverAutoDeployOptionChange}
+              isOptionSelected={(option) => { option.value === selectedSemverAutoDeploy }}
             />
           </div>
           <div className="flex u-marginTop--20">

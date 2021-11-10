@@ -1093,6 +1093,7 @@ class AppVersionHistory extends Component {
             isOpen={showUpdateCheckerModal}
             onRequestClose={this.hideUpdateCheckerModal}
             updateCheckerSpec={app.updateCheckerSpec}
+            semverAutoDeploy={app.semverAutoDeploy}
             appSlug={app.slug}
             gitopsEnabled={gitopsEnabled}
             onUpdateCheckerSpecSubmitted={() => {
