@@ -114,7 +114,7 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 	// 	zap.String("id", id))
 
 	db := persistence.MustGetDBSession()
-	query := `select id, name, license, upstream_uri, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at, last_license_sync, is_airgap, snapshot_ttl_new, snapshot_schedule, restore_in_progress_name, restore_undeploy_status, update_checker_spec, install_state from app where id = $1`
+	query := `select id, name, license, upstream_uri, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at, last_license_sync, is_airgap, snapshot_ttl_new, snapshot_schedule, restore_in_progress_name, restore_undeploy_status, update_checker_spec, semver_auto_deploy, install_state from app where id = $1`
 	row := db.QueryRow(query, id)
 
 	app := apptypes.App{}
