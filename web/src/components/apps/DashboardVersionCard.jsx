@@ -627,8 +627,8 @@ class DashboardVersionCard extends React.Component {
           <div className="flex">
             <div className="flex-column">
               <div className="flex alignItems--center">
-                <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">{downstream?.pendingVersions[0].versionLabel || downstream?.pendingVersions[0].title}</p>
-                <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">Sequence {downstream?.pendingVersions[0].sequence}</p>
+                <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">{downstream?.pendingVersions?.length > 0 ? downstream?.pendingVersions[0].versionLabel || downstream?.pendingVersions[0].title : ""}</p>
+                <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">Sequence {downstream?.pendingVersions?.length > 0 ? downstream?.pendingVersions[0].sequence : ""}</p>
               </div>
               <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5"> Released {Utilities.dateFormat(downstream?.pendingVersions[0]?.createdOn, "MM/DD/YY @ hh:mm a z")} </p>
               <div className="u-marginTop--5 flex flex-auto alignItems--center">
@@ -720,7 +720,7 @@ class DashboardVersionCard extends React.Component {
             <div className={`LicenseCard-content--wrapper u-marginTop--15 ${isNew && !app?.isAirgap ? "is-new" : ""}`}>
               {this.renderVersionAvailable()}
             </div>
-            {versionsToSkip > 0 && <p className="u-fontSize--small u-fontWeight--medium u-textColor--header u-marginTop--10">{versionsToSkip} version{versionsToSkip > 1 && "s"} will be skipped in upgrading to {downstream?.pendingVersions[0]?.versionLabel}.</p>}
+            {versionsToSkip > 0 && <p className="u-fontSize--small u-fontWeight--medium u-textColor--header u-marginTop--10">{versionsToSkip} version{versionsToSkip > 1 && "s"} will be skipped in upgrading to {downstream?.pendingVersions?.length > 0 ? downstream?.pendingVersions[0]?.versionLabel : ""}.</p>}
           </div>
         : null}
         <div className="u-marginTop--10">
