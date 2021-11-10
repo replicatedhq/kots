@@ -144,8 +144,7 @@ type DownstreamStore interface {
 	GetIgnoreRBACErrors(appID string, sequence int64) (bool, error)
 	GetCurrentVersion(appID string, clusterID string) (*downstreamtypes.DownstreamVersion, error)
 	GetStatusForVersion(appID string, clusterID string, sequence int64) (types.DownstreamVersionStatus, error)
-	GetPendingVersions(appID string, clusterID string) (downstreamtypes.DownstreamVersions, error)
-	GetPastVersions(appID string, clusterID string) (downstreamtypes.DownstreamVersions, error)
+	GetAppVersions(appID string, clusterID string) (*downstreamtypes.DownstreamVersions, error)
 	GetDownstreamOutput(appID string, clusterID string, sequence int64) (*downstreamtypes.DownstreamOutput, error)
 	IsDownstreamDeploySuccessful(appID string, clusterID string, sequence int64) (bool, error)
 	UpdateDownstreamDeployStatus(appID string, clusterID string, sequence int64, isError bool, output downstreamtypes.DownstreamOutput) error

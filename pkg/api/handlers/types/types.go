@@ -47,13 +47,13 @@ type ResponseApp struct {
 }
 
 type ResponseDownstream struct {
-	Name            string                              `json:"name"`
-	Links           []versiontypes.RealizedLink         `json:"links"`
-	CurrentVersion  *downstreamtypes.DownstreamVersion  `json:"currentVersion"`
-	PendingVersions []downstreamtypes.DownstreamVersion `json:"pendingVersions"`
-	PastVersions    []downstreamtypes.DownstreamVersion `json:"pastVersions"`
-	GitOps          ResponseGitOps                      `json:"gitops"`
-	Cluster         ResponseCluster                     `json:"cluster"`
+	Name            string                               `json:"name"`
+	Links           []versiontypes.RealizedLink          `json:"links"`
+	CurrentVersion  *downstreamtypes.DownstreamVersion   `json:"currentVersion"`
+	PendingVersions []*downstreamtypes.DownstreamVersion `json:"pendingVersions"`
+	PastVersions    []*downstreamtypes.DownstreamVersion `json:"pastVersions"`
+	GitOps          ResponseGitOps                       `json:"gitops"`
+	Cluster         ResponseCluster                      `json:"cluster"`
 }
 
 type ResponseGitOps struct {

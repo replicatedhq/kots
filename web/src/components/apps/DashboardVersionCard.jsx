@@ -378,7 +378,7 @@ class DashboardVersionCard extends React.Component {
               <div className="DiffSummary u-marginRight--10">
                 <span className="files">{diffSummary.filesChanged} files changed </span>
                 {!downstream.gitops?.enabled &&
-                  <Link className="u-fontSize--small replicated-link u-marginLeft--5" to={`${this.props.location.pathname}?diff/${this.props.currentVersion.sequence}/${version.parentSequence}`}>View diff</Link>
+                  <Link className="u-fontSize--small replicated-link u-marginLeft--5" to={`${this.props.location.pathname}?diff/${this.props.currentVersion?.sequence}/${version.parentSequence}`}>View diff</Link>
                 }
               </div>
               :
@@ -623,7 +623,7 @@ class DashboardVersionCard extends React.Component {
 
     return (
       <div>
-        {!this.props.checkingForUpdates && !checkingForUpdateError && (!isBundleUploading || !this.props.uploadingAirgapFile) ?
+        {!this.props.checkingForUpdates && !checkingForUpdateError && downstream?.pendingVersions?.length > 0 && (!isBundleUploading || !this.props.uploadingAirgapFile) ?
           <div className="flex">
             <div className="flex-column">
               <div className="flex alignItems--center">

@@ -12,7 +12,6 @@ COPY web/webcontent.go ./web/webcontent.go
 COPY web/dist ./web/dist
 COPY kotskinds ./kotskinds
 
-RUN go get github.com/go-delve/delve/cmd/dlv
 RUN DEBUG_KOTSADM="true" make kotsadm
 
 FROM debian:buster

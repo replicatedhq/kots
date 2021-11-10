@@ -38,31 +38,46 @@ type DownstreamVersion struct {
 	YamlErrors               []v1beta1.InstallationYAMLError    `json:"yamlErrors,omitempty"`
 }
 
-type DownstreamVersions []DownstreamVersion
-
-func (d DownstreamVersions) Len() int { return len(d) }
-
-// Treating releases with semver as newer than those without.
-func (d DownstreamVersions) Less(i, j int) bool {
-	if d[i].Semver == nil && d[j].Semver == nil {
-		return d[i].Sequence < d[j].Sequence
-	}
-	if d[i].Semver == nil {
-		return true
-	}
-	if d[j].Semver == nil {
-		return false
-	}
-	if d[i].Semver.EQ((*d[j].Semver)) {
-		return d[i].Sequence < d[j].Sequence
-	}
-	return d[i].Semver.LT((*d[j].Semver))
+type DownstreamVersions struct {
+	CurrentVersion  *DownstreamVersion
+	PendingVersions []*DownstreamVersion
+	PastVersions    []*DownstreamVersion
+	AllVersions     []*DownstreamVersion
 }
 
-func (d DownstreamVersions) Swap(i, j int) {
-	tmp := d[i]
-	d[i] = d[j]
-	d[j] = tmp
+// Modified bubble sort: instead of comparing adjacent elements, compare the elements at the semvers only.
+// Input is assumed to be sorded by sequence so non-semver elements are already in correct order.
+func SortDownstreamVersions(versions *DownstreamVersions) {
+	endIndex := len(versions.AllVersions)
+	for i := 0; i < endIndex; i++ {
+		for j := i; j < endIndex-1; j++ {
+			vj := versions.AllVersions[j]
+			if vj.Semver == nil {
+				continue
+			}
+
+			isLessThan := false
+			for k := j + 1; k < endIndex; k++ {
+				vk := versions.AllVersions[k]
+				if vk.Semver == nil {
+					continue
+				}
+
+				isLessThan = vj.Semver.LT(*vk.Semver)
+				if vj.Semver.EQ(*vk.Semver) {
+					isLessThan = vj.Sequence < vk.Sequence
+				}
+
+				if isLessThan {
+					break
+				}
+			}
+
+			if isLessThan {
+				versions.AllVersions[j], versions.AllVersions[j+1] = versions.AllVersions[j+1], versions.AllVersions[j]
+			}
+		}
+	}
 }
 
 type DownstreamOutput struct {
