@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
+	"regexp"
 	"strings"
 	"text/template"
 
@@ -20,6 +22,13 @@ type depGraph struct {
 	CAItemsFromKey      map[string]map[string]struct{} // items that use the TLSKeyFromCA template function. map of TLSKeyFromCA configoptions to the canames they use
 	CACertItemsFromKey  map[string]map[string]struct{} // items that use the TLSKeyFromCA template function. map of TLSKeyFromCA configoptions to the canames and certnames they use
 }
+
+// These functions will be used to figure out dependency order in the event standard rendering fails
+// The first argument to each is a string with the dependent config item.
+// TLS<blah> functions are deprecated and not included.
+const replFuncReExpr = `(?:ConfigOption|ConfigOptionIndex|ConfigData|ConfigOptionFilename|ConfigOptionEquals|ConfigOptionNotEquals) +"[^"]+"`
+
+var re = regexp.MustCompile(replFuncReExpr)
 
 // these config functions are used to add their dependencies to the depGraph
 func (d *depGraph) funcMap(parent string) template.FuncMap {
@@ -53,6 +62,8 @@ func (d *depGraph) funcMap(parent string) template.FuncMap {
 		return certName
 	}
 
+	// Also note that if you add a function here, more than likely you will need to add it
+	// the regular expression constant in this file, which filters out non-repl functions
 	return template.FuncMap{
 		"ConfigOption":          addDepFunc,
 		"ConfigOptionIndex":     addDepFunc,
@@ -218,6 +229,8 @@ func (d *depGraph) Copy() (depGraph, error) {
 
 }
 
+// ParseConfigGroup iterates through config groups and items and runs the template with the
+// dependency builder. The builder maps replicated config functions to mocks that analyze dependencies.
 func (d *depGraph) ParseConfigGroup(configGroups []kotsv1beta1.ConfigGroup) error {
 	for _, configGroup := range configGroups {
 		for _, configItem := range configGroup.Items {
@@ -230,9 +243,17 @@ func (d *depGraph) ParseConfigGroup(configGroups []kotsv1beta1.ConfigGroup) erro
 			}
 
 			// while builder is normally stateless, the functions it uses within this loop are not
-			// errors are also discarded as we do not have the full set of template functions available here, and errors from not having those functions are expected
-			_, _ = depBuilder.String(configItem.Default.String())
-			_, _ = depBuilder.String(configItem.Value.String())
+			// we do not have the full set of template functions available here, and errors from not having those functions are expected
+			// when errors are received, we fall back to trying to capture only the replicated functions
+			_, err := depBuilder.String(configItem.Default.String())
+			if err != nil {
+				parseReplFuncs(&depBuilder, configItem.Default.String(), configItem.Name)
+			}
+
+			_, err = depBuilder.String(configItem.Value.String())
+			if err != nil {
+				parseReplFuncs(&depBuilder, configItem.Value.String(), configItem.Name)
+			}
 		}
 	}
 
@@ -240,4 +261,25 @@ func (d *depGraph) ParseConfigGroup(configGroups []kotsv1beta1.ConfigGroup) erro
 	d.resolveCACertKeys()
 
 	return nil
+}
+
+// parseReplFuncs takes in a template string and attempts to filter out the replicated-only functions with a regex.
+// It does not return an error to keep the rendering process moving forward.
+func parseReplFuncs(depBuilder *Builder, rawTemplate string, itemName string) {
+	replFuncs := re.FindAllString(rawTemplate, -1)
+	if len(replFuncs) == 0 {
+		return
+	}
+
+	// separate repl function occurrences so they can be evaluated individually
+	for idx := range replFuncs {
+		replFuncs[idx] = fmt.Sprintf("repl{{ %s }}", replFuncs[idx])
+	}
+	cleanedTemplate := strings.Join(replFuncs, " ")
+
+	// We don't exit or return the error here to keep the config rendering.
+	_, err := depBuilder.String(cleanedTemplate)
+	if err != nil {
+		log.Printf("INFO: could not determine config dependencies for item '%s': %s", itemName, err.Error())
+	}
 }

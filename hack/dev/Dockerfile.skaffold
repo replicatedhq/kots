@@ -2,6 +2,7 @@ FROM kotsadm:cache AS builder
 
 ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots
 WORKDIR $PROJECTPATH
+RUN go get github.com/go-delve/delve/cmd/dlv
 COPY Makefile ./
 COPY Makefile.build ./
 COPY go.mod ./
@@ -12,7 +13,6 @@ COPY web/webcontent.go ./web/webcontent.go
 COPY web/dist ./web/dist
 COPY kotskinds ./kotskinds
 
-RUN go get github.com/go-delve/delve/cmd/dlv
 RUN DEBUG_KOTSADM="true" make kotsadm
 
 FROM debian:buster
