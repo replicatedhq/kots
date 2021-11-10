@@ -429,6 +429,21 @@ func (mr *MockStoreMockRecorder) GetAppVersionArchive(appID, sequence, dstPath i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppVersionArchive", reflect.TypeOf((*MockStore)(nil).GetAppVersionArchive), appID, sequence, dstPath)
 }
 
+// GetAppVersions mocks base method.
+func (m *MockStore) GetAppVersions(appID, clusterID string) (*types0.DownstreamVersions, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAppVersions", appID, clusterID)
+	ret0, _ := ret[0].(*types0.DownstreamVersions)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAppVersions indicates an expected call of GetAppVersions.
+func (mr *MockStoreMockRecorder) GetAppVersions(appID, clusterID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppVersions", reflect.TypeOf((*MockStore)(nil).GetAppVersions), appID, clusterID)
+}
+
 // GetAppVersionsAfter mocks base method.
 func (m *MockStore) GetAppVersionsAfter(appID string, sequence int64) ([]*types1.AppVersion, error) {
 	m.ctrl.T.Helper()
@@ -639,21 +654,6 @@ func (mr *MockStoreMockRecorder) GetParentSequenceForSequence(appID, clusterID, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetParentSequenceForSequence", reflect.TypeOf((*MockStore)(nil).GetParentSequenceForSequence), appID, clusterID, sequence)
 }
 
-// GetPastVersions mocks base method.
-func (m *MockStore) GetPastVersions(appID, clusterID string) (types0.DownstreamVersions, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPastVersions", appID, clusterID)
-	ret0, _ := ret[0].(types0.DownstreamVersions)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetPastVersions indicates an expected call of GetPastVersions.
-func (mr *MockStoreMockRecorder) GetPastVersions(appID, clusterID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPastVersions", reflect.TypeOf((*MockStore)(nil).GetPastVersions), appID, clusterID)
-}
-
 // GetPendingAirgapUploadApp mocks base method.
 func (m *MockStore) GetPendingAirgapUploadApp() (*types.PendingApp, error) {
 	m.ctrl.T.Helper()
@@ -682,21 +682,6 @@ func (m *MockStore) GetPendingInstallationStatus() (*types6.InstallStatus, error
 func (mr *MockStoreMockRecorder) GetPendingInstallationStatus() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingInstallationStatus", reflect.TypeOf((*MockStore)(nil).GetPendingInstallationStatus))
-}
-
-// GetPendingVersions mocks base method.
-func (m *MockStore) GetPendingVersions(appID, clusterID string) (types0.DownstreamVersions, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPendingVersions", appID, clusterID)
-	ret0, _ := ret[0].(types0.DownstreamVersions)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetPendingVersions indicates an expected call of GetPendingVersions.
-func (mr *MockStoreMockRecorder) GetPendingVersions(appID, clusterID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingVersions", reflect.TypeOf((*MockStore)(nil).GetPendingVersions), appID, clusterID)
 }
 
 // GetPreflightProgress mocks base method.
@@ -2671,6 +2656,21 @@ func (mr *MockDownstreamStoreMockRecorder) DeleteDownstreamDeployStatus(appID, c
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteDownstreamDeployStatus", reflect.TypeOf((*MockDownstreamStore)(nil).DeleteDownstreamDeployStatus), appID, clusterID, sequence)
 }
 
+// GetAppVersions mocks base method.
+func (m *MockDownstreamStore) GetAppVersions(appID, clusterID string) (*types0.DownstreamVersions, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAppVersions", appID, clusterID)
+	ret0, _ := ret[0].(*types0.DownstreamVersions)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAppVersions indicates an expected call of GetAppVersions.
+func (mr *MockDownstreamStoreMockRecorder) GetAppVersions(appID, clusterID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppVersions", reflect.TypeOf((*MockDownstreamStore)(nil).GetAppVersions), appID, clusterID)
+}
+
 // GetCurrentParentSequence mocks base method.
 func (m *MockDownstreamStore) GetCurrentParentSequence(appID, clusterID string) (int64, error) {
 	m.ctrl.T.Helper()
@@ -2774,36 +2774,6 @@ func (m *MockDownstreamStore) GetParentSequenceForSequence(appID, clusterID stri
 func (mr *MockDownstreamStoreMockRecorder) GetParentSequenceForSequence(appID, clusterID, sequence interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetParentSequenceForSequence", reflect.TypeOf((*MockDownstreamStore)(nil).GetParentSequenceForSequence), appID, clusterID, sequence)
-}
-
-// GetPastVersions mocks base method.
-func (m *MockDownstreamStore) GetPastVersions(appID, clusterID string) (types0.DownstreamVersions, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPastVersions", appID, clusterID)
-	ret0, _ := ret[0].(types0.DownstreamVersions)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetPastVersions indicates an expected call of GetPastVersions.
-func (mr *MockDownstreamStoreMockRecorder) GetPastVersions(appID, clusterID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPastVersions", reflect.TypeOf((*MockDownstreamStore)(nil).GetPastVersions), appID, clusterID)
-}
-
-// GetPendingVersions mocks base method.
-func (m *MockDownstreamStore) GetPendingVersions(appID, clusterID string) (types0.DownstreamVersions, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPendingVersions", appID, clusterID)
-	ret0, _ := ret[0].(types0.DownstreamVersions)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetPendingVersions indicates an expected call of GetPendingVersions.
-func (mr *MockDownstreamStoreMockRecorder) GetPendingVersions(appID, clusterID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingVersions", reflect.TypeOf((*MockDownstreamStore)(nil).GetPendingVersions), appID, clusterID)
 }
 
 // GetPreviouslyDeployedSequence mocks base method.

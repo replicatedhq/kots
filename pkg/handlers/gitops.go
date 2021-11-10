@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"sort"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -197,24 +196,16 @@ func (h *Handler) InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 			}
 		}()
 
-		currentVersion, err := store.GetStore().GetCurrentVersion(a.ID, d.ClusterID)
+		appVersions, err := store.GetStore().GetAppVersions(a.ID, d.ClusterID)
 		if err != nil {
-			err = errors.Wrap(err, "failed to get downstream current version")
-			logger.Error(err)
-			finalError = err
-			return
-		}
-
-		pendingVersions, err := store.GetStore().GetPendingVersions(a.ID, d.ClusterID)
-		if err != nil {
-			err = errors.Wrap(err, "failed to get downstream pending versions")
+			err = errors.Wrap(err, "failed to get downstream versions")
 			logger.Error(err)
 			finalError = err
 			return
 		}
 
 		// Create git commit for current version (if exists)
-		if currentVersion != nil {
+		if appVersions.CurrentVersion != nil {
 			currentVersionArchive, err := ioutil.TempDir("", "kotsadm")
 			if err != nil {
 				err = errors.Wrap(err, "failed to create temp dir")
@@ -224,29 +215,25 @@ func (h *Handler) InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 			}
 			defer os.RemoveAll(currentVersionArchive)
 
-			err = store.GetStore().GetAppVersionArchive(a.ID, currentVersion.ParentSequence, currentVersionArchive)
+			err = store.GetStore().GetAppVersionArchive(a.ID, appVersions.CurrentVersion.ParentSequence, currentVersionArchive)
 			if err != nil {
-				err = errors.Wrapf(err, "failed to get app version archive for current version %d", currentVersion.ParentSequence)
+				err = errors.Wrapf(err, "failed to get app version archive for current version %d", appVersions.CurrentVersion.ParentSequence)
 				logger.Error(err)
 				finalError = err
 				return
 			}
 
-			_, err = gitops.CreateGitOpsCommit(downstreamGitOps, a.Slug, a.Name, int(currentVersion.ParentSequence), currentVersionArchive, d.Name)
+			_, err = gitops.CreateGitOpsCommit(downstreamGitOps, a.Slug, a.Name, int(appVersions.CurrentVersion.ParentSequence), currentVersionArchive, d.Name)
 			if err != nil {
-				err = errors.Wrapf(err, "failed to create gitops commit for current version %d", currentVersion.ParentSequence)
+				err = errors.Wrapf(err, "failed to create gitops commit for current version %d", appVersions.CurrentVersion.ParentSequence)
 				logger.Error(err)
 				finalError = err
 				return
 			}
 		}
 
-		// Sort pending versions ascending before creating commits
-		sort.Slice(pendingVersions, func(i, j int) bool {
-			return pendingVersions[i].ParentSequence < pendingVersions[j].ParentSequence
-		})
 		// Create git commits for sorted pending versions
-		for _, pendingVersion := range pendingVersions {
+		for _, pendingVersion := range appVersions.PendingVersions {
 			pendingVersionArchive, err := ioutil.TempDir("", "kotsadm")
 			if err != nil {
 				err = errors.Wrap(err, "failed to create temp dir")
