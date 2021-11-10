@@ -218,7 +218,7 @@ export default class UpdateCheckerModal extends React.Component {
             <Select
               className="replicated-select-container flex1"
               classNamePrefix="replicated-select"
-              placeholder="Automatically install new versions"
+              placeholder="Automatically deploy new versions"
               options={SEMVER_AUTO_DEPLOY_OPTIONS}
               isSearchable={false}
               getOptionValue={(option) => option.label}
