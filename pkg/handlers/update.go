@@ -44,7 +44,13 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 	contentType = strings.TrimSpace(contentType)
 
 	if contentType == "application/json" {
-		availableUpdates, err := updatechecker.CheckForUpdates(foundApp.ID, deploy, skipPreflights, isCLI)
+		opts := updatechecker.CheckForUpdatesOpts{
+			AppID:          foundApp.ID,
+			Deploy:         deploy,
+			SkipPreflights: skipPreflights,
+			IsCLI:          isCLI,
+		}
+		availableUpdates, err := updatechecker.CheckForUpdates(opts)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to check for updates"))
 			w.WriteHeader(http.StatusInternalServerError)

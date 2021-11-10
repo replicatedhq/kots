@@ -33,6 +33,11 @@ type Upstream struct {
 	EncryptionKey string
 }
 
+type Update struct {
+	Cursor       string `json:"cursor"`
+	VersionLabel string `json:"versionLabel"`
+}
+
 type WriteOptions struct {
 	RootDir             string
 	CreateAppDir        bool

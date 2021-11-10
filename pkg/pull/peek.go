@@ -24,7 +24,7 @@ type GetUpdatesOptions struct {
 
 // GetUpdates will retrieve all later versions of the application specified in upstreamURI
 // using the options specified in getUpdatesOptions. It returns a list of versions.
-func GetUpdates(upstreamURI string, getUpdatesOptions GetUpdatesOptions) ([]upstream.Update, error) {
+func GetUpdates(upstreamURI string, getUpdatesOptions GetUpdatesOptions) ([]upstreamtypes.Update, error) {
 	log := logger.NewCLILogger()
 
 	if getUpdatesOptions.Silent {

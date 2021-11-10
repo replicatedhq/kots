@@ -4,11 +4,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"sort"
 	"sync"
 	"time"
 
+	"github.com/blang/semver"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/app"
+	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
 	upstream "github.com/replicatedhq/kots/pkg/kotsadmupstream"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -17,6 +20,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
+	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
 	cron "github.com/robfig/cron/v3"
@@ -101,10 +105,16 @@ func Configure(appID string) error {
 
 	jobAppID := a.ID
 	jobAppSlug := a.Slug
+	jobSemverAutoDeploy := a.SemverAutoDeploy
+
 	_, err = job.AddFunc(cronSpec, func() {
 		logger.Debug("checking updates for app", zap.String("slug", jobAppSlug))
 
-		availableUpdates, err := CheckForUpdates(jobAppID, false, false, false)
+		opts := CheckForUpdatesOpts{
+			AppID:            jobAppID,
+			SemverAutoDeploy: jobSemverAutoDeploy,
+		}
+		availableUpdates, err := CheckForUpdates(opts)
 		if err != nil {
 			logger.Error(errors.Wrapf(err, "failed to check updates for app %s", jobAppSlug))
 			return
@@ -141,10 +151,18 @@ func Stop(appID string) {
 	}
 }
 
+type CheckForUpdatesOpts struct {
+	AppID            string
+	Deploy           bool
+	SkipPreflights   bool
+	IsCLI            bool
+	SemverAutoDeploy apptypes.SemverAutoDeploy
+}
+
 // CheckForUpdates checks (and downloads) latest updates for a specific app
 // if "deploy" is set to true, the latest version/update will be deployed
 // returns the number of available updates
-func CheckForUpdates(appID string, deploy bool, skipPreflights bool, isCLI bool) (int64, error) {
+func CheckForUpdates(opts CheckForUpdatesOpts) (int64, error) {
 	currentStatus, _, err := store.GetStore().GetTaskStatus("update-download")
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get task status")
@@ -159,7 +177,7 @@ func CheckForUpdates(appID string, deploy bool, skipPreflights bool, isCLI bool)
 		return 0, errors.Wrap(err, "failed to clear task status")
 	}
 
-	a, err := store.GetStore().GetApp(appID)
+	a, err := store.GetStore().GetApp(opts.AppID)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get app")
 	}
@@ -171,7 +189,7 @@ func CheckForUpdates(appID string, deploy bool, skipPreflights bool, isCLI bool)
 	}
 
 	// reload app because license sync could have created a new release
-	a, err = store.GetStore().GetApp(appID)
+	a, err = store.GetStore().GetApp(opts.AppID)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get app")
 	}
@@ -237,7 +255,7 @@ func CheckForUpdates(appID string, deploy bool, skipPreflights bool, isCLI bool)
 
 	// if there are updates, go routine it
 	if len(updates) == 0 {
-		if !deploy {
+		if !opts.Deploy {
 			return 0, nil
 		}
 
@@ -291,15 +309,19 @@ func CheckForUpdates(appID string, deploy bool, skipPreflights bool, isCLI bool)
 	removeArchiveDir = false
 	go func() {
 		defer os.RemoveAll(archiveDir)
+
+		currentVersionLabel := kotsKinds.Installation.Spec.VersionLabel
+		indexToDeploy := findUpdateIndexToDeploy(opts, updates, currentVersionLabel)
+
 		for index, update := range updates {
 			// the latest version is in archive dir
-			sequence, err := upstream.DownloadUpdate(a.ID, archiveDir, update.Cursor, skipPreflights)
+			sequence, err := upstream.DownloadUpdate(a.ID, archiveDir, update.Cursor, opts.SkipPreflights)
 			if err != nil {
 				logger.Error(errors.Wrap(err, "failed to download update"))
 				continue
 			}
 
-			if !deploy || index != len(updates)-1 {
+			if index != indexToDeploy {
 				continue
 			}
 
@@ -320,7 +342,7 @@ func CheckForUpdates(appID string, deploy bool, skipPreflights bool, isCLI bool)
 
 			// preflights reporting
 			go func() {
-				err = reporting.ReportAppInfo(a.ID, sequence, skipPreflights, isCLI)
+				err = reporting.ReportAppInfo(a.ID, sequence, opts.SkipPreflights, opts.IsCLI)
 				if err != nil {
 					logger.Debugf("failed to update preflights reports: %v", err)
 				}
@@ -329,4 +351,89 @@ func CheckForUpdates(appID string, deploy bool, skipPreflights bool, isCLI bool)
 	}()
 
 	return availableUpdates, nil
+}
+
+type UpdateSemverIndex struct {
+	Semver semver.Version
+	Index  int
+}
+
+type UpdateSemverIndicies []UpdateSemverIndex
+
+func (s UpdateSemverIndicies) Len() int { return len(s) }
+
+func (s UpdateSemverIndicies) Less(i, j int) bool {
+	return s[i].Semver.Compare(s[j].Semver) == -1
+}
+
+func (s UpdateSemverIndicies) Swap(i, j int) {
+	tmp := s[i]
+	s[i] = s[j]
+	s[j] = tmp
+}
+
+// findUpdateIndexToDeploy will return the index of the last downloaded update if the "Deploy" option is set to true,
+// if not, it will return the index for the update that matches the semver auto deploy configuration (e.g.: latest patch, latest minor, or latest major).
+func findUpdateIndexToDeploy(opts CheckForUpdatesOpts, updates []upstreamtypes.Update, currentVersionLabel string) int {
+	if opts.Deploy {
+		return len(updates) - 1
+	}
+
+	if opts.SemverAutoDeploy == "" || opts.SemverAutoDeploy == apptypes.SemverAutoDeployDisabled {
+		return -1
+	}
+
+	currentSemver, err := semver.ParseTolerant(currentVersionLabel)
+	if err != nil {
+		return -1
+	}
+
+	semverIndicies := UpdateSemverIndicies{}
+
+	for i, update := range updates {
+		switch opts.SemverAutoDeploy {
+		case apptypes.SemverAutoDeployPatch:
+			s, err := semver.ParseTolerant(update.VersionLabel)
+			if err != nil {
+				continue
+			}
+			if s.Major != currentSemver.Major || s.Minor != currentSemver.Minor {
+				continue
+			}
+			semverIndicies = append(semverIndicies, UpdateSemverIndex{
+				Semver: s,
+				Index:  i,
+			})
+
+		case apptypes.SemverAutoDeployMinorPatch:
+			s, err := semver.ParseTolerant(update.VersionLabel)
+			if err != nil {
+				continue
+			}
+			if s.Major != currentSemver.Major {
+				continue
+			}
+			semverIndicies = append(semverIndicies, UpdateSemverIndex{
+				Semver: s,
+				Index:  i,
+			})
+
+		case apptypes.SemverAutoDeployMajorMinorPatch:
+			s, err := semver.ParseTolerant(update.VersionLabel)
+			if err != nil {
+				continue
+			}
+			semverIndicies = append(semverIndicies, UpdateSemverIndex{
+				Semver: s,
+				Index:  i,
+			})
+		}
+	}
+
+	if len(semverIndicies) == 0 {
+		return -1
+	}
+	sort.Sort(sort.Reverse(semverIndicies))
+
+	return semverIndicies[len(semverIndicies)-1].Index
 }
