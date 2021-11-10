@@ -14,7 +14,7 @@ const (
 type SemverAutoDeploy string
 
 const (
-	SemverAutoDeployNone            SemverAutoDeploy = "none"
+	SemverAutoDeployDisabled        SemverAutoDeploy = "disabled"
 	SemverAutoDeployPatch           SemverAutoDeploy = "patch"
 	SemverAutoDeployMinorPatch      SemverAutoDeploy = "minor-patch"
 	SemverAutoDeployMajorMinorPatch SemverAutoDeploy = "major-minor-patch"

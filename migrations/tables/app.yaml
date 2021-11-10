@@ -79,4 +79,4 @@ spec:
         default: '@default'
       - name: semver_auto_deploy
         type: text
-        default: 'none'
+        default: 'disabled'

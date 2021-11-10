@@ -379,7 +379,7 @@ func findUpdateIndexToDeploy(opts CheckForUpdatesOpts, updates []upstreamtypes.U
 		return len(updates) - 1
 	}
 
-	if opts.SemverAutoDeploy == "" || opts.SemverAutoDeploy == apptypes.SemverAutoDeployNone {
+	if opts.SemverAutoDeploy == "" || opts.SemverAutoDeploy == apptypes.SemverAutoDeployDisabled {
 		return -1
 	}
 
