@@ -883,6 +883,7 @@ class Dashboard extends Component {
             isOpen={this.state.showUpdateCheckerModal}
             onRequestClose={this.hideUpdateCheckerModal}
             updateCheckerSpec={app.updateCheckerSpec}
+            semverAutoDeploy={app.semverAutoDeploy}
             appSlug={app.slug}
             gitopsEnabled={downstream?.gitops?.enabled}
             onUpdateCheckerSpecSubmitted={() => {
