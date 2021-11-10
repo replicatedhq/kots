@@ -42,6 +42,7 @@ type DownstreamVersions []DownstreamVersion
 
 func (d DownstreamVersions) Len() int { return len(d) }
 
+// Treating releases with semver as newer than those without.
 func (d DownstreamVersions) Less(i, j int) bool {
 	if d[i].Semver == nil && d[j].Semver == nil {
 		return d[i].Sequence < d[j].Sequence
@@ -52,7 +53,10 @@ func (d DownstreamVersions) Less(i, j int) bool {
 	if d[j].Semver == nil {
 		return false
 	}
-	return d[i].Semver.Compare(*d[j].Semver) == -1
+	if d[i].Semver.EQ((*d[j].Semver)) {
+		return d[i].Sequence < d[j].Sequence
+	}
+	return d[i].Semver.LT((*d[j].Semver))
 }
 
 func (d DownstreamVersions) Swap(i, j int) {
