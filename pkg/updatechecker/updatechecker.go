@@ -358,15 +358,15 @@ type UpdateSemverIndex struct {
 	Index  int
 }
 
-type UpdateSemverIndicies []UpdateSemverIndex
+type UpdateSemverIndices []UpdateSemverIndex
 
-func (s UpdateSemverIndicies) Len() int { return len(s) }
+func (s UpdateSemverIndices) Len() int { return len(s) }
 
-func (s UpdateSemverIndicies) Less(i, j int) bool {
-	return s[i].Semver.Compare(s[j].Semver) == -1
+func (s UpdateSemverIndices) Less(i, j int) bool {
+	return s[i].Semver.LT(s[j].Semver)
 }
 
-func (s UpdateSemverIndicies) Swap(i, j int) {
+func (s UpdateSemverIndices) Swap(i, j int) {
 	tmp := s[i]
 	s[i] = s[j]
 	s[j] = tmp
@@ -388,7 +388,7 @@ func findUpdateIndexToDeploy(opts CheckForUpdatesOpts, updates []upstreamtypes.U
 		return -1
 	}
 
-	semverIndicies := UpdateSemverIndicies{}
+	semverIndices := UpdateSemverIndices{}
 
 	for i, update := range updates {
 		switch opts.SemverAutoDeploy {
@@ -400,7 +400,7 @@ func findUpdateIndexToDeploy(opts CheckForUpdatesOpts, updates []upstreamtypes.U
 			if s.Major != currentSemver.Major || s.Minor != currentSemver.Minor {
 				continue
 			}
-			semverIndicies = append(semverIndicies, UpdateSemverIndex{
+			semverIndices = append(semverIndices, UpdateSemverIndex{
 				Semver: s,
 				Index:  i,
 			})
@@ -413,7 +413,7 @@ func findUpdateIndexToDeploy(opts CheckForUpdatesOpts, updates []upstreamtypes.U
 			if s.Major != currentSemver.Major {
 				continue
 			}
-			semverIndicies = append(semverIndicies, UpdateSemverIndex{
+			semverIndices = append(semverIndices, UpdateSemverIndex{
 				Semver: s,
 				Index:  i,
 			})
@@ -423,17 +423,17 @@ func findUpdateIndexToDeploy(opts CheckForUpdatesOpts, updates []upstreamtypes.U
 			if err != nil {
 				continue
 			}
-			semverIndicies = append(semverIndicies, UpdateSemverIndex{
+			semverIndices = append(semverIndices, UpdateSemverIndex{
 				Semver: s,
 				Index:  i,
 			})
 		}
 	}
 
-	if len(semverIndicies) == 0 {
+	if len(semverIndices) == 0 {
 		return -1
 	}
-	sort.Sort(sort.Reverse(semverIndicies))
+	sort.Sort(sort.Reverse(semverIndices))
 
-	return semverIndicies[len(semverIndicies)-1].Index
+	return semverIndices[0].Index
 }
