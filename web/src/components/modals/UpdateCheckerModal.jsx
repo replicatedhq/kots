@@ -138,7 +138,7 @@ export default class UpdateCheckerModal extends React.Component {
     });
   }
 
-  handleInstallOptionChange = selectedSemverAutoDeploy => {
+  handleSemverAutoDeployOptionChange = selectedSemverAutoDeploy => {
     this.setState({
       selectedSemverAutoDeploy: { ...selectedSemverAutoDeploy },
     });
@@ -214,7 +214,7 @@ export default class UpdateCheckerModal extends React.Component {
             </div>
           </div>
           <div className="flex-column flex1 u-marginTop--15">
-            <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Automatically install new versions</p>
+            <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Automatically deploy new versions</p>
             <Select
               className="replicated-select-container flex1"
               classNamePrefix="replicated-select"
@@ -223,7 +223,7 @@ export default class UpdateCheckerModal extends React.Component {
               isSearchable={false}
               getOptionValue={(option) => option.label}
               value={selectedSemverAutoDeploy}
-              onChange={this.handleInstallOptionChange}
+              onChange={this.handleSemverAutoDeployOptionChange}
               isOptionSelected={(option) => { option.value === selectedSemverAutoDeploy }}
             />
           </div>
