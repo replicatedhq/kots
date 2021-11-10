@@ -224,6 +224,7 @@ export default class UpdateCheckerModal extends React.Component {
               onChange={this.handleInstallOptionChange}
               isOptionSelected={(option) => { option.value === selectedInstallOption }}
             />
+            <span className="u-marginTop--10 u-fontSize--small u-textColor--info u-fontWeight--medium">Releases without a valid semver will <span className="u-fontWeight--bold">not</span> be automatically installed.</span>
           </div>
           <div className="flex u-marginTop--20">
             <button className="btn primary blue" onClick={this.onSubmitUpdateCheckerSpec}>Update</button>
