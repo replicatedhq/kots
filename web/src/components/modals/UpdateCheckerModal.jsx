@@ -210,7 +210,8 @@ export default class UpdateCheckerModal extends React.Component {
             {submitUpdateCheckerSpecErr && <span className="u-textColor--error u-fontSize--small u-fontWeight--bold u-marginTop--15">Error: {submitUpdateCheckerSpecErr}</span>}
           </div>
           <div className="flex-column flex1 u-marginTop--15">
-            <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Automatically deploy new versions</p>
+            <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal">Automatically deploy new versions</p>
+            <span className="u-marginTop--5 u-marginBottom--15 u-fontSize--small u-textColor--info u-fontWeight--medium">Releases without a valid semver will <span className="u-fontWeight--bold">not</span> be automatically installed.</span>
             <Select
               className="replicated-select-container flex1"
               classNamePrefix="replicated-select"
@@ -222,7 +223,6 @@ export default class UpdateCheckerModal extends React.Component {
               onChange={this.handleSemverAutoDeployOptionChange}
               isOptionSelected={(option) => { option.value === selectedSemverAutoDeploy }}
             />
-            <span className="u-marginTop--10 u-fontSize--small u-textColor--info u-fontWeight--medium">Releases without a valid semver will <span className="u-fontWeight--bold">not</span> be automatically installed.</span>
           </div>
           <div className="flex u-marginTop--20">
             <button className="btn primary blue" onClick={this.onSubmitUpdateCheckerSpec}>Update</button>
