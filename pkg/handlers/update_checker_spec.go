@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/updatechecker"
@@ -13,7 +14,8 @@ import (
 )
 
 type UpdateCheckerSpecRequest struct {
-	UpdateCheckerSpec string `json:"updateCheckerSpec"`
+	UpdateCheckerSpec string                    `json:"updateCheckerSpec"`
+	SemverAutoDeploy  apptypes.SemverAutoDeploy `json:"semverAutoDeploy"`
 }
 
 type UpdateCheckerSpecResponse struct {
@@ -61,6 +63,13 @@ func (h *Handler) UpdateCheckerSpec(w http.ResponseWriter, r *http.Request) {
 	if err := store.GetStore().SetUpdateCheckerSpec(foundApp.ID, cronSpec); err != nil {
 		logger.Error(err)
 		updateCheckerSpecResponse.Error = "failed to set update checker spec"
+		JSON(w, 500, updateCheckerSpecResponse)
+		return
+	}
+
+	if err := store.GetStore().SetSemverAutoDeploy(foundApp.ID, updateCheckerSpecRequest.SemverAutoDeploy); err != nil {
+		logger.Error(err)
+		updateCheckerSpecResponse.Error = "failed to set semver auto deploy"
 		JSON(w, 500, updateCheckerSpecResponse)
 		return
 	}

@@ -81,14 +81,14 @@ func (this ReplicatedCursor) Equal(other ReplicatedCursor) bool {
 	return this.ChannelName == other.ChannelName && this.Cursor == other.Cursor
 }
 
-func getUpdatesReplicated(u *url.URL, localPath string, currentCursor ReplicatedCursor, currentVersionLabel string, license *kotsv1beta1.License, reportingInfo *reportingtypes.ReportingInfo) ([]Update, error) {
+func getUpdatesReplicated(u *url.URL, localPath string, currentCursor ReplicatedCursor, currentVersionLabel string, license *kotsv1beta1.License, reportingInfo *reportingtypes.ReportingInfo) ([]types.Update, error) {
 	if localPath != "" {
 		parsedLocalRelease, err := readReplicatedAppFromLocalPath(localPath, currentCursor, currentVersionLabel)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to read replicated app from local path")
 		}
 
-		return []Update{{Cursor: parsedLocalRelease.UpdateCursor.Cursor, VersionLabel: currentVersionLabel}}, nil
+		return []types.Update{{Cursor: parsedLocalRelease.UpdateCursor.Cursor, VersionLabel: currentVersionLabel}}, nil
 	}
 
 	// A license file is required to be set for this to succeed
@@ -110,9 +110,9 @@ func getUpdatesReplicated(u *url.URL, localPath string, currentCursor Replicated
 		return nil, errors.Wrap(err, "failed to list replicated app releases")
 	}
 
-	updates := []Update{}
+	updates := []types.Update{}
 	for _, pendingRelease := range pendingReleases {
-		updates = append(updates, Update{
+		updates = append(updates, types.Update{
 			Cursor:       strconv.Itoa(pendingRelease.ChannelSequence),
 			VersionLabel: pendingRelease.VersionLabel,
 		})

@@ -5,6 +5,7 @@ import (
 
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
+	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
 )
 
@@ -17,19 +18,20 @@ type AppStatusResponse struct {
 }
 
 type ResponseApp struct {
-	ID                string     `json:"id"`
-	Slug              string     `json:"slug"`
-	Name              string     `json:"name"`
-	IsAirgap          bool       `json:"isAirgap"`
-	CurrentSequence   int64      `json:"currentSequence"`
-	UpstreamURI       string     `json:"upstreamUri"`
-	IconURI           string     `json:"iconUri"`
-	CreatedAt         time.Time  `json:"createdAt"`
-	UpdatedAt         *time.Time `json:"updatedAt"`
-	LastUpdateCheckAt string     `json:"lastUpdateCheckAt"`
-	HasPreflight      bool       `json:"hasPreflight"`
-	IsConfigurable    bool       `json:"isConfigurable"`
-	UpdateCheckerSpec string     `json:"updateCheckerSpec"`
+	ID                string                    `json:"id"`
+	Slug              string                    `json:"slug"`
+	Name              string                    `json:"name"`
+	IsAirgap          bool                      `json:"isAirgap"`
+	CurrentSequence   int64                     `json:"currentSequence"`
+	UpstreamURI       string                    `json:"upstreamUri"`
+	IconURI           string                    `json:"iconUri"`
+	CreatedAt         time.Time                 `json:"createdAt"`
+	UpdatedAt         *time.Time                `json:"updatedAt"`
+	LastUpdateCheckAt string                    `json:"lastUpdateCheckAt"`
+	HasPreflight      bool                      `json:"hasPreflight"`
+	IsConfigurable    bool                      `json:"isConfigurable"`
+	UpdateCheckerSpec string                    `json:"updateCheckerSpec"`
+	SemverAutoDeploy  apptypes.SemverAutoDeploy `json:"semverAutoDeploy"`
 
 	IsGitOpsSupported              bool                     `json:"isGitOpsSupported"`
 	IsIdentityServiceSupported     bool                     `json:"isIdentityServiceSupported"`
