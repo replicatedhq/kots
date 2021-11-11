@@ -336,6 +336,63 @@ func Test_SortDownstreamVersions(t *testing.T) {
 			versions: []*DownstreamVersion{},
 			want:     []*DownstreamVersion{},
 		},
+		{
+			name: "one more",
+			versions: []*DownstreamVersion{
+				{
+					VersionLabel: "1.2.5",
+					Semver:       semverMustParseForTest("1.2.5"),
+					Sequence:     4,
+				},
+				{
+					VersionLabel: "1.1.4",
+					Semver:       semverMustParseForTest("1.1.4"),
+					Sequence:     3,
+				},
+				{
+					VersionLabel: "2.1.3",
+					Semver:       semverMustParseForTest("2.1.3"),
+					Sequence:     2,
+				},
+				{
+					VersionLabel: "1.1.2",
+					Semver:       semverMustParseForTest("1.1.2"),
+					Sequence:     1,
+				},
+				{
+					VersionLabel: "1.1.1",
+					Semver:       semverMustParseForTest("1.1.1"),
+					Sequence:     0,
+				},
+			},
+			want: []*DownstreamVersion{
+				{
+					VersionLabel: "2.1.3",
+					Semver:       semverMustParseForTest("2.1.3"),
+					Sequence:     2,
+				},
+				{
+					VersionLabel: "1.2.5",
+					Semver:       semverMustParseForTest("1.2.5"),
+					Sequence:     4,
+				},
+				{
+					VersionLabel: "1.1.4",
+					Semver:       semverMustParseForTest("1.1.4"),
+					Sequence:     3,
+				},
+				{
+					VersionLabel: "1.1.2",
+					Semver:       semverMustParseForTest("1.1.2"),
+					Sequence:     1,
+				},
+				{
+					VersionLabel: "1.1.1",
+					Semver:       semverMustParseForTest("1.1.1"),
+					Sequence:     0,
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
