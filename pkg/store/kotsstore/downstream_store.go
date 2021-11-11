@@ -3,7 +3,6 @@ package kotsstore
 import (
 	"database/sql"
 	"encoding/base64"
-	"sort"
 
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
@@ -35,7 +34,7 @@ func (s *KOTSStore) GetCurrentSequence(appID string, clusterID string) (int64, e
 func (s *KOTSStore) GetCurrentParentSequence(appID string, clusterID string) (int64, error) {
 	currentSequence, err := s.GetCurrentSequence(appID, clusterID)
 	if err != nil {
-		return -1, errors.Wrap(err, "failed to get current sequence")
+		return -1, errors.Wrap(err, "failed to get current parent sequence")
 	}
 	if currentSequence == -1 {
 		return -1, nil
@@ -180,7 +179,6 @@ func (s *KOTSStore) GetCurrentVersion(appID string, clusterID string) (*downstre
 	db := persistence.MustGetDBSession()
 	query := `SELECT
 	adv.created_at,
-	adv.version_label,
 	adv.status,
 	adv.sequence,
 	adv.parent_sequence,
@@ -195,7 +193,8 @@ func (s *KOTSStore) GetCurrentVersion(appID string, clusterID string) (*downstre
 	adv.git_deployable,
 	ado.is_error,
 	av.upstream_released_at,
-	av.kots_installation_spec
+	av.kots_installation_spec,
+	av.version_label
  FROM
 	 app_downstream_version AS adv
  LEFT JOIN
@@ -209,9 +208,7 @@ func (s *KOTSStore) GetCurrentVersion(appID string, clusterID string) (*downstre
  WHERE
 	 adv.app_id = $1 AND
 	 adv.cluster_id = $2 AND
-	 adv.sequence = $3
- ORDER BY
-	 adv.sequence DESC`
+	 adv.sequence = $3`
 	row := db.QueryRow(query, appID, clusterID, currentSequence)
 
 	v, err := downstreamVersionFromRow(appID, row)
@@ -246,16 +243,15 @@ func (s *KOTSStore) GetStatusForVersion(appID string, clusterID string, sequence
 	return types.DownstreamVersionStatus(versionStatus), nil
 }
 
-func (s *KOTSStore) GetPendingVersions(appID string, clusterID string) (downstreamtypes.DownstreamVersions, error) {
+func (s *KOTSStore) GetAppVersions(appID string, clusterID string) (*downstreamtypes.DownstreamVersions, error) {
 	currentVersion, err := s.GetCurrentVersion(appID, clusterID)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get current sequence")
+		return nil, errors.Wrap(err, "failed to get current version")
 	}
 
 	db := persistence.MustGetDBSession()
 	query := `SELECT
 	adv.created_at,
-	adv.version_label,
 	adv.status,
 	adv.sequence,
 	adv.parent_sequence,
@@ -270,7 +266,8 @@ func (s *KOTSStore) GetPendingVersions(appID string, clusterID string) (downstre
 	adv.git_deployable,
 	ado.is_error,
 	av.upstream_released_at,
-	av.kots_installation_spec
+	av.kots_installation_spec,
+	av.version_label
  FROM
 	 app_downstream_version AS adv
  LEFT JOIN
@@ -285,7 +282,7 @@ func (s *KOTSStore) GetPendingVersions(appID string, clusterID string) (downstre
 	 adv.app_id = $1 AND
 	 adv.cluster_id = $2
  ORDER BY
-	 adv.sequence DESC`
+     adv.sequence DESC`
 
 	rows, err := db.Query(query, appID, clusterID)
 	if err != nil {
@@ -293,103 +290,38 @@ func (s *KOTSStore) GetPendingVersions(appID string, clusterID string) (downstre
 	}
 	defer rows.Close()
 
-	versions := downstreamtypes.DownstreamVersions{}
+	result := &downstreamtypes.DownstreamVersions{
+		CurrentVersion: currentVersion,
+		AllVersions:    []*downstreamtypes.DownstreamVersion{},
+	}
 	for rows.Next() {
 		v, err := downstreamVersionFromRow(appID, rows)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get version from row")
 		}
 		if v != nil {
-			versions = append(versions, *v)
+			result.AllVersions = append(result.AllVersions, v)
 		}
 	}
 
-	sort.Sort(sort.Reverse(versions))
+	downstreamtypes.SortDownstreamVersions(result)
 
 	if currentVersion == nil {
-		return versions, nil
+		result.PendingVersions = result.AllVersions
+		result.PastVersions = []*downstreamtypes.DownstreamVersion{}
+		return result, nil
 	}
 
-	for i, v := range versions {
+	for i, v := range result.AllVersions {
 		if v.Sequence == currentVersion.Sequence {
-			versions = versions[:i]
+			result.PendingVersions = result.AllVersions[:i]
+			result.PastVersions = result.AllVersions[i+1:]
 			break
 		}
 	}
 
-	return versions, nil
-}
+	return result, nil
 
-func (s *KOTSStore) GetPastVersions(appID string, clusterID string) (downstreamtypes.DownstreamVersions, error) {
-	currentVersion, err := s.GetCurrentVersion(appID, clusterID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get current sequence")
-	}
-	if currentVersion == nil {
-		return downstreamtypes.DownstreamVersions{}, nil
-	}
-
-	db := persistence.MustGetDBSession()
-	query := `SELECT
-	adv.created_at,
-	adv.version_label,
-	adv.status,
-	adv.sequence,
-	adv.parent_sequence,
-	adv.applied_at,
-	adv.source,
-	adv.diff_summary,
-	adv.diff_summary_error,
-	adv.preflight_result,
-	adv.preflight_result_created_at,
-	adv.preflight_skipped,
-	adv.git_commit_url,
-	adv.git_deployable,
-	ado.is_error,
-	av.upstream_released_at,
-	av.kots_installation_spec
- FROM
-	 app_downstream_version AS adv
- LEFT JOIN
-	 app_version AS av
- ON
-	 adv.app_id = av.app_id AND adv.parent_sequence = av.sequence
- LEFT JOIN
-	 app_downstream_output AS ado
- ON
-	 adv.app_id = ado.app_id AND adv.cluster_id = ado.cluster_id AND adv.sequence = ado.downstream_sequence
- WHERE
-	 adv.app_id = $1 AND
-	 adv.cluster_id = $2
- ORDER BY
-	 adv.sequence DESC`
-
-	rows, err := db.Query(query, appID, clusterID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to query")
-	}
-	defer rows.Close()
-
-	versions := downstreamtypes.DownstreamVersions{}
-	for rows.Next() {
-		v, err := downstreamVersionFromRow(appID, rows)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get version from row")
-		}
-		if v != nil {
-			versions = append(versions, *v)
-		}
-	}
-
-	sort.Sort(sort.Reverse(versions))
-	for i, v := range versions {
-		if v.Sequence == currentVersion.Sequence {
-			versions = versions[i+1:]
-			break
-		}
-	}
-
-	return versions, nil
 }
 
 func downstreamVersionFromRow(appID string, row scannable) (*downstreamtypes.DownstreamVersion, error) {
@@ -414,7 +346,6 @@ func downstreamVersionFromRow(appID string, row scannable) (*downstreamtypes.Dow
 
 	if err := row.Scan(
 		&createdOn,
-		&versionLabel,
 		&status,
 		&v.Sequence,
 		&parentSequence,
@@ -430,6 +361,7 @@ func downstreamVersionFromRow(appID string, row scannable) (*downstreamtypes.Dow
 		&hasError,
 		&upstreamReleasedAt,
 		&kotsInstallationSpecStr,
+		&versionLabel,
 	); err != nil {
 		return nil, errors.Wrap(err, "failed to scan")
 	}
