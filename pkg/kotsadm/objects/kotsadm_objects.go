@@ -563,6 +563,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 									"memory": resource.MustParse("100Mi"),
 								},
 							},
+							SecurityContext: secureContainerContext(),
 						},
 						{
 							Image:           GetAdminConsoleImage(deployOptions, "kotsadm"),
