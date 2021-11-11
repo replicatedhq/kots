@@ -49,8 +49,10 @@ type DownstreamVersions struct {
 // Input is assumed to be sorded by sequence so non-semver elements are already in correct order.
 func SortDownstreamVersions(versions *DownstreamVersions) {
 	endIndex := len(versions.AllVersions)
-	for i := 0; i < endIndex; i++ {
-		for j := i; j < endIndex-1; j++ {
+	keepSorting := true
+	for keepSorting {
+		keepSorting = false
+		for j := 0; j < endIndex-1; j++ {
 			vj := versions.AllVersions[j]
 			if vj.Semver == nil {
 				continue
@@ -75,6 +77,7 @@ func SortDownstreamVersions(versions *DownstreamVersions) {
 
 			if isLessThan {
 				versions.AllVersions[j], versions.AllVersions[j+1] = versions.AllVersions[j+1], versions.AllVersions[j]
+				keepSorting = true
 			}
 		}
 	}
