@@ -106,6 +106,9 @@ class ConfigureSnapshots extends React.Component {
                         {snapshotSettings?.isMinioDisabled ?
                             <>
                               <a href="https://github.com/replicatedhq/local-volume-provider" target="_blank" rel="noopener noreferrer" className="snapshotOptions">
+                                <span style={{ width: "130px" }}>  <span className="icon pvcIcon u-cursor--pointer u-marginRight--5" /> PVC </span>
+                                <span className="icon external-link-icon u-cursor--pointer u-marginLeft--30" /></a>
+                              <a href="https://github.com/replicatedhq/local-volume-provider" target="_blank" rel="noopener noreferrer" className="snapshotOptions">
                                 <span style={{ width: "130px" }}>  <span className="icon nfsIcon u-cursor--pointer u-marginRight--5" /> NFS </span>
                                 <span className="icon external-link-icon u-cursor--pointer u-marginLeft--30" /></a>
                               <a href="https://github.com/replicatedhq/local-volume-provider" target="_blank" rel="noopener noreferrer" className="snapshotOptions">
