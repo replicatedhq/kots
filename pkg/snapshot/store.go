@@ -45,18 +45,20 @@ import (
 
 const DefaultBackupStorageLocation = "default"
 
+// Velero Store Option struct
 type ConfigureStoreOptions struct {
 	Provider   string
 	Bucket     string
 	Path       string
 	CACertData []byte
 
-	AWS        *types.StoreAWS
-	Google     *types.StoreGoogle
-	Azure      *types.StoreAzure
-	Other      *types.StoreOther
-	Internal   bool
-	FileSystem *types.FileSystemConfig
+	AWS         *types.StoreAWS
+	Google      *types.StoreGoogle
+	Azure       *types.StoreAzure
+	Other       *types.StoreOther
+	Internal    bool
+	InternalPVC *InternalPVC
+	FileSystem  *types.FileSystemConfig
 
 	KotsadmNamespace string
 	RegistryOptions  *kotsadmtypes.KotsadmOptions
@@ -66,6 +68,15 @@ type ConfigureStoreOptions struct {
 	ValidateUsingAPod bool
 	SkipValidation    bool
 	IsMinioDisabled   bool
+}
+
+type InternalPVC struct {
+	S3               bool
+	PVC              bool
+	Bucket           string
+	StorageClassName string
+	StorageSize      string
+	ResticRepoPrefix string
 }
 
 type ValidateStoreOptions struct {
@@ -868,8 +879,16 @@ func GetGlobalStore(ctx context.Context, kotsadmNamespace string, kotsadmVeleroB
 				},
 			},
 		}
-	}
 
+	case "replicated.com/pvc":
+		store.InternalPVC = &types.StoreInternalPVC{
+			Bucket:           "pvc-snapshots",
+			StorageClassName: "default",
+			StorageSize:      "20Gi",
+			ResticRepoPrefix: "/var/velero-local-volume-provider/pvc-snapshots/restic",
+		}
+
+	}
 	return &store, nil
 }
 

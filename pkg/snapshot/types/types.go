@@ -54,16 +54,17 @@ type StoreFileSystem struct {
 }
 
 type Store struct {
-	Provider   string           `json:"provider"`
-	Bucket     string           `json:"bucket"`
-	Path       string           `json:"path"`
-	CACertData []byte           `json:"caCert,omitempty"`
-	AWS        *StoreAWS        `json:"aws,omitempty"`
-	Azure      *StoreAzure      `json:"azure,omitempty"`
-	Google     *StoreGoogle     `json:"gcp,omitempty"`
-	Other      *StoreOther      `json:"other,omitempty"`
-	Internal   *StoreInternal   `json:"internal,omitempty"`
-	FileSystem *StoreFileSystem `json:"fileSystem,omitempty"`
+	Provider    string            `json:"provider"`
+	Bucket      string            `json:"bucket"`
+	Path        string            `json:"path"`
+	CACertData  []byte            `json:"caCert,omitempty"`
+	AWS         *StoreAWS         `json:"aws,omitempty"`
+	Azure       *StoreAzure       `json:"azure,omitempty"`
+	Google      *StoreGoogle      `json:"gcp,omitempty"`
+	Other       *StoreOther       `json:"other,omitempty"`
+	Internal    *StoreInternal    `json:"internal,omitempty"`
+	InternalPVC *StoreInternalPVC `json:"internalpvc,omitempty"`
+	FileSystem  *StoreFileSystem  `json:"fileSystem,omitempty"`
 }
 
 type FileSystemConfig struct {
@@ -74,6 +75,13 @@ type FileSystemConfig struct {
 type NFSConfig struct {
 	Path   string `json:"path,omitempty"`
 	Server string `json:"server,omitempty"`
+}
+
+type StoreInternalPVC struct {
+	Bucket           string
+	StorageClassName string
+	StorageSize      string
+	ResticRepoPrefix string
 }
 
 type App struct {
