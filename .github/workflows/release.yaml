@@ -524,7 +524,8 @@ jobs:
           excludes: prerelease, draft
 
       - name: blah
-        uses: replicatedhq/kots/.github/workflows/regression.yaml@standalone-regression
+#        uses: replicatedhq/kots/.github/workflows/regression.yaml@standalone-regression
+        uses: ./.github/workflows/regression.yaml@standalone-regression
         with:
           version_tag_old: ${{ steps.get_latest_tag.outputs.release }}
           version_tag_new: ${{ env.GITHUB_REF_NAME }}
