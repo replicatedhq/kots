@@ -31,9 +31,6 @@ func Start() error {
 	}
 
 	for _, a := range appsList {
-		if a.IsAirgap {
-			continue
-		}
 		if err := Configure(a.ID); err != nil {
 			logger.Error(errors.Wrapf(err, "failed to configure app %s", a.Slug))
 		}
