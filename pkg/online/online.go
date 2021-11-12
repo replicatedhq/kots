@@ -9,7 +9,6 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/pkg/autodeployer"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	identity "github.com/replicatedhq/kots/pkg/kotsadmidentity"
@@ -61,9 +60,6 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 			}
 			if err := updatechecker.Configure(pendingApp.ID); err != nil {
 				logger.Error(errors.Wrap(err, "failed to configure update checker"))
-			}
-			if err := autodeployer.Configure(pendingApp.ID); err != nil {
-				logger.Error(errors.Wrap(err, "failed to configure auto deployer"))
 			}
 		} else {
 			if err := store.GetStore().SetTaskStatus("online-install", finalError.Error(), "failed"); err != nil {
