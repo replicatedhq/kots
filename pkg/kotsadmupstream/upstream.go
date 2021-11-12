@@ -89,7 +89,7 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string, skipPrefli
 
 	appNamespace := util.AppNamespace()
 
-	appSequence, err := version.GetNextAppSequence(a.ID, &a.CurrentSequence)
+	appSequence, err := store.GetStore().GetNextAppSequence(a.ID)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get new app sequence")
 	}

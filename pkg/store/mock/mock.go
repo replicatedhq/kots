@@ -96,18 +96,18 @@ func (mr *MockStoreMockRecorder) CreateApp(name, upstreamURI, licenseData, isAir
 }
 
 // CreateAppVersion mocks base method.
-func (m *MockStore) CreateAppVersion(appID string, currentSequence *int64, filesInDir, source string, skipPreflights bool, gitops types4.DownstreamGitOps) (int64, error) {
+func (m *MockStore) CreateAppVersion(appID string, baseSequence *int64, filesInDir, source string, skipPreflights bool, gitops types4.DownstreamGitOps) (int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateAppVersion", appID, currentSequence, filesInDir, source, skipPreflights, gitops)
+	ret := m.ctrl.Call(m, "CreateAppVersion", appID, baseSequence, filesInDir, source, skipPreflights, gitops)
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateAppVersion indicates an expected call of CreateAppVersion.
-func (mr *MockStoreMockRecorder) CreateAppVersion(appID, currentSequence, filesInDir, source, skipPreflights, gitops interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) CreateAppVersion(appID, baseSequence, filesInDir, source, skipPreflights, gitops interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAppVersion", reflect.TypeOf((*MockStore)(nil).CreateAppVersion), appID, currentSequence, filesInDir, source, skipPreflights, gitops)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAppVersion", reflect.TypeOf((*MockStore)(nil).CreateAppVersion), appID, baseSequence, filesInDir, source, skipPreflights, gitops)
 }
 
 // CreateAppVersionArchive mocks base method.
@@ -637,6 +637,21 @@ func (m *MockStore) GetLicenseForAppVersion(appID string, sequence int64) (*v1be
 func (mr *MockStoreMockRecorder) GetLicenseForAppVersion(appID, sequence interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLicenseForAppVersion", reflect.TypeOf((*MockStore)(nil).GetLicenseForAppVersion), appID, sequence)
+}
+
+// GetNextAppSequence mocks base method.
+func (m *MockStore) GetNextAppSequence(appID string) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNextAppSequence", appID)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetNextAppSequence indicates an expected call of GetNextAppSequence.
+func (mr *MockStoreMockRecorder) GetNextAppSequence(appID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNextAppSequence", reflect.TypeOf((*MockStore)(nil).GetNextAppSequence), appID)
 }
 
 // GetParentSequenceForSequence mocks base method.
@@ -3038,18 +3053,18 @@ func (m *MockVersionStore) EXPECT() *MockVersionStoreMockRecorder {
 }
 
 // CreateAppVersion mocks base method.
-func (m *MockVersionStore) CreateAppVersion(appID string, currentSequence *int64, filesInDir, source string, skipPreflights bool, gitops types4.DownstreamGitOps) (int64, error) {
+func (m *MockVersionStore) CreateAppVersion(appID string, baseSequence *int64, filesInDir, source string, skipPreflights bool, gitops types4.DownstreamGitOps) (int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateAppVersion", appID, currentSequence, filesInDir, source, skipPreflights, gitops)
+	ret := m.ctrl.Call(m, "CreateAppVersion", appID, baseSequence, filesInDir, source, skipPreflights, gitops)
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateAppVersion indicates an expected call of CreateAppVersion.
-func (mr *MockVersionStoreMockRecorder) CreateAppVersion(appID, currentSequence, filesInDir, source, skipPreflights, gitops interface{}) *gomock.Call {
+func (mr *MockVersionStoreMockRecorder) CreateAppVersion(appID, baseSequence, filesInDir, source, skipPreflights, gitops interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAppVersion", reflect.TypeOf((*MockVersionStore)(nil).CreateAppVersion), appID, currentSequence, filesInDir, source, skipPreflights, gitops)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAppVersion", reflect.TypeOf((*MockVersionStore)(nil).CreateAppVersion), appID, baseSequence, filesInDir, source, skipPreflights, gitops)
 }
 
 // CreateAppVersionArchive mocks base method.
@@ -3108,6 +3123,21 @@ func (m *MockVersionStore) GetAppVersionsAfter(appID string, sequence int64) ([]
 func (mr *MockVersionStoreMockRecorder) GetAppVersionsAfter(appID, sequence interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppVersionsAfter", reflect.TypeOf((*MockVersionStore)(nil).GetAppVersionsAfter), appID, sequence)
+}
+
+// GetNextAppSequence mocks base method.
+func (m *MockVersionStore) GetNextAppSequence(appID string) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNextAppSequence", appID)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetNextAppSequence indicates an expected call of GetNextAppSequence.
+func (mr *MockVersionStoreMockRecorder) GetNextAppSequence(appID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNextAppSequence", reflect.TypeOf((*MockVersionStore)(nil).GetNextAppSequence), appID)
 }
 
 // IsIdentityServiceSupportedForVersion mocks base method.
