@@ -12,6 +12,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/autodeployer"
 	"github.com/replicatedhq/kots/pkg/automation"
 	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/handlers"
@@ -123,6 +124,10 @@ func Start(params *APIServerParams) {
 
 	if err := updatechecker.Start(); err != nil {
 		log.Println("Failed to start update checker", err)
+	}
+
+	if err := autodeployer.Start(); err != nil {
+		log.Println("Failed to start auto deployer", err)
 	}
 
 	if err := snapshotscheduler.Start(); err != nil {

@@ -88,7 +88,7 @@ type KOTSHandler interface {
 	GetLicense(w http.ResponseWriter, r *http.Request)
 
 	AppUpdateCheck(w http.ResponseWriter, r *http.Request)
-	UpdateCheckerSpec(w http.ResponseWriter, r *http.Request)
+	ConfigureAutomaticUpdates(w http.ResponseWriter, r *http.Request)
 	RemoveApp(w http.ResponseWriter, r *http.Request)
 
 	// App snapshot routes
