@@ -25,7 +25,7 @@ function getCurrentVersionStatus(version, viewLogs) {
 }
 
 export default function AppVersionHistoryHeader(props) {
-  const { app, currentDownstreamVersion, showDownstreamReleaseNotes, slug, handleViewLogs, onCheckForUpdates, showUpdateCheckerModal,
+  const { app, currentDownstreamVersion, showDownstreamReleaseNotes, slug, handleViewLogs, onCheckForUpdates, showAutomaticUpdatesModal,
     checkingForUpdates, isBundleUploading, airgapUploader, pendingVersions, showOnlineUI, showAirgapUI, updateText, noUpdateAvailiableMsg } = props;
 
   return (
@@ -106,7 +106,7 @@ export default function AppVersionHistoryHeader(props) {
                       : <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal" style={{ color: "#C4C8CA" }}> No new version available </p>}
                     <div className="flex alignItems--center u-marginTop--10">
                       <button className="btn primary blue" onClick={onCheckForUpdates}>Check for update</button>
-                      <span className="icon settings-small-icon u-marginLeft--10 u-cursor--pointer" onClick={showUpdateCheckerModal} data-tip="Configure automatic update checks"></span>
+                      <span className="icon settings-small-icon u-marginLeft--10 u-cursor--pointer" onClick={showAutomaticUpdatesModal} data-tip="Configubgre automatic updates"></span>
                       <ReactTooltip effect="solid" className="replicated-tooltip" />
                     </div>
                     {updateText}

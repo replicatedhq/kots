@@ -159,9 +159,10 @@ type CheckForUpdatesOpts struct {
 	SemverAutoDeploy apptypes.SemverAutoDeploy
 }
 
-// CheckForUpdates checks (and downloads) latest updates for a specific app
-// if "deploy" is set to true, the latest version/update will be deployed
-// returns the number of available updates
+// CheckForUpdates checks, downloads, and in some cases deploys latest updates for a specific app.
+// if "Deploy" is set to true, the latest version/update will be deployed.
+// otherwise, if "SemverAutoDeploy" is enabled then the version/update that matches the semver auto deploy configuration will be deployed.
+// returns the number of available updates.
 func CheckForUpdates(opts CheckForUpdatesOpts) (int64, error) {
 	currentStatus, _, err := store.GetStore().GetTaskStatus("update-download")
 	if err != nil {
