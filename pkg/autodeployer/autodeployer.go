@@ -96,7 +96,7 @@ func Configure(appID string) error {
 	jobSemverAutoDeploy := a.SemverAutoDeploy
 
 	_, err = job.AddFunc(cronSpec, func() {
-		logger.Debug("checking updates for app", zap.String("slug", jobAppSlug))
+		logger.Debug("processing semver auto deployments for app", zap.String("slug", jobAppSlug))
 
 		opts := ExecuteOpts{
 			AppID:            jobAppID,

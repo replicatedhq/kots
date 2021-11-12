@@ -7,6 +7,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
+	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/autodeployer"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/reporting"
@@ -78,6 +79,10 @@ func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 	for _, v := range versions.PastVersions {
 		if int64(sequence) == v.Sequence {
 			// a past version is being deployed/rolled back to, disable semver automatic deployments so that it doesn't undo this action
+			logger.Infof("disabling semver auto deployer because a past version is being deployed for app %s", a.Slug)
+			if err := store.GetStore().SetSemverAutoDeploy(a.ID, apptypes.SemverAutoDeployDisabled, a.SemverAutoDeploySchedule); err != nil {
+				logger.Error(errors.Wrap(err, "failed to set semver auto deploy"))
+			}
 			autodeployer.Stop(a.ID)
 			break
 		}
