@@ -10,11 +10,11 @@ import (
 
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
+	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/app"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
 	upstream "github.com/replicatedhq/kots/pkg/kotsadmupstream"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/reporting"
@@ -184,7 +184,7 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (int64, error) {
 	}
 
 	// sync license, this method is only called when online
-	_, _, err = license.Sync(a, "", false)
+	latestLicense, _, err := license.Sync(a, "", false)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to sync license")
 	}
@@ -195,46 +195,23 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (int64, error) {
 		return 0, errors.Wrap(err, "failed to get app")
 	}
 
-	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	updateCursor, versionLabel, err := store.GetStore().GetCurrentUpdateCursor(a.ID, latestLicense.Spec.ChannelID)
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to create temp dir")
-	}
-
-	removeArchiveDir := true
-	defer func() {
-		if removeArchiveDir {
-			os.RemoveAll(archiveDir)
-		}
-	}()
-
-	err = store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence, archiveDir)
-	if err != nil {
-		return 0, errors.Wrap(err, "failed to get app version archive")
-	}
-
-	// we need a few objects from the app to check for updates
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
-	if err != nil {
-		return 0, errors.Wrap(err, "failed to load kotskinds from path")
-	}
-
-	latestLicense, err := store.GetStore().GetLatestLicenseForApp(a.ID)
-	if err != nil {
-		return 0, errors.Wrap(err, "failed to get latest license")
+		return 0, errors.Wrap(err, "failed to get current update cursor")
 	}
 
 	getUpdatesOptions := kotspull.GetUpdatesOptions{
 		License:             latestLicense,
-		CurrentCursor:       kotsKinds.Installation.Spec.UpdateCursor,
-		CurrentChannelID:    kotsKinds.Installation.Spec.ChannelID,
-		CurrentChannelName:  kotsKinds.Installation.Spec.ChannelName,
-		CurrentVersionLabel: kotsKinds.Installation.Spec.VersionLabel,
+		CurrentCursor:       updateCursor,
+		CurrentChannelID:    latestLicense.Spec.ChannelID,
+		CurrentChannelName:  latestLicense.Spec.ChannelName,
+		CurrentVersionLabel: versionLabel,
 		Silent:              false,
 		ReportingInfo:       reporting.GetReportingInfo(a.ID),
 	}
 
 	// get updates
-	updates, err := kotspull.GetUpdates(fmt.Sprintf("replicated://%s", kotsKinds.License.Spec.AppSlug), getUpdatesOptions)
+	updates, err := kotspull.GetUpdates(fmt.Sprintf("replicated://%s", latestLicense.Spec.AppSlug), getUpdatesOptions)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get updates")
 	}
@@ -252,9 +229,8 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (int64, error) {
 	if len(downstreams) == 0 {
 		return 0, errors.Errorf("no downstreams found for app %q", a.Slug)
 	}
-	downstream := downstreams[0]
+	d := downstreams[0]
 
-	// if there are updates, go routine it
 	if len(updates) == 0 {
 		if !opts.Deploy {
 			return 0, nil
@@ -273,13 +249,13 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (int64, error) {
 		}
 
 		latestVersion := allVersions[len(allVersions)-1]
-		downstreamParentSequence, err := store.GetStore().GetCurrentParentSequence(a.ID, downstream.ClusterID)
+		downstreamParentSequence, err := store.GetStore().GetCurrentParentSequence(a.ID, d.ClusterID)
 		if err != nil {
 			return 0, errors.Wrap(err, "failed to get current downstream parent sequence")
 		}
 
 		if latestVersion.Sequence != downstreamParentSequence {
-			status, err := store.GetStore().GetStatusForVersion(a.ID, downstream.ClusterID, latestVersion.Sequence)
+			status, err := store.GetStore().GetStatusForVersion(a.ID, d.ClusterID, latestVersion.Sequence)
 			if err != nil {
 				return 0, errors.Wrap(err, "failed to get update downstream status")
 			}
@@ -307,51 +283,142 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (int64, error) {
 		return 0, errors.Wrap(err, "failed to set task status")
 	}
 
-	removeArchiveDir = false
+	// there are updates, go routine it
 	go func() {
-		defer os.RemoveAll(archiveDir)
+		currentVersion, err := store.GetStore().GetCurrentVersion(a.ID, d.ClusterID)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to get current downstream version"))
+			return
+		}
 
-		currentVersionLabel := kotsKinds.Installation.Spec.VersionLabel
+		currentVersionLabel := ""
+		if currentVersion != nil {
+			currentVersionLabel = currentVersion.VersionLabel
+		}
 		indexToDeploy := findUpdateIndexToDeploy(opts, updates, currentVersionLabel)
 
 		for index, update := range updates {
-			// the latest version is in archive dir
-			sequence, err := upstream.DownloadUpdate(a.ID, archiveDir, update.Cursor, opts.SkipPreflights)
-			if err != nil {
-				logger.Error(errors.Wrap(err, "failed to download update"))
+			downloadOptions := DownloadUpdateOptions{
+				AppID:          a.ID,
+				ClusterID:      d.ClusterID,
+				Update:         update,
+				SkipPreflights: opts.SkipPreflights,
+				Deploy:         index == indexToDeploy,
+				IsCLI:          opts.IsCLI,
+			}
+			if err := downloadUpdate(downloadOptions); err != nil {
+				logger.Error(errors.Wrapf(err, "failed to download update %s", update.VersionLabel))
 				continue
 			}
-
-			if index != indexToDeploy {
-				continue
-			}
-
-			status, err := store.GetStore().GetStatusForVersion(a.ID, downstream.ClusterID, sequence)
-			if err != nil {
-				logger.Error(errors.Wrap(err, "failed to get update downstream status"))
-				continue
-			}
-
-			if status == storetypes.VersionPendingConfig {
-				logger.Infof("not deploying version %d because it's %s", sequence, status)
-				continue
-			}
-
-			if err := version.DeployVersion(a.ID, sequence); err != nil {
-				logger.Error(errors.Wrap(err, "failed to queue update for deployment"))
-			}
-
-			// preflights reporting
-			go func() {
-				err = reporting.ReportAppInfo(a.ID, sequence, opts.SkipPreflights, opts.IsCLI)
-				if err != nil {
-					logger.Debugf("failed to update preflights reports: %v", err)
-				}
-			}()
 		}
 	}()
 
 	return availableUpdates, nil
+}
+
+type DownloadUpdateOptions struct {
+	AppID          string
+	ClusterID      string
+	Update         upstreamtypes.Update
+	SkipPreflights bool
+	Deploy         bool
+	IsCLI          bool
+}
+
+func downloadUpdate(opts DownloadUpdateOptions) error {
+	baseArchiveDir, err := GetBaseArchiveDirForVersion(opts.AppID, opts.ClusterID, opts.Update.VersionLabel)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get base archive dir for version %s", opts.Update.VersionLabel)
+	}
+	defer os.RemoveAll(baseArchiveDir)
+
+	sequence, err := upstream.DownloadUpdate(opts.AppID, baseArchiveDir, opts.Update.Cursor, opts.SkipPreflights)
+	if err != nil {
+		return errors.Wrap(err, "failed to download update")
+	}
+
+	if !opts.Deploy {
+		return nil
+	}
+
+	status, err := store.GetStore().GetStatusForVersion(opts.AppID, opts.ClusterID, sequence)
+	if err != nil {
+		return errors.Wrap(err, "failed to get update downstream status")
+	}
+
+	if status == storetypes.VersionPendingConfig {
+		logger.Infof("not deploying version %d because it's %s", sequence, status)
+		return nil
+	}
+
+	if err := version.DeployVersion(opts.AppID, sequence); err != nil {
+		logger.Error(errors.Wrap(err, "failed to queue update for deployment"))
+	}
+
+	// preflights reporting
+	go func() {
+		err = reporting.ReportAppInfo(opts.AppID, sequence, opts.SkipPreflights, opts.IsCLI)
+		if err != nil {
+			logger.Debugf("failed to update preflights reports: %v", err)
+		}
+	}()
+
+	return nil
+}
+
+// GetBaseArchiveDirForVersion returns the base archive directory for a given version label.
+// the base archive directory contains data such as config values.
+// caller is responsible for cleaning up the created archive dir.
+func GetBaseArchiveDirForVersion(appID string, clusterID string, targetVersionLabel string) (string, error) {
+	appVersions, err := store.GetStore().GetAppVersions(appID, clusterID)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to get app versions for app %s", appID)
+	}
+	if len(appVersions.AllVersions) == 0 {
+		return "", errors.Errorf("no app versions found for app %s in downstream %s", appID, clusterID)
+	}
+
+	mockVersion := &downstreamtypes.DownstreamVersion{
+		Sequence: -1, // to id the mocked version and be able to retrieve it later
+	}
+
+	targetSemver, err := semver.ParseTolerant(targetVersionLabel)
+	if err == nil {
+		mockVersion.Semver = &targetSemver
+	}
+
+	appVersions.AllVersions = append(appVersions.AllVersions, mockVersion)
+	downstreamtypes.SortDownstreamVersions(appVersions)
+
+	var baseVersion *downstreamtypes.DownstreamVersion
+	for i, v := range appVersions.AllVersions {
+		if v.Sequence == -1 {
+			// this is our mocked version, base it off of the previous version in the sorted list (if exists).
+			if i < len(appVersions.AllVersions)-1 {
+				baseVersion = appVersions.AllVersions[i+1]
+			}
+			// remove the mocked version from the list to not affect what the latest version is in case there's no previous version to use as base.
+			appVersions.AllVersions = append(appVersions.AllVersions[:i], appVersions.AllVersions[i+1:]...)
+			break
+		}
+	}
+
+	// if a previous version was not found, base off of the latest version
+	if baseVersion == nil {
+		baseVersion = appVersions.AllVersions[0]
+	}
+
+	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create temp dir")
+	}
+
+	err = store.GetStore().GetAppVersionArchive(appID, baseVersion.ParentSequence, archiveDir)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get app version archive")
+	}
+
+	return archiveDir, nil
 }
 
 type UpdateSemverIndex struct {
