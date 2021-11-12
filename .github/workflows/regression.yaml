@@ -12,19 +12,23 @@ on:
         required: true
         type: string
     secrets:
-      token:
-        required: false
+      TESTIM_ACCESS_TOKEN:
+        required: true
+      E2E_TESTIM_AWS_ACCESS_KEY_ID:
+        required: true
+      E2E_TESTIM_AWS_SECRET_ACCESS_KEY:
+        required: true
+      E2E_GH_PAT:
+        required: true
 
   workflow_dispatch:
     inputs:
       version_tag_old:
         description: 'The initial install version to use for upgrade scenarios'
         required: true
-#        default: ''
       version_tag_new:
         description: 'The new version to use as the upgrade in upgrade scenarios and the initial version for fresh installs.'
         required: true
-#        default: ''
 
 concurrency: regression
 
@@ -36,147 +40,6 @@ env:
   TF_WORKSPACE: automation
 
 jobs:
-#  destroy-test-infra:
-#    if: always()
-#    runs-on: ubuntu-20.04
-#    container:
-#      image: hashicorp/terraform:1.0.7
-#    strategy:
-#      fail-fast: false
-#      matrix:
-#        test: [
-#          {
-#            name: "type=embedded cluster, env=airgapped, phase=upgraded install, rbac=cluster admin",
-#            backend_config: "embedded-airgapped-upgrade-backend-config.tfvars",
-#            terraform_script: "embedded-airgapped-upgrade.sh"
-#          },
-#          {
-#            name: "type=embedded cluster, env=airgapped, phase=new install, rbac=cluster admin",
-#            backend_config: "embedded-airgapped-install-backend-config.tfvars",
-#            terraform_script: "embedded-airgapped-install.sh"
-#          },
-#          {
-#            name: "type=embedded cluster, env=online, phase=new install, rbac=cluster admin",
-#            backend_config: "embedded-online-install-backend-config.tfvars",
-#            terraform_script: "embedded-online-install.sh"
-#          },
-#          {
-#            name: "type=embedded cluster, env=online, phase=upgraded install, rbac=cluster admin",
-#            backend_config: "embedded-online-upgrade-backend-config.tfvars",
-#            terraform_script: "embedded-online-upgrade.sh"
-#          },
-#          {
-#            name: "type=existing cluster, env=airgapped, phase=new install, rbac=cluster admin",
-#            backend_config: "existing-airgapped-install-admin-backend-config.tfvars",
-#            terraform_script: "existing-airgapped-install-admin.sh"
-#          },
-#          {
-#            name: "type=existing cluster, env=airgapped, phase=new install, rbac=minimal rbac",
-#            backend_config: "existing-airgapped-install-minimum-backend-config.tfvars",
-#            terraform_script: "existing-airgapped-install-minimum.sh"
-#          },
-#          {
-#            name: "type=existing cluster, env=online, phase=upgraded install, rbac=cluster admin",
-#            backend_config: "existing-online-upgrade-admin-backend-config.tfvars",
-#            terraform_script: "existing-online-upgrade-admin.sh"
-#          },
-#          {
-#            name: "type=existing cluster, env=online, phase=upgraded install, rbac=minimal rbac",
-#            backend_config: "existing-online-upgrade-minimum-backend-config.tfvars",
-#            terraform_script: "existing-online-upgrade-minimum.sh"
-#          },
-#          {
-#            name: "type=existing cluster, env=online, phase=new install, rbac=cluster admin",
-#            backend_config: "existing-online-install-admin-backend-config.tfvars",
-#            terraform_script: "existing-online-install-admin.sh"
-#          },
-#          {
-#            name: "type=existing cluster, env=online, phase=new install, rbac=minimal rbac",
-#            backend_config: "existing-online-install-minimum-backend-config.tfvars",
-#            terraform_script: "existing-online-install-minimum.sh"
-#          },
-#          {
-#            name: "type=existing cluster, env=airgapped, phase=upgraded install, rbac=cluster admin",
-#            backend_config: "existing-airgapped-upgrade-admin-backend-config.tfvars",
-#            terraform_script: "existing-airgapped-upgrade-admin.sh"
-#          },
-#          {
-#            name: "type=existing cluster, env=airgapped, phase=upgraded install, rbac=minimal rbac",
-#            backend_config: "existing-airgapped-upgrade-minimum-backend-config.tfvars",
-#            terraform_script: "existing-airgapped-upgrade-minimum.sh"
-#          }
-#        ]
-#
-#    steps:
-#      - name: Checkout
-#        uses: actions/checkout@v2
-#        with:
-#          repository: replicatedhq/kots-regression-automation
-#          token: ${{ secrets.E2E_GH_PAT }}
-#          path: automation
-#          ref: main
-#
-#      - name: Cleanup test environment
-#        working-directory: automation/cluster
-#        run: |
-#          terraform init -backend-config ${{ matrix.test.backend_config }}
-#          ./${{ matrix.test.terraform_script }} destroy
-#
-#      - name: Notify Slack
-#        if: failure()
-#        uses: 8398a7/action-slack@v3
-#        with:
-#          status: custom
-#          fields: repo,ref,workflow
-#          custom_payload: |
-#            {
-#              attachments: [{
-#                color: '${{ job.status }}' === 'success' ? 'good' : '${{ job.status }}' === 'failure' ? 'danger' : 'warning',
-#                text: `Clean up: ${{ matrix.test.name }}.\nStatus: ${{ job.status }}. Workflow: ${process.env.AS_WORKFLOW}. Repo: ${process.env.AS_REPO}.\nRef: ${process.env.AS_REF}`,
-#              }]
-#            }
-#        env:
-#          SLACK_WEBHOOK_URL: ${{ secrets.KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL }}
-#          MATRIX_CONTEXT: ${{ toJson(matrix) }}
-#
-#
-#  destroy-jumpbox:
-#    if: always()
-#    needs: terraform-cleanup-test-instances
-#    runs-on: ubuntu-20.04
-#    container:
-#      image: hashicorp/terraform:1.0.7
-#    steps:
-#      - name: Checkout
-#        uses: actions/checkout@v2
-#        with:
-#          repository: replicatedhq/kots-regression-automation
-#          token: ${{ secrets.E2E_GH_PAT }}
-#          path: automation
-#          ref: main
-#
-#      - name: Delete Jumpbox Environment
-#        working-directory: automation/jumpbox
-#        run: |
-#          terraform init
-#          terraform destroy --auto-approve
-#
-#      - name: Notify Slack
-#        if: failure()
-#        uses: 8398a7/action-slack@v3
-#        with:
-#          status: custom
-#          fields: repo,ref,workflow
-#          custom_payload: |
-#            {
-#              attachments: [{
-#                color: '${{ job.status }}' === 'success' ? 'good' : '${{ job.status }}' === 'failure' ? 'danger' : 'warning',
-#                text: `Destroy jumpbox: ${{ job.status }}. Workflow: ${process.env.AS_WORKFLOW}. Repo: ${process.env.AS_REPO}.\nRef: ${process.env.AS_REF}`,
-#              }]
-#            }
-#        env:
-#          SLACK_WEBHOOK_URL: ${{ secrets.KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL }}
-
   jumpbox:
     if: always()
     runs-on: ubuntu-20.04
@@ -197,22 +60,6 @@ jobs:
           terraform init
           terraform apply --auto-approve
 
-#      - name: Install openssl
-#        working-directory: automation/jumpbox
-#        run: |
-#          apk add --update openssl
-
-#      - name: Encrypt ssh.pem
-#        working-directory: automation/jumpbox
-#        run: |
-#          openssl enc -aes-256-cbc -md sha512 -pbkdf2 -iter 100000 -pass pass:${{ secrets.ENCRYPTION_KEY }} -salt -in ssh.pem -out ssh.pem.enc
-
-#      - name: Upload ssh.pem.enc artifact
-#        uses: actions/upload-artifact@v2
-#        with:
-#          name: ssh.pem.enc
-#          path: automation/jumpbox/ssh.pem.enc
-
       - name: Notify Slack
         if: failure()
         uses: 8398a7/action-slack@v3
@@ -228,7 +75,6 @@ jobs:
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL }}
-
 
   tests:
     if: always()
@@ -309,9 +155,6 @@ jobs:
         ]
 
     steps:
-#      - name: Checkout
-#        uses: actions/checkout@v2
-
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -359,125 +202,3 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL }}
           MATRIX_CONTEXT: ${{ toJson(matrix) }}
-
-
-#  run-tests:
-#    if: always()
-#    needs: terraform-setup-test-instances
-#    runs-on: ubuntu-20.04
-#    container:
-#      image: hashicorp/terraform:1.0.7
-#    strategy:
-#      fail-fast: false
-#      matrix:
-#        test: [
-#          {
-#            name: "type=embedded cluster, env=airgapped, phase=upgraded install, rbac=cluster admin",
-#            backend_config: "embedded-airgapped-upgrade-backend-config.tfvars"
-#          },
-#          {
-#            name: "type=embedded cluster, env=airgapped, phase=new install, rbac=cluster admin",
-#            backend_config: "embedded-airgapped-install-backend-config.tfvars"
-#          },
-#          {
-#            name: "type=embedded cluster, env=online, phase=new install, rbac=cluster admin",
-#            backend_config: "embedded-online-install-backend-config.tfvars"
-#          },
-#          {
-#            name: "type=embedded cluster, env=online, phase=upgraded install, rbac=cluster admin",
-#            backend_config: "embedded-online-upgrade-backend-config.tfvars"
-#          },
-#          {
-#            name: "type=existing cluster, env=airgapped, phase=new install, rbac=cluster admin",
-#            backend_config: "existing-airgapped-install-admin-backend-config.tfvars"
-#          },
-#          {
-#            name: "type=existing cluster, env=airgapped, phase=new install, rbac=minimal rbac",
-#            backend_config: "existing-airgapped-install-minimum-backend-config.tfvars"
-#          },
-#          {
-#            name: "type=existing cluster, env=online, phase=upgraded install, rbac=cluster admin",
-#            backend_config: "existing-online-upgrade-admin-backend-config.tfvars"
-#          },
-#          {
-#            name: "type=existing cluster, env=online, phase=upgraded install, rbac=minimal rbac",
-#            backend_config: "existing-online-upgrade-minimum-backend-config.tfvars"
-#          },
-#          {
-#            name: "type=existing cluster, env=online, phase=new install, rbac=cluster admin",
-#            backend_config: "existing-online-install-admin-backend-config.tfvars"
-#          },
-#          {
-#            name: "type=existing cluster, env=online, phase=new install, rbac=minimal rbac",
-#            backend_config: "existing-online-install-minimum-backend-config.tfvars"
-#          },
-#          {
-#            name: "type=existing cluster, env=airgapped, phase=upgraded install, rbac=cluster admin",
-#            backend_config: "existing-airgapped-upgrade-admin-backend-config.tfvars"
-#          },
-#          {
-#            name: "type=existing cluster, env=airgapped, phase=upgraded install, rbac=minimal rbac",
-#            backend_config: "existing-airgapped-upgrade-minimum-backend-config.tfvars"
-#          }
-#        ]
-#    steps:
-#      - name: Checkout
-#        uses: actions/checkout@v2
-#        with:
-#          repository: replicatedhq/kots-regression-automation
-#          token: ${{ secrets.E2E_GH_PAT }}
-#          path: automation
-#          ref: main
-#
-#      - name: Set Jumpbox Public Ip
-#        id: set_jumpbox_ip
-#        working-directory: automation/jumpbox
-#        run: |
-#          terraform init
-#          echo "::set-output name=jumpbox_ip::$(terraform output -raw jumpbox_ip_public)"
-#
-#      - name: Download ssh.pem.enc artifact
-#        uses: actions/download-artifact@v2
-#        with:
-#          name: ssh.pem.enc
-#          path: automation/jumpbox/
-#
-#      - name: Install openssl
-#        working-directory: automation/jumpbox
-#        run: |
-#          apk add --update openssl
-#
-#      - name: Decrypt ssh.pem
-#        working-directory: automation/jumpbox
-#        run: |
-#          openssl enc -aes-256-cbc -md sha512 -pbkdf2 -iter 100000 -pass pass:${{ secrets.ENCRYPTION_KEY }} -salt -d -in ssh.pem.enc -out ssh.pem
-#          chmod 600 ssh.pem
-#
-#      - name: Init test environment
-#        id: init_test_env
-#        working-directory: automation/cluster
-#        run: |
-#          terraform init -backend-config ${{ matrix.test.backend_config }}
-#          echo "::set-output name=instance_ip::$(terraform output -raw control_plane_private_ip)"
-#
-#      - name: Run the test
-#        working-directory: automation/jumpbox
-#        run: |
-#          ssh -i ssh.pem ubuntu@${{ steps.set_jumpbox_ip.outputs.jumpbox_ip }} -oStrictHostKeyChecking=no -oServerAliveInterval=60 -oServerAliveCountMax=10 "ssh -tt ubuntu@${{ steps.init_test_env.outputs.instance_ip }} -oServerAliveInterval=60 -oServerAliveCountMax=10 \"sudo /tmp/start.sh\""
-#
-#      - name: Notify Slack
-#        if: always()
-#        uses: 8398a7/action-slack@v3
-#        with:
-#          status: custom
-#          fields: repo,ref,workflow
-#          custom_payload: |
-#            {
-#              attachments: [{
-#                color: '${{ job.status }}' === 'success' ? 'good' : '${{ job.status }}' === 'failure' ? 'danger' : 'warning',
-#                text: `Test name: ${{ matrix.test.name }}.\nStatus: ${{ job.status }}. Workflow: ${process.env.AS_WORKFLOW}. Repo: ${process.env.AS_REPO}.\nRef: ${process.env.AS_REF}`,
-#              }]
-#            }
-#        env:
-#          SLACK_WEBHOOK_URL: ${{ secrets.KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL }}
-#          MATRIX_CONTEXT: ${{ toJson(matrix) }}
