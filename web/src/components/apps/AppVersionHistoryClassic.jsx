@@ -10,7 +10,7 @@ import Loader from "../shared/Loader";
 import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
 import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
-import UpdateCheckerModal from "@src/components/modals/UpdateCheckerModal";
+import AutomaticUpdatesModal from "@src/components/modals/AutomaticUpdatesModal";
 import ShowDetailsModal from "@src/components/modals/ShowDetailsModal";
 import ShowLogsModal from "@src/components/modals/ShowLogsModal";
 import ErrorModal from "../modals/ErrorModal";
@@ -57,7 +57,7 @@ class AppVersionHistory extends Component {
     uploadProgress: 0,
     uploadSize: 0,
     uploadResuming: false,
-    showUpdateCheckerModal: false,
+    showAutomaticUpdatesModal: false,
     displayShowDetailsModal: false,
     yamlErrorDetails: [],
     deployView: false,
@@ -212,15 +212,15 @@ class AppVersionHistory extends Component {
     });
   }
 
-  hideUpdateCheckerModal = () => {
+  hideAutomaticUpdatesModal = () => {
     this.setState({
-      showUpdateCheckerModal: false
+      showAutomaticUpdatesModal: false
     });
   }
 
-  showUpdateCheckerModal = () => {
+  showAutomaticUpdatesModal = () => {
     this.setState({
-      showUpdateCheckerModal: true
+      showAutomaticUpdatesModal: true
     });
   }
 
@@ -794,7 +794,7 @@ class AppVersionHistory extends Component {
       uploadSize,
       uploadResuming,
       noUpdateAvailiableText,
-      showUpdateCheckerModal,
+      showAutomaticUpdatesModal,
       loadingVersionHistory,
       versionHistory,
       errorTitle,
@@ -908,7 +908,7 @@ class AppVersionHistory extends Component {
           noUpdateAvailiableMsg={noUpdateAvailiableMsg}
           updateText={updateText}
           onCheckForUpdates={this.onCheckForUpdates}
-          showUpdateCheckerModal={this.showUpdateCheckerModal}
+          showAutomaticUpdatesModal={this.showAutomaticUpdatesModal}
         />
         <div className="flex-column flex1">
           <div className="flex flex1">
@@ -1088,16 +1088,17 @@ class AppVersionHistory extends Component {
           </Modal>
         }
 
-        {showUpdateCheckerModal &&
-          <UpdateCheckerModal
-            isOpen={showUpdateCheckerModal}
-            onRequestClose={this.hideUpdateCheckerModal}
+        {showAutomaticUpdatesModal &&
+          <AutomaticUpdatesModal
+            isOpen={showAutomaticUpdatesModal}
+            onRequestClose={this.hideAutomaticUpdatesModal}
             updateCheckerSpec={app.updateCheckerSpec}
             semverAutoDeploy={app.semverAutoDeploy}
+            semverAutoDeploySchedule={app.semverAutoDeploySchedule}
             appSlug={app.slug}
             gitopsEnabled={gitopsEnabled}
             onUpdateCheckerSpecSubmitted={() => {
-              this.hideUpdateCheckerModal();
+              this.hideAutomaticUpdatesModal();
               this.props.refreshAppData();
             }}
           />

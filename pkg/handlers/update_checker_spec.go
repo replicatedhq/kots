@@ -50,26 +50,39 @@ func (h *Handler) ConfigureAutomaticUpdates(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// validate cron spec
-	cronSpec := updateCheckerSpecRequest.UpdateCheckerSpec
-	if cronSpec != "@never" && cronSpec != "@default" {
-		_, err := cron.ParseStandard(cronSpec)
+	// validate update checker cron spec
+	updateCheckerSpec := updateCheckerSpecRequest.UpdateCheckerSpec
+	if updateCheckerSpec != "@never" && updateCheckerSpec != "@default" {
+		_, err := cron.ParseStandard(updateCheckerSpec)
 		if err != nil {
 			logger.Error(err)
-			updateCheckerSpecResponse.Error = "failed to parse cron spec"
+			updateCheckerSpecResponse.Error = "failed to parse update check cron spec"
 			JSON(w, 500, updateCheckerSpecResponse)
 			return
 		}
 	}
 
-	if err := store.GetStore().SetUpdateCheckerSpec(foundApp.ID, cronSpec); err != nil {
+	// validate semver auto deploy cron spec
+	semverAutoDeploy := updateCheckerSpecRequest.SemverAutoDeploy
+	semverAutoDeploySchedule := updateCheckerSpecRequest.SemverAutoDeploySchedule
+	if semverAutoDeploy != apptypes.SemverAutoDeployDisabled && semverAutoDeploySchedule != "@default" {
+		_, err := cron.ParseStandard(semverAutoDeploySchedule)
+		if err != nil {
+			logger.Error(err)
+			updateCheckerSpecResponse.Error = "failed to parse update check cron spec"
+			JSON(w, 500, updateCheckerSpecResponse)
+			return
+		}
+	}
+
+	if err := store.GetStore().SetUpdateCheckerSpec(foundApp.ID, updateCheckerSpec); err != nil {
 		logger.Error(err)
 		updateCheckerSpecResponse.Error = "failed to set update checker spec"
 		JSON(w, 500, updateCheckerSpecResponse)
 		return
 	}
 
-	if err := store.GetStore().SetSemverAutoDeploy(foundApp.ID, updateCheckerSpecRequest.SemverAutoDeploy, updateCheckerSpecRequest.SemverAutoDeploySchedule); err != nil {
+	if err := store.GetStore().SetSemverAutoDeploy(foundApp.ID, semverAutoDeploy, semverAutoDeploySchedule); err != nil {
 		logger.Error(err)
 		updateCheckerSpecResponse.Error = "failed to set semver auto deploy"
 		JSON(w, 500, updateCheckerSpecResponse)
