@@ -693,7 +693,7 @@ class DashboardVersionCard extends React.Component {
                 </div>
               }
               <span className="icon clickable dashboard-card-configure-update-icon u-marginRight--5" />
-              <span className="replicated-link u-fontSize--small" onClick={this.props.showUpdateCheckerModal}>Configure automatic update checks</span>
+              <span className="replicated-link u-fontSize--small" onClick={this.props.showAutomaticUpdatesModal}>Configure automatic updates</span>
             </div>
             }
           </div>
