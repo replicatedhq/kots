@@ -295,7 +295,7 @@ export default class DashboardCard extends React.Component {
                 {this.renderVersionAvailable(downstream)}
                 <div className="flex alignItems--center">
                   <button className="btn primary blue u-marginTop--10" onClick={onCheckForUpdates}>Check for update</button>
-                  <span className="icon settings-small-icon u-marginLeft--10 u-cursor--pointer u-marginTop--10" onClick={this.props.showAutomaticUpdatesModal} data-tip="Configubgre automatic updates"></span>
+                  <span className="icon settings-small-icon u-marginLeft--10 u-cursor--pointer u-marginTop--10" onClick={this.props.showAutomaticUpdatesModal} data-tip="Configure automatic updates"></span>
                   <ReactTooltip effect="solid" className="replicated-tooltip" />
                 </div>
                 {updateText}

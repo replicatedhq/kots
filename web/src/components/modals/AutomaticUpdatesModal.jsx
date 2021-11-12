@@ -160,7 +160,7 @@ export default class AutomaticUpdatesModal extends React.Component {
         className="Modal SmallSize ConfigureUpdatesModal"
       >
         <div className="u-position--relative flex-column u-padding--20">
-          <span className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-marginBottom--15">Configubgre automatic updates</span>
+          <span className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-marginBottom--15">Configure automatic updates</span>
           {gitopsEnabled ? 
             <p className="u-fontSize--normal u-lineHeight--normal u-textColor--bodyCopy u-marginBottom--20">
               Configure how often you would like to automatically check for updates.<br/>A commit will be made if an update was found.
