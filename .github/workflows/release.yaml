@@ -5,8 +5,9 @@ on:
     tags:
       - "v*.*.*"
 
+    branches: # TEMP DON'T LET ME MERGE THIS
+      - standalone-regression
 jobs:
-
   generate-schema:
     runs-on: ubuntu-18.04
     container:
@@ -501,7 +502,7 @@ jobs:
         srcReleaseTag: ${{ steps.get_tag.outputs.GIT_TAG }}
         dstReleaseTag: "v0.0.0-nightly"
 
-  regression_test:
+  regression-test:
     name: Run regression testing
     runs-on: ubuntu-latest
     steps:

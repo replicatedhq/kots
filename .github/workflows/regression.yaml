@@ -41,7 +41,6 @@ env:
 
 jobs:
   jumpbox:
-    if: always()
     runs-on: ubuntu-20.04
     container:
       image: hashicorp/terraform:1.0.7
@@ -55,6 +54,7 @@ jobs:
           ref: main
 
       - name: Create Jumpbox Environment
+        if: always()
         working-directory: automation/jumpbox
         run: |
           terraform init
@@ -77,7 +77,6 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL }}
 
   tests:
-    if: always()
     needs: jumpbox
     runs-on: ubuntu-20.04
     container:
@@ -164,6 +163,7 @@ jobs:
           ref: adding-outputs
 
       - name: Create test environment
+        if: always()
         working-directory: automation/cluster
         run: |
           export CURRENT_TAG=${{ github.event.inputs.version_tag_old }}
