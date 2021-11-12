@@ -248,7 +248,7 @@ func (s *KOTSStore) GetAppVersionArchive(appID string, sequence int64, dstPath s
 	return nil
 }
 
-func (s *KOTSStore) CreateAppVersion(appID string, currentSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) (int64, error) {
+func (s *KOTSStore) CreateAppVersion(appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) (int64, error) {
 	db := persistence.MustGetDBSession()
 
 	tx, err := db.Begin()
@@ -257,7 +257,7 @@ func (s *KOTSStore) CreateAppVersion(appID string, currentSequence *int64, files
 	}
 	defer tx.Rollback()
 
-	newSequence, err := s.createAppVersion(tx, appID, currentSequence, filesInDir, source, skipPreflights, gitops)
+	newSequence, err := s.createAppVersion(tx, appID, baseSequence, filesInDir, source, skipPreflights, gitops)
 	if err != nil {
 		return 0, err
 	}
@@ -269,7 +269,7 @@ func (s *KOTSStore) CreateAppVersion(appID string, currentSequence *int64, files
 	return newSequence, nil
 }
 
-func (s *KOTSStore) createAppVersion(tx *sql.Tx, appID string, currentSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) (int64, error) {
+func (s *KOTSStore) createAppVersion(tx *sql.Tx, appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) (int64, error) {
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filesInDir)
 	if err != nil {
 		return int64(0), errors.Wrap(err, "failed to read kots kinds")
@@ -290,7 +290,7 @@ func (s *KOTSStore) createAppVersion(tx *sql.Tx, appID string, currentSequence *
 		return int64(0), errors.Wrap(err, "failed to replace secrets")
 	}
 
-	newSequence, err := s.createAppVersionRecord(tx, appID, currentSequence, appName, appIcon, kotsKinds)
+	newSequence, err := s.createAppVersionRecord(tx, appID, appName, appIcon, kotsKinds)
 	if err != nil {
 		return int64(0), errors.Wrap(err, "failed to create app version")
 	}
@@ -300,7 +300,7 @@ func (s *KOTSStore) createAppVersion(tx *sql.Tx, appID string, currentSequence *
 	}
 
 	previousArchiveDir := ""
-	if currentSequence != nil {
+	if baseSequence != nil {
 		previousDir, err := ioutil.TempDir("", "kotsadm")
 		if err != nil {
 			return int64(0), errors.Wrap(err, "failed to create temp dir")
@@ -308,7 +308,7 @@ func (s *KOTSStore) createAppVersion(tx *sql.Tx, appID string, currentSequence *
 		defer os.RemoveAll(previousDir)
 
 		// Get the previous archive, we need this to calculate the diff
-		err = s.GetAppVersionArchive(appID, *currentSequence, previousDir)
+		err = s.GetAppVersionArchive(appID, *baseSequence, previousDir)
 		if err != nil {
 			return int64(0), errors.Wrap(err, "failed to get previous archive")
 		}
@@ -333,12 +333,12 @@ func (s *KOTSStore) createAppVersion(tx *sql.Tx, appID string, currentSequence *
 		// will support multiple downstreams, so this is cleaner here for now
 
 		downstreamStatus := types.VersionPending
-		if currentSequence == nil && kotsKinds.IsConfigurable() { // initial version should always require configuration (if exists) even if all required items are already set and have values (except for automated installs, which can override this later)
+		if baseSequence == nil && kotsKinds.IsConfigurable() { // initial version should always require configuration (if exists) even if all required items are already set and have values (except for automated installs, which can override this later)
 			downstreamStatus = types.VersionPendingConfig
 		} else if kotsKinds.HasPreflights() && !skipPreflights {
 			downstreamStatus = types.VersionPendingPreflight
 		}
-		if currentSequence != nil { // only check if the version needs configuration for later versions (not the initial one) since the config is always required for the initial version (except for automated installs, which can override that later)
+		if baseSequence != nil { // only check if the version needs configuration for later versions (not the initial one) since the config is always required for the initial version (except for automated installs, which can override that later)
 			// check if version needs additional configuration
 			t, err := kotsadmconfig.NeedsConfiguration(a.Slug, newSequence, a.IsAirgap, kotsKinds, registrySettings)
 			if err != nil {
@@ -350,7 +350,7 @@ func (s *KOTSStore) createAppVersion(tx *sql.Tx, appID string, currentSequence *
 		}
 
 		diffSummary, diffSummaryError := "", ""
-		if currentSequence != nil {
+		if baseSequence != nil {
 			// diff this release from the last release
 			diff, err := kustomize.DiffAppVersionsForDownstream(d.Name, filesInDir, previousArchiveDir, kustomizeBinPath)
 			if err != nil {
@@ -390,7 +390,7 @@ func (s *KOTSStore) createAppVersion(tx *sql.Tx, appID string, currentSequence *
 	return newSequence, nil
 }
 
-func (s *KOTSStore) createAppVersionRecord(tx *sql.Tx, appID string, currentSequence *int64, appName string, appIcon string, kotsKinds *kotsutil.KotsKinds) (int64, error) {
+func (s *KOTSStore) createAppVersionRecord(tx *sql.Tx, appID string, appName string, appIcon string, kotsKinds *kotsutil.KotsKinds) (int64, error) {
 	// we marshal these here because it's a decision of the store to cache them in the app version table
 	// not all stores will do this
 	supportBundleSpec, err := kotsKinds.Marshal("troubleshoot.replicated.com", "v1beta1", "Collector")
@@ -441,13 +441,15 @@ func (s *KOTSStore) createAppVersionRecord(tx *sql.Tx, appID string, currentSequ
 		return int64(0), errors.Wrap(err, "failed to marshal configvalues spec")
 	}
 
+	var maxSequence sql.NullInt64
+	row := tx.QueryRow(`select max(sequence) from app_version where app_id = $1`, appID)
+	if err := row.Scan(&maxSequence); err != nil {
+		return 0, errors.Wrap(err, "failed to find current max sequence in row")
+	}
+
 	newSequence := int64(0)
-	if currentSequence != nil {
-		row := tx.QueryRow(`select max(sequence) from app_version where app_id = $1`, appID)
-		if err := row.Scan(&newSequence); err != nil {
-			return 0, errors.Wrap(err, "failed to find current max sequence in row")
-		}
-		newSequence++
+	if maxSequence.Valid {
+		newSequence = maxSequence.Int64 + 1
 	}
 
 	var releasedAt *time.Time

@@ -19,6 +19,25 @@ import (
 )
 
 func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kotsv1beta1.License, bool, error) {
+	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
+	if err != nil {
+		return nil, false, errors.Wrap(err, "failed to get app downstreams")
+	}
+	if len(downstreams) == 0 {
+		return nil, false, errors.Errorf("app %s has no downstreams", a.Slug)
+	}
+
+	clusterID := downstreams[0].ClusterID
+	downstreamVersions, err := store.GetStore().GetAppVersions(a.ID, clusterID)
+	if err != nil {
+		return nil, false, errors.Wrapf(err, "failed to get downstream versions for cluster %s", clusterID)
+	}
+
+	if len(downstreamVersions.AllVersions) == 0 {
+		return nil, false, errors.Errorf("app %s has no downstream versions", a.Slug)
+	}
+	latestVersion := downstreamVersions.AllVersions[0]
+
 	currentLicense, err := store.GetStore().GetLatestLicenseForApp(a.ID)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "failed to get current license")
@@ -57,7 +76,7 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 
 	// Because an older version can be edited, it is possible to have latest version with an outdated license.
 	// So even if global license sequence is already latest, we still need to create a new app version in this case.
-	err = store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence, archiveDir)
+	err = store.GetStore().GetAppVersionArchive(a.ID, latestVersion.ParentSequence, archiveDir)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "failed to get latest app version")
 	}
@@ -70,7 +89,7 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 	synced := false
 	if updatedLicense.Spec.LicenseSequence != currentLicense.Spec.LicenseSequence ||
 		updatedLicense.Spec.LicenseSequence != kotsKinds.License.Spec.LicenseSequence {
-		newSequence, err := store.GetStore().UpdateAppLicense(a.ID, a.CurrentSequence, archiveDir, updatedLicense, licenseString, failOnVersionCreate, &version.DownstreamGitOps{}, &render.Renderer{})
+		newSequence, err := store.GetStore().UpdateAppLicense(a.ID, latestVersion.ParentSequence, archiveDir, updatedLicense, licenseString, failOnVersionCreate, &version.DownstreamGitOps{}, &render.Renderer{})
 		if err != nil {
 			return nil, false, errors.Wrap(err, "failed to update license")
 		}

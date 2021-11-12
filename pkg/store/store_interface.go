@@ -169,7 +169,7 @@ type VersionStore interface {
 	IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int64, renderer rendertypes.Renderer) (bool, error)
 	GetAppVersionArchive(appID string, sequence int64, dstPath string) error
 	CreateAppVersionArchive(appID string, sequence int64, archivePath string) error
-	CreateAppVersion(appID string, currentSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) (int64, error)
+	CreateAppVersion(appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) (int64, error)
 	GetAppVersion(appID string, sequence int64) (*versiontypes.AppVersion, error)
 	GetAppVersionsAfter(appID string, sequence int64) ([]*versiontypes.AppVersion, error)
 	UpdateAppVersionInstallationSpec(appID string, sequence int64, spec kotsv1beta1.Installation) error

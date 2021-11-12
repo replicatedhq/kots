@@ -88,7 +88,7 @@ func (s *KOTSStore) GetAllAppLicenses() ([]*kotsv1beta1.License, error) {
 	return licenses, nil
 }
 
-func (s *KOTSStore) UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *kotsv1beta1.License, originalLicenseData string, failOnVersionCreate bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error) {
+func (s *KOTSStore) UpdateAppLicense(appID string, baseSequence int64, archiveDir string, newLicense *kotsv1beta1.License, originalLicenseData string, failOnVersionCreate bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error) {
 	db := persistence.MustGetDBSession()
 
 	tx, err := db.Begin()
@@ -114,7 +114,7 @@ func (s *KOTSStore) UpdateAppLicense(appID string, sequence int64, archiveDir st
 		return int64(0), errors.Wrapf(err, "update app %q license", appID)
 	}
 
-	newSeq, err := s.createNewVersionForLicenseChange(tx, appID, sequence, archiveDir, gitops, renderer)
+	newSeq, err := s.createNewVersionForLicenseChange(tx, appID, baseSequence, archiveDir, gitops, renderer)
 	if err != nil {
 		// ignore error here to prevent a failure to render the current version
 		// preventing the end-user from updating the application
@@ -149,7 +149,7 @@ func (s *KOTSStore) UpdateAppLicenseSyncNow(appID string) error {
 	return nil
 }
 
-func (s *KOTSStore) createNewVersionForLicenseChange(tx *sql.Tx, appID string, sequence int64, archiveDir string, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error) {
+func (s *KOTSStore) createNewVersionForLicenseChange(tx *sql.Tx, appID string, baseSequence int64, archiveDir string, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error) {
 	registrySettings, err := s.GetRegistryDetailsForApp(appID)
 	if err != nil {
 		return int64(0), errors.Wrap(err, "failed to get registry settings for app")
@@ -169,7 +169,7 @@ func (s *KOTSStore) createNewVersionForLicenseChange(tx *sql.Tx, appID string, s
 		return int64(0), errors.Wrap(err, "failed to render new version")
 	}
 
-	newSequence, err := s.createAppVersion(tx, appID, &sequence, archiveDir, "License Change", false, gitops)
+	newSequence, err := s.createAppVersion(tx, appID, &baseSequence, archiveDir, "License Change", false, gitops)
 	if err != nil {
 		return int64(0), errors.Wrap(err, "failed to create new version")
 	}
