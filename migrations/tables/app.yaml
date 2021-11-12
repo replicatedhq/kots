@@ -80,6 +80,3 @@ spec:
       - name: semver_auto_deploy
         type: text
         default: 'disabled'
-      - name: semver_auto_deploy_schedule
-        type: text
-        default: '@default'
