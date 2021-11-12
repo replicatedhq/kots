@@ -42,9 +42,6 @@ func Start() error {
 	}
 
 	for _, a := range appsList {
-		if a.IsAirgap {
-			continue
-		}
 		if err := Configure(a.ID); err != nil {
 			logger.Error(errors.Wrapf(err, "failed to configure app %s", a.Slug))
 		}
@@ -106,13 +103,15 @@ func Configure(appID string) error {
 	jobAppID := a.ID
 	jobAppSlug := a.Slug
 	jobSemverAutoDeploy := a.SemverAutoDeploy
+	jobSemverAutoDeploySchedule := a.SemverAutoDeploySchedule
 
 	_, err = job.AddFunc(cronSpec, func() {
 		logger.Debug("checking updates for app", zap.String("slug", jobAppSlug))
 
 		opts := CheckForUpdatesOpts{
-			AppID:            jobAppID,
-			SemverAutoDeploy: jobSemverAutoDeploy,
+			AppID:                    jobAppID,
+			SemverAutoDeploy:         jobSemverAutoDeploy,
+			SemverAutoDeploySchedule: jobSemverAutoDeploySchedule,
 		}
 		availableUpdates, err := CheckForUpdates(opts)
 		if err != nil {
@@ -152,15 +151,17 @@ func Stop(appID string) {
 }
 
 type CheckForUpdatesOpts struct {
-	AppID            string
-	Deploy           bool
-	SkipPreflights   bool
-	IsCLI            bool
-	SemverAutoDeploy apptypes.SemverAutoDeploy
+	AppID                    string
+	Deploy                   bool
+	SkipPreflights           bool
+	IsCLI                    bool
+	SemverAutoDeploy         apptypes.SemverAutoDeploy
+	SemverAutoDeploySchedule string
 }
 
 // CheckForUpdates checks (and downloads) latest updates for a specific app
-// if "deploy" is set to true, the latest version/update will be deployed
+// if "Deploy" is set to true, the latest version/update will be deployed.
+// otherwise, if "SemverAutoDeploy" is enabled and its schedule is set to "@default", then the version/update that matches the semver auto deploy configuration will be deployed.
 // returns the number of available updates
 func CheckForUpdates(opts CheckForUpdatesOpts) (int64, error) {
 	currentStatus, _, err := store.GetStore().GetTaskStatus("update-download")
@@ -380,6 +381,10 @@ func findUpdateIndexToDeploy(opts CheckForUpdatesOpts, updates []upstreamtypes.U
 	}
 
 	if opts.SemverAutoDeploy == "" || opts.SemverAutoDeploy == apptypes.SemverAutoDeployDisabled {
+		return -1
+	}
+
+	if opts.SemverAutoDeploySchedule != "@default" {
 		return -1
 	}
 

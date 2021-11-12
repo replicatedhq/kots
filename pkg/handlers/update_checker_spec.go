@@ -7,6 +7,7 @@ import (
 
 	"github.com/gorilla/mux"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/autodeployer"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/updatechecker"
@@ -14,15 +15,16 @@ import (
 )
 
 type UpdateCheckerSpecRequest struct {
-	UpdateCheckerSpec string                    `json:"updateCheckerSpec"`
-	SemverAutoDeploy  apptypes.SemverAutoDeploy `json:"semverAutoDeploy"`
+	UpdateCheckerSpec        string                    `json:"updateCheckerSpec"`
+	SemverAutoDeploy         apptypes.SemverAutoDeploy `json:"semverAutoDeploy"`
+	SemverAutoDeploySchedule string                    `json:"semverAutoDeploySchedule"`
 }
 
 type UpdateCheckerSpecResponse struct {
 	Error string `json:"error"`
 }
 
-func (h *Handler) UpdateCheckerSpec(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) ConfigureAutomaticUpdates(w http.ResponseWriter, r *http.Request) {
 	updateCheckerSpecResponse := &UpdateCheckerSpecResponse{}
 
 	updateCheckerSpecRequest := UpdateCheckerSpecRequest{}
@@ -67,7 +69,7 @@ func (h *Handler) UpdateCheckerSpec(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := store.GetStore().SetSemverAutoDeploy(foundApp.ID, updateCheckerSpecRequest.SemverAutoDeploy); err != nil {
+	if err := store.GetStore().SetSemverAutoDeploy(foundApp.ID, updateCheckerSpecRequest.SemverAutoDeploy, updateCheckerSpecRequest.SemverAutoDeploySchedule); err != nil {
 		logger.Error(err)
 		updateCheckerSpecResponse.Error = "failed to set semver auto deploy"
 		JSON(w, 500, updateCheckerSpecResponse)
@@ -78,6 +80,14 @@ func (h *Handler) UpdateCheckerSpec(w http.ResponseWriter, r *http.Request) {
 	if err := updatechecker.Configure(foundApp.ID); err != nil {
 		logger.Error(err)
 		updateCheckerSpecResponse.Error = "failed to reconfigure update checker cron job"
+		JSON(w, 500, updateCheckerSpecResponse)
+		return
+	}
+
+	// reconfigure auto deployer for the app
+	if err := autodeployer.Configure(foundApp.ID); err != nil {
+		logger.Error(err)
+		updateCheckerSpecResponse.Error = "failed to reconfigure auto deployer cron job"
 		JSON(w, 500, updateCheckerSpecResponse)
 		return
 	}

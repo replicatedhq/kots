@@ -76,7 +76,7 @@ export default class UpdateCheckerModal extends React.Component {
       submitUpdateCheckerSpecErr: ""
     });
 
-    fetch(`${window.env.API_ENDPOINT}/app/${appSlug}/updatecheckerspec`, {
+    fetch(`${window.env.API_ENDPOINT}/app/${appSlug}/automaticupdates`, {
       headers: {
         "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
@@ -85,6 +85,7 @@ export default class UpdateCheckerModal extends React.Component {
       body: JSON.stringify({
         updateCheckerSpec: updateCheckerSpec,
         semverAutoDeploy: selectedSemverAutoDeploy.value,
+        semverAutoDeploySchedule: "" // TODO: @Grayson
       })
     })
       .then(async (res) => {
