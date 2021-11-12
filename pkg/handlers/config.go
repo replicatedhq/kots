@@ -361,22 +361,22 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 
 func isVersionConfigEditable(app *apptypes.App, sequence int64) (bool, error) {
 	// Only latest and currently deployed versions can be edited
-	if app.CurrentSequence == sequence {
-		return true, nil
-	}
-
 	downstreams, err := store.GetStore().ListDownstreamsForApp(app.ID)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get downstreams")
 	}
 
 	for _, d := range downstreams {
-		parentSequence, err := store.GetStore().GetCurrentParentSequence(app.ID, d.ClusterID)
+		versions, err := store.GetStore().GetAppVersions(app.ID, d.ClusterID)
 		if err != nil {
-			return false, errors.Wrap(err, "failed to get downstream parent sequence")
+			return false, errors.Wrap(err, "failed to get downstream versions")
 		}
 
-		if parentSequence == sequence {
+		if versions.CurrentVersion != nil && versions.CurrentVersion.ParentSequence == sequence {
+			return true, nil
+		}
+
+		if len(versions.PendingVersions) > 0 && versions.PendingVersions[0].ParentSequence == sequence {
 			return true, nil
 		}
 	}
