@@ -23,21 +23,6 @@ import (
 	applicationv1beta1 "sigs.k8s.io/application/api/v1beta1"
 )
 
-// GetNextAppSequence determines next available sequence for this app
-// we shouldn't assume that a.CurrentSequence is accurate. Returns 0 if currentSequence is nil
-func GetNextAppSequence(appID string, currentSequence *int64) (int64, error) {
-	newSequence := 0
-	if currentSequence != nil {
-		db := persistence.MustGetDBSession()
-		row := db.QueryRow(`select max(sequence) from app_version where app_id = $1`, appID)
-		if err := row.Scan(&newSequence); err != nil {
-			return 0, errors.Wrap(err, "failed to find current max sequence in row")
-		}
-		newSequence++
-	}
-	return int64(newSequence), nil
-}
-
 type DownstreamGitOps struct {
 }
 
