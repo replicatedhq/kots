@@ -114,7 +114,7 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 	// 	zap.String("id", id))
 
 	db := persistence.MustGetDBSession()
-	query := `select id, name, license, upstream_uri, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at, last_license_sync, is_airgap, snapshot_ttl_new, snapshot_schedule, restore_in_progress_name, restore_undeploy_status, update_checker_spec, semver_auto_deploy, semver_auto_deploy_schedule, install_state from app where id = $1`
+	query := `select id, name, license, upstream_uri, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at, last_license_sync, is_airgap, snapshot_ttl_new, snapshot_schedule, restore_in_progress_name, restore_undeploy_status, update_checker_spec, semver_auto_deploy, install_state from app where id = $1`
 	row := db.QueryRow(query, id)
 
 	app := apptypes.App{}
@@ -133,9 +133,8 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 	var restoreUndeployStatus sql.NullString
 	var updateCheckerSpec sql.NullString
 	var semverAutoDeploy sql.NullString
-	var semverAutoDeploySchedule sql.NullString
 
-	if err := row.Scan(&app.ID, &app.Name, &licenseStr, &upstreamURI, &iconURI, &createdAt, &updatedAt, &app.Slug, &currentSequence, &lastUpdateCheckAt, &lastLicenseSync, &app.IsAirgap, &snapshotTTLNew, &snapshotSchedule, &restoreInProgressName, &restoreUndeployStatus, &updateCheckerSpec, &semverAutoDeploy, &semverAutoDeploySchedule, &app.InstallState); err != nil {
+	if err := row.Scan(&app.ID, &app.Name, &licenseStr, &upstreamURI, &iconURI, &createdAt, &updatedAt, &app.Slug, &currentSequence, &lastUpdateCheckAt, &lastLicenseSync, &app.IsAirgap, &snapshotTTLNew, &snapshotSchedule, &restoreInProgressName, &restoreUndeployStatus, &updateCheckerSpec, &semverAutoDeploy, &app.InstallState); err != nil {
 		return nil, errors.Wrap(err, "failed to scan app")
 	}
 
@@ -151,7 +150,6 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 	app.RestoreUndeployStatus = apptypes.UndeployStatus(restoreUndeployStatus.String)
 	app.UpdateCheckerSpec = updateCheckerSpec.String
 	app.SemverAutoDeploy = apptypes.SemverAutoDeploy(semverAutoDeploy.String)
-	app.SemverAutoDeploySchedule = semverAutoDeploySchedule.String
 
 	if updatedAt.Valid {
 		app.UpdatedAt = &updatedAt.Time
@@ -386,13 +384,13 @@ func (s *KOTSStore) SetUpdateCheckerSpec(appID string, updateCheckerSpec string)
 	return nil
 }
 
-func (s *KOTSStore) SetSemverAutoDeploy(appID string, semverAutoDeploy apptypes.SemverAutoDeploy, semverAutoDeploySchedule string) error {
+func (s *KOTSStore) SetSemverAutoDeploy(appID string, semverAutoDeploy apptypes.SemverAutoDeploy) error {
 	logger.Debug("setting semver auto deploy",
 		zap.String("appID", appID))
 
 	db := persistence.MustGetDBSession()
-	query := `update app set semver_auto_deploy = $1, semver_auto_deploy_schedule = $2 where id = $3`
-	_, err := db.Exec(query, semverAutoDeploy, semverAutoDeploySchedule, appID)
+	query := `update app set semver_auto_deploy = $1 where id = $2`
+	_, err := db.Exec(query, semverAutoDeploy, appID)
 	if err != nil {
 		return errors.Wrap(err, "failed to exec db query")
 	}

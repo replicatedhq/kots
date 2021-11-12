@@ -275,7 +275,6 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		IsConfigurable:                 a.IsConfigurable,
 		UpdateCheckerSpec:              a.UpdateCheckerSpec,
 		SemverAutoDeploy:               a.SemverAutoDeploy,
-		SemverAutoDeploySchedule:       a.SemverAutoDeploySchedule,
 		IsGitOpsSupported:              license.Spec.IsGitOpsSupported,
 		IsIdentityServiceSupported:     license.Spec.IsIdentityServiceSupported,
 		IsAppIdentityServiceSupported:  isAppIdentityServiceSupported,
