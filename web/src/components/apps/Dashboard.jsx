@@ -9,7 +9,7 @@ import AppStatus from "./AppStatus";
 import DashboardLicenseCard from "./DashboardLicenseCard";
 import DashboardSnapshotsCard from "./DashboardSnapshotsCard";
 import DashboardGraphsCard from "./DashboardGraphsCard";
-import UpdateCheckerModal from "@src/components/modals/UpdateCheckerModal";
+import AutomaticUpdatesModal from "@src/components/modals/AutomaticUpdatesModal";
 import SnapshotDifferencesModal from "@src/components/modals/SnapshotDifferencesModal";
 import Modal from "react-modal";
 import { Repeater } from "../../utilities/repeater";
@@ -46,7 +46,7 @@ class Dashboard extends Component {
     viewAirgapUpdateError: false,
     airgapUpdateError: "",
     startSnapshotErrorMsg: "",
-    showUpdateCheckerModal: false,
+    showAutomaticUpdatesModal: false,
     showAppStatusModal: false,
     dashboard: {
       appStatus: null,
@@ -208,15 +208,15 @@ class Dashboard extends Component {
       });
   }
 
-  hideUpdateCheckerModal = () => {
+  hideAutomaticUpdatesModal = () => {
     this.setState({
-      showUpdateCheckerModal: false
+      showAutomaticUpdatesModal: false
     });
   }
 
-  showUpdateCheckerModal = () => {
+  showAutomaticUpdatesModal = () => {
     this.setState({
-      showUpdateCheckerModal: true
+      showAutomaticUpdatesModal: true
     });
   }
 
@@ -552,7 +552,7 @@ class Dashboard extends Component {
                   checkingForUpdateError={this.state.checkingForUpdateError}
                   viewAirgapUploadError={() => this.toggleViewAirgapUploadError()}
                   viewAirgapUpdateError={(err) => this.toggleViewAirgapUpdateError(err)}
-                  showUpdateCheckerModal={this.showUpdateCheckerModal}
+                  showAutomaticUpdatesModal={this.showAutomaticUpdatesModal}
                 />
               </div>
               <div className="flex1 flex-column u-paddingLeft--15">
@@ -658,16 +658,16 @@ class Dashboard extends Component {
             </div>
           </Modal>
         }
-        {this.state.showUpdateCheckerModal &&
-          <UpdateCheckerModal
-            isOpen={this.state.showUpdateCheckerModal}
-            onRequestClose={this.hideUpdateCheckerModal}
+        {this.state.showAutomaticUpdatesModal &&
+          <AutomaticUpdatesModal
+            isOpen={this.state.showAutomaticUpdatesModal}
+            onRequestClose={this.hideAutomaticUpdatesModal}
             updateCheckerSpec={app.updateCheckerSpec}
             semverAutoDeploy={app.semverAutoDeploy}
             appSlug={app.slug}
             gitopsEnabled={downstream?.gitops?.enabled}
-            onUpdateCheckerSpecSubmitted={() => {
-              this.hideUpdateCheckerModal();
+            onAutomaticUpdatesConfigured={() => {
+              this.hideAutomaticUpdatesModal();
               this.props.refreshAppData();
             }}
           />

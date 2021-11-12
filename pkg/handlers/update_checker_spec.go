@@ -13,20 +13,20 @@ import (
 	cron "github.com/robfig/cron/v3"
 )
 
-type UpdateCheckerSpecRequest struct {
+type ConfigureAutomaticUpdatesRequest struct {
 	UpdateCheckerSpec string                    `json:"updateCheckerSpec"`
 	SemverAutoDeploy  apptypes.SemverAutoDeploy `json:"semverAutoDeploy"`
 }
 
-type UpdateCheckerSpecResponse struct {
+type ConfigureAutomaticUpdatesResponse struct {
 	Error string `json:"error"`
 }
 
-func (h *Handler) UpdateCheckerSpec(w http.ResponseWriter, r *http.Request) {
-	updateCheckerSpecResponse := &UpdateCheckerSpecResponse{}
+func (h *Handler) ConfigureAutomaticUpdates(w http.ResponseWriter, r *http.Request) {
+	updateCheckerSpecResponse := &ConfigureAutomaticUpdatesResponse{}
 
-	updateCheckerSpecRequest := UpdateCheckerSpecRequest{}
-	if err := json.NewDecoder(r.Body).Decode(&updateCheckerSpecRequest); err != nil {
+	configureAutomaticUpdatesRequest := ConfigureAutomaticUpdatesRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&configureAutomaticUpdatesRequest); err != nil {
 		logger.Error(err)
 		updateCheckerSpecResponse.Error = "failed to decode request body"
 		JSON(w, 400, updateCheckerSpecResponse)
@@ -49,7 +49,7 @@ func (h *Handler) UpdateCheckerSpec(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// validate cron spec
-	cronSpec := updateCheckerSpecRequest.UpdateCheckerSpec
+	cronSpec := configureAutomaticUpdatesRequest.UpdateCheckerSpec
 	if cronSpec != "@never" && cronSpec != "@default" {
 		_, err := cron.ParseStandard(cronSpec)
 		if err != nil {
@@ -67,7 +67,7 @@ func (h *Handler) UpdateCheckerSpec(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := store.GetStore().SetSemverAutoDeploy(foundApp.ID, updateCheckerSpecRequest.SemverAutoDeploy); err != nil {
+	if err := store.GetStore().SetSemverAutoDeploy(foundApp.ID, configureAutomaticUpdatesRequest.SemverAutoDeploy); err != nil {
 		logger.Error(err)
 		updateCheckerSpecResponse.Error = "failed to set semver auto deploy"
 		JSON(w, 500, updateCheckerSpecResponse)

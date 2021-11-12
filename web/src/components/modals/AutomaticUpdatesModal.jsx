@@ -46,7 +46,7 @@ const SEMVER_AUTO_DEPLOY_OPTIONS = [
   }
 ];
 
-export default class UpdateCheckerModal extends React.Component {
+export default class AutomaticUpdatesModal extends React.Component {
   constructor(props) {
     super(props);
 
@@ -62,21 +62,21 @@ export default class UpdateCheckerModal extends React.Component {
 
     this.state = {
       updateCheckerSpec: props.updateCheckerSpec,
-      submitUpdateCheckerSpecErr: "",
+      configureAutomaticUpdatesErr: "",
       selectedSchedule,
       selectedSemverAutoDeploy,
     };
   }
 
-  onSubmitUpdateCheckerSpec = () => {
+  onConfigureAutomaticUpdates = () => {
     const { updateCheckerSpec, selectedSemverAutoDeploy } = this.state;
     const { appSlug } = this.props;
 
     this.setState({
-      submitUpdateCheckerSpecErr: ""
+      configureAutomaticUpdatesErr: ""
     });
 
-    fetch(`${window.env.API_ENDPOINT}/app/${appSlug}/updatecheckerspec`, {
+    fetch(`${window.env.API_ENDPOINT}/app/${appSlug}/automaticupdates`, {
       headers: {
         "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
@@ -91,22 +91,22 @@ export default class UpdateCheckerModal extends React.Component {
         if (!res.ok) {
           const response = await res.json();
           this.setState({
-            submitUpdateCheckerSpecErr: response?.error
+            configureAutomaticUpdatesErr: response?.error
           });
           return;
         }
 
         this.setState({
-          submitUpdateCheckerSpecErr: ""
+          configureAutomaticUpdatesErr: ""
         });
         
-        if (this.props.onUpdateCheckerSpecSubmitted) {
-          this.props.onUpdateCheckerSpecSubmitted();
+        if (this.props.onAutomaticUpdatesConfigured) {
+          this.props.onAutomaticUpdatesConfigured();
         }
       })
       .catch((err) => {
         this.setState({
-          submitUpdateCheckerSpecErr: String(err)
+          configureAutomaticUpdatesErr: String(err)
         });
       });
   }
@@ -146,7 +146,7 @@ export default class UpdateCheckerModal extends React.Component {
 
   render() {
     const { isOpen, onRequestClose, gitopsEnabled } = this.props;
-    const { updateCheckerSpec, selectedSchedule, selectedSemverAutoDeploy, submitUpdateCheckerSpecErr } = this.state;
+    const { updateCheckerSpec, selectedSchedule, selectedSemverAutoDeploy, configureAutomaticUpdatesErr } = this.state;
 
     const humanReadableCron = this.getReadableCronExpression(updateCheckerSpec);
 
@@ -160,7 +160,7 @@ export default class UpdateCheckerModal extends React.Component {
         className="Modal SmallSize ConfigureUpdatesModal"
       >
         <div className="u-position--relative flex-column u-padding--20">
-          <span className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-marginBottom--15">Configure automatic update checks</span>
+          <span className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-marginBottom--15">Configure automatic updates</span>
           {gitopsEnabled ? 
             <p className="u-fontSize--normal u-lineHeight--normal u-textColor--bodyCopy u-marginBottom--20">
               Configure how often you would like to automatically check for updates.<br/>A commit will be made if an update was found.
@@ -207,7 +207,6 @@ export default class UpdateCheckerModal extends React.Component {
                 }
               </div>
             </div>
-            {submitUpdateCheckerSpecErr && <span className="u-textColor--error u-fontSize--small u-fontWeight--bold u-marginTop--15">Error: {submitUpdateCheckerSpecErr}</span>}
           </div>
           <div className="flex-column flex1 u-marginTop--15">
             <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal">Automatically deploy new versions</p>
@@ -222,10 +221,11 @@ export default class UpdateCheckerModal extends React.Component {
               value={selectedSemverAutoDeploy}
               onChange={this.handleSemverAutoDeployOptionChange}
               isOptionSelected={(option) => { option.value === selectedSemverAutoDeploy }}
-            />
+              />
           </div>
+          {configureAutomaticUpdatesErr && <span className="u-textColor--error u-fontSize--small u-fontWeight--bold u-marginTop--15">Error: {configureAutomaticUpdatesErr}</span>}
           <div className="flex u-marginTop--20">
-            <button className="btn primary blue" onClick={this.onSubmitUpdateCheckerSpec}>Update</button>
+            <button className="btn primary blue" onClick={this.onConfigureAutomaticUpdates}>Update</button>
             <button className="btn secondary u-marginLeft--10" onClick={onRequestClose}>Cancel</button>
           </div>
         </div>
