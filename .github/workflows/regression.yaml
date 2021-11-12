@@ -176,7 +176,7 @@ jobs:
           fi
           terraform init -backend-config ${{ matrix.test.backend_config }}
           ./${{ matrix.test.terraform_script }} apply
-          terraform taint aws_instance.control_plane
+          terraform taint -allow-missing aws_instance.control_plane
           terraform taint -allow-missing 'aws_instance.worker[0]'
 
       - name: Run the test
