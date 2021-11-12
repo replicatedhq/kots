@@ -506,7 +506,7 @@ jobs:
     name: Run regression testing
     uses: replicatedhq/kots/.github/workflows/regression.yaml@standalone-regression
     with:
-      version_tag_old: ${{ steps.get_latest_tag.outputs.release }}
+      version_tag_old: ${{ jobs.copy_nightly.steps.get_latest_tag.outputs.release }}
       version_tag_new: ${{ env.GITHUB_REF_NAME }}
     secrets:
       AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
