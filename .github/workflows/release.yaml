@@ -505,7 +505,7 @@ jobs:
     name: Run regression testing
     runs-on: ubuntu-latest
     steps:
-      - uses: ./.github/workflows/regression.yaml
+      - uses: replicatedhq/kots/.github/workflows/regression.yaml@standalone-regression
         with:
           AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
