@@ -514,7 +514,7 @@ jobs:
 #      TF_VAR_testim_token: ${{ secrets.TESTIM_ACCESS_TOKEN }}
 #      E2E_GH_PAT: ${{ secrets.E2E_GH_PAT }}
 
-#    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Get latest tag
         id: get_latest_tag
