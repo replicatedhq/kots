@@ -32,7 +32,7 @@ const COMMON_ERRORS = {
   "no such host": "No such host"
 };
 
-class AppVersionHistory extends Component {
+class AppVersionHistoryClassic extends Component {
   state = {
     viewReleaseNotes: false,
     logsLoading: false,
@@ -882,6 +882,7 @@ class AppVersionHistory extends Component {
     // version type does not contain metadata like version label or release notes.
     const currentMidstreamVersion = versionHistory.find(version => version.parentSequence === app.currentVersion.sequence) || app.currentVersion;
     const pendingVersions = downstream?.pendingVersions;
+    const isPastVersion = find(downstream?.pastVersions, { sequence: this.state.versionToDeploy?.sequence });
 
     return (
       <div className="flex flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
@@ -1080,6 +1081,11 @@ class AppVersionHistory extends Component {
           >
             <div className="Modal-body">
               <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">{this.state.confirmType === "rollback" ? "Rollback to" : this.state.confirmType === "redeploy" ? "Redeploy" : "Deploy"} {this.state.versionToDeploy?.versionLabel} (Sequence {this.state.versionToDeploy?.sequence})?</p>
+              {isPastVersion && this.props.app?.semverAutoDeploy !== "disabled" ? 
+                <div className="info-box">
+                  <span className="u-fontSize--small u-textColor--header u-lineHeight--normal u-fontWeight--medium">You have automatic deploys enabled. {this.state.confirmType === "rollback" ? "Rolling back to" : this.state.confirmType === "redeploy" ? "Redeploying" : "Deploying"} this version will disable automatic deploys. You can turn it back on after this version finishes deployment.</span>
+                </div>
+              : null}
               <div className="flex u-paddingTop--10">
                 <button className="btn secondary blue" onClick={() => this.setState({ displayConfirmDeploymentModal: false, confirmType: "", versionToDeploy: null })}>Cancel</button>
                 <button className="u-marginLeft--10 btn primary" onClick={this.state.confirmType === "redeploy" ? this.finalizeRedeployment : () => this.finalizeDeployment(false)}>Yes, {this.state.confirmType === "rollback" ? "rollback" : this.state.confirmType === "redeploy" ? "redeploy" : "deploy"}</button>
@@ -1127,4 +1133,4 @@ class AppVersionHistory extends Component {
   }
 }
 
-export default withRouter(AppVersionHistory);
+export default withRouter(AppVersionHistoryClassic);
