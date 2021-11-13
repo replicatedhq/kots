@@ -520,6 +520,10 @@ jobs:
         repository: ${{ github.repository }}
         excludes: prerelease, draft
 
+    - name: temp
+      run: |
+        ls .github/workflows
+        env
     - name: Start test
 #        uses: replicatedhq/kots/.github/workflows/regression.yaml@standalone-regression
       uses: ./.github/workflows/regression.yaml
