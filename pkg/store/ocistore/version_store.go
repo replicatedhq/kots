@@ -516,3 +516,28 @@ func refFromAppVersion(appID string, sequence int64, baseURI string) string {
 func (s *OCIStore) UpdateAppVersionInstallationSpec(appID string, sequence int64, installation kotsv1beta1.Installation) error {
 	return ErrNotImplemented
 }
+
+func (s *OCIStore) GetNextAppSequence(appID string) (int64, error) {
+	configMapName, err := s.appVersionConfigMapNameForApp(appID)
+	if err != nil {
+		return 0, errors.New("failed to get configmap name for app version")
+	}
+
+	configMap, err := s.getConfigmap(configMapName)
+	if err != nil {
+		return 0, errors.New("failed to get app version config map")
+	}
+
+	maxSequence := int64(-1)
+	for k := range configMap.Data {
+		possibleMaxSequence, err := strconv.ParseInt(k, 10, 64)
+		if err != nil {
+			return 0, errors.Wrap(err, "failed to parse sequence")
+		}
+		if possibleMaxSequence > maxSequence {
+			maxSequence = possibleMaxSequence
+		}
+	}
+
+	return maxSequence + 1, nil
+}

@@ -118,7 +118,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		return errors.Wrap(err, "failed to set task status")
 	}
 
-	appSequence, err := version.GetNextAppSequence(a.ID, &a.CurrentSequence)
+	appSequence, err := store.GetStore().GetNextAppSequence(a.ID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get new app sequence")
 	}

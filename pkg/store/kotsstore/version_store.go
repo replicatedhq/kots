@@ -441,15 +441,9 @@ func (s *KOTSStore) createAppVersionRecord(tx *sql.Tx, appID string, appName str
 		return int64(0), errors.Wrap(err, "failed to marshal configvalues spec")
 	}
 
-	var maxSequence sql.NullInt64
-	row := tx.QueryRow(`select max(sequence) from app_version where app_id = $1`, appID)
-	if err := row.Scan(&maxSequence); err != nil {
-		return 0, errors.Wrap(err, "failed to find current max sequence in row")
-	}
-
-	newSequence := int64(0)
-	if maxSequence.Valid {
-		newSequence = maxSequence.Int64 + 1
+	newSequence, err := s.getNextAppSequence(tx, appID)
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to get next sequence number")
 	}
 
 	var releasedAt *time.Time
@@ -643,4 +637,23 @@ func (s *KOTSStore) UpdateAppVersionInstallationSpec(appID string, sequence int6
 		return errors.Wrap(err, "failed to exec")
 	}
 	return nil
+}
+
+func (s *KOTSStore) GetNextAppSequence(appID string) (int64, error) {
+	return s.getNextAppSequence(persistence.MustGetDBSession(), appID)
+}
+
+func (s *KOTSStore) getNextAppSequence(db queryable, appID string) (int64, error) {
+	var maxSequence sql.NullInt64
+	row := db.QueryRow(`select max(sequence) from app_version where app_id = $1`, appID)
+	if err := row.Scan(&maxSequence); err != nil {
+		return 0, errors.Wrap(err, "failed to find current max sequence in row")
+	}
+
+	newSequence := int64(0)
+	if maxSequence.Valid {
+		newSequence = maxSequence.Int64 + 1
+	}
+
+	return newSequence, nil
 }
