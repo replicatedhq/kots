@@ -20,6 +20,8 @@ on:
         required: true
       E2E_GH_PAT:
         required: true
+      KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL:
+        required: true
 
   workflow_dispatch:
     inputs:
