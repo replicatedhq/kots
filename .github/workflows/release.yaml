@@ -529,9 +529,9 @@ jobs:
       version_tag_old: ${{ needs.regression_test_setup.outputs.last_release_tag }}
       version_tag_new: ${{ github.ref_name }}
     secrets:
-      AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
-      TF_VAR_testim_token: ${{ secrets.TESTIM_ACCESS_TOKEN }}
+      E2E_TESTIM_AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
+      E2E_TESTIM_AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
+      TESTIM_ACCESS_TOKEN: ${{ secrets.TESTIM_ACCESS_TOKEN }}
       E2E_GH_PAT: ${{ secrets.E2E_GH_PAT }}
 
 #  start_kgrid_test:
