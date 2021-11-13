@@ -164,7 +164,7 @@ jobs:
         if: always()
         working-directory: automation/cluster
         run: |
-          export CURRENT_TAG=${{ github.event.inputs.version_tag_old || version_tag_old }}
+          export CURRENT_TAG=${{ github.event.inputs.version_tag_old || inputs.version_tag_old }}
           export NEXT_TAG=${{ github.event.inputs.version_tag_new || inputs.version_tag_new }}
           if [ "${{ matrix.test.is_upgrade }}" ]; then
             export TF_VAR_kots_version_initial="${CURRENT_TAG:1}"
