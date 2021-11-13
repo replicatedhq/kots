@@ -487,7 +487,7 @@ jobs:
     steps:
     - name: blah
       run: |
-        echo ${{env.GITHUB_REF_NAME}}
+        echo ${{github.ref_name}}
         env
     - name: Checkout
       uses: actions/checkout@v2
@@ -496,7 +496,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.NIGHTLY_GH_PAT }}
       with:
-        srcReleaseTag: ${{ env.GITHUB_REF_NAME }}
+        srcReleaseTag: ${{ github.ref_name }}
         dstReleaseTag: "v0.0.0-nightly"
 
   regression_test:
@@ -527,7 +527,7 @@ jobs:
         uses: ./.github/workflows/regression.yaml@standalone-regression
         with:
           version_tag_old: ${{ steps.get_latest_tag.outputs.release }}
-          version_tag_new: ${{ env.GITHUB_REF_NAME }}
+          version_tag_new: ${{ github.ref_name }}
 #        secrets:
           AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
