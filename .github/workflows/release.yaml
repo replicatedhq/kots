@@ -524,7 +524,7 @@ jobs:
     needs: copy_nightly
 
 #    uses: replicatedhq/kots/.github/workflows/regression.yaml@standalone-regression
-    uses: ./.github/workflows/regression.yaml
+    uses: ./.github/workflows/regression.yaml@standalone-regression
     with:
       version_tag_old: ${{ needs.regression_test_setup.outputs.last_release_tag }}
       version_tag_new: ${{ env.GITHUB_REF_NAME }}
