@@ -527,7 +527,7 @@ jobs:
     uses: replicatedhq/kots/.github/workflows/regression.yaml@standalone-regression
     with:
       version_tag_old: ${{ needs.regression_test_setup.outputs.last_release_tag }}
-      version_tag_new: ${{ env.GITHUB_REF_NAME }}
+      version_tag_new: ${{ github.ref_name }}
     secrets:
       AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
