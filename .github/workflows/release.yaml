@@ -526,7 +526,7 @@ jobs:
         env
     - name: Start test
 #        uses: replicatedhq/kots/.github/workflows/regression.yaml@standalone-regression
-      uses: ./.github/workflows/regression.yaml
+      uses: ./.github/workflows/regression
       with:
         version_tag_old: ${{ steps.get_latest_tag.outputs.release }}
         version_tag_new: ${{ github.ref_name }}
