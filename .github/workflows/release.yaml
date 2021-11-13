@@ -530,96 +530,96 @@ jobs:
           TF_VAR_testim_token: ${{ secrets.TESTIM_ACCESS_TOKEN }}
           E2E_GH_PAT: ${{ secrets.E2E_GH_PAT }}
 
-  start_kgrid_test:
-    runs-on: ubuntu-18.04
-    needs: [release_go_api_tagged]
-    if: startsWith(github.ref, 'refs/tags/v') && endsWith(github.ref, '-nightly')
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-
-    - name: Get tags
-      id: get_tag
-      uses: ./actions/version-tag
-
-    - uses: kceb/pull-request-url-action@v2
-      id: pr_url
-
-    - name: Expose git commit data
-      uses: rlespinasse/git-commit-data-action@v1.x   # no v1 tag
-
-    - name: Create staging gitops commit
-      env:
-        REPLICATEDCOM_GITHUB_PRIVATE_KEY: ${{ secrets.REPLICATEDCOM_GITHUB_PRIVATE_KEY }}
-        PR_URL: ${{ steps.pr_url.outputs.url }}
-        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
-        GITOPS_OWNER: replicatedcom
-        GITOPS_REPO: gitops-deploy
-        GITOPS_BRANCH: master
-        RUN_ID: ${{ github.run_id }}
-      run: ./hack/deploy-kgrid.sh
-
-    - name: Create production gitops commit
-      id: deploy_kgrid
-      env:
-        REPLICATEDCOM_GITHUB_PRIVATE_KEY: ${{ secrets.REPLICATEDCOM_GITHUB_PRIVATE_KEY }}
-        PR_URL: ${{ steps.pr_url.outputs.url }}
-        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
-        OVERLAY: production
-        GITOPS_OWNER: replicatedcom
-        GITOPS_REPO: gitops-deploy
-        GITOPS_BRANCH: release
-      run: ./hack/deploy-kgrid.sh
-
-    - name: Wait for production kgrid tests
-      env:
-        KGRID_API_TOKEN: ${{ secrets.KGRID_API_TOKEN }}
-        KGRID_RUN_ID: ${{ steps.deploy_kgrid.outputs.kgrid-run-id }}
-      run: |
-        printf "\n\nSupport bundles are available in the Replicated production AWS account under the 'kgrid-support-bundles' S3 bucket. To download a support bundle, you can do so using the AWS Management Console, or by configuring the AWS cli tool with the appropriate credentials and running the following command: \n\naws s3 cp <test-supportbundle-s3-url> <local-filename>.tar.gz\n\n"
-        ./hack/wait-kgrid.sh
-
-
-  generate-kurl-addon-pr:
-    runs-on: ubuntu-18.04
-    needs: [release_go_api_tagged, build_kurl_proxy_tagged]
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-
-    - name: Get tags
-      id: get_tag
-      uses: ./actions/version-tag
-
-    - name: Generate Kurl Addon PR
-      env:
-        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
-        GH_PAT: ${{ secrets.GH_PAT }}  
-      run: |
-        # Strips off the 'v' in version
-        curl -H "Authorization: token $GH_PAT" \
-          -H 'Accept: application/json' \
-          -d "{\"event_type\": \"auto-kotsadm-update\", \"client_payload\": {\"version\": \"${GIT_TAG:1}\" }}" \
-          "https://api.github.com/repos/replicatedhq/kurl/dispatches"
-
-  generate-kots-release-notes-pr:
-    runs-on: ubuntu-18.04
-    needs: [release_go_api_tagged, build_kurl_proxy_tagged]
-    steps:
-
-    - name: Checkout
-      uses: actions/checkout@v2
-
-    - name: Get tags
-      id: get_tag
-      uses: ./actions/version-tag
-
-    - name: Generate Kots Release Notes PR
-      env:
-        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
-        GH_PAT: ${{ secrets.GH_PAT }}  
-      run: |
-        curl -H "Authorization: token $GH_PAT" \
-          -H 'Accept: application/json' \
-          -d "{\"event_type\": \"auto-release-notes\", \"client_payload\": {\"version\": \"${GIT_TAG}\" }}" \
-          "https://api.github.com/repos/replicatedhq/kots.io/dispatches"
+#  start_kgrid_test:
+#    runs-on: ubuntu-18.04
+#    needs: [release_go_api_tagged]
+#    if: startsWith(github.ref, 'refs/tags/v') && endsWith(github.ref, '-nightly')
+#    steps:
+#    - name: Checkout
+#      uses: actions/checkout@v2
+#
+#    - name: Get tags
+#      id: get_tag
+#      uses: ./actions/version-tag
+#
+#    - uses: kceb/pull-request-url-action@v2
+#      id: pr_url
+#
+#    - name: Expose git commit data
+#      uses: rlespinasse/git-commit-data-action@v1.x   # no v1 tag
+#
+#    - name: Create staging gitops commit
+#      env:
+#        REPLICATEDCOM_GITHUB_PRIVATE_KEY: ${{ secrets.REPLICATEDCOM_GITHUB_PRIVATE_KEY }}
+#        PR_URL: ${{ steps.pr_url.outputs.url }}
+#        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+#        GITOPS_OWNER: replicatedcom
+#        GITOPS_REPO: gitops-deploy
+#        GITOPS_BRANCH: master
+#        RUN_ID: ${{ github.run_id }}
+#      run: ./hack/deploy-kgrid.sh
+#
+#    - name: Create production gitops commit
+#      id: deploy_kgrid
+#      env:
+#        REPLICATEDCOM_GITHUB_PRIVATE_KEY: ${{ secrets.REPLICATEDCOM_GITHUB_PRIVATE_KEY }}
+#        PR_URL: ${{ steps.pr_url.outputs.url }}
+#        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+#        OVERLAY: production
+#        GITOPS_OWNER: replicatedcom
+#        GITOPS_REPO: gitops-deploy
+#        GITOPS_BRANCH: release
+#      run: ./hack/deploy-kgrid.sh
+#
+#    - name: Wait for production kgrid tests
+#      env:
+#        KGRID_API_TOKEN: ${{ secrets.KGRID_API_TOKEN }}
+#        KGRID_RUN_ID: ${{ steps.deploy_kgrid.outputs.kgrid-run-id }}
+#      run: |
+#        printf "\n\nSupport bundles are available in the Replicated production AWS account under the 'kgrid-support-bundles' S3 bucket. To download a support bundle, you can do so using the AWS Management Console, or by configuring the AWS cli tool with the appropriate credentials and running the following command: \n\naws s3 cp <test-supportbundle-s3-url> <local-filename>.tar.gz\n\n"
+#        ./hack/wait-kgrid.sh
+#
+#
+#  generate-kurl-addon-pr:
+#    runs-on: ubuntu-18.04
+#    needs: [release_go_api_tagged, build_kurl_proxy_tagged]
+#    steps:
+#    - name: Checkout
+#      uses: actions/checkout@v2
+#
+#    - name: Get tags
+#      id: get_tag
+#      uses: ./actions/version-tag
+#
+#    - name: Generate Kurl Addon PR
+#      env:
+#        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+#        GH_PAT: ${{ secrets.GH_PAT }}
+#      run: |
+#        # Strips off the 'v' in version
+#        curl -H "Authorization: token $GH_PAT" \
+#          -H 'Accept: application/json' \
+#          -d "{\"event_type\": \"auto-kotsadm-update\", \"client_payload\": {\"version\": \"${GIT_TAG:1}\" }}" \
+#          "https://api.github.com/repos/replicatedhq/kurl/dispatches"
+#
+#  generate-kots-release-notes-pr:
+#    runs-on: ubuntu-18.04
+#    needs: [release_go_api_tagged, build_kurl_proxy_tagged]
+#    steps:
+#
+#    - name: Checkout
+#      uses: actions/checkout@v2
+#
+#    - name: Get tags
+#      id: get_tag
+#      uses: ./actions/version-tag
+#
+#    - name: Generate Kots Release Notes PR
+#      env:
+#        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+#        GH_PAT: ${{ secrets.GH_PAT }}
+#      run: |
+#        curl -H "Authorization: token $GH_PAT" \
+#          -H 'Accept: application/json' \
+#          -d "{\"event_type\": \"auto-release-notes\", \"client_payload\": {\"version\": \"${GIT_TAG}\" }}" \
+#          "https://api.github.com/repos/replicatedhq/kots.io/dispatches"
