@@ -485,6 +485,10 @@ jobs:
     runs-on: ubuntu-18.04
 #    needs: [build_airgap]
     steps:
+    - name: blah
+      run: |
+        echo ${{env.GITHUB_REF_NAME}}
+        env
     - name: Checkout
       uses: actions/checkout@v2
     - name: Copy assets
