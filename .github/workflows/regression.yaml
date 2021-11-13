@@ -30,8 +30,6 @@ on:
         description: 'The new version to use as the upgrade in upgrade scenarios and the initial version for fresh installs.'
         required: true
 
-concurrency: regression
-
 env:
   AWS_DEFAULT_REGION: us-east-1
   AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
