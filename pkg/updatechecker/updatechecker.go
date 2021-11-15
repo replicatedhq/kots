@@ -3,6 +3,7 @@ package updatechecker
 import (
 	"fmt"
 	"io/ioutil"
+	"math"
 	"os"
 	"sort"
 	"sync"
@@ -379,7 +380,7 @@ func GetBaseArchiveDirForVersion(appID string, clusterID string, targetVersionLa
 	}
 
 	mockVersion := &downstreamtypes.DownstreamVersion{
-		Sequence: -1, // to id the mocked version and be able to retrieve it later
+		Sequence: math.MaxInt64, // to id the mocked version and be able to retrieve it later
 	}
 
 	targetSemver, err := semver.ParseTolerant(targetVersionLabel)
@@ -392,7 +393,7 @@ func GetBaseArchiveDirForVersion(appID string, clusterID string, targetVersionLa
 
 	var baseVersion *downstreamtypes.DownstreamVersion
 	for i, v := range appVersions.AllVersions {
-		if v.Sequence == -1 {
+		if v.Sequence == math.MaxInt64 {
 			// this is our mocked version, base it off of the previous version in the sorted list (if exists).
 			if i < len(appVersions.AllVersions)-1 {
 				baseVersion = appVersions.AllVersions[i+1]
