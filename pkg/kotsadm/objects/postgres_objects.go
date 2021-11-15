@@ -203,7 +203,7 @@ func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quanti
 								},
 							},
 							ReadinessProbe: &corev1.Probe{
-								InitialDelaySeconds: 1,
+								InitialDelaySeconds: 5,
 								PeriodSeconds:       1,
 								TimeoutSeconds:      5,
 								Handler: corev1.Handler{
