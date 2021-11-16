@@ -593,6 +593,7 @@ jobs:
 
       - name: Cleanup test environment
         working-directory: automation/cluster
+        continue-on-error: true
         run: |
           terraform init -backend-config ${{ matrix.test.backend_config }}
           ./${{ matrix.test.terraform_script }} destroy
