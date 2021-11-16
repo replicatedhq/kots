@@ -541,3 +541,7 @@ func (s *OCIStore) GetNextAppSequence(appID string) (int64, error) {
 
 	return maxSequence + 1, nil
 }
+
+func (s *OCIStore) GetCurrentUpdateCursor(appID string, channelID string) (string, string, error) {
+	return "", "", ErrNotImplemented
+}
