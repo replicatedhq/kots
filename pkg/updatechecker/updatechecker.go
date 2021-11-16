@@ -380,7 +380,9 @@ func GetBaseArchiveDirForVersion(appID string, clusterID string, targetVersionLa
 	}
 
 	mockVersion := &downstreamtypes.DownstreamVersion{
-		Sequence: math.MaxInt64, // to id the mocked version and be able to retrieve it later
+		// to id the mocked version and be able to retrieve it later.
+		// use "MaxInt64" so that it ends up on the top of the list if it's not a semvered version.
+		Sequence: math.MaxInt64,
 	}
 
 	targetSemver, err := semver.ParseTolerant(targetVersionLabel)
