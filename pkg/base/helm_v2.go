@@ -38,7 +38,7 @@ func renderHelmV2(chartName string, chartPath string, vals map[string]interface{
 		KubeVersion: "1.16.0",
 	}
 	if renderOpts.ReleaseOptions.Namespace == "" {
-		renderOpts.ReleaseOptions.Namespace = "repl{{ Namespace}}"
+		renderOpts.ReleaseOptions.Namespace = NamespaceTemplateConst
 	}
 
 	// Silence the go logger because helm will complain about some of our template strings
