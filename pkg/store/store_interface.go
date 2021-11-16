@@ -174,6 +174,7 @@ type VersionStore interface {
 	GetAppVersionsAfter(appID string, sequence int64) ([]*versiontypes.AppVersion, error)
 	UpdateAppVersionInstallationSpec(appID string, sequence int64, spec kotsv1beta1.Installation) error
 	GetNextAppSequence(appID string) (int64, error)
+	GetCurrentUpdateCursor(appID string, channelID string) (string, string, error)
 }
 
 type LicenseStore interface {
