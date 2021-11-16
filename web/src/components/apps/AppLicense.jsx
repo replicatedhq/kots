@@ -253,7 +253,7 @@ class AppLicense extends Component {
                   <button className="btn primary blue" disabled={loading} onClick={this.syncAppLicense.bind(this, "")}>{loading ? "Syncing" : "Sync license"}</button>
                 }
                 {message &&
-                  <p className={classNames("u-fontWeight--bold u-fontSize--small", {
+                  <p className={classNames("u-fontWeight--bold u-fontSize--small u-marginTop--10", {
                     "u-textColor--error": messageType === "error",
                     "u-textColor--primary": messageType === "info",
                   })}>{message}</p>

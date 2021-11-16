@@ -515,50 +515,62 @@ jobs:
       matrix:
         test: [
           {
+            name: "type=embedded cluster, env=airgapped, phase=upgraded install, rbac=cluster admin",
             backend_config: "embedded-airgapped-upgrade-backend-config.tfvars",
             terraform_script: "embedded-airgapped-upgrade.sh"
           },
           {
+            name: "type=embedded cluster, env=airgapped, phase=new install, rbac=cluster admin",
             backend_config: "embedded-airgapped-install-backend-config.tfvars",
             terraform_script: "embedded-airgapped-install.sh"
           },
           {
+            name: "type=embedded cluster, env=online, phase=new install, rbac=cluster admin",
             backend_config: "embedded-online-install-backend-config.tfvars",
             terraform_script: "embedded-online-install.sh"
           },
           {
+            name: "type=embedded cluster, env=online, phase=upgraded install, rbac=cluster admin",
             backend_config: "embedded-online-upgrade-backend-config.tfvars",
             terraform_script: "embedded-online-upgrade.sh"
           },
           {
+            name: "type=existing cluster, env=airgapped, phase=new install, rbac=cluster admin",
             backend_config: "existing-airgapped-install-admin-backend-config.tfvars",
             terraform_script: "existing-airgapped-install-admin.sh"
           },
           {
+            name: "type=existing cluster, env=airgapped, phase=new install, rbac=minimal rbac",
             backend_config: "existing-airgapped-install-minimum-backend-config.tfvars",
             terraform_script: "existing-airgapped-install-minimum.sh"
           },
           {
+            name: "type=existing cluster, env=online, phase=upgraded install, rbac=cluster admin",
             backend_config: "existing-online-upgrade-admin-backend-config.tfvars",
             terraform_script: "existing-online-upgrade-admin.sh"
           },
           {
+            name: "type=existing cluster, env=online, phase=upgraded install, rbac=minimal rbac",
             backend_config: "existing-online-upgrade-minimum-backend-config.tfvars",
             terraform_script: "existing-online-upgrade-minimum.sh"
           },
           {
+            name: "type=existing cluster, env=online, phase=new install, rbac=cluster admin",
             backend_config: "existing-online-install-admin-backend-config.tfvars",
             terraform_script: "existing-online-install-admin.sh"
           },
           {
+            name: "type=existing cluster, env=online, phase=new install, rbac=minimal rbac",
             backend_config: "existing-online-install-minimum-backend-config.tfvars",
             terraform_script: "existing-online-install-minimum.sh"
           },
           {
+            name: "type=existing cluster, env=airgapped, phase=upgraded install, rbac=cluster admin",
             backend_config: "existing-airgapped-upgrade-admin-backend-config.tfvars",
             terraform_script: "existing-airgapped-upgrade-admin.sh"
           },
           {
+            name: "type=existing cluster, env=airgapped, phase=upgraded install, rbac=minimal rbac",
             backend_config: "existing-airgapped-upgrade-minimum-backend-config.tfvars",
             terraform_script: "existing-airgapped-upgrade-minimum.sh"
           }
@@ -595,7 +607,7 @@ jobs:
             {
               attachments: [{
                 color: '${{ job.status }}' === 'success' ? 'good' : '${{ job.status }}' === 'failure' ? 'danger' : 'warning',
-                text: `${{ job.status }} in ${process.env.AS_WORKFLOW} of ${process.env.AS_REPO}@${process.env.AS_REF}`,
+                text: `Clean up: ${{ matrix.test.name }}.\nStatus: ${{ job.status }}. Workflow: ${process.env.AS_WORKFLOW}. Repo: ${process.env.AS_REPO}.\nRef: ${process.env.AS_REF}`,
               }]
             }
         env:
@@ -640,7 +652,7 @@ jobs:
             {
               attachments: [{
                 color: '${{ job.status }}' === 'success' ? 'good' : '${{ job.status }}' === 'failure' ? 'danger' : 'warning',
-                text: `${{ job.status }} in ${process.env.AS_WORKFLOW} of ${process.env.AS_REPO}@${process.env.AS_REF}`,
+                text: `Destroy jumpbox: ${{ job.status }}. Workflow: ${process.env.AS_WORKFLOW}. Repo: ${process.env.AS_REPO}.\nRef: ${process.env.AS_REF}`,
               }]
             }
         env:
@@ -700,7 +712,7 @@ jobs:
             {
               attachments: [{
                 color: '${{ job.status }}' === 'success' ? 'good' : '${{ job.status }}' === 'failure' ? 'danger' : 'warning',
-                text: `${{ job.status }} in ${process.env.AS_WORKFLOW} of ${process.env.AS_REPO}@${process.env.AS_REF}`,
+                text: `Create jumpbox: ${{ job.status }}. Workflow: ${process.env.AS_WORKFLOW}. Repo: ${process.env.AS_REPO}.\nRef: ${process.env.AS_REF}`,
               }]
             }
         env:
@@ -718,55 +730,67 @@ jobs:
       matrix:
         test: [
           {
+            name: "type=embedded cluster, env=airgapped, phase=upgraded install, rbac=cluster admin",
             backend_config: "embedded-airgapped-upgrade-backend-config.tfvars",
             terraform_script: "embedded-airgapped-upgrade.sh",
             is_upgrade: "1"
           },
           {
+            name: "type=embedded cluster, env=airgapped, phase=new install, rbac=cluster admin",
             backend_config: "embedded-airgapped-install-backend-config.tfvars",
             terraform_script: "embedded-airgapped-install.sh"
           },
           {
+            name: "type=embedded cluster, env=online, phase=new install, rbac=cluster admin",
             backend_config: "embedded-online-install-backend-config.tfvars",
             terraform_script: "embedded-online-install.sh"
           },
           {
+            name: "type=embedded cluster, env=online, phase=upgraded install, rbac=cluster admin",
             backend_config: "embedded-online-upgrade-backend-config.tfvars",
             terraform_script: "embedded-online-upgrade.sh",
             is_upgrade: "1"
           },
           {
+            name: "type=existing cluster, env=airgapped, phase=new install, rbac=cluster admin",
             backend_config: "existing-airgapped-install-admin-backend-config.tfvars",
             terraform_script: "existing-airgapped-install-admin.sh"
           },
           {
+            name: "type=existing cluster, env=airgapped, phase=new install, rbac=minimal rbac",
             backend_config: "existing-airgapped-install-minimum-backend-config.tfvars",
             terraform_script: "existing-airgapped-install-minimum.sh"
           },
           {
+            name: "type=existing cluster, env=online, phase=upgraded install, rbac=cluster admin",
             backend_config: "existing-online-upgrade-admin-backend-config.tfvars",
             terraform_script: "existing-online-upgrade-admin.sh",
             is_upgrade: "1"
           },
           {
+            name: "type=existing cluster, env=online, phase=upgraded install, rbac=minimal rbac",
             backend_config: "existing-online-upgrade-minimum-backend-config.tfvars",
             terraform_script: "existing-online-upgrade-minimum.sh",
             is_upgrade: "1"
           },
           {
+            name: "type=existing cluster, env=online, phase=new install, rbac=cluster admin",
             backend_config: "existing-online-install-admin-backend-config.tfvars",
             terraform_script: "existing-online-install-admin.sh"
           },
           {
+            name: "type=existing cluster, env=online, phase=new install, rbac=minimal rbac",
             backend_config: "existing-online-install-minimum-backend-config.tfvars",
             terraform_script: "existing-online-install-minimum.sh"
           },
           {
+            name: "type=existing cluster, env=airgapped, phase=upgraded install, rbac=cluster admin",
             backend_config: "existing-airgapped-upgrade-admin-backend-config.tfvars",
             terraform_script: "existing-airgapped-upgrade-admin.sh",
             is_upgrade: "1"
           },
           {
+            name: "type=existing cluster, env=airgapped, phase=upgraded install, rbac=minimal rbac",
             backend_config: "existing-airgapped-upgrade-minimum-backend-config.tfvars",
             terraform_script: "existing-airgapped-upgrade-minimum.sh",
             is_upgrade: "1"
@@ -826,7 +850,7 @@ jobs:
             {
               attachments: [{
                 color: '${{ job.status }}' === 'success' ? 'good' : '${{ job.status }}' === 'failure' ? 'danger' : 'warning',
-                text: `${{ job.status }} in ${process.env.AS_WORKFLOW} of ${process.env.AS_REPO}@${process.env.AS_REF}`,
+                text: `Setting up: ${{ matrix.test.name }}.\nStatus: ${{ job.status }}. Workflow: ${process.env.AS_WORKFLOW}. Repo: ${process.env.AS_REPO}.\nRef: ${process.env.AS_REF}`,
               }]
             }
         env:
@@ -845,39 +869,51 @@ jobs:
       matrix:
         test: [
           {
+            name: "type=embedded cluster, env=airgapped, phase=upgraded install, rbac=cluster admin",
             backend_config: "embedded-airgapped-upgrade-backend-config.tfvars"
           },
           {
+            name: "type=embedded cluster, env=airgapped, phase=new install, rbac=cluster admin",
             backend_config: "embedded-airgapped-install-backend-config.tfvars"
           },
           {
+            name: "type=embedded cluster, env=online, phase=new install, rbac=cluster admin",
             backend_config: "embedded-online-install-backend-config.tfvars"
           },
           {
+            name: "type=embedded cluster, env=online, phase=upgraded install, rbac=cluster admin",
             backend_config: "embedded-online-upgrade-backend-config.tfvars"
           },
           {
+            name: "type=existing cluster, env=airgapped, phase=new install, rbac=cluster admin",
             backend_config: "existing-airgapped-install-admin-backend-config.tfvars"
           },
           {
+            name: "type=existing cluster, env=airgapped, phase=new install, rbac=minimal rbac",
             backend_config: "existing-airgapped-install-minimum-backend-config.tfvars"
           },
           {
+            name: "type=existing cluster, env=online, phase=upgraded install, rbac=cluster admin",
             backend_config: "existing-online-upgrade-admin-backend-config.tfvars"
           },
           {
+            name: "type=existing cluster, env=online, phase=upgraded install, rbac=minimal rbac",
             backend_config: "existing-online-upgrade-minimum-backend-config.tfvars"
           },
           {
+            name: "type=existing cluster, env=online, phase=new install, rbac=cluster admin",
             backend_config: "existing-online-install-admin-backend-config.tfvars"
           },
           {
+            name: "type=existing cluster, env=online, phase=new install, rbac=minimal rbac",
             backend_config: "existing-online-install-minimum-backend-config.tfvars"
           },
           {
+            name: "type=existing cluster, env=airgapped, phase=upgraded install, rbac=cluster admin",
             backend_config: "existing-airgapped-upgrade-admin-backend-config.tfvars"
           },
           {
+            name: "type=existing cluster, env=airgapped, phase=upgraded install, rbac=minimal rbac",
             backend_config: "existing-airgapped-upgrade-minimum-backend-config.tfvars"
           }
         ]
@@ -934,7 +970,7 @@ jobs:
           ssh -i ssh.pem ubuntu@${{ steps.set_jumpbox_ip.outputs.jumpbox_ip }} -oStrictHostKeyChecking=no -oServerAliveInterval=60 -oServerAliveCountMax=10 "ssh -tt ubuntu@${{ steps.init_test_env.outputs.instance_ip }} -oServerAliveInterval=60 -oServerAliveCountMax=10 \"sudo /tmp/start.sh\""
 
       - name: Notify Slack
-        if: failure()
+        if: always()
         uses: 8398a7/action-slack@v3
         with:
           status: custom
@@ -943,7 +979,7 @@ jobs:
             {
               attachments: [{
                 color: '${{ job.status }}' === 'success' ? 'good' : '${{ job.status }}' === 'failure' ? 'danger' : 'warning',
-                text: `${{ job.status }} in ${process.env.AS_WORKFLOW} of ${process.env.AS_REPO}@${process.env.AS_REF}`,
+                text: `Test name: ${{ matrix.test.name }}.\nStatus: ${{ job.status }}. Workflow: ${process.env.AS_WORKFLOW}. Repo: ${process.env.AS_REPO}.\nRef: ${process.env.AS_REF}`,
               }]
             }
         env:

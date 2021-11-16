@@ -72,6 +72,10 @@ portForward:
     port: 3000
     localPort: 30000
   - resourceType: service
+    resourceName: kotsadm-dlv
+    port: 40000
+    localPort: 40000
+  - resourceType: service
     resourceName: kotsadm-postgres
     port: 5432
     localPort: 30432

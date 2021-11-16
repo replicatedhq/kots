@@ -2,6 +2,7 @@ FROM kotsadm:cache AS builder
 
 ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots
 WORKDIR $PROJECTPATH
+RUN go get github.com/go-delve/delve/cmd/dlv
 COPY Makefile ./
 COPY Makefile.build ./
 COPY go.mod ./
@@ -12,7 +13,7 @@ COPY web/webcontent.go ./web/webcontent.go
 COPY web/dist ./web/dist
 COPY kotskinds ./kotskinds
 
-RUN make kotsadm
+RUN DEBUG_KOTSADM="true" make kotsadm
 
 FROM debian:buster
 RUN apt-get update && apt-get install -y --no-install-recommends curl gnupg2 \
@@ -112,11 +113,12 @@ ENV KOTS_KUSTOMIZE_BIN_DIR=/usr/local/bin
 # KOTS can be configured to use a specific version of kustomize by setting kustomizeVersion in the
 # kots.io/v1beta1.Application spec. The github.com/replicatedhq/kots/pkg/binaries package will
 # discover all kustomize binaries in the KOTS_KUSTOMIZE_BIN_DIR directory for use by KOTS.
+# CURRENNTLY ONLY ONE VERSION IS SHIPPED BELOW
 
 # Install kustomize 3
-ENV KUSTOMIZE3_VERSION=3.10.0
-ENV KUSTOMIZE3_URL=https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v${KUSTOMIZE3_VERSION}/kustomize_v${KUSTOMIZE3_VERSION}_linux_amd64.tar.gz
-ENV KUSTOMIZE3_SHA256SUM=bab4ab8881718c29ba174bdf677fd89986ad25c40eb363fec9e78c1aff2ff0ea
+ENV KUSTOMIZE3_VERSION=3.8.10
+ENV KUSTOMIZE3_URL=https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${KUSTOMIZE3_VERSION}/kustomize_v${KUSTOMIZE3_VERSION}_linux_amd64.tar.gz
+ENV KUSTOMIZE3_SHA256SUM=10281b6cd16a50fcbb4a762652bf5ab333633d37035fc7f76ee7b941b50b511d
 RUN curl -fsSL -o kustomize.tar.gz "${KUSTOMIZE3_URL}" \
   && echo "${KUSTOMIZE3_SHA256SUM} kustomize.tar.gz" | sha256sum -c - \
   && tar -xzvf kustomize.tar.gz \
@@ -158,6 +160,11 @@ RUN cd /tmp && curl -fsSL -o s3cmd.tar.gz "${S3CMD_URL}" \
   && mv s3cmd-${S3CMD_VERSION}/S3 /usr/local/bin/S3 \
   && rm -rf s3cmd.tar.gz s3cmd.tar.gz.asc s3cmd-${S3CMD_VERSION}
 
+COPY --from=builder /go/bin/dlv .
 COPY --from=builder /go/src/github.com/replicatedhq/kots/bin/kotsadm .
 
-ENTRYPOINT ["/kotsadm", "api"]
+EXPOSE 40000
+
+# Should be entrypoint
+ENTRYPOINT [ "/dlv", "--listen=:40000", "--continue", "--headless=true", "--api-version=2", "--accept-multiclient", "exec"]
+CMD ["/kotsadm", "api"]

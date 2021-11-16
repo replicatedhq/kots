@@ -45,10 +45,15 @@ class AnalyzerFileTree extends React.Component {
 
   buildFileContent = (data) => {
     const nextFiles = this.state.fileContents;
-    const key = Object.keys(data);
+    const keys = Object.keys(data);
+
+    if (!keys.length) {
+      return;
+    }
+
     let newObj = {};
-    newObj.content = new Buffer(data[key], "base64").toString();
-    newObj.key = key[0];
+    newObj.content = new Buffer(data[keys[0]], "base64").toString();
+    newObj.key = keys[0];
     nextFiles.push(newObj);
 
     this.setState({ fileContents: nextFiles });

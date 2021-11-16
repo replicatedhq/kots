@@ -9,6 +9,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type templateTestCase interface {
+	getResolveOrder() []string
+	getExpectError() bool
+	getExpectNotFound() []string
+}
+
 type depGraphTestCase struct {
 	dependencies    map[string][]string
 	testCerts       map[string][]string
@@ -21,6 +27,18 @@ type depGraphTestCase struct {
 	expectNotFound  []string //expect these dependencies not to be part of the head nodes
 
 	name string
+}
+
+func (d *depGraphTestCase) getResolveOrder() []string {
+	return d.resolveOrder
+}
+
+func (d *depGraphTestCase) getExpectError() bool {
+	return d.expectError
+}
+
+func (d *depGraphTestCase) getExpectNotFound() []string {
+	return d.expectNotFound
 }
 
 func TestDepGraph(t *testing.T) {
@@ -267,7 +285,7 @@ func TestDepGraph(t *testing.T) {
 			graph.resolveCACerts()
 			graph.resolveCACertKeys()
 
-			runGraphTests(t, test, graph)
+			runGraphTests(t, &test, graph)
 		})
 
 		t.Run(test.name+"+parse", func(t *testing.T) {
@@ -282,7 +300,7 @@ func TestDepGraph(t *testing.T) {
 			err := graph.ParseConfigGroup(groups)
 			require.NoError(t, err)
 
-			runGraphTests(t, test, graph)
+			runGraphTests(t, &test, graph)
 		})
 	}
 }
@@ -365,21 +383,21 @@ func buildTestConfigGroups(dependencies, certs, keys, cas map[string][]string, c
 	return []kotsv1beta1.ConfigGroup{group}
 }
 
-func runGraphTests(t *testing.T, test depGraphTestCase, graph depGraph) {
+func runGraphTests(t *testing.T, test templateTestCase, graph depGraph) {
 	depLen := len(graph.Dependencies)
 	graphCopy, err := graph.Copy()
 	require.NoError(t, err)
 
-	for _, toResolve := range test.resolveOrder {
+	for _, toResolve := range test.getResolveOrder() {
 		available, err := graph.GetHeadNodes()
-		if err != nil && test.expectError {
+		if err != nil && test.getExpectError() {
 			// fmt.Printf("err: %s\n", err.Error())
 			return
 		}
 
 		require.NoError(t, err, "toResolve: %s", toResolve)
 
-		if stringInSlice(toResolve, test.expectNotFound) {
+		if stringInSlice(toResolve, test.getExpectNotFound()) {
 			require.NotContains(t, available, toResolve)
 			return
 		}
@@ -393,7 +411,7 @@ func runGraphTests(t *testing.T, test depGraphTestCase, graph depGraph) {
 	require.NoError(t, err)
 	require.Empty(t, available)
 
-	require.False(t, test.expectError, "Did not find expected error")
+	require.False(t, test.getExpectError(), "Did not find expected error")
 
 	require.Equal(t, depLen, len(graphCopy.Dependencies))
 }
@@ -405,4 +423,133 @@ func stringInSlice(a string, list []string) bool {
 		}
 	}
 	return false
+}
+
+type parseConfigGroupTestCase struct {
+	itemNames       []string
+	itemValues      map[string]string
+	itemDefaults    map[string]string
+	resolveOrder    []string
+	dependencies    map[string][]string
+	expectError     bool     //expect an error fetching head nodes
+	expectNotFound  []string //expect these dependencies not to be part of the head nodes
+	expectHeadNodes []string //exclusive list of head nodes
+	name            string
+}
+
+func (d *parseConfigGroupTestCase) getResolveOrder() []string {
+	return d.resolveOrder
+}
+
+func (d *parseConfigGroupTestCase) getExpectError() bool {
+	return d.expectError
+}
+
+func (d *parseConfigGroupTestCase) getExpectNotFound() []string {
+	return d.expectNotFound
+}
+
+func TestParseConfigGroupWithNonReplicatedFunctions(t *testing.T) {
+	tests := []parseConfigGroupTestCase{
+		{
+			itemNames: []string{
+				"tls_cert",
+				"tls_key",
+				"tls_json",
+				"ingress_hostname",
+				"tls_ca",
+			},
+			itemValues: map[string]string{
+				"tls_cert": `repl{{ fromJson (ConfigOption "tls_json") | dig "cert" "Cert" "" }}`,
+				"tls_key":  `repl{{ fromJson (ConfigOption "tls_json") | dig "cert" "Key" "" }}`,
+				"tls_json": `repl{{ $ca := genCA (ConfigOption "ingress_hostname") 365 }}
+repl{{ $tls := dict "ca" $ca }}
+repl{{ $cert := genSignedCert (ConfigOption "ingress_hostname") (list ) (list (ConfigOption "ingress_hostname")) 365 $ca }}
+repl{{ $_ := set $tls "cert" $cert }}
+repl{{ toJson $tls }}`,
+				"ingress_hostname": "myHost",
+				"tls_ca":           `repl{{ fromJson (ConfigOption "tls_json") | dig "ca" "Cert" "" }}`,
+			},
+			itemDefaults: map[string]string{
+				"tls_cert":         "",
+				"tls_key":          "",
+				"tls_json":         "",
+				"ingress_hostname": "",
+				"tls_ca":           "",
+			},
+			resolveOrder:    []string{"ingress_hostname", "tls_json", "tls_cert", "tls_key", "tls_ca"},
+			expectHeadNodes: []string{"ingress_hostname"},
+			name:            "multi-line_composite_non-replicated_value_funcs",
+		},
+		{
+			itemNames: []string{
+				"tls_cert",
+				"tls_key",
+				"tls_json",
+				"ingress_hostname",
+				"tls_ca",
+			},
+			itemValues: map[string]string{
+				"tls_cert":         "",
+				"tls_key":          "",
+				"tls_json":         "",
+				"ingress_hostname": "",
+				"tls_ca":           "",
+			},
+			itemDefaults: map[string]string{
+				"tls_cert": `repl{{ fromJson (ConfigOption "tls_json") | dig "cert" "Cert" "" }}`,
+				"tls_key":  `repl{{ fromJson (ConfigOption "tls_json") | dig "cert" "Key" "" }}`,
+				"tls_json": `repl{{ $ca := genCA (ConfigOption "ingress_hostname") 365 }}
+repl{{ $tls := dict "ca" $ca }}
+repl{{ $cert := genSignedCert (ConfigOption "ingress_hostname") (list ) (list (ConfigOption "ingress_hostname")) 365 $ca }}
+repl{{ $_ := set $tls "cert" $cert }}
+repl{{ toJson $tls }}`,
+				"ingress_hostname": "myHost",
+				"tls_ca":           `repl{{ fromJson (ConfigOption "tls_json") | dig "ca" "Cert" "" }}`,
+			},
+			resolveOrder:    []string{"ingress_hostname", "tls_json", "tls_cert", "tls_key", "tls_ca"},
+			expectHeadNodes: []string{"ingress_hostname"},
+			name:            "multi-line_composite_non-replicated_default_funcs",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+
+			groups := createConfigGroups(test.itemNames, test.itemValues, test.itemDefaults)
+
+			graph := depGraph{}
+
+			err := graph.ParseConfigGroup(groups)
+			require.NoError(t, err)
+
+			heads, _ := graph.GetHeadNodes()
+			require.ElementsMatch(t, heads, test.expectHeadNodes)
+
+			runGraphTests(t, &test, graph)
+		})
+	}
+}
+
+func createConfigGroups(itemNames []string, itemValue map[string]string, itemDefault map[string]string) []kotsv1beta1.ConfigGroup {
+	groups := make([]kotsv1beta1.ConfigGroup, 0)
+	group := kotsv1beta1.ConfigGroup{}
+
+	group.Items = make([]kotsv1beta1.ConfigItem, 0)
+
+	for _, itemName := range itemNames {
+		newItem := kotsv1beta1.ConfigItem{}
+		newItem.Name = itemName
+		newItem.Value.Type = multitype.String
+		newItem.Default.Type = multitype.String
+
+		newItem.Value.StrVal = itemValue[itemName]
+		newItem.Default.StrVal = itemDefault[itemName]
+
+		group.Items = append(group.Items, newItem)
+	}
+
+	groups = append(groups, group)
+
+	return groups
 }

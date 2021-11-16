@@ -164,6 +164,7 @@ func executeSupportBundleCollectRoutine(bundle *types.SupportBundle, progressCha
 		KubernetesRestConfig:      k8sconfig,
 		Namespace:                 "",
 		ProgressChan:              progressChan,
+		Redact:                    true,
 	}
 
 	logger.Infof("Executing Collection go routine for support bundle ID: %s", bundle.ID)

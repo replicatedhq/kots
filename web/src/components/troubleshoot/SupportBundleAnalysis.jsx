@@ -1,11 +1,13 @@
 import * as React from "react";
 import { withRouter, Switch, Route, Link } from "react-router-dom";
 import dayjs from "dayjs";
+import Modal from "react-modal";
 
 import Loader from "../shared/Loader";
 import AnalyzerInsights from "./AnalyzerInsights";
 import AnalyzerFileTree from "./AnalyzerFileTree";
 import AnalyzerRedactorReport from "./AnalyzerRedactorReport";
+import PodAnalyzerDetails from "./PodAnalyzerDetails";
 import ErrorModal from "../modals/ErrorModal";
 import { Utilities } from "../../utilities/utilities";
 import "../../scss/components/troubleshoot/SupportBundleAnalysis.scss";
@@ -24,8 +26,13 @@ export class SupportBundleAnalysis extends React.Component {
       getSupportBundleErrMsg: "",
       sendingBundle: false,
       sendingBundleErrMsg: "",
-      displayErrorModal: false
+      displayErrorModal: false,
+      showPodAnalyzerDetailsModal: false,
     };
+  }
+
+  togglePodDetailsModal = (selectedPod) => {
+    this.setState({ showPodAnalyzerDetailsModal: !this.state.showPodAnalyzerDetailsModal, selectedPod });
   }
 
   sendBundleToVendor = async () => {
@@ -38,7 +45,12 @@ export class SupportBundleAnalysis extends React.Component {
     })
       .then(async (result) => {
         if (!result.ok) {
-          this.setState({ sendingBundle: false, sendingBundleErrMsg: `Unable to send bundle to vendor: Status ${result.status}, please try again.` });
+          const text = await result.text();
+          let msg = `Unable to send bundle to vendor: Status ${result.status}, please try again.`;
+          if (text) {
+            msg = `Unable to send bundle to vendor: ${text}`;
+          }
+          this.setState({ sendingBundle: false, sendingBundleErrMsg: msg });
           return;
         }
         await this.getSupportBundle();
@@ -230,6 +242,7 @@ export class SupportBundleAnalysis extends React.Component {
                           status={bundle.status}
                           refetchSupportBundle={this.getSupportBundle}
                           insights={bundle.analysis?.insights}
+                          openPodDetailsModal={this.togglePodDetailsModal}
                         />
                       } />
                       <Route exact path={fileTreeUrl} render={() =>
@@ -262,6 +275,23 @@ export class SupportBundleAnalysis extends React.Component {
             loading={this.state.loading}
             appSlug={this.props.match.params.slug}
           />}
+        {this.state.showPodAnalyzerDetailsModal &&
+          <Modal
+            isOpen={true}
+            shouldReturnFocusAfterClose={false}
+            onRequestClose={() => this.togglePodDetailsModal({})}
+            ariaHideApp={false}
+            contentLabel="Modal"
+            className="Modal PodAnalyzerDetailsModal LargeSize"
+          >
+            <div className="Modal-body">
+              <PodAnalyzerDetails bundleId={bundle.id} pod={this.state.selectedPod} />
+              <div className="u-marginTop--10">
+                <button type="button" className="btn primary blue" onClick={() => this.togglePodDetailsModal({})}>Ok, got it!</button>
+              </div>
+            </div>
+          </Modal>
+        }
       </div>
     );
   }

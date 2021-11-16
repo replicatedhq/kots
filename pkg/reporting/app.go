@@ -144,6 +144,16 @@ func getDownstreamInfo(appID string) (*types.DownstreamInfo, error) {
 		di.Cursor = deployedKotsKinds.Installation.Spec.UpdateCursor
 		di.ChannelID = deployedKotsKinds.Installation.Spec.ChannelID
 		di.ChannelName = deployedKotsKinds.Installation.Spec.ChannelName
+
+		if len(deployedKotsKinds.HelmCharts) > 0 {
+			for _, chart := range deployedKotsKinds.HelmCharts {
+				if chart.Spec.UseHelmInstall {
+					di.NativeHelmInstalls++
+				} else {
+					di.ReplHelmInstalls++
+				}
+			}
+		}
 	}
 
 	return &di, nil

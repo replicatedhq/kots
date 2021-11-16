@@ -6,6 +6,7 @@ bases:
 resources:
   - ./dex-postgres-secret.yaml
   - ./configmap-init-dex-db.yaml
+  - ./dlv-service.yaml
 
 patches:
   - ./deployment.yaml
