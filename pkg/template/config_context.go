@@ -370,6 +370,9 @@ func (ctx ConfigCtx) localRegistryImagePullSecret() string {
 		}
 		secret = secrets.AppSecret
 	}
+	if secret == nil {
+		return ""
+	}
 	dockerConfig, found := secret.Data[".dockerconfigjson"]
 	if !found {
 		return ""
