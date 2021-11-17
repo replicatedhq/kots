@@ -324,6 +324,29 @@ func (s *KOTSStore) GetAppVersions(appID string, clusterID string) (*downstreamt
 
 }
 
+func (s *KOTSStore) FindAppVersions(appID string) (*downstreamtypes.DownstreamVersions, error) {
+	downstreams, err := s.ListDownstreamsForApp(appID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get app downstreams")
+	}
+	if len(downstreams) == 0 {
+		return nil, errors.New("app has no downstreams")
+	}
+
+	for _, d := range downstreams {
+		clusterID := d.ClusterID
+		downstreamVersions, err := s.GetAppVersions(appID, clusterID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to get downstream versions for cluster %s", clusterID)
+		}
+		if len(downstreamVersions.AllVersions) > 0 {
+			return downstreamVersions, nil
+		}
+	}
+
+	return nil, errors.New("app has no versions")
+}
+
 func downstreamVersionFromRow(appID string, row scannable) (*downstreamtypes.DownstreamVersion, error) {
 	v := &downstreamtypes.DownstreamVersion{}
 
