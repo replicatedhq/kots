@@ -122,6 +122,8 @@ func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, exist
 	var headNodes []string
 	headNodes, err = deps.GetHeadNodes() // get the list of config items that do not depend on unresolved config items
 	for (len(headNodes) > 0) && (err == nil) {
+		deps.ResolveMissing(configItemsByName)
+
 		for _, node := range headNodes {
 			deps.ResolveDep(node)
 

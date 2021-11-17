@@ -128,15 +128,6 @@ func TestDepGraph(t *testing.T) {
 		},
 		{
 			dependencies: map[string][]string{
-				"alpha": {},
-				"bravo": {"alpha", "charlie"},
-			},
-			resolveOrder: []string{"alpha", "bravo"},
-			expectError:  true,
-			name:         "does_not_exist",
-		},
-		{
-			dependencies: map[string][]string{
 				"alpha":   {},
 				"bravo":   {"alpha"},
 				"charlie": {"bravo"},
@@ -285,7 +276,7 @@ func TestDepGraph(t *testing.T) {
 			graph.resolveCACerts()
 			graph.resolveCACertKeys()
 
-			runGraphTests(t, &test, graph)
+			runGraphTests(t, &test, nil, graph)
 		})
 
 		t.Run(test.name+"+parse", func(t *testing.T) {
@@ -300,7 +291,7 @@ func TestDepGraph(t *testing.T) {
 			err := graph.ParseConfigGroup(groups)
 			require.NoError(t, err)
 
-			runGraphTests(t, &test, graph)
+			runGraphTests(t, &test, groups, graph)
 		})
 	}
 }
@@ -383,10 +374,21 @@ func buildTestConfigGroups(dependencies, certs, keys, cas map[string][]string, c
 	return []kotsv1beta1.ConfigGroup{group}
 }
 
-func runGraphTests(t *testing.T, test templateTestCase, graph depGraph) {
+func runGraphTests(t *testing.T, test templateTestCase, groups []kotsv1beta1.ConfigGroup, graph depGraph) {
+	configItemsByName := make(map[string]kotsv1beta1.ConfigItem)
+	for _, group := range groups {
+		for _, configItem := range group.Items {
+			configItemsByName[configItem.Name] = configItem
+		}
+	}
+
 	depLen := len(graph.Dependencies)
 	graphCopy, err := graph.Copy()
 	require.NoError(t, err)
+
+	if groups != nil {
+		graph.ResolveMissing(configItemsByName)
+	}
 
 	for _, toResolve := range test.getResolveOrder() {
 		available, err := graph.GetHeadNodes()
@@ -458,6 +460,7 @@ func TestParseConfigGroupWithNonReplicatedFunctions(t *testing.T) {
 				"tls_json",
 				"ingress_hostname",
 				"tls_ca",
+				"missing_ref",
 			},
 			itemValues: map[string]string{
 				"tls_cert": `repl{{ fromJson (ConfigOption "tls_json") | dig "cert" "Cert" "" }}`,
@@ -469,6 +472,7 @@ repl{{ $_ := set $tls "cert" $cert }}
 repl{{ toJson $tls }}`,
 				"ingress_hostname": "myHost",
 				"tls_ca":           `repl{{ fromJson (ConfigOption "tls_json") | dig "ca" "Cert" "" }}`,
+				"missing_ref":      `repl{{ ConfigOption "this_key_does_not_exist" }}`,
 			},
 			itemDefaults: map[string]string{
 				"tls_cert":         "",
@@ -476,8 +480,9 @@ repl{{ toJson $tls }}`,
 				"tls_json":         "",
 				"ingress_hostname": "",
 				"tls_ca":           "",
+				"missing_ref":      "",
 			},
-			resolveOrder:    []string{"ingress_hostname", "tls_json", "tls_cert", "tls_key", "tls_ca"},
+			resolveOrder:    []string{"ingress_hostname", "tls_json", "tls_cert", "tls_key", "tls_ca", "missing_ref"},
 			expectHeadNodes: []string{"ingress_hostname"},
 			name:            "multi-line_composite_non-replicated_value_funcs",
 		},
@@ -526,7 +531,7 @@ repl{{ toJson $tls }}`,
 			heads, _ := graph.GetHeadNodes()
 			require.ElementsMatch(t, heads, test.expectHeadNodes)
 
-			runGraphTests(t, &test, graph)
+			runGraphTests(t, &test, groups, graph)
 		})
 	}
 }

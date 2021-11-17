@@ -181,6 +181,22 @@ func (d *depGraph) ResolveDep(resolvedDependency string) {
 	delete(d.Dependencies, resolvedDependency)
 }
 
+func (d *depGraph) ResolveMissing(knownConfigs map[string]kotsv1beta1.ConfigItem) {
+	for k1, depMap := range d.Dependencies {
+		for k2, _ := range depMap {
+			_, known := knownConfigs[k2]
+			if !known {
+				delete(depMap, k2)
+			}
+		}
+
+		_, known := knownConfigs[k1]
+		if !known {
+			delete(d.Dependencies, k1)
+		}
+	}
+}
+
 func (d *depGraph) GetHeadNodes() ([]string, error) {
 	headNodes := []string{}
 
