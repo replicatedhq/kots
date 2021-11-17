@@ -252,7 +252,7 @@ export default function AppVersionHistoryRow(props) {
     isChecked, isNew, renderSourceAndDiff, handleSelectReleasesToDiff,
     yamlErrorsDetails, gitopsEnabled, toggleShowDetailsModal, latestVersion } = props;
   
-  const hideSourceDiff = version?.source.includes("Airgap Install") || version?.source.includes("Airgap Update") || version?.source.includes("Online Install");
+  const hideSourceDiff = version?.source.includes("Airgap Install") || version?.source.includes("Online Install");
 
   return (
     <div

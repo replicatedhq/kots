@@ -631,7 +631,7 @@ class AppVersionHistory extends Component {
     // This is kinda hacky. This finds the equivalent downstream version because the midstream
     // version type does not contain metadata like version label or release notes.
     const currentMidstreamVersion = versionHistory.find(version => version.parentSequence === app.currentVersion.sequence) || app.currentVersion;
-    const olderVersions = versionHistory.filter((i, idx) => idx !== 0);
+    const otherAvailableVersions = versionHistory.filter((i, idx) => idx !== 0);
     const isPastVersion = find(downstream?.pastVersions, { sequence: this.state.versionToDeploy?.sequence });
   
     return (
@@ -697,12 +697,12 @@ class AppVersionHistory extends Component {
                       />
                     </div>
 
-                    {olderVersions.length > 0 &&
+                    {otherAvailableVersions.length > 0 &&
                       <div className="flex u-marginBottom--15 u-marginTop--30">
                         <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy">Other available versions</p>
                       </div>
                     }
-                    {olderVersions?.map((version) => {
+                    {otherAvailableVersions?.map((version) => {
                       const isChecked = !!checkedReleasesToDiff.find(diffRelease => diffRelease.parentSequence === version.parentSequence);
                       const isNew = secondsAgo(version.createdOn) < 10;
                       const nothingToCommit = gitopsEnabled && !version.commitUrl;
