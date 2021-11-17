@@ -418,7 +418,8 @@ class AppConfig extends Component {
     const sequence = parseInt(match.params.sequence);
     const isCurrentVersion = app.downstreams[0]?.currentVersion?.sequence === sequence;
     const isLatestVersion = app.downstreams[0]?.pendingVersions?.length && app.downstreams[0]?.pendingVersions[0]?.sequence === sequence;
-    return !isLatestVersion && !isCurrentVersion;
+    const pendingVersion = find(app.downstreams[0]?.pendingVersions, { sequence: sequence });
+    return !isLatestVersion && !isCurrentVersion && !pendingVersion?.semver;
   }
 
   toggleActiveGroups = (name) => {

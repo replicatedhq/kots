@@ -82,6 +82,7 @@ function renderVersionAction(version, latestVersion, nothingToCommitDiff, app, h
   
   const isCurrentVersion = version.sequence === downstream.currentVersion?.sequence;
   const isLatestVersion = version.sequence === latestVersion.sequence;
+  const isPendingVersion = find(downstream.pendingVersions, { sequence: version.sequence });
   const isPastVersion = find(downstream.pastVersions, { sequence: version.sequence });
   const isPendingDeployedVersion = find(downstream.pendingVersions, { sequence: version.sequence, status: "deployed" });
   const needsConfiguration = version.status === "pending_config";
@@ -91,7 +92,7 @@ function renderVersionAction(version, latestVersion, nothingToCommitDiff, app, h
 
   const isSecondaryBtn = isPastVersion || needsConfiguration || isRedeploy && !isRollback;
   const isPrimaryButton = !isSecondaryBtn && !isRedeploy && !isRollback;
-  const editableConfig = isCurrentVersion || isLatestVersion;
+  const editableConfig = isCurrentVersion || isLatestVersion || isPendingVersion?.semver;
   let tooltipTip;
   if (editableConfig) {
     tooltipTip = "Edit config";
