@@ -39,6 +39,7 @@ type UpgradeOptions struct {
 	Namespace           string
 	Debug               bool
 	Deploy              bool
+	DeployVersionLabel  string
 	Silent              bool
 }
 
@@ -215,7 +216,7 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 
 	log.FinishSpinner()
 
-	if options.Deploy {
+	if options.Deploy || options.DeployVersionLabel != "" {
 		if airgapPath != "" {
 			log.ActionWithoutSpinner("")
 			log.ActionWithoutSpinner("Update has been uploaded and is being deployed")
@@ -226,10 +227,17 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 
 		if ucr.AvailableUpdates == 0 {
 			log.ActionWithoutSpinner("")
-			log.ActionWithoutSpinner("There are no application updates available, ensuring latest is marked as deployed")
-		} else {
+			if options.Deploy {
+				log.ActionWithoutSpinner("There are no application updates available, ensuring latest is marked as deployed")
+			} else {
+				log.ActionWithoutSpinner("There are no application updates available, ensuring %s is marked as deployed", options.DeployVersionLabel)
+			}
+		} else if options.Deploy {
 			log.ActionWithoutSpinner("")
 			log.ActionWithoutSpinner(fmt.Sprintf("There are currently %d updates available in the Admin Console, when the latest release is downloaded, it will be deployed", ucr.AvailableUpdates))
+		} else {
+			log.ActionWithoutSpinner("")
+			log.ActionWithoutSpinner(fmt.Sprintf("There are currently %d updates available in the Admin Console, when the release with the %s version label is downloaded, it will be deployed", ucr.AvailableUpdates, options.DeployVersionLabel))
 		}
 
 		log.ActionWithoutSpinner("")
