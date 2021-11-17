@@ -145,6 +145,8 @@ type DownstreamStore interface {
 	GetCurrentVersion(appID string, clusterID string) (*downstreamtypes.DownstreamVersion, error)
 	GetStatusForVersion(appID string, clusterID string, sequence int64) (types.DownstreamVersionStatus, error)
 	GetAppVersions(appID string, clusterID string) (*downstreamtypes.DownstreamVersions, error)
+	// Same as GetAppVersions, but finds a cluster where app is deployed
+	FindAppVersions(appID string) (*downstreamtypes.DownstreamVersions, error)
 	GetDownstreamOutput(appID string, clusterID string, sequence int64) (*downstreamtypes.DownstreamOutput, error)
 	IsDownstreamDeploySuccessful(appID string, clusterID string, sequence int64) (bool, error)
 	UpdateDownstreamDeployStatus(appID string, clusterID string, sequence int64, isError bool, output downstreamtypes.DownstreamOutput) error

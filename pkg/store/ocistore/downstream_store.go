@@ -53,6 +53,10 @@ func (s *OCIStore) GetAppVersions(appID string, clusterID string) (*downstreamty
 	return nil, ErrNotImplemented
 }
 
+func (s *OCIStore) FindAppVersions(appID string) (*downstreamtypes.DownstreamVersions, error) {
+	return nil, ErrNotImplemented
+}
+
 func (s *OCIStore) GetDownstreamOutput(appID string, clusterID string, sequence int64) (*downstreamtypes.DownstreamOutput, error) {
 	return nil, ErrNotImplemented
 }

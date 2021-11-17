@@ -167,18 +167,24 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		return nil, errors.Wrap(err, "failed to get license")
 	}
 
-	isIdentityServiceSupportedForVersion, err := store.GetStore().IsIdentityServiceSupportedForVersion(a.ID, a.CurrentSequence)
+	downstreamVersions, err := store.GetStore().FindAppVersions(a.ID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to check if identity service is supported for version %d", a.CurrentSequence)
+		return nil, errors.Wrap(err, "failed to find app versions")
+	}
+	latestVersion := downstreamVersions.AllVersions[0]
+
+	isIdentityServiceSupportedForVersion, err := store.GetStore().IsIdentityServiceSupportedForVersion(a.ID, latestVersion.ParentSequence)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to check if identity service is supported for version %d", latestVersion.ParentSequence)
 	}
 	isAppIdentityServiceSupported := isIdentityServiceSupportedForVersion && license.Spec.IsIdentityServiceSupported
 
-	allowRollback, err := store.GetStore().IsRollbackSupportedForVersion(a.ID, a.CurrentSequence)
+	allowRollback, err := store.GetStore().IsRollbackSupportedForVersion(a.ID, latestVersion.ParentSequence)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to check if rollback is supported")
 	}
 
-	currentVersion, err := store.GetStore().GetAppVersion(a.ID, a.CurrentSequence)
+	currentVersion, err := store.GetStore().GetAppVersion(a.ID, latestVersion.ParentSequence)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app version")
 	}

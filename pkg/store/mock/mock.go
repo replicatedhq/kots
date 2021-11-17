@@ -267,6 +267,21 @@ func (mr *MockStoreMockRecorder) DeleteSession(sessionID interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSession", reflect.TypeOf((*MockStore)(nil).DeleteSession), sessionID)
 }
 
+// FindAppVersions mocks base method.
+func (m *MockStore) FindAppVersions(appID string) (*types0.DownstreamVersions, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindAppVersions", appID)
+	ret0, _ := ret[0].(*types0.DownstreamVersions)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindAppVersions indicates an expected call of FindAppVersions.
+func (mr *MockStoreMockRecorder) FindAppVersions(appID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAppVersions", reflect.TypeOf((*MockStore)(nil).FindAppVersions), appID)
+}
+
 // FlagInvalidPassword mocks base method.
 func (m *MockStore) FlagInvalidPassword() error {
 	m.ctrl.T.Helper()
@@ -2685,6 +2700,21 @@ func (m *MockDownstreamStore) DeleteDownstreamDeployStatus(appID, clusterID stri
 func (mr *MockDownstreamStoreMockRecorder) DeleteDownstreamDeployStatus(appID, clusterID, sequence interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteDownstreamDeployStatus", reflect.TypeOf((*MockDownstreamStore)(nil).DeleteDownstreamDeployStatus), appID, clusterID, sequence)
+}
+
+// FindAppVersions mocks base method.
+func (m *MockDownstreamStore) FindAppVersions(appID string) (*types0.DownstreamVersions, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindAppVersions", appID)
+	ret0, _ := ret[0].(*types0.DownstreamVersions)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindAppVersions indicates an expected call of FindAppVersions.
+func (mr *MockDownstreamStoreMockRecorder) FindAppVersions(appID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAppVersions", reflect.TypeOf((*MockDownstreamStore)(nil).FindAppVersions), appID)
 }
 
 // GetAppVersions mocks base method.
