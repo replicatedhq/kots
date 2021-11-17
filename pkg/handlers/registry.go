@@ -169,28 +169,13 @@ func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 			skipImagePush = true
 		}
 
-		downstreams, err := store.GetStore().ListDownstreamsForApp(foundApp.ID)
+		downstreamVersions, err := store.GetStore().FindAppVersions(foundApp.ID)
 		if err != nil {
-			logger.Error(errors.Wrap(err, "failed to get app downstreams"))
-			return
-		}
-		if len(downstreams) == 0 {
-			logger.Error(errors.Errorf("no downstreams found for app %s", foundApp.Slug))
+			logger.Error(errors.Wrapf(err, "failed to find app versions for app %s", foundApp.Slug))
 			return
 		}
 
-		downstream := downstreams[0]
-		appVersions, err := store.GetStore().GetAppVersions(foundApp.ID, downstream.ClusterID)
-		if err != nil {
-			logger.Error(errors.Wrap(err, "failed to get app versions for downstream"))
-			return
-		}
-		if len(appVersions.AllVersions) == 0 {
-			logger.Error(errors.Errorf("no app versions found for app %s in downstream %s", foundApp.Slug, downstream.ClusterID))
-			return
-		}
-
-		baseSequence := appVersions.AllVersions[0].ParentSequence
+		baseSequence := downstreamVersions.AllVersions[0].ParentSequence
 
 		appDir, err := registry.RewriteImages(
 			foundApp.ID, baseSequence, updateAppRegistryRequest.Hostname,

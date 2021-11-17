@@ -19,22 +19,9 @@ import (
 )
 
 func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kotsv1beta1.License, bool, error) {
-	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
+	downstreamVersions, err := store.GetStore().FindAppVersions(a.ID)
 	if err != nil {
-		return nil, false, errors.Wrap(err, "failed to get app downstreams")
-	}
-	if len(downstreams) == 0 {
-		return nil, false, errors.Errorf("app %s has no downstreams", a.Slug)
-	}
-
-	clusterID := downstreams[0].ClusterID
-	downstreamVersions, err := store.GetStore().GetAppVersions(a.ID, clusterID)
-	if err != nil {
-		return nil, false, errors.Wrapf(err, "failed to get downstream versions for cluster %s", clusterID)
-	}
-
-	if len(downstreamVersions.AllVersions) == 0 {
-		return nil, false, errors.Errorf("app %s has no downstream versions", a.Slug)
+		return nil, false, errors.Wrap(err, "failed to find app versions")
 	}
 	latestVersion := downstreamVersions.AllVersions[0]
 
