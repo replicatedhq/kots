@@ -145,7 +145,7 @@ function renderVersionAction(version, latestVersion, nothingToCommitDiff, app, h
           <div className="u-marginLeft--10">
             <span className="icon deployLogs--icon u-cursor--pointer" onClick={() => viewLogs(version, version?.status === "failed")} data-tip="View deploy logs" />
             <ReactTooltip effect="solid" className="replicated-tooltip" />
-            {version.status === "failed" ? <span className="icon version-row-preflight-status-icon preflight-checks-failed-icon" /> : null}
+            {version.status === "failed" ? <span className="icon version-row-preflight-status-icon preflight-checks-failed-icon logs" /> : null}
           </div>
         : null}
       {showActions &&
@@ -169,22 +169,6 @@ function renderViewPreflights(version, app, match) {
       <span className="replicated-link" style={{ fontSize: 12 }}>View preflight results</span>
     </Link>
   );
-}
-
-function getUpdateTypeClassname(updateType) {
-  if (updateType.includes("Upstream Update")) {
-    return "upstream-update";
-  }
-  if (updateType.includes("Config Change")) {
-    return "config-update";
-  }
-  if (updateType.includes("License Change")) {
-    return "license-sync";
-  }
-  if (updateType.includes("Airgap Install") || updateType.includes("Airgap Update")) {
-    return "airgap-install";
-  }
-  return "online-install";
 }
 
 function renderVersionStatus(version, app, match, viewLogs) {
@@ -267,7 +251,8 @@ export default function AppVersionHistoryRow(props) {
   const { version, selectedDiffReleases, nothingToCommit,
     isChecked, isNew, renderSourceAndDiff, handleSelectReleasesToDiff,
     yamlErrorsDetails, gitopsEnabled, toggleShowDetailsModal, latestVersion } = props;
-
+  
+  const hideSourceDiff = version?.source.includes("Airgap Install") || version?.source.includes("Online Install");
 
   return (
     <div
@@ -283,14 +268,13 @@ export default function AppVersionHistoryRow(props) {
         </div>
         <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5"> Released <span className="u-fontWeight--bold">{version.upstreamReleasedAt ? Utilities.dateFormat(version.upstreamReleasedAt, "MM/DD/YY @ hh:mm a z") : Utilities.dateFormat(version.createdOn, "MM/DD/YY @ hh:mm a z")}</span></p>
         <div className="u-marginTop--5 flex flex-auto alignItems--center">
-          <span className={`icon versionUpdateType u-marginRight--5 ${getUpdateTypeClassname(version.source)}`} data-tip={version.source} />
-          <ReactTooltip effect="solid" className="replicated-tooltip" />
-          {renderSourceAndDiff(version)}
+          {hideSourceDiff ? null : renderSourceAndDiff(version)}
           {yamlErrorsDetails && renderYamlErrors(yamlErrorsDetails, version, toggleShowDetailsModal)}
         </div>
       </div>
-      <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex1`}>
-        <div className="flex flex1 alignItems--center"> {gitopsEnabled ? renderViewPreflights(version, props.app, props.match) : renderVersionStatus(version, props.app, props.match, props.handleViewLogs)}</div>
+      <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex1 justifyContent--center`}>
+        <p className="u-fontSize--small u-fontWeight--bold u-textColor--mutedAccent u-lineHeight--default">{version.source}</p>
+        <div className="flex flex-auto u-marginTop--10"> {gitopsEnabled ? renderViewPreflights(version, props.app, props.match) : renderVersionStatus(version, props.app, props.match, props.handleViewLogs)}</div>
       </div>
       <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex-auto alignItems--flexEnd justifyContent--center`}>
         <div>

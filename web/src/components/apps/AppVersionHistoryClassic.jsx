@@ -1025,6 +1025,8 @@ class AppVersionHistoryClassic extends Component {
             showDeployWarningModal={showDeployWarningModal}
             hideDeployWarningModal={this.hideDeployWarningModal}
             onForceDeployClick={this.onForceDeployClick}
+            showAutoDeployWarning={isPastVersion && this.props.app?.semverAutoDeploy !== "disabled"}
+            confirmType={this.state.confirmType}
           />}
 
         {showSkipModal &&
