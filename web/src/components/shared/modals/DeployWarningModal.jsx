@@ -17,12 +17,17 @@ class DeployWarningModal extends React.Component {
       shouldReturnFocusAfterClose={false}
       contentLabel="Skip preflight checks"
       ariaHideApp={false}
-      className="Modal"
+      className="Modal MediumSize"
     >
       <div className="Modal-body">
         <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">
           Preflight checks for this version are currently failing. Are you sure you want to make this the current version?
         </p>
+        {this.props.showAutoDeployWarning &&
+          <div className="info-box">
+            <span className="u-fontSize--small u-textColor--header u-lineHeight--normal u-fontWeight--medium">You have automatic deploys enabled. {this.props.confirmType === "rollback" ? "Rolling back to" : "Deploying"} this version will disable automatic deploys. You can turn it back on after this version finishes deployment.</span>
+          </div>
+        }
         <div className="u-marginTop--10 flex">
           <button
             onClick={() => onForceDeployClick(true)}

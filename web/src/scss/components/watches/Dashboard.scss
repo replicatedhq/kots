@@ -55,6 +55,11 @@
   top: -6px;
   right: -12px;
 
+  &.logs {
+    top: -10px;
+    right: 4px;
+  }
+
   &.preflight-checks-warn-icon {
     top: -8px;
   }
