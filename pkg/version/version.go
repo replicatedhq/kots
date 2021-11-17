@@ -227,7 +227,8 @@ func GetBaseArchiveDirForVersion(appID string, clusterID string, targetVersionLa
 		mockVersion.Semver = &targetSemver
 	}
 
-	appVersions.AllVersions = append(appVersions.AllVersions, mockVersion)
+	// add to the top of the list and sort
+	appVersions.AllVersions = append([]*downstreamtypes.DownstreamVersion{mockVersion}, appVersions.AllVersions...)
 	downstreamtypes.SortDownstreamVersions(appVersions)
 
 	var baseVersion *downstreamtypes.DownstreamVersion
