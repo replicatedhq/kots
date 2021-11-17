@@ -379,6 +379,16 @@ func isVersionConfigEditable(app *apptypes.App, sequence int64) (bool, error) {
 		if len(versions.PendingVersions) > 0 && versions.PendingVersions[0].ParentSequence == sequence {
 			return true, nil
 		}
+
+		for _, v := range versions.PendingVersions {
+			if v.ParentSequence != sequence {
+				continue
+			}
+			if v.Semver != nil {
+				return true, nil
+			}
+			return false, nil
+		}
 	}
 
 	return false, nil
