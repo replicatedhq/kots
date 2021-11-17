@@ -46,7 +46,7 @@ type DownstreamVersions struct {
 }
 
 // Modified bubble sort: instead of comparing adjacent elements, compare the elements at the semvers only.
-// Input is assumed to be sorded by sequence so non-semver elements are already in correct order.
+// Input is assumed to be sorted by sequence so non-semver elements are already in correct order.
 func SortDownstreamVersions(versions *DownstreamVersions) {
 	endIndex := len(versions.AllVersions)
 	keepSorting := true
