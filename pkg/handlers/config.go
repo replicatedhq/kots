@@ -384,6 +384,9 @@ func isVersionConfigEditable(app *apptypes.App, sequence int64) (bool, error) {
 			if v.ParentSequence != sequence {
 				continue
 			}
+			if v.ParentSequence == 0 && v.Status == storetypes.VersionPendingConfig {
+				return true, nil
+			}
 			if v.Semver != nil {
 				return true, nil
 			}
