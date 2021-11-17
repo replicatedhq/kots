@@ -61,7 +61,7 @@ func UpstreamUpgradeCmd() *cobra.Command {
 				DisableImagePush:   v.GetBool("disable-image-push"),
 				Namespace:          v.GetString("namespace"),
 				Debug:              v.GetBool("debug"),
-				DeployLatest:       v.GetBool("deploy"),
+				Deploy:             v.GetBool("deploy"),
 				DeployVersionLabel: v.GetString("deploy-version-label"),
 				Silent:             output != "",
 			}
@@ -77,7 +77,7 @@ func UpstreamUpgradeCmd() *cobra.Command {
 
 			urlVals := url.Values{}
 			if v.GetBool("deploy") {
-				urlVals.Set("deployLatest", "true")
+				urlVals.Set("deploy", "true")
 			}
 			if dvl := v.GetString("deploy-version-label"); dvl != "" {
 				urlVals.Set("deployVersionLabel", dvl)

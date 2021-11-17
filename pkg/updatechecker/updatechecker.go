@@ -327,7 +327,7 @@ func deployLatestVersion(opts CheckForUpdatesOpts, clusterID string) error {
 	}
 	latestVersion := appVersions.AllVersions[0]
 
-	if err := deploySequence(opts, clusterID, latestVersion.Sequence); err != nil {
+	if err := deployVersion(opts, clusterID, appVersions, latestVersion); err != nil {
 		return errors.Wrapf(err, "failed to deploy sequence %d with version label %s", latestVersion.Sequence, latestVersion.VersionLabel)
 	}
 
@@ -356,7 +356,7 @@ func deployVersionLabel(opts CheckForUpdatesOpts, clusterID string, versionLabel
 		return errors.Errorf("version with label %s could not be found", versionLabel)
 	}
 
-	if err := deploySequence(opts, clusterID, versionToDeploy.Sequence); err != nil {
+	if err := deployVersion(opts, clusterID, appVersions, versionToDeploy); err != nil {
 		return errors.Wrapf(err, "failed to deploy sequence %d with version label %s", versionToDeploy.Sequence, versionToDeploy.VersionLabel)
 	}
 
@@ -376,11 +376,7 @@ func autoDeploy(opts CheckForUpdatesOpts, clusterID string, semverAutoDeploy app
 		return errors.Errorf("no app versions found for app %s in downstream %s", opts.AppID, clusterID)
 	}
 
-	currentVersion, err := store.GetStore().GetCurrentVersion(opts.AppID, clusterID)
-	if err != nil {
-		return errors.Wrap(err, "failed to get current downstream version")
-	}
-
+	currentVersion := appVersions.CurrentVersion
 	if currentVersion == nil || currentVersion.Semver == nil {
 		return nil
 	}
@@ -421,21 +417,40 @@ Loop:
 		return nil
 	}
 
-	if err := deploySequence(opts, clusterID, versionToDeploy.Sequence); err != nil {
+	if err := deployVersion(opts, clusterID, appVersions, versionToDeploy); err != nil {
 		return errors.Wrapf(err, "failed to deploy sequence %d with version label %s", versionToDeploy.Sequence, versionToDeploy.VersionLabel)
 	}
 
 	return nil
 }
 
-func deploySequence(opts CheckForUpdatesOpts, clusterID string, sequence int64) error {
-	downstreamParentSequence, err := store.GetStore().GetCurrentParentSequence(opts.AppID, clusterID)
+func deployVersion(opts CheckForUpdatesOpts, clusterID string, appVersions *downstreamtypes.DownstreamVersions, versionToDeploy *downstreamtypes.DownstreamVersion) error {
+	if appVersions.CurrentVersion != nil {
+		isPastVersion := false
+		for _, p := range appVersions.PastVersions {
+			if versionToDeploy.Sequence == p.Sequence {
+				isPastVersion = true
+				break
+			}
+		}
+		if isPastVersion {
+			allowRollback, err := store.GetStore().IsRollbackSupportedForVersion(opts.AppID, appVersions.AllVersions[0].Sequence)
+			if err != nil {
+				return errors.Wrap(err, "failed to check if rollback is supported")
+			}
+			if !allowRollback {
+				return errors.Errorf("version %s is lower than the currently deployed version %s and rollback is not enabled", versionToDeploy.VersionLabel, appVersions.CurrentVersion.VersionLabel)
+			}
+		}
+	}
+
+	downstreamSequence, err := store.GetStore().GetCurrentSequence(opts.AppID, clusterID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get current downstream parent sequence")
 	}
 
-	if sequence != downstreamParentSequence {
-		status, err := store.GetStore().GetStatusForVersion(opts.AppID, clusterID, sequence)
+	if versionToDeploy.Sequence != downstreamSequence {
+		status, err := store.GetStore().GetStatusForVersion(opts.AppID, clusterID, versionToDeploy.Sequence)
 		if err != nil {
 			return errors.Wrap(err, "failed to get update downstream status")
 		}
@@ -443,17 +458,17 @@ func deploySequence(opts CheckForUpdatesOpts, clusterID string, sequence int64) 
 		if status == storetypes.VersionPendingConfig {
 			return util.ActionableError{
 				NoRetry: true,
-				Message: fmt.Sprintf("Version %d cannot be deployed because it needs configuration", sequence),
+				Message: fmt.Sprintf("Version %d cannot be deployed because it needs configuration", versionToDeploy.Sequence),
 			}
 		}
 
-		if err := version.DeployVersion(opts.AppID, sequence); err != nil {
+		if err := version.DeployVersion(opts.AppID, versionToDeploy.Sequence); err != nil {
 			return errors.Wrap(err, "failed to deploy version")
 		}
 
 		// preflights reporting
 		go func() {
-			err = reporting.ReportAppInfo(opts.AppID, sequence, opts.SkipPreflights, opts.IsCLI)
+			err = reporting.ReportAppInfo(opts.AppID, versionToDeploy.Sequence, opts.SkipPreflights, opts.IsCLI)
 			if err != nil {
 				logger.Debugf("failed to update preflights reports: %v", err)
 			}
