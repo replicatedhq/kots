@@ -5,7 +5,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Modal from "react-modal";
 import find from "lodash/find";
-
+import MountAware from "../shared/MountAware";
 import Loader from "../shared/Loader";
 import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
@@ -14,6 +14,7 @@ import ShowLogsModal from "@src/components/modals/ShowLogsModal";
 import ErrorModal from "../modals/ErrorModal";
 import AppVersionHistoryRow from "@src/components/apps/AppVersionHistoryRow";
 import DeployWarningModal from "../shared/modals/DeployWarningModal";
+import AutomaticUpdatesModal from "@src/components/modals/AutomaticUpdatesModal";
 import SkipPreflightsModal from "../shared/modals/SkipPreflightsModal";
 import { Utilities, isAwaitingResults, secondsAgo, getPreflightResultState, getGitProviderDiffUrl, getCommitHashFromUrl } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
@@ -72,6 +73,10 @@ class AppVersionHistory extends Component {
 
   componentDidMount() {
     this.fetchKotsDownstreamHistory();
+
+    if (this.props.app?.isAirgap && !this.state.airgapUploader) {
+      this.getAirgapConfig()
+    }
 
     const url = window.location.pathname;
     if (url.includes("/diff")) {
@@ -150,6 +155,80 @@ class AppVersionHistory extends Component {
     }
   }
 
+  getAirgapConfig = async () => {
+    const { app } = this.props;
+    const configUrl = `${window.env.API_ENDPOINT}/app/${app.slug}/airgap/config`;
+    let simultaneousUploads = 3;
+    try {
+      let res = await fetch(configUrl, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": Utilities.getToken(),
+        }
+      });
+      if (res.ok) {
+        const response = await res.json();
+        simultaneousUploads = response.simultaneousUploads;
+      }
+    } catch {
+      // no-op
+    }
+
+    this.setState({
+      airgapUploader: new AirgapUploader(true, app.slug, this.onDropBundle, simultaneousUploads),
+    });
+  }
+
+  onDropBundle = async () => {
+    this.setState({
+      uploadingAirgapFile: true,
+      checkingForUpdates: true,
+      airgapUploadError: null,
+      uploadProgress: 0,
+      uploadSize: 0,
+      uploadResuming: false,
+    });
+
+    this.props.toggleIsBundleUploading(true);
+
+    const params = {
+      appId: this.props.app?.id,
+    };
+    this.state.airgapUploader.upload(params, this.onUploadProgress, this.onUploadError, this.onUploadComplete);
+  }
+
+  onUploadProgress = (progress, size, resuming = false) => {
+    this.setState({
+      uploadProgress: progress,
+      uploadSize: size,
+      uploadResuming: resuming,
+    });
+  }
+
+  onUploadError = message => {
+    this.setState({
+      uploadingAirgapFile: false,
+      checkingForUpdates: false,
+      uploadProgress: 0,
+      uploadSize: 0,
+      uploadResuming: false,
+      airgapUploadError: message || "Error uploading bundle, please try again"
+    });
+    this.props.toggleIsBundleUploading(false);
+  }
+
+  onUploadComplete = () => {
+    this.state.updateChecker.start(this.updateStatus, 1000);
+    this.setState({
+      uploadingAirgapFile: false,
+      uploadProgress: 0,
+      uploadSize: 0,
+      uploadResuming: false,
+    });
+    this.props.toggleIsBundleUploading(false);
+  }
+
   toggleErrorModal = () => {
     this.setState({ displayErrorModal: !this.state.displayErrorModal });
   }
@@ -183,6 +262,12 @@ class AppVersionHistory extends Component {
       showDiffErrModal: !this.state.showDiffErrModal,
       releaseWithErr: !this.state.showDiffErrModal ? release : {}
     })
+  }
+
+  toggleAutomaticUpdatesModal = () => {
+    this.setState({
+      showAutomaticUpdatesModal: !this.state.showAutomaticUpdatesModal
+    });
   }
 
   toggleNoChangesModal = (version) => {
@@ -439,6 +524,106 @@ class AppVersionHistory extends Component {
     });
   }
 
+  onCheckForUpdates = async () => {
+    const { app } = this.props;
+
+    this.setState({
+      checkingForUpdates: true,
+      checkingForUpdateError: false,
+      errorCheckingUpdate: false,
+      checkingUpdateMessage: "",
+    });
+
+    fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/updatecheck`, {
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          const text = await res.text();
+          this.setState({
+            errorCheckingUpdate: true,
+            checkingForUpdates: false,
+            checkingUpdateMessage: text
+          });
+          return;
+        }
+        this.props.refreshAppData();
+        const response = await res.json();
+
+        if (response.availableUpdates === 0) {
+          if (!find(this.state.versionHistory, { parentSequence: response.currentAppSequence })) {
+            // version history list is out of sync - most probably because of automatic updates happening in the background - refetch list
+            this.fetchKotsDownstreamHistory();
+            this.setState({ checkingForUpdates: false });
+          } else {
+            this.setState({
+              checkingForUpdates: false,
+              noUpdateAvailiableText: "There are no updates available",
+            });
+            setTimeout(() => {
+              this.setState({
+                noUpdateAvailiableText: null,
+              });
+            }, 3000);
+          }
+        } else {
+          this.state.updateChecker.start(this.updateStatus, 1000);
+        }
+      })
+      .catch((err) => {
+        this.setState({
+          errorCheckingUpdate: true,
+          checkingForUpdates: false,
+          checkingUpdateMessage: String(err),
+        });
+      });
+  }
+
+  updateStatus = () => {
+    const { app } = this.props;
+
+    return new Promise((resolve, reject) => {
+      fetch(`${window.env.API_ENDPOINT}/app/${app?.slug}/task/updatedownload`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "GET",
+      })
+        .then(async (res) => {
+          const response = await res.json();
+
+          if (response.status !== "running" && !this.props.isBundleUploading) {
+            this.state.updateChecker.stop();
+
+            this.setState({
+              checkingForUpdates: false,
+              checkingUpdateMessage: response.currentMessage,
+              checkingForUpdateError: response.status === "failed"
+            });
+
+            if (this.props.updateCallback) {
+              this.props.updateCallback();
+            }
+            this.fetchKotsDownstreamHistory();
+          } else {
+            this.setState({
+              checkingForUpdates: true,
+              checkingUpdateMessage: response.currentMessage,
+            });
+          }
+          resolve();
+        }).catch((err) => {
+          console.log("failed to get rewrite status", err);
+          reject();
+        });
+    });
+  }
+
   handleViewLogs = async (version, isFailing) => {
     try {
       const { app } = this.props;
@@ -483,7 +668,7 @@ class AppVersionHistory extends Component {
     const versionHistory = this.state.versionHistory?.length ? this.state.versionHistory : [];
     return (
       versionHistory.length && selectedDiffReleases ?
-        <div className="flex">
+        <div className="flex u-marginLeft--20">
           <button className="btn secondary small u-marginRight--10" onClick={this.onCloseReleasesToDiff}>Cancel</button>
           <button
             className="btn primary small blue"
@@ -505,7 +690,7 @@ class AppVersionHistory extends Component {
           </button>
         </div>
         :
-        <div className="flex-auto flex alignItems--center" onClick={this.onSelectReleasesToDiff}>
+        <div className="flex-auto flex alignItems--center u-marginLeft--20" onClick={this.onSelectReleasesToDiff}>
           <span className="icon clickable diffReleasesIcon"></span>
           <span className="u-fontSize--small u-fontWeight--medium u-linkColor u-cursor--pointer u-marginLeft--5">Diff versions</span>
         </div>
@@ -610,6 +795,9 @@ class AppVersionHistory extends Component {
       errorTitle,
       errorMsg,
       displayErrorModal,
+      airgapUploader,
+      checkingForUpdates,
+      checkingUpdateMessage
     } = this.state;
 
     if (!app) {
@@ -634,6 +822,11 @@ class AppVersionHistory extends Component {
     const otherAvailableVersions = versionHistory.filter((i, idx) => idx !== 0);
     const isPastVersion = find(downstream?.pastVersions, { sequence: this.state.versionToDeploy?.sequence });
   
+    let checkingUpdateTextShort = checkingUpdateMessage;
+    if (checkingUpdateTextShort && checkingUpdateTextShort.length > 30) {
+      checkingUpdateTextShort = checkingUpdateTextShort.slice(0, 30) + "...";
+    }
+
     return (
       <div className="flex flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
         <Helmet>
@@ -672,7 +865,35 @@ class AppVersionHistory extends Component {
                     <div>
                       <div className="flex justifyContent--spaceBetween u-marginBottom--15">
                         <p className="u-fontSize--normal u-fontWeight--medium u-textColor--header">Latest available version</p>
-                        {versionHistory.length > 1 && this.renderDiffBtn()}
+                        <div className="flex alignItems--center">
+                          <div className="flex alignItems--center">
+                            {app?.isAirgap && airgapUploader ?
+                              <MountAware onMount={el => airgapUploader?.assignElement(el)}>
+                                <div className="flex alignItems--center">
+                                  <span className="icon clickable dashboard-card-upload-version-icon u-marginRight--5" />
+                                  <span className="replicated-link u-fontSize--small u-lineHeight--default">Upload new version</span>
+                                </div>
+                              </MountAware>
+                            :
+                            <div className="flex alignItems--center">
+                              {checkingForUpdates && !this.props.isBundleUploading ?
+                                <div className="flex alignItems--center u-marginRight--20">
+                                  <Loader className="u-marginRight--5" size="15" />
+                                  <span className="u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default">{checkingUpdateMessage === "" ? "Checking for updates" : checkingUpdateTextShort}</span>
+                                </div>
+                              :
+                                <div className="flex alignItems--center u-marginRight--20">
+                                  <span className="icon clickable dashboard-card-check-update-icon u-marginRight--5" />
+                                  <span className="replicated-link u-fontSize--small" onClick={this.onCheckForUpdates}>Check for update</span>
+                                </div>
+                              }
+                              <span className="icon clickable dashboard-card-configure-update-icon u-marginRight--5" />
+                              <span className="replicated-link u-fontSize--small" onClick={this.toggleAutomaticUpdatesModal}>Configure automatic updates</span>
+                            </div>
+                            }
+                          </div>
+                          {versionHistory.length > 1 && this.renderDiffBtn()}
+                        </div>
                       </div>
                       <AppVersionHistoryRow
                         key={versionHistory[0].sequence}
@@ -897,6 +1118,20 @@ class AppVersionHistory extends Component {
                 </div>
               </div>
             </Modal>
+          }
+          {this.state.showAutomaticUpdatesModal &&
+            <AutomaticUpdatesModal
+              isOpen={this.state.showAutomaticUpdatesModal}
+              onRequestClose={this.toggleAutomaticUpdatesModal}
+              updateCheckerSpec={app?.updateCheckerSpec}
+              semverAutoDeploy={app?.semverAutoDeploy}
+              appSlug={app?.slug}
+              gitopsEnabled={downstream?.gitops?.enabled}
+              onAutomaticUpdatesConfigured={() => {
+                this.toggleAutomaticUpdatesModal();
+                this.props.updateCallback();
+              }}
+            />
           }
       </div>
     );
