@@ -4,10 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"io/ioutil"
+	"math"
 	"time"
 
+	"github.com/blang/semver"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/api/version/types"
 	"github.com/replicatedhq/kots/pkg/gitops"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -45,35 +49,6 @@ func (d *DownstreamGitOps) CreateGitOpsDownstreamCommit(appID string, clusterID 
 	}
 
 	return createdCommitURL, nil
-}
-
-// return the list of versions available for an app
-func GetVersions(appID string) ([]types.AppVersion, error) {
-	db := persistence.MustGetDBSession()
-	query := `select sequence from app_version where app_id = $1 order by sequence asc`
-	rows, err := db.Query(query, appID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to query app_version table")
-	}
-	defer rows.Close()
-
-	versions := []types.AppVersion{}
-	for rows.Next() {
-		var sequence int64
-		if err := rows.Scan(&sequence); err != nil {
-			return nil, errors.Wrap(err, "failed to scan sequence from app_version table")
-		}
-
-		v, err := store.GetStore().GetAppVersion(appID, sequence)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get version")
-		}
-		if v != nil {
-			versions = append(versions, *v)
-		}
-	}
-
-	return versions, nil
 }
 
 // DeployVersion deploys the version for the given sequence
@@ -227,4 +202,61 @@ func GetForwardedPortsFromAppSpec(appID string, sequence int64) ([]types.Forward
 	}
 
 	return ports, nil
+}
+
+// GetBaseArchiveDirForVersion returns the base archive directory for a given version label.
+// the base archive directory contains data such as config values.
+// caller is responsible for cleaning up the created archive dir.
+func GetBaseArchiveDirForVersion(appID string, clusterID string, targetVersionLabel string) (string, error) {
+	appVersions, err := store.GetStore().GetAppVersions(appID, clusterID)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to get app versions for app %s", appID)
+	}
+	if len(appVersions.AllVersions) == 0 {
+		return "", errors.Errorf("no app versions found for app %s in downstream %s", appID, clusterID)
+	}
+
+	mockVersion := &downstreamtypes.DownstreamVersion{
+		// to id the mocked version and be able to retrieve it later.
+		// use "MaxInt64" so that it ends up on the top of the list if it's not a semvered version.
+		Sequence: math.MaxInt64,
+	}
+
+	targetSemver, err := semver.ParseTolerant(targetVersionLabel)
+	if err == nil {
+		mockVersion.Semver = &targetSemver
+	}
+
+	appVersions.AllVersions = append(appVersions.AllVersions, mockVersion)
+	downstreamtypes.SortDownstreamVersions(appVersions)
+
+	var baseVersion *downstreamtypes.DownstreamVersion
+	for i, v := range appVersions.AllVersions {
+		if v.Sequence == math.MaxInt64 {
+			// this is our mocked version, base it off of the previous version in the sorted list (if exists).
+			if i < len(appVersions.AllVersions)-1 {
+				baseVersion = appVersions.AllVersions[i+1]
+			}
+			// remove the mocked version from the list to not affect what the latest version is in case there's no previous version to use as base.
+			appVersions.AllVersions = append(appVersions.AllVersions[:i], appVersions.AllVersions[i+1:]...)
+			break
+		}
+	}
+
+	// if a previous version was not found, base off of the latest version
+	if baseVersion == nil {
+		baseVersion = appVersions.AllVersions[0]
+	}
+
+	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create temp dir")
+	}
+
+	err = store.GetStore().GetAppVersionArchive(appID, baseVersion.ParentSequence, archiveDir)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get app version archive")
+	}
+
+	return archiveDir, nil
 }
