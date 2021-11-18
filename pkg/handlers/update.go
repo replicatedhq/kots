@@ -37,6 +37,7 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 	}
 
 	deploy, _ := strconv.ParseBool(r.URL.Query().Get("deploy"))
+	deployVersionLabel := r.URL.Query().Get("deployVersionLabel")
 	skipPreflights, _ := strconv.ParseBool(r.URL.Query().Get("skipPreflights"))
 	isCLI, _ := strconv.ParseBool(r.URL.Query().Get("isCLI"))
 
@@ -45,10 +46,11 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 
 	if contentType == "application/json" {
 		opts := updatechecker.CheckForUpdatesOpts{
-			AppID:          foundApp.ID,
-			Deploy:         deploy,
-			SkipPreflights: skipPreflights,
-			IsCLI:          isCLI,
+			AppID:              foundApp.ID,
+			DeployLatest:       deploy,
+			DeployVersionLabel: deployVersionLabel,
+			SkipPreflights:     skipPreflights,
+			IsCLI:              isCLI,
 		}
 		availableUpdates, err := updatechecker.CheckForUpdates(opts)
 		if err != nil {

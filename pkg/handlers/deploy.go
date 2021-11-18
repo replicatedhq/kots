@@ -12,7 +12,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
-	"github.com/replicatedhq/kots/pkg/updatechecker"
 	"github.com/replicatedhq/kots/pkg/version"
 )
 
@@ -82,10 +81,6 @@ func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 			logger.Infof("disabling semver automatic deployments because a past version is being deployed for app %s", a.Slug)
 			if err := store.GetStore().SetSemverAutoDeploy(a.ID, apptypes.SemverAutoDeployDisabled); err != nil {
 				logger.Error(errors.Wrap(err, "failed to set semver auto deploy"))
-			}
-			// re-configure the update checker to pick up the updated semver auto deployment configuration
-			if err := updatechecker.Configure(a.ID); err != nil {
-				logger.Error(errors.Wrap(err, "failed to configure update checker"))
 			}
 			break
 		}
