@@ -128,6 +128,11 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 		pipeReader.CloseWithError(scanner.Err())
 	}()
 
+	nextAppSequence, err := store.GetStore().GetNextAppSequence(a.ID)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get next app sequence")
+	}
+
 	options := rewrite.RewriteOptions{
 		RootDir:            appDir,
 		UpstreamURI:        fmt.Sprintf("replicated://%s", license.Spec.AppSlug),
@@ -149,7 +154,7 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 		AppID:              a.ID,
 		AppSlug:            a.Slug,
 		IsGitOps:           a.IsGitOps,
-		AppSequence:        a.CurrentSequence + 1, // sequence +1 because this is the current latest sequence, not the sequence that the rendered version will be saved as
+		AppSequence:        nextAppSequence,
 		ReportingInfo:      reporting.GetReportingInfo(a.ID),
 
 		// TODO: pass in as arguments if this is ever called from CLI

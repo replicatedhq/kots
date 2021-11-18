@@ -85,12 +85,16 @@ func DeleteUnusedImages(appID string, ignoreRollback bool) error {
 
 		if !ignoreRollback {
 			// rollback support is detected from the latest available version, not the currently deployed one
-			allowRollback, err := store.GetStore().IsRollbackSupportedForVersion(a.ID, a.CurrentSequence)
+			latestVersion, err := store.GetStore().GetLatestAppVersion(a.ID)
+			if err != nil {
+				return errors.Wrap(err, "failed to get latest app version")
+			}
+			allowRollback, err := store.GetStore().IsRollbackSupportedForVersion(a.ID, latestVersion.Sequence)
 			if err != nil {
 				return errors.Wrap(err, "failed to check if rollback is supported")
 			}
 			if allowRollback {
-				return AppRollbackError{AppID: a.ID, Sequence: a.CurrentSequence}
+				return AppRollbackError{AppID: a.ID, Sequence: latestVersion.Sequence}
 			}
 		} else {
 			logger.Info("ignoring the fact that rollback is enabled and will continue with the images removal process")

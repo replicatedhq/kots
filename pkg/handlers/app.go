@@ -167,26 +167,20 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		return nil, errors.Wrap(err, "failed to get license")
 	}
 
-	downstreamVersions, err := store.GetStore().FindAppVersions(a.ID)
+	latestVersion, err := store.GetStore().GetLatestAppVersion(a.ID)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to find app versions")
+		return nil, errors.Wrap(err, "failed to get latest app version")
 	}
-	latestVersion := downstreamVersions.AllVersions[0]
 
-	isIdentityServiceSupportedForVersion, err := store.GetStore().IsIdentityServiceSupportedForVersion(a.ID, latestVersion.ParentSequence)
+	isIdentityServiceSupportedForVersion, err := store.GetStore().IsIdentityServiceSupportedForVersion(a.ID, latestVersion.Sequence)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to check if identity service is supported for version %d", latestVersion.ParentSequence)
+		return nil, errors.Wrapf(err, "failed to check if identity service is supported for version %d", latestVersion.Sequence)
 	}
 	isAppIdentityServiceSupported := isIdentityServiceSupportedForVersion && license.Spec.IsIdentityServiceSupported
 
-	allowRollback, err := store.GetStore().IsRollbackSupportedForVersion(a.ID, latestVersion.ParentSequence)
+	allowRollback, err := store.GetStore().IsRollbackSupportedForVersion(a.ID, latestVersion.Sequence)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to check if rollback is supported")
-	}
-
-	currentVersion, err := store.GetStore().GetAppVersion(a.ID, latestVersion.ParentSequence)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get app version")
 	}
 
 	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
@@ -271,7 +265,7 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		Slug:                           a.Slug,
 		Name:                           a.Name,
 		IsAirgap:                       a.IsAirgap,
-		CurrentSequence:                a.CurrentSequence,
+		CurrentSequence:                latestVersion.Sequence,
 		UpstreamURI:                    a.UpstreamURI,
 		IconURI:                        a.IconURI,
 		CreatedAt:                      a.CreatedAt,
@@ -289,7 +283,7 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		AllowRollback:                  allowRollback,
 		AllowSnapshots:                 allowSnapshots,
 		LicenseType:                    license.Spec.LicenseType,
-		CurrentVersion:                 currentVersion,
+		CurrentVersion:                 latestVersion,
 		Downstreams:                    responseDownstreams,
 	}
 

@@ -494,13 +494,14 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 		updateAppConfigResponse.Error = "failed to get app"
 		return updateAppConfigResponse, err
 	}
-	downstreams, err := store.GetStore().ListDownstreamsForApp(updateApp.ID)
+
+	latestVersion, err := store.GetStore().GetLatestAppVersion(app.ID)
 	if err != nil {
-		updateAppConfigResponse.Error = "failed to list downstreams for app"
+		updateAppConfigResponse.Error = "failed to get latest app version"
 		return updateAppConfigResponse, err
 	}
 
-	if app.CurrentSequence != sequence {
+	if latestVersion.Sequence != sequence {
 		// We are modifying an old version, registry settings may not match what the user has set
 		// for the app.  Midstream in version archive is the only place we can get them from.
 		versionRegistrySettings, err := midstream.LoadPrivateRegistryInfo(archiveDir)
@@ -519,14 +520,30 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 		}
 	}
 
-	err = render.RenderDir(archiveDir, app, downstreams, registrySettings, createNewVersion)
+	downstreams, err := store.GetStore().ListDownstreamsForApp(updateApp.ID)
+	if err != nil {
+		updateAppConfigResponse.Error = "failed to list downstreams for app"
+		return updateAppConfigResponse, err
+	}
+
+	renderSequence := sequence
+	if createNewVersion {
+		nextAppSequence, err := store.GetStore().GetNextAppSequence(updateApp.ID)
+		if err != nil {
+			updateAppConfigResponse.Error = "failed to get next app sequence"
+			return updateAppConfigResponse, err
+		}
+		renderSequence = nextAppSequence
+	}
+
+	err = render.RenderDir(archiveDir, app, downstreams, registrySettings, renderSequence)
 	if err != nil {
 		updateAppConfigResponse.Error = "failed to render archive directory"
 		return updateAppConfigResponse, err
 	}
 
 	if createNewVersion {
-		newSequence, err := store.GetStore().CreateAppVersion(updateApp.ID, &updateApp.CurrentSequence, archiveDir, "Config Change", false, &version.DownstreamGitOps{})
+		newSequence, err := store.GetStore().CreateAppVersion(updateApp.ID, &sequence, archiveDir, "Config Change", false, &version.DownstreamGitOps{})
 		if err != nil {
 			updateAppConfigResponse.Error = "failed to create an app version"
 			return updateAppConfigResponse, err
@@ -688,6 +705,14 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	latestVersion, err := store.GetStore().GetLatestAppVersion(foundApp.ID)
+	if err != nil {
+		setAppConfigValuesResponse.Error = "failed to get latest app version"
+		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
+		JSON(w, http.StatusInternalServerError, setAppConfigValuesResponse)
+		return
+	}
+
 	archiveDir, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
 		setAppConfigValuesResponse.Error = "failed to create temp dir"
@@ -697,7 +722,7 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 	}
 	defer os.RemoveAll(archiveDir)
 
-	err = store.GetStore().GetAppVersionArchive(foundApp.ID, foundApp.CurrentSequence, archiveDir)
+	err = store.GetStore().GetAppVersionArchive(foundApp.ID, latestVersion.Sequence, archiveDir)
 	if err != nil {
 		setAppConfigValuesResponse.Error = "failed to get app version archive"
 		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
@@ -775,7 +800,15 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 		ReadOnly:  registryInfo.IsReadOnly,
 	}
 
-	versionInfo := template.VersionInfoFromInstallation(foundApp.CurrentSequence+1, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
+	nextAppSequence, err := store.GetStore().GetNextAppSequence(foundApp.ID)
+	if err != nil {
+		setAppConfigValuesResponse.Error = "failed to get next app sequence"
+		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
+		JSON(w, http.StatusInternalServerError, setAppConfigValuesResponse)
+		return
+	}
+
+	versionInfo := template.VersionInfoFromInstallation(nextAppSequence, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
 	appInfo := template.ApplicationInfo{Slug: foundApp.Slug}
 	renderedConfig, err := kotsconfig.TemplateConfigObjects(newConfig, configValueMap, kotsKinds.License, &kotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace)
 	if err != nil {
@@ -794,7 +827,7 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 
 	createNewVersion := true
 	isPrimaryVersion := true // see comment in updateAppConfig
-	resp, err := updateAppConfig(foundApp, foundApp.CurrentSequence, renderedConfig.Spec.Groups, createNewVersion, isPrimaryVersion, setAppConfigValuesRequest.SkipPreflights, setAppConfigValuesRequest.Deploy)
+	resp, err := updateAppConfig(foundApp, latestVersion.Sequence, renderedConfig.Spec.Groups, createNewVersion, isPrimaryVersion, setAppConfigValuesRequest.SkipPreflights, setAppConfigValuesRequest.Deploy)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to create new version"))
 		JSON(w, http.StatusInternalServerError, resp)

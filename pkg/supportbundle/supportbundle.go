@@ -234,6 +234,11 @@ func CreateSupportBundleAnalysis(appID string, archivePath string, bundle *types
 		return err
 	}
 
+	latestVersion, err := store.GetStore().GetLatestAppVersion(foundApp.ID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get latest app version")
+	}
+
 	archiveDir, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
 		err = errors.Wrap(err, "failed to create temp dir")
@@ -242,7 +247,7 @@ func CreateSupportBundleAnalysis(appID string, archivePath string, bundle *types
 	}
 	defer os.RemoveAll(archiveDir)
 
-	err = store.GetStore().GetAppVersionArchive(foundApp.ID, foundApp.CurrentSequence, archiveDir)
+	err = store.GetStore().GetAppVersionArchive(foundApp.ID, latestVersion.Sequence, archiveDir)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get app version archive")
 		logger.Error(err)

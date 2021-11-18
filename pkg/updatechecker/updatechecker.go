@@ -2,7 +2,6 @@ package updatechecker
 
 import (
 	"fmt"
-	"os"
 	"sync"
 	"time"
 
@@ -17,7 +16,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
-	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
 	cron "github.com/robfig/cron/v3"
@@ -247,13 +245,8 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (int64, error) {
 	// there are updates, go routine it
 	go func() {
 		for _, update := range updates {
-			downloadOptions := DownloadUpdateOptions{
-				AppID:          a.ID,
-				ClusterID:      d.ClusterID,
-				Update:         update,
-				SkipPreflights: opts.SkipPreflights,
-			}
-			if err := downloadUpdate(downloadOptions); err != nil {
+			_, err = upstream.DownloadUpdate(a.ID, update, opts.SkipPreflights)
+			if err != nil {
 				logger.Error(errors.Wrapf(err, "failed to download update %s", update.VersionLabel))
 				continue
 			}
@@ -264,28 +257,6 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (int64, error) {
 	}()
 
 	return availableUpdates, nil
-}
-
-type DownloadUpdateOptions struct {
-	AppID          string
-	ClusterID      string
-	Update         upstreamtypes.Update
-	SkipPreflights bool
-}
-
-func downloadUpdate(opts DownloadUpdateOptions) error {
-	baseArchiveDir, err := version.GetBaseArchiveDirForVersion(opts.AppID, opts.ClusterID, opts.Update.VersionLabel)
-	if err != nil {
-		return errors.Wrapf(err, "failed to get base archive dir for version %s", opts.Update.VersionLabel)
-	}
-	defer os.RemoveAll(baseArchiveDir)
-
-	_, err = upstream.DownloadUpdate(opts.AppID, baseArchiveDir, opts.Update.Cursor, opts.SkipPreflights)
-	if err != nil {
-		return errors.Wrap(err, "failed to download update")
-	}
-
-	return nil
 }
 
 func ensureDesiredVersionIsDeployed(opts CheckForUpdatesOpts, clusterID string) error {
