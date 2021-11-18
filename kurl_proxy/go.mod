@@ -9,6 +9,6 @@ require (
 	github.com/soheilhy/cmux v0.1.5
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.22.2
-	k8s.io/apimachinery v0.22.2
+	k8s.io/apimachinery v0.22.4
 	k8s.io/client-go v0.22.2
 )
