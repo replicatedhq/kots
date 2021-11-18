@@ -6,9 +6,13 @@ import (
 	"fmt"
 	"math"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
+	awssession "github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/containers/image/v5/docker"
 	imagetypes "github.com/containers/image/v5/types"
 	"github.com/pkg/errors"
@@ -22,6 +26,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/registry/types"
+	kotss3 "github.com/replicatedhq/kots/pkg/s3"
 	"github.com/replicatedhq/kots/pkg/store"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -205,7 +210,7 @@ func deleteUnusedImages(ctx context.Context, registry types.RegistrySettings, us
 
 	searchResult, err := docker.SearchRegistry(ctx, sysCtx, registry.Hostname, "", math.MaxInt32)
 	if err != nil {
-		return errors.Wrap(err, "failed to seacrh registry")
+		return errors.Wrap(err, "failed to search registry")
 	}
 
 	digestsInRegistry := map[string]string{}
@@ -342,6 +347,11 @@ func runGCCommand(ctx context.Context) error {
 		return errors.Wrap(err, "failed to list registry pods")
 	}
 
+	// let's create an empty file named "empty" in a well-known location to work around a bug in how ceph and the registry
+	// operate together: https://github.com/goharbor/harbor/issues/11929#issuecomment-828892005
+	// we don't care if this file exists, so just ignore errors for now
+	_ = uploadEmptyFileToRegistry(ctx)
+
 	for _, pod := range registryPods.Items {
 		req := clientset.CoreV1().RESTClient().Post().Resource("pods").Name(pod.Name).Namespace(pod.Namespace).SubResource("exec")
 		parameterCodec := runtime.NewParameterCodec(scheme)
@@ -380,4 +390,21 @@ func runGCCommand(ctx context.Context) error {
 	}
 
 	return errors.New("no pods found to run garbage collect command")
+}
+
+func uploadEmptyFileToRegistry(ctx context.Context) error {
+	bucketName := "docker-registry"
+	contents := []byte("")
+	path := filepath.Join("docker", "registry", "v2", "repositories", "empty")
+
+	newSession := awssession.New(kotss3.GetConfig())
+	s3Client := s3.New(newSession)
+
+	_, err := s3Client.PutObject(&s3.PutObjectInput{
+		Body:   bytes.NewReader(contents),
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(path),
+	})
+
+	return err
 }

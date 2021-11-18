@@ -46,7 +46,7 @@ func (h *Handler) GarbageCollectImages(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isKurl, err := kotsadm.IsKurl()
+	isKurl, err := kotsadm.IsKurl() // this is a redundant check, as written today, EnableImageDeletion is an alias for IsKurl
 	if err != nil {
 		response.Error = "failed to check kURL"
 		logger.Error(errors.Wrap(err, response.Error))
