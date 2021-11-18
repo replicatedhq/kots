@@ -7,13 +7,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"os"
 	"path/filepath"
 	"time"
 
+	"github.com/blang/semver"
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/filestore"
@@ -246,6 +249,74 @@ func (s *KOTSStore) GetAppVersionArchive(appID string, sequence int64, dstPath s
 	}
 
 	return nil
+}
+
+// GetAppVersionBaseSequence returns the base sequence for a given version label.
+// if the "versionLabel" param is empty or is not a valid semver, the sequence of the latest version will be returned.
+func (s *KOTSStore) GetAppVersionBaseSequence(appID string, versionLabel string) (int64, error) {
+	appVersions, err := s.FindAppVersions(appID)
+	if err != nil {
+		return -1, errors.Wrapf(err, "failed to find app versions for app %s", appID)
+	}
+
+	mockVersion := &downstreamtypes.DownstreamVersion{
+		// to id the mocked version and be able to retrieve it later.
+		// use "MaxInt64" so that it ends up on the top of the list if it's not a semvered version.
+		Sequence: math.MaxInt64,
+	}
+
+	targetSemver, err := semver.ParseTolerant(versionLabel)
+	if err == nil {
+		mockVersion.Semver = &targetSemver
+	}
+
+	// add to the top of the list and sort
+	appVersions.AllVersions = append([]*downstreamtypes.DownstreamVersion{mockVersion}, appVersions.AllVersions...)
+	downstreamtypes.SortDownstreamVersions(appVersions)
+
+	var baseVersion *downstreamtypes.DownstreamVersion
+	for i, v := range appVersions.AllVersions {
+		if v.Sequence == math.MaxInt64 {
+			// this is our mocked version, base it off of the previous version in the sorted list (if exists).
+			if i < len(appVersions.AllVersions)-1 {
+				baseVersion = appVersions.AllVersions[i+1]
+			}
+			// remove the mocked version from the list to not affect what the latest version is in case there's no previous version to use as base.
+			appVersions.AllVersions = append(appVersions.AllVersions[:i], appVersions.AllVersions[i+1:]...)
+			break
+		}
+	}
+
+	// if a previous version was not found, base off of the latest version
+	if baseVersion == nil {
+		baseVersion = appVersions.AllVersions[0]
+	}
+
+	return baseVersion.ParentSequence, nil
+}
+
+// GetAppVersionBaseArchive returns the base archive directory for a given version label.
+// if the "versionLabel" param is empty or is not a valid semver, the archive of the latest version will be returned.
+// the base archive directory contains data such as config values.
+// caller is responsible for cleaning up the created archive dir.
+// returns the path to the archive and the base sequence.
+func (s *KOTSStore) GetAppVersionBaseArchive(appID string, versionLabel string) (string, int64, error) {
+	baseSequence, err := s.GetAppVersionBaseSequence(appID, versionLabel)
+	if err != nil {
+		return "", -1, errors.Wrapf(err, "failed to get base sequence for version %s", versionLabel)
+	}
+
+	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		return "", -1, errors.Wrap(err, "failed to create temp dir")
+	}
+
+	err = s.GetAppVersionArchive(appID, baseSequence, archiveDir)
+	if err != nil {
+		return "", -1, errors.Wrap(err, "failed to get app version archive")
+	}
+
+	return archiveDir, baseSequence, nil
 }
 
 func (s *KOTSStore) CreateAppVersion(appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) (int64, error) {
@@ -578,6 +649,14 @@ func (s *KOTSStore) GetAppVersion(appID string, sequence int64) (*versiontypes.A
 	v.Status = status.String
 
 	return &v, nil
+}
+
+func (s *KOTSStore) GetLatestAppVersion(appID string) (*versiontypes.AppVersion, error) {
+	downstreamVersions, err := s.FindAppVersions(appID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to find app versions")
+	}
+	return s.GetAppVersion(appID, downstreamVersions.AllVersions[0].ParentSequence)
 }
 
 func (s *KOTSStore) GetAppVersionsAfter(appID string, sequence int64) ([]*versiontypes.AppVersion, error) {

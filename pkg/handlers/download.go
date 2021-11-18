@@ -44,6 +44,13 @@ func (h *Handler) DownloadApp(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	latestVersion, err := store.GetStore().GetLatestAppVersion(a.ID)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(500)
+		return
+	}
+
 	archivePath, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
 		logger.Error(err)
@@ -52,7 +59,7 @@ func (h *Handler) DownloadApp(w http.ResponseWriter, r *http.Request) {
 	}
 	defer os.RemoveAll(archivePath)
 
-	err = store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence, archivePath)
+	err = store.GetStore().GetAppVersionArchive(a.ID, latestVersion.Sequence, archivePath)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)

@@ -161,9 +161,14 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 		app.CurrentSequence = -1
 	}
 
-	if app.CurrentSequence != -1 {
+	if app.CurrentSequence != -1 { // this means that there's at least 1 version available
+		latestVersion, err := s.GetLatestAppVersion(app.ID)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get latest app version")
+		}
+
 		query = `select preflight_spec, config_spec from app_version where app_id = $1 AND sequence = $2`
-		row = db.QueryRow(query, id, app.CurrentSequence)
+		row = db.QueryRow(query, id, latestVersion.Sequence)
 
 		var preflightSpec sql.NullString
 		var configSpec sql.NullString
