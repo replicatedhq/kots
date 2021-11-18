@@ -118,12 +118,7 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	app, err := store.GetStore().GetApp(a.ID)
-	if err != nil {
-		logger.Error(errors.Wrapf(err, "failed to get app %q", a.ID))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+
 	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to list downstreams"))
@@ -137,14 +132,28 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = render.RenderDir(archiveDir, app, downstreams, registrySettings, true)
+	nextAppSequence, err := store.GetStore().GetNextAppSequence(a.ID)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get next app sequence"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	err = render.RenderDir(archiveDir, a, downstreams, registrySettings, nextAppSequence)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to render app version"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &a.CurrentSequence, archiveDir, "KOTS Upload", false, &version.DownstreamGitOps{})
+	baseSequence, err := store.GetStore().GetAppVersionBaseSequence(a.ID, kotsKinds.Installation.Spec.VersionLabel)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to app version base sequence"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "KOTS Upload", false, &version.DownstreamGitOps{})
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to create app version"))
 		w.WriteHeader(http.StatusInternalServerError)

@@ -64,9 +64,17 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// refresh the app to get the correct sequence
+		a, err := store.GetStore().GetApp(foundApp.ID)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to get app"))
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
 		appUpdateCheckResponse := AppUpdateCheckResponse{
 			AvailableUpdates:   availableUpdates,
-			CurrentAppSequence: foundApp.CurrentSequence,
+			CurrentAppSequence: a.CurrentSequence,
 		}
 
 		JSON(w, http.StatusOK, appUpdateCheckResponse)

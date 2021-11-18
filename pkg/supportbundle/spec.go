@@ -17,7 +17,6 @@ import (
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotstypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
-	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/registry"
@@ -30,6 +29,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	"go.uber.org/multierr"
+	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -412,19 +412,23 @@ func addDefaultDynamicTroubleshoot(supportBundle *troubleshootv1beta2.SupportBun
 func getDefaultDynamicCollectors(app *apptypes.App, imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets) []*troubleshootv1beta2.Collect {
 	collectors := make([]*troubleshootv1beta2.Collect, 0)
 
-	licenseData, err := license.GetCurrentLicenseString(app)
+	license, err := store.GetStore().GetLatestLicenseForApp(app.ID)
 	if err != nil {
 		logger.Errorf("Failed to load license data: %v", err)
 	}
 
-	if licenseData != "" {
+	if license != nil {
+		licenseData, err := yaml.Marshal(license)
+		if err != nil {
+			logger.Errorf("Failed to marshal license: %v", err)
+		}
 		collectors = append(collectors, &troubleshootv1beta2.Collect{
 			Data: &troubleshootv1beta2.Data{
 				CollectorMeta: troubleshootv1beta2.CollectorMeta{
 					CollectorName: "license.yaml",
 				},
 				Name: "kots/admin-console",
-				Data: licenseData,
+				Data: string(licenseData),
 			},
 		})
 	}
@@ -602,13 +606,18 @@ func makeAppVersionArchiveCollector(app *apptypes.App, dirPrefix string) (*troub
 		return nil, errors.Wrapf(err, "failed to create temp file %s", fileName)
 	}
 
+	latestVersion, err := store.GetStore().GetLatestAppVersion(app.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get latest app version")
+	}
+
 	tempPath, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temp dir")
 	}
 	defer os.RemoveAll(tempPath)
 
-	err = store.GetStore().GetAppVersionArchive(app.ID, app.CurrentSequence, tempPath)
+	err = store.GetStore().GetAppVersionArchive(app.ID, latestVersion.Sequence, tempPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app version archive")
 	}

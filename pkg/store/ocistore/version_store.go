@@ -46,44 +46,6 @@ func (s *OCIStore) appVersionConfigMapNameForApp(appID string) (string, error) {
 	return fmt.Sprintf("%s%s", AppVersionConfigmapPrefix, a.Slug), nil
 }
 
-func (s *OCIStore) getLatestAppVersion(appID string) (*versiontypes.AppVersion, error) {
-	configMapName, err := s.appVersionConfigMapNameForApp(appID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get appversion config map name")
-	}
-
-	configMap, err := s.getConfigmap(configMapName)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get app version config map")
-	}
-
-	if configMap.Data == nil {
-		configMap.Data = map[string]string{}
-	}
-
-	maxSequence := int64(-1)
-	for k := range configMap.Data {
-		possibleMaxSequence, err := strconv.ParseInt(k, 10, 64)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to parse sequence")
-		}
-		if possibleMaxSequence > maxSequence {
-			maxSequence = possibleMaxSequence
-		}
-	}
-
-	if maxSequence == int64(-1) {
-		return nil, ErrNotFound
-	}
-
-	appVersion := versiontypes.AppVersion{}
-	if err := json.Unmarshal([]byte(configMap.Data[strconv.FormatInt(maxSequence, 10)]), &appVersion); err != nil {
-		return nil, errors.Wrap(err, "failed to unmarshal app version")
-	}
-
-	return &appVersion, nil
-}
-
 func (s *OCIStore) IsIdentityServiceSupportedForVersion(appID string, sequence int64) (bool, error) {
 	configMapName, err := s.appVersionConfigMapNameForApp(appID)
 	if err != nil {
@@ -296,7 +258,15 @@ func (s *OCIStore) GetAppVersionArchive(appID string, sequence int64, dstPath st
 	return nil
 }
 
-func (s *OCIStore) CreateAppVersion(appID string, currentSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) (int64, error) {
+func (s *OCIStore) GetAppVersionBaseSequence(appID string, versionLabel string) (int64, error) {
+	return -1, ErrNotImplemented
+}
+
+func (s *OCIStore) GetAppVersionBaseArchive(appID string, versionLabel string) (string, int64, error) {
+	return "", -1, ErrNotImplemented
+}
+
+func (s *OCIStore) CreateAppVersion(appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) (int64, error) {
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filesInDir)
 	if err != nil {
 		return int64(0), errors.Wrap(err, "failed to read kots kinds")
@@ -319,7 +289,7 @@ func (s *OCIStore) CreateAppVersion(appID string, currentSequence *int64, filesI
 		return int64(0), errors.Wrap(err, "failed to replace secrets")
 	}
 
-	newSequence, err := s.createAppVersion(appID, currentSequence, appName, appIcon, kotsKinds)
+	newSequence, err := s.createAppVersion(appID, baseSequence, appName, appIcon, kotsKinds)
 	if err != nil {
 		return int64(0), errors.Wrap(err, "failed to create app version")
 	}
@@ -329,7 +299,7 @@ func (s *OCIStore) CreateAppVersion(appID string, currentSequence *int64, filesI
 	}
 
 	previousArchiveDir := ""
-	if currentSequence != nil {
+	if baseSequence != nil {
 		previousDir, err := ioutil.TempDir("", "kotsadm")
 		if err != nil {
 			return int64(0), errors.Wrap(err, "failed to create temp dir")
@@ -337,7 +307,7 @@ func (s *OCIStore) CreateAppVersion(appID string, currentSequence *int64, filesI
 		defer os.RemoveAll(previousDir)
 
 		// Get the previous archive, we need this to calculate the diff
-		err = s.GetAppVersionArchive(appID, *currentSequence, previousDir)
+		err = s.GetAppVersionArchive(appID, *baseSequence, previousDir)
 		if err != nil {
 			return int64(0), errors.Wrap(err, "failed to get previous archive")
 		}
@@ -362,12 +332,12 @@ func (s *OCIStore) CreateAppVersion(appID string, currentSequence *int64, filesI
 		// will support multiple downstreams, so this is cleaner here for now
 
 		downstreamStatus := types.VersionPending
-		if currentSequence == nil && kotsKinds.IsConfigurable() { // initial version should always require configuration (if exists) even if all required items are already set and have values (except for automated installs, which can override this later)
+		if baseSequence == nil && kotsKinds.IsConfigurable() { // initial version should always require configuration (if exists) even if all required items are already set and have values (except for automated installs, which can override this later)
 			downstreamStatus = types.VersionPendingConfig
 		} else if kotsKinds.HasPreflights() && !skipPreflights {
 			downstreamStatus = types.VersionPendingPreflight
 		}
-		if currentSequence != nil { // only check if the version needs configuration for later versions (not the initial one) since the config is always required for the initial version (except for automated installs, which can override that later)
+		if baseSequence != nil { // only check if the version needs configuration for later versions (not the initial one) since the config is always required for the initial version (except for automated installs, which can override that later)
 			// check if version needs additional configuration
 			t, err := kotsadmconfig.NeedsConfiguration(a.Slug, newSequence, a.IsAirgap, kotsKinds, registrySettings)
 			if err != nil {
@@ -379,7 +349,7 @@ func (s *OCIStore) CreateAppVersion(appID string, currentSequence *int64, filesI
 		}
 
 		diffSummary, diffSummaryError := "", ""
-		if currentSequence != nil {
+		if baseSequence != nil {
 			// diff this release from the last release
 			diff, err := kustomize.DiffAppVersionsForDownstream(d.Name, filesInDir, previousArchiveDir, kustomizeBinPath)
 			if err != nil {
@@ -419,10 +389,10 @@ func (s *OCIStore) CreateAppVersion(appID string, currentSequence *int64, filesI
 	return newSequence, nil
 }
 
-func (s *OCIStore) createAppVersion(appID string, currentSequence *int64, appName string, appIcon string, kotsKinds *kotsutil.KotsKinds) (int64, error) {
+func (s *OCIStore) createAppVersion(appID string, baseSequence *int64, appName string, appIcon string, kotsKinds *kotsutil.KotsKinds) (int64, error) {
 	// NOTE that this experimental store doesn't have a tx and it's possible that this
 	// could overwrite if there are multiple updates happening concurrently
-	latestAppVersion, err := s.getLatestAppVersion(appID)
+	latestAppVersion, err := s.GetLatestAppVersion(appID)
 	if !s.IsNotFound(err) {
 		return int64(0), errors.Wrap(err, "failed to get latest app version")
 	}
@@ -497,6 +467,10 @@ func (s *OCIStore) GetAppVersion(appID string, sequence int64) (*versiontypes.Ap
 	appVersion.AppID = appID
 
 	return &appVersion, nil
+}
+
+func (s *OCIStore) GetLatestAppVersion(appID string) (*versiontypes.AppVersion, error) {
+	return nil, ErrNotImplemented
 }
 
 func (s *OCIStore) GetAppVersionsAfter(appID string, sequence int64) ([]*versiontypes.AppVersion, error) {
