@@ -118,20 +118,25 @@ func getDownstreamInfo(appID string) (*types.DownstreamInfo, error) {
 		return nil, errors.New("no downstreams found for app")
 	}
 
-	deployedAppSequence, err := store.GetStore().GetCurrentParentSequence(appID, downstreams[0].ClusterID)
+	downstreamVersions, err := store.GetStore().GetAppVersions(appID, downstreams[0].ClusterID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get current downstream parent sequence")
 	}
 
 	// info about the deployed app sequence
-	if deployedAppSequence != -1 {
+	if downstreamVersions.CurrentVersion == nil {
+		oldestKnownVersion := downstreamVersions.PendingVersions[len(downstreamVersions.PendingVersions)-1]
+		di.MinCursor = oldestKnownVersion.UpdateCursor
+		di.MinChannelID = oldestKnownVersion.ChannelID
+		di.MinChannelName = oldestKnownVersion.ChannelName
+	} else {
 		deployedArchiveDir, err := ioutil.TempDir("", "kotsadm")
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create temp dir")
 		}
 		defer os.RemoveAll(deployedArchiveDir)
 
-		err = store.GetStore().GetAppVersionArchive(appID, deployedAppSequence, deployedArchiveDir)
+		err = store.GetStore().GetAppVersionArchive(appID, downstreamVersions.CurrentVersion.ParentSequence, deployedArchiveDir)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get app version archive")
 		}

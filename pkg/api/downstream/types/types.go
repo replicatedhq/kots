@@ -24,6 +24,9 @@ type DownstreamVersion struct {
 	CreatedOn                *time.Time                         `json:"createdOn"`
 	ParentSequence           int64                              `json:"parentSequence"`
 	Sequence                 int64                              `json:"sequence"`
+	UpdateCursor             string                             `json:"updateCursor,omitempty"`
+	ChannelID                string                             `json:"channelID,omitempty"`
+	ChannelName              string                             `json:"channelName,omitempty"`
 	ReleaseNotes             string                             `json:"releaseNotes"`
 	DeployedAt               *time.Time                         `json:"deployedAt"`
 	Source                   string                             `json:"source"`

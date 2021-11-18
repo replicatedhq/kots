@@ -32,6 +32,10 @@ func InjectReportingInfoHeaders(req *http.Request, reportingInfo *types.Reportin
 		req.Header.Set("X-Replicated-DownstreamChannelName", reportingInfo.Downstream.ChannelName)
 	}
 
+	req.Header.Set("X-Replicated-DownstreamMinimumChannelSequence", reportingInfo.Downstream.MinCursor)
+	req.Header.Set("X-Replicated-DownstreamMinimumChannelID", reportingInfo.Downstream.MinChannelID)
+	req.Header.Set("X-Replicated-DownstreamMinimumChannelName", reportingInfo.Downstream.MinChannelName)
+
 	if kotsInstallID := os.Getenv("KOTS_INSTALL_ID"); kotsInstallID != "" {
 		req.Header.Set("X-Replicated-KotsInstallID", kotsInstallID)
 	}

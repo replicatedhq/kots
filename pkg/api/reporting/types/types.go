@@ -13,6 +13,9 @@ type DownstreamInfo struct {
 	Cursor             string
 	ChannelID          string
 	ChannelName        string
+	MinCursor          string
+	MinChannelID       string
+	MinChannelName     string
 	ReplHelmInstalls   int
 	NativeHelmInstalls int
 }
