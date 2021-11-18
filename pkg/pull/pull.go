@@ -424,11 +424,19 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	// for writing Common Midstream, every chart and subchart is in this map as Helm Midstreams will be processed later in the code
 	commonWriteMidstreamOptions.UseHelmInstall = map[string]bool{}
 	for _, v := range newHelmCharts {
-		commonWriteMidstreamOptions.UseHelmInstall[v.Spec.Chart.Name] = v.Spec.UseHelmInstall
+		chartBaseName := v.Spec.Chart.Name
+		// the helmBase may have a chart name prefix removed - we must find the base name instead of the original chart name
+		for _, helmBase := range helmBases {
+			chartName := strings.Split(helmBase.Path, "/")[len(strings.Split(helmBase.Path, "/"))-1]
+			if strings.HasSuffix(v.Spec.Chart.Name, chartName) {
+				chartBaseName = chartName
+			}
+		}
+		commonWriteMidstreamOptions.UseHelmInstall[chartBaseName] = v.Spec.UseHelmInstall
 		if v.Spec.UseHelmInstall {
-			subcharts, err := base.FindHelmSubChartsFromBase(writeBaseOptions.BaseDir, v.Spec.Chart.Name)
+			subcharts, err := base.FindHelmSubChartsFromBase(writeBaseOptions.BaseDir, chartBaseName)
 			if err != nil {
-				return "", errors.Wrapf(err, "failed to find subcharts for parent chart %s", v.Spec.Chart.Name)
+				return "", errors.Wrapf(err, "failed to find subcharts for parent chart %s", chartBaseName)
 			}
 			for _, subchart := range subcharts.SubCharts {
 				commonWriteMidstreamOptions.UseHelmInstall[subchart] = v.Spec.UseHelmInstall
