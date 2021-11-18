@@ -519,7 +519,7 @@ func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license 
 	urlValues.Add("licenseSequence", fmt.Sprintf("%d", license.Spec.LicenseSequence))
 
 	if installedAt != nil {
-		urlValues.Set("installedAt", installedAt.Format(time.RFC3339))
+		urlValues.Set("installedAt", installedAt.UTC().Format(time.RFC3339))
 	}
 
 	url := fmt.Sprintf("%s://%s/release/%s/pending?%s", u.Scheme, hostname, license.Spec.AppSlug, urlValues.Encode())
