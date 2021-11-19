@@ -88,7 +88,7 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 	base.Path = ""
 
 	nextBase := helmChartBaseAppendAdditionalFiles(*base, u)
-	nexterBase := helmChartBaseAppendMissingCharts(nextBase, u)
+	nexterBase := helmChartBaseAppendMissingDependencies(nextBase, u)
 
 	return &nexterBase, nil
 }
@@ -274,7 +274,7 @@ func helmChartBaseAppendAdditionalFiles(base Base, u *upstreamtypes.Upstream) Ba
 }
 
 // look for any sub-chart dependencies that are missing from base and add their Chart.yaml
-func helmChartBaseAppendMissingCharts(base Base, u *upstreamtypes.Upstream) Base {
+func helmChartBaseAppendMissingDependencies(base Base, u *upstreamtypes.Upstream) Base {
 	basePaths := getAllBasePaths(base)
 	basePathMap := map[string]bool{}
 	for _, basePath := range basePaths {
@@ -283,6 +283,7 @@ func helmChartBaseAppendMissingCharts(base Base, u *upstreamtypes.Upstream) Base
 
 	for _, upstreamFile := range u.Files {
 		basePath := strings.TrimSuffix(upstreamFile.Path, "Chart.yaml")
+		basePath = strings.TrimSuffix(basePath, "/")
 		if !basePathMap[basePath] && strings.HasSuffix(upstreamFile.Path, "Chart.yaml") {
 			b := Base{
 				Path: basePath,
