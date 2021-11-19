@@ -198,7 +198,6 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (int64, error) {
 
 	getUpdatesOptions := kotspull.GetUpdatesOptions{
 		License:             latestLicense,
-		InstalledAt:         a.CreatedAt,
 		CurrentCursor:       updateCursor,
 		CurrentChannelID:    latestLicense.Spec.ChannelID,
 		CurrentChannelName:  latestLicense.Spec.ChannelName,
