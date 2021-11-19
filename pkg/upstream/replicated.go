@@ -515,6 +515,7 @@ func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license 
 	urlValues := url.Values{}
 	urlValues.Set("channelSequence", sequence)
 	urlValues.Add("licenseSequence", fmt.Sprintf("%d", license.Spec.LicenseSequence))
+	urlValues.Add("isSemverSupported", "true")
 
 	if lastUpdateCheckAt != nil {
 		urlValues.Add("lastUpdateCheckAt", lastUpdateCheckAt.UTC().Format(time.RFC3339))
