@@ -275,7 +275,7 @@ func helmChartBaseAppendAdditionalFiles(base Base, u *upstreamtypes.Upstream) Ba
 
 // look for any sub-chart dependencies that are missing from base and add their Chart.yaml
 func helmChartBaseAppendMissingDependencies(base Base, u *upstreamtypes.Upstream) Base {
-	basePaths := getAllBasePaths(base)
+	basePaths := getAllBasePaths("", base)
 	basePathMap := map[string]bool{}
 	for _, basePath := range basePaths {
 		basePathMap[basePath] = true
@@ -301,10 +301,10 @@ func helmChartBaseAppendMissingDependencies(base Base, u *upstreamtypes.Upstream
 	return base
 }
 
-func getAllBasePaths(base Base) []string {
-	basePaths := []string{base.Path}
+func getAllBasePaths(prefix string, base Base) []string {
+	basePaths := []string{path.Join(prefix, base.Path)}
 	for _, b := range base.Bases {
-		basePaths = append(basePaths, getAllBasePaths(b)...)
+		basePaths = append(basePaths, getAllBasePaths(path.Join(prefix, base.Path), b)...)
 	}
 	return basePaths
 }
