@@ -202,6 +202,7 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (int64, error) {
 		CurrentChannelID:    latestLicense.Spec.ChannelID,
 		CurrentChannelName:  latestLicense.Spec.ChannelName,
 		CurrentVersionLabel: versionLabel,
+		ChannelChanged:      a.ChannelChanged,
 		Silent:              false,
 		ReportingInfo:       reporting.GetReportingInfo(a.ID),
 	}
@@ -244,13 +245,22 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (int64, error) {
 
 	// there are updates, go routine it
 	go func() {
+		updateSaved := false
 		for _, update := range updates {
 			_, err = upstream.DownloadUpdate(a.ID, update, opts.SkipPreflights)
 			if err != nil {
 				logger.Error(errors.Wrapf(err, "failed to download update %s", update.VersionLabel))
 				continue
 			}
+			updateSaved = true
 		}
+
+		if a.ChannelChanged && updateSaved {
+			if err = store.GetStore().SetAppChannelChanged(a.ID, false); err != nil {
+				logger.Error(errors.Wrapf(err, "failed to reset channel changed flag"))
+			}
+		}
+
 		if err := ensureDesiredVersionIsDeployed(opts, d.ClusterID); err != nil {
 			logger.Error(errors.Wrapf(err, "failed to ensure desired version is deployed"))
 		}

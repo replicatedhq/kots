@@ -72,6 +72,7 @@ type FetchOptions struct {
 	CurrentChannelID       string
 	CurrentChannelName     string
 	CurrentVersionLabel    string
+	ChannelChanged         bool
 	AppSlug                string
 	AppSequence            int64
 	LocalRegistry          LocalRegistry

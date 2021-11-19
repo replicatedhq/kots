@@ -77,10 +77,12 @@ require (
 	github.com/yvasiyarov/go-metrics v0.0.0-20150112132944-c25f46c4b940 // indirect
 	github.com/yvasiyarov/gorelic v0.0.7 // indirect
 	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20160601141957-9c099fbc30e9 // indirect; indirect=
+	go.starlark.net v0.0.0-20200821142938-949cc6f4b097 // indirect
 	go.uber.org/multierr v1.6.0
 	go.uber.org/zap v1.17.0
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
 	golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f
+	golang.org/x/tools v0.1.8-0.20211028023602-8de2a7fd1736 // indirect
 	google.golang.org/api v0.52.0
 	google.golang.org/grpc v1.39.0
 	gopkg.in/go-playground/assert.v1 v1.2.1

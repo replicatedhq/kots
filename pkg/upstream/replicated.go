@@ -105,7 +105,7 @@ func getUpdatesReplicated(u *url.URL, localPath string, currentCursor Replicated
 		return nil, errors.Wrap(err, "failed to get successful head response")
 	}
 
-	pendingReleases, err := listPendingChannelReleases(replicatedUpstream, license, currentCursor, reportingInfo)
+	pendingReleases, err := listPendingChannelReleases(replicatedUpstream, license, currentCursor, reportingInfo, fetchOptions.ChannelChanged)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list replicated app releases")
 	}
@@ -490,7 +490,7 @@ func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kots
 	return &release, nil
 }
 
-func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license *kotsv1beta1.License, currentCursor ReplicatedCursor, reportingInfo *reportingtypes.ReportingInfo) ([]ChannelRelease, error) {
+func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license *kotsv1beta1.License, currentCursor ReplicatedCursor, reportingInfo *reportingtypes.ReportingInfo, channelChanged bool) ([]ChannelRelease, error) {
 	u, err := url.Parse(license.Spec.Endpoint)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse endpoint from license")
@@ -502,9 +502,7 @@ func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license 
 	}
 
 	sequence := currentCursor.Cursor
-	if license.Spec.ChannelID != "" && currentCursor.ChannelID != "" && license.Spec.ChannelID != currentCursor.ChannelID {
-		sequence = ""
-	} else if license.Spec.ChannelName != currentCursor.ChannelName {
+	if channelChanged {
 		sequence = ""
 	}
 

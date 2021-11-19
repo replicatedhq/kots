@@ -80,3 +80,8 @@ spec:
       - name: semver_auto_deploy
         type: text
         default: 'disabled'
+      - name: channel_changed
+        type: boolean
+        default: "false"
+        constraints:
+          notNull: true

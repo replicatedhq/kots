@@ -1264,6 +1264,20 @@ func (mr *MockStoreMockRecorder) RunMigrations() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunMigrations", reflect.TypeOf((*MockStore)(nil).RunMigrations))
 }
 
+// SetAppChannelChanged mocks base method.
+func (m *MockStore) SetAppChannelChanged(appID string, channelChanged bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetAppChannelChanged", appID, channelChanged)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetAppChannelChanged indicates an expected call of SetAppChannelChanged.
+func (mr *MockStoreMockRecorder) SetAppChannelChanged(appID, channelChanged interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAppChannelChanged", reflect.TypeOf((*MockStore)(nil).SetAppChannelChanged), appID, channelChanged)
+}
+
 // SetAppInstallState mocks base method.
 func (m *MockStore) SetAppInstallState(appID, state string) error {
 	m.ctrl.T.Helper()
@@ -1545,18 +1559,18 @@ func (mr *MockStoreMockRecorder) SetUpdateCheckerSpec(appID, updateCheckerSpec i
 }
 
 // UpdateAppLicense mocks base method.
-func (m *MockStore) UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *v1beta1.License, originalLicenseData string, failOnVersionCreate bool, gitops types4.DownstreamGitOps, renderer types9.Renderer) (int64, error) {
+func (m *MockStore) UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *v1beta1.License, originalLicenseData string, channelChanged, failOnVersionCreate bool, gitops types4.DownstreamGitOps, renderer types9.Renderer) (int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateAppLicense", appID, sequence, archiveDir, newLicense, originalLicenseData, failOnVersionCreate, gitops, renderer)
+	ret := m.ctrl.Call(m, "UpdateAppLicense", appID, sequence, archiveDir, newLicense, originalLicenseData, channelChanged, failOnVersionCreate, gitops, renderer)
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UpdateAppLicense indicates an expected call of UpdateAppLicense.
-func (mr *MockStoreMockRecorder) UpdateAppLicense(appID, sequence, archiveDir, newLicense, originalLicenseData, failOnVersionCreate, gitops, renderer interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) UpdateAppLicense(appID, sequence, archiveDir, newLicense, originalLicenseData, channelChanged, failOnVersionCreate, gitops, renderer interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppLicense", reflect.TypeOf((*MockStore)(nil).UpdateAppLicense), appID, sequence, archiveDir, newLicense, originalLicenseData, failOnVersionCreate, gitops, renderer)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppLicense", reflect.TypeOf((*MockStore)(nil).UpdateAppLicense), appID, sequence, archiveDir, newLicense, originalLicenseData, channelChanged, failOnVersionCreate, gitops, renderer)
 }
 
 // UpdateAppLicenseSyncNow mocks base method.
@@ -2641,6 +2655,20 @@ func (mr *MockAppStoreMockRecorder) RemoveApp(appID interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveApp", reflect.TypeOf((*MockAppStore)(nil).RemoveApp), appID)
 }
 
+// SetAppChannelChanged mocks base method.
+func (m *MockAppStore) SetAppChannelChanged(appID string, channelChanged bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetAppChannelChanged", appID, channelChanged)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetAppChannelChanged indicates an expected call of SetAppChannelChanged.
+func (mr *MockAppStoreMockRecorder) SetAppChannelChanged(appID, channelChanged interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAppChannelChanged", reflect.TypeOf((*MockAppStore)(nil).SetAppChannelChanged), appID, channelChanged)
+}
+
 // SetAppInstallState mocks base method.
 func (m *MockAppStore) SetAppInstallState(appID, state string) error {
 	m.ctrl.T.Helper()
@@ -3422,18 +3450,18 @@ func (mr *MockLicenseStoreMockRecorder) GetLicenseForAppVersion(appID, sequence 
 }
 
 // UpdateAppLicense mocks base method.
-func (m *MockLicenseStore) UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *v1beta1.License, originalLicenseData string, failOnVersionCreate bool, gitops types4.DownstreamGitOps, renderer types9.Renderer) (int64, error) {
+func (m *MockLicenseStore) UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *v1beta1.License, originalLicenseData string, channelChanged, failOnVersionCreate bool, gitops types4.DownstreamGitOps, renderer types9.Renderer) (int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateAppLicense", appID, sequence, archiveDir, newLicense, originalLicenseData, failOnVersionCreate, gitops, renderer)
+	ret := m.ctrl.Call(m, "UpdateAppLicense", appID, sequence, archiveDir, newLicense, originalLicenseData, channelChanged, failOnVersionCreate, gitops, renderer)
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UpdateAppLicense indicates an expected call of UpdateAppLicense.
-func (mr *MockLicenseStoreMockRecorder) UpdateAppLicense(appID, sequence, archiveDir, newLicense, originalLicenseData, failOnVersionCreate, gitops, renderer interface{}) *gomock.Call {
+func (mr *MockLicenseStoreMockRecorder) UpdateAppLicense(appID, sequence, archiveDir, newLicense, originalLicenseData, channelChanged, failOnVersionCreate, gitops, renderer interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppLicense", reflect.TypeOf((*MockLicenseStore)(nil).UpdateAppLicense), appID, sequence, archiveDir, newLicense, originalLicenseData, failOnVersionCreate, gitops, renderer)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppLicense", reflect.TypeOf((*MockLicenseStore)(nil).UpdateAppLicense), appID, sequence, archiveDir, newLicense, originalLicenseData, channelChanged, failOnVersionCreate, gitops, renderer)
 }
 
 // UpdateAppLicenseSyncNow mocks base method.
