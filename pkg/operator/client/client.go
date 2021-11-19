@@ -271,14 +271,12 @@ func (c *Client) deployHelmCharts(deployArgs operatortypes.DeployAppArgs) (*comm
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find removed charts")
 	}
-
 	if len(removedCharts) > 0 {
 		err := c.uninstallWithHelm(prevHelmDir, targetNamespace, removedCharts)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to uninstall helm charts")
 		}
 	}
-
 	if len(deployArgs.Charts) > 0 {
 		installResult, err = c.installWithHelm(curHelmDir, targetNamespace)
 		if err != nil {
