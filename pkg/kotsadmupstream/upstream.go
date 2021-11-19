@@ -55,10 +55,6 @@ func DownloadUpdate(appID string, channelID string, update types.Update, skipPre
 		}
 	}()
 
-	if update.VersionLabel == "4.0.0" {
-		return 0, errors.New("random failure")
-	}
-
 	archiveDir, baseSequence, err := store.GetStore().GetAppVersionBaseArchive(appID, update.VersionLabel)
 	if err != nil {
 		return 0, errors.Wrapf(err, "failed to get base archive dir for version %s", update.VersionLabel)
