@@ -298,21 +298,21 @@ func Test_getRequest(t *testing.T) {
 			appSlug:         "sluggy1",
 			channel:         nil,
 			channelSequence: "",
-			expectedURL:     "https://replicated-app/release/sluggy1?channelSequence=&licenseSequence=23",
+			expectedURL:     "https://replicated-app/release/sluggy1?channelSequence=&isSemverSupported=true&licenseSequence=23",
 		},
 		{
 			endpoint:        "http://localhost:30016",
 			appSlug:         "sluggy2",
 			channel:         &beta,
 			channelSequence: "",
-			expectedURL:     "http://localhost:30016/release/sluggy2/beta?channelSequence=&licenseSequence=23",
+			expectedURL:     "http://localhost:30016/release/sluggy2/beta?channelSequence=&isSemverSupported=true&licenseSequence=23",
 		},
 		{
 			endpoint:        "https://replicated-app",
 			appSlug:         "sluggy3",
 			channel:         &unstable,
 			channelSequence: "10",
-			expectedURL:     "https://replicated-app/release/sluggy3/unstable?channelSequence=10&licenseSequence=23",
+			expectedURL:     "https://replicated-app/release/sluggy3/unstable?channelSequence=10&isSemverSupported=true&licenseSequence=23",
 		},
 	}
 
