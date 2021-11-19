@@ -756,3 +756,22 @@ func (s *KOTSStore) GetCurrentUpdateCursor(appID string, channelID string) (stri
 
 	return updateCursor.String, versionLabel.String, nil
 }
+
+func (s *KOTSStore) UpdateAlreadyExists(appID string, channelID string, cursor string) (bool, error) {
+	db := persistence.MustGetDBSession()
+	query := `SELECT sequence FROM app_version WHERE app_id = $1 AND channel_id = $2 AND update_cursor = $3`
+
+	rows, err := db.Query(query, appID, channelID, cursor)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to query db")
+	}
+	defer rows.Close()
+
+	exists := false
+	for rows.Next() {
+		exists = true
+		break
+	}
+
+	return exists, nil
+}

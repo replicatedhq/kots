@@ -7,7 +7,6 @@ import (
 
 	"github.com/pkg/errors"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
-	"github.com/replicatedhq/kots/pkg/app"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
 	upstream "github.com/replicatedhq/kots/pkg/kotsadmupstream"
@@ -213,12 +212,6 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (int64, error) {
 		return 0, errors.Wrap(err, "failed to get updates")
 	}
 
-	// update last updated at time
-	t := app.LastUpdateAtTime(a.ID)
-	if t != nil {
-		return 0, errors.Wrap(err, "failed to update last updated at time")
-	}
-
 	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to list downstreams for app")
@@ -247,7 +240,7 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (int64, error) {
 	go func() {
 		updateSaved := false
 		for _, update := range updates {
-			_, err = upstream.DownloadUpdate(a.ID, update, opts.SkipPreflights)
+			_, err = upstream.DownloadUpdate(a.ID, latestLicense.Spec.ChannelID, update, opts.SkipPreflights)
 			if err != nil {
 				logger.Error(errors.Wrapf(err, "failed to download update %s", update.VersionLabel))
 				continue

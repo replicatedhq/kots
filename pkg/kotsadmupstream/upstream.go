@@ -23,7 +23,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/version"
 )
 
-func DownloadUpdate(appID string, update types.Update, skipPreflights bool) (sequence int64, finalError error) {
+func DownloadUpdate(appID string, channelID string, update types.Update, skipPreflights bool) (sequence int64, finalError error) {
 	if err := store.GetStore().SetTaskStatus("update-download", "Fetching update...", "running"); err != nil {
 		return 0, errors.Wrap(err, "failed to set task status")
 	}
@@ -54,6 +54,14 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool) (seq
 			}
 		}
 	}()
+
+	exists, err := store.GetStore().UpdateAlreadyExists(appID, channelID, update.Cursor)
+	if err != nil {
+		return 0, errors.Wrapf(err, "failed check if update %s already exists", update.VersionLabel)
+	}
+	if exists {
+		return 0, nil
+	}
 
 	archiveDir, baseSequence, err := store.GetStore().GetAppVersionBaseArchive(appID, update.VersionLabel)
 	if err != nil {

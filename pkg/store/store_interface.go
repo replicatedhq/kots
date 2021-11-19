@@ -181,6 +181,7 @@ type VersionStore interface {
 	UpdateAppVersionInstallationSpec(appID string, sequence int64, spec kotsv1beta1.Installation) error
 	GetNextAppSequence(appID string) (int64, error)
 	GetCurrentUpdateCursor(appID string, channelID string) (string, string, error)
+	UpdateAlreadyExists(appID string, channelID string, cursor string) (bool, error)
 }
 
 type LicenseStore interface {
