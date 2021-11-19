@@ -24,7 +24,7 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 		}
 	}
 
-	securityContext := securePodContext(1001)
+	securityContext := securePodContext(1001, deployOptions.StrictSecurityContext)
 	if deployOptions.IsOpenShift {
 		// need to use a security context here because if the project is running with a scc that has "MustRunAsNonRoot" (or is not "MustRunAsRange"),
 		// openshift won't assign a user id to the container to run with, and the container will try to run as root and fail.
@@ -206,7 +206,7 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 									"memory": resource.MustParse("100Mi"),
 								},
 							},
-							SecurityContext: secureContainerContext(),
+							SecurityContext: secureContainerContext(deployOptions.StrictSecurityContext),
 						},
 					},
 				},

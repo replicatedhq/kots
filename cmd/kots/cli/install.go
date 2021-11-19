@@ -218,6 +218,7 @@ func InstallCmd() *cobra.Command {
 				AirgapBundle:              v.GetString("airgap-bundle"),
 				IncludeMinio:              v.GetBool("with-minio"),
 				IncludeMinioSnapshots:     v.GetBool("with-minio"),
+				StrictSecurityContext:     v.GetBool("strict-security-context"),
 
 				KotsadmOptions: *registryConfig,
 
@@ -399,6 +400,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().Bool("airgap", false, "set to true to run install in airgapped mode. setting --airgap-bundle implies --airgap=true.")
 	cmd.Flags().Bool("skip-preflights", false, "set to true to skip preflight checks")
 	cmd.Flags().Bool("disable-image-push", false, "set to true to disable images from being pushed to private registry")
+	cmd.Flags().Bool("strict-security-context", false, "set to explicitly enable explicit security contexts for all kots pods and containers (may not work for some storage providers)")
 
 	cmd.Flags().String("repo", "", "repo uri to use when installing a helm chart")
 	cmd.Flags().StringSlice("set", []string{}, "values to pass to helm when running helm template")

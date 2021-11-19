@@ -80,7 +80,7 @@ func DistributionService(deployOptions types.DeployOptions) *corev1.Service {
 func DistributionStatefulset(deployOptions types.DeployOptions, size resource.Quantity) *appsv1.StatefulSet {
 	var securityContext *corev1.PodSecurityContext
 	if !deployOptions.IsOpenShift {
-		securityContext = securePodContext(1000)
+		securityContext = securePodContext(1000, deployOptions.StrictSecurityContext)
 	}
 
 	statefulset := &appsv1.StatefulSet{
@@ -170,7 +170,7 @@ func DistributionStatefulset(deployOptions types.DeployOptions, size resource.Qu
 									Value: "/var/lib/registry",
 								},
 							},
-							SecurityContext: secureContainerContext(),
+							SecurityContext: secureContainerContext(deployOptions.StrictSecurityContext),
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "kotsadm-storage-registry",

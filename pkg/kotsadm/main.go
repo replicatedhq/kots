@@ -123,6 +123,7 @@ func Upgrade(clientset *kubernetes.Clientset, upgradeOptions types.UpgradeOption
 	deployOptions.StorageBaseURIPlainHTTP = upgradeOptions.StorageBaseURIPlainHTTP
 	deployOptions.IncludeMinio = upgradeOptions.IncludeMinio
 	deployOptions.IncludeDockerDistribution = upgradeOptions.IncludeDockerDistribution
+	deployOptions.StrictSecurityContext = upgradeOptions.StrictSecurityContext
 
 	// Attempt migrations to fail early.
 	if !deployOptions.IncludeMinioSnapshots {

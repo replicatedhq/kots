@@ -76,6 +76,7 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 				StorageBaseURIPlainHTTP:   v.GetBool("storage-base-uri-plainhttp"),
 				IncludeMinio:              includeMinio,
 				IncludeDockerDistribution: v.GetBool("with-dockerdistribution"),
+				StrictSecurityContext:     v.GetBool("strict-security-context"),
 
 				KotsadmOptions: kotsadmtypes.KotsadmOptions{
 					OverrideVersion:   v.GetString("kotsadm-tag"),
@@ -131,6 +132,7 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 	cmd.Flags().String("wait-duration", "3m", "timeout out to be used while waiting for individual components to be ready.  must be in Go duration format (eg: 10s, 2m)")
 	cmd.Flags().Bool("ensure-rbac", true, "when set, kots will create the roles and rolebindings necessary to manage applications")
 	cmd.Flags().String("airgap-upload-parallelism", "", "the number of chunks to upload in parallel when installing or updating in airgap mode")
+	cmd.Flags().Bool("strict-security-context", false, "set to explicitly enable explicit security contexts for all kots pods and containers (may not work for some storage providers)")
 	cmd.Flags().MarkHidden("force-upgrade-kurl")
 	cmd.Flags().MarkHidden("kotsadm-tag")
 	cmd.Flags().MarkHidden("kotsadm-namespace")
