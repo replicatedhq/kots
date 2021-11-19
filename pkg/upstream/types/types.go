@@ -20,18 +20,17 @@ type UpstreamFile struct {
 }
 
 type Upstream struct {
-	URI             string
-	Name            string
-	Type            string
-	Files           []UpstreamFile
-	UpdateCursor    string
-	ChannelID       string
-	ChannelName     string
-	ChannelSequence int64
-	VersionLabel    string
-	ReleaseNotes    string
-	ReleasedAt      *time.Time
-	EncryptionKey   string
+	URI           string
+	Name          string
+	Type          string
+	Files         []UpstreamFile
+	UpdateCursor  string
+	ChannelID     string
+	ChannelName   string
+	VersionLabel  string
+	ReleaseNotes  string
+	ReleasedAt    *time.Time
+	EncryptionKey string
 }
 
 type Update struct {
@@ -69,7 +68,6 @@ type FetchOptions struct {
 	IdentityConfig         *kotsv1beta1.IdentityConfig
 	Airgap                 *kotsv1beta1.Airgap
 	EncryptionKey          string
-	InstalledAt            *time.Time
 	CurrentCursor          string
 	CurrentChannelID       string
 	CurrentChannelName     string
