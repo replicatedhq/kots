@@ -316,6 +316,8 @@ func (r *ReplicatedUpstream) getRequest(method string, license *kotsv1beta1.Lice
 	urlValues := url.Values{}
 	urlValues.Set("channelSequence", cursor.Cursor)
 	urlValues.Add("licenseSequence", fmt.Sprintf("%d", license.Spec.LicenseSequence))
+	urlValues.Add("isSemverSupported", "true")
+
 	url := fmt.Sprintf("%s://%s?%s", u.Scheme, urlPath, urlValues.Encode())
 
 	req, err := http.NewRequest(method, url, nil)

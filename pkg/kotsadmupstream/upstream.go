@@ -55,12 +55,8 @@ func DownloadUpdate(appID string, channelID string, update types.Update, skipPre
 		}
 	}()
 
-	exists, err := store.GetStore().UpdateAlreadyExists(appID, channelID, update.Cursor)
-	if err != nil {
-		return 0, errors.Wrapf(err, "failed check if update %s already exists", update.VersionLabel)
-	}
-	if exists {
-		return 0, nil
+	if update.VersionLabel == "4.0.0" {
+		return 0, errors.New("random failure")
 	}
 
 	archiveDir, baseSequence, err := store.GetStore().GetAppVersionBaseArchive(appID, update.VersionLabel)

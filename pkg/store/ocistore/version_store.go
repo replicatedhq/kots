@@ -519,7 +519,3 @@ func (s *OCIStore) GetNextAppSequence(appID string) (int64, error) {
 func (s *OCIStore) GetCurrentUpdateCursor(appID string, channelID string) (string, string, error) {
 	return "", "", ErrNotImplemented
 }
-
-func (s *OCIStore) UpdateAlreadyExists(appID string, channelID string, cursor string) (bool, error) {
-	return false, ErrNotImplemented
-}

@@ -1558,21 +1558,6 @@ func (mr *MockStoreMockRecorder) SetUpdateCheckerSpec(appID, updateCheckerSpec i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetUpdateCheckerSpec", reflect.TypeOf((*MockStore)(nil).SetUpdateCheckerSpec), appID, updateCheckerSpec)
 }
 
-// UpdateAlreadyExists mocks base method.
-func (m *MockStore) UpdateAlreadyExists(appID, channelID, cursor string) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateAlreadyExists", appID, channelID, cursor)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// UpdateAlreadyExists indicates an expected call of UpdateAlreadyExists.
-func (mr *MockStoreMockRecorder) UpdateAlreadyExists(appID, channelID, cursor interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAlreadyExists", reflect.TypeOf((*MockStore)(nil).UpdateAlreadyExists), appID, channelID, cursor)
-}
-
 // UpdateAppLicense mocks base method.
 func (m *MockStore) UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *v1beta1.License, originalLicenseData string, channelChanged, failOnVersionCreate bool, gitops types4.DownstreamGitOps, renderer types9.Renderer) (int64, error) {
 	m.ctrl.T.Helper()
@@ -3380,21 +3365,6 @@ func (m *MockVersionStore) IsSnapshotsSupportedForVersion(a *types2.App, sequenc
 func (mr *MockVersionStoreMockRecorder) IsSnapshotsSupportedForVersion(a, sequence, renderer interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSnapshotsSupportedForVersion", reflect.TypeOf((*MockVersionStore)(nil).IsSnapshotsSupportedForVersion), a, sequence, renderer)
-}
-
-// UpdateAlreadyExists mocks base method.
-func (m *MockVersionStore) UpdateAlreadyExists(appID, channelID, cursor string) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateAlreadyExists", appID, channelID, cursor)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// UpdateAlreadyExists indicates an expected call of UpdateAlreadyExists.
-func (mr *MockVersionStoreMockRecorder) UpdateAlreadyExists(appID, channelID, cursor interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAlreadyExists", reflect.TypeOf((*MockVersionStore)(nil).UpdateAlreadyExists), appID, channelID, cursor)
 }
 
 // UpdateAppVersionInstallationSpec mocks base method.
