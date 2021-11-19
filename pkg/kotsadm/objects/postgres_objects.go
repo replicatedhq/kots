@@ -29,7 +29,7 @@ func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quanti
 		}
 	}
 
-	securityContext := securePodContext(999)
+	securityContext := securePodContext(999, deployOptions.StrictSecurityContext)
 	if deployOptions.IsOpenShift {
 		// need to use a security context here because if the project is running with a scc that has "MustRunAsNonRoot" (or is not "MustRunAsRange"),
 		// openshift won't assign a user id to the container to run with, and the container will try to run as root and fail.
@@ -227,7 +227,7 @@ func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quanti
 									"memory": resource.MustParse("100Mi"),
 								},
 							},
-							SecurityContext: secureContainerContext(),
+							SecurityContext: secureContainerContext(deployOptions.StrictSecurityContext),
 						},
 					},
 				},

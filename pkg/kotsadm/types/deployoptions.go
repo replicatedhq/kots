@@ -44,6 +44,7 @@ type DeployOptions struct {
 	EnsureKotsadmConfig       bool
 	SkipPreflights            bool
 	EnsureRBAC                bool
+	StrictSecurityContext     bool
 	InstallID                 string
 	SimultaneousUploads       int
 	DisableImagePush          bool
