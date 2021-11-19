@@ -1,6 +1,8 @@
 package pull
 
 import (
+	"time"
+
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	reportingtypes "github.com/replicatedhq/kots/pkg/api/reporting/types"
@@ -14,6 +16,7 @@ type GetUpdatesOptions struct {
 	Namespace           string
 	LocalPath           string
 	License             *kotsv1beta1.License
+	LastUpdateCheckAt   time.Time
 	CurrentCursor       string
 	CurrentChannelID    string
 	CurrentChannelName  string
@@ -37,6 +40,7 @@ func GetUpdates(upstreamURI string, getUpdatesOptions GetUpdatesOptions) ([]upst
 	fetchOptions := upstreamtypes.FetchOptions{}
 	fetchOptions.HelmRepoURI = getUpdatesOptions.HelmRepoURI
 	fetchOptions.LocalPath = getUpdatesOptions.LocalPath
+	fetchOptions.LastUpdateCheckAt = &getUpdatesOptions.LastUpdateCheckAt
 	fetchOptions.CurrentCursor = getUpdatesOptions.CurrentCursor
 	fetchOptions.CurrentChannelID = getUpdatesOptions.CurrentChannelID
 	fetchOptions.CurrentChannelName = getUpdatesOptions.CurrentChannelName
