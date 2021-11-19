@@ -8,8 +8,8 @@ import (
 	"github.com/replicatedhq/kots/pkg/persistence"
 )
 
-// LastUpdateAtTime sets the time that the client last checked for an update to now
-func LastUpdateAtTime(appID string) error {
+// SetLastUpdateAtTime sets the time that the client last checked for an update to now
+func SetLastUpdateAtTime(appID string) error {
 	db := persistence.MustGetDBSession()
 	query := `update app set last_update_check_at = $1 where id = $2`
 	_, err := db.Exec(query, time.Now(), appID)

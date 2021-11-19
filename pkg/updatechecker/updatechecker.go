@@ -196,8 +196,14 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (int64, error) {
 		return 0, errors.Wrap(err, "failed to get current update cursor")
 	}
 
+	lastUpdateCheckAt, err := time.Parse(time.RFC3339, a.LastUpdateCheckAt)
+	if err != nil {
+		lastUpdateCheckAt = a.CreatedAt // first time to check for updates, use installation time instead
+	}
+
 	getUpdatesOptions := kotspull.GetUpdatesOptions{
 		License:             latestLicense,
+		LastUpdateCheckAt:   lastUpdateCheckAt,
 		CurrentCursor:       updateCursor,
 		CurrentChannelID:    latestLicense.Spec.ChannelID,
 		CurrentChannelName:  latestLicense.Spec.ChannelName,
@@ -211,12 +217,6 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (int64, error) {
 	updates, err := kotspull.GetUpdates(fmt.Sprintf("replicated://%s", latestLicense.Spec.AppSlug), getUpdatesOptions)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get updates")
-	}
-
-	// update last updated at time
-	t := app.LastUpdateAtTime(a.ID)
-	if t != nil {
-		return 0, errors.Wrap(err, "failed to update last updated at time")
 	}
 
 	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
@@ -245,22 +245,25 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (int64, error) {
 
 	// there are updates, go routine it
 	go func() {
-		updateSaved := false
-		for _, update := range updates {
+		for index, update := range updates {
 			_, err = upstream.DownloadUpdate(a.ID, update, opts.SkipPreflights)
 			if err != nil {
 				logger.Error(errors.Wrapf(err, "failed to download update %s", update.VersionLabel))
+				if index == len(updates)-1 {
+					// if the last update fails to be downloaded, then the operation isn't successful
+					// and lastUpdateCheckTimestamp shouldn't be updated yet since that timestamp is used in detecting new updates
+					return
+				}
 				continue
 			}
-			updateSaved = true
-		}
-
-		if a.ChannelChanged && updateSaved {
+			// if any update from the channel has been downloaded and processed successfully, then reset the "channel_chaged" flag
 			if err = store.GetStore().SetAppChannelChanged(a.ID, false); err != nil {
 				logger.Error(errors.Wrapf(err, "failed to reset channel changed flag"))
 			}
 		}
-
+		if err := app.SetLastUpdateAtTime(a.ID); err != nil {
+			logger.Error(errors.Wrap(err, "failed to update last updated at time"))
+		}
 		if err := ensureDesiredVersionIsDeployed(opts, d.ClusterID); err != nil {
 			logger.Error(errors.Wrapf(err, "failed to ensure desired version is deployed"))
 		}

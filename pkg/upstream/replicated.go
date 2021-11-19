@@ -81,18 +81,24 @@ func (this ReplicatedCursor) Equal(other ReplicatedCursor) bool {
 	return this.ChannelName == other.ChannelName && this.Cursor == other.Cursor
 }
 
-func getUpdatesReplicated(u *url.URL, localPath string, currentCursor ReplicatedCursor, currentVersionLabel string, license *kotsv1beta1.License, reportingInfo *reportingtypes.ReportingInfo) ([]types.Update, error) {
-	if localPath != "" {
-		parsedLocalRelease, err := readReplicatedAppFromLocalPath(localPath, currentCursor, currentVersionLabel)
+func getUpdatesReplicated(u *url.URL, fetchOptions *types.FetchOptions) ([]types.Update, error) {
+	currentCursor := ReplicatedCursor{
+		ChannelID:   fetchOptions.CurrentChannelID,
+		ChannelName: fetchOptions.CurrentChannelName,
+		Cursor:      fetchOptions.CurrentCursor,
+	}
+
+	if fetchOptions.LocalPath != "" {
+		parsedLocalRelease, err := readReplicatedAppFromLocalPath(fetchOptions.LocalPath, currentCursor, fetchOptions.CurrentVersionLabel)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to read replicated app from local path")
 		}
 
-		return []types.Update{{Cursor: parsedLocalRelease.UpdateCursor.Cursor, VersionLabel: currentVersionLabel}}, nil
+		return []types.Update{{Cursor: parsedLocalRelease.UpdateCursor.Cursor, VersionLabel: fetchOptions.CurrentVersionLabel}}, nil
 	}
 
 	// A license file is required to be set for this to succeed
-	if license == nil {
+	if fetchOptions.License == nil {
 		return nil, errors.New("No license was provided")
 	}
 
@@ -101,11 +107,11 @@ func getUpdatesReplicated(u *url.URL, localPath string, currentCursor Replicated
 		return nil, errors.Wrap(err, "failed to parse replicated upstream")
 	}
 
-	if err := getSuccessfulHeadResponse(replicatedUpstream, license); err != nil {
+	if err := getSuccessfulHeadResponse(replicatedUpstream, fetchOptions.License); err != nil {
 		return nil, errors.Wrap(err, "failed to get successful head response")
 	}
 
-	pendingReleases, err := listPendingChannelReleases(replicatedUpstream, license, currentCursor, reportingInfo, fetchOptions.ChannelChanged)
+	pendingReleases, err := listPendingChannelReleases(replicatedUpstream, fetchOptions.License, fetchOptions.LastUpdateCheckAt, currentCursor, fetchOptions.ChannelChanged, fetchOptions.ReportingInfo)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list replicated app releases")
 	}
@@ -310,6 +316,8 @@ func (r *ReplicatedUpstream) getRequest(method string, license *kotsv1beta1.Lice
 	urlValues := url.Values{}
 	urlValues.Set("channelSequence", cursor.Cursor)
 	urlValues.Add("licenseSequence", fmt.Sprintf("%d", license.Spec.LicenseSequence))
+	urlValues.Add("isSemverSupported", "true")
+
 	url := fmt.Sprintf("%s://%s?%s", u.Scheme, urlPath, urlValues.Encode())
 
 	req, err := http.NewRequest(method, url, nil)
@@ -490,7 +498,7 @@ func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kots
 	return &release, nil
 }
 
-func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license *kotsv1beta1.License, currentCursor ReplicatedCursor, reportingInfo *reportingtypes.ReportingInfo, channelChanged bool) ([]ChannelRelease, error) {
+func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license *kotsv1beta1.License, lastUpdateCheckAt *time.Time, currentCursor ReplicatedCursor, channelChanged bool, reportingInfo *reportingtypes.ReportingInfo) ([]ChannelRelease, error) {
 	u, err := url.Parse(license.Spec.Endpoint)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse endpoint from license")
@@ -509,6 +517,11 @@ func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license 
 	urlValues := url.Values{}
 	urlValues.Set("channelSequence", sequence)
 	urlValues.Add("licenseSequence", fmt.Sprintf("%d", license.Spec.LicenseSequence))
+	urlValues.Add("isSemverSupported", "true")
+
+	if lastUpdateCheckAt != nil {
+		urlValues.Add("lastUpdateCheckAt", lastUpdateCheckAt.UTC().Format(time.RFC3339))
+	}
 
 	url := fmt.Sprintf("%s://%s/release/%s/pending?%s", u.Scheme, hostname, license.Spec.AppSlug, urlValues.Encode())
 

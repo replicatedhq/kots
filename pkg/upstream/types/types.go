@@ -68,6 +68,7 @@ type FetchOptions struct {
 	IdentityConfig         *kotsv1beta1.IdentityConfig
 	Airgap                 *kotsv1beta1.Airgap
 	EncryptionKey          string
+	LastUpdateCheckAt      *time.Time
 	CurrentCursor          string
 	CurrentChannelID       string
 	CurrentChannelName     string
