@@ -246,7 +246,7 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (int64, error) {
 	// there are updates, go routine it
 	go func() {
 		for index, update := range updates {
-			_, err = upstream.DownloadUpdate(a.ID, latestLicense.Spec.ChannelID, update, opts.SkipPreflights)
+			_, err = upstream.DownloadUpdate(a.ID, update, opts.SkipPreflights)
 			if err != nil {
 				logger.Error(errors.Wrapf(err, "failed to download update %s", update.VersionLabel))
 				if index == len(updates)-1 {

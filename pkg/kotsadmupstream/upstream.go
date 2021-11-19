@@ -23,7 +23,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/version"
 )
 
-func DownloadUpdate(appID string, channelID string, update types.Update, skipPreflights bool) (sequence int64, finalError error) {
+func DownloadUpdate(appID string, update types.Update, skipPreflights bool) (sequence int64, finalError error) {
 	if err := store.GetStore().SetTaskStatus("update-download", "Fetching update...", "running"); err != nil {
 		return 0, errors.Wrap(err, "failed to set task status")
 	}
