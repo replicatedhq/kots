@@ -43,4 +43,5 @@ type App struct {
 	IsGitOps              bool             `json:"isGitOps"`
 	InstallState          string           `json:"installState"`
 	LastLicenseSync       string           `json:"lastLicenseSync"`
+	ChannelChanged        bool             `json:"channelChanged"`
 }

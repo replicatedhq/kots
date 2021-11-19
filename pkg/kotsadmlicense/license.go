@@ -74,7 +74,12 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 	synced := false
 	if updatedLicense.Spec.LicenseSequence != currentLicense.Spec.LicenseSequence ||
 		updatedLicense.Spec.LicenseSequence != kotsKinds.License.Spec.LicenseSequence {
-		newSequence, err := store.GetStore().UpdateAppLicense(a.ID, latestVersion.Sequence, archiveDir, updatedLicense, licenseString, failOnVersionCreate, &version.DownstreamGitOps{}, &render.Renderer{})
+
+		channelChanged := false
+		if updatedLicense.Spec.ChannelID != currentLicense.Spec.ChannelID {
+			channelChanged = true
+		}
+		newSequence, err := store.GetStore().UpdateAppLicense(a.ID, latestVersion.Sequence, archiveDir, updatedLicense, licenseString, channelChanged, failOnVersionCreate, &version.DownstreamGitOps{}, &render.Renderer{})
 		if err != nil {
 			return nil, false, errors.Wrap(err, "failed to update license")
 		}

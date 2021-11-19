@@ -88,7 +88,7 @@ func (s *KOTSStore) GetAllAppLicenses() ([]*kotsv1beta1.License, error) {
 	return licenses, nil
 }
 
-func (s *KOTSStore) UpdateAppLicense(appID string, baseSequence int64, archiveDir string, newLicense *kotsv1beta1.License, originalLicenseData string, failOnVersionCreate bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error) {
+func (s *KOTSStore) UpdateAppLicense(appID string, baseSequence int64, archiveDir string, newLicense *kotsv1beta1.License, originalLicenseData string, channelChanged bool, failOnVersionCreate bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error) {
 	db := persistence.MustGetDBSession()
 
 	tx, err := db.Begin()
@@ -108,8 +108,8 @@ func (s *KOTSStore) UpdateAppLicense(appID string, baseSequence int64, archiveDi
 	}
 
 	//  app has the original license data received from the server
-	updateQuery := `update app set license=$1, last_license_sync=$2 where id = $3`
-	_, err = tx.Exec(updateQuery, originalLicenseData, time.Now(), appID)
+	updateQuery := `update app set license=$1, last_license_sync=$2, channel_changed=$3 where id = $4`
+	_, err = tx.Exec(updateQuery, originalLicenseData, time.Now(), channelChanged, appID)
 	if err != nil {
 		return int64(0), errors.Wrapf(err, "update app %q license", appID)
 	}

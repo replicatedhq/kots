@@ -364,3 +364,7 @@ func (s *OCIStore) updateApp(app *apptypes.App) error {
 func (s *OCIStore) RemoveApp(appID string) error {
 	return ErrNotImplemented
 }
+
+func (s *OCIStore) SetAppChannelChanged(appID string, channelChanged bool) error {
+	return ErrNotImplemented
+}

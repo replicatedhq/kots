@@ -130,6 +130,7 @@ type AppStore interface {
 	SetSnapshotTTL(appID string, snapshotTTL string) error
 	SetSnapshotSchedule(appID string, snapshotSchedule string) error
 	RemoveApp(appID string) error
+	SetAppChannelChanged(appID string, channelChanged bool) error
 }
 
 type DownstreamStore interface {
@@ -188,7 +189,7 @@ type LicenseStore interface {
 	GetAllAppLicenses() ([]*kotsv1beta1.License, error)
 
 	// originalLicenseData is the data received from the replicated API that was never marshalled locally so all fields are intact
-	UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *kotsv1beta1.License, originalLicenseData string, failOnVersionCreate bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error)
+	UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *kotsv1beta1.License, originalLicenseData string, channelChanged bool, failOnVersionCreate bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error)
 	UpdateAppLicenseSyncNow(appID string) error
 }
 
