@@ -194,9 +194,9 @@ class SupportBundleRow extends React.Component {
                   </div>
                 : this.state.sendingBundle ?
                   <Loader size="30" className="u-marginRight--10" />
-                :
+                : !this.props.isAirgap ?
                   <span className="u-fontSize--small u-marginRight--10 u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover u-paddingRight--10 u-borderRight--gray" onClick={() => this.sendBundleToVendor(this.props.bundle.slug)}>Send bundle to vendor</span>
-                }
+                : null}
                 {this.state.downloadBundleErrMsg &&
                   <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginRight--10">{this.state.downloadBundleErrMsg}</p>}
                 {this.state.downloadingBundle ?
