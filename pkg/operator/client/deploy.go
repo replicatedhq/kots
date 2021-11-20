@@ -17,6 +17,9 @@ import (
 	"github.com/replicatedhq/kots/pkg/operator/applier"
 	operatortypes "github.com/replicatedhq/kots/pkg/operator/types"
 	"github.com/replicatedhq/yaml/v3"
+	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -129,6 +132,7 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 	// consider some other options here?
 	kubernetesApplier := applier.NewKubectl(kubectl, kustomize, config)
 
+	allPVCs := make([]string, 0)
 	for k, previous := range decodedPreviousMap {
 		if _, ok := decodedCurrentMap[k]; ok {
 			continue
@@ -165,6 +169,12 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 			group = gvk.Group
 			kind = gvk.Kind
 			logger.Infof("deleting manifest(s): %s/%s/%s", group, kind, name)
+
+			pvcs, err := getPVCs(namespace, obj, gvk)
+			if err != nil {
+				return errors.Wrap(err, "failed to list PVCs")
+			}
+			allPVCs = append(allPVCs, pvcs...)
 		}
 
 		wait := deployArgs.Wait
@@ -185,8 +195,9 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 	}
 
 	if deployArgs.ClearPVCs {
+		logger.Infof("deleting pvcs: %s", strings.Join(allPVCs, ","))
 		// TODO: multi-namespace support
-		err := deletePVCs(targetNamespace, deployArgs.AppSlug)
+		err := deletePVCs(targetNamespace, allPVCs)
 		if err != nil {
 			return errors.Wrap(err, "failed to delete PVCs")
 		}
@@ -553,7 +564,67 @@ func parseK8sYaml(doc []byte) (k8sruntime.Object, *k8sschema.GroupVersionKind, e
 	return obj, gvk, err
 }
 
-func deletePVCs(namespace string, appslug string) error {
+func getPVCs(targetNamespace string, obj k8sruntime.Object, gvk *k8sschema.GroupVersionKind) ([]string, error) {
+	var err error
+	var pods []*corev1.Pod
+
+	ns := func(objNs string) string {
+		if objNs != "" {
+			return objNs
+		}
+		return targetNamespace
+	}
+
+	if gvk.Group == "apps" && gvk.Version == "v1" && gvk.Kind == "Deployment" {
+		o := obj.(*appsv1.Deployment)
+		pods, err = findPodsByOwner(o.Name, ns(o.Namespace), gvk)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to find pods for deployment %s", o.Name)
+		}
+	} else if gvk.Group == "apps" && gvk.Version == "v1" && gvk.Kind == "StatefulSet" {
+		o := obj.(*appsv1.StatefulSet)
+		pods, err = findPodsByOwner(o.Name, ns(o.Namespace), gvk)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to find pods for stateful set %s", o.Name)
+		}
+	} else if gvk.Group == "batch" && gvk.Version == "v1" && gvk.Kind == "Job" {
+		o := obj.(*batchv1.Job)
+		pods, err = findPodsByOwner(o.Name, ns(o.Namespace), gvk)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to find pods for job %s", o.Name)
+		}
+	} else if gvk.Group == "batch" && gvk.Version == "v1beta1" && gvk.Kind == "CronJob" {
+		o := obj.(*batchv1beta1.CronJob)
+		pods, err = findPodsByOwner(o.Name, ns(o.Namespace), gvk)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to find pods for cron job %s", o.Name)
+		}
+	} else if gvk.Group == "" && gvk.Version == "v1" && gvk.Kind == "Pod" {
+		o := obj.(*corev1.Pod)
+		pod, err := findPodByName(o.Name, ns(o.Namespace))
+		if err != nil {
+			if !kuberneteserrors.IsNotFound(errors.Cause(err)) {
+				return nil, errors.Wrapf(err, "failed to find pod %s", o.Name)
+			}
+		}
+		if pod != nil {
+			pods = []*corev1.Pod{pod}
+		}
+	}
+
+	pvcs := make([]string, 0)
+	for _, pod := range pods {
+		for _, v := range pod.Spec.Volumes {
+			if v.PersistentVolumeClaim != nil {
+				pvcs = append(pvcs, v.PersistentVolumeClaim.ClaimName)
+			}
+		}
+	}
+
+	return pvcs, nil
+}
+
+func deletePVCs(namespace string, pvcs []string) error {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return errors.Wrap(err, "failed to get config")
@@ -563,28 +634,6 @@ func deletePVCs(namespace string, appslug string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to get client set")
 	}
-
-	podsList, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("kots.io/app-slug=%s", appslug),
-	})
-	if err != nil {
-		return errors.Wrap(err, "failed to get list of app pods")
-	}
-
-	pvcs := make([]string, 0)
-	for _, pod := range podsList.Items {
-		for _, v := range pod.Spec.Volumes {
-			if v.PersistentVolumeClaim != nil {
-				pvcs = append(pvcs, v.PersistentVolumeClaim.ClaimName)
-			}
-		}
-	}
-
-	if len(pvcs) == 0 {
-		logger.Infof("no pvcs to delete in %s for pods with the label 'kots.io/app-slug=%s'", namespace, appslug)
-		return nil
-	}
-	logger.Infof("deleting %d pvcs in %s for pods with the label 'kots.io/app-slug=%s'", len(pvcs), namespace, appslug)
 
 	for _, pvc := range pvcs {
 		grace := int64(0)
