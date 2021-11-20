@@ -49,6 +49,8 @@ type DeployOptions struct {
 	SimultaneousUploads       int
 	DisableImagePush          bool
 	UpstreamURI               string
+	IsMinimalRBAC             bool
+	AdditionalNamespaces      []string
 
 	IdentityConfig kotsv1beta1.IdentityConfig
 	IngressConfig  kotsv1beta1.IngressConfig

@@ -17,6 +17,7 @@ import (
 )
 
 type UpstreamSettings struct {
+	Namespace              string
 	SharedPassword         string
 	SharedPasswordBcrypt   string
 	S3AccessKey            string
@@ -30,11 +31,19 @@ type UpstreamSettings struct {
 	AutoCreateClusterToken string
 	IsOpenShift            bool
 	IncludeMinio           bool
+	IsMinimalRBAC          bool
+	AdditionalNamespaces   []string
 }
 
 func GenerateAdminConsoleFiles(renderDir string, options types.WriteOptions) ([]types.UpstreamFile, error) {
+
+	if options.Namespace == "" {
+		options.Namespace = "default"
+	}
+
 	if _, err := os.Stat(path.Join(renderDir, "admin-console")); os.IsNotExist(err) {
 		settings := &UpstreamSettings{
+			Namespace:              options.Namespace,
 			SharedPassword:         options.SharedPassword,
 			AutoCreateClusterToken: uuid.New().String(),
 			HTTPProxyEnvValue:      options.HTTPProxyEnvValue,
@@ -42,6 +51,8 @@ func GenerateAdminConsoleFiles(renderDir string, options types.WriteOptions) ([]
 			NoProxyEnvValue:        options.NoProxyEnvValue,
 			IsOpenShift:            options.IsOpenShift,
 			IncludeMinio:           options.IncludeMinio,
+			IsMinimalRBAC:          options.IsMinimalRBAC,
+			AdditionalNamespaces:   options.AdditionalNamespaces,
 		}
 		return generateNewAdminConsoleFiles(settings)
 	}
@@ -52,9 +63,12 @@ func GenerateAdminConsoleFiles(renderDir string, options types.WriteOptions) ([]
 	}
 
 	settings := &UpstreamSettings{
+		Namespace:              options.Namespace,
 		AutoCreateClusterToken: uuid.New().String(),
 		IsOpenShift:            options.IsOpenShift,
 		IncludeMinio:           options.IncludeMinio,
+		IsMinimalRBAC:          options.IsMinimalRBAC,
+		AdditionalNamespaces:   options.AdditionalNamespaces,
 	}
 	if err := loadUpstreamSettingsFromFiles(settings, renderDir, existingFiles); err != nil {
 		return nil, errors.Wrap(err, "failed to find existing settings")
@@ -140,7 +154,7 @@ func generateNewAdminConsoleFiles(settings *UpstreamSettings) ([]types.UpstreamF
 	upstreamFiles := []types.UpstreamFile{}
 
 	deployOptions := kotsadmtypes.DeployOptions{
-		Namespace:              "default",
+		Namespace:              settings.Namespace,
 		SharedPassword:         settings.SharedPassword,
 		SharedPasswordBcrypt:   settings.SharedPasswordBcrypt,
 		S3AccessKey:            settings.S3AccessKey,
@@ -155,6 +169,8 @@ func generateNewAdminConsoleFiles(settings *UpstreamSettings) ([]types.UpstreamF
 		IsOpenShift:            settings.IsOpenShift,
 		IncludeMinio:           settings.IncludeMinio,
 		EnsureRBAC:             true,
+		IsMinimalRBAC:          settings.IsMinimalRBAC,
+		AdditionalNamespaces:   settings.AdditionalNamespaces,
 	}
 
 	if deployOptions.SharedPasswordBcrypt == "" && deployOptions.SharedPassword == "" {

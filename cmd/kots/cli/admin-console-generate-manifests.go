@@ -26,13 +26,22 @@ func AdminGenerateManifestsCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
 
+			namespace := v.GetString("namespace")
+
+			if namespace == "" {
+				namespace = "default"
+			}
+
 			renderDir := ExpandDir(v.GetString("rootdir"))
 			options := upstreamtypes.WriteOptions{
-				SharedPassword:     v.GetString("shared-password"),
-				HTTPProxyEnvValue:  v.GetString("http-proxy"),
-				HTTPSProxyEnvValue: v.GetString("https-proxy"),
-				NoProxyEnvValue:    v.GetString("no-proxy"),
-				IncludeMinio:       v.GetBool("with-minio"),
+				Namespace:            namespace,
+				SharedPassword:       v.GetString("shared-password"),
+				HTTPProxyEnvValue:    v.GetString("http-proxy"),
+				HTTPSProxyEnvValue:   v.GetString("https-proxy"),
+				NoProxyEnvValue:      v.GetString("no-proxy"),
+				IncludeMinio:         v.GetBool("with-minio"),
+				IsMinimalRBAC:        v.GetBool("minimal-rbac"),
+				AdditionalNamespaces: v.GetStringSlice("additional-namespaces"),
 			}
 			adminConsoleFiles, err := upstream.GenerateAdminConsoleFiles(renderDir, options)
 			if err != nil {
@@ -66,6 +75,8 @@ func AdminGenerateManifestsCmd() *cobra.Command {
 	cmd.Flags().String("no-proxy", "", "sets NO_PROXY environment variable in all KOTS Admin Console components")
 	cmd.Flags().String("shared-password", "", "shared password to use when deploying the admin console")
 	cmd.Flags().Bool("with-minio", true, "set to true to include a local minio instance to be used for storage")
+	cmd.Flags().Bool("minimal-rbac", false, "set to true to use the namespaced role and bindings instead of cluster-level permissions")
+	cmd.Flags().StringSlice("additional-namespaces", []string{}, "Comma separate list to specify additional namespace(s) managed by KOTS outside where it is to be deployed. Ignored without with '--minimal-rbac=true'")
 
 	return cmd
 }
