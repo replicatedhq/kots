@@ -623,7 +623,7 @@ class DashboardVersionCard extends React.Component {
 
     return (
       <div>
-        {!this.props.checkingForUpdates && !checkingForUpdateError && downstream?.pendingVersions?.length > 0 && (!isBundleUploading || !this.props.uploadingAirgapFile) ?
+        {!checkingForUpdateError && downstream?.pendingVersions?.length > 0 && (!isBundleUploading || !this.props.uploadingAirgapFile) ?
           <div className="flex">
             <div className="flex-column">
               <div className="flex alignItems--center">
@@ -686,6 +686,10 @@ class DashboardVersionCard extends React.Component {
                   <Loader className="u-marginRight--5" size="15" />
                   <span className="u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default">{checkingUpdateText === "" ? "Checking for updates" : checkingUpdateTextShort}</span>
                 </div>
+              : this.props.noUpdatesAvalable ?
+                <div className="flex alignItems--center u-marginRight--20">
+                  <span className="u-textColor--primary u-fontWeight--medium u-fontSize--small u-lineHeight--default">Already up to date</span>
+                </div>
               :
                 <div className="flex alignItems--center u-marginRight--20">
                   <span className="icon clickable dashboard-card-check-update-icon u-marginRight--5" />
@@ -693,7 +697,7 @@ class DashboardVersionCard extends React.Component {
                 </div>
               }
               <span className="icon clickable dashboard-card-configure-update-icon u-marginRight--5" />
-              <span className="replicated-link u-fontSize--small" onClick={this.props.showAutomaticUpdatesModal}>Configure automatic updates</span>
+              <span className="replicated-link u-fontSize--small u-lineHeight--default" onClick={this.props.showAutomaticUpdatesModal}>Configure automatic updates</span>
             </div>
             }
           </div>
@@ -735,8 +739,8 @@ class DashboardVersionCard extends React.Component {
             className="Modal MediumSize"
           >
             <div className="flex-column">
-              <MarkdownRenderer>
-                {downstreamReleaseNotes || ""}
+              <MarkdownRenderer className="is-kotsadm" id="markdown-wrapper">
+                {downstreamReleaseNotes || "No release notes for this version"}
               </MarkdownRenderer>
             </div>
             <div className="flex u-marginTop--10 u-marginLeft--10 u-marginBottom--10">

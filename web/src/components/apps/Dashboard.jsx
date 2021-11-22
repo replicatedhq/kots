@@ -39,6 +39,7 @@ class Dashboard extends Component {
     appLicense: null,
     activeChart: null,
     crosshairValues: [],
+    noUpdatesAvalable: false,
     updateChecker: new Repeater(),
     uploadingAirgapFile: false,
     airgapUploadError: null,
@@ -201,7 +202,18 @@ class Dashboard extends Component {
       method: "POST",
     })
       .then(async (res) => {
-        this.state.updateChecker.start(this.updateStatus, 1000);
+        const response = await res.json();
+        if (response.availableUpdates === 0) {
+          this.setState({
+            checkingForUpdates: false,
+            noUpdatesAvalable: true
+          });
+          setTimeout(() => {
+            this.setState({ noUpdatesAvalable: false });
+          }, 3000);
+        } else {
+          this.state.updateChecker.start(this.updateStatus, 1000);
+        }
       })
       .catch((err) => {
         this.setState({ errorCheckingUpdate: true });
@@ -246,6 +258,7 @@ class Dashboard extends Component {
             if (this.props.updateCallback) {
               this.props.updateCallback();
             }
+
           } else {
             this.setState({
               checkingForUpdates: true,
@@ -553,6 +566,7 @@ class Dashboard extends Component {
                   viewAirgapUploadError={() => this.toggleViewAirgapUploadError()}
                   viewAirgapUpdateError={(err) => this.toggleViewAirgapUpdateError(err)}
                   showAutomaticUpdatesModal={this.showAutomaticUpdatesModal}
+                  noUpdatesAvalable={this.state.noUpdatesAvalable}
                 />
               </div>
               <div className="flex1 flex-column u-paddingLeft--15">
