@@ -186,7 +186,7 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 
 	if deployArgs.ClearPVCs {
 		// TODO: multi-namespace support
-		err := deletePVCs(targetNamespace, deployArgs.RestoreLabelSelector)
+		err := deletePVCs(targetNamespace, deployArgs.RestoreLabelSelector, deployArgs.AppSlug)
 		if err != nil {
 			return errors.Wrap(err, "failed to delete PVCs")
 		}
@@ -553,7 +553,7 @@ func parseK8sYaml(doc []byte) (k8sruntime.Object, *k8sschema.GroupVersionKind, e
 	return obj, gvk, err
 }
 
-func deletePVCs(namespace string, appLabelSelector *metav1.LabelSelector) error {
+func deletePVCs(namespace string, appLabelSelector *metav1.LabelSelector, appslug string) error {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return errors.Wrap(err, "failed to get config")
@@ -564,8 +564,15 @@ func deletePVCs(namespace string, appLabelSelector *metav1.LabelSelector) error 
 		return errors.Wrap(err, "failed to get client set")
 	}
 
+	if appLabelSelector == nil {
+		appLabelSelector = &metav1.LabelSelector{
+			MatchLabels: map[string]string{},
+		}
+	}
+	appLabelSelector.MatchLabels["kots.io/app-slug"] = appslug
+
 	podsList, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: appLabelSelector.String(),
+		LabelSelector: getLabelSelector(appLabelSelector),
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to get list of app pods")
@@ -581,10 +588,10 @@ func deletePVCs(namespace string, appLabelSelector *metav1.LabelSelector) error 
 	}
 
 	if len(pvcs) == 0 {
-		logger.Infof("no pvcs to delete in %s for pods that match %s", namespace, appLabelSelector.String())
+		logger.Infof("no pvcs to delete in %s for pods that match %s", namespace, getLabelSelector(appLabelSelector))
 		return nil
 	}
-	logger.Infof("deleting %d pvcs in %s for pods that match %s", len(pvcs), namespace, appLabelSelector.String())
+	logger.Infof("deleting %d pvcs in %s for pods that match %s", len(pvcs), namespace, getLabelSelector(appLabelSelector))
 
 	for _, pvc := range pvcs {
 		grace := int64(0)
@@ -652,4 +659,17 @@ func getRemovedCharts(prevDir string, curDir string) ([]string, error) {
 	}
 
 	return removedCharts, nil
+}
+
+func getLabelSelector(appLabelSelector *metav1.LabelSelector) string {
+	retString := ""
+	for key, val := range appLabelSelector.MatchLabels {
+		if retString == "" {
+			retString = fmt.Sprintf("%s=%s", key, val)
+		} else {
+			retString = fmt.Sprintf("%s,%s=%s", retString, key, val)
+		}
+	}
+
+	return retString
 }
