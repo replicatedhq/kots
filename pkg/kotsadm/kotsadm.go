@@ -3,6 +3,7 @@ package kotsadm
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -24,17 +25,14 @@ func getKotsadmYAML(deployOptions types.DeployOptions) (map[string][]byte, error
 	docs := map[string][]byte{}
 	s := json.NewYAMLSerializer(json.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
-	var role bytes.Buffer
-	if err := s.Encode(kotsadmobjects.KotsadmClusterRole(), &role); err != nil {
-		return nil, errors.Wrap(err, "failed to marshal kotsadm role")
+	if deployOptions.IsMinimalRBAC {
+		getKotsadmNamespacedRBAC(s, deployOptions.Namespace, deployOptions.Namespace, docs)
+		for _, ns := range deployOptions.AdditionalNamespaces {
+			getKotsadmNamespacedRBAC(s, ns, deployOptions.Namespace, docs)
+		}
+	} else {
+		getKotsadmClusterRBAC(s, deployOptions.Namespace, docs)
 	}
-	docs["kotsadm-role.yaml"] = role.Bytes()
-
-	var roleBinding bytes.Buffer
-	if err := s.Encode(kotsadmobjects.KotsadmClusterRoleBinding(deployOptions.Namespace), &roleBinding); err != nil {
-		return nil, errors.Wrap(err, "failed to marshal kotsadm role binding")
-	}
-	docs["kotsadm-rolebinding.yaml"] = roleBinding.Bytes()
 
 	var serviceAccount bytes.Buffer
 	if err := s.Encode(kotsadmobjects.KotsadmServiceAccount(deployOptions.Namespace), &serviceAccount); err != nil {
@@ -83,6 +81,40 @@ func getKotsadmYAML(deployOptions types.DeployOptions) (map[string][]byte, error
 	// TODO (ethan): identity-service
 
 	return docs, nil
+}
+
+func getKotsadmClusterRBAC(s *json.Serializer, namespace string, docs map[string][]byte) error {
+	var role bytes.Buffer
+
+	if err := s.Encode(kotsadmobjects.KotsadmClusterRole(), &role); err != nil {
+		return errors.Wrap(err, "failed to marshal kotsadm role")
+	}
+	docs["kotsadm-role.yaml"] = role.Bytes()
+
+	var roleBinding bytes.Buffer
+	if err := s.Encode(kotsadmobjects.KotsadmClusterRoleBinding(namespace), &roleBinding); err != nil {
+		return errors.Wrap(err, "failed to marshal kotsadm role binding")
+	}
+	docs["kotsadm-rolebinding.yaml"] = roleBinding.Bytes()
+	return nil
+}
+
+func getKotsadmNamespacedRBAC(s *json.Serializer, additionalNamespace string, kotsadmNamespace string, docs map[string][]byte) error {
+	var role bytes.Buffer
+
+	if err := s.Encode(kotsadmobjects.KotsadmRole(additionalNamespace), &role); err != nil {
+		return errors.Wrap(err, "failed to marshal kotsadm role")
+	}
+	roleName := fmt.Sprintf("kotsadm-role-%s.yaml", additionalNamespace)
+	docs[roleName] = role.Bytes()
+
+	var roleBinding bytes.Buffer
+	if err := s.Encode(kotsadmobjects.KotsadmRoleBinding(additionalNamespace, kotsadmNamespace), &roleBinding); err != nil {
+		return errors.Wrap(err, "failed to marshal kotsadm role binding")
+	}
+	roleBindingName := fmt.Sprintf("kotsadm-rolebinding-%s.yaml", additionalNamespace)
+	docs[roleBindingName] = roleBinding.Bytes()
+	return nil
 }
 
 func restartKotsadm(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
