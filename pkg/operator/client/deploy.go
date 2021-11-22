@@ -572,7 +572,7 @@ func deletePVCs(namespace string, appLabelSelector *metav1.LabelSelector, appslu
 	appLabelSelector.MatchLabels["kots.io/app-slug"] = appslug
 
 	podsList, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: appLabelSelector.String(),
+		LabelSelector: getLabelSelector(appLabelSelector),
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to get list of app pods")
@@ -588,10 +588,10 @@ func deletePVCs(namespace string, appLabelSelector *metav1.LabelSelector, appslu
 	}
 
 	if len(pvcs) == 0 {
-		logger.Infof("no pvcs to delete in %s for pods that match %s", namespace, appLabelSelector.String())
+		logger.Infof("no pvcs to delete in %s for pods that match %s", namespace, getLabelSelector(appLabelSelector))
 		return nil
 	}
-	logger.Infof("deleting %d pvcs in %s for pods that match %s", len(pvcs), namespace, appLabelSelector.String())
+	logger.Infof("deleting %d pvcs in %s for pods that match %s", len(pvcs), namespace, getLabelSelector(appLabelSelector))
 
 	for _, pvc := range pvcs {
 		grace := int64(0)
@@ -659,4 +659,17 @@ func getRemovedCharts(prevDir string, curDir string) ([]string, error) {
 	}
 
 	return removedCharts, nil
+}
+
+func getLabelSelector(appLabelSelector *metav1.LabelSelector) string {
+	retString := ""
+	for key, val := range appLabelSelector.MatchLabels {
+		if retString == "" {
+			retString = fmt.Sprintf("%s=%s", key, val)
+		} else {
+			retString = fmt.Sprintf("%s,%s=%s", retString, key, val)
+		}
+	}
+
+	return retString
 }
