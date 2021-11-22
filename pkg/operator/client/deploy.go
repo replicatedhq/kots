@@ -186,7 +186,7 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 
 	if deployArgs.ClearPVCs {
 		// TODO: multi-namespace support
-		err := deletePVCs(targetNamespace, deployArgs.AppSlug)
+		err := deletePVCs(targetNamespace, deployArgs.RestoreLabelSelector)
 		if err != nil {
 			return errors.Wrap(err, "failed to delete PVCs")
 		}
@@ -553,7 +553,7 @@ func parseK8sYaml(doc []byte) (k8sruntime.Object, *k8sschema.GroupVersionKind, e
 	return obj, gvk, err
 }
 
-func deletePVCs(namespace string, appslug string) error {
+func deletePVCs(namespace string, appLabelSelector *metav1.LabelSelector) error {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		return errors.Wrap(err, "failed to get config")
@@ -565,7 +565,7 @@ func deletePVCs(namespace string, appslug string) error {
 	}
 
 	podsList, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("kots.io/app-slug=%s", appslug),
+		LabelSelector: appLabelSelector.String(),
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to get list of app pods")
@@ -581,10 +581,10 @@ func deletePVCs(namespace string, appslug string) error {
 	}
 
 	if len(pvcs) == 0 {
-		logger.Infof("no pvcs to delete in %s for pods with the label 'kots.io/app-slug=%s'", namespace, appslug)
+		logger.Infof("no pvcs to delete in %s for pods that match %s", namespace, appLabelSelector.String())
 		return nil
 	}
-	logger.Infof("deleting %d pvcs in %s for pods with the label 'kots.io/app-slug=%s'", len(pvcs), namespace, appslug)
+	logger.Infof("deleting %d pvcs in %s for pods that match %s", len(pvcs), namespace, appLabelSelector.String())
 
 	for _, pvc := range pvcs {
 		grace := int64(0)
