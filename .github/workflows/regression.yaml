@@ -166,6 +166,11 @@ jobs:
         run: |
           export CURRENT_TAG=${{ github.event.inputs.version_tag_old || inputs.version_tag_old }}
           export NEXT_TAG=${{ github.event.inputs.version_tag_new || inputs.version_tag_new }}
+          echo ${{ github.event.inputs.version_tag_old }}
+          echo ${{ github.event.inputs.version_tag_new }}
+          echo ${{ inputs.version_tag_old }}
+          echo ${{ inputs.version_tag_new }}
+
           if [ "${{ matrix.test.is_upgrade }}" ]; then
             export TF_VAR_kots_version_initial="${CURRENT_TAG:1}"
             export TF_VAR_kots_version_upgrade="${NEXT_TAG:1}"
