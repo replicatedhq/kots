@@ -1,21 +1,26 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/blang/semver"
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 func AdminConsoleUpgradeCmd() *cobra.Command {
@@ -56,6 +61,10 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 			clientset, err := k8sutil.GetClientset()
 			if err != nil {
 				return errors.Wrap(err, "failed to get clientset")
+			}
+
+			if currentVersion, ok := isDowngrade(cmd.Context(), clientset, namespace); ok {
+				return errors.Errorf("downgrading from %s to %s is not allowed.", currentVersion, buildversion.Version())
 			}
 
 			includeMinio := v.GetBool("with-minio")
@@ -150,4 +159,44 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 	// option to check if the user has cluster-wide previliges to install application
 	cmd.Flags().Bool("skip-rbac-check", false, "set to true to bypass rbac check")
 	return cmd
+}
+
+func isDowngrade(ctx context.Context, clientset kubernetes.Interface, namespace string) (string, bool) {
+	if strings.Contains(buildversion.Version(), "nightly") {
+		return "", false
+	}
+
+	containers := []corev1.Container{}
+
+	s, err := clientset.AppsV1().StatefulSets(namespace).Get(ctx, "kotsadm", metav1.GetOptions{})
+	if err == nil {
+		containers = s.Spec.Template.Spec.Containers
+	} else {
+		d, err := clientset.AppsV1().Deployments(namespace).Get(ctx, "kotsadm", metav1.GetOptions{})
+		if err == nil {
+			containers = d.Spec.Template.Spec.Containers
+		}
+	}
+
+	if len(containers) == 0 {
+		return "", false
+	}
+
+	parts := strings.Split(containers[0].Image, ":")
+	if len(parts) != 2 {
+		return "", false
+	}
+
+	currentTag := parts[1]
+	currentSemver, err := semver.ParseTolerant(currentTag)
+	if err != nil {
+		return "", false
+	}
+
+	newSemver, err := semver.ParseTolerant(buildversion.Version())
+	if err != nil {
+		return "", false
+	}
+
+	return currentTag, newSemver.LT(currentSemver)
 }
