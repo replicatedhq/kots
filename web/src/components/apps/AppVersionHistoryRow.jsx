@@ -273,7 +273,7 @@ export default function AppVersionHistoryRow(props) {
         </div>
       </div>
       <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex1 justifyContent--center`}>
-        <p className="u-fontSize--small u-fontWeight--bold u-textColor--mutedAccent u-lineHeight--default">{version.source}</p>
+        <p className="u-fontSize--small u-fontWeight--bold u-textColor--lightAccent u-lineHeight--default">{version.source}</p>
         <div className="flex flex-auto u-marginTop--10"> {gitopsEnabled ? renderViewPreflights(version, props.app, props.match) : renderVersionStatus(version, props.app, props.match, props.handleViewLogs)}</div>
       </div>
       <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex-auto alignItems--flexEnd justifyContent--center`}>

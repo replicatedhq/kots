@@ -592,7 +592,7 @@ class Dashboard extends Component {
                 <DashboardLicenseCard
                   appLicense={appLicense}
                   app={app}
-                  syncCallback={this.props.updateCallback}
+                  syncCallback={() => this.getAppLicense(this.props.app)}
                   gettingAppLicenseErrMsg={this.state.gettingAppLicenseErrMsg}
                 />
               </div>

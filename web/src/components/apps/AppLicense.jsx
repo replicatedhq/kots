@@ -258,6 +258,11 @@ class AppLicense extends Component {
                     "u-textColor--primary": messageType === "info",
                   })}>{message}</p>
                 }
+                {appLicense?.lastSyncedAt &&
+                  <p className="u-fontWeight--bold u-fontSize--small u-textColor--header u-lineHeight--default u-marginTop--10">
+                    Last synced {Utilities.dateFromNow(appLicense.lastSyncedAt)}
+                  </p>
+                }
               </div>
             </div>
           </div>
