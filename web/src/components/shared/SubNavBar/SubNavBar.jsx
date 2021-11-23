@@ -14,15 +14,17 @@ export default function SubNavBar(props) {
   if (isHelmChart(app)) {
     slug = `helm/${app.id}`;
   }
-  const kotsSequence = app.currentSequence;
 
-  // check is current deployed config latest
-  const currentDeployedSequence = app?.downstreams[0]?.currentVersion?.parentSequence;
-  let configSequence;
-  if (currentDeployedSequence != undefined) {
-    configSequence = currentDeployedSequence
-  } else {
-    configSequence = app?.currentSequence;
+  let configSequence = app?.downstreams[0]?.currentVersion?.parentSequence;
+  let kotsSequence = app?.downstreams[0]?.currentVersion?.parentSequence;
+
+  // file view always shows top version on the list
+  // config view always shows the deployed version, falling back to the top version if nothing is deployed
+  if (app?.downstreams[0]?.pendingVersions?.length) {
+    kotsSequence = app?.downstreams[0]?.pendingVersions[0]?.parentSequence;
+    if (!app?.downstreams[0]?.currentVersion) {
+      configSequence = app?.downstreams[0]?.pendingVersions[0]?.parentSequence;
+    }
   }
 
   const accessConfig = [

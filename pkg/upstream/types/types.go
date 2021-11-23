@@ -33,6 +33,11 @@ type Upstream struct {
 	EncryptionKey string
 }
 
+type Update struct {
+	Cursor       string `json:"cursor"`
+	VersionLabel string `json:"versionLabel"`
+}
+
 type WriteOptions struct {
 	RootDir              string
 	Namespace            string
@@ -66,10 +71,12 @@ type FetchOptions struct {
 	IdentityConfig         *kotsv1beta1.IdentityConfig
 	Airgap                 *kotsv1beta1.Airgap
 	EncryptionKey          string
+	LastUpdateCheckAt      *time.Time
 	CurrentCursor          string
 	CurrentChannelID       string
 	CurrentChannelName     string
 	CurrentVersionLabel    string
+	ChannelChanged         bool
 	AppSlug                string
 	AppSequence            int64
 	LocalRegistry          LocalRegistry

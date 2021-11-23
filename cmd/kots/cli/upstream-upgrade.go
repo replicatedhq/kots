@@ -52,17 +52,18 @@ func UpstreamUpgradeCmd() *cobra.Command {
 			}
 
 			upgradeOptions := upstream.UpgradeOptions{
-				AirgapBundle:      v.GetString("airgap-bundle"),
-				RegistryEndpoint:  v.GetString("kotsadm-registry"),
-				RegistryNamespace: v.GetString("kotsadm-namespace"),
-				RegistryUsername:  v.GetString("registry-username"),
-				RegistryPassword:  v.GetString("registry-password"),
-				IsKurl:            isKurl,
-				DisableImagePush:  v.GetBool("disable-image-push"),
-				Namespace:         v.GetString("namespace"),
-				Debug:             v.GetBool("debug"),
-				Deploy:            v.GetBool("deploy"),
-				Silent:            output != "",
+				AirgapBundle:       v.GetString("airgap-bundle"),
+				RegistryEndpoint:   v.GetString("kotsadm-registry"),
+				RegistryNamespace:  v.GetString("kotsadm-namespace"),
+				RegistryUsername:   v.GetString("registry-username"),
+				RegistryPassword:   v.GetString("registry-password"),
+				IsKurl:             isKurl,
+				DisableImagePush:   v.GetBool("disable-image-push"),
+				Namespace:          v.GetString("namespace"),
+				Debug:              v.GetBool("debug"),
+				Deploy:             v.GetBool("deploy"),
+				DeployVersionLabel: v.GetString("deploy-version-label"),
+				Silent:             output != "",
 			}
 
 			stopCh := make(chan struct{})
@@ -75,13 +76,16 @@ func UpstreamUpgradeCmd() *cobra.Command {
 			}
 
 			urlVals := url.Values{}
-			if viper.GetBool("deploy") {
+			if v.GetBool("deploy") {
 				urlVals.Set("deploy", "true")
 			}
-			if viper.GetBool("skip-preflights") {
+			if dvl := v.GetString("deploy-version-label"); dvl != "" {
+				urlVals.Set("deployVersionLabel", dvl)
+			}
+			if v.GetBool("skip-preflights") {
 				urlVals.Set("skipPreflights", "true")
 			}
-			if viper.GetBool("is-cli") {
+			if v.GetBool("is-cli") {
 				urlVals.Set("isCLI", "true")
 			}
 			upgradeOptions.UpdateCheckEndpoint = fmt.Sprintf("http://localhost:%d/api/v1/app/%s/updatecheck?%s", localPort, url.PathEscape(appSlug), urlVals.Encode())
@@ -120,7 +124,8 @@ func UpstreamUpgradeCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().Bool("deploy", false, "when set, automatically deploy the latest version")
+	cmd.Flags().Bool("deploy", false, "when set, automatically deploy the latest version. if an airgap bundle is provided, the version created from that airgap bundle is deployed instead.")
+	cmd.Flags().String("deploy-version-label", "", "when set, automatically deploy the version with the provided version label")
 	cmd.Flags().Bool("skip-preflights", false, "set to true to skip preflight checks")
 
 	cmd.Flags().String("airgap-bundle", "", "path to the application airgap bundle where application images and metadata will be loaded from")

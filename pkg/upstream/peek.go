@@ -8,12 +8,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
-type Update struct {
-	Cursor       string `json:"cursor"`
-	VersionLabel string `json:"versionLabel"`
-}
-
-func GetUpdatesUpstream(upstreamURI string, fetchOptions *types.FetchOptions) ([]Update, error) {
+func GetUpdatesUpstream(upstreamURI string, fetchOptions *types.FetchOptions) ([]types.Update, error) {
 	versions, err := getUpdatesUpstream(upstreamURI, fetchOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "download upstream failed")
@@ -22,7 +17,7 @@ func GetUpdatesUpstream(upstreamURI string, fetchOptions *types.FetchOptions) ([
 	return versions, nil
 }
 
-func getUpdatesUpstream(upstreamURI string, fetchOptions *types.FetchOptions) ([]Update, error) {
+func getUpdatesUpstream(upstreamURI string, fetchOptions *types.FetchOptions) ([]types.Update, error) {
 	if !util.IsURL(upstreamURI) {
 		return nil, errors.New("not implemented")
 	}
@@ -35,12 +30,7 @@ func getUpdatesUpstream(upstreamURI string, fetchOptions *types.FetchOptions) ([
 		return getUpdatesHelm(u, fetchOptions.HelmRepoURI)
 	}
 	if u.Scheme == "replicated" {
-		currentCursor := ReplicatedCursor{
-			ChannelID:   fetchOptions.CurrentChannelID,
-			ChannelName: fetchOptions.CurrentChannelName,
-			Cursor:      fetchOptions.CurrentCursor,
-		}
-		return getUpdatesReplicated(u, fetchOptions.LocalPath, currentCursor, fetchOptions.CurrentVersionLabel, fetchOptions.License, fetchOptions.ReportingInfo)
+		return getUpdatesReplicated(u, fetchOptions)
 	}
 	if u.Scheme == "git" {
 		// return getUpdatesGit(upstreamURI)

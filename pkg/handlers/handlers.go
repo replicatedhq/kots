@@ -181,8 +181,8 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 
 	r.Name("AppUpdateCheck").Path("/api/v1/app/{appSlug}/updatecheck").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.AppDownstreamWrite, handler.AppUpdateCheck))
-	r.Name("UpdateCheckerSpec").Path("/api/v1/app/{appSlug}/updatecheckerspec").Methods("PUT").
-		HandlerFunc(middleware.EnforceAccess(policy.AppDownstreamWrite, handler.UpdateCheckerSpec))
+	r.Name("ConfigureAutomaticUpdates").Path("/api/v1/app/{appSlug}/automaticupdates").Methods("PUT").
+		HandlerFunc(middleware.EnforceAccess(policy.AppDownstreamWrite, handler.ConfigureAutomaticUpdates))
 	r.Name("RemoveApp").Path("/api/v1/app/{appSlug}/remove").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.AppUpdate, handler.RemoveApp))
 

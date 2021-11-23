@@ -167,20 +167,20 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		return nil, errors.Wrap(err, "failed to get license")
 	}
 
-	isIdentityServiceSupportedForVersion, err := store.GetStore().IsIdentityServiceSupportedForVersion(a.ID, a.CurrentSequence)
+	latestVersion, err := store.GetStore().GetLatestAppVersion(a.ID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to check if identity service is supported for version %d", a.CurrentSequence)
+		return nil, errors.Wrap(err, "failed to get latest app version")
+	}
+
+	isIdentityServiceSupportedForVersion, err := store.GetStore().IsIdentityServiceSupportedForVersion(a.ID, latestVersion.Sequence)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to check if identity service is supported for version %d", latestVersion.Sequence)
 	}
 	isAppIdentityServiceSupported := isIdentityServiceSupportedForVersion && license.Spec.IsIdentityServiceSupported
 
-	allowRollback, err := store.GetStore().IsRollbackSupportedForVersion(a.ID, a.CurrentSequence)
+	allowRollback, err := store.GetStore().IsRollbackSupportedForVersion(a.ID, latestVersion.Sequence)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to check if rollback is supported")
-	}
-
-	currentVersion, err := store.GetStore().GetAppVersion(a.ID, a.CurrentSequence)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get app version")
 	}
 
 	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
@@ -200,19 +200,9 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 			return nil, errors.Wrap(err, "failed to get realized links from app spec")
 		}
 
-		currentVersion, err := store.GetStore().GetCurrentVersion(a.ID, d.ClusterID)
+		appVersions, err := store.GetStore().GetAppVersions(a.ID, d.ClusterID)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to get current downstream version")
-		}
-
-		pendingVersions, err := store.GetStore().GetPendingVersions(a.ID, d.ClusterID)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get pending versions")
-		}
-
-		pastVersions, err := store.GetStore().GetPastVersions(a.ID, d.ClusterID)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get past versions")
+			return nil, errors.Wrap(err, "failed to get downstream versions")
 		}
 
 		downstreamGitOps, err := gitops.GetDownstreamGitOps(a.ID, d.ClusterID)
@@ -245,9 +235,9 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		responseDownstream := types.ResponseDownstream{
 			Name:            d.Name,
 			Links:           links,
-			CurrentVersion:  currentVersion,
-			PendingVersions: pendingVersions,
-			PastVersions:    pastVersions,
+			CurrentVersion:  appVersions.CurrentVersion,
+			PendingVersions: appVersions.PendingVersions,
+			PastVersions:    appVersions.PastVersions,
 			GitOps:          responseGitOps,
 			Cluster:         cluster,
 		}
@@ -275,7 +265,7 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		Slug:                           a.Slug,
 		Name:                           a.Name,
 		IsAirgap:                       a.IsAirgap,
-		CurrentSequence:                a.CurrentSequence,
+		CurrentSequence:                latestVersion.Sequence,
 		UpstreamURI:                    a.UpstreamURI,
 		IconURI:                        a.IconURI,
 		CreatedAt:                      a.CreatedAt,
@@ -284,6 +274,7 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		HasPreflight:                   a.HasPreflight,
 		IsConfigurable:                 a.IsConfigurable,
 		UpdateCheckerSpec:              a.UpdateCheckerSpec,
+		SemverAutoDeploy:               a.SemverAutoDeploy,
 		IsGitOpsSupported:              license.Spec.IsGitOpsSupported,
 		IsIdentityServiceSupported:     license.Spec.IsIdentityServiceSupported,
 		IsAppIdentityServiceSupported:  isAppIdentityServiceSupported,
@@ -292,7 +283,7 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		AllowRollback:                  allowRollback,
 		AllowSnapshots:                 allowSnapshots,
 		LicenseType:                    license.Spec.LicenseType,
-		CurrentVersion:                 currentVersion,
+		CurrentVersion:                 latestVersion,
 		Downstreams:                    responseDownstreams,
 	}
 
@@ -300,7 +291,7 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 }
 
 type GetAppVersionsResponse struct {
-	VersionHistory []downstreamtypes.DownstreamVersion `json:"versionHistory"`
+	VersionHistory []*downstreamtypes.DownstreamVersion `json:"versionHistory"`
 }
 
 func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
@@ -329,38 +320,17 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 
 	clusterID := downstreams[0].ClusterID
 
-	currentVersion, err := store.GetStore().GetCurrentVersion(foundApp.ID, clusterID)
+	appVersions, err := store.GetStore().GetAppVersions(foundApp.ID, clusterID)
 	if err != nil {
-		err = errors.Wrap(err, "failed to get current downstream version")
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	pendingVersions, err := store.GetStore().GetPendingVersions(foundApp.ID, clusterID)
-	if err != nil {
-		err = errors.Wrap(err, "failed to get pending versions")
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	pastVersions, err := store.GetStore().GetPastVersions(foundApp.ID, clusterID)
-	if err != nil {
-		err = errors.Wrap(err, "failed to get past versions")
+		err = errors.Wrap(err, "failed to get downstream versions")
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	response := GetAppVersionsResponse{
-		VersionHistory: []downstreamtypes.DownstreamVersion{},
+		VersionHistory: appVersions.AllVersions,
 	}
-	response.VersionHistory = append(response.VersionHistory, pendingVersions...)
-	if currentVersion != nil {
-		response.VersionHistory = append(response.VersionHistory, *currentVersion)
-	}
-	response.VersionHistory = append(response.VersionHistory, pastVersions...)
 
 	JSON(w, http.StatusOK, response)
 }

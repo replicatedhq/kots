@@ -2,16 +2,15 @@ package updatechecker
 
 import (
 	"fmt"
-	"io/ioutil"
-	"os"
 	"sync"
 	"time"
 
 	"github.com/pkg/errors"
+	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/app"
+	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
 	upstream "github.com/replicatedhq/kots/pkg/kotsadmupstream"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/reporting"
@@ -101,10 +100,15 @@ func Configure(appID string) error {
 
 	jobAppID := a.ID
 	jobAppSlug := a.Slug
+
 	_, err = job.AddFunc(cronSpec, func() {
 		logger.Debug("checking updates for app", zap.String("slug", jobAppSlug))
 
-		availableUpdates, err := CheckForUpdates(jobAppID, false, false, false)
+		opts := CheckForUpdatesOpts{
+			AppID:       jobAppID,
+			IsAutomatic: true,
+		}
+		availableUpdates, err := CheckForUpdates(opts)
 		if err != nil {
 			logger.Error(errors.Wrapf(err, "failed to check updates for app %s", jobAppSlug))
 			return
@@ -141,10 +145,21 @@ func Stop(appID string) {
 	}
 }
 
-// CheckForUpdates checks (and downloads) latest updates for a specific app
-// if "deploy" is set to true, the latest version/update will be deployed
-// returns the number of available updates
-func CheckForUpdates(appID string, deploy bool, skipPreflights bool, isCLI bool) (int64, error) {
+type CheckForUpdatesOpts struct {
+	AppID              string
+	DeployLatest       bool
+	DeployVersionLabel string
+	IsAutomatic        bool
+	SkipPreflights     bool
+	IsCLI              bool
+}
+
+// CheckForUpdates checks, downloads, and makes sure the desired version for a specific app is deployed.
+// if "DeployLatest" is set to true, the latest version will be deployed.
+// otherwise, if "DeployVersionLabel" is set to true, then the version with the corresponding version label will be deployed (if found).
+// otherwise, if "IsAutomatic" is set to true (which means it's an automatic update check), then the version that matches the semver auto deploy configuration (if enabled) will be deployed.
+// returns the number of available updates.
+func CheckForUpdates(opts CheckForUpdatesOpts) (int64, error) {
 	currentStatus, _, err := store.GetStore().GetTaskStatus("update-download")
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get task status")
@@ -159,71 +174,49 @@ func CheckForUpdates(appID string, deploy bool, skipPreflights bool, isCLI bool)
 		return 0, errors.Wrap(err, "failed to clear task status")
 	}
 
-	a, err := store.GetStore().GetApp(appID)
+	a, err := store.GetStore().GetApp(opts.AppID)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get app")
 	}
 
 	// sync license, this method is only called when online
-	_, _, err = license.Sync(a, "", false)
+	latestLicense, _, err := license.Sync(a, "", false)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to sync license")
 	}
 
 	// reload app because license sync could have created a new release
-	a, err = store.GetStore().GetApp(appID)
+	a, err = store.GetStore().GetApp(opts.AppID)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get app")
 	}
 
-	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	updateCursor, versionLabel, err := store.GetStore().GetCurrentUpdateCursor(a.ID, latestLicense.Spec.ChannelID)
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to create temp dir")
+		return 0, errors.Wrap(err, "failed to get current update cursor")
 	}
 
-	removeArchiveDir := true
-	defer func() {
-		if removeArchiveDir {
-			os.RemoveAll(archiveDir)
-		}
-	}()
-
-	err = store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence, archiveDir)
+	lastUpdateCheckAt, err := time.Parse(time.RFC3339, a.LastUpdateCheckAt)
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to get app version archive")
-	}
-
-	// we need a few objects from the app to check for updates
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
-	if err != nil {
-		return 0, errors.Wrap(err, "failed to load kotskinds from path")
-	}
-
-	latestLicense, err := store.GetStore().GetLatestLicenseForApp(a.ID)
-	if err != nil {
-		return 0, errors.Wrap(err, "failed to get latest license")
+		lastUpdateCheckAt = a.CreatedAt // first time to check for updates, use installation time instead
 	}
 
 	getUpdatesOptions := kotspull.GetUpdatesOptions{
 		License:             latestLicense,
-		CurrentCursor:       kotsKinds.Installation.Spec.UpdateCursor,
-		CurrentChannelID:    kotsKinds.Installation.Spec.ChannelID,
-		CurrentChannelName:  kotsKinds.Installation.Spec.ChannelName,
-		CurrentVersionLabel: kotsKinds.Installation.Spec.VersionLabel,
+		LastUpdateCheckAt:   lastUpdateCheckAt,
+		CurrentCursor:       updateCursor,
+		CurrentChannelID:    latestLicense.Spec.ChannelID,
+		CurrentChannelName:  latestLicense.Spec.ChannelName,
+		CurrentVersionLabel: versionLabel,
+		ChannelChanged:      a.ChannelChanged,
 		Silent:              false,
 		ReportingInfo:       reporting.GetReportingInfo(a.ID),
 	}
 
 	// get updates
-	updates, err := kotspull.GetUpdates(fmt.Sprintf("replicated://%s", kotsKinds.License.Spec.AppSlug), getUpdatesOptions)
+	updates, err := kotspull.GetUpdates(fmt.Sprintf("replicated://%s", latestLicense.Spec.AppSlug), getUpdatesOptions)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get updates")
-	}
-
-	// update last updated at time
-	t := app.LastUpdateAtTime(a.ID)
-	if t != nil {
-		return 0, errors.Wrap(err, "failed to update last updated at time")
 	}
 
 	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
@@ -233,50 +226,12 @@ func CheckForUpdates(appID string, deploy bool, skipPreflights bool, isCLI bool)
 	if len(downstreams) == 0 {
 		return 0, errors.Errorf("no downstreams found for app %q", a.Slug)
 	}
-	downstream := downstreams[0]
+	d := downstreams[0]
 
-	// if there are updates, go routine it
 	if len(updates) == 0 {
-		if !deploy {
-			return 0, nil
+		if err := ensureDesiredVersionIsDeployed(opts, d.ClusterID); err != nil {
+			return 0, errors.Wrapf(err, "failed to ensure desired version is deployed")
 		}
-
-		// ensure that the latest version is deployed
-		allVersions, err := version.GetVersions(a.ID)
-		if err != nil {
-			return 0, errors.Wrap(err, "failed to list app versions")
-		}
-
-		// get the first version, the array must contain versions at this point
-		// this function can't run without an app
-		if len(allVersions) == 0 {
-			return 0, errors.New("no versions found")
-		}
-
-		latestVersion := allVersions[len(allVersions)-1]
-		downstreamParentSequence, err := store.GetStore().GetCurrentParentSequence(a.ID, downstream.ClusterID)
-		if err != nil {
-			return 0, errors.Wrap(err, "failed to get current downstream parent sequence")
-		}
-
-		if latestVersion.Sequence != downstreamParentSequence {
-			status, err := store.GetStore().GetStatusForVersion(a.ID, downstream.ClusterID, latestVersion.Sequence)
-			if err != nil {
-				return 0, errors.Wrap(err, "failed to get update downstream status")
-			}
-
-			if status == storetypes.VersionPendingConfig {
-				return 0, util.ActionableError{
-					NoRetry: true,
-					Message: fmt.Sprintf("Version %d cannot be deployed because it needs configuration", latestVersion.Sequence),
-				}
-			}
-
-			if err := version.DeployVersion(a.ID, latestVersion.Sequence); err != nil {
-				return 0, errors.Wrap(err, "failed to deploy latest version")
-			}
-		}
-
 		return 0, nil
 	}
 
@@ -288,45 +243,221 @@ func CheckForUpdates(appID string, deploy bool, skipPreflights bool, isCLI bool)
 		return 0, errors.Wrap(err, "failed to set task status")
 	}
 
-	removeArchiveDir = false
+	// there are updates, go routine it
 	go func() {
-		defer os.RemoveAll(archiveDir)
 		for index, update := range updates {
-			// the latest version is in archive dir
-			sequence, err := upstream.DownloadUpdate(a.ID, archiveDir, update.Cursor, skipPreflights)
+			_, err = upstream.DownloadUpdate(a.ID, update, opts.SkipPreflights)
 			if err != nil {
-				logger.Error(errors.Wrap(err, "failed to download update"))
-				continue
-			}
-
-			if !deploy || index != len(updates)-1 {
-				continue
-			}
-
-			status, err := store.GetStore().GetStatusForVersion(a.ID, downstream.ClusterID, sequence)
-			if err != nil {
-				logger.Error(errors.Wrap(err, "failed to get update downstream status"))
-				continue
-			}
-
-			if status == storetypes.VersionPendingConfig {
-				logger.Infof("not deploying version %d because it's %s", sequence, status)
-				continue
-			}
-
-			if err := version.DeployVersion(a.ID, sequence); err != nil {
-				logger.Error(errors.Wrap(err, "failed to queue update for deployment"))
-			}
-
-			// preflights reporting
-			go func() {
-				err = reporting.ReportAppInfo(a.ID, sequence, skipPreflights, isCLI)
-				if err != nil {
-					logger.Debugf("failed to update preflights reports: %v", err)
+				logger.Error(errors.Wrapf(err, "failed to download update %s", update.VersionLabel))
+				if index == len(updates)-1 {
+					// if the last update fails to be downloaded, then the operation isn't successful
+					// and lastUpdateCheckTimestamp shouldn't be updated yet since that timestamp is used in detecting new updates
+					return
 				}
-			}()
+				continue
+			}
+			// if any update from the channel has been downloaded and processed successfully, then reset the "channel_chaged" flag
+			if err = store.GetStore().SetAppChannelChanged(a.ID, false); err != nil {
+				logger.Error(errors.Wrapf(err, "failed to reset channel changed flag"))
+			}
+		}
+		if err := app.SetLastUpdateAtTime(a.ID); err != nil {
+			logger.Error(errors.Wrap(err, "failed to update last updated at time"))
+		}
+		if err := ensureDesiredVersionIsDeployed(opts, d.ClusterID); err != nil {
+			logger.Error(errors.Wrapf(err, "failed to ensure desired version is deployed"))
 		}
 	}()
 
 	return availableUpdates, nil
+}
+
+func ensureDesiredVersionIsDeployed(opts CheckForUpdatesOpts, clusterID string) error {
+	if opts.DeployLatest {
+		if err := deployLatestVersion(opts, clusterID); err != nil {
+			return errors.Wrap(err, "failed to deploy latest version")
+		}
+		return nil
+	}
+
+	if opts.DeployVersionLabel != "" {
+		if err := deployVersionLabel(opts, clusterID, opts.DeployVersionLabel); err != nil {
+			return errors.Wrapf(err, "failed to deploy version label %s", opts.DeployVersionLabel)
+		}
+		return nil
+	}
+
+	if opts.IsAutomatic {
+		a, err := store.GetStore().GetApp(opts.AppID)
+		if err != nil {
+			return errors.Wrap(err, "failed to get app")
+		}
+		if err := autoDeploy(opts, clusterID, a.SemverAutoDeploy); err != nil {
+			return errors.Wrap(err, "failed to auto deploy")
+		}
+		return nil
+	}
+
+	return nil
+}
+
+func deployLatestVersion(opts CheckForUpdatesOpts, clusterID string) error {
+	appVersions, err := store.GetStore().GetAppVersions(opts.AppID, clusterID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get app versions for app %s", opts.AppID)
+	}
+	if len(appVersions.AllVersions) == 0 {
+		return errors.Errorf("no app versions found for app %s in downstream %s", opts.AppID, clusterID)
+	}
+	latestVersion := appVersions.AllVersions[0]
+
+	if err := deployVersion(opts, clusterID, appVersions, latestVersion); err != nil {
+		return errors.Wrapf(err, "failed to deploy sequence %d with version label %s", latestVersion.Sequence, latestVersion.VersionLabel)
+	}
+
+	return nil
+}
+
+func deployVersionLabel(opts CheckForUpdatesOpts, clusterID string, versionLabel string) error {
+	appVersions, err := store.GetStore().GetAppVersions(opts.AppID, clusterID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get app versions for app %s", opts.AppID)
+	}
+	if len(appVersions.AllVersions) == 0 {
+		return errors.Errorf("no app versions found for app %s in downstream %s", opts.AppID, clusterID)
+	}
+
+	var versionToDeploy *downstreamtypes.DownstreamVersion
+
+	for _, v := range appVersions.AllVersions {
+		if v.VersionLabel == versionLabel {
+			versionToDeploy = v
+			break
+		}
+	}
+
+	if versionToDeploy == nil {
+		return errors.Errorf("version with label %s could not be found", versionLabel)
+	}
+
+	if err := deployVersion(opts, clusterID, appVersions, versionToDeploy); err != nil {
+		return errors.Wrapf(err, "failed to deploy sequence %d with version label %s", versionToDeploy.Sequence, versionToDeploy.VersionLabel)
+	}
+
+	return nil
+}
+
+func autoDeploy(opts CheckForUpdatesOpts, clusterID string, semverAutoDeploy apptypes.SemverAutoDeploy) error {
+	if semverAutoDeploy == "" || semverAutoDeploy == apptypes.SemverAutoDeployDisabled {
+		return nil
+	}
+
+	appVersions, err := store.GetStore().GetAppVersions(opts.AppID, clusterID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get app versions for app %s", opts.AppID)
+	}
+	if len(appVersions.AllVersions) == 0 {
+		return errors.Errorf("no app versions found for app %s in downstream %s", opts.AppID, clusterID)
+	}
+
+	currentVersion := appVersions.CurrentVersion
+	if currentVersion == nil || currentVersion.Semver == nil {
+		return nil
+	}
+
+	var versionToDeploy *downstreamtypes.DownstreamVersion
+
+Loop:
+	for _, v := range appVersions.AllVersions {
+		if v == nil || v.Semver == nil {
+			continue
+		}
+
+		if v.Semver.LTE(*currentVersion.Semver) {
+			// remaining versions are all gonna have lower semvers
+			break
+		}
+
+		switch semverAutoDeploy {
+		case apptypes.SemverAutoDeployPatch:
+			if v.Semver.Major == currentVersion.Semver.Major && v.Semver.Minor == currentVersion.Semver.Minor {
+				versionToDeploy = v
+				break Loop
+			}
+
+		case apptypes.SemverAutoDeployMinorPatch:
+			if v.Semver.Major == currentVersion.Semver.Major {
+				versionToDeploy = v
+				break Loop
+			}
+
+		case apptypes.SemverAutoDeployMajorMinorPatch:
+			versionToDeploy = v
+			break Loop
+		}
+	}
+
+	if versionToDeploy == nil {
+		return nil
+	}
+
+	if err := deployVersion(opts, clusterID, appVersions, versionToDeploy); err != nil {
+		return errors.Wrapf(err, "failed to deploy sequence %d with version label %s", versionToDeploy.Sequence, versionToDeploy.VersionLabel)
+	}
+
+	return nil
+}
+
+func deployVersion(opts CheckForUpdatesOpts, clusterID string, appVersions *downstreamtypes.DownstreamVersions, versionToDeploy *downstreamtypes.DownstreamVersion) error {
+	if appVersions.CurrentVersion != nil {
+		isPastVersion := false
+		for _, p := range appVersions.PastVersions {
+			if versionToDeploy.Sequence == p.Sequence {
+				isPastVersion = true
+				break
+			}
+		}
+		if isPastVersion {
+			allowRollback, err := store.GetStore().IsRollbackSupportedForVersion(opts.AppID, appVersions.AllVersions[0].Sequence)
+			if err != nil {
+				return errors.Wrap(err, "failed to check if rollback is supported")
+			}
+			if !allowRollback {
+				return errors.Errorf("version %s is lower than the currently deployed version %s and rollback is not enabled", versionToDeploy.VersionLabel, appVersions.CurrentVersion.VersionLabel)
+			}
+		}
+	}
+
+	downstreamSequence, err := store.GetStore().GetCurrentSequence(opts.AppID, clusterID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get current downstream parent sequence")
+	}
+
+	if versionToDeploy.Sequence != downstreamSequence {
+		status, err := store.GetStore().GetStatusForVersion(opts.AppID, clusterID, versionToDeploy.Sequence)
+		if err != nil {
+			return errors.Wrap(err, "failed to get update downstream status")
+		}
+
+		if status == storetypes.VersionPendingConfig {
+			return util.ActionableError{
+				NoRetry: true,
+				Message: fmt.Sprintf("Version %d cannot be deployed because it needs configuration", versionToDeploy.Sequence),
+			}
+		}
+
+		if err := version.DeployVersion(opts.AppID, versionToDeploy.Sequence); err != nil {
+			return errors.Wrap(err, "failed to deploy version")
+		}
+
+		// preflights reporting
+		go func() {
+			err = reporting.ReportAppInfo(opts.AppID, versionToDeploy.Sequence, opts.SkipPreflights, opts.IsCLI)
+			if err != nil {
+				logger.Debugf("failed to update preflights reports: %v", err)
+			}
+		}()
+	}
+
+	return nil
 }

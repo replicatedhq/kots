@@ -53,7 +53,7 @@ release:
 
 .PHONY: mock
 mock:
-	go get github.com/golang/mock/mockgen@v1.5.0
+	go get github.com/golang/mock/mockgen@v1.6.0
 	mockgen -source=pkg/store/store_interface.go -destination=pkg/store/mock/mock.go
 	mockgen -source=pkg/handlers/interface.go -destination=pkg/handlers/mock/mock.go
 

@@ -11,7 +11,12 @@ import (
 // RenderAppFile renders a single file using the current sequence of the provided app, or the overrideSequence (if provided)
 // it's here for now to avoid an import cycle between kotsadm/pkg/render and pkg/store
 func RenderAppFile(a *types.App, overrideSequence *int64, inputContent []byte, kotsKinds *kotsutil.KotsKinds, namespace string) ([]byte, error) {
-	sequence := a.CurrentSequence
+	latestVersion, err := store.GetStore().GetLatestAppVersion(a.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get latest app version")
+	}
+
+	sequence := latestVersion.Sequence
 	if overrideSequence != nil {
 		sequence = *overrideSequence
 	}

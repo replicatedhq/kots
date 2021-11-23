@@ -37,6 +37,7 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 	}
 
 	deploy, _ := strconv.ParseBool(r.URL.Query().Get("deploy"))
+	deployVersionLabel := r.URL.Query().Get("deployVersionLabel")
 	skipPreflights, _ := strconv.ParseBool(r.URL.Query().Get("skipPreflights"))
 	isCLI, _ := strconv.ParseBool(r.URL.Query().Get("isCLI"))
 
@@ -44,7 +45,14 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 	contentType = strings.TrimSpace(contentType)
 
 	if contentType == "application/json" {
-		availableUpdates, err := updatechecker.CheckForUpdates(foundApp.ID, deploy, skipPreflights, isCLI)
+		opts := updatechecker.CheckForUpdatesOpts{
+			AppID:              foundApp.ID,
+			DeployLatest:       deploy,
+			DeployVersionLabel: deployVersionLabel,
+			SkipPreflights:     skipPreflights,
+			IsCLI:              isCLI,
+		}
+		availableUpdates, err := updatechecker.CheckForUpdates(opts)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to check for updates"))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -56,9 +64,17 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// refresh the app to get the correct sequence
+		a, err := store.GetStore().GetApp(foundApp.ID)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to get app"))
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
 		appUpdateCheckResponse := AppUpdateCheckResponse{
 			AvailableUpdates:   availableUpdates,
-			CurrentAppSequence: foundApp.CurrentSequence,
+			CurrentAppSequence: a.CurrentSequence,
 		}
 
 		JSON(w, http.StatusOK, appUpdateCheckResponse)

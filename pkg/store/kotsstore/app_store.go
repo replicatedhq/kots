@@ -114,7 +114,7 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 	// 	zap.String("id", id))
 
 	db := persistence.MustGetDBSession()
-	query := `select id, name, license, upstream_uri, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at, last_license_sync, is_airgap, snapshot_ttl_new, snapshot_schedule, restore_in_progress_name, restore_undeploy_status, update_checker_spec, install_state from app where id = $1`
+	query := `select id, name, license, upstream_uri, icon_uri, created_at, updated_at, slug, current_sequence, last_update_check_at, last_license_sync, is_airgap, snapshot_ttl_new, snapshot_schedule, restore_in_progress_name, restore_undeploy_status, update_checker_spec, semver_auto_deploy, install_state, channel_changed from app where id = $1`
 	row := db.QueryRow(query, id)
 
 	app := apptypes.App{}
@@ -132,8 +132,9 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 	var restoreInProgressName sql.NullString
 	var restoreUndeployStatus sql.NullString
 	var updateCheckerSpec sql.NullString
+	var semverAutoDeploy sql.NullString
 
-	if err := row.Scan(&app.ID, &app.Name, &licenseStr, &upstreamURI, &iconURI, &createdAt, &updatedAt, &app.Slug, &currentSequence, &lastUpdateCheckAt, &lastLicenseSync, &app.IsAirgap, &snapshotTTLNew, &snapshotSchedule, &restoreInProgressName, &restoreUndeployStatus, &updateCheckerSpec, &app.InstallState); err != nil {
+	if err := row.Scan(&app.ID, &app.Name, &licenseStr, &upstreamURI, &iconURI, &createdAt, &updatedAt, &app.Slug, &currentSequence, &lastUpdateCheckAt, &lastLicenseSync, &app.IsAirgap, &snapshotTTLNew, &snapshotSchedule, &restoreInProgressName, &restoreUndeployStatus, &updateCheckerSpec, &semverAutoDeploy, &app.InstallState, &app.ChannelChanged); err != nil {
 		return nil, errors.Wrap(err, "failed to scan app")
 	}
 
@@ -148,6 +149,7 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 	app.RestoreInProgressName = restoreInProgressName.String
 	app.RestoreUndeployStatus = apptypes.UndeployStatus(restoreUndeployStatus.String)
 	app.UpdateCheckerSpec = updateCheckerSpec.String
+	app.SemverAutoDeploy = apptypes.SemverAutoDeploy(semverAutoDeploy.String)
 
 	if updatedAt.Valid {
 		app.UpdatedAt = &updatedAt.Time
@@ -159,9 +161,14 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 		app.CurrentSequence = -1
 	}
 
-	if app.CurrentSequence != -1 {
+	if app.CurrentSequence != -1 { // this means that there's at least 1 version available
+		latestVersion, err := s.GetLatestAppVersion(app.ID)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get latest app version")
+		}
+
 		query = `select preflight_spec, config_spec from app_version where app_id = $1 AND sequence = $2`
-		row = db.QueryRow(query, id, app.CurrentSequence)
+		row = db.QueryRow(query, id, latestVersion.Sequence)
 
 		var preflightSpec sql.NullString
 		var configSpec sql.NullString
@@ -382,6 +389,20 @@ func (s *KOTSStore) SetUpdateCheckerSpec(appID string, updateCheckerSpec string)
 	return nil
 }
 
+func (s *KOTSStore) SetSemverAutoDeploy(appID string, semverAutoDeploy apptypes.SemverAutoDeploy) error {
+	logger.Debug("setting semver auto deploy",
+		zap.String("appID", appID))
+
+	db := persistence.MustGetDBSession()
+	query := `update app set semver_auto_deploy = $1 where id = $2`
+	_, err := db.Exec(query, semverAutoDeploy, appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to exec db query")
+	}
+
+	return nil
+}
+
 func (s *KOTSStore) SetSnapshotTTL(appID string, snapshotTTL string) error {
 	logger.Debug("Setting snapshot TTL",
 		zap.String("appID", appID))
@@ -473,6 +494,18 @@ func (s *KOTSStore) RemoveApp(appID string) error {
 
 	if err := tx.Commit(); err != nil {
 		return errors.Wrap(err, "failed to commit transaction")
+	}
+
+	return nil
+}
+
+func (s *KOTSStore) SetAppChannelChanged(appID string, channelChanged bool) error {
+	db := persistence.MustGetDBSession()
+
+	query := `update app set channel_changed = $1 where id = $2`
+	_, err := db.Exec(query, channelChanged, appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to update app channel changed flag")
 	}
 
 	return nil

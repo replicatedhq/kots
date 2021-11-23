@@ -10,7 +10,7 @@ import Loader from "../shared/Loader";
 import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
 import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
-import UpdateCheckerModal from "@src/components/modals/UpdateCheckerModal";
+import AutomaticUpdatesModal from "@src/components/modals/AutomaticUpdatesModal";
 import ShowDetailsModal from "@src/components/modals/ShowDetailsModal";
 import ShowLogsModal from "@src/components/modals/ShowLogsModal";
 import ErrorModal from "../modals/ErrorModal";
@@ -32,7 +32,7 @@ const COMMON_ERRORS = {
   "no such host": "No such host"
 };
 
-class AppVersionHistory extends Component {
+class AppVersionHistoryClassic extends Component {
   state = {
     viewReleaseNotes: false,
     logsLoading: false,
@@ -57,7 +57,7 @@ class AppVersionHistory extends Component {
     uploadProgress: 0,
     uploadSize: 0,
     uploadResuming: false,
-    showUpdateCheckerModal: false,
+    showAutomaticUpdatesModal: false,
     displayShowDetailsModal: false,
     yamlErrorDetails: [],
     deployView: false,
@@ -212,15 +212,15 @@ class AppVersionHistory extends Component {
     });
   }
 
-  hideUpdateCheckerModal = () => {
+  hideAutomaticUpdatesModal = () => {
     this.setState({
-      showUpdateCheckerModal: false
+      showAutomaticUpdatesModal: false
     });
   }
 
-  showUpdateCheckerModal = () => {
+  showAutomaticUpdatesModal = () => {
     this.setState({
-      showUpdateCheckerModal: true
+      showAutomaticUpdatesModal: true
     });
   }
 
@@ -794,7 +794,7 @@ class AppVersionHistory extends Component {
       uploadSize,
       uploadResuming,
       noUpdateAvailiableText,
-      showUpdateCheckerModal,
+      showAutomaticUpdatesModal,
       loadingVersionHistory,
       versionHistory,
       errorTitle,
@@ -882,6 +882,7 @@ class AppVersionHistory extends Component {
     // version type does not contain metadata like version label or release notes.
     const currentMidstreamVersion = versionHistory.find(version => version.parentSequence === app.currentVersion.sequence) || app.currentVersion;
     const pendingVersions = downstream?.pendingVersions;
+    const isPastVersion = find(downstream?.pastVersions, { sequence: this.state.versionToDeploy?.sequence });
 
     return (
       <div className="flex flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
@@ -908,7 +909,7 @@ class AppVersionHistory extends Component {
           noUpdateAvailiableMsg={noUpdateAvailiableMsg}
           updateText={updateText}
           onCheckForUpdates={this.onCheckForUpdates}
-          showUpdateCheckerModal={this.showUpdateCheckerModal}
+          showAutomaticUpdatesModal={this.showAutomaticUpdatesModal}
         />
         <div className="flex-column flex1">
           <div className="flex flex1">
@@ -1024,6 +1025,8 @@ class AppVersionHistory extends Component {
             showDeployWarningModal={showDeployWarningModal}
             hideDeployWarningModal={this.hideDeployWarningModal}
             onForceDeployClick={this.onForceDeployClick}
+            showAutoDeployWarning={isPastVersion && this.props.app?.semverAutoDeploy !== "disabled"}
+            confirmType={this.state.confirmType}
           />}
 
         {showSkipModal &&
@@ -1080,6 +1083,11 @@ class AppVersionHistory extends Component {
           >
             <div className="Modal-body">
               <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">{this.state.confirmType === "rollback" ? "Rollback to" : this.state.confirmType === "redeploy" ? "Redeploy" : "Deploy"} {this.state.versionToDeploy?.versionLabel} (Sequence {this.state.versionToDeploy?.sequence})?</p>
+              {isPastVersion && this.props.app?.semverAutoDeploy !== "disabled" ? 
+                <div className="info-box">
+                  <span className="u-fontSize--small u-textColor--header u-lineHeight--normal u-fontWeight--medium">You have automatic deploys enabled. {this.state.confirmType === "rollback" ? "Rolling back to" : this.state.confirmType === "redeploy" ? "Redeploying" : "Deploying"} this version will disable automatic deploys. You can turn it back on after this version finishes deployment.</span>
+                </div>
+              : null}
               <div className="flex u-paddingTop--10">
                 <button className="btn secondary blue" onClick={() => this.setState({ displayConfirmDeploymentModal: false, confirmType: "", versionToDeploy: null })}>Cancel</button>
                 <button className="u-marginLeft--10 btn primary" onClick={this.state.confirmType === "redeploy" ? this.finalizeRedeployment : () => this.finalizeDeployment(false)}>Yes, {this.state.confirmType === "rollback" ? "rollback" : this.state.confirmType === "redeploy" ? "redeploy" : "deploy"}</button>
@@ -1088,15 +1096,16 @@ class AppVersionHistory extends Component {
           </Modal>
         }
 
-        {showUpdateCheckerModal &&
-          <UpdateCheckerModal
-            isOpen={showUpdateCheckerModal}
-            onRequestClose={this.hideUpdateCheckerModal}
+        {showAutomaticUpdatesModal &&
+          <AutomaticUpdatesModal
+            isOpen={showAutomaticUpdatesModal}
+            onRequestClose={this.hideAutomaticUpdatesModal}
             updateCheckerSpec={app.updateCheckerSpec}
+            semverAutoDeploy={app.semverAutoDeploy}
             appSlug={app.slug}
             gitopsEnabled={gitopsEnabled}
-            onUpdateCheckerSpecSubmitted={() => {
-              this.hideUpdateCheckerModal();
+            onAutomaticUpdatesConfigured={() => {
+              this.hideAutomaticUpdatesModal();
               this.props.refreshAppData();
             }}
           />
@@ -1126,4 +1135,4 @@ class AppVersionHistory extends Component {
   }
 }
 
-export default withRouter(AppVersionHistory);
+export default withRouter(AppVersionHistoryClassic);

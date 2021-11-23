@@ -1,6 +1,8 @@
 package pull
 
 import (
+	"time"
+
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	reportingtypes "github.com/replicatedhq/kots/pkg/api/reporting/types"
@@ -14,17 +16,19 @@ type GetUpdatesOptions struct {
 	Namespace           string
 	LocalPath           string
 	License             *kotsv1beta1.License
+	LastUpdateCheckAt   time.Time
 	CurrentCursor       string
 	CurrentChannelID    string
 	CurrentChannelName  string
 	CurrentVersionLabel string
+	ChannelChanged      bool
 	ReportingInfo       *reportingtypes.ReportingInfo
 	Silent              bool
 }
 
 // GetUpdates will retrieve all later versions of the application specified in upstreamURI
 // using the options specified in getUpdatesOptions. It returns a list of versions.
-func GetUpdates(upstreamURI string, getUpdatesOptions GetUpdatesOptions) ([]upstream.Update, error) {
+func GetUpdates(upstreamURI string, getUpdatesOptions GetUpdatesOptions) ([]upstreamtypes.Update, error) {
 	log := logger.NewCLILogger()
 
 	if getUpdatesOptions.Silent {
@@ -36,10 +40,12 @@ func GetUpdates(upstreamURI string, getUpdatesOptions GetUpdatesOptions) ([]upst
 	fetchOptions := upstreamtypes.FetchOptions{}
 	fetchOptions.HelmRepoURI = getUpdatesOptions.HelmRepoURI
 	fetchOptions.LocalPath = getUpdatesOptions.LocalPath
+	fetchOptions.LastUpdateCheckAt = &getUpdatesOptions.LastUpdateCheckAt
 	fetchOptions.CurrentCursor = getUpdatesOptions.CurrentCursor
 	fetchOptions.CurrentChannelID = getUpdatesOptions.CurrentChannelID
 	fetchOptions.CurrentChannelName = getUpdatesOptions.CurrentChannelName
 	fetchOptions.CurrentVersionLabel = getUpdatesOptions.CurrentVersionLabel
+	fetchOptions.ChannelChanged = getUpdatesOptions.ChannelChanged
 	fetchOptions.ReportingInfo = getUpdatesOptions.ReportingInfo
 
 	if getUpdatesOptions.License != nil {

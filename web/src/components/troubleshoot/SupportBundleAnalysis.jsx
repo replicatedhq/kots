@@ -202,12 +202,14 @@ export class SupportBundleAnalysis extends React.Component {
                     {showSendSupportBundleBtn && (
                       this.state.sendingBundle
                         ? <Loader className="u-marginRight--10" size="30" />
-                        : !bundle.sharedAt
-                            ? <button className="btn primary lightBlue u-marginRight--10" onClick={this.sendBundleToVendor}>Send bundle to vendor</button>
-                            : <div className="sentToVendorWrapper flex alignItems--flexEnd u-paddingLeft--10 u-paddingRight--10 u-marginRight--10">
+                        : bundle.sharedAt
+                            ? <div className="sentToVendorWrapper flex alignItems--flexEnd u-paddingLeft--10 u-paddingRight--10 u-marginRight--10">
                                 <span style={{ marginRight: 7 }} className="icon send-icon" />
                                 <span className="u-fontWeight--bold u-fontSize--small u-color--mutedteal">Sent to vendor on {Utilities.dateFormat(bundle.sharedAt, "MM/DD/YYYY")}</span>
                               </div>
+                            : !this.props.watch.isAirgap ?
+                              <button className="btn primary lightBlue u-marginRight--10" onClick={this.sendBundleToVendor}>Send bundle to vendor</button> 
+                            : null
                     )}
                     {this.state.downloadingBundle ?
                       <Loader size="30" /> :

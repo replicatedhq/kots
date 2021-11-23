@@ -213,7 +213,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			return "", util.ActionableError{Message: "License is expired"}
 		}
 
-		airgap, err := findAirgapMetaInDir(pullOptions.AirgapRoot)
+		airgap, err := FindAirgapMetaInDir(pullOptions.AirgapRoot)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to parse license from file")
 		}
@@ -1002,7 +1002,7 @@ func parseInstallationFromFile(filename string) (*kotsv1beta1.Installation, erro
 	return installation, nil
 }
 
-func findAirgapMetaInDir(root string) (*kotsv1beta1.Airgap, error) {
+func FindAirgapMetaInDir(root string) (*kotsv1beta1.Airgap, error) {
 	files, err := ioutil.ReadDir(root)
 	if err != nil {
 		if os.IsNotExist(err) {

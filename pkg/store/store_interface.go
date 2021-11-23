@@ -126,9 +126,11 @@ type AppStore interface {
 	GetDownstream(clusterID string) (*downstreamtypes.Downstream, error)
 	IsGitOpsEnabledForApp(appID string) (bool, error)
 	SetUpdateCheckerSpec(appID string, updateCheckerSpec string) error
+	SetSemverAutoDeploy(appID string, semverAutoDeploy apptypes.SemverAutoDeploy) error
 	SetSnapshotTTL(appID string, snapshotTTL string) error
 	SetSnapshotSchedule(appID string, snapshotSchedule string) error
 	RemoveApp(appID string) error
+	SetAppChannelChanged(appID string, channelChanged bool) error
 }
 
 type DownstreamStore interface {
@@ -143,8 +145,9 @@ type DownstreamStore interface {
 	GetIgnoreRBACErrors(appID string, sequence int64) (bool, error)
 	GetCurrentVersion(appID string, clusterID string) (*downstreamtypes.DownstreamVersion, error)
 	GetStatusForVersion(appID string, clusterID string, sequence int64) (types.DownstreamVersionStatus, error)
-	GetPendingVersions(appID string, clusterID string) ([]downstreamtypes.DownstreamVersion, error)
-	GetPastVersions(appID string, clusterID string) ([]downstreamtypes.DownstreamVersion, error)
+	GetAppVersions(appID string, clusterID string) (*downstreamtypes.DownstreamVersions, error)
+	// Same as GetAppVersions, but finds a cluster where app is deployed
+	FindAppVersions(appID string) (*downstreamtypes.DownstreamVersions, error)
 	GetDownstreamOutput(appID string, clusterID string, sequence int64) (*downstreamtypes.DownstreamOutput, error)
 	IsDownstreamDeploySuccessful(appID string, clusterID string, sequence int64) (bool, error)
 	UpdateDownstreamDeployStatus(appID string, clusterID string, sequence int64, isError bool, output downstreamtypes.DownstreamOutput) error
@@ -167,12 +170,17 @@ type VersionStore interface {
 	IsIdentityServiceSupportedForVersion(appID string, sequence int64) (bool, error)
 	IsRollbackSupportedForVersion(appID string, sequence int64) (bool, error)
 	IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int64, renderer rendertypes.Renderer) (bool, error)
-	GetAppVersionArchive(appID string, sequence int64, dstPath string) error
 	CreateAppVersionArchive(appID string, sequence int64, archivePath string) error
-	CreateAppVersion(appID string, currentSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) (int64, error)
+	GetAppVersionArchive(appID string, sequence int64, dstPath string) error
+	GetAppVersionBaseSequence(appID string, versionLabel string) (int64, error)
+	GetAppVersionBaseArchive(appID string, versionLabel string) (string, int64, error)
+	CreateAppVersion(appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) (int64, error)
 	GetAppVersion(appID string, sequence int64) (*versiontypes.AppVersion, error)
+	GetLatestAppVersion(appID string) (*versiontypes.AppVersion, error)
 	GetAppVersionsAfter(appID string, sequence int64) ([]*versiontypes.AppVersion, error)
 	UpdateAppVersionInstallationSpec(appID string, sequence int64, spec kotsv1beta1.Installation) error
+	GetNextAppSequence(appID string) (int64, error)
+	GetCurrentUpdateCursor(appID string, channelID string) (string, string, error)
 }
 
 type LicenseStore interface {
@@ -181,7 +189,7 @@ type LicenseStore interface {
 	GetAllAppLicenses() ([]*kotsv1beta1.License, error)
 
 	// originalLicenseData is the data received from the replicated API that was never marshalled locally so all fields are intact
-	UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *kotsv1beta1.License, originalLicenseData string, failOnVersionCreate bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error)
+	UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *kotsv1beta1.License, originalLicenseData string, channelChanged bool, failOnVersionCreate bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error)
 	UpdateAppLicenseSyncNow(appID string) error
 }
 

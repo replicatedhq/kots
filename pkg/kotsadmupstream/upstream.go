@@ -18,11 +18,12 @@ import (
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
 )
 
-func DownloadUpdate(appID string, archiveDir string, toCursor string, skipPreflights bool) (sequence int64, finalError error) {
+func DownloadUpdate(appID string, update types.Update, skipPreflights bool) (sequence int64, finalError error) {
 	if err := store.GetStore().SetTaskStatus("update-download", "Fetching update...", "running"); err != nil {
 		return 0, errors.Wrap(err, "failed to set task status")
 	}
@@ -53,6 +54,12 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string, skipPrefli
 			}
 		}
 	}()
+
+	archiveDir, baseSequence, err := store.GetStore().GetAppVersionBaseArchive(appID, update.VersionLabel)
+	if err != nil {
+		return 0, errors.Wrapf(err, "failed to get base archive dir for version %s", update.VersionLabel)
+	}
+	defer os.RemoveAll(archiveDir)
 
 	beforeKotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
@@ -89,7 +96,7 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string, skipPrefli
 
 	appNamespace := util.AppNamespace()
 
-	appSequence, err := version.GetNextAppSequence(a.ID, &a.CurrentSequence)
+	appSequence, err := store.GetStore().GetNextAppSequence(a.ID)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get new app sequence")
 	}
@@ -122,7 +129,7 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string, skipPrefli
 		ConfigFile:          filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"),
 		IdentityConfigFile:  identityConfigFile,
 		InstallationFile:    filepath.Join(archiveDir, "upstream", "userdata", "installation.yaml"),
-		UpdateCursor:        toCursor,
+		UpdateCursor:        update.Cursor,
 		RootDir:             archiveDir,
 		Downstreams:         downstreamNames,
 		ExcludeKotsKinds:    true,
@@ -156,7 +163,7 @@ func DownloadUpdate(appID string, archiveDir string, toCursor string, skipPrefli
 		return 0, nil // ?
 	}
 
-	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &a.CurrentSequence, archiveDir, "Upstream Update", skipPreflights, &version.DownstreamGitOps{})
+	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "Upstream Update", skipPreflights, &version.DownstreamGitOps{})
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to create version")
 	}

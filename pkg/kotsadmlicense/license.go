@@ -3,7 +3,6 @@ package license
 import (
 	"io/ioutil"
 	"os"
-	"path/filepath"
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -19,6 +18,11 @@ import (
 )
 
 func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kotsv1beta1.License, bool, error) {
+	latestVersion, err := store.GetStore().GetLatestAppVersion(a.ID)
+	if err != nil {
+		return nil, false, errors.Wrap(err, "failed to get latest app version")
+	}
+
 	currentLicense, err := store.GetStore().GetLatestLicenseForApp(a.ID)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "failed to get current license")
@@ -57,7 +61,7 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 
 	// Because an older version can be edited, it is possible to have latest version with an outdated license.
 	// So even if global license sequence is already latest, we still need to create a new app version in this case.
-	err = store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence, archiveDir)
+	err = store.GetStore().GetAppVersionArchive(a.ID, latestVersion.Sequence, archiveDir)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "failed to get latest app version")
 	}
@@ -70,7 +74,12 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 	synced := false
 	if updatedLicense.Spec.LicenseSequence != currentLicense.Spec.LicenseSequence ||
 		updatedLicense.Spec.LicenseSequence != kotsKinds.License.Spec.LicenseSequence {
-		newSequence, err := store.GetStore().UpdateAppLicense(a.ID, a.CurrentSequence, archiveDir, updatedLicense, licenseString, failOnVersionCreate, &version.DownstreamGitOps{}, &render.Renderer{})
+
+		channelChanged := false
+		if updatedLicense.Spec.ChannelID != currentLicense.Spec.ChannelID {
+			channelChanged = true
+		}
+		newSequence, err := store.GetStore().UpdateAppLicense(a.ID, latestVersion.Sequence, archiveDir, updatedLicense, licenseString, channelChanged, failOnVersionCreate, &version.DownstreamGitOps{}, &render.Renderer{})
 		if err != nil {
 			return nil, false, errors.Wrap(err, "failed to update license")
 		}
@@ -87,26 +96,6 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 	}
 
 	return updatedLicense, synced, nil
-}
-
-// Gets the license as it was at a given app sequence
-func GetCurrentLicenseString(a *apptypes.App) (string, error) {
-	archiveDir, err := ioutil.TempDir("", "kotsadm")
-	if err != nil {
-		return "", errors.Wrap(err, "failed to create temp dir")
-	}
-	defer os.RemoveAll(archiveDir)
-
-	err = store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence, archiveDir)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get latest app version")
-	}
-
-	kotsLicense, err := ioutil.ReadFile(filepath.Join(archiveDir, "upstream", "userdata", "license.yaml"))
-	if err != nil {
-		return "", errors.Wrap(err, "failed to read license file from archive")
-	}
-	return string(kotsLicense), nil
 }
 
 func CheckIfLicenseExists(license []byte) (*kotsv1beta1.License, error) {

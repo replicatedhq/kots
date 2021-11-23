@@ -7,6 +7,7 @@ import Helmet from "react-helmet";
 import debounce from "lodash/debounce";
 import size from "lodash/size";
 import find from "lodash/find";
+import findIndex from "lodash/findIndex";
 import map from "lodash/map";
 import Modal from "react-modal";
 import Loader from "../shared/Loader";
@@ -182,7 +183,7 @@ class AppConfig extends Component {
     if (currentDeployedSequence != undefined) {
       return currentDeployedSequence
     } else {
-      return app?.currentSequence;
+      return app?.downstreams[0]?.pendingVersions?.[0]?.parentSequence;
     }
   }
 
@@ -379,29 +380,33 @@ class AppConfig extends Component {
     } else {
       sequence = parseInt(match.params.sequence);
     }
+
     const currentSequence = app?.downstreams[0]?.currentVersion?.parentSequence;
+    const pendingSequenceInxex = findIndex(app?.downstreams[0]?.pendingVersions, function(v) { return v.parentSequence == sequence });
+    const pastSequenceIndex = findIndex(app?.downstreams[0]?.pastVersions, function(v) { return v.parentSequence == sequence });
     const pendingVersions = app?.downstreams[0]?.pendingVersions;
 
-    if (currentSequence > sequence) {
-      return (
-        <div className="ConfigInfo older justifyContent--center">
-          <p className="flex alignItems--center u-marginRight--5"> <span className="icon info-warning-icon flex u-marginRight--5" /> This config is {currentSequence - sequence} version{currentSequence - sequence === 1 ? "" : "s"} older than the currently deployed config. </p>
-          <Link to={`/app/${app?.slug}/config/${currentSequence}`} className="replicated-link"> Edit the currently deployed config </Link>
-        </div>
-      )
-    } else if (currentSequence < sequence) {
-      return (
-        <div className="ConfigInfo newer justifyContent--center">
-          <p className="flex alignItems--center u-marginRight--5"> <span className="icon info-icon flex u-marginRight--5" /> This config is {sequence - currentSequence} version{sequence - currentSequence === 1 ? "" : "s"} newer than the currently deployed config. </p>
-          <Link to={`/app/${app?.slug}/config/${currentSequence}`} className="replicated-link"> Edit the currently deployed config </Link>
-        </div>)
-    } else if (size(pendingVersions) > 0 && (currentSequence === sequence)) {
+    if (size(pendingVersions) > 0 && (currentSequence === sequence)) {
       return (
         <div className="ConfigInfo current justifyContent--center">
           <p className="flex alignItems--center u-marginRight--5"> <span className="icon info-icon-green flex u-marginRight--5" /> This is the currently deployed config. There {size(pendingVersions) === 1 ? "is" : "are"} {size(pendingVersions)} newer version{size(pendingVersions) === 1 ? "" : "s"} since this one. </p>
           <Link to={`/app/${app?.slug}/config/${pendingVersions[0].parentSequence}`} className="replicated-link"> Edit the latest config </Link>
         </div>
+      ) 
+    } else if (pastSequenceIndex > -1) {
+      return (
+        <div className="ConfigInfo older justifyContent--center">
+          <p className="flex alignItems--center u-marginRight--5"> <span className="icon info-warning-icon flex u-marginRight--5" /> This config is {pastSequenceIndex + 1} version{pastSequenceIndex === 0 ? "" : "s"} older than the currently deployed config. </p>
+          <Link to={`/app/${app?.slug}/config/${currentSequence}`} className="replicated-link"> Edit the currently deployed config </Link>
+        </div>
       )
+    } else if (pendingSequenceInxex > -1) {
+      const numVersionsNewer = app?.downstreams[0]?.pendingVersions?.length - pendingSequenceInxex;
+      return (
+        <div className="ConfigInfo newer justifyContent--center">
+          <p className="flex alignItems--center u-marginRight--5"> <span className="icon info-icon flex u-marginRight--5" /> This config is {numVersionsNewer} version{numVersionsNewer === 1 ? "" : "s"} newer than the currently deployed config. </p>
+          <Link to={`/app/${app?.slug}/config/${currentSequence}`} className="replicated-link"> Edit the currently deployed config </Link>
+        </div>)
     } else {
       return null;
     }
@@ -412,8 +417,9 @@ class AppConfig extends Component {
     if (!match.params.sequence) return false;
     const sequence = parseInt(match.params.sequence);
     const isCurrentVersion = app.downstreams[0]?.currentVersion?.sequence === sequence;
-    const isLatestVersion = app.currentVersion.sequence === sequence;
-    return !isLatestVersion && !isCurrentVersion;
+    const isLatestVersion = app.downstreams[0]?.pendingVersions?.length && app.downstreams[0]?.pendingVersions[0]?.sequence === sequence;
+    const pendingVersion = find(app.downstreams[0]?.pendingVersions, { sequence: sequence });
+    return !isLatestVersion && !isCurrentVersion && !pendingVersion?.semver;
   }
 
   toggleActiveGroups = (name) => {

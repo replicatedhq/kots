@@ -23,21 +23,6 @@ import (
 	applicationv1beta1 "sigs.k8s.io/application/api/v1beta1"
 )
 
-// GetNextAppSequence determines next available sequence for this app
-// we shouldn't assume that a.CurrentSequence is accurate. Returns 0 if currentSequence is nil
-func GetNextAppSequence(appID string, currentSequence *int64) (int64, error) {
-	newSequence := 0
-	if currentSequence != nil {
-		db := persistence.MustGetDBSession()
-		row := db.QueryRow(`select max(sequence) from app_version where app_id = $1`, appID)
-		if err := row.Scan(&newSequence); err != nil {
-			return 0, errors.Wrap(err, "failed to find current max sequence in row")
-		}
-		newSequence++
-	}
-	return int64(newSequence), nil
-}
-
 type DownstreamGitOps struct {
 }
 
@@ -60,35 +45,6 @@ func (d *DownstreamGitOps) CreateGitOpsDownstreamCommit(appID string, clusterID 
 	}
 
 	return createdCommitURL, nil
-}
-
-// return the list of versions available for an app
-func GetVersions(appID string) ([]types.AppVersion, error) {
-	db := persistence.MustGetDBSession()
-	query := `select sequence from app_version where app_id = $1 order by sequence asc`
-	rows, err := db.Query(query, appID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to query app_version table")
-	}
-	defer rows.Close()
-
-	versions := []types.AppVersion{}
-	for rows.Next() {
-		var sequence int64
-		if err := rows.Scan(&sequence); err != nil {
-			return nil, errors.Wrap(err, "failed to scan sequence from app_version table")
-		}
-
-		v, err := store.GetStore().GetAppVersion(appID, sequence)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get version")
-		}
-		if v != nil {
-			versions = append(versions, *v)
-		}
-	}
-
-	return versions, nil
 }
 
 // DeployVersion deploys the version for the given sequence

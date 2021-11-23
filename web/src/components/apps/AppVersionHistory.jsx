@@ -215,12 +215,6 @@ class AppVersionHistory extends Component {
           <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-textColor--bodyCopy">Unable to generate diff <span className="replicated-link" onClick={() => this.toggleDiffErrModal(version)}>Why?</span></span>
         </div>
       );
-    } else if (version.source === "Online Install") {
-      return (
-        <div className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal">
-          <span>Online Install</span>
-        </div>
-      );
     } else {
       return (
         <div className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal">
@@ -637,7 +631,9 @@ class AppVersionHistory extends Component {
     // This is kinda hacky. This finds the equivalent downstream version because the midstream
     // version type does not contain metadata like version label or release notes.
     const currentMidstreamVersion = versionHistory.find(version => version.parentSequence === app.currentVersion.sequence) || app.currentVersion;
-
+    const otherAvailableVersions = versionHistory.filter((i, idx) => idx !== 0);
+    const isPastVersion = find(downstream?.pastVersions, { sequence: this.state.versionToDeploy?.sequence });
+  
     return (
       <div className="flex flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
         <Helmet>
@@ -673,9 +669,9 @@ class AppVersionHistory extends Component {
                 <div className={`flex-column flex1 ${showDiffOverlay ? "u-visibility--hidden" : ""}`}>
                 {versionHistory.length >= 1 ?
                   <div>
-                    <div className="u-marginBottom--30">
+                    <div>
                       <div className="flex justifyContent--spaceBetween u-marginBottom--15">
-                        <p className="u-fontSize--normal u-fontWeight--medium u-textColor--header">Latest version</p>
+                        <p className="u-fontSize--normal u-fontWeight--medium u-textColor--header">Latest available version</p>
                         {versionHistory.length > 1 && this.renderDiffBtn()}
                       </div>
                       <AppVersionHistoryRow
@@ -701,10 +697,12 @@ class AppVersionHistory extends Component {
                       />
                     </div>
 
-                    <div className="flex u-marginBottom--15">
-                      <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy">Older versions</p>
-                    </div>
-                    {versionHistory.filter((i, idx) => idx !== 0).map((version) => {
+                    {otherAvailableVersions.length > 0 &&
+                      <div className="flex u-marginBottom--15 u-marginTop--30">
+                        <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy">Other available versions</p>
+                      </div>
+                    }
+                    {otherAvailableVersions?.map((version) => {
                       const isChecked = !!checkedReleasesToDiff.find(diffRelease => diffRelease.parentSequence === version.parentSequence);
                       const isNew = secondsAgo(version.createdOn) < 10;
                       const nothingToCommit = gitopsEnabled && !version.commitUrl;
@@ -792,13 +790,15 @@ class AppVersionHistory extends Component {
             showDeployWarningModal={showDeployWarningModal}
             hideDeployWarningModal={this.hideDeployWarningModal}
             onForceDeployClick={this.onForceDeployClick}
+            showAutoDeployWarning={isPastVersion && this.props.app?.semverAutoDeploy !== "disabled"}
+            confirmType={this.state.confirmType}
           />}
 
         {showSkipModal &&
           <SkipPreflightsModal
             showSkipModal={showSkipModal}
             hideSkipModal={this.hideSkipModal}
-            onForceDeployClick={this.onForceDeployClick} 
+            onForceDeployClick={this.onForceDeployClick}
             />
             }
 
@@ -847,7 +847,12 @@ class AppVersionHistory extends Component {
             className="Modal DefaultSize"
           >
             <div className="Modal-body">
-              <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">{this.state.confirmType === "rollback" ? "Rollback to" : this.state.confirmType === "redeploy" ? "Redeploy" : "Deploy"} {this.state.versionToDeploy?.versionLabel} (Sequence {this.state.versionToDeploy?.sequence})?</p>
+            <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">{this.state.confirmType === "rollback" ? "Rollback to" : this.state.confirmType === "redeploy" ? "Redeploy" : "Deploy"} {this.state.versionToDeploy?.versionLabel} (Sequence {this.state.versionToDeploy?.sequence})?</p>
+              {isPastVersion && this.props.app?.semverAutoDeploy !== "disabled" ? 
+                <div className="info-box">
+                  <span className="u-fontSize--small u-textColor--header u-lineHeight--normal u-fontWeight--medium">You have automatic deploys enabled. {this.state.confirmType === "rollback" ? "Rolling back to" : this.state.confirmType === "redeploy" ? "Redeploying" : "Deploying"} this version will disable automatic deploys. You can turn it back on after this version finishes deployment.</span>
+                </div>
+              : null}
               <div className="flex u-paddingTop--10">
                 <button className="btn secondary blue" onClick={() => this.setState({ displayConfirmDeploymentModal: false, confirmType: "", versionToDeploy: null })}>Cancel</button>
                 <button className="u-marginLeft--10 btn primary" onClick={this.state.confirmType === "redeploy" ? this.finalizeRedeployment : () => this.finalizeDeployment(false)}>Yes, {this.state.confirmType === "rollback" ? "rollback" : this.state.confirmType === "redeploy" ? "redeploy" : "deploy"}</button>

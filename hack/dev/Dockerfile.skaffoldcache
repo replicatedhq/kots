@@ -1,5 +1,7 @@
 FROM golang:1.16 as deps
 
+RUN go get github.com/go-delve/delve/cmd/dlv@v1.7.2
+
 ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots
 WORKDIR $PROJECTPATH
 COPY Makefile ./

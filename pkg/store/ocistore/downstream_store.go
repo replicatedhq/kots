@@ -49,11 +49,11 @@ func (s *OCIStore) GetStatusForVersion(appID string, clusterID string, sequence 
 	return types.DownstreamVersionStatus(""), ErrNotImplemented
 }
 
-func (s *OCIStore) GetPendingVersions(appID string, clusterID string) ([]downstreamtypes.DownstreamVersion, error) {
+func (s *OCIStore) GetAppVersions(appID string, clusterID string) (*downstreamtypes.DownstreamVersions, error) {
 	return nil, ErrNotImplemented
 }
 
-func (s *OCIStore) GetPastVersions(appID string, clusterID string) ([]downstreamtypes.DownstreamVersion, error) {
+func (s *OCIStore) FindAppVersions(appID string) (*downstreamtypes.DownstreamVersions, error) {
 	return nil, ErrNotImplemented
 }
 

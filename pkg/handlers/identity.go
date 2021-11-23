@@ -255,6 +255,14 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	latestVersion, err := store.GetStore().GetLatestAppVersion(a.ID)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get latest app version")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	archiveDir, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
 		err = errors.Wrap(err, "failed to create temp dir")
@@ -264,7 +272,7 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 	}
 	defer os.RemoveAll(archiveDir)
 
-	err = store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence, archiveDir)
+	err = store.GetStore().GetAppVersionArchive(a.ID, latestVersion.Sequence, archiveDir)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get current app version archive")
 		logger.Error(err)
@@ -432,14 +440,6 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(a.ID)
-	if err != nil {
-		err = errors.Wrap(err, "failed to get registry settings")
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
 	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
 	if err != nil {
 		err = errors.Wrap(err, "failed to list downstreams for app")
@@ -448,7 +448,23 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	err = render.RenderDir(archiveDir, a, downstreams, registrySettings, true)
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(a.ID)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get registry settings")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	nextAppSequence, err := store.GetStore().GetNextAppSequence(a.ID)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get next app sequence")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	err = render.RenderDir(archiveDir, a, downstreams, registrySettings, nextAppSequence)
 	if err != nil {
 		err = errors.Wrap(err, "failed to render archive directory")
 		logger.Error(err)
@@ -456,7 +472,7 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &a.CurrentSequence, archiveDir, "Identity Service", false, &version.DownstreamGitOps{})
+	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &latestVersion.Sequence, archiveDir, "Identity Service", false, &version.DownstreamGitOps{})
 	if err != nil {
 		err = errors.Wrap(err, "failed to create an app version")
 		logger.Error(err)
@@ -648,6 +664,14 @@ func (h *Handler) GetAppIdentityServiceConfig(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	latestVersion, err := store.GetStore().GetLatestAppVersion(a.ID)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get latest app version")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	archiveDir, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
 		err = errors.Wrap(err, "failed to create temp dir")
@@ -657,7 +681,7 @@ func (h *Handler) GetAppIdentityServiceConfig(w http.ResponseWriter, r *http.Req
 	}
 	defer os.RemoveAll(archiveDir)
 
-	err = store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence, archiveDir)
+	err = store.GetStore().GetAppVersionArchive(a.ID, latestVersion.Sequence, archiveDir)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get current app version archive")
 		logger.Error(err)

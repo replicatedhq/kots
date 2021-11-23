@@ -4,11 +4,11 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
 
+	"github.com/blang/semver"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
@@ -87,17 +87,18 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		return errors.Wrap(err, "failed to get app registry settings")
 	}
 
-	currentArchivePath, err := ioutil.TempDir("", "kotsadm")
+	airgap, err := pull.FindAirgapMetaInDir(airgapRoot)
 	if err != nil {
-		return errors.Wrap(err, "failed to create temp dir")
+		return errors.Wrap(err, "failed to parse license from file")
 	}
-	defer os.RemoveAll(currentArchivePath)
 
-	err = store.GetStore().GetAppVersionArchive(a.ID, a.CurrentSequence, currentArchivePath)
+	archiveDir, baseSequence, err := store.GetStore().GetAppVersionBaseArchive(a.ID, airgap.Spec.VersionLabel)
 	if err != nil {
-		return errors.Wrap(err, "failed to get current archive")
+		return errors.Wrapf(err, "failed to get base archive dir for version %s", airgap.Spec.VersionLabel)
 	}
-	beforeKotsKinds, err := kotsutil.LoadKotsKindsFromPath(currentArchivePath)
+	defer os.RemoveAll(archiveDir)
+
+	beforeKotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
 		return errors.Wrap(err, "failed to load current kotskinds")
 	}
@@ -117,7 +118,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		return errors.Wrap(err, "failed to set task status")
 	}
 
-	appSequence, err := version.GetNextAppSequence(a.ID, &a.CurrentSequence)
+	appSequence, err := store.GetStore().GetNextAppSequence(a.ID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get new app sequence")
 	}
@@ -139,7 +140,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		return errors.Wrap(err, "failed parse license")
 	}
 
-	identityConfigFile := filepath.Join(currentArchivePath, "upstream", "userdata", "identityconfig.yaml")
+	identityConfigFile := filepath.Join(archiveDir, "upstream", "userdata", "identityconfig.yaml")
 	if _, err := os.Stat(identityConfigFile); os.IsNotExist(err) {
 		file, err := identity.InitAppIdentityConfig(a.Slug, kotsv1beta1.Storage{}, crypto.AESCipher{})
 		if err != nil {
@@ -154,13 +155,13 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 	pullOptions := pull.PullOptions{
 		LicenseObj:          license,
 		Namespace:           appNamespace,
-		ConfigFile:          filepath.Join(currentArchivePath, "upstream", "userdata", "config.yaml"),
+		ConfigFile:          filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"),
 		IdentityConfigFile:  identityConfigFile,
 		AirgapRoot:          airgapRoot,
 		AirgapBundle:        airgapBundlePath,
-		InstallationFile:    filepath.Join(currentArchivePath, "upstream", "userdata", "installation.yaml"),
+		InstallationFile:    filepath.Join(archiveDir, "upstream", "userdata", "installation.yaml"),
 		UpdateCursor:        beforeKotsKinds.Installation.Spec.UpdateCursor,
-		RootDir:             currentArchivePath,
+		RootDir:             archiveDir,
 		ExcludeKotsKinds:    true,
 		ExcludeAdminConsole: true,
 		CreateAppDir:        false,
@@ -183,51 +184,23 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		return errors.Wrap(err, "failed to pull")
 	}
 
-	afterKotsKinds, err := kotsutil.LoadKotsKindsFromPath(currentArchivePath)
+	afterKotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
 		return errors.Wrap(err, "failed to read after kotskinds")
 	}
 
-	bc, err := cursor.NewCursor(beforeKotsKinds.Installation.Spec.UpdateCursor)
-	if err != nil {
-		return errors.Wrap(err, "failed to create bc")
-	}
-
-	ac, err := cursor.NewCursor(afterKotsKinds.Installation.Spec.UpdateCursor)
-	if err != nil {
-		return errors.Wrap(err, "failed to create ac")
-	}
-
-	if !bc.Comparable(ac) {
-		return errors.Errorf("cannot compare %q and %q", beforeKotsKinds.Installation.Spec.UpdateCursor, afterKotsKinds.Installation.Spec.UpdateCursor)
-	}
-
-	installChannelID := beforeKotsKinds.Installation.Spec.ChannelID
-	licenseChannelID := beforeKotsKinds.License.Spec.ChannelID
-	installChannelName := beforeKotsKinds.Installation.Spec.ChannelName
-	licenseChannelName := beforeKotsKinds.License.Spec.ChannelName
-	if (installChannelID != "" && licenseChannelID != "" && installChannelID == licenseChannelID) || (installChannelName == licenseChannelName) {
-		if bc.Equal(ac) {
-			return util.ActionableError{
-				NoRetry: true,
-				Message: fmt.Sprintf("Version %s (%s) cannot be installed again because it is already the current version", afterKotsKinds.Installation.Spec.VersionLabel, afterKotsKinds.Installation.Spec.UpdateCursor),
-			}
-		} else if bc.After(ac) {
-			return util.ActionableError{
-				NoRetry: true,
-				Message: fmt.Sprintf("Version %s (%s) cannot be installed because version %s (%s) is newer", afterKotsKinds.Installation.Spec.VersionLabel, afterKotsKinds.Installation.Spec.UpdateCursor, beforeKotsKinds.Installation.Spec.VersionLabel, beforeKotsKinds.Installation.Spec.UpdateCursor),
-			}
-		}
+	if err := canInstall(beforeKotsKinds, afterKotsKinds); err != nil {
+		return errors.Wrap(err, "cannot install")
 	}
 
 	// Create the app in the db
-	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &a.CurrentSequence, currentArchivePath, "Airgap Update", skipPreflights, &version.DownstreamGitOps{})
+	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "Airgap Update", skipPreflights, &version.DownstreamGitOps{})
 	if err != nil {
 		return errors.Wrap(err, "failed to create new version")
 	}
 
 	if !skipPreflights {
-		if err := preflight.Run(a.ID, a.Slug, newSequence, true, currentArchivePath); err != nil {
+		if err := preflight.Run(a.ID, a.Slug, newSequence, true, archiveDir); err != nil {
 			return errors.Wrap(err, "failed to start preflights")
 		}
 	}
@@ -250,6 +223,62 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 
 		if err := version.DeployVersion(a.ID, newSequence); err != nil {
 			return errors.Wrap(err, "failed to deploy app version")
+		}
+	}
+
+	return nil
+}
+
+func canInstall(beforeKotsKinds *kotsutil.KotsKinds, afterKotsKinds *kotsutil.KotsKinds) error {
+	var beforeSemver, afterSemver *semver.Version
+	if v, err := semver.ParseTolerant(beforeKotsKinds.Installation.Spec.VersionLabel); err == nil {
+		beforeSemver = &v
+	}
+	if v, err := semver.ParseTolerant(afterKotsKinds.Installation.Spec.VersionLabel); err == nil {
+		afterSemver = &v
+	}
+
+	isSameVersion := false
+
+	if beforeSemver != nil && afterSemver != nil {
+		// Allow uploading older versions if both have semvers because they can be sorted correctly.
+		if beforeSemver.EQ(*afterSemver) {
+			isSameVersion = true
+		}
+	} else if beforeSemver != nil {
+		// TODO: pass or fail?
+	} else if afterSemver != nil {
+		// TODO: pass or fail?
+	} else {
+		bc, err := cursor.NewCursor(beforeKotsKinds.Installation.Spec.UpdateCursor)
+		if err != nil {
+			return errors.Wrap(err, "failed to create bc")
+		}
+
+		ac, err := cursor.NewCursor(afterKotsKinds.Installation.Spec.UpdateCursor)
+		if err != nil {
+			return errors.Wrap(err, "failed to create ac")
+		}
+
+		if !bc.Comparable(ac) {
+			return errors.Errorf("cannot compare %q and %q", beforeKotsKinds.Installation.Spec.UpdateCursor, afterKotsKinds.Installation.Spec.UpdateCursor)
+		}
+
+		installChannelID := beforeKotsKinds.Installation.Spec.ChannelID
+		licenseChannelID := beforeKotsKinds.License.Spec.ChannelID
+		installChannelName := beforeKotsKinds.Installation.Spec.ChannelName
+		licenseChannelName := beforeKotsKinds.License.Spec.ChannelName
+		if (installChannelID != "" && licenseChannelID != "" && installChannelID == licenseChannelID) || (installChannelName == licenseChannelName) {
+			if bc.Equal(ac) {
+				isSameVersion = true
+			}
+		}
+	}
+
+	if isSameVersion {
+		return util.ActionableError{
+			NoRetry: true,
+			Message: fmt.Sprintf("Version %s (%s) cannot be installed again because it is already the current version", afterKotsKinds.Installation.Spec.VersionLabel, afterKotsKinds.Installation.Spec.UpdateCursor),
 		}
 	}
 

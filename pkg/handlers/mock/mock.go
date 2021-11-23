@@ -118,6 +118,18 @@ func (mr *MockKOTSHandlerMockRecorder) ConfigureAppIdentityService(w, r interfac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureAppIdentityService", reflect.TypeOf((*MockKOTSHandler)(nil).ConfigureAppIdentityService), w, r)
 }
 
+// ConfigureAutomaticUpdates mocks base method.
+func (m *MockKOTSHandler) ConfigureAutomaticUpdates(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ConfigureAutomaticUpdates", w, r)
+}
+
+// ConfigureAutomaticUpdates indicates an expected call of ConfigureAutomaticUpdates.
+func (mr *MockKOTSHandlerMockRecorder) ConfigureAutomaticUpdates(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureAutomaticUpdates", reflect.TypeOf((*MockKOTSHandler)(nil).ConfigureAutomaticUpdates), w, r)
+}
+
 // ConfigureFileSystemSnapshotProvider mocks base method.
 func (m *MockKOTSHandler) ConfigureFileSystemSnapshotProvider(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
@@ -1184,18 +1196,6 @@ func (m *MockKOTSHandler) UpdateAppRegistry(w http.ResponseWriter, r *http.Reque
 func (mr *MockKOTSHandlerMockRecorder) UpdateAppRegistry(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppRegistry", reflect.TypeOf((*MockKOTSHandler)(nil).UpdateAppRegistry), w, r)
-}
-
-// UpdateCheckerSpec mocks base method.
-func (m *MockKOTSHandler) UpdateCheckerSpec(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UpdateCheckerSpec", w, r)
-}
-
-// UpdateCheckerSpec indicates an expected call of UpdateCheckerSpec.
-func (mr *MockKOTSHandlerMockRecorder) UpdateCheckerSpec(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCheckerSpec", reflect.TypeOf((*MockKOTSHandler)(nil).UpdateCheckerSpec), w, r)
 }
 
 // UpdateGlobalSnapshotSettings mocks base method.

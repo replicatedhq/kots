@@ -3,6 +3,7 @@ package types
 import (
 	"time"
 
+	"github.com/blang/semver"
 	v1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 )
@@ -18,6 +19,7 @@ type Downstream struct {
 
 type DownstreamVersion struct {
 	VersionLabel             string                             `json:"versionLabel"`
+	Semver                   *semver.Version                    `json:"semver,omitempty"`
 	Status                   storetypes.DownstreamVersionStatus `json:"status"`
 	CreatedOn                *time.Time                         `json:"createdOn"`
 	ParentSequence           int64                              `json:"parentSequence"`
@@ -34,6 +36,51 @@ type DownstreamVersion struct {
 	GitDeployable            bool                               `json:"gitDeployable,omitempty"`
 	UpstreamReleasedAt       *time.Time                         `json:"upstreamReleasedAt,omitempty"`
 	YamlErrors               []v1beta1.InstallationYAMLError    `json:"yamlErrors,omitempty"`
+}
+
+type DownstreamVersions struct {
+	CurrentVersion  *DownstreamVersion
+	PendingVersions []*DownstreamVersion
+	PastVersions    []*DownstreamVersion
+	AllVersions     []*DownstreamVersion
+}
+
+// Modified bubble sort: instead of comparing adjacent elements, compare the elements at the semvers only.
+// Input is assumed to be sorted by sequence so non-semver elements are already in correct order.
+func SortDownstreamVersions(versions *DownstreamVersions) {
+	endIndex := len(versions.AllVersions)
+	keepSorting := true
+	for keepSorting {
+		keepSorting = false
+		for j := 0; j < endIndex-1; j++ {
+			vj := versions.AllVersions[j]
+			if vj.Semver == nil {
+				continue
+			}
+
+			isLessThan := false
+			for k := j + 1; k < endIndex; k++ {
+				vk := versions.AllVersions[k]
+				if vk.Semver == nil {
+					continue
+				}
+
+				isLessThan = vj.Semver.LT(*vk.Semver)
+				if vj.Semver.EQ(*vk.Semver) {
+					isLessThan = vj.Sequence < vk.Sequence
+				}
+
+				if isLessThan {
+					break
+				}
+			}
+
+			if isLessThan {
+				versions.AllVersions[j], versions.AllVersions[j+1] = versions.AllVersions[j+1], versions.AllVersions[j]
+				keepSorting = true
+			}
+		}
+	}
 }
 
 type DownstreamOutput struct {

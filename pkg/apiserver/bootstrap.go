@@ -78,13 +78,18 @@ func bootstrapIdentity() error {
 			continue
 		}
 
+		latestVersion, err := store.GetStore().GetLatestAppVersion(app.ID)
+		if err != nil {
+			return errors.Wrap(err, "failed to get latest app version")
+		}
+
 		currentArchivePath, err := ioutil.TempDir("", "kotsadm")
 		if err != nil {
 			return errors.Wrap(err, "failed to create temp dir")
 		}
 		defer os.RemoveAll(currentArchivePath)
 
-		err = store.GetStore().GetAppVersionArchive(app.ID, app.CurrentSequence, currentArchivePath)
+		err = store.GetStore().GetAppVersionArchive(app.ID, latestVersion.Sequence, currentArchivePath)
 		if err != nil {
 			return errors.Wrap(err, "failed to get current archive")
 		}

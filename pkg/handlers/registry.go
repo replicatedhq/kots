@@ -169,8 +169,14 @@ func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 			skipImagePush = true
 		}
 
+		latestVersion, err := store.GetStore().GetLatestAppVersion(foundApp.ID)
+		if err != nil {
+			logger.Error(errors.Wrapf(err, "failed to get latest app version for app %s", foundApp.Slug))
+			return
+		}
+
 		appDir, err := registry.RewriteImages(
-			foundApp.ID, foundApp.CurrentSequence, updateAppRegistryRequest.Hostname,
+			foundApp.ID, latestVersion.Sequence, updateAppRegistryRequest.Hostname,
 			updateAppRegistryRequest.Username, registryPassword,
 			updateAppRegistryRequest.Namespace, skipImagePush, nil)
 		if err != nil {
@@ -191,7 +197,7 @@ func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		}
 		defer os.RemoveAll(appDir)
 
-		newSequence, err := store.GetStore().CreateAppVersion(foundApp.ID, &foundApp.CurrentSequence, appDir, "Registry Change", false, &version.DownstreamGitOps{})
+		newSequence, err := store.GetStore().CreateAppVersion(foundApp.ID, &latestVersion.Sequence, appDir, "Registry Change", false, &version.DownstreamGitOps{})
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to create app version"))
 			return
@@ -232,13 +238,18 @@ func registrySettingsChanged(app *apptypes.App, new UpdateAppRegistryRequest, cu
 
 	// Because an old version can be editted, we may need to push images if registry hostname has changed
 	// TODO: Handle namespace changes too
+	latestVersion, err := store.GetStore().GetLatestAppVersion(app.ID)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get latest app version")
+	}
+
 	archiveDir, err := ioutil.TempDir("", "kotsadm-")
 	if err != nil {
 		return false, errors.Wrap(err, "failed to create temp dir")
 	}
 	defer os.RemoveAll(archiveDir)
 
-	err = store.GetStore().GetAppVersionArchive(app.ID, app.CurrentSequence, archiveDir)
+	err = store.GetStore().GetAppVersionArchive(app.ID, latestVersion.Sequence, archiveDir)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get version archive")
 	}
