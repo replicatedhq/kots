@@ -159,7 +159,6 @@ jobs:
           repository: replicatedhq/kots-regression-automation
           token: ${{ secrets.E2E_GH_PAT }}
           path: automation
-          ref: adding-outputs
       - name: Create test environment
         if: always()
         working-directory: automation/cluster
