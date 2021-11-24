@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -662,14 +663,17 @@ func getRemovedCharts(prevDir string, curDir string) ([]string, error) {
 }
 
 func getLabelSelector(appLabelSelector *metav1.LabelSelector) string {
-	retString := ""
-	for key, val := range appLabelSelector.MatchLabels {
-		if retString == "" {
-			retString = fmt.Sprintf("%s=%s", key, val)
-		} else {
-			retString = fmt.Sprintf("%s,%s=%s", retString, key, val)
-		}
+	allKeys := make([]string, 0)
+	for key := range appLabelSelector.MatchLabels {
+		allKeys = append(allKeys, key)
 	}
 
-	return retString
+	sort.Strings(allKeys)
+
+	allLabels := make([]string, 0)
+	for key, val := range appLabelSelector.MatchLabels {
+		allLabels = append(allLabels, fmt.Sprintf("%s=%s", key, val))
+	}
+
+	return strings.Join(allLabels, ",")
 }
