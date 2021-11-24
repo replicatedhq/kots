@@ -671,8 +671,8 @@ func getLabelSelector(appLabelSelector *metav1.LabelSelector) string {
 	sort.Strings(allKeys)
 
 	allLabels := make([]string, 0)
-	for key, val := range appLabelSelector.MatchLabels {
-		allLabels = append(allLabels, fmt.Sprintf("%s=%s", key, val))
+	for _, key := range allKeys {
+		allLabels = append(allLabels, fmt.Sprintf("%s=%s", key, appLabelSelector.MatchLabels[key]))
 	}
 
 	return strings.Join(allLabels, ",")
