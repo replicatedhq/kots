@@ -8,8 +8,6 @@ import find from "lodash/find";
 import ConnectionTerminated from "./ConnectionTerminated";
 import GitOps from "././components/clusters/GitOps";
 import PreflightResultPage from "./components/PreflightResultPage";
-// import Redactors from "./components/redactors/Redactors";
-// import EditRedactor from "./components/redactors/EditRedactor";
 import AppConfig from "./components/apps/AppConfig";
 import AppDetailPage from "./components/apps/AppDetailPage";
 import ClusterNodes from "./components/apps/ClusterNodes";
@@ -77,7 +75,6 @@ class Root extends Component {
     rootDidInitialWatchFetch: false,
     connectionTerminated: false,
     snapshotInProgressApps: [],
-    showSnapshotsRBACModal: false,
     errLoggingOut: ""
   };
   /**
@@ -237,8 +234,6 @@ class Root extends Component {
         Utilities.logoutUser();
         return;
       }
-      const body = await result.json();
-      this.setState({ connectionTerminated: false, snapshotInProgressApps: body.snapshotInProgressApps });
     }).catch(() => {
       if (tries < 2) {
         setTimeout(() => {
@@ -317,7 +312,6 @@ class Root extends Component {
       appsList,
       rootDidInitialWatchFetch,
       connectionTerminated,
-      showSnapshotsRBACModal,
       errLoggingOut
     } = this.state;
 
@@ -385,9 +379,6 @@ class Root extends Component {
                       )
                     }
                   />
-                  {/* <ProtectedRoute exact path="/redactors" render={(props) => <Redactors {...props} appName={this.state.selectedAppName} />} />
-                  <ProtectedRoute exact path="/redactors/new" render={(props) => <EditRedactor {...props} appName={this.state.selectedAppName} isNew={true} />} />
-                  <ProtectedRoute exact path="/redactors/:slug" render={(props) => <EditRedactor {...props} appName={this.state.selectedAppName} />} /> */}
                   <ProtectedRoute
                     path={["/apps", "/app/:slug/:tab?"]}
                     render={
@@ -417,19 +408,16 @@ class Root extends Component {
             </div>
           </Router>
         </ThemeContext.Provider>
-
-        {connectionTerminated &&
-          <Modal
-            isOpen={connectionTerminated}
-            onRequestClose={undefined}
-            shouldReturnFocusAfterClose={false}
-            contentLabel="Connection terminated modal"
-            ariaHideApp={false}
-            className="ConnectionTerminated--wrapper Modal DefaultSize"
-          >
-            <ConnectionTerminated connectionTerminated={this.state.connectionTerminated} appLogo={this.state.appLogo} setTerminatedState={(status) => this.setState({ connectionTerminated: status })} />
-          </Modal>
-        }
+        <Modal
+          isOpen={connectionTerminated}
+          onRequestClose={undefined}
+          shouldReturnFocusAfterClose={false}
+          contentLabel="Connection terminated modal"
+          ariaHideApp={false}
+          className="ConnectionTerminated--wrapper Modal DefaultSize"
+        >
+          <ConnectionTerminated connectionTerminated={this.state.connectionTerminated} appLogo={this.state.appLogo} setTerminatedState={(status) => this.setState({ connectionTerminated: status })} />
+        </Modal>
       </div>
     );
   }
