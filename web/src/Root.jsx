@@ -1,5 +1,5 @@
 import { hot } from "react-hot-loader/root";
-import React, { Component } from "react";
+import React, {Component, PureComponent} from "react";
 import { createBrowserHistory } from "history";
 import { Switch, Route, Redirect, Router } from "react-router-dom";
 import { Helmet } from "react-helmet";
@@ -8,8 +8,6 @@ import find from "lodash/find";
 import ConnectionTerminated from "./ConnectionTerminated";
 import GitOps from "././components/clusters/GitOps";
 import PreflightResultPage from "./components/PreflightResultPage";
-// import Redactors from "./components/redactors/Redactors";
-// import EditRedactor from "./components/redactors/EditRedactor";
 import AppConfig from "./components/apps/AppConfig";
 import AppDetailPage from "./components/apps/AppDetailPage";
 import ClusterNodes from "./components/apps/ClusterNodes";
@@ -60,7 +58,7 @@ const ThemeContext = React.createContext({
   clearThemeState: () => { }
 });
 
-class Root extends Component {
+class Root extends PureComponent {
   state = {
     appsList: [],
     appLogo: null,
@@ -77,9 +75,9 @@ class Root extends Component {
     rootDidInitialWatchFetch: false,
     connectionTerminated: false,
     snapshotInProgressApps: [],
-    showSnapshotsRBACModal: false,
     errLoggingOut: ""
   };
+
   /**
    * Sets the Theme State for the whole application
    * @param {Object} newThemeState - Object to set for new theme state
@@ -317,7 +315,6 @@ class Root extends Component {
       appsList,
       rootDidInitialWatchFetch,
       connectionTerminated,
-      showSnapshotsRBACModal,
       errLoggingOut
     } = this.state;
 
@@ -385,9 +382,6 @@ class Root extends Component {
                       )
                     }
                   />
-                  {/* <ProtectedRoute exact path="/redactors" render={(props) => <Redactors {...props} appName={this.state.selectedAppName} />} />
-                  <ProtectedRoute exact path="/redactors/new" render={(props) => <EditRedactor {...props} appName={this.state.selectedAppName} isNew={true} />} />
-                  <ProtectedRoute exact path="/redactors/:slug" render={(props) => <EditRedactor {...props} appName={this.state.selectedAppName} />} /> */}
                   <ProtectedRoute
                     path={["/apps", "/app/:slug/:tab?"]}
                     render={
@@ -417,19 +411,16 @@ class Root extends Component {
             </div>
           </Router>
         </ThemeContext.Provider>
-
-        {connectionTerminated &&
-          <Modal
-            isOpen={connectionTerminated}
-            onRequestClose={undefined}
-            shouldReturnFocusAfterClose={false}
-            contentLabel="Connection terminated modal"
-            ariaHideApp={false}
-            className="ConnectionTerminated--wrapper Modal DefaultSize"
-          >
-            <ConnectionTerminated connectionTerminated={this.state.connectionTerminated} appLogo={this.state.appLogo} setTerminatedState={(status) => this.setState({ connectionTerminated: status })} />
-          </Modal>
-        }
+        <Modal
+          isOpen={connectionTerminated}
+          onRequestClose={undefined}
+          shouldReturnFocusAfterClose={false}
+          contentLabel="Connection terminated modal"
+          ariaHideApp={false}
+          className="ConnectionTerminated--wrapper Modal DefaultSize"
+        >
+          <ConnectionTerminated connectionTerminated={this.state.connectionTerminated} appLogo={this.state.appLogo} setTerminatedState={(status) => this.setState({ connectionTerminated: status })} />
+        </Modal>
       </div>
     );
   }

@@ -162,7 +162,7 @@ class GitOpsRepoDetails extends React.Component {
                 <div className="flex flex1 flex-column u-marginRight--20">
                   <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">{isBitbucketServer ? "Project & Repository" : "Owner & Repository"}</p>
                   <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">Where will the commit be made?</p>
-                  <input type="text" className={`Input ${providerError?.field === "ownerRepo" && "has-error"}`} placeholder={isBitbucketServer ? "project/repository" : "owner/repository"} value={ownerRepo} onChange={(e) => this.setState({ ownerRepo: e.target.value })} />
+                  <input type="text" className={`Input ${providerError?.field === "ownerRepo" && "has-error"}`} placeholder={isBitbucketServer ? "project/repository" : "owner/repository"} value={ownerRepo} onChange={(e) => this.setState({ ownerRepo: e.target.value })} autoFocus />
                   {providerError?.field === "ownerRepo" && <p className="u-fontSize--small u-marginTop--5 u-color--chestnut u-fontWeight--medium u-lineHeight--normal">{isBitbucketServer ? "A project and repository must be provided" : "An owner and repository must be provided"}</p>}
                 </div>
               }
