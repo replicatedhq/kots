@@ -12,7 +12,7 @@ $cell-width: 140px;
   }
 
   & > div:last-child {
-    min-width: 270px;
+    min-width: 225px;
   }
 
   &.is-new {
@@ -23,6 +23,11 @@ $cell-width: 140px;
     animation:         newVersion 9s ease forwards;
   }
   
+}
+
+.AppVersionHistory {
+  max-width: 1160px;
+  width: 100%;
 }
 
 .upstream-version-box-wrapper {
@@ -226,6 +231,27 @@ $cell-width: 140px;
 
   &.gitops-enabled {
     margin-top: 30px;
+  }
+
+  &.currentVersionCard--wrapper {
+    position: fixed;
+    width: 340px;
+  }
+
+  .currentVersion--wrapper {
+    background-color: #ffffff;
+    border-radius: 4px;
+    padding: 8px;
+
+    .watch-icon {
+      width: 45px;
+      height: 45px;
+      background-size: contain;
+      background-position: center;
+      background-repeat: no-repeat;
+      border-radius: 40px;
+      box-shadow: inset 0 0 3px rgba(0,0,0,0.3);
+    }
   }
 
 }
