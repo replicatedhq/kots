@@ -304,7 +304,11 @@ func (s *KOTSStore) GetAppVersions(appID string, clusterID string) (*downstreamt
 		}
 	}
 
-	downstreamtypes.SortDownstreamVersions(result)
+	license, err := s.GetLatestLicenseForApp(appID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get app license")
+	}
+	downstreamtypes.SortDownstreamVersions(result, license.Spec.IsSemverRequired)
 
 	if currentVersion == nil {
 		result.PendingVersions = result.AllVersions
