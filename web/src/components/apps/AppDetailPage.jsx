@@ -13,7 +13,7 @@ import DashboardClassic from "./DashboardClassic";
 import CodeSnippet from "../shared/CodeSnippet";
 import DownstreamTree from "../../components/tree/KotsApplicationTree";
 import AppVersionHistory from "./AppVersionHistory";
-import { isAwaitingResults, Utilities, isFeatureEnabled } from "../../utilities/utilities";
+import { isAwaitingResults, Utilities } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
 import PreflightResultPage from "../PreflightResultPage";
 import AppConfig from "./AppConfig";
@@ -345,7 +345,7 @@ class AppDetailPage extends Component {
                   />
                   <Switch>
                     <Route exact path="/app/:slug" render={() =>
-                    isFeatureEnabled(this.props.featureFlags, "new-app-dashboard") ?
+                    app.isNewKotsUiEnabled ?
                       <Dashboard
                         app={app}
                         cluster={app.downstreams?.length && app.downstreams[0]?.cluster}
@@ -377,7 +377,7 @@ class AppDetailPage extends Component {
                     <Route exact path="/app/:slug/tree/:sequence?" render={props => <DownstreamTree {...props} app={app} appNameSpace={this.props.appNameSpace} />} />
 
                     <Route exact path={["/app/:slug/version-history", "/app/:slug/version-history/diff/:firstSequence/:secondSequence"]} render={() =>
-                    isFeatureEnabled(this.props.featureFlags, "new-version-history") ?
+                    app.isNewKotsUiEnabled ?
                       <AppVersionHistory
                         app={app}
                         match={this.props.match}
