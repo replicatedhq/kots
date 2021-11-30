@@ -10,11 +10,13 @@ import (
 func Test_SortDownstreamVersions(t *testing.T) {
 	tests := []struct {
 		name     string
+		bySemver bool
 		versions []*DownstreamVersion
 		want     []*DownstreamVersion
 	}{
 		{
-			name: "mixed labels",
+			name:     "mixed labels",
+			bySemver: true,
 			versions: []*DownstreamVersion{
 				{
 					VersionLabel: "notsemver2",
@@ -161,7 +163,8 @@ func Test_SortDownstreamVersions(t *testing.T) {
 			},
 		},
 		{
-			name: "semver only",
+			name:     "semver only",
+			bySemver: true,
 			versions: []*DownstreamVersion{
 				{
 					VersionLabel: "1.0.185",
@@ -238,7 +241,8 @@ func Test_SortDownstreamVersions(t *testing.T) {
 			},
 		},
 		{
-			name: "none semver only",
+			name:     "none semver only",
+			bySemver: true,
 			versions: []*DownstreamVersion{
 				{
 					VersionLabel: "notsemver2",
@@ -315,7 +319,8 @@ func Test_SortDownstreamVersions(t *testing.T) {
 			},
 		},
 		{
-			name: "one item",
+			name:     "one item",
+			bySemver: true,
 			versions: []*DownstreamVersion{
 				{
 					VersionLabel: "1.0.185",
@@ -333,11 +338,13 @@ func Test_SortDownstreamVersions(t *testing.T) {
 		},
 		{
 			name:     "empty",
+			bySemver: true,
 			versions: []*DownstreamVersion{},
 			want:     []*DownstreamVersion{},
 		},
 		{
-			name: "one more",
+			name:     "one more",
+			bySemver: true,
 			versions: []*DownstreamVersion{
 				{
 					VersionLabel: "1.2.5",
@@ -380,6 +387,64 @@ func Test_SortDownstreamVersions(t *testing.T) {
 					VersionLabel: "1.1.4",
 					Semver:       semverMustParseForTest("1.1.4"),
 					Sequence:     3,
+				},
+				{
+					VersionLabel: "1.1.2",
+					Semver:       semverMustParseForTest("1.1.2"),
+					Sequence:     1,
+				},
+				{
+					VersionLabel: "1.1.1",
+					Semver:       semverMustParseForTest("1.1.1"),
+					Sequence:     0,
+				},
+			},
+		},
+		{
+			name:     "sort by sequence",
+			bySemver: false,
+			versions: []*DownstreamVersion{
+				{
+					VersionLabel: "1.1.1",
+					Semver:       semverMustParseForTest("1.1.1"),
+					Sequence:     0,
+				},
+				{
+					VersionLabel: "1.2.5",
+					Semver:       semverMustParseForTest("1.2.5"),
+					Sequence:     4,
+				},
+				{
+					VersionLabel: "2.1.3",
+					Semver:       semverMustParseForTest("2.1.3"),
+					Sequence:     2,
+				},
+				{
+					VersionLabel: "1.1.4",
+					Semver:       semverMustParseForTest("1.1.4"),
+					Sequence:     3,
+				},
+				{
+					VersionLabel: "1.1.2",
+					Semver:       semverMustParseForTest("1.1.2"),
+					Sequence:     1,
+				},
+			},
+			want: []*DownstreamVersion{
+				{
+					VersionLabel: "1.2.5",
+					Semver:       semverMustParseForTest("1.2.5"),
+					Sequence:     4,
+				},
+				{
+					VersionLabel: "1.1.4",
+					Semver:       semverMustParseForTest("1.1.4"),
+					Sequence:     3,
+				},
+				{
+					VersionLabel: "2.1.3",
+					Semver:       semverMustParseForTest("2.1.3"),
+					Sequence:     2,
 				},
 				{
 					VersionLabel: "1.1.2",
@@ -401,7 +466,7 @@ func Test_SortDownstreamVersions(t *testing.T) {
 			versions := &DownstreamVersions{
 				AllVersions: tt.versions,
 			}
-			SortDownstreamVersions(versions)
+			SortDownstreamVersions(versions, tt.bySemver)
 
 			req.Equal(tt.want, versions.AllVersions)
 		})

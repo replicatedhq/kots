@@ -270,9 +270,14 @@ func (s *KOTSStore) GetAppVersionBaseSequence(appID string, versionLabel string)
 		mockVersion.Semver = &targetSemver
 	}
 
+	license, err := s.GetLatestLicenseForApp(appID)
+	if err != nil {
+		return -1, errors.Wrap(err, "failed to get app license")
+	}
+
 	// add to the top of the list and sort
 	appVersions.AllVersions = append([]*downstreamtypes.DownstreamVersion{mockVersion}, appVersions.AllVersions...)
-	downstreamtypes.SortDownstreamVersions(appVersions)
+	downstreamtypes.SortDownstreamVersions(appVersions, license.Spec.IsSemverRequired)
 
 	var baseVersion *downstreamtypes.DownstreamVersion
 	for i, v := range appVersions.AllVersions {

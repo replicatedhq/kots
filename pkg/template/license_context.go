@@ -53,6 +53,8 @@ func (ctx licenseCtx) licenseFieldValue(name string) string {
 		return ctx.License.Spec.ChannelID
 	case "channelName":
 		return ctx.License.Spec.ChannelName
+	case "isSemverRequired":
+		return strconv.FormatBool(ctx.License.Spec.IsSemverRequired)
 	case "customerName":
 		return ctx.License.Spec.CustomerName
 	case "endpoint":

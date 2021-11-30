@@ -1,6 +1,7 @@
 package types
 
 import (
+	"sort"
 	"time"
 
 	"github.com/blang/semver"
@@ -45,9 +46,26 @@ type DownstreamVersions struct {
 	AllVersions     []*DownstreamVersion
 }
 
+type bySequence []*DownstreamVersion
+
+func (v bySequence) Len() int {
+	return len(v)
+}
+func (v bySequence) Swap(i, j int) {
+	v[i], v[j] = v[j], v[i]
+}
+func (v bySequence) Less(i, j int) bool {
+	return v[i].Sequence < v[j].Sequence
+}
+
 // Modified bubble sort: instead of comparing adjacent elements, compare the elements at the semvers only.
 // Input is assumed to be sorted by sequence so non-semver elements are already in correct order.
-func SortDownstreamVersions(versions *DownstreamVersions) {
+func SortDownstreamVersions(versions *DownstreamVersions, bySemver bool) {
+	if !bySemver {
+		sort.Sort(sort.Reverse(bySequence(versions.AllVersions)))
+		return
+	}
+
 	endIndex := len(versions.AllVersions)
 	keepSorting := true
 	for keepSorting {
