@@ -146,6 +146,7 @@ func VeleroConfigureInternalCmd() *cobra.Command {
 				RegistryOptions:   &registryOptions,
 				SkipValidation:    v.GetBool("skip-validation"),
 				ValidateUsingAPod: true,
+				IsMinioDisabled:   !v.GetBool("with-minio"),
 			}
 			_, err = snapshot.ConfigureStore(cmd.Context(), configureStoreOptions)
 			if err != nil {
@@ -160,6 +161,7 @@ func VeleroConfigureInternalCmd() *cobra.Command {
 	}
 
 	cmd.Flags().Bool("skip-validation", false, "skip the validation of the internal store endpoint/bucket")
+	cmd.Flags().Bool("with-minio", true, "when set, kots will deploy minio for NFS snapshot locations")
 
 	return cmd
 }

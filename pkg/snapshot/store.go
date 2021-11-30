@@ -231,7 +231,7 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 		if store.Other.AccessKeyID == "" || store.Other.SecretAccessKey == "" || store.Other.Endpoint == "" || store.Other.Region == "" {
 			return nil, &InvalidStoreDataError{Message: "access key, secret key, endpoint and region are required"}
 		}
-	} else if options.Internal {
+	} else if options.Internal && !options.IsMinioDisabled {
 		clientset, err := k8sutil.GetClientset()
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get k8s clientset")
@@ -267,7 +267,28 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 		store.Internal.Endpoint = string(secret.Data["endpoint"])
 		store.Internal.ObjectStoreClusterIP = string(secret.Data["object-store-cluster-ip"])
 		store.Internal.Region = "us-east-1"
+	} else if options.Internal && options.IsMinioDisabled {
+		clientset, err := k8sutil.GetClientset()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get k8s clientset")
+		}
 
+		if !kotsutil.IsKurl(clientset) {
+			return nil, &InvalidStoreDataError{Message: "cannot use internal storage on a non-kurl cluster"}
+		}
+
+		if store.Internal == nil {
+			store.Internal = &types.StoreInternal{}
+		}
+		store.AWS = nil
+		store.Google = nil
+		store.Azure = nil
+		store.Other = nil
+		store.FileSystem = nil
+
+		store.Provider = "replicated.com/pvc"
+		store.Bucket = "snapshot-pvc"
+		store.Path = "/var/velero-local-volume-provider/snapshot-pvc/restic"
 	} else if options.FileSystem != nil && !options.IsMinioDisabled {
 		// Legacy Minio Provider
 
@@ -316,7 +337,7 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 		store.FileSystem = storeFileSystem
 	}
 
-	if !options.SkipValidation {
+	if !options.SkipValidation && !options.IsMinioDisabled {
 		validateStoreOptions := ValidateStoreOptions{
 			KotsadmNamespace:  options.KotsadmNamespace,
 			RegistryOptions:   options.RegistryOptions,
