@@ -1,5 +1,5 @@
 import { hot } from "react-hot-loader/root";
-import React, { Component } from "react";
+import React, {Component, PureComponent} from "react";
 import { createBrowserHistory } from "history";
 import { Switch, Route, Redirect, Router } from "react-router-dom";
 import { Helmet } from "react-helmet";
@@ -58,7 +58,7 @@ const ThemeContext = React.createContext({
   clearThemeState: () => { }
 });
 
-class Root extends Component {
+class Root extends PureComponent {
   state = {
     appsList: [],
     appLogo: null,
@@ -77,6 +77,7 @@ class Root extends Component {
     snapshotInProgressApps: [],
     errLoggingOut: ""
   };
+
   /**
    * Sets the Theme State for the whole application
    * @param {Object} newThemeState - Object to set for new theme state
@@ -234,6 +235,8 @@ class Root extends Component {
         Utilities.logoutUser();
         return;
       }
+      const body = await result.json();
+      this.setState({ connectionTerminated: false, snapshotInProgressApps: body.snapshotInProgressApps });
     }).catch(() => {
       if (tries < 2) {
         setTimeout(() => {
