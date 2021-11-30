@@ -277,7 +277,7 @@ class DashboardVersionCard extends React.Component {
             <div className="flex alignItems--center u-marginTop--10">
               <span className={`icon versionUpdateType u-marginRight--5 ${this.getUpdateTypeClassname(currentVersion.source)}`} data-tip={currentVersion.source} />
               <ReactTooltip effect="solid" className="replicated-tooltip" />
-              <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy">{currentVersion.status === "failed" ? "---" : `Deployed ${Utilities.dateFormat(currentVersion?.deployedAt, "MM/DD/YY @ hh:mm a z")}`}</p>
+              <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy">{currentVersion.status === "failed" ? "---" :  `${currentVersion.status === "deploying" ? "Deploy started at" : "Deployed"} ${Utilities.dateFormat(currentVersion?.deployedAt, "MM/DD/YY @ hh:mm a z")}`}</p>
             </div>
           </div>
           <div className="flex flex1 alignItems--center justifyContent--flexEnd">

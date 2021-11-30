@@ -901,7 +901,7 @@ class AppVersionHistory extends Component {
                           <p className="u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10"> {currentDownstreamVersion ? `Sequence ${currentDownstreamVersion?.sequence}` : null}</p>
                         </div>
                         {currentDownstreamVersion && this.getCurrentVersionStatus(currentDownstreamVersion, this.handleViewLogs)}
-                        {currentDownstreamVersion?.deployedAt ? <p className="u-fontSize--small u-lineHeight--normal u-textColor--info u-fontWeight--medium u-marginTop--10">Deployed {Utilities.dateFormat(currentDownstreamVersion.deployedAt, "MM/DD/YY @ hh:mm a z")}</p> : null}
+                        {currentDownstreamVersion?.deployedAt ? <p className="u-fontSize--small u-lineHeight--normal u-textColor--info u-fontWeight--medium u-marginTop--10">{currentDownstreamVersion?.status === "deploying" ? "Deploy started at" : "Deployed"} {Utilities.dateFormat(currentDownstreamVersion.deployedAt, "MM/DD/YY @ hh:mm a z")}</p> : null}
                         {currentDownstreamVersion ?
                           <div className="flex alignItems--center u-marginTop--10">
                             {currentDownstreamVersion?.releaseNotes &&

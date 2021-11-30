@@ -195,7 +195,7 @@ function renderVersionStatus(version, app, match, viewLogs) {
     if (version.status === "deployed" || version.status === "merged") {
       return (
         <div>
-          <span className="status-tag success flex-auto u-cursor--default" data-tip={version.deployedAt ? `Deployed ${Utilities.dateFormat(version.deployedAt, "MMMM D, YYYY @ hh:mm a z")}` : "Unable to find deployed at date"}>Currently {version.status.replace("_", " ")} version</span>
+          <span className="status-tag success flex-auto u-cursor--default" data-tip={version.deployedAt ? `${version.status === "deploying" ? "Deploy started at" : "Deployed"} ${Utilities.dateFormat(version.deployedAt, "MMMM D, YYYY @ hh:mm a z")}` : "Unable to find deployed at date"}>Currently {version.status.replace("_", " ")} version</span>
           <ReactTooltip effect="solid" className="replicated-tooltip" />
           {version.preflightSkipped && <p style={{ maxWidth: "200px" }} className="u-textColor--bodyCopy u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginTop--5">This version was deployed before preflight checks had completed</p>}
         </div>
