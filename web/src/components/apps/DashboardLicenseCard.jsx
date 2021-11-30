@@ -112,9 +112,9 @@ export default class DashboardLicenseCard extends React.Component {
     const appName = app?.name || "Your application";
 
     return (
-      <div className={`${isCommunityLicense ? "community-license" : appLicense && size(appLicense) === 0 ? "no-license" : "dashboard-card"} flex-column`}>
+      <div className={`${isCommunityLicense ? "community-license" : appLicense && size(appLicense) === 0 ? "no-license" : "dashboard-card"} ${Utilities.checkIsDateExpired(expiresAt) ? "expired-license" : ""} flex-column`}>
         <div className="flex flex1 justifyContent--spaceBetween alignItems--center">
-          <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold">License {isCommunityLicense && <span className="CommunityEditionTag u-marginLeft--5"> Community Edition </span>}</p>
+          <p className={`u-fontSize--large u-textColor--${Utilities.checkIsDateExpired(expiresAt) ? "error": "primary"} u-fontWeight--bold`}>License {Utilities.checkIsDateExpired(expiresAt) && "is expired"} {isCommunityLicense && <span className="CommunityEditionTag u-marginLeft--5"> Community Edition </span>}</p>
             {syncingLicense ?
               <div className="flex alignItems--center">
                 <Loader className="u-marginRight--5" size="15" />
@@ -154,7 +154,7 @@ export default class DashboardLicenseCard extends React.Component {
                   </p>
                 </div>
                 {size(appLicense?.entitlements) > 0 &&
-                  <div className="flexWrap--wrap flex-auto flex1 u-marginTop--10">
+                  <div className="u-marginTop--10">
                     {appLicense.entitlements?.map((entitlement, i) => {
                       const currEntitlement = this.state.entitlementsToShow?.find(f => f === entitlement.title);
                       const isTextField = entitlement.valueType === "Text";
@@ -162,13 +162,13 @@ export default class DashboardLicenseCard extends React.Component {
                       if (entitlement.value.length > 30 && (currEntitlement !== entitlement.title)) {
                         return (
                           <span key={entitlement.label} className={`u-fontSize--small u-lineHeight--normal u-textColor--secondary u-fontWeight--medium u-marginRight--10 ${i !== 0 ? "u-marginLeft--5" : ""}`}> {entitlement.title}: <span className={`u-fontWeight--bold ${isTextField && "u-fontFamily--monospace"}`}> {entitlement.value.slice(0, 30) + "..."} </span>
-                            <span className="icon clickable down-arrow-icon" onClick={() => this.toggleShowDetails(entitlement.title)} />
+                            <span className="replicated-link" onClick={() => this.toggleShowDetails(entitlement.title)}>show</span>
                           </span>
                         )
                       } else if (entitlement.value.length > 30 && (currEntitlement === entitlement.title)) {
                         return (
-                          <span key={entitlement.label} className={`flex-column u-fontSize--small u-lineHeight--normal u-textColor--secondary u-fontWeight--medium u-marginRight--10 ${i !== 0 ? "u-marginLeft--5" : ""}`}> {entitlement.title}: <span className={`u-fontWeight--bold ${isTextField && "u-fontFamily--monospace"}`} style={{whiteSpace: "pre"}}> {entitlement.value} </span>
-                            <span className="icon clickable up-arrow-icon u-marginTop--5 u-marginLeft--5" onClick={() => this.toggleHideDetails(entitlement.title)} />
+                          <span key={entitlement.label} className={`u-fontSize--small u-lineHeight--normal u-textColor--secondary u-fontWeight--medium u-marginRight--10 ${i !== 0 ? "u-marginLeft--5" : ""}`}> {entitlement.title}: <span className={`u-fontWeight--bold ${isTextField && "u-fontFamily--monospace"}`} style={{whiteSpace: "pre"}}> {entitlement.value} </span>
+                            <span className="replicated-link" onClick={() => this.toggleHideDetails(entitlement.title)}>hide</span>
                           </span>
                         )
                       } else {
