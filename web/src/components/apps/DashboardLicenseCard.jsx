@@ -13,7 +13,8 @@ export default class DashboardLicenseCard extends React.Component {
   state = {
     syncingLicense: false,
     message: null,
-    messageType: ""
+    messageType: "",
+    entitlementsToShow: []
   }
 
   syncLicense = (licenseData) => {
@@ -90,6 +91,17 @@ export default class DashboardLicenseCard extends React.Component {
   hideNextStepModal = () => {
     this.setState({ showNextStepModal: false });
   }
+
+  toggleShowDetails = (entitlement) => {
+    this.setState({ entitlementsToShow: [...this.state.entitlementsToShow, entitlement] })
+  }
+
+  toggleHideDetails = (entitlement) => {
+    let entitlementsToShow = [...this.state.entitlementsToShow];
+    const index = this.state.entitlementsToShow?.indexOf(entitlement);
+    entitlementsToShow.splice(index, 1);
+    this.setState({ entitlementsToShow })
+  }
   
   render() {
     const { app, appLicense, getingAppLicenseErrMsg } = this.props;
@@ -100,9 +112,9 @@ export default class DashboardLicenseCard extends React.Component {
     const appName = app?.name || "Your application";
 
     return (
-      <div className={`${isCommunityLicense ? "community-license" : appLicense && size(appLicense) === 0 ? "no-license" : "dashboard-card"} flex-column`}>
+      <div className={`${isCommunityLicense ? "community-license" : appLicense && size(appLicense) === 0 ? "no-license" : "dashboard-card"} ${Utilities.checkIsDateExpired(expiresAt) ? "expired-license" : ""} flex-column`}>
         <div className="flex flex1 justifyContent--spaceBetween alignItems--center">
-          <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold">License {isCommunityLicense && <span className="CommunityEditionTag u-marginLeft--5"> Community Edition </span>}</p>
+          <p className={`u-fontSize--large u-textColor--${Utilities.checkIsDateExpired(expiresAt) ? "error": "primary"} u-fontWeight--bold`}>License {Utilities.checkIsDateExpired(expiresAt) && "is expired"} {isCommunityLicense && <span className="CommunityEditionTag u-marginLeft--5"> Community Edition </span>}</p>
             {syncingLicense ?
               <div className="flex alignItems--center">
                 <Loader className="u-marginRight--5" size="15" />
@@ -116,6 +128,7 @@ export default class DashboardLicenseCard extends React.Component {
                     "u-textColor--primary": messageType === "info",
                   })}>{message}</p>
                 }
+                {appLicense?.lastSyncedAt && !message ? <span className="u-fontSize--small u-textColor--header u-fontWeight--medium u-lineHeight--normal u-marginRight--10">Last synced {Utilities.dateFromNow(appLicense.lastSyncedAt)}</span> : null}
                 <span className="icon clickable dashboard-card-sync-icon u-marginRight--5" />
                 <span className="replicated-link u-fontSize--small" onClick={() => this.syncLicense("")}>Sync license</span>
               </div>
@@ -136,11 +149,36 @@ export default class DashboardLicenseCard extends React.Component {
                       ? `${Utilities.toTitleCase(appLicense.licenseType)} license`
                       : `---`}
                   </div>
-                  <span className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginLeft--10"> Expires {expiresAt} </span>
+                  <p className={`u-fontWeight--medium u-fontSize--small u-lineHeight--default u-marginLeft--10 ${Utilities.checkIsDateExpired(expiresAt) ? "u-textColor--error" : "u-textColor--bodyCopy"}`}>
+                    {expiresAt === "Never" ? "Does not expire" : Utilities.checkIsDateExpired(expiresAt) ? `Expired ${expiresAt}` : `Expires ${expiresAt}`}
+                  </p>
                 </div>
-              </div>
-              <div className="flex-column flex-auto justifyContent--center">
-                {appLicense.lastSyncedAt && <span className="u-fontSize--small u-textColor--header u-fontWeight--medium u-lineHeight--normal">Last synced {Utilities.dateFromNow(appLicense.lastSyncedAt)}</span>}
+                {size(appLicense?.entitlements) > 0 &&
+                  <div className="u-marginTop--10">
+                    {appLicense.entitlements?.map((entitlement, i) => {
+                      const currEntitlement = this.state.entitlementsToShow?.find(f => f === entitlement.title);
+                      const isTextField = entitlement.valueType === "Text";
+                      const isBooleanField = entitlement.valueType === "Boolean";
+                      if (entitlement.value.length > 30 && (currEntitlement !== entitlement.title)) {
+                        return (
+                          <span key={entitlement.label} className={`u-fontSize--small u-lineHeight--normal u-textColor--secondary u-fontWeight--medium u-marginRight--10 ${i !== 0 ? "u-marginLeft--5" : ""}`}> {entitlement.title}: <span className={`u-fontWeight--bold ${isTextField && "u-fontFamily--monospace"}`}> {entitlement.value.slice(0, 30) + "..."} </span>
+                            <span className="replicated-link" onClick={() => this.toggleShowDetails(entitlement.title)}>show</span>
+                          </span>
+                        )
+                      } else if (entitlement.value.length > 30 && (currEntitlement === entitlement.title)) {
+                        return (
+                          <span key={entitlement.label} className={`u-fontSize--small u-lineHeight--normal u-textColor--secondary u-fontWeight--medium u-marginRight--10 ${i !== 0 ? "u-marginLeft--5" : ""}`}> {entitlement.title}: <span className={`u-fontWeight--bold ${isTextField && "u-fontFamily--monospace"}`} style={{whiteSpace: "pre"}}> {entitlement.value} </span>
+                            <span className="replicated-link" onClick={() => this.toggleHideDetails(entitlement.title)}>hide</span>
+                          </span>
+                        )
+                      } else {
+                        return (
+                          <span key={entitlement.label} className={`u-fontSize--small u-lineHeight--normal u-textColor--secondary u-fontWeight--medium u-marginRight--10 ${i !== 0 ? "u-marginLeft--5" : ""}`}> {entitlement.title}: <span className={`u-fontWeight--bold ${isTextField && "u-fontFamily--monospace"}`}> {isBooleanField ? entitlement.value.toString() : entitlement.value} </span></span>
+                        );
+                      }
+                    })}
+                  </div>
+                }
               </div>
             </div>
             :

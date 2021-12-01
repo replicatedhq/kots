@@ -142,6 +142,15 @@ func verifyLicenseData(outerLicense *kotsv1beta1.License, innerLicense *kotsv1be
 	if outerLicense.Spec.IsSnapshotSupported != innerLicense.Spec.IsSnapshotSupported {
 		return errors.New("\"IsSnapshotSupported\" field has changed")
 	}
+	if outerLicense.Spec.IsNewKOTSUIEnabled != innerLicense.Spec.IsNewKOTSUIEnabled {
+		return errors.New("\"IsNewKOTSUIEnabled\" field has changed")
+	}
+	if outerLicense.Spec.IsSupportBundleUploadSupported != innerLicense.Spec.IsSupportBundleUploadSupported {
+		return errors.New("\"IsSupportBundleUploadSupported\" field has changed")
+	}
+	if outerLicense.Spec.IsSemverRequired != innerLicense.Spec.IsSemverRequired {
+		return errors.New("\"IsSemverRequired\" field has changed")
+	}
 
 	// Check entitlements
 	if len(outerLicense.Spec.Entitlements) != len(innerLicense.Spec.Entitlements) {

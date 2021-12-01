@@ -22,6 +22,10 @@ const SCHEDULES = [
     label: "Default",
   },
   {
+    value: "@never",
+    label: "Never",
+  },
+  {
     value: "custom",
     label: "Custom",
   },
@@ -172,7 +176,7 @@ export default class AutomaticUpdatesModal extends React.Component {
           }
           <div className="flex-column flex1">
             <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal">Cron expression</p>
-            <span className="u-fontSize--small u-marginTop--5 u-textColor--info u-marginBottom--15">You can enter <span className="u-fontWeight--bold u-textColor--primary">@never</span> to disable scheduled update checks</span>
+            <span className="u-fontSize--small u-marginTop--5 u-textColor--info u-marginBottom--15">Choose how frequently your application automatically checks for updates.</span>
             <div className="flex flex1">
               <Select
                 className="replicated-select-container flex1"

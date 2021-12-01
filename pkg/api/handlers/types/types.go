@@ -37,6 +37,7 @@ type ResponseApp struct {
 	IsIdentityServiceSupported     bool                     `json:"isIdentityServiceSupported"`
 	IsAppIdentityServiceSupported  bool                     `json:"isAppIdentityServiceSupported"`
 	IsGeoaxisSupported             bool                     `json:"isGeoaxisSupported"`
+	IsNewKOTSUIEnabled             bool                     `json:"isNewKotsUiEnabled"`
 	IsSupportBundleUploadSupported bool                     `json:"isSupportBundleUploadSupported"`
 	AllowRollback                  bool                     `json:"allowRollback"`
 	AllowSnapshots                 bool                     `json:"allowSnapshots"`

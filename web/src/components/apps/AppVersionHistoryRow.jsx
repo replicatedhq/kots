@@ -195,7 +195,7 @@ function renderVersionStatus(version, app, match, viewLogs) {
     if (version.status === "deployed" || version.status === "merged") {
       return (
         <div>
-          <span className="status-tag success flex-auto u-cursor--default" data-tip={version.deployedAt ? `Deployed ${Utilities.dateFormat(version.deployedAt, "MMMM D, YYYY @ hh:mm a z")}` : "Unable to find deployed at date"}>Currently {version.status.replace("_", " ")} version</span>
+          <span className="status-tag success flex-auto u-cursor--default" data-tip={version.deployedAt ? `${version.status === "deploying" ? "Deploy started at" : "Deployed"} ${Utilities.dateFormat(version.deployedAt, "MMMM D, YYYY @ hh:mm a z")}` : "Unable to find deployed at date"}>Currently {version.status.replace("_", " ")} version</span>
           <ReactTooltip effect="solid" className="replicated-tooltip" />
           {version.preflightSkipped && <p style={{ maxWidth: "200px" }} className="u-textColor--bodyCopy u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginTop--5">This version was deployed before preflight checks had completed</p>}
         </div>
@@ -273,7 +273,7 @@ export default function AppVersionHistoryRow(props) {
         </div>
       </div>
       <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex1 justifyContent--center`}>
-        <p className="u-fontSize--small u-fontWeight--bold u-textColor--mutedAccent u-lineHeight--default">{version.source}</p>
+        <p className="u-fontSize--small u-fontWeight--bold u-textColor--lightAccent u-lineHeight--default">{version.source}</p>
         <div className="flex flex-auto u-marginTop--10"> {gitopsEnabled ? renderViewPreflights(version, props.app, props.match) : renderVersionStatus(version, props.app, props.match, props.handleViewLogs)}</div>
       </div>
       <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex-auto alignItems--flexEnd justifyContent--center`}>

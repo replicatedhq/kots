@@ -21,6 +21,10 @@
       margin-right: 0;
     }
   }
+
+  &.expired-license {
+    background-color: $error-color-light;
+  }
 }
 
 
