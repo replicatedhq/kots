@@ -994,26 +994,3 @@ func updateConfigObject(config *kotsv1beta1.Config, configValues *kotsv1beta1.Co
 
 	return newConfig, nil
 }
-
-func ConfigGroupToValues(groups []kotsv1beta1.ConfigGroup) kotsv1beta1.ConfigValues {
-	extractedValues := kotsv1beta1.ConfigValues{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "kots.io/v1beta1",
-			Kind:       "ConfigValues",
-		},
-		Spec: kotsv1beta1.ConfigValuesSpec{Values: map[string]kotsv1beta1.ConfigValue{}},
-	}
-
-	for _, group := range groups {
-		for _, item := range group.Items {
-			extractedValues.Spec.Values[item.Name] = kotsv1beta1.ConfigValue{
-				Default:  item.Default.String(),
-				Value:    item.Value.String(),
-				Data:     item.Data,
-				Filename: item.Filename,
-			}
-		}
-	}
-
-	return extractedValues
-}

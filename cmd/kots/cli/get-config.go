@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/handlers"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -11,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"io/ioutil"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"os"
 	"sigs.k8s.io/yaml"
@@ -53,6 +55,16 @@ func getConfigCmd(cmd *cobra.Command, args []string) error {
 		return errors.Wrap(err, "failed to validate namespace")
 	}
 
+	appSlug := v.GetString("appslug")
+	if appSlug == "" {
+		return errors.New("appslug is required")
+	}
+
+	appSequence := v.GetInt("sequence")
+	if appSequence == -1 {
+		return errors.New("sequence is required")
+	}
+
 	podName, err := k8sutil.FindKotsadm(clientset, namespace)
 	if err != nil {
 		return errors.Wrap(err, "failed to find kotsadm pod")
@@ -84,13 +96,13 @@ func getConfigCmd(cmd *cobra.Command, args []string) error {
 		os.Exit(2) // not returning error here as we don't want to show the entire stack trace to normal users
 	}
 
-	url := fmt.Sprintf("http://localhost:%d/api/v1/app/%s/config/%d", localPort, v.GetString("appslug"), v.GetInt("sequence"))
+	url := fmt.Sprintf("http://localhost:%d/api/v1/app/%s/config/%d", localPort, appSlug, appSequence)
 	config, err := getConfig(url, authSlug)
 	if err != nil {
 		return errors.Wrap(err, "failed to get config")
 	}
 
-	values := handlers.ConfigGroupToValues(config.ConfigGroups)
+	values := configGroupToValues(config.ConfigGroups)
 	configYaml, err := yaml.Marshal(values)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal config")
@@ -130,4 +142,27 @@ func getConfig(url string, authSlug string) (*handlers.CurrentAppConfigResponse,
 	}
 
 	return config, nil
+}
+
+func configGroupToValues(groups []v1beta1.ConfigGroup) v1beta1.ConfigValues {
+	extractedValues := v1beta1.ConfigValues{
+		TypeMeta: v1.TypeMeta{
+			APIVersion: "kots.io/v1beta1",
+			Kind:       "ConfigValues",
+		},
+		Spec: v1beta1.ConfigValuesSpec{Values: map[string]v1beta1.ConfigValue{}},
+	}
+
+	for _, group := range groups {
+		for _, item := range group.Items {
+			extractedValues.Spec.Values[item.Name] = v1beta1.ConfigValue{
+				Default:  item.Default.String(),
+				Value:    item.Value.String(),
+				Data:     item.Data,
+				Filename: item.Filename,
+			}
+		}
+	}
+
+	return extractedValues
 }
