@@ -288,7 +288,6 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 
 		store.Provider = "replicated.com/pvc"
 		store.Bucket = "velero-internal-snapshots"
-		store.Path = "/var/velero-local-volume-provider/velero-internal-snapshots/restic"
 	} else if options.FileSystem != nil && !options.IsMinioDisabled {
 		// Legacy Minio Provider
 
@@ -521,48 +520,60 @@ func updateGlobalStore(ctx context.Context, store *types.Store, kotsadmNamespace
 			}
 		}
 	} else if store.Internal != nil {
-		kotsadmVeleroBackendStorageLocation.Spec.Config = map[string]string{
-			"region":           store.Internal.Region,
-			"s3Url":            store.Internal.Endpoint,
-			"publicUrl":        fmt.Sprintf("http://%s", store.Internal.ObjectStoreClusterIP),
-			"s3ForcePathStyle": "true",
-		}
-
-		internalCredentials, err := BuildAWSCredentials(store.Internal.AccessKeyID, store.Internal.SecretAccessKey)
+		isMinioDisabled, err := IsFileSystemMinioDisabled(kotsadmNamespace)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to format internal credentials")
+			return nil, errors.Wrap(err, "failed to check for existing snapshot preference")
 		}
 
-		// create or update the secret
-		if kuberneteserrors.IsNotFound(currentSecretErr) {
-			// create
-			toCreate := corev1.Secret{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "v1",
-					Kind:       "Secret",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "cloud-credentials",
-					Namespace: kotsadmVeleroBackendStorageLocation.Namespace,
-				},
-				Data: map[string][]byte{
-					"cloud": internalCredentials,
-				},
+		if !isMinioDisabled {
+			kotsadmVeleroBackendStorageLocation.Spec.Config = map[string]string{
+				"region":           store.Internal.Region,
+				"s3Url":            store.Internal.Endpoint,
+				"publicUrl":        fmt.Sprintf("http://%s", store.Internal.ObjectStoreClusterIP),
+				"s3ForcePathStyle": "true",
 			}
-			_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Create(ctx, &toCreate, metav1.CreateOptions{})
+
+			internalCredentials, err := BuildAWSCredentials(store.Internal.AccessKeyID, store.Internal.SecretAccessKey)
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to create internal secret")
+				return nil, errors.Wrap(err, "failed to format internal credentials")
+			}
+
+			// create or update the secret
+			if kuberneteserrors.IsNotFound(currentSecretErr) {
+				// create
+				toCreate := corev1.Secret{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "v1",
+						Kind:       "Secret",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "cloud-credentials",
+						Namespace: kotsadmVeleroBackendStorageLocation.Namespace,
+					},
+					Data: map[string][]byte{
+						"cloud": internalCredentials,
+					},
+				}
+				_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Create(ctx, &toCreate, metav1.CreateOptions{})
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to create internal secret")
+				}
+			} else {
+				// update
+				if currentSecret.Data == nil {
+					currentSecret.Data = map[string][]byte{}
+				}
+
+				currentSecret.Data["cloud"] = internalCredentials
+				_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Update(ctx, currentSecret, metav1.UpdateOptions{})
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to update internal secret")
+				}
 			}
 		} else {
-			// update
-			if currentSecret.Data == nil {
-				currentSecret.Data = map[string][]byte{}
-			}
-
-			currentSecret.Data["cloud"] = internalCredentials
-			_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Update(ctx, currentSecret, metav1.UpdateOptions{})
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to update internal secret")
+			kotsadmVeleroBackendStorageLocation.Spec.Config = map[string]string{
+				"storageSize":      "50Gi",
+				"resticRepoPrefix": "/var/velero-local-volume-provider/velero-internal-snapshots/restic",
 			}
 		}
 	} else if store.FileSystem != nil && store.Provider == FileSystemMinioProvider {
