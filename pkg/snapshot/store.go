@@ -287,8 +287,8 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 		store.FileSystem = nil
 
 		store.Provider = "replicated.com/pvc"
-		store.Bucket = "snapshot-pvc"
-		store.Path = "/var/velero-local-volume-provider/snapshot-pvc/restic"
+		store.Bucket = "velero-internal-snapshots"
+		store.Path = "/var/velero-local-volume-provider/velero-internal-snapshots/restic"
 	} else if options.FileSystem != nil && !options.IsMinioDisabled {
 		// Legacy Minio Provider
 
