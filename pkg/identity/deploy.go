@@ -48,7 +48,7 @@ func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace strin
 			Database: "dex",
 			User:     "dex",
 		}
-		if err := identitydeploy.EnsurePostgresSecret(context.TODO(), clientset, namespace, KotsadmNamePrefix, nil, postgresConfig, nil); err != nil {
+		if err := identitydeploy.EnsurePostgresSecret(context.TODO(), clientset, namespace, KotsadmNamePrefix, postgresConfig, nil); err != nil {
 			return errors.Wrap(err, "failed to ensure postgres secret")
 		}
 	}

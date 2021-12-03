@@ -23,13 +23,11 @@ func downloadUpstream(upstreamURI string, fetchOptions *types.FetchOptions) (*ty
 		return readFilesFromPath(upstreamURI)
 	}
 
-	var cipher *crypto.AESCipher
 	if fetchOptions.EncryptionKey != "" {
-		c, err := crypto.AESCipherFromString(fetchOptions.EncryptionKey)
+		err := crypto.InitFromString(fetchOptions.EncryptionKey)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create cipher")
 		}
-		cipher = c
 	}
 
 	u, err := url.ParseRequestURI(upstreamURI)
@@ -50,7 +48,6 @@ func downloadUpstream(upstreamURI string, fetchOptions *types.FetchOptions) (*ty
 			fetchOptions.IdentityConfig,
 			pickCursor(fetchOptions),
 			pickVersionLabel(fetchOptions),
-			cipher,
 			fetchOptions.AppSlug,
 			fetchOptions.AppSequence,
 			fetchOptions.Airgap != nil,

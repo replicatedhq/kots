@@ -7,10 +7,8 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/pkg/crypto"
 	identity "github.com/replicatedhq/kots/pkg/kotsadmidentity"
 	identitystore "github.com/replicatedhq/kots/pkg/kotsadmidentity/store"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/store"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -113,17 +111,7 @@ func bootstrapIdentity() error {
 		}
 		identityConfig := obj.(*kotsv1beta1.IdentityConfig)
 
-		installation, err := kotsutil.LoadInstallationFromPath(filepath.Join(currentArchivePath, "upstream", "userdata", "installation.yaml"))
-		if err != nil {
-			return errors.Wrap(err, "failed to load installation from path")
-		}
-
-		apiCipher, err := crypto.AESCipherFromString(installation.Spec.EncryptionKey)
-		if err != nil {
-			return errors.Wrap(err, "failed to create aes cipher")
-		}
-
-		identityConfigFile, err = identity.InitAppIdentityConfig(app.Slug, identityConfig.Spec.Storage, *apiCipher)
+		identityConfigFile, err = identity.InitAppIdentityConfig(app.Slug, identityConfig.Spec.Storage)
 		if err != nil {
 			return errors.Wrap(err, "failed to init identity config")
 		}

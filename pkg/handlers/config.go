@@ -612,15 +612,10 @@ func updateAppConfigValues(values map[string]kotsv1beta1.ConfigValue, configGrou
 				updatedValue := item.Value.String()
 				if item.Type == "password" {
 					// encrypt using the key
-					cipher, err := crypto.AESCipherFromString(encryptionKey)
-					if err != nil {
-						return nil, errors.Wrap(err, "failed to load encryption cipher")
-					}
-
 					// if the decryption succeeds, don't encrypt again
-					_, err = decrypt(updatedValue, cipher)
+					_, err := decrypt(updatedValue)
 					if err != nil {
-						updatedValue = base64.StdEncoding.EncodeToString(cipher.Encrypt([]byte(updatedValue)))
+						updatedValue = base64.StdEncoding.EncodeToString(crypto.Encrypt([]byte(updatedValue)))
 					}
 				}
 
@@ -647,17 +642,13 @@ func updateAppConfigValues(values map[string]kotsv1beta1.ConfigValue, configGrou
 	}
 	return values, nil
 }
-func decrypt(input string, cipher *crypto.AESCipher) (string, error) {
-	if cipher == nil {
-		return "", errors.New("cipher not defined")
-	}
-
+func decrypt(input string) (string, error) {
 	decoded, err := base64.StdEncoding.DecodeString(input)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to base64 decode")
 	}
 
-	decrypted, err := cipher.Decrypt(decoded)
+	decrypted, err := crypto.Decrypt(decoded)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to decrypt")
 	}

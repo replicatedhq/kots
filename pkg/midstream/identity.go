@@ -42,7 +42,6 @@ func (m *Midstream) writeIdentityService(ctx context.Context, options WriteOptio
 		ImageRewriteFn:     nil, // TODO (ethan): do we rewrite in kustomization.images?
 		ProxyEnv:           proxyEnv,
 		AdditionalLabels:   additionalLabels,
-		Cipher:             &options.Cipher,
 		Builder:            &options.Builder,
 	}
 
@@ -52,7 +51,7 @@ func (m *Midstream) writeIdentityService(ctx context.Context, options WriteOptio
 	}
 
 	if m.IdentityConfig.Spec.Storage.PostgresConfig != nil {
-		postgresSecretResource, err := identitydeploy.RenderPostgresSecret(ctx, options.AppSlug, &options.Cipher, *m.IdentityConfig.Spec.Storage.PostgresConfig, additionalLabels)
+		postgresSecretResource, err := identitydeploy.RenderPostgresSecret(ctx, options.AppSlug, *m.IdentityConfig.Spec.Storage.PostgresConfig, additionalLabels)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to render postgres secret")
 		}
@@ -60,7 +59,7 @@ func (m *Midstream) writeIdentityService(ctx context.Context, options WriteOptio
 	}
 
 	if m.IdentityConfig.Spec.ClientID != "" {
-		clientSecret, err := m.IdentityConfig.Spec.ClientSecret.GetValue(options.Cipher)
+		clientSecret, err := m.IdentityConfig.Spec.ClientSecret.GetValue()
 		if err != nil {
 			return "", errors.Wrap(err, "failed to decrypt client secret")
 		}

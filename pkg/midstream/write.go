@@ -8,7 +8,6 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/disasterrecovery"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/template"
@@ -29,7 +28,6 @@ type WriteOptions struct {
 	AppSlug            string
 	IsGitOps           bool
 	IsOpenShift        bool
-	Cipher             crypto.AESCipher
 	Builder            template.Builder
 	HTTPProxyEnvValue  string
 	HTTPSProxyEnvValue string

@@ -22,7 +22,6 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	reportingtypes "github.com/replicatedhq/kots/pkg/api/reporting/types"
 	"github.com/replicatedhq/kots/pkg/buildversion"
-	"github.com/replicatedhq/kots/pkg/crypto"
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	reporting "github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/template"
@@ -136,7 +135,6 @@ func downloadReplicated(
 	existingIdentityConfig *kotsv1beta1.IdentityConfig,
 	updateCursor ReplicatedCursor,
 	versionLabel string,
-	cipher *crypto.AESCipher,
 	appSlug string,
 	appSequence int64,
 	isAirgap bool,
@@ -262,7 +260,7 @@ func downloadReplicated(
 
 		// If config existed and was removed from the app,
 		// values will be carried over to the new version anyway.
-		configValues, err := createConfigValues(application.Name, config, existingConfigValues, cipher, license, application, &appInfo, &versionInfo, localRegistry, existingIdentityConfig)
+		configValues, err := createConfigValues(application.Name, config, existingConfigValues, license, application, &appInfo, &versionInfo, localRegistry, existingIdentityConfig)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create empty config values")
 		}
@@ -281,17 +279,16 @@ func downloadReplicated(
 	}
 
 	upstream := &types.Upstream{
-		URI:           u.RequestURI(),
-		Name:          application.Name,
-		Files:         files,
-		Type:          "replicated",
-		UpdateCursor:  release.UpdateCursor.Cursor,
-		ChannelID:     channelID,
-		ChannelName:   channelName,
-		VersionLabel:  release.VersionLabel,
-		ReleaseNotes:  release.ReleaseNotes,
-		ReleasedAt:    release.ReleasedAt,
-		EncryptionKey: cipher.ToString(),
+		URI:          u.RequestURI(),
+		Name:         application.Name,
+		Files:        files,
+		Type:         "replicated",
+		UpdateCursor: release.UpdateCursor.Cursor,
+		ChannelID:    channelID,
+		ChannelName:  channelName,
+		VersionLabel: release.VersionLabel,
+		ReleaseNotes: release.ReleaseNotes,
+		ReleasedAt:   release.ReleasedAt,
 	}
 
 	return upstream, nil
@@ -585,7 +582,7 @@ func mustMarshalConfigValues(configValues *kotsv1beta1.ConfigValues) []byte {
 	return b.Bytes()
 }
 
-func createConfigValues(applicationName string, config *kotsv1beta1.Config, existingConfigValues *kotsv1beta1.ConfigValues, cipher *crypto.AESCipher, license *kotsv1beta1.License, app *kotsv1beta1.Application, appInfo *template.ApplicationInfo, versionInfo *template.VersionInfo, localRegistry template.LocalRegistry, identityConfig *kotsv1beta1.IdentityConfig) (*kotsv1beta1.ConfigValues, error) {
+func createConfigValues(applicationName string, config *kotsv1beta1.Config, existingConfigValues *kotsv1beta1.ConfigValues, license *kotsv1beta1.License, app *kotsv1beta1.Application, appInfo *template.ApplicationInfo, versionInfo *template.VersionInfo, localRegistry template.LocalRegistry, identityConfig *kotsv1beta1.IdentityConfig) (*kotsv1beta1.ConfigValues, error) {
 	templateContextValues := make(map[string]template.ItemValue)
 
 	var newValues kotsv1beta1.ConfigValuesSpec
@@ -627,7 +624,6 @@ func createConfigValues(applicationName string, config *kotsv1beta1.Config, exis
 		ConfigGroups:    config.Spec.Groups,
 		ExistingValues:  templateContextValues,
 		LocalRegistry:   localRegistry,
-		Cipher:          cipher,
 		License:         license,
 		Application:     app,
 		ApplicationInfo: appInfo,

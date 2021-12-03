@@ -16,7 +16,6 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/airgap/types"
 	"github.com/replicatedhq/kots/pkg/archives"
-	"github.com/replicatedhq/kots/pkg/crypto"
 	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	identity "github.com/replicatedhq/kots/pkg/kotsadmidentity"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -180,7 +179,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		configFile = tmpFile.Name()
 	}
 
-	identityConfigFile, err := identity.InitAppIdentityConfig(opts.PendingApp.Slug, kotsv1beta1.Storage{}, crypto.AESCipher{})
+	identityConfigFile, err := identity.InitAppIdentityConfig(opts.PendingApp.Slug, kotsv1beta1.Storage{})
 	if err != nil {
 		return errors.Wrap(err, "failed to init identity config")
 	}

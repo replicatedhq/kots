@@ -1,15 +1,21 @@
 package crypto
 
 import (
+	"bytes"
+	"context"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
+	"fmt"
+	"os"
 
 	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
-type AESCipher struct {
+type aesCipher struct {
 	key    []byte
 	cipher cipher.AEAD
 	nonce  []byte
@@ -17,35 +23,112 @@ type AESCipher struct {
 
 const keyLength = 24 // 192 bit
 
-func NewAESCipher() (*AESCipher, error) {
+var decryptionCiphers []*aesCipher // used to decrypt data
+var encryptionCipher *aesCipher    // used to encrypt data
+
+// add cipher from API_ENCRYPTION_KEY environment variable if it is present (and set that key to be used for encryption)
+func init() {
+	decryptionCiphers = []*aesCipher{}
+	if os.Getenv("API_ENCRYPTION_KEY") != "" {
+		envCipher, err := aesCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
+		if err != nil {
+			// do nothing
+		} else {
+			decryptionCiphers = append(decryptionCiphers, envCipher)
+			encryptionCipher = envCipher
+		}
+	}
+}
+
+// InitFromSecret reads the encryption key from kubernetes and adds it to the list of decryptionCiphers, and sets this key to be used for encryption.
+func InitFromSecret(clientset kubernetes.Interface, namespace string) error {
+	sec, err := clientset.CoreV1().Secrets(namespace).Get(context.Background(), "kotsadm-encryption", metav1.GetOptions{})
+	if err != nil {
+		return errors.Wrap(err, "get kotsadm-encryption secret")
+	}
+
+	secData, ok := sec.Data["encryptionKey"]
+	if !ok {
+		return fmt.Errorf("kotsadm-encryption secret in %s does not have member encryptionKey", namespace)
+	}
+
+	secCipher, err := aesCipherFromString(string(secData))
+	if err != nil {
+		return errors.Wrap(err, "parse kotsadm-encryption secret")
+	}
+
+	addCipher(secCipher)
+	encryptionCipher = secCipher
+
+	return nil
+}
+
+// InitFromString parses the encryption key from the provided string and adds it to the list of decryptionCiphers
+func InitFromString(data string) error {
+	if data == "" {
+		return nil
+	}
+
+	newCipher, err := aesCipherFromString(data)
+	if err != nil {
+		return err
+	}
+	addCipher(newCipher)
+	return nil
+}
+
+// check if a cipher exists in the array, if it does not then add it
+func addCipher(aesCipher *aesCipher) {
+	foundMatch := false
+	for _, existingCipher := range decryptionCiphers {
+		if bytes.Compare(existingCipher.key, aesCipher.key) == 0 && bytes.Compare(existingCipher.nonce, aesCipher.nonce) == 0 {
+			foundMatch = true
+		}
+	}
+
+	if !foundMatch {
+		decryptionCiphers = append(decryptionCiphers, aesCipher)
+	}
+}
+
+// NewAESCipher creates a new AES cipher to be used for encryption and decryption. If one already exists, it is used instead.
+func NewAESCipher() error {
+	if encryptionCipher != nil && len(decryptionCiphers) >= 1 {
+		return nil
+	}
+
 	key := make([]byte, keyLength)
 	if _, err := rand.Read(key); err != nil {
-		return nil, errors.Wrap(err, "failed to read key")
+		return errors.Wrap(err, "failed to read key")
 	}
 
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed ro create new cipher")
+		return errors.Wrap(err, "failed to create new cipher")
 	}
 
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to wrap cipher gcm")
+		return errors.Wrap(err, "failed to wrap cipher gcm")
 	}
 
 	nonce := make([]byte, gcm.NonceSize())
 	if _, err := rand.Read(nonce); err != nil {
-		return nil, errors.Wrap(err, "failed to read nonce")
+		return errors.Wrap(err, "failed to read nonce")
 	}
 
-	return &AESCipher{
+	newCipher := &aesCipher{
 		key:    key,
 		cipher: gcm,
 		nonce:  nonce,
-	}, nil
+	}
+
+	addCipher(newCipher)
+	encryptionCipher = newCipher
+	return nil
 }
 
-func AESCipherFromString(data string) (aesCipher *AESCipher, initErr error) {
+func aesCipherFromString(data string) (newCipher *aesCipher, initErr error) {
 	defer func() {
 		if r := recover(); r != nil {
 			initErr = errors.Errorf("cipher init recovered from panic: %v", r)
@@ -82,7 +165,7 @@ func AESCipherFromString(data string) (aesCipher *AESCipher, initErr error) {
 		return
 	}
 
-	aesCipher = &AESCipher{
+	newCipher = &aesCipher{
 		key:    key,
 		cipher: gcm,
 		nonce:  decoded[keyLength:],
@@ -91,18 +174,15 @@ func AESCipherFromString(data string) (aesCipher *AESCipher, initErr error) {
 	return
 }
 
-func (c *AESCipher) ToString() string {
-	if c == nil {
+// ToString returns a string representation of the global encryption key
+func ToString() string {
+	if encryptionCipher == nil {
 		return ""
 	}
-	return base64.StdEncoding.EncodeToString(append(c.key, c.nonce...))
+	return base64.StdEncoding.EncodeToString(append(encryptionCipher.key, encryptionCipher.nonce...))
 }
 
-func (c *AESCipher) Encrypt(in []byte) []byte {
-	return c.cipher.Seal(nil, c.nonce, in, nil)
-}
-
-func (c *AESCipher) Decrypt(in []byte) (result []byte, err error) {
+func (c *aesCipher) decrypt(in []byte) (result []byte, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = errors.Errorf("decrypt recovered from panic: %v", r)
@@ -111,4 +191,26 @@ func (c *AESCipher) Decrypt(in []byte) (result []byte, err error) {
 
 	result, err = c.cipher.Open(nil, c.nonce, in, nil)
 	return
+}
+
+// Encrypt encrypts the data with the registered encryption key
+func Encrypt(in []byte) []byte {
+	if encryptionCipher == nil {
+		_ = NewAESCipher()
+	}
+
+	return encryptionCipher.cipher.Seal(nil, encryptionCipher.nonce, in, nil)
+}
+
+// Decrypt attempts to decrypt the provided data with all registered keys
+func Decrypt(in []byte) (result []byte, err error) {
+	for _, decryptCipher := range decryptionCiphers {
+		result, err = decryptCipher.decrypt(in)
+		if err != nil {
+			continue
+		} else {
+			return result, nil
+		}
+	}
+	return nil, err
 }

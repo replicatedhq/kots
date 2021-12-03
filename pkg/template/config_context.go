@@ -74,7 +74,7 @@ type ConfigCtx struct {
 }
 
 // newConfigContext creates and returns a context for template rendering
-func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, existingValues map[string]ItemValue, localRegistry LocalRegistry, cipher *crypto.AESCipher, license *kotsv1beta1.License, app *kotsv1beta1.Application, info *VersionInfo, dockerHubRegistry registry.RegistryOptions, appSlug string) (*ConfigCtx, error) {
+func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, existingValues map[string]ItemValue, localRegistry LocalRegistry, license *kotsv1beta1.License, app *kotsv1beta1.Application, info *VersionInfo, dockerHubRegistry registry.RegistryOptions, appSlug string) (*ConfigCtx, error) {
 	configCtx := &ConfigCtx{
 		ItemValues:        existingValues,
 		LocalRegistry:     localRegistry,
@@ -103,7 +103,7 @@ func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, exist
 			if configItem.Type == "password" {
 				existingVal, ok := existingValues[configItem.Name]
 				if ok && existingVal.HasValue() {
-					val, err := decrypt(existingVal.ValueStr(), cipher)
+					val, err := decrypt(existingVal.ValueStr())
 					if err == nil {
 						existingVal.Value = val
 						existingValues[configItem.Name] = existingVal
@@ -397,17 +397,13 @@ func (ctx ConfigCtx) getConfigOptionValue(itemName string) (string, error) {
 	return val.DefaultStr(), nil
 }
 
-func decrypt(input string, cipher *crypto.AESCipher) (string, error) {
-	if cipher == nil {
-		return "", errors.New("cipher not defined")
-	}
-
+func decrypt(input string) (string, error) {
 	decoded, err := base64.StdEncoding.DecodeString(input)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to base64 decode")
 	}
 
-	decrypted, err := cipher.Decrypt(decoded)
+	decrypted, err := crypto.Decrypt(decoded)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to decrypt")
 	}
