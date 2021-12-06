@@ -22,8 +22,15 @@ type AppUpdateCheckRequest struct {
 }
 
 type AppUpdateCheckResponse struct {
-	AvailableUpdates   int64 `json:"availableUpdates"`
-	CurrentAppSequence int64 `json:"currentAppSequence"`
+	AvailableUpdates   int64              `json:"availableUpdates"`
+	CurrentAppSequence int64              `json:"currentAppSequence"`
+	DeployedRelease    AppUpdateRelease   `json:"deployedRelease"`
+	AvailableReleases  []AppUpdateRelease `json:"availableReleases"`
+}
+
+type AppUpdateRelease struct {
+	Sequence int64  `json:"sequence"`
+	Version  string `json:"version"`
 }
 
 func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
@@ -52,7 +59,7 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 			SkipPreflights:     skipPreflights,
 			IsCLI:              isCLI,
 		}
-		availableUpdates, err := updatechecker.CheckForUpdates(opts)
+		ucr, err := updatechecker.CheckForUpdates(opts)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to check for updates"))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -72,9 +79,25 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		appUpdateCheckResponse := AppUpdateCheckResponse{
-			AvailableUpdates:   availableUpdates,
-			CurrentAppSequence: a.CurrentSequence,
+		var appUpdateCheckResponse AppUpdateCheckResponse
+		if ucr != nil {
+			var availableReleases []AppUpdateRelease
+			for _, r := range ucr.AvailableReleases {
+				availableReleases = append(availableReleases, AppUpdateRelease{
+					Sequence: r.Sequence,
+					Version:  r.Version,
+				})
+			}
+
+			appUpdateCheckResponse = AppUpdateCheckResponse{
+				AvailableUpdates:   ucr.AvailableUpdates,
+				CurrentAppSequence: a.CurrentSequence,
+				DeployedRelease: AppUpdateRelease{
+					Sequence: ucr.DeployedRelease.Sequence,
+					Version:  ucr.DeployedRelease.Version,
+				},
+				AvailableReleases: availableReleases,
+			}
 		}
 
 		JSON(w, http.StatusOK, appUpdateCheckResponse)
@@ -143,7 +166,7 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			finishedChan <- err
 
-			logger.Error(errors.Wrap(err, "failed to upgrde app"))
+			logger.Error(errors.Wrap(err, "failed to upgrade app"))
 			w.WriteHeader(http.StatusInternalServerError)
 
 			cause := errors.Cause(err)

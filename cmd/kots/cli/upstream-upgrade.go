@@ -15,12 +15,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-type UpstreamUpgradeOutput struct {
-	Success          bool   `json:"success"`
-	AvailableUpdates int64  `json:"availableUpdates,omitempty"`
-	Error            string `json:"error,omitempty"`
-}
-
 func UpstreamUpgradeCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           "upgrade [appSlug]",
@@ -101,19 +95,17 @@ func UpstreamUpgradeCmd() *cobra.Command {
 				}
 			}()
 
-			var upgradeOutput UpstreamUpgradeOutput
 			res, err := upstream.Upgrade(appSlug, upgradeOptions)
-			if err != nil && output == "" {
-				return err
-			} else if err != nil {
-				upgradeOutput.Error = fmt.Sprint(err)
+			if err != nil {
+				res = &upstream.UpgradeResponse{
+					Error: fmt.Sprint(err),
+				}
 			} else {
-				upgradeOutput.Success = true
-				upgradeOutput.AvailableUpdates = res.AvailableUpdates
+				res.Success = true
 			}
 
 			if output == "json" {
-				outputJSON, err := json.Marshal(upgradeOutput)
+				outputJSON, err := json.Marshal(res)
 				if err != nil {
 					return errors.Wrap(err, "error marshaling JSON")
 				}

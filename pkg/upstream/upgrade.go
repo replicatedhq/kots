@@ -24,7 +24,16 @@ import (
 )
 
 type UpgradeResponse struct {
-	AvailableUpdates int64
+	Success           bool             `json:"success"`
+	AvailableUpdates  int64            `json:"availableUpdates"`
+	DeployedRelease   UpgradeRelease   `json:"deployedRelease"`
+	AvailableReleases []UpgradeRelease `json:"availableReleases,omitempty"`
+	Error             string           `json:"error,omitempty"`
+}
+
+type UpgradeRelease struct {
+	Sequence int64  `json:"sequence"`
+	Version  string `json:"version"`
 }
 
 type UpgradeOptions struct {
@@ -206,11 +215,8 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 		return nil, errors.Errorf("Unexpected response from the API: %d", resp.StatusCode)
 	}
 
-	type updateCheckResponse struct {
-		AvailableUpdates int64 `json:"availableUpdates"`
-	}
-	ucr := updateCheckResponse{}
-	if err := json.Unmarshal(b, &ucr); err != nil {
+	ur := UpgradeResponse{}
+	if err := json.Unmarshal(b, &ur); err != nil {
 		return nil, errors.Wrap(err, "failed to parse response")
 	}
 
@@ -220,12 +226,10 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 		if airgapPath != "" {
 			log.ActionWithoutSpinner("")
 			log.ActionWithoutSpinner("Update has been uploaded and is being deployed")
-			return &UpgradeResponse{
-				AvailableUpdates: ucr.AvailableUpdates,
-			}, nil
+			return &ur, nil
 		}
 
-		if ucr.AvailableUpdates == 0 {
+		if ur.AvailableUpdates == 0 {
 			log.ActionWithoutSpinner("")
 			if options.Deploy {
 				log.ActionWithoutSpinner("There are no application updates available, ensuring latest is marked as deployed")
@@ -234,31 +238,29 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 			}
 		} else if options.Deploy {
 			log.ActionWithoutSpinner("")
-			log.ActionWithoutSpinner(fmt.Sprintf("There are currently %d updates available in the Admin Console, when the latest release is downloaded, it will be deployed", ucr.AvailableUpdates))
+			log.ActionWithoutSpinner(fmt.Sprintf("There are currently %d updates available in the Admin Console, when the latest release is downloaded, it will be deployed", ur.AvailableUpdates))
 		} else {
 			log.ActionWithoutSpinner("")
-			log.ActionWithoutSpinner(fmt.Sprintf("There are currently %d updates available in the Admin Console, when the release with the %s version label is downloaded, it will be deployed", ucr.AvailableUpdates, options.DeployVersionLabel))
+			log.ActionWithoutSpinner(fmt.Sprintf("There are currently %d updates available in the Admin Console, when the release with the %s version label is downloaded, it will be deployed", ur.AvailableUpdates, options.DeployVersionLabel))
 		}
 
 		log.ActionWithoutSpinner("")
 		log.ActionWithoutSpinner("To access the Admin Console, run kubectl kots admin-console --namespace %s", options.Namespace)
 		log.ActionWithoutSpinner("")
 
-		return &UpgradeResponse{
-			AvailableUpdates: ucr.AvailableUpdates,
-		}, nil
+		return &ur, nil
 	}
 
 	if airgapPath != "" {
 		log.ActionWithoutSpinner("")
 		log.ActionWithoutSpinner("Update has been uploaded")
 	} else {
-		if ucr.AvailableUpdates == 0 {
+		if ur.AvailableUpdates == 0 {
 			log.ActionWithoutSpinner("")
 			log.ActionWithoutSpinner("There are no application updates available")
 		} else {
 			log.ActionWithoutSpinner("")
-			log.ActionWithoutSpinner(fmt.Sprintf("There are currently %d updates available in the Admin Console", ucr.AvailableUpdates))
+			log.ActionWithoutSpinner(fmt.Sprintf("There are currently %d updates available in the Admin Console", ur.AvailableUpdates))
 		}
 	}
 
@@ -267,9 +269,7 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 		log.ActionWithoutSpinner("")
 	}
 
-	return &UpgradeResponse{
-		AvailableUpdates: ucr.AvailableUpdates,
-	}, nil
+	return &ur, nil
 }
 
 func createPartFromFile(partWriter *multipart.Writer, path string, fileName string) error {
