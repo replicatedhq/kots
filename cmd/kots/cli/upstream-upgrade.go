@@ -104,12 +104,9 @@ func UpstreamUpgradeCmd() *cobra.Command {
 				res.Success = true
 			}
 
-			if output == "json" {
-				outputJSON, err := json.Marshal(res)
-				if err != nil {
-					return errors.Wrap(err, "error marshaling JSON")
-				}
-				log.Info(string(outputJSON))
+			err = logUpstreamUpgrade(res, output)
+			if err != nil {
+				return err
 			}
 
 			return nil
@@ -132,4 +129,28 @@ func UpstreamUpgradeCmd() *cobra.Command {
 	cmd.Flags().MarkHidden("debug")
 
 	return cmd
+}
+
+func logUpstreamUpgrade(res *upstream.UpgradeResponse, output string) error {
+	log := logger.NewCLILogger()
+	if output == "json" {
+		outputJSON, err := json.Marshal(res)
+		if err != nil {
+			return errors.Wrap(err, "error marshaling JSON")
+		}
+		log.Info(string(outputJSON))
+		return nil
+	}
+
+	// text output
+	if res.Error != "" {
+		log.ActionWithoutSpinner(res.Error)
+	} else {
+		log.ActionWithoutSpinner(fmt.Sprintf("Currently deployed release: sequence %v, version %v", res.DeployedRelease.Sequence, res.DeployedRelease.Version))
+		for _, r := range res.AvailableReleases {
+			log.ActionWithoutSpinner(fmt.Sprintf("Downloading available release: sequence %v, version %v", r.Sequence, r.Version))
+		}
+	}
+
+	return nil
 }
