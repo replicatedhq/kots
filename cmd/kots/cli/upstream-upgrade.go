@@ -104,7 +104,7 @@ func UpstreamUpgradeCmd() *cobra.Command {
 				res.Success = true
 			}
 
-			err = logUpstreamUpgrade(res, output)
+			err = logUpstreamUpgrade(log, res, output)
 			if err != nil {
 				return err
 			}
@@ -131,8 +131,7 @@ func UpstreamUpgradeCmd() *cobra.Command {
 	return cmd
 }
 
-func logUpstreamUpgrade(res *upstream.UpgradeResponse, output string) error {
-	log := logger.NewCLILogger()
+func logUpstreamUpgrade(log *logger.CLILogger, res *upstream.UpgradeResponse, output string) error {
 	if output == "json" {
 		outputJSON, err := json.Marshal(res)
 		if err != nil {
