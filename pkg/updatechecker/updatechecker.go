@@ -178,7 +178,7 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 
 	if currentStatus == "running" {
 		logger.Debug("update-download is already running, not starting a new one")
-		return nil, nil // todo: this results in weird json output
+		return nil, nil
 	}
 
 	if err := store.GetStore().ClearTaskStatus("update-download"); err != nil {
