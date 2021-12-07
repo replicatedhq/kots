@@ -156,7 +156,7 @@ type CheckForUpdatesOpts struct {
 
 type UpdateCheckResponse struct {
 	AvailableUpdates  int64
-	DeployedRelease   UpdateCheckRelease
+	CurrentRelease    UpdateCheckRelease
 	AvailableReleases []UpdateCheckRelease
 }
 
@@ -260,7 +260,7 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 
 	ucr := UpdateCheckResponse{
 		AvailableUpdates: int64(len(updates)),
-		DeployedRelease: UpdateCheckRelease{
+		CurrentRelease: UpdateCheckRelease{
 			Sequence: appVersions.CurrentVersion.Sequence,
 			Version:  appVersions.CurrentVersion.VersionLabel,
 		},

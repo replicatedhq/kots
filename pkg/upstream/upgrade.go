@@ -26,7 +26,7 @@ import (
 type UpgradeResponse struct {
 	Success           bool             `json:"success"`
 	AvailableUpdates  int64            `json:"availableUpdates"`
-	DeployedRelease   *UpgradeRelease  `json:"deployedRelease,omitempty"`
+	CurrentRelease    *UpgradeRelease  `json:"currentRelease,omitempty"`
 	AvailableReleases []UpgradeRelease `json:"availableReleases,omitempty"`
 	Error             string           `json:"error,omitempty"`
 }

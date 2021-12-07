@@ -146,8 +146,8 @@ func logUpstreamUpgrade(res *upstream.UpgradeResponse, output string) error {
 	if res.Error != "" {
 		log.ActionWithoutSpinner(res.Error)
 	} else {
-		if res.DeployedRelease != nil {
-			log.ActionWithoutSpinner(fmt.Sprintf("Currently deployed release: sequence %v, version %v", res.DeployedRelease.Sequence, res.DeployedRelease.Version))
+		if res.CurrentRelease != nil {
+			log.ActionWithoutSpinner(fmt.Sprintf("Currently deployed release: sequence %v, version %v", res.CurrentRelease.Sequence, res.CurrentRelease.Version))
 		}
 
 		for _, r := range res.AvailableReleases {
