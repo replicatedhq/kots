@@ -591,6 +591,7 @@ jobs:
           echo ${{ secrets.MULTI_NAMESPACE_REGISTRY_AUTH }} | base64 -d > replicated-registry-auth.json
           kubectl -n nginx-test create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
           kubectl -n redis-test create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
+          kubectl -n redis-test create secret generic multi-namespace-yeti-redis-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
           kubectl -n postgres-test create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
 
           testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --branch ${{ steps.get_branch.outputs.GIT_BRANCH }} --report-file testim-report.xml --suite $SUITE_NAME --tunnel --tunnel-port 8800
@@ -648,6 +649,7 @@ jobs:
           echo ${{ secrets.MULTI_NAMESPACE_REGISTRY_AUTH }} | base64 -d > replicated-registry-auth.json
           kubectl -n nginx-test create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
           kubectl -n redis-test create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
+          kubectl -n redis-test create secret generic multi-namespace-yeti-redis-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
           kubectl -n postgres-test create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
           kubectl -n default create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
 
