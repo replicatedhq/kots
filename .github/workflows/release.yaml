@@ -513,7 +513,7 @@ jobs:
         GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
         GITOPS_OWNER: replicatedcom
         GITOPS_REPO: gitops-deploy
-        GITOPS_BRANCH: master
+        GITOPS_BRANCH: main
         RUN_ID: ${{ github.run_id }}
       run: ./hack/deploy-kgrid.sh
 

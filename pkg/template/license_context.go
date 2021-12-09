@@ -28,7 +28,7 @@ func (ctx licenseCtx) licenseFieldValue(name string) string {
 		return ""
 	}
 
-	// Update docs at https://github.com/replicatedhq/kots.io/blob/master/content/reference/template-functions/license-context.md
+	// Update docs at https://github.com/replicatedhq/kots.io/blob/main/content/reference/template-functions/license-context.md
 	// when adding new values
 	switch name {
 	case "isGitOpsSupported":

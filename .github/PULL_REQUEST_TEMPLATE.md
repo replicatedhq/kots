@@ -1,9 +1,9 @@
 <!--  Thanks for sending a pull request!  Here are some tips for you:
 
 1. If this is your first time, please read our contributor guidelines here:
-https://github.com/replicatedhq/kots/blob/master/CONTRIBUTING.md.
+https://github.com/replicatedhq/kots/blob/main/CONTRIBUTING.md.
 2. Ensure you have added appropriate tests for your PR. For more information read here:
-https://github.com/replicatedhq/kots/blob/master/CONTRIBUTING.md#testing
+https://github.com/replicatedhq/kots/blob/main/CONTRIBUTING.md#testing
 3. If the PR is unfinished, please mark it as a draft.
 -->
 

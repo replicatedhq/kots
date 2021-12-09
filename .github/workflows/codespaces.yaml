@@ -2,7 +2,7 @@ name: prebuild codespace
 on:
   push:
     branches:
-    - master
+    - main
     - codespaces-sandbox
   workflow_dispatch: 
 

@@ -16,5 +16,5 @@ After installing, verify it's working with
 kubectl kots version
 ```
 
-For additional installation options, visit the [advanced installation options](https://github.com/replicatedhq/kots/blob/master/docs/installing/advanced.md) documentation.
+For additional installation options, visit the [advanced installation options](https://github.com/replicatedhq/kots/blob/main/docs/installing/advanced.md) documentation.
 
