@@ -629,6 +629,7 @@ func createConfigValues(applicationName string, config *kotsv1beta1.Config, exis
 		ApplicationInfo: appInfo,
 		VersionInfo:     versionInfo,
 		IdentityConfig:  identityConfig,
+		DecryptValues:   true,
 	}
 	builder, _, err := template.NewBuilder(builderOptions)
 	if err != nil {

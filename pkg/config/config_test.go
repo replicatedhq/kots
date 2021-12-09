@@ -363,7 +363,7 @@ spec:
 			configObj, _, _ := decode([]byte(tt.configSpecData), nil, nil)
 
 			localRegistry := template.LocalRegistry{}
-			got, err := templateConfigObjects(configObj.(*kotsv1beta1.Config), tt.configValuesData, license, app, localRegistry, versionInfo, appInfo, nil, "app-namespace", MarshalConfig)
+			got, err := templateConfigObjects(configObj.(*kotsv1beta1.Config), tt.configValuesData, license, app, localRegistry, versionInfo, appInfo, nil, "app-namespace", false, MarshalConfig)
 			req.NoError(err)
 
 			gotObj, _, err := decode([]byte(got), nil, nil)
@@ -372,7 +372,7 @@ spec:
 			req.Equal(wantObj, gotObj)
 
 			// compare with oldMarshalConfig results
-			got, err = templateConfigObjects(configObj.(*kotsv1beta1.Config), tt.configValuesData, license, app, localRegistry, versionInfo, appInfo, nil, "app-namespace", oldMarshalConfig)
+			got, err = templateConfigObjects(configObj.(*kotsv1beta1.Config), tt.configValuesData, license, app, localRegistry, versionInfo, appInfo, nil, "app-namespace", false, oldMarshalConfig)
 			if !tt.expectOldFail {
 				req.NoError(err)
 

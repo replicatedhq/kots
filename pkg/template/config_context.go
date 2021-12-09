@@ -68,13 +68,14 @@ type ConfigCtx struct {
 	LocalRegistry     LocalRegistry
 	DockerHubRegistry registry.RegistryOptions
 	AppSlug           string
+	DecryptValues     bool
 
 	license *kotsv1beta1.License // Another agument for unifying all these contexts
 	app     *kotsv1beta1.Application
 }
 
 // newConfigContext creates and returns a context for template rendering
-func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, existingValues map[string]ItemValue, localRegistry LocalRegistry, license *kotsv1beta1.License, app *kotsv1beta1.Application, info *VersionInfo, dockerHubRegistry registry.RegistryOptions, appSlug string) (*ConfigCtx, error) {
+func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, existingValues map[string]ItemValue, localRegistry LocalRegistry, license *kotsv1beta1.License, app *kotsv1beta1.Application, info *VersionInfo, dockerHubRegistry registry.RegistryOptions, appSlug string, decryptValues bool) (*ConfigCtx, error) {
 	configCtx := &ConfigCtx{
 		ItemValues:        existingValues,
 		LocalRegistry:     localRegistry,
@@ -82,6 +83,7 @@ func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, exist
 		AppSlug:           appSlug,
 		license:           license,
 		app:               app,
+		DecryptValues:     decryptValues,
 	}
 
 	builder := Builder{
@@ -100,7 +102,7 @@ func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, exist
 			configItemsByName[configItem.Name] = configItem
 
 			// decrypt password if it exists
-			if configItem.Type == "password" {
+			if configItem.Type == "password" && configCtx.DecryptValues {
 				existingVal, ok := existingValues[configItem.Name]
 				if ok && existingVal.HasValue() {
 					val, err := decrypt(existingVal.ValueStr())

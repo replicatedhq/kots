@@ -65,6 +65,7 @@ func NewConfigContextTemplateBuilder(u *upstreamtypes.Upstream, renderOptions *R
 		ApplicationInfo: &appInfo,
 		IdentityConfig:  kotsKinds.IdentityConfig,
 		Namespace:       renderOptions.Namespace,
+		DecryptValues:   true,
 	}
 	builder, itemValues, err := template.NewBuilder(builderOptions)
 	if err != nil {
