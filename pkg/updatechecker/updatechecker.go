@@ -158,6 +158,7 @@ type UpdateCheckResponse struct {
 	AvailableUpdates  int64
 	CurrentRelease    UpdateCheckRelease
 	AvailableReleases []UpdateCheckRelease
+	DeployingRelease  UpdateCheckRelease
 }
 
 type UpdateCheckRelease struct {
@@ -265,6 +266,7 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 			Version:  appVersions.CurrentVersion.VersionLabel,
 		},
 		AvailableReleases: availableReleases,
+		DeployingRelease:  getVersionToDeploy(opts, d.ClusterID, availableReleases),
 	}
 
 	if len(updates) == 0 {
@@ -336,6 +338,49 @@ func ensureDesiredVersionIsDeployed(opts CheckForUpdatesOpts, clusterID string) 
 	}
 
 	return nil
+}
+
+func getVersionToDeploy(opts CheckForUpdatesOpts, clusterID string, availableReleases []UpdateCheckRelease) UpdateCheckRelease {
+	appVersions, err := store.GetStore().GetAppVersions(opts.AppID, clusterID)
+	if err != nil {
+		return UpdateCheckRelease{}
+	}
+	if len(appVersions.AllVersions) == 0 {
+		return UpdateCheckRelease{}
+	}
+
+	// prepend updates
+	for _, u := range availableReleases {
+		appVersions.AllVersions = append([]*downstreamtypes.DownstreamVersion{{VersionLabel: u.Version, Sequence: u.Sequence}}, appVersions.AllVersions...)
+	}
+
+	if opts.DeployLatest && appVersions.AllVersions[0].Sequence != appVersions.CurrentVersion.Sequence {
+		return UpdateCheckRelease{
+			Sequence: appVersions.AllVersions[0].Sequence,
+			Version:  appVersions.AllVersions[0].VersionLabel,
+		}
+	}
+
+	if opts.DeployVersionLabel != "" {
+		var versionToDeploy *downstreamtypes.DownstreamVersion
+		for _, v := range appVersions.AllVersions {
+			if v.VersionLabel == opts.DeployVersionLabel {
+				versionToDeploy = v
+				break
+			}
+		}
+
+		if versionToDeploy != nil && versionToDeploy.Sequence != appVersions.CurrentVersion.Sequence {
+			return UpdateCheckRelease{
+				Sequence: versionToDeploy.Sequence,
+				Version:  versionToDeploy.VersionLabel,
+			}
+		}
+	}
+
+	// todo: get version to deploy for opts.AutoDeploy
+
+	return UpdateCheckRelease{}
 }
 
 func deployLatestVersion(opts CheckForUpdatesOpts, clusterID string) error {

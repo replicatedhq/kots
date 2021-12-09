@@ -28,6 +28,7 @@ type UpgradeResponse struct {
 	AvailableUpdates  int64            `json:"availableUpdates"`
 	CurrentRelease    *UpgradeRelease  `json:"currentRelease,omitempty"`
 	AvailableReleases []UpgradeRelease `json:"availableReleases,omitempty"`
+	DeployingRelease  *UpgradeRelease  `json:"deployingRelease,omitempty"`
 	Error             string           `json:"error,omitempty"`
 }
 
@@ -218,6 +219,9 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 	ur := UpgradeResponse{}
 	if err := json.Unmarshal(b, &ur); err != nil {
 		return nil, errors.Wrap(err, "failed to parse response")
+	}
+	if ur.DeployingRelease.Version == "" {
+		ur.DeployingRelease = nil
 	}
 
 	log.FinishSpinner()

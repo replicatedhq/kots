@@ -26,6 +26,7 @@ type AppUpdateCheckResponse struct {
 	CurrentAppSequence int64              `json:"currentAppSequence"`
 	CurrentRelease     AppUpdateRelease   `json:"currentRelease"`
 	AvailableReleases  []AppUpdateRelease `json:"availableReleases"`
+	DeployingRelease   AppUpdateRelease   `json:"deployingRelease"`
 }
 
 type AppUpdateRelease struct {
@@ -97,6 +98,10 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 					Version:  ucr.CurrentRelease.Version,
 				},
 				AvailableReleases: availableReleases,
+				DeployingRelease: AppUpdateRelease{
+					Sequence: ucr.DeployingRelease.Sequence,
+					Version:  ucr.DeployingRelease.Version,
+				},
 			}
 		}
 
