@@ -3,7 +3,6 @@ package base
 import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/template"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 )
@@ -28,15 +27,6 @@ func NewConfigContextTemplateBuilder(u *upstreamtypes.Upstream, renderOptions *R
 		templateContext = ctx
 	} else {
 		templateContext = map[string]template.ItemValue{}
-	}
-
-	var cipher *crypto.AESCipher
-	if u.EncryptionKey != "" {
-		c, err := crypto.AESCipherFromString(u.EncryptionKey)
-		if err != nil {
-			return nil, nil, errors.Wrap(err, "failed to create cipher")
-		}
-		cipher = c
 	}
 
 	configGroups := []kotsv1beta1.ConfigGroup{}
@@ -69,7 +59,6 @@ func NewConfigContextTemplateBuilder(u *upstreamtypes.Upstream, renderOptions *R
 		ConfigGroups:    configGroups,
 		ExistingValues:  templateContext,
 		LocalRegistry:   localRegistry,
-		Cipher:          cipher,
 		License:         kotsKinds.License,
 		Application:     &kotsKinds.KotsApplication,
 		VersionInfo:     &versionInfo,

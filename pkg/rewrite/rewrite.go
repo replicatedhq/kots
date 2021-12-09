@@ -200,7 +200,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		return errors.Wrap(err, "failed to create new config context template builder")
 	}
 
-	cipher, err := crypto.AESCipherFromString(rewriteOptions.Installation.Spec.EncryptionKey)
+	err = crypto.InitFromString(rewriteOptions.Installation.Spec.EncryptionKey)
 	if err != nil {
 		return errors.Wrap(err, "failed to create cipher from installation spec")
 	}
@@ -215,7 +215,6 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		AppSlug:            rewriteOptions.AppSlug,
 		IsGitOps:           rewriteOptions.IsGitOps,
 		IsOpenShift:        k8sutil.IsOpenShift(clientset),
-		Cipher:             *cipher,
 		Builder:            *builder,
 		HTTPProxyEnvValue:  rewriteOptions.HTTPProxyEnvValue,
 		HTTPSProxyEnvValue: rewriteOptions.HTTPSProxyEnvValue,

@@ -71,7 +71,7 @@ func NewBuilder(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.Re
 		}
 	}
 
-	appCipher, err := crypto.AESCipherFromString(kotsKinds.Installation.Spec.EncryptionKey)
+	err := crypto.InitFromString(kotsKinds.Installation.Spec.EncryptionKey)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load encryption cipher")
 	}
@@ -91,7 +91,6 @@ func NewBuilder(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.Re
 		ConfigGroups:    configGroups,
 		ExistingValues:  templateContextValues,
 		LocalRegistry:   localRegistry,
-		Cipher:          appCipher,
 		License:         kotsKinds.License,
 		Application:     &kotsKinds.KotsApplication,
 		ApplicationInfo: &appInfo,

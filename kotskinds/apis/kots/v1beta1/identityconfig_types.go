@@ -47,13 +47,13 @@ type StringValueOrEncrypted struct {
 	ValueEncrypted string `json:"valueEncrypted,omitempty" yaml:"valueEncrypted,omitempty"`
 }
 
-func NewStringValueOrEncrypted(value string, cipher crypto.AESCipher) *StringValueOrEncrypted {
+func NewStringValueOrEncrypted(value string) *StringValueOrEncrypted {
 	v := &StringValueOrEncrypted{Value: value}
-	v.EncryptValue(cipher)
+	v.EncryptValue()
 	return v
 }
 
-func (v *StringValueOrEncrypted) GetValue(cipher crypto.AESCipher) (string, error) {
+func (v *StringValueOrEncrypted) GetValue() (string, error) {
 	if v == nil {
 		return "", nil
 	}
@@ -62,17 +62,17 @@ func (v *StringValueOrEncrypted) GetValue(cipher crypto.AESCipher) (string, erro
 		if err != nil {
 			return "", errors.Wrap(err, "failed to base64 decode")
 		}
-		result, err := cipher.Decrypt(b)
+		result, err := crypto.Decrypt(b)
 		return string(result), errors.Wrap(err, "failed to decrypt")
 	}
 	return v.Value, nil
 }
 
-func (v *StringValueOrEncrypted) EncryptValue(cipher crypto.AESCipher) {
+func (v *StringValueOrEncrypted) EncryptValue() {
 	if v.ValueEncrypted != "" && v.Value == "" {
 		return
 	}
-	v.ValueEncrypted = base64.StdEncoding.EncodeToString(cipher.Encrypt([]byte(v.Value)))
+	v.ValueEncrypted = base64.StdEncoding.EncodeToString(crypto.Encrypt([]byte(v.Value)))
 	v.Value = ""
 }
 
@@ -99,13 +99,13 @@ type DexConnectors struct {
 	ValueFrom      *DexConnectorsSource `json:"valueFrom,omitempty" yaml:"valueFrom,omitempty"`
 }
 
-func (v *DexConnectors) GetValue(cipher crypto.AESCipher) ([]DexConnector, error) {
+func (v *DexConnectors) GetValue() ([]DexConnector, error) {
 	if v.ValueEncrypted != "" {
 		b, err := base64.StdEncoding.DecodeString(v.ValueEncrypted)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to base64 decode")
 		}
-		result, err := cipher.Decrypt(b)
+		result, err := crypto.Decrypt(b)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to decrypt")
 		}
@@ -118,7 +118,7 @@ func (v *DexConnectors) GetValue(cipher crypto.AESCipher) ([]DexConnector, error
 	return v.Value, nil
 }
 
-func (v *DexConnectors) EncryptValue(cipher crypto.AESCipher) error {
+func (v *DexConnectors) EncryptValue() error {
 	if v.ValueEncrypted != "" && len(v.Value) == 0 {
 		return nil
 	}
@@ -127,7 +127,7 @@ func (v *DexConnectors) EncryptValue(cipher crypto.AESCipher) error {
 	if err != nil {
 		return err
 	}
-	v.ValueEncrypted = base64.StdEncoding.EncodeToString(cipher.Encrypt(b))
+	v.ValueEncrypted = base64.StdEncoding.EncodeToString(crypto.Encrypt(b))
 	v.Value = nil
 	return nil
 }

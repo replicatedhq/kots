@@ -8,7 +8,6 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/kotsadmidentity/store"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/segmentio/ksuid"
@@ -31,7 +30,7 @@ func AppIdentityNeedsBootstrap(appSlug string) (bool, error) {
 	return true, nil
 }
 
-func InitAppIdentityConfig(appSlug string, storage kotsv1beta1.Storage, cipher crypto.AESCipher) (string, error) {
+func InitAppIdentityConfig(appSlug string, storage kotsv1beta1.Storage) (string, error) {
 	// support for the dev environment where app is in "test" namespace
 	host := "kotsadm-postgres"
 	if kotsadmNamespace := util.PodNamespace; kotsadmNamespace != "" {
@@ -41,7 +40,7 @@ func InitAppIdentityConfig(appSlug string, storage kotsv1beta1.Storage, cipher c
 	var postgresPassword string
 	if storage.PostgresConfig != nil {
 		var err error
-		postgresPassword, err = storage.PostgresConfig.Password.GetValue(cipher)
+		postgresPassword, err = storage.PostgresConfig.Password.GetValue()
 		if err != nil {
 			return "", errors.Wrap(err, "failed to get password value")
 		}

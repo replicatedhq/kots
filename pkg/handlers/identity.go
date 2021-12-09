@@ -13,7 +13,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/identity"
 	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
 	dextypes "github.com/replicatedhq/kots/pkg/identity/types/dex"
@@ -297,7 +296,7 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 
 	identityConfigFile := filepath.Join(archiveDir, "upstream", "userdata", "identityconfig.yaml")
 	if _, err := os.Stat(identityConfigFile); os.IsNotExist(err) {
-		f, err := kotsadmidentity.InitAppIdentityConfig(a.Slug, kotsv1beta1.Storage{}, crypto.AESCipher{})
+		f, err := kotsadmidentity.InitAppIdentityConfig(a.Slug, kotsv1beta1.Storage{})
 		if err != nil {
 			err = errors.Wrap(err, "failed to init identity config")
 			logger.Error(err)
@@ -330,15 +329,7 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 	}
 	identityConfig := *s
 
-	cipher, err := crypto.AESCipherFromString(kotsKinds.Installation.Spec.EncryptionKey)
-	if err != nil {
-		err = errors.Wrap(err, "failed to load encryption cipher")
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	dexConnectors, err := identityConfig.Spec.DexConnectors.GetValue(*cipher)
+	dexConnectors, err := identityConfig.Spec.DexConnectors.GetValue()
 	if err != nil {
 		err = errors.Wrap(err, "failed to decrypt dex connectors")
 		logger.Error(err)
@@ -718,15 +709,7 @@ func (h *Handler) GetAppIdentityServiceConfig(w http.ResponseWriter, r *http.Req
 	response.Enabled = kotsKinds.IdentityConfig.Spec.Enabled
 	response.Groups = kotsKinds.IdentityConfig.Spec.Groups
 
-	cipher, err := crypto.AESCipherFromString(kotsKinds.Installation.Spec.EncryptionKey)
-	if err != nil {
-		err = errors.Wrap(err, "failed to load encryption cipher")
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	dexConnectors, err := kotsKinds.IdentityConfig.Spec.DexConnectors.GetValue(*cipher)
+	dexConnectors, err := kotsKinds.IdentityConfig.Spec.DexConnectors.GetValue()
 	if err != nil {
 		err = errors.Wrap(err, "failed to decrypt dex connectors")
 		logger.Error(err)

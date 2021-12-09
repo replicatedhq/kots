@@ -3,8 +3,6 @@ package kotsstore
 import (
 	"database/sql"
 	"encoding/base64"
-	"os"
-
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -40,17 +38,12 @@ func (s *KOTSStore) GetRegistryDetailsForApp(appID string) (registrytypes.Regist
 		return registrySettings, nil
 	}
 
-	apiCipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
-	if err != nil {
-		return registrytypes.RegistrySettings{}, errors.Wrap(err, "failed to load apiCipher")
-	}
-
 	decodedPassword, err := base64.StdEncoding.DecodeString(registrySettings.PasswordEnc)
 	if err != nil {
 		return registrytypes.RegistrySettings{}, errors.Wrap(err, "failed to decode")
 	}
 
-	decryptedPassword, err := apiCipher.Decrypt([]byte(decodedPassword))
+	decryptedPassword, err := crypto.Decrypt([]byte(decodedPassword))
 	if err != nil {
 		return registrytypes.RegistrySettings{}, errors.Wrap(err, "failed to decrypt")
 	}
@@ -74,15 +67,10 @@ func (s *KOTSStore) UpdateRegistry(appID string, hostname string, username strin
 			return errors.Wrap(err, "failed to update registry settings")
 		}
 	} else {
-		cipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
-		if err != nil {
-			return errors.Wrap(err, "failed to create aes cipher")
-		}
-
-		passwordEnc := base64.StdEncoding.EncodeToString(cipher.Encrypt([]byte(password)))
+		passwordEnc := base64.StdEncoding.EncodeToString(crypto.Encrypt([]byte(password)))
 
 		query := `update app set registry_hostname = $1, registry_username = $2, registry_password_enc = $3, namespace = $4, registry_is_readonly = $5 where id = $6`
-		_, err = db.Exec(query, hostname, username, passwordEnc, namespace, isReadOnly, appID)
+		_, err := db.Exec(query, hostname, username, passwordEnc, namespace, isReadOnly, appID)
 		if err != nil {
 			return errors.Wrap(err, "failed to update registry settings")
 		}

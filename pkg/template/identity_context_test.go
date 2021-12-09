@@ -11,7 +11,7 @@ import (
 func TestIdentityContext(t *testing.T) {
 	req := require.New(t)
 
-	cipher, err := crypto.NewAESCipher()
+	err := crypto.NewAESCipher()
 	req.NoError(err)
 
 	// a properly populated identityCtx - should return the appropriate values
@@ -36,13 +36,12 @@ func TestIdentityContext(t *testing.T) {
 				},
 				IdentityServiceAddress: "https://dex.kotsadmdevenv.com",
 				ClientID:               "client-id",
-				ClientSecret:           kotsv1beta1.NewStringValueOrEncrypted("client-secret", *cipher),
+				ClientSecret:           kotsv1beta1.NewStringValueOrEncrypted("client-secret"),
 			},
 		},
 		appInfo: &ApplicationInfo{
 			Slug: "my-app",
 		},
-		cipher: cipher,
 	}
 
 	// an unpopulated identityCtx - should not error/panic

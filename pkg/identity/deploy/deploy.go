@@ -9,7 +9,6 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/identity/types"
 	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/ingress"
@@ -40,7 +39,6 @@ type Options struct {
 	ImageRewriteFn     kotsadmversion.ImageRewriteFunc
 	ProxyEnv           map[string]string
 	AdditionalLabels   map[string]string
-	Cipher             *crypto.AESCipher
 	Builder            *template.Builder
 }
 

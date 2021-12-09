@@ -6,7 +6,6 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/pkg/crypto"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/segmentio/ksuid"
 	corev1 "k8s.io/api/core/v1"
@@ -17,8 +16,8 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func EnsurePostgresSecret(ctx context.Context, clientset kubernetes.Interface, namespace, namePrefix string, cipher *crypto.AESCipher, config kotsv1beta.IdentityPostgresConfig, additionalLabels map[string]string) error {
-	secret, err := postgresSecretResource(namePrefix, cipher, config, additionalLabels)
+func EnsurePostgresSecret(ctx context.Context, clientset kubernetes.Interface, namespace, namePrefix string, config kotsv1beta.IdentityPostgresConfig, additionalLabels map[string]string) error {
+	secret, err := postgresSecretResource(namePrefix, config, additionalLabels)
 	if err != nil {
 		return err
 	}
@@ -47,10 +46,10 @@ func EnsurePostgresSecret(ctx context.Context, clientset kubernetes.Interface, n
 	return nil
 }
 
-func RenderPostgresSecret(ctx context.Context, namePrefix string, cipher *crypto.AESCipher, config kotsv1beta.IdentityPostgresConfig, additionalLabels map[string]string) ([]byte, error) {
+func RenderPostgresSecret(ctx context.Context, namePrefix string, config kotsv1beta.IdentityPostgresConfig, additionalLabels map[string]string) ([]byte, error) {
 	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
-	secret, err := postgresSecretResource(namePrefix, cipher, config, additionalLabels)
+	secret, err := postgresSecretResource(namePrefix, config, additionalLabels)
 	if err != nil {
 		return nil, err
 	}
@@ -67,15 +66,11 @@ func GetPostgresSecret(ctx context.Context, clientset kubernetes.Interface, name
 	return clientset.CoreV1().Secrets(namespace).Get(ctx, prefixName(namePrefix, "dex-postgres"), metav1.GetOptions{})
 }
 
-func postgresSecretResource(namePrefix string, cipher *crypto.AESCipher, config kotsv1beta.IdentityPostgresConfig, additionalLabels map[string]string) (*corev1.Secret, error) {
+func postgresSecretResource(namePrefix string, config kotsv1beta.IdentityPostgresConfig, additionalLabels map[string]string) (*corev1.Secret, error) {
 	password := ""
 	if config.Password != nil {
 		// NOTE: we do not encrypt kotsadm config
-		if cipher == nil && config.Password.ValueEncrypted != "" {
-			return nil, errors.New("cannot decrypt password without cipher")
-		}
-
-		p, err := config.Password.GetValue(*cipher)
+		p, err := config.Password.GetValue()
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to decrypt password")
 		}

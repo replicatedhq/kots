@@ -53,11 +53,11 @@ func getSecretsYAML(deployOptions *types.DeployOptions) (map[string][]byte, erro
 	docs["secret-shared-password.yaml"] = sharedPassword.Bytes()
 
 	if deployOptions.APIEncryptionKey == "" {
-		cipher, err := crypto.NewAESCipher()
+		err := crypto.NewAESCipher()
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create new API encryption key")
 		}
-		deployOptions.APIEncryptionKey = cipher.ToString()
+		deployOptions.APIEncryptionKey = crypto.ToString()
 	}
 	var apiEncryptionBuffer bytes.Buffer
 	if err := s.Encode(kotsadmobjects.ApiEncryptionKeySecret(deployOptions.Namespace, deployOptions.APIEncryptionKey), &apiEncryptionBuffer); err != nil {
@@ -113,7 +113,7 @@ func ensureSecrets(deployOptions *types.DeployOptions, clientset *kubernetes.Cli
 			Database: "dex",
 			User:     "dex",
 		}
-		if err := identitydeploy.EnsurePostgresSecret(context.TODO(), clientset, deployOptions.Namespace, "kotsadm", nil, postgresConfig, nil); err != nil {
+		if err := identitydeploy.EnsurePostgresSecret(context.TODO(), clientset, deployOptions.Namespace, "kotsadm", postgresConfig, nil); err != nil {
 			return errors.Wrap(err, "failed to ensure postgres secret for identity")
 		}
 	}
@@ -320,11 +320,11 @@ func ensureAPIEncryptionSecret(deployOptions *types.DeployOptions, clientset *ku
 	}
 
 	if deployOptions.APIEncryptionKey == "" {
-		cipher, err := crypto.NewAESCipher()
+		err = crypto.NewAESCipher()
 		if err != nil {
 			return errors.Wrap(err, "failed to create new AES cipher")
 		}
-		deployOptions.APIEncryptionKey = cipher.ToString()
+		deployOptions.APIEncryptionKey = crypto.ToString()
 	}
 
 	_, err = clientset.CoreV1().Secrets(deployOptions.Namespace).Create(context.TODO(), kotsadmobjects.ApiEncryptionKeySecret(deployOptions.Namespace, deployOptions.APIEncryptionKey), metav1.CreateOptions{})

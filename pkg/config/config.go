@@ -47,7 +47,6 @@ func templateConfigObjects(configSpec *kotsv1beta1.Config, configValues map[stri
 		ConfigGroups:    configSpec.Spec.Groups,
 		ExistingValues:  configValues,
 		LocalRegistry:   localRegistry,
-		Cipher:          nil,
 		License:         license,
 		Application:     app,
 		VersionInfo:     versionInfo,

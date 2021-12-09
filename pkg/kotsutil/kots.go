@@ -69,11 +69,6 @@ func (k *KotsKinds) EncryptConfigValues() error {
 		return nil
 	}
 
-	cipher, err := crypto.AESCipherFromString(k.Installation.Spec.EncryptionKey)
-	if err != nil {
-		return errors.Wrap(err, "failed to create cipher from installation spec")
-	}
-
 	updated := map[string]kotsv1beta1.ConfigValue{}
 
 	for name, configValue := range k.ConfigValues.Spec.Values {
@@ -100,7 +95,7 @@ func (k *KotsKinds) EncryptConfigValues() error {
 				return errors.Errorf("Cannot encrypt item %q because item type was %q (not password)", name, configItemType)
 			}
 
-			encrypted := cipher.Encrypt([]byte(configValue.ValuePlaintext))
+			encrypted := crypto.Encrypt([]byte(configValue.ValuePlaintext))
 			encoded := base64.StdEncoding.EncodeToString(encrypted)
 
 			configValue.Value = encoded
@@ -120,11 +115,6 @@ func (k *KotsKinds) DecryptConfigValues() error {
 		return nil
 	}
 
-	cipher, err := crypto.AESCipherFromString(k.Installation.Spec.EncryptionKey)
-	if err != nil {
-		return errors.Wrap(err, "failed to create cipher from installation spec")
-	}
-
 	updated := map[string]kotsv1beta1.ConfigValue{}
 
 	for name, configValue := range k.ConfigValues.Spec.Values {
@@ -139,7 +129,7 @@ func (k *KotsKinds) DecryptConfigValues() error {
 			if err != nil {
 				continue
 			}
-			decrypted, err := cipher.Decrypt(decoded)
+			decrypted, err := crypto.Decrypt(decoded)
 			if err != nil {
 				continue
 			}

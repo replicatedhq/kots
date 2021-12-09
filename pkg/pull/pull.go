@@ -401,7 +401,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		return "", errors.Wrap(err, "failed to load installation")
 	}
 
-	cipher, err := crypto.AESCipherFromString(newInstallation.Spec.EncryptionKey)
+	err = crypto.InitFromString(newInstallation.Spec.EncryptionKey)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to load encryption cipher")
 	}
@@ -410,7 +410,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		AppSlug:            pullOptions.AppSlug,
 		IsGitOps:           pullOptions.IsGitOps,
 		IsOpenShift:        k8sutil.IsOpenShift(clientset),
-		Cipher:             *cipher,
 		Builder:            *builder,
 		HTTPProxyEnvValue:  pullOptions.HTTPProxyEnvValue,
 		HTTPSProxyEnvValue: pullOptions.HTTPSProxyEnvValue,

@@ -21,7 +21,6 @@ func getDexConfig(ctx context.Context, issuerURL string, options Options) ([]byt
 	identitySpec := options.IdentitySpec
 	identityConfigSpec := options.IdentityConfigSpec
 	builder := options.Builder
-	cipher := options.Cipher
 
 	redirectURIs, err := buildIdentitySpecOIDCRedirectURIs(identitySpec.OIDCRedirectURIs, builder)
 	if err != nil {
@@ -88,17 +87,9 @@ func getDexConfig(ctx context.Context, issuerURL string, options Options) ([]byt
 		EnablePasswordDB: false,
 	}
 
-	dexConnectors := []kotsv1beta1.DexConnector{}
-	if cipher != nil {
-		dexConnectors, err = identityConfigSpec.DexConnectors.GetValue(*cipher)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to decrypt dex connectors")
-		}
-	} else if identityConfigSpec.DexConnectors.ValueEncrypted != "" {
-		return nil, errors.New("cipher required")
-	} else {
-		// NOTE: we do not encrypt kotsadm config
-		dexConnectors = identityConfigSpec.DexConnectors.Value
+	dexConnectors, err := identityConfigSpec.DexConnectors.GetValue()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decrypt dex connectors")
 	}
 
 	connectors := []kotsv1beta1.DexConnector{}

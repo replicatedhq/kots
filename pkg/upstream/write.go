@@ -67,7 +67,7 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to get encryption key")
 	}
-	u.EncryptionKey = encryptionKey
+	_ = crypto.InitFromString(encryptionKey)
 
 	for i, file := range u.Files {
 		fileRenderPath := path.Join(renderDir, file.Path)
@@ -81,7 +81,7 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 		if options.EncryptConfig {
 			configValues := contentToConfigValues(file.Content)
 			if configValues != nil {
-				content, err := encryptConfigValues(configValues, encryptionKey)
+				content, err := encryptConfigValues(configValues)
 				if err != nil {
 					return errors.Wrap(err, "failed to encrypt config values")
 				}
@@ -92,7 +92,7 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 
 		identityConfig := contentToIdentityConfig(file.Content)
 		if identityConfig != nil {
-			content, err := maybeEncryptIdentityConfig(identityConfig, encryptionKey)
+			content, err := maybeEncryptIdentityConfig(identityConfig)
 			if err != nil {
 				return errors.Wrap(err, "failed to encrypt identity config")
 			}
@@ -152,12 +152,7 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 
 func getEncryptionKey(prevInstallation *kotsv1beta1.Installation) (string, error) {
 	if prevInstallation == nil {
-		cipher, err := crypto.NewAESCipher()
-		if err != nil {
-			return "", errors.Wrap(err, "failed to create new AES cipher")
-		}
-
-		return cipher.ToString(), nil
+		return "", nil
 	}
 
 	return prevInstallation.Spec.EncryptionKey, nil
@@ -174,17 +169,13 @@ func mustMarshalInstallation(installation *kotsv1beta1.Installation) []byte {
 	return b.Bytes()
 }
 
-func encryptConfigValues(configValues *kotsv1beta1.ConfigValues, encryptionKey string) ([]byte, error) {
-	cipher, err := crypto.AESCipherFromString(encryptionKey)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to load encryption cipher")
-	}
+func encryptConfigValues(configValues *kotsv1beta1.ConfigValues) ([]byte, error) {
 	for k, v := range configValues.Spec.Values {
 		if v.ValuePlaintext == "" {
 			continue
 		}
 
-		v.Value = base64.StdEncoding.EncodeToString(cipher.Encrypt([]byte(v.ValuePlaintext)))
+		v.Value = base64.StdEncoding.EncodeToString(crypto.Encrypt([]byte(v.ValuePlaintext)))
 		v.ValuePlaintext = ""
 
 		configValues.Spec.Values[k] = v
@@ -200,19 +191,14 @@ func encryptConfigValues(configValues *kotsv1beta1.ConfigValues, encryptionKey s
 	return b.Bytes(), nil
 }
 
-func maybeEncryptIdentityConfig(identityConfig *kotsv1beta1.IdentityConfig, encryptionKey string) ([]byte, error) {
-	cipher, err := crypto.AESCipherFromString(encryptionKey)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to load encryption cipher")
-	}
-
-	identityConfig.Spec.ClientSecret.EncryptValue(*cipher)
+func maybeEncryptIdentityConfig(identityConfig *kotsv1beta1.IdentityConfig) ([]byte, error) {
+	identityConfig.Spec.ClientSecret.EncryptValue()
 
 	if identityConfig.Spec.Storage.PostgresConfig != nil {
-		identityConfig.Spec.Storage.PostgresConfig.Password.EncryptValue(*cipher)
+		identityConfig.Spec.Storage.PostgresConfig.Password.EncryptValue()
 	}
 
-	identityConfig.Spec.DexConnectors.EncryptValue(*cipher)
+	identityConfig.Spec.DexConnectors.EncryptValue()
 
 	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 

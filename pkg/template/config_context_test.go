@@ -6,7 +6,6 @@ import (
 
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
-	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,7 +15,6 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 	type args struct {
 		configGroups    []kotsv1beta1.ConfigGroup
 		templateContext map[string]ItemValue
-		cipher          *crypto.AESCipher
 		license         *kotsv1beta1.License
 	}
 	tests := []struct {
@@ -29,7 +27,6 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 			args: args{
 				configGroups:    []kotsv1beta1.ConfigGroup{},
 				templateContext: map[string]ItemValue{},
-				cipher:          nil,
 			},
 			want: &ConfigCtx{
 				AppSlug:    "app-slug",
@@ -59,7 +56,6 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 					},
 				},
 				templateContext: map[string]ItemValue{},
-				cipher:          nil,
 			},
 			want: &ConfigCtx{
 				AppSlug: "app-slug",
@@ -98,7 +94,6 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 						Value: "replacedAbcItemValue",
 					},
 				},
-				cipher: nil,
 			},
 			want: &ConfigCtx{
 				AppSlug: "app-slug",
@@ -167,7 +162,6 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 						Value: "replacedAbcItemValue",
 					},
 				},
-				cipher: nil,
 			},
 			want: &ConfigCtx{
 				AppSlug: "app-slug",
@@ -257,7 +251,6 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 						Value: "overwritten default",
 					},
 				},
-				cipher: nil,
 			},
 			want: &ConfigCtx{
 				AppSlug: "app-slug",
@@ -290,7 +283,6 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 						Value: "item does not exist",
 					},
 				},
-				cipher: nil,
 			},
 			want: &ConfigCtx{
 				AppSlug: "app-slug",
@@ -339,7 +331,6 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 					},
 				},
 				templateContext: map[string]ItemValue{},
-				cipher:          nil,
 				license: &kotsv1beta1.License{
 					Spec: kotsv1beta1.LicenseSpec{
 						Entitlements: map[string]kotsv1beta1.EntitlementField{
@@ -381,7 +372,7 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 			builder.AddCtx(StaticCtx{})
 
 			localRegistry := LocalRegistry{}
-			got, err := builder.newConfigContext(tt.args.configGroups, tt.args.templateContext, localRegistry, tt.args.cipher, tt.args.license, nil, nil, registry.RegistryOptions{}, "app-slug")
+			got, err := builder.newConfigContext(tt.args.configGroups, tt.args.templateContext, localRegistry, tt.args.license, nil, nil, registry.RegistryOptions{}, "app-slug")
 			req.NoError(err)
 			req.Equal(tt.want, got)
 		})

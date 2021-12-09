@@ -162,16 +162,12 @@ func GetDownstreamGitOps(appID string, clusterID string) (*GitOpsConfig, error) 
 				}
 				provider, publicKey, privateKey, repoURI, hostname, httpPort, sshPort := gitOpsConfigFromSecretData(idx, secret.Data)
 
-				cipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
-				if err != nil {
-					return nil, errors.Wrap(err, "failed to create aes cipher")
-				}
 				decodedPrivateKey, err := base64.StdEncoding.DecodeString(privateKey)
 				if err != nil {
 					return nil, errors.Wrap(err, "failed to decode")
 				}
 
-				decryptedPrivateKey, err := cipher.Decrypt([]byte(decodedPrivateKey))
+				decryptedPrivateKey, err := crypto.Decrypt([]byte(decodedPrivateKey))
 				if err != nil {
 					return nil, errors.Wrap(err, "failed to decrypt")
 				}
@@ -453,12 +449,7 @@ func CreateGitOps(provider string, repoURI string, hostname string, httpPort str
 		if err != nil {
 			return errors.Wrap(err, "failed to generate key pair")
 		}
-
-		cipher, err := crypto.AESCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
-		if err != nil {
-			return errors.Wrap(err, "failed to create aes cipher")
-		}
-		encryptedPrivateKey := cipher.Encrypt([]byte(keyPair.PrivateKeyPEM))
+		encryptedPrivateKey := crypto.Encrypt([]byte(keyPair.PrivateKeyPEM))
 		encodedPrivateKey := base64.StdEncoding.EncodeToString(encryptedPrivateKey) // encoding here shouldn't be needed. moved logic from TS where ffi EncryptString function base64 encodes the value as well
 
 		secretData[fmt.Sprintf("provider.%d.privateKey", repoIdx)] = []byte(encodedPrivateKey)

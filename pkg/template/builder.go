@@ -8,7 +8,6 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 )
@@ -26,7 +25,6 @@ type BuilderOptions struct {
 	ConfigGroups    []kotsv1beta1.ConfigGroup
 	ExistingValues  map[string]ItemValue
 	LocalRegistry   LocalRegistry
-	Cipher          *crypto.AESCipher
 	License         *kotsv1beta1.License
 	Application     *kotsv1beta1.Application
 	ApplicationInfo *ApplicationInfo
@@ -57,7 +55,7 @@ func NewBuilder(opts BuilderOptions) (Builder, map[string]ItemValue, error) {
 		slug = opts.ApplicationInfo.Slug
 	}
 
-	configCtx, err := b.newConfigContext(opts.ConfigGroups, opts.ExistingValues, opts.LocalRegistry, opts.Cipher,
+	configCtx, err := b.newConfigContext(opts.ConfigGroups, opts.ExistingValues, opts.LocalRegistry,
 		opts.License, opts.Application, opts.VersionInfo, dockerHubRegistry, slug)
 	if err != nil {
 		return Builder{}, nil, errors.Wrap(err, "create config context")
@@ -68,7 +66,7 @@ func NewBuilder(opts BuilderOptions) (Builder, map[string]ItemValue, error) {
 		licenseCtx{License: opts.License},
 		newKurlContext("base", "default"), // can be hardcoded because kurl always deploys to the default namespace
 		newVersionCtx(opts.VersionInfo),
-		newIdentityCtx(opts.IdentityConfig, opts.ApplicationInfo, opts.Cipher),
+		newIdentityCtx(opts.IdentityConfig, opts.ApplicationInfo),
 		configCtx,
 	}
 	return b, configCtx.ItemValues, nil
