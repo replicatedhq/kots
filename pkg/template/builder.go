@@ -31,6 +31,7 @@ type BuilderOptions struct {
 	VersionInfo     *VersionInfo
 	IdentityConfig  *kotsv1beta1.IdentityConfig
 	Namespace       string
+	DecryptValues   bool
 }
 
 // NewBuilder creates a builder with all available contexts.
@@ -56,7 +57,7 @@ func NewBuilder(opts BuilderOptions) (Builder, map[string]ItemValue, error) {
 	}
 
 	configCtx, err := b.newConfigContext(opts.ConfigGroups, opts.ExistingValues, opts.LocalRegistry,
-		opts.License, opts.Application, opts.VersionInfo, dockerHubRegistry, slug)
+		opts.License, opts.Application, opts.VersionInfo, dockerHubRegistry, slug, opts.DecryptValues)
 	if err != nil {
 		return Builder{}, nil, errors.Wrap(err, "create config context")
 	}

@@ -97,6 +97,7 @@ func NewBuilder(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.Re
 		VersionInfo:     &versionInfo,
 		IdentityConfig:  kotsKinds.IdentityConfig,
 		Namespace:       namespace,
+		DecryptValues:   true,
 	}
 	builder, _, err := template.NewBuilder(builderOptions)
 	return &builder, errors.Wrap(err, "failed to create builder")

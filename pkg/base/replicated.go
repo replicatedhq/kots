@@ -70,7 +70,7 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 	versionInfo := template.VersionInfoFromInstallation(renderOptions.Sequence, renderOptions.IsAirgap, kotsKinds.Installation.Spec)
 	appInfo := template.ApplicationInfo{Slug: renderOptions.AppSlug}
 
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, itemValues, kotsKinds.License, &kotsKinds.KotsApplication, registry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace)
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, itemValues, kotsKinds.License, &kotsKinds.KotsApplication, registry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, true)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to template config objects")
 	}

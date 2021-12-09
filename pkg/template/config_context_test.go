@@ -6,16 +6,24 @@ import (
 
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
+	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestBuilder_NewConfigContext(t *testing.T) {
+	err := crypto.NewAESCipher()
+	require.NoError(t, err)
+
+	testValue := "this is a test value to be encrypted"
+	testValueEncrypted := base64.StdEncoding.EncodeToString(crypto.Encrypt([]byte(testValue)))
+
 	type args struct {
 		configGroups    []kotsv1beta1.ConfigGroup
 		templateContext map[string]ItemValue
 		license         *kotsv1beta1.License
+		decryptValues   bool
 	}
 	tests := []struct {
 		name string
@@ -358,6 +366,111 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "chained configOption from password (no decryption)",
+			args: args{
+				configGroups: []kotsv1beta1.ConfigGroup{
+					{
+						Name:        "abc",
+						Title:       "abc",
+						Description: "abc",
+						Items: []kotsv1beta1.ConfigItem{
+							{
+								Name:  "abcItem",
+								Type:  "password",
+								Title: "abcItem",
+								Default: multitype.BoolOrString{
+									Type:   multitype.String,
+									StrVal: "abcItemDefault",
+								},
+								Value: multitype.BoolOrString{},
+							},
+							{
+								Name:     "childItem1",
+								Type:     "text",
+								ReadOnly: true,
+								Value: multitype.BoolOrString{
+									Type:   multitype.String,
+									StrVal: `hello world repl{{ ConfigOption "abcItem" }}`,
+								},
+							},
+						},
+					},
+				},
+				templateContext: map[string]ItemValue{
+					"abcItem": {
+						Value: testValueEncrypted,
+					},
+				},
+				decryptValues: false,
+			},
+			want: &ConfigCtx{
+				AppSlug: "app-slug",
+				ItemValues: map[string]ItemValue{
+					"abcItem": {
+						Value:   testValueEncrypted,
+						Default: "abcItemDefault",
+					},
+					"childItem1": {
+						Value:   "hello world " + testValueEncrypted,
+						Default: "",
+					},
+				},
+			},
+		},
+		{
+			name: "chained configOption from password (with decryption)",
+			args: args{
+				configGroups: []kotsv1beta1.ConfigGroup{
+					{
+						Name:        "abc",
+						Title:       "abc",
+						Description: "abc",
+						Items: []kotsv1beta1.ConfigItem{
+							{
+								Name:  "abcItem",
+								Type:  "password",
+								Title: "abcItem",
+								Default: multitype.BoolOrString{
+									Type:   multitype.String,
+									StrVal: "abcItemDefault",
+								},
+								Value: multitype.BoolOrString{},
+							},
+							{
+								Name:     "childItem1",
+								Type:     "text",
+								ReadOnly: true,
+								Value: multitype.BoolOrString{
+									Type:   multitype.String,
+									StrVal: `hello world repl{{ ConfigOption "abcItem" }}`,
+								},
+							},
+						},
+					},
+				},
+				templateContext: map[string]ItemValue{
+					"abcItem": {
+						Value: testValueEncrypted,
+					},
+				},
+				decryptValues: true,
+			},
+			want: &ConfigCtx{
+				DecryptValues: true,
+				AppSlug:       "app-slug",
+				ItemValues: map[string]ItemValue{
+					"abcItem": {
+						Value:   testValue,
+						Default: "abcItemDefault",
+					},
+					"childItem1": {
+						Value:   "hello world " + testValue,
+						Default: "",
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -372,7 +485,7 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 			builder.AddCtx(StaticCtx{})
 
 			localRegistry := LocalRegistry{}
-			got, err := builder.newConfigContext(tt.args.configGroups, tt.args.templateContext, localRegistry, tt.args.license, nil, nil, registry.RegistryOptions{}, "app-slug")
+			got, err := builder.newConfigContext(tt.args.configGroups, tt.args.templateContext, localRegistry, tt.args.license, nil, nil, registry.RegistryOptions{}, "app-slug", tt.args.decryptValues)
 			req.NoError(err)
 			req.Equal(tt.want, got)
 		})

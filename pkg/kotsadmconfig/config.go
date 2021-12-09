@@ -5,7 +5,6 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/pkg/config"
 	kotsconfig "github.com/replicatedhq/kots/pkg/config"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -60,7 +59,7 @@ func NeedsConfiguration(appSlug string, sequence int64, isAirgap bool, kotsKinds
 	if err != nil {
 		return false, errors.Wrap(err, "failed to marshal configvalues spec")
 	}
-	configValues, err := config.UnmarshalConfigValuesContent([]byte(configValuesSpec))
+	configValues, err := kotsconfig.UnmarshalConfigValuesContent([]byte(configValuesSpec))
 	if err != nil {
 		log.Error(errors.Wrap(err, "failed to create config values"))
 		configValues = map[string]template.ItemValue{}
@@ -78,7 +77,7 @@ func NeedsConfiguration(appSlug string, sequence int64, isAirgap bool, kotsKinds
 	appInfo := template.ApplicationInfo{Slug: appSlug}
 
 	// rendered, err := kotsconfig.TemplateConfig(logger.NewCLILogger(), configSpec, configValuesSpec, licenseSpec, appSpec, identityConfigSpec, localRegistry, util.PodNamespace)
-	config, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, kotsKinds.License, &kotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace)
+	config, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, kotsKinds.License, &kotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, true)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to template config")
 	}
