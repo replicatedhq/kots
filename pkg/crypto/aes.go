@@ -32,7 +32,7 @@ func init() {
 	if os.Getenv("API_ENCRYPTION_KEY") != "" {
 		envCipher, err := aesCipherFromString(os.Getenv("API_ENCRYPTION_KEY"))
 		if err != nil {
-			// do nothing
+			// do nothing - the secret can still be initialized from a different source
 		} else {
 			decryptionCiphers = append(decryptionCiphers, envCipher)
 			encryptionCipher = envCipher
