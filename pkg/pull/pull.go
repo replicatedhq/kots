@@ -244,14 +244,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		fetchOptions.LocalPath = airgapAppFiles
 	}
 
-	var prevHelmCharts []*kotsv1beta1.HelmChart
-	if !pullOptions.SkipHelmChartCheck {
-		prevHelmCharts, err = kotsutil.LoadHelmChartsFromPath(pullOptions.RootDir)
-		if err != nil {
-			return "", errors.Wrap(err, "failed to load previous helm charts")
-		}
-	}
-
 	log.ActionWithSpinner("Pulling upstream")
 	io.WriteString(pullOptions.ReportWriter, "Pulling upstream\n")
 	u, err := upstream.FetchUpstream(upstreamURI, &fetchOptions)
@@ -283,27 +275,30 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 	log.FinishSpinner()
 
-	var newHelmCharts []*kotsv1beta1.HelmChart
-	if !pullOptions.SkipHelmChartCheck {
-		renderDir := pullOptions.RootDir
-		if pullOptions.CreateAppDir {
-			renderDir = filepath.Join(pullOptions.RootDir, u.Name)
-		}
-
-		newHelmCharts, err = kotsutil.LoadHelmChartsFromPath(renderDir)
-		if err != nil {
-			return "", errors.Wrap(err, "failed to load new helm charts")
-		}
+	renderDir := pullOptions.RootDir
+	if pullOptions.CreateAppDir {
+		renderDir = filepath.Join(pullOptions.RootDir, u.Name)
 	}
 
-	for _, prevChart := range prevHelmCharts {
-		for _, newChart := range newHelmCharts {
-			if prevChart.Spec.Chart.Name != newChart.Spec.Chart.Name {
-				continue
-			}
-			if prevChart.Spec.UseHelmInstall != newChart.Spec.UseHelmInstall {
-				log.FinishSpinnerWithError()
-				return "", errors.Errorf("deployment method for chart %s has changed", newChart.Spec.Chart.Name)
+	newHelmCharts, err := kotsutil.LoadHelmChartsFromPath(renderDir)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to load new helm charts")
+	}
+
+	if !pullOptions.SkipHelmChartCheck {
+		prevHelmCharts, err := kotsutil.LoadHelmChartsFromPath(pullOptions.RootDir)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to load previous helm charts")
+		}
+
+		for _, prevChart := range prevHelmCharts {
+			for _, newChart := range newHelmCharts {
+				if prevChart.Spec.Chart.Name != newChart.Spec.Chart.Name {
+					continue
+				}
+				if prevChart.Spec.UseHelmInstall != newChart.Spec.UseHelmInstall {
+					return "", errors.Errorf("deployment method for chart %s has changed", newChart.Spec.Chart.Name)
+				}
 			}
 		}
 	}
@@ -459,8 +454,8 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		// this ensures only the current chart resources are added to kustomization.yaml and pullsecret.yaml
 		chartName := strings.Split(helmBase.Path, "/")[len(strings.Split(helmBase.Path, "/"))-1]
 		// copy the bool setting in the map to restore it after this process loop
-		useHelmSetting := writeMidstreamOptions.UseHelmInstall[chartName]
-		delete(writeMidstreamOptions.UseHelmInstall, chartName)
+		previousUseHelmInstall := writeMidstreamOptions.UseHelmInstall[chartName]
+		writeMidstreamOptions.UseHelmInstall[chartName] = false
 
 		writeMidstreamOptions.MidstreamDir = filepath.Join(helmBase.GetOverlaysDir(writeBaseOptions), "midstream", helmBase.Path)
 		writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), helmBase.Path)
@@ -473,7 +468,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		}
 
 		// add this chart back into UseHelmInstall to make sure it's not processed again
-		writeMidstreamOptions.UseHelmInstall[chartName] = useHelmSetting
+		writeMidstreamOptions.UseHelmInstall[chartName] = previousUseHelmInstall
 
 		helmMidstreams = append(helmMidstreams, *helmMidstream)
 	}
