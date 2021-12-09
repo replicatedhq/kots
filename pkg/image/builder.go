@@ -515,7 +515,7 @@ func IsPrivateImage(image string, dockerHubRegistry registry.RegistryOptions) (b
 			sysCtx.DockerInsecureSkipTLSVerify = types.OptionalBoolTrue
 		}
 
-		remoteImage, err := ref.NewImage(context.Background(), &sysCtx)
+		remoteImage, err := ref.NewImageSource(context.Background(), &sysCtx)
 		if err == nil {
 			remoteImage.Close()
 			return false, nil
