@@ -1,7 +1,7 @@
 # Contributing to KOTS
 
 Thank you for your interest in KOTS, we welcome your participation. Please familiarize yourself with our 
-[Code of Conduct](https://github.com/replicatedhq/kots/blob/master/CODE_OF_CONDUCT.md) prior to contributing. 
+[Code of Conduct](https://github.com/replicatedhq/kots/blob/main/CODE_OF_CONDUCT.md) prior to contributing. 
 
 ## Pull Requests 
 

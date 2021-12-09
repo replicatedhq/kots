@@ -56,8 +56,8 @@ jobs:
           automated-pr
           images
         draft: false
-        base: "master"
-        body: "Automated changes by the [trigger-nightly](https://github.com/replicatedhq/kots/blob/master/.github/workflows/nightly.yaml) GitHub action"
+        base: "main"
+        body: "Automated changes by the [trigger-nightly](https://github.com/replicatedhq/kots/blob/main/.github/workflows/nightly.yaml) GitHub action"
     
     - name: Check outputs
       run: |

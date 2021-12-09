@@ -108,7 +108,7 @@ This covers a proposal for `kots install`. It includes migrating the `kotsadm-mi
 - Add a flag to the kots CLI --object-store-bucket-name
 - Add a flag to the kots CLI --object-store-endpoint  but can be empty to use Amazon S3
 
-**Question:** should the object store types `minio` and `external` should be constants in the `types` package? Or a separate configuration package? https://github.com/replicatedhq/kots/blob/master/pkg/kotsadm/types/constants.go
+**Question:** should the object store types `minio` and `external` should be constants in the `types` package? Or a separate configuration package? https://github.com/replicatedhq/kots/blob/main/pkg/kotsadm/types/constants.go
 
 ### Internal changes
 
