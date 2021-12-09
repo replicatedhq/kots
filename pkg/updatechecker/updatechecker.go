@@ -108,16 +108,16 @@ func Configure(appID string) error {
 			AppID:       jobAppID,
 			IsAutomatic: true,
 		}
-		availableUpdates, err := CheckForUpdates(opts)
+		ucr, err := CheckForUpdates(opts)
 		if err != nil {
 			logger.Error(errors.Wrapf(err, "failed to check updates for app %s", jobAppSlug))
 			return
 		}
 
-		if availableUpdates > 0 {
+		if ucr.AvailableUpdates > 0 {
 			logger.Debug("updates found for app",
 				zap.String("slug", jobAppSlug),
-				zap.Int64("available updates", availableUpdates))
+				zap.Int64("available updates", ucr.AvailableUpdates))
 		} else {
 			logger.Debug("no updates found for app", zap.String("slug", jobAppSlug))
 		}
@@ -154,46 +154,57 @@ type CheckForUpdatesOpts struct {
 	IsCLI              bool
 }
 
+type UpdateCheckResponse struct {
+	AvailableUpdates  int64
+	CurrentRelease    UpdateCheckRelease
+	AvailableReleases []UpdateCheckRelease
+}
+
+type UpdateCheckRelease struct {
+	Sequence int64
+	Version  string
+}
+
 // CheckForUpdates checks, downloads, and makes sure the desired version for a specific app is deployed.
 // if "DeployLatest" is set to true, the latest version will be deployed.
 // otherwise, if "DeployVersionLabel" is set to true, then the version with the corresponding version label will be deployed (if found).
 // otherwise, if "IsAutomatic" is set to true (which means it's an automatic update check), then the version that matches the semver auto deploy configuration (if enabled) will be deployed.
 // returns the number of available updates.
-func CheckForUpdates(opts CheckForUpdatesOpts) (int64, error) {
+func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 	currentStatus, _, err := store.GetStore().GetTaskStatus("update-download")
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to get task status")
+		return nil, errors.Wrap(err, "failed to get task status")
 	}
 
 	if currentStatus == "running" {
 		logger.Debug("update-download is already running, not starting a new one")
-		return 0, nil
+		return nil, nil
 	}
 
 	if err := store.GetStore().ClearTaskStatus("update-download"); err != nil {
-		return 0, errors.Wrap(err, "failed to clear task status")
+		return nil, errors.Wrap(err, "failed to clear task status")
 	}
 
 	a, err := store.GetStore().GetApp(opts.AppID)
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to get app")
+		return nil, errors.Wrap(err, "failed to get app")
 	}
 
 	// sync license, this method is only called when online
 	latestLicense, _, err := license.Sync(a, "", false)
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to sync license")
+		return nil, errors.Wrap(err, "failed to sync license")
 	}
 
 	// reload app because license sync could have created a new release
 	a, err = store.GetStore().GetApp(opts.AppID)
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to get app")
+		return nil, errors.Wrap(err, "failed to get app")
 	}
 
 	updateCursor, versionLabel, err := store.GetStore().GetCurrentUpdateCursor(a.ID, latestLicense.Spec.ChannelID)
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to get current update cursor")
+		return nil, errors.Wrap(err, "failed to get current update cursor")
 	}
 
 	lastUpdateCheckAt, err := time.Parse(time.RFC3339, a.LastUpdateCheckAt)
@@ -216,31 +227,57 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (int64, error) {
 	// get updates
 	updates, err := kotspull.GetUpdates(fmt.Sprintf("replicated://%s", latestLicense.Spec.AppSlug), getUpdatesOptions)
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to get updates")
+		return nil, errors.Wrap(err, "failed to get updates")
 	}
 
 	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to list downstreams for app")
+		return nil, errors.Wrap(err, "failed to list downstreams for app")
 	}
 	if len(downstreams) == 0 {
-		return 0, errors.Errorf("no downstreams found for app %q", a.Slug)
+		return nil, errors.Errorf("no downstreams found for app %q", a.Slug)
 	}
 	d := downstreams[0]
 
-	if len(updates) == 0 {
-		if err := ensureDesiredVersionIsDeployed(opts, d.ClusterID); err != nil {
-			return 0, errors.Wrapf(err, "failed to ensure desired version is deployed")
-		}
-		return 0, nil
+	// get app version labels and sequence numbers
+	appVersions, err := store.GetStore().GetAppVersions(opts.AppID, d.ClusterID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get app versions for app %s", opts.AppID)
+	}
+	if len(appVersions.AllVersions) == 0 {
+		return nil, errors.Errorf("no app versions found for app %s in downstream %s", opts.AppID, d.ClusterID)
 	}
 
-	availableUpdates := int64(len(updates))
+	var availableReleases []UpdateCheckRelease
+	availableSequence := appVersions.AllVersions[0].Sequence + 1
+	for _, u := range updates {
+		availableReleases = append(availableReleases, UpdateCheckRelease{
+			Sequence: availableSequence,
+			Version:  u.VersionLabel,
+		})
+		availableSequence++
+	}
+
+	ucr := UpdateCheckResponse{
+		AvailableUpdates: int64(len(updates)),
+		CurrentRelease: UpdateCheckRelease{
+			Sequence: appVersions.CurrentVersion.Sequence,
+			Version:  appVersions.CurrentVersion.VersionLabel,
+		},
+		AvailableReleases: availableReleases,
+	}
+
+	if len(updates) == 0 {
+		if err := ensureDesiredVersionIsDeployed(opts, d.ClusterID); err != nil {
+			return nil, errors.Wrapf(err, "failed to ensure desired version is deployed")
+		}
+		return &ucr, nil
+	}
 
 	// this is to avoid a race condition where the UI polls the task status before it is set by the goroutine
-	status := fmt.Sprintf("%d Updates available...", availableUpdates)
+	status := fmt.Sprintf("%d Updates available...", ucr.AvailableUpdates)
 	if err := store.GetStore().SetTaskStatus("update-download", status, "running"); err != nil {
-		return 0, errors.Wrap(err, "failed to set task status")
+		return nil, errors.Wrap(err, "failed to set task status")
 	}
 
 	// there are updates, go routine it
@@ -269,7 +306,7 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (int64, error) {
 		}
 	}()
 
-	return availableUpdates, nil
+	return &ucr, nil
 }
 
 func ensureDesiredVersionIsDeployed(opts CheckForUpdatesOpts, clusterID string) error {

@@ -898,7 +898,7 @@ class SnapshotStorageDestination extends Component {
               value: "other",
               label: "Other S3-Compatible Storage",
             });
-            if (snapshotSettings.isKurl) {
+            if (snapshotSettings.isKurl && !snapshotSettings?.isMinioDisabled) {
               availableDestinations.push({
                 value: "internal",
                 label: "Internal Storage (Default)",
@@ -930,6 +930,12 @@ class SnapshotStorageDestination extends Component {
                 value: "hostpath",
                 label: "Host Path",
             });
+            if (snapshotSettings.isKurl) {
+              availableDestinations.push({
+                value: "internal",
+                label: "Internal Storage (Default)",
+              });
+            }
         }
       }
       availableDestinations.sort( (a,b) => a.label.localeCompare(b.label) );

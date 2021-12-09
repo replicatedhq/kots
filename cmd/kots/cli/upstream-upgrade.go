@@ -15,12 +15,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-type UpstreamUpgradeOutput struct {
-	Success          bool   `json:"success"`
-	AvailableUpdates int64  `json:"availableUpdates,omitempty"`
-	Error            string `json:"error,omitempty"`
-}
-
 func UpstreamUpgradeCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           "upgrade [appSlug]",
@@ -101,23 +95,18 @@ func UpstreamUpgradeCmd() *cobra.Command {
 				}
 			}()
 
-			var upgradeOutput UpstreamUpgradeOutput
 			res, err := upstream.Upgrade(appSlug, upgradeOptions)
-			if err != nil && output == "" {
-				return err
-			} else if err != nil {
-				upgradeOutput.Error = fmt.Sprint(err)
+			if err != nil {
+				res = &upstream.UpgradeResponse{
+					Error: fmt.Sprint(err),
+				}
 			} else {
-				upgradeOutput.Success = true
-				upgradeOutput.AvailableUpdates = res.AvailableUpdates
+				res.Success = true
 			}
 
-			if output == "json" {
-				outputJSON, err := json.Marshal(upgradeOutput)
-				if err != nil {
-					return errors.Wrap(err, "error marshaling JSON")
-				}
-				log.Info(string(outputJSON))
+			err = logUpstreamUpgrade(log, res, output)
+			if err != nil {
+				return err
 			}
 
 			return nil
@@ -140,4 +129,30 @@ func UpstreamUpgradeCmd() *cobra.Command {
 	cmd.Flags().MarkHidden("debug")
 
 	return cmd
+}
+
+func logUpstreamUpgrade(log *logger.CLILogger, res *upstream.UpgradeResponse, output string) error {
+	if output == "json" {
+		outputJSON, err := json.Marshal(res)
+		if err != nil {
+			return errors.Wrap(err, "error marshaling JSON")
+		}
+		log.Info(string(outputJSON))
+		return nil
+	}
+
+	// text output
+	if res.Error != "" {
+		log.ActionWithoutSpinner(res.Error)
+	} else {
+		if res.CurrentRelease != nil {
+			log.ActionWithoutSpinner(fmt.Sprintf("Currently deployed release: sequence %v, version %v", res.CurrentRelease.Sequence, res.CurrentRelease.Version))
+		}
+
+		for _, r := range res.AvailableReleases {
+			log.ActionWithoutSpinner(fmt.Sprintf("Downloading available release: sequence %v, version %v", r.Sequence, r.Version))
+		}
+	}
+
+	return nil
 }
