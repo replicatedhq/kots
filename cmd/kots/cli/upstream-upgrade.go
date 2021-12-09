@@ -152,6 +152,10 @@ func logUpstreamUpgrade(log *logger.CLILogger, res *upstream.UpgradeResponse, ou
 		for _, r := range res.AvailableReleases {
 			log.ActionWithoutSpinner(fmt.Sprintf("Downloading available release: sequence %v, version %v", r.Sequence, r.Version))
 		}
+
+		if res.DeployingRelease != nil {
+			log.ActionWithoutSpinner(fmt.Sprintf("Deploying release: sequence %v, version %v", res.DeployingRelease.Sequence, res.DeployingRelease.Version))
+		}
 	}
 
 	return nil
