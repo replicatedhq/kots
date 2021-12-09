@@ -654,6 +654,7 @@ jobs:
           kubectl -n default create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
 
           kustomize build $PWD/$APP_SLUG/overlays/midstream | kubectl apply -f -
+          kustomize build $PWD/$APP_SLUG/overlays/midstream/charts/redis | kubectl apply -f -
 
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
