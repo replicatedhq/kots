@@ -362,7 +362,7 @@ jobs:
         if: startsWith(github.ref, 'refs/heads/')
         id: get_branch
         shell: bash
-        run: BRANCH=${GITHUB_REF/refs\/heads\//} && echo ::set-output name=GIT_BRANCH::${BRANCH:-master}
+        run: BRANCH=${GITHUB_REF/refs\/heads\//} && echo ::set-output name=GIT_BRANCH::${BRANCH:-main}
 
       - name: execute legacy tests
         run: |
@@ -423,7 +423,7 @@ jobs:
         if: startsWith(github.ref, 'refs/heads/')
         id: get_branch
         shell: bash
-        run: BRANCH=${GITHUB_REF/refs\/heads\//} && echo ::set-output name=GIT_BRANCH::${BRANCH:-master}
+        run: BRANCH=${GITHUB_REF/refs\/heads\//} && echo ::set-output name=GIT_BRANCH::${BRANCH:-main}
 
       - name: prepare minimal-rbac online install
         run: |
@@ -487,7 +487,7 @@ jobs:
         if: startsWith(github.ref, 'refs/heads/')
         id: get_branch
         shell: bash
-        run: BRANCH=${GITHUB_REF/refs\/heads\//} && echo ::set-output name=GIT_BRANCH::${BRANCH:-master}
+        run: BRANCH=${GITHUB_REF/refs\/heads\//} && echo ::set-output name=GIT_BRANCH::${BRANCH:-main}
 
       - name: prepare no-required-config online install
         env:
@@ -560,7 +560,7 @@ jobs:
         if: startsWith(github.ref, 'refs/heads/')
         id: get_branch
         shell: bash
-        run: BRANCH=${GITHUB_REF/refs\/heads\//} && echo ::set-output name=GIT_BRANCH::${BRANCH:-master}
+        run: BRANCH=${GITHUB_REF/refs\/heads\//} && echo ::set-output name=GIT_BRANCH::${BRANCH:-main}
 
       - name: prepare multi-namespace online install
         env:
