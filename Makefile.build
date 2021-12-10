@@ -24,16 +24,7 @@ define GIT_SHA
 endef
 endif
 
-ifndef DEBUG_KOTSADM
-define LDFLAGS
--ldflags "\
-	-s -w \
-	-X ${VERSION_PACKAGE}.version=${VERSION} \
-	-X ${VERSION_PACKAGE}.gitSHA=${GIT_SHA} \
-	-X ${VERSION_PACKAGE}.buildTime=${DATE} \
-"
-endef
-else
+ifeq ("$(DEBUG_KOTSADM)", "1")
 define LDFLAGS
 -ldflags "\
 	-X ${VERSION_PACKAGE}.version=${VERSION} \
@@ -43,5 +34,14 @@ define LDFLAGS
 endef
 define GCFLAGS
 -gcflags="all=-N -l"
+endef
+else
+define LDFLAGS
+-ldflags "\
+	-s -w \
+	-X ${VERSION_PACKAGE}.version=${VERSION} \
+	-X ${VERSION_PACKAGE}.gitSHA=${GIT_SHA} \
+	-X ${VERSION_PACKAGE}.buildTime=${DATE} \
+"
 endef
 endif

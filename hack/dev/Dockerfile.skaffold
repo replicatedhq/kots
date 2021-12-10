@@ -12,9 +12,12 @@ COPY web/webcontent.go ./web/webcontent.go
 COPY web/dist ./web/dist
 COPY kotskinds ./kotskinds
 
-RUN DEBUG_KOTSADM="true" make kotsadm
+ARG DEBUG_KOTSADM=0
+
+RUN make kotsadm
 
 FROM debian:buster
+
 RUN apt-get update && apt-get install -y --no-install-recommends curl gnupg2 \
   && curl -k https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
   && echo "deb http://apt.postgresql.org/pub/repos/apt/ buster-pgdg main" > /etc/apt/sources.list.d/PostgreSQL.list \
@@ -165,5 +168,10 @@ COPY --from=builder /go/src/github.com/replicatedhq/kots/bin/kotsadm .
 EXPOSE 40000
 
 # Should be entrypoint
-ENTRYPOINT [ "/dlv", "--listen=:40000", "--continue", "--headless=true", "--api-version=2", "--accept-multiclient", "exec"]
-CMD ["/kotsadm", "api"]
+
+ARG DEBUG_KOTSADM=0
+
+ENV DEBUG_KOTSADM=${DEBUG_KOTSADM}
+
+ADD hack/dev/entrypoint.sh .
+ENTRYPOINT [ "./entrypoint.sh"]

@@ -9,9 +9,17 @@ profiles:
       kustomize:
         paths: 
           - "./kustomize/overlays/kotsstore"
+  - name: debug
+    activation:
+      - env: DEBUG_KOTSADM=1
+    patches:
+      - op: add
+        path: /build/artifacts/1/docker/buildArgs
+        value:
+          DEBUG_KOTSADM: 1
   - name: codespace
     activation:
-      - env: USER=codespace 
+      - env: USER=codespace
     build:
       local:
         concurrency: 0
