@@ -310,7 +310,7 @@ jobs:
           node-version: '14.x'
 
       - name: setup testIM
-        run: npm i -g @testim/testim-cli
+        run: npm i -g @testim/testim-cli@3.206.0
         shell: bash
 
       ## testim tests
@@ -414,7 +414,7 @@ jobs:
           node-version: '14.x'
 
       - name: setup testIM
-        run: npm i -g @testim/testim-cli
+        run: npm i -g @testim/testim-cli@3.206.0
         shell: bash
 
       ## testim tests
@@ -478,7 +478,7 @@ jobs:
           node-version: '14.x'
 
       - name: setup testIM
-        run: npm i -g @testim/testim-cli
+        run: npm i -g @testim/testim-cli@3.206.0
         shell: bash
 
       ## testim tests
@@ -551,7 +551,7 @@ jobs:
           node-version: '14.x'
 
       - name: setup testIM
-        run: npm i -g @testim/testim-cli
+        run: npm i -g @testim/testim-cli@3.206.0
         shell: bash
 
       ## testim tests
