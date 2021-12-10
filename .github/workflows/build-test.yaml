@@ -315,7 +315,7 @@ jobs:
 
       ## testim tests
 
-      - name: aws credentials setup
+      - name: aws credentials setup testing
         run: |
           cat > aws-credentials << EOL
           [default]
