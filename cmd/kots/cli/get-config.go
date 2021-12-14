@@ -1,11 +1,14 @@
 package cli
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/kotskinds/multitype"
 	"github.com/replicatedhq/kots/pkg/auth"
+	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/handlers"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -13,6 +16,7 @@ import (
 	"github.com/spf13/viper"
 	"io/ioutil"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"net/http"
 	"os"
 	"sigs.k8s.io/yaml"
@@ -33,6 +37,7 @@ func GetConfigCmd() *cobra.Command {
 
 	cmd.Flags().Int("sequence", -1, "app sequence to retrieve config for")
 	cmd.Flags().String("appslug", "", "app slug to retrieve config for")
+	cmd.Flags().Bool("decrypt", false, "decrypt encrypted config items")
 
 	return cmd
 }
@@ -102,6 +107,11 @@ func getConfigCmd(cmd *cobra.Command, args []string) error {
 		return errors.Wrap(err, "failed to get config")
 	}
 
+	config.ConfigGroups, err = decryptGroups(clientset, namespace, config.ConfigGroups)
+	if err != nil {
+		return errors.Wrap(err, "failed to decrypt config")
+	}
+
 	values := configGroupToValues(config.ConfigGroups)
 	configYaml, err := yaml.Marshal(values)
 	if err != nil {
@@ -165,4 +175,53 @@ func configGroupToValues(groups []v1beta1.ConfigGroup) v1beta1.ConfigValues {
 	}
 
 	return extractedValues
+}
+
+func decryptGroups(clientset kubernetes.Interface, namespace string, groups []v1beta1.ConfigGroup) ([]v1beta1.ConfigGroup, error) {
+	err := crypto.InitFromSecret(clientset, namespace)
+	if err != nil {
+		return nil, errors.Wrapf(err, "find password encryption information in %s", namespace)
+	}
+
+	outGroups := []v1beta1.ConfigGroup{}
+	for _, group := range groups {
+		outGroup := group.DeepCopy()
+		for idx, item := range group.Items {
+			if item.Type == "password" {
+				// attempt to decrypt the password's value and default
+				decrypted, err := decryptString(item.Value.String())
+				if err == nil {
+					outGroup.Items[idx].Value = multitype.BoolOrString{
+						Type:   multitype.String,
+						StrVal: decrypted,
+					}
+				}
+
+				decrypted, err = decryptString(item.Default.String())
+				if err == nil {
+					outGroup.Items[idx].Default = multitype.BoolOrString{
+						Type:   multitype.String,
+						StrVal: decrypted,
+					}
+				}
+			}
+		}
+		outGroups = append(outGroups, *outGroup)
+	}
+
+	return outGroups, nil
+}
+
+func decryptString(input string) (string, error) {
+	decoded, err := base64.StdEncoding.DecodeString(input)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to base64 decode")
+	}
+
+	decrypted, err := crypto.Decrypt(decoded)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to decrypt")
+	}
+
+	return string(decrypted), nil
 }
