@@ -325,6 +325,70 @@ func Test_RenderHelm(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test subcharts with namespace",
+			args: args{
+				upstream: &upstreamtypes.Upstream{
+					Name: "namespace-test",
+					Files: []upstreamtypes.UpstreamFile{
+						{
+							Path:    "Chart.yaml",
+							Content: []byte("name: test-chart\nversion: 0.1.0"),
+						},
+						{
+							Path:    "templates/deploy-1.yaml",
+							Content: []byte("apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-1"),
+						},
+						{
+							Path:    "charts/test-subchart/Chart.yaml",
+							Content: []byte("name: test-subchart\nversion: 0.2.0"),
+						},
+						{
+							Path:    "charts/test-subchart/templates/deploy-2.yaml",
+							Content: []byte("apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-2"),
+						},
+					},
+				},
+				renderOptions: &RenderOptions{
+					HelmVersion:    "v3",
+					Namespace:      "test-namespace",
+					UseHelmInstall: true,
+				},
+			},
+			want: &Base{
+				Namespace: "test-namespace",
+				Files: []BaseFile{
+					{
+						Path:    "templates/deploy-1.yaml",
+						Content: []byte("apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-1\n  namespace: test-namespace"),
+					},
+				},
+				AdditionalFiles: []BaseFile{
+					{
+						Path:    "Chart.yaml",
+						Content: []byte("name: test-chart\nversion: 0.1.0"),
+					},
+				},
+				Bases: []Base{
+					{
+						Namespace: "test-namespace",
+						Path:      "charts/test-subchart",
+						Files: []BaseFile{
+							{
+								Path:    "templates/deploy-2.yaml",
+								Content: []byte("apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-2\n  namespace: test-namespace"),
+							},
+						},
+						AdditionalFiles: []BaseFile{
+							{
+								Path:    "Chart.yaml",
+								Content: []byte("name: test-subchart\nversion: 0.2.0"),
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

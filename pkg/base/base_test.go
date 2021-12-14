@@ -498,3 +498,58 @@ func TestBaseFile_IsKotsKind(t *testing.T) {
 		})
 	}
 }
+
+func TestBaseFile_DeepCopy(t *testing.T) {
+	var baseFile = &BaseFile{Path: "path", Content: []byte("content")}
+	baseFile2 := baseFile.DeepCopy()
+	baseFile2.Path = "change"
+	baseFile2.Content = []byte("change")
+
+	assert.Equal(t, "path", baseFile.Path)
+	assert.Equal(t, []byte("content"), baseFile.Content)
+}
+
+func TestBase_DeepCopy(t *testing.T) {
+	var subBase = &Base{
+		Path:            "path",
+		Namespace:       "namespace",
+		Files:           []BaseFile{{Path: "path7", Content: []byte("content7")}, {Path: "path10", Content: []byte("content10")}},
+		ErrorFiles:      []BaseFile{{Path: "path8", Content: []byte("content8")}, {Path: "path11", Content: []byte("content11")}},
+		AdditionalFiles: []BaseFile{{Path: "path9", Content: []byte("content9")}, {Path: "path12", Content: []byte("content12")}},
+		Bases:           []Base{},
+	}
+	var base = &Base{
+		Path:            "path",
+		Namespace:       "namespace",
+		Files:           []BaseFile{{Path: "path1", Content: []byte("content1")}, {Path: "path4", Content: []byte("content4")}},
+		ErrorFiles:      []BaseFile{{Path: "path2", Content: []byte("content2")}, {Path: "path5", Content: []byte("content5")}},
+		AdditionalFiles: []BaseFile{{Path: "path3", Content: []byte("content3")}, {Path: "path6", Content: []byte("content6")}},
+		Bases:           []Base{*subBase},
+	}
+
+	base2 := base.DeepCopy()
+	base2.Path = "change"
+	base2.Files = nil
+	base2.ErrorFiles[0].Path = "change"
+	base2.ErrorFiles[0].Content = []byte("change")
+	base2.AdditionalFiles[1] = BaseFile{Path: "change", Content: []byte("change")}
+	base2.Bases[0].Path = "change"
+	base2.Bases[0].Files = nil
+	base2.Bases[0].ErrorFiles[0].Path = "change"
+	base2.Bases[0].ErrorFiles[0].Content = []byte("change")
+	base2.Bases[0].AdditionalFiles[1] = BaseFile{Path: "change", Content: []byte("change")}
+
+	assert.Equal(t, "path", base.Path)
+	assert.Equal(t, "namespace", base.Namespace)
+	assert.Equal(t, []BaseFile{{Path: "path1", Content: []byte("content1")}, {Path: "path4", Content: []byte("content4")}}, base.Files)
+	assert.Equal(t, []BaseFile{{Path: "path2", Content: []byte("content2")}, {Path: "path5", Content: []byte("content5")}}, base.ErrorFiles)
+	assert.Equal(t, []BaseFile{{Path: "path3", Content: []byte("content3")}, {Path: "path6", Content: []byte("content6")}}, base.AdditionalFiles)
+	assert.Equal(t, []Base{{
+		Path:            "path",
+		Namespace:       "namespace",
+		Files:           []BaseFile{{Path: "path7", Content: []byte("content7")}, {Path: "path10", Content: []byte("content10")}},
+		ErrorFiles:      []BaseFile{{Path: "path8", Content: []byte("content8")}, {Path: "path11", Content: []byte("content11")}},
+		AdditionalFiles: []BaseFile{{Path: "path9", Content: []byte("content9")}, {Path: "path12", Content: []byte("content12")}},
+		Bases:           []Base{},
+	}}, base.Bases)
+}

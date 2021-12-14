@@ -99,6 +99,9 @@ func writeHelmBase(chartName string, baseFiles []BaseFile, renderOptions *Render
 	base := &Base{
 		Path: path.Join("charts", chartName),
 	}
+	if renderOptions.UseHelmInstall {
+		base.Namespace = renderOptions.Namespace
+	}
 	for _, baseFile := range rest {
 		fileBaseFiles, err := writeHelmBaseFile(baseFile, renderOptions)
 		if err != nil {
