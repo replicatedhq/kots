@@ -11,6 +11,7 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/replicatedhq/kots/pkg/pull"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -151,11 +152,11 @@ func TestKotsPull(t *testing.T) {
 					if err != nil {
 						fmt.Printf("unable to open file %s\n", path)
 					}
-					require.NoError(t, err)
+					require.NoError(t, err, path)
 
 					contentsString := string(contents)
 					wantContentsString := string(wantContents)
-					require.Equal(t, wantContentsString, contentsString)
+					assert.Equal(t, wantContentsString, contentsString, path)
 
 					return nil
 				})

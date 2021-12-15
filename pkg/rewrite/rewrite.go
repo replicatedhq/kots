@@ -178,6 +178,9 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	}
 
 	for _, helmBase := range helmBases {
+		helmBaseCopy := helmBase.DeepCopy()
+		// strip namespace. helm render takes care of injecting the namespace
+		helmBaseCopy.SetNamespace("")
 		writeBaseOptions := base.WriteOptions{
 			BaseDir:          u.GetBaseDir(writeUpstreamOptions),
 			SkippedDir:       u.GetSkippedDir(writeUpstreamOptions),
@@ -185,8 +188,8 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 			ExcludeKotsKinds: rewriteOptions.ExcludeKotsKinds,
 			IsHelmBase:       true,
 		}
-		if err := helmBase.WriteBase(writeBaseOptions); err != nil {
-			return errors.Wrapf(err, "failed to write helm base %s", helmBase.Path)
+		if err := helmBaseCopy.WriteBase(writeBaseOptions); err != nil {
+			return errors.Wrapf(err, "failed to write helm base %s", helmBaseCopy.Path)
 		}
 	}
 
@@ -270,9 +273,12 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		writeMidstreamOptions.MidstreamDir = filepath.Join(helmBase.GetOverlaysDir(writeBaseOptions), "midstream", helmBase.Path)
 		writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), helmBase.Path)
 
-		helmBaseCopy := helmBase
+		helmBaseCopy := helmBase.DeepCopy()
 
-		helmMidstream, err := writeMidstream(writeMidstreamOptions, rewriteOptions, &helmBaseCopy, fetchOptions.License, u.GetUpstreamDir(writeUpstreamOptions), log)
+		rewriteOptionsCopy := rewriteOptions
+		rewriteOptionsCopy.K8sNamespace = helmBaseCopy.Namespace
+
+		helmMidstream, err := writeMidstream(writeMidstreamOptions, rewriteOptionsCopy, helmBaseCopy, fetchOptions.License, u.GetUpstreamDir(writeUpstreamOptions), log)
 		if err != nil {
 			return errors.Wrapf(err, "failed to write helm midstream %s", helmBase.Path)
 		}

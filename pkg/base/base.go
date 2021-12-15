@@ -26,10 +26,68 @@ type Base struct {
 	Bases           []Base
 }
 
+func (in *Base) DeepCopyInto(out *Base) {
+	*out = *in
+	if in.Files != nil {
+		out.Files = make([]BaseFile, len(in.Files))
+		for i, file := range in.Files {
+			out.Files[i] = *file.DeepCopy()
+		}
+	}
+	if in.ErrorFiles != nil {
+		out.ErrorFiles = make([]BaseFile, len(in.ErrorFiles))
+		for i, file := range in.ErrorFiles {
+			out.ErrorFiles[i] = *file.DeepCopy()
+		}
+	}
+	if in.AdditionalFiles != nil {
+		out.AdditionalFiles = make([]BaseFile, len(in.AdditionalFiles))
+		for i, file := range in.AdditionalFiles {
+			out.AdditionalFiles[i] = *file.DeepCopy()
+		}
+	}
+	if in.Bases != nil {
+		out.Bases = make([]Base, len(in.Bases))
+		for i, base := range in.Bases {
+			out.Bases[i] = *base.DeepCopy()
+		}
+	}
+	return
+}
+
+func (in *Base) DeepCopy() *Base {
+	if in == nil {
+		return nil
+	}
+	out := new(Base)
+	in.DeepCopyInto(out)
+	return out
+}
+
+func (b *Base) SetNamespace(namespace string) {
+	b.Namespace = namespace
+	for i := range b.Bases {
+		b.Bases[i].SetNamespace(namespace)
+	}
+}
+
 type BaseFile struct {
 	Path    string
 	Content []byte
 	Error   error
+}
+
+func (in *BaseFile) DeepCopyInto(out *BaseFile) {
+	*out = *in
+}
+
+func (in *BaseFile) DeepCopy() *BaseFile {
+	if in == nil {
+		return nil
+	}
+	out := new(BaseFile)
+	in.DeepCopyInto(out)
+	return out
 }
 
 type OverlySimpleGVK struct {

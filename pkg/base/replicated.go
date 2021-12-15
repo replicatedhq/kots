@@ -284,6 +284,7 @@ func renderReplicatedHelmBase(u *upstreamtypes.Upstream, renderOptions *RenderOp
 
 	return &Base{
 		Path:            helmBase.Path,
+		Namespace:       helmBase.Namespace,
 		Files:           helmBaseFiles,
 		AdditionalFiles: helmBase.AdditionalFiles,
 		Bases:           helmBaseBases,
