@@ -313,7 +313,7 @@ func deploymentResource(issuerURL, configChecksum string, options Options) (*app
 								},
 							},
 							LivenessProbe: &corev1.Probe{
-								Handler: corev1.Handler{
+								ProbeHandler: corev1.ProbeHandler{
 									HTTPGet: &corev1.HTTPGetAction{
 										Path: path.Join(u.Path, "healthz"),
 										Port: intstr.FromInt(5556),
@@ -321,7 +321,7 @@ func deploymentResource(issuerURL, configChecksum string, options Options) (*app
 								},
 							},
 							ReadinessProbe: &corev1.Probe{
-								Handler: corev1.Handler{
+								ProbeHandler: corev1.ProbeHandler{
 									HTTPGet: &corev1.HTTPGetAction{
 										Path: path.Join(u.Path, "healthz"),
 										Port: intstr.FromInt(5556),

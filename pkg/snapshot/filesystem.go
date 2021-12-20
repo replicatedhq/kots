@@ -376,7 +376,7 @@ func fileSystemMinioDeploymentResource(clientset kubernetes.Interface, secretChe
 							},
 							Args: []string{"--quiet", "server", "data"},
 							LivenessProbe: &corev1.Probe{
-								Handler: corev1.Handler{
+								ProbeHandler: corev1.ProbeHandler{
 									HTTPGet: &corev1.HTTPGetAction{
 										Path: "/minio/health/live",
 										Port: intstr.FromInt(9000),
@@ -386,7 +386,7 @@ func fileSystemMinioDeploymentResource(clientset kubernetes.Interface, secretChe
 								PeriodSeconds:       20,
 							},
 							ReadinessProbe: &corev1.Probe{
-								Handler: corev1.Handler{
+								ProbeHandler: corev1.ProbeHandler{
 									HTTPGet: &corev1.HTTPGetAction{
 										Path: "/minio/health/ready",
 										Port: intstr.FromInt(9000),

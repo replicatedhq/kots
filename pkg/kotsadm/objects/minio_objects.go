@@ -174,7 +174,7 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 								FailureThreshold:    3,
 								SuccessThreshold:    1,
 								PeriodSeconds:       30,
-								Handler: corev1.Handler{
+								ProbeHandler: corev1.ProbeHandler{
 									HTTPGet: &corev1.HTTPGetAction{
 										Path:   "/minio/health/live",
 										Port:   intstr.FromString("service"),
@@ -188,7 +188,7 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 								FailureThreshold:    3,
 								SuccessThreshold:    1,
 								PeriodSeconds:       15,
-								Handler: corev1.Handler{
+								ProbeHandler: corev1.ProbeHandler{
 									HTTPGet: &corev1.HTTPGetAction{
 										Path:   "/minio/health/ready",
 										Port:   intstr.FromString("service"),

@@ -145,7 +145,7 @@ func DistributionStatefulset(deployOptions types.DeployOptions, size resource.Qu
 								},
 							},
 							LivenessProbe: &corev1.Probe{
-								Handler: corev1.Handler{
+								ProbeHandler: corev1.ProbeHandler{
 									HTTPGet: &corev1.HTTPGetAction{
 										Path: "/",
 										Port: intstr.FromInt(5000),
@@ -153,7 +153,7 @@ func DistributionStatefulset(deployOptions types.DeployOptions, size resource.Qu
 								},
 							},
 							ReadinessProbe: &corev1.Probe{
-								Handler: corev1.Handler{
+								ProbeHandler: corev1.ProbeHandler{
 									HTTPGet: &corev1.HTTPGetAction{
 										Path: "/",
 										Port: intstr.FromInt(5000),
