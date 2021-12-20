@@ -1,3 +1,4 @@
+//go:build !kots_experimental
 // +build !kots_experimental
 
 package cli

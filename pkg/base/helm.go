@@ -443,15 +443,43 @@ type HelmSubCharts struct {
 	SubCharts  []string
 }
 
-func FindHelmSubChartsFromBase(baseDir, parentChart string) (*HelmSubCharts, error) {
+func FindHelmSubChartsFromBase(baseDir, parentChartName string) (*HelmSubCharts, error) {
 	type helmName struct {
 		Name string `yaml:"name"`
 	}
+	type dependency struct {
+		Alias string `yaml:"alias"`
+		Name  string `yaml:"name"`
+	}
+	type dependencies struct {
+		Dependencies []dependency `yaml:"dependencies"`
+	}
 
 	charts := make([]string, 0)
-	rootSearch := fmt.Sprintf("%s/charts/%s", baseDir, parentChart)
+	rootSearch := filepath.Join(baseDir, "charts", parentChartName)
 
-	err := filepath.Walk(rootSearch,
+	// If dependencies in the chart are aliased, they will create new directories with the alias name
+	// in the charts folder and need to be excluded when generating the pullsecrets.yaml. It feels like this
+	// could replace the logic below that's doing the file tree walking but I'm unsure.
+	parentChartPath := filepath.Join(rootSearch, "Chart.yaml")
+	parentChartRaw, err := ioutil.ReadFile(parentChartPath)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read parent chart")
+	}
+	parentChart := new(dependencies)
+	err = yaml.Unmarshal(parentChartRaw, parentChart)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to unmarshal parent chart %s", parentChartPath)
+	}
+	for _, dep := range parentChart.Dependencies {
+		if dep.Alias != "" {
+			charts = append(charts, dep.Alias)
+		} else {
+			charts = append(charts, dep.Name)
+		}
+	}
+
+	err = filepath.Walk(rootSearch,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
@@ -488,7 +516,7 @@ func FindHelmSubChartsFromBase(baseDir, parentChart string) (*HelmSubCharts, err
 	}
 
 	return &HelmSubCharts{
-		ParentName: parentChart,
+		ParentName: parentChartName,
 		SubCharts:  charts,
 	}, nil
 }
