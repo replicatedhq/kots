@@ -5,7 +5,7 @@
 	"build": {
 		"dockerfile": "Dockerfile",
 		"args": { 
-            "GO_VERSION": "1.16",
+            "GO_VERSION": "1.17",
         }
 	},
 
