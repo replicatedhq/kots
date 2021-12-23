@@ -2,6 +2,7 @@ package base
 
 import (
 	"io"
+	"strings"
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -50,9 +51,15 @@ func ProcessUpstreamImages(options WriteUpstreamImageOptions) (*WriteUpstreamIma
 			collectors = append(collectors, options.KotsKinds.Preflight.Spec.Collectors...)
 		}
 		for _, c := range collectors {
-			if c.Run != nil && c.Run.Image != "" {
-				additionalImages = append(additionalImages, c.Run.Image)
+			if c.Run == nil || c.Run.Image == "" {
+				continue
 			}
+			if strings.Contains(c.Run.Image, "repl{{") || strings.Contains(c.Run.Image, "{{repl") {
+				// Images that use templates like LocalImageName should be included in application's additionalImages list.
+				// We want the original image names here only, not the templated ones.
+				continue
+			}
+			additionalImages = append(additionalImages, c.Run.Image)
 		}
 
 		checkedImages = makeImageInfoMap(options.KotsKinds.Installation.Spec.KnownImages)
