@@ -1,0 +1,7 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- templates/deployment.yaml
+- templates/service.yaml
+- templates/serviceaccount.yaml
+- templates/tests/test-connection.yaml

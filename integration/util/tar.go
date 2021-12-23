@@ -21,7 +21,7 @@ type CompareOptions struct {
 func CompareTars(expected []byte, actual []byte, compareOptions CompareOptions) (bool, error) {
 	expectedFiles, err := parseTar(expected)
 	if err != nil {
-		return false, errors.Wrap(err, "failed to parse epxected tar")
+		return false, errors.Wrap(err, "failed to parse expected tar")
 	}
 
 	actualFiles, err := parseTar(actual)

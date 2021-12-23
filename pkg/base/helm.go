@@ -463,19 +463,18 @@ func FindHelmSubChartsFromBase(baseDir, parentChartName string) (*HelmSubCharts,
 	// could replace the logic below that's doing the file tree walking but I'm unsure.
 	parentChartPath := filepath.Join(rootSearch, "Chart.yaml")
 	parentChartRaw, err := ioutil.ReadFile(parentChartPath)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to read parent chart")
-	}
-	parentChart := new(dependencies)
-	err = yaml.Unmarshal(parentChartRaw, parentChart)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to unmarshal parent chart %s", parentChartPath)
-	}
-	for _, dep := range parentChart.Dependencies {
-		if dep.Alias != "" {
-			charts = append(charts, dep.Alias)
-		} else {
-			charts = append(charts, dep.Name)
+	if err == nil {
+		parentChart := new(dependencies)
+		err = yaml.Unmarshal(parentChartRaw, parentChart)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to unmarshal parent chart %s", parentChartPath)
+		}
+		for _, dep := range parentChart.Dependencies {
+			if dep.Alias != "" {
+				charts = append(charts, dep.Alias)
+			} else {
+				charts = append(charts, dep.Name)
+			}
 		}
 	}
 

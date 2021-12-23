@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/instance: chart
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: subchart-3
+    app.kubernetes.io/version: 1.16.0
+    helm.sh/chart: subchart-3-0.1.0
+  name: chart-subchart-3
+  namespace: helmns
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: chart
+      app.kubernetes.io/name: subchart-3
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: chart
+        app.kubernetes.io/name: subchart-3
+    spec:
+      containers:
+      - image: nginx:latest
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          httpGet:
+            path: /
+            port: http
+        name: subchart-3
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+        resources: {}
+        securityContext: {}
+      securityContext: {}
+      serviceAccountName: chart-subchart-3

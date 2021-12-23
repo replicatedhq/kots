@@ -40,7 +40,6 @@ func TestKotsPull(t *testing.T) {
 		path := filepath.Join(root, entry.Name())
 
 		if !entry.IsDir() {
-			t.Logf("unexpected file %s", path)
 			continue
 		}
 
@@ -137,7 +136,8 @@ func TestKotsPull(t *testing.T) {
 					}
 
 					// exclude installation.yaml as it has a randomly generated encryptionKey
-					if strings.HasSuffix(path, "upstream/userdata/installation.yaml") {
+					if strings.HasSuffix(path, "upstream/userdata/installation.yaml") ||
+						strings.HasSuffix(path, ".DS_Store") {
 						return nil
 					}
 
