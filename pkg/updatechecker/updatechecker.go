@@ -156,9 +156,9 @@ type CheckForUpdatesOpts struct {
 
 type UpdateCheckResponse struct {
 	AvailableUpdates  int64
-	CurrentRelease    UpdateCheckRelease
+	CurrentRelease    *UpdateCheckRelease
 	AvailableReleases []UpdateCheckRelease
-	DeployingRelease  UpdateCheckRelease
+	DeployingRelease  *UpdateCheckRelease
 }
 
 type UpdateCheckRelease struct {
@@ -260,13 +260,16 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 	}
 
 	ucr := UpdateCheckResponse{
-		AvailableUpdates: int64(len(updates)),
-		CurrentRelease: UpdateCheckRelease{
-			Sequence: appVersions.CurrentVersion.Sequence,
-			Version:  appVersions.CurrentVersion.VersionLabel,
-		},
+		AvailableUpdates:  int64(len(updates)),
 		AvailableReleases: availableReleases,
 		DeployingRelease:  getVersionToDeploy(opts, d.ClusterID, availableReleases),
+	}
+
+	if appVersions.CurrentVersion != nil {
+		ucr.CurrentRelease = &UpdateCheckRelease{
+			Sequence: appVersions.CurrentVersion.Sequence,
+			Version:  appVersions.CurrentVersion.VersionLabel,
+		}
 	}
 
 	if len(updates) == 0 {
@@ -340,13 +343,13 @@ func ensureDesiredVersionIsDeployed(opts CheckForUpdatesOpts, clusterID string) 
 	return nil
 }
 
-func getVersionToDeploy(opts CheckForUpdatesOpts, clusterID string, availableReleases []UpdateCheckRelease) UpdateCheckRelease {
+func getVersionToDeploy(opts CheckForUpdatesOpts, clusterID string, availableReleases []UpdateCheckRelease) *UpdateCheckRelease {
 	appVersions, err := store.GetStore().GetAppVersions(opts.AppID, clusterID)
 	if err != nil {
-		return UpdateCheckRelease{}
+		return nil
 	}
 	if len(appVersions.AllVersions) == 0 {
-		return UpdateCheckRelease{}
+		return nil
 	}
 
 	// prepend updates
@@ -355,7 +358,7 @@ func getVersionToDeploy(opts CheckForUpdatesOpts, clusterID string, availableRel
 	}
 
 	if opts.DeployLatest && appVersions.AllVersions[0].Sequence != appVersions.CurrentVersion.Sequence {
-		return UpdateCheckRelease{
+		return &UpdateCheckRelease{
 			Sequence: appVersions.AllVersions[0].Sequence,
 			Version:  appVersions.AllVersions[0].VersionLabel,
 		}
@@ -371,7 +374,7 @@ func getVersionToDeploy(opts CheckForUpdatesOpts, clusterID string, availableRel
 		}
 
 		if versionToDeploy != nil && versionToDeploy.Sequence != appVersions.CurrentVersion.Sequence {
-			return UpdateCheckRelease{
+			return &UpdateCheckRelease{
 				Sequence: versionToDeploy.Sequence,
 				Version:  versionToDeploy.VersionLabel,
 			}
@@ -380,7 +383,7 @@ func getVersionToDeploy(opts CheckForUpdatesOpts, clusterID string, availableRel
 
 	// todo: get version to deploy for opts.AutoDeploy
 
-	return UpdateCheckRelease{}
+	return nil
 }
 
 func deployLatestVersion(opts CheckForUpdatesOpts, clusterID string) error {
