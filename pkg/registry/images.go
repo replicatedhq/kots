@@ -253,7 +253,7 @@ func deleteUnusedImages(ctx context.Context, registry types.RegistrySettings, us
 		}
 	}
 
-	for _, i := range usedImages {
+	for _, usedImage := range usedImages {
 		registryOptions := dockerregistry.RegistryOptions{
 			Endpoint:  registry.Hostname,
 			Namespace: registry.Namespace,
@@ -261,7 +261,7 @@ func deleteUnusedImages(ctx context.Context, registry types.RegistrySettings, us
 			Password:  registry.Password,
 		}
 
-		appImage := image.DestRef(registryOptions, i)
+		appImage := image.DestRef(registryOptions, usedImage)
 		appImageRef, err := docker.ParseReference(fmt.Sprintf("//%s", appImage))
 		if err != nil {
 			return errors.Wrapf(err, "failed to parse %s", appImage)
@@ -356,6 +356,7 @@ func runGCCommand(ctx context.Context) error {
 	// we don't care if this file exists, so just ignore errors for now
 	_ = uploadEmptyFileToRegistry(ctx)
 
+	errs := make([]error, 0)
 	for _, pod := range registryPods.Items {
 		req := clientset.CoreV1().RESTClient().Post().Resource("pods").Name(pod.Name).Namespace(pod.Namespace).SubResource("exec")
 		parameterCodec := runtime.NewParameterCodec(scheme)
@@ -370,7 +371,8 @@ func runGCCommand(ctx context.Context) error {
 
 		exec, err := remotecommand.NewSPDYExecutor(clusterConfig, "POST", req.URL())
 		if err != nil {
-			return errors.Wrap(err, "failed to create remote executor")
+			errs = append(errs, errors.Wrap(err, "failed to create remote executor"))
+			continue
 		}
 
 		stdout := new(bytes.Buffer)
@@ -387,12 +389,15 @@ func runGCCommand(ctx context.Context) error {
 		logger.Infof("garbage collect command stderr: %s", stderr.Bytes())
 
 		if err != nil {
-			return errors.Wrap(err, "failed to stream command output")
+			errs = append(errs, errors.Wrap(err, "failed to stream command output"))
+			continue
 		}
 
+		// terminate after the first successful loop iteration
 		return nil
 	}
 
+	logger.Errorf("errors while running garbage collect command: %v", errs)
 	return errors.New("no pods found to run garbage collect command")
 }
 

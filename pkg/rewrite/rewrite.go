@@ -154,13 +154,13 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 			files = append(files, file)
 		}
 
-		newInstallation, err := upstream.LoadInstallation(u.GetUpstreamDir(writeUpstreamOptions))
+		newKotsKinds, err := kotsutil.LoadKotsKindsFromPath(u.GetUpstreamDir(writeUpstreamOptions))
 		if err != nil {
 			return errors.Wrap(err, "failed to load installation")
 		}
-		newInstallation.Spec.YAMLErrors = files
+		newKotsKinds.Installation.Spec.YAMLErrors = files
 
-		err = upstream.SaveInstallation(newInstallation, u.GetUpstreamDir(writeUpstreamOptions))
+		err = upstream.SaveInstallation(&newKotsKinds.Installation, u.GetUpstreamDir(writeUpstreamOptions))
 		if err != nil {
 			return errors.Wrap(err, "failed to save installation")
 		}
@@ -341,13 +341,9 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options Rewrit
 		// When only registry endpoint is set, we don't need to copy images, but still
 		// need to rewrite them and create secrets.
 
-		newInstallation, err := upstream.LoadInstallation(upstreamDir)
+		newKotsKinds, err := kotsutil.LoadKotsKindsFromPath(upstreamDir)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to load installation")
-		}
-		application, err := upstream.LoadApplication(upstreamDir)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to load application")
+			return nil, errors.Wrap(err, "failed to load kotskinds from new upstream")
 		}
 
 		writeUpstreamImageOptions := base.WriteUpstreamImageOptions{
@@ -368,10 +364,9 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options Rewrit
 				Username: dockerHubRegistryCreds.Username,
 				Password: dockerHubRegistryCreds.Password,
 			},
-			Installation: newInstallation,
-			Application:  application,
-			IsAirgap:     options.IsAirgap,
-			CopyImages:   options.CopyImages,
+			KotsKinds:  newKotsKinds,
+			IsAirgap:   options.IsAirgap,
+			CopyImages: options.CopyImages,
 		}
 
 		if license != nil {
@@ -385,8 +380,8 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options Rewrit
 			return nil, errors.Wrap(err, "failed to write upstream images")
 		}
 
-		newInstallation.Spec.KnownImages = copyResult.CheckedImages
-		err = upstream.SaveInstallation(newInstallation, upstreamDir)
+		newKotsKinds.Installation.Spec.KnownImages = copyResult.CheckedImages
+		err = upstream.SaveInstallation(&newKotsKinds.Installation, upstreamDir)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to save installation")
 		}
@@ -424,15 +419,12 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options Rewrit
 		images = copyResult.Images
 		objects = affectedObjects
 	} else {
-		application, err := upstream.LoadApplication(upstreamDir)
+		kotsKinds, err := kotsutil.LoadKotsKindsFromPath(upstreamDir)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to load application")
+			return nil, errors.Wrap(err, "failed to load kotskonds")
 		}
 
-		allPrivate := false
-		if application != nil {
-			allPrivate = application.Spec.ProxyPublicImages
-		}
+		allPrivate := kotsKinds.KotsApplication.Spec.ProxyPublicImages
 
 		// When CopyImages is not set, we only rewrite private images and use license to create secrets
 		// for all objects that have private images
@@ -456,12 +448,8 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options Rewrit
 			return nil, errors.Wrap(err, "failed to find private images")
 		}
 
-		newInstallation, err := upstream.LoadInstallation(upstreamDir)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to load installation")
-		}
-		newInstallation.Spec.KnownImages = findResult.CheckedImages
-		err = upstream.SaveInstallation(newInstallation, upstreamDir)
+		kotsKinds.Installation.Spec.KnownImages = findResult.CheckedImages
+		err = upstream.SaveInstallation(&kotsKinds.Installation, upstreamDir)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to save installation")
 		}
