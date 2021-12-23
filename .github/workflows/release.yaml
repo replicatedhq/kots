@@ -562,6 +562,7 @@ jobs:
   generate-kots-release-notes-pr:
     runs-on: ubuntu-18.04
     needs: [release_go_api_tagged, build_kurl_proxy_tagged]
+    if: ${{ ! endsWith(github.ref, '-nightly') }}
     steps:
     - name: Checkout
       uses: actions/checkout@v2
