@@ -212,6 +212,7 @@ class Root extends PureComponent {
           appNameSpace: data.namespace,
           isKurlEnabled: data.isKurlEnabled,
           featureFlags: data.consoleFeatureFlags,
+          extensions: data.extensions,
           fetchingMetadata: false
         });
       })
@@ -345,6 +346,7 @@ class Root extends PureComponent {
                 appsList={appsList}
                 onLogoutError={this.onLogoutError}
                 isSnapshotsSupported={this.isSnapshotsSupported()}
+                extensions={this.state.extensions}
                 errLoggingOut={errLoggingOut}
               />
               <div className="flex1 flex-column u-overflow--auto">

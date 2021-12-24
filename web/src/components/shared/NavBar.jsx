@@ -119,7 +119,7 @@ export class NavBar extends PureComponent {
   }
 
   render() {
-    const { className, fetchingMetadata, isKurlEnabled, isGitOpsSupported, isIdentityServiceSupported, appsList, logo, location, isSnapshotsSupported } = this.props;
+    const { className, fetchingMetadata, isKurlEnabled, isGitOpsSupported, isIdentityServiceSupported, appsList, logo, location, isSnapshotsSupported, extensions } = this.props;
     const { user, selectedTab } = this.state;
 
     const pathname = location.pathname.split("/");
@@ -201,6 +201,16 @@ export class NavBar extends PureComponent {
                         </span>
                       </div>
                     }
+                    {this.props.extensions.map((extension) => (
+                      <div className={classNames("NavItem u-position--relative flex", { "is-active": selectedTab === "{extension.name}" })}>
+                      <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={this.handleGoToAccess}>
+                        <div className="flex flex1 alignItems--center">
+                          <span className="text u-fontSize--normal u-fontWeight--medium flex"> {extension.name} </span>
+                        </div>
+                      </span>
+                    </div>
+                    ))}
+                    
                   </div>
                 )}
               </div>

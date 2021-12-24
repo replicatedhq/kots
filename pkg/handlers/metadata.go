@@ -32,7 +32,8 @@ type MetadataResponse struct {
 	IsKurlEnabled bool   `json:"isKurlEnabled"`
 	UpstreamURI   string `json:"upstreamUri"`
 	// ConsoleFeatureFlags optional flags from application.yaml used to enable ui features
-	ConsoleFeatureFlags []string `json:"consoleFeatureFlags"`
+	ConsoleFeatureFlags []string                           `json:"consoleFeatureFlags"`
+	Extensions          []kotsv1beta1.ApplicationExtension `json:"extensions"`
 }
 
 // GetMetadataHandler helper function that returns a http handler func that returns metadata. It takes a function that
@@ -85,6 +86,7 @@ func GetMetadataHandler(getK8sInfoFn MetadataK8sFn) http.HandlerFunc {
 		metadataResponse.Name = application.Spec.Title
 		metadataResponse.UpstreamURI = brandingConfigMap.Data[upstreamUriKey]
 		metadataResponse.ConsoleFeatureFlags = application.Spec.ConsoleFeatureFlags
+		metadataResponse.Extensions = application.Spec.Extensions
 
 		JSON(w, http.StatusOK, metadataResponse)
 	}
