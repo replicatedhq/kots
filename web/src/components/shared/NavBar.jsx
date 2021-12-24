@@ -85,6 +85,12 @@ export class NavBar extends PureComponent {
       selectedTab = "snapshots";
     } else if (pathname.startsWith("/access")) {
       selectedTab = "access";
+    } else {
+      for(var extension in this.props.extensions){
+        if (pathname.startsWith("/"+extension.name)) {
+          selectedTab = extension.name
+        }
+      }
     }
     this.setState({ selectedTab });
   }
@@ -109,6 +115,10 @@ export class NavBar extends PureComponent {
 
   handleGoToAccess = () => {
     this.props.history.push("/access");
+  }
+
+  handleGoToExtension(name) {
+    this.props.history.push("/" + name);
   }
 
   redirectToDashboard = () => {
@@ -202,13 +212,13 @@ export class NavBar extends PureComponent {
                       </div>
                     }
                     {this.props.extensions.map((extension) => (
-                      <div className={classNames("NavItem u-position--relative flex", { "is-active": selectedTab === "{extension.name}" })}>
-                      <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={this.handleGoToAccess}>
-                        <div className="flex flex1 alignItems--center">
-                          <span className="text u-fontSize--normal u-fontWeight--medium flex"> {extension.name} </span>
-                        </div>
-                      </span>
-                    </div>
+                      <div key={extension.name} className={classNames("NavItem u-position--relative flex", { "is-active": selectedTab === extension.name })}>
+                        <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={() => this.handleGoToExtension(extension.name)}>
+                          <div className="flex flex1 alignItems--center">
+                            <span className="text u-fontSize--normal u-fontWeight--medium flex"> {extension.name} </span>
+                          </div>
+                        </span>
+                      </div>
                     ))}
                     
                   </div>
