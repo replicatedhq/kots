@@ -2,12 +2,15 @@ package base
 
 import (
 	"io"
+	"strings"
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/image"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	kustomizeimage "sigs.k8s.io/kustomize/api/types"
 )
 
@@ -21,8 +24,7 @@ type WriteUpstreamImageOptions struct {
 	IsAirgap          bool
 	Log               *logger.CLILogger
 	ReportWriter      io.Writer
-	Installation      *kotsv1beta1.Installation
-	Application       *kotsv1beta1.Application
+	KotsKinds         *kotsutil.KotsKinds
 }
 
 type WriteUpstreamImageResult struct {
@@ -31,15 +33,40 @@ type WriteUpstreamImageResult struct {
 }
 
 func ProcessUpstreamImages(options WriteUpstreamImageOptions) (*WriteUpstreamImageResult, error) {
-	additionalImages := make([]string, 0)
-	if options.Application != nil {
-		additionalImages = options.Application.Spec.AdditionalImages
-	}
-	checkedImages := makeImageInfoMap(options.Installation.Spec.KnownImages)
-
 	rewriteAll := options.IsAirgap
-	if options.Application != nil && options.Application.Spec.ProxyPublicImages {
-		rewriteAll = true
+	additionalImages := make([]string, 0)
+	checkedImages := make(map[string]image.ImageInfo)
+
+	if options.KotsKinds != nil {
+		additionalImages = options.KotsKinds.KotsApplication.Spec.AdditionalImages
+
+		collectors := make([]*troubleshootv1beta2.Collect, 0)
+		if options.KotsKinds.SupportBundle != nil {
+			collectors = append(collectors, options.KotsKinds.SupportBundle.Spec.Collectors...)
+		}
+		if options.KotsKinds.Collector != nil {
+			collectors = append(collectors, options.KotsKinds.Collector.Spec.Collectors...)
+		}
+		if options.KotsKinds.Preflight != nil {
+			collectors = append(collectors, options.KotsKinds.Preflight.Spec.Collectors...)
+		}
+		for _, c := range collectors {
+			if c.Run == nil || c.Run.Image == "" {
+				continue
+			}
+			if strings.Contains(c.Run.Image, "repl{{") || strings.Contains(c.Run.Image, "{{repl") {
+				// Images that use templates like LocalImageName should be included in application's additionalImages list.
+				// We want the original image names here only, not the templated ones.
+				continue
+			}
+			additionalImages = append(additionalImages, c.Run.Image)
+		}
+
+		checkedImages = makeImageInfoMap(options.KotsKinds.Installation.Spec.KnownImages)
+
+		if options.KotsKinds.KotsApplication.Spec.ProxyPublicImages {
+			rewriteAll = true
+		}
 	}
 
 	newImages, err := image.ProcessImages(options.SourceRegistry, options.DestRegistry, options.AppSlug, options.Log, options.ReportWriter, options.BaseDir, additionalImages, options.CopyImages, rewriteAll, checkedImages, options.DockerHubRegistry)

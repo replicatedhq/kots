@@ -642,7 +642,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 								FailureThreshold:    3,
 								InitialDelaySeconds: 10,
 								PeriodSeconds:       10,
-								Handler: corev1.Handler{
+								ProbeHandler: corev1.ProbeHandler{
 									HTTPGet: &corev1.HTTPGetAction{
 										Path:   "/healthz",
 										Port:   intstr.FromInt(3000),
@@ -1179,7 +1179,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 								FailureThreshold:    3,
 								InitialDelaySeconds: 10,
 								PeriodSeconds:       10,
-								Handler: corev1.Handler{
+								ProbeHandler: corev1.ProbeHandler{
 									HTTPGet: &corev1.HTTPGetAction{
 										Path:   "/healthz",
 										Port:   intstr.FromInt(3000),

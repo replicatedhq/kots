@@ -191,7 +191,7 @@ func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quanti
 								InitialDelaySeconds: 30,
 								TimeoutSeconds:      5,
 								FailureThreshold:    3,
-								Handler: corev1.Handler{
+								ProbeHandler: corev1.ProbeHandler{
 									Exec: &corev1.ExecAction{
 										Command: []string{
 											"/bin/sh",
@@ -206,7 +206,7 @@ func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quanti
 								InitialDelaySeconds: 1,
 								PeriodSeconds:       1,
 								TimeoutSeconds:      5,
-								Handler: corev1.Handler{
+								ProbeHandler: corev1.ProbeHandler{
 									Exec: &corev1.ExecAction{
 										Command: []string{
 											"/bin/sh",

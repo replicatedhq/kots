@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
@@ -28,7 +29,12 @@ type ProcessUpstreamImagesOptions struct {
 	DestinationRegistry registry.RegistryOptions
 }
 
-func ProcessUpstreamImages(u *types.Upstream, options ProcessUpstreamImagesOptions) ([]kustomizetypes.Image, error) {
+type ProcessUpstreamImageResult struct {
+	KustomizeImages []kustomizetypes.Image
+	KnownImages     []kotsv1beta1.InstallationImage
+}
+
+func ProcessUpstreamImages(u *types.Upstream, options ProcessUpstreamImagesOptions) (*ProcessUpstreamImageResult, error) {
 	pushOpts := kotsadmtypes.PushImagesOptions{
 		Registry:       options.DestinationRegistry,
 		Log:            options.Log,
@@ -73,7 +79,13 @@ func ProcessUpstreamImages(u *types.Upstream, options ProcessUpstreamImagesOptio
 		withAltNames = append(withAltNames, image.BuildImageAltNames(i)...)
 	}
 
-	return withAltNames, nil
+	result := &ProcessUpstreamImageResult{
+		KustomizeImages: withAltNames,
+		// This list is slightly different from the list we get from app specs because of alternative names,
+		// but it still works because after rewriting image names with private registry, the lists become the same.
+		KnownImages: makeInstallationImages(withAltNames),
+	}
+	return result, nil
 }
 
 type ProgressReport struct {
@@ -100,4 +112,15 @@ type ProgressImage struct {
 	StartTime time.Time `json:"startTime"`
 	// time when image finished uploading
 	EndTime time.Time `json:"endTime"`
+}
+
+func makeInstallationImages(images []kustomizetypes.Image) []kotsv1beta1.InstallationImage {
+	result := make([]kotsv1beta1.InstallationImage, 0)
+	for _, image := range images {
+		result = append(result, kotsv1beta1.InstallationImage{
+			Image:     image.Name,
+			IsPrivate: true,
+		})
+	}
+	return result
 }

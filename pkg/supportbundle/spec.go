@@ -66,20 +66,23 @@ func CreateRenderedSpec(appID string, sequence int64, kotsKinds *kotsutil.KotsKi
 		return nil, errors.Wrap(err, "failed to get k8s clientset")
 	}
 
-	minimalRBACNamespaces := []string{}
-	if !k8sutil.IsKotsadmClusterScoped(context.TODO(), clientset, util.PodNamespace) {
-		minimalRBACNamespaces = append(minimalRBACNamespaces, util.PodNamespace)
-		minimalRBACNamespaces = append(minimalRBACNamespaces, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
-		requiresAccess, err := kotssnapshot.CheckKotsadmVeleroAccess(context.TODO(), util.PodNamespace)
-		if err != nil {
-			logger.Errorf("Failed to check kotsadm velero access for the support bundle: %v", err)
-		} else if !requiresAccess {
+	namespacesToCollect := []string{}
+	namespacesToAnalyze := []string{}
+	if !kotsutil.IsKurl(clientset) {
+		// with cluster access, collect everything, but only analyze application namespaces
+		// with minimal RBAC collect only application namespaces
+		if k8sutil.IsKotsadmClusterScoped(context.TODO(), clientset, util.PodNamespace) {
+			namespacesToAnalyze = append(namespacesToAnalyze, util.PodNamespace)
+			namespacesToAnalyze = append(namespacesToAnalyze, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
 			veleroNamespace, err := kotssnapshot.DetectVeleroNamespace(context.TODO(), clientset, util.PodNamespace)
 			if err != nil {
 				logger.Errorf("Failed to detect velero namespace for the support bundle: %v", err)
 			} else {
-				minimalRBACNamespaces = append(minimalRBACNamespaces, veleroNamespace)
+				namespacesToAnalyze = append(namespacesToAnalyze, veleroNamespace)
 			}
+		} else {
+			namespacesToCollect = append(namespacesToCollect, util.PodNamespace)
+			namespacesToCollect = append(namespacesToCollect, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
 		}
 	}
 
@@ -88,7 +91,7 @@ func CreateRenderedSpec(appID string, sequence int64, kotsKinds *kotsutil.KotsKi
 		return nil, errors.Wrap(err, "failed to get app")
 	}
 
-	builtBundle, err = injectDefaults(app, builtBundle, opts, minimalRBACNamespaces)
+	builtBundle, err = injectDefaults(app, builtBundle, opts, namespacesToCollect, namespacesToAnalyze)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to inject defaults")
 	}
@@ -172,7 +175,7 @@ func CreateRenderedSpec(appID string, sequence int64, kotsKinds *kotsutil.KotsKi
 }
 
 // injectDefaults injects the kotsadm default collectors/analyzers in the the support bundle specification.
-func injectDefaults(app *apptypes.App, b *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions, minimalRBACNamespaces []string) (*troubleshootv1beta2.SupportBundle, error) {
+func injectDefaults(app *apptypes.App, b *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions, namespacesToCollect []string, namespacesToAnalyze []string) (*troubleshootv1beta2.SupportBundle, error) {
 	supportBundle := b.DeepCopy()
 
 	clientset, err := k8sutil.GetClientset()
@@ -201,7 +204,7 @@ func injectDefaults(app *apptypes.App, b *troubleshootv1beta2.SupportBundle, opt
 
 	supportBundle = addDefaultTroubleshoot(supportBundle, imageName, pullSecret)
 	supportBundle = addDefaultDynamicTroubleshoot(supportBundle, app, imageName, pullSecret)
-	supportBundle = populateNamespaces(supportBundle, minimalRBACNamespaces)
+	supportBundle = populateNamespaces(supportBundle, namespacesToCollect, namespacesToAnalyze)
 	supportBundle = deduplicatedCollectors(supportBundle)
 	supportBundle = deduplicatedAnalyzers(supportBundle)
 
@@ -238,7 +241,7 @@ func injectDefaults(app *apptypes.App, b *troubleshootv1beta2.SupportBundle, opt
 
 // if a namespace is not set for a secret/run/logs/exec/copy collector, set it to the current namespace
 // if kotsadm is running with minimal rbac priviliges, only collect resources from the specified minimal rbac namespaces
-func populateNamespaces(supportBundle *troubleshootv1beta2.SupportBundle, minimalRBACNamespaces []string) *troubleshootv1beta2.SupportBundle {
+func populateNamespaces(supportBundle *troubleshootv1beta2.SupportBundle, namespacesToCollect []string, namespacesToAnalyze []string) *troubleshootv1beta2.SupportBundle {
 	next := supportBundle.DeepCopy()
 
 	// collectors
@@ -262,9 +265,9 @@ func populateNamespaces(supportBundle *troubleshootv1beta2.SupportBundle, minima
 		if collect.Copy != nil && collect.Copy.Namespace == "" {
 			collect.Copy.Namespace = util.PodNamespace
 		}
-		if len(minimalRBACNamespaces) > 0 {
+		if len(namespacesToCollect) > 0 {
 			if collect.ClusterResources != nil && len(collect.ClusterResources.Namespaces) == 0 {
-				collect.ClusterResources.Namespaces = minimalRBACNamespaces
+				collect.ClusterResources.Namespaces = namespacesToCollect
 			}
 		}
 		collects = append(collects, collect)
@@ -272,16 +275,44 @@ func populateNamespaces(supportBundle *troubleshootv1beta2.SupportBundle, minima
 	next.Spec.Collectors = collects
 
 	// analyzers
-	var analyzers []*troubleshootv1beta2.Analyze
-	for _, analyzer := range next.Spec.Analyzers {
-		if len(minimalRBACNamespaces) > 0 {
-			if analyzer.ClusterPodStatuses != nil && len(analyzer.ClusterPodStatuses.Namespaces) == 0 {
-				analyzer.ClusterPodStatuses.Namespaces = minimalRBACNamespaces
+	if len(namespacesToAnalyze) > 0 {
+		isEmpty := func(namespace string, namespaces []string) bool {
+			if len(namespace) > 0 {
+				return false
 			}
+			if len(namespaces) > 0 {
+				return false
+			}
+			return true
 		}
-		analyzers = append(analyzers, analyzer)
+
+		var analyzers []*troubleshootv1beta2.Analyze
+		for _, analyzer := range next.Spec.Analyzers {
+
+			if analyzer.ClusterPodStatuses != nil && isEmpty("", analyzer.ClusterPodStatuses.Namespaces) {
+				analyzer.ClusterPodStatuses.Namespaces = namespacesToAnalyze
+			}
+
+			if analyzer.DeploymentStatus != nil && isEmpty(analyzer.DeploymentStatus.Namespace, analyzer.DeploymentStatus.Namespaces) {
+				analyzer.DeploymentStatus.Namespaces = namespacesToAnalyze
+			}
+
+			if analyzer.JobStatus != nil && isEmpty(analyzer.JobStatus.Namespace, analyzer.JobStatus.Namespaces) {
+				analyzer.JobStatus.Namespaces = namespacesToAnalyze
+			}
+
+			if analyzer.ReplicaSetStatus != nil && isEmpty(analyzer.ReplicaSetStatus.Namespace, analyzer.ReplicaSetStatus.Namespaces) {
+				analyzer.ReplicaSetStatus.Namespaces = namespacesToAnalyze
+			}
+
+			if analyzer.StatefulsetStatus != nil && isEmpty(analyzer.StatefulsetStatus.Namespace, analyzer.StatefulsetStatus.Namespaces) {
+				analyzer.StatefulsetStatus.Namespaces = namespacesToAnalyze
+			}
+
+			analyzers = append(analyzers, analyzer)
+		}
+		next.Spec.Analyzers = analyzers
 	}
-	next.Spec.Analyzers = analyzers
 
 	return next
 }

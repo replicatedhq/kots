@@ -17,14 +17,15 @@ func TestBuilder_populateNamespaces(t *testing.T) {
 	}()
 
 	tests := []struct {
-		name                  string
-		minimalRBACNamespaces []string
-		supportBundle         *troubleshootv1beta2.SupportBundle
-		want                  *troubleshootv1beta2.SupportBundle
+		name                string
+		namespacesToCollect []string
+		namespacesToAnalyze []string
+		supportBundle       *troubleshootv1beta2.SupportBundle
+		want                *troubleshootv1beta2.SupportBundle
 	}{
 		{
-			name:                  "all",
-			minimalRBACNamespaces: []string{},
+			name:                "all",
+			namespacesToCollect: []string{},
 			supportBundle: &troubleshootv1beta2.SupportBundle{
 				Spec: troubleshootv1beta2.SupportBundleSpec{
 					Collectors: []*troubleshootv1beta2.Collect{
@@ -75,8 +76,8 @@ func TestBuilder_populateNamespaces(t *testing.T) {
 			},
 		},
 		{
-			name:                  "minimal rbac namespaces - preserve",
-			minimalRBACNamespaces: []string{"rbac-namespace-1", "rbac-namespace-2"},
+			name:                "minimal rbac namespaces - preserve",
+			namespacesToCollect: []string{"rbac-namespace-1", "rbac-namespace-2"},
 			supportBundle: &troubleshootv1beta2.SupportBundle{
 				Spec: troubleshootv1beta2.SupportBundleSpec{
 					Collectors: []*troubleshootv1beta2.Collect{
@@ -101,13 +102,50 @@ func TestBuilder_populateNamespaces(t *testing.T) {
 			},
 		},
 		{
-			name:                  "minimal rbac namespaces - override",
-			minimalRBACNamespaces: []string{"rbac-namespace-1", "rbac-namespace-2"},
+			name:                "minimal rbac namespaces - override",
+			namespacesToCollect: []string{"rbac-namespace-1", "rbac-namespace-2", "rbac-namespace-3"},
+			namespacesToAnalyze: []string{"rbac-namespace-1", "rbac-namespace-2"},
 			supportBundle: &troubleshootv1beta2.SupportBundle{
 				Spec: troubleshootv1beta2.SupportBundleSpec{
 					Collectors: []*troubleshootv1beta2.Collect{
 						{
 							ClusterResources: &troubleshootv1beta2.ClusterResources{},
+						},
+					},
+					Analyzers: []*troubleshootv1beta2.Analyze{
+						// these will be assigned namespaces
+						{
+							DeploymentStatus: &troubleshootv1beta2.DeploymentStatus{},
+						},
+						{
+							JobStatus: &troubleshootv1beta2.JobStatus{},
+						},
+						{
+							ReplicaSetStatus: &troubleshootv1beta2.ReplicaSetStatus{},
+						},
+						{
+							StatefulsetStatus: &troubleshootv1beta2.StatefulsetStatus{},
+						},
+						// these will not be assigned namespaces
+						{
+							DeploymentStatus: &troubleshootv1beta2.DeploymentStatus{
+								Namespaces: []string{"different-namespace-1", "different-namespace-2"},
+							},
+						},
+						{
+							JobStatus: &troubleshootv1beta2.JobStatus{
+								Namespace: "different-namespace-1",
+							},
+						},
+						{
+							ReplicaSetStatus: &troubleshootv1beta2.ReplicaSetStatus{
+								Namespaces: []string{"different-namespace-1", "different-namespace-2"},
+							},
+						},
+						{
+							StatefulsetStatus: &troubleshootv1beta2.StatefulsetStatus{
+								Namespace: "different-namespace-1",
+							},
 						},
 					},
 				},
@@ -117,7 +155,49 @@ func TestBuilder_populateNamespaces(t *testing.T) {
 					Collectors: []*troubleshootv1beta2.Collect{
 						{
 							ClusterResources: &troubleshootv1beta2.ClusterResources{
+								Namespaces: []string{"rbac-namespace-1", "rbac-namespace-2", "rbac-namespace-3"},
+							},
+						},
+					},
+					Analyzers: []*troubleshootv1beta2.Analyze{
+						{
+							DeploymentStatus: &troubleshootv1beta2.DeploymentStatus{
 								Namespaces: []string{"rbac-namespace-1", "rbac-namespace-2"},
+							},
+						},
+						{
+							JobStatus: &troubleshootv1beta2.JobStatus{
+								Namespaces: []string{"rbac-namespace-1", "rbac-namespace-2"},
+							},
+						},
+						{
+							ReplicaSetStatus: &troubleshootv1beta2.ReplicaSetStatus{
+								Namespaces: []string{"rbac-namespace-1", "rbac-namespace-2"},
+							},
+						},
+						{
+							StatefulsetStatus: &troubleshootv1beta2.StatefulsetStatus{
+								Namespaces: []string{"rbac-namespace-1", "rbac-namespace-2"},
+							},
+						},
+						{
+							DeploymentStatus: &troubleshootv1beta2.DeploymentStatus{
+								Namespaces: []string{"different-namespace-1", "different-namespace-2"},
+							},
+						},
+						{
+							JobStatus: &troubleshootv1beta2.JobStatus{
+								Namespace: "different-namespace-1",
+							},
+						},
+						{
+							ReplicaSetStatus: &troubleshootv1beta2.ReplicaSetStatus{
+								Namespaces: []string{"different-namespace-1", "different-namespace-2"},
+							},
+						},
+						{
+							StatefulsetStatus: &troubleshootv1beta2.StatefulsetStatus{
+								Namespace: "different-namespace-1",
 							},
 						},
 					},
@@ -130,7 +210,7 @@ func TestBuilder_populateNamespaces(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			req := require.New(t)
 
-			got := populateNamespaces(tt.supportBundle, tt.minimalRBACNamespaces)
+			got := populateNamespaces(tt.supportBundle, tt.namespacesToCollect, tt.namespacesToAnalyze)
 
 			req.Equal(tt.want, got)
 		})
