@@ -211,8 +211,8 @@ export class NavBar extends PureComponent {
                         </span>
                       </div>
                     }
-                    {this.props.extensions.map((extension) => (
-                      <div key={extension.name} className={classNames("NavItem u-position--relative flex", { "is-active": selectedTab === extension.name })}>
+                    {this.props.extensions?.map((extension) => (
+                      <div key={extension.name} className={classNames("NavItem u-position--relative flex", { "is-active": selectedTab === extension.name } )}>
                         <span className="HeaderLink flex flex1 u-cursor--pointer" onClick={() => this.handleGoToExtension(extension.name)}>
                           <div className="flex flex1 alignItems--center">
                             <span className="text u-fontSize--normal u-fontWeight--medium flex"> {extension.name} </span>
