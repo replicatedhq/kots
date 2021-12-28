@@ -86,11 +86,11 @@ export class NavBar extends PureComponent {
     } else if (pathname.startsWith("/access")) {
       selectedTab = "access";
     } else {
-      for(var extension in this.props.extensions){
-        if (pathname.startsWith("/"+extension.name)) {
+      this.props.extensions.forEach((extension) => {
+        if (pathname === "/" + extension.name ) {
           selectedTab = extension.name
         }
-      }
+      })
     }
     this.setState({ selectedTab });
   }
