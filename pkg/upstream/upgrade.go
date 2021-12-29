@@ -220,7 +220,7 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 	if err := json.Unmarshal(b, &ur); err != nil {
 		return nil, errors.Wrap(err, "failed to parse response")
 	}
-	if ur.DeployingRelease.Version == "" {
+	if ur.DeployingRelease != nil && ur.DeployingRelease.Version == "" {
 		ur.DeployingRelease = nil
 	}
 
