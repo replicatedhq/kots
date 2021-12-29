@@ -405,7 +405,7 @@ class Root extends PureComponent {
                   />
                   <Route exact path="/restore-completed" render={props => <RestoreCompleted {...props} logo={this.state.appLogo} fetchingMetadata={this.state.fetchingMetadata} />} />
                   {this.state.extensions?.map((extension) => (
-                    <Route exact path={"/" + extension.name} render={(props) => <iframe src={extension.endpoint} height="100%" />} />
+                    <Route key={extension.name} exact path={"/" + extension.name} render={(props) => <iframe src={extension.endpoint} height="100%" />} />
                   ))}
                   <Route component={NotFound} />
                 </Switch>
