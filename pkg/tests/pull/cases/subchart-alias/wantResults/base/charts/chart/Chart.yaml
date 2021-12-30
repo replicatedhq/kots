@@ -1,0 +1,14 @@
+apiVersion: v2
+appVersion: 1.16.0
+description: A Helm chart for Kubernetes
+name: chart
+type: application
+version: 0.1.0
+dependencies:
+  - name: subchart-1
+    repository: file://./helm-charts/subchart-1/
+    version: 0.1.0
+  - alias: subchart-3
+    name: subchart-1
+    repository: file://./helm-charts/subchart-1/
+    version: 0.1.0

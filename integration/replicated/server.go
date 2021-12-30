@@ -1,24 +1,26 @@
 package replicated
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 )
 
-func StartMockServer(endpoint string, appSlug string, licenseID string, archive, license []byte) (chan bool, error) {
-	stopCh := make(chan bool)
-
-	srv := &http.Server{Addr: ":3000"}
-	http.HandleFunc("/release/", func(w http.ResponseWriter, r *http.Request) {
+func StartMockServer(archive, license []byte) (*http.Server, error) {
+	mux := http.NewServeMux()
+	srv := &http.Server{
+		Addr:    ":3000",
+		Handler: mux,
+	}
+	mux.HandleFunc("/release/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("handling URL %s with release tarball\n", r.URL)
 		w.Write(archive)
 	})
-	http.HandleFunc("/license/", func(w http.ResponseWriter, r *http.Request) {
+
+	mux.HandleFunc("/license/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("handling URL %s with license file\n", r.URL)
 		w.Write(license)
 	})
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("WARNING! unable to handle url %s", r.URL)
 		w.WriteHeader(501)
 	})
@@ -27,10 +29,5 @@ func StartMockServer(endpoint string, appSlug string, licenseID string, archive,
 		srv.ListenAndServe()
 	}()
 
-	go func() {
-		<-stopCh
-		srv.Shutdown(context.TODO())
-	}()
-
-	return stopCh, nil
+	return srv, nil
 }

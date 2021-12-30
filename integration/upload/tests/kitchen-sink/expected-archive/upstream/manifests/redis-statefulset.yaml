@@ -1,0 +1,83 @@
+apiVersion: apps/v1beta2
+kind: StatefulSet
+metadata:
+  name: sentry-redis-master
+  labels:
+    app: redis
+spec:
+  selector:
+    matchLabels:
+      release: "release-name"
+      chart: redis-3.8.1
+      role: master
+      app: redis
+  serviceName: "redis-master"
+  template:
+    metadata:
+      labels:
+        release: "release-name"
+        chart: redis-3.8.1
+        role: master
+        app: redis
+    spec:
+      securityContext:
+        fsGroup: 1001
+        runAsUser: 1001
+      serviceAccountName: "default"
+      containers:
+      - name: sentry-redis
+        image: "docker.io/bitnami/redis:4.0.11-debian-9"
+        imagePullPolicy: "Always"
+        env:
+        - name: REDIS_REPLICATION_MODE
+          value: master
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: sentry-redis
+              key: redis-password
+        - name: REDIS_DISABLE_COMMANDS
+          value: FLUSHDB,FLUSHALL
+        ports:
+        - name: redis
+          containerPort: 6379
+        livenessProbe:
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 5
+          exec:
+            command:
+            - redis-cli
+            - ping
+        readinessProbe:
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 1
+          successThreshold: 1
+          failureThreshold: 5
+          exec:
+            command:
+            - redis-cli
+            - ping
+
+        volumeMounts:
+        - name: redis-data
+          mountPath: /bitnami/redis/data
+          subPath:
+      volumes:
+  volumeClaimTemplates:
+    - metadata:
+        name: redis-data
+        labels:
+          app: "redis"
+          component: "master"
+      spec:
+        accessModes:
+          - "ReadWriteOnce"
+        resources:
+          requests:
+            storage: "8Gi"
+  updateStrategy:
+    type: OnDelete

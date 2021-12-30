@@ -1,0 +1,39 @@
+apiVersion: builtin
+kind: LabelTransformer
+metadata:
+  name: backup-label-transformer
+labels:
+  kots.io/app-slug: my-app
+  kots.io/backup: velero
+fieldSpecs:
+- path: metadata/labels
+  create: true
+- version: v1
+  kind: ReplicationController
+  path: spec/template/metadata/labels
+  create: true
+- kind: Deployment
+  path: spec/template/metadata/labels
+  create: true
+- kind: ReplicaSet
+  path: spec/template/metadata/labels
+  create: true
+- kind: DaemonSet
+  path: spec/template/metadata/labels
+  create: true
+- group: apps
+  kind: StatefulSet
+  path: spec/template/metadata/labels
+  create: true
+- group: batch
+  kind: Job
+  path: spec/template/metadata/labels
+  create: true
+- group: batch
+  kind: CronJob
+  path: spec/jobTemplate/metadata/labels
+  create: true
+- group: batch
+  kind: CronJob
+  path: spec/jobTemplate/spec/template/metadata/labels
+  create: true

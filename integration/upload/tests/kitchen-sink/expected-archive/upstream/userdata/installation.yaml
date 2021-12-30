@@ -1,0 +1,9 @@
+apiVersion: kots.io/v1beta1
+kind: Installation
+metadata:
+  creationTimestamp: null
+  name: sentry-enterprise
+spec:
+  updateCursor: "-1"
+  versionLabel: ""
+status: {}

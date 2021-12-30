@@ -1,0 +1,13 @@
+apiVersion: kots.io/v1beta1
+kind: Installation
+metadata:
+  creationTimestamp: null
+  name: replicated-kots-app
+spec:
+  channelID: 1vusIYZLAVxMG6q760OJmRKj5i5
+  channelName: My Channel
+  encryptionKey: z74aV2jTX79N3kaabGvZNbN7kmTGqBarqYAYVNZPdU11ZOCc
+  knownImages:
+  - image: nginx:latest
+  - image: busybox
+status: {}

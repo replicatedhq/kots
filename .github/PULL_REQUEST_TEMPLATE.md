@@ -11,10 +11,12 @@ https://github.com/replicatedhq/kots/blob/main/CONTRIBUTING.md#testing
 
 <!--
 Please choose from one of the following:
-kind/bug
-kind/documentation
-kind/enhancement
-kind/chore
+type::bug
+type::docs
+type::feature
+type::security
+type::chore
+type::tests
 -->
 
 #### What this PR does / why we need it:

@@ -1,7 +1,6 @@
 package upload
 
 import (
-	"io/ioutil"
 	"path"
 	"testing"
 
@@ -46,11 +45,7 @@ func Test_Upload(t *testing.T) {
 				Silent:          true,
 			}
 
-			expectedData, err := ioutil.ReadFile(path.Join("tests", test.path, "expected-archive.tar.gz"))
-			req.NoError(err)
-
-			method := "POST"
-			stopCh, err := StartMockServer("http://localhost:3001", method, test.expectedUpdateCursor, test.expectedVersionLabel, test.expectedLicense, expectedData)
+			stopCh, err := StartMockServer("POST")
 			req.NoError(err)
 
 			defer func() {

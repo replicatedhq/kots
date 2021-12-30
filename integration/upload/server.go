@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func StartMockServer(endpoint string, method string, expectedUpdateCursor string, expectedVersionLabel string, expectedLicense string, archive []byte) (chan bool, error) {
+func StartMockServer(method string) (chan bool, error) {
 	stopCh := make(chan bool)
 
 	srv := &http.Server{Addr: ":3001"}
@@ -41,7 +41,7 @@ func StartMockServer(endpoint string, method string, expectedUpdateCursor string
 		if err == nil && response.StatusCode == http.StatusOK {
 			break
 		}
-		if time.Now().Sub(start) > time.Duration(time.Second*5) {
+		if time.Now().Sub(start) > time.Second*5 {
 			return nil, errors.New("mock server failed to start in the allocated time")
 		}
 
