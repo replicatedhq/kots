@@ -900,6 +900,8 @@ func GetGlobalStore(ctx context.Context, kotsadmNamespace string, kotsadmVeleroB
 				},
 			},
 		}
+	case "replicated.com/pvc":
+		store.Internal = &types.StoreInternal{}
 	}
 
 	return &store, nil
