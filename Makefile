@@ -47,10 +47,6 @@ gosec:
 	go get github.com/securego/gosec/cmd/gosec
 	$(GOPATH)/bin/gosec ./...
 
-.PHONY: release
-release:
-	curl -sL https://git.io/goreleaser | VERSION=v0.118.2 bash -s -- --rm-dist --config deploy/.goreleaser.yml
-
 .PHONY: mock
 mock:
 	go get github.com/golang/mock/mockgen@v1.6.0
