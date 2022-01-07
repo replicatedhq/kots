@@ -277,8 +277,8 @@ github.com/bitly/go-hostpool v0.0.0-20171023180738-a3a6125de932/go.mod h1:NOuUCS
 github.com/bitly/go-simplejson v0.5.0/go.mod h1:cXHtHw4XUPsvGaxgjIAn8PhEWG9NfngEKAMDJEczWVA=
 github.com/bitnami-labs/flagenv v0.0.0-20190607135054-a87af7a1d6fc/go.mod h1:OeW4NPgFPO7+t8q1Vn2Yv+rkO+4kEQzlDskwm7C7PXs=
 github.com/bitnami-labs/pflagenv v0.0.0-20190702160147-b4d9f048d98f/go.mod h1:Lw3ejf6HTt4DqBIAXlkOIvFjnpj8Zq+zD/UtH29ILFA=
-github.com/bitnami-labs/sealed-secrets v0.14.1 h1:nqjpncvWPEdvHoQzgst8+sNEpWWTYs3HrNumwQpZTdE=
-github.com/bitnami-labs/sealed-secrets v0.14.1/go.mod h1:ZzJszoQVYhTm+bt8Cucw2KScLMiGrInOD9hRC6wUg1Q=
+github.com/bitnami-labs/sealed-secrets v0.17.1 h1:1hkkUPBdk6vI53Fq6kEPSVF19xQuSp7MsFtT7MVBWY4=
+github.com/bitnami-labs/sealed-secrets v0.17.1/go.mod h1:bYscvNWqnRcQeGe6w5SYX3RcA6tzARLRYJchb3PLdSE=
 github.com/bits-and-blooms/bitset v1.2.0/go.mod h1:gIdJ4wp64HaoK2YrL1Q5/N7Y16edYb8uY+O0FJTyyDA=
 github.com/bketelsen/crypt v0.0.3-0.20200106085610-5cbc8cc4026c/go.mod h1:MKsuJmJgSg28kpZDP6UIiPt0e0Oz0kqKNGyRaWEPv84=
 github.com/bketelsen/crypt v0.0.4/go.mod h1:aI6NrJ0pMGgvZKL1iVgXLnfIFJtfV+bKCoqOes/6LfM=
@@ -590,6 +590,7 @@ github.com/envoyproxy/go-control-plane v0.9.10-0.20210907150352-cf90f659a021/go.
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
 github.com/euank/go-kmsg-parser v2.0.0+incompatible/go.mod h1:MhmAMZ8V4CYH4ybgdRwPr2TU5ThnS43puaKEMpja1uw=
 github.com/evanphx/json-patch v0.5.2/go.mod h1:ZWS5hhDbVDyob71nXKNL0+PWn6ToqBHMikGIFbs31qQ=
+github.com/evanphx/json-patch v4.2.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=
 github.com/evanphx/json-patch v4.5.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=
 github.com/evanphx/json-patch v4.9.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=
 github.com/evanphx/json-patch v4.11.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLiYLvXMP4fmwYFNcr97nuDLSk=
