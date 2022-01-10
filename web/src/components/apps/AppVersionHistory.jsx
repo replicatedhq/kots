@@ -772,7 +772,7 @@ class AppVersionHistory extends Component {
     if (version?.status === "deployed" || version?.status === "merged") {
       return (
       <div className="u-marginTop--10">
-        <span className="status-tag unknown flex-auto u-cursor--default" data-tip={version.deployedAt ? `Deployed ${Utilities.dateFormat(version.deployedAt, "MMMM D, YYYY @ hh:mm a z")}` : "Unable to find deployed at date"}>Previously deployed</span>
+        <span className="status-tag success flex-auto u-cursor--default" data-tip={version.deployedAt ? `Deployed ${Utilities.dateFormat(version.deployedAt, "MMMM D, YYYY @ hh:mm a z")}` : "Unable to find deployed at date"}>Currently {version.status.replace("_", " ")} version</span>
         <ReactTooltip effect="solid" className="replicated-tooltip" />
       </div>
       );
