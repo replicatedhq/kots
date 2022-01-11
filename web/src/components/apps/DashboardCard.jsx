@@ -253,6 +253,7 @@ export default class DashboardCard extends React.Component {
           resuming={this.props.uploadResuming}
           onProgressError={this.props.onProgressError}
           smallSize={true}
+          classic={true}
         />
       );
     } else if (isBundleUploading) {
@@ -262,6 +263,7 @@ export default class DashboardCard extends React.Component {
           unkownProgress={true}
           onProgressError={this.onProgressError}
           smallSize={true}
+          classic={true}
         />);
     } else if (errorCheckingUpdate) {
       updateText = <p className="u-marginTop--10 u-fontSize--small u-textColor--error u-fontWeight--medium">Error checking for updates, please try again</p>

@@ -62,7 +62,7 @@ class AirgapUploadProgress extends React.Component {
   }
   
   render() {
-    const { total, progress, resuming, onProgressError, onProgressSuccess, smallSize } = this.props;
+    const { total, progress, resuming, onProgressError, onProgressSuccess, smallSize, classic } = this.props;
     const { installStatus, currentMessage } = this.state;
 
     if (installStatus === "installed") {
@@ -104,14 +104,14 @@ class AirgapUploadProgress extends React.Component {
       uploadComplete = progress === 1
       percentage = (progress * 100).toFixed(2) + "%";
       progressBar = (
-        <div className={`progressbar ${smallSize ? "small" : ""}`}>
-          <div className={`progressbar-meter ${uploadComplete ? "complete" : ""}`} style={{ width: `${(progress) * (smallSize ? 355 : 600)}px` }} />
+        <div className={`progressbar ${smallSize ? "small" : ""} ${classic ? "classic" : ""}`}>
+          <div className={`progressbar-meter ${uploadComplete ? "complete" : ""}`} style={{ width: `${(progress) * ((smallSize && classic) ? 150 : smallSize ? 355 : 600)}px` }} />
         </div>
       );
     } else {
       percentage = "0%";
       progressBar = (
-        <div className={`progressbar ${smallSize ? "small" : ""}`}>
+        <div className={`progressbar ${smallSize ? "small" : ""} ${classic ? "classic" : ""}`}>
           <div className="progressbar-meter" style={{ width: "0px" }} />
         </div>
       );
