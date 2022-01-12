@@ -29,7 +29,7 @@ const COMMON_ERRORS = {
   "no such host": "No such host"
 };
 
-class Dashboard extends Component {
+class DashboardClassic extends Component {
 
   state = {
     appName: "",
@@ -472,7 +472,7 @@ class Dashboard extends Component {
     }
 
     return (
-      <div className="dashboard-card graph flex-column flex1 flex u-marginTop--20" key={chart.title}>
+      <div className="dashboard-card classic graph flex-column flex1 flex u-marginTop--20" key={chart.title}>
         <XYPlot width={460} height={180} onMouseLeave={() => this.setState({ crosshairValues: [] })} margin={{ left: 60 }}>
           <VerticalGridLines />
           <HorizontalGridLines />
@@ -902,4 +902,4 @@ class Dashboard extends Component {
   }
 }
 
-export default withRouter(Dashboard);
+export default withRouter(DashboardClassic);

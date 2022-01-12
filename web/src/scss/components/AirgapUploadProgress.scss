@@ -10,6 +10,9 @@
 
     &.small {
       width: 355px;
+      &.classic {
+        width: 150px;
+      }
     }
 
     &.medium {

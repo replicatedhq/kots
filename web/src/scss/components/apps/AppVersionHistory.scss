@@ -15,6 +15,14 @@ $cell-width: 140px;
     min-width: 225px;
   }
 
+  &.classic {
+    border-radius: 0;
+    border-bottom: 1px solid #8e969a;
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
   &.is-new {
     -webkit-animation: newVersion 9s ease forwards; /* Safari 4+ */
     -moz-animation:    newVersion 9s ease forwards; /* Fx 5+ */
