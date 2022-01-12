@@ -137,6 +137,9 @@ commonAnnotations:
 }
 
 // ApplyCreateOrPatch attempts to run a `kubectl apply` on the yaml document. If it fails
+// it will try to split a multi-doc and try again. As a last resort it will try create and patch.
+// It's important to use patch as a last resort because it can trigger load balancer services
+// to redeploy with new nodeports (SC-41322) and will remove the continuity of kubectl apply metadata.
 func (c *Kubectl) ApplyCreateOrPatch(targetNamespace string, slug string, yamlDoc []byte, dryRun bool, wait bool, annotateSlug bool) ([]byte, []byte, error) {
 
 	stdout, stderr, err := c.Apply(targetNamespace, slug, yamlDoc, dryRun, wait, annotateSlug)
@@ -145,7 +148,7 @@ func (c *Kubectl) ApplyCreateOrPatch(targetNamespace string, slug string, yamlDo
 	} else if !strings.Contains(string(stderr), "metadata.annotations: Too long") {
 		return stdout, stderr, errors.Wrap(err, "failed attempted kubectl apply")
 	}
-	logger.Info("Failed to apply document: metadata too long. Trying to 'create' or 'patch' instead")
+	logger.Info("Failed to apply document: metadata too long. Splitting doc and trying again")
 
 	docs, err := splitter.SplitYAML(yamlDoc)
 	if err != nil {
@@ -154,6 +157,18 @@ func (c *Kubectl) ApplyCreateOrPatch(targetNamespace string, slug string, yamlDo
 
 	var combinedStdout, combinedStderr []byte
 	for name, b := range docs {
+
+		stdout, stderr, err := c.Apply(targetNamespace, slug, b, dryRun, wait, annotateSlug)
+		if err == nil {
+			combinedStdout = append(combinedStdout, stdout...)
+			combinedStderr = append(combinedStderr, stderr...)
+			continue
+		} else if !strings.Contains(string(stderr), "metadata.annotations: Too long") {
+			return stdout, stderr, errors.Wrapf(err, "failed attempted kubectl apply for doc %s", name)
+		}
+
+		logger.Infof("Failed to apply document %s: metadata still too long. Trying to 'create' or 'patch' instead", name)
+
 		stdout, stderr, err = c.createOrPatchSingleDoc(name, targetNamespace, slug, b, dryRun, wait, annotateSlug)
 		combinedStdout = append(combinedStdout, stdout...)
 		combinedStderr = append(combinedStderr, stderr...)
