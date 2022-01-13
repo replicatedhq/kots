@@ -16,7 +16,6 @@ spec:
         pre.hook.backup.velero.io/command: '["/bin/bash", "-c", "PGPASSWORD=password pg_dump -U kotsadm -h kotsadm-postgres > /backup/kotsadm-postgres.sql"]'
         pre.hook.backup.velero.io/timeout: 3m
     spec:
-      serviceAccountName: kotsadm
       containers:
         - name: kotsadm
           volumeMounts:
@@ -29,6 +28,21 @@ spec:
               name: dlv
               protocol: TCP
           env:
+            - name: POSTGRES_URI
+              valueFrom:
+                secretKeyRef:
+                  name: kotsadm-postgres # This secret is created in the migrations directory
+                  key: uri
+            - name: S3_BUCKET_NAME
+              value: "shipbucket"
+            - name: S3_ENDPOINT
+              value: http://kotsadm-s3:4569/
+            - name: S3_ACCESS_KEY_ID
+              value: not-a-key
+            - name: S3_SECRET_ACCESS_KEY
+              value: not-a-secret
+            - name: S3_BUCKET_ENDPOINT
+              value: "true"
             - name: DEX_PGPASSWORD
               valueFrom:
                 secretKeyRef:
@@ -38,8 +52,6 @@ spec:
               value: "debug"
             - name: DISABLE_SPA_SERVING
               value: "1"
-            - name: KOTSADM_TARGET_NAMESPACE
-              value: "test"
               valueFrom: ~
             - name: AUTO_CREATE_CLUSTER
               value: "1"
