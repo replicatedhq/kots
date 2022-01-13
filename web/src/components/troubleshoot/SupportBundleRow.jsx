@@ -117,8 +117,10 @@ class SupportBundleRow extends React.Component {
   }
 
   render() {
-    const { bundle } = this.props;
+    const { bundle, isSupportBundleUploadSupported, isAirgap } = this.props;
     const { errorInsights, warningInsights, otherInsights } = this.state;
+
+    const showSendSupportBundleLink = isSupportBundleUploadSupported && !isAirgap;
 
     if (!bundle) {
       return null;
@@ -194,7 +196,7 @@ class SupportBundleRow extends React.Component {
                   </div>
                 : this.state.sendingBundle ?
                   <Loader size="30" className="u-marginRight--10" />
-                : !this.props.isAirgap ?
+                : showSendSupportBundleLink ?
                   <span className="u-fontSize--small u-marginRight--10 u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover u-paddingRight--10 u-borderRight--gray" onClick={() => this.sendBundleToVendor(this.props.bundle.slug)}>Send bundle to vendor</span>
                 : null}
                 {this.state.downloadBundleErrMsg &&
