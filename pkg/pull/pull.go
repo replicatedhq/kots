@@ -292,8 +292,11 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		}
 
 		for _, prevChart := range prevHelmCharts {
-			if prevChart.Spec.Exclude.String() == "1" {
-				continue // this chart was excluded, so any changes to UseHelmInstall are irrelevant
+			if !prevChart.Spec.Exclude.IsEmpty() {
+				isExcluded, err := prevChart.Spec.Exclude.Boolean()
+				if err == nil && isExcluded {
+					continue // this chart was excluded, so any changes to UseHelmInstall are irrelevant
+				}
 			}
 
 			for _, newChart := range newHelmCharts {
