@@ -768,32 +768,6 @@ class AppVersionHistory extends Component {
     this.setState({ displayShowDetailsModal: !this.state.displayShowDetailsModal, deployView: false, yamlErrorDetails, selectedSequence });
   }
 
-  getCurrentVersionStatus = (version, viewLogs) => {
-    if (version?.status === "deployed" || version?.status === "merged") {
-      return (
-      <div className="u-marginTop--10">
-        <span className="status-tag unknown flex-auto u-cursor--default" data-tip={version.deployedAt ? `Deployed ${Utilities.dateFormat(version.deployedAt, "MMMM D, YYYY @ hh:mm a z")}` : "Unable to find deployed at date"}>Previously deployed</span>
-        <ReactTooltip effect="solid" className="replicated-tooltip" />
-      </div>
-      );
-    } else if (version?.status === "failed") {
-      return (
-        <div className="flex alignItems--center u-marginTop--10">
-          <span className="status-tag failed flex-auto u-marginRight--10">Deploy Failed</span>
-          <span className="replicated-link u-fontSize--small" onClick={() => viewLogs(version, true)}>View deploy logs</span>
-        </div>
-      );
-    } else if (version?.status === "deploying") {
-      return (
-        <span className="flex alignItems--center u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium u-marginTop--10">
-          <Loader className="flex alignItems--center u-marginRight--5" size="16" />
-              Deploying
-        </span>);
-    } else {
-      return <span className="u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium flex alignItems--center u-marginTop--10"> {Utilities.toTitleCase(version?.status).replace("_", " ")} </span>
-    }
-  }
-
   render() {
     const {
       app,
@@ -900,7 +874,6 @@ class AppVersionHistory extends Component {
                           <p className="u-fontSize--header2 u-fontWeight--bold u-textColor--primary"> {currentDownstreamVersion ? currentDownstreamVersion.versionLabel : "---"}</p>
                           <p className="u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10"> {currentDownstreamVersion ? `Sequence ${currentDownstreamVersion?.sequence}` : null}</p>
                         </div>
-                        {currentDownstreamVersion && this.getCurrentVersionStatus(currentDownstreamVersion, this.handleViewLogs)}
                         {currentDownstreamVersion?.deployedAt ? <p className="u-fontSize--small u-lineHeight--normal u-textColor--info u-fontWeight--medium u-marginTop--10">{currentDownstreamVersion?.status === "deploying" ? "Deploy started at" : "Deployed"} {Utilities.dateFormat(currentDownstreamVersion.deployedAt, "MM/DD/YY @ hh:mm a z")}</p> : null}
                         {currentDownstreamVersion ?
                           <div className="flex alignItems--center u-marginTop--10">
