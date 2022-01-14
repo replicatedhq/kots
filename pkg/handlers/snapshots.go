@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -180,6 +181,12 @@ func (h *Handler) UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Re
 					JSON(w, http.StatusConflict, globalSnapshotSettingsResponse)
 					return
 				}
+				if _, ok := errors.Cause(err).(*kotssnapshot.HostPathNotFoundError); ok {
+					globalSnapshotSettingsResponse.Error = err.Error()
+					JSON(w, http.StatusBadRequest, globalSnapshotSettingsResponse)
+					return
+				}
+
 				logger.Error(err)
 				globalSnapshotSettingsResponse.Error = "failed to configure file system provider"
 				JSON(w, http.StatusInternalServerError, globalSnapshotSettingsResponse)
@@ -391,6 +398,12 @@ func (h *Handler) ConfigureFileSystemSnapshotProvider(w http.ResponseWriter, r *
 				JSON(w, http.StatusConflict, response)
 				return
 			}
+			if _, ok := errors.Cause(err).(*kotssnapshot.HostPathNotFoundError); ok {
+				response.Error = err.Error()
+				JSON(w, http.StatusBadRequest, response)
+				return
+			}
+
 			errMsg := "failed to configure file system provider"
 			response.Error = errMsg
 			logger.Error(errors.Wrap(err, errMsg))
@@ -431,6 +444,13 @@ func configureMinioFileSystemProvider(ctx context.Context, clientset kubernetes.
 		ForceReset:       fileSystemOptions.ForceReset,
 		FileSystemConfig: fileSystemOptions.FileSystemConfig,
 	}
+
+	if _, err := os.Stat(*deployOptions.FileSystemConfig.HostPath); os.IsNotExist(err) {
+		return &kotssnapshot.HostPathNotFoundError{Message: "Provided host path does not exist"}
+	} else if err != nil {
+		return errors.Wrap(err, "failed to os stat")
+	}
+
 	if err := kotssnapshot.DeployFileSystemMinio(ctx, clientset, deployOptions, registryOptions); err != nil {
 		return err
 	}

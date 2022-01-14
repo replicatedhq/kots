@@ -98,6 +98,7 @@ class SupportBundleList extends React.Component {
               bundle={bundle}
               watchSlug={watch.slug}
               isAirgap={watch.isAirgap}
+              isSupportBundleUploadSupported={watch.isSupportBundleUploadSupported}
               refetchBundleList={this.listSupportBundles}
             />
           ))
