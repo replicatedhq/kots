@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: init-dex-db
+data:
+  init.sh: |
+    #!/bin/bash
+
+    set -e
+
+    while ! pg_isready -h kotsadm-postgres --quiet ; do echo "sleeping..."; sleep 1; done
+    sleep 1
+
+    psql -h kotsadm-postgres -Ukotsadm \
+      -c "CREATE DATABASE dex;" \
+      -c "CREATE USER dex;" \
+      -c "ALTER USER dex WITH PASSWORD '$DEX_PGPASSWORD';" \
+      -c "GRANT ALL PRIVILEGES ON DATABASE dex TO dex;"
