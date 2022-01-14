@@ -320,6 +320,15 @@ class DashboardVersionCard extends React.Component {
               <span className="icon deployLogs--icon u-cursor--pointer" onClick={() => this.handleViewLogs(currentVersion, currentVersion?.status === "failed")} data-tip="View deploy logs" />
               <ReactTooltip effect="solid" className="replicated-tooltip" />
             </div>
+            <div className="flex-column justifyContent--center">
+              <button
+                className="secondary blue btn u-marginLeft--10"
+                disabled={currentVersion.status === "deploying"}
+                onClick={() => this.deployVersion(currentVersion)}
+              >
+                {currentVersion.status === "deploying" ? "Redeploying" : "Redeploy"}
+              </button>
+            </div>
           </div>
         </div>
       </div>
