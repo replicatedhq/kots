@@ -95,7 +95,7 @@ func (c *Kubectl) Apply(targetNamespace string, slug string, yamlDoc []byte, dry
 	}
 
 	if dryRun {
-		args = append(args, "--dry-run")
+		args = append(args, "--dry-run=server")
 	}
 	if wait {
 		args = append(args, "--wait")
@@ -230,7 +230,7 @@ func (c *Kubectl) kubectlCreateCommand(renderedManifestPath string, targetNamesp
 	}
 
 	if dryRun {
-		args = append(args, "--dry-run")
+		args = append(args, "--dry-run=server")
 	}
 	if wait {
 		args = append(args, "--wait")
@@ -256,7 +256,7 @@ func (c *Kubectl) kubectlPatchCommand(renderedManifestPath string, targetNamespa
 	}
 
 	if dryRun {
-		args = append(args, "--dry-run")
+		args = append(args, "--dry-run=server")
 	}
 	if wait {
 		args = append(args, "--wait")
