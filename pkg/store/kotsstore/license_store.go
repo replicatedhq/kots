@@ -108,7 +108,7 @@ func (s *KOTSStore) UpdateAppLicense(appID string, baseSequence int64, archiveDi
 	}
 
 	//  app has the original license data received from the server
-	updateQuery := `update app set license=$1, last_license_sync=$2, channel_changed=$3 where id = $4`
+	updateQuery := `update app set license= $1, last_license_sync= $2, channel_changed= $3 where id = $4`
 	_, err = tx.Exec(updateQuery, originalLicenseData, time.Now(), channelChanged, appID)
 	if err != nil {
 		return int64(0), errors.Wrapf(err, "update app %q license", appID)
@@ -133,15 +133,8 @@ func (s *KOTSStore) UpdateAppLicense(appID string, baseSequence int64, archiveDi
 
 func (s *KOTSStore) UpdateAppLicenseSyncNow(appID string) error {
 	db := persistence.MustGetDBSession()
-
-	tx, err := db.Begin()
-	if err != nil {
-		return errors.Wrap(err, "failed to begin")
-	}
-	defer tx.Rollback()
-
-	updateQuery := `update app set last_license_sync=$1 where id = $2`
-	_, err = tx.Exec(updateQuery, time.Now(), appID)
+	query := `update app set last_license_sync= $1 where id = $2`
+	_, err := db.Exec(query, time.Now(), appID)
 	if err != nil {
 		return errors.Wrapf(err, "update app %q license sync time", appID)
 	}
