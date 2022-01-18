@@ -2,7 +2,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import timezone from "dayjs/plugin/timezone";
 import advanced from "dayjs/plugin/advancedFormat";
-import Cookies from 'universal-cookie';
+import Cookies from "universal-cookie";
 import utc from "dayjs/plugin/utc";
 import queryString from "query-string";
 import sortBy from "lodash/sortBy";
@@ -48,7 +48,7 @@ export function getFileContent(file) {
 export function getApplicationType(watch) {
   try {
     const { metadata } = watch;
-    if (!metadata || metadata === "null") return "";
+    if (!metadata || metadata === "null") {return "";}
     const parsedMetadata = JSON.parse(metadata);
     return parsedMetadata.applicationType;
 
@@ -86,7 +86,7 @@ export function getBuildVersion() {
  * @param {String} - name of feature to check
  */
  export function isFeatureEnabled(featureArr, featureName) {
-   if (!featureArr || featureArr.length === 0) return false;
+   if (!featureArr || featureArr.length === 0) {return false;}
   return featureArr.includes(featureName);
 }
 
@@ -452,11 +452,11 @@ export function isVeleroCorrectVersion (snapshotSettings) {
      let minorVer = parseInt(semVer[1])
      let patchVer = parseInt(semVer[2])
 
-     if( majorVer !== 1) return false;
+     if( majorVer !== 1) {return false;}
      
-     if( minorVer < 5 ) return false;
+     if( minorVer < 5 ) {return false;}
 
-     if( minorVer === 5 && patchVer < 1) return false;
+     if( minorVer === 5 && patchVer < 1) {return false;}
 
      return true
   }
@@ -679,9 +679,9 @@ export const Utilities = {
 
   bytesToSize(bytes) {
     const sizes = ["B", "KB", "MB", "GB", "TB"];
-    if (bytes === 0) return "0 B";
+    if (bytes === 0) {return "0 B";}
     let i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
-    if (i === 0) return bytes + " " + sizes[i];
+    if (i === 0) {return bytes + " " + sizes[i];}
     return (bytes / Math.pow(1024, i)).toFixed(1) + " " + sizes[i];
   },
 

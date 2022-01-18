@@ -92,7 +92,7 @@ export class PodAnalyzerDetails extends React.Component {
     })
     .then(async (result) => {
       const data = await result.json();
-      const decodedLogs = Buffer.from(data.files[selectedContainer.logsFilePath], 'base64').toString();
+      const decodedLogs = Buffer.from(data.files[selectedContainer.logsFilePath], "base64").toString();
       this.setState({ loading: false, selectedContainerLogs: decodedLogs });
     })
     .catch(err => {

@@ -3,6 +3,7 @@ var path = require("path");
 var srcPath = path.join(__dirname, "src");
 
 module.exports = {
+  mode: "development",
   entry: [
     "react-hot-loader/patch",
     "./src/index.jsx"
@@ -19,14 +20,14 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.(js|jsx)$/,
+        test: /\.[jt]sx?$/,
         include: srcPath,
         exclude: /node_modules/,
         enforce: "pre",
         loaders: ["babel-loader"],
       },
       {
-        test: /\.(js|jsx)$/,
+        test: /\.[jt]sx?$/,
         include: srcPath,
         exclude: [
           /node_modules/,
@@ -43,7 +44,7 @@ module.exports = {
   devtool: "eval-source-map",
 
   devServer: {
-    port: 30000,
+    compress: true,
     host: "0.0.0.0",
     hot: true,
     hotOnly: true,

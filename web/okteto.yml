@@ -1,0 +1,9 @@
+name: kotsadm-web
+command: make serve
+sync:
+- .:/src
+image:
+  name: okteto.dev/kotsadm-web:${OKTETO_NAMESPACE}
+  context: .
+  dockerfile: Dockerfile.okteto
+  target: dev

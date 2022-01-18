@@ -37,7 +37,7 @@ export default class ConfigGroup extends React.Component {
   }
 
   renderConfigItems = (items, readonly) => {
-    if (!items) return null;
+    if (!items) {return null;}
     return items.map((item, i) => {
       const isReadOnly = readonly || item.readonly;
       switch (item.type) {
@@ -161,7 +161,7 @@ export default class ConfigGroup extends React.Component {
 
   isAtLeastOneItemVisible = () => {
     const { item } = this.props;
-    if (!item) return false;
+    if (!item) {return false;}
     return some(this.props.item.items, (item) => {
       if (!isEmpty(item)) {
         return ConfigService.isVisible(this.props.items, item);
@@ -172,7 +172,7 @@ export default class ConfigGroup extends React.Component {
   render() {
     const { item, readonly } = this.props;
     const hidden = item && (item.when === "false");
-    if (hidden || !this.isAtLeastOneItemVisible()) return null;
+    if (hidden || !this.isAtLeastOneItemVisible()) {return null;}
     return (
       <div className="flex-column flex-auto">
         {item &&

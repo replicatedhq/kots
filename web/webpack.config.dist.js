@@ -4,7 +4,7 @@ var srcPath = path.join(__dirname, "src");
 const TerserPlugin = require("terser-webpack-plugin");
 const { BugsnagSourceMapUploaderPlugin } = require("webpack-bugsnag-plugins");
 
-function getPlugins(appEnv, env) {
+function getPlugins(appEnv) {
   const plugins = [
     new webpack.NamedModulesPlugin()
   ];
@@ -22,10 +22,9 @@ function getPlugins(appEnv, env) {
   return plugins;
 }
 
-module.exports = (env) => {
-  var appEnv = require("./env/" + (env || "dev") + ".js");
-
+module.exports = (appEnv) => {
   return {
+    mode: "production",
     entry: [
       "./src/index.jsx"
     ],
@@ -33,7 +32,7 @@ module.exports = (env) => {
     module: {
       rules: [
         {
-          test: /\.(js|jsx)$/,
+          test: /\.[jt]sx?$/,
           include: srcPath,
           exclude: /node_modules/,
           enforce: "pre",
@@ -42,7 +41,7 @@ module.exports = (env) => {
       ],
     },
 
-    plugins: getPlugins(appEnv, env),
+    plugins: getPlugins(appEnv),
 
     devtool: "hidden-source-map",
 
