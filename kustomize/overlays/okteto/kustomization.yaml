@@ -1,13 +1,13 @@
 bases:
   - ../../base
-  - ../rbac
   - ../../../web/kustomize/overlays/dev
-  - ../../../kurl_proxy/kustomize/overlays/dev
+  - ../../../migrations/kustomize/overlays/okteto
+  # - ../../../kurl_proxy/kustomize/overlays/dev
+  - ../kotsstore/minio
 
 resources:
   - ./dex-postgres-secret.yaml
   - ./configmap-init-dex-db.yaml
-  - ./dlv-service.yaml
 
 patches:
   - ./deployment.yaml

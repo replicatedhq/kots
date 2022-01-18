@@ -56,6 +56,14 @@ func (e ResetFileSystemError) Error() string {
 	return e.Message
 }
 
+type HostPathNotFoundError struct {
+	Message string
+}
+
+func (e HostPathNotFoundError) Error() string {
+	return e.Message
+}
+
 func DeployFileSystemMinio(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryOptions kotsadmtypes.KotsadmOptions) error {
 	// file system minio can be deployed before installing kotsadm or the application (e.g. disaster recovery)
 	err := kotsadmresources.EnsurePrivateKotsadmRegistrySecret(deployOptions.Namespace, registryOptions, clientset)
