@@ -5,12 +5,14 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Modal from "react-modal";
 import find from "lodash/find";
+import get from "lodash/get";
 import MountAware from "../shared/MountAware";
 import Loader from "../shared/Loader";
 import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
 import ShowDetailsModal from "@src/components/modals/ShowDetailsModal";
 import ShowLogsModal from "@src/components/modals/ShowLogsModal";
+import AirgapUploadProgress from "../AirgapUploadProgress";
 import ErrorModal from "../modals/ErrorModal";
 import AppVersionHistoryRow from "@src/components/apps/AppVersionHistoryRow";
 import DeployWarningModal from "../shared/modals/DeployWarningModal";
@@ -768,12 +770,78 @@ class AppVersionHistory extends Component {
     this.setState({ displayShowDetailsModal: !this.state.displayShowDetailsModal, deployView: false, yamlErrorDetails, selectedSequence });
   }
 
+  renderAirgapVersionUploading = () => {
+    const { app, isBundleUploading } = this.props;
+
+    let updateText;
+    if (this.state.airgapUploadError) {
+      updateText = <p className="u-marginTop--10 u-fontSize--small u-textColor--error u-fontWeight--medium">Error uploading bundle <span className="u-linkColor u-textDecoration--underlineOnHover" onClick={this.props.viewAirgapUploadError}>See details</span></p>
+    } else if (this.state.uploadingAirgapFile) {
+      updateText = (
+        <AirgapUploadProgress
+          appSlug={app.slug}
+          total={this.state.uploadSize}
+          progress={this.state.uploadProgress}
+          resuming={this.state.uploadResuming}
+          onProgressError={undefined}
+          smallSize={true}
+        />
+      );
+    } else if (isBundleUploading) {
+      updateText = (
+        <AirgapUploadProgress
+          appSlug={app.slug}
+          unkownProgress={true}
+          onProgressError={undefined}
+          smallSize={true}
+        />);
+    } else if (this.state.errorCheckingUpdate) {
+      updateText = <p className="u-marginTop--10 u-fontSize--small u-textColor--error u-fontWeight--medium">Error checking for updates, please try again</p>
+    } else if (!app.lastUpdateCheckAt) {
+      updateText = null;
+    }
+
+    let checkingUpdateText = this.state.checkingUpdateMessage;
+    try {
+      const jsonMessage = JSON.parse(checkingUpdateText);
+      const type = get(jsonMessage, "type");
+      if (type === "progressReport") {
+        checkingUpdateText = jsonMessage.compatibilityMessage;
+        // TODO: handle image upload progress here
+      }
+    } catch {
+      // empty
+    }
+
+    if (checkingUpdateText && checkingUpdateText.length > 65) {
+      checkingUpdateText = checkingUpdateText.slice(0, 65) + "...";
+    }
+
+    return (
+      <div>
+        {updateText}
+        {app?.isAirgap && this.state.checkingForUpdates && !isBundleUploading ?
+          <div className="flex-column justifyContent--center alignItems--center">
+            <Loader className="u-marginBottom--10" size="30" />
+            <span className="u-textColor--bodyCopy u-fontWeight--medium u-fontSize--normal u-lineHeight--default">{checkingUpdateText}</span>
+          </div>
+        : null }
+        {this.state.checkingForUpdateError &&
+          <div className={`flex-column flex-auto ${this.state.uploadingAirgapFile || this.state.checkingForUpdates || isBundleUploading ? "u-marginTop--10" : ""}`}>
+            <p className="u-fontSize--normal u-marginBottom--5 u-textColor--error u-fontWeight--medium">Error updating version:</p>
+            <p className="u-fontSize--small u-textColor--error u-lineHeight--normal u-fontWeight--medium">{this.state.checkingUpdateMessage}</p>
+          </div>}
+      </div>
+    )
+  }
+
   render() {
     const {
       app,
       match,
       makingCurrentVersionErrMsg,
-      redeployVersionErrMsg
+      redeployVersionErrMsg,
+      isBundleUploading
     } = this.props;
 
     const {
@@ -797,6 +865,7 @@ class AppVersionHistory extends Component {
       displayErrorModal,
       airgapUploader,
       checkingForUpdates,
+      uploadingAirgapFile,
       checkingUpdateMessage
     } = this.state;
 
@@ -964,7 +1033,11 @@ class AppVersionHistory extends Component {
                         redeployVersion={this.redeployVersion}
                       />
                     </div>
-
+                    {uploadingAirgapFile || isBundleUploading || this.state.checkingForUpdateError || (app?.isAirgap && this.state.checkingForUpdates)  ?
+                      <div className="u-marginTop--20 u-marginBottom--20">
+                        {this.renderAirgapVersionUploading()}
+                      </div>
+                    : null}
                     {otherAvailableVersions.length > 0 &&
                       <div className="flex u-marginBottom--15 u-marginTop--30">
                         <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy">Other available versions</p>
