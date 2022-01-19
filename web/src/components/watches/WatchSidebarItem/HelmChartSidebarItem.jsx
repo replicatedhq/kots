@@ -8,7 +8,7 @@ export default function HelmChartSidebarItem(props) {
   const helmIcon = "";
 
   return (
-    <div className={classNames('sidebar-link', className)}>
+    <div className={classNames("sidebar-link", className)}>
       <Link
         className="flex alignItems--center"
         to={`/watch/helm/${helmChart.id}`}>

@@ -527,7 +527,7 @@ class DashboardVersionCard extends React.Component {
       return (
         <button
           className="btn primary blue"
-          onClick={() => window.open(version.commitUrl, '_blank')}
+          onClick={() => window.open(version.commitUrl, "_blank")}
         >
           View
         </button>

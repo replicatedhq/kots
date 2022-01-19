@@ -63,7 +63,7 @@ class UploadLicenseFile extends React.Component {
   uploadLicenseFile = async () => {
     const { onUploadSuccess, history } = this.props;
     const { licenseFile, licenseFileContent, hasMultiApp } = this.state;
-    const isRliFile = licenseFile.name.substr(licenseFile.name.lastIndexOf('.')) === ".rli";
+    const isRliFile = licenseFile.name.substr(licenseFile.name.lastIndexOf(".")) === ".rli";
     let licenseText;
 
     let serializedLicense;

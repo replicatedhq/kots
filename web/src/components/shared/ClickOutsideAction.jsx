@@ -1,5 +1,5 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types';
+import React, { Component } from "react";
+import PropTypes from "prop-types";
 
 /**
  * Component that performs an action if you click outside of it
@@ -12,11 +12,11 @@ export default class ClickOutsideAction extends Component {
     }
 
     componentDidMount() {
-        document.addEventListener('mousedown', this.handleClickOutside);
+        document.addEventListener("mousedown", this.handleClickOutside);
     }
 
     componentWillUnmount() {
-        document.removeEventListener('mousedown', this.handleClickOutside);
+        document.removeEventListener("mousedown", this.handleClickOutside);
     }
 
     /**

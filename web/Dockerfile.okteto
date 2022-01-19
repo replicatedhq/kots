@@ -1,15 +1,19 @@
-FROM node:10
-EXPOSE 3000 9229
+FROM node:10 as dev
+EXPOSE 8080 9229
 
-ADD ./package.json /src/package.json
-ADD ./yarn.lock /src/yarn.lock
-WORKDIR /src
-RUN yarn install --silent --frozen-lockfile
-
-ADD . /src/
 WORKDIR /src
 
-EXPOSE 30000
-RUN make deps
+COPY ./package.json ./yarn.lock ./
+COPY Makefile ./
+RUN --mount=type=cache,target=/root/.yarn YARN_CACHE_FOLDER=/root/.yarn make deps
 
-ENTRYPOINT ["make", "serve"]
+COPY . .
+
+FROM dev as builder
+ARG OKTETO_NAMESPACE
+RUN --mount=type=cache,target=./node_modules/.cache/webpack make build-local
+
+FROM nginx:1.21.4-alpine as nginx
+COPY --from=builder /src/dist /usr/share/nginx/html
+COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 8080

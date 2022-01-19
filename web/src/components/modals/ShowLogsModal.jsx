@@ -18,7 +18,7 @@ export default function ShowLogsModal(props) {
   >
     <div className="Modal-body flex flex1">
       {viewLogsErrMsg ?
-        <div class="flex1 flex-column justifyContent--center alignItems--center">
+        <div className="flex1 flex-column justifyContent--center alignItems--center">
           <span className="icon redWarningIcon" />
           <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{viewLogsErrMsg}</p>
         </div>

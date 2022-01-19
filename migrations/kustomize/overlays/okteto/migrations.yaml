@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: migrations
+  name: kotsadm-migrations
   labels:
-    app: migrations
+    app: kotsadm-migrations
     tags.datadoghq.com/env: "dev"
 spec:
   selector:
     matchLabels:
-      app: migrations
+      app: kotsadm-migrations
   template:
     metadata:
       labels:
-        app: migrations
+        app: kotsadm-migrations
         tags.datadoghq.com/env: "dev"
     spec:
       volumes:

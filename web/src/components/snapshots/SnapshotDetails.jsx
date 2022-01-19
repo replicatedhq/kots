@@ -86,18 +86,18 @@ class SnapshotDetails extends Component {
       tooltip: {
         custom: function ({ series, seriesIndex, dataPointIndex, w }) {
           return (
-            '<div class="arrow_box">' +
-            '<p class="u-textColor--primary u-fontSize--normal u-fontWeight--medium">' +
+            "<div class=\"arrow_box\">" +
+            "<p class=\"u-textColor--primary u-fontSize--normal u-fontWeight--medium\">" +
             w.globals.labels[dataPointIndex] +
             "</p>" +
-            '<span class="u-fontSize--small u-fontWeight--normal u-textColor--bodyCopy u-marginTop--10">' +
+            "<span class=\"u-fontSize--small u-fontWeight--normal u-textColor--bodyCopy u-marginTop--10\">" +
             w.globals.seriesZ[seriesIndex][dataPointIndex] + "</span>" +
             "<br />" +
             "<br />" +
-            '<span class="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy u-marginTop--10">' +
+            "<span class=\"u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy u-marginTop--10\">" +
             "Started at " + dayjs(w.globals.seriesRangeStart[seriesIndex][dataPointIndex]).format("h:mm:ss") + "</span>" +
             "<br />" +
-            '<span class="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy">' +
+            "<span class=\"u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy\">" +
             "Finished at " + dayjs(w.globals.seriesRangeEnd[seriesIndex][dataPointIndex]).format("h:mm:ss") + "</span>" +
             "</div>"
           );

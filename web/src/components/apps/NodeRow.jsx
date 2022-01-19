@@ -2,7 +2,7 @@ import React from "react";
 import classNames from "classnames";
 import Loader from "../shared/Loader";
 import { rbacRoles } from "../../constants/rbac";
-import { getPercentageStatus, Utilities } from '../../utilities/utilities';
+import { getPercentageStatus, Utilities } from "../../utilities/utilities";
 
 export default function NodeRow(props) {
   const { node } = props;

@@ -44,7 +44,7 @@ export default class ConfigInput extends React.Component {
     if (!value) {
       return "";
     }
-    return value.replace(/./g, '•');
+    return value.replace(/./g, "•");
   }
 
   // p1-2019-06-27

@@ -26,13 +26,13 @@ export default function KotsSidebarItem(props) {
   if (!app.downstreams?.length) {
     versionsBehindText = "No downstreams found"
   } else if (isBehind) {
-    versionsBehindText = `${isBehind} ${isBehind >= 2 || typeof isBehind === 'string' ? "versions" : "version"} behind`
+    versionsBehindText = `${isBehind} ${isBehind >= 2 || typeof isBehind === "string" ? "versions" : "version"} behind`
   }
 
   const gitopsEnabled = app.downstreams?.length > 0 && app.downstreams[0].gitops?.enabled;
 
   return (
-    <div className={classNames('sidebar-link', className)}>
+    <div className={classNames("sidebar-link", className)}>
       <Link
         className="flex alignItems--center"
         to={`/app/${slug}`}>

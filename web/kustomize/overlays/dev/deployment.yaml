@@ -9,4 +9,4 @@ spec:
         - name: kotsadm-web
           ports:
             - name: http
-              containerPort: 30000
+              containerPort: 8080

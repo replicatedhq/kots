@@ -361,7 +361,7 @@ class AppConfig extends Component {
       const changed = this.isConfigChanged(newGroups);
       this.setState({ configGroups: newGroups, changed });
     }).catch((error) => {
-      if (error.name !== 'AbortError') {
+      if (error.name !== "AbortError") {
         console.log(error);
         this.setState({ configError: error?.message });
       }
@@ -414,7 +414,7 @@ class AppConfig extends Component {
 
   isConfigReadOnly = (app) => {
     const { match } = this.props;
-    if (!match.params.sequence) return false;
+    if (!match.params.sequence) {return false;}
     const sequence = parseInt(match.params.sequence);
     const isCurrentVersion = app.downstreams[0]?.currentVersion?.sequence === sequence;
     const isLatestVersion = app.downstreams[0]?.pendingVersions?.length && app.downstreams[0]?.pendingVersions[0]?.sequence === sequence;
@@ -482,7 +482,7 @@ class AppConfig extends Component {
         <div className="flex-column">
           <div id="configSidebarWrapper" className="AppConfigSidenav--wrapper" ref={(wrapper) => this.sidebarWrapper = wrapper}>
             {configGroups?.map((group, i) => {
-              if (group.title === "" || group.title.length === 0 || group.hidden || group.when === "false") return;
+              if (group.title === "" || group.title.length === 0 || group.hidden || group.when === "false") {return;}
               return (
                 <div key={`${i}-${group.name}-${group.title}`} className={`AppConfigSidenav--group ${this.state.activeGroups.includes(group.name) ? "group-open" : ""}`}>
                   <div className="flex alignItems--center AppConfigSidenav--groupWrapper" onClick={() => this.toggleActiveGroups(group.name)}>
@@ -493,7 +493,7 @@ class AppConfig extends Component {
                     <div className="AppConfigSidenav--items">
                       {group.items?.map((item, i) => {
                         const hash = this.props.location.hash.slice(1);
-                        if (item.hidden || item.when === "false") return;
+                        if (item.hidden || item.when === "false") {return;}
                         return (
                           <a className={`u-fontSize--normal u-lineHeight--normal ${hash === `${item.name}-group` ? "active-item" : ""}`} href={`#${item.name}-group`} key={`${i}-${item.name}-${item.title}`}>{item.title}</a>
                         )

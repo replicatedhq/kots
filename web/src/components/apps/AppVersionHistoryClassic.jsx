@@ -671,7 +671,7 @@ class AppVersionHistoryClassic extends Component {
                 const { firstHash, secondHash } = this.getDiffCommitHashes();
                 if (firstHash && secondHash) {
                   const diffUrl = getGitProviderDiffUrl(downstream.gitops?.uri, downstream.gitops?.provider, firstHash, secondHash);
-                  window.open(diffUrl, '_blank');
+                  window.open(diffUrl, "_blank");
                 }
               } else {
                 const { firstSequence, secondSequence } = this.getDiffSequences();

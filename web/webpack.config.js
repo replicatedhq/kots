@@ -10,12 +10,21 @@ const MonacoWebpackPlugin = require("monaco-editor-webpack-plugin");
 
 // const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer");
 
+function mapEnvironment(env) {
+  if(env === "enterprise") {
+    return "enterprise";
+  } else if(process.env.OKTETO_NAMESPACE) {
+    return "okteto";
+  }
+  return "skaffold";
+}
+
 module.exports = function (env) {
   const distPath = path.join(__dirname, "dist");
   const srcPath = path.join(__dirname, "src");
-  const appEnv = require("./env/" + (env || "dev") + ".js");
+  const appEnv = require(`./env/${mapEnvironment(env)}.js`);
 
-  var common = {
+  const common = {
     output: {
       path: distPath,
       publicPath: "/",
@@ -52,7 +61,7 @@ module.exports = function (env) {
             {
               loader: MiniCssExtractPlugin.loader,
               options: {
-                hmr: env === "skaffold",
+                hmr: env !== "enterprise",
               },
             },
             "css-loader",
@@ -74,7 +83,7 @@ module.exports = function (env) {
             {
               loader: MiniCssExtractPlugin.loader,
               options: {
-                hmr: env === "skaffold",
+                hmr: env !== "enterprise",
               },
             },
             { loader: "css-loader", options: { importLoaders: 1 } },
@@ -128,7 +137,6 @@ module.exports = function (env) {
         template: HtmlWebpackTemplate,
         title: "Admin Console",
         appMountId: "app",
-        scripts: appEnv.WEBPACK_SCRIPTS,
         inject: false,
         window: {
           env: appEnv,
@@ -153,12 +161,6 @@ module.exports = function (env) {
           windows: false
         }
       }),
-      new webpack.DefinePlugin({
-        "process.env.NODE_ENV": JSON.stringify(appEnv.ENVIRONMENT === "staging"
-          ? "production"
-          : appEnv.ENVIRONMENT
-        )
-      }),
       new MonacoWebpackPlugin({
         languages: [
           "yaml",
@@ -181,7 +183,7 @@ module.exports = function (env) {
           ]
         },
       }),
-      new webpack.ContextReplacementPlugin(/graphql-language-service-interface[\/\\]dist/, /\.js$/),
+      new webpack.ContextReplacementPlugin(/graphql-language-service-interface[/\\]dist/, /\.js$/),
       new MiniCssExtractPlugin({
         filename: "style.[hash].css",
         chunkFilename: "[id].css"
@@ -194,11 +196,11 @@ module.exports = function (env) {
     ],
   };
 
-  if (env === "skaffold" || !env) {
+  if (env !== "enterprise") {
     var dev = require("./webpack.config.dev");
     return merge(common, dev);
   } else {
     var dist = require("./webpack.config.dist");
-    return merge(common, dist(env));
+    return merge(common, dist(appEnv));
   }
 };
