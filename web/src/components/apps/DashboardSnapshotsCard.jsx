@@ -37,27 +37,6 @@ const DESTINATIONS = [
   }
 ];
 
-const AZURE_CLOUD_NAMES = [
-  {
-    value: "AzurePublicCloud",
-    label: "Public",
-  },
-  {
-    value: "AzureUSGovernmentCloud",
-    label: "US Government",
-  },
-  {
-    value: "AzureChinaCloud",
-    label: "China",
-  },
-  {
-    value: "AzureGermanCloud",
-    label: "German",
-  }
-];
-export const FILE_SYSTEM_NFS_TYPE = "nfs";
-export const FILE_SYSTEM_HOSTPATH_TYPE = "hostpath";
-
 class DashboardSnapshotsCard extends React.Component {
 
   state ={
