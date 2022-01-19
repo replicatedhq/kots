@@ -181,58 +181,27 @@ class DashboardSnapshotsCard extends React.Component {
     if (store?.aws) {
       return this.setState({
         readableName: find(DESTINATIONS, ["value", "aws"])?.label,
-        determiningDestination: false,
-        selectedDestination: find(DESTINATIONS, ["value", "aws"]),
-        s3bucket: store.bucket,
-        s3Region: store?.aws?.region,
-        s3Path: store.path,
-        useIamAws: store?.aws?.useInstanceRole,
-        s3KeyId: store?.aws?.accessKeyID || "",
-        s3KeySecret: store?.aws?.secretAccessKey || "",
         locationStr: `${store?.bucket}${store?.path ? `/${store?.path}` : ""}`
       });
     }
 
     if (store?.azure) {
       return this.setState({
-        determiningDestination: false,
         selectedDestination: find(DESTINATIONS, ["value", "azure"]),
-        azureBucket: store.bucket,
-        azurePath: store.path,
-        azureSubscriptionId: store?.azure?.subscriptionId,
-        azureTenantId: store?.azure?.tenantId,
-        azureClientId: store?.azure?.clientId,
-        azureClientSecret: store?.azure?.clientSecret,
-        azureResourceGroupName: store?.azure?.resourceGroup,
-        azureStorageAccountId: store?.azure?.storageAccount,
-        selectedAzureCloudName: find(AZURE_CLOUD_NAMES, ["value", store?.azure?.cloudName]),
         locationStr: `${store?.bucket}${store?.path ? `/${store?.path}` : ""}`
       });
     }
 
     if (store?.gcp) {
       return this.setState({
-        determiningDestination: false,
         selectedDestination: find(DESTINATIONS, ["value", "gcp"]),
-        gcsBucket: store.bucket,
-        gcsPath: store.path,
-        gcsServiceAccount: store?.gcp?.serviceAccount || "",
-        gcsJsonFile: store?.gcp?.jsonFile || "",
-        gcsUseIam: store?.gcp?.useInstanceRole,
         locationStr: `${store?.bucket}${store?.path ? `/${store?.path}` : ""}`
       });
     }
 
     if (store?.other) {
       return this.setState({
-        determiningDestination: false,
         selectedDestination: find(DESTINATIONS, ["value", "other"]),
-        s3CompatibleBucket: store.bucket,
-        s3CompatiblePath: store.path,
-        s3CompatibleKeyId: store?.other?.accessKeyID,
-        s3CompatibleKeySecret: store?.other?.accessKeySecret,
-        s3CompatibleEndpoint: store?.other?.endpoint,
-        s3CompatibleRegion: store?.other?.region,
         locationStr: `${store?.bucket}${store?.path ? `/${store?.path}` : ""}`
       });
     }
@@ -247,13 +216,8 @@ class DashboardSnapshotsCard extends React.Component {
     if (store?.fileSystem) {
       const { fileSystemConfig } = snapshotSettings;
       return this.setState({
-        determiningDestination: false,
         selectedDestination: fileSystemConfig?.hostPath ? find(DESTINATIONS, ["value", "hostpath"]) : find(DESTINATIONS, ["value", "nfs"]),
-        fileSystemType: fileSystemConfig?.hostPath ? FILE_SYSTEM_HOSTPATH_TYPE : FILE_SYSTEM_NFS_TYPE,
         locationStr: fileSystemConfig?.hostPath ? fileSystemConfig?.hostPath : fileSystemConfig?.nfs?.path,
-        fileSystemNFSPath: fileSystemConfig?.nfs?.path,
-        fileSystemNFSServer: fileSystemConfig?.nfs?.server,
-        fileSystemHostPath: fileSystemConfig?.hostPath,
       });
     }
 
