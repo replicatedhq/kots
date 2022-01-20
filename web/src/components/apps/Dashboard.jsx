@@ -290,8 +290,8 @@ class Dashboard extends Component {
 
             if (this.props.updateCallback) {
               this.props.updateCallback();
-              this.state.fetchAppDownstreamJob.start(this.fetchAppDownstream, 2000);
             }
+            this.state.fetchAppDownstreamJob.start(this.fetchAppDownstream, 2000);
 
           } else {
             this.setState({
