@@ -2,14 +2,13 @@ FROM kotsadm:cache AS builder
 
 ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots
 WORKDIR $PROJECTPATH
+RUN mkdir -p web/dist && touch web/dist/README.md
 COPY Makefile ./
 COPY Makefile.build ./
-COPY go.mod ./
-COPY go.sum ./
+COPY go.mod go.sum ./
 COPY cmd ./cmd
 COPY pkg ./pkg
 COPY web/webcontent.go ./web/webcontent.go
-COPY web/dist ./web/dist
 COPY kotskinds ./kotskinds
 
 ARG DEBUG_KOTSADM=0
