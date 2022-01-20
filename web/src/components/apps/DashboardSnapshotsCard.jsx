@@ -1,9 +1,41 @@
 import React from "react";
 import { Link, withRouter } from "react-router-dom";
-import { Utilities, getSnapshotDestinationLabel } from "@src/utilities/utilities";
+import { Utilities } from "@src/utilities/utilities";
+import find from "lodash/find";
 import "../../scss/components/watches/DashboardCard.scss";
 import InlineDropdown from "../shared/InlineDropdown";
 import SnapshotDifferencesModal from "@src/components/modals/SnapshotDifferencesModal";
+
+const DESTINATIONS = [
+  {
+    value: "aws",
+    label: "Amazon S3",
+  },
+  {
+    value: "azure",
+    label: "Azure Blob Storage",
+  },
+  {
+    value: "gcp",
+    label: "Google Cloud Storage",
+  },
+  {
+    value: "other",
+    label: "Other S3-Compatible Storage",
+  },
+  {
+    value: "internal",
+    label: "Internal Storage (Default)",
+  },
+  {
+    value: "nfs",
+    label: "Network File System (NFS)",
+  },
+  {
+    value: "hostpath",
+    label: "Host Path",
+  }
+];
 
 class DashboardSnapshotsCard extends React.Component {
 
@@ -13,6 +45,7 @@ class DashboardSnapshotsCard extends React.Component {
     snapshotSettingsErr: false,
     snapshotSettingsErrMsg: "",
     minimalRBACKotsadmNamespace: "",
+    locationStr: ""
   }
 
   startASnapshot = (option) => {
@@ -119,14 +152,77 @@ class DashboardSnapshotsCard extends React.Component {
     this.setState({ snapshotDifferencesModal: !this.state.snapshotDifferencesModal });
   }
 
+  setCurrentProvider = () => {
+    const { snapshotSettings } = this.state;
+    if (!snapshotSettings) return;
+    const { store } = snapshotSettings;
+
+    if (store?.aws) {
+      return this.setState({
+        readableName: find(DESTINATIONS, ["value", "aws"])?.label,
+        locationStr: `${store?.bucket}${store?.path ? `/${store?.path}` : ""}`
+      });
+    }
+
+    if (store?.azure) {
+      return this.setState({
+        selectedDestination: find(DESTINATIONS, ["value", "azure"]),
+        locationStr: `${store?.bucket}${store?.path ? `/${store?.path}` : ""}`
+      });
+    }
+
+    if (store?.gcp) {
+      return this.setState({
+        selectedDestination: find(DESTINATIONS, ["value", "gcp"]),
+        locationStr: `${store?.bucket}${store?.path ? `/${store?.path}` : ""}`
+      });
+    }
+
+    if (store?.other) {
+      return this.setState({
+        selectedDestination: find(DESTINATIONS, ["value", "other"]),
+        locationStr: `${store?.bucket}${store?.path ? `/${store?.path}` : ""}`
+      });
+    }
+
+    if (store?.internal) {
+      return this.setState({
+        determiningDestination: false,
+        selectedDestination: find(DESTINATIONS, ["value", "internal"])
+      });
+    }
+
+    if (store?.fileSystem) {
+      const { fileSystemConfig } = snapshotSettings;
+      return this.setState({
+        selectedDestination: fileSystemConfig?.hostPath ? find(DESTINATIONS, ["value", "hostpath"]) : find(DESTINATIONS, ["value", "nfs"]),
+        locationStr: fileSystemConfig?.hostPath ? fileSystemConfig?.hostPath : fileSystemConfig?.nfs?.path,
+      });
+    }
+
+    // if nothing exists yet, we've determined default state is good
+    this.setState({
+      determiningDestination: false,
+      selectedDestination: find(DESTINATIONS, ["value", "aws"]),
+    });
+  }
+
   componentDidMount() {
     this.fetchSnapshotSettings();
+    if (this.state.snapshotSettings) {
+      this.setCurrentProvider();
+    }
+  }
+
+  componentDidUpdate(lastProps, lastState) {
+    if (this.state.snapshotSettings !== lastState.snapshotSettings && this.state.snapshotSettings) {
+      this.setCurrentProvider();
+    }
   }
 
   render() {
     const { isSnapshotAllowed } = this.props;
-    const { snapshotSettings } = this.state;
-    const storagePathStr = `${snapshotSettings?.store?.bucket}${snapshotSettings?.store?.path ? `/${snapshotSettings?.store?.path}` : ""}`;
+    const { snapshotSettings, selectedDestination } = this.state;
     
     return (
       <div className="flex-column flex1 dashboard-card">
@@ -154,10 +250,10 @@ class DashboardSnapshotsCard extends React.Component {
               {isSnapshotAllowed ? "Enabled" : "Disabled"}
             </span>
             <div className="flex alignItems--center u-marginTop--10">
-              <span className={`icon snapshotDestination--${snapshotSettings?.store?.provider} u-marginRight--5`} />
-              <p className="u-fontSize--normal u-fontWeight--medium u-textColor--header">{getSnapshotDestinationLabel(snapshotSettings?.store?.provider)}</p>
+              <span className={`icon snapshotDestination--${selectedDestination?.value} u-marginRight--5`} />
+              <p className="u-fontSize--normal u-fontWeight--medium u-textColor--header">{selectedDestination?.label}</p>
             </div>
-            <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--10">{storagePathStr}</p>
+            {selectedDestination?.value !== "internal" && <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--10">{this.state.locationStr}</p>}
           </div>
           <div className="flex-auto">
             <div className="u-color--taupe u-padding--10">
