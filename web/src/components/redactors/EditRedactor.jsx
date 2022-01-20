@@ -32,7 +32,7 @@ class EditRedactor extends Component {
       redactorErrMsg: ""
     });
 
-    fetch(`${window.env.API_ENDPOINT}/redact/spec/${slug}`, {
+    fetch(`${process.env.API_ENDPOINT}/redact/spec/${slug}`, {
       method: "GET",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -76,7 +76,7 @@ class EditRedactor extends Component {
       redactor: yaml
     }
 
-    fetch(`${window.env.API_ENDPOINT}/redact/spec/${slug}`, {
+    fetch(`${process.env.API_ENDPOINT}/redact/spec/${slug}`, {
       method: "POST",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -147,7 +147,7 @@ class EditRedactor extends Component {
       redactor: yaml
     }
 
-    fetch(`${window.env.API_ENDPOINT}/redact/spec/new`, {
+    fetch(`${process.env.API_ENDPOINT}/redact/spec/new`, {
       method: "POST",
       headers: {
         "Authorization": Utilities.getToken(),

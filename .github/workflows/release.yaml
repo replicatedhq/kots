@@ -102,30 +102,11 @@ jobs:
         name: migrations-image
         path: ./migrations/bin/docker-archive
 
-  test_web:
-    runs-on: ubuntu-18.04
-    needs: [build-schema-migrations]
-    container:
-      image: replicated/gitops-builder:buildkite
-      options: --user root
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-
-    - name: Setup Node.js environment
-      uses: actions/setup-node@v2
-      with:
-        node-version: '10.x'
-
-    - name: Install cross-env
-      run: npm i -g cross-env
-      shell: bash
-
   build_web:
     runs-on: ubuntu-18.04
     needs: [build-schema-migrations]
     container:
-      image: replicated/gitops-builder:buildkite
+      image: replicated/gitops-builder:buildkite-go17-node17
       options: --user root
     steps:
     - name: Checkout
@@ -134,11 +115,6 @@ jobs:
     - name: Get tags
       id: get_tag
       uses: ./actions/version-tag
-
-    - name: Setup Node.js environment
-      uses: actions/setup-node@v2
-      with:
-        node-version: '10.x'
 
     - name: Build web
       env:
@@ -157,16 +133,11 @@ jobs:
     runs-on: ubuntu-18.04
     needs: [build-schema-migrations]
     container:
-      image: replicated/gitops-builder:buildkite-go14-node10
+      image: replicated/gitops-builder:buildkite-go17-node17
       options: --user root
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-
-    - name: Setup Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: '^1.17.4'
 
     - name: Get tags
       id: get_tag
@@ -188,15 +159,11 @@ jobs:
 
   build_go_api:
     runs-on: ubuntu-18.04
-    needs: [test_web, build_web, build_kurl_proxy]
+    needs: [build_web, build_kurl_proxy]
     container:
-      image: replicated/gitops-builder:buildkite-go14-node10
+      image: replicated/gitops-builder:buildkite-go17-node17
       options: --user root
     steps:
-    - uses: actions/setup-go@v2
-      with:
-        go-version: '^1.17.4'
-
     - id: go-cache-paths
       run: |
         echo "::set-output name=go-build::$(go env GOCACHE)"
@@ -244,27 +211,6 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [build_web, build_go_api]
     steps:
-    - name: Setup Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: '^1.17.4'
-
-    - id: go-cache-paths
-      run: |
-        echo "::set-output name=go-build::$(go env GOCACHE)"
-        echo "::set-output name=go-mod::$(go env GOMODCACHE)"
-    - name: Checkout
-      uses: actions/checkout@v2
-
-    - uses: actions/cache@v2
-      with:
-        path: ${{ steps.go-cache-paths.outputs.go-build }}
-        key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
-    - uses: actions/cache@v2
-      with:
-        path: ${{ steps.go-cache-paths.outputs.go-mod }}
-        key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
-
     - name: Get tags
       id: get_tag
       uses: ./actions/version-tag
@@ -307,27 +253,6 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USER }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-    - name: Setup Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: '^1.17.4'
-
-    - id: go-cache-paths
-      run: |
-        echo "::set-output name=go-build::$(go env GOCACHE)"
-        echo "::set-output name=go-mod::$(go env GOMODCACHE)"
-    - name: Checkout
-      uses: actions/checkout@v2
-
-    - uses: actions/cache@v2
-      with:
-        path: ${{ steps.go-cache-paths.outputs.go-build }}
-        key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
-    - uses: actions/cache@v2
-      with:
-        path: ${{ steps.go-cache-paths.outputs.go-mod }}
-        key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
-
     - name: Get tags
       id: get_tag
       uses: ./actions/version-tag
@@ -351,6 +276,10 @@ jobs:
     runs-on: ubuntu-18.04
     needs: [build_web]
     steps:
+    - uses: actions/setup-go@v2
+      with:
+        go-version: '^1.17.4'
+
     - id: go-cache-paths
       run: |
         echo "::set-output name=go-build::$(go env GOCACHE)"
@@ -370,10 +299,6 @@ jobs:
 
     - name: Unshallow
       run: git fetch --prune --unshallow
-
-    - uses: actions/setup-go@v2
-      with:
-        go-version: '^1.17.4'
 
     - run: sudo apt-get update -y
     - run: sudo apt-get -qq -y install gnupg2 libdevmapper-dev libgpgme-dev libc6-dev-i386 btrfs-progs btrfs-tools pkg-config
@@ -422,12 +347,6 @@ jobs:
     runs-on: ubuntu-18.04
     needs: [release_go_api_tagged, goreleaser, build-schema-migrations]
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Get tags
-      id: get_tag
-      uses: ./actions/version-tag
-
     - name: Download migrations
       uses: actions/download-artifact@v2
       with:

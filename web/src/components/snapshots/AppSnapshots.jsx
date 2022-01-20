@@ -105,7 +105,7 @@ class AppSnapshots extends Component {
 
   checkRestoreInProgress() {
     const { selectedApp } = this.state;
-    fetch(`${window.env.API_ENDPOINT}/app/${selectedApp.slug}/snapshot/restore/status`, {
+    fetch(`${process.env.API_ENDPOINT}/app/${selectedApp.slug}/snapshot/restore/status`, {
       method: "GET",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -142,7 +142,7 @@ class AppSnapshots extends Component {
       displayErrorModal: false
     })
     try {
-      const res = await fetch(`${window.env.API_ENDPOINT}/app/${selectedApp.slug}/snapshots`, {
+      const res = await fetch(`${process.env.API_ENDPOINT}/app/${selectedApp.slug}/snapshots`, {
         method: "GET",
         headers: {
           "Authorization": Utilities.getToken(),
@@ -189,7 +189,7 @@ class AppSnapshots extends Component {
       snapshotSettingsErrMsg: "",
     });
 
-    fetch(`${window.env.API_ENDPOINT}/snapshots/settings`, {
+    fetch(`${process.env.API_ENDPOINT}/snapshots/settings`, {
       method: "GET",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -272,7 +272,7 @@ class AppSnapshots extends Component {
 
     this.setState({ deletingSnapshot: true, deleteErr: false, deleteErrorMsg: "", snapshots: this.state.snapshots.map(s => s === snapshot ? fakeDeletionSnapshot : s) });
 
-    fetch(`${window.env.API_ENDPOINT}/snapshot/${snapshot.name}/delete`, {
+    fetch(`${process.env.API_ENDPOINT}/snapshot/${snapshot.name}/delete`, {
       method: "POST",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -324,7 +324,7 @@ class AppSnapshots extends Component {
       restoreErrorMsg: "",
     });
 
-    fetch(`${window.env.API_ENDPOINT}/app/${selectedApp?.slug}/snapshot/restore/${snapshot.name}`, {
+    fetch(`${process.env.API_ENDPOINT}/app/${selectedApp?.slug}/snapshot/restore/${snapshot.name}`, {
       method: "POST",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -385,7 +385,7 @@ class AppSnapshots extends Component {
       snapshots: [...this.state.snapshots, fakeProgressSnapshot].sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt))
     });
 
-    fetch(`${window.env.API_ENDPOINT}/app/${selectedApp.slug}/snapshot/backup`, {
+    fetch(`${process.env.API_ENDPOINT}/app/${selectedApp.slug}/snapshot/backup`, {
       method: "POST",
       headers: {
         "Authorization": Utilities.getToken(),

@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import Select from "react-select";
 import { withRouter } from "react-router-dom"
-import MonacoEditor from "react-monaco-editor";
+import MonacoEditor from "@monaco-editor/react";
 import find from "lodash/find";
 import Modal from "react-modal";
 
@@ -373,8 +373,7 @@ class SnapshotStorageDestination extends Component {
   }
 
   validateSnapshotProviderS3Compatible = () => {
-    
-    const urlRe = /\b(https?):\/\/[\-A-Za-z0-9+&@#\/%?=~_|!:,.;]*[\-A-Za-z0-9+&@#\/%=~_|]/
+    const urlRe = /\b(https?):\/\/[-A-Za-z0-9+&@#/%?=~_|!:,.;]*[-A-Za-z0-9+&@#/%=~_|]/
 
     if (!urlRe.test(this.state.s3CompatibleEndpoint)) {
         return { "endpoint" : "Please enter a valid endpoint with protocol"}
@@ -478,7 +477,7 @@ class SnapshotStorageDestination extends Component {
 
     this.setState({ configuringFileSystemProvider: true, configureFileSystemProviderErrorMsg: "" });
 
-    fetch(`${window.env.API_ENDPOINT}/snapshots/filesystem`, {
+    fetch(`${process.env.API_ENDPOINT}/snapshots/filesystem`, {
       method: "PUT",
       headers: {
         "Authorization": Utilities.getToken(),

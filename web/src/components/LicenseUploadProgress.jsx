@@ -35,7 +35,7 @@ class LicenseUploadProgress extends React.Component {
 
   getOnlineInstallStatus = async () => {
     try {
-      const res = await fetch(`${window.env.API_ENDPOINT}/app/online/status`, {
+      const res = await fetch(`${process.env.API_ENDPOINT}/app/online/status`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",

@@ -4,7 +4,7 @@ import { Utilities } from "../../utilities/utilities";
 import Helmet from "react-helmet";
 import isEmpty from "lodash/isEmpty";
 import keys from "lodash/keys";
-import MonacoEditor from "react-monaco-editor";
+import MonacoEditor from "@monaco-editor/react";
 import Modal from "react-modal";
 import CodeSnippet from "../shared/CodeSnippet";
 
@@ -24,7 +24,7 @@ class KotsApplicationTree extends React.Component {
   }
 
   fetchApplicationTree = () => {
-    const url = `${window.env.API_ENDPOINT}/app/${this.props.match.params.slug}/sequence/${this.props.match.params.sequence}/contents`;
+    const url = `${process.env.API_ENDPOINT}/app/${this.props.match.params.slug}/sequence/${this.props.match.params.sequence}/contents`;
     fetch(url, {
       headers: {
         "Authorization": Utilities.getToken()

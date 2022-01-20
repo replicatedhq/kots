@@ -84,7 +84,7 @@ class Dashboard extends Component {
   }
 
   getAppLicense = async (app) => {
-    await fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/license`, {
+    await fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/license`, {
       method: "GET",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -134,7 +134,7 @@ class Dashboard extends Component {
 
   getAirgapConfig = async () => {
     const { app } = this.props;
-    const configUrl = `${window.env.API_ENDPOINT}/app/${app.slug}/airgap/config`;
+    const configUrl = `${process.env.API_ENDPOINT}/app/${app.slug}/airgap/config`;
     let simultaneousUploads = 3;
     try {
       let res = await fetch(configUrl, {
@@ -159,7 +159,7 @@ class Dashboard extends Component {
 
   getAppDashboard = () => {
     return new Promise((resolve, reject) => {
-      fetch(`${window.env.API_ENDPOINT}/app/${this.props.app?.slug}/cluster/${this.props.cluster?.id}/dashboard`, {
+      fetch(`${process.env.API_ENDPOINT}/app/${this.props.app?.slug}/cluster/${this.props.cluster?.id}/dashboard`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -196,7 +196,7 @@ class Dashboard extends Component {
       checkingForUpdateError: false,
     });
 
-    fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/updatecheck`, {
+    fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/updatecheck`, {
       headers: {
         "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
@@ -269,7 +269,7 @@ class Dashboard extends Component {
     const { app } = this.props;
 
     return new Promise((resolve, reject) => {
-      fetch(`${window.env.API_ENDPOINT}/app/${app?.slug}/task/updatedownload`, {
+      fetch(`${process.env.API_ENDPOINT}/app/${app?.slug}/task/updatedownload`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -393,8 +393,8 @@ class Dashboard extends Component {
     });
 
     let url = option === "full" ?
-      `${window.env.API_ENDPOINT}/snapshot/backup`
-      : `${window.env.API_ENDPOINT}/app/${app.slug}/snapshot/backup`;
+      `${process.env.API_ENDPOINT}/snapshot/backup`
+      : `${process.env.API_ENDPOINT}/app/${app.slug}/snapshot/backup`;
 
     fetch(url, {
       method: "POST",

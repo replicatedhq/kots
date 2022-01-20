@@ -53,7 +53,7 @@ class SnapshotRestore extends Component {
     });
 
     try {
-      const res = await fetch(`${window.env.API_ENDPOINT}/snapshot/${restoreName}/apps-restore-status`, {
+      const res = await fetch(`${process.env.API_ENDPOINT}/snapshot/${restoreName}/apps-restore-status`, {
         method: "POST",
         headers: {
           "Authorization": Utilities.getToken(),
@@ -118,7 +118,7 @@ class SnapshotRestore extends Component {
   fetchCancelRestore = async () => {
     const { match } = this.props;
     const appSlug = match.params.slug;
-    const res = await fetch(`${window.env.API_ENDPOINT}/app/${appSlug}/snapshot/restore`, {
+    const res = await fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/snapshot/restore`, {
       method: "DELETE",
       headers: {
         "Authorization": Utilities.getToken(),
