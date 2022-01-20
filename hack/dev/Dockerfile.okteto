@@ -9,7 +9,7 @@ COPY go.sum ./
 COPY cmd ./cmd
 COPY pkg ./pkg
 COPY web/webcontent.go ./web/webcontent.go
-RUN mkdir web/dist
+RUN mkdir web/dist && touch web/dist/README.md
 COPY kotskinds ./kotskinds
 
 ARG DEBUG_KOTSADM=0
