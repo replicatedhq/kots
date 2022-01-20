@@ -38,7 +38,7 @@ export class PodAnalyzerDetails extends React.Component {
     const { pod } = this.props;
     this.setState({ loading: true, errMsg: "" });
     
-    fetch(`${window.env.API_ENDPOINT}/troubleshoot/app/qakots/supportbundle/${this.props.bundleId}/pod?podNamespace=${pod.namespace}&podName=${pod.name}`, {
+    fetch(`${process.env.API_ENDPOINT}/troubleshoot/app/qakots/supportbundle/${this.props.bundleId}/pod?podNamespace=${pod.namespace}&podName=${pod.name}`, {
       method: "GET",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -83,7 +83,7 @@ export class PodAnalyzerDetails extends React.Component {
       errMsg: "",
     });
 
-    fetch(`${window.env.API_ENDPOINT}/troubleshoot/supportbundle/${this.props.bundleId}/files?filename=${encodeURIComponent(selectedContainer.logsFilePath)}`, {
+    fetch(`${process.env.API_ENDPOINT}/troubleshoot/supportbundle/${this.props.bundleId}/files?filename=${encodeURIComponent(selectedContainer.logsFilePath)}`, {
       method: "GET",
       headers: {
         "Authorization": Utilities.getToken(),

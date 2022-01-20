@@ -7,11 +7,11 @@ release:
 builds:
   - id: kots
     goos:
-    - linux
-    - darwin
+      - linux
+      - darwin
     goarch:
-    - amd64
-    - arm64
+      - amd64
+      - arm64
     env:
       - CGO_ENABLED=0
       - GO111MODULE=on
@@ -26,12 +26,12 @@ builds:
 
   - id: kots_experimental
     goos:
-    - linux
+      - linux
     goarch:
-    - amd64
+      - amd64
     env:
-    - CGO_ENABLED=1
-    - GO111MODULE=on
+      - CGO_ENABLED=1
+      - GO111MODULE=on
     main: cmd/kots/main.go
     ldflags: -s -w
       -X github.com/replicatedhq/kots/pkg/buildversion.version={{.Version}}
@@ -42,7 +42,7 @@ builds:
     hooks: {}
 
 universal_binaries:
-- replace: true
+  - replace: true
 
 archives:
   - id: kots

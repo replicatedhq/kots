@@ -1,6 +1,6 @@
 import React from "react";
 import Modal from "react-modal";
-import MonacoEditor from "react-monaco-editor";
+import MonacoEditor from "@monaco-editor/react";
 import Loader from "../shared/Loader";
 import { Link } from "react-router-dom"
 

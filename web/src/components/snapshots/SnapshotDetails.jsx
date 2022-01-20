@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { withRouter } from "react-router-dom";
-import MonacoEditor from "react-monaco-editor";
+import MonacoEditor from "@monaco-editor/react";
 import Modal from "react-modal";
 import filter from "lodash/filter";
 import isEmpty from "lodash/isEmpty";
@@ -127,7 +127,7 @@ class SnapshotDetails extends Component {
     });
 
     try {
-      const res = await fetch(`${window.env.API_ENDPOINT}/snapshot/${snapshotName}`, {
+      const res = await fetch(`${process.env.API_ENDPOINT}/snapshot/${snapshotName}`, {
         method: "GET",
         headers: {
           "Authorization": Utilities.getToken(),
@@ -223,7 +223,7 @@ class SnapshotDetails extends Component {
     }, () => {
       this.setState({ loadingSnapshotLogs: true })
       const name = this.state.snapshotDetails?.name;
-      const url = `${window.env.API_ENDPOINT}/snapshot/${name}/logs`;
+      const url = `${process.env.API_ENDPOINT}/snapshot/${name}/logs`;
       fetch(url, {
         headers: {
           "Authorization": Utilities.getToken()

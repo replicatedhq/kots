@@ -1,7 +1,11 @@
-FROM node:10 as dev
+FROM node:17-stretch-slim as dev
 EXPOSE 8080 9229
 
 WORKDIR /src
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends make \
+  && rm -rf /var/lib/apt/lists/*
 
 COPY ./package.json ./yarn.lock ./
 COPY Makefile ./

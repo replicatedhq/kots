@@ -54,7 +54,7 @@ class UploadAirgapBundle extends React.Component {
 
   getAirgapConfig = async () => {
     const { match } = this.props;
-    const configUrl = `${window.env.API_ENDPOINT}/app/${match.params.slug}/airgap/config`;
+    const configUrl = `${process.env.API_ENDPOINT}/app/${match.params.slug}/airgap/config`;
     let simultaneousUploads = 3;
     try {
       let res = await fetch(configUrl, {
@@ -81,7 +81,7 @@ class UploadAirgapBundle extends React.Component {
     const { match, showRegistry } = this.props;
 
     // Reset the airgap upload state
-    const resetUrl = `${window.env.API_ENDPOINT}/app/${match.params.slug}/airgap/reset`;
+    const resetUrl = `${process.env.API_ENDPOINT}/app/${match.params.slug}/airgap/reset`;
     try {
       await fetch(resetUrl, {
         method: "POST",
@@ -125,7 +125,7 @@ class UploadAirgapBundle extends React.Component {
 
       let res;
       try {
-        res = await fetch(`${window.env.API_ENDPOINT}/app/${slug}/registry/validate`, {
+        res = await fetch(`${process.env.API_ENDPOINT}/app/${slug}/registry/validate`, {
           method: "POST",
           headers: {
             "Authorization": Utilities.getToken(),
@@ -234,7 +234,7 @@ class UploadAirgapBundle extends React.Component {
     });
 
     let resumeResult;
-    fetch(`${window.env.API_ENDPOINT}/license/resume`, {
+    fetch(`${process.env.API_ENDPOINT}/license/resume`, {
       method: "PUT",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -300,7 +300,7 @@ class UploadAirgapBundle extends React.Component {
   }
 
   getSupportBundleCommand = async (slug) => {
-    const res = await fetch(`${window.env.API_ENDPOINT}/troubleshoot/app/${slug}/supportbundlecommand`, {
+    const res = await fetch(`${process.env.API_ENDPOINT}/troubleshoot/app/${slug}/supportbundlecommand`, {
       method: "POST",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -364,7 +364,7 @@ class UploadAirgapBundle extends React.Component {
 
   getApp = async (slug) => {
     try {
-      const res = await fetch(`${window.env.API_ENDPOINT}/app/${slug}`, {
+      const res = await fetch(`${process.env.API_ENDPOINT}/app/${slug}`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",

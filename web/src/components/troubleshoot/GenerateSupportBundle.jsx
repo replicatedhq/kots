@@ -102,7 +102,7 @@ class GenerateSupportBundle extends React.Component {
     return new Promise((resolve, reject) => {
       this.setState({ loadingSupportBundles: true, errorMsg: "", displayErrorModal: false, networkErr: false });
 
-      fetch(`${window.env.API_ENDPOINT}/troubleshoot/app/${this.props.watch?.slug}/supportbundles`, {
+      fetch(`${process.env.API_ENDPOINT}/troubleshoot/app/${this.props.watch?.slug}/supportbundles`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -176,7 +176,7 @@ class GenerateSupportBundle extends React.Component {
 
   pollForBundleAnalysisProgress = async () => {
     const { newBundleSlug } = this.state;
-    fetch(`${window.env.API_ENDPOINT}/troubleshoot/supportbundle/${newBundleSlug}`, {
+    fetch(`${process.env.API_ENDPOINT}/troubleshoot/supportbundle/${newBundleSlug}`, {
       headers: {
         "Content-Type": "application/json",
         "Authorization": Utilities.getToken(),
@@ -216,7 +216,7 @@ class GenerateSupportBundle extends React.Component {
       generateBundleErrMsg: ""
     });
 
-    fetch(`${window.env.API_ENDPOINT}/troubleshoot/supportbundle/app/${watch?.id}/cluster/${clusterId}/collect`, {
+    fetch(`${process.env.API_ENDPOINT}/troubleshoot/supportbundle/app/${watch?.id}/cluster/${clusterId}/collect`, {
       headers: {
         "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
@@ -241,7 +241,7 @@ class GenerateSupportBundle extends React.Component {
   fetchSupportBundleCommand = async () => {
     const { watch } = this.props;
 
-    const res = await fetch(`${window.env.API_ENDPOINT}/troubleshoot/app/${watch.slug}/supportbundlecommand`, {
+    const res = await fetch(`${process.env.API_ENDPOINT}/troubleshoot/app/${watch.slug}/supportbundlecommand`, {
       method: "POST",
       headers: {
         "Authorization": Utilities.getToken(),

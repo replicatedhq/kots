@@ -42,7 +42,7 @@ jobs:
       - name: Setup Node.js environment
         uses: actions/setup-node@v2
         with:
-          node-version: '10.x'
+          node-version: '17.x'
 
       - name: Build web
         env:
@@ -307,7 +307,7 @@ jobs:
 
       - uses: actions/setup-node@v2
         with:
-          node-version: '14.x'
+          node-version: '17.x'
 
       - name: setup testIM
         run: npm i -g @testim/testim-cli@3.206.0
@@ -411,7 +411,7 @@ jobs:
 
       - uses: actions/setup-node@v2
         with:
-          node-version: '14.x'
+          node-version: '17.x'
 
       - name: setup testIM
         run: npm i -g @testim/testim-cli@3.206.0
@@ -475,7 +475,7 @@ jobs:
 
       - uses: actions/setup-node@v2
         with:
-          node-version: '14.x'
+          node-version: '17.x'
 
       - name: setup testIM
         run: npm i -g @testim/testim-cli@3.206.0
@@ -548,7 +548,7 @@ jobs:
 
       - uses: actions/setup-node@v2
         with:
-          node-version: '14.x'
+          node-version: '17.x'
 
       - name: setup testIM
         run: npm i -g @testim/testim-cli@3.206.0
