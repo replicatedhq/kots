@@ -107,6 +107,7 @@ jobs:
           go version
           go list -deps -json ./...
           go mod graph
+          # test
           make sbom
       - uses: actions/upload-artifact@v2
         with:
