@@ -100,6 +100,14 @@ jobs:
           name: web
           path: ./web/dist
       - run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make ci-test kots
+      - name: Test sbom commands
+        run: |
+          set -x
+          go list -mod readonly -json -m
+          go version
+          go list -deps -json ./...
+          go mod graph
+          make sbom
       - uses: actions/upload-artifact@v2
         with:
           name: kots
