@@ -55,6 +55,7 @@ class Dashboard extends Component {
       prometheusAddress: "",
     },
     getAppDashboardJob: new Repeater(),
+    fetchAppDownstreamJob: new Repeater(),
     gettingAppLicenseErrMsg: "",
     startSnapshotOptions: [
       { option: "partial", name: "Start a Partial snapshot" },
@@ -128,6 +129,7 @@ class Dashboard extends Component {
   componentWillUnmount() {
     this.state.updateChecker.stop();
     this.state.getAppDashboardJob.stop();
+    this.state.fetchAppDownstreamJob.stop();
   }
 
   getAirgapConfig = async () => {
@@ -232,6 +234,38 @@ class Dashboard extends Component {
     });
   }
 
+  fetchAppDownstream = async () => {
+    const { app } = this.props;
+    if (!app) return;
+
+    try {
+      const res = await fetch(`${window.env.API_ENDPOINT}/app/${app.slug}`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "GET",
+      });
+      if (res.ok && res.status == 200) {
+        const app = await res.json();
+        if (app?.downstreams?.length > 0 && app?.downstreams[0].pendingVersions?.length > 0) {
+          const isAwaitingResults = app.downstreams[0].pendingVersions[0].status === "pending_preflight" || app.downstreams[0].pendingVersions[0].status === "deploying" || app.downstreams[0].pendingVersions[0].status === "unknown";
+          if (!isAwaitingResults) {
+            this.state.fetchAppDownstreamJob.stop();
+          }
+        }
+        this.setState({ 
+          downstream: app.downstreams[0],
+         });
+      } else {
+        this.setState({ loadingApp: false, gettingAppErrMsg: `Unexpected status code: ${res.status}`, displayErrorModal: true });
+      }
+    } catch (err) {
+      console.log(err)
+      this.setState({ loadingApp: false, gettingAppErrMsg: err ? err.message : "Something went wrong, please try again.", displayErrorModal: true });
+    }
+  }
+
   updateStatus = () => {
     const { app } = this.props;
 
@@ -257,6 +291,7 @@ class Dashboard extends Component {
 
             if (this.props.updateCallback) {
               this.props.updateCallback();
+              this.state.fetchAppDownstreamJob.start(this.fetchAppDownstream, 2000);
             }
 
           } else {
