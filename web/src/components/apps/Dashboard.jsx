@@ -13,7 +13,7 @@ import AutomaticUpdatesModal from "@src/components/modals/AutomaticUpdatesModal"
 import SnapshotDifferencesModal from "@src/components/modals/SnapshotDifferencesModal";
 import Modal from "react-modal";
 import { Repeater } from "../../utilities/repeater";
-import { Utilities } from "../../utilities/utilities";
+import { Utilities, isAwaitingResults } from "../../utilities/utilities";
 import { AirgapUploader } from "../../utilities/airgapUploader";
 
 import "../../scss/components/watches/Dashboard.scss";
@@ -249,8 +249,7 @@ class Dashboard extends Component {
       if (res.ok && res.status == 200) {
         const app = await res.json();
         if (app?.downstreams?.length > 0 && app?.downstreams[0].pendingVersions?.length > 0) {
-          const isAwaitingResults = app.downstreams[0].pendingVersions[0].status === "pending_preflight" || app.downstreams[0].pendingVersions[0].status === "deploying" || app.downstreams[0].pendingVersions[0].status === "unknown";
-          if (!isAwaitingResults) {
+          if (!isAwaitingResults(app.downstreams[0].pendingVersions)) {
             this.state.fetchAppDownstreamJob.stop();
           }
         }
