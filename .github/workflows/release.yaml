@@ -349,6 +349,7 @@ jobs:
 
   goreleaser:
     runs-on: ubuntu-18.04
+    needs: [build_web]
     steps:
     - id: go-cache-paths
       run: |
@@ -501,7 +502,7 @@ jobs:
 
   start_kgrid_test:
     runs-on: ubuntu-18.04
-    needs: [release_go_api_tagged]
+    needs: [goreleaser, release_go_api_tagged]
     if: startsWith(github.ref, 'refs/tags/v') && endsWith(github.ref, '-nightly')
     steps:
     - name: Checkout
