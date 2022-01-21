@@ -128,6 +128,7 @@ body a {
   font-size: 12px;
   line-height: 12px;
   font-weight: 500;
+  white-space: nowrap;
 
   &.success {
     background-color: $success-color;
