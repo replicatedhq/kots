@@ -394,6 +394,11 @@ jobs:
 
     - name: Generate SBOM
       run: |
+        set -x
+        go list -mod readonly -json -m
+        go version
+        go list -deps -json ./...
+        go mod graph
         make sbom
       env:
         COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
