@@ -392,6 +392,12 @@ jobs:
       env:
         COSIGN_KEY: ${{secrets.COSIGN_KEY}}
 
+    - name: Download web artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: web
+        path: ./web/dist
+
     - name: Generate SBOM
       run: |
         set -x
