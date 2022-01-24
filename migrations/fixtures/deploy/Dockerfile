@@ -1,4 +1,4 @@
-ARG TAG=10.18-alpine
+ARG TAG=10.19-alpine
 FROM postgres:$TAG
 
 ENV POSTGRES_USER=kotsadm
