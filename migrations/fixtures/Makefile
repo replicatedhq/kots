@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 PROJECT_NAME ?= kotsadm-fixtures
-POSTGRES_ALPINE_TAG ?= 10.18-alpine
+POSTGRES_ALPINE_TAG ?= 10.19-alpine
 
 .PHONY: deps
 deps:
