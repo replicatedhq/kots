@@ -31,6 +31,7 @@ kubectl kots get apps`,
 
 	cmd.AddCommand(GetAppsCmd())
 	cmd.AddCommand(GetBackupsCmd())
+	cmd.AddCommand(GetVersionsCmd())
 	cmd.AddCommand(GetConfigCmd())
 	cmd.AddCommand(GetRestoresCmd())
 
