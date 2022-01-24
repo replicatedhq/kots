@@ -20,8 +20,7 @@ import (
 
 func GetVersionsCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:           "versions",
-		Aliases:       []string{"versions"},
+		Use:           "versions [appSlug]",
 		Short:         "Get App Versions",
 		Long:          "",
 		SilenceUsage:  false,
@@ -32,19 +31,18 @@ func GetVersionsCmd() *cobra.Command {
 		RunE: getVersionsCmd,
 	}
 
-	cmd.Flags().StringP("output", "o", "", "output format. supported values: json")
-	cmd.Flags().String("appslug", "", "app slug to retrieve config for")
-
 	return cmd
 }
 
 func getVersionsCmd(cmd *cobra.Command, args []string) error {
 	v := viper.GetViper()
 
-	appSlug := v.GetString("appslug")
-	if appSlug == "" {
-		return errors.New("appslug is required")
+	if len(args) == 0 {
+		cmd.Help()
+		os.Exit(1)
 	}
+
+	appSlug := args[0]
 
 	log := logger.NewCLILogger()
 
@@ -136,6 +134,10 @@ func getAppVersions(url string, authSlug string) (*handlers.GetAppVersionsRespon
 		return nil, errors.Wrap(err, "failed to execute request")
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode == 500 {
+		return nil, fmt.Errorf("check the app slug")
+	}
 
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
