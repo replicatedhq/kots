@@ -277,6 +277,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 
 		rewriteOptionsCopy := rewriteOptions
 		rewriteOptionsCopy.K8sNamespace = helmBaseCopy.Namespace
+		rewriteOptionsCopy.CopyImages = false // don't copy images more than once
 
 		helmMidstream, err := writeMidstream(writeMidstreamOptions, rewriteOptionsCopy, helmBaseCopy, fetchOptions.License, u.GetUpstreamDir(writeUpstreamOptions), log)
 		if err != nil {
