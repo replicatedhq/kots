@@ -253,10 +253,6 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USER }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-    - name: Get tags
-      id: get_tag
-      uses: ./actions/version-tag
-
     - name: Download kurl_proxy artifact
       uses: actions/download-artifact@v2
       with:
@@ -268,7 +264,7 @@ jobs:
 
     - name: Build tagged release
       env:
-        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+        GIT_TAG: ${{ GITHUB_REF_NAME }}
       run: |
         export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C kurl_proxy build-release
 
