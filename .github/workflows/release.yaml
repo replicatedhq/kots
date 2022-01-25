@@ -264,8 +264,8 @@ jobs:
 
     - name: Build tagged release
       run: |
-        docker build --pull -f deploy/Dockerfile -t kotsadm/kurl-proxy:${GITHUB_REF_NAME} -t kotsadm/kurl-proxy:v0.0.0-nightly .
-        docker push kotsadm/kurl-proxy:${GITHUB_REF_NAME}
+        docker build --pull -f deploy/Dockerfile -t kotsadm/kurl-proxy:$GITHUB_REF_NAME -t kotsadm/kurl-proxy:v0.0.0-nightly .
+        docker push kotsadm/kurl-proxy:$GITHUB_REF_NAME
         docker push kotsadm/kurl-proxy:v0.0.0-nightly
 
   goreleaser:
