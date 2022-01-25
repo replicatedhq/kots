@@ -5,6 +5,9 @@ on:
   # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets. 
   # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
     types: [opened, synchronize, reopened, labeled]
+  push:
+    branches:
+      - seanrester/sc-40894/create-testing-that-insures-changes-in-a
 
 jobs:
   can-run-ci:
