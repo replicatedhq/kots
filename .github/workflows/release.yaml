@@ -264,7 +264,7 @@ jobs:
 
     - name: Build tagged release
       env:
-        GIT_TAG: ${{ GITHUB_REF_NAME }}
+        GIT_TAG: ${{ env.GITHUB_REF_NAME }}
       run: |
         export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C kurl_proxy build-release
 
