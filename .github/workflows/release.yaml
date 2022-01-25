@@ -263,10 +263,10 @@ jobs:
       run: chmod a+x ./kurl_proxy/bin/kurl_proxy
 
     - name: Build tagged release
-      env:
-        GIT_TAG: ${{ env.GITHUB_REF_NAME }}
       run: |
-        export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C kurl_proxy build-release
+        docker build --pull -f deploy/Dockerfile -t kotsadm/kurl-proxy:${GITHUB_REF_NAME} -t kotsadm/kurl-proxy:v0.0.0-nightly .
+        docker push kotsadm/kurl-proxy:${GITHUB_REF_NAME}
+        docker push kotsadm/kurl-proxy:v0.0.0-nightly
 
   goreleaser:
     runs-on: ubuntu-18.04
