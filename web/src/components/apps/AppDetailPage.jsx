@@ -40,7 +40,7 @@ class AppDetailPage extends Component {
       selectedWatchName: "",
       watchToEdit: {},
       existingDeploymentClusters: [],
-      displayDownloadCommandModal: false,
+      displayRequiredKotsUpdateModal: false,
       isBundleUploading: false,
       app: null,
       loadingApp: true,
@@ -118,6 +118,10 @@ class AppDetailPage extends Component {
           isCLI: false
         }),
       });
+      if (!res.ok && res.status === 409) {
+        const response = await res.json();
+        this.toggleDisplayRequiredKotsUpdateModal(response);
+      }
       if (res.ok && res.status === 204) {
         this.setState({ makingCurrentReleaseErrMsg: "" });
         this.refetchData();
@@ -161,8 +165,11 @@ class AppDetailPage extends Component {
     }
   }
 
-  toggleDisplayDownloadModal = () => {
-    this.setState({ displayDownloadCommandModal: !this.state.displayDownloadCommandModal });
+  toggleDisplayRequiredKotsUpdateModal = (resObj) => {
+    this.setState({
+      displayRequiredKotsUpdateModal: !this.state.displayRequiredKotsUpdateModal,
+      requiredKotsUpdateObj: resObj,
+    });
   }
 
   toggleIsBundleUploading = (isUploading) => {
@@ -272,8 +279,9 @@ class AppDetailPage extends Component {
 
     const {
       app,
-      displayDownloadCommandModal,
+      displayRequiredKotsUpdateModal,
       isBundleUploading,
+      requiredKotsUpdateObj,
       gettingAppErrMsg,
       isVeleroInstalled
     } = this.state;
@@ -352,6 +360,7 @@ class AppDetailPage extends Component {
                         updateCallback={this.refetchData}
                         onActiveInitSession={this.props.onActiveInitSession}
                         toggleIsBundleUploading={this.toggleIsBundleUploading}
+                        makeCurrentVersion={this.makeCurrentRelease}
                         isBundleUploading={isBundleUploading}
                         isVeleroInstalled={isVeleroInstalled}
                         refreshAppData={this.getApp}
@@ -464,28 +473,37 @@ class AppDetailPage extends Component {
             }
           </div>
         </SidebarLayout>
-        {displayDownloadCommandModal &&
+        {displayRequiredKotsUpdateModal &&
           <Modal
-            isOpen={displayDownloadCommandModal}
-            onRequestClose={this.toggleDisplayDownloadModal}
+            isOpen={displayRequiredKotsUpdateModal}
+            onRequestClose={() => this.toggleDisplayRequiredKotsUpdateModal(null)}
             shouldReturnFocusAfterClose={false}
-            contentLabel="Download cluster command modal"
+            contentLabel="Required KOTS Update modal"
             ariaHideApp={false}
-            className="DisplayDownloadCommandModal--wrapper Modal"
+            className="DisplayRequiredKotsUpdateModal--wrapper Modal"
           >
             <div className="Modal-body">
-              <h2 className="u-fontSize--largest u-textColor--primary u-fontWeight--bold u-lineHeight--normal">Download assets</h2>
-              <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">Run this command in your cluster to download the assets.</p>
-              <CodeSnippet
-                language="bash"
-                canCopy={true}
-                onCopyText={<span className="u-textColor--success">Command has been copied to your clipboard</span>}
-              >
-                kubectl krew install kots
-                {`kubectl kots download --namespace ${this.props.appNameSpace} --slug ${this.props.match.params.slug}`}
-              </CodeSnippet>
+              <h2 className="u-fontSize--largest u-textColor--primary u-fontWeight--bold u-lineHeight--normal">You must update KOTS to deploy this version</h2>
+              <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">This version of {app?.name} requires a version of KOTS that is different from what you currently have installed. Follow the steps below to upgrade KOTS to the required version.</p>
+              {app?.isAirgap ?
+                <CodeSnippet
+                  language="bash"
+                  canCopy={true}
+                  onCopyText={<span className="u-textColor--success">Command has been copied to your clipboard</span>}
+                >
+                  Airgap commands will go here
+                </CodeSnippet>
+              :
+                <CodeSnippet
+                  language="bash"
+                  canCopy={true}
+                  onCopyText={<span className="u-textColor--success">Command has been copied to your clipboard</span>}
+                >
+                  {`curl https://kots.io/install/version/${requiredKotsUpdateObj?.kotsVersion} | bash`}
+                </CodeSnippet>
+              }
               <div className="u-marginTop--10 flex">
-                <button onClick={this.toggleDisplayDownloadModal} className="btn blue primary">Ok, got it!</button>
+                <button onClick={() => this.toggleDisplayRequiredKotsUpdateModal(null)} className="btn blue primary">Ok, got it!</button>
               </div>
             </div>
           </Modal>

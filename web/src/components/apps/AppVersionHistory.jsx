@@ -322,42 +322,6 @@ class AppVersionHistory extends Component {
         </div>
       );
     }
-    // if (hasDiffSummaryError) {
-    //   return (
-    //     <div className="flex flex1 alignItems--center">
-    //       <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-textColor--bodyCopy">Cannot generate diff <span className="replicated-link" onClick={() => this.toggleDiffErrModal(version)}>Why?</span></span>
-    //     </div>
-    //   );
-    // } else {
-    //   return (
-    //     <div>
-    //       {diffSummary ?
-    //         (diffSummary.filesChanged > 0 ?
-    //           <div
-    //             className="DiffSummary u-cursor--pointer u-marginRight--10"
-    //             onClick={() => {
-    //               if (!downstream.gitops?.enabled) {
-    //                 this.setState({
-    //                   showDiffOverlay: true,
-    //                   firstSequence: version.parentSequence - 1,
-    //                   secondSequence: version.parentSequence
-    //                 });
-    //               }
-    //             }}
-    //           >
-    //             <span className="files">{diffSummary.filesChanged} files changed </span>
-    //             <span className="lines-added">+{diffSummary.linesAdded} </span>
-    //             <span className="lines-removed">-{diffSummary.linesRemoved}</span>
-    //           </div>
-    //           :
-    //           <div className="DiffSummary">
-    //             <span className="files">No changes</span>
-    //           </div>
-    //         )
-    //         : <span>&nbsp;</span>}
-    //     </div>
-    //   );
-    // }
   }
 
   renderLogsTabs = () => {

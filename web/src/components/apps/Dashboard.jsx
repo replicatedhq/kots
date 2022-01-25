@@ -592,6 +592,7 @@ class Dashboard extends Component {
                   uploadProgress={this.state.uploadProgress}
                   uploadSize={this.state.uploadSize}
                   uploadResuming={this.state.uploadResuming}
+                  makeCurrentVersion={this.props.makeCurrentVersion}
                   onProgressError={this.onProgressError}
                   onCheckForUpdates={() => this.onCheckForUpdates()}
                   onUploadNewVersion={() => this.onUploadNewVersion()}
