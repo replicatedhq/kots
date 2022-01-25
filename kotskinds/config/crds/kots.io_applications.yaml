@@ -46,6 +46,10 @@ spec:
                 type: array
               allowRollback:
                 type: boolean
+              consoleFeatureFlags:
+                items:
+                  type: string
+                type: array
               graphs:
                 items:
                   properties:
@@ -78,6 +82,8 @@ spec:
                   type: object
                 type: array
               icon:
+                type: string
+              kotsVersion:
                 type: string
               kubectlVersion:
                 type: string

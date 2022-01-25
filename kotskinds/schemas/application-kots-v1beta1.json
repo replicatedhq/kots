@@ -35,6 +35,12 @@
         "allowRollback": {
           "type": "boolean"
         },
+        "consoleFeatureFlags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "graphs": {
           "type": "array",
           "items": {
@@ -83,6 +89,9 @@
           }
         },
         "icon": {
+          "type": "string"
+        },
+        "kotsVersion": {
           "type": "string"
         },
         "kubectlVersion": {
