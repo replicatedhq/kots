@@ -373,7 +373,9 @@ class AppConfig extends Component {
   }
 
   renderConfigInfo = (app) => {
-    const { match } = this.props;
+    const { match, fromLicenseFlow } = this.props;
+    if (fromLicenseFlow) return null;
+    
     let sequence;
     if (!match.params.sequence) {
       sequence = app?.currentSequence;
