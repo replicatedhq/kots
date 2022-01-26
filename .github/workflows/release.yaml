@@ -132,12 +132,13 @@ jobs:
   build_kurl_proxy:
     runs-on: ubuntu-18.04
     needs: [build-schema-migrations]
-    container:
-      image: replicated/gitops-builder:buildkite-go17-node17
-      options: --user root
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+
+    - uses: actions/setup-go@v2
+      with:
+        go-version: '^1.17.4'
 
     - name: Get tags
       id: get_tag
@@ -157,9 +158,20 @@ jobs:
         name: kurl_proxy
         path: ./kurl_proxy/bin
 
+    - uses: azure/docker-login@v1
+      with:
+        username: ${{ secrets.DOCKERHUB_USER }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+    - name: Build tagged release
+      run: |
+        docker build --pull -f deploy/Dockerfile -t kotsadm/kurl-proxy:$GITHUB_REF_NAME -t kotsadm/kurl-proxy:v0.0.0-nightly .
+        docker push kotsadm/kurl-proxy:$GITHUB_REF_NAME
+        docker push kotsadm/kurl-proxy:v0.0.0-nightly
+
   build_go_api:
     runs-on: ubuntu-18.04
-    needs: [build_web, build_kurl_proxy]
+    needs: [build_web]
     container:
       image: replicated/gitops-builder:buildkite-go17-node17
       options: --user root
@@ -169,7 +181,7 @@ jobs:
         echo "::set-output name=go-build::$(go env GOCACHE)"
         echo "::set-output name=go-mod::$(go env GOMODCACHE)"
     - name: Checkout
-      uses: actions/checkout@v1 # not @v2 because of: https://github.com/actions/checkout/issues/126
+      uses: actions/checkout@v2
 
     - uses: actions/cache@v2
       with:
@@ -199,7 +211,6 @@ jobs:
         # GITHUB_WORKSPACE:
         SCOPE_DSN_PUBLIC: ""
       run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make test kotsadm
-      shell: bash
 
     - name: Upload Go API artifact
       uses: actions/upload-artifact@v2
@@ -243,30 +254,6 @@ jobs:
       with:
         name: kotsadm-image
         path: ./bin/docker-archive
-
-  build_kurl_proxy_tagged:
-    runs-on: ubuntu-18.04
-    needs: [build_kurl_proxy]
-    steps:
-    - uses: azure/docker-login@v1
-      with:
-        username: ${{ secrets.DOCKERHUB_USER }}
-        password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-    - name: Download kurl_proxy artifact
-      uses: actions/download-artifact@v2
-      with:
-        name: kurl_proxy
-        path: ./kurl_proxy/bin
-
-    - name: Add executable permissions
-      run: chmod a+x ./kurl_proxy/bin/kurl_proxy
-
-    - name: Build tagged release
-      run: |
-        docker build --pull -f deploy/Dockerfile -t kotsadm/kurl-proxy:$GITHUB_REF_NAME -t kotsadm/kurl-proxy:v0.0.0-nightly .
-        docker push kotsadm/kurl-proxy:$GITHUB_REF_NAME
-        docker push kotsadm/kurl-proxy:v0.0.0-nightly
 
   goreleaser:
     runs-on: ubuntu-18.04
