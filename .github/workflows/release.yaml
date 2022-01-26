@@ -53,27 +53,9 @@ jobs:
         name: fixtures
         path: ./migrations/fixtures/fixtures.sql
 
-  publish-fixtures:
-    runs-on: ubuntu-18.04
-    needs: [generate-fixtures]
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-
-    - uses: azure/docker-login@v1
-      with:
-        username: ${{ secrets.DOCKERHUB_USER }}
-        password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-    - name: Download fixtures artifact
-      uses: actions/download-artifact@v2
-      with:
-        name: fixtures
-        path: ./migrations/fixtures
-
   build-schema-migrations:
     runs-on: ubuntu-20.04
-    needs: [publish-fixtures]
+    needs: [generate-fixtures]
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -150,7 +132,6 @@ jobs:
         GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
         SCOPE_DSN_PUBLIC: ""
       run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C kurl_proxy test build
-      shell: bash
 
     - name: Upload kurl_proxy artifact
       uses: actions/upload-artifact@v2
@@ -164,6 +145,7 @@ jobs:
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
     - name: Build tagged release
+      working-directory: ./kurl_proxy
       run: |
         docker build --pull -f deploy/Dockerfile -t kotsadm/kurl-proxy:$GITHUB_REF_NAME -t kotsadm/kurl-proxy:v0.0.0-nightly .
         docker push kotsadm/kurl-proxy:$GITHUB_REF_NAME
