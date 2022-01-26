@@ -500,6 +500,7 @@ class AppDetailPage extends Component {
                   onCopyText={<span className="u-textColor--success">Command has been copied to your clipboard</span>}
                 >
                   {`curl https://kots.io/install/version/${requiredKotsUpdateObj?.incompatibleKotsVersion} | bash`}
+                  {`kubectl kots admin-console upgrade -n ${this.props.appNameSpace}`}
                 </CodeSnippet>
               }
               <div className="u-marginTop--10 flex">
