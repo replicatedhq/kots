@@ -11,10 +11,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/blang/semver"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/binaries"
+	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -742,4 +744,24 @@ func EncodeIdentityConfig(spec kotsv1beta1.IdentityConfig) ([]byte, error) {
 	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 	err := s.Encode(&spec, buf)
 	return buf.Bytes(), err
+}
+
+func IsKotsVersionCompatibleWithApp(kotsApplication kotsv1beta1.Application) (bool, string, error) {
+	if kotsApplication.Spec.KotsVersion == "" {
+		return true, "", nil
+	}
+
+	desiredSemver, err := semver.ParseTolerant(kotsApplication.Spec.KotsVersion)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "kots version specified in the application spec is invalid"))
+		return true, "", nil
+	}
+
+	actualSemver, err := semver.ParseTolerant(buildversion.Version())
+	if err != nil {
+		logger.Error(errors.Wrap(err, "kots build version is invalid"))
+		return true, "", nil
+	}
+
+	return actualSemver.GTE(desiredSemver), kotsApplication.Spec.KotsVersion, nil
 }

@@ -148,6 +148,29 @@ func InstallCmd() *cobra.Command {
 				}
 			}
 
+			if len(applicationMetadata) > 0 {
+				kotsApp, err := kotsutil.LoadKotsAppFromContents(applicationMetadata)
+				if err != nil {
+					return errors.Wrap(err, "failed to load kots app from metadata")
+				}
+				if kotsApp != nil {
+					isCompatible, requiredKotsVersion, err := kotsutil.IsKotsVersionCompatibleWithApp(*kotsApp)
+					if err != nil {
+						return errors.Wrap(err, "failed to check if kots version is compatible")
+					}
+					if !isCompatible {
+						if isAirgap {
+							// TODO NOW
+							fmt.Println("The app requires a version of KOTS that is different from what you currently have. Please run the following command", requiredKotsVersion)
+							return errors.New("NOT COMPATIBLE")
+						}
+						// TODO NOW
+						fmt.Println("The app requires a version of KOTS that is different from what you currently have. Please run the following command", requiredKotsVersion)
+						return errors.New("NOT COMPATIBLE")
+					}
+				}
+			}
+
 			var configValues *kotsv1beta1.ConfigValues
 			if filepath := v.GetString("config-values"); filepath != "" {
 				parsedConfigValues, err := pull.ParseConfigValuesFromFile(ExpandDir(filepath))

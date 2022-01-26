@@ -8,7 +8,6 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/blang/semver"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
@@ -67,7 +66,35 @@ func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if isCompatible, requiredKotsVersion, err := isKotsVersionCompatible(a.ID, int64(sequence)); err != nil {
+	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		errMsg := "failed to create tmp directory"
+		logger.Error(errors.Wrap(err, errMsg))
+		deployAppVersionResponse.Error = errMsg
+		JSON(w, http.StatusInternalServerError, deployAppVersionResponse)
+		return
+	}
+	defer os.RemoveAll(archiveDir)
+
+	err = store.GetStore().GetAppVersionArchive(a.ID, int64(sequence), archiveDir)
+	if err != nil {
+		errMsg := "failed to get app version archive"
+		logger.Error(errors.Wrap(err, errMsg))
+		deployAppVersionResponse.Error = errMsg
+		JSON(w, http.StatusInternalServerError, deployAppVersionResponse)
+		return
+	}
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	if err != nil {
+		errMsg := "failed to load kots kinds from path"
+		logger.Error(errors.Wrap(err, errMsg))
+		deployAppVersionResponse.Error = errMsg
+		JSON(w, http.StatusInternalServerError, deployAppVersionResponse)
+		return
+	}
+
+	if isCompatible, requiredKotsVersion, err := kotsutil.IsKotsVersionCompatibleWithApp(kotsKinds.KotsApplication); err != nil {
 		errMsg := "failed to check if kots version is compatible"
 		logger.Error(errors.Wrap(err, errMsg))
 		deployAppVersionResponse.Error = errMsg
@@ -162,40 +189,4 @@ func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 	deployAppVersionResponse.Success = true
 
 	JSON(w, 204, deployAppVersionResponse)
-}
-
-func isKotsVersionCompatible(appID string, sequence int64) (bool, string, error) {
-	archiveDir, err := ioutil.TempDir("", "kotsadm")
-	if err != nil {
-		return false, "", errors.Wrap(err, "failed to create tmp directory")
-	}
-	defer os.RemoveAll(archiveDir)
-
-	err = store.GetStore().GetAppVersionArchive(appID, sequence, archiveDir)
-	if err != nil {
-		return false, "", errors.Wrap(err, "failed to get app version archive")
-	}
-
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
-	if err != nil {
-		return false, "", errors.Wrap(err, "failed to load kots kinds from path")
-	}
-
-	if kotsKinds.KotsApplication.Spec.KotsVersion == "" {
-		return true, "", nil
-	}
-
-	desiredSemver, err := semver.ParseTolerant(kotsKinds.KotsApplication.Spec.KotsVersion)
-	if err != nil {
-		logger.Error(errors.Wrap(err, "kots version specified in the application spec is invalid"))
-		return true, "", nil
-	}
-
-	actualSemver, err := semver.ParseTolerant(buildversion.Version())
-	if err != nil {
-		logger.Error(errors.Wrap(err, "kots build version is invalid"))
-		return true, "", nil
-	}
-
-	return actualSemver.GTE(desiredSemver), kotsKinds.KotsApplication.Spec.KotsVersion, nil
 }
