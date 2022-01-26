@@ -486,13 +486,7 @@ class AppDetailPage extends Component {
               <h2 className="u-fontSize--largest u-textColor--primary u-fontWeight--bold u-lineHeight--normal">You must update KOTS to deploy this version</h2>
               <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">This version of {app?.name} requires a version of KOTS that is different from what you currently have installed. Follow the steps below to upgrade KOTS to the required version.</p>
               {app?.isAirgap ?
-                <CodeSnippet
-                  language="bash"
-                  canCopy={true}
-                  onCopyText={<span className="u-textColor--success">Command has been copied to your clipboard</span>}
-                >
-                  Airgap commands will go here
-                </CodeSnippet>
+                <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">To get the version of KOTS specified in this release ({requiredKotsUpdateObj?.incompatibleKotsVersion}) you can visit the download portal or talk to your vendor. Once you have upgraded to the specified version you will be abel to deploy this version.</p>
               :
                 <CodeSnippet
                   language="bash"
@@ -500,7 +494,7 @@ class AppDetailPage extends Component {
                   onCopyText={<span className="u-textColor--success">Command has been copied to your clipboard</span>}
                 >
                   {`curl https://kots.io/install/version/${requiredKotsUpdateObj?.incompatibleKotsVersion} | bash`}
-                  {`kubectl kots admin-console upgrade -n ${this.props.appNameSpace}`}
+                  {`kubectl kots admin-console upgrade -n ${this.props.appNameSpace} [...INSTALL OPTIONS]`}
                 </CodeSnippet>
               }
               <div className="u-marginTop--10 flex">
