@@ -292,7 +292,7 @@ jobs:
       matrix:
         k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2]
     steps:
-      - uses: debianmaster/actions-k3s@f7f902f92baf164187a0693bcf7497355a7a79af
+      - uses: syntastical/actions-k3s@fix-node-unavailable
         id: k3s
         with:
           version: ${{ matrix.k8s_version }}
@@ -396,7 +396,7 @@ jobs:
       matrix:
         k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2]
     steps:
-      - uses: debianmaster/actions-k3s@f7f902f92baf164187a0693bcf7497355a7a79af
+      - uses: syntastical/actions-k3s@fix-node-unavailable
         id: k3s
         with:
           version: ${{ matrix.k8s_version }}
@@ -460,7 +460,7 @@ jobs:
       matrix:
         k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2]
     steps:
-      - uses: debianmaster/actions-k3s@f7f902f92baf164187a0693bcf7497355a7a79af
+      - uses: syntastical/actions-k3s@fix-node-unavailable
         id: k3s
         with:
           version: ${{ matrix.k8s_version }}
@@ -533,7 +533,7 @@ jobs:
       matrix:
         k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2]
     steps:
-      - uses: debianmaster/actions-k3s@f7f902f92baf164187a0693bcf7497355a7a79af
+      - uses: syntastical/actions-k3s@fix-node-unavailable
         id: k3s
         with:
           version: ${{ matrix.k8s_version }}
@@ -614,7 +614,7 @@ jobs:
       matrix:
         k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2]
     steps:
-      - uses: debianmaster/actions-k3s@f7f902f92baf164187a0693bcf7497355a7a79af
+      - uses: syntastical/actions-k3s@fix-node-unavailable
         id: k3s
         with:
           version: ${{ matrix.k8s_version }}
