@@ -375,7 +375,7 @@ class AppConfig extends Component {
   renderConfigInfo = (app) => {
     const { match, fromLicenseFlow } = this.props;
     if (fromLicenseFlow) return null;
-    
+
     let sequence;
     if (!match.params.sequence) {
       sequence = app?.currentSequence;
@@ -480,7 +480,7 @@ class AppConfig extends Component {
         </Helmet>
 
 
-        {fromLicenseFlow && app && <span className="u-fontSize--larger u-textColor--primary u-fontWeight--bold u-marginTop--30">Configure {app.name}</span>}
+        {fromLicenseFlow && app && <span className="u-fontSize--larger u-textColor--primary u-fontWeight--bold u-marginTop--30" style={{ marginLeft: "38px"}}>Configure {app.name}</span>}
         <div className="flex-column">
           <div id="configSidebarWrapper" className="AppConfigSidenav--wrapper" ref={(wrapper) => this.sidebarWrapper = wrapper}>
             {configGroups?.map((group, i) => {
