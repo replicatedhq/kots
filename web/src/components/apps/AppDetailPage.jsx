@@ -499,7 +499,7 @@ class AppDetailPage extends Component {
                   canCopy={true}
                   onCopyText={<span className="u-textColor--success">Command has been copied to your clipboard</span>}
                 >
-                  {`curl https://kots.io/install/version/${requiredKotsUpdateObj?.kotsVersion} | bash`}
+                  {`curl https://kots.io/install/version/${requiredKotsUpdateObj?.incompatibleKotsVersion} | bash`}
                 </CodeSnippet>
               }
               <div className="u-marginTop--10 flex">
