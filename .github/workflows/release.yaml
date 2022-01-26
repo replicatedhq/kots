@@ -67,13 +67,9 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USER }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-    - name: Get tags
-      id: get_tag
-      uses: ./actions/version-tag
-
     - name: "Release schema migrations on tag"
       env:
-        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+        GIT_TAG: ${{ github.ref_name }}
         DOCKER_CONFIG: ./.docker
       run: |
         export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C migrations schema-release
@@ -94,14 +90,10 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
 
-    - name: Get tags
-      id: get_tag
-      uses: ./actions/version-tag
-
     - name: Build web
       env:
         GIT_COMMIT: ${{ github.sha }}
-        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+        GIT_TAG: ${{ github.ref_name }}
       run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C web deps build-kotsadm
       shell: bash
 
@@ -122,14 +114,10 @@ jobs:
       with:
         go-version: '^1.17.4'
 
-    - name: Get tags
-      id: get_tag
-      uses: ./actions/version-tag
-
     - name: Build kurl_proxy
       env:
         GIT_COMMIT: ${{ github.sha }}
-        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+        GIT_TAG: ${{ github.ref_name }}
         SCOPE_DSN_PUBLIC: ""
       run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C kurl_proxy test build
 
@@ -174,10 +162,6 @@ jobs:
         path: ${{ steps.go-cache-paths.outputs.go-mod }}
         key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
 
-    - name: Get tags
-      id: get_tag
-      uses: ./actions/version-tag
-
     - name: Download web artifact
       uses: actions/download-artifact@v2
       with:
@@ -187,10 +171,7 @@ jobs:
     - name: Build Go API
       env:
         GIT_COMMIT: ${{ github.sha }}
-        # GITHUB_SHA: ${{ github.sha }}
-        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
-        # GITHUB_REPOSITORY:
-        # GITHUB_WORKSPACE:
+        GIT_TAG: ${{ github.ref_name }}
         SCOPE_DSN_PUBLIC: ""
       run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make test kotsadm
 
@@ -204,10 +185,6 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [build_web, build_go_api]
     steps:
-    - name: Get tags
-      id: get_tag
-      uses: ./actions/version-tag
-
     - name: Download go_api artifact
       uses: actions/download-artifact@v2
       with:
@@ -226,7 +203,7 @@ jobs:
 
     - name: Build tagged release
       env:
-        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+        GIT_TAG: ${{ github.ref_name }}
         DOCKER_CONFIG: ./.docker
       run: |
         export $(cat .image.env | sed 's/#.*//g' | xargs) && make build-release
@@ -388,13 +365,11 @@ jobs:
     runs-on: ubuntu-18.04
     needs: [goreleaser, release_go_api_tagged]
     if: startsWith(github.ref, 'refs/tags/v') && endsWith(github.ref, '-nightly')
+    env:
+      GIT_TAG: ${{ github.ref_name }}
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-
-    - name: Get tags
-      id: get_tag
-      uses: ./actions/version-tag
 
     - uses: kceb/pull-request-url-action@v2
       id: pr_url
@@ -406,7 +381,6 @@ jobs:
       env:
         REPLICATEDCOM_GITHUB_PRIVATE_KEY: ${{ secrets.REPLICATEDCOM_GITHUB_PRIVATE_KEY }}
         PR_URL: ${{ steps.pr_url.outputs.url }}
-        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
         GITOPS_OWNER: replicatedcom
         GITOPS_REPO: gitops-deploy
         GITOPS_BRANCH: main
@@ -418,7 +392,6 @@ jobs:
       env:
         REPLICATEDCOM_GITHUB_PRIVATE_KEY: ${{ secrets.REPLICATEDCOM_GITHUB_PRIVATE_KEY }}
         PR_URL: ${{ steps.pr_url.outputs.url }}
-        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
         OVERLAY: production
         GITOPS_OWNER: replicatedcom
         GITOPS_REPO: gitops-deploy
@@ -440,13 +413,9 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
 
-    - name: Get tags
-      id: get_tag
-      uses: ./actions/version-tag
-
     - name: Generate Kurl Addon PR
       env:
-        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+        GIT_TAG: ${{ github.ref_name }}
         GH_PAT: ${{ secrets.GH_PAT }}
       run: |
         # Strips off the 'v' in version
@@ -463,13 +432,9 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
 
-    - name: Get tags
-      id: get_tag
-      uses: ./actions/version-tag
-
     - name: Generate Kots Release Notes PR
       env:
-        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+        GIT_TAG: ${{ github.ref_name }}
         GH_PAT: ${{ secrets.GH_PAT }}
       run: |
         curl -H "Authorization: token $GH_PAT" \
