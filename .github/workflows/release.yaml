@@ -185,29 +185,27 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [build_web, build_go_api]
     steps:
+    - name: Checkout
+      uses: actions/checkout@v2
     - name: Download go_api artifact
       uses: actions/download-artifact@v2
       with:
         name: go_api
         path: ./bin
-
     - name: Add executable permissions
       run: chmod a+x ./bin/kotsadm
-
     - uses: azure/docker-login@v1
       env:
         DOCKER_CONFIG: ./.docker
       with:
         username: ${{ secrets.DOCKERHUB_USER }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
     - name: Build tagged release
       env:
         GIT_TAG: ${{ github.ref_name }}
         DOCKER_CONFIG: ./.docker
       run: |
         export $(cat .image.env | sed 's/#.*//g' | xargs) && make build-release
-
     - name: Upload airgap image
       uses: actions/upload-artifact@v2
       with:
@@ -221,15 +219,12 @@ jobs:
     - uses: actions/setup-go@v2
       with:
         go-version: '^1.17.4'
-
     - id: go-cache-paths
       run: |
         echo "::set-output name=go-build::$(go env GOCACHE)"
         echo "::set-output name=go-mod::$(go env GOMODCACHE)"
-
     - name: Checkout
       uses: actions/checkout@v2
-
     - uses: actions/cache@v2
       with:
         path: ${{ steps.go-cache-paths.outputs.go-build }}
@@ -238,10 +233,8 @@ jobs:
       with:
         path: ${{ steps.go-cache-paths.outputs.go-mod }}
         key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
-
     - name: Unshallow
       run: git fetch --prune --unshallow
-
     - run: sudo apt-get update -y
     - run: sudo apt-get -qq -y install gnupg2 libdevmapper-dev libgpgme-dev libc6-dev-i386 btrfs-progs btrfs-tools pkg-config
     - name: set previous release tag for goreleaser
@@ -249,23 +242,19 @@ jobs:
       run: |
         export TAG=$(curl --silent "https://api.github.com/repos/replicatedhq/kots/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")')
         echo "GORELEASER_PREVIOUS_TAG=${TAG}" >> $GITHUB_ENV
-
     - uses: sigstore/cosign-installer@main
       with:
         cosign-release: 'v1.2.1'
-
     - name: Get Cosign Key
       run: |
         echo $COSIGN_KEY | base64 -d > ./cosign.key
       env:
         COSIGN_KEY: ${{secrets.COSIGN_KEY}}
-
     - name: Download web artifact
       uses: actions/download-artifact@v2
       with:
         name: web
         path: ./web/dist
-
     - name: Generate SBOM
       run: |
         set -x
@@ -276,7 +265,6 @@ jobs:
         make sbom
       env:
         COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
-
     - name: Run GoReleaser
       uses: goreleaser/goreleaser-action@v2
       with:
