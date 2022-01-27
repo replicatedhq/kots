@@ -57,7 +57,7 @@ func Version() string {
 	if build.Version == "" {
 		return "v0.0.0-unknown"
 	}
-	return "v1.59.0" //build.Version
+	return build.Version
 }
 
 // GitSHA gets the gitsha
