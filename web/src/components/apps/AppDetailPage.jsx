@@ -484,9 +484,9 @@ class AppDetailPage extends Component {
           >
             <div className="Modal-body">
               <h2 className="u-fontSize--largest u-textColor--primary u-fontWeight--bold u-lineHeight--normal">You must update KOTS to deploy this version</h2>
-              <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">This version of {app?.name} requires a version of KOTS that is different from what you currently have installed. Follow the steps below to upgrade KOTS to the required version.</p>
+              <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">This version of {app?.name} requires a version of KOTS that is different from what you currently have installed.</p>
               {app?.isAirgap ?
-                <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">To get the version of KOTS specified in this release ({requiredKotsUpdateObj?.incompatibleKotsVersion}) you can visit the download portal or talk to your vendor. Once you have upgraded to the specified version you will be abel to deploy this version.</p>
+                <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">Upgrade KOTS to version {requiredKotsUpdateObj?.incompatibleKotsVersion} so you can deploy this version of {app?.name}.</p>
               :
                 <CodeSnippet
                   language="bash"
