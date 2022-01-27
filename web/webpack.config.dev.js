@@ -19,16 +19,7 @@ module.exports = {
       {
         test: /\.[jt]sx?$/,
         exclude: /node_modules/,
-        use: [
-          {
-            loader: require.resolve("babel-loader"),
-            // options: {
-            //   plugins: [
-            //     require.resolve("react-refresh/babel")
-            //   ],
-            // },
-          },
-        ],
+        loader: "babel-loader"
       },
       {
         test: /\.[jt]sx?$/,
@@ -45,8 +36,8 @@ module.exports = {
     ]
   },
   plugins: [
-    new ReactRefreshWebpackPlugin(),
     new webpack.HotModuleReplacementPlugin(),
+    new ReactRefreshWebpackPlugin(),
   ],
   optimization: {
     moduleIds: "named"
