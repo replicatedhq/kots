@@ -10,7 +10,6 @@ import { HelmChartSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import NotFound from "../static/NotFound";
 import Dashboard from "./Dashboard";
 import DashboardClassic from "./DashboardClassic";
-import CodeSnippet from "../shared/CodeSnippet";
 import DownstreamTree from "../../components/tree/KotsApplicationTree";
 import AppVersionHistory from "./AppVersionHistory";
 import { isAwaitingResults, Utilities } from "../../utilities/utilities";
@@ -485,18 +484,7 @@ class AppDetailPage extends Component {
             <div className="Modal-body">
               <h2 className="u-fontSize--largest u-textColor--primary u-fontWeight--bold u-lineHeight--normal">You must update KOTS to deploy this version</h2>
               <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">This version of {app?.name} requires a version of KOTS that is different from what you currently have installed.</p>
-              {app?.isAirgap ?
-                <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">Upgrade KOTS to version {requiredKotsUpdateObj?.incompatibleKotsVersion} so you can deploy this version of {app?.name}.</p>
-              :
-                <CodeSnippet
-                  language="bash"
-                  canCopy={true}
-                  onCopyText={<span className="u-textColor--success">Command has been copied to your clipboard</span>}
-                >
-                  {`curl https://kots.io/install/version/${requiredKotsUpdateObj?.incompatibleKotsVersion} | bash`}
-                  {`kubectl kots admin-console upgrade -n ${this.props.appNameSpace} [...INSTALL OPTIONS]`}
-                </CodeSnippet>
-              }
+                <p className="u-fontSize--normal u-textColor--error u-fontWeight--medium u-lineHeight--normal u-marginBottom--20">{requiredKotsUpdateObj?.error}</p>
               <div className="u-marginTop--10 flex">
                 <button onClick={() => this.toggleDisplayRequiredKotsUpdateModal(null)} className="btn blue primary">Ok, got it!</button>
               </div>
