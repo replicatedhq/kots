@@ -12,10 +12,9 @@ import (
 	"github.com/replicatedhq/kots/pkg/handlers"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/print"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-
-	versionTypes "github.com/replicatedhq/kots/pkg/api/version/types"
 )
 
 func GetVersionsCmd() *cobra.Command {
@@ -31,6 +30,8 @@ func GetVersionsCmd() *cobra.Command {
 		RunE: getVersionsCmd,
 	}
 
+	cmd.Flags().StringP("output", "o", "", "output format (currently supported: json)")
+
 	return cmd
 }
 
@@ -43,6 +44,11 @@ func getVersionsCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	appSlug := args[0]
+
+	output := v.GetString("output")
+	if output != "json" && output != "" {
+		return errors.Errorf("output format %s not supported (allowed formats are: json)", output)
+	}
 
 	log := logger.NewCLILogger()
 
@@ -96,10 +102,10 @@ func getVersionsCmd(cmd *cobra.Command, args []string) error {
 		return errors.Wrap(err, "failed to get app versions")
 	}
 
-	appVersionResponse := []versionTypes.AppVersionCLIResponse{}
+	appVersionResponse := []print.AppVersionResponse{}
 
 	for _, version := range appVersions.VersionHistory {
-		response := versionTypes.AppVersionCLIResponse{
+		response := print.AppVersionResponse{
 			VersionLabel: version.VersionLabel,
 			Sequence:     version.Sequence,
 			CreatedOn:    *version.CreatedOn,
@@ -111,12 +117,7 @@ func getVersionsCmd(cmd *cobra.Command, args []string) error {
 		appVersionResponse = append(appVersionResponse, response)
 	}
 
-	versionJson, err := json.MarshalIndent(&appVersionResponse, "", "	")
-	if err != nil {
-		return errors.Wrap(err, "failed to marshal config")
-	}
-
-	fmt.Print(string(versionJson))
+	print.Versions(appVersionResponse, output)
 
 	return nil
 }
