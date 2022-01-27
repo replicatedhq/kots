@@ -26,12 +26,3 @@ type ForwardedPort struct {
 	ServiceName    string `json:"serviceName"`
 	ServicePort    int    `json:"servicePort"`
 }
-
-type AppVersionCLIResponse struct {
-	VersionLabel string     `json:"versionLabel"`
-	Sequence     int64      `json:"sequence"`
-	CreatedOn    time.Time  `json:"createdOn"`
-	Status       string     `json:"status"`
-	DeployedAt   *time.Time `json:"deployedAt"`
-	Source       string     `json:"source"`
-}
