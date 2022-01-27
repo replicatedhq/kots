@@ -1,5 +1,5 @@
 name: kotsadm-web
-command: bash
+command: make serve
 sync:
 - .:/src
 image:

@@ -236,7 +236,7 @@ class Dashboard extends Component {
 
   fetchAppDownstream = async () => {
     const { app } = this.props;
-    if (!app) return;
+    if (!app) {return;}
 
     try {
       const res = await fetch(`${window.env.API_ENDPOINT}/app/${app.slug}`, {
