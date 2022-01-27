@@ -11,7 +11,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
-	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/reporting"
@@ -94,14 +93,14 @@ func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if isCompatible, requiredKotsVersion, err := kotsutil.IsKotsVersionCompatibleWithApp(kotsKinds.KotsApplication); err != nil {
+	if isCompatible, err := kotsutil.IsKotsVersionCompatibleWithApp(kotsKinds.KotsApplication, false); err != nil {
 		errMsg := "failed to check if kots version is compatible"
 		logger.Error(errors.Wrap(err, errMsg))
 		deployAppVersionResponse.Error = errMsg
 		JSON(w, http.StatusInternalServerError, deployAppVersionResponse)
 		return
 	} else if !isCompatible {
-		errMsg := fmt.Sprintf("not deploying sequence %d because the current kotsadm version %s is less than the version required by the application %s", int64(sequence), buildversion.Version(), requiredKotsVersion)
+		errMsg := kotsutil.GetIncompatbileKotsVersionMessage(kotsKinds.KotsApplication)
 		logger.Error(errors.Wrap(err, errMsg))
 		deployAppVersionResponse.Error = errMsg
 		deployAppVersionResponse.IncompatibleKotsVersion = true

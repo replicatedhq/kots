@@ -746,22 +746,39 @@ func EncodeIdentityConfig(spec kotsv1beta1.IdentityConfig) ([]byte, error) {
 	return buf.Bytes(), err
 }
 
-func IsKotsVersionCompatibleWithApp(kotsApplication kotsv1beta1.Application) (bool, string, error) {
+func IsKotsVersionCompatibleWithApp(kotsApplication kotsv1beta1.Application, isInstall bool) (bool, error) {
 	if kotsApplication.Spec.KotsVersion == "" {
-		return true, "", nil
+		return true, nil
 	}
 
 	desiredSemver, err := semver.ParseTolerant(kotsApplication.Spec.KotsVersion)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "kots version specified in the application spec is invalid"))
-		return true, "", nil
+		return true, nil
 	}
 
 	actualSemver, err := semver.ParseTolerant(buildversion.Version())
 	if err != nil {
 		logger.Error(errors.Wrap(err, "kots build version is invalid"))
-		return true, "", nil
+		return true, nil
 	}
 
-	return actualSemver.GTE(desiredSemver), kotsApplication.Spec.KotsVersion, nil
+	if isInstall {
+		return actualSemver.EQ(desiredSemver), nil
+	}
+
+	return actualSemver.GTE(desiredSemver), nil
+}
+
+func GetIncompatbileKotsVersionMessage(kotsApplication kotsv1beta1.Application) string {
+	appName := kotsApplication.Spec.Title
+	if appName == "" {
+		appName = "the app"
+	}
+	return fmt.Sprintf(
+		"This version of %s requires a version of KOTS that is different from what you currently have installed.\nUpgrade KOTS to version %s so you can deploy this version of %s.",
+		appName,
+		kotsApplication.Spec.KotsVersion,
+		appName,
+	)
 }

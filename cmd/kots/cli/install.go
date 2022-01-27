@@ -148,25 +148,19 @@ func InstallCmd() *cobra.Command {
 				}
 			}
 
-			if len(applicationMetadata) > 0 {
+			// checks kots version compatibility with the app
+			if len(applicationMetadata) > 0 && !v.GetBool("ignore-incompatibility") {
 				kotsApp, err := kotsutil.LoadKotsAppFromContents(applicationMetadata)
 				if err != nil {
 					return errors.Wrap(err, "failed to load kots app from metadata")
 				}
 				if kotsApp != nil {
-					isCompatible, requiredKotsVersion, err := kotsutil.IsKotsVersionCompatibleWithApp(*kotsApp)
+					isCompatible, err := kotsutil.IsKotsVersionCompatibleWithApp(*kotsApp, true)
 					if err != nil {
 						return errors.Wrap(err, "failed to check if kots version is compatible")
 					}
 					if !isCompatible {
-						if isAirgap {
-							// TODO NOW
-							fmt.Println("The app requires a version of KOTS that is different from what you currently have. Please run the following command", requiredKotsVersion)
-							return errors.New("NOT COMPATIBLE")
-						}
-						// TODO NOW
-						fmt.Println("The app requires a version of KOTS that is different from what you currently have. Please run the following command", requiredKotsVersion)
-						return errors.New("NOT COMPATIBLE")
+						return errors.New(kotsutil.GetIncompatbileKotsVersionMessage(*kotsApp))
 					}
 				}
 			}
@@ -424,6 +418,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().Bool("skip-preflights", false, "set to true to skip preflight checks")
 	cmd.Flags().Bool("disable-image-push", false, "set to true to disable images from being pushed to private registry")
 	cmd.Flags().Bool("strict-security-context", false, "set to explicitly enable explicit security contexts for all kots pods and containers (may not work for some storage providers)")
+	cmd.Flags().Bool("ignore-incompatibility", false, "set to true to ignore incompatibility issues between the current kots version and the app")
 
 	cmd.Flags().String("repo", "", "repo uri to use when installing a helm chart")
 	cmd.Flags().StringSlice("set", []string{}, "values to pass to helm when running helm template")
