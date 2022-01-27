@@ -720,8 +720,7 @@ class SnapshotStorageDestination extends Component {
                       ref={(editor) => { this.monacoEditor = editor }}
                       language="json"
                       value={this.state.gcsJsonFile}
-                      height="420"
-                      width="100%"
+                      height="420px"
                       onChange={this.onGcsEditorChange}
                       options={{
                         contextmenu: false,

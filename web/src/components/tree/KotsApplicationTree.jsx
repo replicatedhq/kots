@@ -115,8 +115,6 @@ class KotsApplicationTree extends React.Component {
                 }}
                 language={"yaml"}
                 value={contents}
-                height="100%"
-                width="100%"
                 options={{
                   readOnly: true,
                   contextmenu: false,

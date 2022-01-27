@@ -666,8 +666,6 @@ class SnapshotDetails extends Component {
                     <MonacoEditor
                       language="json"
                       value={scriptOutput[selectedTab]}
-                      height="100%"
-                      width="100%"
                       options={{
                         readOnly: true,
                         contextmenu: false,

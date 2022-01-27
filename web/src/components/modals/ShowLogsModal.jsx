@@ -35,8 +35,6 @@ export default function ShowLogsModal(props) {
                   <MonacoEditor
                     language="json"
                     value={logs.renderError || logs[selectedTab]}
-                    height="100%"
-                    width="100%"
                     options={{
                       readOnly: true,
                       contextmenu: false,

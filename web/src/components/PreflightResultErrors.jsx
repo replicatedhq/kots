@@ -109,8 +109,7 @@ class PreflightResultErrors extends Component {
                   <MonacoEditor
                     language="bash"
                     value={valueFromAPI}
-                    height="300"
-                    width="100%"
+                    height="300px"
                     options={{
                       readOnly: true,
                       contextmenu: false,
