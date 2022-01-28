@@ -1,6 +1,6 @@
 import React from "react";
 import Modal from "react-modal";
-import MonacoEditor from "react-monaco-editor";
+import MonacoEditor from "@monaco-editor/react";
 import Loader from "../shared/Loader";
 import { Link } from "react-router-dom"
 
@@ -35,8 +35,6 @@ export default function ShowLogsModal(props) {
                   <MonacoEditor
                     language="json"
                     value={logs.renderError || logs[selectedTab]}
-                    height="100%"
-                    width="100%"
                     options={{
                       readOnly: true,
                       contextmenu: false,

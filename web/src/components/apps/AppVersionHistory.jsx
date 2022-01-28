@@ -114,7 +114,7 @@ class AppVersionHistory extends Component {
     });
 
     try {
-      const res = await fetch(`${window.env.API_ENDPOINT}/app/${appSlug}/versions`, {
+      const res = await fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/versions`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -159,7 +159,7 @@ class AppVersionHistory extends Component {
 
   getAirgapConfig = async () => {
     const { app } = this.props;
-    const configUrl = `${window.env.API_ENDPOINT}/app/${app.slug}/airgap/config`;
+    const configUrl = `${process.env.API_ENDPOINT}/app/${app.slug}/airgap/config`;
     let simultaneousUploads = 3;
     try {
       let res = await fetch(configUrl, {
@@ -536,7 +536,7 @@ class AppVersionHistory extends Component {
       checkingUpdateMessage: "",
     });
 
-    fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/updatecheck`, {
+    fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/updatecheck`, {
       headers: {
         "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
@@ -589,7 +589,7 @@ class AppVersionHistory extends Component {
     const { app } = this.props;
 
     return new Promise((resolve, reject) => {
-      fetch(`${window.env.API_ENDPOINT}/app/${app?.slug}/task/updatedownload`, {
+      fetch(`${process.env.API_ENDPOINT}/app/${app?.slug}/task/updatedownload`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -633,7 +633,7 @@ class AppVersionHistory extends Component {
 
       this.setState({ logsLoading: true, showLogsModal: true, viewLogsErrMsg: "" });
 
-      const res = await fetch(`${window.env.API_ENDPOINT}/app/${app?.slug}/cluster/${clusterId}/sequence/${version?.sequence}/downstreamoutput`, {
+      const res = await fetch(`${process.env.API_ENDPOINT}/app/${app?.slug}/cluster/${clusterId}/sequence/${version?.sequence}/downstreamoutput`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",

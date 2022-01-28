@@ -22,23 +22,12 @@ clean:
 	rm -rf node_modules
 	rm -rf dist
 
-.PHONY: test
-test: deps
-	rm -rf pacts/kotsadm-web-kotsadm-api.json
-	yarn test
-
-.PHONY: verify_local
-verify_local:
-	yarn test
-	mkdir -p ../ship-cloud-api/pacts
-	cp pacts/* ../ship-cloud-api/pacts
-
 .PHONY: serve
 serve: deps
 	node --max_old_space_size=6144 \
 		./node_modules/webpack-dev-server/bin/webpack-dev-server.js \
 		--config webpack.config.js \
-		-w --debug --color --env development
+		--color --env development
 
 .PHONY: build-local
 build-local: deps

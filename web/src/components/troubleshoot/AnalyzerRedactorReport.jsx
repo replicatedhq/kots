@@ -24,7 +24,7 @@ export class AnalyzerRedactorReport extends Component {
       displayErrorModal: false
     });
 
-    fetch(`${window.env.API_ENDPOINT}/troubleshoot/supportbundle/${this.props.bundle?.id}/redactions`, {
+    fetch(`${process.env.API_ENDPOINT}/troubleshoot/supportbundle/${this.props.bundle?.id}/redactions`, {
       method: "GET",
       headers: {
         "Authorization": Utilities.getToken(),

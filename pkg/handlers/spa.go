@@ -10,7 +10,7 @@ import (
 	"github.com/replicatedhq/kots/web"
 )
 
-// spaHandler implements the http.Handler interface, so we can use it
+// SPAHandler implements the http.Handler interface, so we can use it
 // to respond to HTTP requests. The path to the static directory and
 // path to the index file within that static directory are used to
 // serve the SPA in the given static directory.

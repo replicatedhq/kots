@@ -80,7 +80,7 @@ export default class AutomaticUpdatesModal extends React.Component {
       configureAutomaticUpdatesErr: ""
     });
 
-    fetch(`${window.env.API_ENDPOINT}/app/${appSlug}/automaticupdates`, {
+    fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/automaticupdates`, {
       headers: {
         "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
