@@ -173,7 +173,6 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		}
 		if !isCompatible {
 			return 0, util.ActionableError{
-				NoRetry: true,
 				Message: kotsutil.GetIncompatbileKotsVersionMessage(afterKotsKinds.KotsApplication),
 			}
 		}

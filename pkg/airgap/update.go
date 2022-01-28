@@ -240,7 +240,6 @@ func canInstall(beforeKotsKinds *kotsutil.KotsKinds, afterKotsKinds *kotsutil.Ko
 		}
 		if !isCompatible {
 			return util.ActionableError{
-				NoRetry: true,
 				Message: kotsutil.GetIncompatbileKotsVersionMessage(afterKotsKinds.KotsApplication),
 			}
 		}
