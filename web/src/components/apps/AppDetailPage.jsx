@@ -117,10 +117,6 @@ class AppDetailPage extends Component {
           isCLI: false
         }),
       });
-      if (!res.ok && res.status === 409) {
-        const response = await res.json();
-        this.toggleDisplayRequiredKotsUpdateModal(response);
-      }
       if (res.ok && res.status === 204) {
         this.setState({ makingCurrentReleaseErrMsg: "" });
         this.refetchData();
@@ -164,10 +160,10 @@ class AppDetailPage extends Component {
     }
   }
 
-  toggleDisplayRequiredKotsUpdateModal = (resObj) => {
+  toggleDisplayRequiredKotsUpdateModal = (message) => {
     this.setState({
       displayRequiredKotsUpdateModal: !this.state.displayRequiredKotsUpdateModal,
-      requiredKotsUpdateObj: resObj,
+      requiredKotsUpdateMessage: message,
     });
   }
 
@@ -280,7 +276,7 @@ class AppDetailPage extends Component {
       app,
       displayRequiredKotsUpdateModal,
       isBundleUploading,
-      requiredKotsUpdateObj,
+      requiredKotsUpdateMessage,
       gettingAppErrMsg,
       isVeleroInstalled
     } = this.state;
@@ -373,6 +369,7 @@ class AppDetailPage extends Component {
                         updateCallback={this.refetchData}
                         onActiveInitSession={this.props.onActiveInitSession}
                         toggleIsBundleUploading={this.toggleIsBundleUploading}
+                        toggleDisplayRequiredKotsUpdateModal={this.toggleDisplayRequiredKotsUpdateModal}
                         isBundleUploading={isBundleUploading}
                         isVeleroInstalled={isVeleroInstalled}
                         refreshAppData={this.getApp}
@@ -406,6 +403,7 @@ class AppDetailPage extends Component {
                         app={app}
                         match={this.props.match}
                         makeCurrentVersion={this.makeCurrentRelease}
+                        toggleDisplayRequiredKotsUpdateModal={this.toggleDisplayRequiredKotsUpdateModal}
                         makingCurrentVersionErrMsg={this.state.makingCurrentReleaseErrMsg}
                         updateCallback={this.refetchData}
                         toggleIsBundleUploading={this.toggleIsBundleUploading}
@@ -475,7 +473,7 @@ class AppDetailPage extends Component {
         {displayRequiredKotsUpdateModal &&
           <Modal
             isOpen={displayRequiredKotsUpdateModal}
-            onRequestClose={() => this.toggleDisplayRequiredKotsUpdateModal(null)}
+            onRequestClose={() => this.toggleDisplayRequiredKotsUpdateModal("")}
             shouldReturnFocusAfterClose={false}
             contentLabel="Required KOTS Update modal"
             ariaHideApp={false}
@@ -484,9 +482,9 @@ class AppDetailPage extends Component {
             <div className="Modal-body">
               <h2 className="u-fontSize--largest u-textColor--primary u-fontWeight--bold u-lineHeight--normal">You must update KOTS to deploy this version</h2>
               <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">This version of {app?.name} requires a version of KOTS that is different from what you currently have installed.</p>
-                <p className="u-fontSize--normal u-textColor--error u-fontWeight--medium u-lineHeight--normal u-marginBottom--20">{requiredKotsUpdateObj?.error}</p>
+                <p className="u-fontSize--normal u-textColor--error u-fontWeight--medium u-lineHeight--normal u-marginBottom--20">{requiredKotsUpdateMessage}</p>
               <div className="u-marginTop--10 flex">
-                <button onClick={() => this.toggleDisplayRequiredKotsUpdateModal(null)} className="btn blue primary">Ok, got it!</button>
+                <button onClick={() => this.toggleDisplayRequiredKotsUpdateModal("")} className="btn blue primary">Ok, got it!</button>
               </div>
             </div>
           </Modal>

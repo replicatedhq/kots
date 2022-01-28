@@ -501,11 +501,22 @@ class AppVersionHistoryClassic extends Component {
           if (response.status !== "running" && !this.props.isBundleUploading) {
             this.state.updateChecker.stop();
 
-            this.setState({
-              checkingForUpdates: false,
-              checkingUpdateMessage: response.currentMessage,
-              checkingForUpdateError: response.status === "failed"
-            });
+            if (response.status === "failed") {
+              if (response.currentMessage.includes("Upgrade KOTS to version")) {
+                this.setState({
+                  checkingForUpdates: false,
+                  checkingForUpdateError: true,
+                  checkingUpdateMessage: response.currentMessage,
+                  incompatibleKotsVersionError: true
+                });
+              }
+            } else {
+              this.setState({
+                checkingForUpdates: false,
+                checkingUpdateMessage: response.currentMessage,
+                checkingForUpdateError: response.status === "failed"
+              });
+            }
 
             if (this.props.updateCallback) {
               this.props.updateCallback();
@@ -856,7 +867,11 @@ class AppVersionHistoryClassic extends Component {
           smallSize={true}
         />);
     } else if (errorCheckingUpdate || checkingForUpdateError) {
-      updateText = <p className="u-marginTop--10 u-fontSize--small u-textColor--error u-fontWeight--medium">{errorText}</p>
+      if (checkingForUpdateError && this.state.incompatibleKotsVersionError) {
+        updateText = <span className="u-marginTop--10 u-fontSize--small u-lineHeight--normal u-textColor--error u-fontWeight--medium flex alignItems--center"> <span className="icon error-small u-marginRight--5" /> Incompatible KOTS Version <span className="u-marginLeft--5 replicated-link u-fontSize--small" onClick={() => this.props.toggleDisplayRequiredKotsUpdateModal(checkingUpdateMessage)}> See details </span></span>
+      } else {
+        updateText = <p className="u-marginTop--10 u-fontSize--small u-textColor--error u-fontWeight--medium">{errorText}</p>
+      }
     } else if (checkingForUpdates) {
       updateText = <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium">{checkingUpdateTextShort}</p>
     } else if (app.lastUpdateCheckAt && !noUpdateAvailiableText) {

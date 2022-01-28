@@ -298,11 +298,22 @@ class DashboardClassic extends Component {
           if (response.status !== "running" && !this.props.isBundleUploading) {
             this.state.updateChecker.stop();
 
-            this.setState({
-              checkingForUpdates: false,
-              checkingUpdateMessage: response.currentMessage,
-              checkingForUpdateError: response.status === "failed"
-            });
+            if (response.status === "failed") {
+              if (response.currentMessage.includes("Upgrade KOTS to version")) {
+                this.setState({
+                  checkingForUpdates: false,
+                  checkingForUpdateError: true,
+                  checkingUpdateMessage: response.currentMessage,
+                  incompatibleKotsVersionError: true
+                });
+              }
+            } else {
+              this.setState({
+                checkingForUpdates: false,
+                checkingUpdateMessage: response.currentMessage,
+                checkingForUpdateError: response.status === "failed"
+              });
+            }
 
             if (this.props.updateCallback) {
               this.props.updateCallback();
@@ -732,6 +743,8 @@ class DashboardClassic extends Component {
                 onUploadNewVersion={() => this.onUploadNewVersion()}
                 isBundleUploading={isBundleUploading}
                 checkingForUpdateError={this.state.checkingForUpdateError}
+                incompatibleKotsVersionError={this.state.incompatibleKotsVersionError}
+                toggleDisplayRequiredKotsUpdateModal={this.props.toggleDisplayRequiredKotsUpdateModal}
                 viewAirgapUploadError={() => this.toggleViewAirgapUploadError()}
                 viewAirgapUpdateError={(err) => this.toggleViewAirgapUpdateError(err)}
                 showAutomaticUpdatesModal={this.showAutomaticUpdatesModal}
