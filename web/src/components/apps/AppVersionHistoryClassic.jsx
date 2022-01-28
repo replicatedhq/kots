@@ -502,7 +502,7 @@ class AppVersionHistoryClassic extends Component {
             this.state.updateChecker.stop();
 
             if (response.status === "failed") {
-              if (response.currentMessage.includes("Upgrade KOTS to version")) {
+              if (response.currentMessage.includes("Upgrade KOTS")) {
                 this.setState({
                   checkingForUpdates: false,
                   checkingForUpdateError: true,
