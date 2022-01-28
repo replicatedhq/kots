@@ -23,9 +23,8 @@ type DeployAppVersionRequest struct {
 }
 
 type DeployAppVersionResponse struct {
-	Success                 bool   `json:"success"`
-	Error                   string `json:"error,omitempty"`
-	IncompatibleKotsVersion bool   `json:"incompatibleKotsVersion,omitempty"`
+	Success bool   `json:"success"`
+	Error   string `json:"error,omitempty"`
 }
 
 func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
