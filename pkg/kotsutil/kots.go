@@ -776,7 +776,7 @@ func GetIncompatbileKotsVersionMessage(kotsApplication kotsv1beta1.Application) 
 		appName = "the app"
 	}
 	return fmt.Sprintf(
-		"This version of %s requires a version of KOTS that is different from what you currently have installed.\nUpgrade KOTS to version %s so you can deploy this version of %s.",
+		"The new version of %s requires a version of KOTS that is different from what you currently have installed.\nUpgrade KOTS to version %s so you can get this version of %s.",
 		appName,
 		kotsApplication.Spec.KotsVersion,
 		appName,

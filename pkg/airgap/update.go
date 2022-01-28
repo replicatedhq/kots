@@ -33,7 +33,11 @@ func StartUpdateTaskMonitor(finishedChan <-chan error) {
 					logger.Error(errors.Wrap(err, "failed to clear update-download task status"))
 				}
 			} else {
-				if err := store.GetStore().SetTaskStatus("update-download", finalError.Error(), "failed"); err != nil {
+				errMsg := finalError.Error()
+				if cause, ok := errors.Cause(finalError).(util.ActionableError); ok {
+					errMsg = cause.Error()
+				}
+				if err := store.GetStore().SetTaskStatus("update-download", errMsg, "failed"); err != nil {
 					logger.Error(errors.Wrap(err, "failed to set error on update-download task status"))
 				}
 			}
@@ -229,6 +233,17 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 }
 
 func canInstall(beforeKotsKinds *kotsutil.KotsKinds, afterKotsKinds *kotsutil.KotsKinds) error {
+	isCompatible, err := kotsutil.IsKotsVersionCompatibleWithApp(afterKotsKinds.KotsApplication, false)
+	if err != nil {
+		return errors.Wrap(err, "failed to check if kots version is compatible")
+	}
+	if !isCompatible {
+		return util.ActionableError{
+			NoRetry: true,
+			Message: kotsutil.GetIncompatbileKotsVersionMessage(afterKotsKinds.KotsApplication),
+		}
+	}
+
 	var beforeSemver, afterSemver *semver.Version
 	if v, err := semver.ParseTolerant(beforeKotsKinds.Installation.Spec.VersionLabel); err == nil {
 		beforeSemver = &v
