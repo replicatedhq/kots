@@ -403,8 +403,6 @@ func (h *Handler) CreateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 			RegistryUsername:   username,
 			RegistryPassword:   password,
 			RegistryIsReadOnly: isReadOnly,
-			IsAutomated:        false,
-			SkipPreflights:     false,
 		}
 		if err := airgap.CreateAppFromAirgap(createAppOpts); err != nil {
 			logger.Error(errors.Wrap(err, "failed to create app from airgap bundle"))

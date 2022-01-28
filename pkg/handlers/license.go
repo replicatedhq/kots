@@ -337,13 +337,16 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 
 	if !verifiedLicense.Spec.IsAirgapSupported {
 		// complete the install online
-		pendingApp := installationtypes.PendingApp{
-			ID:          a.ID,
-			Slug:        a.Slug,
-			Name:        a.Name,
-			LicenseData: uploadLicenseRequest.LicenseData,
+		createAppOpts := online.CreateOnlineAppOpts{
+			PendingApp: &installationtypes.PendingApp{
+				ID:          a.ID,
+				Slug:        a.Slug,
+				Name:        a.Name,
+				LicenseData: uploadLicenseRequest.LicenseData,
+			},
+			UpstreamURI: upstreamURI,
 		}
-		kotsKinds, err := online.CreateAppFromOnline(&pendingApp, upstreamURI, false, false)
+		kotsKinds, err := online.CreateAppFromOnline(createAppOpts)
 		if err != nil {
 			logger.Error(err)
 			uploadLicenseResponse.Error = err.Error()
@@ -427,10 +430,13 @@ func (h *Handler) ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 		JSON(w, 500, resumeInstallOnlineResponse)
 		return
 	}
-
 	pendingApp.LicenseData = string(b.Bytes())
 
-	kotsKinds, err := online.CreateAppFromOnline(&pendingApp, fmt.Sprintf("replicated://%s", kotsLicense.Spec.AppSlug), false, false)
+	createAppOpts := online.CreateOnlineAppOpts{
+		PendingApp:  &pendingApp,
+		UpstreamURI: fmt.Sprintf("replicated://%s", kotsLicense.Spec.AppSlug),
+	}
+	kotsKinds, err := online.CreateAppFromOnline(createAppOpts)
 	if err != nil {
 		logger.Error(err)
 		resumeInstallOnlineResponse.Error = err.Error()
