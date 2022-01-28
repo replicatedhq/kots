@@ -1,4 +1,4 @@
-FROM node:17-stretch-slim
+FROM node:17
 EXPOSE 3000 9229
 
 WORKDIR /src
