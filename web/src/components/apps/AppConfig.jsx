@@ -91,7 +91,9 @@ class AppConfig extends Component {
   determineSidebarHeight = () => {
     const windowHeight = window.innerHeight;
     const sidebarEl = this.sidebarWrapper;
-    sidebarEl.style.maxHeight = `${windowHeight - 225}px`;
+    if(sidebarEl) {
+      sidebarEl.style.maxHeight = `${windowHeight - 225}px`;
+    }
   }
 
   navigateToCurrentHash = () => {
