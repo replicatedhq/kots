@@ -328,7 +328,7 @@ func (h *Handler) UpdateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	}
 
 	go func() {
-		if err := airgap.UpdateAppFromAirgap(a, airgapBundlePath, false, false); err != nil {
+		if err := airgap.UpdateAppFromAirgap(a, airgapBundlePath, false, false, false); err != nil {
 			logger.Error(errors.Wrap(err, "failed to update app from airgap bundle"))
 
 			// if NoRetry is set, we stll want to clean up immediately

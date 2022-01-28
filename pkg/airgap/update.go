@@ -57,7 +57,7 @@ func StartUpdateTaskMonitor(finishedChan <-chan error) {
 	}()
 }
 
-func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string, deploy bool, skipPreflights bool) (finalError error) {
+func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string, deploy bool, skipPreflights bool, skipCompatibilityCheck bool) (finalError error) {
 	finishedChan := make(chan error)
 	defer close(finishedChan)
 
@@ -76,11 +76,11 @@ func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string, deploy bool, 
 	}
 	defer os.RemoveAll(airgapRoot)
 
-	err = UpdateAppFromPath(a, airgapRoot, airgapBundlePath, deploy, skipPreflights)
+	err = UpdateAppFromPath(a, airgapRoot, airgapBundlePath, deploy, skipPreflights, skipCompatibilityCheck)
 	return errors.Wrap(err, "failed to update app")
 }
 
-func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath string, deploy bool, skipPreflights bool) error {
+func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath string, deploy bool, skipPreflights bool, skipCompatibilityCheck bool) error {
 	if err := store.GetStore().SetTaskStatus("update-download", "Processing package...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set tasks status")
 	}
@@ -192,7 +192,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		return errors.Wrap(err, "failed to read after kotskinds")
 	}
 
-	if err := canInstall(beforeKotsKinds, afterKotsKinds); err != nil {
+	if err := canInstall(beforeKotsKinds, afterKotsKinds, skipCompatibilityCheck); err != nil {
 		return errors.Wrap(err, "cannot install")
 	}
 
@@ -232,15 +232,17 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 	return nil
 }
 
-func canInstall(beforeKotsKinds *kotsutil.KotsKinds, afterKotsKinds *kotsutil.KotsKinds) error {
-	isCompatible, err := kotsutil.IsKotsVersionCompatibleWithApp(afterKotsKinds.KotsApplication, false)
-	if err != nil {
-		return errors.Wrap(err, "failed to check if kots version is compatible")
-	}
-	if !isCompatible {
-		return util.ActionableError{
-			NoRetry: true,
-			Message: kotsutil.GetIncompatbileKotsVersionMessage(afterKotsKinds.KotsApplication),
+func canInstall(beforeKotsKinds *kotsutil.KotsKinds, afterKotsKinds *kotsutil.KotsKinds, skipCompatibilityCheck bool) error {
+	if !skipCompatibilityCheck {
+		isCompatible, err := kotsutil.IsKotsVersionCompatibleWithApp(afterKotsKinds.KotsApplication, false)
+		if err != nil {
+			return errors.Wrap(err, "failed to check if kots version is compatible")
+		}
+		if !isCompatible {
+			return util.ActionableError{
+				NoRetry: true,
+				Message: kotsutil.GetIncompatbileKotsVersionMessage(afterKotsKinds.KotsApplication),
+			}
 		}
 	}
 

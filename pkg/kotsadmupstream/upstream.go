@@ -22,7 +22,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/version"
 )
 
-func DownloadUpdate(appID string, update types.Update, skipPreflights bool) (sequence int64, finalError error) {
+func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skipCompatibilityCheck bool) (sequence int64, finalError error) {
 	if err := store.GetStore().SetTaskStatus("update-download", "Fetching update...", "running"); err != nil {
 		return 0, errors.Wrap(err, "failed to set task status")
 	}
@@ -166,14 +166,16 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool) (seq
 		return 0, nil // ?
 	}
 
-	isCompatible, err := kotsutil.IsKotsVersionCompatibleWithApp(afterKotsKinds.KotsApplication, false)
-	if err != nil {
-		return 0, errors.Wrap(err, "failed to check if kots version is compatible")
-	}
-	if !isCompatible {
-		return 0, util.ActionableError{
-			NoRetry: true,
-			Message: kotsutil.GetIncompatbileKotsVersionMessage(afterKotsKinds.KotsApplication),
+	if !skipCompatibilityCheck {
+		isCompatible, err := kotsutil.IsKotsVersionCompatibleWithApp(afterKotsKinds.KotsApplication, false)
+		if err != nil {
+			return 0, errors.Wrap(err, "failed to check if kots version is compatible")
+		}
+		if !isCompatible {
+			return 0, util.ActionableError{
+				NoRetry: true,
+				Message: kotsutil.GetIncompatbileKotsVersionMessage(afterKotsKinds.KotsApplication),
+			}
 		}
 	}
 

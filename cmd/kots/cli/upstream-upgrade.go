@@ -79,6 +79,9 @@ func UpstreamUpgradeCmd() *cobra.Command {
 			if v.GetBool("skip-preflights") {
 				urlVals.Set("skipPreflights", "true")
 			}
+			if v.GetBool("skip-compatibility-check") {
+				urlVals.Set("skipCompatibilityCheck", "true")
+			}
 			if v.GetBool("is-cli") {
 				urlVals.Set("isCLI", "true")
 			}
@@ -116,6 +119,7 @@ func UpstreamUpgradeCmd() *cobra.Command {
 	cmd.Flags().Bool("deploy", false, "when set, automatically deploy the latest version. if an airgap bundle is provided, the version created from that airgap bundle is deployed instead.")
 	cmd.Flags().String("deploy-version-label", "", "when set, automatically deploy the version with the provided version label")
 	cmd.Flags().Bool("skip-preflights", false, "set to true to skip preflight checks")
+	cmd.Flags().Bool("skip-compatibility-check", false, "set to true to skip compatibility checks between the current kots version and new app version(s)")
 
 	cmd.Flags().String("airgap-bundle", "", "path to the application airgap bundle where application images and metadata will be loaded from")
 	cmd.Flags().String("kotsadm-registry", "", "registry endpoint where application images will be pushed")
