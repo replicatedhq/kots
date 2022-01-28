@@ -115,7 +115,7 @@ jobs:
     - name: Setup Node.js environment
       uses: actions/setup-node@v2
       with:
-        node-version: '10.x'
+        node-version: '17.x'
 
     - name: Install cross-env
       run: npm i -g cross-env
@@ -149,7 +149,7 @@ jobs:
     - name: Setup Node.js environment
       uses: actions/setup-node@v2
       with:
-        node-version: '10.x'
+        node-version: '17.x'
 
     - name: Build web
       env:

@@ -37,7 +37,7 @@ export class SupportBundleAnalysis extends React.Component {
 
   sendBundleToVendor = async () => {
     this.setState({ sendingBundle: true, sendingBundleErrMsg: "", downloadBundleErrMsg: "" });
-    fetch(`${window.env.API_ENDPOINT}/troubleshoot/app/${this.props.match.params.slug}/supportbundle/${this.props.match.params.bundleSlug}/share`, {
+    fetch(`${process.env.API_ENDPOINT}/troubleshoot/app/${this.props.match.params.slug}/supportbundle/${this.props.match.params.bundleSlug}/share`, {
       method: "POST",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -64,7 +64,7 @@ export class SupportBundleAnalysis extends React.Component {
 
   downloadBundle = async (bundle) => {
     this.setState({ downloadingBundle: true, downloadBundleErrMsg: "", sendingBundleErrMsg: "" });
-    fetch(`${window.env.API_ENDPOINT}/troubleshoot/supportbundle/${bundle.id}/download`, {
+    fetch(`${process.env.API_ENDPOINT}/troubleshoot/supportbundle/${bundle.id}/download`, {
       method: "GET",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -99,7 +99,7 @@ export class SupportBundleAnalysis extends React.Component {
   getSupportBundle = async () => {
     this.setState({ loading: true, getSupportBundleErrMsg: "", displayErrorModal: false });
 
-    fetch(`${window.env.API_ENDPOINT}/troubleshoot/supportbundle/${this.props.match.params.bundleSlug}`, {
+    fetch(`${process.env.API_ENDPOINT}/troubleshoot/supportbundle/${this.props.match.params.bundleSlug}`, {
       headers: {
         "Content-Type": "application/json",
         "Authorization": Utilities.getToken(),

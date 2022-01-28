@@ -8,7 +8,7 @@ export class AirgapUploader {
     this.appSlug = appSlug;
 
     this.resumableUploader = new Resumable({
-      target: `${window.env.API_ENDPOINT}/app/${this.appSlug}/airgap/chunk`,
+      target: `${process.env.API_ENDPOINT}/app/${this.appSlug}/airgap/chunk`,
       headers: {
         "Authorization": Utilities.getToken(),
       },
@@ -32,7 +32,7 @@ export class AirgapUploader {
 
   reconnect = async (reconnectAttempt = 0) => {
     try {
-      const res = await fetch(`${window.env.API_ENDPOINT}/ping`, {
+      const res = await fetch(`${process.env.API_ENDPOINT}/ping`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -147,7 +147,7 @@ export class AirgapUploader {
   }
 
   getApiCurrentProgress = async () => {
-    const res = await fetch(`${window.env.API_ENDPOINT}/app/${this.appSlug}/airgap/bundleprogress/${this.resumableIdentifier}/${this.resumableTotalChunks}`, {
+    const res = await fetch(`${process.env.API_ENDPOINT}/app/${this.appSlug}/airgap/bundleprogress/${this.resumableIdentifier}/${this.resumableTotalChunks}`, {
       headers: {
         "Authorization": Utilities.getToken(),
       },
@@ -165,7 +165,7 @@ export class AirgapUploader {
   }
 
   airgapBundleExists = async () => {
-    const res = await fetch(`${window.env.API_ENDPOINT}/app/${this.appSlug}/airgap/bundleexists/${this.resumableIdentifier}/${this.resumableTotalChunks}`, {
+    const res = await fetch(`${process.env.API_ENDPOINT}/app/${this.appSlug}/airgap/bundleexists/${this.resumableIdentifier}/${this.resumableTotalChunks}`, {
       headers: {
         "Authorization": Utilities.getToken(),
       },
@@ -183,7 +183,7 @@ export class AirgapUploader {
   }
 
   processAirgapBundle = async () => {
-    const res = await fetch(`${window.env.API_ENDPOINT}/app/${this.appSlug}/airgap/processbundle/${this.resumableIdentifier}/${this.resumableTotalChunks}`, {
+    const res = await fetch(`${process.env.API_ENDPOINT}/app/${this.appSlug}/airgap/processbundle/${this.resumableIdentifier}/${this.resumableTotalChunks}`, {
       headers: {
         "Authorization": Utilities.getToken(),
       },

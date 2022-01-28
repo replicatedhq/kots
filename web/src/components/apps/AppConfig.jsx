@@ -119,7 +119,7 @@ class AppConfig extends Component {
 
     try {
       const { slug } = this.props.match.params;
-      const res = await fetch(`${window.env.API_ENDPOINT}/app/${slug}`, {
+      const res = await fetch(`${process.env.API_ENDPOINT}/app/${slug}`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -141,7 +141,7 @@ class AppConfig extends Component {
 
     this.setState({ configLoading: true, gettingConfigErrMsg: "", configError: false });
 
-    fetch(`${window.env.API_ENDPOINT}/app/${slug}/config/${sequence}`, {
+    fetch(`${process.env.API_ENDPOINT}/app/${slug}/config/${sequence}`, {
       method: "GET",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -231,7 +231,7 @@ class AppConfig extends Component {
     const slug = this.getSlug();
     const createNewVersion = !fromLicenseFlow && match.params.sequence == undefined; // this logic might need to be changed when we add support for editing the config for previous versions (if that will need to create a new version)
 
-    fetch(`${window.env.API_ENDPOINT}/app/${slug}/config`, {
+    fetch(`${process.env.API_ENDPOINT}/app/${slug}/config`, {
       method: "PUT",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -322,7 +322,7 @@ class AppConfig extends Component {
     this.fetchController = new AbortController();
     const signal = this.fetchController.signal;
 
-    fetch(`${window.env.API_ENDPOINT}/app/${slug}/liveconfig`, {
+    fetch(`${process.env.API_ENDPOINT}/app/${slug}/liveconfig`, {
       signal,
       headers: {
         "Authorization": Utilities.getToken(),

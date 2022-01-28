@@ -27,7 +27,7 @@ export default class InlineDropdown extends React.Component {
       if (opt.link) {
         return <Link className="option" key={i} to={opt.link}>{opt.displayText}</Link>
       } else if (opt.href) {
-        return <a target="_blank" mrel="noopener noreferrer" className="option" key={i} href={opt.href}>{opt.displayText}</a>
+        return <a target="_blank" rel="noopener noreferrer" className="option" key={i} href={opt.href}>{opt.displayText}</a>
       }
       else if (opt.onClick) {
         return <div className="option" key={i} onClick={opt.onClick}>{opt.displayText}</div>

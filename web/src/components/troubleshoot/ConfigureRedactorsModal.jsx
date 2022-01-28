@@ -51,7 +51,7 @@ export default class ConfigureRedactorsModal extends Component {
 
   getRedactor = () => {
     this.setState({ loadingRedactor: true });
-    fetch(`${window.env.API_ENDPOINT}/redact/get`, {
+    fetch(`${process.env.API_ENDPOINT}/redact/get`, {
       headers: {
         "Authorization": `${Utilities.getToken()}`,
         "Content-Type": "application/json",
@@ -97,7 +97,7 @@ export default class ConfigureRedactorsModal extends Component {
     }
 
     this.setState({ savingRedactor: true });
-    fetch(`${window.env.API_ENDPOINT}/redact/set`, {
+    fetch(`${process.env.API_ENDPOINT}/redact/set`, {
       headers: {
         "Authorization": `${Utilities.getToken()}`,
         "Content-Type": "application/json",

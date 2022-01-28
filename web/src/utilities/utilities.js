@@ -78,7 +78,7 @@ export function getReadableCollectorName(name) {
  * @param {String} - Returns the commit SHA of the current build
  */
 export function getBuildVersion() {
-  return window.env.KOTSADM_BUILD_VERSION;
+  return process.env.KOTSADM_BUILD_VERSION;
 }
 
 /**

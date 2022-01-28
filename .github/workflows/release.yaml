@@ -13,14 +13,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-
       - name: Generate fixtures
         run: |
           /schemahero fixtures \
             --input-dir ./migrations/tables \
             --output-dir ./migrations/fixtures/schema \
             --dbname ship-cloud --driver postgres
-
       - name: Upload schema artifact
         uses: actions/upload-artifact@v2
         with:
@@ -36,62 +34,34 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-
     - name: Download schema artifact
       uses: actions/download-artifact@v2
       with:
         name: schema
         path: ./migrations/fixtures/schema
-
     - name: Build fixtures
       run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C migrations/fixtures deps build run
-      shell: bash
-
     - name: Upload fixtures artifact
       uses: actions/upload-artifact@v2
       with:
         name: fixtures
         path: ./migrations/fixtures/fixtures.sql
 
-  publish-fixtures:
-    runs-on: ubuntu-18.04
+  build-schema-migrations:
+    runs-on: ubuntu-20.04
     needs: [generate-fixtures]
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-
-    - uses: azure/docker-login@v1
-      with:
-        username: ${{ secrets.DOCKERHUB_USER }}
-        password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-    - name: Download fixtures artifact
-      uses: actions/download-artifact@v2
-      with:
-        name: fixtures
-        path: ./migrations/fixtures
-
-  build-schema-migrations:
-    runs-on: ubuntu-20.04
-    needs: [publish-fixtures]
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-
     - uses: azure/docker-login@v1
       env:
         DOCKER_CONFIG: ./migrations/.docker
       with:
         username: ${{ secrets.DOCKERHUB_USER }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-    - name: Get tags
-      id: get_tag
-      uses: ./actions/version-tag
-
     - name: "Release schema migrations on tag"
       env:
-        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+        GIT_TAG: ${{ github.ref_name }}
         DOCKER_CONFIG: ./.docker
       run: |
         export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C migrations schema-release
@@ -102,48 +72,20 @@ jobs:
         name: migrations-image
         path: ./migrations/bin/docker-archive
 
-  test_web:
+  build-web:
     runs-on: ubuntu-18.04
     needs: [build-schema-migrations]
     container:
-      image: replicated/gitops-builder:buildkite
+      image: replicated/gitops-builder:buildkite-go17-node17
       options: --user root
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-
-    - name: Setup Node.js environment
-      uses: actions/setup-node@v2
-      with:
-        node-version: '10.x'
-
-    - name: Install cross-env
-      run: npm i -g cross-env
-      shell: bash
-
-  build_web:
-    runs-on: ubuntu-18.04
-    needs: [build-schema-migrations]
-    container:
-      image: replicated/gitops-builder:buildkite
-      options: --user root
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-
-    - name: Get tags
-      id: get_tag
-      uses: ./actions/version-tag
-
-    - name: Setup Node.js environment
-      uses: actions/setup-node@v2
-      with:
-        node-version: '10.x'
 
     - name: Build web
       env:
         GIT_COMMIT: ${{ github.sha }}
-        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+        GIT_TAG: ${{ github.ref_name }}
       run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C web deps build-kotsadm
       shell: bash
 
@@ -153,32 +95,23 @@ jobs:
         name: web
         path: ./web/dist
 
-  build_kurl_proxy:
+  build-kurl-proxy:
     runs-on: ubuntu-18.04
     needs: [build-schema-migrations]
-    container:
-      image: replicated/gitops-builder:buildkite-go14-node10
-      options: --user root
     steps:
     - name: Checkout
       uses: actions/checkout@v2
 
-    - name: Setup Go
-      uses: actions/setup-go@v2
+    - uses: actions/setup-go@v2
       with:
         go-version: '^1.17.4'
-
-    - name: Get tags
-      id: get_tag
-      uses: ./actions/version-tag
 
     - name: Build kurl_proxy
       env:
         GIT_COMMIT: ${{ github.sha }}
-        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+        GIT_TAG: ${{ github.ref_name }}
         SCOPE_DSN_PUBLIC: ""
       run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C kurl_proxy test build
-      shell: bash
 
     - name: Upload kurl_proxy artifact
       uses: actions/upload-artifact@v2
@@ -186,23 +119,31 @@ jobs:
         name: kurl_proxy
         path: ./kurl_proxy/bin
 
-  build_go_api:
+    - uses: azure/docker-login@v1
+      with:
+        username: ${{ secrets.DOCKERHUB_USER }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+    - name: Build tagged release
+      working-directory: ./kurl_proxy
+      run: |
+        docker build --pull -f deploy/Dockerfile -t kotsadm/kurl-proxy:$GITHUB_REF_NAME -t kotsadm/kurl-proxy:v0.0.0-nightly .
+        docker push kotsadm/kurl-proxy:$GITHUB_REF_NAME
+        docker push kotsadm/kurl-proxy:v0.0.0-nightly
+
+  build-go-api:
     runs-on: ubuntu-18.04
-    needs: [test_web, build_web, build_kurl_proxy]
+    needs: [build-web]
     container:
-      image: replicated/gitops-builder:buildkite-go14-node10
+      image: replicated/gitops-builder:buildkite-go17-node17
       options: --user root
     steps:
-    - uses: actions/setup-go@v2
-      with:
-        go-version: '^1.17.4'
-
     - id: go-cache-paths
       run: |
         echo "::set-output name=go-build::$(go env GOCACHE)"
         echo "::set-output name=go-mod::$(go env GOMODCACHE)"
     - name: Checkout
-      uses: actions/checkout@v1 # not @v2 because of: https://github.com/actions/checkout/issues/126
+      uses: actions/checkout@v2
 
     - uses: actions/cache@v2
       with:
@@ -212,10 +153,6 @@ jobs:
       with:
         path: ${{ steps.go-cache-paths.outputs.go-mod }}
         key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
-
-    - name: Get tags
-      id: get_tag
-      uses: ./actions/version-tag
 
     - name: Download web artifact
       uses: actions/download-artifact@v2
@@ -226,13 +163,9 @@ jobs:
     - name: Build Go API
       env:
         GIT_COMMIT: ${{ github.sha }}
-        # GITHUB_SHA: ${{ github.sha }}
-        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
-        # GITHUB_REPOSITORY:
-        # GITHUB_WORKSPACE:
+        GIT_TAG: ${{ github.ref_name }}
         SCOPE_DSN_PUBLIC: ""
       run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make test kotsadm
-      shell: bash
 
     - name: Upload Go API artifact
       uses: actions/upload-artifact@v2
@@ -240,141 +173,60 @@ jobs:
         name: go_api
         path: ./bin
 
-  release_go_api_tagged:
+  release-go-api-tagged:
     runs-on: ubuntu-20.04
-    needs: [build_web, build_go_api]
+    needs: [build-web, build-go-api]
     steps:
-    - name: Setup Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: '^1.17.4'
-
-    - id: go-cache-paths
-      run: |
-        echo "::set-output name=go-build::$(go env GOCACHE)"
-        echo "::set-output name=go-mod::$(go env GOMODCACHE)"
     - name: Checkout
       uses: actions/checkout@v2
-
-    - uses: actions/cache@v2
-      with:
-        path: ${{ steps.go-cache-paths.outputs.go-build }}
-        key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
-    - uses: actions/cache@v2
-      with:
-        path: ${{ steps.go-cache-paths.outputs.go-mod }}
-        key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
-
-    - name: Get tags
-      id: get_tag
-      uses: ./actions/version-tag
-
     - name: Download go_api artifact
       uses: actions/download-artifact@v2
       with:
         name: go_api
         path: ./bin
-
     - name: Add executable permissions
       run: chmod a+x ./bin/kotsadm
-
     - uses: azure/docker-login@v1
       env:
         DOCKER_CONFIG: ./.docker
       with:
         username: ${{ secrets.DOCKERHUB_USER }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
     - name: Build tagged release
       env:
-        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+        GIT_TAG: ${{ github.ref_name }}
         DOCKER_CONFIG: ./.docker
       run: |
         export $(cat .image.env | sed 's/#.*//g' | xargs) && make build-release
-
     - name: Upload airgap image
       uses: actions/upload-artifact@v2
       with:
         name: kotsadm-image
         path: ./bin/docker-archive
 
-  build_kurl_proxy_tagged:
-    runs-on: ubuntu-18.04
-    needs: [build_kurl_proxy]
-    steps:
-    - uses: azure/docker-login@v1
-      with:
-        username: ${{ secrets.DOCKERHUB_USER }}
-        password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-    - name: Setup Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: '^1.17.4'
-
-    - id: go-cache-paths
-      run: |
-        echo "::set-output name=go-build::$(go env GOCACHE)"
-        echo "::set-output name=go-mod::$(go env GOMODCACHE)"
-    - name: Checkout
-      uses: actions/checkout@v2
-
-    - uses: actions/cache@v2
-      with:
-        path: ${{ steps.go-cache-paths.outputs.go-build }}
-        key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
-    - uses: actions/cache@v2
-      with:
-        path: ${{ steps.go-cache-paths.outputs.go-mod }}
-        key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
-
-    - name: Get tags
-      id: get_tag
-      uses: ./actions/version-tag
-
-    - name: Download kurl_proxy artifact
-      uses: actions/download-artifact@v2
-      with:
-        name: kurl_proxy
-        path: ./kurl_proxy/bin
-
-    - name: Add executable permissions
-      run: chmod a+x ./kurl_proxy/bin/kurl_proxy
-
-    - name: Build tagged release
-      env:
-        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
-      run: |
-        export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C kurl_proxy build-release
-
   goreleaser:
     runs-on: ubuntu-18.04
-    needs: [build_web]
+    needs: [build-web]
     steps:
-    - id: go-cache-paths
-      run: |
-        echo "::set-output name=go-build::$(go env GOCACHE)"
-        echo "::set-output name=go-mod::$(go env GOMODCACHE)"
-
-    - name: Checkout
-      uses: actions/checkout@v2
-
-    - uses: actions/cache@v2
-      with:
-        path: ${{ steps.go-cache-paths.outputs.go-build }}
-        key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
-    - uses: actions/cache@v2
-      with:
-        path: ${{ steps.go-cache-paths.outputs.go-mod }}
-        key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
-
-    - name: Unshallow
-      run: git fetch --prune --unshallow
-
     - uses: actions/setup-go@v2
       with:
         go-version: '^1.17.4'
-
+    - id: go-cache-paths
+      run: |
+        echo "::set-output name=go-build::$(go env GOCACHE)"
+        echo "::set-output name=go-mod::$(go env GOMODCACHE)"
+    - name: Checkout
+      uses: actions/checkout@v2
+    - uses: actions/cache@v2
+      with:
+        path: ${{ steps.go-cache-paths.outputs.go-build }}
+        key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
+    - uses: actions/cache@v2
+      with:
+        path: ${{ steps.go-cache-paths.outputs.go-mod }}
+        key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
+    - name: Unshallow
+      run: git fetch --prune --unshallow
     - run: sudo apt-get update -y
     - run: sudo apt-get -qq -y install gnupg2 libdevmapper-dev libgpgme-dev libc6-dev-i386 btrfs-progs btrfs-tools pkg-config
     - name: set previous release tag for goreleaser
@@ -382,34 +234,25 @@ jobs:
       run: |
         export TAG=$(curl --silent "https://api.github.com/repos/replicatedhq/kots/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")')
         echo "GORELEASER_PREVIOUS_TAG=${TAG}" >> $GITHUB_ENV
-
     - uses: sigstore/cosign-installer@main
       with:
         cosign-release: 'v1.2.1'
-
     - name: Get Cosign Key
       run: |
         echo $COSIGN_KEY | base64 -d > ./cosign.key
       env:
         COSIGN_KEY: ${{secrets.COSIGN_KEY}}
-
     - name: Download web artifact
       uses: actions/download-artifact@v2
       with:
         name: web
         path: ./web/dist
-
     - name: Generate SBOM
       run: |
         set -x
-        go list -mod readonly -json -m
-        go version
-        go list -deps -json ./...
-        go mod graph
         make sbom
       env:
         COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
-
     - name: Run GoReleaser
       uses: goreleaser/goreleaser-action@v2
       with:
@@ -418,38 +261,28 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  build_airgap:
+  build-airgap:
     runs-on: ubuntu-18.04
-    needs: [release_go_api_tagged, goreleaser, build-schema-migrations]
+    needs: [release-go-api-tagged, goreleaser, build-schema-migrations]
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Get tags
-      id: get_tag
-      uses: ./actions/version-tag
-
     - name: Download migrations
       uses: actions/download-artifact@v2
       with:
         name: migrations-image
         path: ./docker-archive
-
     - name: Download kotsadm image
       uses: actions/download-artifact@v2
       with:
         name: kotsadm-image
         path: ./docker-archive
-
     - name: Get Release
       id: get_release
       uses: bruceadams/get-release@v1.2.3   # no v1 tag
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
     - name: Make kotsadm airgap archive
       run: |
         tar czf ./kotsadm.tar.gz -C ./ ./docker-archive
-
     - name: Upload airgap bundle
       uses: actions/upload-release-asset@v1
       env:
@@ -460,17 +293,16 @@ jobs:
         asset_name: kotsadm.tar.gz
         asset_content_type: application/gzip
 
-  regression_test_setup:
+  regression-test-setup:
     name: Run regression testing
     if: startsWith(github.ref, 'refs/tags/v') && endsWith(github.ref, '-nightly')
     runs-on: ubuntu-latest
-    needs: [build_airgap]
+    needs: [build-airgap]
     outputs:
       last_release_tag: ${{ steps.get_latest_release_tag.outputs.release }}
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-
     - name: Copy assets
       uses: ./actions/copy-assets
       env:
@@ -478,7 +310,6 @@ jobs:
       with:
         srcReleaseTag: ${{ github.ref_name }}
         dstReleaseTag: "v0.0.0-nightly"
-
     - name: Get latest release tag
       id: get_latest_release_tag
       uses: pozetroninc/github-action-get-latest-release@master
@@ -486,12 +317,12 @@ jobs:
         repository: ${{ github.repository }}
         excludes: prerelease, draft
 
-  regression_test:
+  regression-test:
     if: startsWith(github.ref, 'refs/tags/v') && endsWith(github.ref, '-nightly')
-    needs: regression_test_setup
+    needs: regression-test-setup
     uses: replicatedhq/kots/.github/workflows/regression.yaml@main
     with:
-      version_tag_old: ${{ needs.regression_test_setup.outputs.last_release_tag }}
+      version_tag_old: ${{ needs.regression-test-setup.outputs.last_release_tag }}
       version_tag_new: ${{ github.ref_name }}
     secrets:
       E2E_TESTIM_AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
@@ -500,47 +331,38 @@ jobs:
       E2E_GH_PAT: ${{ secrets.E2E_GH_PAT }}
       KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL: ${{ secrets.KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL }}
 
-  start_kgrid_test:
+  start-kgrid-test:
     runs-on: ubuntu-18.04
-    needs: [goreleaser, release_go_api_tagged]
+    needs: [goreleaser, release-go-api-tagged]
     if: startsWith(github.ref, 'refs/tags/v') && endsWith(github.ref, '-nightly')
+    env:
+      GIT_TAG: ${{ github.ref_name }}
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-
-    - name: Get tags
-      id: get_tag
-      uses: ./actions/version-tag
-
     - uses: kceb/pull-request-url-action@v2
       id: pr_url
-
     - name: Expose git commit data
       uses: rlespinasse/git-commit-data-action@v1.x   # no v1 tag
-
     - name: Create staging gitops commit
       env:
         REPLICATEDCOM_GITHUB_PRIVATE_KEY: ${{ secrets.REPLICATEDCOM_GITHUB_PRIVATE_KEY }}
         PR_URL: ${{ steps.pr_url.outputs.url }}
-        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
         GITOPS_OWNER: replicatedcom
         GITOPS_REPO: gitops-deploy
         GITOPS_BRANCH: main
         RUN_ID: ${{ github.run_id }}
       run: ./hack/deploy-kgrid.sh
-
     - name: Create production gitops commit
       id: deploy_kgrid
       env:
         REPLICATEDCOM_GITHUB_PRIVATE_KEY: ${{ secrets.REPLICATEDCOM_GITHUB_PRIVATE_KEY }}
         PR_URL: ${{ steps.pr_url.outputs.url }}
-        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
         OVERLAY: production
         GITOPS_OWNER: replicatedcom
         GITOPS_REPO: gitops-deploy
         GITOPS_BRANCH: release
       run: ./hack/deploy-kgrid.sh
-
     - name: Wait for production kgrid tests
       env:
         KGRID_API_TOKEN: ${{ secrets.KGRID_API_TOKEN }}
@@ -551,18 +373,13 @@ jobs:
 
   generate-kurl-addon-pr:
     runs-on: ubuntu-18.04
-    needs: [release_go_api_tagged, build_kurl_proxy_tagged]
+    needs: [release-go-api-tagged, build-kurl-proxy]
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-
-    - name: Get tags
-      id: get_tag
-      uses: ./actions/version-tag
-
     - name: Generate Kurl Addon PR
       env:
-        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+        GIT_TAG: ${{ github.ref_name }}
         GH_PAT: ${{ secrets.GH_PAT }}
       run: |
         # Strips off the 'v' in version
@@ -573,19 +390,15 @@ jobs:
 
   generate-kots-release-notes-pr:
     runs-on: ubuntu-18.04
-    needs: [release_go_api_tagged, build_kurl_proxy_tagged]
+    needs: [release-go-api-tagged, build-kurl-proxy]
     if: ${{ ! endsWith(github.ref, '-nightly') }}
     steps:
     - name: Checkout
       uses: actions/checkout@v2
 
-    - name: Get tags
-      id: get_tag
-      uses: ./actions/version-tag
-
     - name: Generate Kots Release Notes PR
       env:
-        GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+        GIT_TAG: ${{ github.ref_name }}
         GH_PAT: ${{ secrets.GH_PAT }}
       run: |
         curl -H "Authorization: token $GH_PAT" \

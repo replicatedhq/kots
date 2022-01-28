@@ -6,7 +6,6 @@ import Select from "react-select";
 import isEmpty from "lodash/isEmpty";
 import dayjs from "dayjs";
 import size from "lodash/size";
-import url from "url";
 
 import AirgapUploadProgress from "../AirgapUploadProgress";
 import Loader from "../shared/Loader";
@@ -64,7 +63,7 @@ export default class DashboardCard extends React.Component {
   }
 
   createDashboardActionLink = (uri) => {
-    const parsedUrl = url.parse(uri);
+    const parsedUrl = new URL(uri);
 
     let port;
     if (!parsedUrl.port) {
@@ -73,7 +72,7 @@ export default class DashboardCard extends React.Component {
       port = ":" + parsedUrl.port;
     }
 
-    return `${parsedUrl.protocol}//${window.location.hostname}${port}${parsedUrl.path}`;
+    return `${parsedUrl.protocol}//${window.location.hostname}${port}${parsedUrl.pathname}`;
   }
 
   renderApplicationCard = () => {
@@ -186,7 +185,7 @@ export default class DashboardCard extends React.Component {
 
       this.setState({ logsLoading: true, showLogsModal: true, viewLogsErrMsg: "" });
 
-      const res = await fetch(`${window.env.API_ENDPOINT}/app/${app?.slug}/cluster/${clusterId}/sequence/${version?.sequence}/downstreamoutput`, {
+      const res = await fetch(`${process.env.API_ENDPOINT}/app/${app?.slug}/cluster/${clusterId}/sequence/${version?.sequence}/downstreamoutput`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
