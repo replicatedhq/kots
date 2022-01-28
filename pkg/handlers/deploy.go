@@ -3,15 +3,12 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
-	"os"
 	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
@@ -62,49 +59,6 @@ func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 		logger.Error(errors.Wrap(err, errMsg))
 		deployAppVersionResponse.Error = errMsg
 		JSON(w, http.StatusInternalServerError, deployAppVersionResponse)
-		return
-	}
-
-	archiveDir, err := ioutil.TempDir("", "kotsadm")
-	if err != nil {
-		errMsg := "failed to create tmp directory"
-		logger.Error(errors.Wrap(err, errMsg))
-		deployAppVersionResponse.Error = errMsg
-		JSON(w, http.StatusInternalServerError, deployAppVersionResponse)
-		return
-	}
-	defer os.RemoveAll(archiveDir)
-
-	err = store.GetStore().GetAppVersionArchive(a.ID, int64(sequence), archiveDir)
-	if err != nil {
-		errMsg := "failed to get app version archive"
-		logger.Error(errors.Wrap(err, errMsg))
-		deployAppVersionResponse.Error = errMsg
-		JSON(w, http.StatusInternalServerError, deployAppVersionResponse)
-		return
-	}
-
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
-	if err != nil {
-		errMsg := "failed to load kots kinds from path"
-		logger.Error(errors.Wrap(err, errMsg))
-		deployAppVersionResponse.Error = errMsg
-		JSON(w, http.StatusInternalServerError, deployAppVersionResponse)
-		return
-	}
-
-	if isCompatible, err := kotsutil.IsKotsVersionCompatibleWithApp(kotsKinds.KotsApplication, false); err != nil {
-		errMsg := "failed to check if kots version is compatible"
-		logger.Error(errors.Wrap(err, errMsg))
-		deployAppVersionResponse.Error = errMsg
-		JSON(w, http.StatusInternalServerError, deployAppVersionResponse)
-		return
-	} else if !isCompatible {
-		errMsg := kotsutil.GetIncompatbileKotsVersionMessage(kotsKinds.KotsApplication)
-		logger.Error(errors.Wrap(err, errMsg))
-		deployAppVersionResponse.Error = errMsg
-		deployAppVersionResponse.IncompatibleKotsVersion = true
-		JSON(w, http.StatusConflict, deployAppVersionResponse)
 		return
 	}
 
