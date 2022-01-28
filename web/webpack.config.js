@@ -24,6 +24,9 @@ module.exports = function (env) {
 
   const replace = {}
   Object.entries(appEnv).forEach(([key, value]) => replace[`process.env.${key}`] = JSON.stringify(value))
+  if(env.enterprise) {
+    process.env.NODE_ENV = "production"
+  }
 
   const common = {
     output: {
