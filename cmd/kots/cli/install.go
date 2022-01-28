@@ -148,6 +148,23 @@ func InstallCmd() *cobra.Command {
 				}
 			}
 
+			// checks kots version compatibility with the app
+			if len(applicationMetadata) > 0 && !v.GetBool("skip-compatibility-check") {
+				kotsApp, err := kotsutil.LoadKotsAppFromContents(applicationMetadata)
+				if err != nil {
+					return errors.Wrap(err, "failed to load kots app from metadata")
+				}
+				if kotsApp != nil {
+					isCompatible, err := kotsutil.IsKotsVersionCompatibleWithApp(*kotsApp, true)
+					if err != nil {
+						return errors.Wrap(err, "failed to check if kots version is compatible")
+					}
+					if !isCompatible {
+						return errors.New(kotsutil.GetIncompatbileKotsVersionMessage(*kotsApp))
+					}
+				}
+			}
+
 			var configValues *kotsv1beta1.ConfigValues
 			if filepath := v.GetString("config-values"); filepath != "" {
 				parsedConfigValues, err := pull.ParseConfigValuesFromFile(ExpandDir(filepath))
@@ -401,6 +418,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().Bool("skip-preflights", false, "set to true to skip preflight checks")
 	cmd.Flags().Bool("disable-image-push", false, "set to true to disable images from being pushed to private registry")
 	cmd.Flags().Bool("strict-security-context", false, "set to explicitly enable explicit security contexts for all kots pods and containers (may not work for some storage providers)")
+	cmd.Flags().Bool("skip-compatibility-check", false, "set to true to skip compatibility checks between the current kots version and the app")
 
 	cmd.Flags().String("repo", "", "repo uri to use when installing a helm chart")
 	cmd.Flags().StringSlice("set", []string{}, "values to pass to helm when running helm template")
