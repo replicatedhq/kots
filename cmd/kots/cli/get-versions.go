@@ -136,8 +136,8 @@ func getAppVersions(url string, authSlug string) (*handlers.GetAppVersionsRespon
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == 500 {
-		return nil, fmt.Errorf("check the app slug")
+	if resp.StatusCode != 200 {
+		return nil, errors.Errorf("unexpected status code %d", resp.StatusCode)
 	}
 
 	b, err := ioutil.ReadAll(resp.Body)
@@ -147,7 +147,7 @@ func getAppVersions(url string, authSlug string) (*handlers.GetAppVersionsRespon
 
 	appVersions := handlers.GetAppVersionsResponse{}
 	if err := json.Unmarshal(b, &appVersions); err != nil {
-		return nil, errors.Wrap(err, "failed to unmarshal apps")
+		return nil, errors.Wrap(err, "failed to unmarshal app versions")
 	}
 
 	return &appVersions, nil
