@@ -57,7 +57,7 @@ func StartUpdateTaskMonitor(finishedChan <-chan error) {
 	}()
 }
 
-func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string, deploy bool, skipPreflights bool) (finalError error) {
+func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string, deploy bool, skipPreflights bool, skipCompatibilityCheck bool) (finalError error) {
 	finishedChan := make(chan error)
 	defer close(finishedChan)
 
@@ -76,7 +76,7 @@ func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string, deploy bool, 
 	}
 	defer os.RemoveAll(airgapRoot)
 
-	err = UpdateAppFromPath(a, airgapRoot, airgapBundlePath, deploy, skipPreflights, false)
+	err = UpdateAppFromPath(a, airgapRoot, airgapBundlePath, deploy, skipPreflights, skipCompatibilityCheck)
 	return errors.Wrap(err, "failed to update app")
 }
 
