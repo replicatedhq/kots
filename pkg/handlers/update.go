@@ -47,6 +47,7 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 	deploy, _ := strconv.ParseBool(r.URL.Query().Get("deploy"))
 	deployVersionLabel := r.URL.Query().Get("deployVersionLabel")
 	skipPreflights, _ := strconv.ParseBool(r.URL.Query().Get("skipPreflights"))
+	skipCompatibilityCheck, _ := strconv.ParseBool(r.URL.Query().Get("skipCompatibilityCheck"))
 	isCLI, _ := strconv.ParseBool(r.URL.Query().Get("isCLI"))
 
 	contentType := strings.Split(r.Header.Get("Content-Type"), ";")[0]
@@ -54,11 +55,12 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 
 	if contentType == "application/json" {
 		opts := updatechecker.CheckForUpdatesOpts{
-			AppID:              foundApp.ID,
-			DeployLatest:       deploy,
-			DeployVersionLabel: deployVersionLabel,
-			SkipPreflights:     skipPreflights,
-			IsCLI:              isCLI,
+			AppID:                  foundApp.ID,
+			DeployLatest:           deploy,
+			DeployVersionLabel:     deployVersionLabel,
+			SkipPreflights:         skipPreflights,
+			SkipCompatibilityCheck: skipCompatibilityCheck,
+			IsCLI:                  isCLI,
 		}
 		ucr, err := updatechecker.CheckForUpdates(opts)
 		if err != nil {
@@ -172,7 +174,7 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 
 		airgap.StartUpdateTaskMonitor(finishedChan)
 
-		err = airgap.UpdateAppFromPath(foundApp, rootDir, "", deploy, skipPreflights)
+		err = airgap.UpdateAppFromPath(foundApp, rootDir, "", deploy, skipPreflights, skipCompatibilityCheck)
 		if err != nil {
 			finishedChan <- err
 

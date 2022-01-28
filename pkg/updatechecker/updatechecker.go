@@ -146,12 +146,13 @@ func Stop(appID string) {
 }
 
 type CheckForUpdatesOpts struct {
-	AppID              string
-	DeployLatest       bool
-	DeployVersionLabel string
-	IsAutomatic        bool
-	SkipPreflights     bool
-	IsCLI              bool
+	AppID                  string
+	DeployLatest           bool
+	DeployVersionLabel     string
+	IsAutomatic            bool
+	SkipPreflights         bool
+	SkipCompatibilityCheck bool
+	IsCLI                  bool
 }
 
 type UpdateCheckResponse struct {
@@ -288,7 +289,7 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 	// there are updates, go routine it
 	go func() {
 		for index, update := range updates {
-			_, err = upstream.DownloadUpdate(a.ID, update, opts.SkipPreflights)
+			_, err = upstream.DownloadUpdate(a.ID, update, opts.SkipPreflights, opts.SkipCompatibilityCheck)
 			if err != nil {
 				logger.Error(errors.Wrapf(err, "failed to download update %s", update.VersionLabel))
 				if index == len(updates)-1 {
