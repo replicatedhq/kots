@@ -566,11 +566,22 @@ class AppVersionHistory extends Component {
           if (response.status !== "running" && !this.props.isBundleUploading) {
             this.state.updateChecker.stop();
 
-            this.setState({
-              checkingForUpdates: false,
-              checkingUpdateMessage: response.currentMessage,
-              checkingForUpdateError: response.status === "failed"
-            });
+            if (response.status === "failed") {
+              if (response.currentMessage.includes("Upgrade KOTS to version")) {
+                this.setState({
+                  checkingForUpdates: false,
+                  checkingForUpdateError: true,
+                  checkingUpdateMessage: response.currentMessage,
+                  incompatibleKotsVersionError: true
+                });
+              }
+            } else {
+              this.setState({
+                checkingForUpdates: false,
+                checkingUpdateMessage: response.currentMessage,
+                checkingForUpdateError: response.status === "failed"
+              });
+            }
 
             if (this.props.updateCallback) {
               this.props.updateCallback();

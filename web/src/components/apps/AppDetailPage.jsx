@@ -117,10 +117,6 @@ class AppDetailPage extends Component {
           isCLI: false
         }),
       });
-      if (!res.ok && res.status === 409) {
-        const response = await res.json();
-        this.toggleDisplayRequiredKotsUpdateModal(response);
-      }
       if (res.ok && res.status === 204) {
         this.setState({ makingCurrentReleaseErrMsg: "" });
         this.refetchData();
