@@ -113,8 +113,18 @@ ENV KUBECTL_1_22_SHA256SUM=1ab07643807a45e2917072f7ba5f11140b40f19675981b199b810
 RUN curl -fsSLO "${KUBECTL_1_22_URL}" \
 	&& echo "${KUBECTL_1_22_SHA256SUM} kubectl" | sha256sum -c - \
 	&& chmod +x kubectl \
-	&& mv kubectl "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.22" \
-	&& ln -s "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.22" "${KOTS_KUBECTL_BIN_DIR}/kubectl"
+	&& mv kubectl "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.22" 
+
+# Install Kubectl 1.23
+ENV KUBECTL_1_23_VERSION=v1.23.3
+ENV KUBECTL_1_23_URL=https://dl.k8s.io/release/${KUBECTL_1_23_VERSION}/bin/linux/amd64/kubectl
+ENV KUBECTL_1_23_SHA256SUM=d7da739e4977657a3b3c84962df49493e36b09cc66381a5e36029206dd1e01d0
+RUN curl -fsSLO "${KUBECTL_1_23_URL}" \
+	&& echo "${KUBECTL_1_23_SHA256SUM} kubectl" | sha256sum -c - \
+	&& chmod +x kubectl \
+	&& mv kubectl "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.23" \
+	&& ln -s "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.23" "${KOTS_KUBECTL_BIN_DIR}/kubectl"
+
 
 ENV KOTS_KUSTOMIZE_BIN_DIR=/usr/local/bin
 
