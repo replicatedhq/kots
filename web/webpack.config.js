@@ -9,7 +9,7 @@ const MonacoWebpackPlugin = require("monaco-editor-webpack-plugin");
 // const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer");
 
 function mapEnvironment(env) {
-  if(env === "enterprise") {
+  if(env.enterprise) {
     return "enterprise";
   } else if(process.env.OKTETO_NAMESPACE) {
     return "okteto";
@@ -24,6 +24,9 @@ module.exports = function (env) {
 
   const replace = {}
   Object.entries(appEnv).forEach(([key, value]) => replace[`process.env.${key}`] = JSON.stringify(value))
+  if(env.enterprise) {
+    process.env.NODE_ENV = "production"
+  }
 
   const common = {
     output: {
@@ -163,11 +166,11 @@ module.exports = function (env) {
     ],
   };
 
-  if (env !== "enterprise") {
-    var dev = require("./webpack.config.dev");
-    return merge(common, dev);
-  } else {
+  if (env.enterprise) {
     var dist = require("./webpack.config.dist");
     return merge(common, dist(appEnv));
+  } else {
+    var dev = require("./webpack.config.dev");
+    return merge(common, dev);
   }
 };
