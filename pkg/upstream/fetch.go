@@ -54,6 +54,7 @@ func downloadUpstream(upstreamURI string, fetchOptions *types.FetchOptions) (*ty
 			fetchOptions.Airgap,
 			fetchOptions.LocalRegistry,
 			fetchOptions.ReportingInfo,
+			fetchOptions.SkipCompatibilityCheck,
 		)
 	}
 	if u.Scheme == "git" {

@@ -82,6 +82,7 @@ type FetchOptions struct {
 	LocalRegistry          LocalRegistry
 	ReportingInfo          *reportingtypes.ReportingInfo
 	IdentityPostgresConfig *kotsv1beta1.IdentityPostgresConfig
+	SkipCompatibilityCheck bool
 }
 
 type LocalRegistry struct {

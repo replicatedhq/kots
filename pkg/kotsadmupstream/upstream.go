@@ -151,6 +151,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 			Password:   registrySettings.Password,
 			IsReadOnly: registrySettings.IsReadOnly,
 		},
+		SkipCompatibilityCheck: skipCompatibilityCheck,
 	}
 
 	if _, err := kotspull.Pull(fmt.Sprintf("replicated://%s", beforeKotsKinds.License.Spec.AppSlug), pullOptions); err != nil {
@@ -164,19 +165,6 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 
 	if afterKotsKinds.Installation.Spec.UpdateCursor == beforeCursor {
 		return 0, nil // ?
-	}
-
-	if !skipCompatibilityCheck {
-		isCompatible, err := kotsutil.IsKotsVersionCompatibleWithApp(afterKotsKinds.KotsApplication, false)
-		if err != nil {
-			return 0, errors.Wrap(err, "failed to check if kots version is compatible")
-		}
-		if !isCompatible {
-			return 0, util.ActionableError{
-				NoRetry: true,
-				Message: kotsutil.GetIncompatbileKotsVersionMessage(afterKotsKinds.KotsApplication),
-			}
-		}
 	}
 
 	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "Upstream Update", skipPreflights, &version.DownstreamGitOps{})

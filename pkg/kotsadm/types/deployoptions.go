@@ -43,6 +43,7 @@ type DeployOptions struct {
 	ExcludeAdminConsole       bool
 	EnsureKotsadmConfig       bool
 	SkipPreflights            bool
+	SkipCompatibilityCheck    bool
 	EnsureRBAC                bool
 	StrictSecurityContext     bool
 	InstallID                 string

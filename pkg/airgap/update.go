@@ -179,8 +179,9 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 			Password:   registrySettings.Password,
 			IsReadOnly: registrySettings.IsReadOnly,
 		},
-		AppSlug:     a.Slug,
-		AppSequence: appSequence,
+		AppSlug:                a.Slug,
+		AppSequence:            appSequence,
+		SkipCompatibilityCheck: skipCompatibilityCheck,
 	}
 
 	if _, err := pull.Pull(fmt.Sprintf("replicated://%s", beforeKotsKinds.License.Spec.AppSlug), pullOptions); err != nil {
@@ -192,7 +193,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		return errors.Wrap(err, "failed to read after kotskinds")
 	}
 
-	if err := canInstall(beforeKotsKinds, afterKotsKinds, skipCompatibilityCheck); err != nil {
+	if err := canInstall(beforeKotsKinds, afterKotsKinds); err != nil {
 		return errors.Wrap(err, "cannot install")
 	}
 
@@ -232,20 +233,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 	return nil
 }
 
-func canInstall(beforeKotsKinds *kotsutil.KotsKinds, afterKotsKinds *kotsutil.KotsKinds, skipCompatibilityCheck bool) error {
-	if !skipCompatibilityCheck {
-		isCompatible, err := kotsutil.IsKotsVersionCompatibleWithApp(afterKotsKinds.KotsApplication, false)
-		if err != nil {
-			return errors.Wrap(err, "failed to check if kots version is compatible")
-		}
-		if !isCompatible {
-			return util.ActionableError{
-				NoRetry: true,
-				Message: kotsutil.GetIncompatbileKotsVersionMessage(afterKotsKinds.KotsApplication),
-			}
-		}
-	}
-
+func canInstall(beforeKotsKinds *kotsutil.KotsKinds, afterKotsKinds *kotsutil.KotsKinds) error {
 	var beforeSemver, afterSemver *semver.Version
 	if v, err := semver.ParseTolerant(beforeKotsKinds.Installation.Spec.VersionLabel); err == nil {
 		beforeSemver = &v

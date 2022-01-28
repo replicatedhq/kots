@@ -228,6 +228,7 @@ func InstallCmd() *cobra.Command {
 				HTTPSProxyEnvValue:        v.GetString("https-proxy"),
 				NoProxyEnvValue:           v.GetString("no-proxy"),
 				SkipPreflights:            v.GetBool("skip-preflights"),
+				SkipCompatibilityCheck:    v.GetBool("skip-compatibility-check"),
 				EnsureRBAC:                v.GetBool("ensure-rbac"),
 				InstallID:                 m.InstallID,
 				SimultaneousUploads:       simultaneousUploads,

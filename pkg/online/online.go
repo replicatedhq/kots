@@ -26,9 +26,17 @@ import (
 	"go.uber.org/zap"
 )
 
-func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAutomated bool, skipPreflights bool) (_ *kotsutil.KotsKinds, finalError error) {
+type CreateOnlineAppOpts struct {
+	PendingApp             *types.PendingApp
+	UpstreamURI            string
+	IsAutomated            bool
+	SkipPreflights         bool
+	SkipCompatibilityCheck bool
+}
+
+func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, finalError error) {
 	logger.Debug("creating app from online",
-		zap.String("upstreamURI", upstreamURI))
+		zap.String("upstreamURI", opts.UpstreamURI))
 
 	if err := store.GetStore().SetTaskStatus("online-install", "Uploading license...", "running"); err != nil {
 		return nil, errors.Wrap(err, "failed to set task status")
@@ -54,17 +62,17 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 			if err := store.GetStore().ClearTaskStatus("online-install"); err != nil {
 				logger.Error(errors.Wrap(err, "failed to clear install task status"))
 			}
-			if err := store.GetStore().SetAppInstallState(pendingApp.ID, "installed"); err != nil {
+			if err := store.GetStore().SetAppInstallState(opts.PendingApp.ID, "installed"); err != nil {
 				logger.Error(errors.Wrap(err, "failed to set app status to installed"))
 			}
-			if err := updatechecker.Configure(pendingApp.ID); err != nil {
+			if err := updatechecker.Configure(opts.PendingApp.ID); err != nil {
 				logger.Error(errors.Wrap(err, "failed to configure update checker"))
 			}
 		} else {
 			if err := store.GetStore().SetTaskStatus("online-install", finalError.Error(), "failed"); err != nil {
 				logger.Error(errors.Wrap(err, "failed to set error on install task status"))
 			}
-			if err := store.GetStore().SetAppInstallState(pendingApp.ID, "install_error"); err != nil {
+			if err := store.GetStore().SetAppInstallState(opts.PendingApp.ID, "install_error"); err != nil {
 				logger.Error(errors.Wrap(err, "failed to set app status to error"))
 			}
 		}
@@ -87,7 +95,7 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 		return nil, errors.Wrap(err, "failed to create tmp file for license")
 	}
 	defer os.RemoveAll(licenseFile.Name())
-	if err := ioutil.WriteFile(licenseFile.Name(), []byte(pendingApp.LicenseData), 0644); err != nil {
+	if err := ioutil.WriteFile(licenseFile.Name(), []byte(opts.PendingApp.LicenseData), 0644); err != nil {
 		return nil, errors.Wrap(err, "failed to write license tmp file")
 	}
 
@@ -118,7 +126,7 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 		configFile = tmpFile.Name()
 	}
 
-	identityConfigFile, err := identity.InitAppIdentityConfig(pendingApp.Slug, kotsv1beta1.Storage{})
+	identityConfigFile, err := identity.InitAppIdentityConfig(opts.PendingApp.Slug, kotsv1beta1.Storage{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to init identity config")
 	}
@@ -129,22 +137,23 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 	// if this secret exists, we automatically (blindly) use it as the config values
 	// for the application, and then delete it.
 	pullOptions := pull.PullOptions{
-		Downstreams:         []string{"this-cluster"},
-		LicenseFile:         licenseFile.Name(),
-		Namespace:           appNamespace,
-		ExcludeKotsKinds:    true,
-		RootDir:             tmpRoot,
-		ExcludeAdminConsole: true,
-		CreateAppDir:        false,
-		ConfigFile:          configFile,
-		IdentityConfigFile:  identityConfigFile,
-		ReportWriter:        pipeWriter,
-		AppSlug:             pendingApp.Slug,
-		AppSequence:         0,
-		ReportingInfo:       reporting.GetReportingInfo(pendingApp.ID),
+		Downstreams:            []string{"this-cluster"},
+		LicenseFile:            licenseFile.Name(),
+		Namespace:              appNamespace,
+		ExcludeKotsKinds:       true,
+		RootDir:                tmpRoot,
+		ExcludeAdminConsole:    true,
+		CreateAppDir:           false,
+		ConfigFile:             configFile,
+		IdentityConfigFile:     identityConfigFile,
+		ReportWriter:           pipeWriter,
+		AppSlug:                opts.PendingApp.Slug,
+		AppSequence:            0,
+		ReportingInfo:          reporting.GetReportingInfo(opts.PendingApp.ID),
+		SkipCompatibilityCheck: opts.SkipCompatibilityCheck,
 	}
 
-	if _, err := pull.Pull(upstreamURI, pullOptions); err != nil {
+	if _, err := pull.Pull(opts.UpstreamURI, pullOptions); err != nil {
 		return nil, errors.Wrap(err, "failed to pull")
 	}
 
@@ -152,14 +161,14 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 	// copying this from typescript ...
 	// i'll leave this next line
 	// TODO: refactor this entire function to be testable, reliable and less monolithic
-	if err := store.GetStore().AddAppToAllDownstreams(pendingApp.ID); err != nil {
+	if err := store.GetStore().AddAppToAllDownstreams(opts.PendingApp.ID); err != nil {
 		return nil, errors.Wrap(err, "failed to add app to all downstreams")
 	}
-	if err := store.GetStore().SetAppIsAirgap(pendingApp.ID, false); err != nil {
+	if err := store.GetStore().SetAppIsAirgap(opts.PendingApp.ID, false); err != nil {
 		return nil, errors.Wrap(err, "failed to set app is not airgap")
 	}
 
-	newSequence, err := store.GetStore().CreateAppVersion(pendingApp.ID, nil, tmpRoot, "Online Install", skipPreflights, &version.DownstreamGitOps{})
+	newSequence, err := store.GetStore().CreateAppVersion(opts.PendingApp.ID, nil, tmpRoot, "Online Install", opts.SkipPreflights, &version.DownstreamGitOps{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create new version")
 	}
@@ -167,7 +176,7 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 	troubleshootOpts := supportbundletypes.TroubleshootOptions{
 		InCluster: true,
 	}
-	_, err = supportbundle.CreateSupportBundleDependencies(pendingApp.ID, newSequence, troubleshootOpts)
+	_, err = supportbundle.CreateSupportBundleDependencies(opts.PendingApp.ID, newSequence, troubleshootOpts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create rendered support bundle spec")
 	}
@@ -177,28 +186,28 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 		return nil, errors.Wrap(err, "failed to load kotskinds from path")
 	}
 
-	if isAutomated && kotsKinds.IsConfigurable() {
+	if opts.IsAutomated && kotsKinds.IsConfigurable() {
 		// bypass the config screen if no configuration is required and it's an automated install
-		registrySettings, err := store.GetStore().GetRegistryDetailsForApp(pendingApp.ID)
+		registrySettings, err := store.GetStore().GetRegistryDetailsForApp(opts.PendingApp.ID)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get registry settings for app")
 		}
-		needsConfig, err := kotsadmconfig.NeedsConfiguration(pendingApp.Slug, newSequence, false, kotsKinds, registrySettings)
+		needsConfig, err := kotsadmconfig.NeedsConfiguration(opts.PendingApp.Slug, newSequence, false, kotsKinds, registrySettings)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to check if app needs configuration")
 		}
 		if !needsConfig {
-			if skipPreflights {
-				if err := version.DeployVersion(pendingApp.ID, newSequence); err != nil {
+			if opts.SkipPreflights {
+				if err := version.DeployVersion(opts.PendingApp.ID, newSequence); err != nil {
 					return nil, errors.Wrap(err, "failed to deploy version")
 				}
 				go func() {
-					if err := reporting.ReportAppInfo(pendingApp.ID, newSequence, skipPreflights, isAutomated); err != nil {
+					if err := reporting.ReportAppInfo(opts.PendingApp.ID, newSequence, opts.SkipPreflights, opts.IsAutomated); err != nil {
 						logger.Debugf("failed to send preflights data to replicated app: %v", err)
 					}
 				}()
 			} else {
-				err := store.GetStore().SetDownstreamVersionPendingPreflight(pendingApp.ID, newSequence)
+				err := store.GetStore().SetDownstreamVersionPendingPreflight(opts.PendingApp.ID, newSequence)
 				if err != nil {
 					return nil, errors.Wrap(err, "failed to set downstream version status to 'pending preflight'")
 				}
@@ -206,20 +215,20 @@ func CreateAppFromOnline(pendingApp *types.PendingApp, upstreamURI string, isAut
 		}
 	}
 
-	if !kotsKinds.IsConfigurable() && skipPreflights {
+	if !kotsKinds.IsConfigurable() && opts.SkipPreflights {
 		// app is not configurable and preflights are skipped, so just deploy the app
-		if err := version.DeployVersion(pendingApp.ID, newSequence); err != nil {
+		if err := version.DeployVersion(opts.PendingApp.ID, newSequence); err != nil {
 			return nil, errors.Wrap(err, "failed to deploy version")
 		}
 		go func() {
-			if err := reporting.ReportAppInfo(pendingApp.ID, newSequence, skipPreflights, isAutomated); err != nil {
+			if err := reporting.ReportAppInfo(opts.PendingApp.ID, newSequence, opts.SkipPreflights, opts.IsAutomated); err != nil {
 				logger.Debugf("failed to send preflights data to replicated app: %v", err)
 			}
 		}()
 	}
 
-	if !skipPreflights {
-		if err := preflight.Run(pendingApp.ID, pendingApp.Slug, newSequence, false, tmpRoot); err != nil {
+	if !opts.SkipPreflights {
+		if err := preflight.Run(opts.PendingApp.ID, opts.PendingApp.Slug, newSequence, false, tmpRoot); err != nil {
 			return nil, errors.Wrap(err, "failed to start preflights")
 		}
 	}

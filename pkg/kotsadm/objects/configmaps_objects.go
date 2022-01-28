@@ -15,6 +15,7 @@ func KotsadmConfigMap(deployOptions types.DeployOptions) *corev1.ConfigMap {
 		"skip-preflights":           fmt.Sprintf("%v", deployOptions.SkipPreflights),
 		"registry-is-read-only":     fmt.Sprintf("%v", deployOptions.DisableImagePush),
 		"minio-enabled-snapshots":   fmt.Sprintf("%v", deployOptions.IncludeMinioSnapshots),
+		"skip-compatibility-check":  fmt.Sprintf("%v", deployOptions.SkipCompatibilityCheck),
 	}
 	if kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions) != nil {
 		data["kotsadm-registry"] = kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions)
