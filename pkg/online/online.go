@@ -137,19 +137,20 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 	// if this secret exists, we automatically (blindly) use it as the config values
 	// for the application, and then delete it.
 	pullOptions := pull.PullOptions{
-		Downstreams:         []string{"this-cluster"},
-		LicenseFile:         licenseFile.Name(),
-		Namespace:           appNamespace,
-		ExcludeKotsKinds:    true,
-		RootDir:             tmpRoot,
-		ExcludeAdminConsole: true,
-		CreateAppDir:        false,
-		ConfigFile:          configFile,
-		IdentityConfigFile:  identityConfigFile,
-		ReportWriter:        pipeWriter,
-		AppSlug:             opts.PendingApp.Slug,
-		AppSequence:         0,
-		ReportingInfo:       reporting.GetReportingInfo(opts.PendingApp.ID),
+		Downstreams:            []string{"this-cluster"},
+		LicenseFile:            licenseFile.Name(),
+		Namespace:              appNamespace,
+		ExcludeKotsKinds:       true,
+		RootDir:                tmpRoot,
+		ExcludeAdminConsole:    true,
+		CreateAppDir:           false,
+		ConfigFile:             configFile,
+		IdentityConfigFile:     identityConfigFile,
+		ReportWriter:           pipeWriter,
+		AppSlug:                opts.PendingApp.Slug,
+		AppSequence:            0,
+		ReportingInfo:          reporting.GetReportingInfo(opts.PendingApp.ID),
+		SkipCompatibilityCheck: opts.SkipCompatibilityCheck,
 	}
 
 	if _, err := pull.Pull(opts.UpstreamURI, pullOptions); err != nil {
