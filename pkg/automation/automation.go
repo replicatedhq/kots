@@ -190,14 +190,15 @@ LICENSE_LOOP:
 					Name:        a.Name,
 					LicenseData: string(license),
 				},
-				AirgapPath:         airgapFilesDir,
-				RegistryHost:       kotsadmOpts.OverrideRegistry,
-				RegistryNamespace:  kotsadmOpts.OverrideNamespace,
-				RegistryUsername:   kotsadmOpts.Username,
-				RegistryPassword:   kotsadmOpts.Password,
-				RegistryIsReadOnly: instParams.RegistryIsReadOnly,
-				IsAutomated:        true,
-				SkipPreflights:     instParams.SkipPreflights,
+				AirgapPath:             airgapFilesDir,
+				RegistryHost:           kotsadmOpts.OverrideRegistry,
+				RegistryNamespace:      kotsadmOpts.OverrideNamespace,
+				RegistryUsername:       kotsadmOpts.Username,
+				RegistryPassword:       kotsadmOpts.Password,
+				RegistryIsReadOnly:     instParams.RegistryIsReadOnly,
+				IsAutomated:            true,
+				SkipPreflights:         instParams.SkipPreflights,
+				SkipCompatibilityCheck: instParams.SkipCompatibilityCheck,
 			}
 			err = airgap.CreateAppFromAirgap(createAppOpts)
 			if err != nil {
@@ -206,14 +207,19 @@ LICENSE_LOOP:
 			}
 		} else if annotations["kots.io/airgap"] != "true" {
 			// Otherwise there is no airgap data, so this is an online install.
-			pendingApp := onlinetypes.PendingApp{
-				ID:          a.ID,
-				Slug:        a.Slug,
-				Name:        a.Name,
-				LicenseData: string(license),
+			createAppOpts := online.CreateOnlineAppOpts{
+				PendingApp: &onlinetypes.PendingApp{
+					ID:          a.ID,
+					Slug:        a.Slug,
+					Name:        a.Name,
+					LicenseData: string(license),
+				},
+				UpstreamURI:            upstreamURI,
+				IsAutomated:            true,
+				SkipPreflights:         instParams.SkipPreflights,
+				SkipCompatibilityCheck: instParams.SkipCompatibilityCheck,
 			}
-
-			_, err := online.CreateAppFromOnline(&pendingApp, upstreamURI, true, instParams.SkipPreflights)
+			_, err := online.CreateAppFromOnline(createAppOpts)
 			if err != nil {
 				logger.Error(errors.Wrap(err, "failed to create online app"))
 				continue
@@ -360,14 +366,15 @@ func AirgapInstall(appSlug string, additionalFiles map[string][]byte) error {
 			Name:        a.Name,
 			LicenseData: string(license),
 		},
-		AirgapPath:         airgapFilesDir,
-		RegistryHost:       kotsadmOpts.OverrideRegistry,
-		RegistryNamespace:  kotsadmOpts.OverrideNamespace,
-		RegistryUsername:   kotsadmOpts.Username,
-		RegistryPassword:   kotsadmOpts.Password,
-		RegistryIsReadOnly: instParams.RegistryIsReadOnly,
-		IsAutomated:        true,
-		SkipPreflights:     instParams.SkipPreflights,
+		AirgapPath:             airgapFilesDir,
+		RegistryHost:           kotsadmOpts.OverrideRegistry,
+		RegistryNamespace:      kotsadmOpts.OverrideNamespace,
+		RegistryUsername:       kotsadmOpts.Username,
+		RegistryPassword:       kotsadmOpts.Password,
+		RegistryIsReadOnly:     instParams.RegistryIsReadOnly,
+		IsAutomated:            true,
+		SkipPreflights:         instParams.SkipPreflights,
+		SkipCompatibilityCheck: instParams.SkipCompatibilityCheck,
 	}
 	err = airgap.CreateAppFromAirgap(createAppOpts)
 	if err != nil {

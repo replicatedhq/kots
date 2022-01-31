@@ -67,6 +67,7 @@ type PullOptions struct {
 	NoProxyEnvValue        string
 	ReportingInfo          *reportingtypes.ReportingInfo
 	IdentityPostgresConfig *kotsv1beta1.IdentityPostgresConfig
+	SkipCompatibilityCheck bool
 }
 
 type RewriteImageOptions struct {
@@ -134,7 +135,8 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			Password:  pullOptions.RewriteImageOptions.Password,
 			ReadOnly:  pullOptions.RewriteImageOptions.IsReadOnly,
 		},
-		ReportingInfo: pullOptions.ReportingInfo,
+		ReportingInfo:          pullOptions.ReportingInfo,
+		SkipCompatibilityCheck: pullOptions.SkipCompatibilityCheck,
 	}
 
 	var installation *kotsv1beta1.Installation

@@ -85,7 +85,8 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 			Password:  rewriteOptions.RegistryPassword,
 			ReadOnly:  rewriteOptions.RegistryIsReadOnly,
 		},
-		ReportingInfo: rewriteOptions.ReportingInfo,
+		ReportingInfo:          rewriteOptions.ReportingInfo,
+		SkipCompatibilityCheck: true, // we're rewriting an existing version, no need to check for compatibility
 	}
 
 	log.ActionWithSpinner("Pulling upstream")

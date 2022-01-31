@@ -72,10 +72,11 @@ func PullCmd() *cobra.Command {
 					Username:  v.GetString("registry-username"),
 					Password:  v.GetString("registry-password"),
 				},
-				HTTPProxyEnvValue:  v.GetString("http-proxy"),
-				HTTPSProxyEnvValue: v.GetString("https-proxy"),
-				NoProxyEnvValue:    v.GetString("no-proxy"),
-				IncludeMinio:       v.GetBool("with-minio"),
+				HTTPProxyEnvValue:      v.GetString("http-proxy"),
+				HTTPSProxyEnvValue:     v.GetString("https-proxy"),
+				NoProxyEnvValue:        v.GetString("no-proxy"),
+				IncludeMinio:           v.GetBool("with-minio"),
+				SkipCompatibilityCheck: v.GetBool("skip-compatibility-check"),
 			}
 
 			if v.GetBool("copy-proxy-env") {
@@ -137,6 +138,7 @@ func PullCmd() *cobra.Command {
 	cmd.Flags().String("registry-password", "", "the password of the local docker registry to use when pushing images (with --rewrite-images)")
 	cmd.Flags().String("helm-version", "v2", "the Helm version with which to render the Helm Chart")
 	cmd.Flags().Bool("with-minio", true, "set to true to include a local minio instance to be used for storage")
+	cmd.Flags().Bool("skip-compatibility-check", false, "set to true to skip compatibility checks between the current kots version and the app")
 	cmd.Flags().Bool("load-apiversions-from-server", false, "load supported k8s api versions from cluster for Helm charts with useHelmInstall flag set to true")
 	cmd.Flags().MarkHidden("load-apiversions-from-server")
 
