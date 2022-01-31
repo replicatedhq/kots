@@ -85,7 +85,7 @@ class GitOpsDeploymentManager extends React.Component {
 
   getAppsList = async () => {
     try {
-      const res = await fetch(`${process.env.API_ENDPOINT}/apps`, {
+      const res = await fetch(`${window.env.API_ENDPOINT}/apps`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -114,7 +114,7 @@ class GitOpsDeploymentManager extends React.Component {
 
   getGitops = async () => {
     try {
-      const res = await fetch(`${process.env.API_ENDPOINT}/gitops/get`, {
+      const res = await fetch(`${window.env.API_ENDPOINT}/gitops/get`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -264,7 +264,7 @@ class GitOpsDeploymentManager extends React.Component {
   }
 
   createGitOpsRepo = async (gitOpsInput) => {
-    const res = await fetch(`${process.env.API_ENDPOINT}/gitops/create`, {
+    const res = await fetch(`${window.env.API_ENDPOINT}/gitops/create`, {
       headers: {
         "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
@@ -284,7 +284,7 @@ class GitOpsDeploymentManager extends React.Component {
   }
 
   resetGitOps = async () => {
-    const res = await fetch(`${process.env.API_ENDPOINT}/gitops/reset`, {
+    const res = await fetch(`${window.env.API_ENDPOINT}/gitops/reset`, {
       headers: {
         "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
@@ -301,7 +301,7 @@ class GitOpsDeploymentManager extends React.Component {
   }
 
   updateAppGitOps = async (appId, clusterId, gitOpsInput) => {
-    const res = await fetch(`${process.env.API_ENDPOINT}/gitops/app/${appId}/cluster/${clusterId}/update`, {
+    const res = await fetch(`${window.env.API_ENDPOINT}/gitops/app/${appId}/cluster/${clusterId}/update`, {
       headers: {
         "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",

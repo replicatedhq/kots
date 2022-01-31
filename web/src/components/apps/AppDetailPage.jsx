@@ -106,7 +106,7 @@ class AppDetailPage extends Component {
     try {
       this.setState({ makingCurrentReleaseErrMsg: "" });
 
-      const res = await fetch(`${process.env.API_ENDPOINT}/app/${upstreamSlug}/sequence/${version.sequence}/deploy`, {
+      const res = await fetch(`${window.env.API_ENDPOINT}/app/${upstreamSlug}/sequence/${version.sequence}/deploy`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -138,7 +138,7 @@ class AppDetailPage extends Component {
     try {
       this.setState({ redeployVersionErrMsg: "" });
 
-      const res = await fetch(`${process.env.API_ENDPOINT}/app/${upstreamSlug}/sequence/${version.sequence}/redeploy`, {
+      const res = await fetch(`${window.env.API_ENDPOINT}/app/${upstreamSlug}/sequence/${version.sequence}/redeploy`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -222,7 +222,7 @@ class AppDetailPage extends Component {
     try {
       this.setState({ loadingApp: true });
 
-      const res = await fetch(`${process.env.API_ENDPOINT}/app/${slug}`, {
+      const res = await fetch(`${window.env.API_ENDPOINT}/app/${slug}`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -243,7 +243,7 @@ class AppDetailPage extends Component {
 
   checkIsVeleroInstalled = async () => {
     try {
-      const res = await fetch(`${process.env.API_ENDPOINT}/velero`, {
+      const res = await fetch(`${window.env.API_ENDPOINT}/velero`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",

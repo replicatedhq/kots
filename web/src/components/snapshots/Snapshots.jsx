@@ -86,7 +86,7 @@ class Snapshots extends Component {
       displayErrorModal: false
     })
     try {
-      const res = await fetch(`${process.env.API_ENDPOINT}/snapshots`, {
+      const res = await fetch(`${window.env.API_ENDPOINT}/snapshots`, {
         method: "GET",
         headers: {
           "Authorization": Utilities.getToken(),
@@ -149,7 +149,7 @@ class Snapshots extends Component {
       isStartButtonClicked: true,
       snapshots: [...this.state.snapshots, fakeProgressSnapshot].sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt))
     }, () => {
-      fetch(`${process.env.API_ENDPOINT}/snapshot/backup`, {
+      fetch(`${window.env.API_ENDPOINT}/snapshot/backup`, {
         method: "POST",
         headers: {
           "Authorization": Utilities.getToken(),
@@ -216,7 +216,7 @@ class Snapshots extends Component {
 
     this.setState({ deletingSnapshot: true, deleteErr: false, deleteErrorMsg: "", snapshots: this.state.snapshots.map(s => s === snapshot ? fakeDeletionSnapshot : s) });
 
-    fetch(`${process.env.API_ENDPOINT}/snapshot/${snapshot.name}/delete`, {
+    fetch(`${window.env.API_ENDPOINT}/snapshot/${snapshot.name}/delete`, {
       method: "POST",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -270,7 +270,7 @@ class Snapshots extends Component {
       displayErrorModal: false
     });
     try {
-      const res = await fetch(`${process.env.API_ENDPOINT}/snapshots/settings`, {
+      const res = await fetch(`${window.env.API_ENDPOINT}/snapshots/settings`, {
         method: "GET",
         headers: {
           "Authorization": Utilities.getToken(),
@@ -360,7 +360,7 @@ class Snapshots extends Component {
       restoreErrorMsg: "",
     });
 
-    fetch(`${process.env.API_ENDPOINT}/snapshot/${snapshot.name}/restore-apps`, {
+    fetch(`${window.env.API_ENDPOINT}/snapshot/${snapshot.name}/restore-apps`, {
       method: "POST",
       headers: {
         "Authorization": Utilities.getToken(),

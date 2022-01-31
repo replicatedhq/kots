@@ -41,7 +41,7 @@ class SnapshotSettings extends Component {
       minimalRBACKotsadmNamespace: "",
     });
 
-    fetch(`${process.env.API_ENDPOINT}/snapshots/settings`, {
+    fetch(`${window.env.API_ENDPOINT}/snapshots/settings`, {
       method: "GET",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -159,7 +159,7 @@ class SnapshotSettings extends Component {
       
     this.pollSnapshotSettingsOnUpdate();
 
-    fetch(`${process.env.API_ENDPOINT}/snapshots/settings`, {
+    fetch(`${window.env.API_ENDPOINT}/snapshots/settings`, {
       method: "PUT",
       headers: {
         "Authorization": Utilities.getToken(),

@@ -3,7 +3,7 @@
     "eslint:recommended",
     "plugin:react/recommended"
   ],
-  "parser": "@babel/eslint-parser",
+  "parser": "babel-eslint",
   "parserOptions": {
     "ecmaVersion": 2017,
     "ecmaFeatures": {

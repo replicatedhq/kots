@@ -89,7 +89,7 @@ class UploadLicenseFile extends React.Component {
     });
 
     let data;
-    fetch(`${process.env.API_ENDPOINT}/license`, {
+    fetch(`${window.env.API_ENDPOINT}/license`, {
       method: "POST",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -206,7 +206,7 @@ class UploadLicenseFile extends React.Component {
         licenseData: content,
       };
 
-      fetch(`${process.env.API_ENDPOINT}/license/platform`, {
+      fetch(`${window.env.API_ENDPOINT}/license/platform`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -242,7 +242,7 @@ class UploadLicenseFile extends React.Component {
       license: this.state.licenseFile
     }
 
-    fetch(`${process.env.API_ENDPOINT}/snapshot/${snapshot.name}/restore`, {
+    fetch(`${window.env.API_ENDPOINT}/snapshot/${snapshot.name}/restore`, {
       method: "POST",
       headers: {
         "Authorization": Utilities.getToken(),

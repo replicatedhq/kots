@@ -20,7 +20,7 @@ class UploadSupportBundleModal extends React.Component {
     try {
       const { watch } = this.props;
       const bundleId = randomstring.generate({ capitalization: "lowercase" });
-      const uploadBundleUrl = `${process.env.API_ENDPOINT}/troubleshoot/${watch.id}/${bundleId}`;
+      const uploadBundleUrl = `${window.env.API_ENDPOINT}/troubleshoot/${watch.id}/${bundleId}`;
 
       this.setState({ fileUploading: true, uploadBundleErrMsg: "" });
 

@@ -1,6 +1,6 @@
 import React from "react";
 import dayjs from "dayjs";
-import Handlebars from "handlebars/runtime";
+import Handlebars from "handlebars";
 import Modal from "react-modal";
 import { getValueFormat } from "@grafana/ui"
 import { XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, LineSeries, DiscreteColorLegend, Crosshair } from "react-vis";
@@ -29,7 +29,7 @@ export default class DashboardGraphsCard extends React.Component {
 
   getAppDashboard = () => {
     return new Promise((resolve, reject) => {
-      fetch(`${process.env.API_ENDPOINT}/app/${this.props.appSlug}/cluster/${this.props.clusterId}/dashboard`, {
+      fetch(`${window.env.API_ENDPOINT}/app/${this.props.appSlug}/cluster/${this.props.clusterId}/dashboard`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -61,7 +61,7 @@ export default class DashboardGraphsCard extends React.Component {
   updatePromValue = () => {
     this.setState({ savingPromValue: true, savingPromError: "" });
 
-    fetch(`${process.env.API_ENDPOINT}/prometheus`, {
+    fetch(`${window.env.API_ENDPOINT}/prometheus`, {
       headers: {
         "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",

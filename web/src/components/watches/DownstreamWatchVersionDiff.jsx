@@ -26,7 +26,7 @@ class DownstreamWatchVersionDiff extends React.Component {
 
   fetchRenderedApplicationTree = (sequence, isFirst) => {
     this.setState({ loadingFileTrees: true });
-    const url = `${process.env.API_ENDPOINT}/app/${this.props.slug}/sequence/${sequence}/renderedcontents`;
+    const url = `${window.env.API_ENDPOINT}/app/${this.props.slug}/sequence/${sequence}/renderedcontents`;
     fetch(url, {
       headers: {
         "Authorization": Utilities.getToken()

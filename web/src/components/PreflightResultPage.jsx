@@ -67,7 +67,7 @@ class PreflightResultPage extends Component {
   deployKotsVersion = async (appSlug, sequence, force) => {
     this.setState({ errorMessage: "" });
     try {
-      await fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/sequence/${sequence}/deploy`, {
+      await fetch(`${window.env.API_ENDPOINT}/app/${appSlug}/sequence/${sequence}/deploy`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -116,7 +116,7 @@ class PreflightResultPage extends Component {
     const { slug } = this.props.match.params;
     const sequence = this.props.match.params.sequence ? parseInt(this.props.match.params.sequence, 10) : 0;
 
-    fetch(`${process.env.API_ENDPOINT}/app/${slug}/sequence/${sequence}/preflight/ignore-rbac`, {
+    fetch(`${window.env.API_ENDPOINT}/app/${slug}/sequence/${sequence}/preflight/ignore-rbac`, {
       headers: {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -144,7 +144,7 @@ class PreflightResultPage extends Component {
     this.setState({ errorMessage: "" });
     const sequence = this.props.match.params.sequence ? parseInt(this.props.match.params.sequence, 10) : 0;
 
-    fetch(`${process.env.API_ENDPOINT}/app/${slug}/sequence/${sequence}/preflight/run`, {
+    fetch(`${window.env.API_ENDPOINT}/app/${slug}/sequence/${sequence}/preflight/run`, {
       headers: {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -206,7 +206,7 @@ class PreflightResultPage extends Component {
   getKotsPreflightResultForSequence = async (slug, sequence) => {
     
     try {
-      const res = await fetch(`${process.env.API_ENDPOINT}/app/${slug}/sequence/${sequence}/preflight/result`, {
+      const res = await fetch(`${window.env.API_ENDPOINT}/app/${slug}/sequence/${sequence}/preflight/result`, {
         method: "GET",
         headers: {
           "Authorization": Utilities.getToken(),
@@ -249,7 +249,7 @@ class PreflightResultPage extends Component {
     const { slug } = this.props.match.params;
 
     try {
-      const res = await fetch(`${process.env.API_ENDPOINT}/app/${slug}/preflight/result`, {
+      const res = await fetch(`${window.env.API_ENDPOINT}/app/${slug}/preflight/result`, {
         method: "GET",
         headers: {
           "Authorization": Utilities.getToken(),
@@ -295,7 +295,7 @@ class PreflightResultPage extends Component {
       const currentApp = appsList?.find(a => a.slug === slug);
 
       if (!currentApp.isAirgap) {
-        fetch(`${process.env.API_ENDPOINT}/app/${slug}/preflight/report`, {
+        fetch(`${window.env.API_ENDPOINT}/app/${slug}/preflight/report`, {
           headers: {
             "Content-Type": "application/json",
             "Accept": "application/json",

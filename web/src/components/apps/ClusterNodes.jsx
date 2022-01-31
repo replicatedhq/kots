@@ -43,7 +43,7 @@ export class ClusterNodes extends Component {
 
   getNodeStatus = async () => {
     try {
-      const res = await fetch(`${process.env.API_ENDPOINT}/kurl/nodes`, {
+      const res = await fetch(`${window.env.API_ENDPOINT}/kurl/nodes`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Accept": "application/json",
@@ -85,7 +85,7 @@ export class ClusterNodes extends Component {
     const name = this.state.confirmDeleteNode;
     this.cancelDeleteNode();
 
-    fetch(`${process.env.API_ENDPOINT}/kurl/nodes/${name}`, {
+    fetch(`${window.env.API_ENDPOINT}/kurl/nodes/${name}`, {
       headers: {
         "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
@@ -118,7 +118,7 @@ export class ClusterNodes extends Component {
   generateWorkerAddNodeCommand = async () => {
     this.setState({ generating: true, command: "", expiry: null, generateCommandErrMsg: "" });
 
-    fetch(`${process.env.API_ENDPOINT}/kurl/generate-node-join-command-secondary`, {
+    fetch(`${window.env.API_ENDPOINT}/kurl/generate-node-join-command-secondary`, {
       headers: {
         "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
@@ -148,7 +148,7 @@ export class ClusterNodes extends Component {
 
   drainNode = async (name) => {
     this.setState({ showConfirmDrainModal: false, drainingNodeName: name });
-    fetch(`${process.env.API_ENDPOINT}/kurl/nodes/${name}/drain`, {
+    fetch(`${window.env.API_ENDPOINT}/kurl/nodes/${name}/drain`, {
       headers: {
         "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
@@ -177,7 +177,7 @@ export class ClusterNodes extends Component {
   generatePrimaryAddNodeCommand = async () => {
     this.setState({ generating: true, command: "", expiry: null, generateCommandErrMsg: "" });
 
-    fetch(`${process.env.API_ENDPOINT}/kurl/generate-node-join-command-primary`, {
+    fetch(`${window.env.API_ENDPOINT}/kurl/generate-node-join-command-primary`, {
       headers: {
         "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",

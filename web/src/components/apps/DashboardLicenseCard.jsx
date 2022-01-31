@@ -32,7 +32,7 @@ export default class DashboardLicenseCard extends React.Component {
       licenseData,
     };
 
-    fetch(`${process.env.API_ENDPOINT}/app/${app?.slug}/license`, {
+    fetch(`${window.env.API_ENDPOINT}/app/${app?.slug}/license`, {
       method: "PUT",
       headers: {
         "Authorization": Utilities.getToken(),

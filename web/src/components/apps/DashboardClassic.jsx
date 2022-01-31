@@ -18,7 +18,7 @@ import { AirgapUploader } from "../../utilities/airgapUploader";
 import { XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, LineSeries, DiscreteColorLegend, Crosshair } from "react-vis";
 
 import { getValueFormat } from "@grafana/ui"
-import Handlebars from "handlebars/runtime";
+import Handlebars from "handlebars";
 
 import "../../scss/components/watches/Dashboard.scss";
 import "../../../node_modules/react-vis/dist/style";
@@ -82,7 +82,7 @@ class DashboardClassic extends Component {
   updatePromValue = () => {
     this.setState({ savingPromValue: true, savingPromError: "" });
 
-    fetch(`${process.env.API_ENDPOINT}/prometheus`, {
+    fetch(`${window.env.API_ENDPOINT}/prometheus`, {
       headers: {
         "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
@@ -143,7 +143,7 @@ class DashboardClassic extends Component {
   }
 
   getAppLicense = async (app) => {
-    await fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/license`, {
+    await fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/license`, {
       method: "GET",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -192,7 +192,7 @@ class DashboardClassic extends Component {
 
   getAirgapConfig = async () => {
     const { app } = this.props;
-    const configUrl = `${process.env.API_ENDPOINT}/app/${app.slug}/airgap/config`;
+    const configUrl = `${window.env.API_ENDPOINT}/app/${app.slug}/airgap/config`;
     let simultaneousUploads = 3;
     try {
       let res = await fetch(configUrl, {
@@ -217,7 +217,7 @@ class DashboardClassic extends Component {
 
   getAppDashboard = () => {
     return new Promise((resolve, reject) => {
-      fetch(`${process.env.API_ENDPOINT}/app/${this.props.app?.slug}/cluster/${this.props.cluster?.id}/dashboard`, {
+      fetch(`${window.env.API_ENDPOINT}/app/${this.props.app?.slug}/cluster/${this.props.cluster?.id}/dashboard`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -254,7 +254,7 @@ class DashboardClassic extends Component {
       checkingForUpdateError: false,
     });
 
-    fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/updatecheck`, {
+    fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/updatecheck`, {
       headers: {
         "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
@@ -285,7 +285,7 @@ class DashboardClassic extends Component {
     const { app } = this.props;
 
     return new Promise((resolve, reject) => {
-      fetch(`${process.env.API_ENDPOINT}/app/${app?.slug}/task/updatedownload`, {
+      fetch(`${window.env.API_ENDPOINT}/app/${app?.slug}/task/updatedownload`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -517,8 +517,8 @@ class DashboardClassic extends Component {
     });
 
     let url = option === "full" ?
-      `${process.env.API_ENDPOINT}/snapshot/backup`
-      : `${process.env.API_ENDPOINT}/app/${app.slug}/snapshot/backup`;
+      `${window.env.API_ENDPOINT}/snapshot/backup`
+      : `${window.env.API_ENDPOINT}/app/${app.slug}/snapshot/backup`;
 
     fetch(url, {
       method: "POST",

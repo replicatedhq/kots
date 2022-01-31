@@ -27,7 +27,7 @@ class AppLicense extends Component {
   }
 
   getAppLicense = async () => {
-    await fetch(`${process.env.API_ENDPOINT}/app/${this.props.app.slug}/license`, {
+    await fetch(`${window.env.API_ENDPOINT}/app/${this.props.app.slug}/license`, {
       method: "GET",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -89,7 +89,7 @@ class AppLicense extends Component {
       licenseData,
     };
 
-    fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/license`, {
+    fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/license`, {
       method: "PUT",
       headers: {
         "Authorization": Utilities.getToken(),

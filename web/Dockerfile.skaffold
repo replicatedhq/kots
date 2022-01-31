@@ -1,4 +1,4 @@
-FROM node:17
+FROM node:10
 EXPOSE 3000 9229
 
 WORKDIR /src

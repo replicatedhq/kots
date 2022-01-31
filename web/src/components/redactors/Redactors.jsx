@@ -33,7 +33,7 @@ class Redactors extends Component {
       redactorsErrMsg: ""
     });
 
-    fetch(`${process.env.API_ENDPOINT}/redacts`, {
+    fetch(`${window.env.API_ENDPOINT}/redacts`, {
       method: "GET",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -98,7 +98,7 @@ class Redactors extends Component {
   handleDeleteRedactor = redactor => {
     this.setState({ deletingRedactor: true, deleteErrMsg: "" });
 
-    fetch(`${process.env.API_ENDPOINT}/redact/spec/${redactor.slug}`, {
+    fetch(`${window.env.API_ENDPOINT}/redact/spec/${redactor.slug}`, {
       method: "DELETE",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -127,7 +127,7 @@ class Redactors extends Component {
       enabled: redactorEnabled
     }
     this.setState({ enablingRedactorMsg: "" });
-    fetch(`${process.env.API_ENDPOINT}/redact/enabled/${redactor.slug}`, {
+    fetch(`${window.env.API_ENDPOINT}/redact/enabled/${redactor.slug}`, {
       method: "POST",
       headers: {
         "Authorization": Utilities.getToken(),

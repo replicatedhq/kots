@@ -21,7 +21,7 @@ class RestoreSnapshotRow extends React.Component {
       backupInfoMsg: ""
     });
 
-    fetch(`${process.env.API_ENDPOINT}/snapshot/${snapshotName}`, {
+    fetch(`${window.env.API_ENDPOINT}/snapshot/${snapshotName}`, {
       method: "GET",
       headers: {
         "Authorization": Utilities.getToken(),

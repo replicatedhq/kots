@@ -29,7 +29,7 @@ class SupportBundleList extends React.Component {
   listSupportBundles = () => {
     this.setState({ loading: true, errorMsg: "", displayErrorModal: false });
 
-    fetch(`${process.env.API_ENDPOINT}/troubleshoot/app/${this.props.watch?.slug}/supportbundles`, {
+    fetch(`${window.env.API_ENDPOINT}/troubleshoot/app/${this.props.watch?.slug}/supportbundles`, {
       headers: {
         "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",

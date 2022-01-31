@@ -61,7 +61,7 @@ class AirgapRegistrySettings extends Component {
     } = this.state;
     const { slug } = this.props.match.params;
 
-    fetch(`${process.env.API_ENDPOINT}/app/${slug}/registry`, {
+    fetch(`${window.env.API_ENDPOINT}/app/${slug}/registry`, {
       method: "PUT",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -104,7 +104,7 @@ class AirgapRegistrySettings extends Component {
 
     let res;
     try {
-      res = await fetch(`${process.env.API_ENDPOINT}/app/${slug}/registry/validate`, {
+      res = await fetch(`${window.env.API_ENDPOINT}/app/${slug}/registry/validate`, {
         method: "POST",
         headers: {
           "Authorization": Utilities.getToken(),
@@ -179,9 +179,9 @@ class AirgapRegistrySettings extends Component {
 
     this.setState({ loading: true, fetchRegistryErrMsg: "", displayErrorModal: false });
 
-    let url = `${process.env.API_ENDPOINT}/registry`;
+    let url = `${window.env.API_ENDPOINT}/registry`;
     if (this.props.app) {
-      url = `${process.env.API_ENDPOINT}/app/${this.props.app.slug}/registry`;
+      url = `${window.env.API_ENDPOINT}/app/${this.props.app.slug}/registry`;
     }
 
     fetch(url, {
@@ -225,9 +225,9 @@ class AirgapRegistrySettings extends Component {
   }
 
   triggerStatusUpdates = () => {
-    let url = `${process.env.API_ENDPOINT}/imagerewritestatus`;
+    let url = `${window.env.API_ENDPOINT}/imagerewritestatus`;
     if (this.props.app) {
-      url = `${process.env.API_ENDPOINT}/app/${this.props.app.slug}/imagerewritestatus`;
+      url = `${window.env.API_ENDPOINT}/app/${this.props.app.slug}/imagerewritestatus`;
     }
     fetch(url, {
       headers: {
@@ -253,9 +253,9 @@ class AirgapRegistrySettings extends Component {
   }
 
   updateStatus = () => {
-    let url = `${process.env.API_ENDPOINT}/imagerewritestatus`;
+    let url = `${window.env.API_ENDPOINT}/imagerewritestatus`;
     if (this.props.app) {
-      url = `${process.env.API_ENDPOINT}/app/${this.props.app.slug}/imagerewritestatus`;
+      url = `${window.env.API_ENDPOINT}/app/${this.props.app.slug}/imagerewritestatus`;
     }
     return new Promise((resolve, reject) => {
       fetch(url, {

@@ -4,7 +4,8 @@ ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots
 WORKDIR $PROJECTPATH
 COPY Makefile ./
 COPY Makefile.build ./
-COPY go.mod go.sum ./
+COPY go.mod ./
+COPY go.sum ./
 COPY cmd ./cmd
 COPY pkg ./pkg
 COPY web/webcontent.go ./web/webcontent.go
@@ -25,6 +26,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl gnupg2 \
   && pip install s3cmd \
   && rm -rf /var/lib/apt/lists/*
 
+ENV GO111MODULE=on
 ENV PATH="/usr/local/bin:$PATH"
 
 ## python-dateutil pkg is needed for s3cmd to work

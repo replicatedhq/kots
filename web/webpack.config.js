@@ -2,6 +2,8 @@ const path = require("path");
 const { merge } = require("webpack-merge");
 const webpack = require("webpack");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const HtmlWebpackTemplate = require("html-webpack-template");
+const ScriptExtHtmlWebpackPlugin = require("script-ext-html-webpack-plugin");
 const FaviconsWebpackPlugin = require("favicons-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const MonacoWebpackPlugin = require("monaco-editor-webpack-plugin");
@@ -22,33 +24,29 @@ module.exports = function (env) {
   const srcPath = path.join(__dirname, "src");
   const appEnv = require(`./env/${mapEnvironment(env)}.js`);
 
-  const replace = {}
-  Object.entries(appEnv).forEach(([key, value]) => replace[`process.env.${key}`] = JSON.stringify(value))
-
   const common = {
     output: {
       path: distPath,
       publicPath: "/",
-      filename: "[name].[fullhash].js"
+      filename: "[name].[hash].js"
     },
 
     resolve: {
       extensions: [".js", ".mjs", ".jsx", ".css", ".scss", ".png", ".jpg", ".svg", ".ico"],
-      fallback: {
-        fs: false,
-        stream: require.resolve("stream-browserify"),
-        crypto: require.resolve("crypto-browserify"),
-        zlib: require.resolve("browserify-zlib"),
-        constants: require.resolve("constants-browserify"),
-        util: require.resolve("util/"),
-        os: require.resolve("os-browserify/browser"),
-        tty: require.resolve("tty-browserify")
-      },
       alias: {
+        "react": path.resolve("node_modules/react"),
+        "react-dom": path.resolve("node_modules/react-dom"),
+        "/^monaco-editor/": "monaco-editor/esm/vs/editor/editor.api.js",
         "@src": path.resolve(__dirname, "src")
-      },
-      mainFields: ["browser", "main"],
+      }
     },
+
+    devtool: "eval-source-map",
+
+    node: {
+      "fs": "empty"
+    },
+
     module: {
       rules: [
         {
@@ -60,40 +58,63 @@ module.exports = function (env) {
           test: /\.css$/,
           use: [
             "style-loader",
-            // { loader: MiniCssExtractPlugin.loader },
+            {
+              loader: MiniCssExtractPlugin.loader,
+              options: {
+                hmr: env !== "enterprise",
+              },
+            },
             "css-loader",
-            "postcss-loader"
-          ],
-          sideEffects: true,
+            {
+              loader: "postcss-loader",
+              options: {
+                config: {
+                  path: require.resolve("./postcss.config.js"),
+                }
+              }
+            }
+          ]
         },
         {
           test: /\.scss$/,
           include: srcPath,
           use: [
             { loader: "style-loader" },
-            // { loader: MiniCssExtractPlugin.loader },
+            {
+              loader: MiniCssExtractPlugin.loader,
+              options: {
+                hmr: env !== "enterprise",
+              },
+            },
             { loader: "css-loader", options: { importLoaders: 1 } },
-            { loader: "postcss-loader" },
             { loader: "sass-loader" },
-          ],
-          sideEffects: true,
+            {
+              loader: "postcss-loader",
+              options: {
+                ident: "postcss",
+                plugins: () => [
+                  require("cssnano")()
+                ]
+              }
+            }
+          ]
         },
-        // {
-        //   test:  /\.(sa|sc|c)ss$/,
-        //   use: [
-        //     //MiniCssExtractPlugin.loader,
-        //     // { loader: "css-hot-loader" },
-        //     { loader: "style-loader", options: { injectType: "styleTag" } },
-        //     { loader: "css-loader" },
-        //     { loader: "postcss-loader" },
-        //     { loader: "sass-loader" },
-        //   ],
-        //   sideEffects: true,
-        // },
         {
-          test: /\.(png|jpg|svg|ico)$/,
+          test: /\.(png|jpg|ico)$/,
           include: srcPath,
-          type: "asset/resource",
+          use: ["file-loader"],
+        },
+        {
+          test: /\.svg/,
+          include: srcPath,
+          use: [
+            {
+              loader: "svg-url-loader",
+              options: {
+                stripdeclarations: true
+              }
+            }
+          ],
         },
         {
           test: /\.woff(2)?(\?v=\d+\.\d+\.\d+)?$/,
@@ -103,22 +124,27 @@ module.exports = function (env) {
               options: {
                 limit: 10000,
                 mimetype: "application/font-woff",
-                name: "./assets/[fullhash].[ext]"
+                name: "./assets/[hash].[ext]"
               }
             }
           ]
         },
       ],
     },
+
     plugins: [
-      new webpack.ProvidePlugin({
-        Buffer: ["buffer", "Buffer"],
-        process: "process/browser",
-      }),
-      new webpack.DefinePlugin(replace),
       new HtmlWebpackPlugin({
+        template: HtmlWebpackTemplate,
         title: "Admin Console",
-        inject: "body",
+        appMountId: "app",
+        inject: false,
+        window: {
+          env: appEnv,
+        },
+      }),
+      new ScriptExtHtmlWebpackPlugin({
+        sync: "ship-cloud.js",
+        defaultAttribute: "async"
       }),
       new FaviconsWebpackPlugin({
         logo: srcPath + "/favicon-64.png",
@@ -150,9 +176,16 @@ module.exports = function (env) {
           "codelens"
         ]
       }),
+      new webpack.LoaderOptionsPlugin({
+        options: {
+          postcss: [
+            require("autoprefixer")
+          ]
+        },
+      }),
       new webpack.ContextReplacementPlugin(/graphql-language-service-interface[/\\]dist/, /\.js$/),
       new MiniCssExtractPlugin({
-        filename: "style.[fullhash].css",
+        filename: "style.[hash].css",
         chunkFilename: "[id].css"
       })
       // new BundleAnalyzerPlugin({

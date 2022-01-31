@@ -27,7 +27,7 @@ export default class ConnectionTerminated extends React.Component {
 
   ping = async () => {
     const { reconnectAttempts } = this.state;
-    await fetch(`${process.env.API_ENDPOINT}/ping`, {
+    await fetch(`${window.env.API_ENDPOINT}/ping`, {
       headers: {
         "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",

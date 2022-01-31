@@ -7,6 +7,7 @@ import Avatar from "../shared/Avatar";
 import ErrorModal from "../modals/ErrorModal";
 
 import "@src/scss/components/shared/NavBar.scss";
+import toJson from "enzyme-to-json";
 
 export class NavBar extends PureComponent {
   constructor(props) {
@@ -29,7 +30,7 @@ export class NavBar extends PureComponent {
     e.preventDefault();
     try {
       this.setState({ loggingOut: true, displayErrorModal: false })
-      const res = await fetch(`${process.env.API_ENDPOINT}/logout`, {
+      const res = await fetch(`${window.env.API_ENDPOINT}/logout`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",

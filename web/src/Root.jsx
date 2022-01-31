@@ -1,3 +1,4 @@
+import { hot } from "react-hot-loader/root";
 import React, {Component, PureComponent} from "react";
 import { createBrowserHistory } from "history";
 import { Switch, Route, Redirect, Router } from "react-router-dom";
@@ -128,7 +129,7 @@ class Root extends PureComponent {
 
   getPendingApp = async () => {
     try {
-      const res = await fetch(`${process.env.API_ENDPOINT}/pendingapp`, {
+      const res = await fetch(`${window.env.API_ENDPOINT}/pendingapp`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -160,7 +161,7 @@ class Root extends PureComponent {
 
   getAppsList = async () => {
     try {
-      const res = await fetch(`${process.env.API_ENDPOINT}/apps`, {
+      const res = await fetch(`${window.env.API_ENDPOINT}/apps`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -190,7 +191,7 @@ class Root extends PureComponent {
   fetchKotsAppMetadata = async () => {
     this.setState({ fetchingMetadata: true });
 
-    fetch(`${process.env.API_ENDPOINT}/metadata`, {
+    fetch(`${window.env.API_ENDPOINT}/metadata`, {
       headers: {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -223,7 +224,7 @@ class Root extends PureComponent {
   ping = async (tries = 0) => {
     let apps = this.state.appsList;
     const appSlugs = apps?.map(a => a.slug);
-    const url = `${process.env.API_ENDPOINT}/ping?slugs=${appSlugs}`
+    const url = `${window.env.API_ENDPOINT}/ping?slugs=${appSlugs}`
     await fetch(url, {
       headers: {
         "Authorization": Utilities.getToken(),
@@ -425,4 +426,4 @@ class Root extends PureComponent {
   }
 }
 export { ThemeContext };
-export default Root;
+export default hot(Root);

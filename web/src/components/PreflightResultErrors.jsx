@@ -1,7 +1,7 @@
 import get from "lodash/get";
 import React, { Component } from "react";
 import { withRouter } from "react-router-dom";
-import MonacoEditor from "@monaco-editor/react";
+import MonacoEditor from "react-monaco-editor"; 
 import CodeSnippet from "./shared/CodeSnippet";
 import ErrorModal from "./modals/ErrorModal";
 import { Utilities } from "../utilities/utilities";
@@ -57,7 +57,7 @@ class PreflightResultErrors extends Component {
   }
 
   fetchPreflightCommand = async (slug, sequence) => {
-    const res = await fetch(`${process.env.API_ENDPOINT}/app/${slug}/sequence/${sequence}/preflightcommand`, {
+    const res = await fetch(`${window.env.API_ENDPOINT}/app/${slug}/sequence/${sequence}/preflightcommand`, {
       method: "POST",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -109,7 +109,8 @@ class PreflightResultErrors extends Component {
                   <MonacoEditor
                     language="bash"
                     value={valueFromAPI}
-                    height="300px"
+                    height="300"
+                    width="100%"
                     options={{
                       readOnly: true,
                       contextmenu: false,

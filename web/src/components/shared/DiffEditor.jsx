@@ -1,5 +1,5 @@
 import * as React from "react";
-import { DiffEditor as MonacoDiffEditor } from "@monaco-editor/react";
+import { MonacoDiffEditor } from "react-monaco-editor";
 
 import { diffContent } from "../../utilities/utilities";
 

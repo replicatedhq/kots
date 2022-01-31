@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import { withRouter } from "react-router-dom";
 import Helmet from "react-helmet";
+import url from "url";
 import GitOpsRepoDetails from "../gitops/GitOpsRepoDetails";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
 import { getGitOpsUri, getAddKeyUri, requiresHostname, Utilities } from "../../utilities/utilities";
@@ -64,15 +65,15 @@ class AppGitops extends Component {
     }
 
     let ownerRepo = "";
-    const parsed = new URL(gitops?.uri);
+    const parsed = url.parse(gitops?.uri);
     if (gitops?.provider === "bitbucket_server") {
-      const project = parsed.pathname.split("/").length > 2 && parsed.pathname.split("/")[2];
-      const repo = parsed.pathname.split("/").length > 4 && parsed.pathname.split("/")[4];
+      const project = parsed.path.split("/").length > 2 && parsed.path.split("/")[2];
+      const repo = parsed.path.split("/").length > 4 && parsed.path.split("/")[4];
       if (project && repo) {
         ownerRepo = `${project}/${repo}`;
       }
     } else {
-      ownerRepo = parsed.pathname.slice(1);  // remove the "/"
+      ownerRepo = parsed.path.slice(1);  // remove the "/"
     }
 
     return ownerRepo;
@@ -105,7 +106,7 @@ class AppGitops extends Component {
     }
 
     try {
-      const res = await fetch(`${process.env.API_ENDPOINT}/gitops/app/${appId}/cluster/${clusterId}/initconnection`, {
+      const res = await fetch(`${window.env.API_ENDPOINT}/gitops/app/${appId}/cluster/${clusterId}/initconnection`, {
         method: "POST",
         headers: {
           "Authorization": Utilities.getToken(),
@@ -214,7 +215,7 @@ class AppGitops extends Component {
   }
 
   createGitOpsRepo = async (gitOpsInput) => {
-    const res = await fetch(`${process.env.API_ENDPOINT}/gitops/create`, {
+    const res = await fetch(`${window.env.API_ENDPOINT}/gitops/create`, {
       headers: {
         "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
@@ -234,7 +235,7 @@ class AppGitops extends Component {
   }
 
   updateAppGitOps = async (appId, clusterId, gitOpsInput) => {
-    const res = await fetch(`${process.env.API_ENDPOINT}/gitops/app/${appId}/cluster/${clusterId}/update`, {
+    const res = await fetch(`${window.env.API_ENDPOINT}/gitops/app/${appId}/cluster/${clusterId}/update`, {
       headers: {
         "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
@@ -267,7 +268,7 @@ class AppGitops extends Component {
     }
 
     try {
-      const res = await fetch(`${process.env.API_ENDPOINT}/gitops/app/${appId}/cluster/${clusterId}/disable`, {
+      const res = await fetch(`${window.env.API_ENDPOINT}/gitops/app/${appId}/cluster/${clusterId}/disable`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",

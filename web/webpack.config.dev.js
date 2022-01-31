@@ -1,25 +1,30 @@
-const ReactRefreshWebpackPlugin = require("@pmmmwh/react-refresh-webpack-plugin");
-const webpack = require("webpack");
-const path = require("path");
-const srcPath = path.join(__dirname, "src");
+var webpack = require("webpack");
+var path = require("path");
+var srcPath = path.join(__dirname, "src");
 
 module.exports = {
   mode: "development",
   entry: [
+    "react-hot-loader/patch",
     "./src/index.jsx"
   ],
-  cache: {
-    type: "filesystem"
-  },
+
+  plugins: [
+    new webpack.NamedModulesPlugin(),
+  ],
+
   output: {
     path: path.join(__dirname, "dist")
   },
+
   module: {
     rules: [
       {
         test: /\.[jt]sx?$/,
+        include: srcPath,
         exclude: /node_modules/,
-        loader: "babel-loader"
+        enforce: "pre",
+        loaders: ["babel-loader"],
       },
       {
         test: /\.[jt]sx?$/,
@@ -28,32 +33,25 @@ module.exports = {
           /node_modules/,
         ],
         enforce: "pre",
-        loader: "eslint-loader",
+        loaders: "eslint-loader",
         options: {
           fix: true
         }
       }
     ]
   },
-  plugins: [
-    new webpack.HotModuleReplacementPlugin(),
-    new ReactRefreshWebpackPlugin(),
-  ],
-  optimization: {
-    moduleIds: "named"
-  },
+
   devtool: "eval-source-map",
+
   devServer: {
     compress: true,
-    hot: true,
     host: "0.0.0.0",
-    allowedHosts: ["all"],
-    client: {
-      webSocketURL: "auto://0.0.0.0/ws",
-    },
+    hot: true,
+    hotOnly: true,
+    disableHostCheck: true,
     historyApiFallback: {
       verbose: true,
       disableDotRule: true
     },
-  },
+  }
 }

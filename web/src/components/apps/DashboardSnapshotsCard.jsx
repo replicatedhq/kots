@@ -57,8 +57,8 @@ class DashboardSnapshotsCard extends React.Component {
     });
 
     let url = option === "full" ?
-      `${process.env.API_ENDPOINT}/snapshot/backup`
-      : `${process.env.API_ENDPOINT}/app/${app.slug}/snapshot/backup`;
+      `${window.env.API_ENDPOINT}/snapshot/backup`
+      : `${window.env.API_ENDPOINT}/app/${app.slug}/snapshot/backup`;
 
     fetch(url, {
       method: "POST",
@@ -112,7 +112,7 @@ class DashboardSnapshotsCard extends React.Component {
       minimalRBACKotsadmNamespace: "",
     });
 
-    fetch(`${process.env.API_ENDPOINT}/snapshots/settings`, {
+    fetch(`${window.env.API_ENDPOINT}/snapshots/settings`, {
       method: "GET",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -154,7 +154,7 @@ class DashboardSnapshotsCard extends React.Component {
 
   setCurrentProvider = () => {
     const { snapshotSettings } = this.state;
-    if (!snapshotSettings) {return;}
+    if (!snapshotSettings) return;
     const { store } = snapshotSettings;
 
     if (store?.aws) {
