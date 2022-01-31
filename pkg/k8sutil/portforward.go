@@ -27,8 +27,8 @@ import (
 )
 
 func IsPortAvailable(port int) bool {
-	// portforward explicitly listens on localhost
-	host := net.JoinHostPort("127.0.0.1", strconv.Itoa(port))
+	// portforward listens on all interfaces
+	host := net.JoinHostPort("0.0.0.0", strconv.Itoa(port))
 	server, err := net.Listen("tcp4", host)
 	if err != nil {
 		return false
@@ -96,7 +96,7 @@ func PortForward(localPort int, remotePort int, namespace string, podName string
 	stopChan, readyChan := make(chan struct{}, 1), make(chan struct{}, 1)
 	out, errOut := new(bytes.Buffer), new(bytes.Buffer)
 
-	forwarder, err := portforward.New(dialer, []string{fmt.Sprintf("%d:%d", localPort, remotePort)}, stopChan, readyChan, out, errOut)
+	forwarder, err := portforward.NewOnAddresses(dialer, []string{"localhost", "0.0.0.0"} []string{fmt.Sprintf("%d:%d", localPort, remotePort)}, stopChan, readyChan, out, errOut)
 	if err != nil {
 		return 0, nil, errors.Wrap(err, "failed to create new portforward")
 	}
