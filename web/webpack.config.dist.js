@@ -1,10 +1,13 @@
-const path = require("path");
-const srcPath = path.join(__dirname, "src");
+var webpack = require("webpack");
+var path = require("path");
+var srcPath = path.join(__dirname, "src");
 const TerserPlugin = require("terser-webpack-plugin");
 const { BugsnagSourceMapUploaderPlugin } = require("webpack-bugsnag-plugins");
 
 function getPlugins(appEnv) {
-  const plugins = [];
+  const plugins = [
+    new webpack.NamedModulesPlugin()
+  ];
 
   if (appEnv.BUGSNAG_API_KEY) {
     plugins.push(new BugsnagSourceMapUploaderPlugin({
@@ -33,7 +36,7 @@ module.exports = (appEnv) => {
           include: srcPath,
           exclude: /node_modules/,
           enforce: "pre",
-          use: ["babel-loader"],
+          loaders: ["babel-loader"],
         },
       ],
     },
@@ -43,7 +46,6 @@ module.exports = (appEnv) => {
     devtool: "hidden-source-map",
 
     optimization: {
-      moduleIds: "named",
       minimizer: [new TerserPlugin({
         terserOptions: {
           warnings: false,
@@ -51,6 +53,7 @@ module.exports = (appEnv) => {
             comments: false,
           }
         },
+        sourceMap: true,
         parallel: true
       })],
     },

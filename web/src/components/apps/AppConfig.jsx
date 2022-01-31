@@ -91,9 +91,7 @@ class AppConfig extends Component {
   determineSidebarHeight = () => {
     const windowHeight = window.innerHeight;
     const sidebarEl = this.sidebarWrapper;
-    if(sidebarEl) {
-      sidebarEl.style.maxHeight = `${windowHeight - 225}px`;
-    }
+    sidebarEl.style.maxHeight = `${windowHeight - 225}px`;
   }
 
   navigateToCurrentHash = () => {
@@ -376,7 +374,7 @@ class AppConfig extends Component {
 
   renderConfigInfo = (app) => {
     const { match, fromLicenseFlow } = this.props;
-    if (fromLicenseFlow) {return null;}
+    if (fromLicenseFlow) return null;
 
     let sequence;
     if (!match.params.sequence) {
