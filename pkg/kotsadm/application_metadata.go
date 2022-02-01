@@ -3,6 +3,7 @@ package kotsadm
 import (
 	"bytes"
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
@@ -28,16 +29,22 @@ func getApplicationMetadataYAML(data []byte, namespace string, upstreamURI strin
 }
 
 func ensureApplicationMetadata(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
+	fmt.Printf("attempting to ensure app metadata w/ deploy options: %+v\n", deployOptions)
 	_, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Get(context.TODO(), "kotsadm-application-metadata", metav1.GetOptions{})
+	fmt.Printf("err: %+v\n", err)
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing metadata config map")
 		}
 
+		fmt.Printf("CM DNE, creating with: %+v\n", kotsadmobjects.ApplicationMetadataConfig(deployOptions.ApplicationMetadata, deployOptions.Namespace, deployOptions.UpstreamURI))
+
 		_, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Create(context.TODO(), kotsadmobjects.ApplicationMetadataConfig(deployOptions.ApplicationMetadata, deployOptions.Namespace, deployOptions.UpstreamURI), metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create metadata config map")
 		}
+
+		fmt.Println("created CM")
 	}
 
 	return nil
