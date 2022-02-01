@@ -239,7 +239,7 @@ class Dashboard extends Component {
     if (!app) {return;}
 
     try {
-      const res = await fetch(`${window.env.API_ENDPOINT}/app/${app.slug}`, {
+      const res = await fetch(`${process.env.API_ENDPOINT}/app/${app.slug}`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
