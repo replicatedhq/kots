@@ -749,27 +749,31 @@ func EncodeIdentityConfig(spec kotsv1beta1.IdentityConfig) ([]byte, error) {
 }
 
 func IsKotsVersionCompatibleWithApp(kotsApplication kotsv1beta1.Application, isInstall bool) (bool, error) {
-	if kotsApplication.Spec.KotsVersion == "" {
-		return true, nil
-	}
-
-	desiredSemver, err := semver.ParseTolerant(kotsApplication.Spec.KotsVersion)
-	if err != nil {
-		logger.Error(errors.Wrap(err, "kots version specified in the application spec is invalid"))
-		return true, nil
-	}
-
 	actualSemver, err := semver.ParseTolerant(buildversion.Version())
 	if err != nil {
 		logger.Error(errors.Wrap(err, "kots build version is invalid"))
 		return true, nil
 	}
 
-	if isInstall {
-		return actualSemver.EQ(desiredSemver), nil
+	if kotsApplication.Spec.MinKotsVersion != "" {
+		minSemver, err := semver.ParseTolerant(kotsApplication.Spec.MinKotsVersion)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "minimum kots version specified in the application spec is invalid"))
+		} else if actualSemver.LT(minSemver) {
+			return false, nil
+		}
 	}
 
-	return actualSemver.GTE(desiredSemver), nil
+	if isInstall && kotsApplication.Spec.TargetKotsVersion != "" {
+		targetSemver, err := semver.ParseTolerant(kotsApplication.Spec.TargetKotsVersion)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "target kots version specified in the application spec is invalid"))
+		} else if actualSemver.GT(targetSemver) {
+			return false, nil
+		}
+	}
+
+	return true, nil
 }
 
 func GetIncompatbileKotsVersionMessage(kotsApplication kotsv1beta1.Application) string {
@@ -780,7 +784,7 @@ func GetIncompatbileKotsVersionMessage(kotsApplication kotsv1beta1.Application) 
 	return fmt.Sprintf(
 		"The new version of %s requires a version of KOTS that is different from what you currently have installed.\nUpgrade KOTS to version %s so you can get this version of %s.",
 		appName,
-		kotsApplication.Spec.KotsVersion,
+		kotsApplication.Spec.TargetKotsVersion,
 		appName,
 	)
 }
