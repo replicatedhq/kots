@@ -974,10 +974,10 @@ class SnapshotStorageDestination extends Component {
                   {!snapshotSettings?.isVeleroRunning && !checkForVeleroAndRestic ?
                     isKurlEnabled ?
                     <div className="flex-auto u-fontWeight--bold u-fontSize--small u-textColor--error u-marginBottom--10"> Please fix Velero so that the deployment is running. For help troubleshooting this issue visit
-                    <a href="https://velero.io/docs/main/troubleshooting/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">https://velero.io/docs/main/troubleshooting/</a></div>
+                    <a href="https://velero.netlify.app/docs/main/troubleshooting/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">https://velero.netlify.app/docs/main/troubleshooting/</a></div>
                     :
                     <div className="flex-auto u-fontWeight--bold u-fontSize--small u-textColor--error u-marginBottom--10"> Please fix Velero so that the deployment is running. For help troubleshooting this issue visit
-                    <a href="https://velero.io/docs/main/troubleshooting/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">Velero documentation</a></div> : null}
+                    <a href="https://velero.netlify.app/docs/main/troubleshooting/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">Velero documentation</a></div> : null}
                   <div className="flex1">
                     {availableDestinations.length > 1 ?
                       <Select

@@ -12,7 +12,7 @@ export default class SnapshotInstallationBox extends Component {
             <p className="u-textColor--error u-fontSize--larger u-fontWeight--bold"> Velero is not running </p>
             <p className="u-fontSize--small u-textColor--bodyCopy u-lineHeight--normal u-fontWeight--medium u-marginTop--10">
               Velero has been detected, but it's not running successfully. To continue configuring and using snapshots Velero has to be running reliably.
-        <a href="https://velero.io/docs/main/troubleshooting/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">Get help</a>
+        <a href="https://velero.netlify.app/docs/main/troubleshooting/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">Get help</a>
             </p>
           </div>
         </div>
@@ -31,7 +31,7 @@ export default class SnapshotInstallationBox extends Component {
             <p className="u-textColor--error u-fontSize--larger u-fontWeight--bold"> Restic integration not found </p>
             <p className="u-fontSize--small u-textColor--bodyCopy u-lineHeight--normal u-fontWeight--medium u-marginTop--10">
               The Admin Console requires the Velero restic integration to use Snapshots, but it was not found. Please install the Velero restic integration to continue.
-      <a href="https://velero.io/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">Get help</a>
+      <a href="https://velero.netlify.app/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">Get help</a>
             </p>
           </div>
         </div>
@@ -46,7 +46,7 @@ export default class SnapshotInstallationBox extends Component {
             <p className="u-textColor--error u-fontSize--larger u-fontWeight--bold"> Restic is not working </p>
             <p className="u-fontSize--small u-textColor--bodyCopy u-lineHeight--normal u-fontWeight--medium u-marginTop--10">
               Velero and the restic integration have been detected, but restic is not running successfully. To continue configuring and using snapshots Restic has to be running reliably.
-        <a href="https://velero.io/docs/main/restic/#troubleshooting" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">Get help</a>
+        <a href="https://velero.netlify.app/docs/main/restic/#troubleshooting" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">Get help</a>
             </p>
           </div>
         </div>
