@@ -306,7 +306,11 @@ export default class DashboardCard extends React.Component {
         {!showOnlineUI && updateText}
         {checkingForUpdateError &&
           <div className="flex-column flex-auto u-marginTop--5">
-            <p className="u-marginTop--10 u-fontSize--small u-textColor--error u-fontWeight--medium">Error updating version <span className="u-linkColor u-textDecoration--underlineOnHover" onClick={() => this.props.viewAirgapUpdateError(checkingUpdateText)}>View details</span></p>
+            {this.props.incompatibleKotsVersionError ?
+              <p className="u-marginTop--10 u-fontSize--small u-textColor--error u-fontWeight--medium">Incompatible KOTS Version <span className="u-linkColor u-textDecoration--underlineOnHover" onClick={() => this.props.toggleDisplayRequiredKotsUpdateModal(checkingUpdateText)}>See details</span></p>
+            :
+              <p className="u-marginTop--10 u-fontSize--small u-textColor--error u-fontWeight--medium">Error updating version <span className="u-linkColor u-textDecoration--underlineOnHover" onClick={() => this.props.viewAirgapUpdateError(checkingUpdateText)}>See details</span></p>
+            }
           </div>}
       </div>
     )

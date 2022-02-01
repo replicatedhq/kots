@@ -91,7 +91,7 @@ class AppConfig extends Component {
   determineSidebarHeight = () => {
     const windowHeight = window.innerHeight;
     const sidebarEl = this.sidebarWrapper;
-    if(sidebarEl) {
+    if (sidebarEl) {
       sidebarEl.style.maxHeight = `${windowHeight - 225}px`;
     }
   }
