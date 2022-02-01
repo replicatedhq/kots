@@ -83,11 +83,11 @@ spec:
                 type: array
               icon:
                 type: string
-              kotsVersion:
-                type: string
               kubectlVersion:
                 type: string
               kustomizeVersion:
+                type: string
+              minKotsVersion:
                 type: string
               ports:
                 items:
@@ -115,6 +115,8 @@ spec:
                 items:
                   type: string
                 type: array
+              targetKotsVersion:
+                type: string
               title:
                 type: string
             required:

@@ -91,13 +91,13 @@
         "icon": {
           "type": "string"
         },
-        "kotsVersion": {
-          "type": "string"
-        },
         "kubectlVersion": {
           "type": "string"
         },
         "kustomizeVersion": {
+          "type": "string"
+        },
+        "minKotsVersion": {
           "type": "string"
         },
         "ports": {
@@ -138,6 +138,9 @@
           "items": {
             "type": "string"
           }
+        },
+        "targetKotsVersion": {
+          "type": "string"
         },
         "title": {
           "type": "string"
