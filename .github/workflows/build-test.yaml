@@ -879,6 +879,6 @@ jobs:
   # this job will validate that all validate-* jobs succeed
   validate-success:
     runs-on: ubuntu-18.04
-    needs: [validate-smoke-test, validate-minimal-rbac, validate-no-required-config, validate-multi-namespace, validate-kots-pull]
+    needs: [validate-smoke-test, validate-minimal-rbac, validate-no-required-config, validate-multi-namespace, validate-kots-pull, validate-min-kots-version, validate-target-kots-version, validate-range-kots-version]
     steps:
       - run: echo "Validate success"
