@@ -66,7 +66,7 @@ export class AirgapUploader {
       // since this is just to fail early and the api will recheck for compatibility later on.
       let compatibilityResponse;
       try {
-        const appSpec = await Utilities.getAppSpecFromAirgapBundle(this.resumableFile.file)
+        const appSpec = await Utilities.getAppSpecFromAirgapBundle(this.resumableFile.file);
         compatibilityResponse = await this.checkKotsVersionCompatibility(appSpec);
       } catch(err) {
         console.log(err);
