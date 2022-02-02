@@ -67,6 +67,7 @@ type PullOptions struct {
 	NoProxyEnvValue        string
 	ReportingInfo          *reportingtypes.ReportingInfo
 	IdentityPostgresConfig *kotsv1beta1.IdentityPostgresConfig
+	SkipCompatibilityCheck bool
 }
 
 type RewriteImageOptions struct {
@@ -134,7 +135,8 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			Password:  pullOptions.RewriteImageOptions.Password,
 			ReadOnly:  pullOptions.RewriteImageOptions.IsReadOnly,
 		},
-		ReportingInfo: pullOptions.ReportingInfo,
+		ReportingInfo:          pullOptions.ReportingInfo,
+		SkipCompatibilityCheck: pullOptions.SkipCompatibilityCheck,
 	}
 
 	var installation *kotsv1beta1.Installation
@@ -421,6 +423,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		NoProxyEnvValue:    pullOptions.NoProxyEnvValue,
 		NewHelmCharts:      newHelmCharts,
 	}
+	pushImages := pullOptions.RewriteImageOptions.Host != ""
 
 	// the UseHelmInstall map blocks visibility into charts and subcharts when searching for private images
 	// any chart name listed here will be skipped when writing midstream kustomization.yaml and pullsecret.yaml
@@ -452,7 +455,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	writeMidstreamOptions.MidstreamDir = filepath.Join(commonBase.GetOverlaysDir(writeBaseOptions), "midstream")
 	writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), commonBase.Path)
 
-	m, err := writeMidstream(writeMidstreamOptions, pullOptions, u, commonBase, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), log)
+	m, err := writeMidstream(writeMidstreamOptions, pullOptions, u, commonBase, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), pushImages, log)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to write common midstream")
 	}
@@ -469,13 +472,14 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 		writeMidstreamOptions.MidstreamDir = filepath.Join(helmBase.GetOverlaysDir(writeBaseOptions), "midstream", helmBase.Path)
 		writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), helmBase.Path)
+		pushImages = false // never push images more than once
 
 		helmBaseCopy := helmBase.DeepCopy()
 
 		pullOptionsCopy := pullOptions
 		pullOptionsCopy.Namespace = helmBaseCopy.Namespace
 
-		helmMidstream, err := writeMidstream(writeMidstreamOptions, pullOptionsCopy, u, helmBaseCopy, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), log)
+		helmMidstream, err := writeMidstream(writeMidstreamOptions, pullOptionsCopy, u, helmBaseCopy, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), pushImages, log)
 		if err != nil {
 			return "", errors.Wrapf(err, "failed to write helm midstream %s", helmBase.Path)
 		}
@@ -506,7 +510,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	return filepath.Join(pullOptions.RootDir, u.Name), nil
 }
 
-func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOptions, u *upstreamtypes.Upstream, b *base.Base, license *kotsv1beta1.License, identityConfig *kotsv1beta1.IdentityConfig, upstreamDir string, log *logger.CLILogger) (*midstream.Midstream, error) {
+func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOptions, u *upstreamtypes.Upstream, b *base.Base, license *kotsv1beta1.License, identityConfig *kotsv1beta1.IdentityConfig, upstreamDir string, pushImages bool, log *logger.CLILogger) (*midstream.Midstream, error) {
 	var pullSecrets *registry.ImagePullSecrets
 	var images []kustomizetypes.Image
 	var objects []k8sdoc.K8sDoc
@@ -593,12 +597,12 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOp
 		// push the images
 		if options.RewriteImageOptions.Host != "" {
 			processUpstreamImageOptions := upstream.ProcessUpstreamImagesOptions{
-				RootDir:            options.RootDir,
-				ImagesDir:          imagesDirFromOptions(u, options),
-				AirgapBundle:       options.AirgapBundle,
-				CreateAppDir:       options.CreateAppDir,
-				RegistryIsReadOnly: options.RewriteImageOptions.IsReadOnly,
-				Log:                log,
+				RootDir:      options.RootDir,
+				ImagesDir:    imagesDirFromOptions(u, options),
+				AirgapBundle: options.AirgapBundle,
+				CreateAppDir: options.CreateAppDir,
+				PushImages:   !options.RewriteImageOptions.IsReadOnly && pushImages,
+				Log:          log,
 				ReplicatedRegistry: registry.RegistryOptions{
 					Endpoint:      replicatedRegistryInfo.Registry,
 					ProxyEndpoint: replicatedRegistryInfo.Proxy,

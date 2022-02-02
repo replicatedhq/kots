@@ -22,7 +22,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/version"
 )
 
-func DownloadUpdate(appID string, update types.Update, skipPreflights bool) (sequence int64, finalError error) {
+func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skipCompatibilityCheck bool) (sequence int64, finalError error) {
 	if err := store.GetStore().SetTaskStatus("update-download", "Fetching update...", "running"); err != nil {
 		return 0, errors.Wrap(err, "failed to set task status")
 	}
@@ -48,7 +48,11 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool) (seq
 				logger.Error(err)
 			}
 		} else {
-			if err := store.GetStore().SetTaskStatus("update-download", finalError.Error(), "failed"); err != nil {
+			errMsg := finalError.Error()
+			if cause, ok := errors.Cause(finalError).(util.ActionableError); ok {
+				errMsg = cause.Error()
+			}
+			if err := store.GetStore().SetTaskStatus("update-download", errMsg, "failed"); err != nil {
 				logger.Error(err)
 			}
 		}
@@ -147,6 +151,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool) (seq
 			Password:   registrySettings.Password,
 			IsReadOnly: registrySettings.IsReadOnly,
 		},
+		SkipCompatibilityCheck: skipCompatibilityCheck,
 	}
 
 	if _, err := kotspull.Pull(fmt.Sprintf("replicated://%s", beforeKotsKinds.License.Spec.AppSlug), pullOptions); err != nil {

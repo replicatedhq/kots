@@ -78,7 +78,7 @@ class AnalyzerFileTree extends React.Component {
       fileLoadErr: false,
     });
 
-    fetch(`${window.env.API_ENDPOINT}/troubleshoot/supportbundle/${bundleId}/files?filename=${encodeURIComponent(path)}`, {
+    fetch(`${process.env.API_ENDPOINT}/troubleshoot/supportbundle/${bundleId}/files?filename=${encodeURIComponent(path)}`, {
       method: "GET",
       headers: {
         "Authorization": Utilities.getToken(),

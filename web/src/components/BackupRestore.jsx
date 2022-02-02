@@ -45,7 +45,7 @@ class BackupRestore extends React.Component {
       backupsErrMsg: ""
     });
 
-    fetch(`${window.env.API_ENDPOINT}/snapshots`, {
+    fetch(`${process.env.API_ENDPOINT}/snapshots`, {
       method: "GET",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -78,7 +78,7 @@ class BackupRestore extends React.Component {
       hideCheckVeleroButton: isCheckForVelero ? true : false
     });
 
-    fetch(`${window.env.API_ENDPOINT}/snapshots/settings`, {
+    fetch(`${process.env.API_ENDPOINT}/snapshots/settings`, {
       method: "GET",
       headers: {
         "Authorization": Utilities.getToken(),

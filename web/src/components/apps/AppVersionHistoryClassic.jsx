@@ -95,7 +95,7 @@ class AppVersionHistoryClassic extends Component {
 
   getAirgapConfig = async () => {
     const { app } = this.props;
-    const configUrl = `${window.env.API_ENDPOINT}/app/${app.slug}/airgap/config`;
+    const configUrl = `${process.env.API_ENDPOINT}/app/${app.slug}/airgap/config`;
     let simultaneousUploads = 3;
     try {
       let res = await fetch(configUrl, {
@@ -141,7 +141,7 @@ class AppVersionHistoryClassic extends Component {
     });
 
     try {
-      const res = await fetch(`${window.env.API_ENDPOINT}/app/${appSlug}/versions`, {
+      const res = await fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/versions`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -459,7 +459,7 @@ class AppVersionHistoryClassic extends Component {
 
       this.setState({ logsLoading: true, showLogsModal: true, viewLogsErrMsg: "" });
 
-      const res = await fetch(`${window.env.API_ENDPOINT}/app/${app?.slug}/cluster/${clusterId}/sequence/${version?.sequence}/downstreamoutput`, {
+      const res = await fetch(`${process.env.API_ENDPOINT}/app/${app?.slug}/cluster/${clusterId}/sequence/${version?.sequence}/downstreamoutput`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -488,7 +488,7 @@ class AppVersionHistoryClassic extends Component {
     const { app } = this.props;
 
     return new Promise((resolve, reject) => {
-      fetch(`${window.env.API_ENDPOINT}/app/${app?.slug}/task/updatedownload`, {
+      fetch(`${process.env.API_ENDPOINT}/app/${app?.slug}/task/updatedownload`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -501,11 +501,22 @@ class AppVersionHistoryClassic extends Component {
           if (response.status !== "running" && !this.props.isBundleUploading) {
             this.state.updateChecker.stop();
 
-            this.setState({
-              checkingForUpdates: false,
-              checkingUpdateMessage: response.currentMessage,
-              checkingForUpdateError: response.status === "failed"
-            });
+            if (response.status === "failed") {
+              if (response.currentMessage.includes("Upgrade KOTS")) {
+                this.setState({
+                  checkingForUpdates: false,
+                  checkingForUpdateError: true,
+                  checkingUpdateMessage: response.currentMessage,
+                  incompatibleKotsVersionError: true
+                });
+              }
+            } else {
+              this.setState({
+                checkingForUpdates: false,
+                checkingUpdateMessage: response.currentMessage,
+                checkingForUpdateError: response.status === "failed"
+              });
+            }
 
             if (this.props.updateCallback) {
               this.props.updateCallback();
@@ -535,7 +546,7 @@ class AppVersionHistoryClassic extends Component {
       checkingUpdateMessage: "",
     });
 
-    fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/updatecheck`, {
+    fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/updatecheck`, {
       headers: {
         "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
@@ -671,7 +682,7 @@ class AppVersionHistoryClassic extends Component {
                 const { firstHash, secondHash } = this.getDiffCommitHashes();
                 if (firstHash && secondHash) {
                   const diffUrl = getGitProviderDiffUrl(downstream.gitops?.uri, downstream.gitops?.provider, firstHash, secondHash);
-                  window.open(diffUrl, '_blank');
+                  window.open(diffUrl, "_blank");
                 }
               } else {
                 const { firstSequence, secondSequence } = this.getDiffSequences();
@@ -856,7 +867,11 @@ class AppVersionHistoryClassic extends Component {
           smallSize={true}
         />);
     } else if (errorCheckingUpdate || checkingForUpdateError) {
-      updateText = <p className="u-marginTop--10 u-fontSize--small u-textColor--error u-fontWeight--medium">{errorText}</p>
+      if (checkingForUpdateError && this.state.incompatibleKotsVersionError) {
+        updateText = <span className="u-marginTop--10 u-fontSize--small u-lineHeight--normal u-textColor--error u-fontWeight--medium flex alignItems--center"> <span className="icon error-small u-marginRight--5" /> Incompatible KOTS Version <span className="u-marginLeft--5 replicated-link u-fontSize--small" onClick={() => this.props.toggleDisplayRequiredKotsUpdateModal(checkingUpdateMessage)}> See details </span></span>
+      } else {
+        updateText = <p className="u-marginTop--10 u-fontSize--small u-textColor--error u-fontWeight--medium">{errorText}</p>
+      }
     } else if (checkingForUpdates) {
       updateText = <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium">{checkingUpdateTextShort}</p>
     } else if (app.lastUpdateCheckAt && !noUpdateAvailiableText) {

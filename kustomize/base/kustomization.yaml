@@ -2,4 +2,3 @@
 resources:
   - ./deployment.yaml
   - ./service.yaml
-  - ./cluster-rbac.yaml

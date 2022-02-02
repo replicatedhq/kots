@@ -1,15 +1,11 @@
-FROM node:10
+FROM node:17
 EXPOSE 3000 9229
 
-ADD ./package.json /src/package.json
-ADD ./yarn.lock /src/yarn.lock
 WORKDIR /src
-RUN yarn install --silent --frozen-lockfile
+COPY ./Makefile ./
+COPY ./package.json ./yarn.lock ./
 
-ADD . /src/
-WORKDIR /src
-
-EXPOSE 30000
 RUN make deps
+COPY . .
 
 ENTRYPOINT ["make", "serve"]

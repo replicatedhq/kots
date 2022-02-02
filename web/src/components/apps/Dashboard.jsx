@@ -13,7 +13,7 @@ import AutomaticUpdatesModal from "@src/components/modals/AutomaticUpdatesModal"
 import SnapshotDifferencesModal from "@src/components/modals/SnapshotDifferencesModal";
 import Modal from "react-modal";
 import { Repeater } from "../../utilities/repeater";
-import { Utilities } from "../../utilities/utilities";
+import { Utilities, isAwaitingResults } from "../../utilities/utilities";
 import { AirgapUploader } from "../../utilities/airgapUploader";
 
 import "../../scss/components/watches/Dashboard.scss";
@@ -55,6 +55,7 @@ class Dashboard extends Component {
       prometheusAddress: "",
     },
     getAppDashboardJob: new Repeater(),
+    fetchAppDownstreamJob: new Repeater(),
     gettingAppLicenseErrMsg: "",
     startSnapshotOptions: [
       { option: "partial", name: "Start a Partial snapshot" },
@@ -83,7 +84,7 @@ class Dashboard extends Component {
   }
 
   getAppLicense = async (app) => {
-    await fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/license`, {
+    await fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/license`, {
       method: "GET",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -128,11 +129,12 @@ class Dashboard extends Component {
   componentWillUnmount() {
     this.state.updateChecker.stop();
     this.state.getAppDashboardJob.stop();
+    this.state.fetchAppDownstreamJob.stop();
   }
 
   getAirgapConfig = async () => {
     const { app } = this.props;
-    const configUrl = `${window.env.API_ENDPOINT}/app/${app.slug}/airgap/config`;
+    const configUrl = `${process.env.API_ENDPOINT}/app/${app.slug}/airgap/config`;
     let simultaneousUploads = 3;
     try {
       let res = await fetch(configUrl, {
@@ -157,7 +159,7 @@ class Dashboard extends Component {
 
   getAppDashboard = () => {
     return new Promise((resolve, reject) => {
-      fetch(`${window.env.API_ENDPOINT}/app/${this.props.app?.slug}/cluster/${this.props.cluster?.id}/dashboard`, {
+      fetch(`${process.env.API_ENDPOINT}/app/${this.props.app?.slug}/cluster/${this.props.cluster?.id}/dashboard`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -194,7 +196,7 @@ class Dashboard extends Component {
       checkingForUpdateError: false,
     });
 
-    fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/updatecheck`, {
+    fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/updatecheck`, {
       headers: {
         "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
@@ -232,11 +234,42 @@ class Dashboard extends Component {
     });
   }
 
+  fetchAppDownstream = async () => {
+    const { app } = this.props;
+    if (!app) {return;}
+
+    try {
+      const res = await fetch(`${process.env.API_ENDPOINT}/app/${app.slug}`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "GET",
+      });
+      if (res.ok && res.status == 200) {
+        const app = await res.json();
+        if (app?.downstreams?.length > 0 && app?.downstreams[0].pendingVersions?.length > 0) {
+          if (!isAwaitingResults(app.downstreams[0].pendingVersions)) {
+            this.state.fetchAppDownstreamJob.stop();
+          }
+        }
+        this.setState({ 
+          downstream: app.downstreams[0],
+         });
+      } else {
+        this.setState({ loadingApp: false, gettingAppErrMsg: `Unexpected status code: ${res.status}`, displayErrorModal: true });
+      }
+    } catch (err) {
+      console.log(err)
+      this.setState({ loadingApp: false, gettingAppErrMsg: err ? err.message : "Something went wrong, please try again.", displayErrorModal: true });
+    }
+  }
+
   updateStatus = () => {
     const { app } = this.props;
 
     return new Promise((resolve, reject) => {
-      fetch(`${window.env.API_ENDPOINT}/app/${app?.slug}/task/updatedownload`, {
+      fetch(`${process.env.API_ENDPOINT}/app/${app?.slug}/task/updatedownload`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -258,6 +291,7 @@ class Dashboard extends Component {
             if (this.props.updateCallback) {
               this.props.updateCallback();
             }
+            this.state.fetchAppDownstreamJob.start(this.fetchAppDownstream, 2000);
 
           } else {
             this.setState({
@@ -359,8 +393,8 @@ class Dashboard extends Component {
     });
 
     let url = option === "full" ?
-      `${window.env.API_ENDPOINT}/snapshot/backup`
-      : `${window.env.API_ENDPOINT}/app/${app.slug}/snapshot/backup`;
+      `${process.env.API_ENDPOINT}/snapshot/backup`
+      : `${process.env.API_ENDPOINT}/app/${app.slug}/snapshot/backup`;
 
     fetch(url, {
       method: "POST",
@@ -534,6 +568,7 @@ class Dashboard extends Component {
                   <AppStatus
                     appStatus={this.state.dashboard?.appStatus?.state}
                     url={this.props.match.url}
+                    onViewAppStatusDetails={this.toggleAppStatusModal}
                     links={links}
                     app={app}
                   />
@@ -558,6 +593,7 @@ class Dashboard extends Component {
                   uploadProgress={this.state.uploadProgress}
                   uploadSize={this.state.uploadSize}
                   uploadResuming={this.state.uploadResuming}
+                  makeCurrentVersion={this.props.makeCurrentVersion}
                   onProgressError={this.onProgressError}
                   onCheckForUpdates={() => this.onCheckForUpdates()}
                   onUploadNewVersion={() => this.onUploadNewVersion()}

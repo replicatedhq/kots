@@ -23,6 +23,7 @@ dist/
 supportbundle.tar.gz
 
 .envrc
+.DS_Store
 
 # for the embed experiment
 kubernetes/

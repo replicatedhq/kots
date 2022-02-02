@@ -51,6 +51,8 @@ type ApplicationSpec struct {
 	AllowRollback                bool              `json:"allowRollback,omitempty"`
 	StatusInformers              []string          `json:"statusInformers,omitempty"`
 	Graphs                       []MetricGraph     `json:"graphs,omitempty"`
+	MinKotsVersion               string            `json:"minKotsVersion,omitempty"`
+	TargetKotsVersion            string            `json:"targetKotsVersion,omitempty"`
 	KubectlVersion               string            `json:"kubectlVersion,omitempty"`
 	KustomizeVersion             string            `json:"kustomizeVersion,omitempty"`
 	AdditionalImages             []string          `json:"additionalImages,omitempty"`

@@ -42,7 +42,7 @@ jobs:
       - name: Setup Node.js environment
         uses: actions/setup-node@v2
         with:
-          node-version: '10.x'
+          node-version: '17.x'
 
       - name: Build web
         env:
@@ -290,9 +290,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [v1.19.11-k3s1,v1.20.7-k3s1,v1.21.1-k3s1]
+        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
     steps:
-      - uses: debianmaster/actions-k3s@master   #no v1 tag
+      - uses: replicatedhq/action-k3s@main
         id: k3s
         with:
           version: ${{ matrix.k8s_version }}
@@ -307,7 +307,7 @@ jobs:
 
       - uses: actions/setup-node@v2
         with:
-          node-version: '14.x'
+          node-version: '17.x'
 
       - name: setup testIM
         run: npm i -g @testim/testim-cli@3.206.0
@@ -325,10 +325,10 @@ jobs:
 
       - name: velero install
         run: |
-          curl -LO https://github.com/vmware-tanzu/velero/releases/download/v1.6.0/velero-v1.6.0-linux-amd64.tar.gz && tar zxvf velero-v1.6.0-linux-amd64.tar.gz && \
-          ./velero-v1.6.0-linux-amd64/velero install \
+          curl -LO https://github.com/vmware-tanzu/velero/releases/download/v1.7.1/velero-v1.7.1-linux-amd64.tar.gz && tar zxvf velero-v1.7.1-linux-amd64.tar.gz && \
+          ./velero-v1.7.1-linux-amd64/velero install \
           --provider aws \
-          --plugins velero/velero-plugin-for-aws:v1.2.0 \
+          --plugins velero/velero-plugin-for-aws:v1.3.0 \
           --bucket kots-testim-snapshots \
           --backup-location-config region=us-east-1 \
           --snapshot-location-config region=us-east-1 \
@@ -394,9 +394,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [v1.19.11-k3s1,v1.20.7-k3s1,v1.21.1-k3s1]
+        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
     steps:
-      - uses: debianmaster/actions-k3s@master   #no v1 tag
+      - uses: replicatedhq/action-k3s@main
         id: k3s
         with:
           version: ${{ matrix.k8s_version }}
@@ -411,7 +411,7 @@ jobs:
 
       - uses: actions/setup-node@v2
         with:
-          node-version: '14.x'
+          node-version: '17.x'
 
       - name: setup testIM
         run: npm i -g @testim/testim-cli@3.206.0
@@ -458,9 +458,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [v1.19.11-k3s1,v1.20.7-k3s1,v1.21.1-k3s1]
+        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
     steps:
-      - uses: debianmaster/actions-k3s@master   #no v1 tag
+      - uses: replicatedhq/action-k3s@main
         id: k3s
         with:
           version: ${{ matrix.k8s_version }}
@@ -475,7 +475,7 @@ jobs:
 
       - uses: actions/setup-node@v2
         with:
-          node-version: '14.x'
+          node-version: '17.x'
 
       - name: setup testIM
         run: npm i -g @testim/testim-cli@3.206.0
@@ -531,9 +531,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [v1.19.11-k3s1,v1.20.7-k3s1,v1.21.1-k3s1]
+        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
     steps:
-      - uses: debianmaster/actions-k3s@master   #no v1 tag
+      - uses: replicatedhq/action-k3s@main
         id: k3s
         with:
           version: ${{ matrix.k8s_version }}
@@ -548,7 +548,7 @@ jobs:
 
       - uses: actions/setup-node@v2
         with:
-          node-version: '14.x'
+          node-version: '17.x'
 
       - name: setup testIM
         run: npm i -g @testim/testim-cli@3.206.0
@@ -612,9 +612,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [v1.19.11-k3s1,v1.20.7-k3s1,v1.21.1-k3s1]
+        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
     steps:
-      - uses: debianmaster/actions-k3s@master   #no v1 tag
+      - uses: replicatedhq/action-k3s@main
         id: k3s
         with:
           version: ${{ matrix.k8s_version }}

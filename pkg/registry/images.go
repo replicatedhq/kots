@@ -234,7 +234,7 @@ func deleteUnusedImages(ctx context.Context, registry types.RegistrySettings, us
 
 		for _, tag := range tags {
 			taggedName := fmt.Sprintf("%s:%s", imageName, tag)
-			taggedRef, err := docker.ParseReference(fmt.Sprintf("//%s", imageName))
+			taggedRef, err := docker.ParseReference(fmt.Sprintf("//%s", taggedName))
 			if err != nil {
 				logger.Errorf("failed to parse tagged ref %q: %v", taggedName, err)
 				continue
@@ -244,6 +244,8 @@ func deleteUnusedImages(ctx context.Context, registry types.RegistrySettings, us
 			if err != nil {
 				if !strings.Contains(err.Error(), "StatusCode: 404") {
 					logger.Errorf("failed to get digest for %q: %v", taggedName, err)
+				} else {
+					logger.Infof("will not delete %q it's not found in registry", taggedName)
 				}
 				continue
 			}

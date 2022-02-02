@@ -91,7 +91,9 @@ class AppConfig extends Component {
   determineSidebarHeight = () => {
     const windowHeight = window.innerHeight;
     const sidebarEl = this.sidebarWrapper;
-    sidebarEl.style.maxHeight = `${windowHeight - 225}px`;
+    if (sidebarEl) {
+      sidebarEl.style.maxHeight = `${windowHeight - 225}px`;
+    }
   }
 
   navigateToCurrentHash = () => {
@@ -119,7 +121,7 @@ class AppConfig extends Component {
 
     try {
       const { slug } = this.props.match.params;
-      const res = await fetch(`${window.env.API_ENDPOINT}/app/${slug}`, {
+      const res = await fetch(`${process.env.API_ENDPOINT}/app/${slug}`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -141,7 +143,7 @@ class AppConfig extends Component {
 
     this.setState({ configLoading: true, gettingConfigErrMsg: "", configError: false });
 
-    fetch(`${window.env.API_ENDPOINT}/app/${slug}/config/${sequence}`, {
+    fetch(`${process.env.API_ENDPOINT}/app/${slug}/config/${sequence}`, {
       method: "GET",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -231,7 +233,7 @@ class AppConfig extends Component {
     const slug = this.getSlug();
     const createNewVersion = !fromLicenseFlow && match.params.sequence == undefined; // this logic might need to be changed when we add support for editing the config for previous versions (if that will need to create a new version)
 
-    fetch(`${window.env.API_ENDPOINT}/app/${slug}/config`, {
+    fetch(`${process.env.API_ENDPOINT}/app/${slug}/config`, {
       method: "PUT",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -322,7 +324,7 @@ class AppConfig extends Component {
     this.fetchController = new AbortController();
     const signal = this.fetchController.signal;
 
-    fetch(`${window.env.API_ENDPOINT}/app/${slug}/liveconfig`, {
+    fetch(`${process.env.API_ENDPOINT}/app/${slug}/liveconfig`, {
       signal,
       headers: {
         "Authorization": Utilities.getToken(),
@@ -361,7 +363,7 @@ class AppConfig extends Component {
       const changed = this.isConfigChanged(newGroups);
       this.setState({ configGroups: newGroups, changed });
     }).catch((error) => {
-      if (error.name !== 'AbortError') {
+      if (error.name !== "AbortError") {
         console.log(error);
         this.setState({ configError: error?.message });
       }
@@ -373,7 +375,9 @@ class AppConfig extends Component {
   }
 
   renderConfigInfo = (app) => {
-    const { match } = this.props;
+    const { match, fromLicenseFlow } = this.props;
+    if (fromLicenseFlow) {return null;}
+
     let sequence;
     if (!match.params.sequence) {
       sequence = app?.currentSequence;
@@ -414,7 +418,7 @@ class AppConfig extends Component {
 
   isConfigReadOnly = (app) => {
     const { match } = this.props;
-    if (!match.params.sequence) return false;
+    if (!match.params.sequence) {return false;}
     const sequence = parseInt(match.params.sequence);
     const isCurrentVersion = app.downstreams[0]?.currentVersion?.sequence === sequence;
     const isLatestVersion = app.downstreams[0]?.pendingVersions?.length && app.downstreams[0]?.pendingVersions[0]?.sequence === sequence;
@@ -478,11 +482,11 @@ class AppConfig extends Component {
         </Helmet>
 
 
-        {fromLicenseFlow && app && <span className="u-fontSize--larger u-textColor--primary u-fontWeight--bold u-marginTop--30">Configure {app.name}</span>}
+        {fromLicenseFlow && app && <span className="u-fontSize--larger u-textColor--primary u-fontWeight--bold u-marginTop--30" style={{ marginLeft: "38px"}}>Configure {app.name}</span>}
         <div className="flex-column">
           <div id="configSidebarWrapper" className="AppConfigSidenav--wrapper" ref={(wrapper) => this.sidebarWrapper = wrapper}>
             {configGroups?.map((group, i) => {
-              if (group.title === "" || group.title.length === 0 || group.hidden || group.when === "false") return;
+              if (group.title === "" || group.title.length === 0 || group.hidden || group.when === "false") {return;}
               return (
                 <div key={`${i}-${group.name}-${group.title}`} className={`AppConfigSidenav--group ${this.state.activeGroups.includes(group.name) ? "group-open" : ""}`}>
                   <div className="flex alignItems--center AppConfigSidenav--groupWrapper" onClick={() => this.toggleActiveGroups(group.name)}>
@@ -493,7 +497,7 @@ class AppConfig extends Component {
                     <div className="AppConfigSidenav--items">
                       {group.items?.map((item, i) => {
                         const hash = this.props.location.hash.slice(1);
-                        if (item.hidden || item.when === "false") return;
+                        if (item.hidden || item.when === "false") {return;}
                         return (
                           <a className={`u-fontSize--normal u-lineHeight--normal ${hash === `${item.name}-group` ? "active-item" : ""}`} href={`#${item.name}-group`} key={`${i}-${item.name}-${item.title}`}>{item.title}</a>
                         )

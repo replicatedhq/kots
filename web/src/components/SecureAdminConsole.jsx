@@ -69,7 +69,7 @@ class SecureAdminConsole extends React.Component {
   loginWithSharedPassword = async () => {
     if (this.validatePassword()) {
       this.setState({ authLoading: true, loginErr: false, loginErrMessage: "" });
-      fetch(`${window.env.API_ENDPOINT}/login`, {
+      fetch(`${process.env.API_ENDPOINT}/login`, {
         headers: {
           "Content-Type": "application/json",
         },
@@ -109,7 +109,7 @@ class SecureAdminConsole extends React.Component {
     try {
       this.setState({ loginErr: false, loginErrMessage: "" });
 
-      const res = await fetch(`${window.env.API_ENDPOINT}/oidc/login`, {
+      const res = await fetch(`${process.env.API_ENDPOINT}/oidc/login`, {
         headers: {
           "Content-Type": "application/json",
         },
@@ -159,7 +159,7 @@ class SecureAdminConsole extends React.Component {
 
   getLoginInfo = async () => {
     try {
-      const response = await fetch(`${window.env.API_ENDPOINT}/login/info`, {
+      const response = await fetch(`${process.env.API_ENDPOINT}/login/info`, {
         headers: {
           "Content-Type": "application/json",
         },

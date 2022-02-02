@@ -5,12 +5,14 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Modal from "react-modal";
 import find from "lodash/find";
+import get from "lodash/get";
 import MountAware from "../shared/MountAware";
 import Loader from "../shared/Loader";
 import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
 import ShowDetailsModal from "@src/components/modals/ShowDetailsModal";
 import ShowLogsModal from "@src/components/modals/ShowLogsModal";
+import AirgapUploadProgress from "../AirgapUploadProgress";
 import ErrorModal from "../modals/ErrorModal";
 import AppVersionHistoryRow from "@src/components/apps/AppVersionHistoryRow";
 import DeployWarningModal from "../shared/modals/DeployWarningModal";
@@ -112,7 +114,7 @@ class AppVersionHistory extends Component {
     });
 
     try {
-      const res = await fetch(`${window.env.API_ENDPOINT}/app/${appSlug}/versions`, {
+      const res = await fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/versions`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -157,7 +159,7 @@ class AppVersionHistory extends Component {
 
   getAirgapConfig = async () => {
     const { app } = this.props;
-    const configUrl = `${window.env.API_ENDPOINT}/app/${app.slug}/airgap/config`;
+    const configUrl = `${process.env.API_ENDPOINT}/app/${app.slug}/airgap/config`;
     let simultaneousUploads = 3;
     try {
       let res = await fetch(configUrl, {
@@ -320,42 +322,6 @@ class AppVersionHistory extends Component {
         </div>
       );
     }
-    // if (hasDiffSummaryError) {
-    //   return (
-    //     <div className="flex flex1 alignItems--center">
-    //       <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-textColor--bodyCopy">Cannot generate diff <span className="replicated-link" onClick={() => this.toggleDiffErrModal(version)}>Why?</span></span>
-    //     </div>
-    //   );
-    // } else {
-    //   return (
-    //     <div>
-    //       {diffSummary ?
-    //         (diffSummary.filesChanged > 0 ?
-    //           <div
-    //             className="DiffSummary u-cursor--pointer u-marginRight--10"
-    //             onClick={() => {
-    //               if (!downstream.gitops?.enabled) {
-    //                 this.setState({
-    //                   showDiffOverlay: true,
-    //                   firstSequence: version.parentSequence - 1,
-    //                   secondSequence: version.parentSequence
-    //                 });
-    //               }
-    //             }}
-    //           >
-    //             <span className="files">{diffSummary.filesChanged} files changed </span>
-    //             <span className="lines-added">+{diffSummary.linesAdded} </span>
-    //             <span className="lines-removed">-{diffSummary.linesRemoved}</span>
-    //           </div>
-    //           :
-    //           <div className="DiffSummary">
-    //             <span className="files">No changes</span>
-    //           </div>
-    //         )
-    //         : <span>&nbsp;</span>}
-    //     </div>
-    //   );
-    // }
   }
 
   renderLogsTabs = () => {
@@ -534,7 +500,7 @@ class AppVersionHistory extends Component {
       checkingUpdateMessage: "",
     });
 
-    fetch(`${window.env.API_ENDPOINT}/app/${app.slug}/updatecheck`, {
+    fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/updatecheck`, {
       headers: {
         "Authorization": Utilities.getToken(),
         "Content-Type": "application/json",
@@ -587,7 +553,7 @@ class AppVersionHistory extends Component {
     const { app } = this.props;
 
     return new Promise((resolve, reject) => {
-      fetch(`${window.env.API_ENDPOINT}/app/${app?.slug}/task/updatedownload`, {
+      fetch(`${process.env.API_ENDPOINT}/app/${app?.slug}/task/updatedownload`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -631,7 +597,7 @@ class AppVersionHistory extends Component {
 
       this.setState({ logsLoading: true, showLogsModal: true, viewLogsErrMsg: "" });
 
-      const res = await fetch(`${window.env.API_ENDPOINT}/app/${app?.slug}/cluster/${clusterId}/sequence/${version?.sequence}/downstreamoutput`, {
+      const res = await fetch(`${process.env.API_ENDPOINT}/app/${app?.slug}/cluster/${clusterId}/sequence/${version?.sequence}/downstreamoutput`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -678,7 +644,7 @@ class AppVersionHistory extends Component {
                 const { firstHash, secondHash } = this.getDiffCommitHashes();
                 if (firstHash && secondHash) {
                   const diffUrl = getGitProviderDiffUrl(downstream.gitops?.uri, downstream.gitops?.provider, firstHash, secondHash);
-                  window.open(diffUrl, '_blank');
+                  window.open(diffUrl, "_blank");
                 }
               } else {
                 const { firstSequence, secondSequence } = this.getDiffSequences();
@@ -768,12 +734,78 @@ class AppVersionHistory extends Component {
     this.setState({ displayShowDetailsModal: !this.state.displayShowDetailsModal, deployView: false, yamlErrorDetails, selectedSequence });
   }
 
+  renderAirgapVersionUploading = () => {
+    const { app, isBundleUploading } = this.props;
+
+    let updateText;
+    if (this.state.airgapUploadError) {
+      updateText = <p className="u-marginTop--10 u-fontSize--small u-textColor--error u-fontWeight--medium">Error uploading bundle <span className="u-linkColor u-textDecoration--underlineOnHover" onClick={this.props.viewAirgapUploadError}>See details</span></p>
+    } else if (this.state.uploadingAirgapFile) {
+      updateText = (
+        <AirgapUploadProgress
+          appSlug={app.slug}
+          total={this.state.uploadSize}
+          progress={this.state.uploadProgress}
+          resuming={this.state.uploadResuming}
+          onProgressError={undefined}
+          smallSize={true}
+        />
+      );
+    } else if (isBundleUploading) {
+      updateText = (
+        <AirgapUploadProgress
+          appSlug={app.slug}
+          unkownProgress={true}
+          onProgressError={undefined}
+          smallSize={true}
+        />);
+    } else if (this.state.errorCheckingUpdate) {
+      updateText = <p className="u-marginTop--10 u-fontSize--small u-textColor--error u-fontWeight--medium">Error checking for updates, please try again</p>
+    } else if (!app.lastUpdateCheckAt) {
+      updateText = null;
+    }
+
+    let checkingUpdateText = this.state.checkingUpdateMessage;
+    try {
+      const jsonMessage = JSON.parse(checkingUpdateText);
+      const type = get(jsonMessage, "type");
+      if (type === "progressReport") {
+        checkingUpdateText = jsonMessage.compatibilityMessage;
+        // TODO: handle image upload progress here
+      }
+    } catch {
+      // empty
+    }
+
+    if (checkingUpdateText && checkingUpdateText.length > 65) {
+      checkingUpdateText = checkingUpdateText.slice(0, 65) + "...";
+    }
+
+    return (
+      <div>
+        {updateText}
+        {app?.isAirgap && this.state.checkingForUpdates && !isBundleUploading ?
+          <div className="flex-column justifyContent--center alignItems--center">
+            <Loader className="u-marginBottom--10" size="30" />
+            <span className="u-textColor--bodyCopy u-fontWeight--medium u-fontSize--normal u-lineHeight--default">{checkingUpdateText}</span>
+          </div>
+        : null }
+        {this.state.checkingForUpdateError &&
+          <div className={`flex-column flex-auto ${this.state.uploadingAirgapFile || this.state.checkingForUpdates || isBundleUploading ? "u-marginTop--10" : ""}`}>
+            <p className="u-fontSize--normal u-marginBottom--5 u-textColor--error u-fontWeight--medium">Error updating version:</p>
+            <p className="u-fontSize--small u-textColor--error u-lineHeight--normal u-fontWeight--medium">{this.state.checkingUpdateMessage}</p>
+          </div>}
+      </div>
+    )
+  }
+
   render() {
     const {
       app,
       match,
       makingCurrentVersionErrMsg,
-      redeployVersionErrMsg
+      redeployVersionErrMsg,
+      isBundleUploading
     } = this.props;
 
     const {
@@ -797,6 +829,7 @@ class AppVersionHistory extends Component {
       displayErrorModal,
       airgapUploader,
       checkingForUpdates,
+      uploadingAirgapFile,
       checkingUpdateMessage
     } = this.state;
 
@@ -964,7 +997,11 @@ class AppVersionHistory extends Component {
                         redeployVersion={this.redeployVersion}
                       />
                     </div>
-
+                    {uploadingAirgapFile || isBundleUploading || this.state.checkingForUpdateError || (app?.isAirgap && this.state.checkingForUpdates)  ?
+                      <div className="u-marginTop--20 u-marginBottom--20">
+                        {this.renderAirgapVersionUploading()}
+                      </div>
+                    : null}
                     {otherAvailableVersions.length > 0 &&
                       <div className="flex u-marginBottom--15 u-marginTop--30">
                         <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy">Other available versions</p>

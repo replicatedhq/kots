@@ -29,7 +29,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	"go.uber.org/multierr"
-	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -449,19 +448,21 @@ func getDefaultDynamicCollectors(app *apptypes.App, imageName string, pullSecret
 	}
 
 	if license != nil {
-		licenseData, err := yaml.Marshal(license)
-		if err != nil {
+		s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+		var b bytes.Buffer
+		if err := s.Encode(license, &b); err != nil {
 			logger.Errorf("Failed to marshal license: %v", err)
-		}
-		collectors = append(collectors, &troubleshootv1beta2.Collect{
-			Data: &troubleshootv1beta2.Data{
-				CollectorMeta: troubleshootv1beta2.CollectorMeta{
-					CollectorName: "license.yaml",
+		} else {
+			collectors = append(collectors, &troubleshootv1beta2.Collect{
+				Data: &troubleshootv1beta2.Data{
+					CollectorMeta: troubleshootv1beta2.CollectorMeta{
+						CollectorName: "license.yaml",
+					},
+					Name: "kots/admin-console",
+					Data: b.String(),
 				},
-				Name: "kots/admin-console",
-				Data: string(licenseData),
-			},
-		})
+			})
+		}
 	}
 
 	collectors = append(collectors, &troubleshootv1beta2.Collect{

@@ -4,11 +4,13 @@ metadata:
   name: kotsadm-web
   labels:
     app: kotsadm-web
+  annotations:
+    dev.okteto.com/auto-ingress: "true"
 spec:
   type: ClusterIP
   ports:
   - name: http
-    port: 30000
+    port: 8080
     targetPort: http
   selector:
     app: kotsadm-web

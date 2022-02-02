@@ -85,7 +85,8 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 			Password:  rewriteOptions.RegistryPassword,
 			ReadOnly:  rewriteOptions.RegistryIsReadOnly,
 		},
-		ReportingInfo: rewriteOptions.ReportingInfo,
+		ReportingInfo:          rewriteOptions.ReportingInfo,
+		SkipCompatibilityCheck: true, // we're rewriting an existing version, no need to check for compatibility
 	}
 
 	log.ActionWithSpinner("Pulling upstream")
@@ -277,6 +278,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 
 		rewriteOptionsCopy := rewriteOptions
 		rewriteOptionsCopy.K8sNamespace = helmBaseCopy.Namespace
+		rewriteOptionsCopy.CopyImages = false // don't copy images more than once
 
 		helmMidstream, err := writeMidstream(writeMidstreamOptions, rewriteOptionsCopy, helmBaseCopy, fetchOptions.License, u.GetUpstreamDir(writeUpstreamOptions), log)
 		if err != nil {

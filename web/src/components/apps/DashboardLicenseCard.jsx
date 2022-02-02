@@ -1,9 +1,11 @@
 import React from "react";
 import size from "lodash/size";
+import yaml from "js-yaml";
 import classNames from "classnames";
 import Loader from "../shared/Loader";
+import Dropzone from "react-dropzone";
 import Modal from "react-modal";
-import { getLicenseExpiryDate, Utilities } from "@src/utilities/utilities";
+import { getFileContent, getLicenseExpiryDate, Utilities } from "@src/utilities/utilities";
 import "../../scss/components/watches/DashboardCard.scss";
 import "@src/scss/components/apps/AppLicense.scss";
 import { Link } from "react-router-dom";
@@ -30,7 +32,7 @@ export default class DashboardLicenseCard extends React.Component {
       licenseData,
     };
 
-    fetch(`${window.env.API_ENDPOINT}/app/${app?.slug}/license`, {
+    fetch(`${process.env.API_ENDPOINT}/app/${app?.slug}/license`, {
       method: "PUT",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -87,6 +89,31 @@ export default class DashboardLicenseCard extends React.Component {
       }, 3000);
     });
   }
+
+  onDrop = async (files) => {
+    const content = await getFileContent(files[0]);
+    const contentStr = (new TextDecoder("utf-8")).decode(content)
+    const airgapLicense = await yaml.safeLoad(contentStr);
+    const { appLicense } = this.state;
+
+    if (airgapLicense.spec?.licenseID !== appLicense?.id) {
+      this.setState({
+        message: "Licenses do not match",
+        messageType: "error"
+      });
+      return;
+    }
+
+    if (airgapLicense.spec?.licenseSequence === appLicense?.licenseSequence) {
+      this.setState({
+        message: "License is already up to date",
+        messageType: "info"
+      });
+      return;
+    }
+
+    this.syncLicense(contentStr);
+  }
   
   hideNextStepModal = () => {
     this.setState({ showNextStepModal: false });
@@ -115,7 +142,18 @@ export default class DashboardLicenseCard extends React.Component {
       <div className={`${isCommunityLicense ? "community-license" : appLicense && size(appLicense) === 0 ? "no-license" : "dashboard-card"} ${Utilities.checkIsDateExpired(expiresAt) ? "expired-license" : ""} flex-column`}>
         <div className="flex flex1 justifyContent--spaceBetween alignItems--center">
           <p className={`u-fontSize--large u-textColor--${Utilities.checkIsDateExpired(expiresAt) ? "error": "primary"} u-fontWeight--bold`}>License {Utilities.checkIsDateExpired(expiresAt) && "is expired"} {isCommunityLicense && <span className="CommunityEditionTag u-marginLeft--5"> Community Edition </span>}</p>
-            {syncingLicense ?
+            {app?.isAirgap ?
+              <Dropzone
+                className="Dropzone-wrapper flex alignItems--center"
+                accept={["application/x-yaml", ".yaml", ".yml"]}
+                onDropAccepted={this.onDrop}
+                multiple={false}
+              >
+                <span className="icon clickable dashboard-card-upload-version-icon u-marginRight--5" />
+                <span className="replicated-link u-fontSize--small" onClick={() => this.syncLicense("")}>Upload license</span>
+              </Dropzone>
+            :
+            syncingLicense ?
               <div className="flex alignItems--center">
                 <Loader className="u-marginRight--5" size="15" />
                 <span className="u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default">Syncing license</span>

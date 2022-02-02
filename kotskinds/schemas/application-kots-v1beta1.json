@@ -35,6 +35,12 @@
         "allowRollback": {
           "type": "boolean"
         },
+        "consoleFeatureFlags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "graphs": {
           "type": "array",
           "items": {
@@ -91,6 +97,9 @@
         "kustomizeVersion": {
           "type": "string"
         },
+        "minKotsVersion": {
+          "type": "string"
+        },
         "ports": {
           "type": "array",
           "items": {
@@ -129,6 +138,9 @@
           "items": {
             "type": "string"
           }
+        },
+        "targetKotsVersion": {
+          "type": "string"
         },
         "title": {
           "type": "string"

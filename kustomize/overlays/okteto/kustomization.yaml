@@ -1,0 +1,16 @@
+bases:
+  - ../../base
+  - ../../../web/kustomize/overlays/dev
+  - ../../../migrations/kustomize/overlays/okteto
+  # - ../../../kurl_proxy/kustomize/overlays/dev
+  - ../kotsstore/minio
+
+resources:
+  - ./dex-postgres-secret.yaml
+  - ./configmap-init-dex-db.yaml
+
+patches:
+  - ./deployment.yaml
+
+commonLabels:
+  app.kubernetes.io/name: kotsadm

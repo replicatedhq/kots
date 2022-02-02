@@ -65,9 +65,9 @@ class IdentityProviders extends Component {
     });
     let url;
     if (app && !this.state.syncAppWithGlobal) {
-      url = `${window.env.API_ENDPOINT}/app/${app?.slug}/identity/config`;
+      url = `${process.env.API_ENDPOINT}/app/${app?.slug}/identity/config`;
     } else {
-      url = `${window.env.API_ENDPOINT}/identity/config`;
+      url = `${process.env.API_ENDPOINT}/identity/config`;
     }
     try {
       const res = await fetch(url, {
@@ -331,9 +331,9 @@ class IdentityProviders extends Component {
 
       let url;
       if (app) {
-        url = `${window.env.API_ENDPOINT}/app/${app?.slug}/identity/config`;
+        url = `${process.env.API_ENDPOINT}/app/${app?.slug}/identity/config`;
       } else {
-        url = `${window.env.API_ENDPOINT}/identity/config`;
+        url = `${process.env.API_ENDPOINT}/identity/config`;
       }
 
       fetch(url, {

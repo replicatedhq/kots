@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kotsadm-migrations
+  labels:
+    app: kotsadm-migrations
+    tags.datadoghq.com/env: "dev"
+spec:
+  selector:
+    matchLabels:
+      app: kotsadm-migrations
+  template:
+    metadata:
+      labels:
+        app: kotsadm-migrations
+        tags.datadoghq.com/env: "dev"
+    spec:
+      volumes:
+        - name: migrations
+          emptyDir:
+            medium: Memory
+      containers:
+      - image: migrations
+        name: pause
+        command:
+          - sleep
+          - infinity
+        volumeMounts:
+          - name: migrations
+            mountPath: /migrations
+        env:
+          - name: SCHEMAHERO_DRIVER
+            value: postgres
+          - name: SCHEMAHERO_SPEC_FILE
+            value: /go/src/github.com/replicatedhq/kots/tables
+          - name: SCHEMAHERO_OUT
+            value: /migrations/plan.yaml
+          - name: SCHEMAHERO_DDL
+            value: /migrations/plan.yaml
+          - name: SCHEMAHERO_URI
+            value: postgresql://kotsadm:password@kotsadm-postgres/kotsadm?connect_timeout=10&application_name=ship&sslmode=disable
+      initContainers:
+      - image: migrations
+        name: migrations-plan
+        volumeMounts:
+          - name: migrations
+            mountPath: /migrations
+        args: ["plan"]
+        env:
+          - name: SCHEMAHERO_DRIVER
+            value: postgres
+          - name: SCHEMAHERO_SPEC_FILE
+            value: /go/src/github.com/replicatedhq/kots/tables
+          - name: SCHEMAHERO_OUT
+            value: /migrations/plan.yaml
+          - name: SCHEMAHERO_URI
+            value: postgresql://kotsadm:password@kotsadm-postgres/kotsadm?connect_timeout=10&application_name=ship&sslmode=disable
+      - image: migrations
+        name: migrations-apply
+        volumeMounts:
+          - name: migrations
+            mountPath: /migrations
+        args: ["apply"]
+        env:
+          - name: SCHEMAHERO_DRIVER
+            value: postgres
+          - name: SCHEMAHERO_DDL
+            value: /migrations/plan.yaml
+          - name: SCHEMAHERO_URI
+            value: postgresql://kotsadm:password@kotsadm-postgres/kotsadm?connect_timeout=10&application_name=ship&sslmode=disable

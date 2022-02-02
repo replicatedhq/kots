@@ -22,24 +22,12 @@ clean:
 	rm -rf node_modules
 	rm -rf dist
 
-.PHONY: test
-test: deps
-	rm -rf pacts/kotsadm-web-kotsadm-api.json
-	yarn test
-
-.PHONY: verify_local
-verify_local:
-	yarn test
-	mkdir -p ../ship-cloud-api/pacts
-	cp pacts/* ../ship-cloud-api/pacts
-
 .PHONY: serve
 serve: deps
 	node --max_old_space_size=6144 \
 		./node_modules/webpack-dev-server/bin/webpack-dev-server.js \
 		--config webpack.config.js \
-		-w --debug --compress --color --env skaffold --mode development --hot \
-		--host 0.0.0.0
+		--color --env development
 
 .PHONY: build-local
 build-local: deps
@@ -47,9 +35,7 @@ build-local: deps
 		--max_old_space_size=6144 \
 		./node_modules/webpack/bin/webpack.js \
 		--config webpack.config.js \
-		--env skaffold \
-		--mode development \
-		--compress
+		--env development
 
 .PHONY: build-kotsadm
 build-kotsadm: KOTSADM_BUILD_VERSION = $(if ${GIT_TAG},${GIT_TAG},$(shell echo ${GIT_COMMIT} | cut -c1-7))
@@ -59,6 +45,5 @@ build-kotsadm: deps
 		--max_old_space_size=6144 \
 		./node_modules/webpack/bin/webpack.js \
 		--config webpack.config.js \
-		--env enterprise \
-		--mode production
+		--env enterprise
 

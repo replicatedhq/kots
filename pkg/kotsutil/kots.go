@@ -11,10 +11,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/blang/semver"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/binaries"
+	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -652,11 +654,12 @@ func SupportBundleToAnalyzer(sb *troubleshootv1beta2.SupportBundle) *troubleshoo
 }
 
 type InstallationParams struct {
-	KotsadmRegistry     string
-	SkipImagePush       bool
-	SkipPreflights      bool
-	RegistryIsReadOnly  bool
-	EnableImageDeletion bool
+	KotsadmRegistry        string
+	SkipImagePush          bool
+	SkipPreflights         bool
+	SkipCompatibilityCheck bool
+	RegistryIsReadOnly     bool
+	EnableImageDeletion    bool
 }
 
 func GetInstallationParams(configMapName string) (InstallationParams, error) {
@@ -680,6 +683,7 @@ func GetInstallationParams(configMapName string) (InstallationParams, error) {
 	autoConfig.KotsadmRegistry = kotsadmConfigMap.Data["kotsadm-registry"]
 	autoConfig.SkipImagePush, _ = strconv.ParseBool(kotsadmConfigMap.Data["initial-app-images-pushed"])
 	autoConfig.SkipPreflights, _ = strconv.ParseBool(kotsadmConfigMap.Data["skip-preflights"])
+	autoConfig.SkipCompatibilityCheck, _ = strconv.ParseBool(kotsadmConfigMap.Data["skip-compatibility-check"])
 	autoConfig.RegistryIsReadOnly, _ = strconv.ParseBool(kotsadmConfigMap.Data["registry-is-read-only"])
 
 	return autoConfig, nil
@@ -742,4 +746,49 @@ func EncodeIdentityConfig(spec kotsv1beta1.IdentityConfig) ([]byte, error) {
 	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 	err := s.Encode(&spec, buf)
 	return buf.Bytes(), err
+}
+
+func IsKotsVersionCompatibleWithApp(kotsApplication kotsv1beta1.Application, isInstall bool) bool {
+	actualSemver, err := semver.ParseTolerant(buildversion.Version())
+	if err != nil {
+		logger.Error(errors.Wrap(err, "kots build version is invalid"))
+		return true
+	}
+
+	if kotsApplication.Spec.MinKotsVersion != "" {
+		minSemver, err := semver.ParseTolerant(kotsApplication.Spec.MinKotsVersion)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "minimum kots version specified in the application spec is invalid"))
+		} else if actualSemver.LT(minSemver) {
+			return false
+		}
+	}
+
+	if isInstall && kotsApplication.Spec.TargetKotsVersion != "" {
+		targetSemver, err := semver.ParseTolerant(kotsApplication.Spec.TargetKotsVersion)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "target kots version specified in the application spec is invalid"))
+		} else if actualSemver.GT(targetSemver) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func GetIncompatbileKotsVersionMessage(kotsApplication kotsv1beta1.Application) string {
+	appName := kotsApplication.Spec.Title
+	if appName == "" {
+		appName = "the app"
+	}
+	desiredKotsVersion := kotsApplication.Spec.TargetKotsVersion
+	if desiredKotsVersion == "" {
+		desiredKotsVersion = kotsApplication.Spec.MinKotsVersion
+	}
+	return fmt.Sprintf(
+		"The new version of %s requires a version of KOTS that is different from what you currently have installed.\nUpgrade KOTS to version %s so you can get this version of %s.",
+		appName,
+		desiredKotsVersion,
+		appName,
+	)
 }

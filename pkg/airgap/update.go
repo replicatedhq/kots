@@ -33,7 +33,11 @@ func StartUpdateTaskMonitor(finishedChan <-chan error) {
 					logger.Error(errors.Wrap(err, "failed to clear update-download task status"))
 				}
 			} else {
-				if err := store.GetStore().SetTaskStatus("update-download", finalError.Error(), "failed"); err != nil {
+				errMsg := finalError.Error()
+				if cause, ok := errors.Cause(finalError).(util.ActionableError); ok {
+					errMsg = cause.Error()
+				}
+				if err := store.GetStore().SetTaskStatus("update-download", errMsg, "failed"); err != nil {
 					logger.Error(errors.Wrap(err, "failed to set error on update-download task status"))
 				}
 			}
@@ -53,7 +57,7 @@ func StartUpdateTaskMonitor(finishedChan <-chan error) {
 	}()
 }
 
-func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string, deploy bool, skipPreflights bool) (finalError error) {
+func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string, deploy bool, skipPreflights bool, skipCompatibilityCheck bool) (finalError error) {
 	finishedChan := make(chan error)
 	defer close(finishedChan)
 
@@ -72,11 +76,11 @@ func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string, deploy bool, 
 	}
 	defer os.RemoveAll(airgapRoot)
 
-	err = UpdateAppFromPath(a, airgapRoot, airgapBundlePath, deploy, skipPreflights)
+	err = UpdateAppFromPath(a, airgapRoot, airgapBundlePath, deploy, skipPreflights, skipCompatibilityCheck)
 	return errors.Wrap(err, "failed to update app")
 }
 
-func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath string, deploy bool, skipPreflights bool) error {
+func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath string, deploy bool, skipPreflights bool, skipCompatibilityCheck bool) error {
 	if err := store.GetStore().SetTaskStatus("update-download", "Processing package...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set tasks status")
 	}
@@ -175,8 +179,9 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 			Password:   registrySettings.Password,
 			IsReadOnly: registrySettings.IsReadOnly,
 		},
-		AppSlug:     a.Slug,
-		AppSequence: appSequence,
+		AppSlug:                a.Slug,
+		AppSequence:            appSequence,
+		SkipCompatibilityCheck: skipCompatibilityCheck,
 	}
 
 	if _, err := pull.Pull(fmt.Sprintf("replicated://%s", beforeKotsKinds.License.Spec.AppSlug), pullOptions); err != nil {

@@ -94,7 +94,7 @@ class DashboardVersionCard extends React.Component {
 
       this.setState({ logsLoading: true, showLogsModal: true, viewLogsErrMsg: "", versionFailing: false });
 
-      const res = await fetch(`${window.env.API_ENDPOINT}/app/${app?.slug}/cluster/${clusterId}/sequence/${version?.sequence}/downstreamoutput`, {
+      const res = await fetch(`${process.env.API_ENDPOINT}/app/${app?.slug}/cluster/${clusterId}/sequence/${version?.sequence}/downstreamoutput`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -140,38 +140,6 @@ class DashboardVersionCard extends React.Component {
     }
   }
 
-  makeCurrentVersion = async (upstreamSlug, version, isSkipPreflights, continueWithFailedPreflights = false) => {
-    try {
-      this.setState({ makingCurrentReleaseErrMsg: "" });
-
-      const res = await fetch(`${window.env.API_ENDPOINT}/app/${upstreamSlug}/sequence/${version.sequence}/deploy`, {
-        headers: {
-          "Authorization": Utilities.getToken(),
-          "Content-Type": "application/json",
-        },
-        method: "POST",
-        body: JSON.stringify({ 
-          isSkipPreflights: isSkipPreflights ,
-          continueWithFailedPreflights: continueWithFailedPreflights,
-          isCLI: false
-        }),
-      });
-      if (res.ok && res.status === 204) {
-        this.setState({ makingCurrentReleaseErrMsg: "" });
-        this.props.refetchData();
-      } else {
-        this.setState({
-          makingCurrentReleaseErrMsg: `Unable to deploy release ${version.versionLabel}, sequence ${version.sequence}: Unexpected status code: ${res.status}`,
-        });
-      }
-    } catch (err) {
-      console.log(err)
-      this.setState({
-        makingCurrentReleaseErrMsg: err ? `Unable to deploy release ${version.versionLabel}, sequence ${version.sequence}: ${err.message}` : "Something went wrong, please try again.",
-      });
-    }
-  }
-
   fetchKotsDownstreamHistory = async () => {
     const { match } = this.props;
     const appSlug = match.params.slug;
@@ -184,7 +152,7 @@ class DashboardVersionCard extends React.Component {
     });
 
     try {
-      const res = await fetch(`${window.env.API_ENDPOINT}/app/${appSlug}/versions`, {
+      const res = await fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/versions`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -319,6 +287,15 @@ class DashboardVersionCard extends React.Component {
             <div>
               <span className="icon deployLogs--icon u-cursor--pointer" onClick={() => this.handleViewLogs(currentVersion, currentVersion?.status === "failed")} data-tip="View deploy logs" />
               <ReactTooltip effect="solid" className="replicated-tooltip" />
+            </div>
+            <div className="flex-column justifyContent--center">
+              <button
+                className="secondary blue btn u-marginLeft--10"
+                disabled={currentVersion.status === "deploying"}
+                onClick={() => this.deployVersion(currentVersion)}
+              >
+                {currentVersion.status === "deploying" ? "Redeploying" : "Redeploy"}
+              </button>
             </div>
           </div>
         </div>
@@ -462,7 +439,7 @@ class DashboardVersionCard extends React.Component {
     const { match, updateCallback } = this.props;
     const { versionToDeploy, isSkipPreflights } = this.state;
     this.setState({ displayConfirmDeploymentModal: false, confirmType: "" });
-    await this.makeCurrentVersion(match.params.slug, versionToDeploy, isSkipPreflights, continueWithFailedPreflights);
+    await this.props.makeCurrentVersion(match.params.slug, versionToDeploy, isSkipPreflights, continueWithFailedPreflights);
     await this.fetchKotsDownstreamHistory();
     this.setState({ versionToDeploy: null });
 
@@ -518,7 +495,7 @@ class DashboardVersionCard extends React.Component {
       return (
         <button
           className="btn primary blue"
-          onClick={() => window.open(version.commitUrl, '_blank')}
+          onClick={() => window.open(version.commitUrl, "_blank")}
         >
           View
         </button>

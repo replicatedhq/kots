@@ -47,7 +47,7 @@ class SupportBundleRow extends React.Component {
 
   downloadBundle = async (bundle) => {
     this.setState({ downloadingBundle: true, downloadBundleErrMsg: "" });
-    fetch(`${window.env.API_ENDPOINT}/troubleshoot/supportbundle/${bundle.id}/download`, {
+    fetch(`${process.env.API_ENDPOINT}/troubleshoot/supportbundle/${bundle.id}/download`, {
       method: "GET",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -81,7 +81,7 @@ class SupportBundleRow extends React.Component {
 
   sendBundleToVendor = async (bundleSlug) => {
     this.setState({ sendingBundle: true, sendingBundleErrMsg: "", downloadBundleErrMsg: "" });
-    fetch(`${window.env.API_ENDPOINT}/troubleshoot/app/${this.props.match.params.slug}/supportbundle/${bundleSlug}/share`, {
+    fetch(`${process.env.API_ENDPOINT}/troubleshoot/app/${this.props.match.params.slug}/supportbundle/${bundleSlug}/share`, {
       method: "POST",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -103,7 +103,7 @@ class SupportBundleRow extends React.Component {
 
   buildInsights = () => {
     const { bundle } = this.props;
-    if (!bundle?.analysis?.insights) return;
+    if (!bundle?.analysis?.insights) {return;}
     const errorInsights = filter(bundle.analysis.insights, ["severity", "error"]);
     const warningInsights = filter(bundle.analysis.insights, ["severity", "warn"]);
     const otherInsights = filter(bundle.analysis.insights, (item) => {

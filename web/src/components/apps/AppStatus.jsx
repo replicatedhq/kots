@@ -2,7 +2,6 @@ import React from "react";
 import { Link } from "react-router-dom";
 import InlineDropdown from "../shared/InlineDropdown";
 import isEmpty from "lodash/isEmpty";
-import url from "url";
 import { Utilities } from "@src/utilities/utilities";
 
 export default class AppStatus extends React.Component {
@@ -38,7 +37,7 @@ export default class AppStatus extends React.Component {
   }
 
   createDashboardActionLink = (uri) => {
-    const parsedUrl = url.parse(uri);
+    const parsedUrl = new URL(uri);
     let port;
     if (!parsedUrl.port) {
       port = "";
@@ -46,7 +45,7 @@ export default class AppStatus extends React.Component {
       port = ":" + parsedUrl.port;
     }
 
-    return `${parsedUrl.protocol}//${window.location.hostname}${port}${parsedUrl.path}`;
+    return `${parsedUrl.protocol}//${window.location.hostname}${port}${parsedUrl.pathname}`;
   }  
 
   render() {
@@ -63,8 +62,8 @@ export default class AppStatus extends React.Component {
             {Utilities.toTitleCase(appStatus)}
           </span>
           {appStatus !== "ready" ?
-            <Link to={`${url}/troubleshoot`} className="card-link u-marginLeft--10 u-borderLeft--gray u-paddingLeft--10"> Troubleshoot </Link>
-            : null}
+            <span onClick={this.props.onViewAppStatusDetails} className="card-link u-marginLeft--10"> Details </span>
+          : null}
           <Link to={`${url}/config/${app?.downstreams[0]?.currentVersion?.sequence}`} className="card-link u-marginLeft--10 u-borderLeft--gray u-paddingLeft--10">Edit config</Link>
         </div>
         :

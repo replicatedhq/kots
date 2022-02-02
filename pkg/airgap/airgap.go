@@ -33,15 +33,16 @@ import (
 )
 
 type CreateAirgapAppOpts struct {
-	PendingApp         *types.PendingApp
-	AirgapPath         string
-	RegistryHost       string
-	RegistryNamespace  string
-	RegistryUsername   string
-	RegistryPassword   string
-	RegistryIsReadOnly bool
-	IsAutomated        bool
-	SkipPreflights     bool
+	PendingApp             *types.PendingApp
+	AirgapPath             string
+	RegistryHost           string
+	RegistryNamespace      string
+	RegistryUsername       string
+	RegistryPassword       string
+	RegistryIsReadOnly     bool
+	IsAutomated            bool
+	SkipPreflights         bool
+	SkipCompatibilityCheck bool
 }
 
 // CreateAppFromAirgap does a lot. Maybe too much. Definitely too much.
@@ -219,8 +220,9 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 			Password:   opts.RegistryPassword,
 			IsReadOnly: opts.RegistryIsReadOnly,
 		},
-		AppSlug:     opts.PendingApp.Slug,
-		AppSequence: 0,
+		AppSlug:                opts.PendingApp.Slug,
+		AppSequence:            0,
+		SkipCompatibilityCheck: opts.SkipCompatibilityCheck,
 	}
 
 	if _, err := pull.Pull(fmt.Sprintf("replicated://%s", license.Spec.AppSlug), pullOptions); err != nil {

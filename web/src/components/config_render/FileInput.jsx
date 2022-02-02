@@ -56,7 +56,7 @@ export default class FileInput extends React.Component {
   }
 
   renderFilesUploaded = (arr) => {
-    if (!arr || arr.length === 0) { return null };
+    if (!arr || arr.length === 0) { return null }
     return arr.map((item, index) => {
       return (
         <div key={`${item}-${index}`} className="u-marginTop--10">

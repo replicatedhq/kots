@@ -131,7 +131,7 @@ class SnapshotSchedule extends Component {
 
   getSnapshotConfig = async (currentApp) => {
     this.setState({ loadingConfig: true, gettingConfigErrMsg: "", displayErrorModal: false });
-    const url = currentApp ? `${window.env.API_ENDPOINT}/app/${currentApp.slug}/snapshot/config` : `${window.env.API_ENDPOINT}/snapshot/config`;
+    const url = currentApp ? `${process.env.API_ENDPOINT}/app/${currentApp.slug}/snapshot/config` : `${process.env.API_ENDPOINT}/snapshot/config`;
     try {
       const res = await fetch(url, {
         method: "GET",
@@ -225,7 +225,7 @@ class SnapshotSchedule extends Component {
         schedule: this.state.frequency,
         autoEnabled: this.state.autoEnabled,
       };
-      url = `${window.env.API_ENDPOINT}/app/${this.state.selectedApp.slug}/snapshot/config`
+      url = `${process.env.API_ENDPOINT}/app/${this.state.selectedApp.slug}/snapshot/config`
     } else {
       body = {
         inputValue: this.state.retentionInput,
@@ -233,7 +233,7 @@ class SnapshotSchedule extends Component {
         schedule: this.state.frequency,
         autoEnabled: this.state.autoEnabled,
       };
-      url = `${window.env.API_ENDPOINT}/snapshot/config`;
+      url = `${process.env.API_ENDPOINT}/snapshot/config`;
     }
     fetch(url, {
       headers: {

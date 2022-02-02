@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { withRouter } from "react-router-dom";
-import MonacoEditor from "react-monaco-editor";
+import MonacoEditor from "@monaco-editor/react";
 import Modal from "react-modal";
 import filter from "lodash/filter";
 import isEmpty from "lodash/isEmpty";
@@ -86,18 +86,18 @@ class SnapshotDetails extends Component {
       tooltip: {
         custom: function ({ series, seriesIndex, dataPointIndex, w }) {
           return (
-            '<div class="arrow_box">' +
-            '<p class="u-textColor--primary u-fontSize--normal u-fontWeight--medium">' +
+            "<div class=\"arrow_box\">" +
+            "<p class=\"u-textColor--primary u-fontSize--normal u-fontWeight--medium\">" +
             w.globals.labels[dataPointIndex] +
             "</p>" +
-            '<span class="u-fontSize--small u-fontWeight--normal u-textColor--bodyCopy u-marginTop--10">' +
+            "<span class=\"u-fontSize--small u-fontWeight--normal u-textColor--bodyCopy u-marginTop--10\">" +
             w.globals.seriesZ[seriesIndex][dataPointIndex] + "</span>" +
             "<br />" +
             "<br />" +
-            '<span class="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy u-marginTop--10">' +
+            "<span class=\"u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy u-marginTop--10\">" +
             "Started at " + dayjs(w.globals.seriesRangeStart[seriesIndex][dataPointIndex]).format("h:mm:ss") + "</span>" +
             "<br />" +
-            '<span class="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy">' +
+            "<span class=\"u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy\">" +
             "Finished at " + dayjs(w.globals.seriesRangeEnd[seriesIndex][dataPointIndex]).format("h:mm:ss") + "</span>" +
             "</div>"
           );
@@ -127,7 +127,7 @@ class SnapshotDetails extends Component {
     });
 
     try {
-      const res = await fetch(`${window.env.API_ENDPOINT}/snapshot/${snapshotName}`, {
+      const res = await fetch(`${process.env.API_ENDPOINT}/snapshot/${snapshotName}`, {
         method: "GET",
         headers: {
           "Authorization": Utilities.getToken(),
@@ -223,7 +223,7 @@ class SnapshotDetails extends Component {
     }, () => {
       this.setState({ loadingSnapshotLogs: true })
       const name = this.state.snapshotDetails?.name;
-      const url = `${window.env.API_ENDPOINT}/snapshot/${name}/logs`;
+      const url = `${process.env.API_ENDPOINT}/snapshot/${name}/logs`;
       fetch(url, {
         headers: {
           "Authorization": Utilities.getToken()
@@ -666,8 +666,6 @@ class SnapshotDetails extends Component {
                     <MonacoEditor
                       language="json"
                       value={scriptOutput[selectedTab]}
-                      height="100%"
-                      width="100%"
                       options={{
                         readOnly: true,
                         contextmenu: false,

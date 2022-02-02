@@ -205,7 +205,7 @@ func Start(params *APIServerParams) {
 		spa := handlers.SPAHandler{}
 		r.PathPrefix("/").Handler(spa)
 	} else if os.Getenv("ENABLE_WEB_PROXY") == "1" { // for dev env
-		u, err := url.Parse("http://kotsadm-web:30000")
+		u, err := url.Parse("http://kotsadm-web:8080")
 		if err != nil {
 			panic(err)
 		}

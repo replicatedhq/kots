@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -21,58 +22,83 @@ type DeployAppVersionRequest struct {
 	IsCLI                        bool `json:"isCli"`
 }
 
+type DeployAppVersionResponse struct {
+	Success bool   `json:"success"`
+	Error   string `json:"error,omitempty"`
+}
+
 func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
+	deployAppVersionResponse := DeployAppVersionResponse{
+		Success: false,
+	}
+
 	appSlug := mux.Vars(r)["appSlug"]
 
 	request := DeployAppVersionRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		logger.Error(errors.Wrap(err, "failed to decode request body"))
-		w.WriteHeader(http.StatusBadRequest)
+		errMsg := "failed to decode request body"
+		logger.Error(errors.Wrap(err, errMsg))
+		deployAppVersionResponse.Error = errMsg
+		JSON(w, http.StatusBadRequest, deployAppVersionResponse)
 		return
 	}
 
 	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
 	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to parse sequence number"))
-		w.WriteHeader(http.StatusBadRequest)
+		errMsg := "failed to parse sequence number"
+		logger.Error(errors.Wrap(err, errMsg))
+		deployAppVersionResponse.Error = errMsg
+		JSON(w, http.StatusBadRequest, deployAppVersionResponse)
 		return
 	}
 
 	a, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
-		logger.Error(errors.Wrapf(err, "failed to get app for slug %s", appSlug))
-		w.WriteHeader(http.StatusInternalServerError)
+		errMsg := fmt.Sprintf("failed to get app for slug %s", appSlug)
+		logger.Error(errors.Wrap(err, errMsg))
+		deployAppVersionResponse.Error = errMsg
+		JSON(w, http.StatusInternalServerError, deployAppVersionResponse)
 		return
 	}
 
 	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
 	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to list downstreams for app"))
-		w.WriteHeader(http.StatusInternalServerError)
+		errMsg := "failed to list downstreams for app"
+		logger.Error(errors.Wrap(err, errMsg))
+		deployAppVersionResponse.Error = errMsg
+		JSON(w, http.StatusInternalServerError, deployAppVersionResponse)
 		return
 	} else if len(downstreams) == 0 {
-		logger.Error(errors.Errorf("no downstreams for app %s", appSlug))
-		w.WriteHeader(http.StatusInternalServerError)
+		errMsg := fmt.Sprintf("no downstreams for app %s", appSlug)
+		logger.Error(errors.New(errMsg))
+		deployAppVersionResponse.Error = errMsg
+		JSON(w, http.StatusInternalServerError, deployAppVersionResponse)
 		return
 	}
 
 	status, err := store.GetStore().GetStatusForVersion(a.ID, downstreams[0].ClusterID, int64(sequence))
 	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to get update downstream status"))
-		w.WriteHeader(http.StatusInternalServerError)
+		errMsg := "failed to get update downstream status"
+		logger.Error(errors.Wrap(err, errMsg))
+		deployAppVersionResponse.Error = errMsg
+		JSON(w, http.StatusInternalServerError, deployAppVersionResponse)
 		return
 	}
 
 	if status == storetypes.VersionPendingConfig {
-		logger.Error(errors.Errorf("not deploying version %d because it's %s", int64(sequence), status))
-		w.WriteHeader(http.StatusInternalServerError)
+		errMsg := fmt.Sprintf("not deploying version %d because it's %s", int64(sequence), status)
+		logger.Error(errors.New(errMsg))
+		deployAppVersionResponse.Error = errMsg
+		JSON(w, http.StatusInternalServerError, deployAppVersionResponse)
 		return
 	}
 
 	versions, err := store.GetStore().GetAppVersions(a.ID, downstreams[0].ClusterID)
 	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to get app versions"))
-		w.WriteHeader(http.StatusInternalServerError)
+		errMsg := "failed to get app versions"
+		logger.Error(errors.Wrap(err, errMsg))
+		deployAppVersionResponse.Error = errMsg
+		JSON(w, http.StatusInternalServerError, deployAppVersionResponse)
 		return
 	}
 	for _, v := range versions.PastVersions {
@@ -87,14 +113,18 @@ func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := store.GetStore().DeleteDownstreamDeployStatus(a.ID, downstreams[0].ClusterID, int64(sequence)); err != nil {
-		logger.Error(errors.Wrap(err, "failed to delete downstream deploy status"))
-		w.WriteHeader(http.StatusInternalServerError)
+		errMsg := "failed to delete downstream deploy status"
+		logger.Error(errors.Wrap(err, errMsg))
+		deployAppVersionResponse.Error = errMsg
+		JSON(w, http.StatusInternalServerError, deployAppVersionResponse)
 		return
 	}
 
 	if err := version.DeployVersion(a.ID, int64(sequence)); err != nil {
-		logger.Error(errors.Wrap(err, "failed to queue version for deployment"))
-		w.WriteHeader(http.StatusInternalServerError)
+		errMsg := "failed to queue version for deployment"
+		logger.Error(errors.Wrap(err, errMsg))
+		deployAppVersionResponse.Error = errMsg
+		JSON(w, http.StatusInternalServerError, deployAppVersionResponse)
 		return
 	}
 
@@ -108,5 +138,7 @@ func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	JSON(w, 204, "")
+	deployAppVersionResponse.Success = true
+
+	JSON(w, 204, deployAppVersionResponse)
 }

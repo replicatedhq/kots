@@ -17,7 +17,7 @@ export default class ConfigSelectOne extends React.Component {
   render() {
     let options = [];
     map(this.props.items, (childItem, i) => {
-      if (isEmpty(childItem)) return null;
+      if (isEmpty(childItem)) {return null;}
       options.push(
         <ConfigRadio
           key={`${childItem.name}-${i}`}

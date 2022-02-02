@@ -2,7 +2,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import timezone from "dayjs/plugin/timezone";
 import advanced from "dayjs/plugin/advancedFormat";
-import Cookies from 'universal-cookie';
+import Cookies from "universal-cookie";
 import utc from "dayjs/plugin/utc";
 import queryString from "query-string";
 import sortBy from "lodash/sortBy";
@@ -12,6 +12,10 @@ import each from "lodash/each";
 import find from "lodash/find";
 import trim from "lodash/trim";
 import * as jsdiff from "diff";
+import zlib from "zlib";
+import yaml from "js-yaml";
+import tar from "tar-stream";
+import fileReaderStream from "filereader-stream";
 
 dayjs.extend(timezone);
 dayjs.extend(utc);
@@ -48,7 +52,7 @@ export function getFileContent(file) {
 export function getApplicationType(watch) {
   try {
     const { metadata } = watch;
-    if (!metadata || metadata === "null") return "";
+    if (!metadata || metadata === "null") {return "";}
     const parsedMetadata = JSON.parse(metadata);
     return parsedMetadata.applicationType;
 
@@ -78,7 +82,7 @@ export function getReadableCollectorName(name) {
  * @param {String} - Returns the commit SHA of the current build
  */
 export function getBuildVersion() {
-  return window.env.KOTSADM_BUILD_VERSION;
+  return process.env.KOTSADM_BUILD_VERSION;
 }
 
 /**
@@ -86,7 +90,7 @@ export function getBuildVersion() {
  * @param {String} - name of feature to check
  */
  export function isFeatureEnabled(featureArr, featureName) {
-   if (!featureArr || featureArr.length === 0) return false;
+   if (!featureArr || featureArr.length === 0) {return false;}
   return featureArr.includes(featureName);
 }
 
@@ -452,11 +456,11 @@ export function isVeleroCorrectVersion (snapshotSettings) {
      let minorVer = parseInt(semVer[1])
      let patchVer = parseInt(semVer[2])
 
-     if( majorVer !== 1) return false;
+     if( majorVer !== 1) {return false;}
      
-     if( minorVer < 5 ) return false;
+     if( minorVer < 5 ) {return false;}
 
-     if( minorVer === 5 && patchVer < 1) return false;
+     if( minorVer === 5 && patchVer < 1) {return false;}
 
      return true
   }
@@ -679,9 +683,9 @@ export const Utilities = {
 
   bytesToSize(bytes) {
     const sizes = ["B", "KB", "MB", "GB", "TB"];
-    if (bytes === 0) return "0 B";
+    if (bytes === 0) {return "0 B";}
     let i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
-    if (i === 0) return bytes + " " + sizes[i];
+    if (i === 0) {return bytes + " " + sizes[i];}
     return (bytes / Math.pow(1024, i)).toFixed(1) + " " + sizes[i];
   },
 
@@ -715,6 +719,74 @@ export const Utilities = {
     } else {
       return false;
     }
+  },
+
+  getAppArchiveFromAirgapBundle(bundle) {
+    return new Promise((resolve, reject) => {
+      try {
+        const extract = tar.extract();
+        const gzunipStream = zlib.createGunzip();
+        fileReaderStream(bundle).pipe(gzunipStream).pipe(extract).on("entry", (header, stream, next) => {
+          if (header.name !== "app.tar.gz") {
+            next();
+            return;
+          }
+          const buffers = [];
+          stream.on("data", (buffer) => {
+            buffers.push(buffer);
+          });
+          stream.on("end", async () => {
+            resolve(new Blob(buffers));
+          })
+          stream.resume()
+        }).on("finish", () => {
+          resolve();
+        });
+      } catch (err) {
+        reject(err);
+      }
+    });
+  },
+
+  getAppSpecFromAirgapBundle(bundleArchive) {
+    return new Promise((resolve, reject) => {
+      try {
+        this.getAppArchiveFromAirgapBundle(bundleArchive).then(appArchive => {
+          if (!appArchive) {
+            resolve();
+            return;
+          }
+          const extract = tar.extract();
+          const gzunipStream = zlib.createGunzip();
+          fileReaderStream(appArchive).pipe(gzunipStream).pipe(extract).on("entry", (header, stream, next) => {
+            if (getFileFormat(header.name) !== "yaml") {
+              next();
+              return;
+            }
+            const buffers = [];
+            stream.on("data", (buffer) => {
+              buffers.push(buffer);
+            });
+            stream.on("end", async () => {
+              const content = Buffer.concat(buffers).toString("utf-8");
+              const parsed = await yaml.safeLoad(content);
+              if (parsed?.kind === "Application" && parsed?.apiVersion === "kots.io/v1beta1") {
+                resolve(content);
+                return;
+              }
+              next();
+            })
+            stream.resume()
+          }).on("finish", () => {
+            resolve();
+          });
+        }).catch(err => {
+          reject(err)
+        });
+      } catch (err) {
+        reject(err);
+      }
+    });
   }
 };
 

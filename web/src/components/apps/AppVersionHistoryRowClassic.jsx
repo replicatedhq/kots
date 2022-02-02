@@ -57,7 +57,7 @@ function renderVersionAction(version, latestVersion, nothingToCommitDiff, app, h
     return (
       <button
         className="btn primary blue"
-        onClick={() => window.open(version.commitUrl, '_blank')}
+        onClick={() => window.open(version.commitUrl, "_blank")}
       >
         View
       </button>

@@ -1,5 +1,6 @@
 bases:
   - ../../base
+  - ../rbac
   - ../../../web/kustomize/overlays/dev
   - ../../../kurl_proxy/kustomize/overlays/dev
 

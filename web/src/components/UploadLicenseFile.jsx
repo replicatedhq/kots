@@ -63,7 +63,7 @@ class UploadLicenseFile extends React.Component {
   uploadLicenseFile = async () => {
     const { onUploadSuccess, history } = this.props;
     const { licenseFile, licenseFileContent, hasMultiApp } = this.state;
-    const isRliFile = licenseFile.name.substr(licenseFile.name.lastIndexOf('.')) === ".rli";
+    const isRliFile = licenseFile.name.substr(licenseFile.name.lastIndexOf(".")) === ".rli";
     let licenseText;
 
     let serializedLicense;
@@ -89,7 +89,7 @@ class UploadLicenseFile extends React.Component {
     });
 
     let data;
-    fetch(`${window.env.API_ENDPOINT}/license`, {
+    fetch(`${process.env.API_ENDPOINT}/license`, {
       method: "POST",
       headers: {
         "Authorization": Utilities.getToken(),
@@ -206,7 +206,7 @@ class UploadLicenseFile extends React.Component {
         licenseData: content,
       };
 
-      fetch(`${window.env.API_ENDPOINT}/license/platform`, {
+      fetch(`${process.env.API_ENDPOINT}/license/platform`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -242,7 +242,7 @@ class UploadLicenseFile extends React.Component {
       license: this.state.licenseFile
     }
 
-    fetch(`${window.env.API_ENDPOINT}/snapshot/${snapshot.name}/restore`, {
+    fetch(`${process.env.API_ENDPOINT}/snapshot/${snapshot.name}/restore`, {
       method: "POST",
       headers: {
         "Authorization": Utilities.getToken(),

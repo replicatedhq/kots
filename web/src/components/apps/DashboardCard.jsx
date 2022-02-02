@@ -6,7 +6,6 @@ import Select from "react-select";
 import isEmpty from "lodash/isEmpty";
 import dayjs from "dayjs";
 import size from "lodash/size";
-import url from "url";
 
 import AirgapUploadProgress from "../AirgapUploadProgress";
 import Loader from "../shared/Loader";
@@ -64,7 +63,7 @@ export default class DashboardCard extends React.Component {
   }
 
   createDashboardActionLink = (uri) => {
-    const parsedUrl = url.parse(uri);
+    const parsedUrl = new URL(uri);
 
     let port;
     if (!parsedUrl.port) {
@@ -73,7 +72,7 @@ export default class DashboardCard extends React.Component {
       port = ":" + parsedUrl.port;
     }
 
-    return `${parsedUrl.protocol}//${window.location.hostname}${port}${parsedUrl.path}`;
+    return `${parsedUrl.protocol}//${window.location.hostname}${port}${parsedUrl.pathname}`;
   }
 
   renderApplicationCard = () => {
@@ -186,7 +185,7 @@ export default class DashboardCard extends React.Component {
 
       this.setState({ logsLoading: true, showLogsModal: true, viewLogsErrMsg: "" });
 
-      const res = await fetch(`${window.env.API_ENDPOINT}/app/${app?.slug}/cluster/${clusterId}/sequence/${version?.sequence}/downstreamoutput`, {
+      const res = await fetch(`${process.env.API_ENDPOINT}/app/${app?.slug}/cluster/${clusterId}/sequence/${version?.sequence}/downstreamoutput`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -307,7 +306,11 @@ export default class DashboardCard extends React.Component {
         {!showOnlineUI && updateText}
         {checkingForUpdateError &&
           <div className="flex-column flex-auto u-marginTop--5">
-            <p className="u-marginTop--10 u-fontSize--small u-textColor--error u-fontWeight--medium">Error updating version <span className="u-linkColor u-textDecoration--underlineOnHover" onClick={() => this.props.viewAirgapUpdateError(checkingUpdateText)}>View details</span></p>
+            {this.props.incompatibleKotsVersionError ?
+              <p className="u-marginTop--10 u-fontSize--small u-textColor--error u-fontWeight--medium">Incompatible KOTS Version <span className="u-linkColor u-textDecoration--underlineOnHover" onClick={() => this.props.toggleDisplayRequiredKotsUpdateModal(checkingUpdateText)}>See details</span></p>
+            :
+              <p className="u-marginTop--10 u-fontSize--small u-textColor--error u-fontWeight--medium">Error updating version <span className="u-linkColor u-textDecoration--underlineOnHover" onClick={() => this.props.viewAirgapUpdateError(checkingUpdateText)}>See details</span></p>
+            }
           </div>}
       </div>
     )

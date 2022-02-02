@@ -328,7 +328,7 @@ func (h *Handler) UpdateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 	}
 
 	go func() {
-		if err := airgap.UpdateAppFromAirgap(a, airgapBundlePath, false, false); err != nil {
+		if err := airgap.UpdateAppFromAirgap(a, airgapBundlePath, false, false, false); err != nil {
 			logger.Error(errors.Wrap(err, "failed to update app from airgap bundle"))
 
 			// if NoRetry is set, we stll want to clean up immediately
@@ -403,8 +403,6 @@ func (h *Handler) CreateAppFromAirgap(w http.ResponseWriter, r *http.Request) {
 			RegistryUsername:   username,
 			RegistryPassword:   password,
 			RegistryIsReadOnly: isReadOnly,
-			IsAutomated:        false,
-			SkipPreflights:     false,
 		}
 		if err := airgap.CreateAppFromAirgap(createAppOpts); err != nil {
 			logger.Error(errors.Wrap(err, "failed to create app from airgap bundle"))

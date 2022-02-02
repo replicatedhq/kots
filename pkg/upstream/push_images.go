@@ -20,7 +20,7 @@ type ProcessUpstreamImagesOptions struct {
 	ImagesDir           string
 	AirgapBundle        string
 	CreateAppDir        bool
-	RegistryIsReadOnly  bool
+	PushImages          bool
 	UseKnownImages      bool
 	KnownImages         []kustomizetypes.Image
 	Log                 *logger.CLILogger
@@ -46,7 +46,7 @@ func ProcessUpstreamImages(u *types.Upstream, options ProcessUpstreamImagesOptio
 	if options.UseKnownImages {
 		foundImages = options.KnownImages
 	} else {
-		if options.RegistryIsReadOnly {
+		if !options.PushImages {
 			if options.AirgapBundle != "" {
 				images, err := kotsadm.GetImagesFromBundle(options.AirgapBundle, pushOpts)
 				if err != nil {

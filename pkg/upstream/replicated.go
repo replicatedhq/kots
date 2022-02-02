@@ -22,6 +22,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	reportingtypes "github.com/replicatedhq/kots/pkg/api/reporting/types"
 	"github.com/replicatedhq/kots/pkg/buildversion"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	reporting "github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/template"
@@ -141,6 +142,7 @@ func downloadReplicated(
 	airgapMetadata *kotsv1beta1.Airgap,
 	registry types.LocalRegistry,
 	reportingInfo *reportingtypes.ReportingInfo,
+	skipCompatibilityCheck bool,
 ) (*types.Upstream, error) {
 	var release *Release
 
@@ -185,9 +187,18 @@ func downloadReplicated(
 		release = downloadedRelease
 	}
 
-	// Find the config in the upstream and write out default values
-
 	application := findAppInRelease(release) // this function never returns nil
+
+	if !skipCompatibilityCheck {
+		isInstall := appSequence == 0
+		isCompatible := kotsutil.IsKotsVersionCompatibleWithApp(*application, isInstall)
+		if !isCompatible {
+			return nil, util.ActionableError{
+				NoRetry: true,
+				Message: kotsutil.GetIncompatbileKotsVersionMessage(*application),
+			}
+		}
+	}
 
 	// NOTE: this currently comes from the application spec and not the channel release meta
 	if release.ReleaseNotes == "" {
@@ -219,6 +230,7 @@ func downloadReplicated(
 		release.Manifests["userdata/identityconfig.yaml"] = mustMarshalIdentityConfig(existingIdentityConfig)
 	}
 
+	// Find the config in the upstream and write out default values
 	if existingConfigValues == nil {
 		var prevConfigFile string
 		if useAppDir {
@@ -806,7 +818,7 @@ func findAppInRelease(release *Release) *kotsv1beta1.Application {
 		}
 	}
 
-	// Using Ship apps for now, so let's create an app manifest on the fly
+	// create an app manifest on the fly
 	app := &kotsv1beta1.Application{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "kots.io/v1beta1",
