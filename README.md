@@ -26,7 +26,7 @@ kubectl kots install sentry-pro
 
 Set a namespace for the admin console and the application components to be installed, and provide a password for the admin console. After this command completes, the kotsadm Admin Console will be running in your cluster, listening on port :8800 on a ClusterIP service in the namespace you deployed the application to. By default this is exposed to your workstation using kubectl port-forward, but you could set up an ingress/load balancer of your own.
 
-### Access the Admin Console
+### Access the Admin Consoleasdf
 Visit http://localhost:8800 to access the Admin Console, enter the password.
 
 Download the [sample license](https://kots.io/sample-license) for Sentry Pro & upload it to the console. You'll then be presented with configuration settings, preflight checks and other application options.
