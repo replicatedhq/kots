@@ -284,7 +284,7 @@ jobs:
           docker push ttl.sh/automated-${{ github.run_id }}/postgres:2h
 
 
-  validate-legacy:
+  validate-smoke-test:
     runs-on: ubuntu-18.04
     needs: [can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
     strategy:
@@ -336,13 +336,13 @@ jobs:
           --prefix /automated-${{ github.run_id }}-${{ matrix.k8s_version }} \
           --use-restic
 
-      - name: prepare legacy tests
+      - name: prepare smoke test
         run: |
           set +e
           ./bin/kots \
           install qakotstestim/github-actions-qa \
           --port-forward=false \
-          --namespace legacy \
+          --namespace smoke-test \
           --shared-password password \
           --kotsadm-registry ttl.sh \
           --kotsadm-namespace automated-${{ github.run_id }} \
@@ -350,11 +350,11 @@ jobs:
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
             echo "------pods:"
-            kubectl -n legacy get pods
+            kubectl -n smoke-test get pods
             echo "------kotsadm logs"
-            kubectl -n legacy logs deployment/kotsadm
+            kubectl -n smoke-test logs deployment/kotsadm
             echo "------previous kotsadm logs"
-            kubectl -n legacy logs -p deployment/kotsadm
+            kubectl -n smoke-test logs -p deployment/kotsadm
           fi
           exit $EXIT_CODE
 
@@ -364,20 +364,20 @@ jobs:
         shell: bash
         run: BRANCH=${GITHUB_REF/refs\/heads\//} && echo ::set-output name=GIT_BRANCH::${BRANCH:-main}
 
-      - name: execute legacy tests
+      - name: execute smoke test
         run: |
           set +e
-          ./bin/kots admin-console -n legacy &
+          ./bin/kots admin-console -n smoke-test &
           ADMIN_CONSOLE_PID=$!
-          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --branch ${{ steps.get_branch.outputs.GIT_BRANCH }} --report-file testim-report.xml --suite legacy --tunnel --tunnel-port 8800
+          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --branch ${{ steps.get_branch.outputs.GIT_BRANCH }} --report-file testim-report.xml --suite smoke-test --tunnel --tunnel-port 8800
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
             echo "------pods:"
-            kubectl -n legacy get pods
+            kubectl -n smoke-test get pods
             echo "------kotsadm logs"
-            kubectl -n legacy logs deployment/kotsadm
+            kubectl -n smoke-test logs deployment/kotsadm
             echo "------previous kotsadm logs"
-            kubectl -n legacy logs -p deployment/kotsadm
+            kubectl -n smoke-test logs -p deployment/kotsadm
             echo "------velero logs"
             kubectl -n velero logs deployment/velero
           fi
@@ -435,12 +435,13 @@ jobs:
           --kotsadm-registry ttl.sh \
           --kotsadm-namespace automated-${{ github.run_id }} \
           --kotsadm-tag 2h
-      - name: execute suite bravo
+
+      - name: execute suite minimal-rbac
         run: |
           set +e
           ./bin/kots admin-console -n minimal-rbac &
           ADMIN_CONSOLE_PID=$!
-          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --branch ${{ steps.get_branch.outputs.GIT_BRANCH }} --report-file testim-report.xml --suite bravo --tunnel --tunnel-port 8800
+          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --branch ${{ steps.get_branch.outputs.GIT_BRANCH }} --report-file testim-report.xml --suite minimal-rbac --tunnel --tunnel-port 8800
           EXIT_CODE=$?
           echo "------pods:"
           kubectl -n minimal-rbac get pods
@@ -679,9 +680,205 @@ jobs:
           echo "All pods started"
 
 
+
+  validate-min-kots-version:
+    runs-on: ubuntu-18.04
+    needs: [can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
+    steps:
+      - uses: replicatedhq/action-k3s@main
+        id: k3s
+        with:
+          version: ${{ matrix.k8s_version }}
+
+      - name: download kots binary
+        uses: actions/download-artifact@v2
+        with:
+          name: kots
+          path: bin/
+
+      - run: chmod +x bin/kots
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '17.x'
+
+      - name: setup testIM
+        run: npm i -g @testim/testim-cli@3.206.0
+        shell: bash
+
+      ## testim tests
+
+      - name: get branch
+        if: startsWith(github.ref, 'refs/heads/')
+        id: get_branch
+        shell: bash
+        run: BRANCH=${GITHUB_REF/refs\/heads\//} && echo ::set-output name=GIT_BRANCH::${BRANCH:-main}
+
+      - name: prepare min-kots-version online install
+        run: |
+          ./bin/kots \
+          install min-kots-version/automated \
+          --port-forward=false \
+          --namespace min-kots-version \
+          --shared-password password \
+          --kotsadm-registry ttl.sh \
+          --kotsadm-namespace automated-${{ github.run_id }} \
+          --kotsadm-tag 2h
+
+      - name: execute suite min-kots-version
+        run: |
+          set +e
+          ./bin/kots admin-console -n min-kots-version &
+          ADMIN_CONSOLE_PID=$!
+          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --branch ${{ steps.get_branch.outputs.GIT_BRANCH }} --report-file testim-report.xml --suite min-kots-version --tunnel --tunnel-port 8800
+          EXIT_CODE=$?
+          echo "------pods:"
+          kubectl -n min-kots-version get pods
+          echo "------kotsadm logs"
+          kubectl -n min-kots-version logs deployment/kotsadm
+          echo "------previous kotsadm logs"
+          kubectl -n min-kots-version logs -p deployment/kotsadm
+          kill $ADMIN_CONSOLE_PID
+          exit $EXIT_CODE
+
+
+  validate-target-kots-version:
+    runs-on: ubuntu-18.04
+    needs: [can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
+    steps:
+      - uses: replicatedhq/action-k3s@main
+        id: k3s
+        with:
+          version: ${{ matrix.k8s_version }}
+
+      - name: download kots binary
+        uses: actions/download-artifact@v2
+        with:
+          name: kots
+          path: bin/
+
+      - run: chmod +x bin/kots
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '17.x'
+
+      - name: setup testIM
+        run: npm i -g @testim/testim-cli@3.206.0
+        shell: bash
+
+      ## testim tests
+
+      - name: get branch
+        if: startsWith(github.ref, 'refs/heads/')
+        id: get_branch
+        shell: bash
+        run: BRANCH=${GITHUB_REF/refs\/heads\//} && echo ::set-output name=GIT_BRANCH::${BRANCH:-main}
+
+      - name: prepare target-kots-version online install
+        run: |
+          ./bin/kots \
+          install target-kots-version/automated \
+          --port-forward=false \
+          --namespace target-kots-version \
+          --shared-password password \
+          --kotsadm-registry ttl.sh \
+          --kotsadm-namespace automated-${{ github.run_id }} \
+          --kotsadm-tag 2h
+
+      - name: execute suite target-kots-version
+        run: |
+          set +e
+          ./bin/kots admin-console -n target-kots-version &
+          ADMIN_CONSOLE_PID=$!
+          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --branch ${{ steps.get_branch.outputs.GIT_BRANCH }} --report-file testim-report.xml --suite target-kots-version --tunnel --tunnel-port 8800
+          EXIT_CODE=$?
+          echo "------pods:"
+          kubectl -n target-kots-version get pods
+          echo "------kotsadm logs"
+          kubectl -n target-kots-version logs deployment/kotsadm
+          echo "------previous kotsadm logs"
+          kubectl -n target-kots-version logs -p deployment/kotsadm
+          kill $ADMIN_CONSOLE_PID
+          exit $EXIT_CODE
+
+
+  validate-range-kots-version:
+    runs-on: ubuntu-18.04
+    needs: [can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
+    steps:
+      - uses: replicatedhq/action-k3s@main
+        id: k3s
+        with:
+          version: ${{ matrix.k8s_version }}
+
+      - name: download kots binary
+        uses: actions/download-artifact@v2
+        with:
+          name: kots
+          path: bin/
+
+      - run: chmod +x bin/kots
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '17.x'
+
+      - name: setup testIM
+        run: npm i -g @testim/testim-cli@3.206.0
+        shell: bash
+
+      ## testim tests
+
+      - name: get branch
+        if: startsWith(github.ref, 'refs/heads/')
+        id: get_branch
+        shell: bash
+        run: BRANCH=${GITHUB_REF/refs\/heads\//} && echo ::set-output name=GIT_BRANCH::${BRANCH:-main}
+
+      - name: prepare range-kots-version online install
+        run: |
+          ./bin/kots \
+          install range-kots-version/automated \
+          --port-forward=false \
+          --namespace range-kots-version \
+          --shared-password password \
+          --kotsadm-registry ttl.sh \
+          --kotsadm-namespace automated-${{ github.run_id }} \
+          --kotsadm-tag 2h
+
+      - name: execute suite range-kots-version
+        run: |
+          set +e
+          ./bin/kots admin-console -n range-kots-version &
+          ADMIN_CONSOLE_PID=$!
+          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --branch ${{ steps.get_branch.outputs.GIT_BRANCH }} --report-file testim-report.xml --suite range-kots-version --tunnel --tunnel-port 8800
+          EXIT_CODE=$?
+          echo "------pods:"
+          kubectl -n range-kots-version get pods
+          echo "------kotsadm logs"
+          kubectl -n range-kots-version logs deployment/kotsadm
+          echo "------previous kotsadm logs"
+          kubectl -n range-kots-version logs -p deployment/kotsadm
+          kill $ADMIN_CONSOLE_PID
+          exit $EXIT_CODE
+
+
   # this job will validate that all validate-* jobs succeed
   validate-success:
     runs-on: ubuntu-18.04
-    needs: [validate-legacy, validate-minimal-rbac, validate-no-required-config, validate-multi-namespace, validate-kots-pull]
+    needs: [validate-smoke-test, validate-minimal-rbac, validate-no-required-config, validate-multi-namespace, validate-kots-pull, validate-min-kots-version, validate-target-kots-version, validate-range-kots-version]
     steps:
       - run: echo "Validate success"
