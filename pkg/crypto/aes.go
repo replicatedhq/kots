@@ -204,6 +204,10 @@ func Encrypt(in []byte) []byte {
 
 // Decrypt attempts to decrypt the provided data with all registered keys
 func Decrypt(in []byte) (result []byte, err error) {
+	if len(decryptionCiphers) == 0 {
+		return nil, NoDecryptionKeysErr{}
+	}
+
 	for _, decryptCipher := range decryptionCiphers {
 		result, err = decryptCipher.decrypt(in)
 		if err != nil {
@@ -213,4 +217,10 @@ func Decrypt(in []byte) (result []byte, err error) {
 		}
 	}
 	return nil, err
+}
+
+type NoDecryptionKeysErr struct{}
+
+func (e NoDecryptionKeysErr) Error() string {
+	return "no decryption ciphers loaded"
 }
