@@ -2,8 +2,9 @@ package crypto
 
 import (
 	"encoding/base64"
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func Test_General(t *testing.T) {
@@ -95,4 +96,15 @@ func Test_BadDecrypt(t *testing.T) {
 	req.Error(err)
 	req.Equal("cipher: message authentication failed", err.Error())
 	req.Nil(out)
+}
+func Test_NoKeyEncrypt(t *testing.T) {
+	req := require.New(t)
+
+	encryptionCipher = nil
+	decryptionCiphers = nil
+
+	out := Encrypt([]byte("this is a test"))
+	decrypted, err := Decrypt(out)
+	req.NoError(err)
+	req.Equal([]byte("this is a test"), decrypted)
 }
