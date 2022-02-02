@@ -33,7 +33,7 @@ Download the [sample license](https://kots.io/sample-license) for Sentry Pro & u
 
 If you terminate your terminal session, the port-forward will also terminate. To access the admin console again, just run:
 ```
-kubectl kots admin-console --namespace sentry-pro
+kubectl kots admin-console --namespace sentry-proadf
 ```
 
 # Community
