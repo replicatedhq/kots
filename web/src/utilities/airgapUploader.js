@@ -61,6 +61,13 @@ export class AirgapUploader {
 
   upload = async (processParams, onProgress, onError, onComplete) => {
     try {
+      // first, validate that the release is compatible with the current kots version
+      const appSpec = await Utilities.getAppSpecFromAirgapBundle(this.resumableFile.file)
+      const compatibilityResponse = await this.checkKotsVersionCompatibility(appSpec);
+      if (compatibilityResponse?.isCompatible === false) {
+        throw new Error(compatibilityResponse?.error);
+      }
+
       this.processParams = processParams;
       this.onProgress = onProgress;
       this.onError = onError;
@@ -144,6 +151,28 @@ export class AirgapUploader {
         onError(errMsg);
       }
     }
+  }
+
+  checkKotsVersionCompatibility = async appSpec => {
+    const res = await fetch(`${process.env.API_ENDPOINT}/app/iscompatible`, {
+      headers: {
+        "Authorization": Utilities.getToken(),
+      },
+      body: JSON.stringify({
+        appSpec: appSpec,
+        isInstall: !this.isUpdate,
+      }),
+      method: "POST",
+    });
+    if (!res.ok) {
+      if (res.status === 401) {
+        Utilities.logoutUser();
+        return;
+      }
+      throw new Error(`Unexpected status code: ${res.status}`);
+    }
+    const response = await res.json();
+    return response;
   }
 
   getApiCurrentProgress = async () => {

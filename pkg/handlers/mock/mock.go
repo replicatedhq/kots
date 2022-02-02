@@ -874,6 +874,18 @@ func (mr *MockKOTSHandlerMockRecorder) InitGitOpsConnection(w, r interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitGitOpsConnection", reflect.TypeOf((*MockKOTSHandler)(nil).InitGitOpsConnection), w, r)
 }
 
+// IsKotsVersionCompatibleWithApp mocks base method.
+func (m *MockKOTSHandler) IsKotsVersionCompatibleWithApp(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "IsKotsVersionCompatibleWithApp", w, r)
+}
+
+// IsKotsVersionCompatibleWithApp indicates an expected call of IsKotsVersionCompatibleWithApp.
+func (mr *MockKOTSHandlerMockRecorder) IsKotsVersionCompatibleWithApp(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsKotsVersionCompatibleWithApp", reflect.TypeOf((*MockKOTSHandler)(nil).IsKotsVersionCompatibleWithApp), w, r)
+}
+
 // ListApps mocks base method.
 func (m *MockKOTSHandler) ListApps(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()

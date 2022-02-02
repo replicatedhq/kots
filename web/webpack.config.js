@@ -5,6 +5,7 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 const FaviconsWebpackPlugin = require("favicons-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const MonacoWebpackPlugin = require("monaco-editor-webpack-plugin");
+const NodePolyfillPlugin = require("node-polyfill-webpack-plugin");
 
 // const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer");
 
@@ -114,6 +115,7 @@ module.exports = function (env) {
       ],
     },
     plugins: [
+      new NodePolyfillPlugin(),
       new webpack.ProvidePlugin({
         Buffer: ["buffer", "Buffer"],
         process: "process/browser",
