@@ -568,6 +568,7 @@ class Dashboard extends Component {
                   <AppStatus
                     appStatus={this.state.dashboard?.appStatus?.state}
                     url={this.props.match.url}
+                    onViewAppStatusDetails={this.toggleAppStatusModal}
                     links={links}
                     app={app}
                   />
