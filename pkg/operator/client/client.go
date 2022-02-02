@@ -3,7 +3,6 @@ package client
 import (
 	"bytes"
 	"encoding/base64"
-	"encoding/json"
 	"io/ioutil"
 	"log"
 	"os"
@@ -115,8 +114,7 @@ func (c *Client) runAppStateMonitor() error {
 			hash[appStatus.AppID] = nextHash
 			mtx.Unlock()
 			if lastHash != nextHash {
-				b, _ := json.Marshal(appStatus)
-				log.Printf("Updating app status %s", b)
+				log.Println("Updating app status")
 			}
 			if err := c.setAppStatus(appStatus); err != nil {
 				log.Printf("error updating app status: %v", err)
@@ -408,7 +406,7 @@ func (c *Client) setUndeployResults(args operatortypes.DeployAppArgs, results De
 }
 
 func (c *Client) ApplyAppInformers(args operatortypes.AppInformersArgs) {
-	log.Printf("received an inform event: %#v", args)
+	log.Println("received an inform event")
 
 	appID := args.AppID
 	sequence := args.Sequence

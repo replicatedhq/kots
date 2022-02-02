@@ -176,7 +176,7 @@ type runControllerFunc func(context.Context, kubernetes.Interface, string, []typ
 func (m *AppMonitor) runInformers(ctx context.Context, informers []types.StatusInformer) {
 	informers = normalizeStatusInformers(informers, m.targetNamespace)
 
-	log.Printf("Running informers: %#v", informers)
+	log.Println("Running informers")
 
 	appStatus := types.AppStatus{
 		AppID:          m.appID,
