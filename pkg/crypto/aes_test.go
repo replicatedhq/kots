@@ -8,6 +8,10 @@ import (
 
 func Test_General(t *testing.T) {
 	req := require.New(t)
+
+	encryptionCipher = nil
+	decryptionCiphers = nil
+
 	// ensure that it works the first time
 	req.NoError(NewAESCipher())
 	cipherKey := ToString()
@@ -65,4 +69,30 @@ func Test_General(t *testing.T) {
 	testDecrypted, err = Decrypt(testEncrypted)
 	req.NoError(err)
 	req.Equal(testValue, string(testDecrypted))
+}
+
+func Test_NoDecrypt(t *testing.T) {
+	req := require.New(t)
+
+	encryptionCipher = nil
+	decryptionCiphers = nil
+
+	out, err := Decrypt([]byte("this is a test"))
+	req.Error(err)
+	req.ErrorIs(err, NoDecryptionKeysErr{})
+	req.Nil(out)
+}
+
+func Test_BadDecrypt(t *testing.T) {
+	req := require.New(t)
+
+	encryptionCipher = nil
+	decryptionCiphers = nil
+
+	req.NoError(NewAESCipher())
+
+	out, err := Decrypt([]byte("this is a test"))
+	req.Error(err)
+	req.Equal("cipher: message authentication failed", err.Error())
+	req.Nil(out)
 }
