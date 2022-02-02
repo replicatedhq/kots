@@ -5,6 +5,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/fake"
 )
 
 func Test_General(t *testing.T) {
@@ -97,6 +100,7 @@ func Test_BadDecrypt(t *testing.T) {
 	req.Equal("cipher: message authentication failed", err.Error())
 	req.Nil(out)
 }
+
 func Test_NoKeyEncrypt(t *testing.T) {
 	req := require.New(t)
 
@@ -107,4 +111,52 @@ func Test_NoKeyEncrypt(t *testing.T) {
 	decrypted, err := Decrypt(out)
 	req.NoError(err)
 	req.Equal([]byte("this is a test"), decrypted)
+}
+
+func Test_InitFromSecret(t *testing.T) {
+	req := require.New(t)
+
+	// wipe out all ciphers to start
+	encryptionCipher = nil
+	decryptionCiphers = nil
+
+	// create a new cipher and encrypt data with it
+	testString := "initializing from a secret should work"
+	encryptedData := Encrypt([]byte(testString))
+	originalKey := ToString()
+
+	// wipe out all ciphers again to test loading from secret
+	encryptionCipher = nil
+	decryptionCiphers = nil
+
+	clientset := fake.NewSimpleClientset(
+		&corev1.Secret{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Secret",
+				APIVersion: "v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "kotsadm-encryption",
+				Namespace: "testns",
+				Labels: map[string]string{
+					"test": "test",
+				},
+			},
+			Data: map[string][]byte{
+				"encryptionKey": []byte(originalKey),
+			},
+		})
+
+	// load cipher from a k8s secret
+	err := InitFromSecret(clientset, "testns")
+	req.NoError(err)
+
+	// compare the new key to the old key
+	loadedKey := ToString()
+	req.Equal(originalKey, loadedKey)
+
+	// ensure that decryption works
+	decryptedData, err := Decrypt(encryptedData)
+	req.NoError(err)
+	req.Equal(testString, string(decryptedData))
 }
