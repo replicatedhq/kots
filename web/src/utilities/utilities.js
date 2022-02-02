@@ -12,6 +12,10 @@ import each from "lodash/each";
 import find from "lodash/find";
 import trim from "lodash/trim";
 import * as jsdiff from "diff";
+import zlib from "zlib";
+import yaml from "js-yaml";
+import tar from "tar-stream";
+import fileReaderStream from "filereader-stream";
 
 dayjs.extend(timezone);
 dayjs.extend(utc);
@@ -715,6 +719,74 @@ export const Utilities = {
     } else {
       return false;
     }
+  },
+
+  getAppArchiveFromAirgapBundle(bundle) {
+    return new Promise((resolve, reject) => {
+      try {
+        const extract = tar.extract();
+        const gzunipStream = zlib.createGunzip();
+        fileReaderStream(bundle).pipe(gzunipStream).pipe(extract).on("entry", (header, stream, next) => {
+          if (header.name !== "app.tar.gz") {
+            next();
+            return;
+          }
+          const buffers = [];
+          stream.on("data", (buffer) => {
+            buffers.push(buffer);
+          });
+          stream.on("end", async () => {
+            resolve(new Blob(buffers));
+          })
+          stream.resume()
+        }).on("finish", () => {
+          resolve();
+        });
+      } catch (err) {
+        reject(err);
+      }
+    });
+  },
+
+  getAppSpecFromAirgapBundle(bundleArchive) {
+    return new Promise((resolve, reject) => {
+      try {
+        this.getAppArchiveFromAirgapBundle(bundleArchive).then(appArchive => {
+          if (!appArchive) {
+            resolve();
+            return;
+          }
+          const extract = tar.extract();
+          const gzunipStream = zlib.createGunzip();
+          fileReaderStream(appArchive).pipe(gzunipStream).pipe(extract).on("entry", (header, stream, next) => {
+            if (getFileFormat(header.name) !== "yaml") {
+              next();
+              return;
+            }
+            const buffers = [];
+            stream.on("data", (buffer) => {
+              buffers.push(buffer);
+            });
+            stream.on("end", async () => {
+              const content = Buffer.concat(buffers).toString("utf-8");
+              const parsed = await yaml.safeLoad(content);
+              if (parsed?.kind === "Application" && parsed?.apiVersion === "kots.io/v1beta1") {
+                resolve(content);
+                return;
+              }
+              next();
+            })
+            stream.resume()
+          }).on("finish", () => {
+            resolve();
+          });
+        }).catch(err => {
+          reject(err)
+        });
+      } catch (err) {
+        reject(err);
+      }
+    });
   }
 };
 

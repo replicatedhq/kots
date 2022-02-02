@@ -11,6 +11,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/api/handlers/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/gitops"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/rbac"
 	"github.com/replicatedhq/kots/pkg/registry"
@@ -404,6 +405,54 @@ func (h *Handler) RemoveApp(w http.ResponseWriter, r *http.Request) {
 		logger.Error(errors.Wrap(err, response.Error))
 		JSON(w, http.StatusInternalServerError, response)
 		return
+	}
+
+	JSON(w, http.StatusOK, response)
+}
+
+type IsKotsVersionCompatibleWithAppRequest struct {
+	AppSpec   string `json:"appSpec"`
+	IsInstall bool   `json:"isInstall"`
+}
+
+type IsKotsVersionCompatibleWithAppResponse struct {
+	IsCompatible bool   `json:"isCompatible"`
+	Error        string `json:"error,omitempty"`
+}
+
+func (h *Handler) IsKotsVersionCompatibleWithApp(w http.ResponseWriter, r *http.Request) {
+	response := IsKotsVersionCompatibleWithAppResponse{}
+
+	request := IsKotsVersionCompatibleWithAppRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		response.Error = "failed to parse request body"
+		logger.Error(errors.Wrap(err, response.Error))
+		JSON(w, http.StatusBadRequest, response)
+		return
+	}
+
+	if request.AppSpec == "" {
+		response.IsCompatible = true
+		JSON(w, http.StatusOK, response)
+		return
+	}
+
+	kotsApp, err := kotsutil.LoadKotsAppFromContents([]byte(request.AppSpec))
+	if err != nil {
+		response.Error = "failed to load kots app from contents"
+		logger.Error(errors.Wrap(err, response.Error))
+		JSON(w, http.StatusInternalServerError, response)
+		return
+	}
+
+	if kotsApp != nil {
+		response.IsCompatible = kotsutil.IsKotsVersionCompatibleWithApp(*kotsApp, request.IsInstall)
+	} else {
+		response.IsCompatible = true
+	}
+
+	if !response.IsCompatible {
+		response.Error = kotsutil.GetIncompatbileKotsVersionMessage(*kotsApp)
 	}
 
 	JSON(w, http.StatusOK, response)

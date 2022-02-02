@@ -9,6 +9,7 @@ type KOTSHandler interface {
 	ExchangePlatformLicense(w http.ResponseWriter, r *http.Request)
 	ResumeInstallOnline(w http.ResponseWriter, r *http.Request)
 	GetOnlineInstallStatus(w http.ResponseWriter, r *http.Request)
+	IsKotsVersionCompatibleWithApp(w http.ResponseWriter, r *http.Request)
 
 	// Support Bundles
 	GetSupportBundle(w http.ResponseWriter, r *http.Request) // TODO: appSlug

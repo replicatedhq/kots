@@ -191,10 +191,7 @@ func downloadReplicated(
 
 	if !skipCompatibilityCheck {
 		isInstall := appSequence == 0
-		isCompatible, err := kotsutil.IsKotsVersionCompatibleWithApp(*application, isInstall)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to check if kots version is compatible")
-		}
+		isCompatible := kotsutil.IsKotsVersionCompatibleWithApp(*application, isInstall)
 		if !isCompatible {
 			return nil, util.ActionableError{
 				NoRetry: true,

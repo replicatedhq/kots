@@ -155,10 +155,7 @@ func InstallCmd() *cobra.Command {
 					return errors.Wrap(err, "failed to load kots app from metadata")
 				}
 				if kotsApp != nil {
-					isCompatible, err := kotsutil.IsKotsVersionCompatibleWithApp(*kotsApp, true)
-					if err != nil {
-						return errors.Wrap(err, "failed to check if kots version is compatible")
-					}
+					isCompatible := kotsutil.IsKotsVersionCompatibleWithApp(*kotsApp, true)
 					if !isCompatible {
 						return errors.New(kotsutil.GetIncompatbileKotsVersionMessage(*kotsApp))
 					}

@@ -748,11 +748,11 @@ func EncodeIdentityConfig(spec kotsv1beta1.IdentityConfig) ([]byte, error) {
 	return buf.Bytes(), err
 }
 
-func IsKotsVersionCompatibleWithApp(kotsApplication kotsv1beta1.Application, isInstall bool) (bool, error) {
+func IsKotsVersionCompatibleWithApp(kotsApplication kotsv1beta1.Application, isInstall bool) bool {
 	actualSemver, err := semver.ParseTolerant(buildversion.Version())
 	if err != nil {
 		logger.Error(errors.Wrap(err, "kots build version is invalid"))
-		return true, nil
+		return true
 	}
 
 	if kotsApplication.Spec.MinKotsVersion != "" {
@@ -760,7 +760,7 @@ func IsKotsVersionCompatibleWithApp(kotsApplication kotsv1beta1.Application, isI
 		if err != nil {
 			logger.Error(errors.Wrap(err, "minimum kots version specified in the application spec is invalid"))
 		} else if actualSemver.LT(minSemver) {
-			return false, nil
+			return false
 		}
 	}
 
@@ -769,11 +769,11 @@ func IsKotsVersionCompatibleWithApp(kotsApplication kotsv1beta1.Application, isI
 		if err != nil {
 			logger.Error(errors.Wrap(err, "target kots version specified in the application spec is invalid"))
 		} else if actualSemver.GT(targetSemver) {
-			return false, nil
+			return false
 		}
 	}
 
-	return true, nil
+	return true
 }
 
 func GetIncompatbileKotsVersionMessage(kotsApplication kotsv1beta1.Application) string {
