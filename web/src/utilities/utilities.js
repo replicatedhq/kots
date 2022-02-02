@@ -768,16 +768,20 @@ export const Utilities = {
               buffers.push(buffer);
             });
             stream.on("end", async () => {
-              const content = Buffer.concat(buffers).toString("utf-8");
-              const docs = await yaml.safeLoadAll(content);
-              for (const doc of docs) {
-                if (!doc) {
-                  continue;
+              try {
+                const content = Buffer.concat(buffers).toString("utf-8");
+                const docs = await yaml.safeLoadAll(content);
+                for (const doc of docs) {
+                  if (!doc) {
+                    continue;
+                  }
+                  if (doc?.kind === "Application" && doc?.apiVersion === "kots.io/v1beta1") {
+                    resolve(content);
+                    return;
+                  }
                 }
-                if (doc?.kind === "Application" && doc?.apiVersion === "kots.io/v1beta1") {
-                  resolve(content);
-                  return;
-                }
+              } catch(_) {
+                // invalid yaml file, don't stop
               }
               next();
             })
