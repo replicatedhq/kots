@@ -61,9 +61,16 @@ export class AirgapUploader {
 
   upload = async (processParams, onProgress, onError, onComplete) => {
     try {
-      // first, validate that the release is compatible with the current kots version
-      const appSpec = await Utilities.getAppSpecFromAirgapBundle(this.resumableFile.file)
-      const compatibilityResponse = await this.checkKotsVersionCompatibility(appSpec);
+      // first, validate that the release is compatible with the current kots version.
+      // don't block the upload process if compatibility couldn't be determined here
+      // since this is just to fail early and the api will recheck for compatibility later on.
+      let compatibilityResponse;
+      try {
+        const appSpec = await Utilities.getAppSpecFromAirgapBundle(this.resumableFile.file)
+        compatibilityResponse = await this.checkKotsVersionCompatibility(appSpec);
+      } catch(err) {
+        console.log(err);
+      }
       if (compatibilityResponse?.isCompatible === false) {
         throw new Error(compatibilityResponse?.error);
       }
