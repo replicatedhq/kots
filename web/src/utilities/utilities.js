@@ -769,10 +769,15 @@ export const Utilities = {
             });
             stream.on("end", async () => {
               const content = Buffer.concat(buffers).toString("utf-8");
-              const parsed = await yaml.safeLoad(content);
-              if (parsed?.kind === "Application" && parsed?.apiVersion === "kots.io/v1beta1") {
-                resolve(content);
-                return;
+              const docs = await yaml.safeLoadAll(content);
+              for (const doc of docs) {
+                if (!doc) {
+                  continue;
+                }
+                if (doc?.kind === "Application" && doc?.apiVersion === "kots.io/v1beta1") {
+                  resolve(content);
+                  return;
+                }
               }
               next();
             })
