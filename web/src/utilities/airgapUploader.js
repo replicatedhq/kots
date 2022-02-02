@@ -159,7 +159,7 @@ export class AirgapUploader {
         "Authorization": Utilities.getToken(),
       },
       body: JSON.stringify({
-        appSpec: appSpec,
+        appSpec: appSpec || "",
         isInstall: !this.isUpdate,
       }),
       method: "POST",
