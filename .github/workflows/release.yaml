@@ -448,15 +448,15 @@ jobs:
           fi
 
       ## testim tests
-      ## we use a non-existent channel in the install command so that the cli doesn't block deploying kotsadm and be able to test the UI
 
       - name: prepare min-kots-version test
         run: |
           kubectl kots \
-          install min-kots-version/non-existent \
+          install min-kots-version/automated \
           --port-forward=false \
           --namespace min-kots-version \
-          --shared-password password
+          --shared-password password \
+          --skip-compatibility-check
 
       - name: execute suite min-kots-version
         run: |
@@ -513,15 +513,15 @@ jobs:
           fi
 
       ## testim tests
-      ## we use a non-existent channel in the install command so that the cli doesn't block deploying kotsadm and be able to test the UI
 
       - name: prepare target-kots-version test
         run: |
           kubectl kots \
-          install target-kots-version/non-existent \
+          install target-kots-version/automated \
           --port-forward=false \
           --namespace target-kots-version \
-          --shared-password password
+          --shared-password password \
+          --skip-compatibility-check
 
       - name: execute suite target-kots-version
         run: |
