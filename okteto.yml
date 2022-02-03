@@ -7,4 +7,4 @@ securityContext:
 sync:
   - .:/go/src/github.com/replicatedhq/kots
 forward:
-- 2345:2345
+- 2353:2345
