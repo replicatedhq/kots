@@ -434,12 +434,26 @@ jobs:
         run: npm i -g @testim/testim-cli@3.206.0
         shell: bash
 
-      ## testim tests
+      - name: validate that kots install fails early
+        run: |
+          set +e
 
-      - name: prepare min-kots-version online install
+          result=$(kubectl kots install min-kots-version/automated --port-forward=false --namespace min-kots-version --shared-password password 2>&1 >/dev/null)
+          echo "$result"
+
+          if [[ "$result" =~ "requires" ]] && [[ "$result" =~ "10000.0.0" ]]; then
+            exit 0
+          else
+            exit 1
+          fi
+
+      ## testim tests
+      ## we use a non-existent channel in the install command so that the cli doesn't block deploying kotsadm and be able to test the UI
+
+      - name: prepare min-kots-version test
         run: |
           kubectl kots \
-          install min-kots-version/automated \
+          install min-kots-version/non-existent \
           --port-forward=false \
           --namespace min-kots-version \
           --shared-password password
@@ -485,12 +499,26 @@ jobs:
         run: npm i -g @testim/testim-cli@3.206.0
         shell: bash
 
-      ## testim tests
+      - name: validate that kots install fails early
+        run: |
+          set +e
 
-      - name: prepare target-kots-version online install
+          result=$(kubectl kots install target-kots-version/automated --port-forward=false --namespace target-kots-version --shared-password password 2>&1 >/dev/null)
+          echo "$result"
+
+          if [[ "$result" =~ "requires" ]] && [[ "$result" =~ "1.0.0" ]]; then
+            exit 0
+          else
+            exit 1
+          fi
+
+      ## testim tests
+      ## we use a non-existent channel in the install command so that the cli doesn't block deploying kotsadm and be able to test the UI
+
+      - name: prepare target-kots-version test
         run: |
           kubectl kots \
-          install target-kots-version/automated \
+          install target-kots-version/non-existent \
           --port-forward=false \
           --namespace target-kots-version \
           --shared-password password
@@ -538,7 +566,7 @@ jobs:
 
       ## testim tests
 
-      - name: prepare range-kots-version online install
+      - name: prepare range-kots-version test
         run: |
           kubectl kots \
           install range-kots-version/automated \
