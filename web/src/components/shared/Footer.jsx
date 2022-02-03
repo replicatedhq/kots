@@ -24,6 +24,10 @@ export class Footer extends React.Component {
       return;
     }
 
+    if (!semverjs.valid(getBuildVersion())) {
+       return; 
+    }
+
     try {
       let targetKotsVersions = [];
       for (let i = 0; i < this.props.appsList.length; i++) {
@@ -51,6 +55,11 @@ export class Footer extends React.Component {
         }
       }
 
+      const buildSemver = semverjs.coerce(getBuildVersion());
+      if (semverjs.lte(maxSemver, buildSemver)) {
+        return;
+      }
+
       this.setState({
         targetKotsVersion: maxSemver?.version
       });
@@ -65,7 +74,7 @@ export class Footer extends React.Component {
         <div className="container flex1 flex">
           <div className="flex flex1 justifyContent--center alignItems--center">
             <div className="FooterItem-wrapper">
-              <span className="FooterItem">{"v1.58.0"}</span>
+              <span className="FooterItem">{getBuildVersion()}</span>
             </div>
             {this.state.targetKotsVersion &&
               <div className="TargetKotsVersionWrapper flex u-marginLeft--10">
