@@ -8,7 +8,3 @@ sync:
   - .:/go/src/github.com/replicatedhq/kots
 forward:
 - 2345:2345
-- 3000:3000
-volumes:
-- /go/pkg/
-- /root/.cache/go-build/
