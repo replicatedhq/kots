@@ -61,16 +61,18 @@ export class Footer extends React.Component {
 
   render() {
     return (
-      <div className={`FooterContent-wrapper flex flex-auto justifyContent--center ${this.props.className || ""}`}>
+      <div className={`FooterContent-wrapper flex flex-auto justifyContent--center ${this.state.targetKotsVersion && "u-padding--5"} ${this.props.className || ""}`}>
         <div className="container flex1 flex">
-          <div className="flex flex1 justifyContent--center">
+          <div className="flex flex1 justifyContent--center alignItems--center">
             <div className="FooterItem-wrapper">
-              <span className="FooterItem">{getBuildVersion()}</span>
+              <span className="FooterItem">{"v1.58.0"}</span>
             </div>
             {this.state.targetKotsVersion &&
-              <div className="flex FooterItem-wrapper u-marginLeft--10">
-                <span className="icon info-warning-icon flex u-marginRight--5" />
-                <p className="TargetKotsVersion u-fontSize--small u-marginRight--5"> A newer supported version of KOTS is available. Update KOTS to version v{this.state.targetKotsVersion}. </p>
+              <div className="TargetKotsVersionWrapper flex u-marginLeft--10">
+                <span className="icon megaPhoneIcon flex u-marginRight--10" />
+                <p className="u-fontSize--small u-marginRight--10 u-fontWeight--bold"> v{this.state.targetKotsVersion} available. </p>
+                <span className="u-fontSize--small replicated-link u-marginRight--5 u-fontWeight--bold">Learn more</span>
+                <span className="icon external-link-icon u-cursor--pointer justifyContent--flexEnd u-marginRight--5" />
               </div>
             }
           </div>
