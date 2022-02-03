@@ -15,11 +15,7 @@ export default function PreflightRenderer(props) {
 
   return (
     <div className={className}>
-      <p className="u-fontSize--jumbo u-textColor--primary u-fontWeight--bold u-marginBottom--15">
-        Results from your preflight checks
-      </p>
-      {skipped
-        ?
+      {skipped ?
         <p className="u-fontWeight--medium u-lineHeight--more u-marginTop--5 u-marginBottom--10">
           Preflight checks for this version did not run.
         </p>
@@ -32,26 +28,30 @@ export default function PreflightRenderer(props) {
           :
           preflightJSON?.results.map((row, idx) => {
             let icon;
+            let rowClass;
             if (row.isWarn) {
-              icon = "exclamationMark--icon";
+              icon = "preflightCheckWarning--icon";
+              rowClass = "warn"
             } else if (row.isFail) {
-              icon = "error-small";
+              icon = "preflightCheckError--icon";
+              rowClass = "fail"
             } else {
-              icon = "checkmark-icon";
+              icon = "preflightCheckPass--icon";
             }
             return (
-              <div key={idx} className="flex justifyContent--space-between preflight-check-row">
+              <div key={idx} className={classNames("flex justifyContent--space-between preflight-check-row", rowClass)}>
                 <div className={classNames("flex-auto icon", icon, "u-marginRight--10")} />
                 <div className="flex1">
-                  <p className="u-textColor--primary u-fontSize--larger u-fontWeight--bold">{row.title}</p>
+                  <p className="u-textColor--primary u-fontSize--large u-fontWeight--bold">{row.title}</p>
                   <div className="PreflightMessageRow u-marginTop--10">
                     <Markdown source={row.message}/> {row.strict? <div>Strict: { String(row.strict)} </div> : null }
                   </div>
+                  {row.uri &&
+                    <div className="u-marginTop--5">
+                      <a href={row.uri} target="_blank" rel="noopener noreferrer" className="replicated-link u-fontSize--small u-fontWeight--medium u-position--relative"> Learn more <span style={{ top: "2px", marginLeft: "2px" }} className="icon external-link-icon u-cursor--pointer" /></a>
+                    </div>
+                  }
                 </div>
-                {row.uri &&
-                <div className="flex-column flex justifyContent--center">
-                  <a href={row.uri} target="_blank" rel="noopener noreferrer" className="btn secondary lightBlue"> Learn more </a>
-                </div>}
               </div>
             );
         })}

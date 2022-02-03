@@ -30,7 +30,21 @@
 }
 
 .preflight-check-row {
-  border-top: 1px solid #DFDFDF;
-  border-bottom: 1px solid #DFDFDF;
-  padding: 10px 12px;
+  padding: 8px;
+  margin-top: 15px;
+  border-radius: 6px;
+  background-color: #ffffff;
+
+  &.warn {
+    background-color: #fffdf6;
+    .PreflightMessageRow p {
+      color: #F7B500;
+    }
+  }
+  &.fail {
+    background-color: #FEEFEF;
+    .PreflightMessageRow p {
+      color: #F65C5C;
+    }
+  }
 }

@@ -135,6 +135,21 @@
   width: 16px;
   height: 16px;
 }
+.icon.preflightCheckPass--icon {
+  background-position: -247px -916px;
+  width: 18px;
+  height: 18px;
+}
+.icon.preflightCheckError--icon {
+  background-position: -247px -936px;
+  width: 18px;
+  height: 18px;
+}
+.icon.preflightCheckWarning--icon {
+  background-position: -247px -956px;
+  width: 18px;
+  height: 18px;
+}
 .icon.backArrow-icon {
   background-position: -54px -271px;
   width: 7px;
@@ -748,9 +763,9 @@
   }
 }
 .icon.external-link-icon {
-  background-position: -105px -749px;
-  width: 12px;
-  height: 12px;
+  background-position: -104px -748px;
+  width: 13px;
+  height: 13px;
 }
 .icon.restore-icon {
   background-position: -54px -426px;
