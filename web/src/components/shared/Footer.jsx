@@ -70,9 +70,7 @@ export class Footer extends React.Component {
             {this.state.targetKotsVersion &&
               <div className="TargetKotsVersionWrapper flex u-marginLeft--10">
                 <span className="icon megaPhoneIcon flex u-marginRight--10" />
-                <p className="u-fontSize--small u-marginRight--10 u-fontWeight--bold"> v{this.state.targetKotsVersion} available. </p>
-                <span className="u-fontSize--small replicated-link u-marginRight--5 u-fontWeight--bold">Learn more</span>
-                <span className="icon external-link-icon u-cursor--pointer justifyContent--flexEnd u-marginRight--5" />
+                <p className="u-fontSize--small u-fontWeight--bold"> v{this.state.targetKotsVersion} available. </p>
               </div>
             }
           </div>
