@@ -261,6 +261,41 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  generate-kurl-addon-pr:
+    runs-on: ubuntu-18.04
+    needs: [release-go-api-tagged, build-kurl-proxy]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Generate Kurl Addon PR
+      env:
+        GIT_TAG: ${{ github.ref_name }}
+        GH_PAT: ${{ secrets.GH_PAT }}
+      run: |
+        # Strips off the 'v' in version
+        curl -H "Authorization: token $GH_PAT" \
+          -H 'Accept: application/json' \
+          -d "{\"event_type\": \"auto-kotsadm-update\", \"client_payload\": {\"version\": \"${GIT_TAG:1}\" }}" \
+          "https://api.github.com/repos/replicatedhq/kurl/dispatches"
+
+  generate-kots-release-notes-pr:
+    runs-on: ubuntu-18.04
+    needs: [release-go-api-tagged, build-kurl-proxy]
+    if: ${{ ! endsWith(github.ref, '-nightly') }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Generate Kots Release Notes PR
+      env:
+        GIT_TAG: ${{ github.ref_name }}
+        GH_PAT: ${{ secrets.GH_PAT }}
+      run: |
+        curl -H "Authorization: token $GH_PAT" \
+          -H 'Accept: application/json' \
+          -d "{\"event_type\": \"auto-release-notes\", \"client_payload\": {\"version\": \"${GIT_TAG}\" }}" \
+          "https://api.github.com/repos/replicatedhq/kots.io/dispatches"
+
   build-airgap:
     runs-on: ubuntu-18.04
     needs: [release-go-api-tagged, goreleaser, build-schema-migrations]
@@ -371,37 +406,158 @@ jobs:
         printf "\n\nSupport bundles are available in the Replicated production AWS account under the 'kgrid-support-bundles' S3 bucket. To download a support bundle, you can do so using the AWS Management Console, or by configuring the AWS cli tool with the appropriate credentials and running the following command: \n\naws s3 cp <test-supportbundle-s3-url> <local-filename>.tar.gz\n\n"
         ./hack/wait-kgrid.sh
 
-  generate-kurl-addon-pr:
-    runs-on: ubuntu-18.04
-    needs: [release-go-api-tagged, build-kurl-proxy]
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Generate Kurl Addon PR
-      env:
-        GIT_TAG: ${{ github.ref_name }}
-        GH_PAT: ${{ secrets.GH_PAT }}
-      run: |
-        # Strips off the 'v' in version
-        curl -H "Authorization: token $GH_PAT" \
-          -H 'Accept: application/json' \
-          -d "{\"event_type\": \"auto-kotsadm-update\", \"client_payload\": {\"version\": \"${GIT_TAG:1}\" }}" \
-          "https://api.github.com/repos/replicatedhq/kurl/dispatches"
+  # the following KOTS version tests are triggered on the nightly tag because they require a semver #
+  # the tests don't really depend on a k8s version, so run them on a single version for now #
 
-  generate-kots-release-notes-pr:
+  validate-min-kots-version:
+    if: startsWith(github.ref, 'refs/tags/v') && endsWith(github.ref, '-nightly')
     runs-on: ubuntu-18.04
-    needs: [release-go-api-tagged, build-kurl-proxy]
-    if: ${{ ! endsWith(github.ref, '-nightly') }}
+    needs: [goreleaser, release-go-api-tagged]
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_version: [v1.23.3-k3s1]
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
+      - uses: replicatedhq/action-k3s@main
+        id: k3s
+        with:
+          version: ${{ matrix.k8s_version }}
 
-    - name: Generate Kots Release Notes PR
-      env:
-        GIT_TAG: ${{ github.ref_name }}
-        GH_PAT: ${{ secrets.GH_PAT }}
-      run: |
-        curl -H "Authorization: token $GH_PAT" \
-          -H 'Accept: application/json' \
-          -d "{\"event_type\": \"auto-release-notes\", \"client_payload\": {\"version\": \"${GIT_TAG}\" }}" \
-          "https://api.github.com/repos/replicatedhq/kots.io/dispatches"
+      - name: install kots
+        run: curl https://kots.io/install/${{ github.ref_name }} | bash
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '17.x'
+
+      - name: setup testIM
+        run: npm i -g @testim/testim-cli@3.206.0
+        shell: bash
+
+      ## testim tests
+
+      - name: prepare min-kots-version online install
+        run: |
+          ./bin/kots \
+          install min-kots-version/automated \
+          --port-forward=false \
+          --namespace min-kots-version \
+          --shared-password password
+
+      - name: execute suite min-kots-version
+        run: |
+          set +e
+          ./bin/kots admin-console -n min-kots-version &
+          ADMIN_CONSOLE_PID=$!
+          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --branch main --report-file testim-report.xml --suite min-kots-version --tunnel --tunnel-port 8800
+          EXIT_CODE=$?
+          echo "------pods:"
+          kubectl -n min-kots-version get pods
+          echo "------kotsadm logs"
+          kubectl -n min-kots-version logs deployment/kotsadm
+          echo "------previous kotsadm logs"
+          kubectl -n min-kots-version logs -p deployment/kotsadm
+          kill $ADMIN_CONSOLE_PID
+          exit $EXIT_CODE
+
+  validate-target-kots-version:
+    if: startsWith(github.ref, 'refs/tags/v') && endsWith(github.ref, '-nightly')
+    runs-on: ubuntu-18.04
+    needs: [goreleaser, release-go-api-tagged]
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_version: [v1.23.3-k3s1]
+    steps:
+      - uses: replicatedhq/action-k3s@main
+        id: k3s
+        with:
+          version: ${{ matrix.k8s_version }}
+
+      - name: install kots
+        run: curl https://kots.io/install/${{ github.ref_name }} | bash
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '17.x'
+
+      - name: setup testIM
+        run: npm i -g @testim/testim-cli@3.206.0
+        shell: bash
+
+      ## testim tests
+
+      - name: prepare target-kots-version online install
+        run: |
+          ./bin/kots \
+          install target-kots-version/automated \
+          --port-forward=false \
+          --namespace target-kots-version \
+          --shared-password password
+
+      - name: execute suite target-kots-version
+        run: |
+          set +e
+          ./bin/kots admin-console -n target-kots-version &
+          ADMIN_CONSOLE_PID=$!
+          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --branch main --report-file testim-report.xml --suite target-kots-version --tunnel --tunnel-port 8800
+          EXIT_CODE=$?
+          echo "------pods:"
+          kubectl -n target-kots-version get pods
+          echo "------kotsadm logs"
+          kubectl -n target-kots-version logs deployment/kotsadm
+          echo "------previous kotsadm logs"
+          kubectl -n target-kots-version logs -p deployment/kotsadm
+          kill $ADMIN_CONSOLE_PID
+          exit $EXIT_CODE
+
+  validate-range-kots-version:
+    if: startsWith(github.ref, 'refs/tags/v') && endsWith(github.ref, '-nightly')
+    runs-on: ubuntu-18.04
+    needs: [goreleaser, release-go-api-tagged]
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_version: [v1.23.3-k3s1]
+    steps:
+      - uses: replicatedhq/action-k3s@main
+        id: k3s
+        with:
+          version: ${{ matrix.k8s_version }}
+
+      - name: install kots
+        run: curl https://kots.io/install/${{ github.ref_name }} | bash
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '17.x'
+
+      - name: setup testIM
+        run: npm i -g @testim/testim-cli@3.206.0
+        shell: bash
+
+      ## testim tests
+
+      - name: prepare range-kots-version online install
+        run: |
+          ./bin/kots \
+          install range-kots-version/automated \
+          --port-forward=false \
+          --namespace range-kots-version \
+          --shared-password password
+
+      - name: execute suite range-kots-version
+        run: |
+          set +e
+          ./bin/kots admin-console -n range-kots-version &
+          ADMIN_CONSOLE_PID=$!
+          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --branch main --report-file testim-report.xml --suite range-kots-version --tunnel --tunnel-port 8800
+          EXIT_CODE=$?
+          echo "------pods:"
+          kubectl -n range-kots-version get pods
+          echo "------kotsadm logs"
+          kubectl -n range-kots-version logs deployment/kotsadm
+          echo "------previous kotsadm logs"
+          kubectl -n range-kots-version logs -p deployment/kotsadm
+          kill $ADMIN_CONSOLE_PID
+          exit $EXIT_CODE
