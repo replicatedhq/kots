@@ -438,7 +438,7 @@ jobs:
 
       - name: prepare min-kots-version online install
         run: |
-          ./bin/kots \
+          kubectl kots \
           install min-kots-version/automated \
           --port-forward=false \
           --namespace min-kots-version \
@@ -447,7 +447,7 @@ jobs:
       - name: execute suite min-kots-version
         run: |
           set +e
-          ./bin/kots admin-console -n min-kots-version &
+          kubectl kots admin-console -n min-kots-version &
           ADMIN_CONSOLE_PID=$!
           testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --branch main --report-file testim-report.xml --suite min-kots-version --tunnel --tunnel-port 8800
           EXIT_CODE=$?
@@ -489,7 +489,7 @@ jobs:
 
       - name: prepare target-kots-version online install
         run: |
-          ./bin/kots \
+          kubectl kots \
           install target-kots-version/automated \
           --port-forward=false \
           --namespace target-kots-version \
@@ -498,7 +498,7 @@ jobs:
       - name: execute suite target-kots-version
         run: |
           set +e
-          ./bin/kots admin-console -n target-kots-version &
+          kubectl kots admin-console -n target-kots-version &
           ADMIN_CONSOLE_PID=$!
           testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --branch main --report-file testim-report.xml --suite target-kots-version --tunnel --tunnel-port 8800
           EXIT_CODE=$?
@@ -540,7 +540,7 @@ jobs:
 
       - name: prepare range-kots-version online install
         run: |
-          ./bin/kots \
+          kubectl kots \
           install range-kots-version/automated \
           --port-forward=false \
           --namespace range-kots-version \
@@ -549,7 +549,7 @@ jobs:
       - name: execute suite range-kots-version
         run: |
           set +e
-          ./bin/kots admin-console -n range-kots-version &
+          kubectl kots admin-console -n range-kots-version &
           ADMIN_CONSOLE_PID=$!
           testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --branch main --report-file testim-report.xml --suite range-kots-version --tunnel --tunnel-port 8800
           EXIT_CODE=$?
