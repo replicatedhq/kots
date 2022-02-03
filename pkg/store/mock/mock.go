@@ -956,6 +956,21 @@ func (mr *MockStoreMockRecorder) GetSupportBundleArchive(bundleID interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSupportBundleArchive", reflect.TypeOf((*MockStore)(nil).GetSupportBundleArchive), bundleID)
 }
 
+// GetTargetKotsVersionForVersion mocks base method.
+func (m *MockStore) GetTargetKotsVersionForVersion(appID string, sequence int64) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTargetKotsVersionForVersion", appID, sequence)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTargetKotsVersionForVersion indicates an expected call of GetTargetKotsVersionForVersion.
+func (mr *MockStoreMockRecorder) GetTargetKotsVersionForVersion(appID, sequence interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTargetKotsVersionForVersion", reflect.TypeOf((*MockStore)(nil).GetTargetKotsVersionForVersion), appID, sequence)
+}
+
 // GetTaskStatus mocks base method.
 func (m *MockStore) GetTaskStatus(taskID string) (string, string, error) {
 	m.ctrl.T.Helper()
@@ -3320,6 +3335,21 @@ func (m *MockVersionStore) GetNextAppSequence(appID string) (int64, error) {
 func (mr *MockVersionStoreMockRecorder) GetNextAppSequence(appID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNextAppSequence", reflect.TypeOf((*MockVersionStore)(nil).GetNextAppSequence), appID)
+}
+
+// GetTargetKotsVersionForVersion mocks base method.
+func (m *MockVersionStore) GetTargetKotsVersionForVersion(appID string, sequence int64) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTargetKotsVersionForVersion", appID, sequence)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTargetKotsVersionForVersion indicates an expected call of GetTargetKotsVersionForVersion.
+func (mr *MockVersionStoreMockRecorder) GetTargetKotsVersionForVersion(appID, sequence interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTargetKotsVersionForVersion", reflect.TypeOf((*MockVersionStore)(nil).GetTargetKotsVersionForVersion), appID, sequence)
 }
 
 // IsIdentityServiceSupportedForVersion mocks base method.

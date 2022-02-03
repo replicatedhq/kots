@@ -405,7 +405,7 @@ class Root extends PureComponent {
                 </Switch>
               </div>
               <div className="flex-auto Footer-wrapper u-width--full">
-                <Footer />
+                <Footer appsList={appsList} />
               </div>
             </div>
           </Router>

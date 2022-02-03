@@ -41,6 +41,7 @@ type ResponseApp struct {
 	IsSupportBundleUploadSupported bool                     `json:"isSupportBundleUploadSupported"`
 	AllowRollback                  bool                     `json:"allowRollback"`
 	AllowSnapshots                 bool                     `json:"allowSnapshots"`
+	TargetKotsVersion              string                   `json:"targetKotsVersion"`
 	LicenseType                    string                   `json:"licenseType"`
 	CurrentVersion                 *versiontypes.AppVersion `json:"currentVersion"`
 

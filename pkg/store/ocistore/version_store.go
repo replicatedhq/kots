@@ -106,6 +106,10 @@ func (s *OCIStore) IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int6
 	return false, ErrNotImplemented
 }
 
+func (s *OCIStore) GetTargetKotsVersionForVersion(appID string, sequence int64) (string, error) {
+	return "", ErrNotImplemented
+}
+
 // CreateAppVersion takes an unarchived app, makes an archive and then uploads it
 // to s3 with the appID and sequence specified
 func (s *OCIStore) CreateAppVersionArchive(appID string, sequence int64, archivePath string) error {
