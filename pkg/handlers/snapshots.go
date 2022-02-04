@@ -446,9 +446,10 @@ func configureMinioFileSystemProvider(ctx context.Context, clientset kubernetes.
 	}
 
 	if _, err := os.Stat(*deployOptions.FileSystemConfig.HostPath); os.IsNotExist(err) {
-		return &kotssnapshot.HostPathNotFoundError{Message: "Provided host path does not exist"}
+		// TODO: fix to check host path outside of container (ticket https://app.shortcut.com/replicated/story/42701/check-host-path-outside-of-container)
+		// return &kotssnapshot.HostPathNotFoundError{Message: "Provided host path does not exist"}
 	} else if err != nil {
-		return errors.Wrap(err, "failed to os stat")
+		// return errors.Wrap(err, "failed to os stat")
 	}
 
 	if err := kotssnapshot.DeployFileSystemMinio(ctx, clientset, deployOptions, registryOptions); err != nil {
