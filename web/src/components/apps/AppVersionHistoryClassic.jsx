@@ -690,7 +690,7 @@ class AppVersionHistoryClassic extends Component {
               }
             }}
           >
-            Diff releases
+            Diff versions
           </button>
         </div>
         :
