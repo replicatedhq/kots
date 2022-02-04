@@ -34,3 +34,15 @@ a.FooterItem {
   top: 2px;
   background-color: $border-color;
 }
+
+.TargetKotsVersionWrapper {
+  display: flex;
+  align-items: center;
+  font-size: 10px;
+  border-radius: 4px;
+  padding: 4px 6px;
+  margin-top: 1px;
+  margin-bottom: 1px;
+  background: #E1F0F1;
+  color: #577981;
+}

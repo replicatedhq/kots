@@ -136,6 +136,7 @@
     "react-tooltip": "4.2.6",
     "react-vis": "^1.11.7",
     "resumablejs": "^1.1.0",
+    "semver": "^7.3.5",
     "tar-stream": "2.1.0",
     "trim": "^0.0.3",
     "truncate-middle": "^1.0.6",

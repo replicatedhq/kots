@@ -184,6 +184,11 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		return nil, errors.Wrap(err, "failed to check if rollback is supported")
 	}
 
+	targetKotsVersion, err := store.GetStore().GetTargetKotsVersionForVersion(a.ID, latestVersion.Sequence)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get target kots version")
+	}
+
 	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list downstreams for app")
@@ -284,6 +289,7 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		IsSupportBundleUploadSupported: license.Spec.IsSupportBundleUploadSupported,
 		AllowRollback:                  allowRollback,
 		AllowSnapshots:                 allowSnapshots,
+		TargetKotsVersion:              targetKotsVersion,
 		LicenseType:                    license.Spec.LicenseType,
 		CurrentVersion:                 latestVersion,
 		Downstreams:                    responseDownstreams,
