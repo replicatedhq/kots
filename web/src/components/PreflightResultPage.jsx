@@ -380,10 +380,10 @@ class PreflightResultPage extends Component {
                   <div className="flex flex1 justifyContent--spaceBetween alignItems--center">
                     <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold">Results from your preflight checks</p>
                     <div className="flex alignItems--center">
-                    {stopPolling && hasResult && preflightState !== "pass" ?
+                    {this.props.fromLicenseFlow && stopPolling && hasResult && preflightState !== "pass" ?
                       <div className="flex alignItems--center">
                         <div className="flex alignItems--center u-marginRight--20">
-                          <Link to={`/app/${slug}`} className="replicated-link u-fontSize--small">Cancel</Link>
+                          <Link to={`/app/${slug}`} className="u-textColor--error u-textDecoration--underlineOnHover u-fontWeight--medium u-fontSize--small">Cancel</Link>
                         </div>
                         <div className="flex alignItems--center u-marginRight--20">
                           <span className="icon clickable dashboard-card-check-update-icon u-marginRight--5" />
