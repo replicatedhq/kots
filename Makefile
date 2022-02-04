@@ -56,6 +56,17 @@ mock:
 kotsadm:
 	go build ${LDFLAGS} ${GCFLAGS} -o bin/kotsadm $(BUILDFLAGS) ./cmd/kotsadm
 
+# Debugging
+.PHONY: debug-build
+kotsadm-debug-build:
+	go build ${LDFLAGS} ${GCFLAGS} \
+		-o ./bin/kotsadm-api-debug \
+		.
+
+.PHONY: kotsadm-debug
+debug: debug-build
+	dlv --listen=:2345 --headless=true --api-version=2 exec -- ./bin/kotsadm-api-debug -d
+
 .PHONY: build-ttl.sh
 build-ttl.sh:
 	docker build --pull -f deploy/Dockerfile -t ttl.sh/${CURRENT_USER}/kotsadm:12h .
