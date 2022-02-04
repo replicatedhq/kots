@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
+	"github.com/replicatedhq/kots/pkg/api/handlers/types"
 	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/handlers"
@@ -35,7 +36,7 @@ func GetConfigCmd() *cobra.Command {
 		RunE: getConfigCmd,
 	}
 
-	cmd.Flags().Int("sequence", -1, "app sequence to retrieve config for")
+	cmd.Flags().Int64("sequence", -1, "app sequence to retrieve config for")
 	cmd.Flags().String("appslug", "", "app slug to retrieve config for")
 	cmd.Flags().Bool("decrypt", false, "decrypt encrypted config items")
 
@@ -60,20 +61,13 @@ func getConfigCmd(cmd *cobra.Command, args []string) error {
 		return errors.Wrap(err, "failed to validate namespace")
 	}
 
-	appSlug := v.GetString("appslug")
-	if appSlug == "" {
-		return errors.New("appslug is required")
-	}
-
-	appSequence := v.GetInt("sequence")
-	if appSequence == -1 {
-		return errors.New("sequence is required")
-	}
-
 	podName, err := k8sutil.FindKotsadm(clientset, namespace)
 	if err != nil {
 		return errors.Wrap(err, "failed to find kotsadm pod")
 	}
+
+	appSlug := v.GetString("appslug")
+	appSequence := v.GetInt64("sequence")
 
 	localPort, errChan, err := k8sutil.PortForward(0, 3000, namespace, podName, false, stopCh, log)
 	if err != nil {
@@ -101,8 +95,36 @@ func getConfigCmd(cmd *cobra.Command, args []string) error {
 		os.Exit(2) // not returning error here as we don't want to show the entire stack trace to normal users
 	}
 
-	url := fmt.Sprintf("http://localhost:%d/api/v1/app/%s/config/%d", localPort, appSlug, appSequence)
-	config, err := getConfig(url, authSlug)
+	getAppsURL := fmt.Sprintf("http://localhost:%d/api/v1/apps", localPort)
+	apps, err := getApps(getAppsURL, authSlug)
+	if err != nil {
+		return errors.Wrap(err, "failed to get apps")
+	}
+
+	if appSlug == "" {
+		if len(apps.Apps) != 1 {
+			return errors.New("appslug is required")
+		}
+		appSlug = apps.Apps[0].Slug
+	}
+
+	var foundApp *types.ResponseApp
+	for _, a := range apps.Apps {
+		if a.Slug == appSlug {
+			foundApp = &a
+			break
+		}
+	}
+	if foundApp == nil {
+		return errors.Errorf("app %s not found", appSlug)
+	}
+
+	if appSequence == -1 {
+		appSequence = foundApp.CurrentSequence
+	}
+
+	getConfigURL := fmt.Sprintf("http://localhost:%d/api/v1/app/%s/config/%d", localPort, appSlug, appSequence)
+	config, err := getConfig(getConfigURL, authSlug)
 	if err != nil {
 		return errors.Wrap(err, "failed to get config")
 	}
