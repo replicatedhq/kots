@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	preflighttypes "github.com/replicatedhq/kots/pkg/preflight/types"
 	"github.com/replicatedhq/kots/pkg/store"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	"github.com/replicatedhq/troubleshoot/pkg/preflight"
@@ -41,18 +42,22 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta2.Pr
 				logger.Infof("preflight progress: %v", msg)
 			}
 
-			progress, ok := msg.(preflight.CollectProgress)
+			progress, ok := msg.(troubleshootpreflight.CollectProgress)
 			if !ok {
 				continue
 			}
 
 			// TODO: We need a nice title to display
-			progresBytes, err := json.Marshal(map[string]interface{}{
-				"completedCount": progress.CompletedCount,
-				"totalCount":     progress.TotalCount,
-				"currentName":    progress.CurrentName,
-				"currentStatus":  progress.CurrentStatus,
-				"updatedAt":      time.Now().Format(time.RFC3339),
+
+			progressBytes, err := json.Marshal(preflighttypes.PreflightProgress{
+				CompletedCount: progress.CompletedCount,
+				TotalCount:     progress.TotalCount,
+				CurrentName:    progress.CurrentName,
+				CurrentStatus:  progress.CurrentStatus,
+				UpdatedAt:      time.Now().Format(time.RFC3339),
+				Preflights:     progress.Collectors,
+				//TODO: sort these preflights so they don't jump around
+				//TODO: find how current preflight results are sorted?
 			})
 			if err != nil {
 				continue
@@ -60,7 +65,7 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta2.Pr
 
 			completeMx.Lock()
 			if !isComplete {
-				_ = store.GetStore().SetPreflightProgress(appID, sequence, string(progresBytes))
+				_ = store.GetStore().SetPreflightProgress(appID, sequence, string(progressBytes))
 			}
 			completeMx.Unlock()
 		}
