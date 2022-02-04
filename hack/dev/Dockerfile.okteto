@@ -138,6 +138,8 @@ RUN cd /tmp && curl -fsSL -o helm.tar.gz "${HELM3_URL}" \
   && ln -s "${KOTS_HELM_BIN_DIR}/helm3" "${KOTS_HELM_BIN_DIR}/helm" \
   && rm -rf helm.tar.gz linux-amd64
 
+RUN go install github.com/go-delve/delve/cmd/dlv@v1.8.0
+
 ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots
 WORKDIR $PROJECTPATH
 
