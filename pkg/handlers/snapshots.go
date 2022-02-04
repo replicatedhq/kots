@@ -445,10 +445,13 @@ func configureMinioFileSystemProvider(ctx context.Context, clientset kubernetes.
 		FileSystemConfig: fileSystemOptions.FileSystemConfig,
 	}
 
-	if _, err := os.Stat(*deployOptions.FileSystemConfig.HostPath); os.IsNotExist(err) {
-		return &kotssnapshot.HostPathNotFoundError{Message: "Provided host path does not exist"}
-	} else if err != nil {
-		return errors.Wrap(err, "failed to os stat")
+	if os.Getenv("KURL_INSTALL_ID") != "" && os.Getenv("POD_NAMESPACE") != "" {
+		// only check host paths if this is not a k8s pod - paths that exist within a pod will not match those on the host
+		if _, err := os.Stat(*deployOptions.FileSystemConfig.HostPath); os.IsNotExist(err) {
+			return &kotssnapshot.HostPathNotFoundError{Message: "Provided host path does not exist"}
+		} else if err != nil {
+			return errors.Wrap(err, "failed to os stat")
+		}
 	}
 
 	if err := kotssnapshot.DeployFileSystemMinio(ctx, clientset, deployOptions, registryOptions); err != nil {
