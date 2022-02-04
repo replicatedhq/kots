@@ -57,6 +57,7 @@ func UpstreamUpgradeCmd() *cobra.Command {
 				Debug:              v.GetBool("debug"),
 				Deploy:             v.GetBool("deploy"),
 				DeployVersionLabel: v.GetString("deploy-version-label"),
+				Wait:               v.GetBool("wait"),
 				Silent:             output != "",
 			}
 
@@ -84,6 +85,9 @@ func UpstreamUpgradeCmd() *cobra.Command {
 			}
 			if v.GetBool("is-cli") {
 				urlVals.Set("isCLI", "true")
+			}
+			if v.GetBool("wait") {
+				urlVals.Set("wait", "true")
 			}
 			upgradeOptions.UpdateCheckEndpoint = fmt.Sprintf("http://localhost:%d/api/v1/app/%s/updatecheck?%s", localPort, url.PathEscape(appSlug), urlVals.Encode())
 
@@ -120,6 +124,7 @@ func UpstreamUpgradeCmd() *cobra.Command {
 	cmd.Flags().String("deploy-version-label", "", "when set, automatically deploy the version with the provided version label")
 	cmd.Flags().Bool("skip-preflights", false, "set to true to skip preflight checks")
 	cmd.Flags().Bool("skip-compatibility-check", false, "set to true to skip compatibility checks between the current kots version and new app version(s)")
+	cmd.Flags().Bool("wait", true, "set to false to download the updates in the background")
 
 	cmd.Flags().String("airgap-bundle", "", "path to the application airgap bundle where application images and metadata will be loaded from")
 	cmd.Flags().String("kotsadm-registry", "", "registry endpoint where application images will be pushed")
