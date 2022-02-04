@@ -16,6 +16,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
+	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
 	cron "github.com/robfig/cron/v3"
@@ -153,6 +154,7 @@ type CheckForUpdatesOpts struct {
 	SkipPreflights         bool
 	SkipCompatibilityCheck bool
 	IsCLI                  bool
+	Wait                   bool
 }
 
 type UpdateCheckResponse struct {
@@ -286,33 +288,47 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 		return nil, errors.Wrap(err, "failed to set task status")
 	}
 
-	// there are updates, go routine it
-	go func() {
-		for index, update := range updates {
-			_, err = upstream.DownloadUpdate(a.ID, update, opts.SkipPreflights, opts.SkipCompatibilityCheck)
-			if err != nil {
-				logger.Error(errors.Wrapf(err, "failed to download update %s", update.VersionLabel))
-				if index == len(updates)-1 {
-					// if the last update fails to be downloaded, then the operation isn't successful
-					// and lastUpdateCheckTimestamp shouldn't be updated yet since that timestamp is used in detecting new updates
-					return
-				}
-				continue
+	if opts.Wait {
+		if err := processUpdates(opts, a.ID, d.ClusterID, updates); err != nil {
+			return nil, errors.Wrap(err, "failed to process updates")
+		}
+	} else {
+		go func() {
+			if err := processUpdates(opts, a.ID, d.ClusterID, updates); err != nil {
+				logger.Error(errors.Wrap(err, "failed to process updates"))
 			}
-			// if any update from the channel has been downloaded and processed successfully, then reset the "channel_chaged" flag
-			if err = store.GetStore().SetAppChannelChanged(a.ID, false); err != nil {
-				logger.Error(errors.Wrapf(err, "failed to reset channel changed flag"))
-			}
-		}
-		if err := app.SetLastUpdateAtTime(a.ID); err != nil {
-			logger.Error(errors.Wrap(err, "failed to update last updated at time"))
-		}
-		if err := ensureDesiredVersionIsDeployed(opts, d.ClusterID); err != nil {
-			logger.Error(errors.Wrapf(err, "failed to ensure desired version is deployed"))
-		}
-	}()
+		}()
+	}
 
 	return &ucr, nil
+}
+
+func processUpdates(opts CheckForUpdatesOpts, appID string, clusterID string, updates []upstreamtypes.Update) error {
+	for index, update := range updates {
+		_, err := upstream.DownloadUpdate(appID, update, opts.SkipPreflights, opts.SkipCompatibilityCheck)
+		if err != nil {
+			err = errors.Wrapf(err, "failed to download update %s", update.VersionLabel)
+			if index == len(updates)-1 {
+				// if the last update fails to be downloaded, then the operation isn't successful
+				// and lastUpdateCheckTimestamp shouldn't be updated yet since that timestamp is used in detecting new updates
+				return err
+			}
+			logger.Error(err)
+			continue
+		}
+		// if any update from the channel has been downloaded and processed successfully, then reset the "channel_changed" flag
+		// don't block other updates if this fails
+		if err = store.GetStore().SetAppChannelChanged(appID, false); err != nil {
+			logger.Error(errors.Wrapf(err, "failed to reset channel changed flag"))
+		}
+	}
+	if err := app.SetLastUpdateAtTime(appID); err != nil {
+		return errors.Wrap(err, "failed to update last updated at time")
+	}
+	if err := ensureDesiredVersionIsDeployed(opts, clusterID); err != nil {
+		return errors.Wrapf(err, "failed to ensure desired version is deployed")
+	}
+	return nil
 }
 
 func ensureDesiredVersionIsDeployed(opts CheckForUpdatesOpts, clusterID string) error {

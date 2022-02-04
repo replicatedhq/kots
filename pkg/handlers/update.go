@@ -49,6 +49,7 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 	skipPreflights, _ := strconv.ParseBool(r.URL.Query().Get("skipPreflights"))
 	skipCompatibilityCheck, _ := strconv.ParseBool(r.URL.Query().Get("skipCompatibilityCheck"))
 	isCLI, _ := strconv.ParseBool(r.URL.Query().Get("isCLI"))
+	wait, _ := strconv.ParseBool(r.URL.Query().Get("wait"))
 
 	contentType := strings.Split(r.Header.Get("Content-Type"), ";")[0]
 	contentType = strings.TrimSpace(contentType)
@@ -61,6 +62,7 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 			SkipPreflights:         skipPreflights,
 			SkipCompatibilityCheck: skipCompatibilityCheck,
 			IsCLI:                  isCLI,
+			Wait:                   wait,
 		}
 		ucr, err := updatechecker.CheckForUpdates(opts)
 		if err != nil {
