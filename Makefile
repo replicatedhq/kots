@@ -57,15 +57,16 @@ kotsadm:
 	go build ${LDFLAGS} ${GCFLAGS} -o bin/kotsadm $(BUILDFLAGS) ./cmd/kotsadm
 
 # Debugging
-.PHONY: debug-build
+.PHONY: kotsadm-debug-build
 kotsadm-debug-build:
-	go build ${LDFLAGS} ${GCFLAGS} \
+	go build ${LDFLAGS} -gcflags="all=-N -l" \
+ 		$(BUILDFLAGS) \
 		-o ./bin/kotsadm-api-debug \
-		.
+		./cmd/kotsadm
 
 .PHONY: kotsadm-debug
-debug: debug-build
-	dlv --listen=:2345 --headless=true --api-version=2 exec -- ./bin/kotsadm-api-debug -d
+kotsadm-debug: kotsadm-debug-build
+	dlv --listen=:2345 --headless=true --api-version=2 exec -- ./bin/kotsadm-api-debug
 
 .PHONY: build-ttl.sh
 build-ttl.sh:
