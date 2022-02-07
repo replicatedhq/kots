@@ -7,7 +7,7 @@ on:
     types: [opened, synchronize, reopened, labeled]
 
 concurrency:
-  group: ${{ github.ref }}
+  group: ${{ github.head_ref }}
   cancel-in-progress: true
 
 jobs:
@@ -36,6 +36,7 @@ jobs:
         uses: replicatedhq/action-okteto-test@main
         with:
           token: ${{ secrets.OKTETO_TOKEN }}
+          branch: ${{ github.head_ref }}
 
 
   build-web:
