@@ -33,5 +33,4 @@ kotsdata/
 
 sbom/
 cosign.key
-node_modules/
 pkg/tests/pull/cases/subcharts/results
