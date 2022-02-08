@@ -18,8 +18,8 @@ import (
 )
 
 type GetPreflightResultResponse struct {
-	PreflightProgress string                         `json:"preflightProgress,omitempty"`
-	PreflightResult   preflighttypes.PreflightResult `json:"preflightResult"`
+	PreflightProgress preflighttypes.PreflightProgress `json:"preflightProgress,omitempty"`
+	PreflightResult   preflighttypes.PreflightResult   `json:"preflightResult"`
 }
 
 type GetPreflightCommandRequest struct {
@@ -60,9 +60,20 @@ func (h *Handler) GetPreflightResult(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var preflightProgress preflighttypes.PreflightProgress
+	if progress != "" {
+		err = json.Unmarshal([]byte(progress), &preflightProgress)
+		if err != nil {
+			logger.Errorf("progress is %s", progress)
+			logger.Error(err)
+			w.WriteHeader(500)
+			return
+		}
+	}
+
 	response := GetPreflightResultResponse{
 		PreflightResult:   *result,
-		PreflightProgress: progress,
+		PreflightProgress: preflightProgress,
 	}
 	JSON(w, 200, response)
 }
@@ -91,9 +102,19 @@ func (h *Handler) GetLatestPreflightResultsForSequenceZero(w http.ResponseWriter
 		return
 	}
 
+	var preflightProgress preflighttypes.PreflightProgress
+	if progress != "" {
+		err = json.Unmarshal([]byte(progress), &preflightProgress)
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(500)
+			return
+		}
+	}
+
 	response := GetPreflightResultResponse{
 		PreflightResult:   *result,
-		PreflightProgress: progress,
+		PreflightProgress: preflightProgress,
 	}
 	JSON(w, http.StatusOK, response)
 }
