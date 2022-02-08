@@ -170,6 +170,7 @@ type VersionStore interface {
 	IsIdentityServiceSupportedForVersion(appID string, sequence int64) (bool, error)
 	IsRollbackSupportedForVersion(appID string, sequence int64) (bool, error)
 	IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int64, renderer rendertypes.Renderer) (bool, error)
+	GetTargetKotsVersionForVersion(appID string, sequence int64) (string, error)
 	CreateAppVersionArchive(appID string, sequence int64, archivePath string) error
 	GetAppVersionArchive(appID string, sequence int64, dstPath string) error
 	GetAppVersionBaseSequence(appID string, versionLabel string) (int64, error)

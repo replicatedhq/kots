@@ -86,12 +86,14 @@ func (s *KOTSStore) IsRollbackSupportedForVersion(appID string, sequence int64) 
 		return false, errors.Wrap(err, "failed to scan")
 	}
 
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode([]byte(kotsAppSpecStr.String), nil, nil)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to decode kots app spec yaml")
+	if kotsAppSpecStr.String == "" {
+		return false, nil
 	}
-	kotsAppSpec := obj.(*kotsv1beta1.Application)
+
+	kotsAppSpec, err := kotsutil.LoadKotsAppFromContents([]byte(kotsAppSpecStr.String))
+	if err != nil {
+		return false, errors.Wrap(err, "failed to load kots app from contents")
+	}
 
 	return kotsAppSpec.Spec.AllowRollback, nil
 }
@@ -178,6 +180,31 @@ func (s *KOTSStore) IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int
 	}
 
 	return true, nil
+}
+
+func (s *KOTSStore) GetTargetKotsVersionForVersion(appID string, sequence int64) (string, error) {
+	db := persistence.MustGetDBSession()
+	query := `select kots_app_spec from app_version where app_id = $1 and sequence = $2`
+	row := db.QueryRow(query, appID, sequence)
+
+	var kotsAppSpecStr sql.NullString
+	if err := row.Scan(&kotsAppSpecStr); err != nil {
+		if err == sql.ErrNoRows {
+			return "", nil
+		}
+		return "", errors.Wrap(err, "failed to scan")
+	}
+
+	if kotsAppSpecStr.String == "" {
+		return "", nil
+	}
+
+	kotsAppSpec, err := kotsutil.LoadKotsAppFromContents([]byte(kotsAppSpecStr.String))
+	if err != nil {
+		return "", errors.Wrap(err, "failed to load kots app from contents")
+	}
+
+	return kotsAppSpec.Spec.TargetKotsVersion, nil
 }
 
 // CreateAppVersion takes an unarchived app, makes an archive and then uploads it

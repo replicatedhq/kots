@@ -38,7 +38,6 @@ vet:
 
 .PHONY: run
 run:
-	# make -C web deps build-kotsadm
 	source .image.env && make kots
 	./bin/kots run test
 
