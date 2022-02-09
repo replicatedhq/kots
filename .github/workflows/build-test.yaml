@@ -679,10 +679,99 @@ jobs:
 
           echo "All pods started"
 
+  testim-tdk-test:
+    runs-on: ubuntu-18.04
+    needs: [can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_version: [v1.20.14-k3s2]
+    steps:
+      - uses: replicatedhq/action-k3s@main
+        id: k3s
+        with:
+          version: ${{ matrix.k8s_version }}
+
+      - name: download kots binary
+        uses: actions/download-artifact@v2
+        with:
+          name: kots
+          path: bin/
+
+      - run: chmod +x bin/kots
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '17.x'
+
+      - name: setup testIM
+        run: npm i -g @testim/testim-cli@3.206.0
+        shell: bash
+
+      ## testim tests
+
+      - name: aws credentials setup
+        run: |
+          cat > aws-credentials << EOL
+          [default]
+          aws_access_key_id=${{ secrets.TESTIM_AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key=${{ secrets.TESTIM_AWS_SECRET_ACCESS_KEY }}
+          EOL
+
+      - name: prepare smoke test
+        run: |
+          set +e
+          ./bin/kots \
+          install qakotstestim/github-actions-qa \
+          --port-forward=false \
+          --namespace smoke-test \
+          --shared-password password \
+          --kotsadm-registry ttl.sh \
+          --kotsadm-namespace automated-${{ github.run_id }} \
+          --kotsadm-tag 2h
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "------pods:"
+            kubectl -n smoke-test get pods
+            echo "------kotsadm logs"
+            kubectl -n smoke-test logs deployment/kotsadm
+            echo "------previous kotsadm logs"
+            kubectl -n smoke-test logs -p deployment/kotsadm
+          fi
+          exit $EXIT_CODE
+
+      - name: get branch
+        if: startsWith(github.ref, 'refs/heads/')
+        id: get_branch
+        shell: bash
+        run: BRANCH=${GITHUB_REF/refs\/heads\//} && echo ::set-output name=GIT_BRANCH::${BRANCH:-main}
+
+      - name: execute testim tdk test
+        run: |
+          set +e
+          ./bin/kots admin-console -n smoke-test &
+          ADMIN_CONSOLE_PID=$!
+          cd kots/testim/dashboard-app-info
+          TESTIM_ACCESS_TOKEN=${{ secrets.TESTIM_ACCESS_TOKEN }}
+          TESTIM_PROJECT_ID=${{ secrets.TESTIM_PROJECT_ID }}
+          GIT_BRANCH=${{ steps.get_branch.outputs.GIT_BRANCH }}
+          npm run ci
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "------pods:"
+            kubectl -n smoke-test get pods
+            echo "------kotsadm logs"
+            kubectl -n smoke-test logs deployment/kotsadm
+            echo "------previous kotsadm logs"
+            kubectl -n smoke-test logs -p deployment/kotsadm
+          fi
+          kill $ADMIN_CONSOLE_PID
+          exit $EXIT_CODE
+
 
   # this job will validate that all validate-* jobs succeed
   validate-success:
     runs-on: ubuntu-18.04
-    needs: [validate-smoke-test, validate-minimal-rbac, validate-no-required-config, validate-multi-namespace, validate-kots-pull]
+    needs: [validate-smoke-test, validate-minimal-rbac, validate-no-required-config, validate-multi-namespace, validate-kots-pull, testim-tdk-test]
     steps:
       - run: echo "Validate success"
