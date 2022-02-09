@@ -17,6 +17,6 @@
         "debug-file": "cross-env NODE_OPTIONS=--max-old-space-size=8196 testim --inspect 9229 --require-credentials run",
         "debug-examples": "cross-env NODE_OPTIONS=--max-old-space-size=8196 testim --inspect 9229 run \"./tests/examples/*.test.js\" --require-credentials",
         "headless": "cross-env NODE_OPTIONS=--max-old-space-size=8196 testim --inspect 9229 run \"./tests/**/*.test.js\" --require-credentials --headless",
-        "ci": "cross-env NODE_OPTIONS=--max-old-space-size=8196 testim run \"./tests/**/*.test.js\" --grid testim-grid"
+        "ci": "cross-env NODE_OPTIONS=--max-old-space-size=8196 testim run \"./tests/**/*.test.js\" --branch $GIT_BRANCH --token $TESTIM_ACCESS_TOKEN --project $TESTIM_PROJECT_ID --grid testim-grid --report-file testim-report.xml --tunnel --tunnel-port 8800"
     }
 }

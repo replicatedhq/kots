@@ -5,7 +5,7 @@ const { go, resize, evaluate, apiCall, waitForText, click, type, inputFile, exis
 Locator.set(require('./locators/locators.js'));
 
 test("type=embedded cluster, env=online, phase=new install, rbac=cluster admin", async () => {
-  await go("http://localhost:30880");
+  await go("http://localhost:8800");
   await resize({width: 1440, height: 900});
   
   await evaluate(() => {
