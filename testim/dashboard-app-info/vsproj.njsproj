@@ -1,0 +1,61 @@
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">14.0</VisualStudioVersion>
+    <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
+    <Name>TestimProject</Name>
+    <RootNamespace>TestimProject</RootNamespace>
+    <SaveNodeJsSettingsInProjectFile>True</SaveNodeJsSettingsInProjectFile>
+    <Environment>NODE_OPTIONS=--max-old-space-size=8196</Environment>
+    <ScriptArguments>run "./tests/**/*.test.js" --require-credentials</ScriptArguments>
+  </PropertyGroup>
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>df45c9dd-afdf-4039-a3f5-3d030344fd74</ProjectGuid>
+    <ProjectHome>.</ProjectHome>
+    <StartupFile>node_modules\@testim\testim-cli\cli.js</StartupFile>
+    <StartWebBrowser>False</StartWebBrowser>
+    <SearchPath>
+    </SearchPath>
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <ProjectTypeGuids>{3AF33F2E-1136-4D97-BBB7-1795711AC8B8};{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}</ProjectTypeGuids>
+    <StartWebBrowser>False</StartWebBrowser>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="package.json" />
+    <Content Include="webpack.config.js" />
+    <Content Include="tests\examples\01-simple-text-validation.test.js" />
+    <Content Include="tests\examples\02-using-locators.test.js" />
+    <Content Include="tests\examples\03-using-hooks.test.js" />
+    <Content Include="tests\examples\04-skip-and-only.test.js" />
+    <Content Include="tests\examples\05-multiple-windows.test.js" />
+    <Content Include="tests\examples\locators\locator.2tAJgSAmk3.json" />
+    <Content Include="tests\examples\locators\locator.9k9VCOUL4y.json" />
+    <Content Include="tests\examples\locators\locator.AjIJ15ZuBj.json" />
+    <Content Include="tests\examples\locators\locator.FjmSDY45IZ.json" />
+    <Content Include="tests\examples\locators\locator.g2SudoELzB.json" />
+    <Content Include="tests\examples\locators\locator.hRAXmKR3zE.json" />
+    <Content Include="tests\examples\locators\locator.kSEI5IhgWU.json" />
+    <Content Include="tests\examples\locators\locator.pTxwqDP1pW.json" />
+    <Content Include="tests\examples\locators\locator.QJ77pQxaRz.json" />
+    <Content Include="tests\examples\locators\locator.QxcJVFC2C1.json" />
+    <Content Include="tests\examples\locators\locator.Qxpa59SlFg.json" />
+    <Content Include="tests\examples\locators\locator.X3UDpG1Gdq.json" />
+    <Content Include="tests\examples\locators\locators.js" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="tests\" />
+    <Folder Include="tests\examples\" />
+    <Folder Include="tests\examples\locators\" />
+  </ItemGroup>
+  <Import Project="$(VSToolsPath)\Node.js Tools\Microsoft.NodejsToolsV2.targets" />
+</Project>
