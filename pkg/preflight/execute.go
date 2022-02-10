@@ -55,8 +55,7 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta2.Pr
 				CurrentName:    progress.CurrentName,
 				CurrentStatus:  progress.CurrentStatus,
 				UpdatedAt:      time.Now().Format(time.RFC3339),
-				Preflights:     progress.Collectors,
-				PreflightSpec:  preflightSpec,
+				Collectors:     progress.Collectors,
 				//TODO: sort these preflights so they don't jump around
 				//TODO: find how current preflight results are sorted?
 			})

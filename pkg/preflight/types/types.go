@@ -3,7 +3,6 @@ package types
 import (
 	"time"
 
-	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 )
 
@@ -21,6 +20,5 @@ type PreflightProgress struct {
 	CurrentName    string                                           `json:"currentName"`
 	CurrentStatus  string                                           `json:"currentStatus"`
 	UpdatedAt      string                                           `json:"updatedAt"`
-	Preflights     map[string]troubleshootpreflight.CollectorStatus `json:"preflights"`
-	PreflightSpec  *troubleshootv1beta2.Preflight                   `json:"preflightSpec"`
+	Collectors     map[string]troubleshootpreflight.CollectorStatus `json:"preflights"`
 }
