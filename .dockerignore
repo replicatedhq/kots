@@ -7,3 +7,7 @@ kustomize
 migrations
 deploy/minio
 operator
+.git
+.github
+.vscode
+.idea

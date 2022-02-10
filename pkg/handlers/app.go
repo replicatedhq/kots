@@ -458,7 +458,7 @@ func (h *Handler) IsKotsVersionCompatibleWithApp(w http.ResponseWriter, r *http.
 	}
 
 	if !response.IsCompatible {
-		response.Error = kotsutil.GetIncompatbileKotsVersionMessage(*kotsApp)
+		response.Error = kotsutil.GetIncompatbileKotsVersionMessage(*kotsApp, request.IsInstall)
 	}
 
 	JSON(w, http.StatusOK, response)

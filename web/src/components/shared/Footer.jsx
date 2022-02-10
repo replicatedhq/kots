@@ -10,12 +10,12 @@ export class Footer extends React.Component {
   }
 
   componentDidMount() {
-    this.getHighestTargetKotsVersion();
+    this.setState({ targetKotsVersion: this.getHighestTargetKotsVersion()});
   }
 
   componentDidUpdate(lastProps) {
     if (this.props.appsList !== lastProps.appsList) {
-      this.getHighestTargetKotsVersion();
+      this.setState({ targetKotsVersion: this.getHighestTargetKotsVersion()});
     }
   }
 
@@ -60,9 +60,7 @@ export class Footer extends React.Component {
         return;
       }
 
-      this.setState({
-        targetKotsVersion: maxSemver?.version
-      });
+      return maxSemver?.version;
     } catch(err) {
       console.log(err);
     }

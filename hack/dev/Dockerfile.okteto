@@ -1,22 +1,6 @@
 FROM golang:1.17 as builder
 
-EXPOSE 40000
-
-ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots
-WORKDIR $PROJECTPATH
-COPY Makefile ./
-COPY Makefile.build ./
-COPY go.mod go.sum ./
-COPY cmd ./cmd
-COPY pkg ./pkg
-COPY web/webcontent.go ./web/webcontent.go
-RUN mkdir -p web/dist && touch web/dist/README.md
-COPY kotskinds ./kotskinds
-
-ARG DEBUG_KOTSADM=0
-ENV DEBUG_KOTSADM=${DEBUG_KOTSADM}
-
-RUN make kotsadm
+EXPOSE 2345
 
 RUN curl -k https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
   && echo "deb http://apt.postgresql.org/pub/repos/apt/ buster-pgdg main" > /etc/apt/sources.list.d/PostgreSQL.list \
@@ -24,9 +8,7 @@ RUN curl -k https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
   && pip install s3cmd \
   && rm -rf /var/lib/apt/lists/*
 
-# python3-dateutil
 ENV PATH="/usr/local/bin:$PATH"
-
 
 # KOTS can be configured to use a specific version of kubectl by setting kubectlVersion in the
 # kots.io/v1beta1.Application spec. The github.com/replicatedhq/kots/pkg/binaries package will
@@ -156,17 +138,17 @@ RUN cd /tmp && curl -fsSL -o helm.tar.gz "${HELM3_URL}" \
   && ln -s "${KOTS_HELM_BIN_DIR}/helm3" "${KOTS_HELM_BIN_DIR}/helm" \
   && rm -rf helm.tar.gz linux-amd64
 
-# Install s3cmd
-#ENV S3CMD_VERSION=2.1.0
-#ENV S3CMD_URL=https://github.com/s3tools/s3cmd/releases/download/v${S3CMD_VERSION}/s3cmd-${S3CMD_VERSION}.tar.gz
-#RUN cd /tmp && curl -fsSL -o s3cmd.tar.gz "${S3CMD_URL}" \
-#  && curl -fsSL -o s3cmd.tar.gz.asc "${S3CMD_URL}.asc" \
-#  && gpg --keyserver keyserver.ubuntu.com --recv-keys 0x0d37a8f4a5d183d5541d85d9241769189ac3d00b \
-#  && cat s3cmd.tar.gz.asc \
-#  && gpg --verify s3cmd.tar.gz.asc s3cmd.tar.gz \
-#  && tar -xzvf s3cmd.tar.gz \
-#  && mv s3cmd-${S3CMD_VERSION}/s3cmd /usr/local/bin/s3cmd \
-#  && mv s3cmd-${S3CMD_VERSION}/S3 /usr/local/bin/S3 \
-#  && rm -rf s3cmd.tar.gz s3cmd.tar.gz.asc s3cmd-${S3CMD_VERSION}
+RUN go install github.com/go-delve/delve/cmd/dlv@v1.8.0
+
+ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots
+WORKDIR $PROJECTPATH
+
+COPY go.mod go.sum ./
+RUN --mount=target=/go/pkg/mod,type=cache go mod download
+
+COPY . .
+RUN --mount=target=/root/.cache,type=cache mkdir -p web/dist \
+    && touch web/dist/README.md \
+    && make kotsadm
 
 ENTRYPOINT [ "./bin/kotsadm", "api"]

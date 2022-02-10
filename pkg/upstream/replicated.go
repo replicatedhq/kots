@@ -195,7 +195,7 @@ func downloadReplicated(
 		if !isCompatible {
 			return nil, util.ActionableError{
 				NoRetry: true,
-				Message: kotsutil.GetIncompatbileKotsVersionMessage(*application),
+				Message: kotsutil.GetIncompatbileKotsVersionMessage(*application, isInstall),
 			}
 		}
 	}

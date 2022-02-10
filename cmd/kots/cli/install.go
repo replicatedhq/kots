@@ -157,7 +157,7 @@ func InstallCmd() *cobra.Command {
 				if kotsApp != nil {
 					isCompatible := kotsutil.IsKotsVersionCompatibleWithApp(*kotsApp, true)
 					if !isCompatible {
-						return errors.New(kotsutil.GetIncompatbileKotsVersionMessage(*kotsApp))
+						return errors.New(kotsutil.GetIncompatbileKotsVersionMessage(*kotsApp, true))
 					}
 				}
 			}
