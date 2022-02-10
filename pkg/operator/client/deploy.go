@@ -488,7 +488,7 @@ func (c *Client) installWithHelm(helmDir string, targetNamespace string) (*comma
 			return nil, errors.Wrapf(err, "failed to unmarshal %s", chartfilePath)
 		}
 
-		args := []string{"upgrade", "-i", cname.ChartName, installDir, "--timeout 60m0s"}
+		args := []string{"upgrade", "-i", cname.ChartName, installDir, "--timeout", "3600s"}
 
 		if targetNamespace != "" && targetNamespace != "." {
 			args = append(args, "-n", targetNamespace)
