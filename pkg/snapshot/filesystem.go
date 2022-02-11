@@ -1078,7 +1078,7 @@ func EnsureLocalVolumeProviderConfigMap(deployOptions FileSystemDeployOptions, v
 	return nil
 }
 
-// IsFileSystemMinioDisable returns the value of an internal KOTS config map entry indicating
+// IsFileSystemMinioDisabled returns the value of an internal KOTS config map entry indicating
 // if this installation has opted in or out of migrating from Minio to the LVP plugin.
 func IsFileSystemMinioDisabled(kotsadmNamespace string) (bool, error) {
 	clientset, err := k8sutil.GetClientset()
@@ -1090,10 +1090,7 @@ func IsFileSystemMinioDisabled(kotsadmNamespace string) (bool, error) {
 	// 1. minio image is not present in the cluster
 	// 2. disableS3 flag is enabled
 	minioImage, err := image.MinioImage(clientset)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to check minio image")
-	}
-	if minioImage == "" {
+	if err != nil || minioImage == "" {
 		return true, nil
 	}
 
