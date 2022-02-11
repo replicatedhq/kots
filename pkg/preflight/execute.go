@@ -4,12 +4,10 @@ import (
 	"encoding/json"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
-	preflighttypes "github.com/replicatedhq/kots/pkg/preflight/types"
 	"github.com/replicatedhq/kots/pkg/store"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	"github.com/replicatedhq/troubleshoot/pkg/preflight"
@@ -28,7 +26,6 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta2.Pr
 	defer close(progressChan)
 
 	completeMx := sync.Mutex{}
-	isComplete := false
 	go func() {
 		for {
 			msg, ok := <-progressChan
@@ -49,12 +46,11 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta2.Pr
 
 			// TODO: We need a nice title to display
 
-			progressBytes, err := json.Marshal(preflighttypes.PreflightProgress{
+			progressBytes, err := json.Marshal(troubleshootpreflight.CollectProgress{
 				CompletedCount: progress.CompletedCount,
 				TotalCount:     progress.TotalCount,
 				CurrentName:    progress.CurrentName,
 				CurrentStatus:  progress.CurrentStatus,
-				UpdatedAt:      time.Now().Format(time.RFC3339),
 				Collectors:     progress.Collectors,
 				//TODO: sort these preflights so they don't jump around
 				//TODO: find how current preflight results are sorted?
@@ -64,9 +60,8 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta2.Pr
 			}
 
 			completeMx.Lock()
-			if !isComplete {
-				_ = store.GetStore().SetPreflightProgress(appID, sequence, string(progressBytes))
-			}
+			// always update the progress, even if it's the last collector
+			_ = store.GetStore().SetPreflightProgress(appID, sequence, string(progressBytes))
 			completeMx.Unlock()
 		}
 	}()
@@ -138,7 +133,6 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta2.Pr
 	completeMx.Lock()
 	defer completeMx.Unlock()
 
-	isComplete = true
 	if err := store.GetStore().SetPreflightResults(appID, sequence, b); err != nil {
 		return uploadPreflightResults, errors.Wrap(err, "failed to set preflight results")
 	}

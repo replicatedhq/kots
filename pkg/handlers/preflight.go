@@ -15,11 +15,12 @@ import (
 	preflighttypes "github.com/replicatedhq/kots/pkg/preflight/types"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
+	collectortypes "github.com/replicatedhq/troubleshoot/pkg/preflight"
 )
 
 type GetPreflightResultResponse struct {
-	PreflightProgress preflighttypes.PreflightProgress `json:"preflightProgress,omitempty"`
-	PreflightResult   preflighttypes.PreflightResult   `json:"preflightResult"`
+	PreflightProgress collectortypes.CollectProgress `json:"preflightProgress,omitempty"`
+	PreflightResult   preflighttypes.PreflightResult `json:"preflightResult"`
 }
 
 type GetPreflightCommandRequest struct {
@@ -60,11 +61,10 @@ func (h *Handler) GetPreflightResult(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var preflightProgress preflighttypes.PreflightProgress
+	var preflightProgress collectortypes.CollectProgress
 	if progress != "" {
 		err = json.Unmarshal([]byte(progress), &preflightProgress)
 		if err != nil {
-			logger.Errorf("progress is %s", progress)
 			logger.Error(err)
 			w.WriteHeader(500)
 			return
@@ -102,7 +102,7 @@ func (h *Handler) GetLatestPreflightResultsForSequenceZero(w http.ResponseWriter
 		return
 	}
 
-	var preflightProgress preflighttypes.PreflightProgress
+	var preflightProgress collectortypes.CollectProgress
 	if progress != "" {
 		err = json.Unmarshal([]byte(progress), &preflightProgress)
 		if err != nil {
