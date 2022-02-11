@@ -276,17 +276,22 @@ func ensureFileSystemMinioDeployment(ctx context.Context, clientset kubernetes.I
 }
 
 func fileSystemMinioDeploymentResource(clientset kubernetes.Interface, secretChecksum string, deployOptions FileSystemDeployOptions, registryOptions kotsadmtypes.KotsadmOptions) (*appsv1.Deployment, error) {
-	minioTag, err := image.GetTag(image.Minio)
+	existingImage, err := image.MinioImage(clientset)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to find minio image")
+	}
+
+	minioTag, err := image.GetTag(existingImage)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get minio image tag")
 	}
-	image := fmt.Sprintf("minio/minio:%s", minioTag)
+	minioImage := fmt.Sprintf("minio/minio:%s", minioTag)
 	imagePullSecrets := []corev1.LocalObjectReference{}
 
 	if !kotsutil.IsKurl(clientset) || deployOptions.Namespace != metav1.NamespaceDefault {
 		var err error
 		imageRewriteFn := kotsadmversion.DependencyImageRewriteKotsadmRegistry(deployOptions.Namespace, &registryOptions)
-		image, imagePullSecrets, err = imageRewriteFn(image, false)
+		minioImage, imagePullSecrets, err = imageRewriteFn(minioImage, false)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to rewrite image")
 		}
@@ -361,7 +366,7 @@ func fileSystemMinioDeploymentResource(clientset kubernetes.Interface, secretChe
 					ImagePullSecrets: imagePullSecrets,
 					Containers: []corev1.Container{
 						{
-							Image:           image,
+							Image:           minioImage,
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "minio",
 							Ports: []corev1.ContainerPort{

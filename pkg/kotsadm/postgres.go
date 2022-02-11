@@ -3,6 +3,7 @@ package kotsadm
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -155,7 +156,7 @@ func waitForHealthyStatefulSet(name string, deployOptions types.DeployOptions, c
 		time.Sleep(time.Second)
 
 		if time.Now().Sub(start) > time.Duration(deployOptions.Timeout) {
-			return &types.ErrorTimeout{Message: "timeout waiting for postgres pod"}
+			return &types.ErrorTimeout{Message: fmt.Sprintf("timeout waiting for %s pod", name)}
 		}
 	}
 }
