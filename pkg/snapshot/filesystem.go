@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -1090,12 +1089,12 @@ func IsFileSystemMinioDisabled(kotsadmNamespace string) (bool, error) {
 	//Minio disabled is detected based on two cases
 	// 1. minio image is not present in the cluster
 	// 2. disableS3 flag is enabled
-	isMinIOImagePresent, err := IsMinIOImagePresent(clientset)
+	minioImage, err := image.MinioImage(clientset)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to check minio image")
 	}
-	if !isMinIOImagePresent {
-		return !isMinIOImagePresent, nil
+	if minioImage == "" {
+		return true, nil
 	}
 
 	// Get minio snapshot migration status v1.48.0
@@ -1114,25 +1113,6 @@ func IsFileSystemMinioDisabled(kotsadmNamespace string) (bool, error) {
 			return false, errors.Wrap(err, "failed to parse minio-enabled-snapshots from kotsadm-confg")
 		}
 		return !minioEnabled, nil
-	}
-
-	return false, nil
-}
-
-func IsMinIOImagePresent(client kubernetes.Interface) (bool, error) {
-	nodes, err := client.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		return false, errors.Wrap(err, "list nodes")
-	}
-
-	for _, node := range nodes.Items {
-		for _, image := range node.Status.Images {
-			for _, name := range image.Names {
-				if strings.Contains(name, "minio/minio:RELEASE.") {
-					return true, nil
-				}
-			}
-		}
 	}
 
 	return false, nil
