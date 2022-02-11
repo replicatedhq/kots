@@ -1077,21 +1077,20 @@ func EnsureLocalVolumeProviderConfigMap(deployOptions FileSystemDeployOptions, v
 // IsFileSystemMinioDisable returns the value of an internal KOTS config map entry indicating
 // if this installation has opted in or out of migrating from Minio to the LVP plugin.
 func IsFileSystemMinioDisabled(kotsadmNamespace string) (bool, error) {
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get kubernetes clientset")
+	}
 
 	//Minio disabled is detected based on two cases
 	// 1. minio image is not present in the cluster
 	// 2. disableS3 flag is enabled
-	isMinIOImagePresent, err := IsMinIOImagePresent()
+	isMinIOImagePresent, err := IsMinIOImagePresent(clientset)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to check minio image")
 	}
 	if !isMinIOImagePresent {
 		return !isMinIOImagePresent, nil
-	}
-
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return false, errors.Wrap(err, "failed to get kubernetes clientset")
 	}
 
 	// Get minio snapshot migration status v1.48.0
@@ -1115,12 +1114,7 @@ func IsFileSystemMinioDisabled(kotsadmNamespace string) (bool, error) {
 	return false, nil
 }
 
-func IsMinIOImagePresent() (bool, error) {
-	client, err := k8sutil.GetClientset()
-	if err != nil {
-		return false, err
-	}
-
+func IsMinIOImagePresent(client kubernetes.Interface) (bool, error) {
 	nodes, err := client.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return false, errors.Wrap(err, "list nodes")
@@ -1130,7 +1124,6 @@ func IsMinIOImagePresent() (bool, error) {
 		for _, image := range node.Status.Images {
 			for _, name := range image.Names {
 				if strings.Contains(name, "minio/minio:RELEASE.") {
-					fmt.Println("+++++++++ Found MINIO image ++++++++")
 					return true, nil
 				}
 			}
