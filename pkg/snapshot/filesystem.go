@@ -276,7 +276,7 @@ func ensureFileSystemMinioDeployment(ctx context.Context, clientset kubernetes.I
 }
 
 func fileSystemMinioDeploymentResource(clientset kubernetes.Interface, secretChecksum string, deployOptions FileSystemDeployOptions, registryOptions kotsadmtypes.KotsadmOptions) (*appsv1.Deployment, error) {
-	existingImage, err := image.MinioImage(clientset)
+	existingImage, err := image.GetMinioImage(clientset, deployOptions.Namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find minio image")
 	}
@@ -1089,7 +1089,7 @@ func IsFileSystemMinioDisabled(kotsadmNamespace string) (bool, error) {
 	//Minio disabled is detected based on two cases
 	// 1. minio image is not present in the cluster
 	// 2. disableS3 flag is enabled
-	minioImage, err := image.MinioImage(clientset)
+	minioImage, err := image.GetMinioImage(clientset, kotsadmNamespace)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to check minio image")
 	}

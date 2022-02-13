@@ -5,12 +5,22 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
 // MinioImage looks through the nodes in the cluster and finds nodes that have already pulled Minio, and then finds the latest image tag listed
-func MinioImage(clientset kubernetes.Interface) (string, error) {
+func GetMinioImage(clientset kubernetes.Interface, kotsadmNamespace string) (string, error) {
+	/*
+	 *  In existing install with limited RBAC, kotsadm does not have previliges to run Nodes() API.
+	 *  If it is a kurl instance, then use search logic to find the best minio image.
+	 *  If it is not a kurl instance, return the static image name present in the bundle.
+	 */
+	if !kotsutil.IsKurl(clientset) || kotsadmNamespace != metav1.NamespaceDefault {
+		return Minio, nil
+	}
+
 	nodes, err := clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return "", fmt.Errorf("failed to list nodes with minio image: %w", err)
