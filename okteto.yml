@@ -10,5 +10,6 @@ resources:
     memory: 4Gi
 sync:
   - .:/go/src/github.com/replicatedhq/kots
+workdir: /go/src/github.com/replicatedhq/kots
 forward:
 - 2353:2345
