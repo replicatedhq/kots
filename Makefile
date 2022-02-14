@@ -59,7 +59,7 @@ kotsadm:
 # Debugging
 .PHONY: kotsadm-debug-build
 kotsadm-debug-build:
-	CGO_ENABLED=1 go build -v -o ./bin/kotsadm-api-debug ./cmd/kotsadm.git
+	CGO_ENABLED=1 go build -v -o ./bin/kotsadm-api-debug ./cmd/kotsadm
 
 .PHONY: kotsadm-debug
 kotsadm-debug: kotsadm-debug-build
