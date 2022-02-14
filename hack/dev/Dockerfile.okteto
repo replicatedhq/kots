@@ -11,7 +11,7 @@ RUN curl -k https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
   && rm -rf /var/lib/apt/lists/*
 
 RUN apt-get update -y \
-  && install -y libdevmapper-dev golang-github-proglottis-gpgme-dev libbtrfs-dev
+  && apt-get install -y libdevmapper-dev golang-github-proglottis-gpgme-dev libbtrfs-dev
 
 ENV PATH="/usr/local/bin:$PATH"
 
