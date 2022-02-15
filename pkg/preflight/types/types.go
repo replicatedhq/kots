@@ -8,4 +8,6 @@ type PreflightResult struct {
 	AppSlug     string     `json:"appSlug"`
 	ClusterSlug string     `json:"clusterSlug"`
 	Skipped     bool       `json:"skipped"`
+	Blocked     bool       `json:"blocked"`
+	BlockedBy   string     `json:"blocked_by"`
 }

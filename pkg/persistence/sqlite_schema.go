@@ -125,6 +125,11 @@ spec:
       - name: git_deployable
         type: boolean
         default: "true"
+      - name: blocked
+        type: boolean
+        default: "false"
+      - name: blocked_by
+        type: text
 `,
 	`apiVersion: schemas.schemahero.io/v1alpha4
 kind: Table
