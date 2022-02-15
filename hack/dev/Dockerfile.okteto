@@ -2,7 +2,7 @@ FROM golang:1.17 as builder
 
 EXPOSE 2345
 
-# ENV GO111MODULE=on
+ENV GO111MODULE=on
 
 RUN curl -k https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
   && echo "deb http://apt.postgresql.org/pub/repos/apt/ buster-pgdg main" > /etc/apt/sources.list.d/PostgreSQL.list \
@@ -10,8 +10,8 @@ RUN curl -k https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
   && pip install s3cmd \
   && rm -rf /var/lib/apt/lists/*
 
-# RUN apt-get update -y \
-#   && apt-get install -y libdevmapper-dev golang-github-proglottis-gpgme-dev libbtrfs-dev
+RUN apt-get update -y \
+  && apt-get install -y libdevmapper-dev golang-github-proglottis-gpgme-dev libbtrfs-dev
 
 ENV PATH="/usr/local/bin:$PATH"
 
