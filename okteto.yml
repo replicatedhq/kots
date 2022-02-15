@@ -4,10 +4,6 @@ securityContext:
   capabilities:
     add:
     - SYS_PTRACE
-resources:
-  limits:
-    cpu: "2"
-    memory: 4Gi
 sync:
   - .:/go/src/github.com/replicatedhq/kots
 workdir: /go/src/github.com/replicatedhq/kots
