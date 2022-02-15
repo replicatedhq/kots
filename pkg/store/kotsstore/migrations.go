@@ -473,6 +473,7 @@ func (s *KOTSStore) migrateAppSpec() error {
 }
 
 func (s *KOTSStore) migrateSkippedPreflights() error {
+	// TODO JEFF does this need to handle the block fields too? What does this code even do
 	db := persistence.MustGetDBSession()
 
 	query := `update app_downstream_version set preflight_skipped = true where preflight_result_created_at is null`

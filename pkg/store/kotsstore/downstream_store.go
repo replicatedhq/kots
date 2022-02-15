@@ -110,6 +110,7 @@ func (s *KOTSStore) SetDownstreamVersionReady(appID string, sequence int64) erro
 
 // SetDownstreamVersionPendingPreflight sets the status for the downstream version with the given sequence and app id to "pending_preflight"
 func (s *KOTSStore) SetDownstreamVersionPendingPreflight(appID string, sequence int64) error {
+	// TODO JEFF ??
 	db := persistence.MustGetDBSession()
 	query := `update app_downstream_version set status = 'pending_preflight' where app_id = $1 and sequence = $2`
 	_, err := db.Exec(query, appID, sequence)
@@ -191,6 +192,8 @@ func (s *KOTSStore) GetCurrentVersion(appID string, clusterID string) (*downstre
 	adv.preflight_skipped,
 	adv.git_commit_url,
 	adv.git_deployable,
+	adv.blocked,
+	adv.blocked_by,
 	ado.is_error,
 	av.upstream_released_at,
 	av.kots_installation_spec,
@@ -264,6 +267,8 @@ func (s *KOTSStore) GetAppVersions(appID string, clusterID string) (*downstreamt
 	adv.preflight_skipped,
 	adv.git_commit_url,
 	adv.git_deployable,
+	adv.blocked,
+	adv.blocked_by,
 	ado.is_error,
 	av.upstream_released_at,
 	av.kots_installation_spec,
@@ -367,6 +372,8 @@ func downstreamVersionFromRow(appID string, row scannable) (*downstreamtypes.Dow
 	var preflightSkipped sql.NullBool
 	var commitURL sql.NullString
 	var gitDeployable sql.NullBool
+	var blocked sql.NullBool
+	var blocked_by sql.NullString
 	var hasError sql.NullBool
 	var upstreamReleasedAt persistence.NullStringTime
 	var kotsInstallationSpecStr sql.NullString
@@ -385,6 +392,8 @@ func downstreamVersionFromRow(appID string, row scannable) (*downstreamtypes.Dow
 		&preflightSkipped,
 		&commitURL,
 		&gitDeployable,
+		&blocked,
+		&blocked_by,
 		&hasError,
 		&upstreamReleasedAt,
 		&kotsInstallationSpecStr,

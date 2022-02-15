@@ -49,6 +49,7 @@ func (d *DownstreamGitOps) CreateGitOpsDownstreamCommit(appID string, clusterID 
 
 // DeployVersion deploys the version for the given sequence
 func DeployVersion(appID string, sequence int64) error {
+	// TODO JEFF find some way to validate the releases' Block field somewhere before or at here
 	db := persistence.MustGetDBSession()
 
 	tx, err := db.Begin()

@@ -10,6 +10,8 @@ import (
 )
 
 func (s *KOTSStore) SetPreflightProgress(appID string, sequence int64, progress string) error {
+	// TODO JEFF find a way to pass in the blocked status for enforced preflights
+	// if all enforced preflights are finished, set block to false and allow users to skip the rest of preflights
 	db := persistence.MustGetDBSession()
 	query := `update app_downstream_version set preflight_progress = $1 where app_id = $2 and parent_sequence = $3`
 
@@ -39,8 +41,10 @@ func (s *KOTSStore) GetPreflightProgress(appID string, sequence int64) (string, 
 }
 
 func (s *KOTSStore) SetPreflightResults(appID string, sequence int64, results []byte) error {
-	// TODO JEFF pass in enforced preflight block status here!!
+	// TODO JEFF double check that nothing needs to happen with blocking preflights here
 	db := persistence.MustGetDBSession()
+	// preflight_progress = NULL is not necessary, and actually blows away completed collector statuses
+	// this should be removed and tested
 	query := `update app_downstream_version set preflight_result = $1, preflight_result_created_at = $2,
 status = (case when status = 'deployed' then 'deployed' else 'pending' end),
 preflight_progress = NULL, preflight_skipped = false
@@ -61,6 +65,8 @@ func (s *KOTSStore) GetPreflightResults(appID string, sequence int64) (*prefligh
 		app_downstream_version.preflight_result,
 		app_downstream_version.preflight_result_created_at,
 		app_downstream_version.preflight_skipped,
+		app_downstream_version.blocked,
+		app_downstream_version.blocked_by,
 		app.slug as app_slug,
 		cluster.slug as cluster_slug
 	FROM app_downstream_version
@@ -113,6 +119,8 @@ func preflightResultFromRow(row scannable) (*preflighttypes.PreflightResult, err
 		&preflightResult,
 		&preflightResultCreatedAt,
 		&r.Skipped,
+		&r.Blocked,
+		&r.BlockedBy,
 		&r.AppSlug,
 		&r.ClusterSlug,
 	); err != nil {
