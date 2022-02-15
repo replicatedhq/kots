@@ -39,6 +39,7 @@ func (s *KOTSStore) GetPreflightProgress(appID string, sequence int64) (string, 
 }
 
 func (s *KOTSStore) SetPreflightResults(appID string, sequence int64, results []byte) error {
+	// TODO JEFF pass in enforced preflight block status here!!
 	db := persistence.MustGetDBSession()
 	query := `update app_downstream_version set preflight_result = $1, preflight_result_created_at = $2,
 status = (case when status = 'deployed' then 'deployed' else 'pending' end),

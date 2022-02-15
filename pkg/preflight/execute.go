@@ -105,6 +105,9 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta2.Pr
 		logger.Debug("preflight analyze phase")
 		analyzeResults := collectResults.Analyze()
 
+		// TODO JEFF validate enforced preflight analyzers in here
+		// if all enforced preflights passed, set `block` to false
+
 		// the typescript api added some flair to this result
 		// so let's keep it for compatibility
 		// MORE TYPES!
