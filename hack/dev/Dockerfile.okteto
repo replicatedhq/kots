@@ -6,9 +6,6 @@ RUN curl -k https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
   && echo "deb http://apt.postgresql.org/pub/repos/apt/ buster-pgdg main" > /etc/apt/sources.list.d/PostgreSQL.list \
   && apt-get update && apt-get install -y --no-install-recommends gnupg2 postgresql-client-10 python3-pip ca-certificates \
   && pip install s3cmd \
-  && rm -rf /var/lib/apt/lists/*
-
-RUN apt-get update -y \
   && apt-get install -y libdevmapper-dev golang-github-proglottis-gpgme-dev libbtrfs-dev \
   && rm -rf /var/lib/apt/lists/*
 
