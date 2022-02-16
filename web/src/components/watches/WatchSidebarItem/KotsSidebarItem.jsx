@@ -7,9 +7,9 @@ export default function KotsSidebarItem(props) {
   const { iconUri, name, slug } = app;
 
   let downstreamPendingLengths = [];
-  app.downstreams?.map((w) => { 
-    if (w.currentVersion) {
-      downstreamPendingLengths.push(w.pendingVersions?.length);
+  app.downstreams?.map((d) => { 
+    if (d.currentVersion) {
+      downstreamPendingLengths.push(d.pendingVersions?.length);
     }
   });
 

@@ -19,6 +19,7 @@ import (
 	sessiontypes "github.com/replicatedhq/kots/pkg/session/types"
 	"github.com/replicatedhq/kots/pkg/store/types"
 	supportbundletypes "github.com/replicatedhq/kots/pkg/supportbundle/types"
+	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	usertypes "github.com/replicatedhq/kots/pkg/user/types"
 	troubleshootredact "github.com/replicatedhq/troubleshoot/pkg/redact"
 )
@@ -143,11 +144,12 @@ type DownstreamStore interface {
 	UpdateDownstreamVersionStatus(appID string, sequence int64, status string, statusInfo string) error
 	GetDownstreamVersionStatus(appID string, sequence int64) (types.DownstreamVersionStatus, error)
 	GetIgnoreRBACErrors(appID string, sequence int64) (bool, error)
+	GetLatestDownstreamVersion(appID string, clusterID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersion, error)
 	GetCurrentVersion(appID string, clusterID string) (*downstreamtypes.DownstreamVersion, error)
 	GetStatusForVersion(appID string, clusterID string, sequence int64) (types.DownstreamVersionStatus, error)
-	GetAppVersions(appID string, clusterID string) (*downstreamtypes.DownstreamVersions, error)
+	GetAppVersions(appID string, clusterID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error)
 	// Same as GetAppVersions, but finds a cluster where app is deployed
-	FindAppVersions(appID string) (*downstreamtypes.DownstreamVersions, error)
+	FindAppVersions(appID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error)
 	GetDownstreamOutput(appID string, clusterID string, sequence int64) (*downstreamtypes.DownstreamOutput, error)
 	IsDownstreamDeploySuccessful(appID string, clusterID string, sequence int64) (bool, error)
 	UpdateDownstreamDeployStatus(appID string, clusterID string, sequence int64, isError bool, output downstreamtypes.DownstreamOutput) error
@@ -175,10 +177,13 @@ type VersionStore interface {
 	GetAppVersionArchive(appID string, sequence int64, dstPath string) error
 	GetAppVersionBaseSequence(appID string, versionLabel string) (int64, error)
 	GetAppVersionBaseArchive(appID string, versionLabel string) (string, int64, error)
+	CreatePendingDownloadAppVersion(appID string, update upstreamtypes.Update) (int64, error)
+	UpdateAppVersion(appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) error
 	CreateAppVersion(appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) (int64, error)
 	GetAppVersion(appID string, sequence int64) (*versiontypes.AppVersion, error)
-	GetLatestAppVersion(appID string) (*versiontypes.AppVersion, error)
+	GetLatestAppVersion(appID string, downloadedOnly bool) (*versiontypes.AppVersion, error)
 	GetAppVersionsAfter(appID string, sequence int64) ([]*versiontypes.AppVersion, error)
+	UpdateNextAppVersionDiffSummary(appID string, baseSequence int64) error
 	UpdateAppVersionInstallationSpec(appID string, sequence int64, spec kotsv1beta1.Installation) error
 	GetNextAppSequence(appID string) (int64, error)
 	GetCurrentUpdateCursor(appID string, channelID string) (string, string, error)

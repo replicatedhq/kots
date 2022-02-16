@@ -30,7 +30,7 @@ func (h *Handler) GetApplicationPorts(w http.ResponseWriter, r *http.Request) {
 	response := GetApplicationPortsResponse{}
 
 	for _, app := range apps {
-		latestVersion, err := store.GetStore().GetLatestAppVersion(app.ID)
+		latestVersion, err := store.GetStore().GetLatestAppVersion(app.ID, true)
 		if err != nil {
 			logger.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)

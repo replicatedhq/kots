@@ -254,7 +254,7 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	latestVersion, err := store.GetStore().GetLatestAppVersion(a.ID)
+	latestVersion, err := store.GetStore().GetLatestAppVersion(a.ID, true)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get latest app version")
 		logger.Error(err)
@@ -655,7 +655,7 @@ func (h *Handler) GetAppIdentityServiceConfig(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	latestVersion, err := store.GetStore().GetLatestAppVersion(a.ID)
+	latestVersion, err := store.GetStore().GetLatestAppVersion(a.ID, true)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get latest app version")
 		logger.Error(err)

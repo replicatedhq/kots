@@ -3,6 +3,7 @@ package kotsstore
 import (
 	"database/sql"
 	"encoding/base64"
+	"fmt"
 
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
@@ -167,6 +168,17 @@ func (s *KOTSStore) GetIgnoreRBACErrors(appID string, sequence int64) (bool, err
 	return shouldIgnore.Bool, nil
 }
 
+func (s *KOTSStore) GetLatestDownstreamVersion(appID string, clusterID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersion, error) {
+	downstreamVersions, err := s.GetAppVersions(appID, clusterID, downloadedOnly)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to find app versions")
+	}
+	if len(downstreamVersions.AllVersions) == 0 {
+		return nil, errors.New("no app versions found")
+	}
+	return downstreamVersions.AllVersions[0], nil
+}
+
 func (s *KOTSStore) GetCurrentVersion(appID string, clusterID string) (*downstreamtypes.DownstreamVersion, error) {
 	currentSequence, err := s.GetCurrentSequence(appID, clusterID)
 	if err != nil {
@@ -211,7 +223,7 @@ func (s *KOTSStore) GetCurrentVersion(appID string, clusterID string) (*downstre
 	 adv.sequence = $3`
 	row := db.QueryRow(query, appID, clusterID, currentSequence)
 
-	v, err := downstreamVersionFromRow(appID, row)
+	v, err := s.downstreamVersionFromRow(appID, row)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get version from row")
 	}
@@ -243,7 +255,7 @@ func (s *KOTSStore) GetStatusForVersion(appID string, clusterID string, sequence
 	return types.DownstreamVersionStatus(versionStatus), nil
 }
 
-func (s *KOTSStore) GetAppVersions(appID string, clusterID string) (*downstreamtypes.DownstreamVersions, error) {
+func (s *KOTSStore) GetAppVersions(appID string, clusterID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error) {
 	currentVersion, err := s.GetCurrentVersion(appID, clusterID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get current version")
@@ -280,9 +292,13 @@ func (s *KOTSStore) GetAppVersions(appID string, clusterID string) (*downstreamt
 	 adv.app_id = ado.app_id AND adv.cluster_id = ado.cluster_id AND adv.sequence = ado.downstream_sequence
  WHERE
 	 adv.app_id = $1 AND
-	 adv.cluster_id = $2
- ORDER BY
-     adv.sequence DESC`
+	 adv.cluster_id = $2`
+
+	if downloadedOnly {
+		query += fmt.Sprintf(` AND adv.status != '%s'`, types.VersionPendingDownload)
+	}
+
+	query += ` ORDER BY adv.sequence DESC`
 
 	rows, err := db.Query(query, appID, clusterID)
 	if err != nil {
@@ -295,7 +311,7 @@ func (s *KOTSStore) GetAppVersions(appID string, clusterID string) (*downstreamt
 		AllVersions:    []*downstreamtypes.DownstreamVersion{},
 	}
 	for rows.Next() {
-		v, err := downstreamVersionFromRow(appID, rows)
+		v, err := s.downstreamVersionFromRow(appID, rows)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get version from row")
 		}
@@ -325,10 +341,9 @@ func (s *KOTSStore) GetAppVersions(appID string, clusterID string) (*downstreamt
 	}
 
 	return result, nil
-
 }
 
-func (s *KOTSStore) FindAppVersions(appID string) (*downstreamtypes.DownstreamVersions, error) {
+func (s *KOTSStore) FindAppVersions(appID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error) {
 	downstreams, err := s.ListDownstreamsForApp(appID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app downstreams")
@@ -339,7 +354,7 @@ func (s *KOTSStore) FindAppVersions(appID string) (*downstreamtypes.DownstreamVe
 
 	for _, d := range downstreams {
 		clusterID := d.ClusterID
-		downstreamVersions, err := s.GetAppVersions(appID, clusterID)
+		downstreamVersions, err := s.GetAppVersions(appID, clusterID, downloadedOnly)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get downstream versions for cluster %s", clusterID)
 		}
@@ -351,7 +366,7 @@ func (s *KOTSStore) FindAppVersions(appID string) (*downstreamtypes.DownstreamVe
 	return nil, errors.New("app has no versions")
 }
 
-func downstreamVersionFromRow(appID string, row scannable) (*downstreamtypes.DownstreamVersion, error) {
+func (s *KOTSStore) downstreamVersionFromRow(appID string, row scannable) (*downstreamtypes.DownstreamVersion, error) {
 	v := &downstreamtypes.DownstreamVersion{}
 
 	var createdOn persistence.NullStringTime
@@ -440,6 +455,19 @@ func downstreamVersionFromRow(appID string, row scannable) (*downstreamtypes.Dow
 		installationSpec := obj.(*kotsv1beta1.Installation)
 
 		v.YamlErrors = installationSpec.Spec.YAMLErrors
+	}
+
+	if v.Status == types.VersionPendingDownload {
+		downloadTaskID := fmt.Sprintf("update-download.%d", v.Sequence)
+		downloadStatus, downloadStatusMessage, err := s.GetTaskStatus(downloadTaskID)
+		if err != nil {
+			// don't fail on this
+			logger.Error(errors.Wrap(err, fmt.Sprintf("failed to get %s task status", downloadTaskID)))
+		}
+		v.DownloadStatus = downstreamtypes.DownloadStatus{
+			Message: downloadStatusMessage,
+			Status:  downloadStatus,
+		}
 	}
 
 	return v, nil

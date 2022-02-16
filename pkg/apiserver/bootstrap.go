@@ -76,7 +76,7 @@ func bootstrapIdentity() error {
 			continue
 		}
 
-		latestVersion, err := store.GetStore().GetLatestAppVersion(app.ID)
+		latestVersion, err := store.GetStore().GetLatestAppVersion(app.ID, true)
 		if err != nil {
 			return errors.Wrap(err, "failed to get latest app version")
 		}

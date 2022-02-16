@@ -358,8 +358,7 @@ class AppDetailPage extends Component {
                         refreshAppData={this.getApp}
                         snapshotInProgressApps={this.props.snapshotInProgressApps}
                         ping={this.props.ping}
-                      />
-                    }
+                      />}
                     />
 
                     <Route exact path="/app/:slug/tree/:sequence?" render={props => <DownstreamTree {...props} app={app} appNameSpace={this.props.appNameSpace} />} />
@@ -379,8 +378,8 @@ class AppDetailPage extends Component {
                         makingCurrentRelease={this.state.makingCurrentRelease}
                         redeployVersion={this.redeployVersion}
                         redeployVersionErrMsg={this.state.redeployVersionErrMsg}
-                      />
-                    } />
+                      />}
+                    />
                     <Route exact path="/app/:slug/downstreams/:downstreamSlug/version-history/preflight/:sequence" render={props => <PreflightResultPage logo={app.iconUri} {...props} />} />
                     <Route exact path="/app/:slug/config/:sequence?" render={() =>
                       <AppConfig

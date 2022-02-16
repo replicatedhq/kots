@@ -86,6 +86,24 @@
   padding: 8px;
   border-radius: 4px;
   background-color: #ffffff;
+}
+
+.GraphCard-content--wrapper {
+  padding: 8px;
+  border-radius: 4px;
+  background-color: #ffffff;
+}
+
+.SnapshotsCard-content--wrapper {
+  padding: 8px;
+  border-radius: 4px;
+  background-color: #ffffff;
+}
+
+.VersionCard-content--wrapper {
+  padding: 8px;
+  border-radius: 4px;
+  background-color: #ffffff;
 
   &.is-new {
     -webkit-animation: newVersion 9s ease forwards; /* Safari 4+ */
@@ -93,11 +111,6 @@
     -o-animation:      newVersion 9s ease forwards; /* Opera 12+ */
     animation:         newVersion 9s ease forwards; /* IE 10+, Fx 29+ */
     animation:         newVersion 9s ease forwards;
-  }
-
-  &.airgap-upload-block {
-    background-color: transparent;
-    border: 1px dashed $border-color;
   }
 }
 

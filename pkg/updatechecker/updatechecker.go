@@ -244,7 +244,7 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 	d := downstreams[0]
 
 	// get app version labels and sequence numbers
-	appVersions, err := store.GetStore().GetAppVersions(opts.AppID, d.ClusterID)
+	appVersions, err := store.GetStore().GetAppVersions(opts.AppID, d.ClusterID, false)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get app versions for app %s", opts.AppID)
 	}
@@ -305,21 +305,21 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 
 func processUpdates(opts CheckForUpdatesOpts, appID string, clusterID string, updates []upstreamtypes.Update) error {
 	for index, update := range updates {
-		_, err := upstream.DownloadUpdate(appID, update, opts.SkipPreflights, opts.SkipCompatibilityCheck)
+		appSequence, err := upstream.DownloadUpdate(appID, update, opts.SkipPreflights, opts.SkipCompatibilityCheck)
+		if appSequence != nil {
+			// a version has been created, reset the "channel_changed" flag regardless if there was an error or not
+			if err := store.GetStore().SetAppChannelChanged(appID, false); err != nil {
+				logger.Error(errors.Wrapf(err, "failed to reset channel changed flag"))
+			}
+		}
 		if err != nil {
-			err = errors.Wrapf(err, "failed to download update %s", update.VersionLabel)
+			err := errors.Wrapf(err, "failed to download update %s", update.VersionLabel)
 			if index == len(updates)-1 {
 				// if the last update fails to be downloaded, then the operation isn't successful
 				// and lastUpdateCheckTimestamp shouldn't be updated yet since that timestamp is used in detecting new updates
 				return err
 			}
 			logger.Error(err)
-			continue
-		}
-		// if any update from the channel has been downloaded and processed successfully, then reset the "channel_changed" flag
-		// don't block other updates if this fails
-		if err = store.GetStore().SetAppChannelChanged(appID, false); err != nil {
-			logger.Error(errors.Wrapf(err, "failed to reset channel changed flag"))
 		}
 	}
 	if err := app.SetLastUpdateAtTime(appID); err != nil {
@@ -361,7 +361,7 @@ func ensureDesiredVersionIsDeployed(opts CheckForUpdatesOpts, clusterID string) 
 }
 
 func getVersionToDeploy(opts CheckForUpdatesOpts, clusterID string, availableReleases []UpdateCheckRelease) *UpdateCheckRelease {
-	appVersions, err := store.GetStore().GetAppVersions(opts.AppID, clusterID)
+	appVersions, err := store.GetStore().GetAppVersions(opts.AppID, clusterID, true)
 	if err != nil {
 		return nil
 	}
@@ -404,7 +404,7 @@ func getVersionToDeploy(opts CheckForUpdatesOpts, clusterID string, availableRel
 }
 
 func deployLatestVersion(opts CheckForUpdatesOpts, clusterID string) error {
-	appVersions, err := store.GetStore().GetAppVersions(opts.AppID, clusterID)
+	appVersions, err := store.GetStore().GetAppVersions(opts.AppID, clusterID, true)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get app versions for app %s", opts.AppID)
 	}
@@ -421,7 +421,7 @@ func deployLatestVersion(opts CheckForUpdatesOpts, clusterID string) error {
 }
 
 func deployVersionLabel(opts CheckForUpdatesOpts, clusterID string, versionLabel string) error {
-	appVersions, err := store.GetStore().GetAppVersions(opts.AppID, clusterID)
+	appVersions, err := store.GetStore().GetAppVersions(opts.AppID, clusterID, true)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get app versions for app %s", opts.AppID)
 	}
@@ -454,7 +454,7 @@ func autoDeploy(opts CheckForUpdatesOpts, clusterID string, semverAutoDeploy app
 		return nil
 	}
 
-	appVersions, err := store.GetStore().GetAppVersions(opts.AppID, clusterID)
+	appVersions, err := store.GetStore().GetAppVersions(opts.AppID, clusterID, true)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get app versions for app %s", opts.AppID)
 	}
@@ -538,7 +538,7 @@ func deployVersion(opts CheckForUpdatesOpts, clusterID string, appVersions *down
 	if versionToDeploy.Sequence != downstreamSequence {
 		status, err := store.GetStore().GetStatusForVersion(opts.AppID, clusterID, versionToDeploy.Sequence)
 		if err != nil {
-			return errors.Wrap(err, "failed to get update downstream status")
+			return errors.Wrapf(err, "failed to get status for version %d", versionToDeploy.Sequence)
 		}
 
 		if status == storetypes.VersionPendingConfig {

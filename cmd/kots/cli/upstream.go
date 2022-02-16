@@ -28,6 +28,7 @@ func UpstreamCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(UpstreamUpgradeCmd())
+	cmd.AddCommand(UpstreamDownloadCmd())
 
 	return cmd
 }

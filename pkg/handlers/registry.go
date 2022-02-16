@@ -169,7 +169,7 @@ func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 			skipImagePush = true
 		}
 
-		latestVersion, err := store.GetStore().GetLatestAppVersion(foundApp.ID)
+		latestVersion, err := store.GetStore().GetLatestAppVersion(foundApp.ID, true)
 		if err != nil {
 			logger.Error(errors.Wrapf(err, "failed to get latest app version for app %s", foundApp.Slug))
 			return
@@ -238,7 +238,7 @@ func registrySettingsChanged(app *apptypes.App, new UpdateAppRegistryRequest, cu
 
 	// Because an old version can be editted, we may need to push images if registry hostname has changed
 	// TODO: Handle namespace changes too
-	latestVersion, err := store.GetStore().GetLatestAppVersion(app.ID)
+	latestVersion, err := store.GetStore().GetLatestAppVersion(app.ID, true)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get latest app version")
 	}

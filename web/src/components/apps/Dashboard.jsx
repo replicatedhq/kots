@@ -35,7 +35,7 @@ class Dashboard extends Component {
     links: [],
     checkingForUpdates: false,
     checkingUpdateMessage: "Checking for updates",
-    errorCheckingUpdate: false,
+    checkingForUpdateError: false,
     appLicense: null,
     activeChart: null,
     crosshairValues: [],
@@ -218,7 +218,8 @@ class Dashboard extends Component {
         }
       })
       .catch((err) => {
-        this.setState({ errorCheckingUpdate: true });
+        console.log(err);
+        this.setState({ checkingForUpdateError: true, checkingUpdateMessage: String(err) });
       });
   }
 
@@ -522,7 +523,6 @@ class Dashboard extends Component {
       links,
       checkingForUpdates,
       checkingUpdateMessage,
-      errorCheckingUpdate,
       uploadingAirgapFile,
       airgapUploadError,
       appLicense,
@@ -584,7 +584,6 @@ class Dashboard extends Component {
                   url={this.props.match.url}
                   checkingForUpdates={checkingForUpdates}
                   checkingUpdateText={checkingUpdateText}
-                  errorCheckingUpdate={errorCheckingUpdate}
                   onDropBundle={this.onDropBundle}
                   airgapUploader={this.state.airgapUploader}
                   uploadingAirgapFile={uploadingAirgapFile}

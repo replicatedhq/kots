@@ -168,23 +168,23 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		return nil, errors.Wrap(err, "failed to get license")
 	}
 
-	latestVersion, err := store.GetStore().GetLatestAppVersion(a.ID)
+	latestAppVersion, err := store.GetStore().GetLatestAppVersion(a.ID, true)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get latest app version")
 	}
 
-	isIdentityServiceSupportedForVersion, err := store.GetStore().IsIdentityServiceSupportedForVersion(a.ID, latestVersion.Sequence)
+	isIdentityServiceSupportedForVersion, err := store.GetStore().IsIdentityServiceSupportedForVersion(a.ID, latestAppVersion.Sequence)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to check if identity service is supported for version %d", latestVersion.Sequence)
+		return nil, errors.Wrapf(err, "failed to check if identity service is supported for version %d", latestAppVersion.Sequence)
 	}
 	isAppIdentityServiceSupported := isIdentityServiceSupportedForVersion && license.Spec.IsIdentityServiceSupported
 
-	allowRollback, err := store.GetStore().IsRollbackSupportedForVersion(a.ID, latestVersion.Sequence)
+	allowRollback, err := store.GetStore().IsRollbackSupportedForVersion(a.ID, latestAppVersion.Sequence)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to check if rollback is supported")
 	}
 
-	targetKotsVersion, err := store.GetStore().GetTargetKotsVersionForVersion(a.ID, latestVersion.Sequence)
+	targetKotsVersion, err := store.GetStore().GetTargetKotsVersionForVersion(a.ID, latestAppVersion.Sequence)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get target kots version")
 	}
@@ -206,9 +206,14 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 			return nil, errors.Wrap(err, "failed to get realized links from app spec")
 		}
 
-		appVersions, err := store.GetStore().GetAppVersions(a.ID, d.ClusterID)
+		appVersions, err := store.GetStore().GetAppVersions(a.ID, d.ClusterID, true)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get downstream versions")
+		}
+
+		latestVersion, err := store.GetStore().GetLatestDownstreamVersion(a.ID, d.ClusterID, false)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get latest downstream version")
 		}
 
 		downstreamGitOps, err := gitops.GetDownstreamGitOps(a.ID, d.ClusterID)
@@ -244,6 +249,7 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 			CurrentVersion:  appVersions.CurrentVersion,
 			PendingVersions: appVersions.PendingVersions,
 			PastVersions:    appVersions.PastVersions,
+			LatestVersion:   latestVersion,
 			GitOps:          responseGitOps,
 			Cluster:         cluster,
 		}
@@ -271,7 +277,7 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		Slug:                           a.Slug,
 		Name:                           a.Name,
 		IsAirgap:                       a.IsAirgap,
-		CurrentSequence:                latestVersion.Sequence,
+		CurrentSequence:                latestAppVersion.Sequence,
 		UpstreamURI:                    a.UpstreamURI,
 		IconURI:                        a.IconURI,
 		CreatedAt:                      a.CreatedAt,
@@ -290,7 +296,6 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		AllowSnapshots:                 allowSnapshots,
 		TargetKotsVersion:              targetKotsVersion,
 		LicenseType:                    license.Spec.LicenseType,
-		CurrentVersion:                 latestVersion,
 		Downstreams:                    responseDownstreams,
 	}
 
@@ -327,7 +332,7 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 
 	clusterID := downstreams[0].ClusterID
 
-	appVersions, err := store.GetStore().GetAppVersions(foundApp.ID, clusterID)
+	appVersions, err := store.GetStore().GetAppVersions(foundApp.ID, clusterID, false)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get downstream versions")
 		logger.Error(err)

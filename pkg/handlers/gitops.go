@@ -196,7 +196,7 @@ func (h *Handler) InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 			}
 		}()
 
-		appVersions, err := store.GetStore().GetAppVersions(a.ID, d.ClusterID)
+		appVersions, err := store.GetStore().GetAppVersions(a.ID, d.ClusterID, true)
 		if err != nil {
 			err = errors.Wrap(err, "failed to get downstream versions")
 			logger.Error(err)

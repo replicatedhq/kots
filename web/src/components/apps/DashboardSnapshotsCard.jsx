@@ -222,7 +222,7 @@ class DashboardSnapshotsCard extends React.Component {
 
   render() {
     const { isSnapshotAllowed } = this.props;
-    const { snapshotSettings, selectedDestination } = this.state;
+    const { selectedDestination } = this.state;
     
     return (
       <div className="flex-column flex1 dashboard-card">
@@ -243,7 +243,7 @@ class DashboardSnapshotsCard extends React.Component {
             />
           </div>
         </div>
-        <div className="LicenseCard-content--wrapper u-marginTop--10 flex flex1">
+        <div className="SnapshotsCard-content--wrapper u-marginTop--10 flex flex1">
           <div className="flex1">
             <span className={`status-dot ${isSnapshotAllowed ? "u-color--success" : "u-color--warning"}`}/>
             <span className={`u-fontSize--small u-fontWeight--medium ${isSnapshotAllowed ? "u-textColor--success" : "u-textColor--warning"}`}>

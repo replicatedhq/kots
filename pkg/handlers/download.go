@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"database/sql"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -9,11 +10,17 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"github.com/gorilla/mux"
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
+	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
+	upstream "github.com/replicatedhq/kots/pkg/kotsadmupstream"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
+	storetypes "github.com/replicatedhq/kots/pkg/store/types"
+	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 // NOTE: this uses special kots token authorization
@@ -44,7 +51,7 @@ func (h *Handler) DownloadApp(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	latestVersion, err := store.GetStore().GetLatestAppVersion(a.ID)
+	latestVersion, err := store.GetStore().GetLatestAppVersion(a.ID, true)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -159,4 +166,120 @@ func (h *Handler) DownloadApp(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error(err)
 	}
+}
+
+type DownloadAppVersionResponse struct {
+	Success bool   `json:"success"`
+	Error   string `json:"error,omitempty"`
+}
+
+func (h *Handler) DownloadAppVersion(w http.ResponseWriter, r *http.Request) {
+	downloadUpstreamVersionResponse := DownloadAppVersionResponse{
+		Success: false,
+	}
+
+	appSlug := mux.Vars(r)["appSlug"]
+
+	a, err := store.GetStore().GetAppFromSlug(appSlug)
+	if err != nil {
+		errMsg := fmt.Sprintf("failed to get app for slug %s", appSlug)
+		logger.Error(errors.Wrap(err, errMsg))
+		downloadUpstreamVersionResponse.Error = errMsg
+		JSON(w, http.StatusInternalServerError, downloadUpstreamVersionResponse)
+		return
+	}
+
+	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
+	if err != nil {
+		errMsg := "failed to parse sequence number"
+		logger.Error(errors.Wrap(err, errMsg))
+		downloadUpstreamVersionResponse.Error = errMsg
+		JSON(w, http.StatusBadRequest, downloadUpstreamVersionResponse)
+		return
+	}
+
+	skipPreflights, _ := strconv.ParseBool(r.URL.Query().Get("skipPreflights"))
+	skipCompatibilityCheck, _ := strconv.ParseBool(r.URL.Query().Get("skipCompatibilityCheck"))
+	wait, _ := strconv.ParseBool(r.URL.Query().Get("wait"))
+
+	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
+	if err != nil {
+		errMsg := "failed to list downstreams for app"
+		logger.Error(errors.Wrap(err, errMsg))
+		downloadUpstreamVersionResponse.Error = errMsg
+		JSON(w, http.StatusInternalServerError, downloadUpstreamVersionResponse)
+		return
+	} else if len(downstreams) == 0 {
+		errMsg := fmt.Sprintf("no downstreams for app %s", appSlug)
+		logger.Error(errors.New(errMsg))
+		downloadUpstreamVersionResponse.Error = errMsg
+		JSON(w, http.StatusInternalServerError, downloadUpstreamVersionResponse)
+		return
+	}
+
+	status, err := store.GetStore().GetStatusForVersion(a.ID, downstreams[0].ClusterID, int64(sequence))
+	if err != nil {
+		errMsg := fmt.Sprintf("failed to get status for version %d", sequence)
+		logger.Error(errors.Wrap(err, errMsg))
+		downloadUpstreamVersionResponse.Error = errMsg
+		JSON(w, http.StatusInternalServerError, downloadUpstreamVersionResponse)
+		return
+	}
+
+	if status != storetypes.VersionPendingDownload {
+		errMsg := fmt.Sprintf("not downloading version %d because it's %s", int64(sequence), status)
+		logger.Error(errors.New(errMsg))
+		downloadUpstreamVersionResponse.Error = errMsg
+		JSON(w, http.StatusInternalServerError, downloadUpstreamVersionResponse)
+		return
+	}
+
+	version, err := store.GetStore().GetAppVersion(a.ID, int64(sequence))
+	if err != nil {
+		errMsg := fmt.Sprintf("failed to get app version %d", sequence)
+		logger.Error(errors.Wrap(err, errMsg))
+		downloadUpstreamVersionResponse.Error = errMsg
+		JSON(w, http.StatusInternalServerError, downloadUpstreamVersionResponse)
+		return
+	}
+
+	downloadFn := func(appID string, version *versiontypes.AppVersion, skipPreflights bool, skipCompatibilityCheck bool) error {
+		appSequence := version.Sequence
+		update := upstreamtypes.Update{
+			ChannelID:    version.KOTSKinds.Installation.Spec.ChannelID,
+			ChannelName:  version.KOTSKinds.Installation.Spec.ChannelName,
+			Cursor:       version.KOTSKinds.Installation.Spec.UpdateCursor,
+			VersionLabel: version.KOTSKinds.Installation.Spec.VersionLabel,
+			AppSequence:  &appSequence,
+		}
+		_, err := upstream.DownloadUpdate(appID, update, skipPreflights, skipCompatibilityCheck)
+		if err != nil {
+			return errors.Wrapf(err, "failed to download update %s", update.VersionLabel)
+		}
+		return nil
+	}
+
+	if wait {
+		if err := downloadFn(a.ID, version, skipPreflights, skipCompatibilityCheck); err != nil {
+			cause := errors.Cause(err)
+			if _, ok := cause.(util.ActionableError); ok {
+				downloadUpstreamVersionResponse.Error = cause.Error()
+			} else {
+				downloadUpstreamVersionResponse.Error = fmt.Sprintf("failed to get app version %d", sequence)
+			}
+			logger.Error(err)
+			JSON(w, http.StatusInternalServerError, downloadUpstreamVersionResponse)
+			return
+		}
+	} else {
+		go func() {
+			if err := downloadFn(a.ID, version, skipPreflights, skipCompatibilityCheck); err != nil {
+				logger.Error(err)
+			}
+		}()
+	}
+
+	downloadUpstreamVersionResponse.Success = true
+
+	JSON(w, http.StatusOK, downloadUpstreamVersionResponse)
 }

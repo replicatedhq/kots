@@ -33,16 +33,15 @@ type ResponseApp struct {
 	UpdateCheckerSpec string                    `json:"updateCheckerSpec"`
 	SemverAutoDeploy  apptypes.SemverAutoDeploy `json:"semverAutoDeploy"`
 
-	IsGitOpsSupported              bool                     `json:"isGitOpsSupported"`
-	IsIdentityServiceSupported     bool                     `json:"isIdentityServiceSupported"`
-	IsAppIdentityServiceSupported  bool                     `json:"isAppIdentityServiceSupported"`
-	IsGeoaxisSupported             bool                     `json:"isGeoaxisSupported"`
-	IsSupportBundleUploadSupported bool                     `json:"isSupportBundleUploadSupported"`
-	AllowRollback                  bool                     `json:"allowRollback"`
-	AllowSnapshots                 bool                     `json:"allowSnapshots"`
-	TargetKotsVersion              string                   `json:"targetKotsVersion"`
-	LicenseType                    string                   `json:"licenseType"`
-	CurrentVersion                 *versiontypes.AppVersion `json:"currentVersion"`
+	IsGitOpsSupported              bool   `json:"isGitOpsSupported"`
+	IsIdentityServiceSupported     bool   `json:"isIdentityServiceSupported"`
+	IsAppIdentityServiceSupported  bool   `json:"isAppIdentityServiceSupported"`
+	IsGeoaxisSupported             bool   `json:"isGeoaxisSupported"`
+	IsSupportBundleUploadSupported bool   `json:"isSupportBundleUploadSupported"`
+	AllowRollback                  bool   `json:"allowRollback"`
+	AllowSnapshots                 bool   `json:"allowSnapshots"`
+	TargetKotsVersion              string `json:"targetKotsVersion"`
+	LicenseType                    string `json:"licenseType"`
 
 	Downstreams []ResponseDownstream `json:"downstreams"`
 }
@@ -53,6 +52,7 @@ type ResponseDownstream struct {
 	CurrentVersion  *downstreamtypes.DownstreamVersion   `json:"currentVersion"`
 	PendingVersions []*downstreamtypes.DownstreamVersion `json:"pendingVersions"`
 	PastVersions    []*downstreamtypes.DownstreamVersion `json:"pastVersions"`
+	LatestVersion   *downstreamtypes.DownstreamVersion   `json:"latestVersion"`
 	GitOps          ResponseGitOps                       `json:"gitops"`
 	Cluster         ResponseCluster                      `json:"cluster"`
 }

@@ -1,19 +1,11 @@
 @import '../../variables.scss';
 $cell-width: 140px;
 
-.VersionHistoryDeploymentRow {
+.VersionHistoryRowWrapper {
   padding: 12px;
   border-radius: 4px;  
   margin-bottom: 15px;
   background-color: #ffffff;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-
-  & > div:last-child {
-    min-width: 225px;
-  }
 
   &.classic {
     border-radius: 0;
@@ -30,7 +22,16 @@ $cell-width: 140px;
     animation:         newVersion 9s ease forwards; /* IE 10+, Fx 29+ */
     animation:         newVersion 9s ease forwards;
   }
-  
+}
+
+.VersionHistoryRow {
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  & > div:last-child {
+    min-width: 225px;
+  }
 }
 
 .AppVersionHistory {

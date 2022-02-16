@@ -37,6 +37,12 @@ type DownstreamVersion struct {
 	GitDeployable            bool                               `json:"gitDeployable,omitempty"`
 	UpstreamReleasedAt       *time.Time                         `json:"upstreamReleasedAt,omitempty"`
 	YamlErrors               []v1beta1.InstallationYAMLError    `json:"yamlErrors,omitempty"`
+	DownloadStatus           DownloadStatus                     `json:"downloadStatus,omitempty"`
+}
+
+type DownloadStatus struct {
+	Message string `json:"message,omitempty"`
+	Status  string `json:"status,omitempty"`
 }
 
 type DownstreamVersions struct {

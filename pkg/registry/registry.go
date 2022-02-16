@@ -53,13 +53,13 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 	defer func() {
 		if finalError == nil {
 			if err := store.GetStore().ClearTaskStatus("image-rewrite"); err != nil {
-				logger.Error(err)
+				logger.Error(errors.Wrap(err, "failed to clear image rewrite task status"))
 			}
 		} else {
 			// do not show the stack trace to the user
 			causeErr := errors.Cause(finalError)
 			if err := store.GetStore().SetTaskStatus("image-rewrite", causeErr.Error(), "failed"); err != nil {
-				logger.Error(err)
+				logger.Error(errors.Wrap(err, "failed to set image rewrite task status as failed"))
 			}
 		}
 	}()

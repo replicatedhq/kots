@@ -34,8 +34,13 @@ type Upstream struct {
 }
 
 type Update struct {
-	Cursor       string `json:"cursor"`
-	VersionLabel string `json:"versionLabel"`
+	ChannelID    string     `json:"channelID"`
+	ChannelName  string     `json:"channelName"`
+	Cursor       string     `json:"cursor"`
+	VersionLabel string     `json:"versionLabel"`
+	ReleaseNotes string     `json:"releaseNotes"`
+	ReleasedAt   *time.Time `json:"releasedAt"`
+	AppSequence  *int64     `json:"appSequence"` // can have a sequence if update is available as a pending download app version
 }
 
 type WriteOptions struct {
