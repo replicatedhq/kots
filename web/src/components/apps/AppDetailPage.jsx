@@ -9,7 +9,6 @@ import { KotsSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import { HelmChartSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import NotFound from "../static/NotFound";
 import Dashboard from "./Dashboard";
-import DashboardClassic from "./DashboardClassic";
 import DownstreamTree from "../../components/tree/KotsApplicationTree";
 import AppVersionHistory from "./AppVersionHistory";
 import { isAwaitingResults, Utilities } from "../../utilities/utilities";
@@ -28,7 +27,6 @@ import TroubleshootContainer from "../troubleshoot/TroubleshootContainer";
 import ErrorModal from "../modals/ErrorModal";
 
 import "../../scss/components/watches/WatchDetailPage.scss";
-import AppVersionHistoryClassic from "./AppVersionHistoryClassic";
 
 class AppDetailPage extends Component {
   constructor(props) {
@@ -348,7 +346,6 @@ class AppDetailPage extends Component {
                   />
                   <Switch>
                     <Route exact path="/app/:slug" render={() =>
-                    app.isNewKotsUiEnabled ?
                       <Dashboard
                         app={app}
                         cluster={app.downstreams?.length && app.downstreams[0]?.cluster}
@@ -362,48 +359,16 @@ class AppDetailPage extends Component {
                         snapshotInProgressApps={this.props.snapshotInProgressApps}
                         ping={this.props.ping}
                       />
-                    :
-                      <DashboardClassic
-                        app={app}
-                        cluster={app.downstreams?.length && app.downstreams[0]?.cluster}
-                        updateCallback={this.refetchData}
-                        onActiveInitSession={this.props.onActiveInitSession}
-                        toggleIsBundleUploading={this.toggleIsBundleUploading}
-                        toggleDisplayRequiredKotsUpdateModal={this.toggleDisplayRequiredKotsUpdateModal}
-                        isBundleUploading={isBundleUploading}
-                        isVeleroInstalled={isVeleroInstalled}
-                        refreshAppData={this.getApp}
-                        snapshotInProgressApps={this.props.snapshotInProgressApps}
-                        ping={this.props.ping}
-                      />
                     }
                     />
 
                     <Route exact path="/app/:slug/tree/:sequence?" render={props => <DownstreamTree {...props} app={app} appNameSpace={this.props.appNameSpace} />} />
 
                     <Route exact path={["/app/:slug/version-history", "/app/:slug/version-history/diff/:firstSequence/:secondSequence"]} render={() =>
-                    app.isNewKotsUiEnabled ?
                       <AppVersionHistory
                         app={app}
                         match={this.props.match}
                         makeCurrentVersion={this.makeCurrentRelease}
-                        makingCurrentVersionErrMsg={this.state.makingCurrentReleaseErrMsg}
-                        updateCallback={this.refetchData}
-                        toggleIsBundleUploading={this.toggleIsBundleUploading}
-                        isBundleUploading={isBundleUploading}
-                        refreshAppData={this.getApp}
-                        displayErrorModal={this.state.displayErrorModal}
-                        toggleErrorModal={this.toggleErrorModal}
-                        makingCurrentRelease={this.state.makingCurrentRelease}
-                        redeployVersion={this.redeployVersion}
-                        redeployVersionErrMsg={this.state.redeployVersionErrMsg}
-                      />
-                    :
-                      <AppVersionHistoryClassic
-                        app={app}
-                        match={this.props.match}
-                        makeCurrentVersion={this.makeCurrentRelease}
-                        toggleDisplayRequiredKotsUpdateModal={this.toggleDisplayRequiredKotsUpdateModal}
                         makingCurrentVersionErrMsg={this.state.makingCurrentReleaseErrMsg}
                         updateCallback={this.refetchData}
                         toggleIsBundleUploading={this.toggleIsBundleUploading}
