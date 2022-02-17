@@ -66,7 +66,7 @@ kotsadm-debug: kotsadm-debug-build
 	LOG_LEVEL=$(LOG_LEVEL) dlv --listen=:2345 --headless=true --api-version=2 exec ./bin/kotsadm-api-debug api
 
 .PHONY: kotsadm-run
-kotsadm-debug: kotsadm-debug-build
+kotsadm-run: kotsadm-debug-build
 	./bin/kotsadm-api-debug api
 
 .PHONY: build-ttl.sh
