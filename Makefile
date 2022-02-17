@@ -65,6 +65,10 @@ kotsadm-debug-build:
 kotsadm-debug: kotsadm-debug-build
 	LOG_LEVEL=$(LOG_LEVEL) dlv --listen=:2345 --headless=true --api-version=2 exec ./bin/kotsadm-api-debug api
 
+.PHONY: kotsadm-run
+kotsadm-debug: kotsadm-debug-build
+	./bin/kotsadm-api-debug api
+
 .PHONY: build-ttl.sh
 build-ttl.sh:
 	docker build --pull -f deploy/Dockerfile -t ttl.sh/${CURRENT_USER}/kotsadm:12h .
