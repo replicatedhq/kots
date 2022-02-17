@@ -95,7 +95,8 @@ func (c *Kubectl) Apply(targetNamespace string, slug string, yamlDoc []byte, dry
 	}
 
 	if dryRun {
-		args = append(args, "--dry-run=server")
+		// SC-42122: server dry run is incompatible with legacy operators that don't support it, i.e. openebs 1.12.0
+		args = append(args, "--dry-run=client")
 	}
 	if wait {
 		args = append(args, "--wait")
@@ -245,7 +246,8 @@ func (c *Kubectl) kubectlCreateCommand(renderedManifestPath string, targetNamesp
 	}
 
 	if dryRun {
-		args = append(args, "--dry-run=server")
+		// SC-42122: server dry run is incompatible with legacy operators that don't support it, i.e. openebs 1.12.0
+		args = append(args, "--dry-run=client")
 	}
 	if wait {
 		args = append(args, "--wait")
@@ -271,7 +273,8 @@ func (c *Kubectl) kubectlPatchCommand(renderedManifestPath string, targetNamespa
 	}
 
 	if dryRun {
-		args = append(args, "--dry-run=server")
+		// SC-42122: server dry run is incompatible with legacy operators that don't support it, i.e. openebs 1.12.0
+		args = append(args, "--dry-run=client")
 	}
 	if wait {
 		args = append(args, "--wait")
