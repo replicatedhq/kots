@@ -2,6 +2,8 @@ FROM golang:1.17 as builder
 
 EXPOSE 2345
 
+ENV DEBUG_KOTSADM=1
+
 RUN curl -k https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
   && echo "deb http://apt.postgresql.org/pub/repos/apt/ buster-pgdg main" > /etc/apt/sources.list.d/PostgreSQL.list \
   && apt-get update && apt-get install -y --no-install-recommends gnupg2 postgresql-client-10 python3-pip ca-certificates \
