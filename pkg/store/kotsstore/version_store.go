@@ -393,6 +393,7 @@ func (s *KOTSStore) createAppVersion(tx *sql.Tx, appID string, baseSequence *int
 		return int64(0), errors.Wrap(err, "failed to replace secrets")
 	}
 
+	// PA1: insert into app_version
 	newSequence, err := s.createAppVersionRecord(tx, appID, appName, appIcon, kotsKinds)
 	if err != nil {
 		return int64(0), errors.Wrap(err, "failed to create app version")
@@ -452,6 +453,12 @@ func (s *KOTSStore) createAppVersion(tx *sql.Tx, appID string, baseSequence *int
 			}
 		}
 
+		blocked := kotsKinds.HasStrictPreflights()
+		blockedBy := ""
+		if blocked {
+			blockedBy = "strict_preflights"
+		}
+
 		diffSummary, diffSummaryError := "", ""
 		if baseSequence != nil {
 			// diff this release from the last release
@@ -472,9 +479,11 @@ func (s *KOTSStore) createAppVersion(tx *sql.Tx, appID string, baseSequence *int
 			return int64(0), errors.Wrap(err, "failed to create gitops commit")
 		}
 
+		// PA1: insert into app_downstream_version
 		err = s.addAppVersionToDownstream(tx, appID, d.ClusterID, newSequence,
 			kotsKinds.Installation.Spec.VersionLabel, downstreamStatus, source,
-			diffSummary, diffSummaryError, commitURL, commitURL != "", skipPreflights)
+			diffSummary, diffSummaryError, commitURL, commitURL != "", skipPreflights,
+			blocked, blockedBy)
 		if err != nil {
 			return int64(0), errors.Wrap(err, "failed to create downstream version")
 		}
@@ -608,8 +617,8 @@ func (s *KOTSStore) createAppVersionRecord(tx *sql.Tx, appID string, appName str
 	return int64(newSequence), nil
 }
 
-func (s *KOTSStore) addAppVersionToDownstream(tx *sql.Tx, appID string, clusterID string, sequence int64, versionLabel string, status types.DownstreamVersionStatus, source string, diffSummary string, diffSummaryError string, commitURL string, gitDeployable bool, preflightsSkipped bool) error {
-	query := `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status, source, diff_summary, diff_summary_error, git_commit_url, git_deployable, preflight_skipped) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`
+func (s *KOTSStore) addAppVersionToDownstream(tx *sql.Tx, appID string, clusterID string, sequence int64, versionLabel string, status types.DownstreamVersionStatus, source string, diffSummary string, diffSummaryError string, commitURL string, gitDeployable bool, preflightsSkipped bool, blocked bool, blockedBy string) error {
+	query := `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status, source, diff_summary, diff_summary_error, git_commit_url, git_deployable, preflight_skipped, blocked, blocked_by) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`
 	_, err := tx.Exec(
 		query,
 		appID,
@@ -624,7 +633,9 @@ func (s *KOTSStore) addAppVersionToDownstream(tx *sql.Tx, appID string, clusterI
 		diffSummaryError,
 		commitURL,
 		gitDeployable,
-		preflightsSkipped)
+		preflightsSkipped,
+		blocked,
+		blockedBy)
 	if err != nil {
 		return errors.Wrap(err, "failed to execute query")
 	}
