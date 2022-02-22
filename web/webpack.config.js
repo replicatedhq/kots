@@ -2,7 +2,6 @@ const path = require("path");
 const { merge } = require("webpack-merge");
 const webpack = require("webpack");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
-const FaviconsWebpackPlugin = require("favicons-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const MonacoWebpackPlugin = require("monaco-editor-webpack-plugin");
 const NodePolyfillPlugin = require("node-polyfill-webpack-plugin");
@@ -124,21 +123,6 @@ module.exports = function (env) {
       new HtmlWebpackPlugin({
         title: "Admin Console",
         inject: "body",
-      }),
-      new FaviconsWebpackPlugin({
-        logo: srcPath + "/favicon-64.png",
-        icons: {
-          android: false,
-          appleIcon: false,
-          appleStartup: false,
-          coast: false,
-          favicons: true,
-          firefox: true,
-          opengraph: false,
-          twitter: false,
-          yandex: false,
-          windows: false
-        }
       }),
       new MonacoWebpackPlugin({
         languages: [
