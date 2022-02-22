@@ -35,16 +35,14 @@ func Download(appSlug string, path string, downloadOptions DownloadOptions) erro
 		return errors.Wrap(err, "failed to get clientset")
 	}
 
-	podName, err := k8sutil.FindKotsadm(clientset, downloadOptions.Namespace)
-	if err != nil {
-		log.FinishSpinnerWithError()
-		return errors.Wrap(err, "failed to find kotsadm pod")
+	getPodName := func() (string, error) {
+		return k8sutil.FindKotsadm(clientset, downloadOptions.Namespace)
 	}
 
 	stopCh := make(chan struct{})
 	defer close(stopCh)
 
-	localPort, errChan, err := k8sutil.PortForward(0, 3000, downloadOptions.Namespace, podName, false, stopCh, log)
+	localPort, errChan, err := k8sutil.PortForward(0, 3000, downloadOptions.Namespace, getPodName, false, stopCh, log)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to start port forwarding")

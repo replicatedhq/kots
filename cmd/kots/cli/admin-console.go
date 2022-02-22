@@ -33,18 +33,21 @@ func AdminConsoleCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get clientset")
 			}
 
-			podName, err := k8sutil.WaitForKotsadm(clientset, v.GetString("namespace"), time.Second*10)
-			if err != nil {
-				if _, ok := errors.Cause(err).(*types.ErrorTimeout); ok {
-					return errors.Errorf("kotsadm failed to start: %s. Use the --wait-duration flag to increase timeout.", err)
+			getPodName := func() (string, error) {
+				podName, err := k8sutil.WaitForKotsadm(clientset, v.GetString("namespace"), time.Second*10)
+				if err != nil {
+					if _, ok := errors.Cause(err).(*types.ErrorTimeout); ok {
+						return podName, errors.Errorf("kotsadm failed to start: %s. Use the --wait-duration flag to increase timeout.", err)
+					}
+					return podName, errors.Wrap(err, "failed to wait for web")
 				}
-				return errors.Wrap(err, "failed to wait for web")
+				return podName, nil
 			}
 
 			stopCh := make(chan struct{})
 			defer close(stopCh)
 
-			adminConsolePort, errChan, err := k8sutil.PortForward(8800, 3000, v.GetString("namespace"), podName, true, stopCh, log)
+			adminConsolePort, errChan, err := k8sutil.PortForward(8800, 3000, v.GetString("namespace"), getPodName, true, stopCh, log)
 			if err != nil {
 				return errors.Wrap(err, "failed to port forward")
 			}
