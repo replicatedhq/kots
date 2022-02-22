@@ -3,6 +3,6 @@
 .gitignore
 .dockerignore
 
-Dockerfile.skaffold
+skaffold.Dockerfile
 kustomize
 .buildkite
