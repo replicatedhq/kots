@@ -285,7 +285,6 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		IsIdentityServiceSupported:     license.Spec.IsIdentityServiceSupported,
 		IsAppIdentityServiceSupported:  isAppIdentityServiceSupported,
 		IsGeoaxisSupported:             license.Spec.IsGeoaxisSupported,
-		IsNewKOTSUIEnabled:             license.Spec.IsNewKOTSUIEnabled,
 		IsSupportBundleUploadSupported: license.Spec.IsSupportBundleUploadSupported,
 		AllowRollback:                  allowRollback,
 		AllowSnapshots:                 allowSnapshots,

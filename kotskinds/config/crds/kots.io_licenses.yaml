@@ -69,8 +69,6 @@ spec:
                 type: boolean
               isIdentityServiceSupported:
                 type: boolean
-              isNewKotsUiEnabled:
-                type: boolean
               isSemverRequired:
                 type: boolean
               isSnapshotSupported:

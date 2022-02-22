@@ -19,7 +19,7 @@ vendor
 # goreleaser
 dist/
 
-
+velero-credentials
 supportbundle.tar.gz
 
 .envrc
