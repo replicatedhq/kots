@@ -165,7 +165,7 @@ jobs:
         GIT_COMMIT: ${{ github.sha }}
         GIT_TAG: ${{ github.ref_name }}
         SCOPE_DSN_PUBLIC: ""
-      run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make test kotsadm
+      run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make test build
 
     - name: Upload Go API artifact
       uses: actions/upload-artifact@v2
