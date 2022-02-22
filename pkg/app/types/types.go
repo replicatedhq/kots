@@ -33,6 +33,7 @@ type App struct {
 	CreatedAt             time.Time        `json:"updatedAt"`
 	LastUpdateCheckAt     string           `json:"lastUpdateCheckAt"`
 	HasPreflight          bool             `json:"hasPreflight"`
+	HasStrictPreflights   bool             `json:"hasStrictPreflight"`
 	IsConfigurable        bool             `json:"isConfigurable"`
 	SnapshotTTL           string           `json:"snapshotTtl"`
 	SnapshotSchedule      string           `json:"snapshotSchedule"`

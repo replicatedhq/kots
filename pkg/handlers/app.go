@@ -278,6 +278,7 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		UpdatedAt:                      a.UpdatedAt,
 		LastUpdateCheckAt:              a.LastUpdateCheckAt,
 		HasPreflight:                   a.HasPreflight,
+		HasStrictPreflights:            a.HasStrictPreflights,
 		IsConfigurable:                 a.IsConfigurable,
 		UpdateCheckerSpec:              a.UpdateCheckerSpec,
 		SemverAutoDeploy:               a.SemverAutoDeploy,

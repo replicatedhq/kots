@@ -28,6 +28,7 @@ type DownstreamVersion struct {
 	ReleaseNotes             string                             `json:"releaseNotes"`
 	DeployedAt               *time.Time                         `json:"deployedAt"`
 	Source                   string                             `json:"source"`
+	HasStrictPreflights      bool                               `json:"hasStrictPreflights"`
 	PreflightResult          string                             `json:"preflightResult,omitempty"`
 	PreflightResultCreatedAt *time.Time                         `json:"preflightResultCreatedAt,omitempty"`
 	PreflightSkipped         bool                               `json:"preflightSkipped"`

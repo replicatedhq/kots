@@ -185,6 +185,7 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 			if len(preflight.Spec.Analyzers) > 0 {
 				app.HasPreflight = true
 			}
+			app.HasStrictPreflights = kotsutil.HasStrictPreflights(preflight)
 		}
 		if configSpec.String != "" {
 			config, err := kotsutil.LoadConfigFromBytes([]byte(configSpec.String))

@@ -162,6 +162,28 @@ func (k *KotsKinds) HasPreflights() bool {
 	return len(k.Preflight.Spec.Analyzers) > 0
 }
 
+func (k *KotsKinds) HasStrictPreflights() bool {
+	return HasStrictPreflights(k.Preflight)
+}
+
+func HasStrictPreflights(preflight *troubleshootv1beta2.Preflight) bool {
+	if preflight == nil {
+		return false
+	}
+	if len(preflight.Spec.Analyzers) > 0 {
+		for _, a := range preflight.Spec.Analyzers {
+			// TODO: PA1 - update Analyzers if conditions
+			if (a.ClusterVersion != nil && a.ClusterVersion.Strict.BoolVal) ||
+				(a.StorageClass != nil && a.StorageClass.Strict.BoolVal) ||
+				(a.CustomResourceDefinition != nil && a.CustomResourceDefinition.Strict.BoolVal) ||
+				(a.Ingress != nil && a.Ingress.Strict.BoolVal) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // GetKustomizeBinaryPath will return the kustomize binary version to use for this application
 // applying the default, if there is one, for the current version of kots
 func (k KotsKinds) GetKustomizeBinaryPath() string {

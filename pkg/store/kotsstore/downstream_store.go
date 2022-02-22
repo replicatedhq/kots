@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/store/types"
@@ -197,7 +198,8 @@ func (s *KOTSStore) GetCurrentVersion(appID string, clusterID string) (*downstre
 	ado.is_error,
 	av.upstream_released_at,
 	av.kots_installation_spec,
-	av.version_label
+	av.version_label,
+	av.preflight_spec
  FROM
 	 app_downstream_version AS adv
  LEFT JOIN
@@ -272,7 +274,8 @@ func (s *KOTSStore) GetAppVersions(appID string, clusterID string) (*downstreamt
 	ado.is_error,
 	av.upstream_released_at,
 	av.kots_installation_spec,
-	av.version_label
+	av.version_label,
+	av.preflight_spec
  FROM
 	 app_downstream_version AS adv
  LEFT JOIN
@@ -328,6 +331,7 @@ func (s *KOTSStore) GetAppVersions(appID string, clusterID string) (*downstreamt
 			break
 		}
 	}
+	// PA1: set HasStrictPreflights for each version app_version.preflight_spec (av.preflight_spec)
 
 	return result, nil
 
@@ -377,6 +381,7 @@ func downstreamVersionFromRow(appID string, row scannable) (*downstreamtypes.Dow
 	var hasError sql.NullBool
 	var upstreamReleasedAt persistence.NullStringTime
 	var kotsInstallationSpecStr sql.NullString
+	var preflightSpecStr sql.NullString
 
 	if err := row.Scan(
 		&createdOn,
@@ -398,6 +403,7 @@ func downstreamVersionFromRow(appID string, row scannable) (*downstreamtypes.Dow
 		&upstreamReleasedAt,
 		&kotsInstallationSpecStr,
 		&versionLabel,
+		&preflightSpecStr,
 	); err != nil {
 		return nil, errors.Wrap(err, "failed to scan")
 	}
@@ -449,6 +455,14 @@ func downstreamVersionFromRow(appID string, row scannable) (*downstreamtypes.Dow
 		installationSpec := obj.(*kotsv1beta1.Installation)
 
 		v.YamlErrors = installationSpec.Spec.YAMLErrors
+	}
+
+	if preflightSpecStr.Valid && preflightSpecStr.String != "" {
+		preflight, err := kotsutil.LoadPreflightFromContents([]byte(preflightSpecStr.String))
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to load preflights from spec")
+		}
+		v.HasStrictPreflights = kotsutil.HasStrictPreflights(preflight)
 	}
 
 	return v, nil
