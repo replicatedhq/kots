@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import find from "lodash/find";
 import classNames from "classnames";
 import ReactTooltip from "react-tooltip";
+import size from "lodash/size";
 
 import Loader from "../shared/Loader";
 
@@ -93,6 +94,21 @@ function renderVersionAction(version, latestVersion, nothingToCommitDiff, app, h
   const isSecondaryBtn = isPastVersion || needsConfiguration || isRedeploy && !isRollback;
   const isPrimaryButton = !isSecondaryBtn && !isRedeploy && !isRollback;
   const editableConfig = isCurrentVersion || isLatestVersion || isPendingVersion?.semver;
+
+  const preflightResult = version.preflightResult
+  const hasStrictPreflights = version.hasStrictPreflights;
+  let blockDeployment = false;
+  if (hasStrictPreflights && preflightResult) {
+    let preflightJSON = JSON.parse(preflightResult);
+    if (size(preflightJSON?.results) !== 0){
+      preflightJSON?.results.map((row, idx) => {
+        if (row.strict && row.isFail){
+          blockDeployment = true;
+        }
+      })
+    }      
+  }
+
   let tooltipTip;
   if (editableConfig) {
     tooltipTip = "Edit config";
@@ -151,7 +167,7 @@ function renderVersionAction(version, latestVersion, nothingToCommitDiff, app, h
       {showActions &&
         <button
           className={classNames("btn u-marginLeft--10", { "secondary dark": isRollback, "secondary blue": isSecondaryBtn, "primary blue": isPrimaryButton })}
-          disabled={version.status === "deploying"}
+          disabled={version.status === "deploying" || blockDeployment}
           onClick={() => needsConfiguration ? history.push(`/app/${app.slug}/config/${version.sequence}`) : isRollback ? deployVersion(version, true) : deployVersion(version)}
         >
           {deployButtonStatus(downstream, version, app)}

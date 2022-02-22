@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, withRouter } from "react-router-dom";
 import ReactTooltip from "react-tooltip"
+import size from "lodash/size";
 
 import dayjs from "dayjs";
 import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
@@ -479,6 +480,21 @@ class DashboardVersionCard extends React.Component {
   renderVersionAction = (version, nothingToCommit) => {
     const { app } = this.props;
     const downstream = app.downstreams[0];
+
+    const preflightResult = downstream.pendingVersions[0]?.preflightResult
+    const hasStrictPreflights = downstream.pendingVersions[0]?.hasStrictPreflights;
+    let blockDeployment = false;
+    if (hasStrictPreflights && preflightResult) {
+      let preflightJSON = JSON.parse(preflightResult);
+      if (size(preflightJSON?.results) !== 0){
+        preflightJSON?.results.map((row, idx) => {
+          if (row.strict && row.isFail){
+            blockDeployment = true;
+          }
+        })
+      }      
+    }
+
     if (downstream.gitops?.enabled) {
       if (version.gitDeployable === false) {
         return (<div className={nothingToCommit && "u-opacity--half"}>Nothing to commit</div>);
@@ -547,7 +563,7 @@ class DashboardVersionCard extends React.Component {
           <div className="flex-column justifyContent--center">
             <button
               className={classNames("btn u-marginLeft--10", { "secondary blue": needsConfiguration, "primary blue": !needsConfiguration })}
-              disabled={version.status === "deploying"}
+              disabled={version.status === "deploying" || blockDeployment}
               onClick={needsConfiguration ? history.push(`/app/${app?.slug}/config/${version.sequence}`) : () => this.deployVersion(version)}
             >
               {this.deployButtonStatus(downstream, version, app)}

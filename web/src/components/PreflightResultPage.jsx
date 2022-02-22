@@ -314,6 +314,27 @@ class PreflightResultPage extends Component {
 
     const preflightSkipped = preflightResultData?.skipped;
     const stopPolling = (preflightResultData?.result || preflightSkipped);
+    let hasStrictPreflights = false;
+
+    if (this.props.fromLicenseFlow){
+      if (this.props.appsList != null && this.props.appsList.length>0){
+        hasStrictPreflights = this.props.appsList[0]?.downstreams[0]?.pendingVersions[0]?.hasStrictPreflights
+      }
+    }else{
+      hasStrictPreflights = this.props.app?.downstreams[0]?.pendingVersions[0]?.hasStrictPreflights
+    }
+
+    let blockDeployment = false;
+    if (hasStrictPreflights && preflightResultData?.result) {
+      let preflightJSON = JSON.parse(preflightResultData.result);
+      if (size(preflightJSON?.results) !== 0){
+        preflightJSON?.results.map((row, idx) => {
+          if (row.strict && row.isFail){
+            blockDeployment = true;
+          }
+        })
+      }      
+    }
     let preflightJSON = {};
     if (preflightResultData?.result) {
       if (showSkipModal) {
@@ -387,14 +408,16 @@ class PreflightResultPage extends Component {
               <button
                 type="button"
                 className="btn primary blue"
+                disabled= {blockDeployment}
                 onClick={() => this.deployKotsDownstream(false)}
               >
                 Continue
-              </button> :
+              </button> 
+              : !hasStrictPreflights ?
               <div className="flex flex1 justifyContent--center alignItems--center">
                 <span className="u-fontSize--normal u-fontWeight--medium u-textDecoration--underline u-textColor--bodyCopy u-marginTop--15 u-cursor--pointer" onClick={this.showSkipModal}>
                   Ignore Preflights </span>
-              </div>}
+              </div> : null }
           </div>
           : stopPolling ?
             <div className="flex-auto flex justifyContent--flexEnd u-marginBottom--15">
