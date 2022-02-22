@@ -115,9 +115,8 @@ func PortForward(localPort int, remotePort int, namespace string, getPodName fun
 			} else {
 				// Connection to pod was lost or stopChan was closed
 				log.Info("lost connection to pod %s", podName)
-				start := time.Now()
 				success := false
-				for !success && time.Since(start) < 2*time.Minute {
+				for !success {
 					time.Sleep(5 * time.Second)
 					log.Info("attempting to re-establish port-forward")
 					podName, err = getPodName()
@@ -139,10 +138,6 @@ func PortForward(localPort int, remotePort int, namespace string, getPodName fun
 					}
 					success = true
 					log.Info("re-established port-forward to %s", podName)
-				}
-				if !success {
-					log.Error(errors.New("failed to re-establish port forwarding"))
-					break
 				}
 			}
 		}
