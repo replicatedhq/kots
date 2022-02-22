@@ -5,5 +5,5 @@ sync:
 image:
   name: okteto.dev/kotsadm-web:${OKTETO_NAMESPACE}
   context: .
-  dockerfile: Dockerfile.okteto
+  dockerfile: okteto.Dockerfile
   target: dev

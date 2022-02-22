@@ -1,7 +1,7 @@
 node_modules
 .vscode/
 
-Dockerfile.skaffold
+skaffold.Dockerfile
 kustomize
 .buildkite
 dist
