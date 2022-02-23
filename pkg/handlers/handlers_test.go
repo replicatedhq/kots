@@ -534,6 +534,17 @@ var HandlerPolicyTests = map[string][]HandlerPolicyTest{
 		},
 	},
 
+	"UpdateAdminConsole": {
+		{
+			Vars:         map[string]string{"appSlug": "my-app", "sequence": "1"},
+			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
+			SessionRoles: []string{rbac.ClusterAdminRoleID},
+			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
+				handlerRecorder.UpdateAdminConsole(gomock.Any(), gomock.Any())
+			},
+			ExpectStatus: http.StatusOK,
+		},
+	},
 	"DeployAppVersion": {
 		{
 			Vars:         map[string]string{"appSlug": "my-app", "sequence": "1"},

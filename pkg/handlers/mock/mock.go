@@ -1186,6 +1186,18 @@ func (mr *MockKOTSHandlerMockRecorder) SyncLicense(w, r interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyncLicense", reflect.TypeOf((*MockKOTSHandler)(nil).SyncLicense), w, r)
 }
 
+// UpdateAdminConsole mocks base method.
+func (m *MockKOTSHandler) UpdateAdminConsole(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UpdateAdminConsole", w, r)
+}
+
+// UpdateAdminConsole indicates an expected call of UpdateAdminConsole.
+func (mr *MockKOTSHandlerMockRecorder) UpdateAdminConsole(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAdminConsole", reflect.TypeOf((*MockKOTSHandler)(nil).UpdateAdminConsole), w, r)
+}
+
 // UpdateAppConfig mocks base method.
 func (m *MockKOTSHandler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
