@@ -128,13 +128,6 @@ jobs:
     #   run: |
     #     make -C kotsadm/web deps test publish-pact
 
-      # TODO: migrate retry logic for pacts
-      # retry:
-      #   automatic:
-      #     # this command exiting with status 2 typically means that the yarn package failed to download
-      #     - exit_status: 2
-      #       limit: 5
-
 
   build_web:
     runs-on: ubuntu-18.04
@@ -157,12 +150,6 @@ jobs:
         GIT_TAG: ""
       run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C web deps build-kotsadm
       shell: bash
-      ## TODO: retry logic
-      # retry:
-      #   automatic:
-      #     # this command exiting with status 2 typically means that the yarn package failed to download
-      #     - exit_status: 2
-      #       limit: 5
 
     - name: Upload web artifact
       uses: actions/upload-artifact@v2
@@ -242,7 +229,7 @@ jobs:
         # GITHUB_REPOSITORY:
         # GITHUB_WORKSPACE:
         SCOPE_DSN_PUBLIC: ""
-      run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make test kotsadm kots
+      run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make test build kots
       shell: bash
 
     - name: Upload Go API artifact

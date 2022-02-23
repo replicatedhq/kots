@@ -36,11 +36,6 @@ fmt:
 vet:
 	go vet $(BUILDFLAGS) ./pkg/... ./cmd/...
 
-.PHONY: run
-run:
-	source .image.env && make kots
-	./bin/kots run test
-
 .PHONY: gosec
 gosec:
 	go get github.com/securego/gosec/cmd/gosec
@@ -52,22 +47,22 @@ mock:
 	mockgen -source=pkg/store/store_interface.go -destination=pkg/store/mock/mock.go
 	mockgen -source=pkg/handlers/interface.go -destination=pkg/handlers/mock/mock.go
 
-.PHONY: kotsadm
-kotsadm:
+.PHONY: build
+build:
 	go build ${LDFLAGS} ${GCFLAGS} -o bin/kotsadm $(BUILDFLAGS) ./cmd/kotsadm
 
+.PHONY: run
+run: build
+	./bin/kotsadm-api api
+
 # Debugging
-.PHONY: kotsadm-debug-build
-kotsadm-debug-build:
+.PHONY: debug-build
+debug-build:
 	go build ${LDFLAGS} ${GCFLAGS} $(BUILDFLAGS) -v -o ./bin/kotsadm-api-debug ./cmd/kotsadm	
 
-.PHONY: kotsadm-debug
-kotsadm-debug: kotsadm-debug-build
+.PHONY: debug
+debug: debug-build
 	LOG_LEVEL=$(LOG_LEVEL) dlv --listen=:2345 --headless=true --api-version=2 exec ./bin/kotsadm-api-debug api
-
-.PHONY: kotsadm-run
-kotsadm-run: kotsadm-debug-build
-	./bin/kotsadm-api-debug api
 
 .PHONY: build-ttl.sh
 build-ttl.sh:
@@ -75,7 +70,7 @@ build-ttl.sh:
 	docker push ttl.sh/${CURRENT_USER}/kotsadm:12h
 
 .PHONY: all-ttl.sh
-all-ttl.sh: kotsadm
+all-ttl.sh: build
 	make -C web build-kotsadm
 	source .image.env && make build-ttl.sh
 
