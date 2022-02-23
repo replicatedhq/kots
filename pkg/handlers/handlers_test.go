@@ -1299,3 +1299,41 @@ func TestListUnauthedRoutes(t *testing.T) {
 		}
 	}
 }
+
+func TestListTokenAuthRoutes(t *testing.T) {
+	req := require.New(t)
+
+	r := mux.NewRouter()
+	handlers.RegisterTokenAuthRoutes(&handlers.Handler{}, r, r)
+	// build a list of patterns that are used by kots
+	patternList := []string{}
+	err := r.Walk(func(route *mux.Route, _ *mux.Router, _ []*mux.Route) error {
+		path, err := route.GetPathTemplate()
+		if err != nil {
+			return err
+		}
+		patternList = append(patternList, path)
+		return nil
+	})
+	req.NoError(err)
+
+	knownPatterns := []string{
+		"/api/v1/kots/ports",
+		"/api/v1/upload",
+		"/api/v1/download",
+		"/api/v1/airgap/install",
+	}
+
+	for _, knownPattern := range knownPatterns {
+		// validate that this pattern is present within the list of token auth routes and has not been removed
+		found := false
+		for _, currentPattern := range patternList {
+			if currentPattern == knownPattern {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("api pattern %q was not found in list %v", knownPattern, patternList)
+		}
+	}
+}
