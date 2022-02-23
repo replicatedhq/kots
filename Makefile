@@ -99,7 +99,7 @@ build-release:
 	docker tag kotsadm/kotsadm:${GIT_TAG} kotsadm/kotsadm:v0.0.0-nightly
 	docker push kotsadm/kotsadm:v0.0.0-nightly
 
-	docker build --pull -f deploy/Dockerfile.dex -t kotsadm/dex:${DEX_TAG} --build-arg TAG=${DEX_TAG} .
+	docker build --pull -f deploy/dex.Dockerfile -t kotsadm/dex:${DEX_TAG} --build-arg TAG=${DEX_TAG} .
 	docker push kotsadm/dex:${DEX_TAG}
 	mkdir -p bin/docker-archive/dex
 	skopeo copy docker://kotsadm/dex:${DEX_TAG} docker-archive:bin/docker-archive/dex/${DEX_TAG}
@@ -128,7 +128,7 @@ project-pact-tests:
 
 .PHONY: cache
 cache:
-	docker build -f hack/dev/Dockerfile.skaffoldcache . -t kotsadm:cache
+	docker build -f hack/dev/skaffoldcache.Dockerfile . -t kotsadm:cache
 
 .PHONY: init-sbom
 init-sbom:

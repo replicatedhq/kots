@@ -165,7 +165,7 @@ jobs:
         GIT_COMMIT: ${{ github.sha }}
         GIT_TAG: ${{ github.ref_name }}
         SCOPE_DSN_PUBLIC: ""
-      run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make test build
+      run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make test build kots
 
     - name: Upload Go API artifact
       uses: actions/upload-artifact@v2
@@ -185,7 +185,9 @@ jobs:
         name: go_api
         path: ./bin
     - name: Add executable permissions
-      run: chmod a+x ./bin/kotsadm
+      run: |
+        chmod a+x ./bin/kotsadm
+        chmod a+x ./bin/kots
     - uses: azure/docker-login@v1
       env:
         DOCKER_CONFIG: ./.docker

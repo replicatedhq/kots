@@ -125,7 +125,7 @@ jobs:
 
   build-kotsadm:
     runs-on: ubuntu-18.04
-    needs: [can-run-ci, build-web]
+    needs: [can-run-ci, build-web, build-kots]
     steps:
       - uses: actions/setup-go@v2
         with:
@@ -157,6 +157,13 @@ jobs:
         with:
           path: ${{ steps.go-cache-paths.outputs.go-mod }}
           key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
+
+      - name: Download kots artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: kots
+          path: bin/
+      - run: chmod +x bin/kots
 
       - name: Download web artifact
         uses: actions/download-artifact@v2

@@ -66,9 +66,8 @@ func SetConfigCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get clientset")
 			}
 
-			podName, err := k8sutil.WaitForKotsadm(clientset, namespace, time.Second*5)
-			if err != nil {
-				return errors.Wrap(err, "failed to find kotsadm pod")
+			getPodName := func() (string, error) {
+				return k8sutil.WaitForKotsadm(clientset, namespace, time.Second*5)
 			}
 
 			stopCh := make(chan struct{})
@@ -76,7 +75,7 @@ func SetConfigCmd() *cobra.Command {
 
 			log.ActionWithoutSpinner("Updating %s configuration...", appSlug)
 
-			localPort, errChan, err := k8sutil.PortForward(0, 3000, namespace, podName, false, stopCh, log)
+			localPort, errChan, err := k8sutil.PortForward(0, 3000, namespace, getPodName, false, stopCh, log)
 			if err != nil {
 				return errors.Wrap(err, "failed to start port forwarding")
 			}

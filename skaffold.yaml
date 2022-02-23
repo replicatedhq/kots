@@ -51,22 +51,22 @@ build:
           - src: "src/**/*.css"
             dest: "./"
       docker:
-        dockerfile: ./Dockerfile.skaffold
+        dockerfile: ./skaffold.Dockerfile
 
     - image: kotsadm
       context: "./"
       docker:
-        dockerfile: ./hack/dev/Dockerfile.skaffold
+        dockerfile: ./hack/dev/skaffold.Dockerfile
 
     - image: kotsadm-migrations
       context: "./migrations"
       docker:
-        dockerfile: ./Dockerfile.skaffold
+        dockerfile: ./skaffold.Dockerfile
 
     - image: kurl-proxy
       context: "./kurl_proxy"
       docker:
-        dockerfile: ./Dockerfile.skaffold
+        dockerfile: ./skaffold.Dockerfile
 
 deploy:
   statusCheckDeadlineSeconds: 240

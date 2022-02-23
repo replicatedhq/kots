@@ -12,13 +12,12 @@ func StartPortForward(namespace string, stopCh <-chan struct{}, log *logger.CLIL
 		return 0, nil, errors.Wrap(err, "failed to get clientset")
 	}
 
-	podName, err := k8sutil.FindKotsadm(clientset, namespace)
-	if err != nil {
-		return 0, nil, errors.Wrap(err, "failed to find kotsadm pod")
+	getPodName := func() (string, error) {
+		return k8sutil.FindKotsadm(clientset, namespace)
 	}
 
 	// set up port forwarding to get to it
-	localPort, errChan, err := k8sutil.PortForward(0, 3000, namespace, podName, false, stopCh, log)
+	localPort, errChan, err := k8sutil.PortForward(0, 3000, namespace, getPodName, false, stopCh, log)
 	if err != nil {
 		return 0, nil, errors.Wrap(err, "failed to start port forwarding")
 	}

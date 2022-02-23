@@ -281,10 +281,14 @@ func waitForVeleroRestoreCompleted(ctx context.Context, veleroNamespace string, 
 }
 
 func initiateKotsadmApplicationsRestore(backupName string, kotsadmNamespace string, kotsadmPodName string, log *logger.CLILogger) error {
+	getPodName := func() (string, error) {
+		return kotsadmPodName, nil
+	}
+
 	stopCh := make(chan struct{})
 	defer close(stopCh)
 
-	localPort, errChan, err := k8sutil.PortForward(0, 3000, kotsadmNamespace, kotsadmPodName, false, stopCh, log)
+	localPort, errChan, err := k8sutil.PortForward(0, 3000, kotsadmNamespace, getPodName, false, stopCh, log)
 	if err != nil {
 		return errors.Wrap(err, "failed to start port forwarding")
 	}
@@ -339,10 +343,14 @@ func initiateKotsadmApplicationsRestore(backupName string, kotsadmNamespace stri
 }
 
 func waitForKotsadmApplicationsRestore(backupName string, kotsadmNamespace string, kotsadmPodName string, log *logger.CLILogger) error {
+	getPodName := func() (string, error) {
+		return kotsadmPodName, nil
+	}
+
 	stopCh := make(chan struct{})
 	defer close(stopCh)
 
-	localPort, errChan, err := k8sutil.PortForward(0, 3000, kotsadmNamespace, kotsadmPodName, false, stopCh, log)
+	localPort, errChan, err := k8sutil.PortForward(0, 3000, kotsadmNamespace, getPodName, false, stopCh, log)
 	if err != nil {
 		return errors.Wrap(err, "failed to start port forwarding")
 	}

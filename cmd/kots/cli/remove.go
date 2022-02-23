@@ -49,9 +49,8 @@ func RemoveCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get clientset")
 			}
 
-			podName, err := k8sutil.WaitForKotsadm(clientset, namespace, time.Second*5)
-			if err != nil {
-				return errors.Wrap(err, "failed to find kotsadm pod")
+			getPodName := func() (string, error) {
+				return k8sutil.WaitForKotsadm(clientset, namespace, time.Second*5)
 			}
 
 			stopCh := make(chan struct{})
@@ -59,7 +58,7 @@ func RemoveCmd() *cobra.Command {
 
 			log.ActionWithoutSpinner("Removing application %s reference from Admin Console", appSlug)
 
-			localPort, errChan, err := k8sutil.PortForward(0, 3000, namespace, podName, false, stopCh, log)
+			localPort, errChan, err := k8sutil.PortForward(0, 3000, namespace, getPodName, false, stopCh, log)
 			if err != nil {
 				return errors.Wrap(err, "failed to start port forwarding")
 			}
