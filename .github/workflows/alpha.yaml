@@ -273,7 +273,7 @@ jobs:
     - name: Add executable permissions
       run: |
         chmod a+x ./bin/kotsadm
-        chmod a+x ./bin/kot
+        chmod a+x ./bin/kots
 
     - uses: azure/docker-login@v1
       with:
