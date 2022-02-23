@@ -104,7 +104,6 @@ func (l *CLILogger) ActionWithSpinner(msg string, args ...interface{}) {
 	fmt.Printf(msg, args...)
 
 	if !isatty.IsTerminal(os.Stdout.Fd()) {
-		fmt.Println()
 		return
 	}
 
@@ -140,7 +139,6 @@ func (l *CLILogger) ChildActionWithSpinner(msg string, args ...interface{}) {
 	fmt.Printf(msg, args...)
 
 	if !isatty.IsTerminal(os.Stdout.Fd()) {
-		fmt.Println()
 		return
 	}
 

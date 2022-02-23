@@ -352,7 +352,7 @@ func (s *KOTSStore) GetAppVersionBaseArchive(appID string, versionLabel string) 
 	return archiveDir, baseSequence, nil
 }
 
-func (s *KOTSStore) CreatePendingDownloadAppVersion(appID string, update upstreamtypes.Update) (int64, error) {
+func (s *KOTSStore) CreatePendingDownloadAppVersion(appID string, update upstreamtypes.Update, kotsApplication *kotsv1beta1.Application, license *kotsv1beta1.License) (int64, error) {
 	db := persistence.MustGetDBSession()
 
 	tx, err := db.Begin()
@@ -367,6 +367,10 @@ func (s *KOTSStore) CreatePendingDownloadAppVersion(appID string, update upstrea
 	}
 
 	kotsKinds := kotsutil.EmptyKotsKinds()
+	if kotsApplication != nil {
+		kotsKinds.KotsApplication = *kotsApplication
+	}
+	kotsKinds.License = license
 
 	var releasedAt *metav1.Time
 	if update.ReleasedAt != nil {
@@ -757,7 +761,7 @@ func (s *KOTSStore) addAppVersionToDownstream(tx *sql.Tx, appID string, clusterI
 
 func (s *KOTSStore) GetAppVersion(appID string, sequence int64) (*versiontypes.AppVersion, error) {
 	db := persistence.MustGetDBSession()
-	query := `select sequence, created_at, status, applied_at, kots_installation_spec, kots_app_spec from app_version where app_id = $1 and sequence = $2`
+	query := `select sequence, created_at, status, applied_at, kots_installation_spec, kots_app_spec, kots_license from app_version where app_id = $1 and sequence = $2`
 	row := db.QueryRow(query, appID, sequence)
 
 	var status sql.NullString
@@ -765,25 +769,26 @@ func (s *KOTSStore) GetAppVersion(appID string, sequence int64) (*versiontypes.A
 	var createdAt persistence.NullStringTime
 	var installationSpec sql.NullString
 	var kotsAppSpec sql.NullString
+	var licenseSpec sql.NullString
 
 	v := versiontypes.AppVersion{
 		AppID: appID,
 	}
-	if err := row.Scan(&v.Sequence, &createdAt, &status, &createdAt, &installationSpec, &kotsAppSpec); err != nil {
+	if err := row.Scan(&v.Sequence, &createdAt, &status, &createdAt, &installationSpec, &kotsAppSpec, &licenseSpec); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, ErrNotFound
 		}
 		return nil, errors.Wrap(err, "failed to scan")
 	}
 
-	kotsKinds := kotsutil.KotsKinds{}
+	v.KOTSKinds = &kotsutil.KotsKinds{}
 
 	// why is this a nullstring but we don't check if it's null?
 	installation, err := kotsutil.LoadInstallationFromContents([]byte(installationSpec.String))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read installation spec")
 	}
-	kotsKinds.Installation = *installation
+	v.KOTSKinds.Installation = *installation
 
 	if kotsAppSpec.Valid {
 		kotsApp, err := kotsutil.LoadKotsAppFromContents([]byte(kotsAppSpec.String))
@@ -791,7 +796,17 @@ func (s *KOTSStore) GetAppVersion(appID string, sequence int64) (*versiontypes.A
 			return nil, errors.Wrap(err, "failed to read kotsapp spec")
 		}
 		if kotsApp != nil {
-			kotsKinds.KotsApplication = *kotsApp
+			v.KOTSKinds.KotsApplication = *kotsApp
+		}
+	}
+
+	if licenseSpec.Valid {
+		license, err := kotsutil.LoadLicenseFromBytes([]byte(licenseSpec.String))
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to read license spec")
+		}
+		if license != nil {
+			v.KOTSKinds.License = license
 		}
 	}
 
@@ -800,7 +815,6 @@ func (s *KOTSStore) GetAppVersion(appID string, sequence int64) (*versiontypes.A
 		v.DeployedAt = &deployedAt.Time
 	}
 
-	v.KOTSKinds = &kotsKinds
 	v.Status = status.String
 
 	return &v, nil

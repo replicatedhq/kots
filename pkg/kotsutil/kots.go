@@ -753,12 +753,18 @@ func EncodeIdentityConfig(spec kotsv1beta1.IdentityConfig) ([]byte, error) {
 }
 
 func IsKotsVersionCompatibleWithApp(kotsApplication kotsv1beta1.Application, isInstall bool) bool {
+	// if IsKotsAutoUpgradeSupported(kotsApplication) {
+	// 	return true
+	// }
+
+	fmt.Printf("\n+++++buildversion.Version():%s\n", buildversion.Version())
 	actualSemver, err := semver.ParseTolerant(buildversion.Version())
 	if err != nil {
 		logger.Error(errors.Wrap(err, "kots build version is invalid"))
 		return true
 	}
 
+	fmt.Printf("\n+++++kotsApplication.Spec.MinKotsVersion:%s\n", kotsApplication.Spec.MinKotsVersion)
 	if kotsApplication.Spec.MinKotsVersion != "" {
 		minSemver, err := semver.ParseTolerant(kotsApplication.Spec.MinKotsVersion)
 		if err != nil {
@@ -768,6 +774,7 @@ func IsKotsVersionCompatibleWithApp(kotsApplication kotsv1beta1.Application, isI
 		}
 	}
 
+	fmt.Printf("\n+++++isInstall:%v, kotsApplication.Spec.TargetKotsVersion:%s\n", isInstall, kotsApplication.Spec.TargetKotsVersion)
 	if isInstall && kotsApplication.Spec.TargetKotsVersion != "" {
 		targetSemver, err := semver.ParseTolerant(kotsApplication.Spec.TargetKotsVersion)
 		if err != nil {
@@ -778,6 +785,15 @@ func IsKotsVersionCompatibleWithApp(kotsApplication kotsv1beta1.Application, isI
 	}
 
 	return true
+}
+
+func IsKotsAutoUpgradeSupported(kotsApplication kotsv1beta1.Application) bool {
+	for _, f := range kotsApplication.Spec.ConsoleFeatureFlags {
+		if f == "admin-console-auto-updates" {
+			return true
+		}
+	}
+	return false
 }
 
 func GetIncompatbileKotsVersionMessage(kotsApplication kotsv1beta1.Application, isInstall bool) string {
