@@ -229,7 +229,7 @@ jobs:
         # GITHUB_REPOSITORY:
         # GITHUB_WORKSPACE:
         SCOPE_DSN_PUBLIC: ""
-      run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make test build
+      run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make test build kots
       shell: bash
 
     - name: Upload Go API artifact
@@ -271,7 +271,9 @@ jobs:
         path: ./bin
 
     - name: Add executable permissions
-      run: chmod a+x ./bin/kotsadm
+      run: |
+        chmod a+x ./bin/kotsadm
+        chmod a+x ./bin/kot
 
     - uses: azure/docker-login@v1
       with:

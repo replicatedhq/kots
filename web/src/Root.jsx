@@ -323,8 +323,8 @@ class Root extends PureComponent {
           <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
           <meta httpEquiv="Pragma" content="no-cache" />
           <meta httpEquiv="Expires" content="0" />
-          {this.state.appLogo &&
-            <link rel="shortcut icon" href={this.state.appLogo} />
+          {this.state.appLogo && 
+            <link rel="icon" type="image/png" href={this.state.appLogo} />
           }
         </Helmet>
         <ThemeContext.Provider value={{
