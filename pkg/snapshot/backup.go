@@ -55,16 +55,14 @@ func CreateInstanceBackup(ctx context.Context, options CreateInstanceBackupOptio
 		return nil, errors.Wrap(err, "failed to get clientset")
 	}
 
-	podName, err := k8sutil.FindKotsadm(clientset, options.Namespace)
-	if err != nil {
-		log.FinishSpinnerWithError()
-		return nil, errors.Wrap(err, "failed to find kotsadm pod")
+	getPodName := func() (string, error) {
+		return k8sutil.FindKotsadm(clientset, options.Namespace)
 	}
 
 	stopCh := make(chan struct{})
 	defer close(stopCh)
 
-	localPort, errChan, err := k8sutil.PortForward(0, 3000, options.Namespace, podName, false, stopCh, log)
+	localPort, errChan, err := k8sutil.PortForward(0, 3000, options.Namespace, getPodName, false, stopCh, log)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return nil, errors.Wrap(err, "failed to start port forwarding")

@@ -4,6 +4,10 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"os"
+
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
@@ -15,11 +19,8 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"io/ioutil"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"net/http"
-	"os"
 	"sigs.k8s.io/yaml"
 )
 
@@ -61,15 +62,14 @@ func getConfigCmd(cmd *cobra.Command, args []string) error {
 		return errors.Wrap(err, "failed to validate namespace")
 	}
 
-	podName, err := k8sutil.FindKotsadm(clientset, namespace)
-	if err != nil {
-		return errors.Wrap(err, "failed to find kotsadm pod")
+	getPodName := func() (string, error) {
+		return k8sutil.FindKotsadm(clientset, namespace)
 	}
 
 	appSlug := v.GetString("appslug")
 	appSequence := v.GetInt64("sequence")
 
-	localPort, errChan, err := k8sutil.PortForward(0, 3000, namespace, podName, false, stopCh, log)
+	localPort, errChan, err := k8sutil.PortForward(0, 3000, namespace, getPodName, false, stopCh, log)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to start port forwarding")

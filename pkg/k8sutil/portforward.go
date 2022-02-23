@@ -20,6 +20,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/httpstream"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/portforward"
@@ -42,7 +43,7 @@ func IsPortAvailable(port int) bool {
 // if localport is set, it will attempt to use that port locally.
 // always check the port number returned though, because a port conflict
 // could cause a different port to be used
-func PortForward(localPort int, remotePort int, namespace string, podName string, pollForAdditionalPorts bool, stopCh <-chan struct{}, log *logger.CLILogger) (int, <-chan error, error) {
+func PortForward(localPort int, remotePort int, namespace string, getPodName func() (string, error), pollForAdditionalPorts bool, stopCh <-chan struct{}, log *logger.CLILogger) (int, chan error, error) {
 	if persistence.IsSQlite() {
 		// in the kots run workflow, kotsadm runs directly on the host as a service on port 3000
 		return 3000, make(chan error, 2), nil
@@ -66,32 +67,21 @@ func PortForward(localPort int, remotePort int, namespace string, podName string
 		localPort = freePort
 	}
 
+	podName, err := getPodName()
+	if err != nil {
+		return 0, nil, errors.Wrap(err, "failed to get pod name for port forward")
+	}
+
 	// port forward
 	cfg, err := GetClusterConfig()
 	if err != nil {
 		return 0, nil, errors.Wrap(err, "failed to get cluster config")
 	}
 
-	roundTripper, upgrader, err := spdy.RoundTripperFor(cfg)
+	dialer, err := createDialer(cfg, namespace, podName)
 	if err != nil {
-		return 0, nil, errors.Wrap(err, "failed to create roundtriper")
+		return 0, nil, errors.Wrap(err, "failed to create dialer")
 	}
-	path := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s/portforward", namespace, podName)
-	scheme := ""
-	hostIP := cfg.Host
-
-	u, err := url.Parse(cfg.Host)
-	if err != nil {
-		return 0, nil, errors.Wrap(err, "failed to parse host")
-	}
-
-	if u.Scheme == "http" || u.Scheme == "https" {
-		scheme = u.Scheme
-		hostIP = u.Host
-	}
-
-	serverURL := url.URL{Scheme: scheme, Path: path, Host: hostIP}
-	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: roundTripper}, http.MethodPost, &serverURL)
 
 	stopChan, readyChan := make(chan struct{}, 1), make(chan struct{}, 1)
 	out, errOut := new(bytes.Buffer), new(bytes.Buffer)
@@ -116,11 +106,40 @@ func PortForward(localPort int, remotePort int, namespace string, podName string
 
 	var forwardErr error
 	go func() {
-		// Locks until stopChan is closed.
-		// The main function may timeout before this returns an error
-		forwardErr = forwarder.ForwardPorts()
-		if forwardErr != nil {
-			errChan <- errors.Wrap(forwardErr, "forward ports")
+		for {
+			// Locks until stopChan is closed or connection to pod is lost.
+			// The main function may timeout before this returns an error
+			forwardErr = forwarder.ForwardPorts()
+			if forwardErr != nil {
+				errChan <- errors.Wrap(forwardErr, "forward ports")
+			} else {
+				// Connection to pod was lost or stopChan was closed
+				log.Info("lost connection to pod %s", podName)
+				success := false
+				for !success {
+					time.Sleep(5 * time.Second)
+					log.Info("attempting to re-establish port-forward")
+					podName, err = getPodName()
+					if err != nil {
+						log.Error(errors.Wrap(err, "failed to get pod name"))
+						continue
+					}
+					dialer, err = createDialer(cfg, namespace, podName)
+					if err != nil {
+						log.Error(errors.Wrap(err, "failed to create dialer"))
+						continue
+					}
+					stopChan, readyChan := make(chan struct{}, 1), make(chan struct{}, 1)
+					out, errOut := new(bytes.Buffer), new(bytes.Buffer)
+					forwarder, err = portforward.New(dialer, []string{fmt.Sprintf("%d:%d", localPort, remotePort)}, stopChan, readyChan, out, errOut)
+					if err != nil {
+						log.Error(errors.Wrap(err, "failed to create new portforward"))
+						continue
+					}
+					success = true
+					log.Info("re-established port-forward to %s", podName)
+				}
+			}
 		}
 	}()
 
@@ -274,6 +293,29 @@ func PortForward(localPort int, remotePort int, namespace string, podName string
 	}
 
 	return localPort, errChan, nil
+}
+
+func createDialer(cfg *rest.Config, namespace string, podName string) (httpstream.Dialer, error) {
+	roundTripper, upgrader, err := spdy.RoundTripperFor(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create roundtriper")
+	}
+	path := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s/portforward", namespace, podName)
+	scheme := ""
+	hostIP := cfg.Host
+
+	u, err := url.Parse(cfg.Host)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse host")
+	}
+
+	if u.Scheme == "http" || u.Scheme == "https" {
+		scheme = u.Scheme
+		hostIP = u.Host
+	}
+
+	serverURL := url.URL{Scheme: scheme, Path: path, Host: hostIP}
+	return spdy.NewDialer(upgrader, &http.Client{Transport: roundTripper}, http.MethodPost, &serverURL), nil
 }
 
 func ServiceForward(clientset *kubernetes.Clientset, cfg *rest.Config, localPort int, remotePort int, namespace string, serviceName string) (chan struct{}, error) {

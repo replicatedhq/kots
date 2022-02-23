@@ -45,16 +45,14 @@ func UploadLicense(path string, uploadLicenseOptions UploadLicenseOptions) error
 		return errors.Wrap(err, "failed to get clisnetset")
 	}
 
-	podName, err := k8sutil.FindKotsadm(clientset, uploadLicenseOptions.Namespace)
-	if err != nil {
-		log.FinishSpinnerWithError()
-		return errors.Wrap(err, "failed to find kotsadm pod")
+	getPodName := func() (string, error) {
+		return k8sutil.FindKotsadm(clientset, uploadLicenseOptions.Namespace)
 	}
 
 	stopCh := make(chan struct{})
 	defer close(stopCh)
 
-	localPort, errChan, err := k8sutil.PortForward(0, 3000, uploadLicenseOptions.Namespace, podName, false, stopCh, log)
+	localPort, errChan, err := k8sutil.PortForward(0, 3000, uploadLicenseOptions.Namespace, getPodName, false, stopCh, log)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to start port forwarding")

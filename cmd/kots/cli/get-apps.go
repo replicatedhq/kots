@@ -3,6 +3,10 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"os"
+
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/api/handlers/types"
 	"github.com/replicatedhq/kots/pkg/auth"
@@ -11,9 +15,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/print"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"io/ioutil"
-	"net/http"
-	"os"
 )
 
 func GetAppsCmd() *cobra.Command {
@@ -53,12 +54,11 @@ func getAppsCmd(cmd *cobra.Command, args []string) error {
 		return errors.Wrap(err, "failed to validate namespace")
 	}
 
-	podName, err := k8sutil.FindKotsadm(clientset, namespace)
-	if err != nil {
-		return errors.Wrap(err, "failed to find kotsadm pod")
+	getPodName := func() (string, error) {
+		return k8sutil.FindKotsadm(clientset, namespace)
 	}
 
-	localPort, errChan, err := k8sutil.PortForward(0, 3000, namespace, podName, false, stopCh, log)
+	localPort, errChan, err := k8sutil.PortForward(0, 3000, namespace, getPodName, false, stopCh, log)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to start port forwarding")
