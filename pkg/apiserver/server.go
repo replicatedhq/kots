@@ -155,30 +155,13 @@ func Start(params *APIServerParams) {
 	* Unauthenticated routes
 	**********************************************************************/
 
-	debugRouter.HandleFunc("/healthz", handler.Healthz)
-	loggingRouter.HandleFunc("/api/v1/login", handler.Login)
-	loggingRouter.HandleFunc("/api/v1/login/info", handler.GetLoginInfo)
-	loggingRouter.HandleFunc("/api/v1/logout", handler.Logout) // this route uses its own auth
-	loggingRouter.Path("/api/v1/metadata").Methods("GET").HandlerFunc(handlers.GetMetadataHandler(handlers.GetMetaDataConfig))
-
-	loggingRouter.HandleFunc("/api/v1/oidc/login", handler.OIDCLogin)
-	loggingRouter.HandleFunc("/api/v1/oidc/login/callback", handler.OIDCLoginCallback)
-
-	loggingRouter.Path("/api/v1/troubleshoot/{appId}/{bundleId}").Methods("PUT").HandlerFunc(handler.UploadSupportBundle)
-	loggingRouter.Path("/api/v1/troubleshoot/supportbundle/{bundleId}/redactions").Methods("PUT").HandlerFunc(handler.SetSupportBundleRedactions)
-	loggingRouter.Path("/api/v1/preflight/app/{appSlug}/sequence/{sequence}").Methods("POST").HandlerFunc(handler.PostPreflightStatus)
-
-	// This the handler for license API and should be called by the application only.
-	loggingRouter.Path("/license/v1/license").Methods("GET").HandlerFunc(handler.GetPlatformLicenseCompatibility)
+	handlers.RegisterUnauthenticatedRoutes(handler, debugRouter, loggingRouter)
 
 	/**********************************************************************
 	* KOTS token auth routes
 	**********************************************************************/
 
-	debugRouter.Path("/api/v1/kots/ports").Methods("GET").HandlerFunc(handler.GetApplicationPorts)
-	loggingRouter.Path("/api/v1/upload").Methods("PUT").HandlerFunc(handler.UploadExistingApp)
-	loggingRouter.Path("/api/v1/download").Methods("GET").HandlerFunc(handler.DownloadApp)
-	loggingRouter.Path("/api/v1/airgap/install").Methods("POST").HandlerFunc(handler.UploadInitialAirgapApp)
+	handlers.RegisterTokenAuthRoutes(handler, debugRouter, loggingRouter)
 
 	/**********************************************************************
 	* Session auth routes
