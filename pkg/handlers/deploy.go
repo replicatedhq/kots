@@ -6,9 +6,12 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/blang/semver"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/buildversion"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
@@ -24,6 +27,7 @@ type DeployAppVersionRequest struct {
 
 type DeployAppVersionResponse struct {
 	Success bool   `json:"success"`
+	Status  string `json:"status"`
 	Error   string `json:"error,omitempty"`
 }
 
@@ -140,5 +144,59 @@ func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 
 	deployAppVersionResponse.Success = true
 
-	JSON(w, 204, deployAppVersionResponse)
+	JSON(w, http.StatusOK, deployAppVersionResponse)
+}
+
+type AdminConsoleUpgradeError struct {
+	IsCritical bool
+	Message    string
+}
+
+func (e AdminConsoleUpgradeError) Error() string {
+	return e.Message
+}
+
+func getKotsUpgradeVersion(kotsKinds *kotsutil.KotsKinds, latestVersion string) (string, error) {
+	if !kotsutil.IsKotsAutoUpgradeSupported(&kotsKinds.KotsApplication) {
+		return "", AdminConsoleUpgradeError{
+			Message: "admin console auto updates feature flag not enabled",
+		}
+	}
+
+	if kotsKinds.KotsApplication.Spec.MinKotsVersion == "" && kotsKinds.KotsApplication.Spec.TargetKotsVersion == "" {
+		return "", AdminConsoleUpgradeError{
+			Message: "no version requirement found in app",
+		}
+	}
+
+	kotsUpgradeVersion := kotsKinds.KotsApplication.Spec.MinKotsVersion
+	if kotsKinds.KotsApplication.Spec.TargetKotsVersion != "" {
+		kotsUpgradeVersion = kotsKinds.KotsApplication.Spec.TargetKotsVersion
+	} else if latestVersion != "" {
+		kotsUpgradeVersion = latestVersion
+	}
+
+	upgradeSemver, err := semver.ParseTolerant(kotsUpgradeVersion)
+	if err != nil {
+		return "", AdminConsoleUpgradeError{
+			Message:    errors.Wrapf(err, "failed to parse upgrade version %s", kotsUpgradeVersion).Error(),
+			IsCritical: true,
+		}
+	}
+
+	thisSemver, err := semver.ParseTolerant(buildversion.Version())
+	if err != nil {
+		return "", AdminConsoleUpgradeError{
+			Message:    errors.Wrapf(err, "failed to parse this version %s", buildversion.Version()).Error(),
+			IsCritical: true,
+		}
+	}
+
+	if thisSemver.GTE(upgradeSemver) {
+		return "", AdminConsoleUpgradeError{
+			Message: "admin console is already at or above target version",
+		}
+	}
+
+	return kotsUpgradeVersion, nil
 }

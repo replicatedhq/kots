@@ -47,7 +47,7 @@ class AppVersionHistory extends Component {
     showDiffOverlay: false,
     firstSequence: 0,
     secondSequence: 0,
-    updateChecker: new Repeater(),
+    appUpdateChecker: new Repeater(),
     uploadProgress: 0,
     uploadSize: 0,
     uploadResuming: false,
@@ -64,7 +64,13 @@ class AppVersionHistory extends Component {
     displayErrorModal: false,
     displayConfirmDeploymentModal: false,
     confirmType: "",
-    isSkipPreflights: false
+    isSkipPreflights: false,
+    displayKotsUpdateModal: false,
+    kotsUpdateChecker: new Repeater(),
+    kotsUpdateRunning: false,
+    kotsUpdateStatus: undefined,
+    kotsUpdateMessage: undefined,
+    kotsUpdateError: undefined,
   }
 
   // moving this out of the state because new repeater instances were getting created
@@ -96,7 +102,7 @@ class AppVersionHistory extends Component {
   }
 
   componentWillUnmount() {
-    this.state.updateChecker.stop();
+    this.state.appUpdateChecker.stop();
     this.state.versionHistoryJob.stop();
     for (const j in this.versionDownloadStatusJobs) {
       this.versionDownloadStatusJobs[j].stop();
@@ -222,7 +228,7 @@ class AppVersionHistory extends Component {
   }
 
   onUploadComplete = () => {
-    this.state.updateChecker.start(this.updateStatus, 1000);
+    this.state.appUpdateChecker.start(this.getAppUpdateStatus, 1000);
     this.setState({
       uploadingAirgapFile: false,
       uploadProgress: 0,
@@ -397,6 +403,90 @@ class AppVersionHistory extends Component {
           }
         });
       });
+  }
+
+  upgradeAdminConsole = version => {
+    const { app } = this.props;
+
+    this.setState({
+      displayKotsUpdateModal: true,
+      kotsUpdateRunning: true,
+      kotsUpdateStatus: undefined,
+      kotsUpdateMessage: undefined,
+      kotsUpdateError: undefined,
+    });
+
+    fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/sequence/${version.parentSequence}/update-console`, {
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+        const response = await res.json();
+          this.setState({
+            kotsUpdateRunning: false,
+            kotsUpdateStatus: 'failed',
+            kotsUpdateError: response.error,
+          });
+          return;
+        }
+        this.state.kotsUpdateChecker.start(this.getKotsUpdateStatus, 1000);
+      })
+      .catch((err) => {
+        console.log(err);
+        this.setState({
+          kotsUpdateRunning: false,
+          kotsUpdateStatus: 'failed',
+          kotsUpdateError: err?.message || "Something went wrong, please try again.",
+        });
+      });
+  }
+
+  getKotsUpdateStatus = () => {
+    const { app } = this.props;
+
+    return new Promise((resolve, reject) => {
+      fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/task/update-admin-console`, {
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      method: "GET",
+    })
+      .then(async (res) => {
+        if (res.status === 404) {
+          // TODO: remove... this is for testing with older kots releases
+          this.state.kotsUpdateChecker.stop();
+          window.location.reload();
+        }
+
+        const response = await res.json();
+        if (response.status === 'successful') {
+          window.location.reload();
+        } else {
+          this.setState({
+            kotsUpdateRunning: true,
+            kotsUpdateStatus: response.status,
+            kotsUpdateMessage: response.message,
+            kotsUpdateError: response.error,
+          });
+        }
+        resolve();
+      })
+      .catch((err) => {
+        console.log("failed to get upgrade status", err);
+        this.setState({
+          kotsUpdateRunning: false,
+          kotsUpdateStatus: 'waiting',
+          kotsUpdateMessage: 'Waiting for pods to restart...',
+          kotsUpdateError: '',
+        });
+        resolve();
+      });
+    });
   }
 
   updateVersionDownloadStatus = version => {
@@ -674,7 +764,7 @@ class AppVersionHistory extends Component {
             }, 3000);
           }
         } else {
-          this.state.updateChecker.start(this.updateStatus, 1000);
+          this.state.appUpdateChecker.start(this.getAppUpdateStatus, 1000);
         }
       })
       .catch((err) => {
@@ -686,7 +776,7 @@ class AppVersionHistory extends Component {
       });
   }
 
-  updateStatus = () => {
+  getAppUpdateStatus = () => {
     const { app } = this.props;
 
     return new Promise((resolve, reject) => {
@@ -701,7 +791,7 @@ class AppVersionHistory extends Component {
           const response = await res.json();
 
           if (response.status !== "running" && !this.props.isBundleUploading) {
-            this.state.updateChecker.stop();
+            this.state.appUpdateChecker.stop();
 
             this.setState({
               checkingForUpdates: false,
@@ -990,6 +1080,7 @@ class AppVersionHistory extends Component {
         deployVersion={this.deployVersion}
         redeployVersion={this.redeployVersion}
         downloadVersion={this.downloadVersion}
+        upgradeAdminConsole={this.upgradeAdminConsole}
         handleViewLogs={this.handleViewLogs}
         handleSelectReleasesToDiff={this.handleSelectReleasesToDiff}
         renderVersionDownloadStatus={this.renderVersionDownloadStatus}
@@ -1286,6 +1377,31 @@ class AppVersionHistory extends Component {
               <div className="flex u-paddingTop--10">
                 <button className="btn secondary blue" onClick={() => this.setState({ displayConfirmDeploymentModal: false, confirmType: "", versionToDeploy: null })}>Cancel</button>
                 <button className="u-marginLeft--10 btn primary" onClick={this.state.confirmType === "redeploy" ? this.finalizeRedeployment : () => this.finalizeDeployment(false)}>Yes, {this.state.confirmType === "rollback" ? "rollback" : this.state.confirmType === "redeploy" ? "redeploy" : "deploy"}</button>
+              </div>
+            </div>
+          </Modal>
+        }
+
+        {this.state.displayKotsUpdateModal &&
+          <Modal
+            isOpen={true}
+            onRequestClose={() => this.setState({ displayKotsUpdateModal: false })}
+            contentLabel="Upgrade is in progress"
+            ariaHideApp={false}
+            className="Modal DefaultSize"
+          >
+            <div className="Modal-body u-textAlign--center">
+              <div className="flex-column justifyContent--center alignItems--center">
+                <p className="u-fontSize--large u-textColor--primary u-lineHeight--bold u-marginBottom--10">Upgrading...</p>
+                <Loader className="flex alignItems--center" size="32" />
+                {this.state.kotsUpdateStatus ?  
+                  <p className="u-fontSize--normal u-textColor--primary u-lineHeight--normal u-marginBottom--10">{ this.state.kotsUpdateStatus }</p>
+                  : null
+                }
+                {this.state.kotsUpdateMessage ?  
+                  <p className="u-fontSize--normal u-textColor--primary u-lineHeight--normal u-marginBottom--10">{ this.state.kotsUpdateMessage }</p>
+                  : null
+                }
               </div>
             </div>
           </Modal>

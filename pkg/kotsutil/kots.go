@@ -805,3 +805,17 @@ func GetIncompatbileKotsVersionMessage(kotsApplication kotsv1beta1.Application, 
 		desiredKotsVersion,
 	)
 }
+
+func IsKotsAutoUpgradeSupported(app *kotsv1beta1.Application) bool {
+	if app == nil {
+		return false
+	}
+
+	for _, f := range app.Spec.ConsoleFeatureFlags {
+		if f == "admin-console-auto-updates" {
+			return true
+		}
+	}
+
+	return false
+}

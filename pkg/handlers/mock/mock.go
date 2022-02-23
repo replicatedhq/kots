@@ -406,6 +406,18 @@ func (mr *MockKOTSHandlerMockRecorder) GenerateNodeJoinCommandWorker(w, r interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateNodeJoinCommandWorker", reflect.TypeOf((*MockKOTSHandler)(nil).GenerateNodeJoinCommandWorker), w, r)
 }
 
+// GetAdminConsoleUpdateStatus mocks base method.
+func (m *MockKOTSHandler) GetAdminConsoleUpdateStatus(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetAdminConsoleUpdateStatus", w, r)
+}
+
+// GetAdminConsoleUpdateStatus indicates an expected call of GetAdminConsoleUpdateStatus.
+func (mr *MockKOTSHandlerMockRecorder) GetAdminConsoleUpdateStatus(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAdminConsoleUpdateStatus", reflect.TypeOf((*MockKOTSHandler)(nil).GetAdminConsoleUpdateStatus), w, r)
+}
+
 // GetAirgapInstallStatus mocks base method.
 func (m *MockKOTSHandler) GetAirgapInstallStatus(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
@@ -1184,6 +1196,18 @@ func (m *MockKOTSHandler) SyncLicense(w http.ResponseWriter, r *http.Request) {
 func (mr *MockKOTSHandlerMockRecorder) SyncLicense(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SyncLicense", reflect.TypeOf((*MockKOTSHandler)(nil).SyncLicense), w, r)
+}
+
+// UpdateAdminConsole mocks base method.
+func (m *MockKOTSHandler) UpdateAdminConsole(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UpdateAdminConsole", w, r)
+}
+
+// UpdateAdminConsole indicates an expected call of UpdateAdminConsole.
+func (mr *MockKOTSHandlerMockRecorder) UpdateAdminConsole(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAdminConsole", reflect.TypeOf((*MockKOTSHandler)(nil).UpdateAdminConsole), w, r)
 }
 
 // UpdateAppConfig mocks base method.

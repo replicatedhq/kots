@@ -33,6 +33,16 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
+type IncompatibleAppError struct {
+	KotsApplication *kotsv1beta1.Application
+	License         *kotsv1beta1.License
+	Message         string
+}
+
+func (e IncompatibleAppError) Error() string {
+	return e.Message
+}
+
 const DefaultMetadata = `apiVersion: kots.io/v1beta1
 kind: Application
 metadata:
@@ -204,9 +214,10 @@ func downloadReplicated(
 		isInstall := appSequence == 0
 		isCompatible := kotsutil.IsKotsVersionCompatibleWithApp(*application, isInstall)
 		if !isCompatible {
-			return nil, util.ActionableError{
-				NoRetry: true,
-				Message: kotsutil.GetIncompatbileKotsVersionMessage(*application, isInstall),
+			return nil, IncompatibleAppError{
+				KotsApplication: application,
+				License:         license,
+				Message:         kotsutil.GetIncompatbileKotsVersionMessage(*application, isInstall),
 			}
 		}
 	}

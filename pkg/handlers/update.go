@@ -1,6 +1,9 @@
 package handlers
 
 import (
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -11,8 +14,12 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/airgap"
+	"github.com/replicatedhq/kots/pkg/buildversion"
+	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/updatechecker"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -197,4 +204,152 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 
 	logger.Error(errors.Errorf("unsupported content type: %s", r.Header.Get("Content-Type")))
 	w.WriteHeader(http.StatusBadRequest)
+}
+
+type UpdateAdminConsoleResponse struct {
+	Success      bool   `json:"success"`
+	UpdateStatus string `json:"updateStatus"`
+	Error        string `json:"error,omitempty"`
+}
+
+func (h *Handler) UpdateAdminConsole(w http.ResponseWriter, r *http.Request) {
+	updateAdminConsoleResponse := UpdateAdminConsoleResponse{
+		Success: false,
+	}
+
+	appSlug := mux.Vars(r)["appSlug"]
+	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to decode UpdateAdminConsole request body"))
+		updateAdminConsoleResponse.Error = err.Error()
+		JSON(w, http.StatusInternalServerError, updateAdminConsoleResponse)
+		return
+	}
+
+	status, _, err := kotsadm.GetKotsUpdateStatus()
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to check update status"))
+		updateAdminConsoleResponse.Error = err.Error()
+		JSON(w, http.StatusInternalServerError, updateAdminConsoleResponse)
+		return
+	}
+
+	logger.Debugf("Last Admin Console update status is %s", status)
+
+	if status == kotsadm.UpdateRunning {
+		updateAdminConsoleResponse.UpdateStatus = string(status)
+		JSON(w, http.StatusOK, updateAdminConsoleResponse)
+		return
+	}
+
+	a, err := store.GetStore().GetAppFromSlug(appSlug)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get app from slug"))
+		updateAdminConsoleResponse.Error = err.Error()
+		JSON(w, http.StatusInternalServerError, updateAdminConsoleResponse)
+		return
+	}
+
+	// Not using GetAppVersionArchive here because version is expected to be pending download at this point
+	version, err := store.GetStore().GetAppVersion(a.ID, int64(sequence))
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get app version"))
+		updateAdminConsoleResponse.Error = err.Error()
+		JSON(w, http.StatusInternalServerError, updateAdminConsoleResponse)
+		return
+	}
+
+	latestVersion, _ := findLatestKotsVersion(a.ID, version.KOTSKinds.License)
+
+	targetVersion, err := getKotsUpgradeVersion(version.KOTSKinds, latestVersion)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to find target version"))
+		updateAdminConsoleResponse.Error = err.Error()
+		JSON(w, http.StatusInternalServerError, updateAdminConsoleResponse)
+		return
+	}
+
+	logger.Debugf("Updating Admin Console to version %s", targetVersion)
+
+	err = kotsadm.UpdateToVersion(targetVersion)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to check update status"))
+		updateAdminConsoleResponse.Error = err.Error()
+		JSON(w, http.StatusInternalServerError, updateAdminConsoleResponse)
+		return
+	}
+
+	updateAdminConsoleResponse.Success = true
+
+	JSON(w, http.StatusOK, updateAdminConsoleResponse)
+}
+
+func findLatestKotsVersion(appID string, license *kotsv1beta1.License) (string, error) {
+	url := fmt.Sprintf("%s/admin-console/version/latest", license.Spec.Endpoint)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create new request")
+	}
+
+	reportingInfo := reporting.GetReportingInfo(appID)
+	reporting.InjectReportingInfoHeaders(req, reportingInfo)
+
+	req.Header.Add("User-Agent", fmt.Sprintf("KOTS/%s", buildversion.Version()))
+	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.Spec.LicenseID, license.Spec.LicenseID)))))
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to execute get request")
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to read response body")
+	}
+
+	if resp.StatusCode >= 400 {
+		if len(body) > 0 {
+			return "", util.ActionableError{Message: string(body)}
+		}
+		return "", errors.Errorf("unexpected result from get request: %d", resp.StatusCode)
+	}
+
+	var versionInfo struct {
+		Tag string `json:"tag"`
+	}
+	if err := json.Unmarshal(body, &versionInfo); err != nil {
+		return "", errors.Wrapf(err, "failed to unmarshal response: %s", body)
+	}
+
+	return versionInfo.Tag, nil
+}
+
+type GetAdminConsoleUpdateStatusResponse struct {
+	Success bool   `json:"success"`
+	Status  string `json:"status"`
+	Message string `json:"message"`
+	Error   string `json:"error"`
+}
+
+func (h *Handler) GetAdminConsoleUpdateStatus(w http.ResponseWriter, r *http.Request) {
+	getAdminConsoleUpdateStatusResponse := GetAdminConsoleUpdateStatusResponse{
+		Success: false,
+	}
+
+	status, message, err := kotsadm.GetKotsUpdateStatus()
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to check update status"))
+		getAdminConsoleUpdateStatusResponse.Error = err.Error()
+		JSON(w, http.StatusInternalServerError, getAdminConsoleUpdateStatusResponse)
+		return
+	}
+
+	logger.Debugf("Current Admin Console update status is %s", status)
+
+	getAdminConsoleUpdateStatusResponse.Success = true
+	getAdminConsoleUpdateStatusResponse.Status = string(status)
+	getAdminConsoleUpdateStatusResponse.Message = message
+	JSON(w, http.StatusOK, getAdminConsoleUpdateStatusResponse)
 }
