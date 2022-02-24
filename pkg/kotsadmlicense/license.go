@@ -18,7 +18,7 @@ import (
 )
 
 func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kotsv1beta1.License, bool, error) {
-	latestVersion, err := store.GetStore().GetLatestAppVersion(a.ID)
+	latestVersion, err := store.GetStore().GetLatestAppVersion(a.ID, true)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "failed to get latest app version")
 	}

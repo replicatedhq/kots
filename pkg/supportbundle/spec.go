@@ -638,7 +638,7 @@ func makeAppVersionArchiveCollector(app *apptypes.App, dirPrefix string) (*troub
 		return nil, errors.Wrapf(err, "failed to create temp file %s", fileName)
 	}
 
-	latestVersion, err := store.GetStore().GetLatestAppVersion(app.ID)
+	latestVersion, err := store.GetStore().GetLatestAppVersion(app.ID, true)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get latest app version")
 	}

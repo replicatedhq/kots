@@ -150,7 +150,11 @@ class AppConfig extends Component {
         "Content-Type": "application/json",
       }
     }).then(async (response) => {
-      const data = await response.json()
+      if (!response.ok) {
+        const res = await response.json();
+        throw new Error(res.error);
+      }
+      const data = await response.json();
       this.setState({
         configGroups: data.configGroups,
         changed: false,
@@ -167,7 +171,7 @@ class AppConfig extends Component {
         errorTitle: `Failed to get config data`,
         displayErrorModal: true,
         gettingConfigErrMsg: err ? err.message : "Something went wrong, please try again."
-      })
+      });
     });
   }
 
@@ -421,7 +425,7 @@ class AppConfig extends Component {
     if (!match.params.sequence) {return false;}
     const sequence = parseInt(match.params.sequence);
     const isCurrentVersion = app.downstreams[0]?.currentVersion?.sequence === sequence;
-    const isLatestVersion = app.downstreams[0]?.pendingVersions?.length && app.downstreams[0]?.pendingVersions[0]?.sequence === sequence;
+    const isLatestVersion = app.currentSequence === sequence;
     const pendingVersion = find(app.downstreams[0]?.pendingVersions, { sequence: sequence });
     return !isLatestVersion && !isCurrentVersion && !pendingVersion?.semver;
   }

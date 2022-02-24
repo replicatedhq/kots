@@ -286,6 +286,18 @@ func (mr *MockKOTSHandlerMockRecorder) DisableAppGitOps(w, r interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DisableAppGitOps", reflect.TypeOf((*MockKOTSHandler)(nil).DisableAppGitOps), w, r)
 }
 
+// DownloadAppVersion mocks base method.
+func (m *MockKOTSHandler) DownloadAppVersion(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "DownloadAppVersion", w, r)
+}
+
+// DownloadAppVersion indicates an expected call of DownloadAppVersion.
+func (mr *MockKOTSHandlerMockRecorder) DownloadAppVersion(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DownloadAppVersion", reflect.TypeOf((*MockKOTSHandler)(nil).DownloadAppVersion), w, r)
+}
+
 // DownloadSnapshotLogs mocks base method.
 func (m *MockKOTSHandler) DownloadSnapshotLogs(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
@@ -500,6 +512,18 @@ func (m *MockKOTSHandler) GetAppStatus(w http.ResponseWriter, r *http.Request) {
 func (mr *MockKOTSHandlerMockRecorder) GetAppStatus(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppStatus", reflect.TypeOf((*MockKOTSHandler)(nil).GetAppStatus), w, r)
+}
+
+// GetAppVersionDownloadStatus mocks base method.
+func (m *MockKOTSHandler) GetAppVersionDownloadStatus(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetAppVersionDownloadStatus", w, r)
+}
+
+// GetAppVersionDownloadStatus indicates an expected call of GetAppVersionDownloadStatus.
+func (mr *MockKOTSHandlerMockRecorder) GetAppVersionDownloadStatus(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppVersionDownloadStatus", reflect.TypeOf((*MockKOTSHandler)(nil).GetAppVersionDownloadStatus), w, r)
 }
 
 // GetAppVersionHistory mocks base method.

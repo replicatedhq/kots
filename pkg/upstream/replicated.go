@@ -72,6 +72,8 @@ type ChannelRelease struct {
 	ChannelSequence int    `json:"channelSequence"`
 	ReleaseSequence int    `json:"releaseSequence"`
 	VersionLabel    string `json:"versionLabel"`
+	CreatedAt       string `json:"createdAt"`
+	ReleaseNotes    string `json:"releaseNotes"`
 }
 
 func (this ReplicatedCursor) Equal(other ReplicatedCursor) bool {
@@ -118,9 +120,18 @@ func getUpdatesReplicated(u *url.URL, fetchOptions *types.FetchOptions) ([]types
 
 	updates := []types.Update{}
 	for _, pendingRelease := range pendingReleases {
+		var releasedAt *time.Time
+		r, err := time.Parse(time.RFC3339, pendingRelease.CreatedAt)
+		if err == nil {
+			releasedAt = &r
+		}
 		updates = append(updates, types.Update{
+			ChannelID:    fetchOptions.CurrentChannelID,
+			ChannelName:  fetchOptions.CurrentChannelName,
 			Cursor:       strconv.Itoa(pendingRelease.ChannelSequence),
 			VersionLabel: pendingRelease.VersionLabel,
+			ReleasedAt:   releasedAt,
+			ReleaseNotes: pendingRelease.ReleaseNotes,
 		})
 	}
 	return updates, nil

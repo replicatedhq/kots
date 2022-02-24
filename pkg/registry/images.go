@@ -90,7 +90,7 @@ func DeleteUnusedImages(appID string, ignoreRollback bool) error {
 
 		if !ignoreRollback {
 			// rollback support is detected from the latest available version, not the currently deployed one
-			latestVersion, err := store.GetStore().GetLatestAppVersion(a.ID)
+			latestVersion, err := store.GetStore().GetLatestAppVersion(a.ID, true)
 			if err != nil {
 				return errors.Wrap(err, "failed to get latest app version")
 			}

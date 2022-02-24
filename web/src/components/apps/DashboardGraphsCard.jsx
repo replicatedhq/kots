@@ -178,7 +178,7 @@ export default class DashboardGraphsCard extends React.Component {
     }
 
     return (
-      <div className="dashboard-card graph LicenseCard-content--wrapper flex-column flex1" key={chart.title}>
+      <div className="dashboard-card graph GraphCard-content--wrapper flex-column flex1" key={chart.title}>
         <XYPlot width={360} height={180} onMouseLeave={() => this.setState({ crosshairValues: [] })} margin={{ left: 60 }}>
           <VerticalGridLines />
           <HorizontalGridLines />

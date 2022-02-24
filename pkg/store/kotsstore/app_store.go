@@ -162,7 +162,7 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 	}
 
 	if app.CurrentSequence != -1 { // this means that there's at least 1 version available
-		latestVersion, err := s.GetLatestAppVersion(app.ID)
+		latestVersion, err := s.GetLatestAppVersion(app.ID, true)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get latest app version")
 		}

@@ -15,6 +15,7 @@ import (
 	preflighttypes "github.com/replicatedhq/kots/pkg/preflight/types"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
+	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 )
 
 type GetPreflightResultResponse struct {
@@ -102,28 +103,40 @@ func (h *Handler) IgnorePreflightRBACErrors(w http.ResponseWriter, r *http.Reque
 	appSlug := mux.Vars(r)["appSlug"]
 	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(400)
+		logger.Error(errors.Wrap(err, "failed to parse sequence number"))
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		logger.Error(errors.Wrap(err, "failed to get app from slug"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	status, err := store.GetStore().GetDownstreamVersionStatus(foundApp.ID, int64(sequence))
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get downstream version status"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if status == storetypes.VersionPendingDownload {
+		logger.Error(errors.Errorf("not ignoring preflight rbac errors for version %d because it's %s", sequence, status))
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	if err := store.GetStore().SetIgnorePreflightPermissionErrors(foundApp.ID, int64(sequence)); err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		logger.Error(errors.Wrap(err, "failed to ignore preflight permission errors"))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	archiveDir, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		logger.Error(errors.Wrap(err, "failed to create temp dir"))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -136,8 +149,8 @@ func (h *Handler) IgnorePreflightRBACErrors(w http.ResponseWriter, r *http.Reque
 
 	err = store.GetStore().GetAppVersionArchive(foundApp.ID, int64(sequence), archiveDir)
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		logger.Error(errors.Wrap(err, "failed to get app version archive"))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -145,40 +158,52 @@ func (h *Handler) IgnorePreflightRBACErrors(w http.ResponseWriter, r *http.Reque
 	go func() {
 		defer os.RemoveAll(archiveDir)
 		if err := preflight.Run(foundApp.ID, foundApp.Slug, int64(sequence), foundApp.IsAirgap, archiveDir); err != nil {
-			logger.Error(err)
+			logger.Error(errors.Wrap(err, "failed to run preflights"))
 			return
 		}
 	}()
 
-	JSON(w, 200, struct{}{})
+	JSON(w, http.StatusOK, struct{}{})
 }
 
 func (h *Handler) StartPreflightChecks(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(400)
+		logger.Error(errors.Wrap(err, "failed to parse sequence number"))
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		logger.Error(errors.Wrap(err, "failed to get app from slug"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	status, err := store.GetStore().GetDownstreamVersionStatus(foundApp.ID, int64(sequence))
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get downstream version status"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if status == storetypes.VersionPendingDownload {
+		logger.Error(errors.Errorf("not running preflights for version %d because it's %s", sequence, status))
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	if err := store.GetStore().ResetPreflightResults(foundApp.ID, int64(sequence)); err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		logger.Error(errors.Wrap(err, "failed to reset preflight results"))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	archiveDir, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		logger.Error(errors.Wrap(err, "failed to create temp dir"))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -191,8 +216,8 @@ func (h *Handler) StartPreflightChecks(w http.ResponseWriter, r *http.Request) {
 
 	err = store.GetStore().GetAppVersionArchive(foundApp.ID, int64(sequence), archiveDir)
 	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
+		logger.Error(errors.Wrap(err, "failed to get app version archive"))
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -200,12 +225,12 @@ func (h *Handler) StartPreflightChecks(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		defer os.RemoveAll(archiveDir)
 		if err := preflight.Run(foundApp.ID, foundApp.Slug, int64(sequence), foundApp.IsAirgap, archiveDir); err != nil {
-			logger.Error(err)
+			logger.Error(errors.Wrap(err, "failed to run preflights"))
 			return
 		}
 	}()
 
-	JSON(w, 200, struct{}{})
+	JSON(w, http.StatusOK, struct{}{})
 }
 
 func (h *Handler) GetPreflightCommand(w http.ResponseWriter, r *http.Request) {

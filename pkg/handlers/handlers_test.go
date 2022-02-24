@@ -556,6 +556,28 @@ var HandlerPolicyTests = map[string][]HandlerPolicyTest{
 			ExpectStatus: http.StatusOK,
 		},
 	},
+	"DownloadAppVersion": {
+		{
+			Vars:         map[string]string{"appSlug": "my-app", "sequence": "1"},
+			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
+			SessionRoles: []string{rbac.ClusterAdminRoleID},
+			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
+				handlerRecorder.DownloadAppVersion(gomock.Any(), gomock.Any())
+			},
+			ExpectStatus: http.StatusOK,
+		},
+	},
+	"GetAppVersionDownloadStatus": {
+		{
+			Vars:         map[string]string{"appSlug": "my-app", "sequence": "1"},
+			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
+			SessionRoles: []string{rbac.ClusterAdminRoleID},
+			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
+				handlerRecorder.GetAppVersionDownloadStatus(gomock.Any(), gomock.Any())
+			},
+			ExpectStatus: http.StatusOK,
+		},
+	},
 	"GetAppRenderedContents": {
 		{
 			Vars:         map[string]string{"appSlug": "my-app", "sequence": "1"},

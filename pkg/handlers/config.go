@@ -271,18 +271,33 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	appLicense, err := store.GetStore().GetLatestLicenseForApp(foundApp.ID)
-	if err != nil {
-		logger.Error(err)
-		currentAppConfigResponse.Error = "failed to get license for app"
-		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
-		return
-	}
-
 	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
 	if err != nil {
 		logger.Error(err)
 		currentAppConfigResponse.Error = "failed to parse app sequence"
+		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
+		return
+	}
+
+	status, err := store.GetStore().GetDownstreamVersionStatus(foundApp.ID, int64(sequence))
+	if err != nil {
+		logger.Error(err)
+		currentAppConfigResponse.Error = "failed to get downstream version status"
+		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
+		return
+	}
+	if status == storetypes.VersionPendingDownload {
+		err := errors.Errorf("not returning config for version %d because it's %s", sequence, status)
+		logger.Error(err)
+		currentAppConfigResponse.Error = err.Error()
+		JSON(w, http.StatusBadRequest, currentAppConfigResponse)
+		return
+	}
+
+	appLicense, err := store.GetStore().GetLatestLicenseForApp(foundApp.ID)
+	if err != nil {
+		logger.Error(err)
+		currentAppConfigResponse.Error = "failed to get license for app"
 		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
 		return
 	}
@@ -367,7 +382,7 @@ func isVersionConfigEditable(app *apptypes.App, sequence int64) (bool, error) {
 	}
 
 	for _, d := range downstreams {
-		versions, err := store.GetStore().GetAppVersions(app.ID, d.ClusterID)
+		versions, err := store.GetStore().GetAppVersions(app.ID, d.ClusterID, true)
 		if err != nil {
 			return false, errors.Wrap(err, "failed to get downstream versions")
 		}
@@ -505,7 +520,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 		return updateAppConfigResponse, err
 	}
 
-	latestVersion, err := store.GetStore().GetLatestAppVersion(app.ID)
+	latestVersion, err := store.GetStore().GetLatestAppVersion(app.ID, true)
 	if err != nil {
 		updateAppConfigResponse.Error = "failed to get latest app version"
 		return updateAppConfigResponse, err
@@ -706,7 +721,7 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	latestVersion, err := store.GetStore().GetLatestAppVersion(foundApp.ID)
+	latestVersion, err := store.GetStore().GetLatestAppVersion(foundApp.ID, true)
 	if err != nil {
 		setAppConfigValuesResponse.Error = "failed to get latest app version"
 		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))

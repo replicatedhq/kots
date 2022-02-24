@@ -59,8 +59,35 @@ function getPreflightState(version) {
   };
 }
 
-function renderVersionAction(version, latestVersion, nothingToCommitDiff, app, history, deployVersion, showDownstreamReleaseNotes, viewLogs) {
+function renderReleaseNotes(version, showReleaseNotes) {
+  if (!version?.releaseNotes) {
+    return null;
+  }
+  return (
+    <div>
+      <span className="icon releaseNotes--icon u-marginRight--10 u-cursor--pointer" onClick={() => showReleaseNotes(version?.releaseNotes)} data-tip="View release notes" />
+      <ReactTooltip effect="solid" className="replicated-tooltip" />
+    </div>
+  );
+}
+
+function renderVersionAction(version, nothingToCommitDiff, app, history, actionFn, showReleaseNotes, viewLogs, isDownloading) {
   const downstream = app.downstreams[0];
+
+  if (version.status === "pending_download") {
+    return (
+      <div className="flex flex1 justifyContent--flexEnd alignItems--center">
+        {renderReleaseNotes(version, showReleaseNotes)}
+        <button
+          className={"btn secondary blue"}
+          disabled={isDownloading}
+          onClick={() => actionFn(version)}
+        >
+          {isDownloading ? "Downloading" : "Download"}
+        </button>
+      </div>
+    );
+  }
 
   if (downstream.gitops?.enabled) {
     if (version.gitDeployable === false) {
@@ -79,9 +106,8 @@ function renderVersionAction(version, latestVersion, nothingToCommitDiff, app, h
     );
   }
 
-  
   const isCurrentVersion = version.sequence === downstream.currentVersion?.sequence;
-  const isLatestVersion = version.sequence === latestVersion.sequence;
+  const isLatestVersion = version.sequence === app.currentSequence;
   const isPendingVersion = find(downstream.pendingVersions, { sequence: version.sequence });
   const isPastVersion = find(downstream.pastVersions, { sequence: version.sequence });
   const isPendingDeployedVersion = find(downstream.pendingVersions, { sequence: version.sequence, status: "deployed" });
@@ -108,12 +134,8 @@ function renderVersionAction(version, latestVersion, nothingToCommitDiff, app, h
   }
   return (
     <div className="flex flex1 justifyContent--flexEnd alignItems--center">
-      {version?.releaseNotes &&
-        <div>
-          <span className="icon releaseNotes--icon u-marginRight--10 u-cursor--pointer" onClick={() => showDownstreamReleaseNotes(version?.releaseNotes)} data-tip="View release notes" />
-          <ReactTooltip effect="solid" className="replicated-tooltip" />
-        </div>
-      }
+      {renderReleaseNotes(version, showReleaseNotes)}
+
       <div>
         {version.status === "pending_preflight" ?
           <div className="u-marginRight--10 u-position--relative">
@@ -152,7 +174,7 @@ function renderVersionAction(version, latestVersion, nothingToCommitDiff, app, h
         <button
           className={classNames("btn u-marginLeft--10", { "secondary dark": isRollback, "secondary blue": isSecondaryBtn, "primary blue": isPrimaryButton })}
           disabled={version.status === "deploying"}
-          onClick={() => needsConfiguration ? history.push(`/app/${app.slug}/config/${version.sequence}`) : isRollback ? deployVersion(version, true) : deployVersion(version)}
+          onClick={() => needsConfiguration ? history.push(`/app/${app.slug}/config/${version.sequence}`) : isRollback ? actionFn(version, true) : actionFn(version)}
         >
           {deployButtonStatus(downstream, version, app)}
         </button>
@@ -171,7 +193,7 @@ function renderViewPreflights(version, app, match) {
   );
 }
 
-function renderVersionStatus(version, app, match, viewLogs) {
+function renderVersionStatus(version, app, viewLogs) {
   const downstream = app.downstreams?.length && app.downstreams[0];
   if (!downstream) {
     return null;
@@ -179,17 +201,6 @@ function renderVersionStatus(version, app, match, viewLogs) {
 
   const isPastVersion = find(downstream.pastVersions, { sequence: version.sequence });
   const isPendingDeployedVersion = find(downstream.pendingVersions, { sequence: version.sequence, status: "deployed" });
-  const clusterSlug = downstream.cluster?.slug;
-  
-  let preflightBlock = null;
-  if (version.status === "pending_preflight") {
-    preflightBlock = (
-      <span className="flex u-marginLeft--5 alignItems--center">
-        <Loader size="20" />
-      </span>);
-  } else if (app.hasPreflight) {
-    preflightBlock = (<Link to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version.sequence}`} className="replicated-link u-marginLeft--5 u-fontSize--small">View preflights</Link>);
-  }
   
   if (!isPastVersion && !isPendingDeployedVersion) {
     if (version.status === "deployed" || version.status === "merged") {
@@ -241,8 +252,14 @@ function renderVersionStatus(version, app, match, viewLogs) {
           <Loader className="flex alignItems--center u-marginRight--5" size="16" />
             Deploying
         </span>);
+    } else if (version.status === "pending_download") {
+      return (
+        <div className="flex alignItems--center">
+          <span className="status-tag unknown flex-auto u-marginRight--10">Pending download</span>
+        </div>
+      );
     } else {
-      return <span className="status-tag unknown flex-atuo"> {Utilities.toTitleCase(version.status).replace("_", " ")} </span>
+      return <span className="status-tag unknown flex-auto"> {Utilities.toTitleCase(version.status).replace("_", " ")} </span>
     }
   }
 }
@@ -250,40 +267,46 @@ function renderVersionStatus(version, app, match, viewLogs) {
 export default function AppVersionHistoryRow(props) {
   const { version, selectedDiffReleases, nothingToCommit,
     isChecked, isNew, renderSourceAndDiff, handleSelectReleasesToDiff,
-    yamlErrorsDetails, gitopsEnabled, toggleShowDetailsModal, latestVersion } = props;
+    yamlErrorsDetails, gitopsEnabled, toggleShowDetailsModal,
+    renderVersionDownloadStatus, isDownloading } = props;
   
   const hideSourceDiff = version?.source.includes("Airgap Install") || version?.source.includes("Online Install");
+
+  let actionFn = props.deployVersion;
+  if (version.status === "failed" || version.status === "deployed") {
+    actionFn = props.redeployVersion;
+  } else if (version.status === "pending_download") {
+    actionFn = props.downloadVersion;
+  }
 
   return (
     <div
       key={version.sequence}
-      className={classNames(`VersionHistoryDeploymentRow ${version.status} flex flex-auto`, { "overlay": selectedDiffReleases, "disabled": nothingToCommit, "selected": (isChecked && !nothingToCommit), "is-new": isNew })}
+      className={classNames(`VersionHistoryRowWrapper ${version.status} flex-column flex-auto`, { "overlay": selectedDiffReleases, "disabled": nothingToCommit, "selected": (isChecked && !nothingToCommit), "is-new": isNew })}
       onClick={() => selectedDiffReleases && !nothingToCommit && handleSelectReleasesToDiff(version, !isChecked)}
     >
-      {selectedDiffReleases && <div className={classNames("checkbox u-marginRight--20", { "checked": (isChecked && !nothingToCommit) }, { "disabled": nothingToCommit })} />}
-      <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex1 u-paddingRight--20`}>
-        <div className="flex alignItems--center">
-          <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">{version.versionLabel || version.title}</p>
-          <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10" style={{ marginTop: "2px" }}>Sequence {version.sequence}</p>
+      <div className="VersionHistoryRow flex flex-auto">
+        {selectedDiffReleases && <div className={classNames("checkbox u-marginRight--20", { "checked": (isChecked && !nothingToCommit) }, { "disabled": nothingToCommit })} />}
+        <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex1 u-paddingRight--20`}>
+          <div className="flex alignItems--center">
+            <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">{version.versionLabel || version.title}</p>
+            <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10" style={{ marginTop: "2px" }}>Sequence {version.sequence}</p>
+          </div>
+          <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5"> Released <span className="u-fontWeight--bold">{version.upstreamReleasedAt ? Utilities.dateFormat(version.upstreamReleasedAt, "MM/DD/YY @ hh:mm a z") : Utilities.dateFormat(version.createdOn, "MM/DD/YY @ hh:mm a z")}</span></p>
+          <div className="u-marginTop--5 flex flex-auto alignItems--center">
+            {hideSourceDiff ? null : renderSourceAndDiff(version)}
+            {yamlErrorsDetails && renderYamlErrors(yamlErrorsDetails, version, toggleShowDetailsModal)}
+          </div>
         </div>
-        <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5"> Released <span className="u-fontWeight--bold">{version.upstreamReleasedAt ? Utilities.dateFormat(version.upstreamReleasedAt, "MM/DD/YY @ hh:mm a z") : Utilities.dateFormat(version.createdOn, "MM/DD/YY @ hh:mm a z")}</span></p>
-        <div className="u-marginTop--5 flex flex-auto alignItems--center">
-          {hideSourceDiff ? null : renderSourceAndDiff(version)}
-          {yamlErrorsDetails && renderYamlErrors(yamlErrorsDetails, version, toggleShowDetailsModal)}
+        <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex1 justifyContent--center`}>
+          <p className="u-fontSize--small u-fontWeight--bold u-textColor--lightAccent u-lineHeight--default">{version.source}</p>
+          <div className="flex flex-auto u-marginTop--10"> {gitopsEnabled && version.status !== "pending_download" ? renderViewPreflights(version, props.app, props.match) : renderVersionStatus(version, props.app, props.handleViewLogs)}</div>
         </div>
-      </div>
-      <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex1 justifyContent--center`}>
-        <p className="u-fontSize--small u-fontWeight--bold u-textColor--lightAccent u-lineHeight--default">{version.source}</p>
-        <div className="flex flex-auto u-marginTop--10"> {gitopsEnabled ? renderViewPreflights(version, props.app, props.match) : renderVersionStatus(version, props.app, props.match, props.handleViewLogs)}</div>
-      </div>
-      <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex-auto alignItems--flexEnd justifyContent--center`}>
-        <div>
-          {version.status === "failed" || version.status === "deployed" ?
-            renderVersionAction(version, latestVersion, nothingToCommit && selectedDiffReleases, props.app, props.history, props.redeployVersion, props.showDownstreamReleaseNotes, props.handleViewLogs) :
-            renderVersionAction(version, latestVersion, nothingToCommit && selectedDiffReleases, props.app, props.history, props.deployVersion, props.showDownstreamReleaseNotes, props.handleViewLogs)
-          }
+        <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex-auto alignItems--flexEnd justifyContent--center`}>
+          {renderVersionAction(version, nothingToCommit && selectedDiffReleases, props.app, props.history, actionFn, props.showReleaseNotes, props.handleViewLogs, isDownloading)}
         </div>
       </div>
+      {renderVersionDownloadStatus(version)}
     </div>
   )
 }

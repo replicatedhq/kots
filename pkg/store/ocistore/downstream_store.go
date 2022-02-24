@@ -41,6 +41,10 @@ func (s *OCIStore) GetIgnoreRBACErrors(appID string, sequence int64) (bool, erro
 	return false, ErrNotImplemented
 }
 
+func (s *OCIStore) GetLatestDownstreamVersion(appID string, clusterID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersion, error) {
+	return nil, ErrNotImplemented
+}
+
 func (s *OCIStore) GetCurrentVersion(appID string, clusterID string) (*downstreamtypes.DownstreamVersion, error) {
 	return nil, ErrNotImplemented
 }
@@ -49,11 +53,11 @@ func (s *OCIStore) GetStatusForVersion(appID string, clusterID string, sequence 
 	return types.DownstreamVersionStatus(""), ErrNotImplemented
 }
 
-func (s *OCIStore) GetAppVersions(appID string, clusterID string) (*downstreamtypes.DownstreamVersions, error) {
+func (s *OCIStore) GetAppVersions(appID string, clusterID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error) {
 	return nil, ErrNotImplemented
 }
 
-func (s *OCIStore) FindAppVersions(appID string) (*downstreamtypes.DownstreamVersions, error) {
+func (s *OCIStore) FindAppVersions(appID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error) {
 	return nil, ErrNotImplemented
 }
 

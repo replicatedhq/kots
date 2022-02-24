@@ -26,30 +26,24 @@ import ReactTooltip from "react-tooltip"
 import "@src/scss/components/apps/AppVersionHistory.scss";
 dayjs.extend(relativeTime);
 
-const COMMON_ERRORS = {
-  "HTTP 401": "Registry credentials are invalid",
-  "invalid username/password": "Registry credentials are invalid",
-  "no such host": "No such host"
-};
-
 class AppVersionHistory extends Component {
   state = {
-    viewReleaseNotes: false,
     logsLoading: false,
     logs: null,
     selectedTab: null,
     showDeployWarningModal: false,
     showSkipModal: false,
     versionToDeploy: null,
-    downstreamReleaseNotes: null,
+    releaseNotes: null,
     selectedDiffReleases: false,
     checkedReleasesToDiff: [],
     diffHovered: false,
     uploadingAirgapFile: false,
     checkingForUpdates: false,
     checkingUpdateMessage: "Checking for updates",
-    errorCheckingUpdate: false,
+    checkingForUpdateError: false,
     airgapUploadError: null,
+    versionDownloadStatuses: {},
     showDiffOverlay: false,
     firstSequence: 0,
     secondSequence: 0,
@@ -72,6 +66,10 @@ class AppVersionHistory extends Component {
     confirmType: "",
     isSkipPreflights: false
   }
+
+  // moving this out of the state because new repeater instances were getting created
+  // and it doesn't really affect the UI
+  versionDownloadStatusJobs = {}
 
   componentDidMount() {
     this.fetchKotsDownstreamHistory();
@@ -100,6 +98,9 @@ class AppVersionHistory extends Component {
   componentWillUnmount() {
     this.state.updateChecker.stop();
     this.state.versionHistoryJob.stop();
+    for (const j in this.versionDownloadStatusJobs) {
+      this.versionDownloadStatusJobs[j].stop();
+    }
   }
 
   fetchKotsDownstreamHistory = async () => {
@@ -235,27 +236,16 @@ class AppVersionHistory extends Component {
     this.setState({ displayErrorModal: !this.state.displayErrorModal });
   }
 
-  showReleaseNotes = () => {
+
+  showReleaseNotes = notes => {
     this.setState({
-      viewReleaseNotes: true
+      releaseNotes: notes
     });
   }
 
   hideReleaseNotes = () => {
     this.setState({
-      viewReleaseNotes: false
-    });
-  }
-
-  showDownstreamReleaseNotes = notes => {
-    this.setState({
-      downstreamReleaseNotes: notes
-    });
-  }
-
-  hideDownstreamReleaseNotes = () => {
-    this.setState({
-      downstreamReleaseNotes: null
+      releaseNotes: null
     });
   }
 
@@ -296,6 +286,17 @@ class AppVersionHistory extends Component {
     const diffSummary = this.getVersionDiffSummary(version);
     const hasDiffSummaryError = version.diffSummaryError && version.diffSummaryError.length > 0;
 
+    let previousSequence = 0;
+    for(const v of this.state.versionHistory) {
+      if (v.status === "pending_download") {
+        continue;
+      }
+      if (v.parentSequence < version.parentSequence) {
+        previousSequence = v.parentSequence;
+        break;
+      }
+    }
+
     if (hasDiffSummaryError) {
       return (
         <div className="flex flex1 alignItems--center">
@@ -310,7 +311,7 @@ class AppVersionHistory extends Component {
               <div className="DiffSummary u-marginRight--10">
                 <span className="files">{diffSummary.filesChanged} files changed </span>
                 {!downstream.gitops?.enabled &&
-                  <span className="u-fontSize--small replicated-link u-marginLeft--5" onClick={() => this.setState({ showDiffOverlay: true, firstSequence: version.parentSequence - 1, secondSequence: version.parentSequence})}>View diff</span>
+                  <span className="u-fontSize--small replicated-link u-marginLeft--5" onClick={() => this.setState({ showDiffOverlay: true, firstSequence: previousSequence, secondSequence: version.parentSequence})}>View diff</span>
                 }
               </div>
               :
@@ -337,6 +338,143 @@ class AppVersionHistory extends Component {
             {tab}
           </div>
         ))}
+      </div>
+    );
+  }
+
+  downloadVersion = version => {
+    const { app } = this.props;
+
+    if (!this.versionDownloadStatusJobs.hasOwnProperty(version.sequence)) {
+      this.versionDownloadStatusJobs[version.sequence] = new Repeater();
+    }
+
+    this.setState({
+      versionDownloadStatuses: {
+        ...this.state.versionDownloadStatuses,
+        [version.sequence]: {
+          downloadingVersion: true,
+          downloadingVersionMessage: "",
+          downloadingVersionError: false,
+        }
+      },
+    });
+    
+    fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/sequence/${version.parentSequence}/download`, {
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          const response = await res.json();
+          this.setState({
+            versionDownloadStatuses: {
+              ...this.state.versionDownloadStatuses,
+              [version.sequence]: {
+                downloadingVersion: false,
+                downloadingVersionMessage: response.error,
+                downloadingVersionError: true
+              }
+            }
+          });
+          return;
+        }
+        this.versionDownloadStatusJobs[version.sequence].start(() => this.updateVersionDownloadStatus(version), 1000);
+      })
+      .catch((err) => {
+        console.log(err);
+        this.setState({
+          versionDownloadStatuses: {
+            ...this.state.versionDownloadStatuses,
+            [version.sequence]: {
+              downloadingVersion: false,
+              downloadingVersionMessage: err?.message || "Something went wrong, please try again.",
+              downloadingVersionError: true
+            }
+          }
+        });
+      });
+  }
+
+  updateVersionDownloadStatus = version => {
+    const { app } = this.props;
+
+    return new Promise((resolve, reject) => {
+      fetch(`${process.env.API_ENDPOINT}/app/${app?.slug}/sequence/${version?.parentSequence}/task/updatedownload`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "GET",
+      })
+        .then(async (res) => {
+          const response = await res.json();
+
+          if (response.status !== "running") {
+            this.versionDownloadStatusJobs[version.sequence].stop();
+
+            this.setState({
+              versionDownloadStatuses: {
+                ...this.state.versionDownloadStatuses,
+                [version.sequence]: {
+                  downloadingVersion: false,
+                  downloadingVersionMessage: response.currentMessage,
+                  downloadingVersionError: response.status === "failed"
+                }
+              }
+            });
+
+            if (this.props.updateCallback) {
+              this.props.updateCallback();
+            }
+            this.fetchKotsDownstreamHistory();
+          } else {
+            this.setState({
+              versionDownloadStatuses: {
+                ...this.state.versionDownloadStatuses,
+                [version.sequence]: {
+                  downloadingVersion: true,
+                  downloadingVersionMessage: response.currentMessage,
+                }
+              }
+            });
+          }
+          resolve();
+        }).catch((err) => {
+          console.log("failed to get version download status", err);
+          reject();
+        });
+    });
+  }
+
+  renderVersionDownloadStatus = version => {
+    const { versionDownloadStatuses } = this.state;
+
+    if (!versionDownloadStatuses.hasOwnProperty(version.sequence)) {
+      // user hasn't tried to re-download the version yet, show last known download status if exists
+      if (version.downloadStatus) {
+        return (
+          <div className="flex alignItems--center justifyContent--flexEnd">
+            <span className={`u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default ${version.downloadStatus.status === "failed" ? "u-textColor--error" : ""}`}>
+              {version.downloadStatus.message}
+            </span>
+          </div>
+        );
+      }
+      return null
+    }
+
+    const status = versionDownloadStatuses[version.sequence];
+
+    return (
+      <div className="flex alignItems--center justifyContent--flexEnd">
+        {status.downloadingVersion && <Loader className="u-marginRight--5" size="15" />}
+        <span className={`u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default ${status.downloadingVersionError ? "u-textColor--error" : ""}`}>
+          {status.downloadingVersionMessage ? status.downloadingVersionMessage : status.downloadingVersion ? "Downloading" : ""}
+        </span>
       </div>
     );
   }
@@ -496,7 +634,6 @@ class AppVersionHistory extends Component {
     this.setState({
       checkingForUpdates: true,
       checkingForUpdateError: false,
-      errorCheckingUpdate: false,
       checkingUpdateMessage: "",
     });
 
@@ -511,7 +648,7 @@ class AppVersionHistory extends Component {
         if (!res.ok) {
           const text = await res.text();
           this.setState({
-            errorCheckingUpdate: true,
+            checkingForUpdateError: true,
             checkingForUpdates: false,
             checkingUpdateMessage: text
           });
@@ -542,7 +679,7 @@ class AppVersionHistory extends Component {
       })
       .catch((err) => {
         this.setState({
-          errorCheckingUpdate: true,
+          checkingForUpdateError: true,
           checkingForUpdates: false,
           checkingUpdateMessage: String(err),
         });
@@ -584,7 +721,7 @@ class AppVersionHistory extends Component {
           }
           resolve();
         }).catch((err) => {
-          console.log("failed to get rewrite status", err);
+          console.log("failed to get update status", err);
           reject();
         });
     });
@@ -734,12 +871,44 @@ class AppVersionHistory extends Component {
     this.setState({ displayShowDetailsModal: !this.state.displayShowDetailsModal, deployView: false, yamlErrorDetails, selectedSequence });
   }
 
-  renderAirgapVersionUploading = () => {
-    const { app, isBundleUploading } = this.props;
+  shouldRenderUpdateProgress = () => {
+    if (this.state.uploadingAirgapFile) {
+      return true;
+    }
+    if (this.props.isBundleUploading) {
+      return true;
+    }
+    if (this.state.checkingForUpdateError) {
+      return true;
+    }
+    if (this.state.airgapUploadError) {
+      return true;
+    }
+    if (this.props.app?.isAirgap && this.state.checkingForUpdates) {
+      return true;
+    }
+    return false;
+  }
+
+  renderUpdateProgress = () => {
+    const { app } = this.props;
+
+    if (!this.shouldRenderUpdateProgress()) {
+      return null;
+    }
 
     let updateText;
     if (this.state.airgapUploadError) {
-      updateText = <p className="u-marginTop--10 u-fontSize--small u-textColor--error u-fontWeight--medium">Error uploading bundle <span className="u-linkColor u-textDecoration--underlineOnHover" onClick={this.props.viewAirgapUploadError}>See details</span></p>
+      updateText = (
+        <p className="u-marginTop--10 u-fontSize--small u-textColor--error u-fontWeight--medium">{this.state.airgapUploadError}</p>
+      );
+    } else if (this.state.checkingForUpdateError) {
+      updateText = (
+        <div className="flex-column flex-auto u-marginTop--10">
+          <p className="u-fontSize--normal u-marginBottom--5 u-textColor--error u-fontWeight--medium">Error updating version:</p>
+          <p className="u-fontSize--small u-textColor--error u-lineHeight--normal u-fontWeight--medium">{this.state.checkingUpdateMessage}</p>
+        </div>
+      );
     } else if (this.state.uploadingAirgapFile) {
       updateText = (
         <AirgapUploadProgress
@@ -751,7 +920,7 @@ class AppVersionHistory extends Component {
           smallSize={true}
         />
       );
-    } else if (isBundleUploading) {
+    } else if (this.props.isBundleUploading) {
       updateText = (
         <AirgapUploadProgress
           appSlug={app.slug}
@@ -759,44 +928,74 @@ class AppVersionHistory extends Component {
           onProgressError={undefined}
           smallSize={true}
         />);
-    } else if (this.state.errorCheckingUpdate) {
-      updateText = <p className="u-marginTop--10 u-fontSize--small u-textColor--error u-fontWeight--medium">Error checking for updates, please try again</p>
-    } else if (!app.lastUpdateCheckAt) {
-      updateText = null;
-    }
-
-    let checkingUpdateText = this.state.checkingUpdateMessage;
-    try {
-      const jsonMessage = JSON.parse(checkingUpdateText);
-      const type = get(jsonMessage, "type");
-      if (type === "progressReport") {
-        checkingUpdateText = jsonMessage.compatibilityMessage;
-        // TODO: handle image upload progress here
+    } else if (app?.isAirgap && this.state.checkingForUpdates) {
+      let checkingUpdateText = this.state.checkingUpdateMessage;
+      try {
+        const jsonMessage = JSON.parse(checkingUpdateText);
+        const type = get(jsonMessage, "type");
+        if (type === "progressReport") {
+          checkingUpdateText = jsonMessage.compatibilityMessage;
+          // TODO: handle image upload progress here
+        }
+      } catch {
+        // empty
       }
-    } catch {
-      // empty
-    }
-
-    if (checkingUpdateText && checkingUpdateText.length > 65) {
-      checkingUpdateText = checkingUpdateText.slice(0, 65) + "...";
+      if (checkingUpdateText && checkingUpdateText.length > 65) {
+        checkingUpdateText = checkingUpdateText.slice(0, 65) + "...";
+      }
+      updateText = (
+        <div className="flex-column justifyContent--center alignItems--center">
+          <Loader className="u-marginBottom--10" size="30" />
+          <span className="u-textColor--bodyCopy u-fontWeight--medium u-fontSize--normal u-lineHeight--default">{checkingUpdateText}</span>
+        </div>
+      );
     }
 
     return (
-      <div>
+      <div className="u-marginTop--20 u-marginBottom--20">
         {updateText}
-        {app?.isAirgap && this.state.checkingForUpdates && !isBundleUploading ?
-          <div className="flex-column justifyContent--center alignItems--center">
-            <Loader className="u-marginBottom--10" size="30" />
-            <span className="u-textColor--bodyCopy u-fontWeight--medium u-fontSize--normal u-lineHeight--default">{checkingUpdateText}</span>
-          </div>
-        : null }
-        {this.state.checkingForUpdateError &&
-          <div className={`flex-column flex-auto ${this.state.uploadingAirgapFile || this.state.checkingForUpdates || isBundleUploading ? "u-marginTop--10" : ""}`}>
-            <p className="u-fontSize--normal u-marginBottom--5 u-textColor--error u-fontWeight--medium">Error updating version:</p>
-            <p className="u-fontSize--small u-textColor--error u-lineHeight--normal u-fontWeight--medium">{this.state.checkingUpdateMessage}</p>
-          </div>}
       </div>
     )
+  }
+
+  renderAppVersionHistoryRow = version => {
+    if (this.state.selectedDiffReleases && version.status === "pending_download") {
+      // non-downloaded versions can't be diffed
+      return null;
+    }
+
+    const downstream = this.props.app.downstreams?.length && this.props.app.downstreams[0];
+    const gitopsEnabled = downstream?.gitops?.enabled;
+    const nothingToCommit = gitopsEnabled && !version.commitUrl;
+    const yamlErrorsDetails = this.yamlErrorsDetails(downstream, version);
+    const isChecked = !!this.state.checkedReleasesToDiff.find(diffRelease => diffRelease.parentSequence === version.parentSequence);
+    const isNew = secondsAgo(version.createdOn) < 10;
+
+    return (
+      <AppVersionHistoryRow
+        key={version.sequence}
+        app={this.props.app}
+        match={this.props.match}
+        history={this.props.history}
+        version={version}
+        selectedDiffReleases={this.state.selectedDiffReleases}
+        nothingToCommit={nothingToCommit}
+        isChecked={isChecked}
+        isNew={isNew}
+        showReleaseNotes={this.showReleaseNotes}
+        renderSourceAndDiff={this.renderSourceAndDiff}
+        yamlErrorsDetails={yamlErrorsDetails}
+        toggleShowDetailsModal={this.toggleShowDetailsModal}
+        gitopsEnabled={gitopsEnabled}
+        deployVersion={this.deployVersion}
+        redeployVersion={this.redeployVersion}
+        downloadVersion={this.downloadVersion}
+        handleViewLogs={this.handleViewLogs}
+        handleSelectReleasesToDiff={this.handleSelectReleasesToDiff}
+        renderVersionDownloadStatus={this.renderVersionDownloadStatus}
+        isDownloading={this.state.versionDownloadStatuses?.[version.sequence]?.downloadingVersion}
+      />
+    );
   }
 
   render() {
@@ -804,21 +1003,17 @@ class AppVersionHistory extends Component {
       app,
       match,
       makingCurrentVersionErrMsg,
-      redeployVersionErrMsg,
-      isBundleUploading
+      redeployVersionErrMsg
     } = this.props;
 
     const {
-      viewReleaseNotes,
       showLogsModal,
       selectedTab,
       logs,
       logsLoading,
       showDeployWarningModal,
       showSkipModal,
-      downstreamReleaseNotes,
-      selectedDiffReleases,
-      checkedReleasesToDiff,
+      releaseNotes,
       showDiffOverlay,
       firstSequence,
       secondSequence,
@@ -829,7 +1024,6 @@ class AppVersionHistory extends Component {
       displayErrorModal,
       airgapUploader,
       checkingForUpdates,
-      uploadingAirgapFile,
       checkingUpdateMessage
     } = this.state;
 
@@ -852,7 +1046,6 @@ class AppVersionHistory extends Component {
 
     // This is kinda hacky. This finds the equivalent downstream version because the midstream
     // version type does not contain metadata like version label or release notes.
-    const currentMidstreamVersion = versionHistory.find(version => version.parentSequence === app.currentVersion.sequence) || app.currentVersion;
     const otherAvailableVersions = versionHistory.filter((i, idx) => idx !== 0);
     const isPastVersion = find(downstream?.pastVersions, { sequence: this.state.versionToDeploy?.sequence });
   
@@ -912,7 +1105,7 @@ class AppVersionHistory extends Component {
                           <div className="flex alignItems--center u-marginTop--10">
                             {currentDownstreamVersion?.releaseNotes &&
                               <div>
-                                <span className="icon releaseNotes--icon u-marginRight--10 u-cursor--pointer" onClick={() => this.showDownstreamReleaseNotes(currentDownstreamVersion?.releaseNotes)} data-tip="View release notes" />
+                                <span className="icon releaseNotes--icon u-marginRight--10 u-cursor--pointer" onClick={() => this.showReleaseNotes(currentDownstreamVersion?.releaseNotes)} data-tip="View release notes" />
                                 <ReactTooltip effect="solid" className="replicated-tooltip" />
                               </div>}
                             <div>
@@ -975,67 +1168,15 @@ class AppVersionHistory extends Component {
                           {versionHistory.length > 1 && this.renderDiffBtn()}
                         </div>
                       </div>
-                      <AppVersionHistoryRow
-                        key={versionHistory[0].sequence}
-                        app={this.props.app}
-                        match={this.props.match}
-                        history={this.props.history}
-                        version={versionHistory[0]}
-                        latestVersion={versionHistory[0]}
-                        selectedDiffReleases={selectedDiffReleases}
-                        nothingToCommit={gitopsEnabled && !versionHistory[0].commitUrl}
-                        isChecked={!!checkedReleasesToDiff.find(diffRelease => diffRelease.parentSequence === versionHistory[0].parentSequence)}
-                        isNew={secondsAgo(versionHistory[0].createdOn) < 10}
-                        showDownstreamReleaseNotes={this.showDownstreamReleaseNotes}
-                        renderSourceAndDiff={this.renderSourceAndDiff}
-                        yamlErrorsDetails={this.yamlErrorsDetails(downstream, versionHistory[0])}
-                        toggleShowDetailsModal={this.toggleShowDetailsModal}
-                        gitopsEnabled={gitopsEnabled}
-                        deployVersion={this.deployVersion}
-                        handleViewLogs={this.handleViewLogs}
-                        handleSelectReleasesToDiff={this.handleSelectReleasesToDiff}
-                        redeployVersion={this.redeployVersion}
-                      />
+                      {this.renderAppVersionHistoryRow(versionHistory[0])}
                     </div>
-                    {uploadingAirgapFile || isBundleUploading || this.state.checkingForUpdateError || (app?.isAirgap && this.state.checkingForUpdates)  ?
-                      <div className="u-marginTop--20 u-marginBottom--20">
-                        {this.renderAirgapVersionUploading()}
-                      </div>
-                    : null}
+                    {this.renderUpdateProgress()}
                     {otherAvailableVersions.length > 0 &&
                       <div className="flex u-marginBottom--15 u-marginTop--30">
                         <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy">Other available versions</p>
                       </div>
                     }
-                    {otherAvailableVersions?.map((version) => {
-                      const isChecked = !!checkedReleasesToDiff.find(diffRelease => diffRelease.parentSequence === version.parentSequence);
-                      const isNew = secondsAgo(version.createdOn) < 10;
-                      const nothingToCommit = gitopsEnabled && !version.commitUrl;
-                      const yamlErrorsDetails = this.yamlErrorsDetails(downstream, version);
-                      return (
-                        <AppVersionHistoryRow
-                          key={version.sequence}
-                          app={this.props.app}
-                          match={this.props.match}
-                          history={this.props.history}
-                          version={version}
-                          latestVersion={versionHistory[0]}
-                          selectedDiffReleases={selectedDiffReleases}
-                          nothingToCommit={nothingToCommit}
-                          isChecked={isChecked}
-                          isNew={isNew}
-                          showDownstreamReleaseNotes={this.showDownstreamReleaseNotes}
-                          renderSourceAndDiff={this.renderSourceAndDiff}
-                          yamlErrorsDetails={yamlErrorsDetails}
-                          toggleShowDetailsModal={this.toggleShowDetailsModal}
-                          gitopsEnabled={gitopsEnabled}
-                          deployVersion={this.deployVersion}
-                          handleViewLogs={this.handleViewLogs}
-                          handleSelectReleasesToDiff={this.handleSelectReleasesToDiff}
-                          redeployVersion={this.redeployVersion}
-                        />
-                      );
-                    })}
+                    {otherAvailableVersions?.map((version) => this.renderAppVersionHistoryRow(version))}
                   </div>
                 :
                 <div className="flex-column flex1 alignItems--center justifyContent--center">
@@ -1062,22 +1203,6 @@ class AppVersionHistory extends Component {
           </div>
         </div>
 
-        <Modal
-          isOpen={viewReleaseNotes}
-          onRequestClose={this.hideReleaseNotes}
-          contentLabel="Release Notes"
-          ariaHideApp={false}
-          className="Modal LargeSize"
-        >
-          <div className="flex-column">
-            <MarkdownRenderer className="is-kotsadm" id="markdown-wrapper">
-              {currentMidstreamVersion?.releaseNotes || "No release notes for this version"}
-            </MarkdownRenderer>
-          </div>
-          <div className="flex u-marginTop--10 u-marginLeft--10 u-marginBottom--10">
-            <button className="btn primary" onClick={this.hideReleaseNotes}>Close</button>
-          </div>
-        </Modal>
 
         {showLogsModal &&
           <ShowLogsModal
@@ -1108,19 +1233,19 @@ class AppVersionHistory extends Component {
             }
 
         <Modal
-          isOpen={!!downstreamReleaseNotes}
-          onRequestClose={this.hideDownstreamReleaseNotes}
+          isOpen={!!releaseNotes}
+          onRequestClose={this.hideReleaseNotes}
           contentLabel="Release Notes"
           ariaHideApp={false}
           className="Modal MediumSize"
         >
           <div className="flex-column">
             <MarkdownRenderer className="is-kotsadm" id="markdown-wrapper">
-              {downstreamReleaseNotes || ""}
+              {releaseNotes || ""}
             </MarkdownRenderer>
           </div>
           <div className="flex u-marginTop--10 u-marginLeft--10 u-marginBottom--10">
-            <button className="btn primary" onClick={this.hideDownstreamReleaseNotes}>Close</button>
+            <button className="btn primary" onClick={this.hideReleaseNotes}>Close</button>
           </div>
         </Modal>
 

@@ -134,10 +134,14 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 	r.Name("GetPreflightResult").Path("/api/v1/app/{appSlug}/sequence/{sequence}/preflight/result").Methods("GET").
 		HandlerFunc(middleware.EnforceAccess(policy.AppDownstreamPreflightRead, handler.GetPreflightResult))
 	r.Name("GetPreflightCommand").Path("/api/v1/app/{appSlug}/sequence/{sequence}/preflightcommand").Methods("POST").
-		HandlerFunc(middleware.EnforceAccess(policy.AppRead, handler.GetPreflightCommand)) // this is intentionall
+		HandlerFunc(middleware.EnforceAccess(policy.AppRead, handler.GetPreflightCommand)) // this is intentional
 	r.Name("PreflightsReports").Path("/api/v1/app/{appSlug}/preflight/report").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.AppDownstreamPreflightWrite, handler.PreflightsReports))
 
+	r.Name("DownloadAppVersion").Path("/api/v1/app/{appSlug}/sequence/{sequence}/download").Methods("POST").
+		HandlerFunc(middleware.EnforceAccess(policy.AppDownstreamWrite, handler.DownloadAppVersion))
+	r.Name("GetAppVersionDownloadStatus").Path("/api/v1/app/{appSlug}/sequence/{sequence}/task/updatedownload").Methods("GET").
+		HandlerFunc(middleware.EnforceAccess(policy.AppRead, handler.GetAppVersionDownloadStatus)) // NOTE: appSlug is unused
 	r.Name("DeployAppVersion").Path("/api/v1/app/{appSlug}/sequence/{sequence}/deploy").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.AppDownstreamWrite, handler.DeployAppVersion))
 	r.Name("RedeployAppVersion").Path("/api/v1/app/{appSlug}/sequence/{sequence}/redeploy").Methods("POST").

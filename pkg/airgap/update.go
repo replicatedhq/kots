@@ -218,7 +218,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 
 		status, err := store.GetStore().GetStatusForVersion(a.ID, downstream.ClusterID, newSequence)
 		if err != nil {
-			return errors.Wrap(err, "failed to get update downstream status")
+			return errors.Wrapf(err, "failed to get status for version %d", newSequence)
 		}
 
 		if status == storetypes.VersionPendingConfig {

@@ -78,22 +78,22 @@ func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 
 	status, err := store.GetStore().GetStatusForVersion(a.ID, downstreams[0].ClusterID, int64(sequence))
 	if err != nil {
-		errMsg := "failed to get update downstream status"
+		errMsg := fmt.Sprintf("failed to get status for version %d", sequence)
 		logger.Error(errors.Wrap(err, errMsg))
 		deployAppVersionResponse.Error = errMsg
 		JSON(w, http.StatusInternalServerError, deployAppVersionResponse)
 		return
 	}
 
-	if status == storetypes.VersionPendingConfig {
+	if status == storetypes.VersionPendingDownload || status == storetypes.VersionPendingConfig {
 		errMsg := fmt.Sprintf("not deploying version %d because it's %s", int64(sequence), status)
 		logger.Error(errors.New(errMsg))
 		deployAppVersionResponse.Error = errMsg
-		JSON(w, http.StatusInternalServerError, deployAppVersionResponse)
+		JSON(w, http.StatusBadRequest, deployAppVersionResponse)
 		return
 	}
 
-	versions, err := store.GetStore().GetAppVersions(a.ID, downstreams[0].ClusterID)
+	versions, err := store.GetStore().GetAppVersions(a.ID, downstreams[0].ClusterID, true)
 	if err != nil {
 		errMsg := "failed to get app versions"
 		logger.Error(errors.Wrap(err, errMsg))

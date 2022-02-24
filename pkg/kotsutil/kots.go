@@ -336,7 +336,7 @@ func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {
 }
 
 // create a new kots kinds, ensuring that the require objets exist as empty defaults
-func emptyKotsKinds() KotsKinds {
+func EmptyKotsKinds() KotsKinds {
 	kotsKinds := KotsKinds{
 		Installation: kotsv1beta1.Installation{
 			TypeMeta: metav1.TypeMeta{
@@ -356,9 +356,13 @@ func emptyKotsKinds() KotsKinds {
 }
 
 func LoadKotsKindsFromPath(fromDir string) (*KotsKinds, error) {
-	kotsKinds := emptyKotsKinds()
-	decode := scheme.Codecs.UniversalDeserializer().Decode
+	kotsKinds := EmptyKotsKinds()
 
+	if fromDir == "" {
+		return &kotsKinds, nil
+	}
+
+	decode := scheme.Codecs.UniversalDeserializer().Decode
 	err := filepath.Walk(fromDir,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
@@ -796,9 +800,8 @@ func GetIncompatbileKotsVersionMessage(kotsApplication kotsv1beta1.Application, 
 	}
 
 	return fmt.Sprintf(
-		"The new version of %s requires a version of KOTS that is different from what you currently have installed.\nUpgrade KOTS to version %s so you can get this version of %s.",
+		"This version of %s requires a version of KOTS that is different than what you currently have installed. Upgrade KOTS to version %s, and then download this application version again in the admin console or with the 'kots upstream download' command.",
 		appName,
 		desiredKotsVersion,
-		appName,
 	)
 }

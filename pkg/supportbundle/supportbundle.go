@@ -234,7 +234,7 @@ func CreateSupportBundleAnalysis(appID string, archivePath string, bundle *types
 		return err
 	}
 
-	latestVersion, err := store.GetStore().GetLatestAppVersion(foundApp.ID)
+	latestVersion, err := store.GetStore().GetLatestAppVersion(foundApp.ID, true)
 	if err != nil {
 		return errors.Wrap(err, "failed to get latest app version")
 	}

@@ -14,7 +14,8 @@ import DeployWarningModal from "../shared/modals/DeployWarningModal";
 import SkipPreflightsModal from "../shared/modals/SkipPreflightsModal";
 import classNames from "classnames";
 
-import { Utilities, getPreflightResultState, getDeployErrorTab, isAwaitingResults, secondsAgo } from "@src/utilities/utilities";
+import { Utilities, getPreflightResultState, secondsAgo } from "@src/utilities/utilities";
+import { Repeater } from "@src/utilities/repeater";
 
 import "../../scss/components/watches/DashboardCard.scss";
 
@@ -31,9 +32,14 @@ class DashboardVersionCard extends React.Component {
       showNoChangesModal: false,
       releaseWithNoChanges: {},
       releaseWithErr: {},
-      showDiffErrModal: false
+      showDiffErrModal: false,
+      versionDownloadStatuses: {}
     }
     this.cardTitleText = React.createRef();
+
+    // moving this out of the state because new repeater instances were getting created
+    // and it doesn't really affect the UI
+    this.versionDownloadStatusJobs = {}
   }
 
   componentDidMount() {
@@ -140,61 +146,6 @@ class DashboardVersionCard extends React.Component {
     }
   }
 
-  fetchKotsDownstreamHistory = async () => {
-    const { match } = this.props;
-    const appSlug = match.params.slug;
-
-    this.setState({
-      loadingVersionHistory: true,
-      errorTitle: "",
-      errorMsg: "",
-      displayErrorModal: false,
-    });
-
-    try {
-      const res = await fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/versions`, {
-        headers: {
-          "Authorization": Utilities.getToken(),
-          "Content-Type": "application/json",
-        },
-        method: "GET",
-      });
-      if (!res.ok) {
-        if (res.status === 401) {
-          Utilities.logoutUser();
-          return;
-        }
-        this.setState({
-          loadingVersionHistory: false,
-          errorTitle: "Failed to get version history",
-          errorMsg: `Unexpected status code: ${res.status}`,
-          displayErrorModal: true,
-        });
-        return;
-      }
-      const response = await res.json();
-      const versionHistory = response.versionHistory;
-
-      if (isAwaitingResults(versionHistory)) {
-        this.state.versionHistoryJob.start(this.fetchKotsDownstreamHistory, 2000);
-      } else {
-        this.state.versionHistoryJob.stop();
-      }
-
-      this.setState({
-        loadingVersionHistory: false,
-        versionHistory: versionHistory,
-      });
-    } catch (err) {
-      this.setState({
-        loadingVersionHistory: false,
-        errorTitle: "Failed to get version history",
-        errorMsg: err ? err.message : "Something went wrong, please try again.",
-        displayErrorModal: true,
-      });
-    }
-  }
-
   toggleDiffErrModal = (release) => {
     this.setState({
       showDiffErrModal: !this.state.showDiffErrModal,
@@ -224,15 +175,88 @@ class DashboardVersionCard extends React.Component {
     };
   }
 
-  renderCurrentVersion = () => {
-    const { currentVersion, app } = this.props;
-    const preflightState = this.getPreflightState(currentVersion);
+  renderReleaseNotes = version => {
+    if (!version?.releaseNotes) {
+      return null;
+    }
+    return (
+      <div>
+        <span className="icon releaseNotes--icon u-cursor--pointer" onClick={() => this.showReleaseNotes(version?.releaseNotes)} data-tip="View release notes" />
+        <ReactTooltip effect="solid" className="replicated-tooltip" />
+      </div>
+    );
+  }
+
+  renderPreflights = version => {
+    if (!version) {
+      return null;
+    }
+    if (version.status === "pending_download") {
+      return null;
+    }
+    if (version.status === "pending_config") {
+      return null;
+    }
+
+    const { app } = this.props;
+
+    const preflightState = this.getPreflightState(version);
     let checksStatusText;
     if (preflightState.preflightsFailed) {
       checksStatusText = "Checks failed"
     } else if (preflightState.preflightState === "warn") {
       checksStatusText = "Checks passed with warnings"
     }
+
+    return (
+      <div>
+        {version.status === "pending_preflight" ?
+          <div className="u-marginLeft--10 u-position--relative">
+            <Loader size="30" />
+            <p className="checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium">Running checks</p>
+          </div>
+        :
+        <div>
+          <Link to={`/app/${app?.slug}/downstreams/${app?.downstreams[0].cluster?.slug}/version-history/preflight/${version?.sequence}`}
+            className="icon preflightChecks--icon u-marginLeft--10 u-cursor--pointer u-position--relative"
+            data-tip="View preflight checks">
+              {preflightState.preflightsFailed || preflightState.preflightState === "warn" ?
+              <div>
+                <span className={`icon version-row-preflight-status-icon ${preflightState.preflightsFailed ? "preflight-checks-failed-icon" : preflightState.preflightState === "warn" ? "preflight-checks-warn-icon" : ""}`} />
+                <p className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${preflightState.preflightsFailed ? "err" : preflightState.preflightState === "warn" ? "warning" : ""}`}>{checksStatusText}</p>
+              </div>
+              : null}
+          </Link>
+          <ReactTooltip effect="solid" className="replicated-tooltip" />
+        </div>}
+      </div>
+    );
+  }
+
+  renderEditConfigIcon = (app, version) => {
+    if (!app?.isConfigurable) {
+      return null;
+    }
+    if (!version) {
+      return null;
+    }
+    if (version.status === "pending_download") {
+      return null;
+    }
+    if (version.status === "pending_config") {
+      // action button will already be set to "Configure", no need to show edit config icon as well
+      return null;
+    }
+    return (
+      <div className="u-marginLeft--10">
+        <Link to={`/app/${app?.slug}/config/${version.sequence}`} className="icon configEdit--icon u-cursor--pointer" data-tip="Edit config" />
+        <ReactTooltip effect="solid" className="replicated-tooltip" />
+      </div>
+    );
+  }
+
+  renderCurrentVersion = () => {
+    const { currentVersion, app } = this.props;
     return (
       <div className="flex1 flex-column">
         <div className="flex">
@@ -250,47 +274,16 @@ class DashboardVersionCard extends React.Component {
             <p className="u-fontSize--small u-fontWeight--bold u-textColor--lightAccent u-lineHeight--default">{currentVersion.source}</p>
           </div>
           <div className="flex flex1 alignItems--center justifyContent--flexEnd">
-            {currentVersion?.releaseNotes &&
-              <div>
-                <span className="icon releaseNotes--icon u-marginRight--10 u-cursor--pointer" onClick={() => this.showDownstreamReleaseNotes(currentVersion?.releaseNotes)} data-tip="View release notes" />
-                <ReactTooltip effect="solid" className="replicated-tooltip" />
-              </div>
-            }
-            <div>
-            {currentVersion.status === "pending_preflight" ?
-              <div className="u-marginRight--10 u-position--relative">
-                <Loader size="30" />
-                <p className="checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium">Running checks</p>
-              </div>
-            :
-            <div>
-              <Link to={`/app/${app?.slug}/downstreams/${app?.downstreams[0].cluster?.slug}/version-history/preflight/${currentVersion?.sequence}`}
-                className="icon preflightChecks--icon u-marginRight--10 u-cursor--pointer u-position--relative"
-                data-tip="View preflight checks">
-                  {preflightState.preflightsFailed || preflightState.preflightState === "warn" ?
-                  <div>
-                    <span className={`icon version-row-preflight-status-icon ${preflightState.preflightsFailed ? "preflight-checks-failed-icon" : preflightState.preflightState === "warn" ? "preflight-checks-warn-icon" : ""}`} />
-                    <p className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${preflightState.preflightsFailed ? "err" : preflightState.preflightState === "warn" ? "warning" : ""}`}>{checksStatusText}</p>
-                  </div>
-                  : null}
-                </Link>
-              <ReactTooltip effect="solid" className="replicated-tooltip" />
-            </div>
-            }
-            </div>
-            {app?.isConfigurable &&
-              <div className="u-marginRight--10">
-                <Link to={`/app/${app?.slug}/config/${currentVersion.sequence}`} className="icon configEdit--icon u-cursor--pointer" data-tip="Edit config" />
-                <ReactTooltip effect="solid" className="replicated-tooltip" />
-              </div>
-            }
-            <div>
+            {this.renderReleaseNotes(currentVersion)}
+            {this.renderPreflights(currentVersion)}
+            {this.renderEditConfigIcon(app, currentVersion)}
+            <div className="u-marginLeft--10">
               <span className="icon deployLogs--icon u-cursor--pointer" onClick={() => this.handleViewLogs(currentVersion, currentVersion?.status === "failed")} data-tip="View deploy logs" />
               <ReactTooltip effect="solid" className="replicated-tooltip" />
             </div>
-            <div className="flex-column justifyContent--center">
+            <div className="flex-column justifyContent--center u-marginLeft--10">
               <button
-                className="secondary blue btn u-marginLeft--10"
+                className="secondary blue btn"
                 disabled={currentVersion.status === "deploying"}
                 onClick={() => this.deployVersion(currentVersion)}
               >
@@ -436,15 +429,14 @@ class DashboardVersionCard extends React.Component {
   }
 
   finalizeDeployment = async (continueWithFailedPreflights) => {
-    const { match, updateCallback } = this.props;
+    const { match } = this.props;
     const { versionToDeploy, isSkipPreflights } = this.state;
     this.setState({ displayConfirmDeploymentModal: false, confirmType: "" });
     await this.props.makeCurrentVersion(match.params.slug, versionToDeploy, isSkipPreflights, continueWithFailedPreflights);
-    await this.fetchKotsDownstreamHistory();
     this.setState({ versionToDeploy: null });
 
-    if (updateCallback && typeof updateCallback === "function") {
-      updateCallback();
+    if (this.props.refetchData) {
+      this.props.refetchData();
     }
   }
 
@@ -454,122 +446,309 @@ class DashboardVersionCard extends React.Component {
     this.deployVersion(versionToDeploy, true, continueWithFailedPreflights);
   }
 
-  showDownstreamReleaseNotes = (releaseNotes) => {
+  showReleaseNotes = (releaseNotes) => {
     this.setState({
-      showDownstreamReleaseNotes: true,
-      downstreamReleaseNotes: releaseNotes
+      showReleaseNotes: true,
+      releaseNotes: releaseNotes
+    });
+  }
+
+  hideReleaseNotes = () => {
+    this.setState({
+      showReleaseNotes: false,
+      releaseNotes: ""
     });
   }
   
-  deployButtonStatus = (downstream, version) => {
+  actionButtonStatus = version => {
     const isDeploying = version.status === "deploying";
+    const isDownloading = this.state.versionDownloadStatuses?.[version.sequence]?.downloadingVersion;
+    const isPendingDownload = version.status === "pending_download";
     const needsConfiguration = version.status === "pending_config";
   
-    if (needsConfiguration) {
-      return "Configure";
-    } else if (downstream?.currentVersion?.sequence == undefined) {
-      return "Deploy";
-    } else if (isDeploying) {
+    if (isDeploying) {
       return "Deploying";
+    } else if (isDownloading) {
+      return "Downloading";
+    } else if (isPendingDownload) {
+      return "Download";
+    } if (needsConfiguration) {
+      return "Configure";
     } else {
       return "Deploy";
     }
   }
-  
-  renderVersionAction = (version, nothingToCommit) => {
+
+  renderGitopsVersionAction = version => {
     const { app } = this.props;
-    const downstream = app.downstreams[0];
-    if (downstream.gitops?.enabled) {
-      if (version.gitDeployable === false) {
-        return (<div className={nothingToCommit && "u-opacity--half"}>Nothing to commit</div>);
-      }
-      if (!version.commitUrl) {
-        return (
-          <div className="flex flex1 alignItems--center justifyContent--flexEnd">
-            <span className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--normal">No commit URL found</span>
-            <span className="icon grayOutlineQuestionMark--icon u-marginLeft--5" data-tip="This version may have been created before Gitops was enabled" />
-            <ReactTooltip effect="solid" className="replicated-tooltip" />
-          </div>
-        );
-      }
+    const downstream = app.downstreams?.length && app.downstreams[0];
+    const nothingToCommit = downstream?.gitops?.enabled && !downstream?.latestVersion?.commitUrl;
+
+    if (version.status === "pending_download") {
+      const isDownloading = this.state.versionDownloadStatuses?.[version.sequence]?.downloadingVersion;
       return (
+        <div className="flex flex1 alignItems--center justifyContent--flexEnd">
+          {this.renderReleaseNotes(version)}
+          <button
+            className="btn secondary blue u-marginLeft--10"
+            disabled={isDownloading}
+            onClick={() => this.downloadVersion(version)}
+          >
+            {isDownloading ? "Downloading" : "Download"}
+          </button>
+        </div>
+      );
+    }
+    if (version.gitDeployable === false) {
+      return (<div className={nothingToCommit && "u-opacity--half"}>Nothing to commit</div>);
+    }
+    if (!version.commitUrl) {
+      return (
+        <div className="flex flex1 alignItems--center justifyContent--flexEnd">
+          <span className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--normal">No commit URL found</span>
+          <span className="icon grayOutlineQuestionMark--icon u-marginLeft--5" data-tip="This version may have been created before Gitops was enabled" />
+          <ReactTooltip effect="solid" className="replicated-tooltip" />
+        </div>
+      );
+    }
+    return (
+      <div className="flex flex1 alignItems--center justifyContent--flexEnd">
         <button
           className="btn primary blue"
           onClick={() => window.open(version.commitUrl, "_blank")}
         >
           View
         </button>
-      );
-    }
+      </div>
+    );
+  }
   
-    const needsConfiguration = version.status === "pending_config";
-    const preflightState = this.getPreflightState(version);
-    let checksStatusText;
-    if (preflightState.preflightsFailed) {
-      checksStatusText = "Checks failed"
-    } else if (preflightState.preflightState === "warn") {
-      checksStatusText = "Checks passed with warnings"
+  renderVersionAction = version => {
+    const { app } = this.props;
+    const downstream = app.downstreams[0];
+
+    if (downstream.gitops?.enabled) {
+      return this.renderGitopsVersionAction(version);
     }
+
+    const needsConfiguration = version.status === "pending_config";
+    const isPendingDownload = version.status === "pending_download";
+    const isSecondaryActionBtn = needsConfiguration || isPendingDownload;
+    const isDeploying = version.status === "deploying";
+    const isDownloading = this.state.versionDownloadStatuses?.[version.sequence]?.downloadingVersion;
+
     return (
       <div className="flex flex1 alignItems--center justifyContent--flexEnd">
-          {version?.releaseNotes &&
-            <div>
-              <span className="icon releaseNotes--icon u-marginRight--10 u-cursor--pointer" onClick={() => this.showDownstreamReleaseNotes(version?.releaseNotes)} data-tip="View release notes" />
-              <ReactTooltip effect="solid" className="replicated-tooltip" />
-            </div>
-          }
-          {version.status === "pending_preflight" ?
-            <div className="u-marginRight--10 u-position--relative">
-              <Loader size="30" />
-              <p className="checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium">Running checks</p>
-            </div>
-            :
-            <div>
-              <Link to={`/app/${app?.slug}/downstreams/${app?.downstreams[0].cluster?.slug}/version-history/preflight/${version?.sequence}`}
-                className="icon preflightChecks--icon u-marginRight--10 u-cursor--pointer u-position--relative"
-                data-tip="View preflight checks">
-                  {preflightState.preflightsFailed || preflightState.preflightState === "warn" ?
-                  <div>
-                    <span className={`icon version-row-preflight-status-icon ${preflightState.preflightsFailed ? "preflight-checks-failed-icon" : preflightState.preflightState === "warn" ? "preflight-checks-warn-icon" : ""}`} />
-                    <p className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${preflightState.preflightsFailed ? "err" : preflightState.preflightState === "warn" ? "warning" : ""}`}>{checksStatusText}</p>
-                  </div>
-                  : null}
-                </Link>
-              <ReactTooltip effect="solid" className="replicated-tooltip" />
-            </div>
-          }
-          {app?.isConfigurable &&
-            <div>
-              <Link to={`/app/${app?.slug}/config/${version.sequence}`} className="icon configEdit--icon u-cursor--pointer" data-tip="Edit config" />
-              <ReactTooltip effect="solid" className="replicated-tooltip" />
-            </div>
-          }
-          <div className="flex-column justifyContent--center">
-            <button
-              className={classNames("btn u-marginLeft--10", { "secondary blue": needsConfiguration, "primary blue": !needsConfiguration })}
-              disabled={version.status === "deploying"}
-              onClick={needsConfiguration ? history.push(`/app/${app?.slug}/config/${version.sequence}`) : () => this.deployVersion(version)}
-            >
-              {this.deployButtonStatus(downstream, version, app)}
-            </button>
-          </div>
+        {this.renderReleaseNotes(version)}
+        {this.renderPreflights(version)}
+        {this.renderEditConfigIcon(app, version)}
+        <div className="flex-column justifyContent--center u-marginLeft--10">
+          <button
+            className={classNames("btn", { "secondary blue": isSecondaryActionBtn, "primary blue": !isSecondaryActionBtn })}
+            disabled={isDeploying || isDownloading}
+            onClick={() => {
+              if (needsConfiguration) {
+                this.props.history.push(`/app/${app?.slug}/config/${version.sequence}`);
+                return;
+              }
+              if (isPendingDownload) {
+                this.downloadVersion(version);
+                return;
+              }
+              this.deployVersion(version);
+            }}
+          >
+            {this.actionButtonStatus(version)}
+          </button>
+        </div>
       </div>
     );
   }
 
-  renderVersionAvailable = () => {
-    const { app, downstream, checkingForUpdateError, checkingUpdateText, errorCheckingUpdate, isBundleUploading } = this.props;
+  renderVersionDownloadStatus = version => {
+    const { versionDownloadStatuses } = this.state;
 
-    const showOnlineUI = !app.isAirgap;
-    const nothingToCommit = downstream.gitops?.enabled && !downstream?.pendingVersions[0].commitUrl;
-    const downstreamSource = downstream?.pendingVersions[0]?.source;
+    if (!versionDownloadStatuses.hasOwnProperty(version.sequence)) {
+      // user hasn't tried to re-download the version yet, show last known download status if exists
+      if (version.downloadStatus) {
+        return (
+          <div className="flex alignItems--center justifyContent--flexEnd">
+            <span className={`u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default ${version.downloadStatus.status === "failed" ? "u-textColor--error" : ""}`}>
+              {version.downloadStatus.message}
+            </span>
+          </div>
+        );
+      }
+      return null
+    }
+
+    const status = versionDownloadStatuses[version.sequence];
+
+    return (
+      <div className="flex alignItems--center justifyContent--flexEnd">
+        {status.downloadingVersion && <Loader className="u-marginRight--5" size="15" />}
+        <span className={`u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default ${status.downloadingVersionError ? "u-textColor--error" : ""}`}>
+          {status.downloadingVersionMessage ? status.downloadingVersionMessage : status.downloadingVersion ? "Downloading" : ""}
+        </span>
+      </div>
+    );
+  }
+
+  downloadVersion = version => {
+    const { app } = this.props;
+
+    if (!this.versionDownloadStatusJobs.hasOwnProperty(version.sequence)) {
+      this.versionDownloadStatusJobs[version.sequence] = new Repeater();
+    }
+
+    this.setState({
+      versionDownloadStatuses: {
+        ...this.state.versionDownloadStatuses,
+        [version.sequence]: {
+          downloadingVersion: true,
+          downloadingVersionMessage: "",
+          downloadingVersionError: false,
+        }
+      },
+    });
+    
+    fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/sequence/${version.parentSequence}/download`, {
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          const response = await res.json();
+          this.setState({
+            versionDownloadStatuses: {
+              ...this.state.versionDownloadStatuses,
+              [version.sequence]: {
+                downloadingVersion: false,
+                downloadingVersionMessage: response.error,
+                downloadingVersionError: true
+              }
+            }
+          });
+          return;
+        }
+        this.versionDownloadStatusJobs[version.sequence].start(() => this.updateVersionDownloadStatus(version), 1000);
+      })
+      .catch((err) => {
+        console.log(err);
+        this.setState({
+          versionDownloadStatuses: {
+            ...this.state.versionDownloadStatuses,
+            [version.sequence]: {
+              downloadingVersion: false,
+              downloadingVersionMessage: err?.message || "Something went wrong, please try again.",
+              downloadingVersionError: true
+            }
+          }
+        });
+      });
+  }
+
+  updateVersionDownloadStatus = version => {
+    const { app } = this.props;
+
+    return new Promise((resolve, reject) => {
+      fetch(`${process.env.API_ENDPOINT}/app/${app?.slug}/sequence/${version?.parentSequence}/task/updatedownload`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "GET",
+      })
+        .then(async (res) => {
+          const response = await res.json();
+
+          if (response.status !== "running") {
+            this.versionDownloadStatusJobs[version.sequence].stop();
+
+            this.setState({
+              versionDownloadStatuses: {
+                ...this.state.versionDownloadStatuses,
+                [version.sequence]: {
+                  downloadingVersion: false,
+                  downloadingVersionMessage: response.currentMessage,
+                  downloadingVersionError: response.status === "failed"
+                }
+              }
+            });
+
+            if (this.props.refetchData) {
+              this.props.refetchData();
+            }
+          } else {
+            this.setState({
+              versionDownloadStatuses: {
+                ...this.state.versionDownloadStatuses,
+                [version.sequence]: {
+                  downloadingVersion: true,
+                  downloadingVersionMessage: response.currentMessage,
+                }
+              }
+            });
+          }
+          resolve();
+        }).catch((err) => {
+          console.log("failed to get version download status", err);
+          reject();
+        });
+    });
+  }
+
+  shouldRenderUpdateProgress = () => {
+    if (this.props.uploadingAirgapFile) {
+      return true;
+    }
+    if (this.props.isBundleUploading) {
+      return true;
+    }
+    if (this.props.checkingForUpdateError) {
+      return true;
+    }
+    if (this.props.airgapUploadError) {
+      return true;
+    }
+    if (this.props.app?.isAirgap && this.props.checkingForUpdates) {
+      return true;
+    }
+    return false;
+  }
+
+  renderUpdateProgress = () => {
+    const {
+      app,
+      checkingForUpdateError,
+      checkingUpdateText,
+      isBundleUploading,
+      uploadingAirgapFile,
+      checkingForUpdates,
+      airgapUploadError
+    } = this.props;
 
     let updateText;
-    if (showOnlineUI && app.lastUpdateCheckAt) {
-      updateText = <p className="u-marginTop--8 u-fontSize--smaller u-textColor--info u-marginTop--8">Last checked <span className="u-fontWeight--bold">{dayjs(app.lastUpdateCheckAt).fromNow()}</span></p>;
-    } else if (this.props.airgapUploadError) {
-      updateText = <p className="u-marginTop--10 u-fontSize--small u-textColor--error u-fontWeight--medium">Error uploading bundle <span className="u-linkColor u-textDecoration--underlineOnHover" onClick={this.props.viewAirgapUploadError}>See details</span></p>
-    } else if (this.props.uploadingAirgapFile) {
+    if (airgapUploadError) {
+      updateText = (
+        <p className="u-marginTop--10 u-marginBottom--10 u-fontSize--small u-textColor--error u-fontWeight--medium">
+          Error uploading bundle
+          <span className="u-linkColor u-textDecoration--underlineOnHover u-marginLeft--5" onClick={this.props.viewAirgapUploadError}>
+            See details
+          </span>
+        </p>
+      );
+    } else if (checkingForUpdateError) {
+      updateText = (
+        <div className="flex-column flex-auto u-marginTop--10">
+          <p className="u-fontSize--normal u-marginBottom--5 u-textColor--error u-fontWeight--medium">Error updating version:</p>
+          <p className="u-fontSize--small u-textColor--error u-lineHeight--normal u-fontWeight--medium">{checkingUpdateText}</p>
+        </div>
+      );
+    } else if (uploadingAirgapFile) {
       updateText = (
         <AirgapUploadProgress
           appSlug={app.slug}
@@ -588,64 +767,83 @@ class DashboardVersionCard extends React.Component {
           onProgressError={this.onProgressError}
           smallSize={true}
         />);
-    } else if (errorCheckingUpdate) {
-      updateText = <p className="u-marginTop--10 u-fontSize--small u-textColor--error u-fontWeight--medium">Error checking for updates, please try again</p>
-    } else if (!app.lastUpdateCheckAt) {
-      updateText = null;
-    }
-
-    let checkingUpdateTextShort = checkingUpdateText;
-    if (checkingUpdateTextShort && checkingUpdateTextShort.length > 65) {
-      checkingUpdateTextShort = checkingUpdateTextShort.slice(0, 65) + "...";
+    } else if (checkingForUpdates) {
+      let shortText = checkingUpdateText;
+      if (shortText && shortText.length > 65) {
+        shortText = shortText.slice(0, 65) + "...";
+      }
+      updateText = (
+        <div className="flex-column justifyContent--center alignItems--center">
+          <Loader className="u-marginBottom--10" size="30" />
+          <span className="u-textColor--bodyCopy u-fontWeight--medium u-fontSize--normal u-lineHeight--default">{shortText}</span>
+        </div>
+      );
     }
 
     return (
-      <div>
-        {!checkingForUpdateError && downstream?.pendingVersions?.length > 0 && (!isBundleUploading || !this.props.uploadingAirgapFile) ?
-          <div className="flex">
+      <div className="VersionCard-content--wrapper u-marginTop--15">
+        {updateText}
+      </div>
+    );
+  }
+
+  renderBottomSection = () => {
+    if (this.shouldRenderUpdateProgress()) {
+      return this.renderUpdateProgress();
+    }
+
+    const downstream = this.props.downstream;
+    if (!downstream?.latestVersion || downstream?.latestVersion?.sequence === downstream?.currentVersion?.sequence) {
+      return null;
+    }
+
+    const app = this.props.app;
+    const latestVersion = downstream?.latestVersion;
+    const downstreamSource = latestVersion?.source;
+    const gitopsEnabled = downstream?.gitops?.enabled;
+    const versionsToSkip = downstream?.pendingVersions?.length - 1;
+    const isNew = secondsAgo(latestVersion?.createdOn) < 10;
+
+    return (
+      <div className="u-marginTop--20">
+        <p className="u-fontSize--normal u-lineHeight--normal u-textColor--header u-fontWeight--medium">Latest available version</p>
+        {gitopsEnabled &&
+          <div className="gitops-enabled-block u-fontSize--small u-fontWeight--medium flex alignItems--center u-textColor--header u-marginTop--10">
+            <span className={`icon gitopsService--${downstream?.gitops?.provider} u-marginRight--10`}/>Gitops is enabled for this application. Versions are tracked {app?.isAirgap ? "at" : "on"}&nbsp;<a target="_blank" rel="noopener noreferrer" href={downstream?.gitops?.uri} className="replicated-link">{app.isAirgap ? downstream?.gitops?.uri : Utilities.toTitleCase(downstream?.gitops?.provider)}</a>
+          </div>
+        }
+        <div className="VersionCard-content--wrapper u-marginTop--15">
+          <div className={`flex ${isNew && !app?.isAirgap ? "is-new" : ""}`}>
             <div className="flex-column">
               <div className="flex alignItems--center">
-                <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">{downstream?.pendingVersions[0].versionLabel || downstream?.pendingVersions[0].title}</p>
-                <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">Sequence {downstream?.pendingVersions[0].sequence}</p>
+                <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">{latestVersion.versionLabel || latestVersion.title}</p>
+                <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">Sequence {latestVersion.sequence}</p>
               </div>
-              <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5"> Released {Utilities.dateFormat(downstream?.pendingVersions[0]?.createdOn, "MM/DD/YY @ hh:mm a z")} </p>
+              <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5"> Released {Utilities.dateFormat(latestVersion?.createdOn, "MM/DD/YY @ hh:mm a z")} </p>
               <div className="u-marginTop--5 flex flex-auto alignItems--center">
-                {this.renderSourceAndDiff(downstream?.pendingVersions[0])}
+                {this.renderSourceAndDiff(latestVersion)}
               </div>
             </div>
             <div className="flex alignItems--center u-paddingLeft--20">
               <p className="u-fontSize--small u-fontWeight--bold u-textColor--lightAccent u-lineHeight--default">{downstreamSource}</p>
             </div>
-              {this.renderVersionAction(downstream?.pendingVersions[0], nothingToCommit)}
+            {this.renderVersionAction(latestVersion)}
           </div>
-        : null}
-        {!showOnlineUI && updateText}
-        {app?.isAirgap && this.props.checkingForUpdates && !isBundleUploading ?
-          <div className="flex-column justifyContent--center alignItems--center">
-            <Loader className="u-marginBottom--10" size="30" />
-            <span className="u-textColor--bodyCopy u-fontWeight--medium u-fontSize--normal u-lineHeight--default">{checkingUpdateTextShort}</span>
-          </div>
-        : null }
-        {checkingForUpdateError &&
-          <div className={`flex-column flex-auto ${this.props.uploadingAirgapFile || this.props.checkingForUpdates || isBundleUploading ? "u-marginTop--10" : ""}`}>
-            <p className="u-fontSize--normal u-marginBottom--5 u-textColor--error u-fontWeight--medium">Error updating version:</p>
-            <p className="u-fontSize--small u-textColor--error u-lineHeight--normal u-fontWeight--medium">{checkingUpdateText}</p>
-          </div>}
+          {this.renderVersionDownloadStatus(latestVersion)}
+        </div>
+        {versionsToSkip > 0 && <p className="u-fontSize--small u-fontWeight--medium u-textColor--header u-marginTop--10">{versionsToSkip} version{versionsToSkip > 1 && "s"} will be skipped in upgrading to {downstream?.pendingVersions[0]?.versionLabel}.</p>}
       </div>
-    )
+    );
   }
 
   render() {
-    const { app, downstream, currentVersion, checkingForUpdates, checkingUpdateText, uploadingAirgapFile, isBundleUploading, airgapUploader } = this.props;
-    const { downstreamReleaseNotes } = this.state;
-    const versionsToSkip = downstream?.pendingVersions?.length - 1;
-    const gitopsEnabled = downstream?.gitops?.enabled;
+    const { app, currentVersion, checkingForUpdates, checkingUpdateText, isBundleUploading, airgapUploader } = this.props;
 
     let checkingUpdateTextShort = checkingUpdateText;
     if (checkingUpdateTextShort && checkingUpdateTextShort.length > 30) {
       checkingUpdateTextShort = checkingUpdateTextShort.slice(0, 30) + "...";
     }
-    const isNew = downstream?.pendingVersions ? secondsAgo(downstream?.pendingVersions[0]?.createdOn) < 10 : false;
+
     return (
       <div className="flex-column flex1 dashboard-card">
         <div className="flex flex1 justifyContent--spaceBetween alignItems--center u-marginBottom--10">
@@ -682,7 +880,7 @@ class DashboardVersionCard extends React.Component {
           </div>
         </div>
         {currentVersion?.deployedAt ?
-          <div className="LicenseCard-content--wrapper">
+          <div className="VersionCard-content--wrapper">
             {this.renderCurrentVersion()}
           </div>
         :
@@ -690,40 +888,25 @@ class DashboardVersionCard extends React.Component {
             <p className="u-fontWeight--medium u-fontSize--normal u-textColor--bodyCopy"> No version has been deployed </p>
           </div>
         }
-        {downstream?.pendingVersions?.length > 0 || uploadingAirgapFile || isBundleUploading || this.props.checkingForUpdateError || (app?.isAirgap && this.props.checkingForUpdates)  ?
-          <div className="u-marginTop--20">
-            {uploadingAirgapFile || isBundleUploading || this.props.checkingForUpdateError || (app?.isAirgap && this.props.checkingForUpdates) ? null :
-              <p className="u-fontSize--normal u-lineHeight--normal u-textColor--header u-fontWeight--medium">{currentVersion?.deployedAt ? "Latest available version" : "Deploy latest available version"}</p>
-            }
-            {gitopsEnabled &&
-              <div className="gitops-enabled-block u-fontSize--small u-fontWeight--medium flex alignItems--center u-textColor--header u-marginTop--10">
-                <span className={`icon gitopsService--${downstream?.gitops?.provider} u-marginRight--10`}/>Gitops is enabled for this application. Versions are tracked {app?.isAirgap ? "at" : "on"}&nbsp;<a target="_blank" rel="noopener noreferrer" href={downstream?.gitops?.uri} className="replicated-link">{app.isAirgap ? downstream?.gitops?.uri : Utilities.toTitleCase(downstream?.gitops?.provider)}</a>
-              </div>
-            }
-            <div className={`LicenseCard-content--wrapper u-marginTop--15 ${isNew && !app?.isAirgap ? "is-new" : ""}`}>
-              {this.renderVersionAvailable()}
-            </div>
-            {versionsToSkip > 0 && <p className="u-fontSize--small u-fontWeight--medium u-textColor--header u-marginTop--10">{versionsToSkip} version{versionsToSkip > 1 && "s"} will be skipped in upgrading to {downstream?.pendingVersions[0]?.versionLabel}.</p>}
-          </div>
-        : null}
+        {this.renderBottomSection()}
         <div className="u-marginTop--10">
           <Link to={`/app/${this.props.app?.slug}/version-history`} className="replicated-link has-arrow u-fontSize--small">See all versions</Link>
         </div>
-        {this.state.showDownstreamReleaseNotes &&
+        {this.state.showReleaseNotes &&
           <Modal
-            isOpen={this.state.showDownstreamReleaseNotes}
-            onRequestClose={() => this.setState({ showDownstreamReleaseNotes: false })}
+            isOpen={this.state.showReleaseNotes}
+            onRequestClose={this.hideReleaseNotes}
             contentLabel="Release Notes"
             ariaHideApp={false}
             className="Modal MediumSize"
           >
             <div className="flex-column">
               <MarkdownRenderer className="is-kotsadm" id="markdown-wrapper">
-                {downstreamReleaseNotes || "No release notes for this version"}
+                {this.state.releaseNotes || "No release notes for this version"}
               </MarkdownRenderer>
             </div>
             <div className="flex u-marginTop--10 u-marginLeft--10 u-marginBottom--10">
-              <button className="btn primary" onClick={() => this.setState({ showDownstreamReleaseNotes: false })}>Close</button>
+              <button className="btn primary" onClick={this.hideReleaseNotes}>Close</button>
             </div>
           </Modal>
         }

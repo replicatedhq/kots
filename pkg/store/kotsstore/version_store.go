@@ -30,6 +30,7 @@ import (
 	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
 	"github.com/replicatedhq/kots/pkg/secrets"
 	"github.com/replicatedhq/kots/pkg/store/types"
+	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -281,7 +282,7 @@ func (s *KOTSStore) GetAppVersionArchive(appID string, sequence int64, dstPath s
 // GetAppVersionBaseSequence returns the base sequence for a given version label.
 // if the "versionLabel" param is empty or is not a valid semver, the sequence of the latest version will be returned.
 func (s *KOTSStore) GetAppVersionBaseSequence(appID string, versionLabel string) (int64, error) {
-	appVersions, err := s.FindAppVersions(appID)
+	appVersions, err := s.FindAppVersions(appID, true)
 	if err != nil {
 		return -1, errors.Wrapf(err, "failed to find app versions for app %s", appID)
 	}
@@ -351,6 +352,97 @@ func (s *KOTSStore) GetAppVersionBaseArchive(appID string, versionLabel string) 
 	return archiveDir, baseSequence, nil
 }
 
+func (s *KOTSStore) CreatePendingDownloadAppVersion(appID string, update upstreamtypes.Update) (int64, error) {
+	db := persistence.MustGetDBSession()
+
+	tx, err := db.Begin()
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to begin")
+	}
+	defer tx.Rollback()
+
+	a, err := s.GetApp(appID)
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to get app")
+	}
+
+	kotsKinds := kotsutil.EmptyKotsKinds()
+
+	var releasedAt *metav1.Time
+	if update.ReleasedAt != nil {
+		releasedAt = &metav1.Time{Time: *update.ReleasedAt}
+	}
+	kotsKinds.Installation = kotsv1beta1.Installation{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "kots.io/v1beta1",
+			Kind:       "Installation",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: fmt.Sprintf("%s-%s", update.Cursor, update.VersionLabel),
+		},
+		Spec: kotsv1beta1.InstallationSpec{
+			UpdateCursor: update.Cursor,
+			ChannelID:    update.ChannelID,
+			ChannelName:  update.ChannelName,
+			VersionLabel: update.VersionLabel,
+			ReleasedAt:   releasedAt,
+			ReleaseNotes: update.ReleaseNotes,
+		},
+	}
+
+	newSequence, err := s.createAppVersionRecord(tx, a.ID, a.Name, a.IconURI, &kotsKinds)
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to create app version")
+	}
+
+	downstreams, err := s.ListDownstreamsForApp(appID)
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to list downstreams")
+	}
+
+	for _, d := range downstreams {
+		err = s.addAppVersionToDownstream(tx, a.ID, d.ClusterID, newSequence,
+			kotsKinds.Installation.Spec.VersionLabel, types.VersionPendingDownload, "Upstream Update",
+			"", "", "", false, false)
+		if err != nil {
+			return 0, errors.Wrap(err, "failed to create downstream version")
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return 0, errors.Wrap(err, "failed to commit")
+	}
+
+	return newSequence, nil
+}
+
+func (s *KOTSStore) UpdateAppVersion(appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) error {
+	// make sure version exists first
+	if v, err := s.GetAppVersion(appID, sequence); err != nil {
+		return errors.Wrap(err, "failed to get app version")
+	} else if v == nil {
+		return errors.Errorf("version %d not found", sequence)
+	}
+
+	db := persistence.MustGetDBSession()
+
+	tx, err := db.Begin()
+	if err != nil {
+		return errors.Wrap(err, "failed to begin")
+	}
+	defer tx.Rollback()
+
+	if err := s.upsertAppVersion(tx, appID, sequence, baseSequence, filesInDir, source, skipPreflights, gitops); err != nil {
+		return errors.Wrap(err, "failed to upsert app version")
+	}
+
+	if err := tx.Commit(); err != nil {
+		return errors.Wrap(err, "failed to commit")
+	}
+
+	return nil
+}
+
 func (s *KOTSStore) CreateAppVersion(appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) (int64, error) {
 	db := persistence.MustGetDBSession()
 
@@ -373,15 +465,28 @@ func (s *KOTSStore) CreateAppVersion(appID string, baseSequence *int64, filesInD
 }
 
 func (s *KOTSStore) createAppVersion(tx *sql.Tx, appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) (int64, error) {
+	newSequence, err := s.getNextAppSequence(tx, appID)
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to get next sequence number")
+	}
+
+	if err := s.upsertAppVersion(tx, appID, newSequence, baseSequence, filesInDir, source, skipPreflights, gitops); err != nil {
+		return 0, errors.Wrap(err, "failed to upsert app version")
+	}
+
+	return newSequence, nil
+}
+
+func (s *KOTSStore) upsertAppVersion(tx *sql.Tx, appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) error {
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filesInDir)
 	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to read kots kinds")
+		return errors.Wrap(err, "failed to read kots kinds")
 	}
 
 	appName := kotsKinds.KotsApplication.Spec.Title
 	a, err := s.GetApp(appID)
 	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to get app")
+		return errors.Wrap(err, "failed to get app")
 	}
 	if appName == "" {
 		appName = a.Name
@@ -389,31 +494,29 @@ func (s *KOTSStore) createAppVersion(tx *sql.Tx, appID string, baseSequence *int
 
 	appIcon := kotsKinds.KotsApplication.Spec.Icon
 
+	if err := s.upsertAppVersionRecord(tx, appID, sequence, appName, appIcon, kotsKinds); err != nil {
+		return errors.Wrap(err, "failed to upsert app version record")
+	}
+
 	if err := secrets.ReplaceSecretsInPath(filesInDir); err != nil {
-		return int64(0), errors.Wrap(err, "failed to replace secrets")
+		return errors.Wrap(err, "failed to replace secrets")
 	}
-
-	newSequence, err := s.createAppVersionRecord(tx, appID, appName, appIcon, kotsKinds)
-	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to create app version")
-	}
-
-	if err := s.CreateAppVersionArchive(appID, int64(newSequence), filesInDir); err != nil {
-		return int64(0), errors.Wrap(err, "failed to create app version archive")
+	if err := s.CreateAppVersionArchive(appID, sequence, filesInDir); err != nil {
+		return errors.Wrap(err, "failed to create app version archive")
 	}
 
 	previousArchiveDir := ""
 	if baseSequence != nil {
 		previousDir, err := ioutil.TempDir("", "kotsadm")
 		if err != nil {
-			return int64(0), errors.Wrap(err, "failed to create temp dir")
+			return errors.Wrap(err, "failed to create temp dir")
 		}
 		defer os.RemoveAll(previousDir)
 
 		// Get the previous archive, we need this to calculate the diff
 		err = s.GetAppVersionArchive(appID, *baseSequence, previousDir)
 		if err != nil {
-			return int64(0), errors.Wrap(err, "failed to get previous archive")
+			return errors.Wrap(err, "failed to get previous archive")
 		}
 
 		previousArchiveDir = previousDir
@@ -421,12 +524,12 @@ func (s *KOTSStore) createAppVersion(tx *sql.Tx, appID string, baseSequence *int
 
 	registrySettings, err := s.GetRegistryDetailsForApp(appID)
 	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to get app registry info")
+		return errors.Wrap(err, "failed to get app registry info")
 	}
 
 	downstreams, err := s.ListDownstreamsForApp(appID)
 	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to list downstreams")
+		return errors.Wrap(err, "failed to list downstreams")
 	}
 
 	kustomizeBinPath := kotsKinds.GetKustomizeBinaryPath()
@@ -443,9 +546,9 @@ func (s *KOTSStore) createAppVersion(tx *sql.Tx, appID string, baseSequence *int
 		}
 		if baseSequence != nil { // only check if the version needs configuration for later versions (not the initial one) since the config is always required for the initial version (except for automated installs, which can override that later)
 			// check if version needs additional configuration
-			t, err := kotsadmconfig.NeedsConfiguration(a.Slug, newSequence, a.IsAirgap, kotsKinds, registrySettings)
+			t, err := kotsadmconfig.NeedsConfiguration(a.Slug, sequence, a.IsAirgap, kotsKinds, registrySettings)
 			if err != nil {
-				return int64(0), errors.Wrap(err, "failed to check if version needs configuration")
+				return errors.Wrap(err, "failed to check if version needs configuration")
 			}
 			if t {
 				downstreamStatus = types.VersionPendingConfig
@@ -467,86 +570,94 @@ func (s *KOTSStore) createAppVersion(tx *sql.Tx, appID string, baseSequence *int
 			}
 		}
 
-		commitURL, err := gitops.CreateGitOpsDownstreamCommit(appID, d.ClusterID, int(newSequence), filesInDir, d.Name)
+		commitURL, err := gitops.CreateGitOpsDownstreamCommit(appID, d.ClusterID, int(sequence), filesInDir, d.Name)
 		if err != nil {
-			return int64(0), errors.Wrap(err, "failed to create gitops commit")
+			return errors.Wrap(err, "failed to create gitops commit")
 		}
 
-		err = s.addAppVersionToDownstream(tx, appID, d.ClusterID, newSequence,
+		err = s.addAppVersionToDownstream(tx, appID, d.ClusterID, sequence,
 			kotsKinds.Installation.Spec.VersionLabel, downstreamStatus, source,
 			diffSummary, diffSummaryError, commitURL, commitURL != "", skipPreflights)
 		if err != nil {
-			return int64(0), errors.Wrap(err, "failed to create downstream version")
+			return errors.Wrap(err, "failed to create downstream version")
 		}
 
 		// update metadata configmap
 		applicationSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Application")
 		if err != nil {
-			return int64(0), errors.Wrap(err, "failed to marshal application spec")
+			return errors.Wrap(err, "failed to marshal application spec")
 		}
 
 		if err := s.ensureApplicationMetadata(applicationSpec, util.PodNamespace, a.UpstreamURI); err != nil {
-			return int64(0), errors.Wrap(err, "failed to get metadata config map")
+			return errors.Wrap(err, "failed to get metadata config map")
 		}
+	}
+
+	return nil
+}
+
+func (s *KOTSStore) createAppVersionRecord(tx *sql.Tx, appID string, appName string, appIcon string, kotsKinds *kotsutil.KotsKinds) (int64, error) {
+	newSequence, err := s.getNextAppSequence(tx, appID)
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to get next sequence number")
+	}
+
+	if err := s.upsertAppVersionRecord(tx, appID, newSequence, appName, appIcon, kotsKinds); err != nil {
+		return 0, errors.Wrap(err, "failed to upsert app version record")
 	}
 
 	return newSequence, nil
 }
 
-func (s *KOTSStore) createAppVersionRecord(tx *sql.Tx, appID string, appName string, appIcon string, kotsKinds *kotsutil.KotsKinds) (int64, error) {
+func (s *KOTSStore) upsertAppVersionRecord(tx *sql.Tx, appID string, sequence int64, appName string, appIcon string, kotsKinds *kotsutil.KotsKinds) error {
 	// we marshal these here because it's a decision of the store to cache them in the app version table
 	// not all stores will do this
 	supportBundleSpec, err := kotsKinds.Marshal("troubleshoot.replicated.com", "v1beta1", "Collector")
 	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to marshal support bundle spec")
+		return errors.Wrap(err, "failed to marshal support bundle spec")
 	}
 	analyzersSpec, err := kotsKinds.Marshal("troubleshoot.replicated.com", "v1beta1", "Analyzer")
 	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to marshal analyzer spec")
+		return errors.Wrap(err, "failed to marshal analyzer spec")
 	}
 	preflightSpec, err := kotsKinds.Marshal("troubleshoot.replicated.com", "v1beta1", "Preflight")
 	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to marshal preflight spec")
+		return errors.Wrap(err, "failed to marshal preflight spec")
 	}
 
 	appSpec, err := kotsKinds.Marshal("app.k8s.io", "v1beta1", "Application")
 	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to marshal app spec")
+		return errors.Wrap(err, "failed to marshal app spec")
 	}
 	kotsAppSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Application")
 	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to marshal kots app spec")
+		return errors.Wrap(err, "failed to marshal kots app spec")
 	}
 	kotsInstallationSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Installation")
 	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to marshal kots installation spec")
+		return errors.Wrap(err, "failed to marshal kots installation spec")
 	}
 
 	backupSpec, err := kotsKinds.Marshal("velero.io", "v1", "Backup")
 	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to marshal backup spec")
+		return errors.Wrap(err, "failed to marshal backup spec")
 	}
 	identitySpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Identity")
 	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to marshal identity spec")
+		return errors.Wrap(err, "failed to marshal identity spec")
 	}
 
 	licenseSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "License")
 	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to marshal license spec")
+		return errors.Wrap(err, "failed to marshal license spec")
 	}
 	configSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Config")
 	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to marshal config spec")
+		return errors.Wrap(err, "failed to marshal config spec")
 	}
 	configValuesSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
 	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to marshal configvalues spec")
-	}
-
-	newSequence, err := s.getNextAppSequence(tx, appID)
-	if err != nil {
-		return 0, errors.Wrap(err, "failed to get next sequence number")
+		return errors.Wrap(err, "failed to marshal configvalues spec")
 	}
 
 	var releasedAt *time.Time
@@ -576,7 +687,7 @@ func (s *KOTSStore) createAppVersionRecord(tx *sql.Tx, appID string, appName str
 		config_values = EXCLUDED.config_values,
 		backup_spec = EXCLUDED.backup_spec,
 		identity_spec = EXCLUDED.identity_spec`
-	_, err = tx.Exec(query, appID, newSequence, time.Now(),
+	_, err = tx.Exec(query, appID, sequence, time.Now(),
 		kotsKinds.Installation.Spec.VersionLabel,
 		kotsKinds.Installation.Spec.ReleaseNotes,
 		kotsKinds.Installation.Spec.UpdateCursor,
@@ -596,20 +707,32 @@ func (s *KOTSStore) createAppVersionRecord(tx *sql.Tx, appID string, appName str
 		backupSpec,
 		identitySpec)
 	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to insert app version")
+		return errors.Wrap(err, "failed to insert app version")
 	}
 
-	query = "update app set current_sequence = $1, name = $2, icon_uri = $3 where id = $4"
-	_, err = tx.Exec(query, int64(newSequence), appName, appIcon, appID)
+	// an old version could be downloaded at a later point, pick higher sequence
+	query = "update app set current_sequence = greatest(current_sequence, $1), name = $2, icon_uri = $3 where id = $4"
+	_, err = tx.Exec(query, sequence, appName, appIcon, appID)
 	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to update app")
+		return errors.Wrap(err, "failed to update app")
 	}
 
-	return int64(newSequence), nil
+	return nil
 }
 
 func (s *KOTSStore) addAppVersionToDownstream(tx *sql.Tx, appID string, clusterID string, sequence int64, versionLabel string, status types.DownstreamVersionStatus, source string, diffSummary string, diffSummaryError string, commitURL string, gitDeployable bool, preflightsSkipped bool) error {
-	query := `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status, source, diff_summary, diff_summary_error, git_commit_url, git_deployable, preflight_skipped) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`
+	query := `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status, source, diff_summary, diff_summary_error, git_commit_url, git_deployable, preflight_skipped)
+		values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+		ON CONFLICT(app_id, cluster_id, sequence) DO UPDATE SET
+		created_at = EXCLUDED.created_at,
+		version_label = EXCLUDED.version_label,
+		status = EXCLUDED.status,
+		source = EXCLUDED.source,
+		diff_summary = EXCLUDED.diff_summary,
+		diff_summary_error = EXCLUDED.diff_summary_error,
+		git_commit_url = EXCLUDED.git_commit_url,
+		git_deployable = EXCLUDED.git_deployable,
+		preflight_skipped= EXCLUDED.preflight_skipped`
 	_, err := tx.Exec(
 		query,
 		appID,
@@ -683,10 +806,13 @@ func (s *KOTSStore) GetAppVersion(appID string, sequence int64) (*versiontypes.A
 	return &v, nil
 }
 
-func (s *KOTSStore) GetLatestAppVersion(appID string) (*versiontypes.AppVersion, error) {
-	downstreamVersions, err := s.FindAppVersions(appID)
+func (s *KOTSStore) GetLatestAppVersion(appID string, downloadedOnly bool) (*versiontypes.AppVersion, error) {
+	downstreamVersions, err := s.FindAppVersions(appID, downloadedOnly)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find app versions")
+	}
+	if len(downstreamVersions.AllVersions) == 0 {
+		return nil, errors.New("no app versions found")
 	}
 	return s.GetAppVersion(appID, downstreamVersions.AllVersions[0].ParentSequence)
 }
@@ -732,6 +858,85 @@ func (s *KOTSStore) GetAppVersionsAfter(appID string, sequence int64) ([]*versio
 	}
 
 	return versions, nil
+}
+
+func (s *KOTSStore) UpdateNextAppVersionDiffSummary(appID string, baseSequence int64) error {
+	a, err := s.GetApp(appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get app")
+	}
+
+	appVersions, err := s.FindAppVersions(a.ID, true)
+	if err != nil {
+		return errors.Wrapf(err, "failed to find app versions for app %s", appID)
+	}
+
+	nextSequence := int64(-1)
+	for _, v := range appVersions.AllVersions {
+		if v.ParentSequence == baseSequence {
+			break
+		}
+		nextSequence = v.ParentSequence
+	}
+
+	if nextSequence == -1 {
+		return nil
+	}
+
+	downstreams, err := s.ListDownstreamsForApp(a.ID)
+	if err != nil {
+		return errors.Wrap(err, "failed to list downstreams")
+	}
+	if len(downstreams) == 0 {
+		return errors.Errorf("no downstreams found for app %q", a.Slug)
+	}
+	d := downstreams[0]
+
+	baseArchiveDir, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		return errors.Wrap(err, "failed to create base temp dir")
+	}
+	defer os.RemoveAll(baseArchiveDir)
+
+	if err := s.GetAppVersionArchive(appID, baseSequence, baseArchiveDir); err != nil {
+		return errors.Wrap(err, "failed to get base archive dir")
+	}
+
+	nextArchiveDir, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		return errors.Wrap(err, "failed to create next temp dir")
+	}
+	defer os.RemoveAll(nextArchiveDir)
+
+	if err := s.GetAppVersionArchive(appID, nextSequence, nextArchiveDir); err != nil {
+		return errors.Wrap(err, "failed to get next archive dir")
+	}
+
+	nextKotsKinds, err := kotsutil.LoadKotsKindsFromPath(nextArchiveDir)
+	if err != nil {
+		return errors.Wrap(err, "failed to read kots kinds")
+	}
+
+	diffSummary, diffSummaryError := "", ""
+
+	diff, err := kustomize.DiffAppVersionsForDownstream(d.Name, nextArchiveDir, baseArchiveDir, nextKotsKinds.GetKustomizeBinaryPath())
+	if err != nil {
+		diffSummaryError = errors.Wrap(err, "failed to diff").Error()
+	} else {
+		b, err := json.Marshal(diff)
+		if err != nil {
+			diffSummaryError = errors.Wrap(err, "failed to marshal diff").Error()
+		}
+		diffSummary = string(b)
+	}
+
+	db := persistence.MustGetDBSession()
+	query := `update app_downstream_version set diff_summary = $3, diff_summary_error = $4 where app_id = $1 AND sequence = $2`
+	if _, err := db.Exec(query, appID, nextSequence, diffSummary, diffSummaryError); err != nil {
+		return errors.Wrap(err, "failed to execute query")
+	}
+
+	return nil
 }
 
 func (s *KOTSStore) UpdateAppVersionInstallationSpec(appID string, sequence int64, installation kotsv1beta1.Installation) error {

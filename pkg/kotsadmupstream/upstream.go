@@ -22,9 +22,15 @@ import (
 	"github.com/replicatedhq/kots/pkg/version"
 )
 
-func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skipCompatibilityCheck bool) (sequence int64, finalError error) {
-	if err := store.GetStore().SetTaskStatus("update-download", "Fetching update...", "running"); err != nil {
-		return 0, errors.Wrap(err, "failed to set task status")
+func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skipCompatibilityCheck bool) (finalSequence *int64, finalError error) {
+	taskID := "update-download"
+	if update.AppSequence != nil {
+		taskID = fmt.Sprintf("update-download.%d", *update.AppSequence)
+	}
+
+	if err := store.GetStore().SetTaskStatus(taskID, "Fetching update...", "running"); err != nil {
+		finalError = errors.Wrap(err, "failed to set task status")
+		return
 	}
 
 	finishedCh := make(chan struct{})
@@ -33,8 +39,8 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		for {
 			select {
 			case <-time.After(time.Second):
-				if err := store.GetStore().UpdateTaskStatusTimestamp("update-download"); err != nil {
-					logger.Error(err)
+				if err := store.GetStore().UpdateTaskStatusTimestamp(taskID); err != nil {
+					logger.Error(errors.Wrapf(err, "failed to update %s task status timestamp", taskID))
 				}
 			case <-finishedCh:
 				return
@@ -44,29 +50,68 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 
 	defer func() {
 		if finalError == nil {
-			if err := store.GetStore().ClearTaskStatus("update-download"); err != nil {
-				logger.Error(err)
+			if update.AppSequence != nil {
+				// this could be an older version that is being downloaded at a later point
+				// update the diff summary of the next version in the list (if exists)
+				err := store.GetStore().UpdateNextAppVersionDiffSummary(appID, *update.AppSequence)
+				if err != nil {
+					logger.Error(errors.Wrapf(err, "failed to update next app version diff summary for base sequence %d", *update.AppSequence))
+				}
 			}
-		} else {
-			errMsg := finalError.Error()
-			if cause, ok := errors.Cause(finalError).(util.ActionableError); ok {
-				errMsg = cause.Error()
+			err := store.GetStore().ClearTaskStatus(taskID)
+			if err != nil {
+				logger.Error(errors.Wrapf(err, "failed to clear %s task status", taskID))
 			}
-			if err := store.GetStore().SetTaskStatus("update-download", errMsg, "failed"); err != nil {
-				logger.Error(err)
+			return
+		}
+
+		errMsg := finalError.Error()
+		if cause, ok := errors.Cause(finalError).(util.ActionableError); ok {
+			errMsg = cause.Error()
+		}
+
+		if update.AppSequence != nil || finalSequence != nil {
+			// a version already exists or has been created
+			err := store.GetStore().SetTaskStatus(taskID, errMsg, "failed")
+			if err != nil {
+				logger.Error(errors.Wrapf(err, "failed to set %s task status", taskID))
 			}
+			return
+		}
+
+		// no version has been created for the update yet, create the version as pending download
+		newSequence, err := store.GetStore().CreatePendingDownloadAppVersion(appID, update)
+		if err != nil {
+			logger.Error(errors.Wrapf(err, "failed to create pending download app version for update %s", update.VersionLabel))
+			if err := store.GetStore().SetTaskStatus(taskID, errMsg, "failed"); err != nil {
+				logger.Error(errors.Wrapf(err, "failed to set %s task status", taskID))
+			}
+			return
+		}
+		finalSequence = &newSequence
+
+		// a pending download version has been created, bind the download error to it
+		// clear the global task status at the end to avoid a race condition with the UI
+		sequenceTaskID := fmt.Sprintf("update-download.%d", *finalSequence)
+		if err := store.GetStore().SetTaskStatus(sequenceTaskID, errMsg, "failed"); err != nil {
+			logger.Error(errors.Wrapf(err, "failed to set %s task status", sequenceTaskID))
+		}
+		if err := store.GetStore().ClearTaskStatus(taskID); err != nil {
+			logger.Error(errors.Wrapf(err, "failed to clear %s task status", taskID))
 		}
 	}()
 
 	archiveDir, baseSequence, err := store.GetStore().GetAppVersionBaseArchive(appID, update.VersionLabel)
 	if err != nil {
-		return 0, errors.Wrapf(err, "failed to get base archive dir for version %s", update.VersionLabel)
+		finalError = errors.Wrapf(err, "failed to get base archive dir for version %s", update.VersionLabel)
+		return
 	}
 	defer os.RemoveAll(archiveDir)
 
 	beforeKotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to read kots kinds before update")
+		finalError = errors.Wrap(err, "failed to read kots kinds before update")
+		return
 	}
 
 	beforeCursor := beforeKotsKinds.Installation.Spec.UpdateCursor
@@ -75,7 +120,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 	go func() {
 		scanner := bufio.NewScanner(pipeReader)
 		for scanner.Scan() {
-			if err := store.GetStore().SetTaskStatus("update-download", scanner.Text(), "running"); err != nil {
+			if err := store.GetStore().SetTaskStatus(taskID, scanner.Text(), "running"); err != nil {
 				logger.Error(err)
 			}
 		}
@@ -84,12 +129,14 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 
 	a, err := store.GetStore().GetApp(appID)
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to get app")
+		finalError = errors.Wrap(err, "failed to get app")
+		return
 	}
 
 	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to list downstreams for app")
+		finalError = errors.Wrap(err, "failed to list downstreams for app")
+		return
 	}
 
 	downstreamNames := []string{}
@@ -101,29 +148,37 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 
 	appSequence, err := store.GetStore().GetNextAppSequence(a.ID)
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to get new app sequence")
+		finalError = errors.Wrap(err, "failed to get new app sequence")
+		return
+	}
+	if update.AppSequence != nil {
+		appSequence = *update.AppSequence
 	}
 
 	latestLicense, err := store.GetStore().GetLatestLicenseForApp(a.ID)
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to get latest license")
+		finalError = errors.Wrap(err, "failed to get latest license")
+		return
 	}
 
 	identityConfigFile := filepath.Join(archiveDir, "upstream", "userdata", "identityconfig.yaml")
 	if _, err := os.Stat(identityConfigFile); os.IsNotExist(err) {
 		file, err := identity.InitAppIdentityConfig(a.Slug, kotsv1beta1.Storage{})
 		if err != nil {
-			return 0, errors.Wrap(err, "failed to init identity config")
+			finalError = errors.Wrap(err, "failed to init identity config")
+			return
 		}
 		identityConfigFile = file
 		defer os.Remove(identityConfigFile)
 	} else if err != nil {
-		return 0, errors.Wrap(err, "failed to get stat identity config file")
+		finalError = errors.Wrap(err, "failed to get stat identity config file")
+		return
 	}
 
 	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(appID)
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to get registry settings")
+		finalError = errors.Wrap(err, "failed to get registry settings")
+		return
 	}
 
 	pullOptions := kotspull.PullOptions{
@@ -155,28 +210,40 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 	}
 
 	if _, err := kotspull.Pull(fmt.Sprintf("replicated://%s", beforeKotsKinds.License.Spec.AppSlug), pullOptions); err != nil {
-		return 0, errors.Wrap(err, "failed to pull")
+		finalError = errors.Wrap(err, "failed to pull")
+		return
 	}
 
-	afterKotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
-	if err != nil {
-		return 0, errors.Wrap(err, "failed to read kots kinds after update")
-	}
-
-	if afterKotsKinds.Installation.Spec.UpdateCursor == beforeCursor {
-		return 0, nil // ?
-	}
-
-	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "Upstream Update", skipPreflights, &version.DownstreamGitOps{})
-	if err != nil {
-		return 0, errors.Wrap(err, "failed to create version")
+	if update.AppSequence == nil {
+		afterKotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+		if err != nil {
+			finalError = errors.Wrap(err, "failed to read kots kinds after update")
+			return
+		}
+		if afterKotsKinds.Installation.Spec.UpdateCursor == beforeCursor {
+			return
+		}
+		newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "Upstream Update", skipPreflights, &version.DownstreamGitOps{})
+		if err != nil {
+			finalError = errors.Wrap(err, "failed to create version")
+			return
+		}
+		finalSequence = &newSequence
+	} else {
+		err := store.GetStore().UpdateAppVersion(a.ID, *update.AppSequence, &baseSequence, archiveDir, "Upstream Update", skipPreflights, &version.DownstreamGitOps{})
+		if err != nil {
+			finalError = errors.Wrap(err, "failed to create version")
+			return
+		}
+		finalSequence = update.AppSequence
 	}
 
 	if !skipPreflights {
-		if err := preflight.Run(appID, a.Slug, newSequence, a.IsAirgap, archiveDir); err != nil {
-			return 0, errors.Wrap(err, "failed to run preflights")
+		if err := preflight.Run(appID, a.Slug, *finalSequence, a.IsAirgap, archiveDir); err != nil {
+			finalError = errors.Wrap(err, "failed to run preflights")
+			return
 		}
 	}
 
-	return newSequence, nil
+	return
 }
