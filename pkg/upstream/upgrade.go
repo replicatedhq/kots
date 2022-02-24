@@ -237,17 +237,17 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 		if ur.AvailableUpdates == 0 {
 			log.ActionWithoutSpinner("")
 			if options.Deploy {
-				log.ActionWithoutSpinner("There are no application updates available, ensuring latest is marked as deployed")
+				log.ActionWithoutSpinner("There are no application updates available, ensuring latest is deployed")
 			} else {
-				log.ActionWithoutSpinner("There are no application updates available, ensuring %s is marked as deployed", options.DeployVersionLabel)
+				log.ActionWithoutSpinner("There are no application updates available, ensuring %s is deployed", options.DeployVersionLabel)
 			}
 		} else if options.Wait {
 			if options.Deploy {
 				log.ActionWithoutSpinner("")
-				log.ActionWithoutSpinner(fmt.Sprintf("There are currently %d updates available in the Admin Console, ensuring latest is marked as deployed", ur.AvailableUpdates))
+				log.ActionWithoutSpinner(fmt.Sprintf("There are currently %d updates available in the Admin Console, ensuring latest is deployed", ur.AvailableUpdates))
 			} else {
 				log.ActionWithoutSpinner("")
-				log.ActionWithoutSpinner(fmt.Sprintf("There are currently %d updates available in the Admin Console, ensuring %s is marked as deployed", ur.AvailableUpdates, options.DeployVersionLabel))
+				log.ActionWithoutSpinner(fmt.Sprintf("There are currently %d updates available in the Admin Console, ensuring %s is deployed", ur.AvailableUpdates, options.DeployVersionLabel))
 			}
 		} else {
 			if options.Deploy {
