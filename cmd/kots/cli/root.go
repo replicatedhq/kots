@@ -17,6 +17,14 @@ func RootCmd() *cobra.Command {
 		PreRun: func(cmd *cobra.Command, args []string) {
 			viper.BindPFlags(cmd.Flags())
 		},
+		PersistentPostRun: func(cmd *cobra.Command, args []string) {
+			// NOTE: If a PersistentPostRun is specified for a subcommand, it will override the root PersistentPostRun
+			err := cliVersionCheck()
+			if err != nil {
+				// likely unable to set up port-forwarding to perform check
+				// not logging since this would be expected for some commands
+			}
+		},
 	}
 
 	cobra.OnInitialize(initConfig)

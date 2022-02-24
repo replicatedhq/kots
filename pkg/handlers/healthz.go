@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"net/http"
+
+	"github.com/replicatedhq/kots/pkg/buildversion"
 )
 
 type HealthzResponse struct {
@@ -30,7 +32,7 @@ func (h *Handler) Healthz(w http.ResponseWriter, r *http.Request) {
 	isStorageAvailable := true
 
 	healthzResponse := HealthzResponse{
-		Version: "test",
+		Version: buildversion.Version(),
 		GitSHA:  "test",
 		Status: StatusResponse{
 			Database: DatabaseResponse{
