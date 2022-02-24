@@ -13,6 +13,8 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart/loader"
+	"helm.sh/helm/v3/pkg/cli"
+	"helm.sh/helm/v3/pkg/kube"
 	rspb "helm.sh/helm/v3/pkg/release"
 	helmtime "helm.sh/helm/v3/pkg/time"
 	k8syaml "sigs.k8s.io/yaml"
@@ -25,35 +27,87 @@ var (
 const NamespaceTemplateConst = "repl{{ Namespace}}"
 
 func renderHelmV3(chartName string, chartPath string, vals map[string]interface{}, renderOptions *RenderOptions) ([]BaseFile, error) {
+	settings := cli.New()
+
+	cs := kube.New(settings.RESTClientGetter())
+
 	cfg := &action.Configuration{
-		Log: renderOptions.Log.Debug,
-	}
-	client := action.NewInstall(cfg)
-	client.DryRun = true
-	client.ReleaseName = chartName
-	client.Replace = true
-	client.ClientOnly = true
-	client.IncludeCRDs = true
-
-	client.Namespace = renderOptions.Namespace
-	if client.Namespace == "" {
-		client.Namespace = NamespaceTemplateConst
+		Log:        renderOptions.Log.Debug,
+		KubeClient: cs,
 	}
 
-	chartRequested, err := loader.Load(chartPath)
+	err := cfg.Init(settings.RESTClientGetter(), settings.Namespace(), "secret", cfg.Log)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to load chart")
+		return nil, errors.Wrap(err, "failed to initialise config")
 	}
 
-	if req := chartRequested.Metadata.Dependencies; req != nil {
-		if err := action.CheckDependencies(chartRequested, req); err != nil {
-			return nil, errors.Wrap(err, "failed dependency check")
+	if err := cfg.KubeClient.IsReachable(); err != nil {
+		return nil, errors.Wrap(err, "kubeclient not reachable")
+	}
+
+	client := action.NewHistory(cfg)
+
+	hist, err := client.Run(chartName)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get history")
+	}
+
+	exists := len(hist) > 0
+
+	ns := renderOptions.Namespace
+	if ns == "" {
+		ns = NamespaceTemplateConst
+	}
+
+	var rel *rspb.Release
+	switch {
+	// doesn't exist, install from new
+	case !exists:
+		client := action.NewInstall(cfg)
+		client.DryRun = true
+		client.ReleaseName = chartName
+		client.Replace = true
+		client.ClientOnly = true
+		client.IncludeCRDs = true
+
+		client.Namespace = ns
+
+		chartRequested, err := loader.Load(chartPath)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to load chart")
 		}
-	}
 
-	rel, err := client.Run(chartRequested, vals)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to render chart")
+		if req := chartRequested.Metadata.Dependencies; req != nil {
+			if err := action.CheckDependencies(chartRequested, req); err != nil {
+				return nil, errors.Wrap(err, "failed dependency check")
+			}
+		}
+
+		rel, err = client.Run(chartRequested, vals)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to render chart")
+		}
+	// exists, upgrade from existing
+	case exists:
+		client := action.NewUpgrade(cfg)
+		client.DryRun = true
+		client.Namespace = ns
+
+		chartRequested, err := loader.Load(chartPath)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to load chart")
+		}
+
+		if req := chartRequested.Metadata.Dependencies; req != nil {
+			if err := action.CheckDependencies(chartRequested, req); err != nil {
+				return nil, errors.Wrap(err, "failed dependency check")
+			}
+		}
+
+		rel, err = client.Run(chartName, chartRequested, vals)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to render upgrade chart")
+		}
 	}
 
 	var manifests bytes.Buffer
