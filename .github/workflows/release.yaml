@@ -566,6 +566,19 @@ jobs:
         run: npm i -g @testim/testim-cli
         shell: bash
 
+      - name: validate that kots install fails early
+        run: |
+          set +e
+
+          result=$(kubectl kots install range-kots-version/automated --port-forward=false --namespace range-kots-version --shared-password password 2>&1 >/dev/null)
+          echo "$result"
+
+          if [[ "$result" =~ "requires" ]] && [[ "$result" =~ "11000.0.0" ]]; then
+            exit 0
+          else
+            exit 1
+          fi
+
       ## testim tests
 
       - name: prepare range-kots-version test
@@ -574,7 +587,8 @@ jobs:
           install range-kots-version/automated \
           --port-forward=false \
           --namespace range-kots-version \
-          --shared-password password
+          --shared-password password \
+          --skip-compatibility-check
 
       - name: execute suite range-kots-version
         run: |
