@@ -109,8 +109,6 @@ func Upload(path string, uploadOptions UploadOptions) (string, error) {
 		log.Silence()
 	}
 
-	log.ActionWithSpinner("Uploading local application to Admin Console")
-
 	// upload using http to the pod directly
 	req, err := createUploadRequest(archiveFilename, uploadOptions, fmt.Sprintf("%s/api/v1/upload", uploadOptions.Endpoint))
 	if err != nil {
