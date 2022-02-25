@@ -753,6 +753,10 @@ func EncodeIdentityConfig(spec kotsv1beta1.IdentityConfig) ([]byte, error) {
 }
 
 func IsKotsVersionCompatibleWithApp(kotsApplication kotsv1beta1.Application, isInstall bool) bool {
+	if IsKotsAutoUpgradeSupported(kotsApplication) {
+		return true
+	}
+
 	actualSemver, err := semver.ParseTolerant(buildversion.Version())
 	if err != nil {
 		logger.Error(errors.Wrap(err, "kots build version is invalid"))
@@ -778,6 +782,15 @@ func IsKotsVersionCompatibleWithApp(kotsApplication kotsv1beta1.Application, isI
 	}
 
 	return true
+}
+
+func IsKotsAutoUpgradeSupported(kotsApplication kotsv1beta1.Application) bool {
+	for _, f := range kotsApplication.Spec.ConsoleFeatureFlags {
+		if f == "admin-console-auto-updates" {
+			return true
+		}
+	}
+	return false
 }
 
 func GetIncompatbileKotsVersionMessage(kotsApplication kotsv1beta1.Application, isInstall bool) string {

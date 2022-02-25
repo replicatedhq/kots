@@ -30,7 +30,11 @@ function deployButtonStatus(downstream, version, app) {
   if (needsConfiguration) {
     return "Configure";
   } else if (downstream?.currentVersion?.sequence == undefined) {
-    return "Deploy";
+    if (version.needsKotsUpgrade) {
+      return "Upgrade";
+    } else {
+      return "Deploy";
+    }
   } else if (isRedeploy) {
     return "Redeploy";
   } else if (isRollback) {
@@ -40,7 +44,11 @@ function deployButtonStatus(downstream, version, app) {
   } else if (isCurrentVersion) {
     return "Deployed";
   } else {
-    return "Deploy";
+    if (version.needsKotsUpgrade) {
+      return "Upgrade";
+    } else {
+      return "Deploy";
+    }
   }
 }
 

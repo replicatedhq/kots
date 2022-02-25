@@ -1,9 +1,6 @@
 package handlers
 
 import (
-	"encoding/base64"
-	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -12,16 +9,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/blang/semver"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/airgap"
-	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
-	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/updatechecker"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -301,87 +294,4 @@ func (h *Handler) UpdateAdminConsole(w http.ResponseWriter, r *http.Request) {
 	updateAdminConsoleResponse.Success = true
 
 	JSON(w, http.StatusOK, updateAdminConsoleResponse)
-}
-
-func findLatestKotsVersion(appID string, license *kotsv1beta1.License) (string, error) {
-	url := fmt.Sprintf("%s/admin-console/version/latest", license.Spec.Endpoint)
-
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to create new request")
-	}
-
-	reportingInfo := reporting.GetReportingInfo(appID)
-	reporting.InjectReportingInfoHeaders(req, reportingInfo)
-
-	req.Header.Add("User-Agent", fmt.Sprintf("KOTS/%s", buildversion.Version()))
-	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.Spec.LicenseID, license.Spec.LicenseID)))))
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to execute get request")
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to read response body")
-	}
-
-	if resp.StatusCode >= 400 {
-		if len(body) > 0 {
-			return "", util.ActionableError{Message: string(body)}
-		}
-		return "", errors.Errorf("unexpected result from get request: %d", resp.StatusCode)
-	}
-
-	var versionInfo struct {
-		Tag string `json:"tag"`
-	}
-	if err := json.Unmarshal(body, &versionInfo); err != nil {
-		return "", errors.Wrapf(err, "failed to unmarshal response: %s", body)
-	}
-
-	return versionInfo.Tag, nil
-}
-
-func getTargetKotsVersion(kotsKinds *kotsutil.KotsKinds, latestVersion string) (string, error) {
-	featureEnabled := false
-	for _, f := range kotsKinds.KotsApplication.Spec.ConsoleFeatureFlags {
-		if f == "admin-console-auto-updates" {
-			featureEnabled = true
-			break
-		}
-	}
-
-	if !featureEnabled {
-		return "", errors.New("admin console auto updates feature flag not enabled")
-	}
-
-	if kotsKinds.KotsApplication.Spec.MinKotsVersion == "" && kotsKinds.KotsApplication.Spec.TargetKotsVersion == "" {
-		return "", errors.New("no version requirement found in app")
-	}
-
-	targetKotsVersion := kotsKinds.KotsApplication.Spec.MinKotsVersion
-	if kotsKinds.KotsApplication.Spec.TargetKotsVersion != "" {
-		targetKotsVersion = kotsKinds.KotsApplication.Spec.TargetKotsVersion
-	} else if latestVersion != "" {
-		targetKotsVersion = latestVersion
-	}
-
-	targetSemver, err := semver.ParseTolerant(targetKotsVersion)
-	if err != nil {
-		return "", errors.Wrapf(err, "failed to parse target version %s", targetKotsVersion)
-	}
-
-	thisSemver, err := semver.ParseTolerant(buildversion.Version())
-	if err != nil {
-		return "", errors.Wrapf(err, "failed to parse target version %s", targetKotsVersion)
-	}
-
-	if thisSemver.GTE(targetSemver) {
-		return "", errors.New("admdin console is already at or above target version")
-	}
-
-	return targetKotsVersion, nil
 }

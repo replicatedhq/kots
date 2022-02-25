@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/rand"
 	"github.com/replicatedhq/kots/pkg/util"
 	corev1 "k8s.io/api/core/v1"
@@ -61,6 +62,17 @@ func GetUpdateUpdateStatus() (UpdateStatus, error) {
 }
 
 func UpdateToVersion(newVersion string) error {
+	status, err := GetUpdateUpdateStatus()
+	if err != nil {
+		return errors.Wrap(err, "failed to check update status")
+	}
+
+	logger.Debugf("Current Admin Console update status is %s", status)
+
+	if status == UpdateRunning {
+		return errors.New("update already in progress")
+	}
+
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to create k8s client")
