@@ -284,6 +284,7 @@ WHERE
 	// if preflights were skipped don't poll and check results
 	if hasStrictPreflights && !preflightSkipped.Bool && storetypes.DownstreamVersionStatus(status.String) == storetypes.VersionPendingPreflight {
 
+		// set a timeout for polling.
 		err := wait.PollImmediateInfinite(2*time.Second, func() (bool, error) {
 			versionStatus, err := getStatus(appID, sequence)
 			if err != nil {
