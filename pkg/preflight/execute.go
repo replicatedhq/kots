@@ -111,6 +111,7 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta2.Pr
 		results := []*troubleshootpreflight.UploadPreflightResult{}
 		for _, analyzeResult := range analyzeResults {
 			uploadPreflightResult := &troubleshootpreflight.UploadPreflightResult{
+				Strict:  analyzeResult.Strict,
 				IsFail:  analyzeResult.IsFail,
 				IsWarn:  analyzeResult.IsWarn,
 				IsPass:  analyzeResult.IsPass,

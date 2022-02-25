@@ -19,25 +19,26 @@ type Downstream struct {
 }
 
 type DownstreamVersion struct {
-	VersionLabel             string                             `json:"versionLabel"`
-	Semver                   *semver.Version                    `json:"semver,omitempty"`
-	Status                   storetypes.DownstreamVersionStatus `json:"status"`
-	CreatedOn                *time.Time                         `json:"createdOn"`
-	ParentSequence           int64                              `json:"parentSequence"`
-	Sequence                 int64                              `json:"sequence"`
-	ReleaseNotes             string                             `json:"releaseNotes"`
-	DeployedAt               *time.Time                         `json:"deployedAt"`
-	Source                   string                             `json:"source"`
-	PreflightResult          string                             `json:"preflightResult,omitempty"`
-	PreflightResultCreatedAt *time.Time                         `json:"preflightResultCreatedAt,omitempty"`
-	PreflightSkipped         bool                               `json:"preflightSkipped"`
-	DiffSummary              string                             `json:"diffSummary,omitempty"`
-	DiffSummaryError         string                             `json:"diffSummaryError,omitempty"`
-	CommitURL                string                             `json:"commitUrl,omitempty"`
-	GitDeployable            bool                               `json:"gitDeployable,omitempty"`
-	UpstreamReleasedAt       *time.Time                         `json:"upstreamReleasedAt,omitempty"`
-	YamlErrors               []v1beta1.InstallationYAMLError    `json:"yamlErrors,omitempty"`
-	DownloadStatus           DownloadStatus                     `json:"downloadStatus,omitempty"`
+	VersionLabel               string                             `json:"versionLabel"`
+	Semver                     *semver.Version                    `json:"semver,omitempty"`
+	Status                     storetypes.DownstreamVersionStatus `json:"status"`
+	CreatedOn                  *time.Time                         `json:"createdOn"`
+	ParentSequence             int64                              `json:"parentSequence"`
+	Sequence                   int64                              `json:"sequence"`
+	ReleaseNotes               string                             `json:"releaseNotes"`
+	DeployedAt                 *time.Time                         `json:"deployedAt"`
+	Source                     string                             `json:"source"`
+	PreflightResult            string                             `json:"preflightResult,omitempty"`
+	PreflightResultCreatedAt   *time.Time                         `json:"preflightResultCreatedAt,omitempty"`
+	PreflightSkipped           bool                               `json:"preflightSkipped"`
+	HasFailingStrictPreflights bool                               `json:"hasFailingStrictPreflights"`
+	DiffSummary                string                             `json:"diffSummary,omitempty"`
+	DiffSummaryError           string                             `json:"diffSummaryError,omitempty"`
+	CommitURL                  string                             `json:"commitUrl,omitempty"`
+	GitDeployable              bool                               `json:"gitDeployable,omitempty"`
+	UpstreamReleasedAt         *time.Time                         `json:"upstreamReleasedAt,omitempty"`
+	YamlErrors                 []v1beta1.InstallationYAMLError    `json:"yamlErrors,omitempty"`
+	DownloadStatus             DownloadStatus                     `json:"downloadStatus,omitempty"`
 }
 
 type DownloadStatus struct {
