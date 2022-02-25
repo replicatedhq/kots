@@ -62,7 +62,7 @@ func DeployVersion(appID string, sequence int64) error {
 	if blocked {
 		return util.ActionableError{
 			NoRetry: true,
-			Message: "Unable to deploy as preflight check's strict analyzer has failed or has not been run",
+			Message: "Unable to deploy as preflight check's strict analyzer has failed",
 		}
 	}
 
@@ -282,7 +282,7 @@ WHERE
 
 	// if preflights were not skipped and status is pending_preflight, poll till the status gets updated
 	// if preflights were skipped don't poll and check results
-	if !preflightSkipped.Bool && storetypes.DownstreamVersionStatus(status.String) == storetypes.VersionPendingPreflight {
+	if hasStrictPreflights && !preflightSkipped.Bool && storetypes.DownstreamVersionStatus(status.String) == storetypes.VersionPendingPreflight {
 
 		err := wait.PollImmediateInfinite(2*time.Second, func() (bool, error) {
 			versionStatus, err := getStatus(appID, sequence)
