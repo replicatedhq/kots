@@ -31,6 +31,7 @@ type DownstreamVersion struct {
 	PreflightResult          string                             `json:"preflightResult,omitempty"`
 	PreflightResultCreatedAt *time.Time                         `json:"preflightResultCreatedAt,omitempty"`
 	PreflightSkipped         bool                               `json:"preflightSkipped"`
+	HasFailingStrictPreflights bool                               `json:"hasFailingStrictPreflights"`
 	DiffSummary              string                             `json:"diffSummary,omitempty"`
 	DiffSummaryError         string                             `json:"diffSummaryError,omitempty"`
 	CommitURL                string                             `json:"commitUrl,omitempty"`

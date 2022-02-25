@@ -3,6 +3,7 @@ package kotsstore
 import (
 	"database/sql"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 
 	"github.com/blang/semver"
@@ -13,6 +14,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/store/types"
+	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -208,7 +210,8 @@ func (s *KOTSStore) GetCurrentVersion(appID string, clusterID string) (*downstre
 	av.upstream_released_at,
 	av.kots_installation_spec,
 	av.kots_app_spec,
-	av.version_label
+	av.version_label,
+	av.preflight_spec
  FROM
 	 app_downstream_version AS adv
  LEFT JOIN
@@ -282,7 +285,8 @@ func (s *KOTSStore) GetAppVersions(appID string, clusterID string, downloadedOnl
 	av.upstream_released_at,
 	av.kots_installation_spec,
 	av.kots_app_spec,
-	av.version_label
+	av.version_label,
+	av.preflight_spec
  FROM
 	 app_downstream_version AS adv
  LEFT JOIN
@@ -383,6 +387,7 @@ func (s *KOTSStore) downstreamVersionFromRow(appID string, row scannable) (*down
 	var preflightResult sql.NullString
 	var preflightResultCreatedAt persistence.NullStringTime
 	var preflightSkipped sql.NullBool
+	var preflightSpecStr sql.NullString
 	var commitURL sql.NullString
 	var gitDeployable sql.NullBool
 	var hasError sql.NullBool
@@ -409,6 +414,7 @@ func (s *KOTSStore) downstreamVersionFromRow(appID string, row scannable) (*down
 		&kotsInstallationSpecStr,
 		&kotsAppSpecStr,
 		&versionLabel,
+		&preflightSpecStr,
 	); err != nil {
 		return nil, errors.Wrap(err, "failed to scan")
 	}
@@ -482,10 +488,34 @@ func (s *KOTSStore) downstreamVersionFromRow(appID string, row scannable) (*down
 		}
 		v.KotsApplication = obj.(*kotsv1beta1.Application)
 	}
-
+	
 	v.NeedsKotsUpgrade = needsKotsUpgrade(v.KotsApplication)
+	v.HasFailingStrictPreflights, err = s.hasFailingStrictPreflights(preflightSpecStr, preflightResult)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get strict preflight results")
+	}
 
 	return v, nil
+}
+
+func (s *KOTSStore) hasFailingStrictPreflights(preflightSpecStr sql.NullString, preflightResultStr sql.NullString) (bool, error) {
+	hasFailingStrictPreflights := false
+	if preflightSpecStr.Valid && preflightSpecStr.String != "" {
+		preflight, err := kotsutil.LoadPreflightFromContents([]byte(preflightSpecStr.String))
+		if err != nil {
+			return false, errors.Wrap(err, "failed to load preflights from spec")
+		}
+		hasFailingStrictPreflights = kotsutil.HasStrictPreflights(preflight)
+	}
+
+	if preflightResultStr.Valid && preflightResultStr.String != "" {
+		preflightResult := troubleshootpreflight.UploadPreflightResults{}
+		if err := json.Unmarshal([]byte(preflightResultStr.String), &preflightResult); err != nil {
+			return false, errors.Wrap(err, "failed to unmarshal preflightResults")
+		}
+		hasFailingStrictPreflights = hasFailingStrictPreflights && kotsutil.IsStrictPreflightFailing(&preflightResult)
+	}
+	return hasFailingStrictPreflights, nil
 }
 
 func getReleaseNotes(appID string, parentSequence int64) (string, error) {

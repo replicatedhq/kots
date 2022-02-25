@@ -428,7 +428,7 @@ class AppVersionHistory extends Component {
         const response = await res.json();
           this.setState({
             kotsUpdateRunning: false,
-            kotsUpdateStatus: 'failed',
+            kotsUpdateStatus: "failed",
             kotsUpdateError: response.error,
           });
           return;
@@ -439,7 +439,7 @@ class AppVersionHistory extends Component {
         console.log(err);
         this.setState({
           kotsUpdateRunning: false,
-          kotsUpdateStatus: 'failed',
+          kotsUpdateStatus: "failed",
           kotsUpdateError: err?.message || "Something went wrong, please try again.",
         });
       });
@@ -464,7 +464,7 @@ class AppVersionHistory extends Component {
         }
 
         const response = await res.json();
-        if (response.status === 'successful') {
+        if (response.status === "successful") {
           window.location.reload();
         } else {
           this.setState({
@@ -480,9 +480,9 @@ class AppVersionHistory extends Component {
         console.log("failed to get upgrade status", err);
         this.setState({
           kotsUpdateRunning: false,
-          kotsUpdateStatus: 'waiting',
-          kotsUpdateMessage: 'Waiting for pods to restart...',
-          kotsUpdateError: '',
+          kotsUpdateStatus: "waiting",
+          kotsUpdateMessage: "Waiting for pods to restart...",
+          kotsUpdateError: "",
         });
         resolve();
       });
