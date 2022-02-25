@@ -16,7 +16,7 @@ Required Software:
 Build Kotsadm go binary:
 
 ```
-GOOS=linux make kotsadm
+GOOS=linux make build
 ```
 
 Next, you can build and run all server components in the Kubernetes cluster with:
@@ -32,7 +32,7 @@ DEBUG_KOTSADM=1 skaffold dev
 ```
 
 ## Notes:
-- Go code will not be rebuilt automatically.  Run `make kotsadm` again to make the new binary and restart the pod.
+- Go code will not be rebuilt automatically.  Run `make build` again to make the new binary and restart the pod.
 - After installing restic/velero, `kubectl -n velero edit daemonset restic` to change the volume hostPath mount from:
       `/var/lib/kubelet/pods` to `/var/snap/microk8s/common/var/lib/kubelet/pods`
 
