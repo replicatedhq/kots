@@ -217,27 +217,33 @@ func (h *Handler) DownloadAppVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status, err := store.GetStore().GetStatusForVersion(a.ID, downstreams[0].ClusterID, int64(sequence))
-	if err != nil {
-		errMsg := fmt.Sprintf("failed to get status for version %d", sequence)
-		logger.Error(errors.Wrap(err, errMsg))
-		downloadUpstreamVersionResponse.Error = errMsg
-		JSON(w, http.StatusInternalServerError, downloadUpstreamVersionResponse)
-		return
-	}
-
-	if status != storetypes.VersionPendingDownload {
-		errMsg := fmt.Sprintf("not downloading version %d because it's %s", int64(sequence), status)
-		logger.Error(errors.New(errMsg))
-		downloadUpstreamVersionResponse.Error = errMsg
-		JSON(w, http.StatusInternalServerError, downloadUpstreamVersionResponse)
-		return
-	}
-
 	version, err := store.GetStore().GetAppVersion(a.ID, int64(sequence))
 	if err != nil {
+		if store.GetStore().IsNotFound(err) {
+			errMsg := fmt.Sprintf("version for sequence %d not found", sequence)
+			logger.Error(errors.New(errMsg))
+			downloadUpstreamVersionResponse.Error = errMsg
+			JSON(w, http.StatusNotFound, downloadUpstreamVersionResponse)
+			return
+		}
 		errMsg := fmt.Sprintf("failed to get app version %d", sequence)
 		logger.Error(errors.Wrap(err, errMsg))
+		downloadUpstreamVersionResponse.Error = errMsg
+		JSON(w, http.StatusInternalServerError, downloadUpstreamVersionResponse)
+		return
+	}
+
+	status, err := store.GetStore().GetStatusForVersion(a.ID, downstreams[0].ClusterID, version.Sequence)
+	if err != nil {
+		errMsg := fmt.Sprintf("failed to get status for version %d", version.Sequence)
+		logger.Error(errors.Wrap(err, errMsg))
+		downloadUpstreamVersionResponse.Error = errMsg
+		JSON(w, http.StatusInternalServerError, downloadUpstreamVersionResponse)
+		return
+	}
+	if status != storetypes.VersionPendingDownload {
+		errMsg := fmt.Sprintf("not downloading version %d because it's %s", version.Sequence, status)
+		logger.Error(errors.New(errMsg))
 		downloadUpstreamVersionResponse.Error = errMsg
 		JSON(w, http.StatusInternalServerError, downloadUpstreamVersionResponse)
 		return
