@@ -135,12 +135,12 @@ func Upload(path string, uploadOptions UploadOptions) (string, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
+		log.FinishSpinnerWithError()
 		b, _ := ioutil.ReadAll(resp.Body)
 		if len(b) > 0 {
-			log.ActionWithoutSpinner("upload error: %v", string(b))
+			log.Error(errors.New(string(b)))
 		}
-		log.FinishSpinnerWithError()
-		return "", errors.Errorf("unexpected status code: %d", resp.StatusCode)
+		return "", errors.Errorf("Unexpected response from the API: %d", resp.StatusCode)
 	}
 
 	b, err := ioutil.ReadAll(resp.Body)
