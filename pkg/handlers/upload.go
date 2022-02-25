@@ -16,6 +16,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
 )
 
@@ -160,7 +161,12 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !uploadExistingAppRequest.SkipPreflights {
+	hasStrictPreflights := kotsKinds.HasStrictPreflights()
+	if hasStrictPreflights && uploadExistingAppRequest.SkipPreflights {
+		logger.Errorf("preflights will not be skipped, strict preflights are set to %t", hasStrictPreflights)
+	}
+
+	if !uploadExistingAppRequest.SkipPreflights || hasStrictPreflights {
 		if err := preflight.Run(a.ID, a.Slug, newSequence, a.IsAirgap, archiveDir); err != nil {
 			logger.Error(errors.Wrap(err, "failed to get run preflights"))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -185,6 +191,10 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 		if err := version.DeployVersion(a.ID, newSequence); err != nil {
 			logger.Error(errors.Wrap(err, "failed to deploy latest version"))
 			w.WriteHeader(http.StatusInternalServerError)
+			cause := errors.Cause(err)
+			if _, ok := cause.(util.ActionableError); ok {
+				w.Write([]byte(cause.Error()))
+			}
 			return
 		}
 	}
