@@ -136,6 +136,7 @@ function renderVersionAction(version, nothingToCommitDiff, app, history, actionF
   const isSecondaryBtn = isPastVersion || needsConfiguration || isRedeploy && !isRollback;
   const isPrimaryButton = !isSecondaryBtn && !isRedeploy && !isRollback;
   const editableConfig = isCurrentVersion || isLatestVersion || isPendingVersion?.semver;
+  const blockDeployment = version.hasFailingStrictPreflights
   let tooltipTip;
   if (editableConfig) {
     tooltipTip = "Edit config";
@@ -188,13 +189,22 @@ function renderVersionAction(version, nothingToCommitDiff, app, history, actionF
           </div>
         : null}
       {showActions &&
-        <button
-          className={classNames("btn u-marginLeft--10", { "secondary dark": isRollback, "secondary blue": isSecondaryBtn, "primary blue": isPrimaryButton })}
-          disabled={version.status === "deploying"}
-          onClick={() => needsConfiguration ? history.push(`/app/${app.slug}/config/${version.sequence}`) : isRollback ? actionFn(version, true) : actionFn(version)}
-        >
-          {deployButtonStatus(downstream, version, app, adminConsoleMetadata)}
-        </button>
+        <div className="flex alignItems--center">
+          <button
+            className={classNames("btn u-marginLeft--10", { "secondary dark": isRollback, "secondary blue": isSecondaryBtn, "primary blue": isPrimaryButton })}
+            disabled={version.status === "deploying"}
+            onClick={() => needsConfiguration ? history.push(`/app/${app.slug}/config/${version.sequence}`) : isRollback ? actionFn(version, true) : actionFn(version)}
+          >
+            <span
+              data-tip-disable={!blockDeployment}
+              data-tip="Deployment is disabled as a strict analyzer in this version's preflight checks has failed or has not been run"
+              data-for="disable-deployment-tooltip"
+            >
+              {deployButtonStatus(downstream, version, app, adminConsoleMetadata)}
+            </span>
+          </button>
+          <ReactTooltip effect="solid" id="disable-deployment-tooltip" />
+        </div>
       }
     </div>
   );
