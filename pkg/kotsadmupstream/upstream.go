@@ -128,6 +128,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		return
 	}
 
+	hasStrictPreflights := beforeKotsKinds.HasStrictPreflights()
 	beforeCursor := beforeKotsKinds.Installation.Spec.UpdateCursor
 
 	pipeReader, pipeWriter := io.Pipe()
@@ -242,6 +243,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 			finalError = errors.Wrap(err, "failed to create version")
 			return
 		}
+		hasStrictPreflights = afterKotsKinds.HasStrictPreflights()
 		finalSequence = &newSequence
 	} else {
 		err := store.GetStore().UpdateAppVersion(a.ID, *update.AppSequence, &baseSequence, archiveDir, "Upstream Update", skipPreflights, &version.DownstreamGitOps{})
@@ -252,7 +254,11 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		finalSequence = update.AppSequence
 	}
 
-	if !skipPreflights {
+	if hasStrictPreflights && skipPreflights {
+		logger.Warnf("preflights will not be skipped, strict preflights are set to %t", hasStrictPreflights)
+	}
+
+	if !skipPreflights || hasStrictPreflights {
 		if err := preflight.Run(appID, a.Slug, *finalSequence, a.IsAirgap, archiveDir); err != nil {
 			finalError = errors.Wrap(err, "failed to run preflights")
 			return
