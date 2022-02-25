@@ -3,6 +3,7 @@ package version
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -11,14 +12,18 @@ import (
 	"github.com/replicatedhq/kots/pkg/api/version/types"
 	"github.com/replicatedhq/kots/pkg/gitops"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/store"
+	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/util"
+	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/scheme"
 	applicationv1beta1 "sigs.k8s.io/application/api/v1beta1"
 )
@@ -49,6 +54,18 @@ func (d *DownstreamGitOps) CreateGitOpsDownstreamCommit(appID string, clusterID 
 
 // DeployVersion deploys the version for the given sequence
 func DeployVersion(appID string, sequence int64) error {
+
+	blocked, err := isBlockedDueToStricPreFlights(appID, sequence)
+	if err != nil {
+		return errors.Wrap(err, "failed to validate strict preflights")
+	}
+	if blocked {
+		return util.ActionableError{
+			NoRetry: true,
+			Message: "Unable to deploy as preflight check's strict analyzer has failed or has not been run",
+		}
+	}
+
 	db := persistence.MustGetDBSession()
 
 	tx, err := db.Begin()
@@ -198,4 +215,106 @@ func GetForwardedPortsFromAppSpec(appID string, sequence int64) ([]types.Forward
 	}
 
 	return ports, nil
+}
+
+func getStatus(appID string, sequence int64) (storetypes.DownstreamVersionStatus, error) {
+	db := persistence.MustGetDBSession()
+	var status sql.NullString
+	query := `
+SELECT
+	adv.status
+FROM
+	app_downstream_version AS adv
+WHERE
+	adv.app_id = $1 AND
+	adv.parent_sequence = $2`
+	row := db.QueryRow(query, appID, sequence)
+	if err := row.Scan(
+		&status,
+	); err != nil {
+		return "", errors.Wrap(err, "failed to scan")
+	}
+	return storetypes.DownstreamVersionStatus(status.String), nil
+}
+
+func isBlockedDueToStricPreFlights(appID string, sequence int64) (bool, error) {
+	var (
+		status             sql.NullString
+		preflightSkipped   sql.NullBool
+		preflightSpecStr   sql.NullString
+		preflightResultStr sql.NullString
+	)
+	db := persistence.MustGetDBSession()
+	query := `
+SELECT
+	adv.status,
+	adv.preflight_skipped,
+	av.preflight_spec,
+	adv.preflight_result
+FROM
+	app_version AS av
+LEFT JOIN
+	app_downstream_version AS adv
+ON
+	adv.app_id = av.app_id AND adv.parent_sequence = av.sequence
+WHERE
+	av.app_id = $1 AND
+ 	av.sequence = $2`
+
+	row := db.QueryRow(query, appID, sequence)
+	if err := row.Scan(
+		&status,
+		&preflightSkipped,
+		&preflightSpecStr,
+		&preflightResultStr,
+	); err != nil {
+		return false, errors.Wrap(err, "failed to scan")
+	}
+
+	hasStrictPreflights := false
+	if preflightSpecStr.Valid && preflightSpecStr.String != "" {
+		preflight, err := kotsutil.LoadPreflightFromContents([]byte(preflightSpecStr.String))
+		if err != nil {
+			return false, errors.Wrap(err, "failed to load preflights from spec")
+		}
+		hasStrictPreflights = kotsutil.HasStrictPreflights(preflight)
+	}
+
+	// if preflights were not skipped and status is pending_preflight, poll till the status gets updated
+	// if preflights were skipped don't poll and check results
+	if !preflightSkipped.Bool && storetypes.DownstreamVersionStatus(status.String) == storetypes.VersionPendingPreflight {
+
+		err := wait.PollImmediateInfinite(2*time.Second, func() (bool, error) {
+			versionStatus, err := getStatus(appID, sequence)
+			if err != nil {
+				return false, errors.Wrap(err, "failed get status")
+			}
+			if versionStatus != storetypes.VersionPendingPreflight {
+				return true, nil
+			}
+			return false, nil
+		})
+		if err != nil {
+			return false, errors.Wrap(err, "failed to poll for preflights results")
+		}
+
+		// fetch latest results
+		row = db.QueryRow(query, appID, sequence)
+		if err := row.Scan(
+			&status,
+			&preflightSkipped,
+			&preflightSpecStr,
+			&preflightResultStr,
+		); err != nil {
+			return false, errors.Wrap(err, "failed to scan")
+		}
+	}
+
+	preflightResult := troubleshootpreflight.UploadPreflightResults{}
+	if preflightResultStr.Valid && preflightResultStr.String != "" {
+		if err := json.Unmarshal([]byte(preflightResultStr.String), &preflightResult); err != nil {
+			return false, errors.Wrap(err, "failed to unmarshal preflightResults")
+		}
+	}
+	return hasStrictPreflights && kotsutil.IsStrictPreflightFailing(&preflightResult), nil
 }
