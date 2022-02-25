@@ -440,7 +440,7 @@ jobs:
         run: |
           set +e
 
-          result=$(kubectl kots install min-kots-version/automated --port-forward=false --namespace min-kots-version --shared-password password 2>&1 >/dev/null)
+          result=$(kubectl kots install min-kots-version/automated --no-port-forward --namespace min-kots-version --shared-password password 2>&1 >/dev/null)
           echo "$result"
 
           if [[ "$result" =~ "requires" ]] && [[ "$result" =~ "10000.0.0" ]]; then
@@ -455,7 +455,7 @@ jobs:
         run: |
           kubectl kots \
           install min-kots-version/automated \
-          --port-forward=false \
+          --no-port-forward \
           --namespace min-kots-version \
           --shared-password password \
           --skip-compatibility-check
@@ -505,7 +505,7 @@ jobs:
         run: |
           set +e
 
-          result=$(kubectl kots install target-kots-version/automated --port-forward=false --namespace target-kots-version --shared-password password 2>&1 >/dev/null)
+          result=$(kubectl kots install target-kots-version/automated --no-port-forward --namespace target-kots-version --shared-password password 2>&1 >/dev/null)
           echo "$result"
 
           if [[ "$result" =~ "requires" ]] && [[ "$result" =~ "1.0.0" ]]; then
@@ -520,7 +520,7 @@ jobs:
         run: |
           kubectl kots \
           install target-kots-version/automated \
-          --port-forward=false \
+          --no-port-forward \
           --namespace target-kots-version \
           --shared-password password \
           --skip-compatibility-check
@@ -570,7 +570,7 @@ jobs:
         run: |
           set +e
 
-          result=$(kubectl kots install range-kots-version/automated --port-forward=false --namespace range-kots-version --shared-password password 2>&1 >/dev/null)
+          result=$(kubectl kots install range-kots-version/automated --no-port-forward --namespace range-kots-version --shared-password password 2>&1 >/dev/null)
           echo "$result"
 
           if [[ "$result" =~ "requires" ]] && [[ "$result" =~ "11000.0.0" ]]; then
@@ -585,7 +585,7 @@ jobs:
         run: |
           kubectl kots \
           install range-kots-version/automated \
-          --port-forward=false \
+          --no-port-forward \
           --namespace range-kots-version \
           --shared-password password \
           --skip-compatibility-check

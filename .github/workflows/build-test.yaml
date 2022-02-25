@@ -365,7 +365,7 @@ jobs:
           set +e
           ./bin/kots \
           install qakotstestim/github-actions-qa \
-          --port-forward=false \
+          --no-port-forward \
           --namespace smoke-test \
           --shared-password password \
           --kotsadm-registry ttl.sh \
@@ -463,7 +463,7 @@ jobs:
         run: |
           ./bin/kots \
           install minimal-rbac/automated \
-          --port-forward=false \
+          --no-port-forward \
           --namespace minimal-rbac \
           --shared-password password \
           --kotsadm-registry ttl.sh \
@@ -535,7 +535,7 @@ jobs:
         run: |
           ./bin/kots \
           install $APP_NAME/automated \
-          --port-forward=false \
+          --no-port-forward \
           --namespace $APP_NAME \
           --shared-password password \
           --kotsadm-registry ttl.sh \
@@ -613,7 +613,7 @@ jobs:
         run: |
           ./bin/kots \
           install $APP_NAME/automated \
-          --port-forward=false \
+          --no-port-forward \
           --namespace $APP_NAME \
           --shared-password password \
           --kotsadm-registry ttl.sh \

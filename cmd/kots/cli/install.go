@@ -373,7 +373,13 @@ func InstallCmd() *cobra.Command {
 
 			m.ReportInstallFinish()
 
-			if v.GetBool("port-forward") && !deployOptions.ExcludeAdminConsole {
+			isPortForwarding := !v.GetBool("no-port-forward")
+			if isPortForwarding {
+				// if --no-port-forward not specififed, check deprecated method
+				isPortForwarding = v.GetBool("port-forward")
+			}
+
+			if isPortForwarding && !deployOptions.ExcludeAdminConsole {
 				log.ActionWithoutSpinner("")
 
 				if adminConsolePort != 8800 {
@@ -409,6 +415,8 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String("license-file", "", "path to a license file to use when download a replicated app")
 	cmd.Flags().String("config-values", "", "path to a manifest containing config values (must be apiVersion: kots.io/v1beta1, kind: ConfigValues)")
 	cmd.Flags().Bool("port-forward", true, "set to false to disable automatic port forward")
+	cmd.Flags().MarkDeprecated("port-forward", "please use --no-port-forward instead")
+	cmd.Flags().Bool("no-port-forward", false, "set to true to disable automatic port forward")
 	cmd.Flags().String("wait-duration", "2m", "timeout out to be used while waiting for individual components to be ready.  must be in Go duration format (eg: 10s, 2m)")
 	cmd.Flags().String("http-proxy", "", "sets HTTP_PROXY environment variable in all KOTS Admin Console components")
 	cmd.Flags().String("https-proxy", "", "sets HTTPS_PROXY environment variable in all KOTS Admin Console components")
