@@ -163,7 +163,7 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 
 	hasStrictPreflights := kotsKinds.HasStrictPreflights()
 	if hasStrictPreflights && uploadExistingAppRequest.SkipPreflights {
-		logger.Errorf("preflights will not be skipped, strict preflights are set to %t", hasStrictPreflights)
+		logger.Warnf("preflights will not be skipped, strict preflights are set to %t", hasStrictPreflights)
 	}
 
 	if !uploadExistingAppRequest.SkipPreflights || hasStrictPreflights {
