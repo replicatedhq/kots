@@ -591,7 +591,12 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 		return updateAppConfigResponse, err
 	}
 
-	if !skipPreflights {
+	hasStrictPreflights := kotsKinds.HasStrictPreflights()
+	if hasStrictPreflights && skipPreflights {
+		logger.Warnf("preflights will not be skipped, strict preflights are set to %t", hasStrictPreflights)
+	}
+
+	if !skipPreflights || hasStrictPreflights {
 		if err := preflight.Run(updateApp.ID, updateApp.Slug, int64(sequence), updateApp.IsAirgap, archiveDir); err != nil {
 			updateAppConfigResponse.Error = errors.Cause(err).Error()
 			return updateAppConfigResponse, err
