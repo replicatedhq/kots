@@ -154,7 +154,7 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "KOTS Upload", false, &version.DownstreamGitOps{})
+	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "KOTS Upload", uploadExistingAppRequest.SkipPreflights, &version.DownstreamGitOps{})
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to create app version"))
 		w.WriteHeader(http.StatusInternalServerError)
