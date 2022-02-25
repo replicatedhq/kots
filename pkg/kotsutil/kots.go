@@ -24,6 +24,7 @@ import (
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	"github.com/replicatedhq/troubleshoot/pkg/docrewrite"
+	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -160,6 +161,51 @@ func (k *KotsKinds) HasPreflights() bool {
 		return false
 	}
 	return len(k.Preflight.Spec.Analyzers) > 0
+}
+
+func (k *KotsKinds) HasStrictPreflights() bool {
+	return HasStrictPreflights(k.Preflight)
+}
+
+func HasStrictPreflights(preflight *troubleshootv1beta2.Preflight) bool {
+	if preflight == nil {
+		return false
+	}
+	for _, a := range preflight.Spec.Analyzers {
+		if (a.ClusterVersion != nil && a.ClusterVersion.Strict.BoolOrDefaultFalse()) ||
+			(a.StorageClass != nil && a.StorageClass.Strict.BoolOrDefaultFalse()) ||
+			(a.CustomResourceDefinition != nil && a.CustomResourceDefinition.Strict.BoolOrDefaultFalse()) ||
+			(a.Ingress != nil && a.Ingress.Strict.BoolOrDefaultFalse()) ||
+			(a.Secret != nil && a.Secret.Strict.BoolOrDefaultFalse()) ||
+			(a.ImagePullSecret != nil && a.ImagePullSecret.Strict.BoolOrDefaultFalse()) ||
+			(a.DeploymentStatus != nil && a.DeploymentStatus.Strict.BoolOrDefaultFalse()) ||
+			(a.StatefulsetStatus != nil && a.StatefulsetStatus.Strict.BoolOrDefaultFalse()) ||
+			(a.ContainerRuntime != nil && a.ContainerRuntime.Strict.BoolOrDefaultFalse()) ||
+			(a.Distribution != nil && a.Distribution.Strict.BoolOrDefaultFalse()) ||
+			(a.NodeResources != nil && a.NodeResources.Strict.BoolOrDefaultFalse()) ||
+			(a.TextAnalyze != nil && a.TextAnalyze.Strict.BoolOrDefaultFalse()) ||
+			(a.Postgres != nil && a.Postgres.Strict.BoolOrDefaultFalse()) ||
+			(a.Mysql != nil && a.Mysql.Strict.BoolOrDefaultFalse()) ||
+			(a.Redis != nil && a.Redis.Strict.BoolOrDefaultFalse()) {
+			return true
+		}
+	}
+	return false
+}
+
+func IsStrictPreflightFailing(preflightResult *troubleshootpreflight.UploadPreflightResults) bool {
+	isStrictPreflightFailing := false
+	// if results are empty, treat as failure
+	if preflightResult == nil || len(preflightResult.Results) == 0 {
+		isStrictPreflightFailing = true
+	} else {
+		for _, result := range preflightResult.Results {
+			if result.IsFail && result.Strict {
+				isStrictPreflightFailing = true
+			}
+		}
+	}
+	return isStrictPreflightFailing
 }
 
 // GetKustomizeBinaryPath will return the kustomize binary version to use for this application
