@@ -4,6 +4,7 @@ import { Helmet } from "react-helmet";
 import { withRouter } from "react-router-dom";
 import Modal from "react-modal";
 import size from "lodash/size";
+import ReactTooltip from "react-tooltip"
 
 import PreflightRenderer from "./PreflightRenderer";
 import PreflightResultErrors from "./PreflightResultErrors";
@@ -20,6 +21,7 @@ class PreflightResultPage extends Component {
     showSkipModal: false,
     showWarningModal: false,
     getKotsPreflightResultJob: new Repeater(),
+    getAppsListJob: new Repeater(),
     preflightResultData: null,
     errorMessage: "",
     preflightResultCheckCount: 0
@@ -27,11 +29,15 @@ class PreflightResultPage extends Component {
 
   componentDidMount() {
     this.state.getKotsPreflightResultJob.start(this.getKotsPreflightResult, 1000);
+
+    if (this.props.fromLicenseFlow) {
+      this.state.getAppsListJob.start(this.props.refetchAppsList, 1000);
+    }
   }
 
   async componentWillUnmount() {
     this.state.getKotsPreflightResultJob.stop();
-
+    this.state.getAppsListJob.stop();
     if (this.props.fromLicenseFlow && this.props.refetchAppsList) {
       await this.props.refetchAppsList();
     }
@@ -314,6 +320,16 @@ class PreflightResultPage extends Component {
 
     const preflightSkipped = preflightResultData?.skipped;
     const stopPolling = (preflightResultData?.result || preflightSkipped);
+    let blockDeployment = false;
+    if (this.props.fromLicenseFlow) {
+      for (const app of this.props.appsList) {
+        if (app.slug == slug) {
+          blockDeployment = app.downstreams[0]?.pendingVersions[0]?.hasFailingStrictPreflights;
+        }
+      }
+    } else {
+      blockDeployment = this.props.app?.downstreams[0]?.pendingVersions[0]?.hasFailingStrictPreflights;
+    }
     let preflightJSON = {};
     if (preflightResultData?.result) {
       if (showSkipModal) {
@@ -384,17 +400,28 @@ class PreflightResultPage extends Component {
             }
 
             {stopPolling ?
-              <button
-                type="button"
-                className="btn primary blue"
-                onClick={() => this.deployKotsDownstream(false)}
-              >
-                Continue
-              </button> :
-              <div className="flex flex1 justifyContent--center alignItems--center">
-                <span className="u-fontSize--normal u-fontWeight--medium u-textDecoration--underline u-textColor--bodyCopy u-marginTop--15 u-cursor--pointer" onClick={this.showSkipModal}>
-                  Ignore Preflights </span>
-              </div>}
+              <div>
+                <button
+                  type="button"
+                  className="btn primary blue"
+                  disabled={blockDeployment}
+                  onClick={() => this.deployKotsDownstream(false)}
+                >
+                  <span
+                    data-tip-disable={!blockDeployment}
+                    data-tip="Deployment is disabled as a strict analyzer in this version's preflight checks has failed or has not been run"
+                    data
+                  >
+                    Continue
+                  </span>
+                  <ReactTooltip effect="solid" id="disable-deployment-tooltip" />
+                </button>
+              </div>
+              : !blockDeployment ?
+                <div className="flex flex1 justifyContent--center alignItems--center">
+                  <span className="u-fontSize--normal u-fontWeight--medium u-textDecoration--underline u-textColor--bodyCopy u-marginTop--15 u-cursor--pointer" onClick={this.showSkipModal}>
+                    Ignore Preflights </span>
+                </div> : null}
           </div>
           : stopPolling ?
             <div className="flex-auto flex justifyContent--flexEnd u-marginBottom--15">
