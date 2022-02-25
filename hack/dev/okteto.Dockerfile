@@ -151,6 +151,6 @@ RUN --mount=target=/go/pkg/mod,type=cache go mod download
 COPY . .
 RUN --mount=target=/root/.cache,type=cache mkdir -p web/dist \
     && touch web/dist/README.md \
-    && make kotsadm
+    && make build
 
 ENTRYPOINT [ "./bin/kotsadm", "api"]

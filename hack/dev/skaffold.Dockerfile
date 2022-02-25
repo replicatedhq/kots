@@ -13,7 +13,7 @@ COPY kotskinds ./kotskinds
 
 ARG DEBUG_KOTSADM=0
 
-RUN make kotsadm
+RUN make build
 
 FROM debian:buster
 
