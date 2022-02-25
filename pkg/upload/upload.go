@@ -20,6 +20,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -116,6 +117,18 @@ func Upload(path string, uploadOptions UploadOptions) (string, error) {
 		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to create upload request")
 	}
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(path)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to load kotskinds from path")
+	}
+
+	hasStrictPreflights := kotsKinds.HasStrictPreflights()
+	if hasStrictPreflights && uploadOptions.SkipPreflights {
+		log.ActionWithoutSpinner("preflights will not be skipped, strict preflights are enabled.")
+	}
+
+	log.ActionWithSpinner("Uploading local application to Admin Console")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.FinishSpinnerWithError()
@@ -124,6 +137,10 @@ func Upload(path string, uploadOptions UploadOptions) (string, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
+		b, _ := ioutil.ReadAll(resp.Body)
+		if len(b) > 0 {
+			log.ActionWithoutSpinner("upload error: %v", string(b))
+		}
 		log.FinishSpinnerWithError()
 		return "", errors.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
