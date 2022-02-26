@@ -121,7 +121,7 @@
     "monaco-editor": "^0.31.0",
     "monaco-editor-webpack-plugin": "^7.0.1",
     "node-polyfill-webpack-plugin": "^1.1.4",
-    "prismjs": "^1.25.0",
+    "prismjs": "^1.27.0",
     "query-string": "6.13.1",
     "randomstring": "^1.1.5",
     "rc-progress": "^2.5.2",
