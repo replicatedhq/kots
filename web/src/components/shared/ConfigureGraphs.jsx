@@ -21,7 +21,7 @@ class ConfigureGraphs extends React.Component {
             <input
               type="text"
               className="Input u-marginRight--10"
-              placeholder="https://prometheus.default.svc.cluster.local:9090"
+              placeholder="https://prometheus-k8s.default.svc.cluster.local:9090"
               value={promValue}
               onChange={onPromValueChange}
             />
