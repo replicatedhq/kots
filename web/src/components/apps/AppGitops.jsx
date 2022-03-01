@@ -138,7 +138,7 @@ class AppGitops extends Component {
       this.setState({ testingConnection: false, connectionTested: true });
     }
   }
-  
+
   goToTroubleshootPage = () => {
     const { app, history } = this.props;
     history.push(`/app/${app.slug}/troubleshoot`);
@@ -148,7 +148,7 @@ class AppGitops extends Component {
     this.setState({ showGitOpsSettings: true });
   }
 
-  finishGitOpsSetup = async repoDetails => {    
+  finishGitOpsSetup = async repoDetails => {
     const {
       ownerRepo,
       branch,
@@ -259,7 +259,7 @@ class AppGitops extends Component {
 
   disableGitOps = async () => {
     this.setState({ disablingGitOps: true });
-  
+
     const appId = this.props.app?.id;
     let clusterId;
     if (this.props.app?.downstreams?.length) {
@@ -389,7 +389,7 @@ class AppGitops extends Component {
                 ? <div style={{ backgroundImage: `url(${app.iconUri})` }} className="appIcon u-position--relative" />
                 : <span className="icon onlyAirgapBundleIcon" />
               }
-              {gitopsIsConnected 
+              {gitopsIsConnected
                 ? <span className="icon connectionEstablished u-marginLeft--10" />
                 : <span className="icon onlyNoConnectionIcon u-marginLeft--10" />
               }
@@ -449,7 +449,8 @@ class AppGitops extends Component {
                 <div className="flex justifyContent--spaceBetween alignItems--center">
                   <div className="flex">
                     <button className="btn secondary blue u-marginRight--10" disabled={testingConnection} onClick={this.handleTestConnection}>{testingConnection ? "Testing connection" : "Try again"}</button>
-                    <button className="btn primary blue" onClick={this.goToTroubleshootPage}>Troubleshoot</button>
+                    <button className="btn primary blue u-marginRight--10" onClick={this.goToTroubleshootPage}>Troubleshoot</button>
+                    <button className="btn secondary red" disabled={disablingGitOps} onClick={this.promptToDisableGitOps}>{disablingGitOps ? "Disabling GitOps" : "Disable GitOps"}</button>
                   </div>
                   <button className="btn secondary dustyGray" onClick={this.updateGitOpsSettings}>Update GitOps Settings</button>
                 </div>
