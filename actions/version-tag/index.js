@@ -9,8 +9,9 @@ try {
         var dateObj = new Date();
         var month = dateObj.getUTCMonth() + 1; // months are 0-based
         var day = dateObj.getUTCDate();
+        var hour = dateObj.getUTCHours();
         var year = dateObj.getUTCFullYear();
-        core.setOutput("GIT_TAG", `v${year}.${month}.${day}-nightly`);
+        core.setOutput("GIT_TAG", `v${year}.${month}.${day}-${hour}-nightly`);
     }
 } catch (error) {
     core.setFailed(error.message);
