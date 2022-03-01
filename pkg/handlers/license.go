@@ -310,10 +310,18 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if existingLicense != nil {
-		uploadLicenseResponse.Error = "License already exists"
-		uploadLicenseResponse.DeleteAppCommand = fmt.Sprintf("kubectl kots remove %s -n %s --force", existingLicense.Spec.AppSlug, util.PodNamespace)
-		JSON(w, 400, uploadLicenseResponse)
-		return
+		// TODO: check if app is in app_downstream table, if it is not, overwrite license
+		appID, _ := store.GetStore().GetAppIDFromSlug(verifiedLicense.Spec.AppSlug)
+		downstreams, _ := store.GetStore().ListDownstreamsForApp(appID) //--> check if downstreams is empty, or err returned
+		if len(downstreams) == 0 {
+			//if empty, RemoveApp (remove previous failed license upload record)
+			store.GetStore().RemoveApp(appID)
+		} else {
+			uploadLicenseResponse.Error = "License already exists"
+			uploadLicenseResponse.DeleteAppCommand = fmt.Sprintf("kubectl kots remove %s -n %s --force", existingLicense.Spec.AppSlug, util.PodNamespace)
+			JSON(w, 400, uploadLicenseResponse)
+			return
+		}
 	}
 
 	installationParams, err := kotsutil.GetInstallationParams(kotsadmtypes.KotsadmConfigMap)
