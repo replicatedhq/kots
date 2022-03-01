@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/gosimple/slug"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -311,8 +312,12 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	}
 	if existingLicense != nil {
 		// TODO: check if app is in app_downstream table, if it is not, overwrite license
-		appID, _ := store.GetStore().GetAppIDFromSlug(verifiedLicense.Spec.AppSlug)
-		downstreams, _ := store.GetStore().ListDownstreamsForApp(appID) //--> check if downstreams is empty, or err returned
+		name := strings.Replace(verifiedLicense.Spec.AppSlug, "-", " ", 0)
+		titleForSlug := strings.Replace(name, ".", "-", 0)
+		slugProposal := slug.Make(titleForSlug)
+		appID, _ := store.GetStore().GetAppIDFromSlug(slugProposal)
+		downstreams, _ := store.GetStore().ListDownstreamsForApp(appID)
+		// check if app_downstream record exists, if not install likely failed on license upload
 		if len(downstreams) == 0 {
 			//if empty, RemoveApp (remove previous failed license upload record)
 			store.GetStore().RemoveApp(appID)
