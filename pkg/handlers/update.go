@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -13,7 +14,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/airgap"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/updatechecker"
@@ -202,8 +202,9 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 }
 
 type UpdateAdminConsoleResponse struct {
-	Success bool    `json:"success"`
-	Error   *string `json:"error,omitempty"`
+	Success      bool    `json:"success"`
+	UpdateStatus string  `json:"updateStatus"`
+	Error        *string `json:"error,omitempty"` // TODO: no pointer
 }
 
 func (h *Handler) UpdateAdminConsole(w http.ResponseWriter, r *http.Request) {
@@ -228,13 +229,12 @@ func (h *Handler) UpdateAdminConsole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logger.Debugf("Current Admin Console update status is %s", status)
+	logger.Debugf("Last Admin Console update status is %s", status)
+	fmt.Printf("++++++++Last Admin Console update status is %s\n", status)
 
 	if status == kotsadm.UpdateRunning {
-		err := errors.New("update already in progress")
-		logger.Error(err)
-		updateAdminConsoleResponse.Error = optionalString(err.Error())
-		JSON(w, http.StatusInternalServerError, updateAdminConsoleResponse)
+		updateAdminConsoleResponse.UpdateStatus = string(status)
+		JSON(w, http.StatusOK, updateAdminConsoleResponse)
 		return
 	}
 
@@ -246,34 +246,18 @@ func (h *Handler) UpdateAdminConsole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	archivePath, err := ioutil.TempDir("", "kotsadm")
+	// Not using GetAppVersionArchive here because version is expected to be pending download at this point
+	version, err := store.GetStore().GetAppVersion(a.ID, int64(sequence))
 	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to create temp dir"))
-		updateAdminConsoleResponse.Error = optionalString(err.Error())
-		JSON(w, http.StatusInternalServerError, updateAdminConsoleResponse)
-		return
-	}
-	defer os.RemoveAll(archivePath)
-
-	err = store.GetStore().GetAppVersionArchive(a.ID, int64(sequence), archivePath)
-	if err != nil {
-		logger.Error(errors.Wrapf(err, "failed to get archive for sequence %d", sequence))
+		logger.Error(errors.Wrap(err, "failed to get app version"))
 		updateAdminConsoleResponse.Error = optionalString(err.Error())
 		JSON(w, http.StatusInternalServerError, updateAdminConsoleResponse)
 		return
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archivePath)
-	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to load kots kinds"))
-		updateAdminConsoleResponse.Error = optionalString(err.Error())
-		JSON(w, http.StatusInternalServerError, updateAdminConsoleResponse)
-		return
-	}
+	latestVersion, _ := findLatestKotsVersion(a.ID, version.KOTSKinds.License)
 
-	latestVersion, _ := findLatestKotsVersion(a.ID, kotsKinds.License)
-
-	targetVersion, err := getTargetKotsVersion(kotsKinds, latestVersion)
+	targetVersion, err := getTargetKotsVersion(version.KOTSKinds, latestVersion)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to find target version"))
 		updateAdminConsoleResponse.Error = optionalString(err.Error())
@@ -282,6 +266,7 @@ func (h *Handler) UpdateAdminConsole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logger.Debugf("Updating Admin Console to version %s", targetVersion)
+	fmt.Printf("++++++++Updating Admin Console to version %s", targetVersion)
 
 	err = kotsadm.UpdateToVersion(targetVersion)
 	if err != nil {
@@ -294,4 +279,30 @@ func (h *Handler) UpdateAdminConsole(w http.ResponseWriter, r *http.Request) {
 	updateAdminConsoleResponse.Success = true
 
 	JSON(w, http.StatusOK, updateAdminConsoleResponse)
+}
+
+type GetAdminConsoleUpdateStatusResponse struct {
+	Success bool   `json:"success"`
+	Status  string `json:"status"`
+	Error   string `json:"error"`
+}
+
+func (h *Handler) GetAdminConsoleUpdateStatus(w http.ResponseWriter, r *http.Request) {
+	getAdminConsoleUpdateStatusResponse := GetAdminConsoleUpdateStatusResponse{
+		Success: false,
+	}
+
+	status, err := kotsadm.GetUpdateUpdateStatus()
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to check update status"))
+		getAdminConsoleUpdateStatusResponse.Error = err.Error()
+		JSON(w, http.StatusInternalServerError, getAdminConsoleUpdateStatusResponse)
+		return
+	}
+
+	logger.Debugf("Current Admin Console update status is %s", status)
+
+	getAdminConsoleUpdateStatusResponse.Success = true
+	getAdminConsoleUpdateStatusResponse.Status = string(status)
+	JSON(w, http.StatusOK, getAdminConsoleUpdateStatusResponse)
 }

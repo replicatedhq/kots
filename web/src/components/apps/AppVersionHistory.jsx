@@ -47,7 +47,7 @@ class AppVersionHistory extends Component {
     showDiffOverlay: false,
     firstSequence: 0,
     secondSequence: 0,
-    updateChecker: new Repeater(),
+    appUpdateChecker: new Repeater(),
     uploadProgress: 0,
     uploadSize: 0,
     uploadResuming: false,
@@ -64,7 +64,11 @@ class AppVersionHistory extends Component {
     displayErrorModal: false,
     displayConfirmDeploymentModal: false,
     confirmType: "",
-    isSkipPreflights: false
+    isSkipPreflights: false,
+    kotsUpdateChecker: new Repeater(),
+    kotsUpdateRunning: false,
+    kotsUpdateStatus: undefined,
+    kotsUpdateError: undefined,
   }
 
   // moving this out of the state because new repeater instances were getting created
@@ -96,7 +100,7 @@ class AppVersionHistory extends Component {
   }
 
   componentWillUnmount() {
-    this.state.updateChecker.stop();
+    this.state.appUpdateChecker.stop();
     this.state.versionHistoryJob.stop();
     for (const j in this.versionDownloadStatusJobs) {
       this.versionDownloadStatusJobs[j].stop();
@@ -222,7 +226,7 @@ class AppVersionHistory extends Component {
   }
 
   onUploadComplete = () => {
-    this.state.updateChecker.start(this.updateStatus, 1000);
+    this.state.appUpdateChecker.start(this.getAppUpdateStatus, 1000);
     this.setState({
       uploadingAirgapFile: false,
       uploadProgress: 0,
@@ -395,6 +399,46 @@ class AppVersionHistory extends Component {
               downloadingVersionError: true
             }
           }
+        });
+      });
+  }
+
+  upgradeAdminConsole = version => {
+    const { app } = this.props;
+
+    this.setState({
+      kotsUpdateRunning: true,
+      kotsUpdateStatus: undefined,
+      kotsUpdateError: undefined,
+    });
+    
+    fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/sequence/${version.parentSequence}/update-console`, {
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+        // TODO: show in UI
+        const response = await res.json();
+          this.setState({
+            kotsUpdateRunning: false,
+            kotsUpdateStatus: 'failed', // TODO: real value
+            kotsUpdateError: response.error,
+          });
+          return;
+        }
+        this.state.kotsUpdateChecker.start(this.kotsUpdateStatus, 1000);
+      })
+      .catch((err) => {
+        // TODO: show in UI
+        console.log(err);
+        this.setState({
+          kotsUpdateRunning: false,
+          kotsUpdateStatus: 'failed', // TODO: real value
+          kotsUpdateError: err?.message || "Something went wrong, please try again.",
         });
       });
   }
@@ -674,7 +718,7 @@ class AppVersionHistory extends Component {
             }, 3000);
           }
         } else {
-          this.state.updateChecker.start(this.updateStatus, 1000);
+          this.state.appUpdateChecker.start(this.getAppUpdateStatus, 1000);
         }
       })
       .catch((err) => {
@@ -686,7 +730,7 @@ class AppVersionHistory extends Component {
       });
   }
 
-  updateStatus = () => {
+  getAppUpdateStatus = () => {
     const { app } = this.props;
 
     return new Promise((resolve, reject) => {
@@ -701,7 +745,7 @@ class AppVersionHistory extends Component {
           const response = await res.json();
 
           if (response.status !== "running" && !this.props.isBundleUploading) {
-            this.state.updateChecker.stop();
+            this.state.appUpdateChecker.stop();
 
             this.setState({
               checkingForUpdates: false,
@@ -717,6 +761,43 @@ class AppVersionHistory extends Component {
             this.setState({
               checkingForUpdates: true,
               checkingUpdateMessage: response.currentMessage,
+            });
+          }
+          resolve();
+        }).catch((err) => {
+          console.log("failed to get update status", err);
+          reject();
+        });
+    });
+  }
+
+  getKotsUpdateStatus = () => {
+    const { app } = this.props;
+
+    return new Promise((resolve, reject) => {
+      fetch(`${process.env.API_ENDPOINT}/app/${app?.slug}/task/update-admin-console`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "GET",
+      })
+        .then(async (res) => {
+          const response = await res.json();
+
+          if (response.status !== "running") {
+            this.state.kotsUpdateChecker.stop();
+
+            this.setState({
+              kotsUpdateRunning: false,
+              kotsUpdateStatus: undefined,
+              kotsUpdateError: response.currentMessage,
+            });
+          } else {
+            this.setState({
+              kotsUpdateRunning: true,
+              kotsUpdateStatus: response.currentMessage,
+              kotsUpdateError: undefined,
             });
           }
           resolve();
@@ -990,6 +1071,7 @@ class AppVersionHistory extends Component {
         deployVersion={this.deployVersion}
         redeployVersion={this.redeployVersion}
         downloadVersion={this.downloadVersion}
+        upgradeAdminConsole={this.upgradeAdminConsole}
         handleViewLogs={this.handleViewLogs}
         handleSelectReleasesToDiff={this.handleSelectReleasesToDiff}
         renderVersionDownloadStatus={this.renderVersionDownloadStatus}

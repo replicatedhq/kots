@@ -115,7 +115,7 @@ class AppDetailPage extends Component {
           isCLI: false
         }),
       });
-      if (res.ok && res.status === 204) {
+      if (res.ok && res.status < 300) {
         this.setState({ makingCurrentReleaseErrMsg: "" });
         this.refetchData();
       } else {
