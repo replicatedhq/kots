@@ -47,7 +47,7 @@ spec:
         name: kots/admin_console
         selector:
           - app=kotsadm-postgres
-    - logs:
+    - logs:  # this is removable when we don't need to support kots <= 1.19
         collectorName: kotsadm-api
         name: kots/admin_console
         selector:

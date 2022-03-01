@@ -2,9 +2,10 @@ package image
 
 import (
 	"fmt"
-	"github.com/containers/image/v5/docker/reference"
 	"path"
 	"strings"
+
+	"github.com/containers/image/v5/docker/reference"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
@@ -179,7 +180,7 @@ func kustomizeImage(destRegistry registry.RegistryOptions, image string) ([]kust
 		// this means the image is something like "redis", which refers to "docker.io/library/redis"
 		imgParts = append([]string{"docker.io", "library"}, imgParts...)
 	} else if len(imgParts) == 2 {
-		// this means the image is something like "kotsadm/kotsadm-api", which refers to "docker.io/kotsadm/kotsadm-api"
+		// this means the image is something like "kotsadm/kotsadm", which refers to "docker.io/kotsadm/kotsadm"
 		imgParts = append([]string{"docker.io"}, imgParts...)
 	}
 
