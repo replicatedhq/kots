@@ -93,6 +93,26 @@ func (s *OCIStore) ListInstalledApps() ([]*apptypes.App, error) {
 	return apps, nil
 }
 
+func (s *OCIStore) ListFailedApps() ([]*apptypes.App, error) {
+	appListConfigmap, err := s.getConfigmap(AppListConfigmapName)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get app list configmap")
+	}
+
+	apps := []*apptypes.App{}
+	for _, appData := range appListConfigmap.Data {
+		app := apptypes.App{}
+		if err := json.Unmarshal([]byte(appData), &app); err != nil {
+			return nil, errors.Wrap(err, "failed to unmarshal app data")
+		}
+		if app.InstallState != "installed" {
+			apps = append(apps, &app)
+		}
+	}
+
+	return apps, nil
+}
+
 func (s *OCIStore) ListInstalledAppSlugs() ([]string, error) {
 	apps, err := s.ListInstalledApps()
 	if err != nil {

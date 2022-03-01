@@ -73,6 +73,31 @@ func (s *KOTSStore) ListInstalledApps() ([]*apptypes.App, error) {
 	return apps, nil
 }
 
+func (s *KOTSStore) ListFailedApps() ([]*apptypes.App, error) {
+	db := persistence.MustGetDBSession()
+	query := `select id from app where install_state != 'installed'`
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to query db")
+	}
+	defer rows.Close()
+
+	apps := []*apptypes.App{}
+	for rows.Next() {
+		var appID string
+		if err := rows.Scan(&appID); err != nil {
+			return nil, errors.Wrap(err, "failed to scan")
+		}
+		app, err := s.GetApp(appID)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get app")
+		}
+		apps = append(apps, app)
+	}
+
+	return apps, nil
+}
+
 func (s *KOTSStore) ListInstalledAppSlugs() ([]string, error) {
 	db := persistence.MustGetDBSession()
 	query := `select slug from app where install_state = 'installed'`

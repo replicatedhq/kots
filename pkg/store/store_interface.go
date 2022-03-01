@@ -118,6 +118,7 @@ type AppStore interface {
 	SetAppInstallState(appID string, state string) error
 	ListInstalledApps() ([]*apptypes.App, error)
 	ListInstalledAppSlugs() ([]string, error)
+	ListFailedApps() ([]*apptypes.App, error)
 	GetAppIDFromSlug(slug string) (appID string, err error)
 	GetApp(appID string) (*apptypes.App, error)
 	GetAppFromSlug(slug string) (*apptypes.App, error)

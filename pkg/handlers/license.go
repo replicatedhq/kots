@@ -309,11 +309,19 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 		JSON(w, 500, uploadLicenseResponse)
 		return
 	}
+
 	if existingLicense != nil {
-		uploadLicenseResponse.Error = "License already exists"
-		uploadLicenseResponse.DeleteAppCommand = fmt.Sprintf("kubectl kots remove %s -n %s --force", existingLicense.Spec.AppSlug, util.PodNamespace)
-		JSON(w, 400, uploadLicenseResponse)
-		return
+		resolved, err := kotslicense.ResolveExistingLicense(verifiedLicense)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to resolve existing license conflict"))
+		}
+
+		if !resolved {
+			uploadLicenseResponse.Error = "License already exists"
+			uploadLicenseResponse.DeleteAppCommand = fmt.Sprintf("kubectl kots remove %s -n %s --force", existingLicense.Spec.AppSlug, util.PodNamespace)
+			JSON(w, http.StatusBadRequest, uploadLicenseResponse)
+			return
+		}
 	}
 
 	installationParams, err := kotsutil.GetInstallationParams(kotsadmtypes.KotsadmConfigMap)
