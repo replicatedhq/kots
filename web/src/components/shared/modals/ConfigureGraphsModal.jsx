@@ -32,7 +32,7 @@ class ConfigureGraphsModal extends React.Component {
               <input
                 type="text"
                 className="Input u-marginBottom--20"
-                placeholder="https://prometheus.default.svc.cluster.local:9090"
+                placeholder="https://prometheus-k8s.default.svc.cluster.local:9090"
                 value={promValue}
                 onChange={onPromValueChange}
               />
