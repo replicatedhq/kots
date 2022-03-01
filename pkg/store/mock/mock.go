@@ -155,18 +155,18 @@ func (mr *MockStoreMockRecorder) CreateNewCluster(userID, isAllUsers, title, tok
 }
 
 // CreatePendingDownloadAppVersion mocks base method.
-func (m *MockStore) CreatePendingDownloadAppVersion(appID string, update types13.Update) (int64, error) {
+func (m *MockStore) CreatePendingDownloadAppVersion(appID string, update types13.Update, kotsApplication *v1beta1.Application, license *v1beta1.License) (int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreatePendingDownloadAppVersion", appID, update)
+	ret := m.ctrl.Call(m, "CreatePendingDownloadAppVersion", appID, update, kotsApplication, license)
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreatePendingDownloadAppVersion indicates an expected call of CreatePendingDownloadAppVersion.
-func (mr *MockStoreMockRecorder) CreatePendingDownloadAppVersion(appID, update interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) CreatePendingDownloadAppVersion(appID, update, kotsApplication, license interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePendingDownloadAppVersion", reflect.TypeOf((*MockStore)(nil).CreatePendingDownloadAppVersion), appID, update)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePendingDownloadAppVersion", reflect.TypeOf((*MockStore)(nil).CreatePendingDownloadAppVersion), appID, update, kotsApplication, license)
 }
 
 // CreateScheduledInstanceSnapshot mocks base method.
@@ -3291,18 +3291,18 @@ func (mr *MockVersionStoreMockRecorder) CreateAppVersionArchive(appID, sequence,
 }
 
 // CreatePendingDownloadAppVersion mocks base method.
-func (m *MockVersionStore) CreatePendingDownloadAppVersion(appID string, update types13.Update) (int64, error) {
+func (m *MockVersionStore) CreatePendingDownloadAppVersion(appID string, update types13.Update, kotsApplication *v1beta1.Application, license *v1beta1.License) (int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreatePendingDownloadAppVersion", appID, update)
+	ret := m.ctrl.Call(m, "CreatePendingDownloadAppVersion", appID, update, kotsApplication, license)
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreatePendingDownloadAppVersion indicates an expected call of CreatePendingDownloadAppVersion.
-func (mr *MockVersionStoreMockRecorder) CreatePendingDownloadAppVersion(appID, update interface{}) *gomock.Call {
+func (mr *MockVersionStoreMockRecorder) CreatePendingDownloadAppVersion(appID, update, kotsApplication, license interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePendingDownloadAppVersion", reflect.TypeOf((*MockVersionStore)(nil).CreatePendingDownloadAppVersion), appID, update)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePendingDownloadAppVersion", reflect.TypeOf((*MockVersionStore)(nil).CreatePendingDownloadAppVersion), appID, update, kotsApplication, license)
 }
 
 // GetAppVersion mocks base method.

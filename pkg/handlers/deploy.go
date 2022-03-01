@@ -15,7 +15,6 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/buildversion"
-	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/reporting"
@@ -113,18 +112,26 @@ func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if kotsUpgradeNeeded {
-		logger.Debugf("will upgrade to Admin Console to version %s", targetVersion)
-
-		deployAppVersionResponse.Status = "kots-upgrade-needed"
-		JSON(w, http.StatusOK, deployAppVersionResponse)
-		go func() {
-			err := kotsadm.UpdateToVersion(targetVersion)
-			if err != nil {
-				logger.Error(errors.Wrap(err, "failed to start kots upgrade"))
-			}
-		}()
+		err := errors.Errorf("upgrade to version %s is needed", targetVersion)
+		logger.Error(err)
+		deployAppVersionResponse.Error = err.Error()
+		JSON(w, http.StatusInternalServerError, deployAppVersionResponse)
 		return
 	}
+
+	// if kotsUpgradeNeeded {
+	// 	logger.Debugf("will upgrade to Admin Console to version %s", targetVersion)
+
+	// 	deployAppVersionResponse.Status = "kots-upgrade-needed"
+	// 	JSON(w, http.StatusOK, deployAppVersionResponse)
+	// 	go func() {
+	// 		err := kotsadm.UpdateToVersion(targetVersion)
+	// 		if err != nil {
+	// 			logger.Error(errors.Wrap(err, "failed to start kots upgrade"))
+	// 		}
+	// 	}()
+	// 	return
+	// }
 
 	versions, err := store.GetStore().GetAppVersions(a.ID, downstreams[0].ClusterID, true)
 	if err != nil {

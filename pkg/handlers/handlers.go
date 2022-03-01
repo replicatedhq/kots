@@ -138,12 +138,14 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 	r.Name("PreflightsReports").Path("/api/v1/app/{appSlug}/preflight/report").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.AppDownstreamPreflightWrite, handler.PreflightsReports))
 
+	r.Name("UpdateAdminConsole").Path("/api/v1/app/{appSlug}/sequence/{sequence}/update-console").Methods("POST").
+		HandlerFunc(middleware.EnforceAccess(policy.ClusterWrite, handler.UpdateAdminConsole))
+	r.Name("GetAdminConsoleUpdateStatus").Path("/api/v1/app/{appSlug}/task/update-admin-console").Methods("POST").
+		HandlerFunc(middleware.EnforceAccess(policy.ClusterWrite, handler.GetAdminConsoleUpdateStatus))
 	r.Name("DownloadAppVersion").Path("/api/v1/app/{appSlug}/sequence/{sequence}/download").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.AppDownstreamWrite, handler.DownloadAppVersion))
 	r.Name("GetAppVersionDownloadStatus").Path("/api/v1/app/{appSlug}/sequence/{sequence}/task/updatedownload").Methods("GET").
 		HandlerFunc(middleware.EnforceAccess(policy.AppRead, handler.GetAppVersionDownloadStatus)) // NOTE: appSlug is unused
-	r.Name("UpdateAdminConsole").Path("/api/v1/app/{appSlug}/sequence/{sequence}/update-console").Methods("POST").
-		HandlerFunc(middleware.EnforceAccess(policy.ClusterWrite, handler.UpdateAdminConsole))
 	r.Name("DeployAppVersion").Path("/api/v1/app/{appSlug}/sequence/{sequence}/deploy").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.AppDownstreamWrite, handler.DeployAppVersion))
 	r.Name("RedeployAppVersion").Path("/api/v1/app/{appSlug}/sequence/{sequence}/redeploy").Methods("POST").

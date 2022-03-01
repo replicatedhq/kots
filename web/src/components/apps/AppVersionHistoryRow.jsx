@@ -83,6 +83,15 @@ function renderVersionAction(version, nothingToCommitDiff, app, history, actionF
   const downstream = app.downstreams[0];
 
   if (version.status === "pending_download") {
+
+    // TODO: text for Upgrading
+    let buttonText = "Download";
+    if (isDownloading) {
+      buttonText = "Downloading";
+    } else if (version.needsKotsUpgrade) {
+      buttonText = "Upgrade";
+    }
+
     return (
       <div className="flex flex1 justifyContent--flexEnd alignItems--center">
         {renderReleaseNotes(version, showReleaseNotes)}
@@ -91,7 +100,7 @@ function renderVersionAction(version, nothingToCommitDiff, app, history, actionF
           disabled={isDownloading}
           onClick={() => actionFn(version)}
         >
-          {isDownloading ? "Downloading" : "Download"}
+          {buttonText}
         </button>
       </div>
     );
@@ -283,6 +292,8 @@ export default function AppVersionHistoryRow(props) {
   let actionFn = props.deployVersion;
   if (version.status === "failed" || version.status === "deployed") {
     actionFn = props.redeployVersion;
+  } else if (version.needsKotsUpgrade) {
+    actionFn = props.upgradeAdminConsole;
   } else if (version.status === "pending_download") {
     actionFn = props.downloadVersion;
   }

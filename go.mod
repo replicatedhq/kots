@@ -96,6 +96,8 @@ require (
 	sigs.k8s.io/yaml v1.3.0
 )
 
+require golang.org/x/mod v0.5.1 // indirect
+
 require (
 	cloud.google.com/go v0.93.3 // indirect
 	github.com/AppsFlyer/go-sundheit v0.4.0 // indirect
