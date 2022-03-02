@@ -41,17 +41,24 @@ export default function PreflightRenderer(props) {
             return (
               <div key={idx} className={classNames("flex justifyContent--space-between preflight-check-row", rowClass)}>
                 <div className={classNames("flex-auto icon", icon, "u-marginRight--10")} />
-                <div className="flex1">
-                  <p className="u-textColor--primary u-fontSize--large u-fontWeight--bold">{row.title}</p>
-                  <div className="PreflightMessageRow u-marginTop--10">
-                    <Markdown source={row.message}/> {row.strict? <div>Strict: { String(row.strict)} </div> : null }
-                  </div>
-                  {row.uri &&
-                    <div className="u-marginTop--5">
-                      <a href={row.uri} target="_blank" rel="noopener noreferrer" className="replicated-link u-fontSize--small u-fontWeight--medium u-position--relative"> Learn more <span style={{ top: "2px", marginLeft: "2px" }} className="icon external-link-icon u-cursor--pointer" /></a>
+                <div className="flex flex1">
+                  <div className="flex1">
+                    <p className="u-textColor--primary u-fontSize--large u-fontWeight--bold">{row.title}</p>
+                    <div className="PreflightMessageRow u-marginTop--10">
+                      <Markdown source={row.message}/> {row.strict? <div>Strict: { String(row.strict)} </div> : null }
                     </div>
-                  }
-                </div>
+                    {row.uri &&
+                      <div className="u-marginTop--5">
+                        <a href={row.uri} target="_blank" rel="noopener noreferrer" className="replicated-link u-fontSize--small u-fontWeight--medium u-position--relative"> Learn more <span style={{ top: "2px", marginLeft: "2px" }} className="icon external-link-icon u-cursor--pointer" /></a>
+                      </div>
+                    }
+                    </div>
+                    {row.isFail && row.strict ? 
+                      <div className="flex flex-auto alignItems--center">
+                        <p className="u-textColor--error u-fontSize--small u-fontWeight--medium">To deploy the application, this check cannot fail.</p>
+                      </div>
+                    : null}
+                  </div>
               </div>
             );
         })}
