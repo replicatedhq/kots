@@ -227,6 +227,7 @@ func InstallCmd() *cobra.Command {
 				SkipPreflights:            v.GetBool("skip-preflights"),
 				SkipCompatibilityCheck:    v.GetBool("skip-compatibility-check"),
 				EnsureRBAC:                v.GetBool("ensure-rbac"),
+				SkipRBACCheck:             v.GetBool("skip-rbac-check"),
 				InstallID:                 m.InstallID,
 				SimultaneousUploads:       simultaneousUploads,
 				DisableImagePush:          v.GetBool("disable-image-push"),
