@@ -311,14 +311,27 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if existingLicense != nil {
-		// TODO: check if app is in app_downstream table, if it is not, overwrite license
 		name := strings.Replace(verifiedLicense.Spec.AppSlug, "-", " ", 0)
 		titleForSlug := strings.Replace(name, ".", "-", 0)
 		slugProposal := slug.Make(titleForSlug)
+
 		appID, _ := store.GetStore().GetAppIDFromSlug(slugProposal)
-		downstreams, _ := store.GetStore().ListDownstreamsForApp(appID)
+		apps, _ := store.GetStore().ListInstalledApps()
+		// check if this license is installed or not
+		isInstalled := false
+		for _, app := range apps {
+			decode := scheme.Codecs.UniversalDeserializer().Decode
+			obj, _, err := decode([]byte(app.License), nil, nil)
+			if err != nil {
+				// return errors.Wrap(err, "failed to decode app license")
+			}
+			license := obj.(*kotsv1beta1.License)
+			if license.Spec.LicenseID == verifiedLicense.Spec.LicenseID {
+				isInstalled = true
+			}
+		}
 		// check if app_downstream record exists, if not install likely failed on license upload
-		if len(downstreams) == 0 {
+		if !isInstalled {
 			//if empty, RemoveApp (remove previous failed license upload record)
 			store.GetStore().RemoveApp(appID)
 		} else {
