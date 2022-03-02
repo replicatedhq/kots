@@ -23,20 +23,22 @@ import (
 )
 
 type RestoreInstanceBackupOptions struct {
-	BackupName      string
-	WaitForApps     bool
-	VeleroNamespace string
-	Silent          bool
+	BackupName          string
+	ExcludeAdminConsole bool
+	ExcludeApps         bool
+	WaitForApps         bool
+	VeleroNamespace     string
+	Silent              bool
 }
 
 type ListInstanceRestoresOptions struct {
 	Namespace string
 }
 
-func RestoreInstanceBackup(ctx context.Context, options RestoreInstanceBackupOptions) (*velerov1.Restore, error) {
+func RestoreInstanceBackup(ctx context.Context, options RestoreInstanceBackupOptions) error {
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get k8s clientset")
+		return errors.Wrap(err, "failed to get k8s clientset")
 	}
 
 	veleroNamespace := options.VeleroNamespace
@@ -44,42 +46,42 @@ func RestoreInstanceBackup(ctx context.Context, options RestoreInstanceBackupOpt
 		var err error
 		veleroNamespace, err = DetectVeleroNamespace(ctx, clientset, "")
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to detect velero namespace")
+			return errors.Wrap(err, "failed to detect velero namespace")
 		}
 		if veleroNamespace == "" {
-			return nil, errors.New("velero not found")
+			return errors.New("velero not found")
 		}
 	}
 
 	// get the backup
 	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get cluster config")
+		return errors.Wrap(err, "failed to get cluster config")
 	}
 
 	veleroClient, err := veleroclientv1.NewForConfig(cfg)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create velero clientset")
+		return errors.Wrap(err, "failed to create velero clientset")
 	}
 
 	backup, err := veleroClient.Backups(veleroNamespace).Get(ctx, options.BackupName, metav1.GetOptions{})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to find backup")
+		return errors.Wrap(err, "failed to find backup")
 	}
 
 	// make sure this is an instance backup
 	if backup.Annotations["kots.io/instance"] != "true" {
-		return nil, errors.Wrap(err, "backup provided is not an instance backup")
+		return errors.Wrap(err, "backup provided is not an instance backup")
 	}
 
 	kotsadmImage, ok := backup.Annotations["kots.io/kotsadm-image"]
 	if !ok {
-		return nil, errors.Wrap(err, "failed to find kotsadm image annotation")
+		return errors.Wrap(err, "failed to find kotsadm image annotation")
 	}
 
 	kotsadmNamespace, _ := backup.Annotations["kots.io/kotsadm-deploy-namespace"]
 	if kotsadmNamespace == "" {
-		return nil, errors.Wrap(err, "failed to find kotsadm deploy namespace annotation")
+		return errors.Wrap(err, "failed to find kotsadm deploy namespace annotation")
 	}
 
 	// make sure backup is restorable/complete
@@ -87,120 +89,160 @@ func RestoreInstanceBackup(ctx context.Context, options RestoreInstanceBackupOpt
 	case velerov1.BackupPhaseCompleted:
 		break
 	case velerov1.BackupPhaseFailed, velerov1.BackupPhasePartiallyFailed:
-		return nil, errors.Wrap(err, "cannot restore a failed backup")
+		return errors.Wrap(err, "cannot restore a failed backup")
 	default:
-		return nil, errors.Wrap(err, "backup is still in progress")
+		return errors.Wrap(err, "backup is still in progress")
 	}
 
 	log := logger.NewCLILogger()
 	if options.Silent {
 		log.Silence()
 	}
-	log.ActionWithSpinner("Deleting Admin Console")
 
-	// delete all kotsadm objects before creating the restore
-	err = k8sutil.DeleteKotsadm(ctx, clientset, kotsadmNamespace, kotsutil.IsKurl(clientset))
-	if err != nil {
-		log.FinishSpinnerWithError()
-		return nil, errors.Wrap(err, "failed to delete kotsadm objects")
-	}
+	if !options.ExcludeAdminConsole {
+		log.ActionWithSpinner("Deleting Admin Console")
 
-	log.FinishSpinner()
-	log.ActionWithSpinner("Restoring Admin Console")
+		// delete all kotsadm objects before creating the restore
+		err = k8sutil.DeleteKotsadm(ctx, clientset, kotsadmNamespace, kotsutil.IsKurl(clientset))
+		if err != nil {
+			log.FinishSpinnerWithError()
+			return errors.Wrap(err, "failed to delete kotsadm objects")
+		}
 
-	// create a restore for kotsadm objects
-	trueVal := true
-	restore := &velerov1.Restore{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: veleroNamespace,
-			Name:      fmt.Sprintf("%s.kotsadm", options.BackupName),
-			Annotations: map[string]string{
-				"kots.io/instance":                 "true",
-				"kots.io/kotsadm-image":            kotsadmImage,
-				"kots.io/kotsadm-deploy-namespace": kotsadmNamespace,
-			},
-		},
-		Spec: velerov1.RestoreSpec{
-			BackupName: options.BackupName,
-			LabelSelector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					kotsadmtypes.KotsadmKey: kotsadmtypes.KotsadmLabelValue, // restoring applications is in a separate step after kotsadm spins up
+		log.FinishSpinner()
+		log.ActionWithSpinner("Restoring Admin Console")
+
+		// create a restore for kotsadm objects
+		trueVal := true
+		restore := &velerov1.Restore{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: veleroNamespace,
+				Name:      fmt.Sprintf("%s.kotsadm", options.BackupName),
+				Annotations: map[string]string{
+					"kots.io/instance":                 "true",
+					"kots.io/kotsadm-image":            kotsadmImage,
+					"kots.io/kotsadm-deploy-namespace": kotsadmNamespace,
 				},
 			},
-			RestorePVs:              &trueVal,
-			IncludeClusterResources: &trueVal,
-		},
-	}
-
-	// delete existing restore object (if exists)
-	err = veleroClient.Restores(veleroNamespace).Delete(ctx, restore.ObjectMeta.Name, metav1.DeleteOptions{})
-	if err != nil && !strings.Contains(err.Error(), "not found") {
-		log.FinishSpinnerWithError()
-		return nil, errors.Wrapf(err, "failed to delete restore %s", restore.ObjectMeta.Name)
-	}
-
-	// create new restore object
-	restore, err = veleroClient.Restores(veleroNamespace).Create(ctx, restore, metav1.CreateOptions{})
-	if err != nil {
-		log.FinishSpinnerWithError()
-		return nil, errors.Wrap(err, "failed to create restore")
-	}
-
-	// wait for restore to complete
-	restore, err = waitForVeleroRestoreCompleted(ctx, veleroNamespace, restore.ObjectMeta.Name)
-	if err != nil {
-		if restore != nil {
-			errMsg := fmt.Sprintf("Admin Console restore failed with %d errors and %d warnings.", restore.Status.Errors, restore.Status.Warnings)
-			log.FinishSpinnerWithError()
-			log.ActionWithoutSpinner(errMsg)
-			return nil, errors.Wrap(err, errMsg)
+			Spec: velerov1.RestoreSpec{
+				BackupName: options.BackupName,
+				LabelSelector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						kotsadmtypes.KotsadmKey: kotsadmtypes.KotsadmLabelValue, // restoring applications is in a separate step after kotsadm spins up
+					},
+				},
+				RestorePVs:              &trueVal,
+				IncludeClusterResources: &trueVal,
+			},
 		}
-		log.FinishSpinnerWithError()
-		return nil, errors.Wrap(err, "failed to wait for velero restore completed")
-	}
 
-	// wait for kotsadm to start up
-	timeout, err := time.ParseDuration("10m")
-	if err != nil {
-		log.FinishSpinnerWithError()
-		return nil, errors.Wrap(err, "failed to parse timeout value")
-	}
-	kotsadmPodName, err := k8sutil.WaitForKotsadm(clientset, kotsadmNamespace, timeout)
-	if err != nil {
-		log.FinishSpinnerWithError()
-		return nil, errors.Wrap(err, "failed to wait for kotsadm")
-	}
+		// delete existing restore object (if exists)
+		err = veleroClient.Restores(veleroNamespace).Delete(ctx, restore.ObjectMeta.Name, metav1.DeleteOptions{})
+		if err != nil && !strings.Contains(err.Error(), "not found") {
+			log.FinishSpinnerWithError()
+			return errors.Wrapf(err, "failed to delete restore %s", restore.ObjectMeta.Name)
+		}
 
-	log.FinishSpinner()
-	log.ActionWithSpinner("Restoring Applications")
-
-	// initiate kotsadm applications restore
-	err = initiateKotsadmApplicationsRestore(options.BackupName, kotsadmNamespace, kotsadmPodName, log)
-	if err != nil {
-		log.FinishSpinnerWithError()
-		return nil, errors.Wrap(err, "failed to restore kotsadm applications")
-	}
-
-	if options.WaitForApps {
-		// wait for applications restore to finish
-		err = waitForKotsadmApplicationsRestore(options.BackupName, kotsadmNamespace, kotsadmPodName, log)
+		// create new restore object
+		restore, err = veleroClient.Restores(veleroNamespace).Create(ctx, restore, metav1.CreateOptions{})
 		if err != nil {
-			if _, ok := errors.Cause(err).(*kotsadmtypes.ErrorAppsRestore); ok {
+			log.FinishSpinnerWithError()
+			return errors.Wrap(err, "failed to create restore")
+		}
+
+		// wait for restore to complete
+		restore, err = waitForVeleroRestoreCompleted(ctx, veleroNamespace, restore.ObjectMeta.Name)
+		if err != nil {
+			if restore != nil {
+				errMsg := fmt.Sprintf("Admin Console restore failed with %d errors and %d warnings.", restore.Status.Errors, restore.Status.Warnings)
 				log.FinishSpinnerWithError()
-				return nil, errors.Errorf("failed to restore kotsadm applications: %s", err)
+				log.ActionWithoutSpinner(errMsg)
+				return errors.Wrap(err, errMsg)
 			}
 			log.FinishSpinnerWithError()
-			return nil, errors.Wrap(err, "failed to wait for kotsadm applications restore")
+			return errors.Wrap(err, "failed to wait for velero restore completed")
+		}
+
+		// wait for kotsadm to start up
+		timeout, err := time.ParseDuration("10m")
+		if err != nil {
+			log.FinishSpinnerWithError()
+			return errors.Wrap(err, "failed to parse timeout value")
+		}
+		_, err = k8sutil.WaitForKotsadm(clientset, kotsadmNamespace, timeout)
+		if err != nil {
+			log.FinishSpinnerWithError()
+			return errors.Wrap(err, "failed to wait for kotsadm")
 		}
 
 		log.FinishSpinner()
-		log.ActionWithoutSpinner("Restore completed successfully.")
-	} else {
-		log.FinishSpinner()
-		log.ActionWithoutSpinner("Admin Console restored successfully. Applications restore is still in progress.")
 	}
 
-	return restore, nil
+	if !options.ExcludeApps {
+		log.ActionWithSpinner("Restoring Applications")
+
+		// make sure kotsadm is up and running
+		timeout, err := time.ParseDuration("10m")
+		if err != nil {
+			log.FinishSpinnerWithError()
+			return errors.Wrap(err, "failed to parse timeout value")
+		}
+		kotsadmPodName, err := k8sutil.WaitForKotsadm(clientset, kotsadmNamespace, timeout)
+		if err != nil {
+			log.FinishSpinnerWithError()
+			return errors.Wrap(err, "failed to wait for kotsadm")
+		}
+
+		// initiate kotsadm applications restore
+		err = initiateKotsadmApplicationsRestore(options.BackupName, kotsadmNamespace, kotsadmPodName, log)
+		if err != nil {
+			log.FinishSpinnerWithError()
+			return errors.Wrap(err, "failed to restore kotsadm applications")
+		}
+
+		if options.WaitForApps {
+			// wait for applications restore to finish
+			err = waitForKotsadmApplicationsRestore(options.BackupName, kotsadmNamespace, kotsadmPodName, log)
+			if err != nil {
+				if _, ok := errors.Cause(err).(*kotsadmtypes.ErrorAppsRestore); ok {
+					log.FinishSpinnerWithError()
+					return errors.Errorf("failed to restore kotsadm applications: %s", err)
+				}
+				log.FinishSpinnerWithError()
+				return errors.Wrap(err, "failed to wait for kotsadm applications restore")
+			}
+		}
+
+		log.FinishSpinner()
+	}
+
+	// both admin console and apps were restored
+	if !options.ExcludeAdminConsole && !options.ExcludeApps {
+		if options.WaitForApps {
+			log.ActionWithoutSpinner("Restore completed successfully.")
+		} else {
+			log.ActionWithoutSpinner("Admin Console restored successfully. Applications restore is still in progress.")
+		}
+		return nil
+	}
+
+	// only the admin console was restored
+	if !options.ExcludeAdminConsole && options.ExcludeApps {
+		log.ActionWithoutSpinner("Admin Console restored successfully.")
+		return nil
+	}
+
+	// only the applications were restored
+	if options.ExcludeAdminConsole && !options.ExcludeApps {
+		if options.WaitForApps {
+			log.ActionWithoutSpinner("Applications restored successfully.")
+		} else {
+			log.ActionWithoutSpinner("Applications restore initiated successfully but is still in progress.")
+		}
+		return nil
+	}
+
+	return nil
 }
 
 func ListInstanceRestores(ctx context.Context, options ListInstanceRestoresOptions) ([]velerov1.Restore, error) {
