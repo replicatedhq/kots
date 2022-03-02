@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/gosimple/slug"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -311,29 +310,38 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if existingLicense != nil {
-		name := strings.Replace(verifiedLicense.Spec.AppSlug, "-", " ", 0)
-		titleForSlug := strings.Replace(name, ".", "-", 0)
-		slugProposal := slug.Make(titleForSlug)
-
-		appID, _ := store.GetStore().GetAppIDFromSlug(slugProposal)
-		apps, _ := store.GetStore().ListInstalledApps()
+		apps, err := store.GetStore().ListInstalledApps()
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to list installed apps"))
+			uploadLicenseResponse.Error = err.Error()
+			JSON(w, 500, uploadLicenseResponse)
+		}
 		// check if this license is installed or not
 		isInstalled := false
+		var idToRemove string
 		for _, app := range apps {
 			decode := scheme.Codecs.UniversalDeserializer().Decode
 			obj, _, err := decode([]byte(app.License), nil, nil)
 			if err != nil {
-				// return errors.Wrap(err, "failed to decode app license")
+				logger.Error(errors.Wrap(err, "failed to decode app license"))
+				uploadLicenseResponse.Error = err.Error()
+				JSON(w, 500, uploadLicenseResponse)
+				return
 			}
 			license := obj.(*kotsv1beta1.License)
 			if license.Spec.LicenseID == verifiedLicense.Spec.LicenseID {
 				isInstalled = true
+				idToRemove = app.ID
 			}
 		}
 		// check if app_downstream record exists, if not install likely failed on license upload
 		if !isInstalled {
-			//if empty, RemoveApp (remove previous failed license upload record)
-			store.GetStore().RemoveApp(appID)
+			err := store.GetStore().RemoveApp(idToRemove)
+			if err != nil {
+				logger.Error(errors.Wrap(err, "failed to remove uninstalled app"))
+				uploadLicenseResponse.Error = err.Error()
+				JSON(w, 500, uploadLicenseResponse)
+			}
 		} else {
 			uploadLicenseResponse.Error = "License already exists"
 			uploadLicenseResponse.DeleteAppCommand = fmt.Sprintf("kubectl kots remove %s -n %s --force", existingLicense.Spec.AppSlug, util.PodNamespace)
