@@ -316,6 +316,7 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 			uploadLicenseResponse.Error = err.Error()
 			JSON(w, 500, uploadLicenseResponse)
 		}
+
 		// check if this license is installed or not
 		isInstalled := false
 		var idToRemove string
@@ -332,9 +333,10 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 			if license.Spec.LicenseID == verifiedLicense.Spec.LicenseID {
 				isInstalled = true
 				idToRemove = app.ID
+				break
 			}
 		}
-		// check if app_downstream record exists, if not install likely failed on license upload
+
 		if !isInstalled {
 			err := store.GetStore().RemoveApp(idToRemove)
 			if err != nil {
