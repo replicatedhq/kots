@@ -272,13 +272,17 @@ func (s *OCIStore) GetAppVersionBaseArchive(appID string, versionLabel string) (
 	return "", -1, ErrNotImplemented
 }
 
-func (s *OCIStore) CreatePendingDownloadAppVersion(appID string, update upstreamtypes.Update) (int64, error) {
+func (s *OCIStore) CreatePendingDownloadAppVersion(appID string, update upstreamtypes.Update, kotsApplication *kotsv1beta1.Application, license *kotsv1beta1.License) (int64, error) {
 	a, err := s.GetApp(appID)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get app")
 	}
 
 	kotsKinds := kotsutil.EmptyKotsKinds()
+	if kotsApplication != nil {
+		kotsKinds.KotsApplication = *kotsApplication
+	}
+	kotsKinds.License = license
 
 	var releasedAt *metav1.Time
 	if update.ReleasedAt != nil {

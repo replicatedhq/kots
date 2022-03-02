@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/store/types"
@@ -206,6 +207,7 @@ func (s *KOTSStore) GetCurrentVersion(appID string, clusterID string) (*downstre
 	ado.is_error,
 	av.upstream_released_at,
 	av.kots_installation_spec,
+	av.kots_app_spec,
 	av.version_label
  FROM
 	 app_downstream_version AS adv
@@ -279,6 +281,7 @@ func (s *KOTSStore) GetAppVersions(appID string, clusterID string, downloadedOnl
 	ado.is_error,
 	av.upstream_released_at,
 	av.kots_installation_spec,
+	av.kots_app_spec,
 	av.version_label
  FROM
 	 app_downstream_version AS adv
@@ -385,6 +388,7 @@ func (s *KOTSStore) downstreamVersionFromRow(appID string, row scannable) (*down
 	var hasError sql.NullBool
 	var upstreamReleasedAt persistence.NullStringTime
 	var kotsInstallationSpecStr sql.NullString
+	var kotsAppSpecStr sql.NullString
 
 	if err := row.Scan(
 		&createdOn,
@@ -403,6 +407,7 @@ func (s *KOTSStore) downstreamVersionFromRow(appID string, row scannable) (*down
 		&hasError,
 		&upstreamReleasedAt,
 		&kotsInstallationSpecStr,
+		&kotsAppSpecStr,
 		&versionLabel,
 	); err != nil {
 		return nil, errors.Wrap(err, "failed to scan")
@@ -446,8 +451,8 @@ func (s *KOTSStore) downstreamVersionFromRow(appID string, row scannable) (*down
 		v.UpstreamReleasedAt = &upstreamReleasedAt.Time
 	}
 
-	if kotsInstallationSpecStr.Valid && kotsInstallationSpecStr.String != "" {
-		decode := scheme.Codecs.UniversalDeserializer().Decode
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	if kotsInstallationSpecStr.String != "" {
 		obj, _, err := decode([]byte(kotsInstallationSpecStr.String), nil, nil)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to decode installation spec yaml")
@@ -469,6 +474,16 @@ func (s *KOTSStore) downstreamVersionFromRow(appID string, row scannable) (*down
 			Status:  downloadStatus,
 		}
 	}
+
+	if kotsAppSpecStr.String != "" {
+		obj, _, err := decode([]byte(kotsAppSpecStr.String), nil, nil)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to decode kots app spec yaml")
+		}
+		v.KotsApplication = obj.(*kotsv1beta1.Application)
+	}
+
+	v.NeedsKotsUpgrade = needsKotsUpgrade(v.KotsApplication)
 
 	return v, nil
 }
@@ -506,6 +521,18 @@ func getDownstreamVersionStatus(status types.DownstreamVersionStatus, hasError s
 	}
 
 	return s
+}
+
+func needsKotsUpgrade(app *kotsv1beta1.Application) bool {
+	if app == nil {
+		return false
+	}
+
+	if !kotsutil.IsKotsAutoUpgradeSupported(app) {
+		return false
+	}
+
+	return !kotsutil.IsKotsVersionCompatibleWithApp(*app, false)
 }
 
 func (s *KOTSStore) GetDownstreamOutput(appID string, clusterID string, sequence int64) (*downstreamtypes.DownstreamOutput, error) {

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/replicatedhq/kots/pkg/apiserver"
+	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/spf13/cobra"
@@ -30,7 +31,7 @@ func APICmd() *cobra.Command {
 			util.KotsadmTargetNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
 
 			params := apiserver.APIServerParams{
-				Version:                os.Getenv("VERSION"),
+				Version:                buildversion.Version(),
 				PostgresURI:            os.Getenv("POSTGRES_URI"),
 				AutocreateClusterToken: os.Getenv("AUTO_CREATE_CLUSTER_TOKEN"),
 				EnableIdentity:         true,

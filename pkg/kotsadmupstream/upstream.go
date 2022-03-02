@@ -17,6 +17,7 @@ import (
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/upstream"
 	"github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
@@ -66,6 +67,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		}
 
 		errMsg := finalError.Error()
+
 		if cause, ok := errors.Cause(finalError).(util.ActionableError); ok {
 			errMsg = cause.Error()
 		}
@@ -79,8 +81,20 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 			return
 		}
 
+		var kotsApplication *kotsv1beta1.Application
+		var license *kotsv1beta1.License
+		if cause, ok := errors.Cause(finalError).(upstream.IncompatibleAppError); ok {
+			kotsApplication = cause.KotsApplication
+			license = cause.License
+			isInstall := false // this is calculated based on sequence and will always be false here
+			finalError = util.ActionableError{
+				NoRetry: true,
+				Message: kotsutil.GetIncompatbileKotsVersionMessage(*cause.KotsApplication, isInstall),
+			}
+		}
+
 		// no version has been created for the update yet, create the version as pending download
-		newSequence, err := store.GetStore().CreatePendingDownloadAppVersion(appID, update)
+		newSequence, err := store.GetStore().CreatePendingDownloadAppVersion(appID, update, kotsApplication, license)
 		if err != nil {
 			logger.Error(errors.Wrapf(err, "failed to create pending download app version for update %s", update.VersionLabel))
 			if err := store.GetStore().SetTaskStatus(taskID, errMsg, "failed"); err != nil {

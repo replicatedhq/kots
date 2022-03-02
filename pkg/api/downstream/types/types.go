@@ -38,6 +38,8 @@ type DownstreamVersion struct {
 	UpstreamReleasedAt       *time.Time                         `json:"upstreamReleasedAt,omitempty"`
 	YamlErrors               []v1beta1.InstallationYAMLError    `json:"yamlErrors,omitempty"`
 	DownloadStatus           DownloadStatus                     `json:"downloadStatus,omitempty"`
+	NeedsKotsUpgrade         bool                               `json:"needsKotsUpgrade"`
+	KotsApplication          *v1beta1.Application               `json:"-"`
 }
 
 type DownloadStatus struct {
