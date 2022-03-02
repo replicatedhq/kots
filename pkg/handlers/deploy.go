@@ -119,20 +119,6 @@ func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// if kotsUpgradeNeeded {
-	// 	logger.Debugf("will upgrade to Admin Console to version %s", targetVersion)
-
-	// 	deployAppVersionResponse.Status = "kots-upgrade-needed"
-	// 	JSON(w, http.StatusOK, deployAppVersionResponse)
-	// 	go func() {
-	// 		err := kotsadm.UpdateToVersion(targetVersion)
-	// 		if err != nil {
-	// 			logger.Error(errors.Wrap(err, "failed to start kots upgrade"))
-	// 		}
-	// 	}()
-	// 	return
-	// }
-
 	versions, err := store.GetStore().GetAppVersions(a.ID, downstreams[0].ClusterID, true)
 	if err != nil {
 		errMsg := "failed to get app versions"
@@ -269,7 +255,7 @@ func (e AdminConsoleUpgradeError) Error() string {
 }
 
 func getTargetKotsVersion(kotsKinds *kotsutil.KotsKinds, latestVersion string) (string, error) {
-	if !kotsutil.IsKotsAutoUpgradeSupported(kotsKinds.KotsApplication) {
+	if !isKotsAutoUpgradeSupported(kotsKinds.KotsApplication) {
 		return "", AdminConsoleUpgradeError{
 			Message: "admin console auto updates feature flag not enabled",
 		}
@@ -311,4 +297,13 @@ func getTargetKotsVersion(kotsKinds *kotsutil.KotsKinds, latestVersion string) (
 	}
 
 	return targetKotsVersion, nil
+}
+
+func isKotsAutoUpgradeSupported(kotsApplication kotsv1beta1.Application) bool {
+	for _, f := range kotsApplication.Spec.ConsoleFeatureFlags {
+		if f == "admin-console-auto-updates" {
+			return true
+		}
+	}
+	return false
 }

@@ -342,10 +342,3 @@ func YAML(w http.ResponseWriter, code int, payload interface{}) {
 	w.WriteHeader(code)
 	w.Write(response)
 }
-
-func optionalString(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
-}

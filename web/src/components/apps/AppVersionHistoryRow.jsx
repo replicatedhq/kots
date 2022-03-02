@@ -84,7 +84,6 @@ function renderVersionAction(version, nothingToCommitDiff, app, history, actionF
 
   if (version.status === "pending_download") {
 
-    // TODO: text for Upgrading
     let buttonText = "Download";
     if (isDownloading) {
       buttonText = "Downloading";

@@ -425,7 +425,6 @@ class AppVersionHistory extends Component {
     })
       .then(async (res) => {
         if (!res.ok) {
-        // TODO: show in UI
         const response = await res.json();
           this.setState({
             kotsUpdateRunning: false,
@@ -437,7 +436,6 @@ class AppVersionHistory extends Component {
         this.state.kotsUpdateChecker.start(this.getKotsUpdateStatus, 1000);
       })
       .catch((err) => {
-        // TODO: show in UI
         console.log(err);
         this.setState({
           kotsUpdateRunning: false,
@@ -471,7 +469,7 @@ class AppVersionHistory extends Component {
         } else {
           this.setState({
             kotsUpdateRunning: true,
-            kotsUpdateStatus: response.status, // TODO: real value
+            kotsUpdateStatus: response.status,
             kotsUpdateMessage: response.message,
             kotsUpdateError: response.error,
           });
