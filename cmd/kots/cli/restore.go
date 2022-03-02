@@ -42,14 +42,20 @@ func RestoreCmd() *cobra.Command {
 				return errors.Errorf("output format %s not supported (allowed formats are: json)", output)
 			}
 
+			if v.GetBool("exclude-admin-console") && v.GetBool("exclude-apps") {
+				return errors.New("--exclude-admin-console and --exclude-apps cannot be used together")
+			}
+
 			var restoreOutput RestoreOutput
 			options := snapshot.RestoreInstanceBackupOptions{
-				BackupName:      backupName,
-				WaitForApps:     v.GetBool("wait-for-apps"),
-				VeleroNamespace: v.GetString("velero-namespace"),
-				Silent:          output != "",
+				BackupName:          backupName,
+				ExcludeAdminConsole: v.GetBool("exclude-admin-console"),
+				ExcludeApps:         v.GetBool("exclude-apps"),
+				WaitForApps:         v.GetBool("wait-for-apps"),
+				VeleroNamespace:     v.GetString("velero-namespace"),
+				Silent:              output != "",
 			}
-			_, err := snapshot.RestoreInstanceBackup(cmd.Context(), options)
+			err := snapshot.RestoreInstanceBackup(cmd.Context(), options)
 			if err != nil && output == "" {
 				return errors.Wrap(err, "failed to restore instance backup")
 			} else if err != nil {
@@ -73,6 +79,8 @@ func RestoreCmd() *cobra.Command {
 
 	cmd.Flags().String("from-backup", "", "the name of the backup to restore from")
 	cmd.Flags().String("velero-namespace", "", "namespace in which velero is installed")
+	cmd.Flags().Bool("exclude-admin-console", false, "exclude restoring the admin console and only restore the application(s)")
+	cmd.Flags().Bool("exclude-apps", false, "exclude restoring the application(s) and only restore the admin console")
 	cmd.Flags().Bool("wait-for-apps", true, "wait for all applications to be restored")
 	cmd.Flags().StringP("output", "o", "", "output format (currently supported: json)")
 
