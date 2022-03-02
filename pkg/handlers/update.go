@@ -221,7 +221,7 @@ func (h *Handler) UpdateAdminConsole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status, err := kotsadm.GetUpdateUpdateStatus()
+	status, _, err := kotsadm.GetUpdateUpdateStatus()
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to check update status"))
 		updateAdminConsoleResponse.Error = optionalString(err.Error())
@@ -284,6 +284,7 @@ func (h *Handler) UpdateAdminConsole(w http.ResponseWriter, r *http.Request) {
 type GetAdminConsoleUpdateStatusResponse struct {
 	Success bool   `json:"success"`
 	Status  string `json:"status"`
+	Message string `json:"message"`
 	Error   string `json:"error"`
 }
 
@@ -292,7 +293,7 @@ func (h *Handler) GetAdminConsoleUpdateStatus(w http.ResponseWriter, r *http.Req
 		Success: false,
 	}
 
-	status, err := kotsadm.GetUpdateUpdateStatus()
+	status, message, err := kotsadm.GetUpdateUpdateStatus()
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to check update status"))
 		getAdminConsoleUpdateStatusResponse.Error = err.Error()
@@ -304,5 +305,6 @@ func (h *Handler) GetAdminConsoleUpdateStatus(w http.ResponseWriter, r *http.Req
 
 	getAdminConsoleUpdateStatusResponse.Success = true
 	getAdminConsoleUpdateStatusResponse.Status = string(status)
+	getAdminConsoleUpdateStatusResponse.Message = message
 	JSON(w, http.StatusOK, getAdminConsoleUpdateStatusResponse)
 }

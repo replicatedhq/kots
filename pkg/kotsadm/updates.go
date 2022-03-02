@@ -1,8 +1,11 @@
 package kotsadm
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/pkg/errors"
@@ -14,6 +17,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/kubernetes"
 )
 
 type UpdateStatus string
@@ -26,43 +30,58 @@ const (
 	UpdateUnknown    UpdateStatus = "unknown"
 )
 
-func GetUpdateUpdateStatus() (UpdateStatus, error) {
-	pod, err := findUpdatePod()
+func GetUpdateUpdateStatus() (UpdateStatus, string, error) {
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return UpdateUnknown, errors.Wrap(err, "failed to find update pod")
+		return UpdateNotFound, "", errors.Wrap(err, "failed to create k8s client")
+	}
+
+	ctx := context.TODO()
+
+	pod, err := findUpdatePod(ctx, clientset)
+	if err != nil {
+		return UpdateUnknown, "", errors.Wrap(err, "failed to find update pod")
 	}
 
 	if pod == nil {
-		return UpdateNotFound, nil
+		return UpdateNotFound, "", nil
 	}
 
-	if pod.Status.Phase == corev1.PodSucceeded {
-		return UpdateSuccessful, nil
+	if pod.CreationTimestamp.Add(5 * time.Minute).Before(time.Now()) {
+		return UpdateNotFound, "", nil
 	}
+
+	lastLine, err := getLastLogLineFromPod(ctx, clientset, pod)
+	if err != nil {
+		fmt.Printf("++++failed to get last log line from pod: %v\n", err)
+	}
+	// if pod.Status.Phase == corev1.PodSucceeded {
+	// 	return UpdateSuccessful, nil
+	// }
 
 	if len(pod.Status.ContainerStatuses) == 0 {
-		return UpdateUnknown, nil
+		return UpdateUnknown, lastLine, nil
 	}
 
 	cs := pod.Status.ContainerStatuses[0]
 
 	if cs.State.Terminated == nil {
 		if pod.CreationTimestamp.Add(5 * time.Minute).Before(time.Now()) {
-			return UpdateNotFound, nil
+			return UpdateNotFound, "", nil
 		}
 
-		return UpdateRunning, nil
+		return UpdateRunning, lastLine, nil
 	}
 
 	if cs.State.Terminated.ExitCode != 0 {
-		return UpdateFailed, nil
+		return UpdateFailed, lastLine, nil
 	}
 
-	return UpdateSuccessful, nil
+	return UpdateSuccessful, lastLine, nil
 }
 
 func UpdateToVersion(newVersion string) error {
-	status, err := GetUpdateUpdateStatus()
+	status, _, err := GetUpdateUpdateStatus()
 	if err != nil {
 		return errors.Wrap(err, "failed to check update status")
 	}
@@ -117,12 +136,7 @@ func UpdateToVersion(newVersion string) error {
 	return nil
 }
 
-func findUpdatePod() (*corev1.Pod, error) {
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create k8s client")
-	}
-
+func findUpdatePod(ctx context.Context, clientset *kubernetes.Clientset) (*corev1.Pod, error) {
 	selectorLabels := map[string]string{
 		"app": "kotsadm-updater",
 	}
@@ -148,4 +162,33 @@ func findUpdatePod() (*corev1.Pod, error) {
 	}
 
 	return pod, nil
+}
+
+func getLastLogLineFromPod(ctx context.Context, clientset *kubernetes.Clientset, pod *corev1.Pod) (string, error) {
+	if len(pod.Spec.Containers) == 0 {
+		return "", nil
+	}
+
+	one := int64(1)
+	podLogOpts := corev1.PodLogOptions{
+		Follow:    false,
+		Container: pod.Spec.Containers[0].Name,
+		TailLines: &one,
+	}
+
+	req := clientset.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &podLogOpts)
+	podLogs, err := req.Stream(ctx)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get log stream")
+	}
+	defer podLogs.Close()
+
+	var buffer bytes.Buffer
+	byteWriter := bufio.NewWriter(&buffer)
+
+	_, err = io.Copy(byteWriter, podLogs)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to copy log")
+	}
+	return buffer.String(), nil
 }
