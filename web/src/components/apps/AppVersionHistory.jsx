@@ -65,9 +65,11 @@ class AppVersionHistory extends Component {
     displayConfirmDeploymentModal: false,
     confirmType: "",
     isSkipPreflights: false,
+    displayKotsUpdateModal: false,
     kotsUpdateChecker: new Repeater(),
     kotsUpdateRunning: false,
     kotsUpdateStatus: undefined,
+    kotsUpdateMessage: undefined,
     kotsUpdateError: undefined,
   }
 
@@ -407,11 +409,13 @@ class AppVersionHistory extends Component {
     const { app } = this.props;
 
     this.setState({
+      displayKotsUpdateModal: true,
       kotsUpdateRunning: true,
       kotsUpdateStatus: undefined,
+      kotsUpdateMessage: undefined,
       kotsUpdateError: undefined,
     });
-    
+
     fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/sequence/${version.parentSequence}/update-console`, {
       headers: {
         "Authorization": Utilities.getToken(),
@@ -430,7 +434,7 @@ class AppVersionHistory extends Component {
           });
           return;
         }
-        this.state.kotsUpdateChecker.start(this.kotsUpdateStatus, 1000);
+        this.state.kotsUpdateChecker.start(this.getKotsUpdateStatus, 1000);
       })
       .catch((err) => {
         // TODO: show in UI
@@ -441,6 +445,50 @@ class AppVersionHistory extends Component {
           kotsUpdateError: err?.message || "Something went wrong, please try again.",
         });
       });
+  }
+
+  getKotsUpdateStatus = () => {
+    const { app } = this.props;
+
+    return new Promise((resolve, reject) => {
+      fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/task/update-admin-console`, {
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      method: "GET",
+    })
+      .then(async (res) => {
+        if (res.status === 404) {
+          // TODO: remove... this is for testing with older kots releases
+          this.state.kotsUpdateChecker.stop();
+          window.location.reload();
+        }
+
+        const response = await res.json();
+        if (response.status === 'successful') {
+          window.location.reload();
+        } else {
+          this.setState({
+            kotsUpdateRunning: true,
+            kotsUpdateStatus: response.status, // TODO: real value
+            kotsUpdateMessage: response.message,
+            kotsUpdateError: response.error,
+          });
+        }
+        resolve();
+      })
+      .catch((err) => {
+        console.log("failed to get upgrade status", err);
+        this.setState({
+          kotsUpdateRunning: false,
+          kotsUpdateStatus: 'waiting',
+          kotsUpdateMessage: 'Waiting for pods to restart...',
+          kotsUpdateError: '', // err?.message || "Something went wrong, retrying...",
+        });
+        resolve();
+      });
+    });
   }
 
   updateVersionDownloadStatus = version => {
@@ -761,43 +809,6 @@ class AppVersionHistory extends Component {
             this.setState({
               checkingForUpdates: true,
               checkingUpdateMessage: response.currentMessage,
-            });
-          }
-          resolve();
-        }).catch((err) => {
-          console.log("failed to get update status", err);
-          reject();
-        });
-    });
-  }
-
-  getKotsUpdateStatus = () => {
-    const { app } = this.props;
-
-    return new Promise((resolve, reject) => {
-      fetch(`${process.env.API_ENDPOINT}/app/${app?.slug}/task/update-admin-console`, {
-        headers: {
-          "Authorization": Utilities.getToken(),
-          "Content-Type": "application/json",
-        },
-        method: "GET",
-      })
-        .then(async (res) => {
-          const response = await res.json();
-
-          if (response.status !== "running") {
-            this.state.kotsUpdateChecker.stop();
-
-            this.setState({
-              kotsUpdateRunning: false,
-              kotsUpdateStatus: undefined,
-              kotsUpdateError: response.currentMessage,
-            });
-          } else {
-            this.setState({
-              kotsUpdateRunning: true,
-              kotsUpdateStatus: response.currentMessage,
-              kotsUpdateError: undefined,
             });
           }
           resolve();
@@ -1368,6 +1379,31 @@ class AppVersionHistory extends Component {
               <div className="flex u-paddingTop--10">
                 <button className="btn secondary blue" onClick={() => this.setState({ displayConfirmDeploymentModal: false, confirmType: "", versionToDeploy: null })}>Cancel</button>
                 <button className="u-marginLeft--10 btn primary" onClick={this.state.confirmType === "redeploy" ? this.finalizeRedeployment : () => this.finalizeDeployment(false)}>Yes, {this.state.confirmType === "rollback" ? "rollback" : this.state.confirmType === "redeploy" ? "redeploy" : "deploy"}</button>
+              </div>
+            </div>
+          </Modal>
+        }
+
+        {this.state.displayKotsUpdateModal &&
+          <Modal
+            isOpen={true}
+            onRequestClose={() => this.setState({ displayKotsUpdateModal: false })}
+            contentLabel="Upgrade is in progress"
+            ariaHideApp={false}
+            className="Modal DefaultSize"
+          >
+            <div className="Modal-body u-textAlign--center">
+              <div className="flex-column justifyContent--center alignItems--center">
+                <p className="u-fontSize--large u-textColor--primary u-lineHeight--bold u-marginBottom--10">Upgrading...</p>
+                <Loader className="flex alignItems--center" size="32" />
+                {this.state.kotsUpdateStatus ?  
+                  <p className="u-fontSize--normal u-textColor--primary u-lineHeight--normal u-marginBottom--10">{ this.state.kotsUpdateStatus }</p>
+                  : null
+                }
+                {this.state.kotsUpdateMessage ?  
+                  <p className="u-fontSize--normal u-textColor--primary u-lineHeight--normal u-marginBottom--10">{ this.state.kotsUpdateMessage }</p>
+                  : null
+                }
               </div>
             </div>
           </Modal>

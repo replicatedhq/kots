@@ -28,6 +28,8 @@ class DashboardVersionCard extends React.Component {
       logs: null,
       selectedTab: null,
       displayConfirmDeploymentModal: false,
+      displayAdminConsoleUpdateModal: false,
+      versionForAdminConsoleUpgrade: undefined,
       showDiffModal: false,
       showNoChangesModal: false,
       releaseWithNoChanges: {},
@@ -377,7 +379,15 @@ class DashboardVersionCard extends React.Component {
       return false;
     }
   }
-  
+
+  upgradeAdminConsole = (version) => {
+    // const { app } = this.props;
+    this.setState({
+      displayAdminConsoleUpdateModal: true,
+      versionForAdminConsoleUpgrade: version,
+    });
+  }
+
   deployVersion = (version, force = false, continueWithFailedPreflights = false) => {
     const { app } = this.props;
     const clusterSlug = app.downstreams?.length && app.downstreams[0].cluster?.slug;
@@ -972,6 +982,25 @@ class DashboardVersionCard extends React.Component {
                 <div className="flex u-paddingTop--10">
                   <button className="btn secondary blue" onClick={() => this.setState({ displayConfirmDeploymentModal: false, versionToDeploy: null })}>Cancel</button>
                   <button className="u-marginLeft--10 btn primary" onClick={() => this.finalizeDeployment(false)}>Yes, deploy</button>
+                </div>
+              </div>
+            </Modal>
+          }
+          {this.state.displayAdminConsoleUpdateModal &&
+            <Modal
+              isOpen={true}
+              onRequestClose={() => this.setState({ displayAdminConsoleUpdateModal: false, versionToDeploy: null })}
+              contentLabel="Confirm upgrade"
+              ariaHideApp={false}
+              className="Modal DefaultSize"
+            >
+              <div className="Modal-body">
+                <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">Upgrading {this.state.versionToDeploy?.versionLabel} (Sequence {this.state.versionToDeploy?.sequence})?</p>
+                <div className="flex u-paddingTop--10">
+                  <span className="flex alignItems--center u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium">
+                    <Loader className="flex alignItems--center u-marginRight--5" size="16" />
+                      Upgrading
+                  </span>
                 </div>
               </div>
             </Modal>
