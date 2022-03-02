@@ -209,21 +209,16 @@ func downloadReplicated(
 
 	application := findAppInRelease(release) // this function never returns nil
 
-	fmt.Printf("\n+++++skipCompatibilityCheck:%v\n", skipCompatibilityCheck)
 	if !skipCompatibilityCheck {
 		isInstall := appSequence == 0
 		isCompatible := kotsutil.IsKotsVersionCompatibleWithApp(*application, isInstall)
-		fmt.Printf("+++++++isCompatible:%v\n", isCompatible)
 		if !isCompatible {
-			fmt.Printf("\n+++++will not download\n")
 			return nil, IncompatibleAppError{
 				KotsApplication: application,
 				License:         license,
 			}
 		}
 	}
-
-	fmt.Printf("\n+++++will download\n")
 
 	// NOTE: this currently comes from the application spec and not the channel release meta
 	if release.ReleaseNotes == "" {

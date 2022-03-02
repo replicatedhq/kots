@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -230,7 +229,6 @@ func (h *Handler) UpdateAdminConsole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logger.Debugf("Last Admin Console update status is %s", status)
-	fmt.Printf("++++++++Last Admin Console update status is %s\n", status)
 
 	if status == kotsadm.UpdateRunning {
 		updateAdminConsoleResponse.UpdateStatus = string(status)
@@ -266,7 +264,6 @@ func (h *Handler) UpdateAdminConsole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logger.Debugf("Updating Admin Console to version %s", targetVersion)
-	fmt.Printf("++++++++Updating Admin Console to version %s", targetVersion)
 
 	err = kotsadm.UpdateToVersion(targetVersion)
 	if err != nil {

@@ -53,11 +53,8 @@ func GetUpdateUpdateStatus() (UpdateStatus, string, error) {
 
 	lastLine, err := getLastLogLineFromPod(ctx, clientset, pod)
 	if err != nil {
-		fmt.Printf("++++failed to get last log line from pod: %v\n", err)
+		logger.Debugf("failed to get last log line from pod: %v", err)
 	}
-	// if pod.Status.Phase == corev1.PodSucceeded {
-	// 	return UpdateSuccessful, nil
-	// }
 
 	if len(pod.Status.ContainerStatuses) == 0 {
 		return UpdateUnknown, lastLine, nil

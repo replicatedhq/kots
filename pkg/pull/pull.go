@@ -248,7 +248,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 	log.ActionWithSpinner("Pulling upstream")
 	io.WriteString(pullOptions.ReportWriter, "Pulling upstream\n")
-	fmt.Printf("\n+++++++fetchOptions:%#v\n", fetchOptions)
 	u, err := upstream.FetchUpstream(upstreamURI, &fetchOptions)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to fetch upstream")

@@ -413,8 +413,6 @@ func (s *KOTSStore) downstreamVersionFromRow(appID string, row scannable) (*down
 		return nil, errors.Wrap(err, "failed to scan")
 	}
 
-	// fmt.Printf("+++++v.Sequence:%v\n", v.Sequence)
-
 	if createdOn.Valid {
 		v.CreatedOn = &createdOn.Time
 	}
@@ -575,7 +573,6 @@ func needsKotsUpgrade(app *kotsv1beta1.Application) bool {
 		return false
 	}
 
-	fmt.Printf("++++++++currentKotsSemver:%s, desiredVersion:%s\n", currentKotsSemver.String(), desiredVersion.String())
 	return currentKotsSemver.LT(*desiredVersion)
 }
 
