@@ -28,14 +28,17 @@ class DashboardVersionCard extends React.Component {
       logs: null,
       selectedTab: null,
       displayConfirmDeploymentModal: false,
-      displayAdminConsoleUpdateModal: false,
-      versionForAdminConsoleUpgrade: undefined,
       showDiffModal: false,
       showNoChangesModal: false,
       releaseWithNoChanges: {},
       releaseWithErr: {},
       showDiffErrModal: false,
-      versionDownloadStatuses: {}
+      versionDownloadStatuses: {},
+      kotsUpdateChecker: new Repeater(),
+      kotsUpdateRunning: false,
+      kotsUpdateStatus: undefined,
+      kotsUpdateMessage: undefined,
+      kotsUpdateError: undefined,
     }
     this.cardTitleText = React.createRef();
 
@@ -380,14 +383,6 @@ class DashboardVersionCard extends React.Component {
     }
   }
 
-  upgradeAdminConsole = (version) => {
-    // const { app } = this.props;
-    this.setState({
-      displayAdminConsoleUpdateModal: true,
-      versionForAdminConsoleUpgrade: version,
-    });
-  }
-
   deployVersion = (version, force = false, continueWithFailedPreflights = false) => {
     const { app } = this.props;
     const clusterSlug = app.downstreams?.length && app.downstreams[0].cluster?.slug;
@@ -481,11 +476,19 @@ class DashboardVersionCard extends React.Component {
     } else if (isDownloading) {
       return "Downloading";
     } else if (isPendingDownload) {
-      return "Download";
+      if (version.needsKotsUpgrade) {
+        return "Upgrade";
+      } else {
+        return "Download";
+      }
     } if (needsConfiguration) {
       return "Configure";
     } else {
-      return "Deploy";
+      if (version.needsKotsUpgrade) {
+        return "Upgrade";
+      } else {
+        return "Deploy";
+      }
     }
   }
 
@@ -561,6 +564,10 @@ class DashboardVersionCard extends React.Component {
                 this.props.history.push(`/app/${app?.slug}/config/${version.sequence}`);
                 return;
               }
+              if (version.needsKotsUpgrade) {
+                this.upgradeAdminConsole(version);
+                return;
+              }
               if (isPendingDownload) {
                 this.downloadVersion(version);
                 return;
@@ -602,6 +609,92 @@ class DashboardVersionCard extends React.Component {
         </span>
       </div>
     );
+  }
+
+  upgradeAdminConsole = version => {
+    const { app } = this.props;
+
+    this.setState({
+      displayKotsUpdateModal: true,
+      kotsUpdateRunning: true,
+      kotsUpdateStatus: undefined,
+      kotsUpdateMessage: undefined,
+      kotsUpdateError: undefined,
+    });
+
+    fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/sequence/${version.parentSequence}/update-console`, {
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+        // TODO: show in UI
+        const response = await res.json();
+          this.setState({
+            kotsUpdateRunning: false,
+            kotsUpdateStatus: 'failed', // TODO: real value
+            kotsUpdateError: response.error,
+          });
+          return;
+        }
+        this.state.kotsUpdateChecker.start(this.getKotsUpdateStatus, 1000);
+      })
+      .catch((err) => {
+        // TODO: show in UI
+        console.log(err);
+        this.setState({
+          kotsUpdateRunning: false,
+          kotsUpdateStatus: 'failed', // TODO: real value
+          kotsUpdateError: err?.message || "Something went wrong, please try again.",
+        });
+      });
+  }
+
+  getKotsUpdateStatus = () => {
+    const { app } = this.props;
+
+    return new Promise((resolve, reject) => {
+      fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/task/update-admin-console`, {
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      method: "GET",
+    })
+      .then(async (res) => {
+        if (res.status === 404) {
+          // TODO: remove... this is for testing with older kots releases
+          this.state.kotsUpdateChecker.stop();
+          window.location.reload();
+        }
+
+        const response = await res.json();
+        if (response.status === 'successful') {
+          window.location.reload();
+        } else {
+          this.setState({
+            kotsUpdateRunning: true,
+            kotsUpdateStatus: response.status, // TODO: real value
+            kotsUpdateMessage: response.message,
+            kotsUpdateError: response.error,
+          });
+        }
+        resolve();
+      })
+      .catch((err) => {
+        console.log("failed to get upgrade status", err);
+        this.setState({
+          kotsUpdateRunning: false,
+          kotsUpdateStatus: 'waiting',
+          kotsUpdateMessage: 'Waiting for pods to restart...',
+          kotsUpdateError: '', // err?.message || "Something went wrong, retrying...",
+        });
+        resolve();
+      });
+    });
   }
 
   downloadVersion = version => {
@@ -986,21 +1079,26 @@ class DashboardVersionCard extends React.Component {
               </div>
             </Modal>
           }
-          {this.state.displayAdminConsoleUpdateModal &&
+          {this.state.displayKotsUpdateModal &&
             <Modal
               isOpen={true}
-              onRequestClose={() => this.setState({ displayAdminConsoleUpdateModal: false, versionToDeploy: null })}
-              contentLabel="Confirm upgrade"
+              onRequestClose={() => this.setState({ displayKotsUpdateModal: false })}
+              contentLabel="Upgrade is in progress"
               ariaHideApp={false}
               className="Modal DefaultSize"
             >
-              <div className="Modal-body">
-                <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">Upgrading {this.state.versionToDeploy?.versionLabel} (Sequence {this.state.versionToDeploy?.sequence})?</p>
-                <div className="flex u-paddingTop--10">
-                  <span className="flex alignItems--center u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium">
-                    <Loader className="flex alignItems--center u-marginRight--5" size="16" />
-                      Upgrading
-                  </span>
+              <div className="Modal-body u-textAlign--center">
+                <div className="flex-column justifyContent--center alignItems--center">
+                  <p className="u-fontSize--large u-textColor--primary u-lineHeight--bold u-marginBottom--10">Upgrading...</p>
+                  <Loader className="flex alignItems--center" size="32" />
+                  {this.state.kotsUpdateStatus ?  
+                    <p className="u-fontSize--normal u-textColor--primary u-lineHeight--normal u-marginBottom--10">{ this.state.kotsUpdateStatus }</p>
+                    : null
+                  }
+                  {this.state.kotsUpdateMessage ?  
+                    <p className="u-fontSize--normal u-textColor--primary u-lineHeight--normal u-marginBottom--10">{ this.state.kotsUpdateMessage }</p>
+                    : null
+                  }
                 </div>
               </div>
             </Modal>
