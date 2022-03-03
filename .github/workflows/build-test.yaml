@@ -357,7 +357,7 @@ jobs:
           --backup-location-config region=us-east-1 \
           --snapshot-location-config region=us-east-1 \
           --secret-file ./aws-credentials \
-          --prefix /automated-${{ github.run_id }}-${{ matrix.k8s_version }} \
+          --prefix /automated-smoke-test-${{ github.run_id }}-${{ matrix.k8s_version }} \
           --use-restic
 
       - name: prepare smoke test
@@ -483,6 +483,97 @@ jobs:
           kubectl -n minimal-rbac logs deployment/kotsadm
           echo "------previous kotsadm logs"
           kubectl -n minimal-rbac logs -p deployment/kotsadm
+          kill $ADMIN_CONSOLE_PID
+          exit $EXIT_CODE
+
+
+  validate-backup-and-restore:
+    runs-on: ubuntu-18.04
+    needs: [can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
+    steps:
+      - uses: replicatedhq/action-k3s@main
+        id: k3s
+        with:
+          version: ${{ matrix.k8s_version }}
+
+      - name: download kots binary
+        uses: actions/download-artifact@v2
+        with:
+          name: kots
+          path: bin/
+
+      - run: chmod +x bin/kots
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '17.x'
+
+      - name: setup testIM
+        run: npm i -g @testim/testim-cli
+        shell: bash
+
+      ## testim tests
+
+      - name: aws credentials setup
+        run: |
+          cat > aws-credentials << EOL
+          [default]
+          aws_access_key_id=${{ secrets.TESTIM_AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key=${{ secrets.TESTIM_AWS_SECRET_ACCESS_KEY }}
+          EOL
+
+      - name: velero install
+        run: |
+          curl -LO https://github.com/vmware-tanzu/velero/releases/download/v1.7.1/velero-v1.7.1-linux-amd64.tar.gz && tar zxvf velero-v1.7.1-linux-amd64.tar.gz && \
+          ./velero-v1.7.1-linux-amd64/velero install \
+          --provider aws \
+          --plugins velero/velero-plugin-for-aws:v1.3.0 \
+          --bucket kots-testim-snapshots \
+          --backup-location-config region=us-east-1 \
+          --snapshot-location-config region=us-east-1 \
+          --secret-file ./aws-credentials \
+          --prefix /automated-backup-and-restore-test-${{ github.run_id }}-${{ matrix.k8s_version }} \
+          --use-restic
+
+      - name: get testim branch
+        if: startsWith(github.ref, 'refs/heads/')
+        id: get_testim_branch
+        shell: bash
+        run: |
+          BRANCH=${GITHUB_REF/refs\/heads\//}
+          if [ "$BRANCH" == "main" ]; then
+            BRANCH="master"
+          fi
+          echo ::set-output name=TESTIM_BRANCH::${BRANCH:-master}
+
+      - name: prepare backup-and-restore online install
+        run: |
+          ./bin/kots \
+          install backup-and-restore/automated \
+          --no-port-forward \
+          --namespace backup-and-restore \
+          --shared-password password \
+          --kotsadm-registry ttl.sh \
+          --kotsadm-namespace automated-${{ github.run_id }} \
+          --kotsadm-tag 2h
+
+      - name: execute suite backup-and-restore
+        run: |
+          set +e
+          ./bin/kots admin-console -n backup-and-restore &
+          ADMIN_CONSOLE_PID=$!
+          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite backup-and-restore --tunnel --tunnel-port 8800
+          EXIT_CODE=$?
+          echo "------pods:"
+          kubectl -n backup-and-restore get pods
+          echo "------kotsadm logs"
+          kubectl -n backup-and-restore logs deployment/kotsadm
+          echo "------previous kotsadm logs"
+          kubectl -n backup-and-restore logs -p deployment/kotsadm
           kill $ADMIN_CONSOLE_PID
           exit $EXIT_CODE
 
@@ -727,6 +818,6 @@ jobs:
   # this job will validate that all validate-* jobs succeed
   validate-success:
     runs-on: ubuntu-18.04
-    needs: [validate-smoke-test, validate-minimal-rbac, validate-no-required-config, validate-multi-namespace, validate-kots-pull]
+    needs: [validate-smoke-test, validate-minimal-rbac, validate-backup-and-restore, validate-no-required-config, validate-multi-namespace, validate-kots-pull]
     steps:
       - run: echo "Validate success"
