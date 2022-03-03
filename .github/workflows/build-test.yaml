@@ -347,6 +347,9 @@ jobs:
           aws_secret_access_key=${{ secrets.TESTIM_AWS_SECRET_ACCESS_KEY }}
           EOL
 
+      - name: delete velero if exists
+        run: kubectl delete ns velero --ignore-not-found
+
       - name: velero install
         run: |
           curl -LO https://github.com/vmware-tanzu/velero/releases/download/v1.7.1/velero-v1.7.1-linux-amd64.tar.gz && tar zxvf velero-v1.7.1-linux-amd64.tar.gz && \
@@ -525,6 +528,9 @@ jobs:
           aws_access_key_id=${{ secrets.TESTIM_AWS_ACCESS_KEY_ID }}
           aws_secret_access_key=${{ secrets.TESTIM_AWS_SECRET_ACCESS_KEY }}
           EOL
+
+      - name: delete velero if exists
+        run: kubectl delete ns velero --ignore-not-found
 
       - name: velero install
         run: |
