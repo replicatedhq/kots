@@ -337,7 +337,7 @@ jobs:
         run: npm i -g @testim/testim-cli
         shell: bash
 
-      ## testim tests
+      ## testim test
 
       - name: aws credentials setup
         run: |
