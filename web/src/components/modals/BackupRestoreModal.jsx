@@ -78,7 +78,7 @@ export default function BackupRestoreModal(props) {
             </div>
             <div className={`SelectRestore--wrapper flex alignItems--center u-marginBottom--15 ${selectedRestore === "partial" && "is-selected"}`} onClick={() => onChangeRestoreOption("partial")}>
               <input className="u-marginRight--20" type="radio" checked={selectedRestore === "partial"} />
-              <span className="flex-auto icon snapshot-partial-restore-icon" />
+              <span className="flex-auto icon snapshot-partial-restore-icon u-marginRight--5" />
               <div className="flex flex-column u-marginLeft--10">
                 <p className="u-fontSize--normal u-fontWeight--medium u-textColor--primary u-lineHeight--normal"> Partial restore </p>
                 <p className="u-fontSize--small u-fontWeight--normal u-textColor--bodyCopy u-lineHeight--normal"> Application &amp; metadata only</p>
@@ -86,7 +86,7 @@ export default function BackupRestoreModal(props) {
             </div>
             <div className={`SelectRestore--wrapper flex alignItems--center ${selectedRestore === "kotsadm" && "is-selected"}`} onClick={() => onChangeRestoreOption("kotsadm")}>
               <input className="u-marginRight--20" type="radio" checked={selectedRestore === "kotsadm"} />
-              <span className="flex-auto icon snapshot-partial-restore-icon" />
+              <span className="flex-auto icon snapshot-kotsadm-restore-icon" />
               <div className="flex flex-column u-marginLeft--10">
                 <p className="u-fontSize--normal u-fontWeight--medium u-textColor--primary u-lineHeight--normal"> Restore admin console </p>
                 <p className="u-fontSize--small u-fontWeight--normal u-textColor--bodyCopy u-lineHeight--normal"> Only restores the admin console</p>
