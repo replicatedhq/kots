@@ -18,7 +18,6 @@ import (
 
 	"github.com/containers/image/v5/copy"
 	"github.com/containers/image/v5/docker/tarfile"
-	"github.com/containers/image/v5/signature"
 	"github.com/containers/image/v5/transports/alltransports"
 	containerstypes "github.com/containers/image/v5/types"
 	"github.com/pkg/errors"
@@ -28,6 +27,7 @@ import (
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
+// Pushes Admin Console images from airgap bundle to private registry
 func PushImages(airgapArchive string, options types.PushImagesOptions) error {
 	imagesRootDir, err := ioutil.TempDir("", "kotsadm-airgap")
 	if err != nil {
@@ -180,19 +180,6 @@ func processImageTags(rootDir string, format string, imageName string, options t
 }
 
 func pushOneImage(rootDir string, format string, imageName string, tag string, options types.PushImagesOptions) error {
-	var imagePolicy = []byte(`{
-		"default": [{"type": "insecureAcceptAnything"}]
-	  }`)
-
-	policy, err := signature.NewPolicyFromBytes(imagePolicy)
-	if err != nil {
-		return errors.Wrap(err, "failed to read default policy")
-	}
-	policyContext, err := signature.NewPolicyContext(policy)
-	if err != nil {
-		return errors.Wrap(err, "failed to create policy")
-	}
-
 	destCtx := &containerstypes.SystemContext{
 		DockerInsecureSkipTLSVerify: containerstypes.OptionalBoolTrue,
 		DockerDisableV1Ping:         true,
@@ -228,7 +215,7 @@ func pushOneImage(rootDir string, format string, imageName string, tag string, o
 
 	writeProgressLine(options.ProgressWriter, fmt.Sprintf("Pushing %s", destStr))
 
-	_, err = image.CopyImageWithGC(context.Background(), policyContext, destRef, localRef, &copy.Options{
+	_, err = image.CopyImageWithGC(context.Background(), destRef, localRef, &copy.Options{
 		RemoveSignatures:      true,
 		SignBy:                "",
 		ReportWriter:          options.ProgressWriter,

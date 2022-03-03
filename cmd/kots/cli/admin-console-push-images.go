@@ -1,14 +1,17 @@
 package cli
 
 import (
+	"context"
 	"os"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func AdminPushImagesCmd() *cobra.Command {
@@ -29,11 +32,23 @@ func AdminPushImagesCmd() *cobra.Command {
 				os.Exit(1)
 			}
 
-			airgapArchive := args[0]
+			imageSource := args[0]
 			endpoint := args[1]
+
+			namespace := v.GetString("namespace")
+			if namespace == "" {
+				namespace = metav1.NamespaceDefault
+			}
 
 			username := v.GetString("registry-username")
 			password := v.GetString("registry-password")
+			if username == "" && password == "" {
+				u, p, err := getRegistryCredentialsFromSecret(endpoint, v.GetString("namespace"))
+				if err != nil {
+					return errors.Wrap(err, "failed get registry login from secret")
+				}
+				username, password = u, p
+			}
 
 			if registry.IsECREndpoint(endpoint) && username != "AWS" {
 				var err error
@@ -55,9 +70,19 @@ func AdminPushImagesCmd() *cobra.Command {
 				ProgressWriter: os.Stdout,
 			}
 
-			err := kotsadm.PushImages(airgapArchive, options)
-			if err != nil {
-				return errors.Wrap(err, "failed to push images")
+			_, err := os.Stat(imageSource)
+			if err == nil {
+				err := kotsadm.PushImages(imageSource, options)
+				if err != nil {
+					return errors.Wrap(err, "failed to push images")
+				}
+			} else if os.IsNotExist(err) {
+				err := kotsadm.CopyImages(imageSource, options, namespace)
+				if err != nil {
+					return errors.Wrap(err, "failed to push images")
+				}
+			} else {
+				return errors.Wrap(err, "failed to stat file")
 			}
 
 			return nil
@@ -71,4 +96,38 @@ func AdminPushImagesCmd() *cobra.Command {
 	cmd.Flags().MarkHidden("kotsadm-tag")
 
 	return cmd
+}
+
+func getRegistryCredentialsFromSecret(endpoint string, namespace string) (username string, password string, err error) {
+	if namespace == "" {
+		namespace = metav1.NamespaceDefault
+	}
+
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		err = errors.Wrap(err, "failed to get clientset")
+		return
+	}
+
+	secret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), "kotsadm-replicated-registry", metav1.GetOptions{})
+	if err != nil {
+		err = errors.Wrap(err, "failed to get secret")
+		return
+	}
+
+	dockerConfigJson := secret.Data[".dockerconfigjson"]
+	if len(dockerConfigJson) == 0 {
+		err = errors.New("no .dockerconfigjson found in secret")
+		return
+	}
+
+	credentials, err := registry.GetCredentialsForRegistryFromConfigJSON(dockerConfigJson, endpoint)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get credentials")
+		return
+	}
+
+	username = credentials.Username
+	password = credentials.Password
+	return
 }
