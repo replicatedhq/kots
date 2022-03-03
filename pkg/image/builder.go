@@ -230,15 +230,6 @@ func listImagesInFile(contents []byte, handler processImagesFunc) error {
 }
 
 func processOneImage(srcRegistry, destRegistry registry.RegistryOptions, image string, appSlug string, reportWriter io.Writer, log *logger.CLILogger, copyImages, allImagesPrivate bool, checkedImages map[string]ImageInfo, dockerHubRegistry registry.RegistryOptions) ([]kustomizeimage.Image, error) {
-	policy, err := signature.NewPolicyFromBytes(imagePolicy)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to read default policy")
-	}
-	policyContext, err := signature.NewPolicyContext(policy)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create policy")
-	}
-
 	sourceCtx := &types.SystemContext{DockerDisableV1Ping: true}
 
 	// allow pulling images from http/invalid https docker repos
@@ -316,7 +307,7 @@ func processOneImage(srcRegistry, destRegistry registry.RegistryOptions, image s
 		return kustomizeImage(destRegistry, image)
 	}
 
-	_, err = CopyImageWithGC(context.Background(), policyContext, destRef, srcRef, &copy.Options{
+	_, err = CopyImageWithGC(context.Background(), destRef, srcRef, &copy.Options{
 		RemoveSignatures:      true,
 		SignBy:                "",
 		ReportWriter:          reportWriter,
@@ -345,7 +336,7 @@ func processOneImage(srcRegistry, destRegistry registry.RegistryOptions, image s
 		}
 
 		// copy image from remote to local
-		_, err = CopyImageWithGC(context.Background(), policyContext, localRef, srcRef, &copy.Options{
+		_, err = CopyImageWithGC(context.Background(), localRef, srcRef, &copy.Options{
 			RemoveSignatures:      true,
 			SignBy:                "",
 			ReportWriter:          reportWriter,
@@ -358,7 +349,7 @@ func processOneImage(srcRegistry, destRegistry registry.RegistryOptions, image s
 		}
 
 		// copy image from local to remote
-		_, err = CopyImageWithGC(context.Background(), policyContext, destRef, localRef, &copy.Options{
+		_, err = CopyImageWithGC(context.Background(), destRef, localRef, &copy.Options{
 			RemoveSignatures:      true,
 			SignBy:                "",
 			ReportWriter:          reportWriter,
@@ -428,15 +419,6 @@ func (ref *ImageRef) String() string {
 }
 
 func CopyFromFileToRegistry(path string, name string, tag string, digest string, auth RegistryAuth, reportWriter io.Writer) error {
-	policy, err := signature.NewPolicyFromBytes(imagePolicy)
-	if err != nil {
-		return errors.Wrap(err, "failed to read default policy")
-	}
-	policyContext, err := signature.NewPolicyContext(policy)
-	if err != nil {
-		return errors.Wrap(err, "failed to create policy")
-	}
-
 	srcRef, err := alltransports.ParseImageName(fmt.Sprintf("docker-archive:%s", path))
 	if err != nil {
 		return errors.Wrap(err, "failed to parse src image name")
@@ -472,7 +454,7 @@ func CopyFromFileToRegistry(path string, name string, tag string, digest string,
 		}
 	}
 
-	_, err = CopyImageWithGC(context.Background(), policyContext, destRef, srcRef, &copy.Options{
+	_, err = CopyImageWithGC(context.Background(), destRef, srcRef, &copy.Options{
 		RemoveSignatures:      true,
 		SignBy:                "",
 		ReportWriter:          reportWriter,
@@ -600,7 +582,24 @@ func isTooManyRequests(err error) bool {
 	return isTooManyRequests(cause)
 }
 
-func CopyImageWithGC(ctx context.Context, policyContext *signature.PolicyContext, destRef, srcRef types.ImageReference, options *copy.Options) ([]byte, error) {
+func getPolicyContext() (*signature.PolicyContext, error) {
+	policy, err := signature.NewPolicyFromBytes(imagePolicy)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read default policy")
+	}
+	policyContext, err := signature.NewPolicyContext(policy)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create policy")
+	}
+	return policyContext, nil
+}
+
+func CopyImageWithGC(ctx context.Context, destRef, srcRef types.ImageReference, options *copy.Options) ([]byte, error) {
+	policyContext, err := getPolicyContext()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get policy")
+	}
+
 	manifest, err := copy.Image(ctx, policyContext, destRef, srcRef, options)
 
 	// copying an image increases allocated memory, which can push the pod to cross the memory limit when copying multiple images in a row.

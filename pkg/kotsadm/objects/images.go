@@ -47,3 +47,14 @@ func GetAdminConsoleImages(deployOptions types.DeployOptions) map[string]string 
 		"dex":                dexImage,
 	}
 }
+
+func GetOriginalAdminConsoleImages(deployOptions types.DeployOptions) map[string]string {
+	dexTag, _ := image.GetTag(image.Dex) // dex image is special; we host a copy
+	return map[string]string{
+		"kotsadm-migrations": fmt.Sprintf("kotsadm/kotsadm-migrations:%s", kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
+		"kotsadm":            fmt.Sprintf("kotsadm/kotsadm:%s", kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
+		"minio":              image.Minio,
+		"postgres":           fmt.Sprintf("postgres:%s", getPostgresTag(deployOptions)),
+		"dex":                fmt.Sprintf("kotsadm/dex:%s", dexTag),
+	}
+}
