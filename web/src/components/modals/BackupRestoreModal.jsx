@@ -26,6 +26,14 @@ export default function BackupRestoreModal(props) {
     getLabel
   } = props;
 
+  let restoreCommand = `kubectl kots restore --from-backup ${snapshotToRestore?.name}`;
+  if (isMinimalRBACEnabled) {
+    restoreCommand += ` --velero-namespace ${veleroNamespace}`;
+  }
+  if (selectedRestore === "kotsadm") {
+    restoreCommand += " --exclude-apps";
+  }
+
   return (
     <Modal
       isOpen={restoreSnapshotModal}
@@ -59,35 +67,42 @@ export default function BackupRestoreModal(props) {
             You can do a full restore of the application, admin console, and databases or
             you can do a partial restore of just your application and its metadata.
           </p>
-          <div className="flex flex1 justifyContent--spaceBetween u-marginTop--15">
-            <div className={`SelectRestore--wrapper flex flex-auto alignItems--center ${selectedRestore === "full" && "is-selected"}`} onClick={() => onChangeRestoreOption("full")}>
+          <div className="flex-column flex1 u-marginTop--15">
+            <div className={`SelectRestore--wrapper flex alignItems--center u-marginBottom--15 ${selectedRestore === "full" && "is-selected"}`} onClick={() => onChangeRestoreOption("full")}>
+              <input className="u-marginRight--20" type="radio" checked={selectedRestore === "full"} />
               <span className="flex-auto icon snapshot-full-restore-icon" />
               <div className="flex flex-column u-marginLeft--10">
                 <p className="u-fontSize--normal u-fontWeight--medium u-textColor--primary u-lineHeight--normal"> Full restore </p>
                 <p className="u-fontSize--small u-fontWeight--normal u-textColor--bodyCopy u-lineHeight--normal"> Admin console &amp; application </p>
               </div>
             </div>
-            <div className={`SelectRestore--wrapper flex flex-auto alignItems--center ${selectedRestore === "partial" && "is-selected"}`} onClick={() => onChangeRestoreOption("partial")}>
-              <span className="flex-auto icon snapshot-partial-restore-icon" />
+            <div className={`SelectRestore--wrapper flex alignItems--center u-marginBottom--15 ${selectedRestore === "partial" && "is-selected"}`} onClick={() => onChangeRestoreOption("partial")}>
+              <input className="u-marginRight--20" type="radio" checked={selectedRestore === "partial"} />
+              <span className="flex-auto icon snapshot-partial-restore-icon u-marginRight--5" />
               <div className="flex flex-column u-marginLeft--10">
                 <p className="u-fontSize--normal u-fontWeight--medium u-textColor--primary u-lineHeight--normal"> Partial restore </p>
                 <p className="u-fontSize--small u-fontWeight--normal u-textColor--bodyCopy u-lineHeight--normal"> Application &amp; metadata only</p>
               </div>
             </div>
-
+            <div className={`SelectRestore--wrapper flex alignItems--center ${selectedRestore === "kotsadm" && "is-selected"}`} onClick={() => onChangeRestoreOption("kotsadm")}>
+              <input className="u-marginRight--20" type="radio" checked={selectedRestore === "kotsadm"} />
+              <span className="flex-auto icon snapshot-kotsadm-restore-icon" />
+              <div className="flex flex-column u-marginLeft--10">
+                <p className="u-fontSize--normal u-fontWeight--medium u-textColor--primary u-lineHeight--normal"> Restore admin console </p>
+                <p className="u-fontSize--small u-fontWeight--normal u-textColor--bodyCopy u-lineHeight--normal"> Only restores the admin console</p>
+              </div>
+            </div>
           </div>
-          {selectedRestore === "full" ?
+          {selectedRestore === "full" || selectedRestore === "kotsadm" ?
             <div className="flex flex-column u-marginTop--20">
               <p className="u-fontSize--small u-fontWeight--normal u-textColor--bodyCopy u-lineHeight--normal"> To start the restore, run this command on your cluster. </p>
               <CodeSnippet
+                key={restoreCommand}
                 language="bash"
                 canCopy={true}
                 onCopyText={<span className="u-textColor--success">Command has been copied to your clipboard</span>}
               >
-                {!isMinimalRBACEnabled
-                  ? `kubectl kots restore --from-backup ${snapshotToRestore?.name}`
-                  : `kubectl kots restore --from-backup ${snapshotToRestore?.name} --velero-namespace ${veleroNamespace}`
-                }
+                {restoreCommand}
               </CodeSnippet>
             </div>
             : includedApps?.length === 1 ?
@@ -128,7 +143,7 @@ export default function BackupRestoreModal(props) {
               </div>
           }
         </div>
-        {selectedRestore === "full" ?
+        {selectedRestore === "full" || selectedRestore === "kotsadm" ?
           <div className="flex justifyContent--flexStart u-marginTop--20">
             <button className="btn primary" onClick={toggleRestoreModal}> Ok, got it! </button>
           </div>
@@ -139,7 +154,7 @@ export default function BackupRestoreModal(props) {
               onClick={toggleRestoreModal}
             >
               Cancel
-      </button>
+            </button>
             <button
               className="btn primary blue"
               onClick={() => { handlePartialRestoreSnapshot(snapshotToRestore, includedApps?.length === 1) }}
