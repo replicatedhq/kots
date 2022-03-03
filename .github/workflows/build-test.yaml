@@ -337,7 +337,7 @@ jobs:
         run: npm i -g @testim/testim-cli
         shell: bash
 
-      ## testim test
+      ## testim tests
 
       - name: aws credentials setup
         run: |
@@ -360,7 +360,7 @@ jobs:
           --backup-location-config region=us-east-1 \
           --snapshot-location-config region=us-east-1 \
           --secret-file ./aws-credentials \
-          --prefix /automated-smoke-test-${{ github.run_id }}-${{ matrix.k8s_version }} \
+          --prefix /automated-smoke-test-${{ github.run_id }}-${{ matrix.k8s_version }}-$RANDOM \
           --use-restic
 
       - name: prepare smoke test
@@ -542,7 +542,7 @@ jobs:
           --backup-location-config region=us-east-1 \
           --snapshot-location-config region=us-east-1 \
           --secret-file ./aws-credentials \
-          --prefix /automated-backup-and-restore-test-${{ github.run_id }}-${{ matrix.k8s_version }} \
+          --prefix /automated-backup-and-restore-test-${{ github.run_id }}-${{ matrix.k8s_version }}-$RANDOM \
           --use-restic
 
       - name: get testim branch
