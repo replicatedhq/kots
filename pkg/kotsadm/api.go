@@ -11,6 +11,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+// removeNodeAPI should be removable when we don't need to support direct upgrade paths from 1.19.6 and before
 func removeNodeAPI(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
 	ns := deployOptions.Namespace
 
@@ -33,6 +34,7 @@ func removeNodeAPI(deployOptions *types.DeployOptions, clientset *kubernetes.Cli
 	return nil
 }
 
+// removeNodeAPIRBAC should be removable when we don't need to support direct upgrade paths from 1.19.6 and before
 func removeNodeAPIRBAC(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
 	isClusterScoped, err := isKotsadmClusterScoped(deployOptions.ApplicationMetadata)
 	if err != nil {
@@ -57,6 +59,7 @@ func removeNodeAPIRBAC(deployOptions *types.DeployOptions, clientset *kubernetes
 	return nil
 }
 
+// removeNodeAPIClusterRBAC should be removable when we don't need to support direct upgrade paths from 1.19.6 and before
 func removeNodeAPIClusterRBAC(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
 	err := clientset.CoreV1().ServiceAccounts(deployOptions.Namespace).Delete(context.TODO(), "kotsadm-api", metav1.DeleteOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {

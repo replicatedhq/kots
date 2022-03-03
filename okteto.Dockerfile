@@ -88,7 +88,7 @@ ENV KUBECTL_1_22_SHA256SUM=1ab07643807a45e2917072f7ba5f11140b40f19675981b199b810
 RUN curl -fsSLO "${KUBECTL_1_22_URL}" \
 	&& echo "${KUBECTL_1_22_SHA256SUM} kubectl" | sha256sum -c - \
 	&& chmod +x kubectl \
-	&& mv kubectl "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.22" 
+	&& mv kubectl "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.22"
 
 # Install Kubectl 1.23
 ENV KUBECTL_1_23_VERSION=v1.23.3
@@ -149,8 +149,14 @@ COPY go.mod go.sum ./
 RUN --mount=target=/go/pkg/mod,type=cache go mod download
 
 COPY . .
+
 RUN --mount=target=/root/.cache,type=cache mkdir -p web/dist \
     && touch web/dist/README.md \
     && make build
+
+## Hack, but let's save that buildkit cache for okteto dev pods
+RUN --mount=target=/root/.cache,type=cache mkdir -p /tmp/.cache && \
+  cp -r /root/.cache/* /tmp/.cache
+RUN rm -rf /root/.cache && mv /tmp/.cache /root/.cache
 
 ENTRYPOINT [ "./bin/kotsadm", "api"]

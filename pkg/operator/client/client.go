@@ -47,7 +47,7 @@ type DeployResults struct {
 	HelmStderr   []byte `json:"helmStderr"`
 }
 
-// DesiredState is what we receive from the kotsadm-api server
+// DesiredState is what we receive from the kotsadm api server
 type DesiredState struct {
 	Present []operatortypes.DeployAppArgs `json:"present"`
 	Missing map[string][]string           `json:"missing"`

@@ -48,21 +48,24 @@ mock:
 	mockgen -source=pkg/handlers/interface.go -destination=pkg/handlers/mock/mock.go
 
 .PHONY: build
+build: kots
 build:
+	mkdir -p web/dist
+	touch web/dist/THIS_IS_OKTETO  # we need this for go:embed, but it's not actually used in dev
 	go build ${LDFLAGS} ${GCFLAGS} -o bin/kotsadm $(BUILDFLAGS) ./cmd/kotsadm
 
 .PHONY: run
 run: build
-	./bin/kotsadm-api api
+	./bin/kotsadm api
 
 # Debugging
 .PHONY: debug-build
 debug-build:
-	go build ${LDFLAGS} ${GCFLAGS} $(BUILDFLAGS) -v -o ./bin/kotsadm-api-debug ./cmd/kotsadm	
+	go build ${LDFLAGS} ${GCFLAGS} $(BUILDFLAGS) -v -o ./bin/kotsadm-debug ./cmd/kotsadm
 
 .PHONY: debug
 debug: debug-build
-	LOG_LEVEL=$(LOG_LEVEL) dlv --listen=:2345 --headless=true --api-version=2 exec ./bin/kotsadm-api-debug api
+	LOG_LEVEL=$(LOG_LEVEL) dlv --listen=:2345 --headless=true --api-version=2 exec ./bin/kotsadm-debug api
 
 .PHONY: build-ttl.sh
 build-ttl.sh:
@@ -121,7 +124,7 @@ project-pact-tests:
 	cd migrations && docker build -t kotsadm/kotsadm-fixtures:local -f ./fixtures/deploy/Dockerfile ./fixtures
 
 	mkdir -p api/pacts
-	cp web/pacts/kotsadm-web-kotsadm-api.json api/pacts/
+	cp web/pacts/kotsadm-web-kotsadm.json api/pacts/
 	make -C api test
 
 	@echo All contract tests have passed.
@@ -132,10 +135,10 @@ cache:
 
 .PHONY: init-sbom
 init-sbom:
-	mkdir -p sbom/spdx 
+	mkdir -p sbom/spdx
 
 .PHONY: install-spdx-sbom-generator
-install-spdx-sbom-generator: init-sbom  
+install-spdx-sbom-generator: init-sbom
 ifeq (,$(shell command -v spdx-sbom-generator))
 	./scripts/install-sbom-generator.sh
 SPDX_GENERATOR=./sbom/spdx-sbom-generator
@@ -144,9 +147,9 @@ SPDX_GENERATOR=$(shell command -v spdx-sbom-generator)
 endif
 
 sbom/spdx/bom-go-mod.spdx: install-spdx-sbom-generator
-	$(SPDX_GENERATOR) -o ./sbom/spdx 
+	$(SPDX_GENERATOR) -o ./sbom/spdx
 
-sbom/kots-sbom.tgz: sbom/spdx/bom-go-mod.spdx 
+sbom/kots-sbom.tgz: sbom/spdx/bom-go-mod.spdx
 	tar -czf sbom/kots-sbom.tgz sbom/spdx/*.spdx
 
 sbom: sbom/kots-sbom.tgz
