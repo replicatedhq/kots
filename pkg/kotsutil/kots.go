@@ -755,7 +755,6 @@ func EncodeIdentityConfig(spec kotsv1beta1.IdentityConfig) ([]byte, error) {
 func IsKotsVersionCompatibleWithApp(kotsApplication kotsv1beta1.Application, isInstall bool) bool {
 	actualSemver, err := semver.ParseTolerant(buildversion.Version())
 	if err != nil {
-		logger.Error(errors.Wrap(err, "kots build version is invalid"))
 		return true
 	}
 
