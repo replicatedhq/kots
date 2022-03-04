@@ -5,6 +5,7 @@ on:
   # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets. 
   # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
     types: [opened, synchronize, reopened, labeled]
+  push
 
 concurrency:
   group: ${{ github.head_ref }}
@@ -335,10 +336,8 @@ jobs:
 
       - name: setup testIM
         run: npm i -g @testim/testim-cli
-        shell: bash
 
       ## testim tests
-
       - name: aws credentials setup
         run: |
           cat > aws-credentials << EOL
@@ -388,7 +387,6 @@ jobs:
       - name: get testim branch
         if: startsWith(github.ref, 'refs/heads/')
         id: get_testim_branch
-        shell: bash
         run: |
           BRANCH=${GITHUB_REF/refs\/heads\//}
           if [ "$BRANCH" == "main" ]; then
@@ -401,7 +399,7 @@ jobs:
           set +e
           ./bin/kots admin-console -n smoke-test &
           ADMIN_CONSOLE_PID=$!
-          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite smoke-test --tunnel --tunnel-port 8800
+          testim --use-chrome-launcher --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite smoke-test
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
             echo "------pods:"
