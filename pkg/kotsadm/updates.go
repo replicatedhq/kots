@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"time"
 
 	"github.com/pkg/errors"
@@ -89,12 +90,31 @@ func UpdateToVersion(newVersion string) error {
 		return errors.New("update already in progress")
 	}
 
+	ns := util.PodNamespace
+
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to create k8s client")
 	}
 
-	ns := util.PodNamespace
+	kotsOptions, err := GetKotsadmOptionsFromCluster(ns, clientset)
+	if err != nil {
+		return errors.Wrap(err, "failed to get kots options from cluster")
+	}
+
+	args := []string{
+		fmt.Sprintf("namespace=%s", ns),
+	}
+
+	if kotsOptions.OverrideRegistry != "" && !kotsOptions.IsReadOnly {
+		var registryValue string
+		if kotsOptions.OverrideNamespace == "" {
+			registryValue = kotsOptions.OverrideRegistry
+		} else {
+			registryValue = fmt.Sprintf("%s/%s", kotsOptions.OverrideRegistry, kotsOptions.OverrideNamespace)
+		}
+		args = append(args, fmt.Sprintf("registry=%s", registryValue))
+	}
 
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
@@ -111,14 +131,20 @@ func UpdateToVersion(newVersion string) error {
 			RestartPolicy:      corev1.RestartPolicyNever,
 			Containers: []corev1.Container{
 				{
-					Name:    "kotsadm-updater",
-					Image:   fmt.Sprintf("kotsadm/kotsadm:%s", newVersion),
-					Command: []string{"/kots"},
-					Args: []string{
-						"admin-console",
-						"upgrade",
-						"-n",
-						ns,
+					Name:            "kotsadm-updater",
+					Image:           fmt.Sprintf("kotsadm/kotsadm:%s", newVersion),
+					ImagePullPolicy: corev1.PullIfNotPresent,
+					Command:         []string{"/kots-upgrade.sh"},
+					Args:            args,
+					Env: []corev1.EnvVar{
+						{
+							Name:  "DISABLE_OUTBOUND_CONNECTIONS",
+							Value: os.Getenv("DISABLE_OUTBOUND_CONNECTIONS"),
+						},
+						{
+							Name:  "KOTSADM_INSECURE_SRCREGISTRY",
+							Value: os.Getenv("KOTSADM_INSECURE_SRCREGISTRY"),
+						},
 					},
 				},
 			},

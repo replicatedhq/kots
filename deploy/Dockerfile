@@ -169,6 +169,8 @@ COPY --chown=kotsadm:kotsadm ./deploy/fs-minio-keys-sha.sh /fs-minio-keys-sha.sh
 COPY --chown=kotsadm:kotsadm ./deploy/s3-bucket-create.sh /s3-bucket-create.sh
 COPY --chown=kotsadm:kotsadm ./deploy/s3-bucket-head.sh /s3-bucket-head.sh
 
+COPY --chown=kotsadm:kotsadm ./deploy/kots-upgrade.sh /kots-upgrade.sh
+
 COPY --chown=kotsadm:kotsadm ./bin/kotsadm /kotsadm
 COPY --chown=kotsadm:kotsadm ./bin/kots /kots
 
