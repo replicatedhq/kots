@@ -945,6 +945,12 @@ class DashboardVersionCard extends React.Component {
       checkingUpdateTextShort = checkingUpdateTextShort.slice(0, 30) + "...";
     }
 
+    const renderKotsUpgradeStatus = this.state.kotsUpdateStatus && !this.state.kotsUpdateMessage;
+    let shortKotsUpdateMessage = this.state.kotsUpdateMessage;
+    if (shortKotsUpdateMessage && shortKotsUpdateMessage.length > 60) {
+      shortKotsUpdateMessage = shortKotsUpdateMessage.substring(0, 60) + "...";
+    }
+
     return (
       <div className="flex-column flex1 dashboard-card">
         <div className="flex flex1 justifyContent--spaceBetween alignItems--center u-marginBottom--10">
@@ -1089,12 +1095,12 @@ class DashboardVersionCard extends React.Component {
                 <div className="flex-column justifyContent--center alignItems--center">
                   <p className="u-fontSize--large u-textColor--primary u-lineHeight--bold u-marginBottom--10">Upgrading...</p>
                   <Loader className="flex alignItems--center" size="32" />
-                  {this.state.kotsUpdateStatus ?  
+                  {renderKotsUpgradeStatus ?  
                     <p className="u-fontSize--normal u-textColor--primary u-lineHeight--normal u-marginBottom--10">{ this.state.kotsUpdateStatus }</p>
                     : null
                   }
                   {this.state.kotsUpdateMessage ?  
-                    <p className="u-fontSize--normal u-textColor--primary u-lineHeight--normal u-marginBottom--10">{ this.state.kotsUpdateMessage }</p>
+                    <p className="u-fontSize--normal u-textColor--primary u-lineHeight--normal u-marginBottom--10">{ shortKotsUpdateMessage }</p>
                     : null
                   }
                 </div>

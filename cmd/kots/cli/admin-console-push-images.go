@@ -2,7 +2,10 @@ package cli
 
 import (
 	"context"
+	"fmt"
+	"net/url"
 	"os"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
@@ -43,7 +46,12 @@ func AdminPushImagesCmd() *cobra.Command {
 			username := v.GetString("registry-username")
 			password := v.GetString("registry-password")
 			if username == "" && password == "" {
-				u, p, err := getRegistryCredentialsFromSecret(endpoint, v.GetString("namespace"))
+				hostname, err := getHostnameFromEndpoint(endpoint)
+				if err != nil {
+					return errors.Wrap(err, "failed get hostname from endpoint")
+				}
+
+				u, p, err := getRegistryCredentialsFromSecret(hostname, v.GetString("namespace"))
 				if err != nil {
 					return errors.Wrap(err, "failed get registry login from secret")
 				}
@@ -63,7 +71,7 @@ func AdminPushImagesCmd() *cobra.Command {
 			options := kotsadmtypes.PushImagesOptions{
 				KotsadmTag: v.GetString("kotsadm-tag"),
 				Registry: registry.RegistryOptions{
-					Endpoint: args[1],
+					Endpoint: endpoint,
 					Username: username,
 					Password: password,
 				},
@@ -109,7 +117,7 @@ func getRegistryCredentialsFromSecret(endpoint string, namespace string) (userna
 		return
 	}
 
-	secret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), "kotsadm-replicated-registry", metav1.GetOptions{})
+	secret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), kotsadmtypes.PrivateKotsadmRegistrySecret, metav1.GetOptions{})
 	if err != nil {
 		err = errors.Wrap(err, "failed to get secret")
 		return
@@ -121,6 +129,7 @@ func getRegistryCredentialsFromSecret(endpoint string, namespace string) (userna
 		return
 	}
 
+	endpoint = strings.Split(endpoint, "/")[0]
 	credentials, err := registry.GetCredentialsForRegistryFromConfigJSON(dockerConfigJson, endpoint)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get credentials")
@@ -130,4 +139,18 @@ func getRegistryCredentialsFromSecret(endpoint string, namespace string) (userna
 	username = credentials.Username
 	password = credentials.Password
 	return
+}
+
+func getHostnameFromEndpoint(endpoint string) (string, error) {
+	if !strings.HasPrefix(endpoint, "http") {
+		// url.Parse doesn't work without scheme
+		endpoint = fmt.Sprintf("https://%s", endpoint)
+	}
+
+	parsed, err := url.Parse(endpoint)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to parse endpoint")
+	}
+
+	return parsed.Hostname(), nil
 }
