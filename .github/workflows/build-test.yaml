@@ -26,7 +26,7 @@ jobs:
 #      contains(github.event.pull_request.labels.*.name, '@actions/safe-to-test')
     steps:
       - name: ok
-        run: echo "yes"
+        run: echo "yes please"
 
 
   test-okteto-env:
