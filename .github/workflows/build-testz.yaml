@@ -29,15 +29,15 @@ jobs:
         run: echo "yes"
 
 
-  test-okteto-env:
-    runs-on: ubuntu-latest
-    needs: [can-run-ci]
-    steps:
-      - name: Test Okteto development environment
-        uses: replicatedhq/action-okteto-test@main
-        with:
-          token: ${{ secrets.OKTETO_TOKEN }}
-          branch: ${{ github.head_ref }}
+#  test-okteto-env:
+#    runs-on: ubuntu-latest
+#    needs: [can-run-ci]
+#    steps:
+#      - name: Test Okteto development environment
+#        uses: replicatedhq/action-okteto-test@main
+#        with:
+#          token: ${{ secrets.OKTETO_TOKEN }}
+#          branch: ${{ github.head_ref }}
 
 
   build-web:
@@ -281,7 +281,6 @@ jobs:
         with:
           path: .image.env
 
-# Why
       - name: push minio for e2e
         run: |
           docker pull minio/minio:${{ steps.dotenv.outputs.minio_tag }}
@@ -397,8 +396,8 @@ jobs:
         run: |
           set +e
           ./bin/kots admin-console -n smoke-test &
-          ADMIN_CONSOLE_PID=$!
-          testim --use-chrome-launcher --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite smoke-test
+          ADMIN_CONSOLE_PID=$! 
+          testim --use-chrome-launcher --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite smoke-test --use-local-chrome-driver --user CxABBne964hmLaFMGVqR
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
             echo "------pods:"
