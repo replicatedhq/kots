@@ -20,13 +20,13 @@ jobs:
     # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
     # only run this workflow if:
     #   not a fork or user is dependabot or PR is labeled with '@actions/safe-to-test'
-    if: >
-      github.event.pull_request.head.repo.full_name == github.repository ||
-      github.event.pull_request.user.login == 'dependabot[bot]' ||
-      contains(github.event.pull_request.labels.*.name, '@actions/safe-to-test')
-    steps:
-      - name: ok
-        run: echo "yes"
+#    if: >
+#      github.event.pull_request.head.repo.full_name == github.repository ||
+#      github.event.pull_request.user.login == 'dependabot[bot]' ||
+#      contains(github.event.pull_request.labels.*.name, '@actions/safe-to-test')
+#    steps:
+#      - name: ok
+#        run: echo "yes"
 
 
   test-okteto-env:
@@ -138,7 +138,6 @@ jobs:
         run: |
           echo "GOPATH=$(go env GOPATH)" >> $GITHUB_ENV
           echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
-        shell: bash
 
       - id: go-cache-paths
         run: |
@@ -285,6 +284,7 @@ jobs:
         with:
           path: .image.env
 
+# Why
       - name: push minio for e2e
         run: |
           docker pull minio/minio:${{ steps.dotenv.outputs.minio_tag }}
@@ -447,14 +447,12 @@ jobs:
 
       - name: setup testIM
         run: npm i -g @testim/testim-cli
-        shell: bash
 
       ## testim tests
 
       - name: get testim branch
         if: startsWith(github.ref, 'refs/heads/')
         id: get_testim_branch
-        shell: bash
         run: |
           BRANCH=${GITHUB_REF/refs\/heads\//}
           if [ "$BRANCH" == "main" ]; then
@@ -478,7 +476,7 @@ jobs:
           set +e
           ./bin/kots admin-console -n minimal-rbac &
           ADMIN_CONSOLE_PID=$!
-          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite minimal-rbac --tunnel --tunnel-port 8800
+          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --grid "Testim-grid" --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite minimal-rbac --tunnel --tunnel-port 8800
           EXIT_CODE=$?
           echo "------pods:"
           kubectl -n minimal-rbac get pods
@@ -572,7 +570,7 @@ jobs:
           set +e
           ./bin/kots admin-console -n backup-and-restore &
           ADMIN_CONSOLE_PID=$!
-          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite backup-and-restore --tunnel --tunnel-port 8800
+          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --grid "Testim-grid" --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite backup-and-restore --tunnel --tunnel-port 8800
           EXIT_CODE=$?
           echo "------pods:"
           kubectl -n backup-and-restore get pods
@@ -650,7 +648,7 @@ jobs:
           sleep 5
           echo "KOTSADM_API_TOKEN=`kubectl -n $APP_NAME get secret kotsadm-authstring -o json | jq -r '.data."kotsadm-authstring"' | base64 -d`" > .env
 
-          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite $APP_NAME --tunnel --tunnel-port 8800
+          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --grid "Testim-grid" --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite $APP_NAME --tunnel --tunnel-port 8800
           EXIT_CODE=$?
           echo "------pods:"
           kubectl -n no-config get pods
@@ -736,7 +734,7 @@ jobs:
           kubectl -n redis-test create secret generic multi-namespace-yeti-redis-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
           kubectl -n postgres-test create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
 
-          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite $SUITE_NAME --tunnel --tunnel-port 8800
+          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --grid "Testim-grid" --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite $SUITE_NAME --tunnel --tunnel-port 8800
           EXIT_CODE=$?
           echo "------pods:"
           kubectl get pods -A
