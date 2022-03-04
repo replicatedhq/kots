@@ -128,7 +128,7 @@ type AppStore interface {
 	GetDownstream(clusterID string) (*downstreamtypes.Downstream, error)
 	IsGitOpsEnabledForApp(appID string) (bool, error)
 	SetUpdateCheckerSpec(appID string, updateCheckerSpec string) error
-	SetSemverAutoDeploy(appID string, semverAutoDeploy apptypes.SemverAutoDeploy) error
+	SetAutoDeploy(appID string, autoDeploy apptypes.AutoDeploy) error
 	SetSnapshotTTL(appID string, snapshotTTL string) error
 	SetSnapshotSchedule(appID string, snapshotSchedule string) error
 	RemoveApp(appID string) error
@@ -148,6 +148,7 @@ type DownstreamStore interface {
 	GetLatestDownstreamVersion(appID string, clusterID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersion, error)
 	GetCurrentVersion(appID string, clusterID string) (*downstreamtypes.DownstreamVersion, error)
 	GetStatusForVersion(appID string, clusterID string, sequence int64) (types.DownstreamVersionStatus, error)
+	// GetAppVersions returns a sorted list of app releases. The sort order is determined by semver being enabled in the license.
 	GetAppVersions(appID string, clusterID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error)
 	// Same as GetAppVersions, but finds a cluster where app is deployed
 	FindAppVersions(appID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error)

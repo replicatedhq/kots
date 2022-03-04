@@ -172,7 +172,7 @@ type UpdateCheckRelease struct {
 // CheckForUpdates checks, downloads, and makes sure the desired version for a specific app is deployed.
 // if "DeployLatest" is set to true, the latest version will be deployed.
 // otherwise, if "DeployVersionLabel" is set to true, then the version with the corresponding version label will be deployed (if found).
-// otherwise, if "IsAutomatic" is set to true (which means it's an automatic update check), then the version that matches the semver auto deploy configuration (if enabled) will be deployed.
+// otherwise, if "IsAutomatic" is set to true (which means it's an automatic update check), then the version that matches the auto deploy configuration (if enabled) will be deployed.
 // returns the number of available updates.
 func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 	currentStatus, _, err := store.GetStore().GetTaskStatus("update-download")
@@ -351,7 +351,7 @@ func ensureDesiredVersionIsDeployed(opts CheckForUpdatesOpts, clusterID string) 
 		if err != nil {
 			return errors.Wrap(err, "failed to get app")
 		}
-		if err := autoDeploy(opts, clusterID, a.SemverAutoDeploy); err != nil {
+		if err := autoDeploy(opts, clusterID, a.AutoDeploy); err != nil {
 			return errors.Wrap(err, "failed to auto deploy")
 		}
 		return nil
@@ -449,8 +449,8 @@ func deployVersionLabel(opts CheckForUpdatesOpts, clusterID string, versionLabel
 	return nil
 }
 
-func autoDeploy(opts CheckForUpdatesOpts, clusterID string, semverAutoDeploy apptypes.SemverAutoDeploy) error {
-	if semverAutoDeploy == "" || semverAutoDeploy == apptypes.SemverAutoDeployDisabled {
+func autoDeploy(opts CheckForUpdatesOpts, clusterID string, autoDeploy apptypes.AutoDeploy) error {
+	if autoDeploy == "" || autoDeploy == apptypes.AutoDeployDisabled {
 		return nil
 	}
 
@@ -469,33 +469,43 @@ func autoDeploy(opts CheckForUpdatesOpts, clusterID string, semverAutoDeploy app
 
 	var versionToDeploy *downstreamtypes.DownstreamVersion
 
-Loop:
-	for _, v := range appVersions.AllVersions {
-		if v == nil || v.Semver == nil {
-			continue
+	// In the case semver is not required, we only need to check if the newest app version
+	// is greater than the current version.
+	if autoDeploy == apptypes.AutoDeploySequence {
+		if currentVersion.Sequence < appVersions.AllVersions[0].Sequence {
+			versionToDeploy = appVersions.AllVersions[0]
+		} else {
+			return nil
 		}
+	} else { // semver is required
+	Loop:
+		for _, v := range appVersions.AllVersions {
+			if v == nil || v.Semver == nil {
+				continue
+			}
 
-		if v.Semver.LTE(*currentVersion.Semver) {
-			// remaining versions are all gonna have lower semvers
-			break
-		}
+			if v.Semver.LTE(*currentVersion.Semver) {
+				// remaining versions are all gonna have lower semvers
+				break
+			}
 
-		switch semverAutoDeploy {
-		case apptypes.SemverAutoDeployPatch:
-			if v.Semver.Major == currentVersion.Semver.Major && v.Semver.Minor == currentVersion.Semver.Minor {
+			switch autoDeploy {
+			case apptypes.AutoDeploySemverPatch:
+				if v.Semver.Major == currentVersion.Semver.Major && v.Semver.Minor == currentVersion.Semver.Minor {
+					versionToDeploy = v
+					break Loop
+				}
+
+			case apptypes.AutoDeploySemverMinorPatch:
+				if v.Semver.Major == currentVersion.Semver.Major {
+					versionToDeploy = v
+					break Loop
+				}
+
+			case apptypes.AutoDeploySemverMajorMinorPatch:
 				versionToDeploy = v
 				break Loop
 			}
-
-		case apptypes.SemverAutoDeployMinorPatch:
-			if v.Semver.Major == currentVersion.Semver.Major {
-				versionToDeploy = v
-				break Loop
-			}
-
-		case apptypes.SemverAutoDeployMajorMinorPatch:
-			versionToDeploy = v
-			break Loop
 		}
 	}
 

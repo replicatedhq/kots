@@ -1317,7 +1317,7 @@ class AppVersionHistory extends Component {
             showDeployWarningModal={showDeployWarningModal}
             hideDeployWarningModal={this.hideDeployWarningModal}
             onForceDeployClick={this.onForceDeployClick}
-            showAutoDeployWarning={isPastVersion && this.props.app?.semverAutoDeploy !== "disabled"}
+            showAutoDeployWarning={isPastVersion && this.props.app?.autoDeploy !== "disabled"}
             confirmType={this.state.confirmType}
           />}
 
@@ -1375,7 +1375,7 @@ class AppVersionHistory extends Component {
           >
             <div className="Modal-body">
             <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">{this.state.confirmType === "rollback" ? "Rollback to" : this.state.confirmType === "redeploy" ? "Redeploy" : "Deploy"} {this.state.versionToDeploy?.versionLabel} (Sequence {this.state.versionToDeploy?.sequence})?</p>
-              {isPastVersion && this.props.app?.semverAutoDeploy !== "disabled" ? 
+              {isPastVersion && this.props.app?.autoDeploy !== "disabled" ? 
                 <div className="info-box">
                   <span className="u-fontSize--small u-textColor--header u-lineHeight--normal u-fontWeight--medium">You have automatic deploys enabled. {this.state.confirmType === "rollback" ? "Rolling back to" : this.state.confirmType === "redeploy" ? "Redeploying" : "Deploying"} this version will disable automatic deploys. You can turn it back on after this version finishes deployment.</span>
                 </div>
@@ -1455,8 +1455,9 @@ class AppVersionHistory extends Component {
               isOpen={this.state.showAutomaticUpdatesModal}
               onRequestClose={this.toggleAutomaticUpdatesModal}
               updateCheckerSpec={app?.updateCheckerSpec}
-              semverAutoDeploy={app?.semverAutoDeploy}
+              autoDeploy={app?.autoDeploy}
               appSlug={app?.slug}
+              isSemverRequired={app?.isSemverRequired}
               gitopsEnabled={downstream?.gitops?.enabled}
               onAutomaticUpdatesConfigured={() => {
                 this.toggleAutomaticUpdatesModal();

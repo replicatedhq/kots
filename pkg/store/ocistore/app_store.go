@@ -345,7 +345,7 @@ func (c OCIStore) SetUpdateCheckerSpec(appID string, updateCheckerSpec string) e
 	return ErrNotImplemented
 }
 
-func (c OCIStore) SetSemverAutoDeploy(appID string, semverAutoDeploy apptypes.SemverAutoDeploy) error {
+func (c OCIStore) SetAutoDeploy(appID string, autoDeploy apptypes.AutoDeploy) error {
 	return ErrNotImplemented
 }
 
