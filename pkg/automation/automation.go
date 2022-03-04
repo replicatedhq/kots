@@ -130,9 +130,15 @@ LICENSE_LOOP:
 			continue
 		}
 		if existingLicense != nil {
-			logger.Errorf("license already exists for app %s", verifiedLicense.Spec.AppSlug)
-			cleanup(&licenseSecret, verifiedLicense.Spec.AppSlug)
-			continue
+			resolved, err := kotslicense.ResolveExistingLicense(verifiedLicense)
+			if err != nil {
+				logger.Error(errors.Wrap(err, "failed to resolve existing license conflict"))
+			}
+			if !resolved {
+				logger.Errorf("license already exists for app %s", verifiedLicense.Spec.AppSlug)
+				cleanup(&licenseSecret, verifiedLicense.Spec.AppSlug)
+				continue
+			}
 		}
 
 		instParams, err := kotsutil.GetInstallationParams(kotsadmtypes.KotsadmConfigMap)
@@ -309,8 +315,14 @@ func AirgapInstall(appSlug string, additionalFiles map[string][]byte) error {
 		return errors.Wrapf(err, "failed to check if license already exists for app %s", verifiedLicense.Spec.AppSlug)
 	}
 	if existingLicense != nil {
-		cleanup(&licenseSecret, verifiedLicense.Spec.AppSlug)
-		return errors.Errorf("license already exists for app %s", verifiedLicense.Spec.AppSlug)
+		resolved, err := kotslicense.ResolveExistingLicense(verifiedLicense)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to resolve existing license conflict"))
+		}
+		if !resolved {
+			cleanup(&licenseSecret, verifiedLicense.Spec.AppSlug)
+			return errors.Errorf("license already exists for app %s", verifiedLicense.Spec.AppSlug)
+		}
 	}
 
 	instParams, err := kotsutil.GetInstallationParams(kotsadmtypes.KotsadmConfigMap)

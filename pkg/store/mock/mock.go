@@ -1181,6 +1181,21 @@ func (mr *MockStoreMockRecorder) ListDownstreamsForApp(appID interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListDownstreamsForApp", reflect.TypeOf((*MockStore)(nil).ListDownstreamsForApp), appID)
 }
 
+// ListFailedApps mocks base method.
+func (m *MockStore) ListFailedApps() ([]*types2.App, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListFailedApps")
+	ret0, _ := ret[0].([]*types2.App)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListFailedApps indicates an expected call of ListFailedApps.
+func (mr *MockStoreMockRecorder) ListFailedApps() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFailedApps", reflect.TypeOf((*MockStore)(nil).ListFailedApps))
+}
+
 // ListInstalledAppSlugs mocks base method.
 func (m *MockStore) ListInstalledAppSlugs() ([]string, error) {
 	m.ctrl.T.Helper()
@@ -2683,6 +2698,21 @@ func (m *MockAppStore) ListDownstreamsForApp(appID string) ([]types0.Downstream,
 func (mr *MockAppStoreMockRecorder) ListDownstreamsForApp(appID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListDownstreamsForApp", reflect.TypeOf((*MockAppStore)(nil).ListDownstreamsForApp), appID)
+}
+
+// ListFailedApps mocks base method.
+func (m *MockAppStore) ListFailedApps() ([]*types2.App, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListFailedApps")
+	ret0, _ := ret[0].([]*types2.App)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListFailedApps indicates an expected call of ListFailedApps.
+func (mr *MockAppStoreMockRecorder) ListFailedApps() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFailedApps", reflect.TypeOf((*MockAppStore)(nil).ListFailedApps))
 }
 
 // ListInstalledAppSlugs mocks base method.

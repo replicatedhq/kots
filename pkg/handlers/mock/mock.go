@@ -946,6 +946,18 @@ func (mr *MockKOTSHandlerMockRecorder) ListBackups(w, r interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListBackups", reflect.TypeOf((*MockKOTSHandler)(nil).ListBackups), w, r)
 }
 
+// ListFailedApps mocks base method.
+func (m *MockKOTSHandler) ListFailedApps(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ListFailedApps", w, r)
+}
+
+// ListFailedApps indicates an expected call of ListFailedApps.
+func (mr *MockKOTSHandlerMockRecorder) ListFailedApps(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFailedApps", reflect.TypeOf((*MockKOTSHandler)(nil).ListFailedApps), w, r)
+}
+
 // ListInstanceBackups mocks base method.
 func (m *MockKOTSHandler) ListInstanceBackups(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
