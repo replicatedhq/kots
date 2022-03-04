@@ -7,8 +7,7 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends make \
   && rm -rf /var/lib/apt/lists/*
 
-COPY ./package.json ./yarn.lock ./
-COPY Makefile ./
+COPY ./package.json ./yarn.lock Makefile ./
 RUN --mount=type=cache,target=/root/.yarn YARN_CACHE_FOLDER=/root/.yarn make deps
 
 COPY . .

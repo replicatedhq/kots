@@ -17,7 +17,7 @@ vendor
 .vscode/
 
 # goreleaser
-dist/
+/dist
 
 velero-credentials
 supportbundle.tar.gz
