@@ -217,11 +217,25 @@ func (h *Handler) UpdateAdminConsole(w http.ResponseWriter, r *http.Request) {
 		Success: false,
 	}
 
+	isKurl, err := kotsadm.IsKurl()
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to check kURL"))
+		JSON(w, http.StatusInternalServerError, updateAdminConsoleResponse)
+		return
+	}
+
+	if isKurl || kotsadm.IsAirgap() {
+		err := errors.New("cannot automatically update the admin console in kURL or airgapped installations")
+		logger.Error(err)
+		updateAdminConsoleResponse.Error = err.Error()
+		JSON(w, http.StatusBadRequest, updateAdminConsoleResponse)
+		return
+	}
+
 	appSlug := mux.Vars(r)["appSlug"]
 	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to decode UpdateAdminConsole request body"))
-		updateAdminConsoleResponse.Error = err.Error()
 		JSON(w, http.StatusInternalServerError, updateAdminConsoleResponse)
 		return
 	}
@@ -229,7 +243,6 @@ func (h *Handler) UpdateAdminConsole(w http.ResponseWriter, r *http.Request) {
 	status, _, err := kotsadm.GetKotsUpdateStatus()
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to check update status"))
-		updateAdminConsoleResponse.Error = err.Error()
 		JSON(w, http.StatusInternalServerError, updateAdminConsoleResponse)
 		return
 	}
@@ -245,7 +258,6 @@ func (h *Handler) UpdateAdminConsole(w http.ResponseWriter, r *http.Request) {
 	a, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get app from slug"))
-		updateAdminConsoleResponse.Error = err.Error()
 		JSON(w, http.StatusInternalServerError, updateAdminConsoleResponse)
 		return
 	}
@@ -254,7 +266,6 @@ func (h *Handler) UpdateAdminConsole(w http.ResponseWriter, r *http.Request) {
 	version, err := store.GetStore().GetAppVersion(a.ID, int64(sequence))
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get app version"))
-		updateAdminConsoleResponse.Error = err.Error()
 		JSON(w, http.StatusInternalServerError, updateAdminConsoleResponse)
 		return
 	}
@@ -264,7 +275,6 @@ func (h *Handler) UpdateAdminConsole(w http.ResponseWriter, r *http.Request) {
 	targetVersion, err := getKotsUpgradeVersion(version.KOTSKinds, latestVersion)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to find target version"))
-		updateAdminConsoleResponse.Error = err.Error()
 		JSON(w, http.StatusInternalServerError, updateAdminConsoleResponse)
 		return
 	}
@@ -274,7 +284,6 @@ func (h *Handler) UpdateAdminConsole(w http.ResponseWriter, r *http.Request) {
 	err = kotsadm.UpdateToVersion(targetVersion)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to check update status"))
-		updateAdminConsoleResponse.Error = err.Error()
 		JSON(w, http.StatusInternalServerError, updateAdminConsoleResponse)
 		return
 	}

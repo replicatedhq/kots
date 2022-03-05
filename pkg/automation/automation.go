@@ -96,10 +96,7 @@ LICENSE_LOOP:
 			continue
 		}
 
-		disableOutboundConnections := false
-		// ignore the error, default to false
-		disableOutboundConnections, _ = strconv.ParseBool(os.Getenv("DISABLE_OUTBOUND_CONNECTIONS"))
-		if !disableOutboundConnections {
+		if !kotsadm.IsAirgap() {
 			licenseData, err := kotslicense.GetLatestLicense(verifiedLicense)
 			if err != nil {
 				logger.Error(errors.Wrap(err, "failed to get latest license"))

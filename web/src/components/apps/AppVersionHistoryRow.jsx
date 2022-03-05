@@ -19,18 +19,19 @@ function renderYamlErrors(yamlErrorsDetails, version, toggleShowDetailsModal) {
   )
 }
 
-function deployButtonStatus(downstream, version, app) {
+function deployButtonStatus(downstream, version, app, adminConsoleMetadata) {
   const isCurrentVersion = version.sequence === downstream.currentVersion?.sequence;
   const isDeploying = version.status === "deploying";
   const isPastVersion = find(downstream.pastVersions, { sequence: version.sequence });
   const needsConfiguration = version.status === "pending_config";
   const isRollback = isPastVersion && version.deployedAt && app.allowRollback;
   const isRedeploy = isCurrentVersion && (version.status === "failed" || version.status === "deployed");
+  const canUpdateKots = version.needsKotsUpgrade && !adminConsoleMetadata?.isAirgap && !adminConsoleMetadata?.isKurl;
 
   if (needsConfiguration) {
     return "Configure";
   } else if (downstream?.currentVersion?.sequence == undefined) {
-    if (version.needsKotsUpgrade) {
+    if (canUpdateKots) {
       return "Upgrade";
     } else {
       return "Deploy";
@@ -44,7 +45,7 @@ function deployButtonStatus(downstream, version, app) {
   } else if (isCurrentVersion) {
     return "Deployed";
   } else {
-    if (version.needsKotsUpgrade) {
+    if (canUpdateKots) {
       return "Upgrade";
     } else {
       return "Deploy";
@@ -79,7 +80,7 @@ function renderReleaseNotes(version, showReleaseNotes) {
   );
 }
 
-function renderVersionAction(version, nothingToCommitDiff, app, history, actionFn, showReleaseNotes, viewLogs, isDownloading) {
+function renderVersionAction(version, nothingToCommitDiff, app, history, actionFn, showReleaseNotes, viewLogs, isDownloading, adminConsoleMetadata) {
   const downstream = app.downstreams[0];
 
   if (version.status === "pending_download") {
@@ -192,7 +193,7 @@ function renderVersionAction(version, nothingToCommitDiff, app, history, actionF
           disabled={version.status === "deploying"}
           onClick={() => needsConfiguration ? history.push(`/app/${app.slug}/config/${version.sequence}`) : isRollback ? actionFn(version, true) : actionFn(version)}
         >
-          {deployButtonStatus(downstream, version, app)}
+          {deployButtonStatus(downstream, version, app, adminConsoleMetadata)}
         </button>
       }
     </div>
@@ -321,7 +322,7 @@ export default function AppVersionHistoryRow(props) {
           <div className="flex flex-auto u-marginTop--10"> {gitopsEnabled && version.status !== "pending_download" ? renderViewPreflights(version, props.app, props.match) : renderVersionStatus(version, props.app, props.handleViewLogs)}</div>
         </div>
         <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex-auto alignItems--flexEnd justifyContent--center`}>
-          {renderVersionAction(version, nothingToCommit && selectedDiffReleases, props.app, props.history, actionFn, props.showReleaseNotes, props.handleViewLogs, isDownloading)}
+          {renderVersionAction(version, nothingToCommit && selectedDiffReleases, props.app, props.history, actionFn, props.showReleaseNotes, props.handleViewLogs, isDownloading, props.adminConsoleMetadata)}
         </div>
       </div>
       {renderVersionDownloadStatus(version)}

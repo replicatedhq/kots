@@ -7,7 +7,8 @@ import (
 
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
-	"github.com/replicatedhq/kots/pkg/kurl"
+	"github.com/replicatedhq/kots/pkg/kotsadm"
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
 	v1 "k8s.io/api/core/v1"
@@ -26,13 +27,18 @@ const (
 
 // MetadataResponse non sensitive information to be used by ui pre-login
 type MetadataResponse struct {
-	IconURI       string `json:"iconUri"`
-	Name          string `json:"name"`
-	Namespace     string `json:"namespace"`
-	IsKurlEnabled bool   `json:"isKurlEnabled"`
-	UpstreamURI   string `json:"upstreamUri"`
+	IconURI     string `json:"iconUri"`
+	Name        string `json:"name"`
+	Namespace   string `json:"namespace"`
+	UpstreamURI string `json:"upstreamUri"`
 	// ConsoleFeatureFlags optional flags from application.yaml used to enable ui features
-	ConsoleFeatureFlags []string `json:"consoleFeatureFlags"`
+	ConsoleFeatureFlags  []string             `json:"consoleFeatureFlags"`
+	AdminConsoleMetadata AdminConsoleMetadata `json:"adminConsoleMetadata"`
+}
+
+type AdminConsoleMetadata struct {
+	IsAirgap bool `json:"isAirgap"`
+	IsKurl   bool `json:"isKurl"`
 }
 
 // GetMetadataHandler helper function that returns a http handler func that returns metadata. It takes a function that
@@ -45,7 +51,7 @@ func GetMetadataHandler(getK8sInfoFn MetadataK8sFn) http.HandlerFunc {
 			Namespace: util.PodNamespace,
 		}
 
-		brandingConfigMap, isKurlEnabled, err := getK8sInfoFn()
+		brandingConfigMap, kotsadmMetadata, err := getK8sInfoFn()
 		if err != nil {
 			// if we can't find config map in cluster, it's not an error,  we still want to return a stripped down response
 			if kuberneteserrors.IsNotFound(err) {
@@ -80,31 +86,34 @@ func GetMetadataHandler(getK8sInfoFn MetadataK8sFn) http.HandlerFunc {
 			return
 		}
 		application := obj.(*kotsv1beta1.Application)
-		metadataResponse.IsKurlEnabled = isKurlEnabled
 		metadataResponse.IconURI = application.Spec.Icon
 		metadataResponse.Name = application.Spec.Title
 		metadataResponse.UpstreamURI = brandingConfigMap.Data[upstreamUriKey]
 		metadataResponse.ConsoleFeatureFlags = application.Spec.ConsoleFeatureFlags
+		metadataResponse.AdminConsoleMetadata = AdminConsoleMetadata{
+			IsAirgap: kotsadmMetadata.IsAirgap,
+			IsKurl:   kotsadmMetadata.IsKurl,
+		}
 
 		JSON(w, http.StatusOK, metadataResponse)
 	}
 }
 
 // GetMetaDataConfig retrieves configMap from k8s used to construct metadata
-func GetMetaDataConfig() (*v1.ConfigMap, bool, error) {
+func GetMetaDataConfig() (*v1.ConfigMap, types.Metadata, error) {
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return nil, false, nil
+		return nil, types.Metadata{}, nil
 	}
 
-	isKurlEnabled := kurl.IsKurl()
+	kotsadmMetadata := kotsadm.GetMetadata()
 
 	brandingConfigMap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), metadataConfigMapName, metav1.GetOptions{})
 	if err != nil {
-		return nil, false, err
+		return nil, kotsadmMetadata, err
 	}
 
-	return brandingConfigMap, isKurlEnabled, nil
+	return brandingConfigMap, kotsadmMetadata, nil
 }
 
-type MetadataK8sFn func() (*v1.ConfigMap, bool, error)
+type MetadataK8sFn func() (*v1.ConfigMap, types.Metadata, error)

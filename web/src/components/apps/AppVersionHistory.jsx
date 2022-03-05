@@ -1085,6 +1085,7 @@ class AppVersionHistory extends Component {
         handleSelectReleasesToDiff={this.handleSelectReleasesToDiff}
         renderVersionDownloadStatus={this.renderVersionDownloadStatus}
         isDownloading={this.state.versionDownloadStatuses?.[version.sequence]?.downloadingVersion}
+        adminConsoleMetadata={this.props.adminConsoleMetadata}
       />
     );
   }

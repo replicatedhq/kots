@@ -470,13 +470,14 @@ class DashboardVersionCard extends React.Component {
     const isDownloading = this.state.versionDownloadStatuses?.[version.sequence]?.downloadingVersion;
     const isPendingDownload = version.status === "pending_download";
     const needsConfiguration = version.status === "pending_config";
-  
+    const canUpdateKots = version.needsKotsUpgrade && !this.props.adminConsoleMetadata?.isAirgap && !this.props.adminConsoleMetadata?.isKurl;
+
     if (isDeploying) {
       return "Deploying";
     } else if (isDownloading) {
       return "Downloading";
     } else if (isPendingDownload) {
-      if (version.needsKotsUpgrade) {
+      if (canUpdateKots) {
         return "Upgrade";
       } else {
         return "Download";
@@ -484,7 +485,7 @@ class DashboardVersionCard extends React.Component {
     } if (needsConfiguration) {
       return "Configure";
     } else {
-      if (version.needsKotsUpgrade) {
+      if (canUpdateKots) {
         return "Upgrade";
       } else {
         return "Deploy";

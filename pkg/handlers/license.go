@@ -5,14 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -270,10 +269,7 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	disableOutboundConnections := false
-	// ignore the error, default to false
-	disableOutboundConnections, _ = strconv.ParseBool(os.Getenv("DISABLE_OUTBOUND_CONNECTIONS"))
-	if !disableOutboundConnections {
+	if !kotsadm.IsAirgap() {
 		// sync license
 		logger.Info("syncing license with server to retrieve latest version")
 		licenseData, err := kotslicense.GetLatestLicense(verifiedLicense)

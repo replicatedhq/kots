@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
@@ -51,17 +52,22 @@ metadata:
 	}{
 		{
 			name: "happy path feature flag test",
-			funcPtr: func() (*v1.ConfigMap, bool, error) {
+			funcPtr: func() (*v1.ConfigMap, types.Metadata, error) {
 
 				// parse data as a kotskind
 				obj, _, err := scheme.Codecs.UniversalDeserializer().Decode([]byte(configMap), nil, nil)
 				require.Nil(t, err)
 
-				return obj.(*v1.ConfigMap), true, nil
+				meta := types.Metadata{
+					IsKurl: true,
+				}
+				return obj.(*v1.ConfigMap), meta, nil
 
 			},
 			expected: MetadataResponse{
-				IsKurlEnabled:       true,
+				AdminConsoleMetadata: AdminConsoleMetadata{
+					IsKurl: true,
+				},
 				IconURI:             "https://foo.com/icon.png",
 				Name:                "App Name",
 				ConsoleFeatureFlags: []string{"feature1", "feature2"},
@@ -71,15 +77,15 @@ metadata:
 		},
 		{
 			name: "cluster error",
-			funcPtr: func() (*v1.ConfigMap, bool, error) {
-				return nil, false, errors.New("wah wah wah")
+			funcPtr: func() (*v1.ConfigMap, types.Metadata, error) {
+				return nil, types.Metadata{}, errors.New("wah wah wah")
 			},
 			httpStatus: http.StatusServiceUnavailable,
 		},
 		{
 			name: "cluster present, no kurl",
-			funcPtr: func() (*v1.ConfigMap, bool, error) {
-				return nil, false, &mockNotFound{}
+			funcPtr: func() (*v1.ConfigMap, types.Metadata, error) {
+				return nil, types.Metadata{}, &mockNotFound{}
 			},
 			httpStatus: http.StatusOK,
 			expected: MetadataResponse{

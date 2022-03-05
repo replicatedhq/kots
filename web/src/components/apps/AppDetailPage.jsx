@@ -378,6 +378,7 @@ class AppDetailPage extends Component {
                         makingCurrentRelease={this.state.makingCurrentRelease}
                         redeployVersion={this.redeployVersion}
                         redeployVersionErrMsg={this.state.redeployVersionErrMsg}
+                        adminConsoleMetadata={this.props.adminConsoleMetadata}
                       />}
                     />
                     <Route exact path="/app/:slug/downstreams/:downstreamSlug/version-history/preflight/:sequence" render={props => <PreflightResultPage logo={app.iconUri} {...props} />} />

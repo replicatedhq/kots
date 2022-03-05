@@ -209,7 +209,7 @@ class Root extends PureComponent {
           selectedAppName: data.name,
           appSlugFromMetadata: parseUpstreamUri(data.upstreamUri),
           appNameSpace: data.namespace,
-          isKurlEnabled: data.isKurlEnabled,
+          adminConsoleMetadata: data.adminConsoleMetadata,
           featureFlags: data.consoleFeatureFlags,
           fetchingMetadata: false
         });
@@ -338,7 +338,7 @@ class Root extends PureComponent {
                 logo={themeState.navbarLogo || this.state.appLogo}
                 refetchAppsList={this.getAppsList}
                 fetchingMetadata={this.state.fetchingMetadata}
-                isKurlEnabled={this.state.isKurlEnabled}
+                isKurlEnabled={this.state.adminConsoleMetadata?.isKurl}
                 isGitOpsSupported={this.isGitOpsSupported()}
                 isIdentityServiceSupported={this.isIdentityServiceSupported()}
                 appsList={appsList}
@@ -367,7 +367,7 @@ class Root extends PureComponent {
                   <Route path="/unsupported" component={UnsupportedBrowser} />
                   <ProtectedRoute path="/cluster/manage" render={(props) => <ClusterNodes {...props} appName={this.state.selectedAppName} />} />
                   <ProtectedRoute path="/gitops" render={(props) => <GitOps {...props} appName={this.state.selectedAppName} />} />
-                  <ProtectedRoute path="/access/:tab?" render={(props) => <Access {...props} appName={this.state.selectedAppName} isKurlEnabled={this.state.isKurlEnabled} isGeoaxisSupported={this.isGeoaxisSupported()} />} />
+                  <ProtectedRoute path="/access/:tab?" render={(props) => <Access {...props} appName={this.state.selectedAppName} isKurlEnabled={this.state.adminConsoleMetadata?.isKurl} isGeoaxisSupported={this.isGeoaxisSupported()} />} />
                   <ProtectedRoute
                     path={["/snapshots/:tab?"]}
                     render={
@@ -375,8 +375,8 @@ class Root extends PureComponent {
                         <SnapshotsWrapper
                           {...props} 
                           appName={this.state.selectedAppName} 
-                          isKurlEnabled={this.state.isKurlEnabled} 
-                          appsList={appsList}
+                          isKurlEnabled={this.state.adminConsoleMetadata?.isKurl} 
+                          nabled={this.state.adminConsoleMetadata.isKurl}                          appsList={appsList}
                         />
                       )
                     }
