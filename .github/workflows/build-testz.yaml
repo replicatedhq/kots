@@ -269,7 +269,12 @@ jobs:
   validate-smoke-test:
     runs-on: ubuntu-18.04
     needs: [can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
-#    services:
+    services:
+      grid:
+        image: selenium/standalone-firefox
+        ports:
+          - 4444:4444
+          - 7900:7900
 #      browser:
 #        image: browserless/chrome
 #        ports:
@@ -361,9 +366,9 @@ jobs:
           set +e
           ./bin/kots admin-console -n smoke-test &
           ADMIN_CONSOLE_PID=$!
-          curl -L "https://download-chromium.appspot.com/dl/Linux_x64?type=snapshots" -o chrome.zip
-          unzip chrome.zip
-          testim --use-local-chrome-driver --chrome-binary-location ./chrome-linux/chrome --headless --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite smoke-test 
+#          curl -L "https://download-chromium.appspot.com/dl/Linux_x64?type=snapshots" -o chrome.zip
+#          unzip chrome.zip
+          testim --host localhost --port 4444 --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite smoke-test 
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
             echo "------pods:"
