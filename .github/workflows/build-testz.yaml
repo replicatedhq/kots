@@ -271,7 +271,7 @@ jobs:
     needs: [can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
     services:
       grid:
-        image: selenium/standalone-firefox
+        image: selenium/standalone-chrome
         ports:
           - 4444:4444
           - 7900:7900
