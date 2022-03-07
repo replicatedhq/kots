@@ -8,6 +8,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Replicated App Manager</title>
     <link rel="stylesheet" href="/assets/tls-custom.css" />
+    {{if .AppIcon }}
+      <link rel="icon" type="image/png" href="{{ .AppIcon }}" />
+    {{end}}
     <script>
       //defaults to chrome example
       var firefoxText = "On the next screen, click \"I Understand the Risks\", then click \"Add Exception\". Finally, click \"Confirm Security Exception\" to proceed to the Admin Console.";
