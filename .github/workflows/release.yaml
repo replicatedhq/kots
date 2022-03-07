@@ -280,24 +280,6 @@ jobs:
           -d "{\"event_type\": \"auto-kotsadm-update\", \"client_payload\": {\"version\": \"${GIT_TAG:1}\" }}" \
           "https://api.github.com/repos/replicatedhq/kurl/dispatches"
 
-  generate-kots-release-notes-pr:
-    runs-on: ubuntu-18.04
-    needs: [release-go-api-tagged, build-kurl-proxy]
-    if: ${{ ! endsWith(github.ref, '-nightly') }}
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-
-    - name: Generate Kots Release Notes PR
-      env:
-        GIT_TAG: ${{ github.ref_name }}
-        GH_PAT: ${{ secrets.GH_PAT }}
-      run: |
-        curl -H "Authorization: token $GH_PAT" \
-          -H 'Accept: application/json' \
-          -d "{\"event_type\": \"auto-release-notes\", \"client_payload\": {\"version\": \"${GIT_TAG}\" }}" \
-          "https://api.github.com/repos/replicatedhq/kots.io/dispatches"
-
   build-airgap:
     runs-on: ubuntu-18.04
     needs: [release-go-api-tagged, goreleaser, build-schema-migrations]
