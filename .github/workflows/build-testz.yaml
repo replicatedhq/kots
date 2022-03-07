@@ -218,6 +218,7 @@ jobs:
     runs-on: ubuntu-18.04
     needs: [can-run-ci]
     steps:
+      - uses: actions/checkout@v2
       - name: build and push migrations for e2e
         uses: docker/build-push-action@v2
         with:
