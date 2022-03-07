@@ -143,12 +143,10 @@ jobs:
           repository: ${{github.event.pull_request.head.repo.full_name}}
       - uses: actions/cache@v2
         with:
-          path: ${{ steps.go-cache-paths.outputs.go-build }}
-          key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
-      - uses: actions/cache@v2
-        with:
-          path: ${{ steps.go-cache-paths.outputs.go-mod }}
-          key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
+          path: |
+            ${{ steps.go-cache-paths.outputs.go-build }}
+            ${{ steps.go-cache-paths.outputs.go-mod }}
+          key: ${{ runner.os }}-go-cache
 
       - name: Download kots artifact
         uses: actions/download-artifact@v2
@@ -200,12 +198,10 @@ jobs:
           repository: ${{github.event.pull_request.head.repo.full_name}}
       - uses: actions/cache@v2
         with:
-          path: ${{ steps.go-cache-paths.outputs.go-build }}
-          key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
-      - uses: actions/cache@v2
-        with:
-          path: ${{ steps.go-cache-paths.outputs.go-mod }}
-          key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
+          path: |
+            ${{ steps.go-cache-paths.outputs.go-build }}
+            ${{ steps.go-cache-paths.outputs.go-mod }}
+          key: ${{ runner.os }}-go-cache
 
       - run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C kurl_proxy build
 
@@ -222,37 +218,6 @@ jobs:
     runs-on: ubuntu-18.04
     needs: [can-run-ci]
     steps:
-      - uses: actions/setup-go@v2
-        with:
-          go-version: '^1.17.4'
-
-      - name: setup env
-        run: |
-          echo "GOPATH=$(go env GOPATH)" >> $GITHUB_ENV
-          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
-        shell: bash
-
-      - id: go-cache-paths
-        run: |
-          echo "::set-output name=go-build::$(go env GOCACHE)"
-          echo "::set-output name=go-mod::$(go env GOMODCACHE)"
-
-      # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets. 
-      # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
-      # this action creates a branch based on remote branch and runs the tests
-      - uses: actions/checkout@v2
-        with:
-          ref: ${{github.event.pull_request.head.ref}}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
-      - uses: actions/cache@v2
-        with:
-          path: ${{ steps.go-cache-paths.outputs.go-build }}
-          key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
-      - uses: actions/cache@v2
-        with:
-          path: ${{ steps.go-cache-paths.outputs.go-mod }}
-          key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
-
       - name: build and push migrations for e2e
         uses: docker/build-push-action@v2
         with:
@@ -303,11 +268,11 @@ jobs:
   validate-smoke-test:
     runs-on: ubuntu-18.04
     needs: [can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
-    services:
-      browser:
-        image: browserless/chrome
-        ports:
-          - 3000:3000
+#    services:
+#      browser:
+#        image: browserless/chrome
+#        ports:
+#          - 3000:3000
     strategy:
       fail-fast: false
       matrix:
@@ -394,8 +359,10 @@ jobs:
         run: |
           set +e
           ./bin/kots admin-console -n smoke-test &
-          ADMIN_CONSOLE_PID=$! 
-          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite smoke-test --host localhost --port 3000 --path webdriver 
+          ADMIN_CONSOLE_PID=$!
+          curl -L "https://download-chromium.appspot.com/dl/Linux_x64?type=snapshots" -o chrome.zip
+          unzip chrome.zip
+          testim --chrome-binary-location ./chrome-linux/chrome --headless --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite smoke-test 
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
             echo "------pods:"
@@ -410,412 +377,409 @@ jobs:
           kill $ADMIN_CONSOLE_PID
           exit $EXIT_CODE
 
-      - name: delete velero namespace
-        run: kubectl delete namespace velero
 
-
-  validate-minimal-rbac:
-    runs-on: ubuntu-18.04
-    needs: [can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
-    strategy:
-      fail-fast: false
-      matrix:
-        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
-    steps:
-      - uses: replicatedhq/action-k3s@main
-        id: k3s
-        with:
-          version: ${{ matrix.k8s_version }}
-
-      - name: download kots binary
-        uses: actions/download-artifact@v2
-        with:
-          name: kots
-          path: bin/
-
-      - run: chmod +x bin/kots
-
-      - uses: actions/setup-node@v2
-        with:
-          node-version: '17.x'
-
-      - name: setup testIM
-        run: npm i -g @testim/testim-cli
-
-      ## testim tests
-
-      - name: get testim branch
-        if: startsWith(github.ref, 'refs/heads/')
-        id: get_testim_branch
-        run: |
-          BRANCH=${GITHUB_REF/refs\/heads\//}
-          if [ "$BRANCH" == "main" ]; then
-            BRANCH="master"
-          fi
-          echo ::set-output name=TESTIM_BRANCH::${BRANCH:-master}
-
-      - name: prepare minimal-rbac online install
-        run: |
-          ./bin/kots \
-          install minimal-rbac/automated \
-          --no-port-forward \
-          --namespace minimal-rbac \
-          --shared-password password \
-          --kotsadm-registry ttl.sh \
-          --kotsadm-namespace automated-${{ github.run_id }} \
-          --kotsadm-tag 2h
-
-      - name: execute suite minimal-rbac
-        run: |
-          set +e
-          ./bin/kots admin-console -n minimal-rbac &
-          ADMIN_CONSOLE_PID=$!
-          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --grid "Testim-grid" --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite minimal-rbac --tunnel --tunnel-port 8800
-          EXIT_CODE=$?
-          echo "------pods:"
-          kubectl -n minimal-rbac get pods
-          echo "------kotsadm logs"
-          kubectl -n minimal-rbac logs deployment/kotsadm
-          echo "------previous kotsadm logs"
-          kubectl -n minimal-rbac logs -p deployment/kotsadm
-          kill $ADMIN_CONSOLE_PID
-          exit $EXIT_CODE
-
-
-  validate-backup-and-restore:
-    runs-on: ubuntu-18.04
-    needs: [can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
-    strategy:
-      fail-fast: false
-      matrix:
-        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
-    steps:
-      - uses: replicatedhq/action-k3s@main
-        id: k3s
-        with:
-          version: ${{ matrix.k8s_version }}
-
-      - name: download kots binary
-        uses: actions/download-artifact@v2
-        with:
-          name: kots
-          path: bin/
-
-      - run: chmod +x bin/kots
-
-      - uses: actions/setup-node@v2
-        with:
-          node-version: '17.x'
-
-      - name: setup testIM
-        run: npm i -g @testim/testim-cli
-        shell: bash
-
-      ## testim tests
-
-      - name: aws credentials setup
-        run: |
-          cat > aws-credentials << EOL
-          [default]
-          aws_access_key_id=${{ secrets.TESTIM_AWS_ACCESS_KEY_ID }}
-          aws_secret_access_key=${{ secrets.TESTIM_AWS_SECRET_ACCESS_KEY }}
-          EOL
-
-      - name: delete velero if exists
-        run: kubectl delete ns velero --ignore-not-found
-
-      - name: velero install
-        run: |
-          curl -LO https://github.com/vmware-tanzu/velero/releases/download/v1.7.1/velero-v1.7.1-linux-amd64.tar.gz && tar zxvf velero-v1.7.1-linux-amd64.tar.gz && \
-          ./velero-v1.7.1-linux-amd64/velero install \
-          --provider aws \
-          --plugins velero/velero-plugin-for-aws:v1.3.0 \
-          --bucket kots-testim-snapshots \
-          --backup-location-config region=us-east-1 \
-          --snapshot-location-config region=us-east-1 \
-          --secret-file ./aws-credentials \
-          --prefix /automated-backup-and-restore-test-${{ github.run_id }}-${{ matrix.k8s_version }}-$RANDOM \
-          --use-restic
-
-      - name: get testim branch
-        if: startsWith(github.ref, 'refs/heads/')
-        id: get_testim_branch
-        shell: bash
-        run: |
-          BRANCH=${GITHUB_REF/refs\/heads\//}
-          if [ "$BRANCH" == "main" ]; then
-            BRANCH="master"
-          fi
-          echo ::set-output name=TESTIM_BRANCH::${BRANCH:-master}
-
-      - name: prepare backup-and-restore online install
-        run: |
-          ./bin/kots \
-          install backup-and-restore/automated \
-          --no-port-forward \
-          --namespace backup-and-restore \
-          --shared-password password \
-          --kotsadm-registry ttl.sh \
-          --kotsadm-namespace automated-${{ github.run_id }} \
-          --kotsadm-tag 2h
-
-      - name: execute suite backup-and-restore
-        run: |
-          set +e
-          ./bin/kots admin-console -n backup-and-restore &
-          ADMIN_CONSOLE_PID=$!
-          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --grid "Testim-grid" --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite backup-and-restore --tunnel --tunnel-port 8800
-          EXIT_CODE=$?
-          echo "------pods:"
-          kubectl -n backup-and-restore get pods
-          echo "------kotsadm logs"
-          kubectl -n backup-and-restore logs deployment/kotsadm
-          echo "------previous kotsadm logs"
-          kubectl -n backup-and-restore logs -p deployment/kotsadm
-          kill $ADMIN_CONSOLE_PID
-          exit $EXIT_CODE
-
-
-  validate-no-required-config:
-    runs-on: ubuntu-18.04
-    needs: [can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
-    strategy:
-      fail-fast: false
-      matrix:
-        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
-    steps:
-      - uses: replicatedhq/action-k3s@main
-        id: k3s
-        with:
-          version: ${{ matrix.k8s_version }}
-
-      - name: download kots binary
-        uses: actions/download-artifact@v2
-        with:
-          name: kots
-          path: bin/
-
-      - run: chmod +x bin/kots
-
-      - uses: actions/setup-node@v2
-        with:
-          node-version: '17.x'
-
-      - name: setup testIM
-        run: npm i -g @testim/testim-cli
-        shell: bash
-
-      ## testim tests
-
-      - name: get testim branch
-        if: startsWith(github.ref, 'refs/heads/')
-        id: get_testim_branch
-        shell: bash
-        run: |
-          BRANCH=${GITHUB_REF/refs\/heads\//}
-          if [ "$BRANCH" == "main" ]; then
-            BRANCH="master"
-          fi
-          echo ::set-output name=TESTIM_BRANCH::${BRANCH:-master}
-
-      - name: prepare no-required-config online install
-        env:
-          APP_NAME: no-required-config
-        run: |
-          ./bin/kots \
-          install $APP_NAME/automated \
-          --no-port-forward \
-          --namespace $APP_NAME \
-          --shared-password password \
-          --kotsadm-registry ttl.sh \
-          --kotsadm-namespace automated-${{ github.run_id }} \
-          --kotsadm-tag 2h
-
-      - name: execute suite no-required-config
-        env:
-          APP_NAME: no-required-config
-        run: |
-          set +e
-          ./bin/kots admin-console -n $APP_NAME &
-          ADMIN_CONSOLE_PID=$!
-
-          sleep 5
-          echo "KOTSADM_API_TOKEN=`kubectl -n $APP_NAME get secret kotsadm-authstring -o json | jq -r '.data."kotsadm-authstring"' | base64 -d`" > .env
-
-          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --grid "Testim-grid" --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite $APP_NAME --tunnel --tunnel-port 8800
-          EXIT_CODE=$?
-          echo "------pods:"
-          kubectl -n no-config get pods
-          echo "------kotsadm logs"
-          kubectl -n $APP_NAME logs deployment/kotsadm
-          echo "------previous kotsadm logs"
-          kubectl -n $APP_NAME logs -p deployment/kotsadm
-          kill $ADMIN_CONSOLE_PID
-          exit $EXIT_CODE
-
-
-  validate-multi-namespace:
-    runs-on: ubuntu-18.04
-    needs: [can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
-    strategy:
-      fail-fast: false
-      matrix:
-        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
-    steps:
-      - uses: replicatedhq/action-k3s@main
-        id: k3s
-        with:
-          version: ${{ matrix.k8s_version }}
-
-      - name: download kots binary
-        uses: actions/download-artifact@v2
-        with:
-          name: kots
-          path: bin/
-
-      - run: chmod +x bin/kots
-
-      - uses: actions/setup-node@v2
-        with:
-          node-version: '17.x'
-
-      - name: setup testIM
-        run: npm i -g @testim/testim-cli
-        shell: bash
-
-      ## testim tests
-
-      - name: get testim branch
-        if: startsWith(github.ref, 'refs/heads/')
-        id: get_testim_branch
-        shell: bash
-        run: |
-          BRANCH=${GITHUB_REF/refs\/heads\//}
-          if [ "$BRANCH" == "main" ]; then
-            BRANCH="master"
-          fi
-          echo ::set-output name=TESTIM_BRANCH::${BRANCH:-master}
-
-      - name: prepare multi-namespace online install
-        env:
-          APP_NAME: multi-namespace-yeti
-        run: |
-          ./bin/kots \
-          install $APP_NAME/automated \
-          --no-port-forward \
-          --namespace $APP_NAME \
-          --shared-password password \
-          --kotsadm-registry ttl.sh \
-          --kotsadm-namespace automated-${{ github.run_id }} \
-          --kotsadm-tag 2h
-
-      - name: execute suite multi-namespace
-        env:
-          APP_NAME: multi-namespace-yeti
-          SUITE_NAME: multi-namespace
-        run: |
-          set +e
-          ./bin/kots admin-console -n $APP_NAME &
-          ADMIN_CONSOLE_PID=$!
-
-          sleep 5
-          echo "KOTSADM_API_TOKEN=`kubectl -n $APP_NAME get secret kotsadm-authstring -o json | jq -r '.data."kotsadm-authstring"' | base64 -d`" > .env
-
-          # HACK: with limitted RBAC secrets are not applied by kotsadm
-          echo ${{ secrets.MULTI_NAMESPACE_REGISTRY_AUTH }} | base64 -d > replicated-registry-auth.json
-          kubectl -n nginx-test create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
-          kubectl -n redis-test create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
-          kubectl -n redis-test create secret generic multi-namespace-yeti-redis-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
-          kubectl -n postgres-test create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
-
-          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --grid "Testim-grid" --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite $SUITE_NAME --tunnel --tunnel-port 8800
-          EXIT_CODE=$?
-          echo "------pods:"
-          kubectl get pods -A
-          echo "------kotsadm logs"
-          kubectl -n $APP_NAME logs deployment/kotsadm
-          echo "------previous kotsadm logs"
-          kubectl -n $APP_NAME logs -p deployment/kotsadm
-          kill $ADMIN_CONSOLE_PID
-          exit $EXIT_CODE
-
-
-  validate-kots-pull:
-    runs-on: ubuntu-18.04
-    needs: [can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
-    strategy:
-      fail-fast: false
-      matrix:
-        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
-    steps:
-      - uses: replicatedhq/action-k3s@main
-        id: k3s
-        with:
-          version: ${{ matrix.k8s_version }}
-
-      - name: download kots binary
-        uses: actions/download-artifact@v2
-        with:
-          name: kots
-          path: bin/
-
-      - run: chmod +x bin/kots
-
-      - name: run kots pull
-        env:
-          APP_NAME: multi-namespace-yeti
-          APP_SLUG: multi-namespace
-        run: |
-          set +e
-          echo ${{ secrets.MULTI_NAMESPACE_LICENSE }} | base64 -d > license.yaml
-          ./bin/kots pull $APP_NAME/automated \
-            --license-file license.yaml \
-            --shared-password password \
-            --namespace $APP_NAME \
-            --exclude-admin-console
-
-          kubectl create ns $APP_NAME
-          kubectl create ns nginx-test
-          kubectl create ns redis-test
-          kubectl create ns postgres-test
-
-          # HACK: without operator, additonal namespaces don't get image pull secrets
-          echo ${{ secrets.MULTI_NAMESPACE_REGISTRY_AUTH }} | base64 -d > replicated-registry-auth.json
-          kubectl -n nginx-test create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
-          kubectl -n redis-test create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
-          kubectl -n redis-test create secret generic multi-namespace-yeti-redis-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
-          kubectl -n postgres-test create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
-          kubectl -n default create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
-
-          kustomize build $PWD/$APP_SLUG/overlays/midstream | kubectl apply -f -
-          kustomize build $PWD/$APP_SLUG/overlays/midstream/charts/redis | kubectl apply -f -
-
-          EXIT_CODE=$?
-          if [ $EXIT_CODE -ne 0 ]; then
-            echo "Failed to apply spec"
-            kubectl get pods -A
-            exit $EXIT_CODE
-          fi
-
-          echo "Waiting for pods to start"
-
-          COUNTER=1
-          while [ $(kubectl get pods --no-headers | grep -v Running | grep -v Completed | wc -l) -gt 0 ]; do
-            COUNTER=$[$COUNTER +1]
-            if [ $COUNTER -gt 120 ]; then
-              echo "Timed out waiting for pods to start"
-              kubectl get pods -A
-              exit -1
-            fi
-            sleep 1
-          done
-
-          echo "All pods started"
-
-
-  # this job will validate that all validate-* jobs succeed
-  validate-success:
-    runs-on: ubuntu-18.04
-    needs: [validate-smoke-test, validate-minimal-rbac, validate-backup-and-restore, validate-no-required-config, validate-multi-namespace, validate-kots-pull]
-    steps:
-      - run: echo "Validate success"
+#  validate-minimal-rbac:
+#    runs-on: ubuntu-18.04
+#    needs: [can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
+#    steps:
+#      - uses: replicatedhq/action-k3s@main
+#        id: k3s
+#        with:
+#          version: ${{ matrix.k8s_version }}
+#
+#      - name: download kots binary
+#        uses: actions/download-artifact@v2
+#        with:
+#          name: kots
+#          path: bin/
+#
+#      - run: chmod +x bin/kots
+#
+#      - uses: actions/setup-node@v2
+#        with:
+#          node-version: '17.x'
+#
+#      - name: setup testIM
+#        run: npm i -g @testim/testim-cli
+#
+#      ## testim tests
+#
+#      - name: get testim branch
+#        if: startsWith(github.ref, 'refs/heads/')
+#        id: get_testim_branch
+#        run: |
+#          BRANCH=${GITHUB_REF/refs\/heads\//}
+#          if [ "$BRANCH" == "main" ]; then
+#            BRANCH="master"
+#          fi
+#          echo ::set-output name=TESTIM_BRANCH::${BRANCH:-master}
+#
+#      - name: prepare minimal-rbac online install
+#        run: |
+#          ./bin/kots \
+#          install minimal-rbac/automated \
+#          --no-port-forward \
+#          --namespace minimal-rbac \
+#          --shared-password password \
+#          --kotsadm-registry ttl.sh \
+#          --kotsadm-namespace automated-${{ github.run_id }} \
+#          --kotsadm-tag 2h
+#
+#      - name: execute suite minimal-rbac
+#        run: |
+#          set +e
+#          ./bin/kots admin-console -n minimal-rbac &
+#          ADMIN_CONSOLE_PID=$!
+#          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --grid "Testim-grid" --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite minimal-rbac --tunnel --tunnel-port 8800
+#          EXIT_CODE=$?
+#          echo "------pods:"
+#          kubectl -n minimal-rbac get pods
+#          echo "------kotsadm logs"
+#          kubectl -n minimal-rbac logs deployment/kotsadm
+#          echo "------previous kotsadm logs"
+#          kubectl -n minimal-rbac logs -p deployment/kotsadm
+#          kill $ADMIN_CONSOLE_PID
+#          exit $EXIT_CODE
+#
+#
+#  validate-backup-and-restore:
+#    runs-on: ubuntu-18.04
+#    needs: [can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
+#    steps:
+#      - uses: replicatedhq/action-k3s@main
+#        id: k3s
+#        with:
+#          version: ${{ matrix.k8s_version }}
+#
+#      - name: download kots binary
+#        uses: actions/download-artifact@v2
+#        with:
+#          name: kots
+#          path: bin/
+#
+#      - run: chmod +x bin/kots
+#
+#      - uses: actions/setup-node@v2
+#        with:
+#          node-version: '17.x'
+#
+#      - name: setup testIM
+#        run: npm i -g @testim/testim-cli
+#        shell: bash
+#
+#      ## testim tests
+#
+#      - name: aws credentials setup
+#        run: |
+#          cat > aws-credentials << EOL
+#          [default]
+#          aws_access_key_id=${{ secrets.TESTIM_AWS_ACCESS_KEY_ID }}
+#          aws_secret_access_key=${{ secrets.TESTIM_AWS_SECRET_ACCESS_KEY }}
+#          EOL
+#
+#      - name: delete velero if exists
+#        run: kubectl delete ns velero --ignore-not-found
+#
+#      - name: velero install
+#        run: |
+#          curl -LO https://github.com/vmware-tanzu/velero/releases/download/v1.7.1/velero-v1.7.1-linux-amd64.tar.gz && tar zxvf velero-v1.7.1-linux-amd64.tar.gz && \
+#          ./velero-v1.7.1-linux-amd64/velero install \
+#          --provider aws \
+#          --plugins velero/velero-plugin-for-aws:v1.3.0 \
+#          --bucket kots-testim-snapshots \
+#          --backup-location-config region=us-east-1 \
+#          --snapshot-location-config region=us-east-1 \
+#          --secret-file ./aws-credentials \
+#          --prefix /automated-backup-and-restore-test-${{ github.run_id }}-${{ matrix.k8s_version }}-$RANDOM \
+#          --use-restic
+#
+#      - name: get testim branch
+#        if: startsWith(github.ref, 'refs/heads/')
+#        id: get_testim_branch
+#        shell: bash
+#        run: |
+#          BRANCH=${GITHUB_REF/refs\/heads\//}
+#          if [ "$BRANCH" == "main" ]; then
+#            BRANCH="master"
+#          fi
+#          echo ::set-output name=TESTIM_BRANCH::${BRANCH:-master}
+#
+#      - name: prepare backup-and-restore online install
+#        run: |
+#          ./bin/kots \
+#          install backup-and-restore/automated \
+#          --no-port-forward \
+#          --namespace backup-and-restore \
+#          --shared-password password \
+#          --kotsadm-registry ttl.sh \
+#          --kotsadm-namespace automated-${{ github.run_id }} \
+#          --kotsadm-tag 2h
+#
+#      - name: execute suite backup-and-restore
+#        run: |
+#          set +e
+#          ./bin/kots admin-console -n backup-and-restore &
+#          ADMIN_CONSOLE_PID=$!
+#          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --grid "Testim-grid" --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite backup-and-restore --tunnel --tunnel-port 8800
+#          EXIT_CODE=$?
+#          echo "------pods:"
+#          kubectl -n backup-and-restore get pods
+#          echo "------kotsadm logs"
+#          kubectl -n backup-and-restore logs deployment/kotsadm
+#          echo "------previous kotsadm logs"
+#          kubectl -n backup-and-restore logs -p deployment/kotsadm
+#          kill $ADMIN_CONSOLE_PID
+#          exit $EXIT_CODE
+#
+#
+#  validate-no-required-config:
+#    runs-on: ubuntu-18.04
+#    needs: [can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
+#    steps:
+#      - uses: replicatedhq/action-k3s@main
+#        id: k3s
+#        with:
+#          version: ${{ matrix.k8s_version }}
+#
+#      - name: download kots binary
+#        uses: actions/download-artifact@v2
+#        with:
+#          name: kots
+#          path: bin/
+#
+#      - run: chmod +x bin/kots
+#
+#      - uses: actions/setup-node@v2
+#        with:
+#          node-version: '17.x'
+#
+#      - name: setup testIM
+#        run: npm i -g @testim/testim-cli
+#        shell: bash
+#
+#      ## testim tests
+#
+#      - name: get testim branch
+#        if: startsWith(github.ref, 'refs/heads/')
+#        id: get_testim_branch
+#        shell: bash
+#        run: |
+#          BRANCH=${GITHUB_REF/refs\/heads\//}
+#          if [ "$BRANCH" == "main" ]; then
+#            BRANCH="master"
+#          fi
+#          echo ::set-output name=TESTIM_BRANCH::${BRANCH:-master}
+#
+#      - name: prepare no-required-config online install
+#        env:
+#          APP_NAME: no-required-config
+#        run: |
+#          ./bin/kots \
+#          install $APP_NAME/automated \
+#          --no-port-forward \
+#          --namespace $APP_NAME \
+#          --shared-password password \
+#          --kotsadm-registry ttl.sh \
+#          --kotsadm-namespace automated-${{ github.run_id }} \
+#          --kotsadm-tag 2h
+#
+#      - name: execute suite no-required-config
+#        env:
+#          APP_NAME: no-required-config
+#        run: |
+#          set +e
+#          ./bin/kots admin-console -n $APP_NAME &
+#          ADMIN_CONSOLE_PID=$!
+#
+#          sleep 5
+#          echo "KOTSADM_API_TOKEN=`kubectl -n $APP_NAME get secret kotsadm-authstring -o json | jq -r '.data."kotsadm-authstring"' | base64 -d`" > .env
+#
+#          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --grid "Testim-grid" --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite $APP_NAME --tunnel --tunnel-port 8800
+#          EXIT_CODE=$?
+#          echo "------pods:"
+#          kubectl -n no-config get pods
+#          echo "------kotsadm logs"
+#          kubectl -n $APP_NAME logs deployment/kotsadm
+#          echo "------previous kotsadm logs"
+#          kubectl -n $APP_NAME logs -p deployment/kotsadm
+#          kill $ADMIN_CONSOLE_PID
+#          exit $EXIT_CODE
+#
+#
+#  validate-multi-namespace:
+#    runs-on: ubuntu-18.04
+#    needs: [can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
+#    steps:
+#      - uses: replicatedhq/action-k3s@main
+#        id: k3s
+#        with:
+#          version: ${{ matrix.k8s_version }}
+#
+#      - name: download kots binary
+#        uses: actions/download-artifact@v2
+#        with:
+#          name: kots
+#          path: bin/
+#
+#      - run: chmod +x bin/kots
+#
+#      - uses: actions/setup-node@v2
+#        with:
+#          node-version: '17.x'
+#
+#      - name: setup testIM
+#        run: npm i -g @testim/testim-cli
+#        shell: bash
+#
+#      ## testim tests
+#
+#      - name: get testim branch
+#        if: startsWith(github.ref, 'refs/heads/')
+#        id: get_testim_branch
+#        shell: bash
+#        run: |
+#          BRANCH=${GITHUB_REF/refs\/heads\//}
+#          if [ "$BRANCH" == "main" ]; then
+#            BRANCH="master"
+#          fi
+#          echo ::set-output name=TESTIM_BRANCH::${BRANCH:-master}
+#
+#      - name: prepare multi-namespace online install
+#        env:
+#          APP_NAME: multi-namespace-yeti
+#        run: |
+#          ./bin/kots \
+#          install $APP_NAME/automated \
+#          --no-port-forward \
+#          --namespace $APP_NAME \
+#          --shared-password password \
+#          --kotsadm-registry ttl.sh \
+#          --kotsadm-namespace automated-${{ github.run_id }} \
+#          --kotsadm-tag 2h
+#
+#      - name: execute suite multi-namespace
+#        env:
+#          APP_NAME: multi-namespace-yeti
+#          SUITE_NAME: multi-namespace
+#        run: |
+#          set +e
+#          ./bin/kots admin-console -n $APP_NAME &
+#          ADMIN_CONSOLE_PID=$!
+#
+#          sleep 5
+#          echo "KOTSADM_API_TOKEN=`kubectl -n $APP_NAME get secret kotsadm-authstring -o json | jq -r '.data."kotsadm-authstring"' | base64 -d`" > .env
+#
+#          # HACK: with limitted RBAC secrets are not applied by kotsadm
+#          echo ${{ secrets.MULTI_NAMESPACE_REGISTRY_AUTH }} | base64 -d > replicated-registry-auth.json
+#          kubectl -n nginx-test create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
+#          kubectl -n redis-test create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
+#          kubectl -n redis-test create secret generic multi-namespace-yeti-redis-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
+#          kubectl -n postgres-test create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
+#
+#          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --grid "Testim-grid" --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite $SUITE_NAME --tunnel --tunnel-port 8800
+#          EXIT_CODE=$?
+#          echo "------pods:"
+#          kubectl get pods -A
+#          echo "------kotsadm logs"
+#          kubectl -n $APP_NAME logs deployment/kotsadm
+#          echo "------previous kotsadm logs"
+#          kubectl -n $APP_NAME logs -p deployment/kotsadm
+#          kill $ADMIN_CONSOLE_PID
+#          exit $EXIT_CODE
+#
+#
+#  validate-kots-pull:
+#    runs-on: ubuntu-18.04
+#    needs: [can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
+#    steps:
+#      - uses: replicatedhq/action-k3s@main
+#        id: k3s
+#        with:
+#          version: ${{ matrix.k8s_version }}
+#
+#      - name: download kots binary
+#        uses: actions/download-artifact@v2
+#        with:
+#          name: kots
+#          path: bin/
+#
+#      - run: chmod +x bin/kots
+#
+#      - name: run kots pull
+#        env:
+#          APP_NAME: multi-namespace-yeti
+#          APP_SLUG: multi-namespace
+#        run: |
+#          set +e
+#          echo ${{ secrets.MULTI_NAMESPACE_LICENSE }} | base64 -d > license.yaml
+#          ./bin/kots pull $APP_NAME/automated \
+#            --license-file license.yaml \
+#            --shared-password password \
+#            --namespace $APP_NAME \
+#            --exclude-admin-console
+#
+#          kubectl create ns $APP_NAME
+#          kubectl create ns nginx-test
+#          kubectl create ns redis-test
+#          kubectl create ns postgres-test
+#
+#          # HACK: without operator, additonal namespaces don't get image pull secrets
+#          echo ${{ secrets.MULTI_NAMESPACE_REGISTRY_AUTH }} | base64 -d > replicated-registry-auth.json
+#          kubectl -n nginx-test create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
+#          kubectl -n redis-test create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
+#          kubectl -n redis-test create secret generic multi-namespace-yeti-redis-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
+#          kubectl -n postgres-test create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
+#          kubectl -n default create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
+#
+#          kustomize build $PWD/$APP_SLUG/overlays/midstream | kubectl apply -f -
+#          kustomize build $PWD/$APP_SLUG/overlays/midstream/charts/redis | kubectl apply -f -
+#
+#          EXIT_CODE=$?
+#          if [ $EXIT_CODE -ne 0 ]; then
+#            echo "Failed to apply spec"
+#            kubectl get pods -A
+#            exit $EXIT_CODE
+#          fi
+#
+#          echo "Waiting for pods to start"
+#
+#          COUNTER=1
+#          while [ $(kubectl get pods --no-headers | grep -v Running | grep -v Completed | wc -l) -gt 0 ]; do
+#            COUNTER=$[$COUNTER +1]
+#            if [ $COUNTER -gt 120 ]; then
+#              echo "Timed out waiting for pods to start"
+#              kubectl get pods -A
+#              exit -1
+#            fi
+#            sleep 1
+#          done
+#
+#          echo "All pods started"
+#
+#
+#  # this job will validate that all validate-* jobs succeed
+#  validate-success:
+#    runs-on: ubuntu-18.04
+#    needs: [validate-smoke-test, validate-minimal-rbac, validate-backup-and-restore, validate-no-required-config, validate-multi-namespace, validate-kots-pull]
+#    steps:
+#      - run: echo "Validate success"
