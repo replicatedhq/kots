@@ -31,23 +31,45 @@ const SCHEDULES = [
   },
 ];
 
+const DISABLED_AUTO_DEPLOY_OPTION =   {
+  value: "disabled",
+  label: "Do not automatically deploy new versions",
+}
+const SEMVER_PATCH_AUTO_DEPLOY_OPTION =   {
+  value: "semver-patch",
+  label: "Automatically deploy new patch versions",
+}
+  
+const SEMVER_MINOR_PATCH_AUTO_DEPLOY_OPTION =   {
+  value: "semver-minor-patch",
+  label: "Automatically deploy new patch and minor versions",
+}
+
+const SEMVER_MAJOR_MINOR_PATCH_AUTO_DEPLOY_OPTION =   {
+  value: "semver-major-minor-patch",
+  label: "Automatically deploy new patch, minor, and major versions",
+}
+
+const SEQUENCE_AUTO_DEPLOY_OPTION =   {
+  value: "sequence",
+  label: "Automatically deploy the most recent update",
+}
+
+// All available options for automatic deployments
+const AUTO_DEPLOY_OPTIONS = [
+  DISABLED_AUTO_DEPLOY_OPTION,
+  SEMVER_PATCH_AUTO_DEPLOY_OPTION,
+  SEMVER_MINOR_PATCH_AUTO_DEPLOY_OPTION,
+  SEMVER_MAJOR_MINOR_PATCH_AUTO_DEPLOY_OPTION,
+  SEQUENCE_AUTO_DEPLOY_OPTION,
+];
+
+// Valid automatic deployment options for licenses with semver required
 const SEMVER_AUTO_DEPLOY_OPTIONS = [
-  {
-    value: "disabled",
-    label: "Do not automatically deploy new versions",
-  },
-  {
-    value: "patch",
-    label: "Automatically deploy new patch versions",
-  },
-  {
-    value: "minor-patch",
-    label: "Automatically deploy new patch and minor versions",
-  },
-  {
-    value: "major-minor-patch",
-    label: "Automatically deploy new patch, minor, and major versions",
-  }
+  DISABLED_AUTO_DEPLOY_OPTION,
+  SEMVER_PATCH_AUTO_DEPLOY_OPTION,
+  SEMVER_MINOR_PATCH_AUTO_DEPLOY_OPTION,
+  SEMVER_MAJOR_MINOR_PATCH_AUTO_DEPLOY_OPTION,
 ];
 
 export default class AutomaticUpdatesModal extends React.Component {
@@ -59,21 +81,21 @@ export default class AutomaticUpdatesModal extends React.Component {
       selectedSchedule = find(SCHEDULES, { value: "custom" });
     }
 
-    let selectedSemverAutoDeploy = find(SEMVER_AUTO_DEPLOY_OPTIONS, ["value", props.semverAutoDeploy]);
-    if (!selectedSemverAutoDeploy) {
-      selectedSemverAutoDeploy = find(SEMVER_AUTO_DEPLOY_OPTIONS, ["value", "disabled"])
+    let selectedAutoDeploy = find(AUTO_DEPLOY_OPTIONS, ["value", props.autoDeploy]);
+    if (!selectedAutoDeploy) {
+      selectedAutoDeploy = find(AUTO_DEPLOY_OPTIONS, ["value", "disabled"])
     }
 
     this.state = {
       updateCheckerSpec: props.updateCheckerSpec,
       configureAutomaticUpdatesErr: "",
       selectedSchedule,
-      selectedSemverAutoDeploy,
+      selectedAutoDeploy,
     };
   }
 
   onConfigureAutomaticUpdates = () => {
-    const { updateCheckerSpec, selectedSemverAutoDeploy } = this.state;
+    const { updateCheckerSpec, selectedAutoDeploy } = this.state;
     const { appSlug } = this.props;
 
     this.setState({
@@ -88,7 +110,7 @@ export default class AutomaticUpdatesModal extends React.Component {
       method: "PUT",
       body: JSON.stringify({
         updateCheckerSpec: updateCheckerSpec,
-        semverAutoDeploy: selectedSemverAutoDeploy.value,
+        autoDeploy: selectedAutoDeploy.value,
       })
     })
       .then(async (res) => {
@@ -142,15 +164,27 @@ export default class AutomaticUpdatesModal extends React.Component {
     });
   }
 
-  handleSemverAutoDeployOptionChange = selectedSemverAutoDeploy => {
+  handleAutoDeployOptionChange = selectedAutoDeploy => {
     this.setState({
-      selectedSemverAutoDeploy: { ...selectedSemverAutoDeploy },
+      selectedAutoDeploy: { ...selectedAutoDeploy },
     });
   }
 
+  handleSequenceAutoUpdatesChange = (sequenceAutoDeployEnabled) => {
+    if (sequenceAutoDeployEnabled) {
+      this.setState({
+        selectedAutoDeploy: { ...SEQUENCE_AUTO_DEPLOY_OPTION },
+      });
+    } else {
+      this.setState({
+        selectedAutoDeploy: { ...DISABLED_AUTO_DEPLOY_OPTION },
+      });
+    }
+  }
+
   render() {
-    const { isOpen, onRequestClose, gitopsEnabled } = this.props;
-    const { updateCheckerSpec, selectedSchedule, selectedSemverAutoDeploy, configureAutomaticUpdatesErr } = this.state;
+    const { isOpen, onRequestClose, isSemverRequired, gitopsEnabled } = this.props;
+    const { updateCheckerSpec, selectedSchedule, selectedAutoDeploy, configureAutomaticUpdatesErr } = this.state;
 
     const humanReadableCron = this.getReadableCronExpression(updateCheckerSpec);
 
@@ -171,12 +205,12 @@ export default class AutomaticUpdatesModal extends React.Component {
             </p>
             :
             <p className="u-fontSize--normal u-lineHeight--normal u-textColor--bodyCopy u-marginBottom--20">
-              Configure how often you would like to automatically check for updates.<br/>This will only download updates, not deploy them.
+              Configure how often you would like to automatically check for updates, and whether updates should also be deployed automatically.
             </p>
           }
           <div className="flex-column flex1">
-            <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal">Cron expression</p>
-            <span className="u-fontSize--small u-marginTop--5 u-textColor--info u-marginBottom--15">Choose how frequently your application automatically checks for updates.</span>
+            <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal">Update check frequency</p>
+            <span className="u-fontSize--small u-marginTop--5 u-textColor--info u-marginBottom--15">Choose how frequently your application checks for updates. A custom schedule can be defined with a cron expression.</span>
             <div className="flex flex1">
               <Select
                 className="replicated-select-container flex1"
@@ -214,18 +248,42 @@ export default class AutomaticUpdatesModal extends React.Component {
           </div>
           <div className="flex-column flex1 u-marginTop--15">
             <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal">Automatically deploy new versions</p>
-            <span className="u-marginTop--5 u-marginBottom--15 u-fontSize--small u-textColor--info u-fontWeight--medium">Releases without a valid <a href="https://semver.org/" className="replicated-link" target="_blank" rel="noopener noreferrer">semantic version</a> will <span className="u-fontWeight--bold">not</span> be automatically deployed.</span>
-            <Select
-              className="replicated-select-container flex1"
-              classNamePrefix="replicated-select"
-              placeholder="Automatically deploy new versions"
-              options={SEMVER_AUTO_DEPLOY_OPTIONS}
-              isSearchable={false}
-              getOptionValue={(option) => option.label}
-              value={selectedSemverAutoDeploy}
-              onChange={this.handleSemverAutoDeployOptionChange}
-              isOptionSelected={(option) => { option.value === selectedSemverAutoDeploy }}
-              />
+            { isSemverRequired ?
+                <>
+                  <span className="u-marginTop--5 u-marginBottom--15 u-fontSize--small u-textColor--info u-fontWeight--medium">Choose which versions should be automatically deployed.</span>
+                  <Select
+                  className="replicated-select-container flex1"
+                  classNamePrefix="replicated-select"
+                  placeholder="Automatically deploy new versions"
+                  options={SEMVER_AUTO_DEPLOY_OPTIONS}
+                  isSearchable={false}
+                  getOptionValue={(option) => option.label}
+                  value={selectedAutoDeploy}
+                  onChange={this.handleAutoDeployOptionChange}
+                  isOptionSelected={(option) => { option.value === selectedAutoDeploy }}
+                  />
+                </>
+                :
+                <>
+                  <span className="u-marginTop--5 u-marginBottom--15 u-fontSize--small u-textColor--info u-fontWeight--medium">Choose whether you would like new releases deployed automatically.</span>
+                  <div className="BoxedCheckbox-wrapper flex1 u-textAlign--left">
+                    <div className={`flex-auto flex ${"sequence" === selectedAutoDeploy.value ? "is-active" : ""}`}>
+                      <input
+                        type="checkbox"
+                        className="u-cursor--pointer"
+                        id="sequenceAutoUpdatesEnabled"
+                        checked={"sequence" === selectedAutoDeploy.value}
+                        onChange={(e) => { this.handleSequenceAutoUpdatesChange(e.target.checked); }}
+                      />
+                      <label htmlFor="sequenceAutoUpdatesEnabled" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none" style={{ marginTop: "2px" }}>
+                        <div className="flex flex-column u-marginLeft--5 justifyContent--center">
+                          <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium">Enable automatic deployment</p>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                </>
+            }
           </div>
           {configureAutomaticUpdatesErr && <span className="u-textColor--error u-fontSize--small u-fontWeight--bold u-marginTop--15">Error: {configureAutomaticUpdatesErr}</span>}
           <div className="flex u-marginTop--20">

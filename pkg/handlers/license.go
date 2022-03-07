@@ -44,6 +44,7 @@ type LicenseResponse struct {
 	IsGitOpsSupported              bool                  `json:"isGitOpsSupported"`
 	IsIdentityServiceSupported     bool                  `json:"isIdentityServiceSupported"`
 	IsGeoaxisSupported             bool                  `json:"isGeoaxisSupported"`
+	IsSemverRequired               bool                  `json:"isSemverRequired"`
 	IsSnapshotSupported            bool                  `json:"isSnapshotSupported"`
 	LastSyncedAt                   string                `json:"lastSyncedAt"`
 	IsSupportBundleUploadSupported bool                  `json:"isSupportBundleUploadSupported"`
@@ -151,6 +152,7 @@ func (h *Handler) SyncLicense(w http.ResponseWriter, r *http.Request) {
 		IsGitOpsSupported:              latestLicense.Spec.IsGitOpsSupported,
 		IsIdentityServiceSupported:     latestLicense.Spec.IsIdentityServiceSupported,
 		IsGeoaxisSupported:             latestLicense.Spec.IsGeoaxisSupported,
+		IsSemverRequired:               latestLicense.Spec.IsSemverRequired,
 		IsSnapshotSupported:            latestLicense.Spec.IsSnapshotSupported,
 		LastSyncedAt:                   foundApp.LastLicenseSync,
 		IsSupportBundleUploadSupported: latestLicense.Spec.IsSupportBundleUploadSupported,
@@ -202,6 +204,7 @@ func (h *Handler) GetLicense(w http.ResponseWriter, r *http.Request) {
 		IsGitOpsSupported:              license.Spec.IsGitOpsSupported,
 		IsIdentityServiceSupported:     license.Spec.IsIdentityServiceSupported,
 		IsGeoaxisSupported:             license.Spec.IsGeoaxisSupported,
+		IsSemverRequired:               license.Spec.IsSemverRequired,
 		IsSnapshotSupported:            license.Spec.IsSnapshotSupported,
 		LastSyncedAt:                   foundApp.LastLicenseSync,
 		IsSupportBundleUploadSupported: license.Spec.IsSupportBundleUploadSupported,

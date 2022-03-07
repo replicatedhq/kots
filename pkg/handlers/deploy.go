@@ -107,10 +107,10 @@ func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, v := range versions.PastVersions {
 		if int64(sequence) == v.Sequence {
-			// a past version is being deployed/rolled back to, disable semver automatic deployments so that it doesn't undo this action later
-			logger.Infof("disabling semver automatic deployments because a past version is being deployed for app %s", a.Slug)
-			if err := store.GetStore().SetSemverAutoDeploy(a.ID, apptypes.SemverAutoDeployDisabled); err != nil {
-				logger.Error(errors.Wrap(err, "failed to set semver auto deploy"))
+			// a past version is being deployed/rolled back to, disable automatic deployments so that it doesn't undo this action later
+			logger.Infof("disabling automatic deployments because a past version is being deployed for app %s", a.Slug)
+			if err := store.GetStore().SetAutoDeploy(a.ID, apptypes.AutoDeployDisabled); err != nil {
+				logger.Error(errors.Wrap(err, "failed to set versioning auto deploy"))
 			}
 			break
 		}

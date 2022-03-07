@@ -712,8 +712,9 @@ class Dashboard extends Component {
             isOpen={this.state.showAutomaticUpdatesModal}
             onRequestClose={this.hideAutomaticUpdatesModal}
             updateCheckerSpec={app.updateCheckerSpec}
-            semverAutoDeploy={app.semverAutoDeploy}
+            autoDeploy={app.autoDeploy}
             appSlug={app.slug}
+            isSemverRequired={app?.isSemverRequired}
             gitopsEnabled={downstream?.gitops?.enabled}
             onAutomaticUpdatesConfigured={() => {
               this.hideAutomaticUpdatesModal();

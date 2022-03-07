@@ -1381,6 +1381,20 @@ func (mr *MockStoreMockRecorder) SetAppStatus(appID, resourceStates, updatedAt, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAppStatus", reflect.TypeOf((*MockStore)(nil).SetAppStatus), appID, resourceStates, updatedAt, sequence)
 }
 
+// SetAutoDeploy mocks base method.
+func (m *MockStore) SetAutoDeploy(appID string, autoDeploy types2.AutoDeploy) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetAutoDeploy", appID, autoDeploy)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetAutoDeploy indicates an expected call of SetAutoDeploy.
+func (mr *MockStoreMockRecorder) SetAutoDeploy(appID, autoDeploy interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAutoDeploy", reflect.TypeOf((*MockStore)(nil).SetAutoDeploy), appID, autoDeploy)
+}
+
 // SetDownstreamVersionPendingPreflight mocks base method.
 func (m *MockStore) SetDownstreamVersionPendingPreflight(appID string, sequence int64) error {
 	m.ctrl.T.Helper()
@@ -1533,20 +1547,6 @@ func (m *MockStore) SetRedactions(bundleID string, redacts redact.RedactionList)
 func (mr *MockStoreMockRecorder) SetRedactions(bundleID, redacts interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRedactions", reflect.TypeOf((*MockStore)(nil).SetRedactions), bundleID, redacts)
-}
-
-// SetSemverAutoDeploy mocks base method.
-func (m *MockStore) SetSemverAutoDeploy(appID string, semverAutoDeploy types2.SemverAutoDeploy) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetSemverAutoDeploy", appID, semverAutoDeploy)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetSemverAutoDeploy indicates an expected call of SetSemverAutoDeploy.
-func (mr *MockStoreMockRecorder) SetSemverAutoDeploy(appID, semverAutoDeploy interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetSemverAutoDeploy", reflect.TypeOf((*MockStore)(nil).SetSemverAutoDeploy), appID, semverAutoDeploy)
 }
 
 // SetSnapshotSchedule mocks base method.
@@ -2787,18 +2787,18 @@ func (mr *MockAppStoreMockRecorder) SetAppInstallState(appID, state interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAppInstallState", reflect.TypeOf((*MockAppStore)(nil).SetAppInstallState), appID, state)
 }
 
-// SetSemverAutoDeploy mocks base method.
-func (m *MockAppStore) SetSemverAutoDeploy(appID string, semverAutoDeploy types2.SemverAutoDeploy) error {
+// SetAutoDeploy mocks base method.
+func (m *MockAppStore) SetAutoDeploy(appID string, autoDeploy types2.AutoDeploy) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetSemverAutoDeploy", appID, semverAutoDeploy)
+	ret := m.ctrl.Call(m, "SetAutoDeploy", appID, autoDeploy)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// SetSemverAutoDeploy indicates an expected call of SetSemverAutoDeploy.
-func (mr *MockAppStoreMockRecorder) SetSemverAutoDeploy(appID, semverAutoDeploy interface{}) *gomock.Call {
+// SetAutoDeploy indicates an expected call of SetAutoDeploy.
+func (mr *MockAppStoreMockRecorder) SetAutoDeploy(appID, autoDeploy interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetSemverAutoDeploy", reflect.TypeOf((*MockAppStore)(nil).SetSemverAutoDeploy), appID, semverAutoDeploy)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAutoDeploy", reflect.TypeOf((*MockAppStore)(nil).SetAutoDeploy), appID, autoDeploy)
 }
 
 // SetSnapshotSchedule mocks base method.

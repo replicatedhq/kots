@@ -5,6 +5,8 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/replicatedhq/kots/pkg/kotsutil"
+
 	"github.com/gorilla/mux"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -14,8 +16,8 @@ import (
 )
 
 type ConfigureAutomaticUpdatesRequest struct {
-	UpdateCheckerSpec string                    `json:"updateCheckerSpec"`
-	SemverAutoDeploy  apptypes.SemverAutoDeploy `json:"semverAutoDeploy"`
+	UpdateCheckerSpec string              `json:"updateCheckerSpec"`
+	AutoDeploy        apptypes.AutoDeploy `json:"autoDeploy"`
 }
 
 type ConfigureAutomaticUpdatesResponse struct {
@@ -39,6 +41,29 @@ func (h *Handler) ConfigureAutomaticUpdates(w http.ResponseWriter, r *http.Reque
 		updateCheckerSpecResponse.Error = "failed to get app from slug"
 		JSON(w, 500, updateCheckerSpecResponse)
 		return
+	}
+
+	license, err := kotsutil.LoadLicenseFromBytes([]byte(foundApp.License))
+	if err != nil {
+		logger.Error(err)
+		updateCheckerSpecResponse.Error = "failed to get license from app"
+		JSON(w, 500, updateCheckerSpecResponse)
+		return
+	}
+
+	// Check if the deploy update configuration is valid based on app channel
+	if license.Spec.IsSemverRequired {
+		if configureAutomaticUpdatesRequest.AutoDeploy == apptypes.AutoDeploySequence {
+			updateCheckerSpecResponse.Error = "automatic updates based on sequence type are not supported for semantic versioning apps"
+			JSON(w, 422, updateCheckerSpecResponse)
+			return
+		}
+	} else {
+		if configureAutomaticUpdatesRequest.AutoDeploy != apptypes.AutoDeployDisabled && configureAutomaticUpdatesRequest.AutoDeploy != apptypes.AutoDeploySequence {
+			updateCheckerSpecResponse.Error = "automatic updates based on semantic versioning are not supported for non-semantic versioning apps"
+			JSON(w, 422, updateCheckerSpecResponse)
+			return
+		}
 	}
 
 	if foundApp.IsAirgap {
@@ -67,9 +92,9 @@ func (h *Handler) ConfigureAutomaticUpdates(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if err := store.GetStore().SetSemverAutoDeploy(foundApp.ID, configureAutomaticUpdatesRequest.SemverAutoDeploy); err != nil {
+	if err := store.GetStore().SetAutoDeploy(foundApp.ID, configureAutomaticUpdatesRequest.AutoDeploy); err != nil {
 		logger.Error(err)
-		updateCheckerSpecResponse.Error = "failed to set semver auto deploy"
+		updateCheckerSpecResponse.Error = "failed to set auto deploy"
 		JSON(w, 500, updateCheckerSpecResponse)
 		return
 	}
