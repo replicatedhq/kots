@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io/ioutil"
+	"os"
 	"path"
 	"path/filepath"
 	"strconv"
@@ -256,6 +257,10 @@ func IsKurl() (bool, error) {
 	}
 
 	return kotsutil.IsKurl(clientset), nil
+}
+
+func IsAirgap() bool {
+	return os.Getenv("DISABLE_OUTBOUND_CONNECTIONS") == "true"
 }
 
 func canUpgrade(upgradeOptions types.UpgradeOptions, clientset *kubernetes.Clientset, log *logger.CLILogger) error {

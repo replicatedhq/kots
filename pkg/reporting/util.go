@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"os"
 	"regexp"
-	"strconv"
 
 	"github.com/replicatedhq/kots/pkg/api/reporting/types"
+	"github.com/replicatedhq/kots/pkg/kotsadm"
 )
 
 func InjectReportingInfoHeaders(req *http.Request, reportingInfo *types.ReportingInfo) {
@@ -41,10 +41,7 @@ func InjectReportingInfoHeaders(req *http.Request, reportingInfo *types.Reportin
 }
 
 func canReport(endpoint string) bool {
-	disableOutboundConnections := false
-	// ignore the error, default to false
-	disableOutboundConnections, _ = strconv.ParseBool(os.Getenv("DISABLE_OUTBOUND_CONNECTIONS"))
-	if disableOutboundConnections {
+	if kotsadm.IsAirgap() {
 		return false
 	}
 	if os.Getenv("KOTSADM_ENV") == "dev" && !isDevEndpoint(endpoint) {
