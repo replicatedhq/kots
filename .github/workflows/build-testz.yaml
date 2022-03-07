@@ -366,7 +366,7 @@ jobs:
           set +e
           ./bin/kots admin-console -n smoke-test &
           ADMIN_CONSOLE_PID=$!
-          testim --host localhost --port 4444 --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite smoke-test 
+          testim --base-url host.docker.internal:8800 --host localhost --port 4444 --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite smoke-test 
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
             echo "------pods:"
