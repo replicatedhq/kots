@@ -363,7 +363,6 @@ jobs:
       - name: execute smoke test
         run: |
           set +e
-#          ./bin/kots admin-console -n smoke-test &
           ADMIN_CONSOLE_PID=$!
           kubectl apply -f deploy/smoke-test/selenium-standalone.yaml -n smoke-test
           kubectl wait --timeout=-1s -n smoke-test deployment/grid --for condition=available
