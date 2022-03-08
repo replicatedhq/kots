@@ -1018,6 +1018,21 @@ func (mr *MockStoreMockRecorder) GetTaskStatus(taskID interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTaskStatus", reflect.TypeOf((*MockStore)(nil).GetTaskStatus), taskID)
 }
 
+// HasStrictPreflights mocks base method.
+func (m *MockStore) HasStrictPreflights(appID string, sequence int64) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HasStrictPreflights", appID, sequence)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// HasStrictPreflights indicates an expected call of HasStrictPreflights.
+func (mr *MockStoreMockRecorder) HasStrictPreflights(appID, sequence interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasStrictPreflights", reflect.TypeOf((*MockStore)(nil).HasStrictPreflights), appID, sequence)
+}
+
 // Init mocks base method.
 func (m *MockStore) Init() error {
 	m.ctrl.T.Helper()
@@ -3469,6 +3484,21 @@ func (m *MockVersionStore) GetTargetKotsVersionForVersion(appID string, sequence
 func (mr *MockVersionStoreMockRecorder) GetTargetKotsVersionForVersion(appID, sequence interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTargetKotsVersionForVersion", reflect.TypeOf((*MockVersionStore)(nil).GetTargetKotsVersionForVersion), appID, sequence)
+}
+
+// HasStrictPreflights mocks base method.
+func (m *MockVersionStore) HasStrictPreflights(appID string, sequence int64) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HasStrictPreflights", appID, sequence)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// HasStrictPreflights indicates an expected call of HasStrictPreflights.
+func (mr *MockVersionStoreMockRecorder) HasStrictPreflights(appID, sequence interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasStrictPreflights", reflect.TypeOf((*MockVersionStore)(nil).HasStrictPreflights), appID, sequence)
 }
 
 // IsIdentityServiceSupportedForVersion mocks base method.
