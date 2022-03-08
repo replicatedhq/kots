@@ -18,6 +18,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight"
 	"github.com/replicatedhq/kots/pkg/pull"
+	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -198,12 +199,21 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 	}
 
 	// Create the app in the db
-	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "Airgap Update", skipPreflights, &version.DownstreamGitOps{})
+	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "Airgap Update", skipPreflights, &version.DownstreamGitOps{}, render.Renderer{})
 	if err != nil {
 		return errors.Wrap(err, "failed to create new version")
 	}
 
-	if !skipPreflights {
+	hasStrictPreflights, err := store.GetStore().HasStrictPreflights(a.ID, newSequence)
+	if err != nil {
+		return errors.Wrap(err, "failed to check if app preflight has strict analyzers")
+	}
+
+	if hasStrictPreflights && skipPreflights {
+		logger.Warnf("preflights will not be skipped, strict preflights are set to %t", hasStrictPreflights)
+	}
+
+	if !skipPreflights || hasStrictPreflights {
 		if err := preflight.Run(a.ID, a.Slug, newSequence, true, archiveDir); err != nil {
 			return errors.Wrap(err, "failed to start preflights")
 		}
@@ -211,6 +221,9 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 
 	if deploy {
 		downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
+		if err != nil {
+			return errors.Wrap(err, "failed to fetch downstreams")
+		}
 		if len(downstreams) == 0 {
 			return errors.Errorf("no downstreams found for app %q", a.Slug)
 		}

@@ -32,6 +32,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/store/types"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
+	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -420,7 +421,7 @@ func (s *KOTSStore) CreatePendingDownloadAppVersion(appID string, update upstrea
 	return newSequence, nil
 }
 
-func (s *KOTSStore) UpdateAppVersion(appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) error {
+func (s *KOTSStore) UpdateAppVersion(appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) error {
 	// make sure version exists first
 	if v, err := s.GetAppVersion(appID, sequence); err != nil {
 		return errors.Wrap(err, "failed to get app version")
@@ -436,7 +437,7 @@ func (s *KOTSStore) UpdateAppVersion(appID string, sequence int64, baseSequence 
 	}
 	defer tx.Rollback()
 
-	if err := s.upsertAppVersion(tx, appID, sequence, baseSequence, filesInDir, source, skipPreflights, gitops); err != nil {
+	if err := s.upsertAppVersion(tx, appID, sequence, baseSequence, filesInDir, source, skipPreflights, gitops, renderer); err != nil {
 		return errors.Wrap(err, "failed to upsert app version")
 	}
 
@@ -447,7 +448,7 @@ func (s *KOTSStore) UpdateAppVersion(appID string, sequence int64, baseSequence 
 	return nil
 }
 
-func (s *KOTSStore) CreateAppVersion(appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) (int64, error) {
+func (s *KOTSStore) CreateAppVersion(appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error) {
 	db := persistence.MustGetDBSession()
 
 	tx, err := db.Begin()
@@ -456,7 +457,7 @@ func (s *KOTSStore) CreateAppVersion(appID string, baseSequence *int64, filesInD
 	}
 	defer tx.Rollback()
 
-	newSequence, err := s.createAppVersion(tx, appID, baseSequence, filesInDir, source, skipPreflights, gitops)
+	newSequence, err := s.createAppVersion(tx, appID, baseSequence, filesInDir, source, skipPreflights, gitops, renderer)
 	if err != nil {
 		return 0, err
 	}
@@ -468,20 +469,20 @@ func (s *KOTSStore) CreateAppVersion(appID string, baseSequence *int64, filesInD
 	return newSequence, nil
 }
 
-func (s *KOTSStore) createAppVersion(tx *sql.Tx, appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) (int64, error) {
+func (s *KOTSStore) createAppVersion(tx *sql.Tx, appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error) {
 	newSequence, err := s.getNextAppSequence(tx, appID)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get next sequence number")
 	}
 
-	if err := s.upsertAppVersion(tx, appID, newSequence, baseSequence, filesInDir, source, skipPreflights, gitops); err != nil {
+	if err := s.upsertAppVersion(tx, appID, newSequence, baseSequence, filesInDir, source, skipPreflights, gitops, renderer); err != nil {
 		return 0, errors.Wrap(err, "failed to upsert app version")
 	}
 
 	return newSequence, nil
 }
 
-func (s *KOTSStore) upsertAppVersion(tx *sql.Tx, appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) error {
+func (s *KOTSStore) upsertAppVersion(tx *sql.Tx, appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) error {
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filesInDir)
 	if err != nil {
 		return errors.Wrap(err, "failed to read kots kinds")
@@ -497,6 +498,12 @@ func (s *KOTSStore) upsertAppVersion(tx *sql.Tx, appID string, sequence int64, b
 	}
 
 	appIcon := kotsKinds.KotsApplication.Spec.Icon
+
+	renderedPreflight, err := s.renderPreflightSpec(appID, a.Slug, sequence, a.IsAirgap, kotsKinds, renderer)
+	if err != nil {
+		return errors.Wrap(err, "failed to render app preflight spec")
+	}
+	kotsKinds.Preflight = renderedPreflight
 
 	if err := s.upsertAppVersionRecord(tx, appID, sequence, appName, appIcon, kotsKinds); err != nil {
 		return errors.Wrap(err, "failed to upsert app version record")
@@ -1009,4 +1016,54 @@ func (s *KOTSStore) GetCurrentUpdateCursor(appID string, channelID string) (stri
 	}
 
 	return updateCursor.String, versionLabel.String, nil
+}
+
+func (s *KOTSStore) HasStrictPreflights(appID string, sequence int64) (bool, error) {
+
+	var preflightSpecStr sql.NullString
+	db := persistence.MustGetDBSession()
+	query := `SELECT preflight_spec FROM app_version WHERE app_id = $1 AND sequence = $2`
+	row := db.QueryRow(query, appID, sequence)
+
+	if err := row.Scan(&preflightSpecStr); err != nil {
+		return false, errors.Wrap(err, "failed to scan")
+	}
+
+	if preflightSpecStr.Valid && preflightSpecStr.String != "" {
+		preflight, err := kotsutil.LoadPreflightFromContents([]byte(preflightSpecStr.String))
+		if err != nil {
+			return false, errors.Wrap(err, "failed to load preflights from spec")
+		}
+		return kotsutil.HasStrictPreflights(preflight), nil
+	}
+	return false, fmt.Errorf(`failed to load perflight spec from db`)
+}
+
+func (s *KOTSStore) renderPreflightSpec(appID string, appSlug string, sequence int64, isAirgap bool, kotsKinds *kotsutil.KotsKinds, renderer rendertypes.Renderer) (*troubleshootv1beta2.Preflight, error) {
+
+	if kotsKinds.Preflight != nil {
+		// render the preflight file
+		// we need to convert to bytes first, so that we can reuse the renderfile function
+		renderedMarshalledPreflights, err := kotsKinds.Marshal("troubleshoot.replicated.com", "v1beta1", "Preflight")
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to marshal preflight")
+		}
+
+		registrySettings, err := s.GetRegistryDetailsForApp(appID)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get registry settings for app")
+		}
+
+		renderedPreflight, err := renderer.RenderFile(kotsKinds, registrySettings, appSlug, sequence, isAirgap, util.PodNamespace, []byte(renderedMarshalledPreflights))
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to render preflights")
+		}
+		preflight, err := kotsutil.LoadPreflightFromContents(renderedPreflight)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to load rendered preflight")
+		}
+		return preflight, nil
+	}
+
+	return nil, nil
 }

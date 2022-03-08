@@ -568,7 +568,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 	}
 
 	if createNewVersion {
-		newSequence, err := store.GetStore().CreateAppVersion(updateApp.ID, &sequence, archiveDir, "Config Change", false, &version.DownstreamGitOps{})
+		newSequence, err := store.GetStore().CreateAppVersion(updateApp.ID, &sequence, archiveDir, "Config Change", false, &version.DownstreamGitOps{}, render.Renderer{})
 		if err != nil {
 			updateAppConfigResponse.Error = "failed to create an app version"
 			return updateAppConfigResponse, err
@@ -591,7 +591,12 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 		return updateAppConfigResponse, err
 	}
 
-	hasStrictPreflights := kotsKinds.HasStrictPreflights()
+	hasStrictPreflights, err := store.GetStore().HasStrictPreflights(updateApp.ID, sequence)
+	if err != nil {
+		updateAppConfigResponse.Error = errors.Cause(err).Error()
+		return updateAppConfigResponse, err
+	}
+
 	if hasStrictPreflights && skipPreflights {
 		logger.Warnf("preflights will not be skipped, strict preflights are set to %t", hasStrictPreflights)
 	}

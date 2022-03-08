@@ -217,7 +217,7 @@ func GetForwardedPortsFromAppSpec(appID string, sequence int64) ([]types.Forward
 	return ports, nil
 }
 
-func getStatus(appID string, sequence int64) (storetypes.DownstreamVersionStatus, error) {
+func getDownstreamStatus(appID string, sequence int64) (storetypes.DownstreamVersionStatus, error) {
 	db := persistence.MustGetDBSession()
 	var status sql.NullString
 	query := `
@@ -286,7 +286,7 @@ WHERE
 
 		// set a timeout for polling.
 		err := wait.PollImmediateInfinite(2*time.Second, func() (bool, error) {
-			versionStatus, err := getStatus(appID, sequence)
+			versionStatus, err := getDownstreamStatus(appID, sequence)
 			if err != nil {
 				return false, errors.Wrap(err, "failed get status")
 			}

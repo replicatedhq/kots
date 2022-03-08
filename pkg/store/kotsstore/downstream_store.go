@@ -488,7 +488,7 @@ func (s *KOTSStore) downstreamVersionFromRow(appID string, row scannable) (*down
 		}
 		v.KotsApplication = obj.(*kotsv1beta1.Application)
 	}
-	
+
 	v.NeedsKotsUpgrade = needsKotsUpgrade(v.KotsApplication)
 	v.HasFailingStrictPreflights, err = s.hasFailingStrictPreflights(preflightSpecStr, preflightResult)
 	if err != nil {

@@ -164,10 +164,6 @@ func (k *KotsKinds) HasPreflights() bool {
 	return len(k.Preflight.Spec.Analyzers) > 0
 }
 
-func (k *KotsKinds) HasStrictPreflights() bool {
-	return HasStrictPreflights(k.Preflight)
-}
-
 func HasStrictPreflights(preflight *troubleshootv1beta2.Preflight) bool {
 	if preflight == nil {
 		return false

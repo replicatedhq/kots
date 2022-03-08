@@ -154,14 +154,20 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "KOTS Upload", uploadExistingAppRequest.SkipPreflights, &version.DownstreamGitOps{})
+	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "KOTS Upload", uploadExistingAppRequest.SkipPreflights, &version.DownstreamGitOps{}, render.Renderer{})
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to create app version"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	hasStrictPreflights := kotsKinds.HasStrictPreflights()
+	hasStrictPreflights, err := store.GetStore().HasStrictPreflights(a.ID, newSequence)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to check if app preflight has strict analyzers"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	if hasStrictPreflights && uploadExistingAppRequest.SkipPreflights {
 		logger.Warnf("preflights will not be skipped, strict preflights are set to %t", hasStrictPreflights)
 	}

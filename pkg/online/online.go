@@ -16,6 +16,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/online/types"
 	"github.com/replicatedhq/kots/pkg/preflight"
 	"github.com/replicatedhq/kots/pkg/pull"
+	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
@@ -168,7 +169,7 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 		return nil, errors.Wrap(err, "failed to set app is not airgap")
 	}
 
-	newSequence, err := store.GetStore().CreateAppVersion(opts.PendingApp.ID, nil, tmpRoot, "Online Install", opts.SkipPreflights, &version.DownstreamGitOps{})
+	newSequence, err := store.GetStore().CreateAppVersion(opts.PendingApp.ID, nil, tmpRoot, "Online Install", opts.SkipPreflights, &version.DownstreamGitOps{}, render.Renderer{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create new version")
 	}
@@ -186,6 +187,21 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 		return nil, errors.Wrap(err, "failed to load kotskinds from path")
 	}
 
+	hasStrictPreflights, err := store.GetStore().HasStrictPreflights(opts.PendingApp.ID, newSequence)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to check if app preflight has strict analyzers")
+	}
+
+	if hasStrictPreflights && opts.SkipPreflights {
+		logger.Warnf("preflights will not be skipped, strict preflights are set to %t", hasStrictPreflights)
+	}
+
+	if !opts.SkipPreflights || hasStrictPreflights {
+		if err := preflight.Run(opts.PendingApp.ID, opts.PendingApp.Slug, newSequence, false, tmpRoot); err != nil {
+			return nil, errors.Wrap(err, "failed to start preflights")
+		}
+	}
+
 	if opts.IsAutomated && kotsKinds.IsConfigurable() {
 		// bypass the config screen if no configuration is required and it's an automated install
 		registrySettings, err := store.GetStore().GetRegistryDetailsForApp(opts.PendingApp.ID)
@@ -197,7 +213,7 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 			return nil, errors.Wrap(err, "failed to check if app needs configuration")
 		}
 		if !needsConfig {
-			if opts.SkipPreflights {
+			if opts.SkipPreflights || !hasStrictPreflights {
 				if err := version.DeployVersion(opts.PendingApp.ID, newSequence); err != nil {
 					return nil, errors.Wrap(err, "failed to deploy version")
 				}
@@ -215,7 +231,7 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 		}
 	}
 
-	if !kotsKinds.IsConfigurable() && opts.SkipPreflights {
+	if !kotsKinds.IsConfigurable() && opts.SkipPreflights && !hasStrictPreflights {
 		// app is not configurable and preflights are skipped, so just deploy the app
 		if err := version.DeployVersion(opts.PendingApp.ID, newSequence); err != nil {
 			return nil, errors.Wrap(err, "failed to deploy version")
@@ -225,12 +241,6 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 				logger.Debugf("failed to send preflights data to replicated app: %v", err)
 			}
 		}()
-	}
-
-	if !opts.SkipPreflights {
-		if err := preflight.Run(opts.PendingApp.ID, opts.PendingApp.Slug, newSequence, false, tmpRoot); err != nil {
-			return nil, errors.Wrap(err, "failed to start preflights")
-		}
 	}
 
 	return kotsKinds, nil

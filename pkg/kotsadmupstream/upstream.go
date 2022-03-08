@@ -15,6 +15,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
+	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/upstream"
@@ -128,7 +129,6 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		return
 	}
 
-	hasStrictPreflights := beforeKotsKinds.HasStrictPreflights()
 	beforeCursor := beforeKotsKinds.Installation.Spec.UpdateCursor
 
 	pipeReader, pipeWriter := io.Pipe()
@@ -238,20 +238,25 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		if afterKotsKinds.Installation.Spec.UpdateCursor == beforeCursor {
 			return
 		}
-		newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "Upstream Update", skipPreflights, &version.DownstreamGitOps{})
+		newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "Upstream Update", skipPreflights, &version.DownstreamGitOps{}, render.Renderer{})
 		if err != nil {
 			finalError = errors.Wrap(err, "failed to create version")
 			return
 		}
-		hasStrictPreflights = afterKotsKinds.HasStrictPreflights()
 		finalSequence = &newSequence
 	} else {
-		err := store.GetStore().UpdateAppVersion(a.ID, *update.AppSequence, &baseSequence, archiveDir, "Upstream Update", skipPreflights, &version.DownstreamGitOps{})
+		err := store.GetStore().UpdateAppVersion(a.ID, *update.AppSequence, &baseSequence, archiveDir, "Upstream Update", skipPreflights, &version.DownstreamGitOps{}, render.Renderer{})
 		if err != nil {
 			finalError = errors.Wrap(err, "failed to create version")
 			return
 		}
 		finalSequence = update.AppSequence
+	}
+
+	hasStrictPreflights, err := store.GetStore().HasStrictPreflights(a.ID, *finalSequence)
+	if err != nil {
+		finalError = errors.Wrap(err, "failed to check if app preflight has strict analyzers")
+		return
 	}
 
 	if hasStrictPreflights && skipPreflights {

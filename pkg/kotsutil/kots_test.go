@@ -144,12 +144,6 @@ func TestKotsKinds_HasStrictPreflights(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			k := &KotsKinds{
-				Preflight: tt.preflight,
-			}
-			if got := k.HasStrictPreflights(); got != tt.want {
-				t.Errorf("KotsKinds.HasStrictPreflights() = %v, want %v", got, tt.want)
-			}
 			if got := HasStrictPreflights(tt.preflight); got != tt.want {
 				t.Errorf("HasStrictPreflights() = %v, want %v", got, tt.want)
 			}

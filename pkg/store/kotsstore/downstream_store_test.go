@@ -93,7 +93,7 @@ func Test_hasFailingStrictPreflights(t *testing.T) {
 			want:               true,
 			wantErr:            false,
 		}, {
-			name:               "expect false, nil when preflightSpec with strict:true analyzer and result IsPass:true",
+			name:               "expect false, nil when preflightSpec with strict:true analyzer and result IsFail:false",
 			preflightSpecStr:   toSqlString(t, strictTruePreflightSpec),
 			preflightResultStr: toSqlString(t, strictFailFalsePreflightResultSpec),
 			want:               false,
@@ -105,7 +105,7 @@ func Test_hasFailingStrictPreflights(t *testing.T) {
 			want:               false,
 			wantErr:            false,
 		}, {
-			name:               "expect false, nil when preflightSpec with strict:false analyzer and result IsPass:true",
+			name:               "expect false, nil when preflightSpec with strict:false analyzer and result IsFail:false",
 			preflightSpecStr:   toSqlString(t, strictFalsePreflightSpec),
 			preflightResultStr: toSqlString(t, strictFailFalsePreflightResultSpec),
 			want:               false,
