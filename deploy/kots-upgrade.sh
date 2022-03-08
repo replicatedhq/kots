@@ -12,6 +12,9 @@ while [ "$1" != "" ]; do
         namespace)
             NAMESPACE="$_value"
             ;;
+        "ensure-rbac" | "skip-rbac-check" | "strict-security-context" | "wait-duration" | "with-minio")
+            INSTALL_PARAMS="$INSTALL_PARAMS --$_param=$_value"
+            ;;
         *)
             echo >&2 "Error: unknown parameter \"$_param\""
             exit 1
@@ -25,4 +28,4 @@ then
     /kots admin-console push-images docker.io $REGISTRY -n $NAMESPACE
 fi
 
-/kots admin-console upgrade -n $NAMESPACE
+/kots admin-console upgrade -n $NAMESPACE $INSTALL_PARAMS

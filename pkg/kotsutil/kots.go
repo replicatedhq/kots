@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
@@ -664,6 +665,11 @@ type InstallationParams struct {
 	SkipCompatibilityCheck bool
 	RegistryIsReadOnly     bool
 	EnableImageDeletion    bool
+	EnsureRBAC             bool
+	SkipRBACCheck          bool
+	StrictSecurityContext  bool
+	WaitDuration           time.Duration
+	WithMinio              bool
 }
 
 func GetInstallationParams(configMapName string) (InstallationParams, error) {
@@ -689,6 +695,11 @@ func GetInstallationParams(configMapName string) (InstallationParams, error) {
 	autoConfig.SkipPreflights, _ = strconv.ParseBool(kotsadmConfigMap.Data["skip-preflights"])
 	autoConfig.SkipCompatibilityCheck, _ = strconv.ParseBool(kotsadmConfigMap.Data["skip-compatibility-check"])
 	autoConfig.RegistryIsReadOnly, _ = strconv.ParseBool(kotsadmConfigMap.Data["registry-is-read-only"])
+	autoConfig.EnsureRBAC, _ = strconv.ParseBool(kotsadmConfigMap.Data["ensure-rbac"])
+	autoConfig.SkipRBACCheck, _ = strconv.ParseBool(kotsadmConfigMap.Data["skip-rbac-check"])
+	autoConfig.StrictSecurityContext, _ = strconv.ParseBool(kotsadmConfigMap.Data["strict-security-context"])
+	autoConfig.WaitDuration, _ = time.ParseDuration(kotsadmConfigMap.Data["wait-duration"])
+	autoConfig.WithMinio, _ = strconv.ParseBool(kotsadmConfigMap.Data["with-minio"])
 
 	return autoConfig, nil
 }

@@ -12,6 +12,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/rand"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -102,8 +104,18 @@ func UpdateToVersion(newVersion string) error {
 		return errors.Wrap(err, "failed to get kots options from cluster")
 	}
 
+	installationParams, err := kotsutil.GetInstallationParams(kotsadmtypes.KotsadmConfigMap)
+	if err != nil {
+		return errors.Wrap(err, "failed to get installation params")
+	}
+
 	args := []string{
 		fmt.Sprintf("namespace=%s", ns),
+		fmt.Sprintf("ensure-rbac=%v", installationParams.EnsureRBAC),
+		fmt.Sprintf("skip-rbac-check=%v", installationParams.SkipRBACCheck),
+		fmt.Sprintf("strict-security-context=%v", installationParams.StrictSecurityContext),
+		fmt.Sprintf("wait-duration=%v", installationParams.WaitDuration),
+		fmt.Sprintf("with-minio=%v", installationParams.WithMinio),
 	}
 
 	if kotsOptions.OverrideRegistry != "" && !kotsOptions.IsReadOnly {
