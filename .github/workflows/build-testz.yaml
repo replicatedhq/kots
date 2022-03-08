@@ -43,7 +43,7 @@ jobs:
     steps:
       # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets. 
       # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
-      # this action checksout the remote branch and runs CI
+      # this action checks out the remote branch and runs CI
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -351,10 +351,10 @@ jobs:
       - name: execute smoke test
         run: |
           set +e
-          ADMIN_CONSOLE_PID=$!
           kubectl apply -f deploy/smoke-test/selenium-standalone.yaml -n smoke-test
           kubectl wait --timeout=-1s -n smoke-test deployment/grid --for condition=available
           kubectl port-forward -n smoke-test service/grid 4444 &
+          ADMIN_CONSOLE_PID=$!
           sleep 4
           testim --base-url kotsadm:3000 --host localhost --port 4444 --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite smoke-test 
           EXIT_CODE=$?
