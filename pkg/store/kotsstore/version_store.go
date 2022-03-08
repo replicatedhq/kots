@@ -1036,7 +1036,8 @@ func (s *KOTSStore) HasStrictPreflights(appID string, sequence int64) (bool, err
 		}
 		return kotsutil.HasStrictPreflights(preflight), nil
 	}
-	return false, fmt.Errorf(`failed to load perflight spec from db`)
+	// no preflight spec, so return false, nil
+	return false, nil
 }
 
 func (s *KOTSStore) renderPreflightSpec(appID string, appSlug string, sequence int64, isAirgap bool, kotsKinds *kotsutil.KotsKinds, renderer rendertypes.Renderer) (*troubleshootv1beta2.Preflight, error) {
