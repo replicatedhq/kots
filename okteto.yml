@@ -9,3 +9,7 @@ sync:
 workdir: /go/src/github.com/replicatedhq/kots
 forward:
 - 2353:2345
+resources:
+  limits:
+    cpu: "2"
+    memory: 4Gi
