@@ -45,7 +45,7 @@ export default function PreflightRenderer(props) {
                   <div className="flex1">
                     <p className="u-textColor--primary u-fontSize--large u-fontWeight--bold">{row.title}</p>
                     <div className="PreflightMessageRow u-marginTop--10">
-                      <Markdown source={row.message}/> {row.strict? <div>Strict: { String(row.strict)} </div> : null }
+                      <Markdown source={row.message}/>
                     </div>
                     {row.uri &&
                       <div className="u-marginTop--5">
