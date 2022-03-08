@@ -269,12 +269,11 @@ jobs:
   validate-smoke-test:
     runs-on: ubuntu-18.04
     needs: [can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
-    services:
-      grid:
-        image: selenium/standalone-chrome
-        ports:
-          - 4444:4444
-          - 7900:7900
+#    services:
+#      grid:
+#        image: selenium/standalone-chrome
+#        ports:
+#          - 4444:4444
 #      browser:
 #        image: browserless/chrome
 #        ports:
@@ -364,9 +363,13 @@ jobs:
       - name: execute smoke test
         run: |
           set +e
-          ./bin/kots admin-console -n smoke-test &
+#          ./bin/kots admin-console -n smoke-test &
           ADMIN_CONSOLE_PID=$!
-          testim --base-url host.docker.internal:8800 --host localhost --port 4444 --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite smoke-test 
+          kubectl apply -f deploy/smoke-test/selenium-standalone.yaml -n smoke-test
+          kubectl wait --timeout=-1s -n smoke-test deployment/grid --for condition=available
+          kubectl port-forward -n smoke-test service/grid 4444 &
+          sleep 4
+          testim --base-url kotsadm:3000 --host localhost --port 4444 --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite smoke-test 
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
             echo "------pods:"
