@@ -122,6 +122,18 @@ func Test_hasFailingStrictPreflights(t *testing.T) {
 			preflightResultStr: sql.NullString{Valid: true, String: "invalid"},
 			want:               false,
 			wantErr:            true,
+		}, {
+			name:               "expect false, error when preflightSpec with strict:true analyzer and preflightResultSpec has a empty string",
+			preflightSpecStr:   toSqlString(t, strictTruePreflightSpec),
+			preflightResultStr: sql.NullString{Valid: true, String: ""},
+			want:               true,
+			wantErr:            false,
+		}, {
+			name:               "expect false, error when preflightSpec with strict:false analyzer and preflightResultSpec has a empty string",
+			preflightSpecStr:   toSqlString(t, strictFalsePreflightSpec),
+			preflightResultStr: sql.NullString{Valid: true, String: ""},
+			want:               false,
+			wantErr:            false,
 		},
 	}
 	for _, tt := range tests {

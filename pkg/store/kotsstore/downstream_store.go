@@ -3,7 +3,6 @@ package kotsstore
 import (
 	"database/sql"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 
 	"github.com/blang/semver"
@@ -14,7 +13,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/store/types"
-	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -496,26 +494,6 @@ func (s *KOTSStore) downstreamVersionFromRow(appID string, row scannable) (*down
 	}
 
 	return v, nil
-}
-
-func (s *KOTSStore) hasFailingStrictPreflights(preflightSpecStr sql.NullString, preflightResultStr sql.NullString) (bool, error) {
-	hasFailingStrictPreflights := false
-	if preflightSpecStr.Valid && preflightSpecStr.String != "" {
-		preflight, err := kotsutil.LoadPreflightFromContents([]byte(preflightSpecStr.String))
-		if err != nil {
-			return false, errors.Wrap(err, "failed to load preflights from spec")
-		}
-		hasFailingStrictPreflights = kotsutil.HasStrictPreflights(preflight)
-	}
-
-	if preflightResultStr.Valid && preflightResultStr.String != "" {
-		preflightResult := troubleshootpreflight.UploadPreflightResults{}
-		if err := json.Unmarshal([]byte(preflightResultStr.String), &preflightResult); err != nil {
-			return false, errors.Wrap(err, "failed to unmarshal preflightResults")
-		}
-		hasFailingStrictPreflights = hasFailingStrictPreflights && kotsutil.IsStrictPreflightFailing(&preflightResult)
-	}
-	return hasFailingStrictPreflights, nil
 }
 
 func getReleaseNotes(appID string, parentSequence int64) (string, error) {

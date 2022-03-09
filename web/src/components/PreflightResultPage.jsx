@@ -21,7 +21,6 @@ class PreflightResultPage extends Component {
     showSkipModal: false,
     showWarningModal: false,
     getKotsPreflightResultJob: new Repeater(),
-    getAppsListJob: new Repeater(),
     preflightResultData: null,
     errorMessage: "",
     preflightResultCheckCount: 0
@@ -29,15 +28,10 @@ class PreflightResultPage extends Component {
 
   componentDidMount() {
     this.state.getKotsPreflightResultJob.start(this.getKotsPreflightResult, 1000);
-
-    if (this.props.fromLicenseFlow) {
-      this.state.getAppsListJob.start(this.props.refetchAppsList, 1000);
-    }
   }
 
   async componentWillUnmount() {
     this.state.getKotsPreflightResultJob.stop();
-    this.state.getAppsListJob.stop();
     if (this.props.fromLicenseFlow && this.props.refetchAppsList) {
       await this.props.refetchAppsList();
     }
@@ -320,16 +314,7 @@ class PreflightResultPage extends Component {
 
     const preflightSkipped = preflightResultData?.skipped;
     const stopPolling = (preflightResultData?.result || preflightSkipped);
-    let blockDeployment = false;
-    if (this.props.fromLicenseFlow) {
-      for (const app of this.props.appsList) {
-        if (app.slug == slug) {
-          blockDeployment = app.downstreams[0]?.pendingVersions[0]?.hasFailingStrictPreflights;
-        }
-      }
-    } else {
-      blockDeployment = this.props.app?.downstreams[0]?.pendingVersions[0]?.hasFailingStrictPreflights;
-    }
+    const blockDeployment = preflightResultData?.hasFailingStrictPreflights;
     let preflightJSON = {};
     if (preflightResultData?.result) {
       if (showSkipModal) {
