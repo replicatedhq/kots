@@ -800,7 +800,7 @@ func (s *KOTSStore) GetAppVersion(appID string, sequence int64) (*versiontypes.A
 		}
 	}
 
-	if licenseSpec.Valid {
+	if licenseSpec.Valid && licenseSpec.String != "" {
 		license, err := kotsutil.LoadLicenseFromBytes([]byte(licenseSpec.String))
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to read license spec")
