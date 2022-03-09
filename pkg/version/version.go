@@ -237,7 +237,7 @@ WHERE
 	return storetypes.DownstreamVersionStatus(status.String), nil
 }
 
-func isBlockedDueToStricPreFlights(appID string, sequence int64) (bool, error) {
+func isBlockedDueToStrictPreFlights(appID string, sequence int64) (bool, error) {
 	var (
 		status             sql.NullString
 		preflightSkipped   sql.NullBool
