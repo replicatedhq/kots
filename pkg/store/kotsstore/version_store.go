@@ -783,14 +783,17 @@ func (s *KOTSStore) GetAppVersion(appID string, sequence int64) (*versiontypes.A
 
 	v.KOTSKinds = &kotsutil.KotsKinds{}
 
-	// why is this a nullstring but we don't check if it's null?
-	installation, err := kotsutil.LoadInstallationFromContents([]byte(installationSpec.String))
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to read installation spec")
+	if installationSpec.Valid && installationSpec.String != "" {
+		installation, err := kotsutil.LoadInstallationFromContents([]byte(installationSpec.String))
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to read installation spec")
+		}
+		if installation != nil {
+			v.KOTSKinds.Installation = *installation
+		}
 	}
-	v.KOTSKinds.Installation = *installation
 
-	if kotsAppSpec.Valid {
+	if kotsAppSpec.Valid && kotsAppSpec.String != "" {
 		kotsApp, err := kotsutil.LoadKotsAppFromContents([]byte(kotsAppSpec.String))
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to read kotsapp spec")
@@ -800,7 +803,7 @@ func (s *KOTSStore) GetAppVersion(appID string, sequence int64) (*versiontypes.A
 		}
 	}
 
-	if licenseSpec.Valid {
+	if licenseSpec.Valid && licenseSpec.String != "" {
 		license, err := kotsutil.LoadLicenseFromBytes([]byte(licenseSpec.String))
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to read license spec")
