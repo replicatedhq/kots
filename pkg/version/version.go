@@ -54,8 +54,7 @@ func (d *DownstreamGitOps) CreateGitOpsDownstreamCommit(appID string, clusterID 
 
 // DeployVersion deploys the version for the given sequence
 func DeployVersion(appID string, sequence int64) error {
-
-	blocked, err := isBlockedDueToStricPreFlights(appID, sequence)
+	blocked, err := isBlockedDueToStrictPreFlights(appID, sequence)
 	if err != nil {
 		return errors.Wrap(err, "failed to validate strict preflights")
 	}
@@ -283,7 +282,6 @@ WHERE
 	// if preflights were not skipped and status is pending_preflight, poll till the status gets updated
 	// if preflights were skipped don't poll and check results
 	if hasStrictPreflights && !preflightSkipped.Bool && storetypes.DownstreamVersionStatus(status.String) == storetypes.VersionPendingPreflight {
-
 		// set a timeout for polling.
 		err := wait.PollImmediateInfinite(2*time.Second, func() (bool, error) {
 			versionStatus, err := getDownstreamStatus(appID, sequence)

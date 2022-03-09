@@ -1019,7 +1019,6 @@ func (s *KOTSStore) GetCurrentUpdateCursor(appID string, channelID string) (stri
 }
 
 func (s *KOTSStore) HasStrictPreflights(appID string, sequence int64) (bool, error) {
-
 	var preflightSpecStr sql.NullString
 	db := persistence.MustGetDBSession()
 	query := `SELECT preflight_spec FROM app_version WHERE app_id = $1 AND sequence = $2`
@@ -1041,7 +1040,6 @@ func (s *KOTSStore) HasStrictPreflights(appID string, sequence int64) (bool, err
 }
 
 func (s *KOTSStore) renderPreflightSpec(appID string, appSlug string, sequence int64, isAirgap bool, kotsKinds *kotsutil.KotsKinds, renderer rendertypes.Renderer) (*troubleshootv1beta2.Preflight, error) {
-
 	if kotsKinds.HasPreflights() {
 		// render the preflight file
 		// we need to convert to bytes first, so that we can reuse the renderfile function
