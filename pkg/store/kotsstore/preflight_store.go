@@ -69,8 +69,7 @@ func (s *KOTSStore) GetPreflightResults(appID string, sequence int64) (*prefligh
 	FROM app_downstream_version
 		INNER JOIN app ON app_downstream_version.app_id = app.id
 		INNER JOIN cluster ON app_downstream_version.cluster_id = cluster.id
-		INNER JOIN app_version ON app_downstream_version.app_id = app_version.app_id 
-							AND app_downstream_version.parent_sequence = app_version.sequence
+		INNER JOIN app_version ON app_downstream_version.app_id = app_version.app_id AND app_downstream_version.parent_sequence = app_version.sequence
 	WHERE
 		app_downstream_version.app_id = $1 AND
 		app_downstream_version.sequence = $2`
