@@ -20,25 +20,6 @@ spec:
               containerPort: 4444
             - name: web-interface
               containerPort: 7900
-#          readinessProbe:
-#            failureThreshold: 3
-#            httpGet:
-#              path: /healthz
-#              port: grid
-#              scheme: HTTP
-#            initialDelaySeconds: 2
-#            periodSeconds: 2
-#            successThreshold: 1
-#            timeoutSeconds: 1
-#          livenessProbe:
-#            failureThreshold: 2
-#            httpGet:
-#              path: /livez
-#              port: grid
-#              scheme: HTTP
-#            initialDelaySeconds: 30
-#            periodSeconds: 15
-#            timeoutSeconds: 1
 ---
 
 apiVersion: v1
