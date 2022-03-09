@@ -559,7 +559,6 @@ func deployVersion(opts CheckForUpdatesOpts, clusterID string, appVersions *down
 		}
 
 		if err := version.DeployVersion(opts.AppID, versionToDeploy.Sequence); err != nil {
-			logger.Errorf("failed to deploy version with ID: %v, sequence: %v. error: %w", opts.AppID, versionToDeploy.Sequence, err.Error())
 			return errors.Wrap(err, "failed to deploy version")
 		}
 
