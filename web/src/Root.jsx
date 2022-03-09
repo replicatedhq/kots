@@ -373,10 +373,10 @@ class Root extends PureComponent {
                     render={
                       props => (
                         <SnapshotsWrapper
-                          {...props} 
-                          appName={this.state.selectedAppName} 
-                          isKurlEnabled={this.state.adminConsoleMetadata?.isKurl} 
-                          nabled={this.state.adminConsoleMetadata.isKurl}                          appsList={appsList}
+                          {...props}
+                          appName={this.state.selectedAppName}
+                          isKurlEnabled={this.state.adminConsoleMetadata?.isKurl}
+                          appsList={appsList}
                         />
                       )
                     }
