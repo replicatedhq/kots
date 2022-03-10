@@ -175,14 +175,14 @@ func HasStrictPreflights(preflight *troubleshootv1beta2.Preflight) bool {
 		return false
 	}
 
-	analyzerMap := []map[string]interface{}{}
-	err = json.Unmarshal(marshalledAnalyzers, &analyzerMap)
+	analyzersMap := []map[string]interface{}{}
+	err = json.Unmarshal(marshalledAnalyzers, &analyzersMap)
 	if err != nil {
 		return false
 	}
 
 	// analyzerMap will ignore empty Analyzers and loop around Analyzer with data
-	for _, analyzers := range analyzerMap {
+	for _, analyzers := range analyzersMap {
 		for _, analyzer := range analyzers {
 			marshalledAnalyzer, err := json.Marshal(analyzer)
 			if err != nil {
