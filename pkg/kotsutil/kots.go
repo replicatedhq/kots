@@ -184,13 +184,13 @@ func HasStrictPreflights(preflight *troubleshootv1beta2.Preflight) bool {
 	// analyzerMap will ignore empty Analyzers and loop around Analyzer with data
 	for _, analyzers := range analyzerMap {
 		for _, analyzer := range analyzers {
-			marshalledV, err := json.Marshal(analyzer)
+			marshalledAnalyzer, err := json.Marshal(analyzer)
 			if err != nil {
 				return false
 			}
 			// return Analyzer.Strict which can be extraceted from AnalyzeMeta
 			analyzeMeta := troubleshootv1beta2.AnalyzeMeta{}
-			err = json.Unmarshal(marshalledV, &analyzeMeta)
+			err = json.Unmarshal(marshalledAnalyzer, &analyzeMeta)
 			if err != nil {
 				return false
 			}
