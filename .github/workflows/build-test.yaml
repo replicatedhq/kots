@@ -781,9 +781,89 @@ jobs:
 
           echo "All pods started"
 
+
+  validate-strict-preflight-checks:
+    runs-on: ubuntu-18.04
+    needs: [can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
+    strategy:
+      fail-fast: false
+      matrix:
+        # TODO: change to [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
+        k8s_version: [v1.23.3-k3s1]
+    steps:
+      - uses: replicatedhq/action-k3s@main
+        id: k3s
+        with:
+          version: ${{ matrix.k8s_version }}
+
+      - name: download kots binary
+        uses: actions/download-artifact@v2
+        with:
+          name: kots
+          path: bin/
+
+      - run: chmod +x bin/kots
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '17.x'
+
+      - name: setup testIM
+        run: npm i -g @testim/testim-cli
+        shell: bash
+
+      ## testim tests
+
+      - name: get testim branch
+        if: startsWith(github.ref, 'refs/heads/')
+        id: get_testim_branch
+        shell: bash
+        run: |
+          BRANCH=${GITHUB_REF/refs\/heads\//}
+          if [ "$BRANCH" == "main" ]; then
+            BRANCH="master"
+          fi
+          echo ::set-output name=TESTIM_BRANCH::${BRANCH:-master}
+
+      - name: prepare strict-preflight-checks online install
+        env:
+          APP_NAME: strict-preflight-checks
+        run: |
+          ./bin/kots \
+          install $APP_NAME/automated \
+          --no-port-forward \
+          --namespace $APP_NAME \
+          --shared-password password \
+          --kotsadm-registry ttl.sh \
+          --kotsadm-namespace automated-${{ github.run_id }} \
+          --kotsadm-tag 2h
+
+      - name: execute suite strict-preflight-checks
+        env:
+          APP_NAME: strict-preflight-checks
+        run: |
+          set +e
+          ./bin/kots admin-console -n $APP_NAME &
+          ADMIN_CONSOLE_PID=$!
+
+          sleep 5
+          echo "KOTSADM_API_TOKEN=`kubectl -n $APP_NAME get secret kotsadm-authstring -o json | jq -r '.data."kotsadm-authstring"' | base64 -d`" > .env
+          # TODO change branch name `pa1-strict-test` to `${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }}`
+          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --branch pa1-strict-test --report-file testim-report.xml --suite $APP_NAME --tunnel --tunnel-port 8800
+          EXIT_CODE=$?
+          echo "------pods:"
+          kubectl -n no-config get pods
+          echo "------kotsadm logs"
+          kubectl -n $APP_NAME logs deployment/kotsadm
+          echo "------previous kotsadm logs"
+          kubectl -n $APP_NAME logs -p deployment/kotsadm
+          kill $ADMIN_CONSOLE_PID
+          exit $EXIT_CODE
+
+
   # this job will validate that all validate-* jobs succeed and is used for the github branch protection rule
   validate-success:
     runs-on: ubuntu-18.04
-    needs: [validate-smoke-test, validate-minimal-rbac, validate-backup-and-restore, validate-no-required-config, validate-multi-namespace, validate-kots-pull]
+    needs: [validate-smoke-test, validate-minimal-rbac, validate-backup-and-restore, validate-no-required-config, validate-multi-namespace, validate-kots-pull, validate-strict-preflight-checks]
     steps:
       - run: echo "Validate success"
