@@ -3,7 +3,6 @@ package version
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -12,13 +11,11 @@ import (
 	"github.com/replicatedhq/kots/pkg/api/version/types"
 	"github.com/replicatedhq/kots/pkg/gitops"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/util"
-	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -234,7 +231,7 @@ func isBlockedDueToStrictPreFlights(appID string, sequence int64) (bool, error) 
 	// if preflights were skipped don't poll and check results
 	if hasStrictPreflights && !preflightResult.Skipped && status == storetypes.VersionPendingPreflight {
 		// set a timeout for polling.
-		err := wait.PollImmediateInfinite(2*time.Second, func() (bool, error) {
+		err := wait.PollImmediate(2*time.Second, 15*time.Minute, func() (bool, error) {
 			versionStatus, err := store.GetStore().GetDownstreamVersionStatus(appID, sequence)
 			if err != nil {
 				return false, errors.Wrap(err, "failed get status")
@@ -253,12 +250,5 @@ func isBlockedDueToStrictPreFlights(appID string, sequence int64) (bool, error) 
 			return false, errors.Wrap(err, "failed to fetch preflight results")
 		}
 	}
-
-	uploadedPreflightResult := troubleshootpreflight.UploadPreflightResults{}
-	if preflightResult.Result != "" {
-		if err := json.Unmarshal([]byte(preflightResult.Result), &preflightResult); err != nil {
-			return false, errors.Wrap(err, "failed to unmarshal preflightResults")
-		}
-	}
-	return hasStrictPreflights && kotsutil.IsStrictPreflightFailing(&uploadedPreflightResult), nil
+	return hasStrictPreflights && preflightResult.HasFailingStrictPreflights, nil
 }

@@ -409,12 +409,12 @@ class PreflightResultPage extends Component {
                   <span
                     data-tip-disable={!blockDeployment}
                     data-tip="Deployment is disabled as a strict analyzer in this version's preflight checks has failed or has not been run"
-                    data
+                    data-for="disable-deployment-tooltip"
                   >
                     Continue
                   </span>
-                  <ReactTooltip effect="solid" id="disable-deployment-tooltip" />
                 </button>
+                <ReactTooltip effect="solid" id="disable-deployment-tooltip" />
               </div>
               : !blockDeployment ?
                 <div className="flex flex1 justifyContent--center alignItems--center">
