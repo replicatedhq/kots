@@ -549,10 +549,14 @@ func (s *KOTSStore) upsertAppVersion(tx *sql.Tx, appID string, sequence int64, b
 		// there's a small chance this is not optimal, but no current code path
 		// will support multiple downstreams, so this is cleaner here for now
 
+		hasStrictPreflights, err := kotsutil.HasStrictPreflights(renderedPreflight)
+		if err != nil {
+			return errors.Wrap(err, "failed to check strict preflights from spec")
+		}
 		downstreamStatus := types.VersionPending
 		if baseSequence == nil && kotsKinds.IsConfigurable() { // initial version should always require configuration (if exists) even if all required items are already set and have values (except for automated installs, which can override this later)
 			downstreamStatus = types.VersionPendingConfig
-		} else if kotsKinds.HasPreflights() && (!skipPreflights || kotsutil.HasStrictPreflights(renderedPreflight)) {
+		} else if kotsKinds.HasPreflights() && (!skipPreflights || hasStrictPreflights) {
 			downstreamStatus = types.VersionPendingPreflight
 		}
 		if baseSequence != nil { // only check if the version needs configuration for later versions (not the initial one) since the config is always required for the initial version (except for automated installs, which can override that later)

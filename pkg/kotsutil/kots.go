@@ -165,39 +165,39 @@ func (k *KotsKinds) HasPreflights() bool {
 	return len(k.Preflight.Spec.Analyzers) > 0
 }
 
-func HasStrictPreflights(preflight *troubleshootv1beta2.Preflight) bool {
+func HasStrictPreflights(preflight *troubleshootv1beta2.Preflight) (bool, error) {
 	if preflight == nil {
-		return false
+		return false, nil
 	}
 
-	marshalledAnalyzers, err := json.Marshal(preflight.Spec.Analyzers)
+	marshalledAnalyzers, err := json.Marshal(preflight.Spec.Analyzers) // marshall and remove nil Analyzers eg result: "[{\"clusterVersion\":{\"exclude\":\"\",\"strict\":\"false\",\"outcomes\":null}}]"
 	if err != nil {
-		return false
+		return false, errors.Wrap(err, "error while marshalling preflight.Spec.Analyzers")
 	}
 
 	analyzersMap := []map[string]interface{}{}
-	err = json.Unmarshal(marshalledAnalyzers, &analyzersMap)
+	err = json.Unmarshal(marshalledAnalyzers, &analyzersMap) // Unmarshall again so we can loop over non nil analyzers
 	if err != nil {
-		return false
+		return false, errors.Wrap(err, "error while un-marshalling marshalledAnalyzers")
 	}
 
 	// analyzerMap will ignore empty Analyzers and loop around Analyzer with data
-	for _, analyzers := range analyzersMap {
-		for _, analyzer := range analyzers {
+	for _, analyzers := range analyzersMap { // for each analyzers: map["clusterVersion": map[string]interface{} ["exclude": "", "strict": "true", "outcomes": nil]
+		for _, analyzer := range analyzers { // for each analyzeMeta: map[string]interface{} ["exclude": "", "strict": "true", "outcomes": nil]
 			marshalledAnalyzer, err := json.Marshal(analyzer)
 			if err != nil {
-				return false
+				return false, errors.Wrap(err, "error while marshalling analyzer")
 			}
 			// return Analyzer.Strict which can be extraceted from AnalyzeMeta
 			analyzeMeta := troubleshootv1beta2.AnalyzeMeta{}
 			err = json.Unmarshal(marshalledAnalyzer, &analyzeMeta)
 			if err != nil {
-				return false
+				return false, errors.Wrap(err, "error while un-marshalling marshalledAnalyzers")
 			}
-			return analyzeMeta.Strict.BoolOrDefaultFalse()
+			return analyzeMeta.Strict.BoolOrDefaultFalse(), nil
 		}
 	}
-	return false
+	return false, nil
 }
 
 func IsStrictPreflightFailing(preflightResult *troubleshootpreflight.UploadPreflightResults) bool {

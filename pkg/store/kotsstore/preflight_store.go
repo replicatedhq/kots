@@ -156,13 +156,17 @@ func (s *KOTSStore) hasFailingStrictPreflights(preflightSpecStr sql.NullString, 
 }
 
 func (s *KOTSStore) hasStrictPreflights(preflightSpecStr sql.NullString) (bool, error) {
+	hasStrictPreflights := false
 	if preflightSpecStr.Valid && preflightSpecStr.String != "" {
 		preflight, err := kotsutil.LoadPreflightFromContents([]byte(preflightSpecStr.String))
 		if err != nil {
 			return false, errors.Wrap(err, "failed to load preflights from spec")
 		}
-		return kotsutil.HasStrictPreflights(preflight), nil
+		hasStrictPreflights, err = kotsutil.HasStrictPreflights(preflight)
+		if err != nil {
+			return false, errors.Wrap(err, "failed to check strict preflights from spec")
+		}
 	}
 	// no preflight spec, so return false, nil
-	return false, nil
+	return hasStrictPreflights, nil
 }

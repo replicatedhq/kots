@@ -51,17 +51,20 @@ func TestKotsKinds_HasStrictPreflights(t *testing.T) {
 		name      string
 		preflight *troubleshootv1beta2.Preflight
 		want      bool
+		wantErr   bool
 	}{
 		{
 			name:      "expect false when preflight is nil",
 			preflight: nil,
 			want:      false,
+			wantErr:   false,
 		}, {
 			name: "expect false when preflight spec is empty",
 			preflight: &troubleshootv1beta2.Preflight{
 				Spec: troubleshootv1beta2.PreflightSpec{},
 			},
-			want: false,
+			want:    false,
+			wantErr: false,
 		}, {
 			name: "expect false when preflight spec's analyzers is nil",
 			preflight: &troubleshootv1beta2.Preflight{
@@ -69,7 +72,8 @@ func TestKotsKinds_HasStrictPreflights(t *testing.T) {
 					Analyzers: nil,
 				},
 			},
-			want: false,
+			want:    false,
+			wantErr: false,
 		}, {
 			name: "expect false when preflight spec's analyzers is empty",
 			preflight: &troubleshootv1beta2.Preflight{
@@ -77,7 +81,8 @@ func TestKotsKinds_HasStrictPreflights(t *testing.T) {
 					Analyzers: []*troubleshootv1beta2.Analyze{},
 				},
 			},
-			want: false,
+			want:    false,
+			wantErr: false,
 		}, {
 			name: "expect false when preflight spec's analyzser has nil anlyzer",
 			preflight: &troubleshootv1beta2.Preflight{
@@ -89,7 +94,8 @@ func TestKotsKinds_HasStrictPreflights(t *testing.T) {
 					},
 				},
 			},
-			want: false,
+			want:    false,
+			wantErr: false,
 		}, {
 			name: "expect false when preflight spec's analyzser has anlyzer with strict str: false",
 			preflight: &troubleshootv1beta2.Preflight{
@@ -101,7 +107,8 @@ func TestKotsKinds_HasStrictPreflights(t *testing.T) {
 					},
 				},
 			},
-			want: false,
+			want:    false,
+			wantErr: false,
 		}, {
 			name: "expect false when preflight spec's analyzser has anlyzer with strict bool: false",
 			preflight: &troubleshootv1beta2.Preflight{
@@ -113,7 +120,8 @@ func TestKotsKinds_HasStrictPreflights(t *testing.T) {
 					},
 				},
 			},
-			want: false,
+			want:    false,
+			wantErr: false,
 		}, {
 			name: "expect false when preflight spec's analyzser has anlyzer with strict str: invalid",
 			preflight: &troubleshootv1beta2.Preflight{
@@ -125,7 +133,8 @@ func TestKotsKinds_HasStrictPreflights(t *testing.T) {
 					},
 				},
 			},
-			want: false,
+			want:    false,
+			wantErr: false,
 		}, {
 			name: "expect true when preflight spec's analyzser has anlyzer with strict str: true",
 			preflight: &troubleshootv1beta2.Preflight{
@@ -137,7 +146,8 @@ func TestKotsKinds_HasStrictPreflights(t *testing.T) {
 					},
 				},
 			},
-			want: true,
+			want:    true,
+			wantErr: false,
 		}, {
 			name: "expect true when preflight spec's analyzer has anlyzer with strict bool: true",
 			preflight: &troubleshootv1beta2.Preflight{
@@ -149,7 +159,8 @@ func TestKotsKinds_HasStrictPreflights(t *testing.T) {
 					},
 				},
 			},
-			want: true,
+			want:    true,
+			wantErr: false,
 		}, {
 			name: "expect true when preflight spec's analyzer has anlyzer with strict int: 1",
 			preflight: &troubleshootv1beta2.Preflight{
@@ -161,7 +172,8 @@ func TestKotsKinds_HasStrictPreflights(t *testing.T) {
 					},
 				},
 			},
-			want: true,
+			want:    true,
+			wantErr: false,
 		}, {
 			name: "expect false when preflight spec's analyzer has anlyzer with strict int: 0",
 			preflight: &troubleshootv1beta2.Preflight{
@@ -173,12 +185,18 @@ func TestKotsKinds_HasStrictPreflights(t *testing.T) {
 					},
 				},
 			},
-			want: false,
+			want:    false,
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := HasStrictPreflights(tt.preflight); got != tt.want {
+			got, err := HasStrictPreflights(tt.preflight)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("HasStrictPreflights error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
 				t.Errorf("HasStrictPreflights() = %v, want %v", got, tt.want)
 			}
 		})
