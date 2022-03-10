@@ -2,8 +2,8 @@ name: build-test
 
 on:
   pull_request_target:
-  # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets. 
-  # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+    # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
+    # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
     types: [opened, synchronize, reopened, labeled]
 
 concurrency:
@@ -13,7 +13,7 @@ concurrency:
 jobs:
   can-run-ci:
     runs-on: ubuntu-18.04
-    # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets. 
+    # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
     # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
     # only run this workflow if:
     #   not a fork or user is dependabot or PR is labeled with '@actions/safe-to-test'
@@ -30,8 +30,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: [can-run-ci]
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
       - name: Test Okteto development environment
         uses: replicatedhq/action-okteto-test@main
         with:
@@ -42,15 +40,23 @@ jobs:
   build-web:
     runs-on: ubuntu-18.04
     needs: [can-run-ci]
+    env:
+      YARN_CACHE_FOLDER: /home/runner/work/kots/.cache/yarn
     steps:
-      # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets. 
+      # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
       # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
-      # this action checksout the remote branch and runs CI
+      # this action checks out the remote branch and runs CI
       - name: Checkout
         uses: actions/checkout@v2
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
+
+      - uses: actions/cache@v2
+        with:
+          path: ${{ env.YARN_CACHE_FOLDER }}
+          key: ${{ runner.os }}-kotsweb-nodecache-${{ hashFiles('./web/yarn.lock') }}
+          restore-keys: ${{ runner.os }}-kotsweb-nodecache-
 
       - name: Get tags
         id: get_tag
@@ -74,103 +80,56 @@ jobs:
           path: ./web/dist
 
 
-  build-kots:
-    runs-on: ubuntu-18.04
-    needs: [can-run-ci, build-web]
-
-    steps:
-      - uses: actions/setup-go@v2
-        with:
-          go-version: '^1.17.4'
-
-      - name: setup env
-        run: |
-          echo "GOPATH=$(go env GOPATH)" >> $GITHUB_ENV
-          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
-        shell: bash
-
-      - id: go-cache-paths
-        run: |
-          echo "::set-output name=go-build::$(go env GOCACHE)"
-          echo "::set-output name=go-mod::$(go env GOMODCACHE)"
-
-      # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets. 
-      # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
-      # this action checksout the remote branch and runs CI
-      - uses: actions/checkout@v2
-        with:
-          ref: ${{github.event.pull_request.head.ref}}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
-
-      - uses: actions/cache@v2
-        with:
-          path: ${{ steps.go-cache-paths.outputs.go-build }}
-          key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
-      - uses: actions/cache@v2
-        with:
-          path: ${{ steps.go-cache-paths.outputs.go-mod }}
-          key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
-
-      - name: Download web artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: web
-          path: ./web/dist
-      - run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make ci-test kots
-      - uses: actions/upload-artifact@v2
-        with:
-          name: kots
-          path: bin/kots
-
-
   build-kotsadm:
     runs-on: ubuntu-18.04
-    needs: [can-run-ci, build-web, build-kots]
+    needs: [can-run-ci, build-web]
     steps:
-      - uses: actions/setup-go@v2
-        with:
-          go-version: '^1.17.4'
-
-      - name: setup env
-        run: |
-          echo "GOPATH=$(go env GOPATH)" >> $GITHUB_ENV
-          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
-        shell: bash
-
-      - id: go-cache-paths
-        run: |
-          echo "::set-output name=go-build::$(go env GOCACHE)"
-          echo "::set-output name=go-mod::$(go env GOMODCACHE)"
-
-      # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets. 
+      # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
       # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
       # this action creates a branch based on remote branch and runs the tests
       - uses: actions/checkout@v2
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
-      - uses: actions/cache@v2
-        with:
-          path: ${{ steps.go-cache-paths.outputs.go-build }}
-          key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
-      - uses: actions/cache@v2
-        with:
-          path: ${{ steps.go-cache-paths.outputs.go-mod }}
-          key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
 
-      - name: Download kots artifact
-        uses: actions/download-artifact@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '^1.17.4'
+
+      - name: setup env
+        run: |
+          echo "GOPATH=$(go env GOPATH)" >> $GITHUB_ENV
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+
+      - id: go-cache-paths
+        run: |
+          echo "::set-output name=go-build::$(go env GOCACHE)"
+          echo "::set-output name=go-mod::$(go env GOMODCACHE)"
+
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ${{ steps.go-cache-paths.outputs.go-build }}
+            ${{ steps.go-cache-paths.outputs.go-mod }}
+          key: ${{ runner.os }}-kots-gocache-${{ hashFiles('./kurl_proxy/go.sum') }}
+          restore-keys: ${{ runner.os }}-kots-gocache-
+
+      - name: Build kots
+        run: |
+          export $(cat .image.env | sed 's/#.*//g' | xargs) && make ci-test kots
+          chmod +x bin/kots
+      - uses: actions/upload-artifact@v2
         with:
           name: kots
-          path: bin/
-      - run: chmod +x bin/kots
+          path: bin/kots
 
       - name: Download web artifact
         uses: actions/download-artifact@v2
         with:
           name: web
           path: ./web/dist
-      - run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make build
+      - name: Build kotsadm
+        run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make build
       - name: build and push kotsadm for e2e
         uses: docker/build-push-action@v2
         with:
@@ -184,6 +143,14 @@ jobs:
     runs-on: ubuntu-18.04
     needs: [can-run-ci]
     steps:
+      # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
+      # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+      # this action creates a branch based on remote branch and runs the tests
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+
       - uses: actions/setup-go@v2
         with:
           go-version: '^1.17.4'
@@ -199,21 +166,14 @@ jobs:
           echo "::set-output name=go-build::$(go env GOCACHE)"
           echo "::set-output name=go-mod::$(go env GOMODCACHE)"
 
-      # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets. 
-      # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
-      # this action creates a branch based on remote branch and runs the tests
-      - uses: actions/checkout@v2
-        with:
-          ref: ${{github.event.pull_request.head.ref}}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
       - uses: actions/cache@v2
         with:
-          path: ${{ steps.go-cache-paths.outputs.go-build }}
-          key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
-      - uses: actions/cache@v2
-        with:
-          path: ${{ steps.go-cache-paths.outputs.go-mod }}
-          key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
+          path: |
+            ${{ steps.go-cache-paths.outputs.go-build }}
+            ${{ steps.go-cache-paths.outputs.go-mod }}
+          key: ${{ runner.os }}-kurlproxy-gocache-${{ hashFiles('./kurl_proxy/go.sum') }}
+          restore-keys: ${{ runner.os }}-kurlproxy-gocache-
+
 
       - run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C kurl_proxy build
 
@@ -230,37 +190,10 @@ jobs:
     runs-on: ubuntu-18.04
     needs: [can-run-ci]
     steps:
-      - uses: actions/setup-go@v2
-        with:
-          go-version: '^1.17.4'
-
-      - name: setup env
-        run: |
-          echo "GOPATH=$(go env GOPATH)" >> $GITHUB_ENV
-          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
-        shell: bash
-
-      - id: go-cache-paths
-        run: |
-          echo "::set-output name=go-build::$(go env GOCACHE)"
-          echo "::set-output name=go-mod::$(go env GOMODCACHE)"
-
-      # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets. 
-      # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
-      # this action creates a branch based on remote branch and runs the tests
       - uses: actions/checkout@v2
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
-      - uses: actions/cache@v2
-        with:
-          path: ${{ steps.go-cache-paths.outputs.go-build }}
-          key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
-      - uses: actions/cache@v2
-        with:
-          path: ${{ steps.go-cache-paths.outputs.go-mod }}
-          key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
-
       - name: build and push migrations for e2e
         uses: docker/build-push-action@v2
         with:
@@ -275,6 +208,9 @@ jobs:
     needs: [can-run-ci]
     steps:
       - uses: actions/checkout@v2
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
 
       - name: load environment variables from .image.env
         uses: falti/dotenv-action@v0.2
@@ -294,6 +230,9 @@ jobs:
     needs: [can-run-ci]
     steps:
       - uses: actions/checkout@v2
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
 
       - name: load environment variables from .image.env
         uses: falti/dotenv-action@v0.2
@@ -310,16 +249,22 @@ jobs:
 
   validate-smoke-test:
     runs-on: ubuntu-18.04
-    needs: [can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
+    needs: [can-run-ci, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
     strategy:
       fail-fast: false
       matrix:
         k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
     steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+
       - uses: replicatedhq/action-k3s@main
         id: k3s
         with:
           version: ${{ matrix.k8s_version }}
+          ports: '30000:30000'
 
       - name: download kots binary
         uses: actions/download-artifact@v2
@@ -333,12 +278,10 @@ jobs:
         with:
           node-version: '17.x'
 
-      - name: setup testIM
+      - name: setup testim
         run: npm i -g @testim/testim-cli
-        shell: bash
 
       ## testim tests
-
       - name: aws credentials setup
         run: |
           cat > aws-credentials << EOL
@@ -388,7 +331,6 @@ jobs:
       - name: get testim branch
         if: startsWith(github.ref, 'refs/heads/')
         id: get_testim_branch
-        shell: bash
         run: |
           BRANCH=${GITHUB_REF/refs\/heads\//}
           if [ "$BRANCH" == "main" ]; then
@@ -399,9 +341,10 @@ jobs:
       - name: execute smoke test
         run: |
           set +e
-          ./bin/kots admin-console -n smoke-test &
-          ADMIN_CONSOLE_PID=$!
-          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite smoke-test --tunnel --tunnel-port 8800
+          kubectl apply -f deploy/build-test-pipeline/selenium-standalone.yaml -n smoke-test
+          kubectl wait --timeout=60s -n smoke-test deployment/grid --for condition=available
+          sleep 4
+          testim --turbo-mode --base-url kotsadm:3000 --host localhost --port 30000 --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite smoke-test
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
             echo "------pods:"
@@ -413,25 +356,27 @@ jobs:
             echo "------velero logs"
             kubectl -n velero logs deployment/velero
           fi
-          kill $ADMIN_CONSOLE_PID
           exit $EXIT_CODE
-
-      - name: delete velero namespace
-        run: kubectl delete namespace velero
 
 
   validate-minimal-rbac:
     runs-on: ubuntu-18.04
-    needs: [can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
+    needs: [can-run-ci, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
     strategy:
       fail-fast: false
       matrix:
         k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
     steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+
       - uses: replicatedhq/action-k3s@main
         id: k3s
         with:
           version: ${{ matrix.k8s_version }}
+          ports: '30000:30000'
 
       - name: download kots binary
         uses: actions/download-artifact@v2
@@ -445,16 +390,13 @@ jobs:
         with:
           node-version: '17.x'
 
-      - name: setup testIM
+      - name: setup testim
         run: npm i -g @testim/testim-cli
-        shell: bash
 
       ## testim tests
-
       - name: get testim branch
         if: startsWith(github.ref, 'refs/heads/')
         id: get_testim_branch
-        shell: bash
         run: |
           BRANCH=${GITHUB_REF/refs\/heads\//}
           if [ "$BRANCH" == "main" ]; then
@@ -476,32 +418,40 @@ jobs:
       - name: execute suite minimal-rbac
         run: |
           set +e
-          ./bin/kots admin-console -n minimal-rbac &
-          ADMIN_CONSOLE_PID=$!
-          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite minimal-rbac --tunnel --tunnel-port 8800
+          kubectl apply -f deploy/build-test-pipeline/selenium-standalone.yaml -n minimal-rbac
+          kubectl wait --timeout=60s -n minimal-rbac deployment/grid --for condition=available
+          sleep 4
+          testim --turbo-mode --base-url kotsadm:3000 --host localhost --port 30000 --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite minimal-rbac
           EXIT_CODE=$?
-          echo "------pods:"
-          kubectl -n minimal-rbac get pods
-          echo "------kotsadm logs"
-          kubectl -n minimal-rbac logs deployment/kotsadm
-          echo "------previous kotsadm logs"
-          kubectl -n minimal-rbac logs -p deployment/kotsadm
-          kill $ADMIN_CONSOLE_PID
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "------pods:"
+            kubectl -n minimal-rbac get pods
+            echo "------kotsadm logs"
+            kubectl -n minimal-rbac logs deployment/kotsadm
+            echo "------previous kotsadm logs"
+            kubectl -n minimal-rbac logs -p deployment/kotsadm
+          fi
           exit $EXIT_CODE
 
 
   validate-backup-and-restore:
     runs-on: ubuntu-18.04
-    needs: [can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
+    needs: [can-run-ci, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
     strategy:
       fail-fast: false
       matrix:
         k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
     steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+
       - uses: replicatedhq/action-k3s@main
         id: k3s
         with:
           version: ${{ matrix.k8s_version }}
+          ports: '30000:30000'
 
       - name: download kots binary
         uses: actions/download-artifact@v2
@@ -515,12 +465,11 @@ jobs:
         with:
           node-version: '17.x'
 
-      - name: setup testIM
+      - name: setup testim
         run: npm i -g @testim/testim-cli
         shell: bash
 
       ## testim tests
-
       - name: aws credentials setup
         run: |
           cat > aws-credentials << EOL
@@ -548,7 +497,6 @@ jobs:
       - name: get testim branch
         if: startsWith(github.ref, 'refs/heads/')
         id: get_testim_branch
-        shell: bash
         run: |
           BRANCH=${GITHUB_REF/refs\/heads\//}
           if [ "$BRANCH" == "main" ]; then
@@ -570,32 +518,40 @@ jobs:
       - name: execute suite backup-and-restore
         run: |
           set +e
-          ./bin/kots admin-console -n backup-and-restore &
-          ADMIN_CONSOLE_PID=$!
-          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite backup-and-restore --tunnel --tunnel-port 8800
+          kubectl apply -f deploy/build-test-pipeline/selenium-standalone.yaml -n backup-and-restore
+          kubectl wait --timeout=60s -n backup-and-restore deployment/grid --for condition=available
+          sleep 4
+          testim --turbo-mode --base-url kotsadm:3000 --host localhost --port 30000 --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite backup-and-restore
           EXIT_CODE=$?
-          echo "------pods:"
-          kubectl -n backup-and-restore get pods
-          echo "------kotsadm logs"
-          kubectl -n backup-and-restore logs deployment/kotsadm
-          echo "------previous kotsadm logs"
-          kubectl -n backup-and-restore logs -p deployment/kotsadm
-          kill $ADMIN_CONSOLE_PID
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "------pods:"
+            kubectl -n backup-and-restore get pods
+            echo "------kotsadm logs"
+            kubectl -n backup-and-restore logs deployment/kotsadm
+            echo "------previous kotsadm logs"
+            kubectl -n backup-and-restore logs -p deployment/kotsadm
+          fi
           exit $EXIT_CODE
 
 
   validate-no-required-config:
     runs-on: ubuntu-18.04
-    needs: [can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
+    needs: [can-run-ci, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
     strategy:
       fail-fast: false
       matrix:
         k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
     steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+
       - uses: replicatedhq/action-k3s@main
         id: k3s
         with:
           version: ${{ matrix.k8s_version }}
+          ports: '30000:30000'
 
       - name: download kots binary
         uses: actions/download-artifact@v2
@@ -609,16 +565,13 @@ jobs:
         with:
           node-version: '17.x'
 
-      - name: setup testIM
+      - name: setup testim
         run: npm i -g @testim/testim-cli
-        shell: bash
 
       ## testim tests
-
       - name: get testim branch
         if: startsWith(github.ref, 'refs/heads/')
         id: get_testim_branch
-        shell: bash
         run: |
           BRANCH=${GITHUB_REF/refs\/heads\//}
           if [ "$BRANCH" == "main" ]; then
@@ -644,36 +597,43 @@ jobs:
           APP_NAME: no-required-config
         run: |
           set +e
-          ./bin/kots admin-console -n $APP_NAME &
-          ADMIN_CONSOLE_PID=$!
-
-          sleep 5
+          kubectl apply -f deploy/build-test-pipeline/selenium-standalone.yaml -n $APP_NAME
+          kubectl wait --timeout=60s -n $APP_NAME deployment/grid --for condition=available
+          ./bin/kots admin-console -n $APP_NAME deployment/grid &
+          sleep 4
           echo "KOTSADM_API_TOKEN=`kubectl -n $APP_NAME get secret kotsadm-authstring -o json | jq -r '.data."kotsadm-authstring"' | base64 -d`" > .env
 
-          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite $APP_NAME --tunnel --tunnel-port 8800
+          testim --turbo-mode --base-url kotsadm:3000 --host localhost --port 30000 --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite $APP_NAME
           EXIT_CODE=$?
-          echo "------pods:"
-          kubectl -n no-config get pods
-          echo "------kotsadm logs"
-          kubectl -n $APP_NAME logs deployment/kotsadm
-          echo "------previous kotsadm logs"
-          kubectl -n $APP_NAME logs -p deployment/kotsadm
-          kill $ADMIN_CONSOLE_PID
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "------pods:"
+            kubectl -n no-config get pods
+            echo "------kotsadm logs"
+            kubectl -n $APP_NAME logs deployment/kotsadm
+            echo "------previous kotsadm logs"
+            kubectl -n $APP_NAME logs -p deployment/kotsadm
+          fi
           exit $EXIT_CODE
 
 
   validate-multi-namespace:
     runs-on: ubuntu-18.04
-    needs: [can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
+    needs: [can-run-ci, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
     strategy:
       fail-fast: false
       matrix:
         k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
     steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+
       - uses: replicatedhq/action-k3s@main
         id: k3s
         with:
           version: ${{ matrix.k8s_version }}
+          ports: '30000:30000'
 
       - name: download kots binary
         uses: actions/download-artifact@v2
@@ -687,12 +647,11 @@ jobs:
         with:
           node-version: '17.x'
 
-      - name: setup testIM
+      - name: setup testim
         run: npm i -g @testim/testim-cli
         shell: bash
 
       ## testim tests
-
       - name: get testim branch
         if: startsWith(github.ref, 'refs/heads/')
         id: get_testim_branch
@@ -723,10 +682,10 @@ jobs:
           SUITE_NAME: multi-namespace
         run: |
           set +e
+          kubectl apply -f deploy/build-test-pipeline/selenium-standalone.yaml -n $APP_NAME
+          kubectl wait --timeout=60s -n $APP_NAME deployment/grid --for condition=available
           ./bin/kots admin-console -n $APP_NAME &
-          ADMIN_CONSOLE_PID=$!
-
-          sleep 5
+          sleep 4
           echo "KOTSADM_API_TOKEN=`kubectl -n $APP_NAME get secret kotsadm-authstring -o json | jq -r '.data."kotsadm-authstring"' | base64 -d`" > .env
 
           # HACK: with limitted RBAC secrets are not applied by kotsadm
@@ -736,21 +695,22 @@ jobs:
           kubectl -n redis-test create secret generic multi-namespace-yeti-redis-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
           kubectl -n postgres-test create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
 
-          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite $SUITE_NAME --tunnel --tunnel-port 8800
+          testim --turbo-mode --base-url kotsadm:3000 --host localhost --port 30000 --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite $SUITE_NAME
           EXIT_CODE=$?
-          echo "------pods:"
-          kubectl get pods -A
-          echo "------kotsadm logs"
-          kubectl -n $APP_NAME logs deployment/kotsadm
-          echo "------previous kotsadm logs"
-          kubectl -n $APP_NAME logs -p deployment/kotsadm
-          kill $ADMIN_CONSOLE_PID
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "------pods:"
+            kubectl get pods -A
+            echo "------kotsadm logs"
+            kubectl -n $APP_NAME logs deployment/kotsadm
+            echo "------previous kotsadm logs"
+            kubectl -n $APP_NAME logs -p deployment/kotsadm
+          fi
           exit $EXIT_CODE
 
 
   validate-kots-pull:
     runs-on: ubuntu-18.04
-    needs: [can-run-ci, build-kots, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
+    needs: [can-run-ci, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
     strategy:
       fail-fast: false
       matrix:
@@ -760,6 +720,7 @@ jobs:
         id: k3s
         with:
           version: ${{ matrix.k8s_version }}
+          ports: '30000:30000'
 
       - name: download kots binary
         uses: actions/download-artifact@v2
@@ -819,11 +780,3 @@ jobs:
           done
 
           echo "All pods started"
-
-
-  # this job will validate that all validate-* jobs succeed
-  validate-success:
-    runs-on: ubuntu-18.04
-    needs: [validate-smoke-test, validate-minimal-rbac, validate-backup-and-restore, validate-no-required-config, validate-multi-namespace, validate-kots-pull]
-    steps:
-      - run: echo "Validate success"
