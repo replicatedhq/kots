@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -168,23 +169,32 @@ func HasStrictPreflights(preflight *troubleshootv1beta2.Preflight) bool {
 	if preflight == nil {
 		return false
 	}
-	for _, a := range preflight.Spec.Analyzers {
-		if (a.ClusterVersion != nil && a.ClusterVersion.Strict.BoolOrDefaultFalse()) ||
-			(a.StorageClass != nil && a.StorageClass.Strict.BoolOrDefaultFalse()) ||
-			(a.CustomResourceDefinition != nil && a.CustomResourceDefinition.Strict.BoolOrDefaultFalse()) ||
-			(a.Ingress != nil && a.Ingress.Strict.BoolOrDefaultFalse()) ||
-			(a.Secret != nil && a.Secret.Strict.BoolOrDefaultFalse()) ||
-			(a.ImagePullSecret != nil && a.ImagePullSecret.Strict.BoolOrDefaultFalse()) ||
-			(a.DeploymentStatus != nil && a.DeploymentStatus.Strict.BoolOrDefaultFalse()) ||
-			(a.StatefulsetStatus != nil && a.StatefulsetStatus.Strict.BoolOrDefaultFalse()) ||
-			(a.ContainerRuntime != nil && a.ContainerRuntime.Strict.BoolOrDefaultFalse()) ||
-			(a.Distribution != nil && a.Distribution.Strict.BoolOrDefaultFalse()) ||
-			(a.NodeResources != nil && a.NodeResources.Strict.BoolOrDefaultFalse()) ||
-			(a.TextAnalyze != nil && a.TextAnalyze.Strict.BoolOrDefaultFalse()) ||
-			(a.Postgres != nil && a.Postgres.Strict.BoolOrDefaultFalse()) ||
-			(a.Mysql != nil && a.Mysql.Strict.BoolOrDefaultFalse()) ||
-			(a.Redis != nil && a.Redis.Strict.BoolOrDefaultFalse()) {
-			return true
+
+	marshalledAnalyzers, err := json.Marshal(preflight.Spec.Analyzers)
+	if err != nil {
+		return false
+	}
+
+	analyzerMap := []map[string]interface{}{}
+	err = json.Unmarshal(marshalledAnalyzers, &analyzerMap)
+	if err != nil {
+		return false
+	}
+
+	// analyzerMap will ignore empty Analyzers and loop around Analyzer with data
+	for _, analyzers := range analyzerMap {
+		for _, analyzer := range analyzers {
+			marshalledV, err := json.Marshal(analyzer)
+			if err != nil {
+				return false
+			}
+			// return Analyzer.Strict which can be extraceted from AnalyzeMeta
+			analyzeMeta := troubleshootv1beta2.AnalyzeMeta{}
+			err = json.Unmarshal(marshalledV, &analyzeMeta)
+			if err != nil {
+				return false
+			}
+			return analyzeMeta.Strict.BoolOrDefaultFalse()
 		}
 	}
 	return false

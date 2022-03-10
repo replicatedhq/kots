@@ -37,6 +37,16 @@ func TestKotsKinds_HasStrictPreflights(t *testing.T) {
 			BoolVal: true,
 		},
 	}
+	analyzeMetaStrictFalseInt := troubleshootv1beta2.AnalyzeMeta{
+		Strict: multitype.BoolOrString{
+			StrVal: "0",
+		},
+	}
+	analyzeMetaStrictTrueInt := troubleshootv1beta2.AnalyzeMeta{
+		Strict: multitype.BoolOrString{
+			StrVal: "1",
+		},
+	}
 	tests := []struct {
 		name      string
 		preflight *troubleshootv1beta2.Preflight
@@ -140,6 +150,30 @@ func TestKotsKinds_HasStrictPreflights(t *testing.T) {
 				},
 			},
 			want: true,
+		}, {
+			name: "expect true when preflight spec's analyzer has anlyzer with strict int: 1",
+			preflight: &troubleshootv1beta2.Preflight{
+				Spec: troubleshootv1beta2.PreflightSpec{
+					Analyzers: []*troubleshootv1beta2.Analyze{
+						{
+							ClusterVersion: &troubleshootv1beta2.ClusterVersion{AnalyzeMeta: analyzeMetaStrictTrueInt},
+						},
+					},
+				},
+			},
+			want: true,
+		}, {
+			name: "expect false when preflight spec's analyzer has anlyzer with strict int: 0",
+			preflight: &troubleshootv1beta2.Preflight{
+				Spec: troubleshootv1beta2.PreflightSpec{
+					Analyzers: []*troubleshootv1beta2.Analyze{
+						{
+							ClusterVersion: &troubleshootv1beta2.ClusterVersion{AnalyzeMeta: analyzeMetaStrictFalseInt},
+						},
+					},
+				},
+			},
+			want: false,
 		},
 	}
 	for _, tt := range tests {
