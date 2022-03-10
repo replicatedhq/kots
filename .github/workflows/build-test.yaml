@@ -780,3 +780,10 @@ jobs:
           done
 
           echo "All pods started"
+
+  # this job will validate that all validate-* jobs succeed and is used for the github branch protection rule
+  validate-success:
+    runs-on: ubuntu-18.04
+    needs: [validate-smoke-test, validate-minimal-rbac, validate-backup-and-restore, validate-no-required-config, validate-multi-namespace, validate-kots-pull]
+    steps:
+      - run: echo "Validate success"
