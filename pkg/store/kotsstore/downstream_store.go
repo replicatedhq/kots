@@ -208,7 +208,8 @@ func (s *KOTSStore) GetCurrentVersion(appID string, clusterID string) (*downstre
 	av.upstream_released_at,
 	av.kots_installation_spec,
 	av.kots_app_spec,
-	av.version_label
+	av.version_label,
+	av.preflight_spec
  FROM
 	 app_downstream_version AS adv
  LEFT JOIN
@@ -282,7 +283,8 @@ func (s *KOTSStore) GetAppVersions(appID string, clusterID string, downloadedOnl
 	av.upstream_released_at,
 	av.kots_installation_spec,
 	av.kots_app_spec,
-	av.version_label
+	av.version_label,
+	av.preflight_spec
  FROM
 	 app_downstream_version AS adv
  LEFT JOIN
@@ -383,6 +385,7 @@ func (s *KOTSStore) downstreamVersionFromRow(appID string, row scannable) (*down
 	var preflightResult sql.NullString
 	var preflightResultCreatedAt persistence.NullStringTime
 	var preflightSkipped sql.NullBool
+	var preflightSpecStr sql.NullString
 	var commitURL sql.NullString
 	var gitDeployable sql.NullBool
 	var hasError sql.NullBool
@@ -409,6 +412,7 @@ func (s *KOTSStore) downstreamVersionFromRow(appID string, row scannable) (*down
 		&kotsInstallationSpecStr,
 		&kotsAppSpecStr,
 		&versionLabel,
+		&preflightSpecStr,
 	); err != nil {
 		return nil, errors.Wrap(err, "failed to scan")
 	}
@@ -484,6 +488,10 @@ func (s *KOTSStore) downstreamVersionFromRow(appID string, row scannable) (*down
 	}
 
 	v.NeedsKotsUpgrade = needsKotsUpgrade(v.KotsApplication)
+	v.HasFailingStrictPreflights, err = s.hasFailingStrictPreflights(preflightSpecStr, preflightResult)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get strict preflight results")
+	}
 
 	return v, nil
 }

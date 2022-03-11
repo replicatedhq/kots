@@ -180,8 +180,8 @@ type VersionStore interface {
 	GetAppVersionBaseSequence(appID string, versionLabel string) (int64, error)
 	GetAppVersionBaseArchive(appID string, versionLabel string) (string, int64, error)
 	CreatePendingDownloadAppVersion(appID string, update upstreamtypes.Update, kotsApplication *kotsv1beta1.Application, license *kotsv1beta1.License) (int64, error)
-	UpdateAppVersion(appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) error
-	CreateAppVersion(appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) (int64, error)
+	UpdateAppVersion(appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) error
+	CreateAppVersion(appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error)
 	GetAppVersion(appID string, sequence int64) (*versiontypes.AppVersion, error)
 	GetLatestAppVersion(appID string, downloadedOnly bool) (*versiontypes.AppVersion, error)
 	GetAppVersionsAfter(appID string, sequence int64) ([]*versiontypes.AppVersion, error)
@@ -189,6 +189,7 @@ type VersionStore interface {
 	UpdateAppVersionInstallationSpec(appID string, sequence int64, spec kotsv1beta1.Installation) error
 	GetNextAppSequence(appID string) (int64, error)
 	GetCurrentUpdateCursor(appID string, channelID string) (string, string, error)
+	HasStrictPreflights(appID string, sequence int64) (bool, error)
 }
 
 type LicenseStore interface {

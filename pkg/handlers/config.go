@@ -568,7 +568,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 	}
 
 	if createNewVersion {
-		newSequence, err := store.GetStore().CreateAppVersion(updateApp.ID, &sequence, archiveDir, "Config Change", false, &version.DownstreamGitOps{})
+		newSequence, err := store.GetStore().CreateAppVersion(updateApp.ID, &sequence, archiveDir, "Config Change", false, &version.DownstreamGitOps{}, render.Renderer{})
 		if err != nil {
 			updateAppConfigResponse.Error = "failed to create an app version"
 			return updateAppConfigResponse, err
@@ -591,7 +591,17 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 		return updateAppConfigResponse, err
 	}
 
-	if !skipPreflights {
+	hasStrictPreflights, err := store.GetStore().HasStrictPreflights(updateApp.ID, sequence)
+	if err != nil {
+		updateAppConfigResponse.Error = "failed to check if version has strict preflights"
+		return updateAppConfigResponse, err
+	}
+
+	if hasStrictPreflights && skipPreflights {
+		logger.Warnf("preflights will not be skipped, strict preflights are set to %t", hasStrictPreflights)
+	}
+
+	if !skipPreflights || hasStrictPreflights {
 		if err := preflight.Run(updateApp.ID, updateApp.Slug, int64(sequence), updateApp.IsAirgap, archiveDir); err != nil {
 			updateAppConfigResponse.Error = errors.Cause(err).Error()
 			return updateAppConfigResponse, err

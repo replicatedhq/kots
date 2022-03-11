@@ -108,14 +108,14 @@ func Upload(path string, uploadOptions UploadOptions) (string, error) {
 		log.Silence()
 	}
 
-	log.ActionWithSpinner("Uploading local application to Admin Console")
-
 	// upload using http to the pod directly
 	req, err := createUploadRequest(archiveFilename, uploadOptions, fmt.Sprintf("%s/api/v1/upload", uploadOptions.Endpoint))
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to create upload request")
 	}
+
+	log.ActionWithSpinner("Uploading local application to Admin Console")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.FinishSpinnerWithError()
@@ -125,7 +125,11 @@ func Upload(path string, uploadOptions UploadOptions) (string, error) {
 
 	if resp.StatusCode != 200 {
 		log.FinishSpinnerWithError()
-		return "", errors.Errorf("unexpected status code: %d", resp.StatusCode)
+		b, _ := ioutil.ReadAll(resp.Body)
+		if len(b) > 0 {
+			log.Error(errors.New(string(b)))
+		}
+		return "", errors.Errorf("Unexpected response from the API: %d", resp.StatusCode)
 	}
 
 	b, err := ioutil.ReadAll(resp.Body)

@@ -15,6 +15,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
+	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/upstream"
@@ -237,14 +238,14 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		if afterKotsKinds.Installation.Spec.UpdateCursor == beforeCursor {
 			return
 		}
-		newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "Upstream Update", skipPreflights, &version.DownstreamGitOps{})
+		newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "Upstream Update", skipPreflights, &version.DownstreamGitOps{}, render.Renderer{})
 		if err != nil {
 			finalError = errors.Wrap(err, "failed to create version")
 			return
 		}
 		finalSequence = &newSequence
 	} else {
-		err := store.GetStore().UpdateAppVersion(a.ID, *update.AppSequence, &baseSequence, archiveDir, "Upstream Update", skipPreflights, &version.DownstreamGitOps{})
+		err := store.GetStore().UpdateAppVersion(a.ID, *update.AppSequence, &baseSequence, archiveDir, "Upstream Update", skipPreflights, &version.DownstreamGitOps{}, render.Renderer{})
 		if err != nil {
 			finalError = errors.Wrap(err, "failed to create version")
 			return
@@ -252,7 +253,17 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		finalSequence = update.AppSequence
 	}
 
-	if !skipPreflights {
+	hasStrictPreflights, err := store.GetStore().HasStrictPreflights(a.ID, *finalSequence)
+	if err != nil {
+		finalError = errors.Wrap(err, "failed to check if app preflight has strict analyzers")
+		return
+	}
+
+	if hasStrictPreflights && skipPreflights {
+		logger.Warnf("preflights will not be skipped, strict preflights are set to %t", hasStrictPreflights)
+	}
+
+	if !skipPreflights || hasStrictPreflights {
 		if err := preflight.Run(appID, a.Slug, *finalSequence, a.IsAirgap, archiveDir); err != nil {
 			finalError = errors.Wrap(err, "failed to run preflights")
 			return

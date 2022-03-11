@@ -16,6 +16,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
 )
 
@@ -153,14 +154,25 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "KOTS Upload", false, &version.DownstreamGitOps{})
+	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "KOTS Upload", uploadExistingAppRequest.SkipPreflights, &version.DownstreamGitOps{}, render.Renderer{})
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to create app version"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	if !uploadExistingAppRequest.SkipPreflights {
+	hasStrictPreflights, err := store.GetStore().HasStrictPreflights(a.ID, newSequence)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to check if app preflight has strict analyzers"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if hasStrictPreflights && uploadExistingAppRequest.SkipPreflights {
+		logger.Warnf("preflights will not be skipped, strict preflights are set to %t", hasStrictPreflights)
+	}
+
+	if !uploadExistingAppRequest.SkipPreflights || hasStrictPreflights {
 		if err := preflight.Run(a.ID, a.Slug, newSequence, a.IsAirgap, archiveDir); err != nil {
 			logger.Error(errors.Wrap(err, "failed to get run preflights"))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -185,6 +197,10 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 		if err := version.DeployVersion(a.ID, newSequence); err != nil {
 			logger.Error(errors.Wrap(err, "failed to deploy latest version"))
 			w.WriteHeader(http.StatusInternalServerError)
+			cause := errors.Cause(err)
+			if _, ok := cause.(util.ActionableError); ok {
+				w.Write([]byte(cause.Error()))
+			}
 			return
 		}
 	}

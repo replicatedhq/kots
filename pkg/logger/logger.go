@@ -66,3 +66,9 @@ func Debugf(template string, args ...interface{}) {
 	sugar := log.Sugar()
 	sugar.Debugf(template, args...)
 }
+
+func Warnf(template string, args ...interface{}) {
+	defer log.Sync()
+	sugar := log.Sugar()
+	sugar.Warnf(template, args...)
+}

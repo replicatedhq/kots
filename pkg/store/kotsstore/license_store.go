@@ -167,7 +167,7 @@ func (s *KOTSStore) createNewVersionForLicenseChange(tx *sql.Tx, appID string, b
 		return int64(0), errors.Wrap(err, "failed to render new version")
 	}
 
-	newSequence, err := s.createAppVersion(tx, appID, &baseSequence, archiveDir, "License Change", false, gitops)
+	newSequence, err := s.createAppVersion(tx, appID, &baseSequence, archiveDir, "License Change", false, gitops, renderer)
 	if err != nil {
 		return int64(0), errors.Wrap(err, "failed to create new version")
 	}

@@ -155,3 +155,24 @@ func (boolstr *BoolOrString) Fuzz(c fuzz.Continue) {
 		c.Fuzz(&boolstr.StrVal)
 	}
 }
+
+// BoolOrDefaultFalse returns bool val, if strValu is parsed returns parsed value  else false as default when parse error
+func (boolstr *BoolOrString) BoolOrDefaultFalse() bool {
+	val, err := boolstr.Bool()
+	if err != nil {
+		return false
+	}
+	return val
+}
+
+// Bool returns bool val, if strValu is parsed returns parsed value else false with parse error
+func (boolstr *BoolOrString) Bool() (bool, error) {
+	if boolstr.Type == Bool {
+		return boolstr.BoolVal, nil
+	}
+	parsed, err := strconv.ParseBool(boolstr.StrVal)
+	if err != nil {
+		return false, fmt.Errorf("failed to parse bool string(err: %v)", err)
+	}
+	return parsed, nil
+}

@@ -24,6 +24,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/registry"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
+	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
 	supportbundletypes "github.com/replicatedhq/kots/pkg/supportbundle/types"
@@ -247,7 +248,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		return errors.Wrap(err, "failed to set app is airgap the second time")
 	}
 
-	newSequence, err := store.GetStore().CreateAppVersion(a.ID, nil, tmpRoot, "Airgap Install", opts.SkipPreflights, &version.DownstreamGitOps{})
+	newSequence, err := store.GetStore().CreateAppVersion(a.ID, nil, tmpRoot, "Airgap Install", opts.SkipPreflights, &version.DownstreamGitOps{}, render.Renderer{})
 	if err != nil {
 		return errors.Wrap(err, "failed to create new version")
 	}
@@ -265,6 +266,21 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		return errors.Wrap(err, "failed to load kotskinds from path")
 	}
 
+	hasStrictPreflights, err := store.GetStore().HasStrictPreflights(a.ID, newSequence)
+	if err != nil {
+		return errors.Wrap(err, "failed to check if app preflight has strict analyzers")
+	}
+
+	if hasStrictPreflights && opts.SkipPreflights {
+		logger.Warnf("preflights will not be skipped, strict preflights are set to %t", hasStrictPreflights)
+	}
+
+	if !opts.SkipPreflights || hasStrictPreflights {
+		if err := preflight.Run(opts.PendingApp.ID, opts.PendingApp.Slug, newSequence, true, tmpRoot); err != nil {
+			return errors.Wrap(err, "failed to start preflights")
+		}
+	}
+
 	if opts.IsAutomated && kotsKinds.IsConfigurable() {
 		// bypass the config screen if no configuration is required
 		registrySettings := registrytypes.RegistrySettings{
@@ -279,29 +295,18 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 			return errors.Wrap(err, "failed to check if app needs configuration")
 		}
 		if !needsConfig {
-			if opts.SkipPreflights {
+			if opts.SkipPreflights && !hasStrictPreflights {
 				if err := version.DeployVersion(opts.PendingApp.ID, newSequence); err != nil {
 					return errors.Wrap(err, "failed to deploy version")
-				}
-			} else {
-				err := store.GetStore().SetDownstreamVersionPendingPreflight(opts.PendingApp.ID, newSequence)
-				if err != nil {
-					return errors.Wrap(err, "failed to set downstream version status to 'pending preflight'")
 				}
 			}
 		}
 	}
 
-	if !kotsKinds.IsConfigurable() && opts.SkipPreflights {
+	if !kotsKinds.IsConfigurable() && opts.SkipPreflights && !hasStrictPreflights {
 		// app is not configurable and preflights are skipped, so just deploy the app
 		if err := version.DeployVersion(opts.PendingApp.ID, newSequence); err != nil {
 			return errors.Wrap(err, "failed to deploy version")
-		}
-	}
-
-	if !opts.SkipPreflights {
-		if err := preflight.Run(opts.PendingApp.ID, opts.PendingApp.Slug, newSequence, true, tmpRoot); err != nil {
-			return errors.Wrap(err, "failed to start preflights")
 		}
 	}
 

@@ -328,7 +328,7 @@ func (s *OCIStore) CreatePendingDownloadAppVersion(appID string, update upstream
 	return newSequence, nil
 }
 
-func (s *OCIStore) UpdateAppVersion(appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) error {
+func (s *OCIStore) UpdateAppVersion(appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, render rendertypes.Renderer) error {
 	// make sure version exists first
 	if v, err := s.GetAppVersion(appID, sequence); err != nil {
 		return errors.Wrap(err, "failed to get app version")
@@ -343,7 +343,7 @@ func (s *OCIStore) UpdateAppVersion(appID string, sequence int64, baseSequence *
 	return nil
 }
 
-func (s *OCIStore) CreateAppVersion(appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) (int64, error) {
+func (s *OCIStore) CreateAppVersion(appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error) {
 	// NOTE that this experimental store doesn't have a tx and it's possible that this
 	// could overwrite if there are multiple updates happening concurrently
 	newSequence, err := s.GetNextAppSequence(appID)
@@ -611,4 +611,9 @@ func (s *OCIStore) GetNextAppSequence(appID string) (int64, error) {
 
 func (s *OCIStore) GetCurrentUpdateCursor(appID string, channelID string) (string, string, error) {
 	return "", "", ErrNotImplemented
+}
+
+func (s *OCIStore) HasStrictPreflights(appID string, sequence int64) (bool, error) {
+	// TODO: Does OCIStore needs strict implemenation??
+	return false, nil
 }

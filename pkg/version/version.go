@@ -14,11 +14,13 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/store"
+	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/scheme"
 	applicationv1beta1 "sigs.k8s.io/application/api/v1beta1"
 )
@@ -49,6 +51,17 @@ func (d *DownstreamGitOps) CreateGitOpsDownstreamCommit(appID string, clusterID 
 
 // DeployVersion deploys the version for the given sequence
 func DeployVersion(appID string, sequence int64) error {
+	blocked, err := isBlockedDueToStrictPreFlights(appID, sequence)
+	if err != nil {
+		return errors.Wrap(err, "failed to validate strict preflights")
+	}
+	if blocked {
+		return util.ActionableError{
+			NoRetry: true,
+			Message: "Unable to deploy as preflight check's strict analyzer has failed",
+		}
+	}
+
 	db := persistence.MustGetDBSession()
 
 	tx, err := db.Begin()
@@ -198,4 +211,44 @@ func GetForwardedPortsFromAppSpec(appID string, sequence int64) ([]types.Forward
 	}
 
 	return ports, nil
+}
+
+func isBlockedDueToStrictPreFlights(appID string, sequence int64) (bool, error) {
+	status, err := store.GetStore().GetDownstreamVersionStatus(appID, sequence)
+	if err != nil {
+		return false, errors.Wrap(err, "failed get status")
+	}
+	preflightResult, err := store.GetStore().GetPreflightResults(appID, sequence)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to fetch preflight results")
+	}
+	hasStrictPreflights, err := store.GetStore().HasStrictPreflights(appID, sequence)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to check strict preflight")
+	}
+
+	// if preflights were not skipped and status is pending_preflight, poll till the status gets updated
+	// if preflights were skipped don't poll and check results
+	if hasStrictPreflights && !preflightResult.Skipped && status == storetypes.VersionPendingPreflight {
+		// set a timeout for polling.
+		err := wait.PollImmediate(2*time.Second, 15*time.Minute, func() (bool, error) {
+			versionStatus, err := store.GetStore().GetDownstreamVersionStatus(appID, sequence)
+			if err != nil {
+				return false, errors.Wrap(err, "failed get status")
+			}
+			if versionStatus != storetypes.VersionPendingPreflight {
+				return true, nil
+			}
+			return false, nil
+		})
+		if err != nil {
+			return false, errors.Wrap(err, "failed to poll for preflights results")
+		}
+		// refetch latest results
+		preflightResult, err = store.GetStore().GetPreflightResults(appID, sequence)
+		if err != nil {
+			return false, errors.Wrap(err, "failed to fetch preflight results")
+		}
+	}
+	return hasStrictPreflights && preflightResult.HasFailingStrictPreflights, nil
 }

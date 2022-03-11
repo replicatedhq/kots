@@ -4,6 +4,7 @@ import { Helmet } from "react-helmet";
 import { withRouter } from "react-router-dom";
 import Modal from "react-modal";
 import size from "lodash/size";
+import ReactTooltip from "react-tooltip"
 
 import PreflightRenderer from "./PreflightRenderer";
 import PreflightResultErrors from "./PreflightResultErrors";
@@ -31,7 +32,6 @@ class PreflightResultPage extends Component {
 
   async componentWillUnmount() {
     this.state.getKotsPreflightResultJob.stop();
-
     if (this.props.fromLicenseFlow && this.props.refetchAppsList) {
       await this.props.refetchAppsList();
     }
@@ -314,6 +314,7 @@ class PreflightResultPage extends Component {
 
     const preflightSkipped = preflightResultData?.skipped;
     const stopPolling = (preflightResultData?.result || preflightSkipped);
+    const blockDeployment = preflightResultData?.hasFailingStrictPreflights;
     let preflightJSON = {};
     if (preflightResultData?.result) {
       if (showSkipModal) {
@@ -347,11 +348,11 @@ class PreflightResultPage extends Component {
                   </div>
                 </div>
                 : null}
-              <p className="u-fontSize--header u-textColor--primary u-fontWeight--bold">
+              <p className="u-fontSize--jumbo2 u-textColor--primary u-fontWeight--bold">
                 Preflight checks
               </p>
-              <p className="u-fontWeight--medium u-lineHeight--more u-marginTop--5 u-marginBottom--10">
-                Preflight checks validate that your cluster will meet the minimum requirements. If your cluster does not meet the requirements you can still proceed, but understand that things might not work properly.
+              <p className="u-fontWeight--medium u-lineHeight--more u-marginTop--5 u-marginBottom--15">
+                Preflight checks validate that your cluster will meet the minimum requirements. If your cluster does not meet the requirements your application might not work properly. Some checks may be required which means your application will not be able to be deployed until they pass. Optional checks are recommended to ensure that the application you are installing will work as intended.
               </p>
               {!stopPolling && (
                 <div className="flex-column justifyContent--center alignItems--center flex1 u-minWidth--full">
@@ -360,12 +361,35 @@ class PreflightResultPage extends Component {
               )}
               {hasErrors && this.renderErrors(preflightJSON?.errors)}
               {stopPolling && !hasErrors &&
-                <div className="flex-column">
-                  <PreflightRenderer
-                    className="u-marginTop--20"
-                    results={preflightResultData.result}
-                    skipped={preflightSkipped}
-                  />
+                <div className="dashboard-card">
+                  <div className="flex flex1 justifyContent--spaceBetween alignItems--center">
+                    <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold">Results from your preflight checks</p>
+                    <div className="flex alignItems--center">
+                    {this.props.fromLicenseFlow && stopPolling && hasResult && preflightState !== "pass" ?
+                      <div className="flex alignItems--center">
+                        <div className="flex alignItems--center u-marginRight--20">
+                          <Link to={`/app/${slug}`} className="u-textColor--error u-textDecoration--underlineOnHover u-fontWeight--medium u-fontSize--small">Cancel</Link>
+                        </div>
+                        <div className="flex alignItems--center u-marginRight--20">
+                          <span className="icon clickable dashboard-card-check-update-icon u-marginRight--5" />
+                          <span className="replicated-link u-fontSize--small" onClick={this.rerunPreflights}>Re-run</span>
+                        </div>
+                      </div>
+                      : stopPolling ?
+                        <div className="flex alignItems--center u-marginRight--20">
+                          <span className="icon clickable dashboard-card-check-update-icon u-marginRight--5" />
+                          <span className="replicated-link u-fontSize--small" onClick={this.rerunPreflights}>Re-run</span>
+                        </div>
+                    : null}
+
+                    </div>
+                  </div>
+                  <div className="flex-column">
+                    <PreflightRenderer
+                      results={preflightResultData.result}
+                      skipped={preflightSkipped}
+                    />
+                  </div>
                 </div>
               }
             </div>
@@ -374,35 +398,31 @@ class PreflightResultPage extends Component {
 
         {this.props.fromLicenseFlow ?
           <div className="flex-auto flex justifyContent--flexEnd u-marginBottom--15">
-            {stopPolling && hasResult && preflightState !== "pass" &&
-              <div className="flex">
-                <Link to={`/app/${slug}`}>
-                  <button type="button" className="btn secondary u-marginRight--10">Cancel</button>
-                </Link>
-                <button type="button" className="btn secondary blue u-marginRight--10" onClick={this.rerunPreflights}>Re-run</button>
-              </div>
-            }
-
             {stopPolling ?
-              <button
-                type="button"
-                className="btn primary blue"
-                onClick={() => this.deployKotsDownstream(false)}
-              >
-                Continue
-              </button> :
-              <div className="flex flex1 justifyContent--center alignItems--center">
-                <span className="u-fontSize--normal u-fontWeight--medium u-textDecoration--underline u-textColor--bodyCopy u-marginTop--15 u-cursor--pointer" onClick={this.showSkipModal}>
-                  Ignore Preflights </span>
-              </div>}
+              <div>
+                <button
+                  type="button"
+                  className="btn primary blue"
+                  disabled={blockDeployment}
+                  onClick={() => this.deployKotsDownstream(false)}
+                >
+                  <span
+                    data-tip-disable={!blockDeployment}
+                    data-tip="Deployment is disabled as a strict analyzer in this version's preflight checks has failed or has not been run"
+                    data-for="disable-deployment-tooltip"
+                  >
+                    Continue
+                  </span>
+                </button>
+                <ReactTooltip effect="solid" id="disable-deployment-tooltip" />
+              </div>
+              : !blockDeployment ?
+                <div className="flex flex1 justifyContent--center alignItems--center">
+                  <span className="u-fontSize--normal u-fontWeight--medium u-textDecoration--underline u-textColor--bodyCopy u-marginTop--15 u-cursor--pointer" onClick={this.showSkipModal}>
+                    Ignore Preflights </span>
+                </div> : null}
           </div>
-          : stopPolling ?
-            <div className="flex-auto flex justifyContent--flexEnd u-marginBottom--15">
-              <button type="button" className="btn primary blue" onClick={this.rerunPreflights}>Re-run</button>
-            </div>
-            :
-            null
-        }
+        : null}
 
         {showSkipModal &&
           <SkipPreflightsModal

@@ -781,9 +781,91 @@ jobs:
 
           echo "All pods started"
 
+
+  validate-strict-preflight-checks:
+    runs-on: ubuntu-18.04
+    needs: [can-run-ci, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+
+      - uses: replicatedhq/action-k3s@main
+        id: k3s
+        with:
+          version: ${{ matrix.k8s_version }}
+          ports: '30000:30000'
+
+      - name: download kots binary
+        uses: actions/download-artifact@v2
+        with:
+          name: kots
+          path: bin/
+
+      - run: chmod +x bin/kots
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '17.x'
+
+      - name: setup testim
+        run: npm i -g @testim/testim-cli
+
+      ## testim tests
+      - name: get testim branch
+        if: startsWith(github.ref, 'refs/heads/')
+        id: get_testim_branch
+        run: |
+          BRANCH=${GITHUB_REF/refs\/heads\//}
+          if [ "$BRANCH" == "main" ]; then
+            BRANCH="master"
+          fi
+          echo ::set-output name=TESTIM_BRANCH::${BRANCH:-master}
+
+      - name: prepare strict-preflight-checks online install
+        env:
+          APP_NAME: strict-preflight-checks
+        run: |
+          ./bin/kots \
+          install $APP_NAME/automated \
+          --no-port-forward \
+          --namespace $APP_NAME \
+          --shared-password password \
+          --kotsadm-registry ttl.sh \
+          --kotsadm-namespace automated-${{ github.run_id }} \
+          --kotsadm-tag 2h
+
+      - name: execute suite strict-preflight-checks
+        env:
+          APP_NAME: strict-preflight-checks
+        run: |
+          set +e
+          kubectl apply -f deploy/build-test-pipeline/selenium-standalone.yaml -n $APP_NAME
+          kubectl wait --timeout=60s -n $APP_NAME deployment/grid --for condition=available
+          ./bin/kots admin-console -n $APP_NAME deployment/grid &
+          sleep 4
+          echo "KOTSADM_API_TOKEN=`kubectl -n $APP_NAME get secret kotsadm-authstring -o json | jq -r '.data."kotsadm-authstring"' | base64 -d`" > .env
+          testim --turbo-mode --base-url kotsadm:3000 --host localhost --port 30000 --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --branch `${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }}` --report-file testim-report.xml --suite $APP_NAME
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "------pods:"
+            kubectl -n no-config get pods
+            echo "------kotsadm logs"
+            kubectl -n $APP_NAME logs deployment/kotsadm
+            echo "------previous kotsadm logs"
+            kubectl -n $APP_NAME logs -p deployment/kotsadm
+          fi
+          exit $EXIT_CODE
+
+
   # this job will validate that all validate-* jobs succeed and is used for the github branch protection rule
   validate-success:
     runs-on: ubuntu-18.04
-    needs: [validate-smoke-test, validate-minimal-rbac, validate-backup-and-restore, validate-no-required-config, validate-multi-namespace, validate-kots-pull]
+    needs: [validate-smoke-test, validate-minimal-rbac, validate-backup-and-restore, validate-no-required-config, validate-multi-namespace, validate-kots-pull, validate-strict-preflight-checks]
     steps:
       - run: echo "Validate success"
