@@ -1,10 +1,15 @@
 name: pr-test
 
+# on:
+#   pull_request_target:
+#     # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
+#     # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+#     types: [opened, synchronize, reopened, labeled]
+
 on:
-  pull_request_target:
-    # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
-    # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
-    types: [opened, synchronize, reopened, labeled]
+  push:
+    branches:
+      - team-blue/sc-24474/preflights-strict
 
 concurrency:
   group: ${{ github.head_ref }}
