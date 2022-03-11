@@ -183,7 +183,7 @@ func HasStrictPreflights(preflight *troubleshootv1beta2.Preflight) (bool, error)
 
 	// analyzerMap will ignore empty Analyzers and loop around Analyzer with data
 	for _, analyzers := range analyzersMap { // for each analyzer: map["clusterVersion": map[string]interface{} ["exclude": "", "strict": "true", "outcomes": nil]
-		for _, analyzer := range analyzers { // for each analyzeMeta: map[string]interface{} ["exclude": "", "strict": "true", "outcomes": nil]
+		for _, analyzer := range analyzers { // for each analyzerMeta: map[string]interface{} ["exclude": "", "strict": "true", "outcomes": nil]
 			marshalledAnalyzer, err := json.Marshal(analyzer)
 			if err != nil {
 				return false, errors.Wrap(err, "error while marshalling analyzer")
