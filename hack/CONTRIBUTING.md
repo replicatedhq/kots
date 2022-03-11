@@ -7,13 +7,18 @@ Contributions are definitely welcome! We've published documentation on how to se
 The recommended configuration to build and run kotsadm on a microk8s cluster, locally.
 
 Required Software:
-- [Skaffold](https://skaffold.dev) 1.10.1 or later
+- [Skaffold](https://skaffold.dev) 1.32.0 or later
 - [Kustomize](https://kustomize.io) 2.0 or later
 - Kubernetes (Recommended to run microk8s)
 
 ## Running
 
-Build Kotsadm go binary:
+Make the cache for Skaffold in the root directory
+```
+make cache
+```
+
+Build Kotsadm go binary in the root directory
 
 ```
 GOOS=linux make build
