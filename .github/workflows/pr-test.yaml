@@ -11,9 +11,9 @@ on:
     branches:
       - team-blue/sc-24474/preflights-strict
 
-concurrency:
-  group: ${{ github.head_ref }}
-  cancel-in-progress: true
+# concurrency:
+#   group: ${{ github.head_ref }}
+#   cancel-in-progress: true
 
 jobs:
   # can-run-ci:
