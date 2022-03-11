@@ -172,23 +172,23 @@ func HasStrictPreflights(preflight *troubleshootv1beta2.Preflight) (bool, error)
 
 	marshalledAnalyzers, err := json.Marshal(preflight.Spec.Analyzers) // marshall and remove nil Analyzers eg result: "[{\"clusterVersion\":{\"exclude\":\"\",\"strict\":\"false\",\"outcomes\":null}}]"
 	if err != nil {
-		return false, errors.Wrap(err, "error while marshalling preflight.Spec.Analyzers")
+		return false, errors.Wrap(err, "failed to marshal analyzers")
 	}
 
 	analyzersMap := []map[string]interface{}{}
 	err = json.Unmarshal(marshalledAnalyzers, &analyzersMap) // Unmarshall again so we can loop over non nil analyzers
 	if err != nil {
-		return false, errors.Wrap(err, "error while un-marshalling marshalledAnalyzers")
+		return false, errors.Wrap(err, "failed to unmarshal analyzers")
 	}
 
 	// analyzerMap will ignore empty Analyzers and loop around Analyzer with data
-	for _, analyzers := range analyzersMap { // for each analyzers: map["clusterVersion": map[string]interface{} ["exclude": "", "strict": "true", "outcomes": nil]
+	for _, analyzers := range analyzersMap { // for each analyzer: map["clusterVersion": map[string]interface{} ["exclude": "", "strict": "true", "outcomes": nil]
 		for _, analyzer := range analyzers { // for each analyzeMeta: map[string]interface{} ["exclude": "", "strict": "true", "outcomes": nil]
 			marshalledAnalyzer, err := json.Marshal(analyzer)
 			if err != nil {
 				return false, errors.Wrap(err, "error while marshalling analyzer")
 			}
-			// return Analyzer.Strict which can be extraceted from AnalyzeMeta
+			// return Analyzer.Strict which can be extracted from AnalyzeMeta
 			analyzeMeta := troubleshootv1beta2.AnalyzeMeta{}
 			err = json.Unmarshal(marshalledAnalyzer, &analyzeMeta)
 			if err != nil {

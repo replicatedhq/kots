@@ -593,7 +593,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 
 	hasStrictPreflights, err := store.GetStore().HasStrictPreflights(updateApp.ID, sequence)
 	if err != nil {
-		updateAppConfigResponse.Error = errors.Cause(err).Error()
+		updateAppConfigResponse.Error = "failed to check if version has strict preflights"
 		return updateAppConfigResponse, err
 	}
 
