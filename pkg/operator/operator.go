@@ -438,14 +438,14 @@ func handleUndeployCompleted(a *apptypes.App) error {
 
 	restore, err := snapshot.GetRestore(context.Background(), util.PodNamespace, restoreName)
 	if err != nil {
-		return errors.Wrap(err, "failed to get restore")
+		return errors.Wrapf(err, "failed to get restore %q", restoreName)
 	}
 
 	if restore == nil {
-		return errors.Wrap(startVeleroRestore(snapshotName, a.Slug), "failed to start velero restore")
+		return errors.Wrapf(startVeleroRestore(snapshotName, a.Slug), "failed to start velero restore %q", restoreName)
 	}
 
-	return errors.Wrap(checkRestoreComplete(a, restore), "failed to check restore complete")
+	return errors.Wrapf(checkRestoreComplete(a, restore), "failed to check restore %q complete", restoreName)
 }
 
 func startVeleroRestore(snapshotName string, appSlug string) error {
