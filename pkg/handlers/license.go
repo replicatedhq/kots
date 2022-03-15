@@ -346,10 +346,11 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 		// complete the install online
 		createAppOpts := online.CreateOnlineAppOpts{
 			PendingApp: &installationtypes.PendingApp{
-				ID:          a.ID,
-				Slug:        a.Slug,
-				Name:        a.Name,
-				LicenseData: uploadLicenseRequest.LicenseData,
+				ID:           a.ID,
+				Slug:         a.Slug,
+				Name:         a.Name,
+				LicenseData:  uploadLicenseRequest.LicenseData,
+				VersionLabel: installationParams.AppVersionLabel,
 			},
 			UpstreamURI: upstreamURI,
 		}
@@ -401,7 +402,7 @@ func (h *Handler) ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&resumeInstallOnlineRequest); err != nil {
 		logger.Error(err)
 		resumeInstallOnlineResponse.Error = err.Error()
-		JSON(w, 500, resumeInstallOnlineResponse)
+		JSON(w, http.StatusInternalServerError, resumeInstallOnlineResponse)
 		return
 	}
 
@@ -409,14 +410,23 @@ func (h *Handler) ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error(err)
 		resumeInstallOnlineResponse.Error = err.Error()
-		JSON(w, 500, resumeInstallOnlineResponse)
+		JSON(w, http.StatusInternalServerError, resumeInstallOnlineResponse)
+		return
+	}
+
+	installationParams, err := kotsutil.GetInstallationParams(kotsadmtypes.KotsadmConfigMap)
+	if err != nil {
+		logger.Error(err)
+		resumeInstallOnlineResponse.Error = err.Error()
+		JSON(w, http.StatusInternalServerError, resumeInstallOnlineResponse)
 		return
 	}
 
 	pendingApp := installationtypes.PendingApp{
-		ID:   a.ID,
-		Slug: a.Slug,
-		Name: a.Name,
+		ID:           a.ID,
+		Slug:         a.Slug,
+		Name:         a.Name,
+		VersionLabel: installationParams.AppVersionLabel,
 	}
 
 	// the license data is left in the table
@@ -424,7 +434,7 @@ func (h *Handler) ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error(err)
 		resumeInstallOnlineResponse.Error = err.Error()
-		JSON(w, 500, resumeInstallOnlineResponse)
+		JSON(w, http.StatusInternalServerError, resumeInstallOnlineResponse)
 		return
 	}
 
@@ -434,7 +444,7 @@ func (h *Handler) ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 	if err := s.Encode(kotsLicense, &b); err != nil {
 		logger.Error(err)
 		resumeInstallOnlineResponse.Error = err.Error()
-		JSON(w, 500, resumeInstallOnlineResponse)
+		JSON(w, http.StatusInternalServerError, resumeInstallOnlineResponse)
 		return
 	}
 	pendingApp.LicenseData = string(b.Bytes())
@@ -447,7 +457,7 @@ func (h *Handler) ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error(err)
 		resumeInstallOnlineResponse.Error = err.Error()
-		JSON(w, 500, resumeInstallOnlineResponse)
+		JSON(w, http.StatusInternalServerError, resumeInstallOnlineResponse)
 		return
 	}
 
@@ -456,7 +466,7 @@ func (h *Handler) ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 	resumeInstallOnlineResponse.Slug = a.Slug
 	resumeInstallOnlineResponse.IsConfigurable = kotsKinds.IsConfigurable()
 
-	JSON(w, 200, resumeInstallOnlineResponse)
+	JSON(w, http.StatusOK, resumeInstallOnlineResponse)
 }
 
 func (h *Handler) GetOnlineInstallStatus(w http.ResponseWriter, r *http.Request) {

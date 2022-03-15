@@ -286,11 +286,13 @@ func Test_createConfigValues(t *testing.T) {
 func Test_getRequest(t *testing.T) {
 	beta := "beta"
 	unstable := "unstable"
+	version := "1.1.0"
 	tests := []struct {
 		endpoint        string
 		appSlug         string
 		channel         *string
 		channelSequence string
+		versionLabel    *string
 		expectedURL     string
 	}{
 		{
@@ -298,6 +300,7 @@ func Test_getRequest(t *testing.T) {
 			appSlug:         "sluggy1",
 			channel:         nil,
 			channelSequence: "",
+			versionLabel:    nil,
 			expectedURL:     "https://replicated-app/release/sluggy1?channelSequence=&isSemverSupported=true&licenseSequence=23",
 		},
 		{
@@ -305,6 +308,7 @@ func Test_getRequest(t *testing.T) {
 			appSlug:         "sluggy2",
 			channel:         &beta,
 			channelSequence: "",
+			versionLabel:    nil,
 			expectedURL:     "http://localhost:30016/release/sluggy2/beta?channelSequence=&isSemverSupported=true&licenseSequence=23",
 		},
 		{
@@ -312,7 +316,16 @@ func Test_getRequest(t *testing.T) {
 			appSlug:         "sluggy3",
 			channel:         &unstable,
 			channelSequence: "10",
+			versionLabel:    nil,
 			expectedURL:     "https://replicated-app/release/sluggy3/unstable?channelSequence=10&isSemverSupported=true&licenseSequence=23",
+		},
+		{
+			endpoint:        "https://replicated-app",
+			appSlug:         "sluggy3",
+			channel:         &unstable,
+			channelSequence: "",
+			versionLabel:    &version,
+			expectedURL:     "https://replicated-app/release/sluggy3/unstable?channelSequence=&isSemverSupported=true&licenseSequence=23&versionLabel=1.1.0",
 		},
 	}
 
@@ -326,7 +339,8 @@ func Test_getRequest(t *testing.T) {
 			},
 		}
 		r := &ReplicatedUpstream{
-			Channel: test.channel,
+			Channel:      test.channel,
+			VersionLabel: test.versionLabel,
 		}
 		cursor := ReplicatedCursor{
 			Cursor: test.channelSequence,

@@ -212,10 +212,11 @@ LICENSE_LOOP:
 			// Otherwise there is no airgap data, so this is an online install.
 			createAppOpts := online.CreateOnlineAppOpts{
 				PendingApp: &onlinetypes.PendingApp{
-					ID:          a.ID,
-					Slug:        a.Slug,
-					Name:        a.Name,
-					LicenseData: string(license),
+					ID:           a.ID,
+					Slug:         a.Slug,
+					Name:         a.Name,
+					LicenseData:  string(license),
+					VersionLabel: instParams.AppVersionLabel,
 				},
 				UpstreamURI:            upstreamURI,
 				IsAutomated:            true,

@@ -1,10 +1,11 @@
 package types
 
 type PendingApp struct {
-	ID          string
-	Slug        string
-	Name        string
-	LicenseData string
+	ID           string
+	Slug         string
+	Name         string
+	LicenseData  string
+	VersionLabel string
 }
 
 type InstallStatus struct {

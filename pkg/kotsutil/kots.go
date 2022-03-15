@@ -722,6 +722,7 @@ type InstallationParams struct {
 	StrictSecurityContext  bool
 	WaitDuration           time.Duration
 	WithMinio              bool
+	AppVersionLabel        string
 }
 
 func GetInstallationParams(configMapName string) (InstallationParams, error) {
@@ -752,6 +753,7 @@ func GetInstallationParams(configMapName string) (InstallationParams, error) {
 	autoConfig.StrictSecurityContext, _ = strconv.ParseBool(kotsadmConfigMap.Data["strict-security-context"])
 	autoConfig.WaitDuration, _ = time.ParseDuration(kotsadmConfigMap.Data["wait-duration"])
 	autoConfig.WithMinio, _ = strconv.ParseBool(kotsadmConfigMap.Data["with-minio"])
+	autoConfig.AppVersionLabel = kotsadmConfigMap.Data["app-version-label"]
 
 	return autoConfig, nil
 }

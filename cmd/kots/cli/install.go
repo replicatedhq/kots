@@ -226,6 +226,7 @@ func InstallCmd() *cobra.Command {
 				NoProxyEnvValue:           v.GetString("no-proxy"),
 				SkipPreflights:            v.GetBool("skip-preflights"),
 				SkipCompatibilityCheck:    v.GetBool("skip-compatibility-check"),
+				AppVersionLabel:           v.GetString("app-version-label"),
 				EnsureRBAC:                v.GetBool("ensure-rbac"),
 				SkipRBACCheck:             v.GetBool("skip-rbac-check"),
 				InstallID:                 m.InstallID,
@@ -429,6 +430,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().Bool("disable-image-push", false, "set to true to disable images from being pushed to private registry")
 	cmd.Flags().Bool("strict-security-context", false, "set to explicitly enable explicit security contexts for all kots pods and containers (may not work for some storage providers)")
 	cmd.Flags().Bool("skip-compatibility-check", false, "set to true to skip compatibility checks between the current kots version and the app")
+	cmd.Flags().String("app-version-label", "", "the application version label to install. if not specified, the latest version will be installed")
 
 	cmd.Flags().String("repo", "", "repo uri to use when installing a helm chart")
 	cmd.Flags().StringSlice("set", []string{}, "values to pass to helm when running helm template")
