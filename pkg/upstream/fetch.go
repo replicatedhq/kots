@@ -71,6 +71,12 @@ func pickVersionLabel(fetchOptions *types.FetchOptions) string {
 	if fetchOptions.Airgap != nil && fetchOptions.Airgap.Spec.VersionLabel != "" {
 		return fetchOptions.Airgap.Spec.VersionLabel
 	}
+
+	// only initial install can request a specific version label
+	if fetchOptions.AppSequence == 0 && fetchOptions.AppVersionLabel != "" {
+		return fetchOptions.AppVersionLabel
+	}
+
 	return fetchOptions.CurrentVersionLabel
 }
 

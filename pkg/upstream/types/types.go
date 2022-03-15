@@ -84,6 +84,7 @@ type FetchOptions struct {
 	ChannelChanged         bool
 	AppSlug                string
 	AppSequence            int64
+	AppVersionLabel        string
 	LocalRegistry          LocalRegistry
 	ReportingInfo          *reportingtypes.ReportingInfo
 	IdentityPostgresConfig *kotsv1beta1.IdentityPostgresConfig
