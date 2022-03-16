@@ -42,6 +42,17 @@ func ResolveExistingLicense(newLicense *kotsv1beta1.License) (bool, error) {
 		}
 	}
 
+	// check if license still exists
+	allLicenses, err := store.GetStore().GetAllAppLicenses()
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get all app licenses")
+	}
+	for _, l := range allLicenses {
+		if l.Spec.LicenseID == newLicense.Spec.LicenseID {
+			return false, nil
+		}
+	}
+
 	return true, nil
 }
 
