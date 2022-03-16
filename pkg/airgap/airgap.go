@@ -275,12 +275,6 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		logger.Warnf("preflights will not be skipped, strict preflights are set to %t", hasStrictPreflights)
 	}
 
-	if !opts.SkipPreflights || hasStrictPreflights {
-		if err := preflight.Run(opts.PendingApp.ID, opts.PendingApp.Slug, newSequence, true, tmpRoot); err != nil {
-			return errors.Wrap(err, "failed to start preflights")
-		}
-	}
-
 	if opts.IsAutomated && kotsKinds.IsConfigurable() {
 		// bypass the config screen if no configuration is required
 		registrySettings := registrytypes.RegistrySettings{
@@ -300,6 +294,12 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 					return errors.Wrap(err, "failed to deploy version")
 				}
 			}
+		}
+	}
+
+	if !opts.SkipPreflights || hasStrictPreflights {
+		if err := preflight.Run(opts.PendingApp.ID, opts.PendingApp.Slug, newSequence, true, tmpRoot); err != nil {
+			return errors.Wrap(err, "failed to start preflights")
 		}
 	}
 

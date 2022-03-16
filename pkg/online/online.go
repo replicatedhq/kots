@@ -196,12 +196,6 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 		logger.Warnf("preflights will not be skipped, strict preflights are set to %t", hasStrictPreflights)
 	}
 
-	if !opts.SkipPreflights || hasStrictPreflights {
-		if err := preflight.Run(opts.PendingApp.ID, opts.PendingApp.Slug, newSequence, false, tmpRoot); err != nil {
-			return nil, errors.Wrap(err, "failed to start preflights")
-		}
-	}
-
 	if opts.IsAutomated && kotsKinds.IsConfigurable() {
 		// bypass the config screen if no configuration is required and it's an automated install
 		registrySettings, err := store.GetStore().GetRegistryDetailsForApp(opts.PendingApp.ID)
@@ -223,6 +217,12 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 					}
 				}()
 			}
+		}
+	}
+
+	if !opts.SkipPreflights || hasStrictPreflights {
+		if err := preflight.Run(opts.PendingApp.ID, opts.PendingApp.Slug, newSequence, false, tmpRoot); err != nil {
+			return nil, errors.Wrap(err, "failed to start preflights")
 		}
 	}
 
