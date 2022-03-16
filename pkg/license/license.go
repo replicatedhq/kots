@@ -26,6 +26,7 @@ func ResolveExistingLicense(newLicense *kotsv1beta1.License) (bool, error) {
 		return false, err
 	}
 
+	resolved := false
 	for _, app := range notInstalledApps {
 		decode := scheme.Codecs.UniversalDeserializer().Decode
 		obj, _, err := decode([]byte(app.License), nil, nil)
@@ -39,10 +40,10 @@ func ResolveExistingLicense(newLicense *kotsv1beta1.License) (bool, error) {
 		if err := store.GetStore().RemoveApp(app.ID); err != nil {
 			return false, errors.Wrap(err, "failed to remove existing app record")
 		}
-		return true, nil
+		resolved = true // don't stop yet as there could be multiple failed installations that need to be cleaned up
 	}
 
-	return false, nil
+	return resolved, nil
 }
 
 func GetLatestLicense(license *kotsv1beta1.License) (*LicenseData, error) {
