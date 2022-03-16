@@ -207,7 +207,7 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 			return nil, errors.Wrap(err, "failed to check if app needs configuration")
 		}
 		if !needsConfig {
-			if opts.SkipPreflights || !hasStrictPreflights {
+			if opts.SkipPreflights && !hasStrictPreflights {
 				if err := version.DeployVersion(opts.PendingApp.ID, newSequence); err != nil {
 					return nil, errors.Wrap(err, "failed to deploy version")
 				}
@@ -216,6 +216,11 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 						logger.Debugf("failed to send preflights data to replicated app: %v", err)
 					}
 				}()
+			} else {
+				err := store.GetStore().SetDownstreamVersionPendingPreflight(opts.PendingApp.ID, newSequence)
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to set downstream version status to 'pending preflight'")
+				}
 			}
 		}
 	}

@@ -293,6 +293,11 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 				if err := version.DeployVersion(opts.PendingApp.ID, newSequence); err != nil {
 					return errors.Wrap(err, "failed to deploy version")
 				}
+			} else {
+				err := store.GetStore().SetDownstreamVersionPendingPreflight(opts.PendingApp.ID, newSequence)
+				if err != nil {
+					return errors.Wrap(err, "failed to set downstream version status to 'pending preflight'")
+				}
 			}
 		}
 	}
