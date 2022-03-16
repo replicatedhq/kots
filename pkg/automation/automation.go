@@ -54,6 +54,11 @@ func AutomateInstall() error {
 	}
 
 	cleanup := func(licenseSecret *corev1.Secret, appSlug string) {
+		err = kotsutil.RemoveAppVersionLabelFromInstallationParams(kotsadmtypes.KotsadmConfigMap)
+		if err != nil {
+			logger.Error(errors.Wrapf(err, "failed to delete app version label from config"))
+		}
+
 		err = clientset.CoreV1().Secrets(licenseSecret.Namespace).Delete(context.TODO(), licenseSecret.Name, metav1.DeleteOptions{})
 		if err != nil {
 			logger.Error(errors.Wrapf(err, "failed to delete license data %s", licenseSecret.Name))
