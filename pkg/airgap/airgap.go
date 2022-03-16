@@ -317,6 +317,11 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		}
 	}
 
+	err = kotsutil.RemoveAppVersionLabelFromInstallationParams(kotsadmtypes.KotsadmConfigMap)
+	if err != nil {
+		logger.Error(errors.Wrapf(err, "failed to delete app version label from config"))
+	}
+
 	return nil
 }
 

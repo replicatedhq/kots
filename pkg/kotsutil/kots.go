@@ -883,3 +883,31 @@ func IsKotsAutoUpgradeSupported(app *kotsv1beta1.Application) bool {
 
 	return false
 }
+
+func RemoveAppVersionLabelFromInstallationParams(configMapName string) error {
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return errors.Wrap(err, "failed to get k8s clientset")
+	}
+
+	kotsadmConfigMap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), configMapName, metav1.GetOptions{})
+	if err != nil {
+		if kuberneteserrors.IsNotFound(err) {
+			return nil
+		}
+		return errors.Wrap(err, "failed to get existing kotsadm config map")
+	}
+
+	if kotsadmConfigMap.Data["app-version-label"] == "" {
+		return nil
+	}
+
+	delete(kotsadmConfigMap.Data, "app-version-label")
+
+	_, err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Update(context.TODO(), kotsadmConfigMap, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update kotsadm config map")
+	}
+
+	return nil
+}

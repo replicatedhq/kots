@@ -247,7 +247,7 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	uploadLicenseRequest := UploadLicenseRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&uploadLicenseRequest); err != nil {
 		logger.Error(errors.Wrap(err, "failed to decode request body"))
-		w.WriteHeader(400)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
@@ -257,7 +257,7 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	unverifiedLicense, err := kotsutil.LoadLicenseFromBytes([]byte(licenseString))
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to load license from bytes"))
-		w.WriteHeader(400)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
@@ -268,7 +268,7 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	verifiedLicense, err := kotspull.VerifySignature(unverifiedLicense)
 	if err != nil {
 		uploadLicenseResponse.Error = "License signature is not valid"
-		JSON(w, 400, uploadLicenseResponse)
+		JSON(w, http.StatusBadRequest, uploadLicenseResponse)
 		return
 	}
 
@@ -279,7 +279,7 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to get latest license"))
 			uploadLicenseResponse.Error = err.Error()
-			JSON(w, 500, uploadLicenseResponse)
+			JSON(w, http.StatusInternalServerError, uploadLicenseResponse)
 			return
 		}
 		verifiedLicense = licenseData.License
@@ -291,12 +291,12 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to check if license is expired"))
 		uploadLicenseResponse.Error = err.Error()
-		JSON(w, 500, uploadLicenseResponse)
+		JSON(w, http.StatusInternalServerError, uploadLicenseResponse)
 		return
 	}
 	if expired {
 		uploadLicenseResponse.Error = "License is expired"
-		JSON(w, 400, uploadLicenseResponse)
+		JSON(w, http.StatusBadRequest, uploadLicenseResponse)
 		return
 	}
 
@@ -305,7 +305,7 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to check if license already exists"))
 		uploadLicenseResponse.Error = err.Error()
-		JSON(w, 500, uploadLicenseResponse)
+		JSON(w, http.StatusInternalServerError, uploadLicenseResponse)
 		return
 	}
 
@@ -327,7 +327,7 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error(err)
 		uploadLicenseResponse.Error = err.Error()
-		JSON(w, 500, uploadLicenseResponse)
+		JSON(w, http.StatusInternalServerError, uploadLicenseResponse)
 		return
 	}
 
@@ -338,7 +338,7 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Error(err)
 		uploadLicenseResponse.Error = err.Error()
-		JSON(w, 500, uploadLicenseResponse)
+		JSON(w, http.StatusInternalServerError, uploadLicenseResponse)
 		return
 	}
 
@@ -358,7 +358,15 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			logger.Error(err)
 			uploadLicenseResponse.Error = err.Error()
-			JSON(w, 500, uploadLicenseResponse)
+			JSON(w, http.StatusInternalServerError, uploadLicenseResponse)
+			return
+		}
+
+		err = kotsutil.RemoveAppVersionLabelFromInstallationParams(kotsadmtypes.KotsadmConfigMap)
+		if err != nil {
+			logger.Error(err)
+			uploadLicenseResponse.Error = err.Error()
+			JSON(w, http.StatusInternalServerError, uploadLicenseResponse)
 			return
 		}
 
@@ -454,6 +462,14 @@ func (h *Handler) ResumeInstallOnline(w http.ResponseWriter, r *http.Request) {
 		UpstreamURI: fmt.Sprintf("replicated://%s", kotsLicense.Spec.AppSlug),
 	}
 	kotsKinds, err := online.CreateAppFromOnline(createAppOpts)
+	if err != nil {
+		logger.Error(err)
+		resumeInstallOnlineResponse.Error = err.Error()
+		JSON(w, http.StatusInternalServerError, resumeInstallOnlineResponse)
+		return
+	}
+
+	err = kotsutil.RemoveAppVersionLabelFromInstallationParams(kotsadmtypes.KotsadmConfigMap)
 	if err != nil {
 		logger.Error(err)
 		resumeInstallOnlineResponse.Error = err.Error()
