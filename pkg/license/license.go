@@ -36,13 +36,13 @@ func ResolveExistingLicense(newLicense *kotsv1beta1.License) (bool, error) {
 		if license.Spec.LicenseID != newLicense.Spec.LicenseID {
 			continue
 		}
-
 		if err := store.GetStore().RemoveApp(app.ID); err != nil {
 			return false, errors.Wrap(err, "failed to remove existing app record")
 		}
+		return true, nil
 	}
 
-	return true, nil
+	return false, nil
 }
 
 func GetLatestLicense(license *kotsv1beta1.License) (*LicenseData, error) {
