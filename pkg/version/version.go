@@ -62,6 +62,19 @@ func DeployVersion(appID string, sequence int64) error {
 		}
 	}
 
+	// TODO: this check should be removed when we implement auto deploy if intermediate required releases.
+	// the function can then be refactored to return the required versions to be deployed first.
+	blocked, err = isBlockedDueToRequiredReleases(appID, sequence)
+	if err != nil {
+		return errors.Wrap(err, "failed to check if deployment is blocked due to previous required releases")
+	}
+	if blocked {
+		return util.ActionableError{
+			NoRetry: true,
+			Message: "Unable to deploy as there are intermediate required releases that need to be deployed first", // TODO @salah find a better message
+		}
+	}
+
 	db := persistence.MustGetDBSession()
 
 	logger.Info("deploying app version", zap.String("appId", appID), zap.Int64("sequence", sequence))
@@ -253,4 +266,58 @@ func isBlockedDueToStrictPreFlights(appID string, sequence int64) (bool, error) 
 		}
 	}
 	return hasStrictPreflights && preflightResult.HasFailingStrictPreflights, nil
+}
+
+func isBlockedDueToRequiredReleases(appID string, sequence int64) (bool, error) {
+	// TODO @salah how to distinguish between a bad release and a min kots version blocked release?
+	// check for intermediate required non-downloaded versions as well
+	appVersions, err := store.GetStore().FindAppVersions(appID, false)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get downstream versions")
+	}
+
+	if appVersions.CurrentVersion == nil {
+		// no version has been deployed yet, treat as an initial install where any version can be deployed at first.
+		return false, nil
+	}
+
+	versionIndex := -1
+	for i, v := range appVersions.AllVersions {
+		if v.Sequence == sequence {
+			versionIndex = i
+			break
+		}
+	}
+
+	deployedVersionIndex := -1
+	for i, v := range appVersions.AllVersions {
+		if v.Sequence == appVersions.CurrentVersion.Sequence {
+			deployedVersionIndex = i
+			break
+		}
+	}
+
+	if versionIndex == deployedVersionIndex {
+		// version is currently deployed, so previous required versions should've already been deployed.
+		// also, we shouldn't block re-deploying if a previous release is edited later by the vendor to be required.
+		return false, nil
+	}
+
+	// check if there are required versions between the currently deployed version and the desired version
+	// TODO @salah: check if those versions have been deployed before, what should happen in that scenario?
+	blocked := false
+	for i, v := range appVersions.AllVersions {
+		if i <= versionIndex {
+			continue
+		}
+		if i == deployedVersionIndex {
+			break
+		}
+		if v.IsRequired {
+			blocked = true
+			break
+		}
+	}
+
+	return blocked, nil
 }
