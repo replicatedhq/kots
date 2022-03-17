@@ -67,7 +67,7 @@ require (
 	github.com/vmware-tanzu/velero v1.5.4
 	go.uber.org/multierr v1.6.0
 	go.uber.org/zap v1.19.1
-	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
+	golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd
 	golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f
 	google.golang.org/api v0.56.0
 	google.golang.org/grpc v1.41.0
@@ -359,10 +359,10 @@ require (
 	go.opentelemetry.io/proto/otlp v0.7.0 // indirect
 	go.starlark.net v0.0.0-20200821142938-949cc6f4b097 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
-	golang.org/x/net v0.0.0-20211209124913-491a49abca63 // indirect
+	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
-	golang.org/x/sys v0.0.0-20211029165221-6e7872819dc8 // indirect
-	golang.org/x/term v0.0.0-20210615171337-6886f2dfbf5b // indirect
+	golang.org/x/sys v0.0.0-20220315194320-039c03cc5b86 // indirect
+	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
 	golang.org/x/tools v0.1.8-0.20211028023602-8de2a7fd1736 // indirect
@@ -401,6 +401,7 @@ require (
 )
 
 replace (
+	golang.org/x/crypto v0.0.0-20220112180741-5e0467b6c7ce => github.com/dmacvicar/golang-x-crypto v0.0.0-20220126233154-a96af8f07497
 	github.com/go-openapi/jsonpointer => github.com/go-openapi/jsonpointer v0.19.5
 	github.com/go-openapi/jsonreference => github.com/go-openapi/jsonreference v0.19.6
 	github.com/go-openapi/loads => github.com/go-openapi/loads v0.20.1
