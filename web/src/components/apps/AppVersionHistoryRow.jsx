@@ -84,14 +84,12 @@ function renderVersionAction(version, nothingToCommitDiff, app, history, actionF
   const downstream = app.downstreams[0];
 
   if (version.status === "pending_download") {
-
     let buttonText = "Download";
     if (isDownloading) {
       buttonText = "Downloading";
     } else if (version.needsKotsUpgrade) {
       buttonText = "Upgrade";
     }
-
     return (
       <div className="flex flex1 justifyContent--flexEnd alignItems--center">
         {renderReleaseNotes(version, showReleaseNotes)}
@@ -329,6 +327,11 @@ export default function AppVersionHistoryRow(props) {
         </div>
         <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex1 justifyContent--center`}>
           <p className="u-fontSize--small u-fontWeight--bold u-textColor--lightAccent u-lineHeight--default">{version.source}</p>
+          {version.isRequired &&
+            <div className="u-marginTop--10">
+              <span className="status-tag required"> Required </span>
+            </div>
+          }
           <div className="flex flex-auto u-marginTop--10"> {gitopsEnabled && version.status !== "pending_download" ? renderViewPreflights(version, props.app, props.match) : renderVersionStatus(version, props.app, props.handleViewLogs)}</div>
         </div>
         <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex-auto alignItems--flexEnd justifyContent--center`}>
