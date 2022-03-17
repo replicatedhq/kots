@@ -13,7 +13,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/store/types"
-	"k8s.io/client-go/kubernetes/scheme"
 )
 
 func (s *KOTSStore) GetCurrentSequence(appID string, clusterID string) (int64, error) {
@@ -325,6 +324,13 @@ func (s *KOTSStore) GetAppVersions(appID string, clusterID string, downloadedOnl
 		}
 	}
 
+	if err := rows.Err(); err != nil {
+		if err == sql.ErrNoRows {
+			return result, nil
+		}
+		return nil, errors.Wrap(err, "failed to iterate over rows")
+	}
+
 	license, err := s.GetLatestLicenseForApp(appID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app license")
@@ -455,15 +461,16 @@ func (s *KOTSStore) downstreamVersionFromRow(appID string, row scannable) (*down
 		v.UpstreamReleasedAt = &upstreamReleasedAt.Time
 	}
 
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	if kotsInstallationSpecStr.String != "" {
-		obj, _, err := decode([]byte(kotsInstallationSpecStr.String), nil, nil)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to decode installation spec yaml")
-		}
-		installationSpec := obj.(*kotsv1beta1.Installation)
+	v.KOTSKinds = &kotsutil.KotsKinds{}
 
-		v.YamlErrors = installationSpec.Spec.YAMLErrors
+	if kotsInstallationSpecStr.String != "" {
+		installation, err := kotsutil.LoadInstallationFromContents([]byte(kotsInstallationSpecStr.String))
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to load installation spec")
+		}
+
+		v.KOTSKinds.Installation = *installation
+		v.YamlErrors = v.KOTSKinds.Installation.Spec.YAMLErrors
 	}
 
 	if v.Status == types.VersionPendingDownload {
@@ -480,14 +487,15 @@ func (s *KOTSStore) downstreamVersionFromRow(appID string, row scannable) (*down
 	}
 
 	if kotsAppSpecStr.String != "" {
-		obj, _, err := decode([]byte(kotsAppSpecStr.String), nil, nil)
+		app, err := kotsutil.LoadKotsAppFromContents([]byte(kotsAppSpecStr.String))
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to decode kots app spec yaml")
+			return nil, errors.Wrap(err, "failed to load installation spec")
 		}
-		v.KotsApplication = obj.(*kotsv1beta1.Application)
+
+		v.KOTSKinds.KotsApplication = *app
 	}
 
-	v.NeedsKotsUpgrade = needsKotsUpgrade(v.KotsApplication)
+	v.NeedsKotsUpgrade = needsKotsUpgrade(&v.KOTSKinds.KotsApplication)
 	v.HasFailingStrictPreflights, err = s.hasFailingStrictPreflights(preflightSpecStr, preflightResult)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get strict preflight results")

@@ -845,49 +845,6 @@ func (s *KOTSStore) GetLatestAppVersion(appID string, downloadedOnly bool) (*ver
 	return s.GetAppVersion(appID, downstreamVersions.AllVersions[0].ParentSequence)
 }
 
-func (s *KOTSStore) GetAppVersionsAfter(appID string, sequence int64) ([]*versiontypes.AppVersion, error) {
-	db := persistence.MustGetDBSession()
-	query := `select sequence, created_at, status, applied_at, kots_installation_spec from app_version where app_id = $1 and sequence > $2`
-	rows, err := db.Query(query, appID, sequence)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to query")
-	}
-	defer rows.Close()
-
-	var status sql.NullString
-	var deployedAt sql.NullTime
-	var installationSpec sql.NullString
-
-	versions := []*versiontypes.AppVersion{}
-
-	for rows.Next() {
-		v := versiontypes.AppVersion{
-			AppID: appID,
-		}
-		if err := rows.Scan(&v.Sequence, &v.CreatedOn, &status, &deployedAt, &installationSpec); err != nil {
-			return nil, errors.Wrap(err, "failed to scan")
-		}
-
-		kotsKinds := kotsutil.KotsKinds{}
-
-		installation, err := kotsutil.LoadInstallationFromContents([]byte(installationSpec.String))
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to read installation spec")
-		}
-		kotsKinds.Installation = *installation
-
-		if deployedAt.Valid {
-			v.DeployedAt = &deployedAt.Time
-		}
-
-		v.Status = status.String
-
-		versions = append(versions, &v)
-	}
-
-	return versions, nil
-}
-
 func (s *KOTSStore) UpdateNextAppVersionDiffSummary(appID string, baseSequence int64) error {
 	a, err := s.GetApp(appID)
 	if err != nil {
