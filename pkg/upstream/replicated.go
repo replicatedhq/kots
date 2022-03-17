@@ -190,6 +190,17 @@ func downloadReplicated(
 			return nil, errors.Wrap(err, "failed to parse replicated upstream")
 		}
 
+		// Don't include version label if it's an upgrade.  It's used to get a specific version on new installs only.
+		if appSequence == 0 && versionLabel != "" {
+			if replicatedUpstream.VersionLabel != nil && *replicatedUpstream.VersionLabel != versionLabel {
+				return nil, errors.Errorf("upstream version is %q, but requested installation version is %q", *replicatedUpstream.VersionLabel, versionLabel)
+			}
+
+			if replicatedUpstream.VersionLabel == nil && versionLabel != "" {
+				replicatedUpstream.VersionLabel = &versionLabel
+			}
+		}
+
 		if err := getSuccessfulHeadResponse(replicatedUpstream, license); err != nil {
 			return nil, errors.Wrap(err, "failed to get successful head response")
 		}
@@ -346,6 +357,9 @@ func (r *ReplicatedUpstream) getRequest(method string, license *kotsv1beta1.Lice
 
 	urlValues := url.Values{}
 	urlValues.Set("channelSequence", cursor.Cursor)
+	if r.VersionLabel != nil {
+		urlValues.Set("versionLabel", *r.VersionLabel)
+	}
 	urlValues.Add("licenseSequence", fmt.Sprintf("%d", license.Spec.LicenseSequence))
 	urlValues.Add("isSemverSupported", "true")
 

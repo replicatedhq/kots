@@ -54,6 +54,11 @@ func AutomateInstall() error {
 	}
 
 	cleanup := func(licenseSecret *corev1.Secret, appSlug string) {
+		err = kotsutil.RemoveAppVersionLabelFromInstallationParams(kotsadmtypes.KotsadmConfigMap)
+		if err != nil {
+			logger.Error(errors.Wrapf(err, "failed to delete app version label from config"))
+		}
+
 		err = clientset.CoreV1().Secrets(licenseSecret.Namespace).Delete(context.TODO(), licenseSecret.Name, metav1.DeleteOptions{})
 		if err != nil {
 			logger.Error(errors.Wrapf(err, "failed to delete license data %s", licenseSecret.Name))
@@ -212,10 +217,11 @@ LICENSE_LOOP:
 			// Otherwise there is no airgap data, so this is an online install.
 			createAppOpts := online.CreateOnlineAppOpts{
 				PendingApp: &onlinetypes.PendingApp{
-					ID:          a.ID,
-					Slug:        a.Slug,
-					Name:        a.Name,
-					LicenseData: string(license),
+					ID:           a.ID,
+					Slug:         a.Slug,
+					Name:         a.Name,
+					LicenseData:  string(license),
+					VersionLabel: instParams.AppVersionLabel,
 				},
 				UpstreamURI:            upstreamURI,
 				IsAutomated:            true,

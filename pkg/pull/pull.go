@@ -61,6 +61,7 @@ type PullOptions struct {
 	ReportWriter           io.Writer
 	AppSlug                string
 	AppSequence            int64
+	AppVersionLabel        string
 	IsGitOps               bool
 	HTTPProxyEnvValue      string
 	HTTPSProxyEnvValue     string
@@ -121,13 +122,14 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 
 	fetchOptions := upstreamtypes.FetchOptions{
-		HelmRepoURI:   pullOptions.HelmRepoURI,
-		RootDir:       pullOptions.RootDir,
-		UseAppDir:     pullOptions.CreateAppDir,
-		LocalPath:     pullOptions.LocalPath,
-		CurrentCursor: pullOptions.UpdateCursor,
-		AppSlug:       pullOptions.AppSlug,
-		AppSequence:   pullOptions.AppSequence,
+		HelmRepoURI:     pullOptions.HelmRepoURI,
+		RootDir:         pullOptions.RootDir,
+		UseAppDir:       pullOptions.CreateAppDir,
+		LocalPath:       pullOptions.LocalPath,
+		CurrentCursor:   pullOptions.UpdateCursor,
+		AppSlug:         pullOptions.AppSlug,
+		AppSequence:     pullOptions.AppSequence,
+		AppVersionLabel: pullOptions.AppVersionLabel,
 		LocalRegistry: upstreamtypes.LocalRegistry{
 			Host:      pullOptions.RewriteImageOptions.Host,
 			Namespace: pullOptions.RewriteImageOptions.Namespace,
@@ -218,6 +220,10 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		airgap, err := FindAirgapMetaInDir(pullOptions.AirgapRoot)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to parse license from file")
+		}
+
+		if fetchOptions.AppVersionLabel != "" && fetchOptions.AppVersionLabel != airgap.Spec.VersionLabel {
+			logger.Infof("Expecting to install version %s but airgap bundle version is %s.", fetchOptions.AppVersionLabel, airgap.Spec.VersionLabel)
 		}
 
 		if fetchOptions.License.Spec.ChannelID != airgap.Spec.ChannelID {
