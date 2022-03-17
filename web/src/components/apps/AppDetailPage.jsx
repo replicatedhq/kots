@@ -119,8 +119,9 @@ class AppDetailPage extends Component {
         this.setState({ makingCurrentReleaseErrMsg: "" });
         this.refetchData();
       } else {
+        const response = await res.json();
         this.setState({
-          makingCurrentReleaseErrMsg: `Unable to deploy release ${version.versionLabel}, sequence ${version.sequence}: Unexpected status code: ${res.status}`,
+          makingCurrentReleaseErrMsg: `Unable to deploy release ${version.versionLabel}, sequence ${version.sequence}: ${response.error}`,
         });
       }
     } catch (err) {
