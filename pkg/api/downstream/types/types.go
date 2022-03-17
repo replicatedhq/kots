@@ -6,6 +6,7 @@ import (
 
 	"github.com/blang/semver"
 	v1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 )
 
@@ -41,7 +42,7 @@ type DownstreamVersion struct {
 	YamlErrors                 []v1beta1.InstallationYAMLError    `json:"yamlErrors,omitempty"`
 	DownloadStatus             DownloadStatus                     `json:"downloadStatus,omitempty"`
 	NeedsKotsUpgrade           bool                               `json:"needsKotsUpgrade"`
-	KotsApplication            *v1beta1.Application               `json:"-"`
+	KOTSKinds                  *kotsutil.KotsKinds                `json:"-"`
 }
 
 type DownloadStatus struct {
