@@ -98,6 +98,11 @@ spec:
         type: text
         constraints:
           notNull: true
+      - name: is_required
+        type: boolean
+        constraints:
+          notNull: true
+        default: "false"
       - name: status
         type: text
       - name: status_info
@@ -209,6 +214,11 @@ spec:
         type: text
         constraints:
           notNull: true
+      - name: is_required
+        type: boolean
+        constraints:
+          notNull: true
+        default: "false"
       - name: release_notes
         type: text
       - name: supportbundle_spec

@@ -127,6 +127,7 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 			ChannelID:     channelID,
 			ChannelName:   channelName,
 			VersionLabel:  u.VersionLabel,
+			IsRequired:    u.IsRequired,
 			ReleaseNotes:  u.ReleaseNotes,
 			EncryptionKey: encryptionKey,
 		},

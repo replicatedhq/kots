@@ -73,6 +73,7 @@ type App struct {
 type Release struct {
 	UpdateCursor ReplicatedCursor
 	VersionLabel string
+	IsRequired   bool
 	ReleaseNotes string
 	ReleasedAt   *time.Time
 	Manifests    map[string][]byte
@@ -82,6 +83,7 @@ type ChannelRelease struct {
 	ChannelSequence int    `json:"channelSequence"`
 	ReleaseSequence int    `json:"releaseSequence"`
 	VersionLabel    string `json:"versionLabel"`
+	IsRequired      bool   `json:"isRequired"`
 	CreatedAt       string `json:"createdAt"`
 	ReleaseNotes    string `json:"releaseNotes"`
 }
@@ -140,6 +142,7 @@ func getUpdatesReplicated(u *url.URL, fetchOptions *types.FetchOptions) ([]types
 			ChannelName:  fetchOptions.CurrentChannelName,
 			Cursor:       strconv.Itoa(pendingRelease.ChannelSequence),
 			VersionLabel: pendingRelease.VersionLabel,
+			IsRequired:   pendingRelease.IsRequired,
 			ReleasedAt:   releasedAt,
 			ReleaseNotes: pendingRelease.ReleaseNotes,
 		})
@@ -292,6 +295,7 @@ func downloadReplicated(
 			Cursor:       updateCursor.Cursor,
 			ChannelName:  channelName,
 			VersionLabel: release.VersionLabel,
+			// TODO @salah add isrequired here
 			ReleaseNotes: release.ReleaseNotes,
 			IsAirgap:     isAirgap,
 		}
@@ -332,6 +336,7 @@ func downloadReplicated(
 		ChannelID:    channelID,
 		ChannelName:  channelName,
 		VersionLabel: release.VersionLabel,
+		IsRequired:   release.IsRequired,
 		ReleaseNotes: release.ReleaseNotes,
 		ReleasedAt:   release.ReleasedAt,
 	}
@@ -487,6 +492,7 @@ func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kots
 	updateChannelID := getResp.Header.Get("X-Replicated-ChannelID")
 	updateChannelName := getResp.Header.Get("X-Replicated-ChannelName")
 	versionLabel := getResp.Header.Get("X-Replicated-VersionLabel")
+	isRequiredStr := getResp.Header.Get("X-Replicated-IsRequired")
 	releasedAtStr := getResp.Header.Get("X-Replicated-ReleasedAt")
 
 	var releasedAt *time.Time
@@ -494,6 +500,8 @@ func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kots
 	if err == nil {
 		releasedAt = &r
 	}
+
+	isRequired, _ := strconv.ParseBool(isRequiredStr)
 
 	gzf, err := gzip.NewReader(getResp.Body)
 	if err != nil {
@@ -508,6 +516,7 @@ func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kots
 			Cursor:      updateSequence,
 		},
 		VersionLabel: versionLabel,
+		IsRequired:   isRequired,
 		ReleasedAt:   releasedAt,
 		// NOTE: release notes come from Application spec
 	}

@@ -256,6 +256,7 @@ func (h *Handler) DownloadAppVersion(w http.ResponseWriter, r *http.Request) {
 			ChannelName:  version.KOTSKinds.Installation.Spec.ChannelName,
 			Cursor:       version.KOTSKinds.Installation.Spec.UpdateCursor,
 			VersionLabel: version.KOTSKinds.Installation.Spec.VersionLabel,
+			IsRequired:   version.KOTSKinds.Installation.Spec.IsRequired,
 			AppSequence:  &appSequence,
 		}
 		_, err := upstream.DownloadUpdate(appID, update, skipPreflights, skipCompatibilityCheck)

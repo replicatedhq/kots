@@ -208,6 +208,7 @@ func (s *KOTSStore) GetCurrentVersion(appID string, clusterID string) (*downstre
 	av.kots_installation_spec,
 	av.kots_app_spec,
 	av.version_label,
+	av.is_required,
 	av.preflight_spec
  FROM
 	 app_downstream_version AS adv
@@ -283,6 +284,7 @@ func (s *KOTSStore) GetAppVersions(appID string, clusterID string, downloadedOnl
 	av.kots_installation_spec,
 	av.kots_app_spec,
 	av.version_label,
+	av.is_required,
 	av.preflight_spec
  FROM
 	 app_downstream_version AS adv
@@ -418,6 +420,7 @@ func (s *KOTSStore) downstreamVersionFromRow(appID string, row scannable) (*down
 		&kotsInstallationSpecStr,
 		&kotsAppSpecStr,
 		&versionLabel,
+		&v.IsRequired,
 		&preflightSpecStr,
 	); err != nil {
 		return nil, errors.Wrap(err, "failed to scan")
