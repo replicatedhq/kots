@@ -390,6 +390,7 @@ func (s *KOTSStore) CreatePendingDownloadAppVersion(appID string, update upstrea
 			ChannelID:    update.ChannelID,
 			ChannelName:  update.ChannelName,
 			VersionLabel: update.VersionLabel,
+			IsRequired:   update.IsRequired,
 			ReleasedAt:   releasedAt,
 			ReleaseNotes: update.ReleaseNotes,
 		},
@@ -407,8 +408,8 @@ func (s *KOTSStore) CreatePendingDownloadAppVersion(appID string, update upstrea
 
 	for _, d := range downstreams {
 		err = s.addAppVersionToDownstream(tx, a.ID, d.ClusterID, newSequence,
-			kotsKinds.Installation.Spec.VersionLabel, types.VersionPendingDownload, "Upstream Update",
-			"", "", "", false, false)
+			kotsKinds.Installation.Spec.VersionLabel, kotsKinds.Installation.Spec.IsRequired, types.VersionPendingDownload,
+			"Upstream Update", "", "", "", false, false)
 		if err != nil {
 			return 0, errors.Wrap(err, "failed to create downstream version")
 		}
@@ -591,8 +592,8 @@ func (s *KOTSStore) upsertAppVersion(tx *sql.Tx, appID string, sequence int64, b
 		}
 
 		err = s.addAppVersionToDownstream(tx, appID, d.ClusterID, sequence,
-			kotsKinds.Installation.Spec.VersionLabel, downstreamStatus, source,
-			diffSummary, diffSummaryError, commitURL, commitURL != "", skipPreflights)
+			kotsKinds.Installation.Spec.VersionLabel, kotsKinds.Installation.Spec.IsRequired, downstreamStatus,
+			source, diffSummary, diffSummaryError, commitURL, commitURL != "", skipPreflights)
 		if err != nil {
 			return errors.Wrap(err, "failed to create downstream version")
 		}
@@ -679,12 +680,13 @@ func (s *KOTSStore) upsertAppVersionRecord(tx *sql.Tx, appID string, sequence in
 	if kotsKinds.Installation.Spec.ReleasedAt != nil {
 		releasedAt = &kotsKinds.Installation.Spec.ReleasedAt.Time
 	}
-	query := `insert into app_version (app_id, sequence, created_at, version_label, release_notes, update_cursor, channel_id, channel_name, upstream_released_at, encryption_key,
+	query := `insert into app_version (app_id, sequence, created_at, version_label, is_required, release_notes, update_cursor, channel_id, channel_name, upstream_released_at, encryption_key,
 		supportbundle_spec, analyzer_spec, preflight_spec, app_spec, kots_app_spec, kots_installation_spec, kots_license, config_spec, config_values, backup_spec, identity_spec)
 		values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
 		ON CONFLICT(app_id, sequence) DO UPDATE SET
 		created_at = EXCLUDED.created_at,
 		version_label = EXCLUDED.version_label,
+		is_required = EXCLUDED.is_required,
 		release_notes = EXCLUDED.release_notes,
 		update_cursor = EXCLUDED.update_cursor,
 		channel_id = EXCLUDED.channel_id,
@@ -704,6 +706,7 @@ func (s *KOTSStore) upsertAppVersionRecord(tx *sql.Tx, appID string, sequence in
 		identity_spec = EXCLUDED.identity_spec`
 	_, err = tx.Exec(query, appID, sequence, time.Now(),
 		kotsKinds.Installation.Spec.VersionLabel,
+		kotsKinds.Installation.Spec.IsRequired,
 		kotsKinds.Installation.Spec.ReleaseNotes,
 		kotsKinds.Installation.Spec.UpdateCursor,
 		kotsKinds.Installation.Spec.ChannelID,
@@ -735,12 +738,13 @@ func (s *KOTSStore) upsertAppVersionRecord(tx *sql.Tx, appID string, sequence in
 	return nil
 }
 
-func (s *KOTSStore) addAppVersionToDownstream(tx *sql.Tx, appID string, clusterID string, sequence int64, versionLabel string, status types.DownstreamVersionStatus, source string, diffSummary string, diffSummaryError string, commitURL string, gitDeployable bool, preflightsSkipped bool) error {
-	query := `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, status, source, diff_summary, diff_summary_error, git_commit_url, git_deployable, preflight_skipped)
+func (s *KOTSStore) addAppVersionToDownstream(tx *sql.Tx, appID string, clusterID string, sequence int64, versionLabel string, isRequired bool, status types.DownstreamVersionStatus, source string, diffSummary string, diffSummaryError string, commitURL string, gitDeployable bool, preflightsSkipped bool) error {
+	query := `insert into app_downstream_version (app_id, cluster_id, sequence, parent_sequence, created_at, version_label, is_required, status, source, diff_summary, diff_summary_error, git_commit_url, git_deployable, preflight_skipped)
 		values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 		ON CONFLICT(app_id, cluster_id, sequence) DO UPDATE SET
 		created_at = EXCLUDED.created_at,
 		version_label = EXCLUDED.version_label,
+		is_required = EXCLUDED.is_required,
 		status = EXCLUDED.status,
 		source = EXCLUDED.source,
 		diff_summary = EXCLUDED.diff_summary,
@@ -756,6 +760,7 @@ func (s *KOTSStore) addAppVersionToDownstream(tx *sql.Tx, appID string, clusterI
 		sequence,
 		time.Now(),
 		versionLabel,
+		isRequired,
 		status,
 		source,
 		diffSummary,

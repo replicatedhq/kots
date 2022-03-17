@@ -301,6 +301,7 @@ func (s *OCIStore) CreatePendingDownloadAppVersion(appID string, update upstream
 			ChannelID:    update.ChannelID,
 			ChannelName:  update.ChannelName,
 			VersionLabel: update.VersionLabel,
+			IsRequired:   update.IsRequired,
 			ReleasedAt:   releasedAt,
 			ReleaseNotes: update.ReleaseNotes,
 		},

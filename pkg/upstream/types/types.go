@@ -28,6 +28,7 @@ type Upstream struct {
 	ChannelID     string
 	ChannelName   string
 	VersionLabel  string
+	IsRequired    bool
 	ReleaseNotes  string
 	ReleasedAt    *time.Time
 	EncryptionKey string
@@ -38,6 +39,7 @@ type Update struct {
 	ChannelName  string     `json:"channelName"`
 	Cursor       string     `json:"cursor"`
 	VersionLabel string     `json:"versionLabel"`
+	IsRequired   bool       `json:"isRequired"`
 	ReleaseNotes string     `json:"releaseNotes"`
 	ReleasedAt   *time.Time `json:"releasedAt"`
 	AppSequence  *int64     `json:"appSequence"` // can have a sequence if update is available as a pending download app version

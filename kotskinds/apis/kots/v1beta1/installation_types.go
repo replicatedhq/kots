@@ -26,6 +26,7 @@ type InstallationSpec struct {
 	ChannelID     string                  `json:"channelID,omitempty"`
 	ChannelName   string                  `json:"channelName,omitempty"`
 	VersionLabel  string                  `json:"versionLabel,omitempty"`
+	IsRequired    bool                    `json:"isRequired,omitempty"`
 	ReleaseNotes  string                  `json:"releaseNotes,omitempty"`
 	ReleasedAt    *metav1.Time            `json:"releasedAt,omitempty"`
 	EncryptionKey string                  `json:"encryptionKey,omitempty"`
