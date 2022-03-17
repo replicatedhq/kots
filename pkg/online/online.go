@@ -196,12 +196,6 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 		logger.Warnf("preflights will not be skipped, strict preflights are set to %t", hasStrictPreflights)
 	}
 
-	if !opts.SkipPreflights || hasStrictPreflights {
-		if err := preflight.Run(opts.PendingApp.ID, opts.PendingApp.Slug, newSequence, false, tmpRoot); err != nil {
-			return nil, errors.Wrap(err, "failed to start preflights")
-		}
-	}
-
 	if opts.IsAutomated && kotsKinds.IsConfigurable() {
 		// bypass the config screen if no configuration is required and it's an automated install
 		registrySettings, err := store.GetStore().GetRegistryDetailsForApp(opts.PendingApp.ID)
@@ -213,7 +207,7 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 			return nil, errors.Wrap(err, "failed to check if app needs configuration")
 		}
 		if !needsConfig {
-			if opts.SkipPreflights || !hasStrictPreflights {
+			if opts.SkipPreflights && !hasStrictPreflights {
 				if err := version.DeployVersion(opts.PendingApp.ID, newSequence); err != nil {
 					return nil, errors.Wrap(err, "failed to deploy version")
 				}
@@ -222,7 +216,18 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 						logger.Debugf("failed to send preflights data to replicated app: %v", err)
 					}
 				}()
+			} else {
+				err := store.GetStore().SetDownstreamVersionPendingPreflight(opts.PendingApp.ID, newSequence)
+				if err != nil {
+					return nil, errors.Wrap(err, "failed to set downstream version status to 'pending preflight'")
+				}
 			}
+		}
+	}
+
+	if !opts.SkipPreflights || hasStrictPreflights {
+		if err := preflight.Run(opts.PendingApp.ID, opts.PendingApp.Slug, newSequence, false, tmpRoot); err != nil {
+			return nil, errors.Wrap(err, "failed to start preflights")
 		}
 	}
 
