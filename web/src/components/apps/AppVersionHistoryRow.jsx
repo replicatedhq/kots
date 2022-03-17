@@ -290,7 +290,7 @@ function renderVersionStatus(version, app, viewLogs) {
 }
 
 export default function AppVersionHistoryRow(props) {
-  const { version, selectedDiffReleases, nothingToCommit,
+  const { version, requiredVersions, selectedDiffReleases, nothingToCommit,
     isChecked, isNew, renderSourceAndDiff, handleSelectReleasesToDiff,
     yamlErrorsDetails, gitopsEnabled, toggleShowDetailsModal,
     renderVersionDownloadStatus, isDownloading } = props;
@@ -298,12 +298,14 @@ export default function AppVersionHistoryRow(props) {
   const hideSourceDiff = version?.source.includes("Airgap Install") || version?.source.includes("Online Install");
 
   let actionFn = props.deployVersion;
-  if (version.status === "failed" || version.status === "deployed") {
-    actionFn = props.redeployVersion;
-  } else if (version.needsKotsUpgrade) {
+  if (version.needsKotsUpgrade) {
     actionFn = props.upgradeAdminConsole;
   } else if (version.status === "pending_download") {
     actionFn = props.downloadVersion;
+  } else if (requiredVersions?.length) {
+    actionFn = props.displayRequiredVersionsModal;
+  } else if (version.status === "failed" || version.status === "deployed") {
+    actionFn = props.redeployVersion;
   }
 
   return (

@@ -5,6 +5,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Modal from "react-modal";
 import find from "lodash/find";
+import findIndex from "lodash/findIndex";
 import get from "lodash/get";
 import MountAware from "../shared/MountAware";
 import Loader from "../shared/Loader";
@@ -63,6 +64,7 @@ class AppVersionHistory extends Component {
     errorMsg: "",
     displayErrorModal: false,
     displayConfirmDeploymentModal: false,
+    displayRequiredVersionsModal: false,
     confirmType: "",
     isSkipPreflights: false,
     displayKotsUpdateModal: false,
@@ -1048,6 +1050,50 @@ class AppVersionHistory extends Component {
     )
   }
 
+  displayRequiredVersionsModal = () => {
+    this.setState({ displayRequiredVersionsModal: true });
+  }
+
+  getRequiredVersionsForVersion = version => {
+    const { app } = this.props;
+    const { versionHistory } = this.state;
+
+    const downstream = app.downstreams?.length && app.downstreams[0];
+    const deployedVersion = downstream?.currentVersion;
+
+    const versionIndex = findIndex(versionHistory, v => v.sequence === version.sequence);
+    const deployedVersionIndex = findIndex(versionHistory, v => v.sequence === deployedVersion?.sequence);
+
+    if (deployedVersionIndex === -1) {
+      // no version has been deployed yet, treat as an initial install where any version can be deployed at first.
+      return [];
+    }
+
+    if (versionIndex === deployedVersionIndex) {
+      // version is currently deployed, so previous required versions should've already been deployed.
+      // also, we shouldn't block re-deploying if a previous release is edited later by the vendor to be required.
+      return [];
+    }
+
+    // find required versions between the currently deployed version and the desired version
+    // TODO @salah: check if those versions have been deployed before, what should happen in that scenario?
+    const requiredVersions = [];
+    for (let i = 0; i < versionHistory.length; i++) {
+      if (i <= versionIndex) {
+        continue;
+      }
+      if (i == deployedVersionIndex) {
+        break;
+      }
+      const v = versionHistory[i];
+      if (v.isRequired) {
+        requiredVersions.push(v);
+      }
+    }
+
+    return requiredVersions;
+  }
+
   renderAppVersionHistoryRow = version => {
     if (this.state.selectedDiffReleases && version.status === "pending_download") {
       // non-downloaded versions can't be diffed
@@ -1060,6 +1106,7 @@ class AppVersionHistory extends Component {
     const yamlErrorsDetails = this.yamlErrorsDetails(downstream, version);
     const isChecked = !!this.state.checkedReleasesToDiff.find(diffRelease => diffRelease.parentSequence === version.parentSequence);
     const isNew = secondsAgo(version.createdOn) < 10;
+    const requiredVersions = this.getRequiredVersionsForVersion(version);
 
     return (
       <AppVersionHistoryRow
@@ -1068,6 +1115,7 @@ class AppVersionHistory extends Component {
         match={this.props.match}
         history={this.props.history}
         version={version}
+        requiredVersions={requiredVersions}
         selectedDiffReleases={this.state.selectedDiffReleases}
         nothingToCommit={nothingToCommit}
         isChecked={isChecked}
@@ -1081,6 +1129,7 @@ class AppVersionHistory extends Component {
         redeployVersion={this.redeployVersion}
         downloadVersion={this.downloadVersion}
         upgradeAdminConsole={this.upgradeAdminConsole}
+        displayRequiredVersionsModal={this.displayRequiredVersionsModal}
         handleViewLogs={this.handleViewLogs}
         handleSelectReleasesToDiff={this.handleSelectReleasesToDiff}
         renderVersionDownloadStatus={this.renderVersionDownloadStatus}
@@ -1375,7 +1424,7 @@ class AppVersionHistory extends Component {
             className="Modal DefaultSize"
           >
             <div className="Modal-body">
-            <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">{this.state.confirmType === "rollback" ? "Rollback to" : this.state.confirmType === "redeploy" ? "Redeploy" : "Deploy"} {this.state.versionToDeploy?.versionLabel} (Sequence {this.state.versionToDeploy?.sequence})?</p>
+              <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">{this.state.confirmType === "rollback" ? "Rollback to" : this.state.confirmType === "redeploy" ? "Redeploy" : "Deploy"} {this.state.versionToDeploy?.versionLabel} (Sequence {this.state.versionToDeploy?.sequence})?</p>
               {isPastVersion && this.props.app?.autoDeploy !== "disabled" ? 
                 <div className="info-box">
                   <span className="u-fontSize--small u-textColor--header u-lineHeight--normal u-fontWeight--medium">You have automatic deploys enabled. {this.state.confirmType === "rollback" ? "Rolling back to" : this.state.confirmType === "redeploy" ? "Redeploying" : "Deploying"} this version will disable automatic deploys. You can turn it back on after this version finishes deployment.</span>
@@ -1385,6 +1434,24 @@ class AppVersionHistory extends Component {
                 <button className="btn secondary blue" onClick={() => this.setState({ displayConfirmDeploymentModal: false, confirmType: "", versionToDeploy: null })}>Cancel</button>
                 <button className="u-marginLeft--10 btn primary" onClick={this.state.confirmType === "redeploy" ? this.finalizeRedeployment : () => this.finalizeDeployment(false)}>Yes, {this.state.confirmType === "rollback" ? "rollback" : this.state.confirmType === "redeploy" ? "redeploy" : "deploy"}</button>
               </div>
+            </div>
+          </Modal>
+        }
+
+        {this.state.displayRequiredVersionsModal &&
+          <Modal
+            isOpen={true}
+            onRequestClose={() => this.setState({ displayRequiredVersionsModal: false })}
+            contentLabel="Required releases"
+            ariaHideApp={false}
+            className="Modal DefaultSize"
+          >
+            <div className="Modal-body">
+              {/* <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10"></p> */}
+              <div className="info-box">
+                <span className="u-fontSize--small u-textColor--header u-lineHeight--normal u-fontWeight--medium">Release is blocked.</span>
+              </div>
+              <button type="button" className="btn primary u-marginTop--15" onClick={() => this.setState({ displayRequiredVersionsModal: false })}>Ok, got it!</button>
             </div>
           </Modal>
         }
