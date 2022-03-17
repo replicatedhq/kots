@@ -146,6 +146,10 @@ body a {
     background-color: $muted-light-accent;
     color: #ffffff;
   }
+  &.required {
+    background-color: $warning-color;
+    color: #ffffff;
+  }
 }
 
 .status-indicator {
