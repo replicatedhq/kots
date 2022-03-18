@@ -4,10 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/api/version/types"
 	"github.com/replicatedhq/kots/pkg/gitops"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -64,14 +66,19 @@ func DeployVersion(appID string, sequence int64) error {
 
 	// TODO: this check should be removed when we implement auto deploy if intermediate required releases.
 	// the function can then be refactored to return the required versions to be deployed first.
-	blocked, err = isBlockedDueToRequiredReleases(appID, sequence)
+	blocked, requiredVersions, err := isBlockedDueToRequiredVersions(appID, sequence)
 	if err != nil {
 		return errors.Wrap(err, "failed to check if deployment is blocked due to previous required releases")
 	}
 	if blocked {
+		versionLabels := []string{}
+		for _, v := range requiredVersions {
+			versionLabels = append(versionLabels, v.VersionLabel)
+		}
+		versionLabelsStr := strings.Join(versionLabels, ", ")
 		return util.ActionableError{
 			NoRetry: true,
-			Message: "Unable to deploy as there are intermediate required releases that need to be deployed first", // TODO @salah find a better message
+			Message: fmt.Sprintf("This version cannot be deployed because versions %s are required and must be deployed first.", versionLabelsStr),
 		}
 	}
 
@@ -268,17 +275,16 @@ func isBlockedDueToStrictPreFlights(appID string, sequence int64) (bool, error) 
 	return hasStrictPreflights && preflightResult.HasFailingStrictPreflights, nil
 }
 
-func isBlockedDueToRequiredReleases(appID string, sequence int64) (bool, error) {
-	// TODO @salah how to distinguish between a bad release and a min kots version blocked release?
+func isBlockedDueToRequiredVersions(appID string, sequence int64) (bool, []*downstreamtypes.DownstreamVersion, error) {
 	// check for intermediate required non-downloaded versions as well
 	appVersions, err := store.GetStore().FindAppVersions(appID, false)
 	if err != nil {
-		return false, errors.Wrap(err, "failed to get downstream versions")
+		return false, nil, errors.Wrap(err, "failed to get downstream versions")
 	}
 
 	if appVersions.CurrentVersion == nil {
 		// no version has been deployed yet, treat as an initial install where any version can be deployed at first.
-		return false, nil
+		return false, nil, nil
 	}
 
 	versionIndex := -1
@@ -300,12 +306,11 @@ func isBlockedDueToRequiredReleases(appID string, sequence int64) (bool, error) 
 	if versionIndex == deployedVersionIndex {
 		// version is currently deployed, so previous required versions should've already been deployed.
 		// also, we shouldn't block re-deploying if a previous release is edited later by the vendor to be required.
-		return false, nil
+		return false, nil, nil
 	}
 
 	// check if there are required versions between the currently deployed version and the desired version
-	// TODO @salah: check if those versions have been deployed before, what should happen in that scenario?
-	blocked := false
+	requiredVersions := []*downstreamtypes.DownstreamVersion{}
 	for i, v := range appVersions.AllVersions {
 		if i <= versionIndex {
 			continue
@@ -314,10 +319,9 @@ func isBlockedDueToRequiredReleases(appID string, sequence int64) (bool, error) 
 			break
 		}
 		if v.IsRequired {
-			blocked = true
-			break
+			requiredVersions = append(requiredVersions, v)
 		}
 	}
 
-	return blocked, nil
+	return len(requiredVersions) > 0, requiredVersions, nil
 }
