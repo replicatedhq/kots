@@ -184,7 +184,6 @@ type VersionStore interface {
 	CreateAppVersion(appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error)
 	GetAppVersion(appID string, sequence int64) (*versiontypes.AppVersion, error)
 	GetLatestAppVersion(appID string, downloadedOnly bool) (*versiontypes.AppVersion, error)
-	GetAppVersionsAfter(appID string, sequence int64) ([]*versiontypes.AppVersion, error)
 	UpdateNextAppVersionDiffSummary(appID string, baseSequence int64) error
 	UpdateAppVersionInstallationSpec(appID string, sequence int64, spec kotsv1beta1.Installation) error
 	GetNextAppSequence(appID string) (int64, error)

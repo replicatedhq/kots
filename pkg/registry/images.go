@@ -16,7 +16,7 @@ import (
 	"github.com/containers/image/v5/docker"
 	imagetypes "github.com/containers/image/v5/types"
 	"github.com/pkg/errors"
-	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
+	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	dockerregistry "github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -81,7 +81,7 @@ func DeleteUnusedImages(appID string, ignoreRollback bool) error {
 		return errors.Wrap(err, "failed to get apps with registry")
 	}
 
-	activeVersions := []*versiontypes.AppVersion{}
+	activeVersions := []*downstreamtypes.DownstreamVersion{}
 	for _, appID := range appIDs {
 		a, err := store.GetStore().GetApp(appID)
 		if err != nil {
@@ -111,23 +111,13 @@ func DeleteUnusedImages(appID string, ignoreRollback bool) error {
 		}
 
 		for _, d := range downstreams {
-			curSequence, err := store.GetStore().GetCurrentParentSequence(a.ID, d.ClusterID)
+			downstreamVersions, err := store.GetStore().GetAppVersions(a.ID, d.ClusterID, false)
 			if err != nil {
-				return errors.Wrap(err, "failed to get current parent sequence")
+				return errors.Wrapf(err, "failed to get app versions for downstream %s", d.ClusterID)
 			}
 
-			curVersion, err := store.GetStore().GetAppVersion(a.ID, curSequence)
-			if err != nil {
-				return errors.Wrap(err, "failed to get app version")
-			}
-
-			activeVersions = append(activeVersions, curVersion)
-
-			laterVersions, err := store.GetStore().GetAppVersionsAfter(a.ID, curSequence)
-			if err != nil {
-				return errors.Wrapf(err, "failed to get versions after %d", curVersion.Sequence)
-			}
-			activeVersions = append(activeVersions, laterVersions...)
+			activeVersions = append(activeVersions, downstreamVersions.CurrentVersion)
+			activeVersions = append(activeVersions, downstreamVersions.PendingVersions...)
 		}
 	}
 
