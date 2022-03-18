@@ -57,13 +57,11 @@ export default class AppStatus extends React.Component {
       <div className="flex flex1 u-marginTop--10">
       {!isEmpty(appStatus) ?
         <div className="flex alignItems--center">
-          <span className={`status-dot ${appStatus === "ready" ? "u-color--success" : appStatus === "degraded" ? "u-color--warning" : "u-color--error"}`}/>
-          <span className={`u-fontSize--normal u-fontWeight--medium ${appStatus === "ready" ? "u-textColor--bodyCopy" : appStatus === "degraded" ? "u-textColor--warning" : "u-textColor--error"}`}>
+          <span className={`status-dot ${appStatus === "ready" ? "u-color--success" : appStatus === "degraded" || appStatus === "updating" ? "u-color--warning" : "u-color--error"}`}/>
+          <span className={`u-fontSize--normal u-fontWeight--medium ${appStatus === "ready" ? "u-textColor--bodyCopy" : appStatus === "degraded" || appStatus === "updating" ? "u-textColor--warning" : "u-textColor--error"}`}>
             {Utilities.toTitleCase(appStatus)}
           </span>
-          {appStatus !== "ready" ?
-            <span onClick={this.props.onViewAppStatusDetails} className="card-link u-marginLeft--10"> Details </span>
-          : null}
+          <span onClick={this.props.onViewAppStatusDetails} className="card-link u-marginLeft--10"> Details </span>
           <Link to={`${url}/config/${app?.downstreams[0]?.currentVersion?.sequence}`} className="card-link u-marginLeft--10 u-borderLeft--gray u-paddingLeft--10">Edit config</Link>
         </div>
         :

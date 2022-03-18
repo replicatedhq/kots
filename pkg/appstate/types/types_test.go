@@ -61,18 +61,23 @@ func TestMinState(t *testing.T) {
 			want: StateReady,
 		},
 		{
+			name: "updating",
+			ss:   []State{StateUpdating, StateReady},
+			want: StateUpdating,
+		},
+		{
 			name: "degraded",
-			ss:   []State{StateReady, StateDegraded, StateReady},
+			ss:   []State{StateReady, StateDegraded, StateUpdating, StateReady},
 			want: StateDegraded,
 		},
 		{
 			name: "unavailable",
-			ss:   []State{StateUnavailable, StateDegraded, StateReady},
+			ss:   []State{StateUnavailable, StateDegraded, StateUpdating, StateReady},
 			want: StateUnavailable,
 		},
 		{
 			name: "missing",
-			ss:   []State{StateUnavailable, StateDegraded, StateMissing, StateReady},
+			ss:   []State{StateUnavailable, StateDegraded, StateMissing, StateUpdating, StateReady},
 			want: StateMissing,
 		},
 		{
