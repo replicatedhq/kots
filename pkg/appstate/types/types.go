@@ -8,6 +8,7 @@ import (
 
 var (
 	StateReady       State = "ready"
+	StateUpdating    State = "updating"
 	StateDegraded    State = "degraded"
 	StateUnavailable State = "unavailable"
 	StateMissing     State = "missing"
@@ -76,6 +77,8 @@ func MinState(ss ...State) (min State) {
 			min = StateUnavailable
 		} else if s == StateDegraded || min == StateDegraded {
 			min = StateDegraded
+		} else if s == StateUpdating || min == StateUpdating {
+			min = StateUpdating
 		} else if s == StateReady || min == StateReady {
 			min = StateReady
 		}
