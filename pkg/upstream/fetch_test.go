@@ -73,7 +73,9 @@ ACgAAA==`,
 					Kind:       "Airgap",
 				},
 				Spec: kotsv1beta1.AirgapSpec{
-					VersionLabel: test.airgapVersionLabel,
+					AirgapReleaseMeta: kotsv1beta1.AirgapReleaseMeta{
+						VersionLabel: test.airgapVersionLabel,
+					},
 				},
 			},
 		}

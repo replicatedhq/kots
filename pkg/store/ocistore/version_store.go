@@ -559,6 +559,35 @@ func (s *OCIStore) GetAppVersion(appID string, sequence int64) (*versiontypes.Ap
 	return &appVersion, nil
 }
 
+func (s *OCIStore) GetAppVersions(appID string) ([]*versiontypes.AppVersion, error) {
+	configMapName, err := s.appVersionConfigMapNameForApp(appID)
+	if err != nil {
+		return nil, errors.New("failed to get configmap name for app version")
+	}
+
+	configMap, err := s.getConfigmap(configMapName)
+	if err != nil {
+		return nil, errors.New("failed to get app version config map")
+	}
+
+	if configMap.Data == nil {
+		return nil, ErrNotFound
+	}
+
+	appVersions := []*versiontypes.AppVersion{}
+	for _, data := range configMap.Data {
+		v := &versiontypes.AppVersion{}
+		if err := json.Unmarshal([]byte(data), v); err != nil {
+			return nil, errors.Wrap(err, "failed to unmarshal app version")
+		}
+		v.AppID = appID
+
+		appVersions = append(appVersions, v)
+	}
+
+	return appVersions, nil
+}
+
 func (s *OCIStore) GetLatestAppVersion(appID string, downloadedOnly bool) (*versiontypes.AppVersion, error) {
 	return nil, ErrNotImplemented
 }

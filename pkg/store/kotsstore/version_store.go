@@ -777,66 +777,43 @@ func (s *KOTSStore) addAppVersionToDownstream(tx *sql.Tx, appID string, clusterI
 
 func (s *KOTSStore) GetAppVersion(appID string, sequence int64) (*versiontypes.AppVersion, error) {
 	db := persistence.MustGetDBSession()
-	query := `select sequence, created_at, status, applied_at, kots_installation_spec, kots_app_spec, kots_license from app_version where app_id = $1 and sequence = $2`
+	query := `select app_id, sequence, update_cursor, channel_id, version_label, created_at, status, applied_at, kots_installation_spec, kots_app_spec, kots_license from app_version where app_id = $1 and sequence = $2`
 	row := db.QueryRow(query, appID, sequence)
 
-	var status sql.NullString
-	var deployedAt persistence.NullStringTime
-	var createdAt persistence.NullStringTime
-	var installationSpec sql.NullString
-	var kotsAppSpec sql.NullString
-	var licenseSpec sql.NullString
-
-	v := versiontypes.AppVersion{
-		AppID: appID,
+	v, err := s.appVersionFromRow(row)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get app version from row")
 	}
-	if err := row.Scan(&v.Sequence, &createdAt, &status, &createdAt, &installationSpec, &kotsAppSpec, &licenseSpec); err != nil {
+
+	return v, nil
+}
+
+func (s *KOTSStore) GetAppVersions(appID string) ([]*versiontypes.AppVersion, error) {
+	db := persistence.MustGetDBSession()
+	query := `select app_id, sequence, update_cursor, channel_id, version_label, created_at, status, applied_at, kots_installation_spec, kots_app_spec, kots_license from app_version where app_id = $1`
+
+	rows, err := db.Query(query, appID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to query db")
+	}
+
+	versions := []*versiontypes.AppVersion{}
+	for rows.Next() {
+		v, err := s.appVersionFromRow(rows)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get app version from row")
+		}
+		versions = append(versions, v)
+	}
+
+	if err := rows.Err(); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrNotFound
+			return versions, nil
 		}
-		return nil, errors.Wrap(err, "failed to scan")
+		return nil, errors.Wrap(err, "failed to iterate over rows")
 	}
 
-	v.KOTSKinds = &kotsutil.KotsKinds{}
-
-	if installationSpec.Valid && installationSpec.String != "" {
-		installation, err := kotsutil.LoadInstallationFromContents([]byte(installationSpec.String))
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to read installation spec")
-		}
-		if installation != nil {
-			v.KOTSKinds.Installation = *installation
-		}
-	}
-
-	if kotsAppSpec.Valid && kotsAppSpec.String != "" {
-		kotsApp, err := kotsutil.LoadKotsAppFromContents([]byte(kotsAppSpec.String))
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to read kotsapp spec")
-		}
-		if kotsApp != nil {
-			v.KOTSKinds.KotsApplication = *kotsApp
-		}
-	}
-
-	if licenseSpec.Valid && licenseSpec.String != "" {
-		license, err := kotsutil.LoadLicenseFromBytes([]byte(licenseSpec.String))
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to read license spec")
-		}
-		if license != nil {
-			v.KOTSKinds.License = license
-		}
-	}
-
-	v.CreatedOn = createdAt.Time
-	if deployedAt.Valid {
-		v.DeployedAt = &deployedAt.Time
-	}
-
-	v.Status = status.String
-
-	return &v, nil
+	return versions, nil
 }
 
 func (s *KOTSStore) GetLatestAppVersion(appID string, downloadedOnly bool) (*versiontypes.AppVersion, error) {
@@ -1023,4 +1000,70 @@ func (s *KOTSStore) renderPreflightSpec(appID string, appSlug string, sequence i
 	}
 
 	return nil, nil
+}
+
+func (s *KOTSStore) appVersionFromRow(row scannable) (*versiontypes.AppVersion, error) {
+	v := &versiontypes.AppVersion{}
+
+	var status sql.NullString
+	var deployedAt persistence.NullStringTime
+	var createdAt persistence.NullStringTime
+	var installationSpec sql.NullString
+	var kotsAppSpec sql.NullString
+	var licenseSpec sql.NullString
+	var updateCursor sql.NullString
+	var channelID sql.NullString
+	var versionLabel sql.NullString
+
+	if err := row.Scan(&v.AppID, &v.Sequence, &updateCursor, &channelID, &versionLabel, &createdAt, &status, &createdAt, &installationSpec, &kotsAppSpec, &licenseSpec); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrNotFound
+		}
+		return nil, errors.Wrap(err, "failed to scan")
+	}
+
+	v.KOTSKinds = &kotsutil.KotsKinds{}
+
+	v.UpdateCursor = updateCursor.String
+	v.ChannelID = channelID.String
+	v.VersionLabel = versionLabel.String
+
+	if installationSpec.Valid && installationSpec.String != "" {
+		installation, err := kotsutil.LoadInstallationFromContents([]byte(installationSpec.String))
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to read installation spec")
+		}
+		if installation != nil {
+			v.KOTSKinds.Installation = *installation
+		}
+	}
+
+	if kotsAppSpec.Valid && kotsAppSpec.String != "" {
+		kotsApp, err := kotsutil.LoadKotsAppFromContents([]byte(kotsAppSpec.String))
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to read kotsapp spec")
+		}
+		if kotsApp != nil {
+			v.KOTSKinds.KotsApplication = *kotsApp
+		}
+	}
+
+	if licenseSpec.Valid && licenseSpec.String != "" {
+		license, err := kotsutil.LoadLicenseFromBytes([]byte(licenseSpec.String))
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to read license spec")
+		}
+		if license != nil {
+			v.KOTSKinds.License = license
+		}
+	}
+
+	v.CreatedOn = createdAt.Time
+	if deployedAt.Valid {
+		v.DeployedAt = &deployedAt.Time
+	}
+
+	v.Status = status.String
+
+	return v, nil
 }

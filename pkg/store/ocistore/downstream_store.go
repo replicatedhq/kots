@@ -53,7 +53,7 @@ func (s *OCIStore) GetStatusForVersion(appID string, clusterID string, sequence 
 	return types.DownstreamVersionStatus(""), ErrNotImplemented
 }
 
-func (s *OCIStore) GetAppVersions(appID string, clusterID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error) {
+func (s *OCIStore) GetDownstreamVersions(appID string, clusterID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error) {
 	return nil, ErrNotImplemented
 }
 
