@@ -80,7 +80,7 @@ function renderReleaseNotes(version, showReleaseNotes) {
   );
 }
 
-function renderVersionAction(version, nothingToCommitDiff, app, history, actionFn, showReleaseNotes, viewLogs, isDownloading, adminConsoleMetadata) {
+function renderVersionAction(version, nothingToCommitDiff, app, history, actionFn, showReleaseNotes, viewLogs, isDownloading, adminConsoleMetadata, requiredVersions) {
   const downstream = app.downstreams[0];
 
   if (version.status === "pending_download") {
@@ -134,7 +134,7 @@ function renderVersionAction(version, nothingToCommitDiff, app, history, actionF
   const isSecondaryBtn = isPastVersion || needsConfiguration || isRedeploy && !isRollback;
   const isPrimaryButton = !isSecondaryBtn && !isRedeploy && !isRollback;
   const editableConfig = isCurrentVersion || isLatestVersion || isPendingVersion?.semver;
-  const blockDeployment = version.hasFailingStrictPreflights
+  const blockDeployment = version.hasFailingStrictPreflights || requiredVersions?.length;
   let tooltipTip;
   if (editableConfig) {
     tooltipTip = "Edit config";
@@ -195,7 +195,7 @@ function renderVersionAction(version, nothingToCommitDiff, app, history, actionF
           >
             <span
               data-tip-disable={!blockDeployment}
-              data-tip="Deployment is disabled as a strict analyzer in this version's preflight checks has failed or has not been run"
+              data-tip={disableDeploymentTooltipText(version, requiredVersions)}
               data-for="disable-deployment-tooltip"
             >
               {deployButtonStatus(downstream, version, app, adminConsoleMetadata)}
@@ -206,6 +206,13 @@ function renderVersionAction(version, nothingToCommitDiff, app, history, actionF
       }
     </div>
   );
+}
+
+function disableDeploymentTooltipText(version, requiredVersions) {
+  if (requiredVersions?.length) {
+    return `This version cannot be deployed because version${requiredVersions?.length > 1 ? "s" : ""} ${requiredVersions.map(v => v.versionLabel).join(", ")} ${requiredVersions?.length > 1 ? "are" : "is"} required and must be deployed first.`
+  }
+  return "Deployment is disabled as a strict analyzer in this version's preflight checks has failed or has not been run";
 }
 
 function renderViewPreflights(version, app, match) {
@@ -290,7 +297,7 @@ function renderVersionStatus(version, app, viewLogs) {
 }
 
 export default function AppVersionHistoryRow(props) {
-  const { version, requiredVersions, selectedDiffReleases, nothingToCommit,
+  const { version, selectedDiffReleases, nothingToCommit,
     isChecked, isNew, renderSourceAndDiff, handleSelectReleasesToDiff,
     yamlErrorsDetails, gitopsEnabled, toggleShowDetailsModal,
     renderVersionDownloadStatus, isDownloading } = props;
@@ -302,8 +309,6 @@ export default function AppVersionHistoryRow(props) {
     actionFn = props.upgradeAdminConsole;
   } else if (version.status === "pending_download") {
     actionFn = props.downloadVersion;
-  } else if (requiredVersions?.length) {
-    actionFn = props.displayRequiredVersionsModal;
   } else if (version.status === "failed" || version.status === "deployed") {
     actionFn = props.redeployVersion;
   }
@@ -337,7 +342,7 @@ export default function AppVersionHistoryRow(props) {
           <div className="flex flex-auto u-marginTop--10"> {gitopsEnabled && version.status !== "pending_download" ? renderViewPreflights(version, props.app, props.match) : renderVersionStatus(version, props.app, props.handleViewLogs)}</div>
         </div>
         <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex-auto alignItems--flexEnd justifyContent--center`}>
-          {renderVersionAction(version, nothingToCommit && selectedDiffReleases, props.app, props.history, actionFn, props.showReleaseNotes, props.handleViewLogs, isDownloading, props.adminConsoleMetadata)}
+          {renderVersionAction(version, nothingToCommit && selectedDiffReleases, props.app, props.history, actionFn, props.showReleaseNotes, props.handleViewLogs, isDownloading, props.adminConsoleMetadata, props.requiredVersions)}
         </div>
       </div>
       {renderVersionDownloadStatus(version)}
