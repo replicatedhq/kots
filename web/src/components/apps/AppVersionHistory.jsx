@@ -64,7 +64,6 @@ class AppVersionHistory extends Component {
     errorMsg: "",
     displayErrorModal: false,
     displayConfirmDeploymentModal: false,
-    displayRequiredVersionsModal: false,
     confirmType: "",
     isSkipPreflights: false,
     displayKotsUpdateModal: false,
@@ -1050,10 +1049,6 @@ class AppVersionHistory extends Component {
     )
   }
 
-  displayRequiredVersionsModal = () => {
-    this.setState({ displayRequiredVersionsModal: true });
-  }
-
   getRequiredVersionsForVersion = version => {
     const { app } = this.props;
     const { versionHistory } = this.state;
@@ -1076,7 +1071,6 @@ class AppVersionHistory extends Component {
     }
 
     // find required versions between the currently deployed version and the desired version
-    // TODO @salah: check if those versions have been deployed before, what should happen in that scenario?
     const requiredVersions = [];
     for (let i = 0; i < versionHistory.length; i++) {
       if (i <= versionIndex) {
@@ -1129,7 +1123,6 @@ class AppVersionHistory extends Component {
         redeployVersion={this.redeployVersion}
         downloadVersion={this.downloadVersion}
         upgradeAdminConsole={this.upgradeAdminConsole}
-        displayRequiredVersionsModal={this.displayRequiredVersionsModal}
         handleViewLogs={this.handleViewLogs}
         handleSelectReleasesToDiff={this.handleSelectReleasesToDiff}
         renderVersionDownloadStatus={this.renderVersionDownloadStatus}
@@ -1434,24 +1427,6 @@ class AppVersionHistory extends Component {
                 <button className="btn secondary blue" onClick={() => this.setState({ displayConfirmDeploymentModal: false, confirmType: "", versionToDeploy: null })}>Cancel</button>
                 <button className="u-marginLeft--10 btn primary" onClick={this.state.confirmType === "redeploy" ? this.finalizeRedeployment : () => this.finalizeDeployment(false)}>Yes, {this.state.confirmType === "rollback" ? "rollback" : this.state.confirmType === "redeploy" ? "redeploy" : "deploy"}</button>
               </div>
-            </div>
-          </Modal>
-        }
-
-        {this.state.displayRequiredVersionsModal &&
-          <Modal
-            isOpen={true}
-            onRequestClose={() => this.setState({ displayRequiredVersionsModal: false })}
-            contentLabel="Required releases"
-            ariaHideApp={false}
-            className="Modal DefaultSize"
-          >
-            <div className="Modal-body">
-              {/* <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10"></p> */}
-              <div className="info-box">
-                <span className="u-fontSize--small u-textColor--header u-lineHeight--normal u-fontWeight--medium">Release is blocked.</span>
-              </div>
-              <button type="button" className="btn primary u-marginTop--15" onClick={() => this.setState({ displayRequiredVersionsModal: false })}>Ok, got it!</button>
             </div>
           </Modal>
         }
