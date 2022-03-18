@@ -245,7 +245,7 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 	d := downstreams[0]
 
 	// get app version labels and sequence numbers
-	appVersions, err := store.GetStore().GetAppVersions(opts.AppID, d.ClusterID, false)
+	appVersions, err := store.GetStore().GetDownstreamVersions(opts.AppID, d.ClusterID, false)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get app versions for app %s", opts.AppID)
 	}
@@ -362,7 +362,7 @@ func ensureDesiredVersionIsDeployed(opts CheckForUpdatesOpts, clusterID string) 
 }
 
 func getVersionToDeploy(opts CheckForUpdatesOpts, clusterID string, availableReleases []UpdateCheckRelease) *UpdateCheckRelease {
-	appVersions, err := store.GetStore().GetAppVersions(opts.AppID, clusterID, true)
+	appVersions, err := store.GetStore().GetDownstreamVersions(opts.AppID, clusterID, true)
 	if err != nil {
 		return nil
 	}
@@ -405,7 +405,7 @@ func getVersionToDeploy(opts CheckForUpdatesOpts, clusterID string, availableRel
 }
 
 func deployLatestVersion(opts CheckForUpdatesOpts, clusterID string) error {
-	appVersions, err := store.GetStore().GetAppVersions(opts.AppID, clusterID, true)
+	appVersions, err := store.GetStore().GetDownstreamVersions(opts.AppID, clusterID, true)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get app versions for app %s", opts.AppID)
 	}
@@ -422,7 +422,7 @@ func deployLatestVersion(opts CheckForUpdatesOpts, clusterID string) error {
 }
 
 func deployVersionLabel(opts CheckForUpdatesOpts, clusterID string, versionLabel string) error {
-	appVersions, err := store.GetStore().GetAppVersions(opts.AppID, clusterID, true)
+	appVersions, err := store.GetStore().GetDownstreamVersions(opts.AppID, clusterID, true)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get app versions for app %s", opts.AppID)
 	}
@@ -455,7 +455,7 @@ func autoDeploy(opts CheckForUpdatesOpts, clusterID string, autoDeploy apptypes.
 		return nil
 	}
 
-	appVersions, err := store.GetStore().GetAppVersions(opts.AppID, clusterID, true)
+	appVersions, err := store.GetStore().GetDownstreamVersions(opts.AppID, clusterID, true)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get app versions for app %s", opts.AppID)
 	}

@@ -22,13 +22,20 @@ import (
 
 // AirgapSpec defines the desired state of AirgapSpec
 type AirgapSpec struct {
+	AirgapReleaseMeta `json:",inline"`
+	ChannelID         string              `json:"channelID,omitempty"`
+	ChannelName       string              `json:"channelName,omitempty"`
+	Signature         []byte              `json:"signature,omitempty"`
+	AppSlug           string              `json:"appSlug,omitempty"`
+	IsRequired        bool                `json:"isRequired,omitempty"`
+	RequiredReleases  []AirgapReleaseMeta `json:"requiredReleases,omitempty"`
+}
+
+// AirgapStatus defines airgap release metadata
+type AirgapReleaseMeta struct {
 	VersionLabel string `json:"versionLabel,omitempty"`
 	ReleaseNotes string `json:"releaseNotes,omitempty"`
 	UpdateCursor string `json:"updateCursor,omitempty"`
-	ChannelID    string `json:"channelID,omitempty"`
-	ChannelName  string `json:"channelName,omitempty"`
-	Signature    []byte `json:"signature,omitempty"`
-	AppSlug      string `json:"appSlug,omitempty"`
 }
 
 // AirgapStatus defines the observed state of Airgap
