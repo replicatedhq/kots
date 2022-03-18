@@ -9,10 +9,11 @@ import (
 type VersionInfo struct {
 	Sequence     int64  // the installation sequence. Always 0 when being freshly installed, etc
 	Cursor       string // the upstream version cursor - integers for kots apps, may be semvers for helm charts
-	ChannelName  string // the name of the channel that the current version was from (kots apps only)
-	VersionLabel string // a pretty version label if provided (kots apps only)
-	ReleaseNotes string // the release notes for the given version (kots apps only)
-	IsAirgap     bool   // is this an airgap app (kots apps only)
+	ChannelName  string // the name of the channel that the current version was from
+	VersionLabel string // a pretty version label if provided
+	IsRequired   bool   // is the version/release required during upgrades or can it be skipped
+	ReleaseNotes string // the release notes for the given version
+	IsAirgap     bool   // is this an airgap app
 }
 
 type versionCtx struct {
@@ -29,6 +30,7 @@ func VersionInfoFromInstallation(sequence int64, isAirgap bool, spec v1beta1.Ins
 		Cursor:       spec.UpdateCursor,
 		ChannelName:  spec.ChannelName,
 		VersionLabel: spec.VersionLabel,
+		IsRequired:   spec.IsRequired,
 		ReleaseNotes: spec.ReleaseNotes,
 		IsAirgap:     isAirgap,
 	}
@@ -41,6 +43,7 @@ func (ctx versionCtx) FuncMap() template.FuncMap {
 		"Cursor":       ctx.cursor,
 		"ChannelName":  ctx.channelName,
 		"VersionLabel": ctx.versionLabel,
+		"IsRequired":   ctx.isRequired,
 		"ReleaseNotes": ctx.releaseNotes,
 		"IsAirgap":     ctx.isAirgap,
 	}
@@ -72,6 +75,13 @@ func (ctx versionCtx) versionLabel() string {
 		return ""
 	}
 	return ctx.info.VersionLabel
+}
+
+func (ctx versionCtx) isRequired() bool {
+	if ctx.info == nil {
+		return false
+	}
+	return ctx.info.IsRequired
 }
 
 func (ctx versionCtx) releaseNotes() string {

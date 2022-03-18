@@ -16,6 +16,7 @@ func TestVersionContext(t *testing.T) {
 			Cursor:       "five",
 			ChannelName:  "chanFive",
 			VersionLabel: "verFive",
+			IsRequired:   true,
 			ReleaseNotes: "this is five",
 			IsAirgap:     true,
 		},
@@ -35,6 +36,9 @@ func TestVersionContext(t *testing.T) {
 
 	req.Equal("verFive", ctx.versionLabel())
 	req.Equal("", nilCtx.versionLabel())
+
+	req.Equal(true, ctx.isRequired())
+	req.Equal(false, nilCtx.isRequired())
 
 	req.Equal("this is five", ctx.releaseNotes())
 	req.Equal("", nilCtx.releaseNotes())

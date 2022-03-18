@@ -98,6 +98,7 @@ func TestTemplateConfig(t *testing.T) {
 		Cursor:       "345",
 		ChannelName:  "Stable",
 		VersionLabel: "1.2.3",
+		IsRequired:   true,
 		ReleaseNotes: "",
 		IsAirgap:     false,
 	}
