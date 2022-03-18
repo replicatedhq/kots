@@ -98,7 +98,7 @@ jobs:
           {
             name: "type=embedded cluster, env=airgapped, phase=new install, rbac=cluster admin",
             backend_config: "embedded-airgapped-install-backend-config-k3s.tfvars",
-            terraform_script: "embedded-airgapped-install.sh",
+            terraform_script: "embedded-airgapped-install-k3s.sh",
             kubernetes_distro: "k3s"
           },
           {
