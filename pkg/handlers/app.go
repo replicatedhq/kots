@@ -206,7 +206,7 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 			return nil, errors.Wrap(err, "failed to get realized links from app spec")
 		}
 
-		appVersions, err := store.GetStore().GetAppVersions(a.ID, d.ClusterID, true)
+		appVersions, err := store.GetStore().GetDownstreamVersions(a.ID, d.ClusterID, true)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get downstream versions")
 		}
@@ -333,7 +333,7 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 
 	clusterID := downstreams[0].ClusterID
 
-	appVersions, err := store.GetStore().GetAppVersions(foundApp.ID, clusterID, false)
+	appVersions, err := store.GetStore().GetDownstreamVersions(foundApp.ID, clusterID, false)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get downstream versions")
 		logger.Error(err)
