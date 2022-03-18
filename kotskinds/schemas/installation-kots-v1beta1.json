@@ -26,6 +26,9 @@
         "encryptionKey": {
           "type": "string"
         },
+        "isRequired": {
+          "type": "boolean"
+        },
         "knownImages": {
           "type": "array",
           "items": {

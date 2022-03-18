@@ -51,6 +51,7 @@ func NewConfigContextTemplateBuilder(u *upstreamtypes.Upstream, renderOptions *R
 		Cursor:       u.UpdateCursor,
 		ChannelName:  u.ChannelName,
 		VersionLabel: u.VersionLabel,
+		IsRequired:   u.IsRequired,
 		ReleaseNotes: u.ReleaseNotes,
 		IsAirgap:     renderOptions.IsAirgap,
 	}

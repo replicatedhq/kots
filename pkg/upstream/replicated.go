@@ -295,7 +295,7 @@ func downloadReplicated(
 			Cursor:       updateCursor.Cursor,
 			ChannelName:  channelName,
 			VersionLabel: release.VersionLabel,
-			// TODO @salah add isrequired here
+			IsRequired:   release.IsRequired,
 			ReleaseNotes: release.ReleaseNotes,
 			IsAirgap:     isAirgap,
 		}
