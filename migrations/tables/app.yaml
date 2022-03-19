@@ -37,7 +37,7 @@ spec:
       - name: license
         type: text
       - name: current_sequence
-        type: numeric(3, 2)
+        type: numeric(21, 2)
       - name: last_update_check_at
         type: timestamp without time zone
       - name: is_all_users

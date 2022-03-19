@@ -25,4 +25,4 @@ spec:
         constraints:
           notNull: true
       - name: current_sequence
-        type: numeric(3, 2)
+        type: numeric(21, 2)

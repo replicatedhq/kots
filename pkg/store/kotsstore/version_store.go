@@ -967,6 +967,7 @@ func (s *KOTSStore) getNextAppSequence(db queryable, appID string) (float64, err
 	newSequence := float64(0)
 	if maxSequence.Valid {
 		newSequence = maxSequence.Float64 + 1
+		newSequence = math.Floor(newSequence) // since max sequence could be a patch
 	}
 
 	return newSequence, nil
@@ -997,6 +998,11 @@ func (s *KOTSStore) getNextPatchSequence(db queryable, appID string, baseSequenc
 
 	newSequence := maxPatch.Float64 + 0.01          // e.g. 2.0299999999
 	newSequence = math.Round(newSequence*100) / 100 // e.g. 2.03
+
+	if newSequence == nextMajorSequence {
+		logger.Info("patch sequence limit reached, falling back to getting the next app sequence")
+		return s.getNextAppSequence(db, appID)
+	}
 
 	return newSequence, nil
 }
