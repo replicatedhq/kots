@@ -976,6 +976,7 @@ func (s *KOTSStore) getNextPatchSequence(db queryable, appID string, baseSequenc
 		return 0, nil
 	}
 	// TODO @salah make this work with 1/100 and 1/1000
+	// Also check if that patch already exists
 	return *baseSequence + 0.1, nil
 }
 
