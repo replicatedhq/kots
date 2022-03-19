@@ -973,7 +973,7 @@ func (s *KOTSStore) getNextAppSequence(db queryable, appID string) (float64, err
 
 func (s *KOTSStore) getNextPatchSequence(db queryable, appID string, baseSequence *float64) (float64, error) {
 	if baseSequence == nil {
-		return 0.1, nil
+		return 0, nil
 	}
 	// TODO @salah make this work with 1/100 and 1/1000
 	return *baseSequence + 0.1, nil

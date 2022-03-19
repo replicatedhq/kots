@@ -51,7 +51,7 @@ class PreflightResultPage extends Component {
           this.showWarningModal();
           return;
         }
-        const sequence = match.params.sequence ? parseInt(match.params.sequence, 10) : 0;
+        const sequence = match.params.sequence ? parseFloat(match.params.sequence) : 0;
         await this.deployKotsVersion(slug, sequence, force);
       }
 
@@ -114,7 +114,7 @@ class PreflightResultPage extends Component {
     this.setState({ errorMessage: "" });
 
     const { slug } = this.props.match.params;
-    const sequence = this.props.match.params.sequence ? parseInt(this.props.match.params.sequence, 10) : 0;
+    const sequence = this.props.match.params.sequence ? parseFloat(this.props.match.params.sequence) : 0;
 
     fetch(`${process.env.API_ENDPOINT}/app/${slug}/sequence/${sequence}/preflight/ignore-rbac`, {
       headers: {
@@ -142,7 +142,7 @@ class PreflightResultPage extends Component {
     const { slug } = this.props.match.params;
 
     this.setState({ errorMessage: "" });
-    const sequence = this.props.match.params.sequence ? parseInt(this.props.match.params.sequence, 10) : 0;
+    const sequence = this.props.match.params.sequence ? parseFloat(this.props.match.params.sequence) : 0;
 
     fetch(`${process.env.API_ENDPOINT}/app/${slug}/sequence/${sequence}/preflight/run`, {
       headers: {
@@ -197,7 +197,7 @@ class PreflightResultPage extends Component {
     this.setState({ errorMessage: "" });
     const { match } = this.props;
     if (match.params.downstreamSlug) { // why?
-      const sequence = match.params.sequence ? parseInt(match.params.sequence, 10) : 0;
+      const sequence = match.params.sequence ? parseFloat(match.params.sequence) : 0;
       return this.getKotsPreflightResultForSequence(match.params.slug, sequence);
     }
     return this.getLatestKotsPreflightResult();

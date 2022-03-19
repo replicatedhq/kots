@@ -181,7 +181,7 @@ class AppConfig extends Component {
       return 0;
     }
     if (match.params.sequence != undefined) {
-      return parseInt(match.params.sequence);
+      return parseFloat(match.params.sequence);
     }
 
     // check is current deployed config latest
@@ -386,7 +386,7 @@ class AppConfig extends Component {
     if (!match.params.sequence) {
       sequence = app?.currentSequence;
     } else {
-      sequence = parseInt(match.params.sequence);
+      sequence = parseFloat(match.params.sequence);
     }
 
     const currentSequence = app?.downstreams[0]?.currentVersion?.parentSequence;
@@ -423,7 +423,7 @@ class AppConfig extends Component {
   isConfigReadOnly = (app) => {
     const { match } = this.props;
     if (!match.params.sequence) {return false;}
-    const sequence = parseInt(match.params.sequence);
+    const sequence = parseFloat(match.params.sequence);
     const isCurrentVersion = app.downstreams[0]?.currentVersion?.sequence === sequence;
     const isLatestVersion = app.currentSequence === sequence;
     const pendingVersion = find(app.downstreams[0]?.pendingVersions, { sequence: sequence });

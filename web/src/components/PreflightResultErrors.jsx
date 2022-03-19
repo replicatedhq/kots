@@ -41,7 +41,7 @@ class PreflightResultErrors extends Component {
 
   getPreflightCommand = async () => {
     const { match, preflightResultData } = this.props;
-    const sequence = match.params.sequence ? parseInt(match.params.sequence, 10) : 0;
+    const sequence = match.params.sequence ? parseFloat(match.params.sequence) : 0;
     try {
       const command = await this.fetchPreflightCommand(preflightResultData.appSlug, sequence);
       this.setState({
