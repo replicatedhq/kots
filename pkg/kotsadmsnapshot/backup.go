@@ -119,7 +119,7 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 	}
 	veleroBackup.Annotations["kots.io/snapshot-trigger"] = snapshotTrigger
 	veleroBackup.Annotations["kots.io/app-id"] = a.ID
-	veleroBackup.Annotations["kots.io/app-sequence"] = strconv.FormatFloat(parentSequence, 10, 3, 64)
+	veleroBackup.Annotations["kots.io/app-sequence"] = strconv.FormatFloat(parentSequence, 'f', -1, 64)
 	veleroBackup.Annotations["kots.io/snapshot-requested"] = time.Now().UTC().Format(time.RFC3339)
 
 	labelSelector := metav1.LabelSelector{

@@ -18,4 +18,4 @@ spec:
       - name: updated_at
         type: timestamp without time zone
       - name: sequence
-        type: numeric(4, 3)
+        type: numeric(3, 2)

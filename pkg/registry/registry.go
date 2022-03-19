@@ -128,7 +128,7 @@ func RewriteImages(appID string, sequence float64, hostname string, username str
 		pipeReader.CloseWithError(scanner.Err())
 	}()
 
-	nextAppSequence, err := store.GetStore().GetNextAppSequence(a.ID)
+	nextSequence, err := store.GetStore().GetNextPatchSequence(a.ID, &sequence)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get next app sequence")
 	}
@@ -154,7 +154,7 @@ func RewriteImages(appID string, sequence float64, hostname string, username str
 		AppID:              a.ID,
 		AppSlug:            a.Slug,
 		IsGitOps:           a.IsGitOps,
-		AppSequence:        nextAppSequence,
+		AppSequence:        nextSequence,
 		ReportingInfo:      reporting.GetReportingInfo(a.ID),
 
 		// TODO: pass in as arguments if this is ever called from CLI

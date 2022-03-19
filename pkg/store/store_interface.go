@@ -187,6 +187,7 @@ type VersionStore interface {
 	UpdateNextAppVersionDiffSummary(appID string, baseSequence float64) error
 	UpdateAppVersionInstallationSpec(appID string, sequence float64, spec kotsv1beta1.Installation) error
 	GetNextAppSequence(appID string) (float64, error)
+	GetNextPatchSequence(appID string, baseSequence *float64) (float64, error)
 	GetCurrentUpdateCursor(appID string, channelID string) (string, string, error)
 	HasStrictPreflights(appID string, sequence float64) (bool, error)
 }

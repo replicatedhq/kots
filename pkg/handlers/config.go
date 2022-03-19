@@ -551,15 +551,14 @@ func updateAppConfig(updateApp *apptypes.App, sequence float64, configGroups []k
 		return updateAppConfigResponse, err
 	}
 
-	// TODO @salah fix this
 	renderSequence := sequence
 	if createNewVersion {
-		nextAppSequence, err := store.GetStore().GetNextAppSequence(updateApp.ID)
+		s, err := store.GetStore().GetNextPatchSequence(updateApp.ID, &sequence)
 		if err != nil {
 			updateAppConfigResponse.Error = "failed to get next app sequence"
 			return updateAppConfigResponse, err
 		}
-		renderSequence = nextAppSequence
+		renderSequence = s
 	}
 
 	err = render.RenderDir(archiveDir, app, downstreams, registrySettings, renderSequence)
@@ -827,15 +826,15 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 		ReadOnly:  registryInfo.IsReadOnly,
 	}
 
-	nextAppSequence, err := store.GetStore().GetNextAppSequence(foundApp.ID)
+	nextSequence, err := store.GetStore().GetNextPatchSequence(foundApp.ID, &latestVersion.Sequence)
 	if err != nil {
-		setAppConfigValuesResponse.Error = "failed to get next app sequence"
+		setAppConfigValuesResponse.Error = "failed to get next patch sequence"
 		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
 		JSON(w, http.StatusInternalServerError, setAppConfigValuesResponse)
 		return
 	}
 
-	versionInfo := template.VersionInfoFromInstallation(nextAppSequence, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
+	versionInfo := template.VersionInfoFromInstallation(nextSequence, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
 	appInfo := template.ApplicationInfo{Slug: foundApp.Slug}
 	renderedConfig, err := kotsconfig.TemplateConfigObjects(newConfig, configValueMap, kotsKinds.License, &kotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, true)
 	if err != nil {

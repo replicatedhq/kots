@@ -747,6 +747,21 @@ func (mr *MockStoreMockRecorder) GetNextAppSequence(appID interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNextAppSequence", reflect.TypeOf((*MockStore)(nil).GetNextAppSequence), appID)
 }
 
+// GetNextPatchSequence mocks base method.
+func (m *MockStore) GetNextPatchSequence(appID string, baseSequence *float64) (float64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNextPatchSequence", appID, baseSequence)
+	ret0, _ := ret[0].(float64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetNextPatchSequence indicates an expected call of GetNextPatchSequence.
+func (mr *MockStoreMockRecorder) GetNextPatchSequence(appID, baseSequence interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNextPatchSequence", reflect.TypeOf((*MockStore)(nil).GetNextPatchSequence), appID, baseSequence)
+}
+
 // GetParentSequenceForSequence mocks base method.
 func (m *MockStore) GetParentSequenceForSequence(appID, clusterID string, sequence float64) (float64, error) {
 	m.ctrl.T.Helper()
@@ -3439,6 +3454,21 @@ func (m *MockVersionStore) GetNextAppSequence(appID string) (float64, error) {
 func (mr *MockVersionStoreMockRecorder) GetNextAppSequence(appID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNextAppSequence", reflect.TypeOf((*MockVersionStore)(nil).GetNextAppSequence), appID)
+}
+
+// GetNextPatchSequence mocks base method.
+func (m *MockVersionStore) GetNextPatchSequence(appID string, baseSequence *float64) (float64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNextPatchSequence", appID, baseSequence)
+	ret0, _ := ret[0].(float64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetNextPatchSequence indicates an expected call of GetNextPatchSequence.
+func (mr *MockVersionStoreMockRecorder) GetNextPatchSequence(appID, baseSequence interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNextPatchSequence", reflect.TypeOf((*MockVersionStore)(nil).GetNextPatchSequence), appID, baseSequence)
 }
 
 // GetTargetKotsVersionForVersion mocks base method.

@@ -158,12 +158,12 @@ func (s *KOTSStore) createNewVersionForLicenseChange(tx *sql.Tx, appID string, b
 		return 0, errors.Wrap(err, "failed to list downstreams")
 	}
 
-	nextAppSequence, err := s.GetNextAppSequence(appID)
+	nextSequence, err := s.GetNextPatchSequence(appID, &baseSequence)
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to get next app sequence")
+		return 0, errors.Wrap(err, "failed to get next patch sequence")
 	}
 
-	if err := renderer.RenderDir(archiveDir, app, downstreams, registrySettings, nextAppSequence); err != nil {
+	if err := renderer.RenderDir(archiveDir, app, downstreams, registrySettings, nextSequence); err != nil {
 		return 0, errors.Wrap(err, "failed to render new version")
 	}
 

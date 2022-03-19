@@ -447,7 +447,7 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	nextAppSequence, err := store.GetStore().GetNextAppSequence(a.ID)
+	nextSequence, err := store.GetStore().GetNextPatchSequence(a.ID, &latestVersion.Sequence)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get next app sequence")
 		logger.Error(err)
@@ -455,7 +455,7 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	err = render.RenderDir(archiveDir, a, downstreams, registrySettings, nextAppSequence)
+	err = render.RenderDir(archiveDir, a, downstreams, registrySettings, nextSequence)
 	if err != nil {
 		err = errors.Wrap(err, "failed to render archive directory")
 		logger.Error(err)

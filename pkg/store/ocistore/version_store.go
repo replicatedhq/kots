@@ -344,12 +344,21 @@ func (s *OCIStore) UpdateAppVersion(appID string, sequence float64, baseSequence
 }
 
 func (s *OCIStore) CreateAppVersion(appID string, baseSequence *float64, patch bool, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (float64, error) {
-	// TODO @salah handle patches
 	// NOTE that this experimental store doesn't have a tx and it's possible that this
 	// could overwrite if there are multiple updates happening concurrently
-	newSequence, err := s.GetNextAppSequence(appID)
-	if err != nil {
-		return 0, errors.Wrap(err, "failed to get next app sequence")
+	var newSequence float64
+	if patch {
+		s, err := s.GetNextPatchSequence(appID, baseSequence)
+		if err != nil {
+			return 0, errors.Wrap(err, "failed to get next patch sequence number")
+		}
+		newSequence = s
+	} else {
+		s, err := s.GetNextAppSequence(appID)
+		if err != nil {
+			return 0, errors.Wrap(err, "failed to get next app sequence")
+		}
+		newSequence = s
 	}
 
 	if err := s.upsertAppVersion(appID, newSequence, baseSequence, filesInDir, source, skipPreflights, gitops); err != nil {
@@ -604,6 +613,10 @@ func (s *OCIStore) GetNextAppSequence(appID string) (float64, error) {
 	}
 
 	return maxSequence + 1, nil
+}
+
+func (s *OCIStore) GetNextPatchSequence(appID string, baseSequence *float64) (float64, error) {
+	return -1, ErrNotImplemented
 }
 
 func (s *OCIStore) GetCurrentUpdateCursor(appID string, channelID string) (string, string, error) {

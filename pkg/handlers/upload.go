@@ -133,23 +133,23 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	nextAppSequence, err := store.GetStore().GetNextAppSequence(a.ID)
+	baseSequence, err := store.GetStore().GetAppVersionBaseSequence(a.ID, kotsKinds.Installation.Spec.VersionLabel)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to app version base sequence"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	nextSequence, err := store.GetStore().GetNextPatchSequence(a.ID, &baseSequence)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get next app sequence"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	err = render.RenderDir(archiveDir, a, downstreams, registrySettings, nextAppSequence)
+	err = render.RenderDir(archiveDir, a, downstreams, registrySettings, nextSequence)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to render app version"))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	baseSequence, err := store.GetStore().GetAppVersionBaseSequence(a.ID, kotsKinds.Installation.Spec.VersionLabel)
-	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to app version base sequence"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

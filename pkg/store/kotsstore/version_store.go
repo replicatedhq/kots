@@ -27,6 +27,7 @@ import (
 	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kustomize"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
 	"github.com/replicatedhq/kots/pkg/secrets"
@@ -476,13 +477,13 @@ func (s *KOTSStore) createAppVersion(tx *sql.Tx, appID string, baseSequence *flo
 	if patch {
 		s, err := s.getNextPatchSequence(tx, appID, baseSequence)
 		if err != nil {
-			return 0, errors.Wrap(err, "failed to get next sequence number")
+			return 0, errors.Wrap(err, "failed to get next patch sequence number")
 		}
 		newSequence = s
 	} else {
 		s, err := s.getNextAppSequence(tx, appID)
 		if err != nil {
-			return 0, errors.Wrap(err, "failed to get next sequence number")
+			return 0, errors.Wrap(err, "failed to get next app sequence number")
 		}
 		newSequence = s
 	}
@@ -626,7 +627,7 @@ func (s *KOTSStore) upsertAppVersion(tx *sql.Tx, appID string, sequence float64,
 func (s *KOTSStore) createAppVersionRecord(tx *sql.Tx, appID string, appName string, appIcon string, kotsKinds *kotsutil.KotsKinds) (float64, error) {
 	newSequence, err := s.getNextAppSequence(tx, appID)
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to get next sequence number")
+		return 0, errors.Wrap(err, "failed to get next app sequence number")
 	}
 
 	if err := s.upsertAppVersionRecord(tx, appID, newSequence, appName, appIcon, kotsKinds); err != nil {
@@ -971,13 +972,33 @@ func (s *KOTSStore) getNextAppSequence(db queryable, appID string) (float64, err
 	return newSequence, nil
 }
 
+func (s *KOTSStore) GetNextPatchSequence(appID string, baseSequence *float64) (float64, error) {
+	return s.getNextPatchSequence(persistence.MustGetDBSession(), appID, baseSequence)
+}
+
 func (s *KOTSStore) getNextPatchSequence(db queryable, appID string, baseSequence *float64) (float64, error) {
 	if baseSequence == nil {
 		return 0, nil
 	}
-	// TODO @salah make this work with 1/100 and 1/1000
-	// Also check if that patch already exists
-	return *baseSequence + 0.1, nil
+
+	majorSequence, _ := math.Modf(*baseSequence)         // e.g. 2
+	nextMajorSequence, _ := math.Modf(*baseSequence + 1) // e.g. 3
+
+	var maxPatch sql.NullFloat64
+	row := db.QueryRow(`select max(sequence) from app_version where app_id = $1 and sequence >= $2 and sequence < $3`, appID, majorSequence, nextMajorSequence)
+	if err := row.Scan(&maxPatch); err != nil {
+		return 0, errors.Wrap(err, "failed to find current max patch sequence in row")
+	}
+
+	if !maxPatch.Valid {
+		logger.Info("max patch sequence is invalid, falling back to getting the next app sequence")
+		return s.getNextAppSequence(db, appID)
+	}
+
+	newSequence := maxPatch.Float64 + 0.01          // e.g. 2.0299999999
+	newSequence = math.Round(newSequence*100) / 100 // e.g. 2.03
+
+	return newSequence, nil
 }
 
 func (s *KOTSStore) GetCurrentUpdateCursor(appID string, channelID string) (string, string, error) {
