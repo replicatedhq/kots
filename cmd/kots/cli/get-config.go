@@ -123,7 +123,7 @@ func getConfigCmd(cmd *cobra.Command, args []string) error {
 		appSequence = foundApp.CurrentSequence
 	}
 
-	getConfigURL := fmt.Sprintf("http://localhost:%d/api/v1/app/%s/config/%f", localPort, appSlug, appSequence)
+	getConfigURL := fmt.Sprintf("http://localhost:%d/api/v1/app/%s/config/%.2f", localPort, appSlug, appSequence)
 	config, err := getConfig(getConfigURL, authSlug)
 	if err != nil {
 		return errors.Wrap(err, "failed to get config")

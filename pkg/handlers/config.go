@@ -287,7 +287,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if status == storetypes.VersionPendingDownload {
-		err := errors.Errorf("not returning config for version %f because it's %s", sequence, status)
+		err := errors.Errorf("not returning config for version %.2f because it's %s", sequence, status)
 		logger.Error(err)
 		currentAppConfigResponse.Error = err.Error()
 		JSON(w, http.StatusBadRequest, currentAppConfigResponse)

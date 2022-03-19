@@ -688,7 +688,7 @@ func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 	}
 
 	// commit it
-	updatedHash, err := workTree.Commit(fmt.Sprintf("Updating %s to version %f", appName, newSequence), &git.CommitOptions{
+	updatedHash, err := workTree.Commit(fmt.Sprintf("Updating %s to version %.2f", appName, newSequence), &git.CommitOptions{
 		Author: &object.Signature{
 			Name:  "KOTS Admin Console",
 			Email: "help@replicated.com",

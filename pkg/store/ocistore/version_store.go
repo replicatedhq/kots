@@ -333,7 +333,7 @@ func (s *OCIStore) UpdateAppVersion(appID string, sequence float64, baseSequence
 	if v, err := s.GetAppVersion(appID, sequence); err != nil {
 		return errors.Wrap(err, "failed to get app version")
 	} else if v == nil {
-		return errors.Errorf("version %f not found", sequence)
+		return errors.Errorf("version %.2f not found", sequence)
 	}
 
 	if err := s.upsertAppVersion(appID, sequence, baseSequence, filesInDir, source, skipPreflights, gitops); err != nil {
@@ -581,7 +581,7 @@ func refFromAppVersion(appID string, sequence float64, baseURI string) string {
 
 	// docker images don't allow a large charset
 	// so this names it registry.host/base/lower(app-id):sequence
-	ref := fmt.Sprintf("%s/%s:%f", strings.TrimPrefix(baseURI, "docker://"), strings.ToLower(appID), sequence)
+	ref := fmt.Sprintf("%s/%s:%.2f", strings.TrimPrefix(baseURI, "docker://"), strings.ToLower(appID), sequence)
 
 	return ref
 }

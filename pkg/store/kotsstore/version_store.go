@@ -428,7 +428,7 @@ func (s *KOTSStore) UpdateAppVersion(appID string, sequence float64, baseSequenc
 	if v, err := s.GetAppVersion(appID, sequence); err != nil {
 		return errors.Wrap(err, "failed to get app version")
 	} else if v == nil {
-		return errors.Errorf("version %f not found", sequence)
+		return errors.Errorf("version %.2f not found", sequence)
 	}
 
 	db := persistence.MustGetDBSession()

@@ -82,7 +82,7 @@ func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 
 	status, err := store.GetStore().GetStatusForVersion(a.ID, downstreams[0].ClusterID, sequence)
 	if err != nil {
-		errMsg := fmt.Sprintf("failed to get status for version %f", sequence)
+		errMsg := fmt.Sprintf("failed to get status for version %.2f", sequence)
 		logger.Error(errors.Wrap(err, errMsg))
 		deployAppVersionResponse.Error = errMsg
 		JSON(w, http.StatusInternalServerError, deployAppVersionResponse)
@@ -90,7 +90,7 @@ func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if status == storetypes.VersionPendingDownload || status == storetypes.VersionPendingConfig {
-		errMsg := fmt.Sprintf("not deploying version %f because it's %s", sequence, status)
+		errMsg := fmt.Sprintf("not deploying version %.2f because it's %s", sequence, status)
 		logger.Error(errors.New(errMsg))
 		deployAppVersionResponse.Error = errMsg
 		JSON(w, http.StatusBadRequest, deployAppVersionResponse)

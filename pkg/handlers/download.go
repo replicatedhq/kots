@@ -220,13 +220,13 @@ func (h *Handler) DownloadAppVersion(w http.ResponseWriter, r *http.Request) {
 	version, err := store.GetStore().GetAppVersion(a.ID, sequence)
 	if err != nil {
 		if store.GetStore().IsNotFound(err) {
-			errMsg := fmt.Sprintf("version for sequence %f not found", sequence)
+			errMsg := fmt.Sprintf("version for sequence %.2f not found", sequence)
 			logger.Error(errors.New(errMsg))
 			downloadUpstreamVersionResponse.Error = errMsg
 			JSON(w, http.StatusNotFound, downloadUpstreamVersionResponse)
 			return
 		}
-		errMsg := fmt.Sprintf("failed to get app version %f", sequence)
+		errMsg := fmt.Sprintf("failed to get app version %.2f", sequence)
 		logger.Error(errors.Wrap(err, errMsg))
 		downloadUpstreamVersionResponse.Error = errMsg
 		JSON(w, http.StatusInternalServerError, downloadUpstreamVersionResponse)
@@ -235,14 +235,14 @@ func (h *Handler) DownloadAppVersion(w http.ResponseWriter, r *http.Request) {
 
 	status, err := store.GetStore().GetStatusForVersion(a.ID, downstreams[0].ClusterID, version.Sequence)
 	if err != nil {
-		errMsg := fmt.Sprintf("failed to get status for version %f", version.Sequence)
+		errMsg := fmt.Sprintf("failed to get status for version %.2f", version.Sequence)
 		logger.Error(errors.Wrap(err, errMsg))
 		downloadUpstreamVersionResponse.Error = errMsg
 		JSON(w, http.StatusInternalServerError, downloadUpstreamVersionResponse)
 		return
 	}
 	if status != storetypes.VersionPendingDownload {
-		errMsg := fmt.Sprintf("not downloading version %f because it's %s", version.Sequence, status)
+		errMsg := fmt.Sprintf("not downloading version %.2f because it's %s", version.Sequence, status)
 		logger.Error(errors.New(errMsg))
 		downloadUpstreamVersionResponse.Error = errMsg
 		JSON(w, http.StatusInternalServerError, downloadUpstreamVersionResponse)
@@ -271,7 +271,7 @@ func (h *Handler) DownloadAppVersion(w http.ResponseWriter, r *http.Request) {
 			if _, ok := cause.(util.ActionableError); ok {
 				downloadUpstreamVersionResponse.Error = cause.Error()
 			} else {
-				downloadUpstreamVersionResponse.Error = fmt.Sprintf("failed to get app version %f", sequence)
+				downloadUpstreamVersionResponse.Error = fmt.Sprintf("failed to get app version %.2f", sequence)
 			}
 			logger.Error(err)
 			JSON(w, http.StatusInternalServerError, downloadUpstreamVersionResponse)

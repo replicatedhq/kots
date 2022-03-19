@@ -333,7 +333,7 @@ func (c *Client) setDeployResults(args operatortypes.DeployAppArgs, results Depl
 	}
 	if _, err := supportbundle.CreateSupportBundleDependencies(args.AppID, args.Sequence, troubleshootOpts); err != nil {
 		// support bundle is not essential. keep processing deployment request
-		logger.Error(errors.Wrapf(err, "failed to create support bundle for sequence %f after deploying", args.Sequence))
+		logger.Error(errors.Wrapf(err, "failed to create support bundle for sequence %.2f after deploying", args.Sequence))
 	}
 
 	alreadySuccessful, err := store.GetStore().IsDownstreamDeploySuccessful(args.AppID, args.ClusterID, args.Sequence)

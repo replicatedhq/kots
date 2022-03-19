@@ -189,7 +189,7 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if status == storetypes.VersionPendingConfig {
-			logger.Error(errors.Errorf("not deploying version %f because it's %s", newSequence, status))
+			logger.Error(errors.Errorf("not deploying version %.2f because it's %s", newSequence, status))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

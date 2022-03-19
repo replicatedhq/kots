@@ -474,7 +474,7 @@ func (s *KOTSStore) downstreamVersionFromRow(appID string, row scannable) (*down
 	}
 
 	if v.Status == types.VersionPendingDownload {
-		downloadTaskID := fmt.Sprintf("update-download.%f", v.Sequence)
+		downloadTaskID := fmt.Sprintf("update-download.%.2f", v.Sequence)
 		downloadStatus, downloadStatusMessage, err := s.GetTaskStatus(downloadTaskID)
 		if err != nil {
 			// don't fail on this
