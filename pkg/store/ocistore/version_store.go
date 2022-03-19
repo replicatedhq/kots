@@ -581,7 +581,7 @@ func refFromAppVersion(appID string, sequence float64, baseURI string) string {
 
 	// docker images don't allow a large charset
 	// so this names it registry.host/base/lower(app-id):sequence
-	ref := fmt.Sprintf("%s/%s:%.2f", strings.TrimPrefix(baseURI, "docker://"), strings.ToLower(appID), sequence)
+	ref := fmt.Sprintf("%s/%s:%s", strings.TrimPrefix(baseURI, "docker://"), strings.ToLower(appID), strconv.FormatFloat(sequence, 'f', -1, 64))
 
 	return ref
 }
