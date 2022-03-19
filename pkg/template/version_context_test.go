@@ -24,8 +24,8 @@ func TestVersionContext(t *testing.T) {
 	// an unpopulated versionCtx - should not error/panic
 	nilCtx := versionCtx{}
 
-	req.Equal(int64(5), ctx.sequence())
-	req.Equal(int64(-1), nilCtx.sequence())
+	req.Equal(float64(5), ctx.sequence())
+	req.Equal(float64(-1), nilCtx.sequence())
 
 	req.Equal("five", ctx.cursor())
 	req.Equal("", nilCtx.cursor())

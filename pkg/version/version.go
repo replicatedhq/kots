@@ -28,7 +28,7 @@ import (
 type DownstreamGitOps struct {
 }
 
-func (d *DownstreamGitOps) CreateGitOpsDownstreamCommit(appID string, clusterID string, newSequence int, filesInDir string, downstreamName string) (string, error) {
+func (d *DownstreamGitOps) CreateGitOpsDownstreamCommit(appID string, clusterID string, newSequence float64, filesInDir string, downstreamName string) (string, error) {
 	downstreamGitOps, err := gitops.GetDownstreamGitOps(appID, clusterID)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get downstream gitops")
@@ -41,7 +41,7 @@ func (d *DownstreamGitOps) CreateGitOpsDownstreamCommit(appID string, clusterID 
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get app")
 	}
-	createdCommitURL, err := gitops.CreateGitOpsCommit(downstreamGitOps, a.Slug, a.Name, int(newSequence), filesInDir, downstreamName)
+	createdCommitURL, err := gitops.CreateGitOpsCommit(downstreamGitOps, a.Slug, a.Name, newSequence, filesInDir, downstreamName)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create gitops commit")
 	}
@@ -50,7 +50,7 @@ func (d *DownstreamGitOps) CreateGitOpsDownstreamCommit(appID string, clusterID 
 }
 
 // DeployVersion deploys the version for the given sequence
-func DeployVersion(appID string, sequence int64) error {
+func DeployVersion(appID string, sequence float64) error {
 	blocked, err := isBlockedDueToStrictPreFlights(appID, sequence)
 	if err != nil {
 		return errors.Wrap(err, "failed to validate strict preflights")
@@ -89,7 +89,7 @@ func DeployVersion(appID string, sequence int64) error {
 	return nil
 }
 
-func GetRealizedLinksFromAppSpec(appID string, sequence int64) ([]types.RealizedLink, error) {
+func GetRealizedLinksFromAppSpec(appID string, sequence float64) ([]types.RealizedLink, error) {
 	db := persistence.MustGetDBSession()
 	query := `select app_spec, kots_app_spec from app_version where app_id = $1 and sequence = $2`
 	row := db.QueryRow(query, appID, sequence)
@@ -138,7 +138,7 @@ func GetRealizedLinksFromAppSpec(appID string, sequence int64) ([]types.Realized
 	return realizedLinks, nil
 }
 
-func GetForwardedPortsFromAppSpec(appID string, sequence int64) ([]types.ForwardedPort, error) {
+func GetForwardedPortsFromAppSpec(appID string, sequence float64) ([]types.ForwardedPort, error) {
 	appVersion, err := store.GetStore().GetAppVersion(appID, sequence)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app version")
@@ -213,7 +213,7 @@ func GetForwardedPortsFromAppSpec(appID string, sequence int64) ([]types.Forward
 	return ports, nil
 }
 
-func isBlockedDueToStrictPreFlights(appID string, sequence int64) (bool, error) {
+func isBlockedDueToStrictPreFlights(appID string, sequence float64) (bool, error) {
 	status, err := store.GetStore().GetDownstreamVersionStatus(appID, sequence)
 	if err != nil {
 		return false, errors.Wrap(err, "failed get status")

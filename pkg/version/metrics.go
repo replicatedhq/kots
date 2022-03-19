@@ -79,7 +79,7 @@ var (
 	}
 )
 
-func GetMetricCharts(appID string, sequence int64, prometheusAddress string) ([]MetricChart, error) {
+func GetMetricCharts(appID string, sequence float64, prometheusAddress string) ([]MetricChart, error) {
 	if prometheusAddress == "" {
 		return []MetricChart{}, nil
 	}

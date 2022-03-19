@@ -18,9 +18,9 @@ spec:
       - name: cluster_id
         type: text
       - name: sequence
-        type: integer
+        type: numeric(4, 3)
       - name: parent_sequence
-        type: integer
+        type: numeric(4, 3)
       - name: created_at
         type: timestamp without time zone
       - name: applied_at

@@ -198,7 +198,7 @@ func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		}
 		defer os.RemoveAll(appDir)
 
-		newSequence, err := store.GetStore().CreateAppVersion(foundApp.ID, &latestVersion.Sequence, appDir, "Registry Change", false, &version.DownstreamGitOps{}, render.Renderer{})
+		newSequence, err := store.GetStore().CreateAppVersion(foundApp.ID, &latestVersion.Sequence, true, appDir, "Registry Change", false, &version.DownstreamGitOps{}, render.Renderer{})
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to create app version"))
 			return

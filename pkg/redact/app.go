@@ -29,7 +29,7 @@ func GetAppRedactSpecURI(appSlug string) string {
 }
 
 // CreateRenderedAppRedactSpec creates a configmap that contains the redaction yaml spec included in the application release
-func CreateRenderedAppRedactSpec(appID string, sequence int64, kotsKinds *kotsutil.KotsKinds) error {
+func CreateRenderedAppRedactSpec(appID string, sequence float64, kotsKinds *kotsutil.KotsKinds) error {
 	builtRedactor := kotsKinds.Redactor.DeepCopy()
 	if builtRedactor == nil {
 		builtRedactor = &troubleshootv1beta2.Redactor{

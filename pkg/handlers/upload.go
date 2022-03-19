@@ -154,7 +154,7 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "KOTS Upload", uploadExistingAppRequest.SkipPreflights, &version.DownstreamGitOps{}, render.Renderer{})
+	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, true, archiveDir, "KOTS Upload", uploadExistingAppRequest.SkipPreflights, &version.DownstreamGitOps{}, render.Renderer{})
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to create app version"))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -189,7 +189,7 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if status == storetypes.VersionPendingConfig {
-			logger.Error(errors.Errorf("not deploying version %d because it's %s", newSequence, status))
+			logger.Error(errors.Errorf("not deploying version %f because it's %s", newSequence, status))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

@@ -30,15 +30,15 @@ type AppUpdateCheckRequest struct {
 
 type AppUpdateCheckResponse struct {
 	AvailableUpdates   int64              `json:"availableUpdates"`
-	CurrentAppSequence int64              `json:"currentAppSequence"`
+	CurrentAppSequence float64            `json:"currentAppSequence"`
 	CurrentRelease     *AppUpdateRelease  `json:"currentRelease,omitempty"`
 	AvailableReleases  []AppUpdateRelease `json:"availableReleases"`
 	DeployingRelease   *AppUpdateRelease  `json:"deployingRelease,omitempty"`
 }
 
 type AppUpdateRelease struct {
-	Sequence int64  `json:"sequence"`
-	Version  string `json:"version"`
+	Sequence float64 `json:"sequence"`
+	Version  string  `json:"version"`
 }
 
 func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
@@ -233,7 +233,7 @@ func (h *Handler) UpdateAdminConsole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	appSlug := mux.Vars(r)["appSlug"]
-	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
+	sequence, err := strconv.ParseFloat(mux.Vars(r)["sequence"], 64)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to decode UpdateAdminConsole request body"))
 		JSON(w, http.StatusInternalServerError, updateAdminConsoleResponse)
@@ -263,7 +263,7 @@ func (h *Handler) UpdateAdminConsole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Not using GetAppVersionArchive here because version is expected to be pending download at this point
-	version, err := store.GetStore().GetAppVersion(a.ID, int64(sequence))
+	version, err := store.GetStore().GetAppVersion(a.ID, sequence)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get app version"))
 		JSON(w, http.StatusInternalServerError, updateAdminConsoleResponse)

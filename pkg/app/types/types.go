@@ -27,7 +27,7 @@ type App struct {
 	Name                  string         `json:"name"`
 	License               string         `json:"license"`
 	IsAirgap              bool           `json:"isAirgap"`
-	CurrentSequence       int64          `json:"currentSequence"`
+	CurrentSequence       float64        `json:"currentSequence"`
 	UpstreamURI           string         `json:"upstreamUri"`
 	IconURI               string         `json:"iconUri"`
 	UpdatedAt             *time.Time     `json:"createdAt"`

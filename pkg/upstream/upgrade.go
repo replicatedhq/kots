@@ -33,8 +33,8 @@ type UpgradeResponse struct {
 }
 
 type UpgradeRelease struct {
-	Sequence int64  `json:"sequence"`
-	Version  string `json:"version"`
+	Sequence float64 `json:"sequence"`
+	Version  string  `json:"version"`
 }
 
 type UpgradeOptions struct {

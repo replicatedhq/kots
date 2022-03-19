@@ -18,10 +18,10 @@ import (
 
 // execute will execute the preflights using spec in preflightSpec.
 // This spec should be rendered, no template functions remaining
-func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta2.Preflight, ignorePermissionErrors bool) (*troubleshootpreflight.UploadPreflightResults, error) {
+func execute(appID string, sequence float64, preflightSpec *troubleshootv1beta2.Preflight, ignorePermissionErrors bool) (*troubleshootpreflight.UploadPreflightResults, error) {
 	logger.Debug("executing preflight checks",
 		zap.String("appID", appID),
-		zap.Int64("sequence", sequence))
+		zap.Float64("sequence", sequence))
 
 	progressChan := make(chan interface{}, 0) // non-zero buffer will result in missed messages
 	defer close(progressChan)

@@ -48,7 +48,7 @@ func (s *OCIStore) appVersionConfigMapNameForApp(appID string) (string, error) {
 	return fmt.Sprintf("%s%s", AppVersionConfigmapPrefix, a.Slug), nil
 }
 
-func (s *OCIStore) IsIdentityServiceSupportedForVersion(appID string, sequence int64) (bool, error) {
+func (s *OCIStore) IsIdentityServiceSupportedForVersion(appID string, sequence float64) (bool, error) {
 	configMapName, err := s.appVersionConfigMapNameForApp(appID)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get appversion config map name")
@@ -63,7 +63,7 @@ func (s *OCIStore) IsIdentityServiceSupportedForVersion(appID string, sequence i
 		configMap.Data = map[string]string{}
 	}
 
-	sequenceData, ok := configMap.Data[strconv.FormatInt(sequence, 10)]
+	sequenceData, ok := configMap.Data[strconv.FormatFloat(sequence, 'f', -1, 64)]
 	if !ok {
 		return false, nil // copied from s3pg store, this isn't an error?
 	}
@@ -76,7 +76,7 @@ func (s *OCIStore) IsIdentityServiceSupportedForVersion(appID string, sequence i
 	return appVersion.KOTSKinds.Identity != nil, nil
 }
 
-func (s *OCIStore) IsRollbackSupportedForVersion(appID string, sequence int64) (bool, error) {
+func (s *OCIStore) IsRollbackSupportedForVersion(appID string, sequence float64) (bool, error) {
 	configMapName, err := s.appVersionConfigMapNameForApp(appID)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get appversion config map name")
@@ -91,7 +91,7 @@ func (s *OCIStore) IsRollbackSupportedForVersion(appID string, sequence int64) (
 		configMap.Data = map[string]string{}
 	}
 
-	sequenceData, ok := configMap.Data[strconv.FormatInt(sequence, 10)]
+	sequenceData, ok := configMap.Data[strconv.FormatFloat(sequence, 'f', -1, 64)]
 	if !ok {
 		return false, nil // copied from s3pg store, this isn't an error?
 	}
@@ -104,17 +104,17 @@ func (s *OCIStore) IsRollbackSupportedForVersion(appID string, sequence int64) (
 	return appVersion.KOTSKinds.KotsApplication.Spec.AllowRollback, nil
 }
 
-func (s *OCIStore) IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int64, renderer rendertypes.Renderer) (bool, error) {
+func (s *OCIStore) IsSnapshotsSupportedForVersion(a *apptypes.App, sequence float64, renderer rendertypes.Renderer) (bool, error) {
 	return false, ErrNotImplemented
 }
 
-func (s *OCIStore) GetTargetKotsVersionForVersion(appID string, sequence int64) (string, error) {
+func (s *OCIStore) GetTargetKotsVersionForVersion(appID string, sequence float64) (string, error) {
 	return "", ErrNotImplemented
 }
 
 // CreateAppVersion takes an unarchived app, makes an archive and then uploads it
 // to s3 with the appID and sequence specified
-func (s *OCIStore) CreateAppVersionArchive(appID string, sequence int64, archivePath string) error {
+func (s *OCIStore) CreateAppVersionArchive(appID string, sequence float64, archivePath string) error {
 	paths := []string{
 		filepath.Join(archivePath, "upstream"),
 		filepath.Join(archivePath, "base"),
@@ -182,7 +182,7 @@ func (s *OCIStore) CreateAppVersionArchive(appID string, sequence int64, archive
 	resolver := docker.NewResolver(options)
 
 	memoryStore := content.NewMemoryStore()
-	desc := memoryStore.Add(fmt.Sprintf("appversion-%s-%d.tar.gz", appID, sequence), "application/gzip", fileContents)
+	desc := memoryStore.Add(fmt.Sprintf("appversion-%s-%s.tar.gz", appID, strconv.FormatFloat(sequence, 'f', -1, 64)), "application/gzip", fileContents)
 	pushContents := []ocispec.Descriptor{desc}
 	pushedDescriptor, err := oras.Push(context.Background(), resolver, ref, memoryStore, pushContents)
 	if err != nil {
@@ -191,7 +191,7 @@ func (s *OCIStore) CreateAppVersionArchive(appID string, sequence int64, archive
 
 	logger.Info("pushed app archive to docker registry",
 		zap.String("appID", appID),
-		zap.Int64("sequence", sequence),
+		zap.Float64("sequence", sequence),
 		zap.String("ref", ref),
 		zap.String("digest", pushedDescriptor.Digest.String()))
 
@@ -200,11 +200,11 @@ func (s *OCIStore) CreateAppVersionArchive(appID string, sequence int64, archive
 
 // GetAppVersionArchive will fetch the archive and return a string that contains a
 // directory name where it's extracted into
-func (s *OCIStore) GetAppVersionArchive(appID string, sequence int64, dstPath string) error {
+func (s *OCIStore) GetAppVersionArchive(appID string, sequence float64, dstPath string) error {
 	// too noisy
 	// logger.Debug("getting app version archive",
 	// 	zap.String("appID", appID),
-	// 	zap.Int64("sequence", sequence))
+	// 	zap.Float64("sequence", sequence))
 
 	storageBaseURI := os.Getenv("STORAGE_BASEURI")
 	if storageBaseURI == "" {
@@ -248,7 +248,7 @@ func (s *OCIStore) GetAppVersionArchive(appID string, sequence int64, dstPath st
 
 	logger.Debug("pulled app archive from docker registry",
 		zap.String("appID", appID),
-		zap.Int64("sequence", sequence),
+		zap.Float64("sequence", sequence),
 		zap.String("ref", ref),
 		zap.String("digest", pulledDescriptor.Digest.String()))
 
@@ -257,22 +257,22 @@ func (s *OCIStore) GetAppVersionArchive(appID string, sequence int64, dstPath st
 			ImplicitTopLevelFolder: false,
 		},
 	}
-	if err := tarGz.Unarchive(filepath.Join(dstPath, fmt.Sprintf("appversion-%s-%d.tar.gz", appID, sequence)), dstPath); err != nil {
+	if err := tarGz.Unarchive(filepath.Join(dstPath, fmt.Sprintf("appversion-%s-%s.tar.gz", appID, strconv.FormatFloat(sequence, 'f', -1, 64))), dstPath); err != nil {
 		return errors.Wrap(err, "failed to unarchive")
 	}
 
 	return nil
 }
 
-func (s *OCIStore) GetAppVersionBaseSequence(appID string, versionLabel string) (int64, error) {
+func (s *OCIStore) GetAppVersionBaseSequence(appID string, versionLabel string) (float64, error) {
 	return -1, ErrNotImplemented
 }
 
-func (s *OCIStore) GetAppVersionBaseArchive(appID string, versionLabel string) (string, int64, error) {
+func (s *OCIStore) GetAppVersionBaseArchive(appID string, versionLabel string) (string, float64, error) {
 	return "", -1, ErrNotImplemented
 }
 
-func (s *OCIStore) CreatePendingDownloadAppVersion(appID string, update upstreamtypes.Update, kotsApplication *kotsv1beta1.Application, license *kotsv1beta1.License) (int64, error) {
+func (s *OCIStore) CreatePendingDownloadAppVersion(appID string, update upstreamtypes.Update, kotsApplication *kotsv1beta1.Application, license *kotsv1beta1.License) (float64, error) {
 	a, err := s.GetApp(appID)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get app")
@@ -328,12 +328,12 @@ func (s *OCIStore) CreatePendingDownloadAppVersion(appID string, update upstream
 	return newSequence, nil
 }
 
-func (s *OCIStore) UpdateAppVersion(appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, render rendertypes.Renderer) error {
+func (s *OCIStore) UpdateAppVersion(appID string, sequence float64, baseSequence *float64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, render rendertypes.Renderer) error {
 	// make sure version exists first
 	if v, err := s.GetAppVersion(appID, sequence); err != nil {
 		return errors.Wrap(err, "failed to get app version")
 	} else if v == nil {
-		return errors.Errorf("version %d not found", sequence)
+		return errors.Errorf("version %f not found", sequence)
 	}
 
 	if err := s.upsertAppVersion(appID, sequence, baseSequence, filesInDir, source, skipPreflights, gitops); err != nil {
@@ -343,7 +343,8 @@ func (s *OCIStore) UpdateAppVersion(appID string, sequence int64, baseSequence *
 	return nil
 }
 
-func (s *OCIStore) CreateAppVersion(appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error) {
+func (s *OCIStore) CreateAppVersion(appID string, baseSequence *float64, patch bool, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (float64, error) {
+	// TODO @salah handle patches
 	// NOTE that this experimental store doesn't have a tx and it's possible that this
 	// could overwrite if there are multiple updates happening concurrently
 	newSequence, err := s.GetNextAppSequence(appID)
@@ -358,7 +359,7 @@ func (s *OCIStore) CreateAppVersion(appID string, baseSequence *int64, filesInDi
 	return newSequence, nil
 }
 
-func (s *OCIStore) upsertAppVersion(appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) error {
+func (s *OCIStore) upsertAppVersion(appID string, sequence float64, baseSequence *float64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) error {
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filesInDir)
 	if err != nil {
 		return errors.Wrap(err, "failed to read kots kinds")
@@ -451,7 +452,7 @@ func (s *OCIStore) upsertAppVersion(appID string, sequence int64, baseSequence *
 			}
 		}
 
-		commitURL, err := gitops.CreateGitOpsDownstreamCommit(appID, d.ClusterID, int(sequence), filesInDir, d.Name)
+		commitURL, err := gitops.CreateGitOpsDownstreamCommit(appID, d.ClusterID, sequence, filesInDir, d.Name)
 		if err != nil {
 			return errors.Wrap(err, "failed to create gitops commit")
 		}
@@ -477,7 +478,7 @@ func (s *OCIStore) upsertAppVersion(appID string, sequence int64, baseSequence *
 	return nil
 }
 
-func (s *OCIStore) createAppVersionRecord(appID string, appName string, appIcon string, kotsKinds *kotsutil.KotsKinds) (int64, error) {
+func (s *OCIStore) createAppVersionRecord(appID string, appName string, appIcon string, kotsKinds *kotsutil.KotsKinds) (float64, error) {
 	newSequence, err := s.GetNextAppSequence(appID)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get next app sequence")
@@ -490,7 +491,7 @@ func (s *OCIStore) createAppVersionRecord(appID string, appName string, appIcon 
 	return newSequence, nil
 }
 
-func (s *OCIStore) upsertAppVersionRecord(appID string, sequence int64, appName string, appIcon string, kotsKinds *kotsutil.KotsKinds) error {
+func (s *OCIStore) upsertAppVersionRecord(appID string, sequence float64, appName string, appIcon string, kotsKinds *kotsutil.KotsKinds) error {
 	appVersion := versiontypes.AppVersion{
 		KOTSKinds: kotsKinds,
 		CreatedOn: time.Now(),
@@ -516,7 +517,7 @@ func (s *OCIStore) upsertAppVersionRecord(appID string, sequence int64, appName 
 		configMap.Data = map[string]string{}
 	}
 
-	configMap.Data[strconv.FormatInt(sequence, 10)] = string(b)
+	configMap.Data[strconv.FormatFloat(sequence, 'f', -1, 64)] = string(b)
 
 	if err := s.updateConfigmap(configMap); err != nil {
 		return errors.Wrap(err, "failed to update app version configmap")
@@ -525,11 +526,11 @@ func (s *OCIStore) upsertAppVersionRecord(appID string, sequence int64, appName 
 	return nil
 }
 
-func (s *OCIStore) addAppVersionToDownstream(appID string, clusterID string, sequence int64, versionLabel string, status types.DownstreamVersionStatus, source string, diffSummary string, diffSummaryError string, commitURL string, gitDeployable bool) error {
+func (s *OCIStore) addAppVersionToDownstream(appID string, clusterID string, sequence float64, versionLabel string, status types.DownstreamVersionStatus, source string, diffSummary string, diffSummaryError string, commitURL string, gitDeployable bool) error {
 	return ErrNotImplemented
 }
 
-func (s *OCIStore) GetAppVersion(appID string, sequence int64) (*versiontypes.AppVersion, error) {
+func (s *OCIStore) GetAppVersion(appID string, sequence float64) (*versiontypes.AppVersion, error) {
 	configMapName, err := s.appVersionConfigMapNameForApp(appID)
 	if err != nil {
 		return nil, errors.New("failed to get configmap name for app version")
@@ -544,7 +545,7 @@ func (s *OCIStore) GetAppVersion(appID string, sequence int64) (*versiontypes.Ap
 		return nil, ErrNotFound
 	}
 
-	data, ok := configMap.Data[strconv.FormatInt(sequence, 10)]
+	data, ok := configMap.Data[strconv.FormatFloat(sequence, 'f', -1, 64)]
 	if !ok {
 		return nil, ErrNotFound
 	}
@@ -562,25 +563,25 @@ func (s *OCIStore) GetLatestAppVersion(appID string, downloadedOnly bool) (*vers
 	return nil, ErrNotImplemented
 }
 
-func (s *OCIStore) UpdateNextAppVersionDiffSummary(appID string, baseSequence int64) error {
+func (s *OCIStore) UpdateNextAppVersionDiffSummary(appID string, baseSequence float64) error {
 	return ErrNotImplemented
 }
 
-func refFromAppVersion(appID string, sequence int64, baseURI string) string {
+func refFromAppVersion(appID string, sequence float64, baseURI string) string {
 	baseURI = strings.TrimSuffix(baseURI, "/")
 
 	// docker images don't allow a large charset
 	// so this names it registry.host/base/lower(app-id):sequence
-	ref := fmt.Sprintf("%s/%s:%d", strings.TrimPrefix(baseURI, "docker://"), strings.ToLower(appID), sequence)
+	ref := fmt.Sprintf("%s/%s:%f", strings.TrimPrefix(baseURI, "docker://"), strings.ToLower(appID), sequence)
 
 	return ref
 }
 
-func (s *OCIStore) UpdateAppVersionInstallationSpec(appID string, sequence int64, installation kotsv1beta1.Installation) error {
+func (s *OCIStore) UpdateAppVersionInstallationSpec(appID string, sequence float64, installation kotsv1beta1.Installation) error {
 	return ErrNotImplemented
 }
 
-func (s *OCIStore) GetNextAppSequence(appID string) (int64, error) {
+func (s *OCIStore) GetNextAppSequence(appID string) (float64, error) {
 	configMapName, err := s.appVersionConfigMapNameForApp(appID)
 	if err != nil {
 		return 0, errors.New("failed to get configmap name for app version")
@@ -591,9 +592,9 @@ func (s *OCIStore) GetNextAppSequence(appID string) (int64, error) {
 		return 0, errors.New("failed to get app version config map")
 	}
 
-	maxSequence := int64(-1)
+	maxSequence := float64(-1)
 	for k := range configMap.Data {
-		possibleMaxSequence, err := strconv.ParseInt(k, 10, 64)
+		possibleMaxSequence, err := strconv.ParseFloat(k, 64)
 		if err != nil {
 			return 0, errors.Wrap(err, "failed to parse sequence")
 		}
@@ -609,7 +610,7 @@ func (s *OCIStore) GetCurrentUpdateCursor(appID string, channelID string) (strin
 	return "", "", ErrNotImplemented
 }
 
-func (s *OCIStore) HasStrictPreflights(appID string, sequence int64) (bool, error) {
+func (s *OCIStore) HasStrictPreflights(appID string, sequence float64) (bool, error) {
 	// TODO: Does OCIStore needs strict implemenation??
 	return false, nil
 }

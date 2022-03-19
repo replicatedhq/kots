@@ -47,7 +47,7 @@ func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
+	sequence, err := strconv.ParseFloat(mux.Vars(r)["sequence"], 64)
 	if err != nil {
 		errMsg := "failed to parse sequence number"
 		logger.Error(errors.Wrap(err, errMsg))
@@ -80,9 +80,9 @@ func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status, err := store.GetStore().GetStatusForVersion(a.ID, downstreams[0].ClusterID, int64(sequence))
+	status, err := store.GetStore().GetStatusForVersion(a.ID, downstreams[0].ClusterID, sequence)
 	if err != nil {
-		errMsg := fmt.Sprintf("failed to get status for version %d", sequence)
+		errMsg := fmt.Sprintf("failed to get status for version %f", sequence)
 		logger.Error(errors.Wrap(err, errMsg))
 		deployAppVersionResponse.Error = errMsg
 		JSON(w, http.StatusInternalServerError, deployAppVersionResponse)
@@ -90,7 +90,7 @@ func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if status == storetypes.VersionPendingDownload || status == storetypes.VersionPendingConfig {
-		errMsg := fmt.Sprintf("not deploying version %d because it's %s", int64(sequence), status)
+		errMsg := fmt.Sprintf("not deploying version %f because it's %s", sequence, status)
 		logger.Error(errors.New(errMsg))
 		deployAppVersionResponse.Error = errMsg
 		JSON(w, http.StatusBadRequest, deployAppVersionResponse)
@@ -106,7 +106,7 @@ func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	for _, v := range versions.PastVersions {
-		if int64(sequence) == v.Sequence {
+		if sequence == v.Sequence {
 			// a past version is being deployed/rolled back to, disable automatic deployments so that it doesn't undo this action later
 			logger.Infof("disabling automatic deployments because a past version is being deployed for app %s", a.Slug)
 			if err := store.GetStore().SetAutoDeploy(a.ID, apptypes.AutoDeployDisabled); err != nil {
@@ -116,7 +116,7 @@ func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err := store.GetStore().DeleteDownstreamDeployStatus(a.ID, downstreams[0].ClusterID, int64(sequence)); err != nil {
+	if err := store.GetStore().DeleteDownstreamDeployStatus(a.ID, downstreams[0].ClusterID, sequence); err != nil {
 		errMsg := "failed to delete downstream deploy status"
 		logger.Error(errors.Wrap(err, errMsg))
 		deployAppVersionResponse.Error = errMsg
@@ -124,7 +124,7 @@ func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := version.DeployVersion(a.ID, int64(sequence)); err != nil {
+	if err := version.DeployVersion(a.ID, sequence); err != nil {
 		errMsg := "failed to queue version for deployment"
 		logger.Error(errors.Wrap(err, errMsg))
 		deployAppVersionResponse.Error = errMsg
@@ -135,7 +135,7 @@ func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 	// preflights reports
 	go func() {
 		if request.IsSkipPreflights || request.ContinueWithFailedPreflights {
-			if err := reporting.ReportAppInfo(a.ID, int64(sequence), request.IsSkipPreflights, request.IsCLI); err != nil {
+			if err := reporting.ReportAppInfo(a.ID, sequence, request.IsSkipPreflights, request.IsCLI); err != nil {
 				logger.Debugf("failed to send preflights data to replicated app: %v", err)
 				return
 			}

@@ -17,7 +17,7 @@ func (s *KOTSStore) GetAppStatus(appID string) (*appstatetypes.AppStatus, error)
 
 	var updatedAt sql.NullTime
 	var resourceStatesStr sql.NullString
-	var sequence sql.NullInt64
+	var sequence sql.NullFloat64
 
 	if err := row.Scan(&resourceStatesStr, &updatedAt, &sequence); err != nil {
 		if err == sql.ErrNoRows {
@@ -34,7 +34,7 @@ func (s *KOTSStore) GetAppStatus(appID string) (*appstatetypes.AppStatus, error)
 
 	appStatus := appstatetypes.AppStatus{
 		AppID:    appID,
-		Sequence: sequence.Int64,
+		Sequence: sequence.Float64,
 	}
 
 	if updatedAt.Valid {
@@ -54,7 +54,7 @@ func (s *KOTSStore) GetAppStatus(appID string) (*appstatetypes.AppStatus, error)
 	return &appStatus, nil
 }
 
-func (s *KOTSStore) SetAppStatus(appID string, resourceStates appstatetypes.ResourceStates, updatedAt time.Time, sequence int64) error {
+func (s *KOTSStore) SetAppStatus(appID string, resourceStates appstatetypes.ResourceStates, updatedAt time.Time, sequence float64) error {
 	marshalledResourceStates, err := json.Marshal(resourceStates)
 	if err != nil {
 		return errors.Wrap(err, "failed to json marshal resource states")

@@ -11,7 +11,7 @@ func (s *OCIStore) GetLatestLicenseForApp(appID string) (*kotsv1beta1.License, e
 	return nil, ErrNotImplemented
 }
 
-func (s *OCIStore) GetLicenseForAppVersion(appID string, sequence int64) (*kotsv1beta1.License, error) {
+func (s *OCIStore) GetLicenseForAppVersion(appID string, sequence float64) (*kotsv1beta1.License, error) {
 	appVersion, err := s.GetAppVersion(appID, sequence)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app version")
@@ -28,8 +28,8 @@ func (s *OCIStore) GetAllAppLicenses() ([]*kotsv1beta1.License, error) {
 	return nil, ErrNotImplemented
 }
 
-func (s *OCIStore) UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *kotsv1beta1.License, originalLicenseData string, channelChanged bool, failOnVersionCreate bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error) {
-	return int64(0), ErrNotImplemented
+func (s *OCIStore) UpdateAppLicense(appID string, sequence float64, archiveDir string, newLicense *kotsv1beta1.License, originalLicenseData string, channelChanged bool, failOnVersionCreate bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (float64, error) {
+	return float64(0), ErrNotImplemented
 }
 
 func (s *OCIStore) UpdateAppLicenseSyncNow(appID string) error {

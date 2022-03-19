@@ -199,7 +199,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 	}
 
 	// Create the app in the db
-	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "Airgap Update", skipPreflights, &version.DownstreamGitOps{}, render.Renderer{})
+	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, false, archiveDir, "Airgap Update", skipPreflights, &version.DownstreamGitOps{}, render.Renderer{})
 	if err != nil {
 		return errors.Wrap(err, "failed to create new version")
 	}
@@ -231,11 +231,11 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 
 		status, err := store.GetStore().GetStatusForVersion(a.ID, downstream.ClusterID, newSequence)
 		if err != nil {
-			return errors.Wrapf(err, "failed to get status for version %d", newSequence)
+			return errors.Wrapf(err, "failed to get status for version %f", newSequence)
 		}
 
 		if status == storetypes.VersionPendingConfig {
-			return errors.Errorf("not deploying version %d because it's %s", newSequence, status)
+			return errors.Errorf("not deploying version %f because it's %s", newSequence, status)
 		}
 
 		if err := version.DeployVersion(a.ID, newSequence); err != nil {

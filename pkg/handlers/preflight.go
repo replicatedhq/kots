@@ -33,7 +33,7 @@ type GetPreflightCommandResponse struct {
 
 func (h *Handler) GetPreflightResult(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
-	sequence, err := strconv.ParseInt(mux.Vars(r)["sequence"], 10, 64)
+	sequence, err := strconv.ParseFloat(mux.Vars(r)["sequence"], 64)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(400)
@@ -101,7 +101,7 @@ func (h *Handler) GetLatestPreflightResultsForSequenceZero(w http.ResponseWriter
 
 func (h *Handler) IgnorePreflightRBACErrors(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
-	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
+	sequence, err := strconv.ParseFloat(mux.Vars(r)["sequence"], 64)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to parse sequence number"))
 		w.WriteHeader(http.StatusBadRequest)
@@ -115,19 +115,19 @@ func (h *Handler) IgnorePreflightRBACErrors(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	status, err := store.GetStore().GetDownstreamVersionStatus(foundApp.ID, int64(sequence))
+	status, err := store.GetStore().GetDownstreamVersionStatus(foundApp.ID, sequence)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get downstream version status"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	if status == storetypes.VersionPendingDownload {
-		logger.Error(errors.Errorf("not ignoring preflight rbac errors for version %d because it's %s", sequence, status))
+		logger.Error(errors.Errorf("not ignoring preflight rbac errors for version %f because it's %s", sequence, status))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	if err := store.GetStore().SetIgnorePreflightPermissionErrors(foundApp.ID, int64(sequence)); err != nil {
+	if err := store.GetStore().SetIgnorePreflightPermissionErrors(foundApp.ID, sequence); err != nil {
 		logger.Error(errors.Wrap(err, "failed to ignore preflight permission errors"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -147,7 +147,7 @@ func (h *Handler) IgnorePreflightRBACErrors(w http.ResponseWriter, r *http.Reque
 		}
 	}()
 
-	err = store.GetStore().GetAppVersionArchive(foundApp.ID, int64(sequence), archiveDir)
+	err = store.GetStore().GetAppVersionArchive(foundApp.ID, sequence, archiveDir)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get app version archive"))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -157,7 +157,7 @@ func (h *Handler) IgnorePreflightRBACErrors(w http.ResponseWriter, r *http.Reque
 	removeArchiveDir = false
 	go func() {
 		defer os.RemoveAll(archiveDir)
-		if err := preflight.Run(foundApp.ID, foundApp.Slug, int64(sequence), foundApp.IsAirgap, archiveDir); err != nil {
+		if err := preflight.Run(foundApp.ID, foundApp.Slug, sequence, foundApp.IsAirgap, archiveDir); err != nil {
 			logger.Error(errors.Wrap(err, "failed to run preflights"))
 			return
 		}
@@ -168,7 +168,7 @@ func (h *Handler) IgnorePreflightRBACErrors(w http.ResponseWriter, r *http.Reque
 
 func (h *Handler) StartPreflightChecks(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
-	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
+	sequence, err := strconv.ParseFloat(mux.Vars(r)["sequence"], 64)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to parse sequence number"))
 		w.WriteHeader(http.StatusBadRequest)
@@ -182,19 +182,19 @@ func (h *Handler) StartPreflightChecks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status, err := store.GetStore().GetDownstreamVersionStatus(foundApp.ID, int64(sequence))
+	status, err := store.GetStore().GetDownstreamVersionStatus(foundApp.ID, sequence)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get downstream version status"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	if status == storetypes.VersionPendingDownload {
-		logger.Error(errors.Errorf("not running preflights for version %d because it's %s", sequence, status))
+		logger.Error(errors.Errorf("not running preflights for version %f because it's %s", sequence, status))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	if err := store.GetStore().ResetPreflightResults(foundApp.ID, int64(sequence)); err != nil {
+	if err := store.GetStore().ResetPreflightResults(foundApp.ID, sequence); err != nil {
 		logger.Error(errors.Wrap(err, "failed to reset preflight results"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -214,7 +214,7 @@ func (h *Handler) StartPreflightChecks(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	err = store.GetStore().GetAppVersionArchive(foundApp.ID, int64(sequence), archiveDir)
+	err = store.GetStore().GetAppVersionArchive(foundApp.ID, sequence, archiveDir)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get app version archive"))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -224,7 +224,7 @@ func (h *Handler) StartPreflightChecks(w http.ResponseWriter, r *http.Request) {
 	removeArchiveDir = false
 	go func() {
 		defer os.RemoveAll(archiveDir)
-		if err := preflight.Run(foundApp.ID, foundApp.Slug, int64(sequence), foundApp.IsAirgap, archiveDir); err != nil {
+		if err := preflight.Run(foundApp.ID, foundApp.Slug, sequence, foundApp.IsAirgap, archiveDir); err != nil {
 			logger.Error(errors.Wrap(err, "failed to run preflights"))
 			return
 		}
@@ -235,7 +235,7 @@ func (h *Handler) StartPreflightChecks(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) GetPreflightCommand(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
-	sequence, err := strconv.ParseInt(mux.Vars(r)["sequence"], 10, 64)
+	sequence, err := strconv.ParseFloat(mux.Vars(r)["sequence"], 64)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to parse sequence"))
 		w.WriteHeader(http.StatusBadRequest)
@@ -298,7 +298,7 @@ func (h *Handler) GetPreflightCommand(w http.ResponseWriter, r *http.Request) {
 // This request comes from the `kubectl preflight` command.
 func (h *Handler) PostPreflightStatus(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
-	sequence, err := strconv.ParseInt(mux.Vars(r)["sequence"], 10, 64)
+	sequence, err := strconv.ParseFloat(mux.Vars(r)["sequence"], 64)
 	if err != nil {
 		err = errors.Wrap(err, "failed to parse sequence")
 		logger.Error(err)

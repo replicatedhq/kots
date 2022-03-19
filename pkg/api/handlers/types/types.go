@@ -22,7 +22,7 @@ type ResponseApp struct {
 	Slug              string              `json:"slug"`
 	Name              string              `json:"name"`
 	IsAirgap          bool                `json:"isAirgap"`
-	CurrentSequence   int64               `json:"currentSequence"`
+	CurrentSequence   float64             `json:"currentSequence"`
 	UpstreamURI       string              `json:"upstreamUri"`
 	IconURI           string              `json:"iconUri"`
 	CreatedAt         time.Time           `json:"createdAt"`

@@ -36,7 +36,7 @@ func UpstreamDownloadCmd() *cobra.Command {
 			}
 			appSlug := args[0]
 
-			appSequence := v.GetInt64("sequence")
+			appSequence := v.GetFloat64("sequence")
 			if appSequence == -1 {
 				return errors.New("--sequence flag is required")
 			}
@@ -71,7 +71,7 @@ func UpstreamDownloadCmd() *cobra.Command {
 			if v.GetBool("wait") {
 				urlVals.Set("wait", "true")
 			}
-			url := fmt.Sprintf("http://localhost:%d/api/v1/app/%s/sequence/%d/download?%s", localPort, url.PathEscape(appSlug), appSequence, urlVals.Encode())
+			url := fmt.Sprintf("http://localhost:%d/api/v1/app/%s/sequence/%f/download?%s", localPort, url.PathEscape(appSlug), appSequence, urlVals.Encode())
 
 			go func() {
 				select {
@@ -98,7 +98,7 @@ func UpstreamDownloadCmd() *cobra.Command {
 				os.Exit(2) // not returning error here as we don't want to show the entire stack trace to normal users
 			}
 
-			log.ActionWithSpinner(fmt.Sprintf("Retrying download for sequence %d", appSequence))
+			log.ActionWithSpinner(fmt.Sprintf("Retrying download for sequence %f", appSequence))
 
 			newReq, err := http.NewRequest("POST", url, nil)
 			if err != nil {
@@ -151,14 +151,14 @@ func UpstreamDownloadCmd() *cobra.Command {
 			if v.GetBool("wait") {
 				log.ActionWithoutSpinner("Downloaded successfully.")
 			} else {
-				log.ActionWithoutSpinner(fmt.Sprintf("App sequence %d is being re-downloaded.", appSequence))
+				log.ActionWithoutSpinner(fmt.Sprintf("App sequence %f is being re-downloaded.", appSequence))
 			}
 
 			return nil
 		},
 	}
 
-	cmd.Flags().Int64("sequence", -1, "local app sequence for the version to retry downloading.")
+	cmd.Flags().Float64("sequence", -1, "local app sequence for the version to retry downloading.")
 	cmd.Flags().Bool("skip-preflights", false, "set to true to skip preflight checks")
 	cmd.Flags().Bool("skip-compatibility-check", false, "set to true to skip compatibility checks between the current kots version and the update")
 	cmd.Flags().Bool("wait", true, "set to false to download the update in the background")

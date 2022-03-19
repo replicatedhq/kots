@@ -158,7 +158,7 @@ func downloadReplicated(
 	updateCursor ReplicatedCursor,
 	versionLabel string,
 	appSlug string,
-	appSequence int64,
+	appSequence float64,
 	isAirgap bool,
 	airgapMetadata *kotsv1beta1.Airgap,
 	registry types.LocalRegistry,

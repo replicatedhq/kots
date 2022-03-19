@@ -189,7 +189,7 @@ func (h *Handler) DownloadAppVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
+	sequence, err := strconv.ParseFloat(mux.Vars(r)["sequence"], 64)
 	if err != nil {
 		errMsg := "failed to parse sequence number"
 		logger.Error(errors.Wrap(err, errMsg))
@@ -217,16 +217,16 @@ func (h *Handler) DownloadAppVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	version, err := store.GetStore().GetAppVersion(a.ID, int64(sequence))
+	version, err := store.GetStore().GetAppVersion(a.ID, sequence)
 	if err != nil {
 		if store.GetStore().IsNotFound(err) {
-			errMsg := fmt.Sprintf("version for sequence %d not found", sequence)
+			errMsg := fmt.Sprintf("version for sequence %f not found", sequence)
 			logger.Error(errors.New(errMsg))
 			downloadUpstreamVersionResponse.Error = errMsg
 			JSON(w, http.StatusNotFound, downloadUpstreamVersionResponse)
 			return
 		}
-		errMsg := fmt.Sprintf("failed to get app version %d", sequence)
+		errMsg := fmt.Sprintf("failed to get app version %f", sequence)
 		logger.Error(errors.Wrap(err, errMsg))
 		downloadUpstreamVersionResponse.Error = errMsg
 		JSON(w, http.StatusInternalServerError, downloadUpstreamVersionResponse)
@@ -235,14 +235,14 @@ func (h *Handler) DownloadAppVersion(w http.ResponseWriter, r *http.Request) {
 
 	status, err := store.GetStore().GetStatusForVersion(a.ID, downstreams[0].ClusterID, version.Sequence)
 	if err != nil {
-		errMsg := fmt.Sprintf("failed to get status for version %d", version.Sequence)
+		errMsg := fmt.Sprintf("failed to get status for version %f", version.Sequence)
 		logger.Error(errors.Wrap(err, errMsg))
 		downloadUpstreamVersionResponse.Error = errMsg
 		JSON(w, http.StatusInternalServerError, downloadUpstreamVersionResponse)
 		return
 	}
 	if status != storetypes.VersionPendingDownload {
-		errMsg := fmt.Sprintf("not downloading version %d because it's %s", version.Sequence, status)
+		errMsg := fmt.Sprintf("not downloading version %f because it's %s", version.Sequence, status)
 		logger.Error(errors.New(errMsg))
 		downloadUpstreamVersionResponse.Error = errMsg
 		JSON(w, http.StatusInternalServerError, downloadUpstreamVersionResponse)
@@ -271,7 +271,7 @@ func (h *Handler) DownloadAppVersion(w http.ResponseWriter, r *http.Request) {
 			if _, ok := cause.(util.ActionableError); ok {
 				downloadUpstreamVersionResponse.Error = cause.Error()
 			} else {
-				downloadUpstreamVersionResponse.Error = fmt.Sprintf("failed to get app version %d", sequence)
+				downloadUpstreamVersionResponse.Error = fmt.Sprintf("failed to get app version %f", sequence)
 			}
 			logger.Error(err)
 			JSON(w, http.StatusInternalServerError, downloadUpstreamVersionResponse)

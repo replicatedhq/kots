@@ -35,7 +35,7 @@ const (
 // It returns the ID of the support bundle so that the status can be queried by the
 // front end.
 func Collect(appID string, clusterID string) (string, error) {
-	sequence := int64(0)
+	sequence := float64(0)
 
 	currentVersion, err := store.GetStore().GetCurrentVersion(appID, clusterID)
 	if err != nil {
@@ -107,7 +107,7 @@ func GetBundleCommand(appSlug string) []string {
 
 // CreateSupportBundleDependencies generates k8s secrets and configmaps for the support bundle spec and redactors.
 // These resources will be used when executing a support bundle collection
-func CreateSupportBundleDependencies(appID string, sequence int64, opts types.TroubleshootOptions) (*types.SupportBundle, error) {
+func CreateSupportBundleDependencies(appID string, sequence float64, opts types.TroubleshootOptions) (*types.SupportBundle, error) {
 	a, err := store.GetStore().GetApp(appID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get app %s", appID)

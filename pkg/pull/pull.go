@@ -60,7 +60,7 @@ type PullOptions struct {
 	SkipHelmChartCheck     bool
 	ReportWriter           io.Writer
 	AppSlug                string
-	AppSequence            int64
+	AppSequence            float64
 	AppVersionLabel        string
 	IsGitOps               bool
 	HTTPProxyEnvValue      string

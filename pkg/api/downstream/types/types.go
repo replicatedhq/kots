@@ -11,12 +11,12 @@ import (
 )
 
 type Downstream struct {
-	ClusterID        string `json:"id"`
-	ClusterSlug      string `json:"slug"`
-	Name             string `json:"name"`
-	CurrentSequence  int64  `json:"currentSequence"`
-	SnapshotSchedule string `json:"snapshotSchedule,omitempty"`
-	SnapshotTTL      string `json:"snapshotTtl,omitempty"`
+	ClusterID        string  `json:"id"`
+	ClusterSlug      string  `json:"slug"`
+	Name             string  `json:"name"`
+	CurrentSequence  float64 `json:"currentSequence"`
+	SnapshotSchedule string  `json:"snapshotSchedule,omitempty"`
+	SnapshotTTL      string  `json:"snapshotTtl,omitempty"`
 }
 
 type DownstreamVersion struct {
@@ -24,8 +24,8 @@ type DownstreamVersion struct {
 	Semver                     *semver.Version                    `json:"semver,omitempty"`
 	Status                     storetypes.DownstreamVersionStatus `json:"status"`
 	CreatedOn                  *time.Time                         `json:"createdOn"`
-	ParentSequence             int64                              `json:"parentSequence"`
-	Sequence                   int64                              `json:"sequence"`
+	ParentSequence             float64                            `json:"parentSequence"`
+	Sequence                   float64                            `json:"sequence"`
 	ReleaseNotes               string                             `json:"releaseNotes"`
 	DeployedAt                 *time.Time                         `json:"deployedAt"`
 	Source                     string                             `json:"source"`

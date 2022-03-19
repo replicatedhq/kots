@@ -24,10 +24,10 @@ import (
 	"github.com/replicatedhq/kots/pkg/version"
 )
 
-func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skipCompatibilityCheck bool) (finalSequence *int64, finalError error) {
+func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skipCompatibilityCheck bool) (finalSequence *float64, finalError error) {
 	taskID := "update-download"
 	if update.AppSequence != nil {
-		taskID = fmt.Sprintf("update-download.%d", *update.AppSequence)
+		taskID = fmt.Sprintf("update-download.%f", *update.AppSequence)
 	}
 
 	if err := store.GetStore().SetTaskStatus(taskID, "Fetching update...", "running"); err != nil {
@@ -57,7 +57,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 				// update the diff summary of the next version in the list (if exists)
 				err := store.GetStore().UpdateNextAppVersionDiffSummary(appID, *update.AppSequence)
 				if err != nil {
-					logger.Error(errors.Wrapf(err, "failed to update next app version diff summary for base sequence %d", *update.AppSequence))
+					logger.Error(errors.Wrapf(err, "failed to update next app version diff summary for base sequence %f", *update.AppSequence))
 				}
 			}
 			err := store.GetStore().ClearTaskStatus(taskID)
@@ -107,7 +107,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 
 		// a pending download version has been created, bind the download error to it
 		// clear the global task status at the end to avoid a race condition with the UI
-		sequenceTaskID := fmt.Sprintf("update-download.%d", *finalSequence)
+		sequenceTaskID := fmt.Sprintf("update-download.%f", *finalSequence)
 		if err := store.GetStore().SetTaskStatus(sequenceTaskID, errMsg, "failed"); err != nil {
 			logger.Error(errors.Wrapf(err, "failed to set %s task status", sequenceTaskID))
 		}
@@ -238,7 +238,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		if afterKotsKinds.Installation.Spec.UpdateCursor == beforeCursor {
 			return
 		}
-		newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "Upstream Update", skipPreflights, &version.DownstreamGitOps{}, render.Renderer{})
+		newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, false, archiveDir, "Upstream Update", skipPreflights, &version.DownstreamGitOps{}, render.Renderer{})
 		if err != nil {
 			finalError = errors.Wrap(err, "failed to create version")
 			return

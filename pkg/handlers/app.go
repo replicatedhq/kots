@@ -175,7 +175,7 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 
 	isIdentityServiceSupportedForVersion, err := store.GetStore().IsIdentityServiceSupportedForVersion(a.ID, latestAppVersion.Sequence)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to check if identity service is supported for version %d", latestAppVersion.Sequence)
+		return nil, errors.Wrapf(err, "failed to check if identity service is supported for version %f", latestAppVersion.Sequence)
 	}
 	isAppIdentityServiceSupported := isIdentityServiceSupportedForVersion && license.Spec.IsIdentityServiceSupported
 

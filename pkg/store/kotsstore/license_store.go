@@ -36,7 +36,7 @@ func (s *KOTSStore) GetLatestLicenseForApp(appID string) (*kotsv1beta1.License, 
 	return license, nil
 }
 
-func (s *KOTSStore) GetLicenseForAppVersion(appID string, sequence int64) (*kotsv1beta1.License, error) {
+func (s *KOTSStore) GetLicenseForAppVersion(appID string, sequence float64) (*kotsv1beta1.License, error) {
 	db := persistence.MustGetDBSession()
 	query := `select kots_license from app_version where app_id = $1 and sequence = $2`
 	row := db.QueryRow(query, appID, sequence)
@@ -88,30 +88,30 @@ func (s *KOTSStore) GetAllAppLicenses() ([]*kotsv1beta1.License, error) {
 	return licenses, nil
 }
 
-func (s *KOTSStore) UpdateAppLicense(appID string, baseSequence int64, archiveDir string, newLicense *kotsv1beta1.License, originalLicenseData string, channelChanged bool, failOnVersionCreate bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error) {
+func (s *KOTSStore) UpdateAppLicense(appID string, baseSequence float64, archiveDir string, newLicense *kotsv1beta1.License, originalLicenseData string, channelChanged bool, failOnVersionCreate bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (float64, error) {
 	db := persistence.MustGetDBSession()
 
 	tx, err := db.Begin()
 	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to begin")
+		return 0, errors.Wrap(err, "failed to begin")
 	}
 	defer tx.Rollback()
 
 	ser := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 	var b bytes.Buffer
 	if err := ser.Encode(newLicense, &b); err != nil {
-		return int64(0), errors.Wrap(err, "failed to encode license")
+		return 0, errors.Wrap(err, "failed to encode license")
 	}
 	encodedLicense := b.Bytes()
 	if err := ioutil.WriteFile(filepath.Join(archiveDir, "upstream", "userdata", "license.yaml"), encodedLicense, 0644); err != nil {
-		return int64(0), errors.Wrap(err, "failed to write new license")
+		return 0, errors.Wrap(err, "failed to write new license")
 	}
 
 	//  app has the original license data received from the server
 	updateQuery := `update app set license= $1, last_license_sync= $2, channel_changed= $3 where id = $4`
 	_, err = tx.Exec(updateQuery, originalLicenseData, time.Now(), channelChanged, appID)
 	if err != nil {
-		return int64(0), errors.Wrapf(err, "update app %q license", appID)
+		return 0, errors.Wrapf(err, "update app %q license", appID)
 	}
 
 	newSeq, err := s.createNewVersionForLicenseChange(tx, appID, baseSequence, archiveDir, gitops, renderer)
@@ -119,13 +119,13 @@ func (s *KOTSStore) UpdateAppLicense(appID string, baseSequence int64, archiveDi
 		// ignore error here to prevent a failure to render the current version
 		// preventing the end-user from updating the application
 		if failOnVersionCreate {
-			return int64(0), errors.Wrap(err, "failed to create new version")
+			return 0, errors.Wrap(err, "failed to create new version")
 		}
 		logger.Errorf("Failed to create new version from license sync: %v", err)
 	}
 
 	if err := tx.Commit(); err != nil {
-		return int64(0), errors.Wrap(err, "failed to commit transaction")
+		return 0, errors.Wrap(err, "failed to commit transaction")
 	}
 
 	return newSeq, nil
@@ -142,34 +142,34 @@ func (s *KOTSStore) UpdateAppLicenseSyncNow(appID string) error {
 	return nil
 }
 
-func (s *KOTSStore) createNewVersionForLicenseChange(tx *sql.Tx, appID string, baseSequence int64, archiveDir string, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error) {
+func (s *KOTSStore) createNewVersionForLicenseChange(tx *sql.Tx, appID string, baseSequence float64, archiveDir string, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (float64, error) {
 	registrySettings, err := s.GetRegistryDetailsForApp(appID)
 	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to get registry settings for app")
+		return 0, errors.Wrap(err, "failed to get registry settings for app")
 	}
 
 	app, err := s.GetApp(appID)
 	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to get app")
+		return 0, errors.Wrap(err, "failed to get app")
 	}
 
 	downstreams, err := s.ListDownstreamsForApp(appID)
 	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to list downstreams")
+		return 0, errors.Wrap(err, "failed to list downstreams")
 	}
 
 	nextAppSequence, err := s.GetNextAppSequence(appID)
 	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to get next app sequence")
+		return 0, errors.Wrap(err, "failed to get next app sequence")
 	}
 
 	if err := renderer.RenderDir(archiveDir, app, downstreams, registrySettings, nextAppSequence); err != nil {
-		return int64(0), errors.Wrap(err, "failed to render new version")
+		return 0, errors.Wrap(err, "failed to render new version")
 	}
 
-	newSequence, err := s.createAppVersion(tx, appID, &baseSequence, archiveDir, "License Change", false, gitops, renderer)
+	newSequence, err := s.createAppVersion(tx, appID, &baseSequence, true, archiveDir, "License Change", false, gitops, renderer)
 	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to create new version")
+		return 0, errors.Wrap(err, "failed to create new version")
 	}
 
 	return newSequence, nil

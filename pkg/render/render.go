@@ -23,11 +23,11 @@ type Renderer struct {
 
 // RenderFile renders a single file
 // this is useful for upstream/kotskinds files that are not rendered in the dir
-func (r Renderer) RenderFile(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings, appSlug string, sequence int64, isAirgap bool, namespace string, inputContent []byte) ([]byte, error) {
+func (r Renderer) RenderFile(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings, appSlug string, sequence float64, isAirgap bool, namespace string, inputContent []byte) ([]byte, error) {
 	return RenderFile(kotsKinds, registrySettings, appSlug, sequence, isAirgap, namespace, inputContent)
 }
 
-func RenderFile(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings, appSlug string, sequence int64, isAirgap bool, namespace string, inputContent []byte) ([]byte, error) {
+func RenderFile(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings, appSlug string, sequence float64, isAirgap bool, namespace string, inputContent []byte) ([]byte, error) {
 	fixedUpContent, err := kotsutil.FixUpYAML(inputContent)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to fix up yaml")
@@ -38,7 +38,7 @@ func RenderFile(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.Re
 
 // RenderContent renders any string/content
 // this is useful for rendering single values, like a status informer
-func RenderContent(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings, appSlug string, sequence int64, isAirgap bool, namespace string, inputContent []byte) ([]byte, error) {
+func RenderContent(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings, appSlug string, sequence float64, isAirgap bool, namespace string, inputContent []byte) ([]byte, error) {
 	builder, err := NewBuilder(kotsKinds, registrySettings, appSlug, sequence, isAirgap, namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create builder")
@@ -52,7 +52,7 @@ func RenderContent(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes
 	return []byte(rendered), nil
 }
 
-func NewBuilder(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings, appSlug string, sequence int64, isAirgap bool, namespace string) (*template.Builder, error) {
+func NewBuilder(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings, appSlug string, sequence float64, isAirgap bool, namespace string) (*template.Builder, error) {
 	localRegistry := template.LocalRegistry{
 		Host:      registrySettings.Hostname,
 		Namespace: registrySettings.Namespace,
@@ -105,11 +105,11 @@ func NewBuilder(kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.Re
 
 // RenderDir renders an app archive dir
 // this is useful for when the license/config have updated, and template functions need to be evaluated again
-func (r Renderer) RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes.Downstream, registrySettings registrytypes.RegistrySettings, sequence int64) error {
+func (r Renderer) RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes.Downstream, registrySettings registrytypes.RegistrySettings, sequence float64) error {
 	return RenderDir(archiveDir, a, downstreams, registrySettings, sequence)
 }
 
-func RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes.Downstream, registrySettings registrytypes.RegistrySettings, sequence int64) error {
+func RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes.Downstream, registrySettings registrytypes.RegistrySettings, sequence float64) error {
 	installation, err := kotsutil.LoadInstallationFromPath(filepath.Join(archiveDir, "upstream", "userdata", "installation.yaml"))
 	if err != nil {
 		return errors.Wrap(err, "failed to load installation from path")

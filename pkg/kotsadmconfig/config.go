@@ -43,7 +43,7 @@ func IsUnsetItem(item kotsv1beta1.ConfigItem) bool {
 	return true
 }
 
-func NeedsConfiguration(appSlug string, sequence int64, isAirgap bool, kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings) (bool, error) {
+func NeedsConfiguration(appSlug string, sequence float64, isAirgap bool, kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings) (bool, error) {
 	log := logger.NewCLILogger()
 
 	configSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Config")
@@ -101,7 +101,7 @@ func NeedsConfiguration(appSlug string, sequence int64, isAirgap bool, kotsKinds
 
 // UpdateConfigValuesInDB it gets the config values from filesInDir and
 // updates the app version config values in the db for the given sequence and app id
-func UpdateConfigValuesInDB(filesInDir string, appID string, sequence int64) error {
+func UpdateConfigValuesInDB(filesInDir string, appID string, sequence float64) error {
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filesInDir)
 	if err != nil {
 		return errors.Wrap(err, "failed to read kots kinds")

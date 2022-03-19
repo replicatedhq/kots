@@ -36,13 +36,13 @@ import (
 )
 
 type UpdateAppConfigRequest struct {
-	Sequence         int64                     `json:"sequence"`
+	Sequence         float64                   `json:"sequence"`
 	CreateNewVersion bool                      `json:"createNewVersion"`
 	ConfigGroups     []kotsv1beta1.ConfigGroup `json:"configGroups"`
 }
 
 type LiveAppConfigRequest struct {
-	Sequence     int64                     `json:"sequence"`
+	Sequence     float64                   `json:"sequence"`
 	ConfigGroups []kotsv1beta1.ConfigGroup `json:"configGroups"`
 }
 
@@ -271,7 +271,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
+	sequence, err := strconv.ParseFloat(mux.Vars(r)["sequence"], 64)
 	if err != nil {
 		logger.Error(err)
 		currentAppConfigResponse.Error = "failed to parse app sequence"
@@ -279,7 +279,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status, err := store.GetStore().GetDownstreamVersionStatus(foundApp.ID, int64(sequence))
+	status, err := store.GetStore().GetDownstreamVersionStatus(foundApp.ID, sequence)
 	if err != nil {
 		logger.Error(err)
 		currentAppConfigResponse.Error = "failed to get downstream version status"
@@ -287,7 +287,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if status == storetypes.VersionPendingDownload {
-		err := errors.Errorf("not returning config for version %d because it's %s", sequence, status)
+		err := errors.Errorf("not returning config for version %f because it's %s", sequence, status)
 		logger.Error(err)
 		currentAppConfigResponse.Error = err.Error()
 		JSON(w, http.StatusBadRequest, currentAppConfigResponse)
@@ -311,7 +311,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 	}
 	defer os.RemoveAll(archiveDir)
 
-	err = store.GetStore().GetAppVersionArchive(foundApp.ID, int64(sequence), archiveDir)
+	err = store.GetStore().GetAppVersionArchive(foundApp.ID, sequence, archiveDir)
 	if err != nil {
 		logger.Error(err)
 		currentAppConfigResponse.Error = "failed to get app version archive"
@@ -356,7 +356,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		ReadOnly:  registryInfo.IsReadOnly,
 	}
 
-	versionInfo := template.VersionInfoFromInstallation(int64(sequence)+1, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
+	versionInfo := template.VersionInfoFromInstallation(sequence+1, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
 	appInfo := template.ApplicationInfo{Slug: foundApp.Slug}
 	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, &kotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, false)
 	if err != nil {
@@ -374,7 +374,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, CurrentAppConfigResponse{Success: true, ConfigGroups: configGroups})
 }
 
-func isVersionConfigEditable(app *apptypes.App, sequence int64) (bool, error) {
+func isVersionConfigEditable(app *apptypes.App, sequence float64) (bool, error) {
 	// Only latest and currently deployed versions can be edited
 	downstreams, err := store.GetStore().ListDownstreamsForApp(app.ID)
 	if err != nil {
@@ -409,7 +409,7 @@ func isVersionConfigEditable(app *apptypes.App, sequence int64) (bool, error) {
 	return false, nil
 }
 
-func shouldCreateNewAppVersion(appID string, sequence int64) (bool, error) {
+func shouldCreateNewAppVersion(appID string, sequence float64) (bool, error) {
 	// Updates are allowed only for sequence 0 and only when it's pending config.
 	if sequence > 0 {
 		return true, nil
@@ -435,7 +435,7 @@ func shouldCreateNewAppVersion(appID string, sequence int64) (bool, error) {
 
 // if isPrimaryVersion is false, missing a required config field will not cause a failure, and instead will create
 // the app version with status needs_config
-func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kotsv1beta1.ConfigGroup, createNewVersion bool, isPrimaryVersion bool, skipPreflights bool, deploy bool) (UpdateAppConfigResponse, error) {
+func updateAppConfig(updateApp *apptypes.App, sequence float64, configGroups []kotsv1beta1.ConfigGroup, createNewVersion bool, isPrimaryVersion bool, skipPreflights bool, deploy bool) (UpdateAppConfigResponse, error) {
 	updateAppConfigResponse := UpdateAppConfigResponse{
 		Success: false,
 	}
@@ -551,6 +551,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 		return updateAppConfigResponse, err
 	}
 
+	// TODO @salah fix this
 	renderSequence := sequence
 	if createNewVersion {
 		nextAppSequence, err := store.GetStore().GetNextAppSequence(updateApp.ID)
@@ -568,25 +569,25 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 	}
 
 	if createNewVersion {
-		newSequence, err := store.GetStore().CreateAppVersion(updateApp.ID, &sequence, archiveDir, "Config Change", false, &version.DownstreamGitOps{}, render.Renderer{})
+		newSequence, err := store.GetStore().CreateAppVersion(updateApp.ID, &sequence, true, archiveDir, "Config Change", false, &version.DownstreamGitOps{}, render.Renderer{})
 		if err != nil {
 			updateAppConfigResponse.Error = "failed to create an app version"
 			return updateAppConfigResponse, err
 		}
 		sequence = newSequence
 	} else {
-		if err := kotsadmconfig.UpdateConfigValuesInDB(archiveDir, updateApp.ID, int64(sequence)); err != nil {
+		if err := kotsadmconfig.UpdateConfigValuesInDB(archiveDir, updateApp.ID, sequence); err != nil {
 			updateAppConfigResponse.Error = "failed to update config values in db"
 			return updateAppConfigResponse, err
 		}
 
-		if err := store.GetStore().CreateAppVersionArchive(updateApp.ID, int64(sequence), archiveDir); err != nil {
+		if err := store.GetStore().CreateAppVersionArchive(updateApp.ID, sequence, archiveDir); err != nil {
 			updateAppConfigResponse.Error = "failed to create app version archive"
 			return updateAppConfigResponse, err
 		}
 	}
 
-	if err := store.GetStore().SetDownstreamVersionPendingPreflight(updateApp.ID, int64(sequence)); err != nil {
+	if err := store.GetStore().SetDownstreamVersionPendingPreflight(updateApp.ID, sequence); err != nil {
 		updateAppConfigResponse.Error = "failed to set downstream status to 'pending preflight'"
 		return updateAppConfigResponse, err
 	}
@@ -602,7 +603,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 	}
 
 	if !skipPreflights || hasStrictPreflights {
-		if err := preflight.Run(updateApp.ID, updateApp.Slug, int64(sequence), updateApp.IsAirgap, archiveDir); err != nil {
+		if err := preflight.Run(updateApp.ID, updateApp.Slug, sequence, updateApp.IsAirgap, archiveDir); err != nil {
 			updateAppConfigResponse.Error = errors.Cause(err).Error()
 			return updateAppConfigResponse, err
 		}

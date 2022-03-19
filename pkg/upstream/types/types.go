@@ -40,7 +40,7 @@ type Update struct {
 	VersionLabel string     `json:"versionLabel"`
 	ReleaseNotes string     `json:"releaseNotes"`
 	ReleasedAt   *time.Time `json:"releasedAt"`
-	AppSequence  *int64     `json:"appSequence"` // can have a sequence if update is available as a pending download app version
+	AppSequence  *float64   `json:"appSequence"` // can have a sequence if update is available as a pending download app version
 }
 
 type WriteOptions struct {
@@ -83,7 +83,7 @@ type FetchOptions struct {
 	CurrentVersionLabel    string
 	ChannelChanged         bool
 	AppSlug                string
-	AppSequence            int64
+	AppSequence            float64
 	AppVersionLabel        string
 	LocalRegistry          LocalRegistry
 	ReportingInfo          *reportingtypes.ReportingInfo

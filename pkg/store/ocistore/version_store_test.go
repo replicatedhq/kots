@@ -10,7 +10,7 @@ func Test_refFromAppVersion(t *testing.T) {
 	tests := []struct {
 		name           string
 		appID          string
-		sequence       int64
+		sequence       float64
 		storageBaseURI string
 		expect         string
 	}{

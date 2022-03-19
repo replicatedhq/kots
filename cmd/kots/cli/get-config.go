@@ -37,7 +37,7 @@ func GetConfigCmd() *cobra.Command {
 		RunE: getConfigCmd,
 	}
 
-	cmd.Flags().Int64("sequence", -1, "app sequence to retrieve config for")
+	cmd.Flags().Float64("sequence", -1, "app sequence to retrieve config for")
 	cmd.Flags().String("appslug", "", "app slug to retrieve config for")
 	cmd.Flags().Bool("decrypt", false, "decrypt encrypted config items")
 
@@ -67,7 +67,7 @@ func getConfigCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	appSlug := v.GetString("appslug")
-	appSequence := v.GetInt64("sequence")
+	appSequence := v.GetFloat64("sequence")
 
 	localPort, errChan, err := k8sutil.PortForward(0, 3000, namespace, getPodName, false, stopCh, log)
 	if err != nil {
@@ -123,7 +123,7 @@ func getConfigCmd(cmd *cobra.Command, args []string) error {
 		appSequence = foundApp.CurrentSequence
 	}
 
-	getConfigURL := fmt.Sprintf("http://localhost:%d/api/v1/app/%s/config/%d", localPort, appSlug, appSequence)
+	getConfigURL := fmt.Sprintf("http://localhost:%d/api/v1/app/%s/config/%f", localPort, appSlug, appSequence)
 	config, err := getConfig(getConfigURL, authSlug)
 	if err != nil {
 		return errors.Wrap(err, "failed to get config")

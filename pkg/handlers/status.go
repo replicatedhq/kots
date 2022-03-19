@@ -39,7 +39,7 @@ type GetAppVersionDownloadStatusResponse struct {
 func (h *Handler) GetAppVersionDownloadStatus(w http.ResponseWriter, r *http.Request) {
 	getAppVersionDownloadStatusResponse := GetAppVersionDownloadStatusResponse{}
 
-	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
+	sequence, err := strconv.ParseFloat(mux.Vars(r)["sequence"], 64)
 	if err != nil {
 		errMsg := "failed to parse sequence number"
 		logger.Error(errors.Wrap(err, errMsg))
@@ -48,7 +48,7 @@ func (h *Handler) GetAppVersionDownloadStatus(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	taskID := fmt.Sprintf("update-download.%d", sequence)
+	taskID := fmt.Sprintf("update-download.%f", sequence)
 	status, message, err := store.GetStore().GetTaskStatus(taskID)
 	if err != nil {
 		errMsg := fmt.Sprintf("failed to get %s task status", taskID)

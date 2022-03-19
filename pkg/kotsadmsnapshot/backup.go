@@ -51,7 +51,7 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 
 	logger.Debug("creating backup",
 		zap.String("appID", a.ID),
-		zap.Int64("sequence", parentSequence))
+		zap.Float64("sequence", parentSequence))
 
 	archiveDir, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
@@ -119,7 +119,7 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 	}
 	veleroBackup.Annotations["kots.io/snapshot-trigger"] = snapshotTrigger
 	veleroBackup.Annotations["kots.io/app-id"] = a.ID
-	veleroBackup.Annotations["kots.io/app-sequence"] = strconv.FormatInt(parentSequence, 10)
+	veleroBackup.Annotations["kots.io/app-sequence"] = strconv.FormatFloat(parentSequence, 10, 3, 64)
 	veleroBackup.Annotations["kots.io/snapshot-requested"] = time.Now().UTC().Format(time.RFC3339)
 
 	labelSelector := metav1.LabelSelector{
@@ -172,7 +172,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 	logger.Debug("creating instance backup")
 
 	kotsadmNamespace := util.PodNamespace
-	appsSequences := map[string]int64{}
+	appsSequences := map[string]float64{}
 	includedNamespaces := []string{kotsadmNamespace}
 	excludedNamespaces := []string{}
 	backupAnnotations := map[string]string{}
@@ -429,7 +429,7 @@ func ListBackupsForApp(ctx context.Context, kotsadmNamespace string, appID strin
 		}
 		sequence, ok := veleroBackup.Annotations["kots.io/app-sequence"]
 		if ok {
-			s, err := strconv.ParseInt(sequence, 10, 64)
+			s, err := strconv.ParseFloat(sequence, 64)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to parse app sequence")
 			}
@@ -591,7 +591,7 @@ func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types
 
 		appAnnotationStr, _ := veleroBackup.Annotations["kots.io/apps-sequences"]
 		if len(appAnnotationStr) > 0 {
-			var apps map[string]int64
+			var apps map[string]float64
 			if err := json.Unmarshal([]byte(appAnnotationStr), &apps); err != nil {
 				return nil, errors.Wrap(err, "failed to unmarshal apps sequences")
 			}

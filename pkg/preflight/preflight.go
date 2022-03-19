@@ -35,7 +35,7 @@ const (
 	SpecDataKey = "preflight-spec"
 )
 
-func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir string) error {
+func Run(appID string, appSlug string, sequence float64, isAirgap bool, archiveDir string) error {
 	renderedKotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
 		return errors.Wrap(err, "failed to load rendered kots kinds")
@@ -43,14 +43,14 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 
 	status, err := store.GetStore().GetDownstreamVersionStatus(appID, sequence)
 	if err != nil {
-		return errors.Wrapf(err, "failed to check downstream version %d status", sequence)
+		return errors.Wrapf(err, "failed to check downstream version %f status", sequence)
 	}
 
 	// preflights should not run until config is finished
 	if status == storetypes.VersionPendingConfig {
 		logger.Debug("not running preflights for app that is pending required configuration",
 			zap.String("appID", appID),
-			zap.Int64("sequence", sequence))
+			zap.Float64("sequence", sequence))
 		return nil
 	}
 
@@ -62,7 +62,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 
 		if status != "deployed" {
 			if err := store.GetStore().SetDownstreamVersionPendingPreflight(appID, sequence); err != nil {
-				return errors.Wrapf(err, "failed to set downstream version %d pending preflight", sequence)
+				return errors.Wrapf(err, "failed to set downstream version %f pending preflight", sequence)
 			}
 		}
 
@@ -148,7 +148,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 // maybeDeployFirstVersion will deploy the first version if
 // 1. preflight checks pass
 // 2. we have not already deployed it
-func maybeDeployFirstVersion(appID string, sequence int64, preflightResults *troubleshootpreflight.UploadPreflightResults) (bool, error) {
+func maybeDeployFirstVersion(appID string, sequence float64, preflightResults *troubleshootpreflight.UploadPreflightResults) (bool, error) {
 	if sequence != 0 {
 		return false, nil
 	}
@@ -219,7 +219,7 @@ func GetPreflightCommand(appSlug string) []string {
 	return comamnd
 }
 
-func CreateRenderedSpec(appID string, sequence int64, origin string, inCluster bool, kotsKinds *kotsutil.KotsKinds) error {
+func CreateRenderedSpec(appID string, sequence float64, origin string, inCluster bool, kotsKinds *kotsutil.KotsKinds) error {
 	builtPreflight := kotsKinds.Preflight.DeepCopy()
 	if builtPreflight == nil {
 		builtPreflight = &troubleshootv1beta2.Preflight{
@@ -257,7 +257,7 @@ func CreateRenderedSpec(appID string, sequence int64, origin string, inCluster b
 	} else if origin != "" {
 		baseURL = origin
 	}
-	builtPreflight.Spec.UploadResultsTo = fmt.Sprintf("%s/api/v1/preflight/app/%s/sequence/%d", baseURL, app.Slug, sequence)
+	builtPreflight.Spec.UploadResultsTo = fmt.Sprintf("%s/api/v1/preflight/app/%s/sequence/%f", baseURL, app.Slug, sequence)
 
 	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 	var b bytes.Buffer

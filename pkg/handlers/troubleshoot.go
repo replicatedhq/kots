@@ -240,7 +240,7 @@ func (h *Handler) GetSupportBundleCommand(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	sequence := int64(0)
+	sequence := float64(0)
 
 	downstreams, err := store.GetStore().ListDownstreamsForApp(foundApp.ID)
 	if err != nil {

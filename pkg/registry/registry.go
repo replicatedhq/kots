@@ -30,7 +30,7 @@ import (
 // RewriteImages will use the app (a) and send the images to the registry specified. It will create patches for these
 // and create a new version of the application
 // the caller is responsible for deleting the appDir returned
-func RewriteImages(appID string, sequence int64, hostname string, username string, password string, namespace string, isReadOnly bool, configValues *kotsv1beta1.ConfigValues) (appDir string, finalError error) {
+func RewriteImages(appID string, sequence float64, hostname string, username string, password string, namespace string, isReadOnly bool, configValues *kotsv1beta1.ConfigValues) (appDir string, finalError error) {
 	if err := store.GetStore().SetTaskStatus("image-rewrite", "Updating registry settings", "running"); err != nil {
 		return "", errors.Wrap(err, "failed to set task status")
 	}

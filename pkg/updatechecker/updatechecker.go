@@ -165,7 +165,7 @@ type UpdateCheckResponse struct {
 }
 
 type UpdateCheckRelease struct {
-	Sequence int64
+	Sequence float64
 	Version  string
 }
 
@@ -414,7 +414,7 @@ func deployLatestVersion(opts CheckForUpdatesOpts, clusterID string) error {
 	latestVersion := appVersions.AllVersions[0]
 
 	if err := deployVersion(opts, clusterID, appVersions, latestVersion); err != nil {
-		return errors.Wrapf(err, "failed to deploy sequence %d with version label %s", latestVersion.Sequence, latestVersion.VersionLabel)
+		return errors.Wrapf(err, "failed to deploy sequence %f with version label %s", latestVersion.Sequence, latestVersion.VersionLabel)
 	}
 
 	return nil
@@ -443,7 +443,7 @@ func deployVersionLabel(opts CheckForUpdatesOpts, clusterID string, versionLabel
 	}
 
 	if err := deployVersion(opts, clusterID, appVersions, versionToDeploy); err != nil {
-		return errors.Wrapf(err, "failed to deploy sequence %d with version label %s", versionToDeploy.Sequence, versionToDeploy.VersionLabel)
+		return errors.Wrapf(err, "failed to deploy sequence %f with version label %s", versionToDeploy.Sequence, versionToDeploy.VersionLabel)
 	}
 
 	return nil
@@ -514,7 +514,7 @@ func autoDeploy(opts CheckForUpdatesOpts, clusterID string, autoDeploy apptypes.
 	}
 
 	if err := deployVersion(opts, clusterID, appVersions, versionToDeploy); err != nil {
-		return errors.Wrapf(err, "failed to deploy sequence %d with version label %s", versionToDeploy.Sequence, versionToDeploy.VersionLabel)
+		return errors.Wrapf(err, "failed to deploy sequence %f with version label %s", versionToDeploy.Sequence, versionToDeploy.VersionLabel)
 	}
 
 	return nil
@@ -548,13 +548,13 @@ func deployVersion(opts CheckForUpdatesOpts, clusterID string, appVersions *down
 	if versionToDeploy.Sequence != downstreamSequence {
 		status, err := store.GetStore().GetStatusForVersion(opts.AppID, clusterID, versionToDeploy.Sequence)
 		if err != nil {
-			return errors.Wrapf(err, "failed to get status for version %d", versionToDeploy.Sequence)
+			return errors.Wrapf(err, "failed to get status for version %f", versionToDeploy.Sequence)
 		}
 
 		if status == storetypes.VersionPendingConfig {
 			return util.ActionableError{
 				NoRetry: true,
-				Message: fmt.Sprintf("Version %d cannot be deployed because it needs configuration", versionToDeploy.Sequence),
+				Message: fmt.Sprintf("Version %f cannot be deployed because it needs configuration", versionToDeploy.Sequence),
 			}
 		}
 

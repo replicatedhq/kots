@@ -609,7 +609,7 @@ func getAuth(privateKey string) (transport.AuthMethod, error) {
 	return auth, nil
 }
 
-func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName string, newSequence int, archiveDir string, downstreamName string) (string, error) {
+func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName string, newSequence float64, archiveDir string, downstreamName string) (string, error) {
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to load kots kinds")
@@ -688,7 +688,7 @@ func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 	}
 
 	// commit it
-	updatedHash, err := workTree.Commit(fmt.Sprintf("Updating %s to version %d", appName, newSequence), &git.CommitOptions{
+	updatedHash, err := workTree.Commit(fmt.Sprintf("Updating %s to version %f", appName, newSequence), &git.CommitOptions{
 		Author: &object.Signature{
 			Name:  "KOTS Admin Console",
 			Email: "help@replicated.com",

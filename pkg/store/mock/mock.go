@@ -97,22 +97,22 @@ func (mr *MockStoreMockRecorder) CreateApp(name, upstreamURI, licenseData, isAir
 }
 
 // CreateAppVersion mocks base method.
-func (m *MockStore) CreateAppVersion(appID string, baseSequence *int64, filesInDir, source string, skipPreflights bool, gitops types4.DownstreamGitOps, renderer types9.Renderer) (int64, error) {
+func (m *MockStore) CreateAppVersion(appID string, baseSequence *float64, patch bool, filesInDir, source string, skipPreflights bool, gitops types4.DownstreamGitOps, renderer types9.Renderer) (float64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateAppVersion", appID, baseSequence, filesInDir, source, skipPreflights, gitops, renderer)
-	ret0, _ := ret[0].(int64)
+	ret := m.ctrl.Call(m, "CreateAppVersion", appID, baseSequence, patch, filesInDir, source, skipPreflights, gitops, renderer)
+	ret0, _ := ret[0].(float64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateAppVersion indicates an expected call of CreateAppVersion.
-func (mr *MockStoreMockRecorder) CreateAppVersion(appID, baseSequence, filesInDir, source, skipPreflights, gitops, renderer interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) CreateAppVersion(appID, baseSequence, patch, filesInDir, source, skipPreflights, gitops, renderer interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAppVersion", reflect.TypeOf((*MockStore)(nil).CreateAppVersion), appID, baseSequence, filesInDir, source, skipPreflights, gitops, renderer)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAppVersion", reflect.TypeOf((*MockStore)(nil).CreateAppVersion), appID, baseSequence, patch, filesInDir, source, skipPreflights, gitops, renderer)
 }
 
 // CreateAppVersionArchive mocks base method.
-func (m *MockStore) CreateAppVersionArchive(appID string, sequence int64, archivePath string) error {
+func (m *MockStore) CreateAppVersionArchive(appID string, sequence float64, archivePath string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateAppVersionArchive", appID, sequence, archivePath)
 	ret0, _ := ret[0].(error)
@@ -155,10 +155,10 @@ func (mr *MockStoreMockRecorder) CreateNewCluster(userID, isAllUsers, title, tok
 }
 
 // CreatePendingDownloadAppVersion mocks base method.
-func (m *MockStore) CreatePendingDownloadAppVersion(appID string, update types13.Update, kotsApplication *v1beta1.Application, license *v1beta1.License) (int64, error) {
+func (m *MockStore) CreatePendingDownloadAppVersion(appID string, update types13.Update, kotsApplication *v1beta1.Application, license *v1beta1.License) (float64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreatePendingDownloadAppVersion", appID, update, kotsApplication, license)
-	ret0, _ := ret[0].(int64)
+	ret0, _ := ret[0].(float64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -228,7 +228,7 @@ func (mr *MockStoreMockRecorder) CreateSupportBundle(bundleID, appID, archivePat
 }
 
 // DeleteDownstreamDeployStatus mocks base method.
-func (m *MockStore) DeleteDownstreamDeployStatus(appID, clusterID string, sequence int64) error {
+func (m *MockStore) DeleteDownstreamDeployStatus(appID, clusterID string, sequence float64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteDownstreamDeployStatus", appID, clusterID, sequence)
 	ret0, _ := ret[0].(error)
@@ -432,7 +432,7 @@ func (mr *MockStoreMockRecorder) GetAppStatus(appID interface{}) *gomock.Call {
 }
 
 // GetAppVersion mocks base method.
-func (m *MockStore) GetAppVersion(appID string, sequence int64) (*types1.AppVersion, error) {
+func (m *MockStore) GetAppVersion(appID string, sequence float64) (*types1.AppVersion, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAppVersion", appID, sequence)
 	ret0, _ := ret[0].(*types1.AppVersion)
@@ -447,7 +447,7 @@ func (mr *MockStoreMockRecorder) GetAppVersion(appID, sequence interface{}) *gom
 }
 
 // GetAppVersionArchive mocks base method.
-func (m *MockStore) GetAppVersionArchive(appID string, sequence int64, dstPath string) error {
+func (m *MockStore) GetAppVersionArchive(appID string, sequence float64, dstPath string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAppVersionArchive", appID, sequence, dstPath)
 	ret0, _ := ret[0].(error)
@@ -461,11 +461,11 @@ func (mr *MockStoreMockRecorder) GetAppVersionArchive(appID, sequence, dstPath i
 }
 
 // GetAppVersionBaseArchive mocks base method.
-func (m *MockStore) GetAppVersionBaseArchive(appID, versionLabel string) (string, int64, error) {
+func (m *MockStore) GetAppVersionBaseArchive(appID, versionLabel string) (string, float64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAppVersionBaseArchive", appID, versionLabel)
 	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(int64)
+	ret1, _ := ret[1].(float64)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
@@ -477,10 +477,10 @@ func (mr *MockStoreMockRecorder) GetAppVersionBaseArchive(appID, versionLabel in
 }
 
 // GetAppVersionBaseSequence mocks base method.
-func (m *MockStore) GetAppVersionBaseSequence(appID, versionLabel string) (int64, error) {
+func (m *MockStore) GetAppVersionBaseSequence(appID, versionLabel string) (float64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAppVersionBaseSequence", appID, versionLabel)
-	ret0, _ := ret[0].(int64)
+	ret0, _ := ret[0].(float64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -537,10 +537,10 @@ func (mr *MockStoreMockRecorder) GetClusterIDFromSlug(slug interface{}) *gomock.
 }
 
 // GetCurrentParentSequence mocks base method.
-func (m *MockStore) GetCurrentParentSequence(appID, clusterID string) (int64, error) {
+func (m *MockStore) GetCurrentParentSequence(appID, clusterID string) (float64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCurrentParentSequence", appID, clusterID)
-	ret0, _ := ret[0].(int64)
+	ret0, _ := ret[0].(float64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -552,10 +552,10 @@ func (mr *MockStoreMockRecorder) GetCurrentParentSequence(appID, clusterID inter
 }
 
 // GetCurrentSequence mocks base method.
-func (m *MockStore) GetCurrentSequence(appID, clusterID string) (int64, error) {
+func (m *MockStore) GetCurrentSequence(appID, clusterID string) (float64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCurrentSequence", appID, clusterID)
-	ret0, _ := ret[0].(int64)
+	ret0, _ := ret[0].(float64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -613,7 +613,7 @@ func (mr *MockStoreMockRecorder) GetDownstream(clusterID interface{}) *gomock.Ca
 }
 
 // GetDownstreamOutput mocks base method.
-func (m *MockStore) GetDownstreamOutput(appID, clusterID string, sequence int64) (*types0.DownstreamOutput, error) {
+func (m *MockStore) GetDownstreamOutput(appID, clusterID string, sequence float64) (*types0.DownstreamOutput, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetDownstreamOutput", appID, clusterID, sequence)
 	ret0, _ := ret[0].(*types0.DownstreamOutput)
@@ -628,7 +628,7 @@ func (mr *MockStoreMockRecorder) GetDownstreamOutput(appID, clusterID, sequence 
 }
 
 // GetDownstreamVersionStatus mocks base method.
-func (m *MockStore) GetDownstreamVersionStatus(appID string, sequence int64) (types11.DownstreamVersionStatus, error) {
+func (m *MockStore) GetDownstreamVersionStatus(appID string, sequence float64) (types11.DownstreamVersionStatus, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetDownstreamVersionStatus", appID, sequence)
 	ret0, _ := ret[0].(types11.DownstreamVersionStatus)
@@ -658,7 +658,7 @@ func (mr *MockStoreMockRecorder) GetEmbeddedClusterAuthToken() *gomock.Call {
 }
 
 // GetIgnoreRBACErrors mocks base method.
-func (m *MockStore) GetIgnoreRBACErrors(appID string, sequence int64) (bool, error) {
+func (m *MockStore) GetIgnoreRBACErrors(appID string, sequence float64) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetIgnoreRBACErrors", appID, sequence)
 	ret0, _ := ret[0].(bool)
@@ -718,7 +718,7 @@ func (mr *MockStoreMockRecorder) GetLatestLicenseForApp(appID interface{}) *gomo
 }
 
 // GetLicenseForAppVersion mocks base method.
-func (m *MockStore) GetLicenseForAppVersion(appID string, sequence int64) (*v1beta1.License, error) {
+func (m *MockStore) GetLicenseForAppVersion(appID string, sequence float64) (*v1beta1.License, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLicenseForAppVersion", appID, sequence)
 	ret0, _ := ret[0].(*v1beta1.License)
@@ -733,10 +733,10 @@ func (mr *MockStoreMockRecorder) GetLicenseForAppVersion(appID, sequence interfa
 }
 
 // GetNextAppSequence mocks base method.
-func (m *MockStore) GetNextAppSequence(appID string) (int64, error) {
+func (m *MockStore) GetNextAppSequence(appID string) (float64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetNextAppSequence", appID)
-	ret0, _ := ret[0].(int64)
+	ret0, _ := ret[0].(float64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -748,10 +748,10 @@ func (mr *MockStoreMockRecorder) GetNextAppSequence(appID interface{}) *gomock.C
 }
 
 // GetParentSequenceForSequence mocks base method.
-func (m *MockStore) GetParentSequenceForSequence(appID, clusterID string, sequence int64) (int64, error) {
+func (m *MockStore) GetParentSequenceForSequence(appID, clusterID string, sequence float64) (float64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetParentSequenceForSequence", appID, clusterID, sequence)
-	ret0, _ := ret[0].(int64)
+	ret0, _ := ret[0].(float64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -793,7 +793,7 @@ func (mr *MockStoreMockRecorder) GetPendingInstallationStatus() *gomock.Call {
 }
 
 // GetPreflightProgress mocks base method.
-func (m *MockStore) GetPreflightProgress(appID string, sequence int64) (string, error) {
+func (m *MockStore) GetPreflightProgress(appID string, sequence float64) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPreflightProgress", appID, sequence)
 	ret0, _ := ret[0].(string)
@@ -808,7 +808,7 @@ func (mr *MockStoreMockRecorder) GetPreflightProgress(appID, sequence interface{
 }
 
 // GetPreflightResults mocks base method.
-func (m *MockStore) GetPreflightResults(appID string, sequence int64) (*types7.PreflightResult, error) {
+func (m *MockStore) GetPreflightResults(appID string, sequence float64) (*types7.PreflightResult, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPreflightResults", appID, sequence)
 	ret0, _ := ret[0].(*types7.PreflightResult)
@@ -823,10 +823,10 @@ func (mr *MockStoreMockRecorder) GetPreflightResults(appID, sequence interface{}
 }
 
 // GetPreviouslyDeployedSequence mocks base method.
-func (m *MockStore) GetPreviouslyDeployedSequence(appID, clusterID string) (int64, error) {
+func (m *MockStore) GetPreviouslyDeployedSequence(appID, clusterID string) (float64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPreviouslyDeployedSequence", appID, clusterID)
-	ret0, _ := ret[0].(int64)
+	ret0, _ := ret[0].(float64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -913,7 +913,7 @@ func (mr *MockStoreMockRecorder) GetSharedPasswordBcrypt() *gomock.Call {
 }
 
 // GetStatusForVersion mocks base method.
-func (m *MockStore) GetStatusForVersion(appID, clusterID string, sequence int64) (types11.DownstreamVersionStatus, error) {
+func (m *MockStore) GetStatusForVersion(appID, clusterID string, sequence float64) (types11.DownstreamVersionStatus, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetStatusForVersion", appID, clusterID, sequence)
 	ret0, _ := ret[0].(types11.DownstreamVersionStatus)
@@ -973,7 +973,7 @@ func (mr *MockStoreMockRecorder) GetSupportBundleArchive(bundleID interface{}) *
 }
 
 // GetTargetKotsVersionForVersion mocks base method.
-func (m *MockStore) GetTargetKotsVersionForVersion(appID string, sequence int64) (string, error) {
+func (m *MockStore) GetTargetKotsVersionForVersion(appID string, sequence float64) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTargetKotsVersionForVersion", appID, sequence)
 	ret0, _ := ret[0].(string)
@@ -1004,7 +1004,7 @@ func (mr *MockStoreMockRecorder) GetTaskStatus(taskID interface{}) *gomock.Call 
 }
 
 // HasStrictPreflights mocks base method.
-func (m *MockStore) HasStrictPreflights(appID string, sequence int64) (bool, error) {
+func (m *MockStore) HasStrictPreflights(appID string, sequence float64) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "HasStrictPreflights", appID, sequence)
 	ret0, _ := ret[0].(bool)
@@ -1033,7 +1033,7 @@ func (mr *MockStoreMockRecorder) Init() *gomock.Call {
 }
 
 // IsDownstreamDeploySuccessful mocks base method.
-func (m *MockStore) IsDownstreamDeploySuccessful(appID, clusterID string, sequence int64) (bool, error) {
+func (m *MockStore) IsDownstreamDeploySuccessful(appID, clusterID string, sequence float64) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsDownstreamDeploySuccessful", appID, clusterID, sequence)
 	ret0, _ := ret[0].(bool)
@@ -1063,7 +1063,7 @@ func (mr *MockStoreMockRecorder) IsGitOpsEnabledForApp(appID interface{}) *gomoc
 }
 
 // IsIdentityServiceSupportedForVersion mocks base method.
-func (m *MockStore) IsIdentityServiceSupportedForVersion(appID string, sequence int64) (bool, error) {
+func (m *MockStore) IsIdentityServiceSupportedForVersion(appID string, sequence float64) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsIdentityServiceSupportedForVersion", appID, sequence)
 	ret0, _ := ret[0].(bool)
@@ -1107,7 +1107,7 @@ func (mr *MockStoreMockRecorder) IsNotFound(err interface{}) *gomock.Call {
 }
 
 // IsRollbackSupportedForVersion mocks base method.
-func (m *MockStore) IsRollbackSupportedForVersion(appID string, sequence int64) (bool, error) {
+func (m *MockStore) IsRollbackSupportedForVersion(appID string, sequence float64) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsRollbackSupportedForVersion", appID, sequence)
 	ret0, _ := ret[0].(bool)
@@ -1122,7 +1122,7 @@ func (mr *MockStoreMockRecorder) IsRollbackSupportedForVersion(appID, sequence i
 }
 
 // IsSnapshotsSupportedForVersion mocks base method.
-func (m *MockStore) IsSnapshotsSupportedForVersion(a *types2.App, sequence int64, renderer types9.Renderer) (bool, error) {
+func (m *MockStore) IsSnapshotsSupportedForVersion(a *types2.App, sequence float64, renderer types9.Renderer) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsSnapshotsSupportedForVersion", a, sequence, renderer)
 	ret0, _ := ret[0].(bool)
@@ -1300,7 +1300,7 @@ func (mr *MockStoreMockRecorder) ResetAirgapInstallInProgress(appID interface{})
 }
 
 // ResetPreflightResults mocks base method.
-func (m *MockStore) ResetPreflightResults(appID string, sequence int64) error {
+func (m *MockStore) ResetPreflightResults(appID string, sequence float64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResetPreflightResults", appID, sequence)
 	ret0, _ := ret[0].(error)
@@ -1368,7 +1368,7 @@ func (mr *MockStoreMockRecorder) SetAppIsAirgap(appID, isAirgap interface{}) *go
 }
 
 // SetAppStatus mocks base method.
-func (m *MockStore) SetAppStatus(appID string, resourceStates types3.ResourceStates, updatedAt time.Time, sequence int64) error {
+func (m *MockStore) SetAppStatus(appID string, resourceStates types3.ResourceStates, updatedAt time.Time, sequence float64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetAppStatus", appID, resourceStates, updatedAt, sequence)
 	ret0, _ := ret[0].(error)
@@ -1396,7 +1396,7 @@ func (mr *MockStoreMockRecorder) SetAutoDeploy(appID, autoDeploy interface{}) *g
 }
 
 // SetDownstreamVersionPendingPreflight mocks base method.
-func (m *MockStore) SetDownstreamVersionPendingPreflight(appID string, sequence int64) error {
+func (m *MockStore) SetDownstreamVersionPendingPreflight(appID string, sequence float64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetDownstreamVersionPendingPreflight", appID, sequence)
 	ret0, _ := ret[0].(error)
@@ -1410,7 +1410,7 @@ func (mr *MockStoreMockRecorder) SetDownstreamVersionPendingPreflight(appID, seq
 }
 
 // SetDownstreamVersionReady mocks base method.
-func (m *MockStore) SetDownstreamVersionReady(appID string, sequence int64) error {
+func (m *MockStore) SetDownstreamVersionReady(appID string, sequence float64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetDownstreamVersionReady", appID, sequence)
 	ret0, _ := ret[0].(error)
@@ -1438,7 +1438,7 @@ func (mr *MockStoreMockRecorder) SetEmbeddedClusterAuthToken(token interface{}) 
 }
 
 // SetIgnorePreflightPermissionErrors mocks base method.
-func (m *MockStore) SetIgnorePreflightPermissionErrors(appID string, sequence int64) error {
+func (m *MockStore) SetIgnorePreflightPermissionErrors(appID string, sequence float64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetIgnorePreflightPermissionErrors", appID, sequence)
 	ret0, _ := ret[0].(error)
@@ -1494,7 +1494,7 @@ func (mr *MockStoreMockRecorder) SetIsKotsadmIDGenerated() *gomock.Call {
 }
 
 // SetPreflightProgress mocks base method.
-func (m *MockStore) SetPreflightProgress(appID string, sequence int64, progress string) error {
+func (m *MockStore) SetPreflightProgress(appID string, sequence float64, progress string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetPreflightProgress", appID, sequence, progress)
 	ret0, _ := ret[0].(error)
@@ -1508,7 +1508,7 @@ func (mr *MockStoreMockRecorder) SetPreflightProgress(appID, sequence, progress 
 }
 
 // SetPreflightResults mocks base method.
-func (m *MockStore) SetPreflightResults(appID string, sequence int64, results []byte) error {
+func (m *MockStore) SetPreflightResults(appID string, sequence float64, results []byte) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetPreflightResults", appID, sequence, results)
 	ret0, _ := ret[0].(error)
@@ -1620,10 +1620,10 @@ func (mr *MockStoreMockRecorder) SetUpdateCheckerSpec(appID, updateCheckerSpec i
 }
 
 // UpdateAppLicense mocks base method.
-func (m *MockStore) UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *v1beta1.License, originalLicenseData string, channelChanged, failOnVersionCreate bool, gitops types4.DownstreamGitOps, renderer types9.Renderer) (int64, error) {
+func (m *MockStore) UpdateAppLicense(appID string, sequence float64, archiveDir string, newLicense *v1beta1.License, originalLicenseData string, channelChanged, failOnVersionCreate bool, gitops types4.DownstreamGitOps, renderer types9.Renderer) (float64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateAppLicense", appID, sequence, archiveDir, newLicense, originalLicenseData, channelChanged, failOnVersionCreate, gitops, renderer)
-	ret0, _ := ret[0].(int64)
+	ret0, _ := ret[0].(float64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1649,7 +1649,7 @@ func (mr *MockStoreMockRecorder) UpdateAppLicenseSyncNow(appID interface{}) *gom
 }
 
 // UpdateAppVersion mocks base method.
-func (m *MockStore) UpdateAppVersion(appID string, sequence int64, baseSequence *int64, filesInDir, source string, skipPreflights bool, gitops types4.DownstreamGitOps, renderer types9.Renderer) error {
+func (m *MockStore) UpdateAppVersion(appID string, sequence float64, baseSequence *float64, filesInDir, source string, skipPreflights bool, gitops types4.DownstreamGitOps, renderer types9.Renderer) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateAppVersion", appID, sequence, baseSequence, filesInDir, source, skipPreflights, gitops, renderer)
 	ret0, _ := ret[0].(error)
@@ -1663,7 +1663,7 @@ func (mr *MockStoreMockRecorder) UpdateAppVersion(appID, sequence, baseSequence,
 }
 
 // UpdateAppVersionInstallationSpec mocks base method.
-func (m *MockStore) UpdateAppVersionInstallationSpec(appID string, sequence int64, spec v1beta1.Installation) error {
+func (m *MockStore) UpdateAppVersionInstallationSpec(appID string, sequence float64, spec v1beta1.Installation) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateAppVersionInstallationSpec", appID, sequence, spec)
 	ret0, _ := ret[0].(error)
@@ -1677,7 +1677,7 @@ func (mr *MockStoreMockRecorder) UpdateAppVersionInstallationSpec(appID, sequenc
 }
 
 // UpdateDownstreamDeployStatus mocks base method.
-func (m *MockStore) UpdateDownstreamDeployStatus(appID, clusterID string, sequence int64, isError bool, output types0.DownstreamOutput) error {
+func (m *MockStore) UpdateDownstreamDeployStatus(appID, clusterID string, sequence float64, isError bool, output types0.DownstreamOutput) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateDownstreamDeployStatus", appID, clusterID, sequence, isError, output)
 	ret0, _ := ret[0].(error)
@@ -1691,7 +1691,7 @@ func (mr *MockStoreMockRecorder) UpdateDownstreamDeployStatus(appID, clusterID, 
 }
 
 // UpdateDownstreamVersionStatus mocks base method.
-func (m *MockStore) UpdateDownstreamVersionStatus(appID string, sequence int64, status, statusInfo string) error {
+func (m *MockStore) UpdateDownstreamVersionStatus(appID string, sequence float64, status, statusInfo string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateDownstreamVersionStatus", appID, sequence, status, statusInfo)
 	ret0, _ := ret[0].(error)
@@ -1705,7 +1705,7 @@ func (mr *MockStoreMockRecorder) UpdateDownstreamVersionStatus(appID, sequence, 
 }
 
 // UpdateNextAppVersionDiffSummary mocks base method.
-func (m *MockStore) UpdateNextAppVersionDiffSummary(appID string, baseSequence int64) error {
+func (m *MockStore) UpdateNextAppVersionDiffSummary(appID string, baseSequence float64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateNextAppVersionDiffSummary", appID, baseSequence)
 	ret0, _ := ret[0].(error)
@@ -2125,7 +2125,7 @@ func (m *MockPreflightStore) EXPECT() *MockPreflightStoreMockRecorder {
 }
 
 // GetPreflightProgress mocks base method.
-func (m *MockPreflightStore) GetPreflightProgress(appID string, sequence int64) (string, error) {
+func (m *MockPreflightStore) GetPreflightProgress(appID string, sequence float64) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPreflightProgress", appID, sequence)
 	ret0, _ := ret[0].(string)
@@ -2140,7 +2140,7 @@ func (mr *MockPreflightStoreMockRecorder) GetPreflightProgress(appID, sequence i
 }
 
 // GetPreflightResults mocks base method.
-func (m *MockPreflightStore) GetPreflightResults(appID string, sequence int64) (*types7.PreflightResult, error) {
+func (m *MockPreflightStore) GetPreflightResults(appID string, sequence float64) (*types7.PreflightResult, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPreflightResults", appID, sequence)
 	ret0, _ := ret[0].(*types7.PreflightResult)
@@ -2155,7 +2155,7 @@ func (mr *MockPreflightStoreMockRecorder) GetPreflightResults(appID, sequence in
 }
 
 // ResetPreflightResults mocks base method.
-func (m *MockPreflightStore) ResetPreflightResults(appID string, sequence int64) error {
+func (m *MockPreflightStore) ResetPreflightResults(appID string, sequence float64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResetPreflightResults", appID, sequence)
 	ret0, _ := ret[0].(error)
@@ -2169,7 +2169,7 @@ func (mr *MockPreflightStoreMockRecorder) ResetPreflightResults(appID, sequence 
 }
 
 // SetIgnorePreflightPermissionErrors mocks base method.
-func (m *MockPreflightStore) SetIgnorePreflightPermissionErrors(appID string, sequence int64) error {
+func (m *MockPreflightStore) SetIgnorePreflightPermissionErrors(appID string, sequence float64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetIgnorePreflightPermissionErrors", appID, sequence)
 	ret0, _ := ret[0].(error)
@@ -2183,7 +2183,7 @@ func (mr *MockPreflightStoreMockRecorder) SetIgnorePreflightPermissionErrors(app
 }
 
 // SetPreflightProgress mocks base method.
-func (m *MockPreflightStore) SetPreflightProgress(appID string, sequence int64, progress string) error {
+func (m *MockPreflightStore) SetPreflightProgress(appID string, sequence float64, progress string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetPreflightProgress", appID, sequence, progress)
 	ret0, _ := ret[0].(error)
@@ -2197,7 +2197,7 @@ func (mr *MockPreflightStoreMockRecorder) SetPreflightProgress(appID, sequence, 
 }
 
 // SetPreflightResults mocks base method.
-func (m *MockPreflightStore) SetPreflightResults(appID string, sequence int64, results []byte) error {
+func (m *MockPreflightStore) SetPreflightResults(appID string, sequence float64, results []byte) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetPreflightResults", appID, sequence, results)
 	ret0, _ := ret[0].(error)
@@ -2530,7 +2530,7 @@ func (mr *MockAppStatusStoreMockRecorder) GetAppStatus(appID interface{}) *gomoc
 }
 
 // SetAppStatus mocks base method.
-func (m *MockAppStatusStore) SetAppStatus(appID string, resourceStates types3.ResourceStates, updatedAt time.Time, sequence int64) error {
+func (m *MockAppStatusStore) SetAppStatus(appID string, resourceStates types3.ResourceStates, updatedAt time.Time, sequence float64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetAppStatus", appID, resourceStates, updatedAt, sequence)
 	ret0, _ := ret[0].(error)
@@ -2867,7 +2867,7 @@ func (m *MockDownstreamStore) EXPECT() *MockDownstreamStoreMockRecorder {
 }
 
 // DeleteDownstreamDeployStatus mocks base method.
-func (m *MockDownstreamStore) DeleteDownstreamDeployStatus(appID, clusterID string, sequence int64) error {
+func (m *MockDownstreamStore) DeleteDownstreamDeployStatus(appID, clusterID string, sequence float64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteDownstreamDeployStatus", appID, clusterID, sequence)
 	ret0, _ := ret[0].(error)
@@ -2911,10 +2911,10 @@ func (mr *MockDownstreamStoreMockRecorder) GetAppVersions(appID, clusterID, down
 }
 
 // GetCurrentParentSequence mocks base method.
-func (m *MockDownstreamStore) GetCurrentParentSequence(appID, clusterID string) (int64, error) {
+func (m *MockDownstreamStore) GetCurrentParentSequence(appID, clusterID string) (float64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCurrentParentSequence", appID, clusterID)
-	ret0, _ := ret[0].(int64)
+	ret0, _ := ret[0].(float64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -2926,10 +2926,10 @@ func (mr *MockDownstreamStoreMockRecorder) GetCurrentParentSequence(appID, clust
 }
 
 // GetCurrentSequence mocks base method.
-func (m *MockDownstreamStore) GetCurrentSequence(appID, clusterID string) (int64, error) {
+func (m *MockDownstreamStore) GetCurrentSequence(appID, clusterID string) (float64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCurrentSequence", appID, clusterID)
-	ret0, _ := ret[0].(int64)
+	ret0, _ := ret[0].(float64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -2956,7 +2956,7 @@ func (mr *MockDownstreamStoreMockRecorder) GetCurrentVersion(appID, clusterID in
 }
 
 // GetDownstreamOutput mocks base method.
-func (m *MockDownstreamStore) GetDownstreamOutput(appID, clusterID string, sequence int64) (*types0.DownstreamOutput, error) {
+func (m *MockDownstreamStore) GetDownstreamOutput(appID, clusterID string, sequence float64) (*types0.DownstreamOutput, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetDownstreamOutput", appID, clusterID, sequence)
 	ret0, _ := ret[0].(*types0.DownstreamOutput)
@@ -2971,7 +2971,7 @@ func (mr *MockDownstreamStoreMockRecorder) GetDownstreamOutput(appID, clusterID,
 }
 
 // GetDownstreamVersionStatus mocks base method.
-func (m *MockDownstreamStore) GetDownstreamVersionStatus(appID string, sequence int64) (types11.DownstreamVersionStatus, error) {
+func (m *MockDownstreamStore) GetDownstreamVersionStatus(appID string, sequence float64) (types11.DownstreamVersionStatus, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetDownstreamVersionStatus", appID, sequence)
 	ret0, _ := ret[0].(types11.DownstreamVersionStatus)
@@ -2986,7 +2986,7 @@ func (mr *MockDownstreamStoreMockRecorder) GetDownstreamVersionStatus(appID, seq
 }
 
 // GetIgnoreRBACErrors mocks base method.
-func (m *MockDownstreamStore) GetIgnoreRBACErrors(appID string, sequence int64) (bool, error) {
+func (m *MockDownstreamStore) GetIgnoreRBACErrors(appID string, sequence float64) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetIgnoreRBACErrors", appID, sequence)
 	ret0, _ := ret[0].(bool)
@@ -3016,10 +3016,10 @@ func (mr *MockDownstreamStoreMockRecorder) GetLatestDownstreamVersion(appID, clu
 }
 
 // GetParentSequenceForSequence mocks base method.
-func (m *MockDownstreamStore) GetParentSequenceForSequence(appID, clusterID string, sequence int64) (int64, error) {
+func (m *MockDownstreamStore) GetParentSequenceForSequence(appID, clusterID string, sequence float64) (float64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetParentSequenceForSequence", appID, clusterID, sequence)
-	ret0, _ := ret[0].(int64)
+	ret0, _ := ret[0].(float64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -3031,10 +3031,10 @@ func (mr *MockDownstreamStoreMockRecorder) GetParentSequenceForSequence(appID, c
 }
 
 // GetPreviouslyDeployedSequence mocks base method.
-func (m *MockDownstreamStore) GetPreviouslyDeployedSequence(appID, clusterID string) (int64, error) {
+func (m *MockDownstreamStore) GetPreviouslyDeployedSequence(appID, clusterID string) (float64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPreviouslyDeployedSequence", appID, clusterID)
-	ret0, _ := ret[0].(int64)
+	ret0, _ := ret[0].(float64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -3046,7 +3046,7 @@ func (mr *MockDownstreamStoreMockRecorder) GetPreviouslyDeployedSequence(appID, 
 }
 
 // GetStatusForVersion mocks base method.
-func (m *MockDownstreamStore) GetStatusForVersion(appID, clusterID string, sequence int64) (types11.DownstreamVersionStatus, error) {
+func (m *MockDownstreamStore) GetStatusForVersion(appID, clusterID string, sequence float64) (types11.DownstreamVersionStatus, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetStatusForVersion", appID, clusterID, sequence)
 	ret0, _ := ret[0].(types11.DownstreamVersionStatus)
@@ -3061,7 +3061,7 @@ func (mr *MockDownstreamStoreMockRecorder) GetStatusForVersion(appID, clusterID,
 }
 
 // IsDownstreamDeploySuccessful mocks base method.
-func (m *MockDownstreamStore) IsDownstreamDeploySuccessful(appID, clusterID string, sequence int64) (bool, error) {
+func (m *MockDownstreamStore) IsDownstreamDeploySuccessful(appID, clusterID string, sequence float64) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsDownstreamDeploySuccessful", appID, clusterID, sequence)
 	ret0, _ := ret[0].(bool)
@@ -3076,7 +3076,7 @@ func (mr *MockDownstreamStoreMockRecorder) IsDownstreamDeploySuccessful(appID, c
 }
 
 // SetDownstreamVersionPendingPreflight mocks base method.
-func (m *MockDownstreamStore) SetDownstreamVersionPendingPreflight(appID string, sequence int64) error {
+func (m *MockDownstreamStore) SetDownstreamVersionPendingPreflight(appID string, sequence float64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetDownstreamVersionPendingPreflight", appID, sequence)
 	ret0, _ := ret[0].(error)
@@ -3090,7 +3090,7 @@ func (mr *MockDownstreamStoreMockRecorder) SetDownstreamVersionPendingPreflight(
 }
 
 // SetDownstreamVersionReady mocks base method.
-func (m *MockDownstreamStore) SetDownstreamVersionReady(appID string, sequence int64) error {
+func (m *MockDownstreamStore) SetDownstreamVersionReady(appID string, sequence float64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetDownstreamVersionReady", appID, sequence)
 	ret0, _ := ret[0].(error)
@@ -3104,7 +3104,7 @@ func (mr *MockDownstreamStoreMockRecorder) SetDownstreamVersionReady(appID, sequ
 }
 
 // UpdateDownstreamDeployStatus mocks base method.
-func (m *MockDownstreamStore) UpdateDownstreamDeployStatus(appID, clusterID string, sequence int64, isError bool, output types0.DownstreamOutput) error {
+func (m *MockDownstreamStore) UpdateDownstreamDeployStatus(appID, clusterID string, sequence float64, isError bool, output types0.DownstreamOutput) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateDownstreamDeployStatus", appID, clusterID, sequence, isError, output)
 	ret0, _ := ret[0].(error)
@@ -3118,7 +3118,7 @@ func (mr *MockDownstreamStoreMockRecorder) UpdateDownstreamDeployStatus(appID, c
 }
 
 // UpdateDownstreamVersionStatus mocks base method.
-func (m *MockDownstreamStore) UpdateDownstreamVersionStatus(appID string, sequence int64, status, statusInfo string) error {
+func (m *MockDownstreamStore) UpdateDownstreamVersionStatus(appID string, sequence float64, status, statusInfo string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateDownstreamVersionStatus", appID, sequence, status, statusInfo)
 	ret0, _ := ret[0].(error)
@@ -3292,22 +3292,22 @@ func (m *MockVersionStore) EXPECT() *MockVersionStoreMockRecorder {
 }
 
 // CreateAppVersion mocks base method.
-func (m *MockVersionStore) CreateAppVersion(appID string, baseSequence *int64, filesInDir, source string, skipPreflights bool, gitops types4.DownstreamGitOps, renderer types9.Renderer) (int64, error) {
+func (m *MockVersionStore) CreateAppVersion(appID string, baseSequence *float64, patch bool, filesInDir, source string, skipPreflights bool, gitops types4.DownstreamGitOps, renderer types9.Renderer) (float64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateAppVersion", appID, baseSequence, filesInDir, source, skipPreflights, gitops, renderer)
-	ret0, _ := ret[0].(int64)
+	ret := m.ctrl.Call(m, "CreateAppVersion", appID, baseSequence, patch, filesInDir, source, skipPreflights, gitops, renderer)
+	ret0, _ := ret[0].(float64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateAppVersion indicates an expected call of CreateAppVersion.
-func (mr *MockVersionStoreMockRecorder) CreateAppVersion(appID, baseSequence, filesInDir, source, skipPreflights, gitops, renderer interface{}) *gomock.Call {
+func (mr *MockVersionStoreMockRecorder) CreateAppVersion(appID, baseSequence, patch, filesInDir, source, skipPreflights, gitops, renderer interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAppVersion", reflect.TypeOf((*MockVersionStore)(nil).CreateAppVersion), appID, baseSequence, filesInDir, source, skipPreflights, gitops, renderer)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAppVersion", reflect.TypeOf((*MockVersionStore)(nil).CreateAppVersion), appID, baseSequence, patch, filesInDir, source, skipPreflights, gitops, renderer)
 }
 
 // CreateAppVersionArchive mocks base method.
-func (m *MockVersionStore) CreateAppVersionArchive(appID string, sequence int64, archivePath string) error {
+func (m *MockVersionStore) CreateAppVersionArchive(appID string, sequence float64, archivePath string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateAppVersionArchive", appID, sequence, archivePath)
 	ret0, _ := ret[0].(error)
@@ -3321,10 +3321,10 @@ func (mr *MockVersionStoreMockRecorder) CreateAppVersionArchive(appID, sequence,
 }
 
 // CreatePendingDownloadAppVersion mocks base method.
-func (m *MockVersionStore) CreatePendingDownloadAppVersion(appID string, update types13.Update, kotsApplication *v1beta1.Application, license *v1beta1.License) (int64, error) {
+func (m *MockVersionStore) CreatePendingDownloadAppVersion(appID string, update types13.Update, kotsApplication *v1beta1.Application, license *v1beta1.License) (float64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreatePendingDownloadAppVersion", appID, update, kotsApplication, license)
-	ret0, _ := ret[0].(int64)
+	ret0, _ := ret[0].(float64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -3336,7 +3336,7 @@ func (mr *MockVersionStoreMockRecorder) CreatePendingDownloadAppVersion(appID, u
 }
 
 // GetAppVersion mocks base method.
-func (m *MockVersionStore) GetAppVersion(appID string, sequence int64) (*types1.AppVersion, error) {
+func (m *MockVersionStore) GetAppVersion(appID string, sequence float64) (*types1.AppVersion, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAppVersion", appID, sequence)
 	ret0, _ := ret[0].(*types1.AppVersion)
@@ -3351,7 +3351,7 @@ func (mr *MockVersionStoreMockRecorder) GetAppVersion(appID, sequence interface{
 }
 
 // GetAppVersionArchive mocks base method.
-func (m *MockVersionStore) GetAppVersionArchive(appID string, sequence int64, dstPath string) error {
+func (m *MockVersionStore) GetAppVersionArchive(appID string, sequence float64, dstPath string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAppVersionArchive", appID, sequence, dstPath)
 	ret0, _ := ret[0].(error)
@@ -3365,11 +3365,11 @@ func (mr *MockVersionStoreMockRecorder) GetAppVersionArchive(appID, sequence, ds
 }
 
 // GetAppVersionBaseArchive mocks base method.
-func (m *MockVersionStore) GetAppVersionBaseArchive(appID, versionLabel string) (string, int64, error) {
+func (m *MockVersionStore) GetAppVersionBaseArchive(appID, versionLabel string) (string, float64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAppVersionBaseArchive", appID, versionLabel)
 	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(int64)
+	ret1, _ := ret[1].(float64)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
@@ -3381,10 +3381,10 @@ func (mr *MockVersionStoreMockRecorder) GetAppVersionBaseArchive(appID, versionL
 }
 
 // GetAppVersionBaseSequence mocks base method.
-func (m *MockVersionStore) GetAppVersionBaseSequence(appID, versionLabel string) (int64, error) {
+func (m *MockVersionStore) GetAppVersionBaseSequence(appID, versionLabel string) (float64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAppVersionBaseSequence", appID, versionLabel)
-	ret0, _ := ret[0].(int64)
+	ret0, _ := ret[0].(float64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -3427,10 +3427,10 @@ func (mr *MockVersionStoreMockRecorder) GetLatestAppVersion(appID, downloadedOnl
 }
 
 // GetNextAppSequence mocks base method.
-func (m *MockVersionStore) GetNextAppSequence(appID string) (int64, error) {
+func (m *MockVersionStore) GetNextAppSequence(appID string) (float64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetNextAppSequence", appID)
-	ret0, _ := ret[0].(int64)
+	ret0, _ := ret[0].(float64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -3442,7 +3442,7 @@ func (mr *MockVersionStoreMockRecorder) GetNextAppSequence(appID interface{}) *g
 }
 
 // GetTargetKotsVersionForVersion mocks base method.
-func (m *MockVersionStore) GetTargetKotsVersionForVersion(appID string, sequence int64) (string, error) {
+func (m *MockVersionStore) GetTargetKotsVersionForVersion(appID string, sequence float64) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTargetKotsVersionForVersion", appID, sequence)
 	ret0, _ := ret[0].(string)
@@ -3457,7 +3457,7 @@ func (mr *MockVersionStoreMockRecorder) GetTargetKotsVersionForVersion(appID, se
 }
 
 // HasStrictPreflights mocks base method.
-func (m *MockVersionStore) HasStrictPreflights(appID string, sequence int64) (bool, error) {
+func (m *MockVersionStore) HasStrictPreflights(appID string, sequence float64) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "HasStrictPreflights", appID, sequence)
 	ret0, _ := ret[0].(bool)
@@ -3472,7 +3472,7 @@ func (mr *MockVersionStoreMockRecorder) HasStrictPreflights(appID, sequence inte
 }
 
 // IsIdentityServiceSupportedForVersion mocks base method.
-func (m *MockVersionStore) IsIdentityServiceSupportedForVersion(appID string, sequence int64) (bool, error) {
+func (m *MockVersionStore) IsIdentityServiceSupportedForVersion(appID string, sequence float64) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsIdentityServiceSupportedForVersion", appID, sequence)
 	ret0, _ := ret[0].(bool)
@@ -3487,7 +3487,7 @@ func (mr *MockVersionStoreMockRecorder) IsIdentityServiceSupportedForVersion(app
 }
 
 // IsRollbackSupportedForVersion mocks base method.
-func (m *MockVersionStore) IsRollbackSupportedForVersion(appID string, sequence int64) (bool, error) {
+func (m *MockVersionStore) IsRollbackSupportedForVersion(appID string, sequence float64) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsRollbackSupportedForVersion", appID, sequence)
 	ret0, _ := ret[0].(bool)
@@ -3502,7 +3502,7 @@ func (mr *MockVersionStoreMockRecorder) IsRollbackSupportedForVersion(appID, seq
 }
 
 // IsSnapshotsSupportedForVersion mocks base method.
-func (m *MockVersionStore) IsSnapshotsSupportedForVersion(a *types2.App, sequence int64, renderer types9.Renderer) (bool, error) {
+func (m *MockVersionStore) IsSnapshotsSupportedForVersion(a *types2.App, sequence float64, renderer types9.Renderer) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsSnapshotsSupportedForVersion", a, sequence, renderer)
 	ret0, _ := ret[0].(bool)
@@ -3517,7 +3517,7 @@ func (mr *MockVersionStoreMockRecorder) IsSnapshotsSupportedForVersion(a, sequen
 }
 
 // UpdateAppVersion mocks base method.
-func (m *MockVersionStore) UpdateAppVersion(appID string, sequence int64, baseSequence *int64, filesInDir, source string, skipPreflights bool, gitops types4.DownstreamGitOps, renderer types9.Renderer) error {
+func (m *MockVersionStore) UpdateAppVersion(appID string, sequence float64, baseSequence *float64, filesInDir, source string, skipPreflights bool, gitops types4.DownstreamGitOps, renderer types9.Renderer) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateAppVersion", appID, sequence, baseSequence, filesInDir, source, skipPreflights, gitops, renderer)
 	ret0, _ := ret[0].(error)
@@ -3531,7 +3531,7 @@ func (mr *MockVersionStoreMockRecorder) UpdateAppVersion(appID, sequence, baseSe
 }
 
 // UpdateAppVersionInstallationSpec mocks base method.
-func (m *MockVersionStore) UpdateAppVersionInstallationSpec(appID string, sequence int64, spec v1beta1.Installation) error {
+func (m *MockVersionStore) UpdateAppVersionInstallationSpec(appID string, sequence float64, spec v1beta1.Installation) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateAppVersionInstallationSpec", appID, sequence, spec)
 	ret0, _ := ret[0].(error)
@@ -3545,7 +3545,7 @@ func (mr *MockVersionStoreMockRecorder) UpdateAppVersionInstallationSpec(appID, 
 }
 
 // UpdateNextAppVersionDiffSummary mocks base method.
-func (m *MockVersionStore) UpdateNextAppVersionDiffSummary(appID string, baseSequence int64) error {
+func (m *MockVersionStore) UpdateNextAppVersionDiffSummary(appID string, baseSequence float64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateNextAppVersionDiffSummary", appID, baseSequence)
 	ret0, _ := ret[0].(error)
@@ -3612,7 +3612,7 @@ func (mr *MockLicenseStoreMockRecorder) GetLatestLicenseForApp(appID interface{}
 }
 
 // GetLicenseForAppVersion mocks base method.
-func (m *MockLicenseStore) GetLicenseForAppVersion(appID string, sequence int64) (*v1beta1.License, error) {
+func (m *MockLicenseStore) GetLicenseForAppVersion(appID string, sequence float64) (*v1beta1.License, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLicenseForAppVersion", appID, sequence)
 	ret0, _ := ret[0].(*v1beta1.License)
@@ -3627,10 +3627,10 @@ func (mr *MockLicenseStoreMockRecorder) GetLicenseForAppVersion(appID, sequence 
 }
 
 // UpdateAppLicense mocks base method.
-func (m *MockLicenseStore) UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *v1beta1.License, originalLicenseData string, channelChanged, failOnVersionCreate bool, gitops types4.DownstreamGitOps, renderer types9.Renderer) (int64, error) {
+func (m *MockLicenseStore) UpdateAppLicense(appID string, sequence float64, archiveDir string, newLicense *v1beta1.License, originalLicenseData string, channelChanged, failOnVersionCreate bool, gitops types4.DownstreamGitOps, renderer types9.Renderer) (float64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateAppLicense", appID, sequence, archiveDir, newLicense, originalLicenseData, channelChanged, failOnVersionCreate, gitops, renderer)
-	ret0, _ := ret[0].(int64)
+	ret0, _ := ret[0].(float64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

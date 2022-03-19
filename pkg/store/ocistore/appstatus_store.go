@@ -10,6 +10,6 @@ func (s *OCIStore) GetAppStatus(appID string) (*appstatetypes.AppStatus, error) 
 	return nil, ErrNotImplemented
 }
 
-func (s *OCIStore) SetAppStatus(appID string, resourceStates appstatetypes.ResourceStates, updatedAt time.Time, sequence int64) error {
+func (s *OCIStore) SetAppStatus(appID string, resourceStates appstatetypes.ResourceStates, updatedAt time.Time, sequence float64) error {
 	return ErrNotImplemented
 }

@@ -19,7 +19,7 @@ type RenderOptions struct {
 	LocalRegistryIsReadOnly bool
 	ExcludeKotsKinds        bool
 	AppSlug                 string
-	Sequence                int64
+	Sequence                float64
 	IsAirgap                bool
 	UseHelmInstall          bool
 	Log                     *logger.CLILogger

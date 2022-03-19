@@ -25,7 +25,7 @@ type DownstreamLogs struct {
 func (h *Handler) GetDownstreamOutput(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 	clusterID := mux.Vars(r)["clusterId"]
-	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
+	sequence, err := strconv.ParseFloat(mux.Vars(r)["sequence"], 64)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -39,7 +39,7 @@ func (h *Handler) GetDownstreamOutput(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	output, err := store.GetStore().GetDownstreamOutput(a.ID, clusterID, int64(sequence))
+	output, err := store.GetStore().GetDownstreamOutput(a.ID, clusterID, sequence)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)

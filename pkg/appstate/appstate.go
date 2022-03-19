@@ -29,7 +29,7 @@ type EventHandler interface {
 
 type appInformer struct {
 	appID     string
-	sequence  int64
+	sequence  float64
 	informers []types.StatusInformer
 }
 
@@ -53,10 +53,10 @@ func (m *Monitor) Shutdown() {
 	m.cancel()
 }
 
-func (m *Monitor) Apply(appID string, sequence int64, informers []types.StatusInformer) {
+func (m *Monitor) Apply(appID string, sequence float64, informers []types.StatusInformer) {
 	m.appInformersCh <- struct {
 		appID     string
-		sequence  int64
+		sequence  float64
 		informers []types.StatusInformer
 	}{
 		appID:     appID,
@@ -112,10 +112,10 @@ type AppMonitor struct {
 	informersCh     chan []types.StatusInformer
 	appStatusCh     chan types.AppStatus
 	cancel          context.CancelFunc
-	sequence        int64
+	sequence        float64
 }
 
-func NewAppMonitor(clientset kubernetes.Interface, targetNamespace, appID string, sequence int64) *AppMonitor {
+func NewAppMonitor(clientset kubernetes.Interface, targetNamespace, appID string, sequence float64) *AppMonitor {
 	ctx, cancel := context.WithCancel(context.Background())
 	m := &AppMonitor{
 		appID:           appID,

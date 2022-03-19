@@ -18,14 +18,14 @@ import (
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 )
 
-func SendPreflightsReportToReplicatedApp(license *kotsv1beta1.License, appID string, clusterID string, sequence int64, skipPreflights bool, installStatus storetypes.DownstreamVersionStatus, isCLI bool, preflightStatus string, appStatus string) error {
+func SendPreflightsReportToReplicatedApp(license *kotsv1beta1.License, appID string, clusterID string, sequence float64, skipPreflights bool, installStatus storetypes.DownstreamVersionStatus, isCLI bool, preflightStatus string, appStatus string) error {
 	endpoint := license.Spec.Endpoint
 	if !canReport(endpoint) {
 		return nil
 	}
 
 	urlValues := url.Values{}
-	urlValues.Set("sequence", fmt.Sprintf("%d", sequence))
+	urlValues.Set("sequence", fmt.Sprintf("%f", sequence))
 	urlValues.Set("skipPreflights", fmt.Sprintf("%t", skipPreflights))
 	urlValues.Set("installStatus", string(installStatus))
 	urlValues.Set("isCLI", fmt.Sprintf("%t", isCLI))
@@ -52,7 +52,7 @@ func SendPreflightsReportToReplicatedApp(license *kotsv1beta1.License, appID str
 	return nil
 }
 
-func ReportAppInfo(appID string, sequence int64, isSkipPreflights bool, isCLI bool) error {
+func ReportAppInfo(appID string, sequence float64, isSkipPreflights bool, isCLI bool) error {
 	app, err := store.GetStore().GetApp(appID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get app")

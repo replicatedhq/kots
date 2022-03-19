@@ -149,7 +149,7 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 	var iconURI sql.NullString
 	var createdAt persistence.StringTime
 	var updatedAt persistence.NullStringTime
-	var currentSequence sql.NullInt64
+	var currentSequence sql.NullFloat64
 	var lastUpdateCheckAt sql.NullString
 	var lastLicenseSync sql.NullString
 	var snapshotTTLNew sql.NullString
@@ -181,7 +181,7 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 	}
 
 	if currentSequence.Valid {
-		app.CurrentSequence = currentSequence.Int64
+		app.CurrentSequence = currentSequence.Float64
 	} else {
 		app.CurrentSequence = -1
 	}
@@ -367,7 +367,7 @@ func (s *KOTSStore) GetDownstream(clusterID string) (*downstreamtypes.Downstream
 	downstream := downstreamtypes.Downstream{
 		CurrentSequence: -1,
 	}
-	var sequence sql.NullInt64
+	var sequence sql.NullFloat64
 	if err := row.Scan(&downstream.ClusterID, &downstream.ClusterSlug, &downstream.Name, &sequence); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -375,7 +375,7 @@ func (s *KOTSStore) GetDownstream(clusterID string) (*downstreamtypes.Downstream
 		return nil, errors.Wrap(err, "failed to scan downstream")
 	}
 	if sequence.Valid {
-		downstream.CurrentSequence = sequence.Int64
+		downstream.CurrentSequence = sequence.Float64
 	}
 
 	return &downstream, nil

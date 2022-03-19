@@ -13,7 +13,7 @@ import (
 
 func (h *Handler) RedeployAppVersion(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
-	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
+	sequence, err := strconv.ParseFloat(mux.Vars(r)["sequence"], 64)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -40,13 +40,13 @@ func (h *Handler) RedeployAppVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := store.GetStore().DeleteDownstreamDeployStatus(a.ID, downstreams[0].ClusterID, int64(sequence)); err != nil {
+	if err := store.GetStore().DeleteDownstreamDeployStatus(a.ID, downstreams[0].ClusterID, sequence); err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	if err := operator.RedeployAppVersion(a.ID, int64(sequence)); err != nil {
+	if err := operator.RedeployAppVersion(a.ID, sequence); err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return

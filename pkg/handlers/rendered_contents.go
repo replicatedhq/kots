@@ -28,7 +28,7 @@ type GetAppRenderedContentsErrorResponse struct {
 
 func (h *Handler) GetAppRenderedContents(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
-	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
+	sequence, err := strconv.ParseFloat(mux.Vars(r)["sequence"], 64)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to parse sequence number"))
 		w.WriteHeader(http.StatusBadRequest)
@@ -42,14 +42,14 @@ func (h *Handler) GetAppRenderedContents(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	status, err := store.GetStore().GetDownstreamVersionStatus(a.ID, int64(sequence))
+	status, err := store.GetStore().GetDownstreamVersionStatus(a.ID, sequence)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get downstream version status"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	if status == storetypes.VersionPendingDownload {
-		logger.Error(errors.Errorf("not returning rendered contents for version %d because it's %s", sequence, status))
+		logger.Error(errors.Errorf("not returning rendered contents for version %f because it's %s", sequence, status))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -62,7 +62,7 @@ func (h *Handler) GetAppRenderedContents(w http.ResponseWriter, r *http.Request)
 	}
 	defer os.RemoveAll(archivePath)
 
-	err = store.GetStore().GetAppVersionArchive(a.ID, int64(sequence), archivePath)
+	err = store.GetStore().GetAppVersionArchive(a.ID, sequence, archivePath)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get app version archive"))
 		w.WriteHeader(http.StatusInternalServerError)

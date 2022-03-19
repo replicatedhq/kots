@@ -39,7 +39,7 @@ import (
 )
 
 // CreateRenderedSpec creates the support bundle specification from defaults and the kots app
-func CreateRenderedSpec(appID string, sequence int64, kotsKinds *kotsutil.KotsKinds, opts types.TroubleshootOptions) (*troubleshootv1beta2.SupportBundle, error) {
+func CreateRenderedSpec(appID string, sequence float64, kotsKinds *kotsutil.KotsKinds, opts types.TroubleshootOptions) (*troubleshootv1beta2.SupportBundle, error) {
 	builtBundle := kotsKinds.SupportBundle.DeepCopy()
 	if builtBundle == nil {
 		builtBundle = &troubleshootv1beta2.SupportBundle{

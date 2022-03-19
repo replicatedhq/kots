@@ -41,7 +41,7 @@ import (
 
 var operatorClient *client.Client
 var clusterID string
-var lastDeployedSequences map[string]int64
+var lastDeployedSequences map[string]float64
 var socketMtx sync.Mutex
 
 func Start(clusterToken string) error {
@@ -62,7 +62,7 @@ func Start(clusterToken string) error {
 	}
 	clusterID = id
 
-	lastDeployedSequences = make(map[string]int64, 0)
+	lastDeployedSequences = make(map[string]float64, 0)
 
 	startLoop(deployLoop, 1)
 	startLoop(restoreLoop, 1)
@@ -471,14 +471,14 @@ func checkRestoreComplete(a *apptypes.App, restore *velerov1.Restore) error {
 			return errors.New("backup is missing required annotations")
 		}
 
-		var sequence int64 = 0
+		var sequence float64 = 0
 		if backupAnnotations["kots.io/instance"] == "true" {
 			b, ok := backupAnnotations["kots.io/apps-sequences"]
 			if !ok || b == "" {
 				return errors.New("instance backup is missing apps sequences annotation")
 			}
 
-			var appsSequences map[string]int64
+			var appsSequences map[string]float64
 			if err := json.Unmarshal([]byte(b), &appsSequences); err != nil {
 				return errors.Wrap(err, "failed to unmarshal apps sequences")
 			}
@@ -494,14 +494,14 @@ func checkRestoreComplete(a *apptypes.App, restore *velerov1.Restore) error {
 				return errors.New("backup is missing sequence annotation")
 			}
 
-			s, err := strconv.ParseInt(sequenceStr, 10, 64)
+			s, err := strconv.ParseFloat(sequenceStr, 64)
 			if err != nil {
 				return errors.Wrap(err, "failed to parse sequence")
 			}
 			sequence = s
 		}
 
-		logger.Info(fmt.Sprintf("restore complete, marking version %d as deployed", sequence))
+		logger.Info(fmt.Sprintf("restore complete, marking version %f as deployed", sequence))
 
 		// mark the sequence as deployed both in the db and sequences history
 		// so that the admin console does not try to re-deploy it
@@ -517,7 +517,7 @@ func checkRestoreComplete(a *apptypes.App, restore *velerov1.Restore) error {
 		}
 		if _, err := supportbundle.CreateSupportBundleDependencies(a.ID, sequence, troubleshootOpts); err != nil {
 			// support bundle is not essential. keep processing restore status
-			logger.Error(errors.Wrapf(err, "failed to create support bundle for sequence %d post restore", sequence))
+			logger.Error(errors.Wrapf(err, "failed to create support bundle for sequence %f post restore", sequence))
 		}
 
 		if err := app.ResetRestore(a.ID); err != nil {
@@ -617,7 +617,7 @@ func undeployApp(a *apptypes.App, d *downstreamtypes.Downstream, isRestore bool)
 }
 
 // RedeployAppVersion will force trigger a redeploy of the app version, even if it's currently deployed
-func RedeployAppVersion(appID string, sequence int64) error {
+func RedeployAppVersion(appID string, sequence float64) error {
 	if err := version.DeployVersion(appID, sequence); err != nil {
 		return errors.Wrap(err, "failed to deploy version")
 	}

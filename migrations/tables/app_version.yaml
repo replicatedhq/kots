@@ -15,7 +15,7 @@ spec:
       - name: app_id
         type: text
       - name: sequence
-        type: integer
+        type: numeric(4, 3)
       - name: update_cursor
         type: text
       - name: channel_id

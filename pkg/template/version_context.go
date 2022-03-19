@@ -7,12 +7,12 @@ import (
 )
 
 type VersionInfo struct {
-	Sequence     int64  // the installation sequence. Always 0 when being freshly installed, etc
-	Cursor       string // the upstream version cursor - integers for kots apps, may be semvers for helm charts
-	ChannelName  string // the name of the channel that the current version was from (kots apps only)
-	VersionLabel string // a pretty version label if provided (kots apps only)
-	ReleaseNotes string // the release notes for the given version (kots apps only)
-	IsAirgap     bool   // is this an airgap app (kots apps only)
+	Sequence     float64 // the installation sequence. Always 0 when being freshly installed, etc
+	Cursor       string  // the upstream version cursor - integers for kots apps, may be semvers for helm charts
+	ChannelName  string  // the name of the channel that the current version was from (kots apps only)
+	VersionLabel string  // a pretty version label if provided (kots apps only)
+	ReleaseNotes string  // the release notes for the given version (kots apps only)
+	IsAirgap     bool    // is this an airgap app (kots apps only)
 }
 
 type versionCtx struct {
@@ -23,7 +23,7 @@ func newVersionCtx(info *VersionInfo) versionCtx {
 	return versionCtx{info: info}
 }
 
-func VersionInfoFromInstallation(sequence int64, isAirgap bool, spec v1beta1.InstallationSpec) VersionInfo {
+func VersionInfoFromInstallation(sequence float64, isAirgap bool, spec v1beta1.InstallationSpec) VersionInfo {
 	return VersionInfo{
 		Sequence:     sequence,
 		Cursor:       spec.UpdateCursor,
@@ -46,7 +46,7 @@ func (ctx versionCtx) FuncMap() template.FuncMap {
 	}
 }
 
-func (ctx versionCtx) sequence() int64 {
+func (ctx versionCtx) sequence() float64 {
 	if ctx.info == nil {
 		return -1
 	}

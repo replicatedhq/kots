@@ -77,10 +77,10 @@ type NFSConfig struct {
 }
 
 type App struct {
-	Slug       string `json:"slug"`
-	Sequence   int64  `json:"sequence"`
-	Name       string `json:"name"`
-	AppIconURI string `json:"iconUri"`
+	Slug       string  `json:"slug"`
+	Sequence   float64 `json:"sequence"`
+	Name       string  `json:"name"`
+	AppIconURI string  `json:"iconUri"`
 }
 
 type Backup struct {
@@ -88,7 +88,7 @@ type Backup struct {
 	Status             string     `json:"status"`
 	Trigger            string     `json:"trigger"`
 	AppID              string     `json:"appID"`    // TODO: remove with app backups
-	Sequence           int64      `json:"sequence"` // TODO: remove with app backups
+	Sequence           float64    `json:"sequence"` // TODO: remove with app backups
 	StartedAt          *time.Time `json:"startedAt,omitempty"`
 	FinishedAt         *time.Time `json:"finishedAt,omitempty"`
 	ExpiresAt          *time.Time `json:"expiresAt,omitempty"`

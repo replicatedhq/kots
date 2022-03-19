@@ -75,12 +75,12 @@ type SupportBundleStore interface {
 }
 
 type PreflightStore interface {
-	SetPreflightProgress(appID string, sequence int64, progress string) error
-	GetPreflightProgress(appID string, sequence int64) (string, error)
-	SetPreflightResults(appID string, sequence int64, results []byte) error
-	GetPreflightResults(appID string, sequence int64) (*preflighttypes.PreflightResult, error)
-	ResetPreflightResults(appID string, sequence int64) error
-	SetIgnorePreflightPermissionErrors(appID string, sequence int64) error
+	SetPreflightProgress(appID string, sequence float64, progress string) error
+	GetPreflightProgress(appID string, sequence float64) (string, error)
+	SetPreflightResults(appID string, sequence float64, results []byte) error
+	GetPreflightResults(appID string, sequence float64) (*preflighttypes.PreflightResult, error)
+	ResetPreflightResults(appID string, sequence float64) error
+	SetIgnorePreflightPermissionErrors(appID string, sequence float64) error
 }
 
 type PrometheusStore interface {
@@ -110,7 +110,7 @@ type SessionStore interface {
 
 type AppStatusStore interface {
 	GetAppStatus(appID string) (*appstatetypes.AppStatus, error)
-	SetAppStatus(appID string, resourceStates appstatetypes.ResourceStates, updatedAt time.Time, sequence int64) error
+	SetAppStatus(appID string, resourceStates appstatetypes.ResourceStates, updatedAt time.Time, sequence float64) error
 }
 
 type AppStore interface {
@@ -136,26 +136,26 @@ type AppStore interface {
 }
 
 type DownstreamStore interface {
-	GetCurrentSequence(appID string, clusterID string) (int64, error)
-	GetCurrentParentSequence(appID string, clusterID string) (int64, error)
-	GetParentSequenceForSequence(appID string, clusterID string, sequence int64) (int64, error)
-	GetPreviouslyDeployedSequence(appID string, clusterID string) (int64, error)
-	SetDownstreamVersionReady(appID string, sequence int64) error
-	SetDownstreamVersionPendingPreflight(appID string, sequence int64) error
-	UpdateDownstreamVersionStatus(appID string, sequence int64, status string, statusInfo string) error
-	GetDownstreamVersionStatus(appID string, sequence int64) (types.DownstreamVersionStatus, error)
-	GetIgnoreRBACErrors(appID string, sequence int64) (bool, error)
+	GetCurrentSequence(appID string, clusterID string) (float64, error)
+	GetCurrentParentSequence(appID string, clusterID string) (float64, error)
+	GetParentSequenceForSequence(appID string, clusterID string, sequence float64) (float64, error)
+	GetPreviouslyDeployedSequence(appID string, clusterID string) (float64, error)
+	SetDownstreamVersionReady(appID string, sequence float64) error
+	SetDownstreamVersionPendingPreflight(appID string, sequence float64) error
+	UpdateDownstreamVersionStatus(appID string, sequence float64, status string, statusInfo string) error
+	GetDownstreamVersionStatus(appID string, sequence float64) (types.DownstreamVersionStatus, error)
+	GetIgnoreRBACErrors(appID string, sequence float64) (bool, error)
 	GetLatestDownstreamVersion(appID string, clusterID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersion, error)
 	GetCurrentVersion(appID string, clusterID string) (*downstreamtypes.DownstreamVersion, error)
-	GetStatusForVersion(appID string, clusterID string, sequence int64) (types.DownstreamVersionStatus, error)
+	GetStatusForVersion(appID string, clusterID string, sequence float64) (types.DownstreamVersionStatus, error)
 	// GetAppVersions returns a sorted list of app releases. The sort order is determined by semver being enabled in the license.
 	GetAppVersions(appID string, clusterID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error)
 	// Same as GetAppVersions, but finds a cluster where app is deployed
 	FindAppVersions(appID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error)
-	GetDownstreamOutput(appID string, clusterID string, sequence int64) (*downstreamtypes.DownstreamOutput, error)
-	IsDownstreamDeploySuccessful(appID string, clusterID string, sequence int64) (bool, error)
-	UpdateDownstreamDeployStatus(appID string, clusterID string, sequence int64, isError bool, output downstreamtypes.DownstreamOutput) error
-	DeleteDownstreamDeployStatus(appID string, clusterID string, sequence int64) error
+	GetDownstreamOutput(appID string, clusterID string, sequence float64) (*downstreamtypes.DownstreamOutput, error)
+	IsDownstreamDeploySuccessful(appID string, clusterID string, sequence float64) (bool, error)
+	UpdateDownstreamDeployStatus(appID string, clusterID string, sequence float64, isError bool, output downstreamtypes.DownstreamOutput) error
+	DeleteDownstreamDeployStatus(appID string, clusterID string, sequence float64) error
 }
 
 type SnapshotStore interface {
@@ -171,33 +171,33 @@ type SnapshotStore interface {
 }
 
 type VersionStore interface {
-	IsIdentityServiceSupportedForVersion(appID string, sequence int64) (bool, error)
-	IsRollbackSupportedForVersion(appID string, sequence int64) (bool, error)
-	IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int64, renderer rendertypes.Renderer) (bool, error)
-	GetTargetKotsVersionForVersion(appID string, sequence int64) (string, error)
-	CreateAppVersionArchive(appID string, sequence int64, archivePath string) error
-	GetAppVersionArchive(appID string, sequence int64, dstPath string) error
-	GetAppVersionBaseSequence(appID string, versionLabel string) (int64, error)
-	GetAppVersionBaseArchive(appID string, versionLabel string) (string, int64, error)
-	CreatePendingDownloadAppVersion(appID string, update upstreamtypes.Update, kotsApplication *kotsv1beta1.Application, license *kotsv1beta1.License) (int64, error)
-	UpdateAppVersion(appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) error
-	CreateAppVersion(appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error)
-	GetAppVersion(appID string, sequence int64) (*versiontypes.AppVersion, error)
+	IsIdentityServiceSupportedForVersion(appID string, sequence float64) (bool, error)
+	IsRollbackSupportedForVersion(appID string, sequence float64) (bool, error)
+	IsSnapshotsSupportedForVersion(a *apptypes.App, sequence float64, renderer rendertypes.Renderer) (bool, error)
+	GetTargetKotsVersionForVersion(appID string, sequence float64) (string, error)
+	CreateAppVersionArchive(appID string, sequence float64, archivePath string) error
+	GetAppVersionArchive(appID string, sequence float64, dstPath string) error
+	GetAppVersionBaseSequence(appID string, versionLabel string) (float64, error)
+	GetAppVersionBaseArchive(appID string, versionLabel string) (string, float64, error)
+	CreatePendingDownloadAppVersion(appID string, update upstreamtypes.Update, kotsApplication *kotsv1beta1.Application, license *kotsv1beta1.License) (float64, error)
+	UpdateAppVersion(appID string, sequence float64, baseSequence *float64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) error
+	CreateAppVersion(appID string, baseSequence *float64, patch bool, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (float64, error)
+	GetAppVersion(appID string, sequence float64) (*versiontypes.AppVersion, error)
 	GetLatestAppVersion(appID string, downloadedOnly bool) (*versiontypes.AppVersion, error)
-	UpdateNextAppVersionDiffSummary(appID string, baseSequence int64) error
-	UpdateAppVersionInstallationSpec(appID string, sequence int64, spec kotsv1beta1.Installation) error
-	GetNextAppSequence(appID string) (int64, error)
+	UpdateNextAppVersionDiffSummary(appID string, baseSequence float64) error
+	UpdateAppVersionInstallationSpec(appID string, sequence float64, spec kotsv1beta1.Installation) error
+	GetNextAppSequence(appID string) (float64, error)
 	GetCurrentUpdateCursor(appID string, channelID string) (string, string, error)
-	HasStrictPreflights(appID string, sequence int64) (bool, error)
+	HasStrictPreflights(appID string, sequence float64) (bool, error)
 }
 
 type LicenseStore interface {
 	GetLatestLicenseForApp(appID string) (*kotsv1beta1.License, error)
-	GetLicenseForAppVersion(appID string, sequence int64) (*kotsv1beta1.License, error)
+	GetLicenseForAppVersion(appID string, sequence float64) (*kotsv1beta1.License, error)
 	GetAllAppLicenses() ([]*kotsv1beta1.License, error)
 
 	// originalLicenseData is the data received from the replicated API that was never marshalled locally so all fields are intact
-	UpdateAppLicense(appID string, sequence int64, archiveDir string, newLicense *kotsv1beta1.License, originalLicenseData string, channelChanged bool, failOnVersionCreate bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error)
+	UpdateAppLicense(appID string, sequence float64, archiveDir string, newLicense *kotsv1beta1.License, originalLicenseData string, channelChanged bool, failOnVersionCreate bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (float64, error)
 	UpdateAppLicenseSyncNow(appID string) error
 }
 

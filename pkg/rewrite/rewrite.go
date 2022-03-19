@@ -49,7 +49,7 @@ type RewriteOptions struct {
 	AppID              string
 	AppSlug            string
 	IsGitOps           bool
-	AppSequence        int64
+	AppSequence        float64
 	ReportingInfo      *reportingtypes.ReportingInfo
 	HTTPProxyEnvValue  string
 	HTTPSProxyEnvValue string

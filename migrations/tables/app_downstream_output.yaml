@@ -22,7 +22,7 @@ spec:
         constraints:
           notNull: true
       - name: downstream_sequence
-        type: integer
+        type: numeric(4, 3)
         constraints:
           notNull: true
       - name: dryrun_stdout

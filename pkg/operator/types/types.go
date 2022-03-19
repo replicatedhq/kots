@@ -9,7 +9,7 @@ type DeployAppArgs struct {
 	AppID                string                `json:"app_id"`
 	AppSlug              string                `json:"app_slug"`
 	ClusterID            string                `json:"cluster_id"`
-	Sequence             int64                 `json:"sequence"`
+	Sequence             float64               `json:"sequence"`
 	KubectlVersion       string                `json:"kubectl_version"`
 	KustomizeVersion     string                `json:"kustomize_version"`
 	AdditionalNamespaces []string              `json:"additional_namespaces"`
@@ -30,6 +30,6 @@ type DeployAppArgs struct {
 
 type AppInformersArgs struct {
 	AppID     string                               `json:"app_id"`
-	Sequence  int64                                `json:"sequence"`
+	Sequence  float64                              `json:"sequence"`
 	Informers []appstatetypes.StatusInformerString `json:"informers"`
 }

@@ -39,11 +39,11 @@ var deleteImagesTaskID = "delete-images"
 
 type AppRollbackError struct {
 	AppID    string
-	Sequence int64
+	Sequence float64
 }
 
 func (e AppRollbackError) Error() string {
-	return fmt.Sprintf("app:%s, version:%d", e.AppID, e.Sequence)
+	return fmt.Sprintf("app:%s, version:%f", e.AppID, e.Sequence)
 }
 
 func DeleteUnusedImages(appID string, ignoreRollback bool) error {

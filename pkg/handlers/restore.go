@@ -48,7 +48,7 @@ func (h *Handler) CreateApplicationRestore(w http.ResponseWriter, r *http.Reques
 	}
 
 	appID := backup.Annotations["kots.io/app-id"]
-	sequence, err := strconv.ParseInt(backup.Annotations["kots.io/app-sequence"], 10, 64)
+	sequence, err := strconv.ParseFloat(backup.Annotations["kots.io/app-sequence"], 64)
 	if err != nil {
 		logger.Error(err)
 		createRestoreResponse.Error = "failed to parse sequence label"
@@ -81,7 +81,7 @@ func (h *Handler) CreateApplicationRestore(w http.ResponseWriter, r *http.Reques
 	}
 
 	if status != "deployed" {
-		err := errors.Errorf("sequence %d of app %s was never deployed to this cluster", sequence, kotsApp.ID)
+		err := errors.Errorf("sequence %f of app %s was never deployed to this cluster", sequence, kotsApp.ID)
 		logger.Error(err)
 		createRestoreResponse.Error = err.Error()
 		JSON(w, http.StatusInternalServerError, createRestoreResponse)

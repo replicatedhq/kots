@@ -64,13 +64,13 @@ func (s *KOTSStore) migrateKotsAppSpec() error {
 
 	type versionType struct {
 		appID    string
-		sequence int64
+		sequence float64
 	}
 
 	versions := make([]versionType, 0)
 	for rows.Next() {
 		var appID string
-		var sequence int64
+		var sequence float64
 
 		if err := rows.Scan(&appID, &sequence); err != nil {
 			return errors.Wrap(err, "failed to scan")
@@ -83,7 +83,7 @@ func (s *KOTSStore) migrateKotsAppSpec() error {
 	}
 
 	for _, version := range versions {
-		logger.Info(fmt.Sprintf("Migrating kots_app_spec for app %s sequence %d", version.appID, version.sequence))
+		logger.Info(fmt.Sprintf("Migrating kots_app_spec for app %s sequence %f", version.appID, version.sequence))
 		err := func() error {
 			archiveDir, err := ioutil.TempDir("", "kotsadm")
 			if err != nil {
@@ -134,13 +134,13 @@ func (s *KOTSStore) migrateKotsInstallationSpec() error {
 
 	type versionType struct {
 		appID    string
-		sequence int64
+		sequence float64
 	}
 
 	versions := make([]versionType, 0)
 	for rows.Next() {
 		var appID string
-		var sequence int64
+		var sequence float64
 
 		if err := rows.Scan(&appID, &sequence); err != nil {
 			return errors.Wrap(err, "failed to scan")
@@ -153,7 +153,7 @@ func (s *KOTSStore) migrateKotsInstallationSpec() error {
 	}
 
 	for _, version := range versions {
-		logger.Info(fmt.Sprintf("Migrating kots_installation_spec for app %s sequence %d", version.appID, version.sequence))
+		logger.Info(fmt.Sprintf("Migrating kots_installation_spec for app %s sequence %f", version.appID, version.sequence))
 		err := func() error {
 			archiveDir, err := ioutil.TempDir("", "kotsadm")
 			if err != nil {
@@ -204,13 +204,13 @@ func (s *KOTSStore) migrateSupportBundleSpec() error {
 
 	type versionType struct {
 		appID    string
-		sequence int64
+		sequence float64
 	}
 
 	versions := make([]versionType, 0)
 	for rows.Next() {
 		var appID string
-		var sequence int64
+		var sequence float64
 
 		if err := rows.Scan(&appID, &sequence); err != nil {
 			return errors.Wrap(err, "failed to scan")
@@ -223,7 +223,7 @@ func (s *KOTSStore) migrateSupportBundleSpec() error {
 	}
 
 	for _, version := range versions {
-		logger.Info(fmt.Sprintf("Migrating kots_installation_spec for app %s sequence %d", version.appID, version.sequence))
+		logger.Info(fmt.Sprintf("Migrating kots_installation_spec for app %s sequence %f", version.appID, version.sequence))
 		err := func() error {
 			archiveDir, err := ioutil.TempDir("", "kotsadm")
 			if err != nil {
@@ -274,13 +274,13 @@ func (s *KOTSStore) migratePreflightSpec() error {
 
 	type versionType struct {
 		appID    string
-		sequence int64
+		sequence float64
 	}
 
 	versions := make([]versionType, 0)
 	for rows.Next() {
 		var appID string
-		var sequence int64
+		var sequence float64
 
 		if err := rows.Scan(&appID, &sequence); err != nil {
 			return errors.Wrap(err, "failed to scan")
@@ -293,7 +293,7 @@ func (s *KOTSStore) migratePreflightSpec() error {
 	}
 
 	for _, version := range versions {
-		logger.Info(fmt.Sprintf("Migrating preflight_spec for app %s sequence %d", version.appID, version.sequence))
+		logger.Info(fmt.Sprintf("Migrating preflight_spec for app %s sequence %f", version.appID, version.sequence))
 		err := func() error {
 			archiveDir, err := ioutil.TempDir("", "kotsadm")
 			if err != nil {
@@ -344,13 +344,13 @@ func (s *KOTSStore) migrateAnalyzerSpec() error {
 
 	type versionType struct {
 		appID    string
-		sequence int64
+		sequence float64
 	}
 
 	versions := make([]versionType, 0)
 	for rows.Next() {
 		var appID string
-		var sequence int64
+		var sequence float64
 
 		if err := rows.Scan(&appID, &sequence); err != nil {
 			return errors.Wrap(err, "failed to scan")
@@ -363,7 +363,7 @@ func (s *KOTSStore) migrateAnalyzerSpec() error {
 	}
 
 	for _, version := range versions {
-		logger.Info(fmt.Sprintf("Migrating analyzer_spec for app %s sequence %d", version.appID, version.sequence))
+		logger.Info(fmt.Sprintf("Migrating analyzer_spec for app %s sequence %f", version.appID, version.sequence))
 		err := func() error {
 			archiveDir, err := ioutil.TempDir("", "kotsadm")
 			if err != nil {
@@ -414,13 +414,13 @@ func (s *KOTSStore) migrateAppSpec() error {
 
 	type versionType struct {
 		appID    string
-		sequence int64
+		sequence float64
 	}
 
 	versions := make([]versionType, 0)
 	for rows.Next() {
 		var appID string
-		var sequence int64
+		var sequence float64
 
 		if err := rows.Scan(&appID, &sequence); err != nil {
 			return errors.Wrap(err, "failed to scan")
@@ -433,7 +433,7 @@ func (s *KOTSStore) migrateAppSpec() error {
 	}
 
 	for _, version := range versions {
-		logger.Info(fmt.Sprintf("Migrating app_spec for app %s sequence %d", version.appID, version.sequence))
+		logger.Info(fmt.Sprintf("Migrating app_spec for app %s sequence %f", version.appID, version.sequence))
 		err := func() error {
 			archiveDir, err := ioutil.TempDir("", "kotsadm")
 			if err != nil {
