@@ -1196,7 +1196,7 @@ class AppVersionHistory extends Component {
                       <div className="flex1 flex-column">
                         <div className="flex alignItems--center u-marginTop--5">
                           <p className="u-fontSize--header2 u-fontWeight--bold u-textColor--primary"> {currentDownstreamVersion ? currentDownstreamVersion.versionLabel : "---"}</p>
-                          <p className="u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10"> {currentDownstreamVersion ? `Sequence ${currentDownstreamVersion?.sequence}` : null}</p>
+                          <p className="u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10"> {currentDownstreamVersion ? `Sequence ${Utilities.formatSequence(currentDownstreamVersion?.sequence)}` : null}</p>
                         </div>
                         {currentDownstreamVersion?.deployedAt ? <p className="u-fontSize--small u-lineHeight--normal u-textColor--info u-fontWeight--medium u-marginTop--10">{currentDownstreamVersion?.status === "deploying" ? "Deploy started at" : "Deployed"} {Utilities.dateFormat(currentDownstreamVersion.deployedAt, "MM/DD/YY @ hh:mm a z")}</p> : null}
                         {currentDownstreamVersion ?
