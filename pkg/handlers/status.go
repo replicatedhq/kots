@@ -48,7 +48,7 @@ func (h *Handler) GetAppVersionDownloadStatus(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	taskID := fmt.Sprintf("update-download.%.2f", sequence)
+	taskID := fmt.Sprintf("update-download.%.3f", sequence)
 	status, message, err := store.GetStore().GetTaskStatus(taskID)
 	if err != nil {
 		errMsg := fmt.Sprintf("failed to get %s task status", taskID)

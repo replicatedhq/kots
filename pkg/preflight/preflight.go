@@ -43,7 +43,7 @@ func Run(appID string, appSlug string, sequence float64, isAirgap bool, archiveD
 
 	status, err := store.GetStore().GetDownstreamVersionStatus(appID, sequence)
 	if err != nil {
-		return errors.Wrapf(err, "failed to check downstream version %.2f status", sequence)
+		return errors.Wrapf(err, "failed to check downstream version %.3f status", sequence)
 	}
 
 	// preflights should not run until config is finished
@@ -62,7 +62,7 @@ func Run(appID string, appSlug string, sequence float64, isAirgap bool, archiveD
 
 		if status != "deployed" {
 			if err := store.GetStore().SetDownstreamVersionPendingPreflight(appID, sequence); err != nil {
-				return errors.Wrapf(err, "failed to set downstream version %.2f pending preflight", sequence)
+				return errors.Wrapf(err, "failed to set downstream version %.3f pending preflight", sequence)
 			}
 		}
 
@@ -257,7 +257,7 @@ func CreateRenderedSpec(appID string, sequence float64, origin string, inCluster
 	} else if origin != "" {
 		baseURL = origin
 	}
-	builtPreflight.Spec.UploadResultsTo = fmt.Sprintf("%s/api/v1/preflight/app/%s/sequence/%.2f", baseURL, app.Slug, sequence)
+	builtPreflight.Spec.UploadResultsTo = fmt.Sprintf("%s/api/v1/preflight/app/%s/sequence/%.3f", baseURL, app.Slug, sequence)
 
 	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 	var b bytes.Buffer

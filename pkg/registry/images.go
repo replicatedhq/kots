@@ -43,7 +43,7 @@ type AppRollbackError struct {
 }
 
 func (e AppRollbackError) Error() string {
-	return fmt.Sprintf("app:%s, version:%.2f", e.AppID, e.Sequence)
+	return fmt.Sprintf("app:%s, version:%.3f", e.AppID, e.Sequence)
 }
 
 func DeleteUnusedImages(appID string, ignoreRollback bool) error {

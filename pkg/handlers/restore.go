@@ -81,7 +81,7 @@ func (h *Handler) CreateApplicationRestore(w http.ResponseWriter, r *http.Reques
 	}
 
 	if status != "deployed" {
-		err := errors.Errorf("sequence %.2f of app %s was never deployed to this cluster", sequence, kotsApp.ID)
+		err := errors.Errorf("sequence %.3f of app %s was never deployed to this cluster", sequence, kotsApp.ID)
 		logger.Error(err)
 		createRestoreResponse.Error = err.Error()
 		JSON(w, http.StatusInternalServerError, createRestoreResponse)

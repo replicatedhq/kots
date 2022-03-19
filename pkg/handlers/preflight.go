@@ -122,7 +122,7 @@ func (h *Handler) IgnorePreflightRBACErrors(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	if status == storetypes.VersionPendingDownload {
-		logger.Error(errors.Errorf("not ignoring preflight rbac errors for version %.2f because it's %s", sequence, status))
+		logger.Error(errors.Errorf("not ignoring preflight rbac errors for version %.3f because it's %s", sequence, status))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -189,7 +189,7 @@ func (h *Handler) StartPreflightChecks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if status == storetypes.VersionPendingDownload {
-		logger.Error(errors.Errorf("not running preflights for version %.2f because it's %s", sequence, status))
+		logger.Error(errors.Errorf("not running preflights for version %.3f because it's %s", sequence, status))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}

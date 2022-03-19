@@ -83,7 +83,7 @@ func (s *KOTSStore) migrateKotsAppSpec() error {
 	}
 
 	for _, version := range versions {
-		logger.Info(fmt.Sprintf("Migrating kots_app_spec for app %s sequence %.2f", version.appID, version.sequence))
+		logger.Info(fmt.Sprintf("Migrating kots_app_spec for app %s sequence %.3f", version.appID, version.sequence))
 		err := func() error {
 			archiveDir, err := ioutil.TempDir("", "kotsadm")
 			if err != nil {
@@ -153,7 +153,7 @@ func (s *KOTSStore) migrateKotsInstallationSpec() error {
 	}
 
 	for _, version := range versions {
-		logger.Info(fmt.Sprintf("Migrating kots_installation_spec for app %s sequence %.2f", version.appID, version.sequence))
+		logger.Info(fmt.Sprintf("Migrating kots_installation_spec for app %s sequence %.3f", version.appID, version.sequence))
 		err := func() error {
 			archiveDir, err := ioutil.TempDir("", "kotsadm")
 			if err != nil {
@@ -223,7 +223,7 @@ func (s *KOTSStore) migrateSupportBundleSpec() error {
 	}
 
 	for _, version := range versions {
-		logger.Info(fmt.Sprintf("Migrating kots_installation_spec for app %s sequence %.2f", version.appID, version.sequence))
+		logger.Info(fmt.Sprintf("Migrating kots_installation_spec for app %s sequence %.3f", version.appID, version.sequence))
 		err := func() error {
 			archiveDir, err := ioutil.TempDir("", "kotsadm")
 			if err != nil {
@@ -293,7 +293,7 @@ func (s *KOTSStore) migratePreflightSpec() error {
 	}
 
 	for _, version := range versions {
-		logger.Info(fmt.Sprintf("Migrating preflight_spec for app %s sequence %.2f", version.appID, version.sequence))
+		logger.Info(fmt.Sprintf("Migrating preflight_spec for app %s sequence %.3f", version.appID, version.sequence))
 		err := func() error {
 			archiveDir, err := ioutil.TempDir("", "kotsadm")
 			if err != nil {
@@ -363,7 +363,7 @@ func (s *KOTSStore) migrateAnalyzerSpec() error {
 	}
 
 	for _, version := range versions {
-		logger.Info(fmt.Sprintf("Migrating analyzer_spec for app %s sequence %.2f", version.appID, version.sequence))
+		logger.Info(fmt.Sprintf("Migrating analyzer_spec for app %s sequence %.3f", version.appID, version.sequence))
 		err := func() error {
 			archiveDir, err := ioutil.TempDir("", "kotsadm")
 			if err != nil {
@@ -433,7 +433,7 @@ func (s *KOTSStore) migrateAppSpec() error {
 	}
 
 	for _, version := range versions {
-		logger.Info(fmt.Sprintf("Migrating app_spec for app %s sequence %.2f", version.appID, version.sequence))
+		logger.Info(fmt.Sprintf("Migrating app_spec for app %s sequence %.3f", version.appID, version.sequence))
 		err := func() error {
 			archiveDir, err := ioutil.TempDir("", "kotsadm")
 			if err != nil {

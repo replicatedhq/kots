@@ -568,6 +568,16 @@ export const Utilities = {
     }
   },
 
+  formatSequence(sequence) {
+    if (sequence == undefined) {
+      return "";
+    }
+    if (sequence % 1 === 0) {
+      return `${sequence}`;
+    }
+    return sequence.toFixed(3);
+  },
+
   // Converts string to titlecase i.e. 'hello' -> 'Hello'
   // @returns {String}
   toTitleCase(word) {

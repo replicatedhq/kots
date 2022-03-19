@@ -268,7 +268,7 @@ class DashboardVersionCard extends React.Component {
           <div className="flex-column">
             <div className="flex alignItems--center u-marginBottom--5">
               <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">{currentVersion.versionLabel || currentVersion.title}</p>
-              <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">Sequence {currentVersion.sequence}</p>
+              <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">Sequence {Utilities.formatSequence(currentVersion.sequence)}</p>
             </div>
             <div>{this.getCurrentVersionStatus(currentVersion)}</div>
             <div className="flex alignItems--center u-marginTop--10">
@@ -927,7 +927,7 @@ class DashboardVersionCard extends React.Component {
             <div className="flex-column">
               <div className="flex alignItems--center">
                 <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">{latestVersion.versionLabel || latestVersion.title}</p>
-                <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">Sequence {latestVersion.sequence}</p>
+                <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">Sequence {Utilities.formatSequence(latestVersion.sequence)}</p>
               </div>
               <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5"> Released {Utilities.dateFormat(latestVersion?.createdOn, "MM/DD/YY @ hh:mm a z")} </p>
               <div className="u-marginTop--5 flex flex-auto alignItems--center">
@@ -1048,7 +1048,7 @@ class DashboardVersionCard extends React.Component {
             >
               <div className="Modal-body">
                 <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">Unable to generate a file diff for release</p>
-                <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">The <span className="u-fontWeight--bold">Upstream {this.state.releaseWithErr.versionLabel}, Sequence {this.state.releaseWithErr.sequence}</span> release was unable to generate a diff because the following error:</p>
+                <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">The <span className="u-fontWeight--bold">Upstream {this.state.releaseWithErr.versionLabel}, Sequence {Utilities.formatSequence(this.state.releaseWithErr.sequence)}</span> release was unable to generate a diff because the following error:</p>
                 <div className="error-block-wrapper u-marginBottom--30 flex flex1">
                   <span className="u-textColor--error">{this.state.releaseWithErr.diffSummaryError}</span>
                 </div>
@@ -1068,7 +1068,7 @@ class DashboardVersionCard extends React.Component {
             >
               <div className="Modal-body">
                 <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">No changes to show</p>
-                <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">The <span className="u-fontWeight--bold">Upstream {this.state.releaseWithNoChanges.versionLabel}, Sequence {this.state.releaseWithNoChanges.sequence}</span> release was unable to generate a diff because the changes made do not affect any manifests that will be deployed. Only changes affecting the application manifest will be included in a diff.</p>
+                <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">The <span className="u-fontWeight--bold">Upstream {this.state.releaseWithNoChanges.versionLabel}, Sequence {Utilities.formatSequence(this.state.releaseWithNoChanges.sequence)}</span> release was unable to generate a diff because the changes made do not affect any manifests that will be deployed. Only changes affecting the application manifest will be included in a diff.</p>
                 <div className="flex u-paddingTop--10">
                   <button className="btn primary" onClick={this.toggleNoChangesModal}>Ok, got it!</button>
                 </div>

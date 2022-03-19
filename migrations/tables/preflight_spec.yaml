@@ -16,7 +16,7 @@ spec:
         constraints:
           notNull: true
       - name: sequence
-        type: numeric(21, 2)
+        type: numeric(22, 3)
         constraints:
           notNull: true
       - name: spec

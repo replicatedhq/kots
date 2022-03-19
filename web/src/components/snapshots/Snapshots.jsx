@@ -406,7 +406,7 @@ class Snapshots extends Component {
           <span style={{ fontSize: 14 }}>{name}</span>
         </div>
         <div style={{ display: "flex" }}>
-          <span style={{ fontSize: 14, color: "#9B9B9B", marginLeft: "10px" }}>Sequence {sequence}</span>
+          <span style={{ fontSize: 14, color: "#9B9B9B", marginLeft: "10px" }}>Sequence {Utilities.formatSequence(sequence)}</span>
         </div>
       </div>
     );

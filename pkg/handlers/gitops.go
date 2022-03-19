@@ -217,7 +217,7 @@ func (h *Handler) InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 
 			err = store.GetStore().GetAppVersionArchive(a.ID, appVersions.CurrentVersion.ParentSequence, currentVersionArchive)
 			if err != nil {
-				err = errors.Wrapf(err, "failed to get app version archive for current version %.2f", appVersions.CurrentVersion.ParentSequence)
+				err = errors.Wrapf(err, "failed to get app version archive for current version %.3f", appVersions.CurrentVersion.ParentSequence)
 				logger.Error(err)
 				finalError = err
 				return
@@ -225,7 +225,7 @@ func (h *Handler) InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 
 			_, err = gitops.CreateGitOpsCommit(downstreamGitOps, a.Slug, a.Name, appVersions.CurrentVersion.ParentSequence, currentVersionArchive, d.Name)
 			if err != nil {
-				err = errors.Wrapf(err, "failed to create gitops commit for current version %.2f", appVersions.CurrentVersion.ParentSequence)
+				err = errors.Wrapf(err, "failed to create gitops commit for current version %.3f", appVersions.CurrentVersion.ParentSequence)
 				logger.Error(err)
 				finalError = err
 				return
@@ -245,7 +245,7 @@ func (h *Handler) InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 
 			err = store.GetStore().GetAppVersionArchive(a.ID, pendingVersion.ParentSequence, pendingVersionArchive)
 			if err != nil {
-				err = errors.Wrapf(err, "failed to get app version archive for pending version %.2f", pendingVersion.ParentSequence)
+				err = errors.Wrapf(err, "failed to get app version archive for pending version %.3f", pendingVersion.ParentSequence)
 				logger.Error(err)
 				finalError = err
 				return
@@ -253,7 +253,7 @@ func (h *Handler) InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 
 			_, err = gitops.CreateGitOpsCommit(downstreamGitOps, a.Slug, a.Name, pendingVersion.ParentSequence, pendingVersionArchive, d.Name)
 			if err != nil {
-				err = errors.Wrapf(err, "failed to create gitops commit for pending version %.2f", pendingVersion.ParentSequence)
+				err = errors.Wrapf(err, "failed to create gitops commit for pending version %.3f", pendingVersion.ParentSequence)
 				logger.Error(err)
 				finalError = err
 				return

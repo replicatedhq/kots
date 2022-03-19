@@ -42,7 +42,7 @@ func (h *Handler) GetAppContents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if status == storetypes.VersionPendingDownload {
-		logger.Error(errors.Errorf("not returning contents for version %.2f because it's %s", sequence, status))
+		logger.Error(errors.Errorf("not returning contents for version %.3f because it's %s", sequence, status))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}

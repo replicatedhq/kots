@@ -113,7 +113,7 @@ export default function BackupRestoreModal(props) {
                     <p className="u-fontSize--normal u-fontWeight--bold u-textColor--primary u-lineHeight--normal">{selectedRestoreApp?.name}</p>
                   </div>
                   <div className="flex flex1 justifyContent--flexEnd">
-                    <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal justifyContent--center"> Sequence {selectedRestoreApp?.sequence} </p>
+                    <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal justifyContent--center"> Sequence {Utilities.formatSequence(selectedRestoreApp?.sequence)} </p>
                   </div>
                 </div>
                 {appSlugMismatch ?

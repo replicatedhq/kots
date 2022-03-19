@@ -501,7 +501,7 @@ func checkRestoreComplete(a *apptypes.App, restore *velerov1.Restore) error {
 			sequence = s
 		}
 
-		logger.Info(fmt.Sprintf("restore complete, marking version %.2f as deployed", sequence))
+		logger.Info(fmt.Sprintf("restore complete, marking version %.3f as deployed", sequence))
 
 		// mark the sequence as deployed both in the db and sequences history
 		// so that the admin console does not try to re-deploy it
@@ -517,7 +517,7 @@ func checkRestoreComplete(a *apptypes.App, restore *velerov1.Restore) error {
 		}
 		if _, err := supportbundle.CreateSupportBundleDependencies(a.ID, sequence, troubleshootOpts); err != nil {
 			// support bundle is not essential. keep processing restore status
-			logger.Error(errors.Wrapf(err, "failed to create support bundle for sequence %.2f post restore", sequence))
+			logger.Error(errors.Wrapf(err, "failed to create support bundle for sequence %.3f post restore", sequence))
 		}
 
 		if err := app.ResetRestore(a.ID); err != nil {

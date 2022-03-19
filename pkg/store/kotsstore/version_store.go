@@ -428,7 +428,7 @@ func (s *KOTSStore) UpdateAppVersion(appID string, sequence float64, baseSequenc
 	if v, err := s.GetAppVersion(appID, sequence); err != nil {
 		return errors.Wrap(err, "failed to get app version")
 	} else if v == nil {
-		return errors.Errorf("version %.2f not found", sequence)
+		return errors.Errorf("version %.3f not found", sequence)
 	}
 
 	db := persistence.MustGetDBSession()
@@ -996,8 +996,8 @@ func (s *KOTSStore) getNextPatchSequence(db queryable, appID string, baseSequenc
 		return s.getNextAppSequence(db, appID)
 	}
 
-	newSequence := maxPatch.Float64 + 0.01          // e.g. 2.0299999999
-	newSequence = math.Round(newSequence*100) / 100 // e.g. 2.03
+	newSequence := maxPatch.Float64 + 0.001           // e.g. 2.00299999999
+	newSequence = math.Round(newSequence*1000) / 1000 // e.g. 2.003
 
 	if newSequence == nextMajorSequence {
 		logger.Info("patch sequence limit reached, falling back to getting the next app sequence")

@@ -231,11 +231,11 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 
 		status, err := store.GetStore().GetStatusForVersion(a.ID, downstream.ClusterID, newSequence)
 		if err != nil {
-			return errors.Wrapf(err, "failed to get status for version %.2f", newSequence)
+			return errors.Wrapf(err, "failed to get status for version %.3f", newSequence)
 		}
 
 		if status == storetypes.VersionPendingConfig {
-			return errors.Errorf("not deploying version %.2f because it's %s", newSequence, status)
+			return errors.Errorf("not deploying version %.3f because it's %s", newSequence, status)
 		}
 
 		if err := version.DeployVersion(a.ID, newSequence); err != nil {

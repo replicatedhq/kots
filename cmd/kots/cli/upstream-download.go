@@ -71,7 +71,7 @@ func UpstreamDownloadCmd() *cobra.Command {
 			if v.GetBool("wait") {
 				urlVals.Set("wait", "true")
 			}
-			url := fmt.Sprintf("http://localhost:%d/api/v1/app/%s/sequence/%.2f/download?%s", localPort, url.PathEscape(appSlug), appSequence, urlVals.Encode())
+			url := fmt.Sprintf("http://localhost:%d/api/v1/app/%s/sequence/%.3f/download?%s", localPort, url.PathEscape(appSlug), appSequence, urlVals.Encode())
 
 			go func() {
 				select {
@@ -98,7 +98,7 @@ func UpstreamDownloadCmd() *cobra.Command {
 				os.Exit(2) // not returning error here as we don't want to show the entire stack trace to normal users
 			}
 
-			log.ActionWithSpinner(fmt.Sprintf("Retrying download for sequence %.2f", appSequence))
+			log.ActionWithSpinner(fmt.Sprintf("Retrying download for sequence %.3f", appSequence))
 
 			newReq, err := http.NewRequest("POST", url, nil)
 			if err != nil {
@@ -151,7 +151,7 @@ func UpstreamDownloadCmd() *cobra.Command {
 			if v.GetBool("wait") {
 				log.ActionWithoutSpinner("Downloaded successfully.")
 			} else {
-				log.ActionWithoutSpinner(fmt.Sprintf("App sequence %.2f is being re-downloaded.", appSequence))
+				log.ActionWithoutSpinner(fmt.Sprintf("App sequence %.3f is being re-downloaded.", appSequence))
 			}
 
 			return nil

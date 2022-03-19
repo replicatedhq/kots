@@ -25,7 +25,7 @@ func SendPreflightsReportToReplicatedApp(license *kotsv1beta1.License, appID str
 	}
 
 	urlValues := url.Values{}
-	urlValues.Set("sequence", fmt.Sprintf("%.2f", sequence))
+	urlValues.Set("sequence", fmt.Sprintf("%.3f", sequence))
 	urlValues.Set("skipPreflights", fmt.Sprintf("%t", skipPreflights))
 	urlValues.Set("installStatus", string(installStatus))
 	urlValues.Set("isCLI", fmt.Sprintf("%t", isCLI))
