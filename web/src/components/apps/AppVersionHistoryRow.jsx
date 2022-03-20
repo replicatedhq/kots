@@ -80,6 +80,32 @@ function renderReleaseNotes(version, showReleaseNotes) {
   );
 }
 
+// even if the application allows rollbacks, rolling back should be blocked if a more recent required version has been deployed
+function blockRollback(app, version) {
+  const downstream = app.downstreams?.length && app.downstreams[0];
+
+  const isPastVersion = find(downstream?.pastVersions, { sequence: version.sequence });
+  if (!isPastVersion) {
+    return false;
+  }
+
+  if (downstream?.currentVersion?.isRequired) {
+    // the deployed version is required, don't allow rolling back
+    return true;
+  }
+
+  // if there are any intermediate required versions, don't allow rolling back
+  for (const v of downstream?.pastVersions) {
+    if (v.sequence === version.sequence) {
+      break;
+    }
+    if (v.isRequired) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function renderVersionAction(version, nothingToCommitDiff, app, history, actionFn, showReleaseNotes, viewLogs, isDownloading, adminConsoleMetadata, requiredVersions) {
   const downstream = app.downstreams[0];
 
@@ -134,7 +160,7 @@ function renderVersionAction(version, nothingToCommitDiff, app, history, actionF
   const isSecondaryBtn = isPastVersion || needsConfiguration || isRedeploy && !isRollback;
   const isPrimaryButton = !isSecondaryBtn && !isRedeploy && !isRollback;
   const editableConfig = isCurrentVersion || isLatestVersion || isPendingVersion?.semver;
-  const blockDeployment = version.hasFailingStrictPreflights || requiredVersions?.length;
+  const blockDeployment = version.hasFailingStrictPreflights || requiredVersions?.length || blockRollback(app, version);
   let tooltipTip;
   if (editableConfig) {
     tooltipTip = "Edit config";
@@ -195,7 +221,7 @@ function renderVersionAction(version, nothingToCommitDiff, app, history, actionF
           >
             <span
               data-tip-disable={!blockDeployment}
-              data-tip={disableDeploymentTooltipText(version, requiredVersions)}
+              data-tip={disableDeploymentTooltipText(app, version, requiredVersions)}
               data-for="disable-deployment-tooltip"
             >
               {deployButtonStatus(downstream, version, app, adminConsoleMetadata)}
@@ -208,11 +234,14 @@ function renderVersionAction(version, nothingToCommitDiff, app, history, actionF
   );
 }
 
-function disableDeploymentTooltipText(version, requiredVersions) {
+function disableDeploymentTooltipText(app, version, requiredVersions) {
+  if (blockRollback(app, version)) {
+    return "One or more non-reversible versions have been deployed since this version."
+  }
   if (requiredVersions?.length) {
     return `This version cannot be deployed because version${requiredVersions?.length > 1 ? "s" : ""} ${requiredVersions.map(v => v.versionLabel).join(", ")} ${requiredVersions?.length > 1 ? "are" : "is"} required and must be deployed first.`
   }
-  return "Deployment is disabled as a strict analyzer in this version's preflight checks has failed or has not been run";
+  return "Deployment is disabled as a strict analyzer in this version's preflight checks has failed or has not been run.";
 }
 
 function renderViewPreflights(version, app, match) {

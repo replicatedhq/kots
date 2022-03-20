@@ -64,21 +64,14 @@ func DeployVersion(appID string, sequence int64) error {
 		}
 	}
 
-	// TODO: this check should be removed when we implement auto deploy if intermediate required releases.
-	// the function can then be refactored to return the required versions to be deployed first.
-	blocked, requiredVersions, err := isBlockedDueToRequiredVersions(appID, sequence)
+	blocked, cause, err := isBlockedDueToRequiredVersions(appID, sequence)
 	if err != nil {
-		return errors.Wrap(err, "failed to check if deployment is blocked due to previous required releases")
+		return errors.Wrap(err, "failed to check if deployment is blocked due to required releases")
 	}
 	if blocked {
-		versionLabels := []string{}
-		for _, v := range requiredVersions {
-			versionLabels = append(versionLabels, v.VersionLabel)
-		}
-		versionLabelsStr := strings.Join(versionLabels, ", ")
 		return util.ActionableError{
 			NoRetry: true,
-			Message: fmt.Sprintf("This version cannot be deployed because versions %s are required and must be deployed first.", versionLabelsStr),
+			Message: cause,
 		}
 	}
 
@@ -275,16 +268,16 @@ func isBlockedDueToStrictPreFlights(appID string, sequence int64) (bool, error) 
 	return hasStrictPreflights && preflightResult.HasFailingStrictPreflights, nil
 }
 
-func isBlockedDueToRequiredVersions(appID string, sequence int64) (bool, []*downstreamtypes.DownstreamVersion, error) {
+func isBlockedDueToRequiredVersions(appID string, sequence int64) (bool, string, error) {
 	// check for intermediate required non-downloaded versions as well
 	appVersions, err := store.GetStore().FindAppVersions(appID, false)
 	if err != nil {
-		return false, nil, errors.Wrap(err, "failed to get downstream versions")
+		return false, "", errors.Wrap(err, "failed to get downstream versions")
 	}
 
 	if appVersions.CurrentVersion == nil {
 		// no version has been deployed yet, treat as an initial install where any version can be deployed at first.
-		return false, nil, nil
+		return false, "", nil
 	}
 
 	versionIndex := -1
@@ -306,7 +299,12 @@ func isBlockedDueToRequiredVersions(appID string, sequence int64) (bool, []*down
 	if versionIndex == deployedVersionIndex {
 		// version is currently deployed, so previous required versions should've already been deployed.
 		// also, we shouldn't block re-deploying if a previous release is edited later by the vendor to be required.
-		return false, nil, nil
+		return false, "", nil
+	}
+
+	if versionIndex > deployedVersionIndex {
+		// version is a past version, check if rollback is allowed
+		return isBlockedDueToIncompatibleRollback(appID, appVersions, sequence)
 	}
 
 	// check if there are required versions between the currently deployed version and the desired version
@@ -323,5 +321,61 @@ func isBlockedDueToRequiredVersions(appID string, sequence int64) (bool, []*down
 		}
 	}
 
-	return len(requiredVersions) > 0, requiredVersions, nil
+	if len(requiredVersions) > 0 {
+		versionLabels := []string{}
+		for _, v := range requiredVersions {
+			versionLabels = append(versionLabels, v.VersionLabel)
+		}
+		versionLabelsStr := strings.Join(versionLabels, ", ")
+		return true, fmt.Sprintf("This version cannot be deployed because versions %s are required and must be deployed first.", versionLabelsStr), nil
+	}
+
+	return false, "", nil
+}
+
+func isBlockedDueToIncompatibleRollback(appID string, appVersions *downstreamtypes.DownstreamVersions, sequence int64) (bool, string, error) {
+	versionIndex := -1
+	for i, v := range appVersions.PastVersions {
+		if v.Sequence == sequence {
+			versionIndex = i
+			break
+		}
+	}
+
+	if versionIndex == -1 {
+		// not a past version
+		return false, "", nil
+	}
+
+	a, err := store.GetStore().GetApp(appID)
+	if err != nil {
+		return false, "", errors.Wrap(err, "failed to get app")
+	}
+	latestAppVersion, err := store.GetStore().GetLatestAppVersion(a.ID, true)
+	if err != nil {
+		return false, "", errors.Wrap(err, "failed to get latest app version")
+	}
+	allowRollback, err := store.GetStore().IsRollbackSupportedForVersion(a.ID, latestAppVersion.Sequence)
+	if err != nil {
+		return false, "", errors.Wrap(err, "failed to check if rollback is supported")
+	}
+	if !allowRollback {
+		return true, fmt.Sprintf("Rollback is not supported for app %s", a.Slug), nil
+	}
+
+	if appVersions.CurrentVersion != nil && appVersions.CurrentVersion.IsRequired {
+		// the deployed version is required, don't allow rolling back
+		return true, fmt.Sprintf("The currently deployed version for app %s is marked as required, rolling back past it is not allowed", a.Slug), nil
+	}
+
+	// if there are any intermediate required versions, don't allow rolling back
+	for _, v := range appVersions.PastVersions {
+		if v.Sequence == sequence {
+			break
+		}
+		if v.IsRequired {
+			return true, fmt.Sprintf("One or more non-reversible versions have been deployed since version %d. Rolling back is not allowed", sequence), nil
+		}
+	}
+	return false, "", nil
 }

@@ -1070,6 +1070,11 @@ class AppVersionHistory extends Component {
       return [];
     }
 
+    if (versionIndex > deployedVersionIndex) {
+      // version is a past version
+      return [];
+    }
+
     // find required versions between the currently deployed version and the desired version
     const requiredVersions = [];
     for (let i = 0; i < versionHistory.length; i++) {
