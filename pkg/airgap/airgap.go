@@ -16,6 +16,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/airgap/types"
 	"github.com/replicatedhq/kots/pkg/archives"
+	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	identity "github.com/replicatedhq/kots/pkg/kotsadmidentity"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -198,6 +199,11 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		}
 	}
 
+	instParams, err := kotsutil.GetInstallationParams(kotsadmtypes.KotsadmConfigMap)
+	if err != nil {
+		return errors.Wrap(err, "failed to get existing kotsadm config map")
+	}
+
 	pullOptions := pull.PullOptions{
 		Downstreams:         []string{"this-cluster"},
 		LocalPath:           releaseDir,
@@ -207,7 +213,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		IdentityConfigFile:  identityConfigFile,
 		AirgapRoot:          archiveDir,
 		AirgapBundle:        airgapBundle,
-		Silent:              true,
+		Silent:              !opts.IsAutomated,
 		ExcludeKotsKinds:    true,
 		RootDir:             tmpRoot,
 		ExcludeAdminConsole: true,
@@ -223,6 +229,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		},
 		AppSlug:                opts.PendingApp.Slug,
 		AppSequence:            0,
+		AppVersionLabel:        instParams.AppVersionLabel,
 		SkipCompatibilityCheck: opts.SkipCompatibilityCheck,
 	}
 
@@ -275,12 +282,6 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		logger.Warnf("preflights will not be skipped, strict preflights are set to %t", hasStrictPreflights)
 	}
 
-	if !opts.SkipPreflights || hasStrictPreflights {
-		if err := preflight.Run(opts.PendingApp.ID, opts.PendingApp.Slug, newSequence, true, tmpRoot); err != nil {
-			return errors.Wrap(err, "failed to start preflights")
-		}
-	}
-
 	if opts.IsAutomated && kotsKinds.IsConfigurable() {
 		// bypass the config screen if no configuration is required
 		registrySettings := registrytypes.RegistrySettings{
@@ -299,7 +300,18 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 				if err := version.DeployVersion(opts.PendingApp.ID, newSequence); err != nil {
 					return errors.Wrap(err, "failed to deploy version")
 				}
+			} else {
+				err := store.GetStore().SetDownstreamVersionPendingPreflight(opts.PendingApp.ID, newSequence)
+				if err != nil {
+					return errors.Wrap(err, "failed to set downstream version status to 'pending preflight'")
+				}
 			}
+		}
+	}
+
+	if !opts.SkipPreflights || hasStrictPreflights {
+		if err := preflight.Run(opts.PendingApp.ID, opts.PendingApp.Slug, newSequence, true, tmpRoot); err != nil {
+			return errors.Wrap(err, "failed to start preflights")
 		}
 	}
 
@@ -308,6 +320,11 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		if err := version.DeployVersion(opts.PendingApp.ID, newSequence); err != nil {
 			return errors.Wrap(err, "failed to deploy version")
 		}
+	}
+
+	err = kotsutil.RemoveAppVersionLabelFromInstallationParams(kotsadmtypes.KotsadmConfigMap)
+	if err != nil {
+		logger.Error(errors.Wrapf(err, "failed to delete app version label from config"))
 	}
 
 	return nil

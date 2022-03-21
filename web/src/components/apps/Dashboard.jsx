@@ -503,8 +503,11 @@ class Dashboard extends Component {
       if (s === "degraded") {
         return 3
       }
-      if (s === "ready") {
+      if (s === "updating") {
         return 4
+      }
+      if (s === "ready") {
+        return 5
       }
     });
 

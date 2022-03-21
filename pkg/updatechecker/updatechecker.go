@@ -1,7 +1,10 @@
 package updatechecker
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/replicatedhq/troubleshoot/pkg/preflight"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"sync"
 	"time"
 
@@ -14,7 +17,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/reporting"
-	"github.com/replicatedhq/kots/pkg/store"
+	storepkg "github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -26,13 +29,14 @@ import (
 // jobs maps app ids to their cron jobs
 var jobs = make(map[string]*cron.Cron)
 var mtx sync.Mutex
+var store = storepkg.GetStore()
 
 // Start will start the update checker
 // the frequency of those update checks are app specific and can be modified by the user
 func Start() error {
 	logger.Debug("starting update checker")
 
-	appsList, err := store.GetStore().ListInstalledApps()
+	appsList, err := store.ListInstalledApps()
 	if err != nil {
 		return errors.Wrap(err, "failed to list installed apps")
 	}
@@ -55,7 +59,7 @@ func Start() error {
 // if disabled: stop the current running cron job (if exists)
 // no-op for airgap applications
 func Configure(appID string) error {
-	a, err := store.GetStore().GetApp(appID)
+	a, err := store.GetApp(appID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get app")
 	}
@@ -175,7 +179,7 @@ type UpdateCheckRelease struct {
 // otherwise, if "IsAutomatic" is set to true (which means it's an automatic update check), then the version that matches the auto deploy configuration (if enabled) will be deployed.
 // returns the number of available updates.
 func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
-	currentStatus, _, err := store.GetStore().GetTaskStatus("update-download")
+	currentStatus, _, err := store.GetTaskStatus("update-download")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get task status")
 	}
@@ -185,11 +189,11 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 		return nil, nil
 	}
 
-	if err := store.GetStore().ClearTaskStatus("update-download"); err != nil {
+	if err := store.ClearTaskStatus("update-download"); err != nil {
 		return nil, errors.Wrap(err, "failed to clear task status")
 	}
 
-	a, err := store.GetStore().GetApp(opts.AppID)
+	a, err := store.GetApp(opts.AppID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app")
 	}
@@ -201,12 +205,12 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 	}
 
 	// reload app because license sync could have created a new release
-	a, err = store.GetStore().GetApp(opts.AppID)
+	a, err = store.GetApp(opts.AppID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app")
 	}
 
-	updateCursor, versionLabel, err := store.GetStore().GetCurrentUpdateCursor(a.ID, latestLicense.Spec.ChannelID)
+	updateCursor, versionLabel, err := store.GetCurrentUpdateCursor(a.ID, latestLicense.Spec.ChannelID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get current update cursor")
 	}
@@ -234,7 +238,7 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 		return nil, errors.Wrap(err, "failed to get updates")
 	}
 
-	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
+	downstreams, err := store.ListDownstreamsForApp(a.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list downstreams for app")
 	}
@@ -244,7 +248,7 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 	d := downstreams[0]
 
 	// get app version labels and sequence numbers
-	appVersions, err := store.GetStore().GetAppVersions(opts.AppID, d.ClusterID, false)
+	appVersions, err := store.GetAppVersions(opts.AppID, d.ClusterID, false)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get app versions for app %s", opts.AppID)
 	}
@@ -284,7 +288,7 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 
 	// this is to avoid a race condition where the UI polls the task status before it is set by the goroutine
 	status := fmt.Sprintf("%d Updates available...", ucr.AvailableUpdates)
-	if err := store.GetStore().SetTaskStatus("update-download", status, "running"); err != nil {
+	if err := store.SetTaskStatus("update-download", status, "running"); err != nil {
 		return nil, errors.Wrap(err, "failed to set task status")
 	}
 
@@ -308,7 +312,7 @@ func processUpdates(opts CheckForUpdatesOpts, appID string, clusterID string, up
 		appSequence, err := upstream.DownloadUpdate(appID, update, opts.SkipPreflights, opts.SkipCompatibilityCheck)
 		if appSequence != nil {
 			// a version has been created, reset the "channel_changed" flag regardless if there was an error or not
-			if err := store.GetStore().SetAppChannelChanged(appID, false); err != nil {
+			if err := store.SetAppChannelChanged(appID, false); err != nil {
 				logger.Error(errors.Wrapf(err, "failed to reset channel changed flag"))
 			}
 		}
@@ -347,7 +351,7 @@ func ensureDesiredVersionIsDeployed(opts CheckForUpdatesOpts, clusterID string) 
 	}
 
 	if opts.IsAutomatic {
-		a, err := store.GetStore().GetApp(opts.AppID)
+		a, err := store.GetApp(opts.AppID)
 		if err != nil {
 			return errors.Wrap(err, "failed to get app")
 		}
@@ -361,7 +365,7 @@ func ensureDesiredVersionIsDeployed(opts CheckForUpdatesOpts, clusterID string) 
 }
 
 func getVersionToDeploy(opts CheckForUpdatesOpts, clusterID string, availableReleases []UpdateCheckRelease) *UpdateCheckRelease {
-	appVersions, err := store.GetStore().GetAppVersions(opts.AppID, clusterID, true)
+	appVersions, err := store.GetAppVersions(opts.AppID, clusterID, true)
 	if err != nil {
 		return nil
 	}
@@ -404,7 +408,7 @@ func getVersionToDeploy(opts CheckForUpdatesOpts, clusterID string, availableRel
 }
 
 func deployLatestVersion(opts CheckForUpdatesOpts, clusterID string) error {
-	appVersions, err := store.GetStore().GetAppVersions(opts.AppID, clusterID, true)
+	appVersions, err := store.GetAppVersions(opts.AppID, clusterID, true)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get app versions for app %s", opts.AppID)
 	}
@@ -421,7 +425,7 @@ func deployLatestVersion(opts CheckForUpdatesOpts, clusterID string) error {
 }
 
 func deployVersionLabel(opts CheckForUpdatesOpts, clusterID string, versionLabel string) error {
-	appVersions, err := store.GetStore().GetAppVersions(opts.AppID, clusterID, true)
+	appVersions, err := store.GetAppVersions(opts.AppID, clusterID, true)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get app versions for app %s", opts.AppID)
 	}
@@ -454,7 +458,7 @@ func autoDeploy(opts CheckForUpdatesOpts, clusterID string, autoDeploy apptypes.
 		return nil
 	}
 
-	appVersions, err := store.GetStore().GetAppVersions(opts.AppID, clusterID, true)
+	appVersions, err := store.GetAppVersions(opts.AppID, clusterID, true)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get app versions for app %s", opts.AppID)
 	}
@@ -513,8 +517,48 @@ func autoDeploy(opts CheckForUpdatesOpts, clusterID string, autoDeploy apptypes.
 		return nil
 	}
 
+	if err := waitForPreflightsToFinish(opts.AppID, versionToDeploy.Sequence); err != nil {
+		return errors.Wrap(err, "not able to auto-deploy due to failed preflight check")
+	}
+
 	if err := deployVersion(opts, clusterID, appVersions, versionToDeploy); err != nil {
 		return errors.Wrapf(err, "failed to deploy sequence %d with version label %s", versionToDeploy.Sequence, versionToDeploy.VersionLabel)
+	}
+
+	return nil
+}
+
+func waitForPreflightsToFinish(appID string, sequence int64) error {
+	err := wait.PollImmediate(2*time.Second, 15*time.Minute, func() (bool, error) {
+		versionStatus, err := store.GetDownstreamVersionStatus(appID, sequence)
+		if err != nil {
+			return false, errors.Wrap(err, "failed get status")
+		}
+		if versionStatus != storetypes.VersionPendingPreflight {
+			return true, nil
+		}
+		return false, nil
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to poll for preflights results")
+	}
+	// refetch latest results
+	preflightResult, err := store.GetPreflightResults(appID, sequence)
+	if err != nil {
+		return errors.Wrap(err, "failed to fetch preflight results")
+	}
+
+	if preflightResult == nil || len(preflightResult.Result) == 0 {
+		return errors.New("failed to find a preflight spec")
+	}
+
+	var parsedResults preflight.UploadPreflightResults
+	if err = json.Unmarshal([]byte(preflightResult.Result), &parsedResults); err != nil {
+		return errors.Wrap(err, "failed to parse preflight results")
+	}
+
+	if parsedResults.Errors != nil {
+		return errors.Wrap(errors.New(preflightResult.Result), "preflight errors")
 	}
 
 	return nil
@@ -530,7 +574,7 @@ func deployVersion(opts CheckForUpdatesOpts, clusterID string, appVersions *down
 			}
 		}
 		if isPastVersion {
-			allowRollback, err := store.GetStore().IsRollbackSupportedForVersion(opts.AppID, appVersions.AllVersions[0].Sequence)
+			allowRollback, err := store.IsRollbackSupportedForVersion(opts.AppID, appVersions.AllVersions[0].Sequence)
 			if err != nil {
 				return errors.Wrap(err, "failed to check if rollback is supported")
 			}
@@ -540,13 +584,13 @@ func deployVersion(opts CheckForUpdatesOpts, clusterID string, appVersions *down
 		}
 	}
 
-	downstreamSequence, err := store.GetStore().GetCurrentSequence(opts.AppID, clusterID)
+	downstreamSequence, err := store.GetCurrentSequence(opts.AppID, clusterID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get current downstream parent sequence")
 	}
 
 	if versionToDeploy.Sequence != downstreamSequence {
-		status, err := store.GetStore().GetStatusForVersion(opts.AppID, clusterID, versionToDeploy.Sequence)
+		status, err := store.GetStatusForVersion(opts.AppID, clusterID, versionToDeploy.Sequence)
 		if err != nil {
 			return errors.Wrapf(err, "failed to get status for version %d", versionToDeploy.Sequence)
 		}

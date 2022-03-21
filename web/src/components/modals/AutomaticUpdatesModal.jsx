@@ -205,11 +205,11 @@ export default class AutomaticUpdatesModal extends React.Component {
             </p>
             :
             <p className="u-fontSize--normal u-lineHeight--normal u-textColor--bodyCopy u-marginBottom--20">
-              Configure how often you would like to automatically check for updates, and whether updates should also be deployed automatically.
+              Configure how often you would like to automatically check for updates, and whether updates will be deployed automatically.
             </p>
           }
           <div className="flex-column flex1">
-            <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal">Update check frequency</p>
+            <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal">Automatically check for updates</p>
             <span className="u-fontSize--small u-marginTop--5 u-textColor--info u-marginBottom--15">Choose how frequently your application checks for updates. A custom schedule can be defined with a cron expression.</span>
             <div className="flex flex1">
               <Select
@@ -250,7 +250,7 @@ export default class AutomaticUpdatesModal extends React.Component {
             <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal">Automatically deploy new versions</p>
             { isSemverRequired ?
                 <>
-                  <span className="u-marginTop--5 u-marginBottom--15 u-fontSize--small u-textColor--info u-fontWeight--medium">Choose which versions should be automatically deployed.</span>
+                  <span className="u-marginTop--5 u-marginBottom--15 u-fontSize--small u-textColor--info u-fontWeight--medium">Choose which versions will be deployed automatically. New versions will never be deployed automatically when you manually check for updates.</span>
                   <Select
                   className="replicated-select-container flex1"
                   classNamePrefix="replicated-select"
@@ -265,7 +265,7 @@ export default class AutomaticUpdatesModal extends React.Component {
                 </>
                 :
                 <>
-                  <span className="u-marginTop--5 u-marginBottom--15 u-fontSize--small u-textColor--info u-fontWeight--medium">Choose whether you would like new releases deployed automatically.</span>
+                  <span className="u-marginTop--5 u-marginBottom--15 u-fontSize--small u-textColor--info u-fontWeight--medium">Choose whether new versions will be deployed automatically. New versions will never be deployed automatically when you manually check for updates.</span>
                   <div className="BoxedCheckbox-wrapper flex1 u-textAlign--left">
                     <div className={`flex-auto flex ${"sequence" === selectedAutoDeploy.value ? "is-active" : ""}`}>
                       <input
