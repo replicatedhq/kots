@@ -290,7 +290,7 @@ class DashboardVersionCard extends React.Component {
               <button
                 className="secondary blue btn"
                 disabled={currentVersion.status === "deploying"}
-                onClick={() => this.deployVersion(currentVersion)}
+                onClick={() => this.deployVersion(currentVersion, false, false, true)}
               >
                 {currentVersion.status === "deploying" ? "Redeploying" : "Redeploy"}
               </button>
@@ -383,7 +383,7 @@ class DashboardVersionCard extends React.Component {
     }
   }
 
-  deployVersion = (version, force = false, continueWithFailedPreflights = false) => {
+  deployVersion = (version, force = false, continueWithFailedPreflights = false, redeploy = false) => {
     const { app } = this.props;
     const clusterSlug = app.downstreams?.length && app.downstreams[0].cluster?.slug;
     if (!clusterSlug) {
@@ -426,24 +426,29 @@ class DashboardVersionCard extends React.Component {
       this.setState({
         displayConfirmDeploymentModal: true,
         versionToDeploy: version,
+        isRedeploy: true
       });
       return;
     } else { // force deploy is set to true so finalize the deployment
-      this.finalizeDeployment(continueWithFailedPreflights);
+      this.finalizeDeployment(continueWithFailedPreflights, redeploy);
     }
   }
 
-  finalizeDeployment = async (continueWithFailedPreflights) => {
+  finalizeDeployment = async (continueWithFailedPreflights, redeploy) => {
     const { match } = this.props;
     const { versionToDeploy, isSkipPreflights } = this.state;
     this.setState({ displayConfirmDeploymentModal: false, confirmType: "" });
+    if (redeploy) {
+      await this.props.redeployVersion(match.params.slug, versionToDeploy);
+    }
     await this.props.makeCurrentVersion(match.params.slug, versionToDeploy, isSkipPreflights, continueWithFailedPreflights);
-    this.setState({ versionToDeploy: null });
+    this.setState({ versionToDeploy: null, isRedeploy: false });
 
     if (this.props.refetchData) {
       this.props.refetchData();
     }
   }
+  
 
   onForceDeployClick = (continueWithFailedPreflights = false) => {
     this.setState({ showSkipModal: false, showDeployWarningModal: false, displayShowDetailsModal: false });
@@ -1078,16 +1083,16 @@ class DashboardVersionCard extends React.Component {
           {this.state.displayConfirmDeploymentModal &&
             <Modal
               isOpen={true}
-              onRequestClose={() => this.setState({ displayConfirmDeploymentModal: false, versionToDeploy: null })}
+              onRequestClose={() => this.setState({ displayConfirmDeploymentModal: false, versionToDeploy: null, isRedeploy: false })}
               contentLabel="Confirm deployment"
               ariaHideApp={false}
               className="Modal DefaultSize"
             >
               <div className="Modal-body">
-                <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">Deploy {this.state.versionToDeploy?.versionLabel} (Sequence {this.state.versionToDeploy?.sequence})?</p>
+                <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">{this.state.isRedeploy ? "Redeploy" : "Deploy"} {this.state.versionToDeploy?.versionLabel} (Sequence {this.state.versionToDeploy?.sequence})?</p>
                 <div className="flex u-paddingTop--10">
-                  <button className="btn secondary blue" onClick={() => this.setState({ displayConfirmDeploymentModal: false, versionToDeploy: null })}>Cancel</button>
-                  <button className="u-marginLeft--10 btn primary" onClick={() => this.finalizeDeployment(false)}>Yes, deploy</button>
+                  <button className="btn secondary blue" onClick={() => this.setState({ displayConfirmDeploymentModal: false, versionToDeploy: null, isRedeploy: false })}>Cancel</button>
+                  <button className="u-marginLeft--10 btn primary" onClick={() => this.finalizeDeployment(false, this.state.isRedeploy)}>Yes, {this.state.isRedeploy ? "Redeploy" : "deploy"}</button>
                 </div>
               </div>
             </Modal>
