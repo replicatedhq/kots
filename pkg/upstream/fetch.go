@@ -70,9 +70,7 @@ func downloadUpstream(upstreamURI string, fetchOptions *types.FetchOptions) (*ty
 
 func pickVersionIsRequired(fetchOptions *types.FetchOptions) bool {
 	if fetchOptions.Airgap != nil {
-		// TODO @dmitriy? :)
-		// return fetchOptions.Airgap.Spec.IsRequired
-		return false
+		return fetchOptions.Airgap.Spec.IsRequired
 	}
 	return fetchOptions.CurrentVersionIsRequired
 }
