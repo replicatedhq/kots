@@ -1049,50 +1049,6 @@ class AppVersionHistory extends Component {
     )
   }
 
-  getRequiredVersionsForVersion = version => {
-    const { app } = this.props;
-    const { versionHistory } = this.state;
-
-    const downstream = app.downstreams?.length && app.downstreams[0];
-    const deployedVersion = downstream?.currentVersion;
-
-    const versionIndex = findIndex(versionHistory, v => v.sequence === version.sequence);
-    const deployedVersionIndex = findIndex(versionHistory, v => v.sequence === deployedVersion?.sequence);
-
-    if (deployedVersionIndex === -1) {
-      // no version has been deployed yet, treat as an initial install where any version can be deployed at first.
-      return [];
-    }
-
-    if (versionIndex === deployedVersionIndex) {
-      // version is currently deployed, so previous required versions should've already been deployed.
-      // also, we shouldn't block re-deploying if a previous release is edited later by the vendor to be required.
-      return [];
-    }
-
-    if (versionIndex > deployedVersionIndex) {
-      // version is a past version
-      return [];
-    }
-
-    // find required versions between the currently deployed version and the desired version
-    const requiredVersions = [];
-    for (let i = 0; i < versionHistory.length; i++) {
-      if (i <= versionIndex) {
-        continue;
-      }
-      if (i == deployedVersionIndex) {
-        break;
-      }
-      const v = versionHistory[i];
-      if (v.isRequired) {
-        requiredVersions.push(v);
-      }
-    }
-
-    return requiredVersions;
-  }
-
   renderAppVersionHistoryRow = version => {
     if (this.state.selectedDiffReleases && version.status === "pending_download") {
       // non-downloaded versions can't be diffed
@@ -1105,7 +1061,6 @@ class AppVersionHistory extends Component {
     const yamlErrorsDetails = this.yamlErrorsDetails(downstream, version);
     const isChecked = !!this.state.checkedReleasesToDiff.find(diffRelease => diffRelease.parentSequence === version.parentSequence);
     const isNew = secondsAgo(version.createdOn) < 10;
-    const requiredVersions = this.getRequiredVersionsForVersion(version);
 
     return (
       <AppVersionHistoryRow
@@ -1114,7 +1069,6 @@ class AppVersionHistory extends Component {
         match={this.props.match}
         history={this.props.history}
         version={version}
-        requiredVersions={requiredVersions}
         selectedDiffReleases={this.state.selectedDiffReleases}
         nothingToCommit={nothingToCommit}
         isChecked={isChecked}

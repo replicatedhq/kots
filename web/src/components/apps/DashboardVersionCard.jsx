@@ -555,7 +555,6 @@ class DashboardVersionCard extends React.Component {
     const isSecondaryActionBtn = needsConfiguration || isPendingDownload;
     const isDeploying = version.status === "deploying";
     const isDownloading = this.state.versionDownloadStatuses?.[version.sequence]?.downloadingVersion;
-    const blockDeployment = downstream.pendingVersions[0]?.hasFailingStrictPreflights;
 
     return (
       <div className="flex flex1 alignItems--center justifyContent--flexEnd">
@@ -565,7 +564,7 @@ class DashboardVersionCard extends React.Component {
         <div className="flex-column justifyContent--center u-marginLeft--10">
           <button
             className={classNames("btn", { "secondary blue": isSecondaryActionBtn, "primary blue": !isSecondaryActionBtn })}
-            disabled={isDeploying || isDownloading || blockDeployment}
+            disabled={isDeploying || isDownloading || !version.isDeployable}
             onClick={() => {
               if (needsConfiguration) {
                 this.props.history.push(`/app/${app?.slug}/config/${version.sequence}`);
@@ -583,14 +582,15 @@ class DashboardVersionCard extends React.Component {
             }}
           >
             <span
-              data-tip-disable={!blockDeployment}
-              data-tip="Deployment is disabled as a strict analyzer in this version's preflight checks has failed or has not been run"
+              key={version.nonDeployableCause}
+              data-tip-disable={version.isDeployable}
+              data-tip={version.nonDeployableCause}
               data-for="disable-deployment-tooltip"
             >
               {this.actionButtonStatus(version)}
+              <ReactTooltip effect="solid" id="disable-deployment-tooltip" />
             </span>
           </button>
-          <ReactTooltip effect="solid" id="disable-deployment-tooltip" />
         </div>
       </div>
     );
