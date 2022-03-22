@@ -610,8 +610,8 @@ func (s *OCIStore) GetNextAppSequence(appID string) (int64, error) {
 	return maxSequence + 1, nil
 }
 
-func (s *OCIStore) GetCurrentUpdateCursor(appID string, channelID string) (string, string, error) {
-	return "", "", ErrNotImplemented
+func (s *OCIStore) GetCurrentUpdateCursor(appID string, channelID string) (string, string, bool, error) {
+	return "", "", false, ErrNotImplemented
 }
 
 func (s *OCIStore) HasStrictPreflights(appID string, sequence int64) (bool, error) {

@@ -595,11 +595,12 @@ func isAppVersionDeployable(version *downstreamtypes.DownstreamVersion, appVersi
 
 	// find required versions between the deployed version and the desired version
 	requiredVersions := []*downstreamtypes.DownstreamVersion{}
+ALL_VERSIONS_LOOP:
 	for i, v := range allVersions {
 		if !v.IsRequired {
 			continue
 		}
-		if v.Cursor == version.Cursor {
+		if v.ChannelID == version.ChannelID && v.Cursor == version.Cursor {
 			// variants of the same upstream release don't block each other
 			continue
 		}
@@ -612,6 +613,17 @@ func isAppVersionDeployable(version *downstreamtypes.DownstreamVersion, appVersi
 			continue
 		}
 		// this is a pending version
+		if v.ChannelID == appVersions.CurrentVersion.ChannelID && v.Cursor == appVersions.CurrentVersion.Cursor {
+			// variants of the deployed upstream release are not required
+			continue
+		}
+		for _, r := range requiredVersions {
+			// variants of the same upstream release are only required once
+			// since the list is sorted in descending order, the latest variant (highest sequence) will be added first
+			if r.ChannelID == v.ChannelID && r.Cursor == v.Cursor {
+				continue ALL_VERSIONS_LOOP
+			}
+		}
 		if i > versionIndex && i < deployedVersionIndex {
 			requiredVersions = append(requiredVersions, v)
 		}
@@ -620,7 +632,7 @@ func isAppVersionDeployable(version *downstreamtypes.DownstreamVersion, appVersi
 	if len(requiredVersions) > 0 {
 		versionLabels := []string{}
 		for _, v := range requiredVersions {
-			versionLabels = append(versionLabels, v.VersionLabel)
+			versionLabels = append([]string{v.VersionLabel}, versionLabels...)
 		}
 		versionLabelsStr := strings.Join(versionLabels, ", ")
 		if len(requiredVersions) == 1 {

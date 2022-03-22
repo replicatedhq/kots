@@ -48,6 +48,7 @@ func downloadUpstream(upstreamURI string, fetchOptions *types.FetchOptions) (*ty
 			fetchOptions.IdentityConfig,
 			pickCursor(fetchOptions),
 			pickVersionLabel(fetchOptions),
+			pickVersionIsRequired(fetchOptions),
 			fetchOptions.AppSlug,
 			fetchOptions.AppSequence,
 			fetchOptions.Airgap != nil,
@@ -65,6 +66,15 @@ func downloadUpstream(upstreamURI string, fetchOptions *types.FetchOptions) (*ty
 	}
 
 	return nil, errors.Errorf("unknown protocol scheme %q", u.Scheme)
+}
+
+func pickVersionIsRequired(fetchOptions *types.FetchOptions) bool {
+	if fetchOptions.Airgap != nil {
+		// TODO @dmitriy? :)
+		// return fetchOptions.Airgap.Spec.IsRequired
+		return false
+	}
+	return fetchOptions.CurrentVersionIsRequired
 }
 
 func pickVersionLabel(fetchOptions *types.FetchOptions) string {

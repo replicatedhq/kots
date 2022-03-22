@@ -1007,24 +1007,25 @@ func (s *KOTSStore) getNextAppSequence(db queryable, appID string) (int64, error
 	return newSequence, nil
 }
 
-func (s *KOTSStore) GetCurrentUpdateCursor(appID string, channelID string) (string, string, error) {
+func (s *KOTSStore) GetCurrentUpdateCursor(appID string, channelID string) (string, string, bool, error) {
 	db := persistence.MustGetDBSession()
-	query := `SELECT update_cursor, version_label FROM app_version WHERE app_id = $1 AND channel_id = $2 AND update_cursor::INT IN (
+	query := `SELECT update_cursor, version_label, is_required FROM app_version WHERE app_id = $1 AND channel_id = $2 AND update_cursor::INT IN (
 		SELECT MAX(update_cursor::INT) FROM app_version WHERE app_id = $1 AND channel_id = $2
 	) ORDER BY sequence DESC LIMIT 1`
 	row := db.QueryRow(query, appID, channelID)
 
 	var updateCursor sql.NullString
 	var versionLabel sql.NullString
+	var isRequired sql.NullBool
 
-	if err := row.Scan(&updateCursor, &versionLabel); err != nil {
+	if err := row.Scan(&updateCursor, &versionLabel, &isRequired); err != nil {
 		if err == sql.ErrNoRows {
-			return "", "", nil
+			return "", "", false, nil
 		}
-		return "", "", errors.Wrap(err, "failed to scan")
+		return "", "", false, errors.Wrap(err, "failed to scan")
 	}
 
-	return updateCursor.String, versionLabel.String, nil
+	return updateCursor.String, versionLabel.String, isRequired.Bool, nil
 }
 
 func (s *KOTSStore) HasStrictPreflights(appID string, sequence int64) (bool, error) {

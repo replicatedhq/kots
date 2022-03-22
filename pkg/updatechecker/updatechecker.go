@@ -206,7 +206,7 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 		return nil, errors.Wrap(err, "failed to get app")
 	}
 
-	updateCursor, versionLabel, err := store.GetStore().GetCurrentUpdateCursor(a.ID, latestLicense.Spec.ChannelID)
+	updateCursor, versionLabel, isRequired, err := store.GetStore().GetCurrentUpdateCursor(a.ID, latestLicense.Spec.ChannelID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get current update cursor")
 	}
@@ -217,15 +217,16 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 	}
 
 	getUpdatesOptions := kotspull.GetUpdatesOptions{
-		License:             latestLicense,
-		LastUpdateCheckAt:   lastUpdateCheckAt,
-		CurrentCursor:       updateCursor,
-		CurrentChannelID:    latestLicense.Spec.ChannelID,
-		CurrentChannelName:  latestLicense.Spec.ChannelName,
-		CurrentVersionLabel: versionLabel,
-		ChannelChanged:      a.ChannelChanged,
-		Silent:              false,
-		ReportingInfo:       reporting.GetReportingInfo(a.ID),
+		License:                  latestLicense,
+		LastUpdateCheckAt:        lastUpdateCheckAt,
+		CurrentCursor:            updateCursor,
+		CurrentChannelID:         latestLicense.Spec.ChannelID,
+		CurrentChannelName:       latestLicense.Spec.ChannelName,
+		CurrentVersionLabel:      versionLabel,
+		CurrentVersionIsRequired: isRequired,
+		ChannelChanged:           a.ChannelChanged,
+		Silent:                   false,
+		ReportingInfo:            reporting.GetReportingInfo(a.ID),
 	}
 
 	// get updates
