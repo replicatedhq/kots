@@ -178,8 +178,8 @@ export default class DashboardGraphsCard extends React.Component {
     }
 
     return (
-      <div className="dashboard-card graph GraphCard-content--wrapper flex-column flex1" key={chart.title}>
-        <XYPlot width={360} height={180} onMouseLeave={() => this.setState({ crosshairValues: [] })} margin={{ left: 60 }}>
+      <div className="dashboard-card graph GraphCard-content--wrapper flex-column" key={chart.title}>
+        <XYPlot width={344} height={180} onMouseLeave={() => this.setState({ crosshairValues: [] })} margin={{ left: 60 }}>
           <VerticalGridLines />
           <HorizontalGridLines />
           <XAxis tickFormat={v => `${dayjs.unix(v).format("H:mm")}`} style={axisStyle} />
@@ -238,10 +238,8 @@ export default class DashboardGraphsCard extends React.Component {
           </div>
         </div>
         {prometheusAddress ?
-          <div className="u-marginTop--10">
-            <div className="flex flex1">
-              {metrics.map(this.renderGraph)}
-            </div>
+          <div className="Graphs-wrapper">
+            {metrics.map(this.renderGraph)}
           </div>
           :
           <div className="flex flex1 justifyContent--center u-paddingTop--50 u-paddingBottom--50 u-position--relative">
