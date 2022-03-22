@@ -1047,6 +1047,22 @@ func (mr *MockStoreMockRecorder) Init() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockStore)(nil).Init))
 }
 
+// IsAppVersionDeployable mocks base method.
+func (m *MockStore) IsAppVersionDeployable(appID string, sequence int64) (bool, string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsAppVersionDeployable", appID, sequence)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(string)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// IsAppVersionDeployable indicates an expected call of IsAppVersionDeployable.
+func (mr *MockStoreMockRecorder) IsAppVersionDeployable(appID, sequence interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsAppVersionDeployable", reflect.TypeOf((*MockStore)(nil).IsAppVersionDeployable), appID, sequence)
+}
+
 // IsDownstreamDeploySuccessful mocks base method.
 func (m *MockStore) IsDownstreamDeploySuccessful(appID, clusterID string, sequence int64) (bool, error) {
 	m.ctrl.T.Helper()
@@ -3073,6 +3089,22 @@ func (m *MockDownstreamStore) GetStatusForVersion(appID, clusterID string, seque
 func (mr *MockDownstreamStoreMockRecorder) GetStatusForVersion(appID, clusterID, sequence interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStatusForVersion", reflect.TypeOf((*MockDownstreamStore)(nil).GetStatusForVersion), appID, clusterID, sequence)
+}
+
+// IsAppVersionDeployable mocks base method.
+func (m *MockDownstreamStore) IsAppVersionDeployable(appID string, sequence int64) (bool, string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsAppVersionDeployable", appID, sequence)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(string)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// IsAppVersionDeployable indicates an expected call of IsAppVersionDeployable.
+func (mr *MockDownstreamStoreMockRecorder) IsAppVersionDeployable(appID, sequence interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsAppVersionDeployable", reflect.TypeOf((*MockDownstreamStore)(nil).IsAppVersionDeployable), appID, sequence)
 }
 
 // IsDownstreamDeploySuccessful mocks base method.

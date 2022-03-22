@@ -80,33 +80,7 @@ function renderReleaseNotes(version, showReleaseNotes) {
   );
 }
 
-// even if the application allows rollbacks, rolling back should be blocked if a more recent required version has been deployed
-function blockRollback(app, version) {
-  const downstream = app.downstreams?.length && app.downstreams[0];
-
-  const isPastVersion = find(downstream?.pastVersions, { sequence: version.sequence });
-  if (!isPastVersion) {
-    return false;
-  }
-
-  if (downstream?.currentVersion?.isRequired) {
-    // the deployed version is required, don't allow rolling back
-    return true;
-  }
-
-  // if there are any intermediate required versions, don't allow rolling back
-  for (const v of downstream?.pastVersions) {
-    if (v.sequence === version.sequence) {
-      break;
-    }
-    if (v.isRequired) {
-      return true;
-    }
-  }
-  return false;
-}
-
-function renderVersionAction(version, nothingToCommitDiff, app, history, actionFn, showReleaseNotes, viewLogs, isDownloading, adminConsoleMetadata, requiredVersions) {
+function renderVersionAction(version, nothingToCommitDiff, app, history, actionFn, showReleaseNotes, viewLogs, isDownloading, adminConsoleMetadata) {
   const downstream = app.downstreams[0];
 
   if (version.status === "pending_download") {
@@ -160,13 +134,14 @@ function renderVersionAction(version, nothingToCommitDiff, app, history, actionF
   const isSecondaryBtn = isPastVersion || needsConfiguration || isRedeploy && !isRollback;
   const isPrimaryButton = !isSecondaryBtn && !isRedeploy && !isRollback;
   const editableConfig = isCurrentVersion || isLatestVersion || isPendingVersion?.semver;
-  const blockDeployment = version.hasFailingStrictPreflights || requiredVersions?.length || blockRollback(app, version);
+
   let tooltipTip;
   if (editableConfig) {
     tooltipTip = "Edit config";
   } else {
     tooltipTip = "View config"
   }
+
   const preflightState = getPreflightState(version);
   let checksStatusText;
   if (preflightState.preflightsFailed) {
@@ -174,6 +149,7 @@ function renderVersionAction(version, nothingToCommitDiff, app, history, actionF
   } else if (preflightState.preflightState === "warn") {
     checksStatusText = "Checks passed with warnings"
   }
+
   return (
     <div className="flex flex1 justifyContent--flexEnd alignItems--center">
       {renderReleaseNotes(version, showReleaseNotes)}
@@ -216,32 +192,23 @@ function renderVersionAction(version, nothingToCommitDiff, app, history, actionF
         <div className="flex alignItems--center">
           <button
             className={classNames("btn u-marginLeft--10", { "secondary dark": isRollback, "secondary blue": isSecondaryBtn, "primary blue": isPrimaryButton })}
-            disabled={version.status === "deploying" || blockDeployment}
+            disabled={version.status === "deploying" || !version.isDeployable}
             onClick={() => needsConfiguration ? history.push(`/app/${app.slug}/config/${version.sequence}`) : isRollback ? actionFn(version, true) : actionFn(version)}
           >
             <span
-              data-tip-disable={!blockDeployment}
-              data-tip={disableDeploymentTooltipText(app, version, requiredVersions)}
+              key={version.nonDeployableCause}
+              data-tip-disable={version.isDeployable}
+              data-tip={version.nonDeployableCause}
               data-for="disable-deployment-tooltip"
             >
               {deployButtonStatus(downstream, version, app, adminConsoleMetadata)}
+              <ReactTooltip effect="solid" id="disable-deployment-tooltip" />
             </span>
           </button>
-          <ReactTooltip effect="solid" id="disable-deployment-tooltip" />
         </div>
       }
     </div>
   );
-}
-
-function disableDeploymentTooltipText(app, version, requiredVersions) {
-  if (blockRollback(app, version)) {
-    return "One or more non-reversible versions have been deployed since this version."
-  }
-  if (requiredVersions?.length) {
-    return `This version cannot be deployed because version${requiredVersions?.length > 1 ? "s" : ""} ${requiredVersions.map(v => v.versionLabel).join(", ")} ${requiredVersions?.length > 1 ? "are" : "is"} required and must be deployed first.`
-  }
-  return "Deployment is disabled as a strict analyzer in this version's preflight checks has failed or has not been run.";
 }
 
 function renderViewPreflights(version, app, match) {
@@ -371,7 +338,7 @@ export default function AppVersionHistoryRow(props) {
           <div className="flex flex-auto u-marginTop--10"> {gitopsEnabled && version.status !== "pending_download" ? renderViewPreflights(version, props.app, props.match) : renderVersionStatus(version, props.app, props.handleViewLogs)}</div>
         </div>
         <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex-auto alignItems--flexEnd justifyContent--center`}>
-          {renderVersionAction(version, nothingToCommit && selectedDiffReleases, props.app, props.history, actionFn, props.showReleaseNotes, props.handleViewLogs, isDownloading, props.adminConsoleMetadata, props.requiredVersions)}
+          {renderVersionAction(version, nothingToCommit && selectedDiffReleases, props.app, props.history, actionFn, props.showReleaseNotes, props.handleViewLogs, isDownloading, props.adminConsoleMetadata)}
         </div>
       </div>
       {renderVersionDownloadStatus(version)}
