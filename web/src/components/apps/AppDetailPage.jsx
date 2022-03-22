@@ -353,6 +353,8 @@ class AppDetailPage extends Component {
                         onActiveInitSession={this.props.onActiveInitSession}
                         toggleIsBundleUploading={this.toggleIsBundleUploading}
                         makeCurrentVersion={this.makeCurrentRelease}
+                        redeployVersion={this.redeployVersion}
+                        redeployVersionErrMsg={this.state.redeployVersionErrMsg}
                         isBundleUploading={isBundleUploading}
                         isVeleroInstalled={isVeleroInstalled}
                         refreshAppData={this.getApp}
