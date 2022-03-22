@@ -103,12 +103,12 @@ func getUpdatesReplicated(u *url.URL, fetchOptions *types.FetchOptions) ([]types
 	}
 
 	if fetchOptions.LocalPath != "" {
-		parsedLocalRelease, err := readReplicatedAppFromLocalPath(fetchOptions.LocalPath, currentCursor, fetchOptions.CurrentVersionLabel)
+		parsedLocalRelease, err := readReplicatedAppFromLocalPath(fetchOptions.LocalPath, currentCursor, fetchOptions.CurrentVersionLabel, fetchOptions.CurrentVersionIsRequired)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to read replicated app from local path")
 		}
 
-		return []types.Update{{Cursor: parsedLocalRelease.UpdateCursor.Cursor, VersionLabel: fetchOptions.CurrentVersionLabel}}, nil
+		return []types.Update{{Cursor: parsedLocalRelease.UpdateCursor.Cursor, VersionLabel: parsedLocalRelease.VersionLabel, IsRequired: parsedLocalRelease.IsRequired}}, nil
 	}
 
 	// A license file is required to be set for this to succeed
@@ -160,6 +160,7 @@ func downloadReplicated(
 	existingIdentityConfig *kotsv1beta1.IdentityConfig,
 	updateCursor ReplicatedCursor,
 	versionLabel string,
+	isRequired bool,
 	appSlug string,
 	appSequence int64,
 	isAirgap bool,
@@ -171,7 +172,7 @@ func downloadReplicated(
 	var release *Release
 
 	if localPath != "" {
-		parsedLocalRelease, err := readReplicatedAppFromLocalPath(localPath, updateCursor, versionLabel)
+		parsedLocalRelease, err := readReplicatedAppFromLocalPath(localPath, updateCursor, versionLabel, isRequired)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to read replicated app from local path")
 		}
@@ -429,11 +430,12 @@ func getSuccessfulHeadResponse(replicatedUpstream *ReplicatedUpstream, license *
 	return nil
 }
 
-func readReplicatedAppFromLocalPath(localPath string, localCursor ReplicatedCursor, versionLabel string) (*Release, error) {
+func readReplicatedAppFromLocalPath(localPath string, localCursor ReplicatedCursor, versionLabel string, isRequired bool) (*Release, error) {
 	release := Release{
 		Manifests:    make(map[string][]byte),
 		UpdateCursor: localCursor,
 		VersionLabel: versionLabel,
+		IsRequired:   isRequired,
 	}
 
 	err := filepath.Walk(localPath,
