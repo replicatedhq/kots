@@ -22,6 +22,7 @@ type Downstream struct {
 type DownstreamVersion struct {
 	VersionLabel               string                             `json:"versionLabel"`
 	Semver                     *semver.Version                    `json:"semver,omitempty"`
+	ChannelID                  string                             `json:"channelId"`
 	IsRequired                 bool                               `json:"isRequired"`
 	Status                     storetypes.DownstreamVersionStatus `json:"status"`
 	CreatedOn                  *time.Time                         `json:"createdOn"`

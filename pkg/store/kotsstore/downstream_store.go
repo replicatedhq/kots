@@ -169,7 +169,7 @@ func (s *KOTSStore) GetIgnoreRBACErrors(appID string, sequence int64) (bool, err
 }
 
 func (s *KOTSStore) GetLatestDownstreamVersion(appID string, clusterID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersion, error) {
-	downstreamVersions, err := s.GetAppVersions(appID, clusterID, downloadedOnly)
+	downstreamVersions, err := s.GetDownstreamVersions(appID, clusterID, downloadedOnly)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find app versions")
 	}
@@ -258,7 +258,7 @@ func (s *KOTSStore) GetStatusForVersion(appID string, clusterID string, sequence
 	return types.DownstreamVersionStatus(versionStatus), nil
 }
 
-func (s *KOTSStore) GetAppVersions(appID string, clusterID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error) {
+func (s *KOTSStore) GetDownstreamVersions(appID string, clusterID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error) {
 	currentVersion, err := s.GetCurrentVersion(appID, clusterID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get current version")
@@ -367,7 +367,7 @@ func (s *KOTSStore) FindAppVersions(appID string, downloadedOnly bool) (*downstr
 
 	for _, d := range downstreams {
 		clusterID := d.ClusterID
-		downstreamVersions, err := s.GetAppVersions(appID, clusterID, downloadedOnly)
+		downstreamVersions, err := s.GetDownstreamVersions(appID, clusterID, downloadedOnly)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get downstream versions for cluster %s", clusterID)
 		}
