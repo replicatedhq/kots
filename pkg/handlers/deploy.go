@@ -97,7 +97,7 @@ func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	versions, err := store.GetStore().GetAppVersions(a.ID, downstreams[0].ClusterID, true)
+	versions, err := store.GetStore().GetDownstreamVersions(a.ID, downstreams[0].ClusterID, true)
 	if err != nil {
 		errMsg := "failed to get app versions"
 		logger.Error(errors.Wrap(err, errMsg))

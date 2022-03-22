@@ -111,7 +111,7 @@ func DeleteUnusedImages(appID string, ignoreRollback bool) error {
 		}
 
 		for _, d := range downstreams {
-			downstreamVersions, err := store.GetStore().GetAppVersions(a.ID, d.ClusterID, false)
+			downstreamVersions, err := store.GetStore().GetDownstreamVersions(a.ID, d.ClusterID, false)
 			if err != nil {
 				return errors.Wrapf(err, "failed to get app versions for downstream %s", d.ClusterID)
 			}

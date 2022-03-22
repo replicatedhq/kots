@@ -148,9 +148,9 @@ type DownstreamStore interface {
 	GetLatestDownstreamVersion(appID string, clusterID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersion, error)
 	GetCurrentVersion(appID string, clusterID string) (*downstreamtypes.DownstreamVersion, error)
 	GetStatusForVersion(appID string, clusterID string, sequence int64) (types.DownstreamVersionStatus, error)
-	// GetAppVersions returns a sorted list of app releases. The sort order is determined by semver being enabled in the license.
-	GetAppVersions(appID string, clusterID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error)
-	// Same as GetAppVersions, but finds a cluster where app is deployed
+	// GetDownstreamVersions returns a sorted list of app releases. The sort order is determined by semver being enabled in the license.
+	GetDownstreamVersions(appID string, clusterID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error)
+	// Same as GetDownstreamVersions, but finds a cluster where app is deployed
 	FindAppVersions(appID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error)
 	GetDownstreamOutput(appID string, clusterID string, sequence int64) (*downstreamtypes.DownstreamOutput, error)
 	IsDownstreamDeploySuccessful(appID string, clusterID string, sequence int64) (bool, error)
@@ -183,6 +183,7 @@ type VersionStore interface {
 	UpdateAppVersion(appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) error
 	CreateAppVersion(appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error)
 	GetAppVersion(appID string, sequence int64) (*versiontypes.AppVersion, error)
+	GetAppVersions(appID string) ([]*versiontypes.AppVersion, error)
 	GetLatestAppVersion(appID string, downloadedOnly bool) (*versiontypes.AppVersion, error)
 	UpdateNextAppVersionDiffSummary(appID string, baseSequence int64) error
 	UpdateAppVersionInstallationSpec(appID string, sequence int64, spec kotsv1beta1.Installation) error
