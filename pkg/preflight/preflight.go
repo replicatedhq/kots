@@ -163,7 +163,7 @@ func maybeDeployFirstVersion(appID string, sequence int64, preflightResults *tro
 		return false, nil
 	}
 
-	preflightState := getPreflightState(preflightResults)
+	preflightState := GetPreflightState(preflightResults)
 	if preflightState != "pass" {
 		return false, nil
 	}
@@ -181,7 +181,7 @@ func maybeDeployFirstVersion(appID string, sequence int64, preflightResults *tro
 	return true, nil
 }
 
-func getPreflightState(preflightResults *troubleshootpreflight.UploadPreflightResults) string {
+func GetPreflightState(preflightResults *troubleshootpreflight.UploadPreflightResults) string {
 	if len(preflightResults.Errors) > 0 {
 		return "fail"
 	}
