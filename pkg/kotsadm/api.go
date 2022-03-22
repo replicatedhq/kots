@@ -36,7 +36,7 @@ func removeNodeAPI(deployOptions *types.DeployOptions, clientset *kubernetes.Cli
 
 // removeNodeAPIRBAC should be removable when we don't need to support direct upgrade paths from 1.19.6 and before
 func removeNodeAPIRBAC(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
-	isClusterScoped, err := isKotsadmClusterScoped(deployOptions.ApplicationMetadata)
+	isClusterScoped, err := isKotsadmClusterScoped(deployOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to check if kotsadm api is cluster scoped")
 	}

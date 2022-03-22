@@ -47,6 +47,7 @@ type DeployOptions struct {
 	SkipCompatibilityCheck    bool
 	EnsureRBAC                bool
 	SkipRBACCheck             bool
+	UseMinimalRBAC            bool
 	StrictSecurityContext     bool
 	InstallID                 string
 	SimultaneousUploads       int

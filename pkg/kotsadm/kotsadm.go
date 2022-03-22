@@ -202,7 +202,7 @@ func ensureKotsadmComponent(deployOptions *types.DeployOptions, clientset *kuber
 }
 
 func ensureKotsadmRBAC(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
-	isClusterScoped, err := isKotsadmClusterScoped(deployOptions.ApplicationMetadata)
+	isClusterScoped, err := isKotsadmClusterScoped(&deployOptions)
 	if err != nil {
 		return errors.Wrap(err, "failed to check if kotsadm is cluster scoped")
 	}
@@ -427,13 +427,13 @@ func updateKotsadmService(existing, desiredService *corev1.Service) *corev1.Serv
 
 // isKotsadmClusterScoped determines if the kotsadm pod should be running
 // with cluster-wide permissions or not
-func isKotsadmClusterScoped(applicationMetadata []byte) (bool, error) {
-	if len(applicationMetadata) == 0 {
+func isKotsadmClusterScoped(deployOptions *types.DeployOptions) (bool, error) {
+	if len(deployOptions.ApplicationMetadata) == 0 {
 		return true, nil
 	}
 
 	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, gvk, err := decode(applicationMetadata, nil, nil)
+	obj, gvk, err := decode(deployOptions.ApplicationMetadata, nil, nil)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to decode application metadata")
 	}
@@ -443,6 +443,10 @@ func isKotsadmClusterScoped(applicationMetadata []byte) (bool, error) {
 	}
 
 	application := obj.(*kotsv1beta1.Application)
+
+	if deployOptions.UseMinimalRBAC && application.Spec.SupportMinimalRBACPrivileges {
+		return false, nil
+	}
 
 	// An application can request cluster scope privileges quite simply
 	if !application.Spec.RequireMinimalRBACPrivileges {

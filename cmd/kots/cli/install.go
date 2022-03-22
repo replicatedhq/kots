@@ -229,6 +229,7 @@ func InstallCmd() *cobra.Command {
 				AppVersionLabel:           v.GetString("app-version-label"),
 				EnsureRBAC:                v.GetBool("ensure-rbac"),
 				SkipRBACCheck:             v.GetBool("skip-rbac-check"),
+				UseMinimalRBAC:            v.GetBool("use-minimal-rbac"),
 				InstallID:                 m.InstallID,
 				SimultaneousUploads:       simultaneousUploads,
 				DisableImagePush:          v.GetBool("disable-image-push"),
@@ -456,6 +457,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().MarkHidden("storage-base-uri-plainhttp")
 
 	cmd.Flags().Bool("ensure-rbac", true, "when set, kots will create the roles and rolebindings necessary to manage applications")
+	cmd.Flags().Bool("use-minimal-rbac", false, "when set, kots will be namespace scoped if application supports namespace scoped installations")
 
 	cmd.Flags().String("airgap-upload-parallelism", "", "the number of chunks to upload in parallel when installing or updating in airgap mode")
 	cmd.Flags().MarkHidden("airgap-upload-parallelism")

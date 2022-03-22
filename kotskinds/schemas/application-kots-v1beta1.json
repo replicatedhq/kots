@@ -139,6 +139,9 @@
             "type": "string"
           }
         },
+        "supportMinimalRBACPrivileges": {
+          "type": "boolean"
+        },
         "targetKotsVersion": {
           "type": "string"
         },
