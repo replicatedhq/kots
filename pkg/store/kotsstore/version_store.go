@@ -33,6 +33,7 @@ import (
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
+	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -548,8 +549,7 @@ func (s *KOTSStore) upsertAppVersion(tx *sql.Tx, appID string, sequence int64, b
 	for _, d := range downstreams {
 		// there's a small chance this is not optimal, but no current code path
 		// will support multiple downstreams, so this is cleaner here for now
-
-		hasStrictPreflights, err := kotsutil.HasStrictPreflights(renderedPreflight)
+		hasStrictPreflights, err := troubleshootpreflight.HasStrictAnalyzers(renderedPreflight)
 		if err != nil {
 			return errors.Wrap(err, "failed to check strict preflights from spec")
 		}
