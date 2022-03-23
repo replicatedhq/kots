@@ -358,6 +358,27 @@ jobs:
           fi
           exit $EXIT_CODE
 
+      - name: Generate support bundle on failure
+        if: failure()
+        env:
+          # aws replicated dev account e2e-kots-support-bundle user
+          AWS_ACCESS_KEY_ID: ${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+          KOTS_NAMESPACE: smoke-test
+        run: |
+          RELEASE="$(
+            curl -sfL https://api.github.com/repos/replicatedhq/troubleshoot/releases/latest | \
+            grep '"tag_name":' | \
+            sed -E 's/.*"(v[^"]+)".*/\1/'
+          )"
+          curl -fsLO "https://github.com/replicatedhq/troubleshoot/releases/download/${RELEASE}/support-bundle_linux_amd64.tar.gz"
+          tar xzf support-bundle_linux_amd64.tar.gz
+          ./support-bundle -n "${KOTS_NAMESPACE}" https://kots.io
+          BUNDLE="$(ls -1 | grep 'support-bundle-.*.tar.gz')"
+          aws s3 cp "${BUNDLE}" "s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
+          echo "::notice ::support bundle uploaded to s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
+
 
   validate-minimal-rbac:
     runs-on: ubuntu-20.04
@@ -432,6 +453,27 @@ jobs:
             kubectl -n minimal-rbac logs -p deployment/kotsadm
           fi
           exit $EXIT_CODE
+
+      - name: Generate support bundle on failure
+        if: failure()
+        env:
+          # aws replicated dev account e2e-kots-support-bundle user
+          AWS_ACCESS_KEY_ID: ${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+          KOTS_NAMESPACE: minimal-rbac
+        run: |
+          RELEASE="$(
+            curl -sfL https://api.github.com/repos/replicatedhq/troubleshoot/releases/latest | \
+            grep '"tag_name":' | \
+            sed -E 's/.*"(v[^"]+)".*/\1/'
+          )"
+          curl -fsLO "https://github.com/replicatedhq/troubleshoot/releases/download/${RELEASE}/support-bundle_linux_amd64.tar.gz"
+          tar xzf support-bundle_linux_amd64.tar.gz
+          ./support-bundle -n "${KOTS_NAMESPACE}" https://kots.io
+          BUNDLE="$(ls -1 | grep 'support-bundle-.*.tar.gz')"
+          aws s3 cp "${BUNDLE}" "s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
+          echo "::notice ::support bundle uploaded to s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
 
 
   validate-backup-and-restore:
@@ -533,6 +575,27 @@ jobs:
           fi
           exit $EXIT_CODE
 
+      - name: Generate support bundle on failure
+        if: failure()
+        env:
+          # aws replicated dev account e2e-kots-support-bundle user
+          AWS_ACCESS_KEY_ID: ${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+          KOTS_NAMESPACE: backup-and-restore
+        run: |
+          RELEASE="$(
+            curl -sfL https://api.github.com/repos/replicatedhq/troubleshoot/releases/latest | \
+            grep '"tag_name":' | \
+            sed -E 's/.*"(v[^"]+)".*/\1/'
+          )"
+          curl -fsLO "https://github.com/replicatedhq/troubleshoot/releases/download/${RELEASE}/support-bundle_linux_amd64.tar.gz"
+          tar xzf support-bundle_linux_amd64.tar.gz
+          ./support-bundle -n "${KOTS_NAMESPACE}" https://kots.io
+          BUNDLE="$(ls -1 | grep 'support-bundle-.*.tar.gz')"
+          aws s3 cp "${BUNDLE}" "s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
+          echo "::notice ::support bundle uploaded to s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
+
 
   validate-no-required-config:
     runs-on: ubuntu-20.04
@@ -614,6 +677,27 @@ jobs:
             kubectl -n $APP_NAME logs -p deployment/kotsadm
           fi
           exit $EXIT_CODE
+
+      - name: Generate support bundle on failure
+        if: failure()
+        env:
+          # aws replicated dev account e2e-kots-support-bundle user
+          AWS_ACCESS_KEY_ID: ${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+          KOTS_NAMESPACE: no-required-config
+        run: |
+          RELEASE="$(
+            curl -sfL https://api.github.com/repos/replicatedhq/troubleshoot/releases/latest | \
+            grep '"tag_name":' | \
+            sed -E 's/.*"(v[^"]+)".*/\1/'
+          )"
+          curl -fsLO "https://github.com/replicatedhq/troubleshoot/releases/download/${RELEASE}/support-bundle_linux_amd64.tar.gz"
+          tar xzf support-bundle_linux_amd64.tar.gz
+          ./support-bundle -n "${KOTS_NAMESPACE}" https://kots.io
+          BUNDLE="$(ls -1 | grep 'support-bundle-.*.tar.gz')"
+          aws s3 cp "${BUNDLE}" "s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
+          echo "::notice ::support bundle uploaded to s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
 
 
   validate-multi-namespace:
@@ -707,6 +791,27 @@ jobs:
           fi
           exit $EXIT_CODE
 
+      - name: Generate support bundle on failure
+        if: failure()
+        env:
+          # aws replicated dev account e2e-kots-support-bundle user
+          AWS_ACCESS_KEY_ID: ${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+          KOTS_NAMESPACE: multi-namespace-yeti
+        run: |
+          RELEASE="$(
+            curl -sfL https://api.github.com/repos/replicatedhq/troubleshoot/releases/latest | \
+            grep '"tag_name":' | \
+            sed -E 's/.*"(v[^"]+)".*/\1/'
+          )"
+          curl -fsLO "https://github.com/replicatedhq/troubleshoot/releases/download/${RELEASE}/support-bundle_linux_amd64.tar.gz"
+          tar xzf support-bundle_linux_amd64.tar.gz
+          ./support-bundle -n "${KOTS_NAMESPACE}" https://kots.io
+          BUNDLE="$(ls -1 | grep 'support-bundle-.*.tar.gz')"
+          aws s3 cp "${BUNDLE}" "s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
+          echo "::notice ::support bundle uploaded to s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
+
 
   validate-kots-pull:
     runs-on: ubuntu-20.04
@@ -780,6 +885,27 @@ jobs:
           done
 
           echo "All pods started"
+
+      - name: Generate support bundle on failure
+        if: failure()
+        env:
+          # aws replicated dev account e2e-kots-support-bundle user
+          AWS_ACCESS_KEY_ID: ${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+          KOTS_NAMESPACE: multi-namespace-yeti
+        run: |
+          RELEASE="$(
+            curl -sfL https://api.github.com/repos/replicatedhq/troubleshoot/releases/latest | \
+            grep '"tag_name":' | \
+            sed -E 's/.*"(v[^"]+)".*/\1/'
+          )"
+          curl -fsLO "https://github.com/replicatedhq/troubleshoot/releases/download/${RELEASE}/support-bundle_linux_amd64.tar.gz"
+          tar xzf support-bundle_linux_amd64.tar.gz
+          ./support-bundle -n "${KOTS_NAMESPACE}" https://kots.io
+          BUNDLE="$(ls -1 | grep 'support-bundle-.*.tar.gz')"
+          aws s3 cp "${BUNDLE}" "s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
+          echo "::notice ::support bundle uploaded to s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
 
 
   validate-app-version-label:
@@ -874,6 +1000,27 @@ jobs:
           printf "App is installed successfully with the correct version label: $LATEST_APP_VERSION_LABEL\n\n"
           ./bin/kots get apps --namespace $APP_SLUG
 
+      - name: Generate support bundle on failure
+        if: failure()
+        env:
+          # aws replicated dev account e2e-kots-support-bundle user
+          AWS_ACCESS_KEY_ID: ${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+          KOTS_NAMESPACE: app-version-label
+        run: |
+          RELEASE="$(
+            curl -sfL https://api.github.com/repos/replicatedhq/troubleshoot/releases/latest | \
+            grep '"tag_name":' | \
+            sed -E 's/.*"(v[^"]+)".*/\1/'
+          )"
+          curl -fsLO "https://github.com/replicatedhq/troubleshoot/releases/download/${RELEASE}/support-bundle_linux_amd64.tar.gz"
+          tar xzf support-bundle_linux_amd64.tar.gz
+          ./support-bundle -n "${KOTS_NAMESPACE}" https://kots.io
+          BUNDLE="$(ls -1 | grep 'support-bundle-.*.tar.gz')"
+          aws s3 cp "${BUNDLE}" "s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
+          echo "::notice ::support bundle uploaded to s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
+
 
   validate-strict-preflight-checks:
     runs-on: ubuntu-20.04
@@ -954,6 +1101,27 @@ jobs:
             kubectl -n $APP_NAME logs -p deployment/kotsadm
           fi
           exit $EXIT_CODE
+
+      - name: Generate support bundle on failure
+        if: failure()
+        env:
+          # aws replicated dev account e2e-kots-support-bundle user
+          AWS_ACCESS_KEY_ID: ${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+          KOTS_NAMESPACE: strict-preflight-checks
+        run: |
+          RELEASE="$(
+            curl -sfL https://api.github.com/repos/replicatedhq/troubleshoot/releases/latest | \
+            grep '"tag_name":' | \
+            sed -E 's/.*"(v[^"]+)".*/\1/'
+          )"
+          curl -fsLO "https://github.com/replicatedhq/troubleshoot/releases/download/${RELEASE}/support-bundle_linux_amd64.tar.gz"
+          tar xzf support-bundle_linux_amd64.tar.gz
+          ./support-bundle -n "${KOTS_NAMESPACE}" https://kots.io
+          BUNDLE="$(ls -1 | grep 'support-bundle-.*.tar.gz')"
+          aws s3 cp "${BUNDLE}" "s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
+          echo "::notice ::support bundle uploaded to s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
 
 
   # this job will validate that all validate-* jobs succeed and is used for the github branch protection rule
