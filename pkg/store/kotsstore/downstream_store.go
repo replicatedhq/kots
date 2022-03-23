@@ -543,6 +543,19 @@ func (s *KOTSStore) IsAppVersionDeployable(appID string, sequence int64) (bool, 
 	return false, "", errors.Errorf("version %d not found", sequence)
 }
 
+func isSameUpstreamRelease(v1 *downstreamtypes.DownstreamVersion, v2 *downstreamtypes.DownstreamVersion, isSemverRequired bool) bool {
+	if v1.ChannelID == v2.ChannelID && v1.Cursor == v2.Cursor {
+		return true
+	}
+	if !isSemverRequired {
+		return false
+	}
+	if v1.Semver == nil || v2.Semver == nil {
+		return false
+	}
+	return v1.Semver.EQ(*v2.Semver)
+}
+
 // TODO @salah write tests for this
 func isAppVersionDeployable(version *downstreamtypes.DownstreamVersion, appVersions *downstreamtypes.DownstreamVersions, isSemverRequired bool) (bool, string) {
 	if version.HasFailingStrictPreflights {
@@ -608,7 +621,7 @@ ALL_VERSIONS_LOOP:
 		if !v.IsRequired {
 			continue
 		}
-		if v.ChannelID == version.ChannelID && v.Cursor == version.Cursor {
+		if isSameUpstreamRelease(v, version, isSemverRequired) {
 			// variants of the same upstream release don't block each other
 			continue
 		}
@@ -621,14 +634,14 @@ ALL_VERSIONS_LOOP:
 			continue
 		}
 		// this is a pending version
-		if v.ChannelID == appVersions.CurrentVersion.ChannelID && v.Cursor == appVersions.CurrentVersion.Cursor {
+		if isSameUpstreamRelease(v, appVersions.CurrentVersion, isSemverRequired) {
 			// variants of the deployed upstream release are not required
 			continue
 		}
 		for _, r := range requiredVersions {
 			// variants of the same upstream release are only required once
 			// since the list is sorted in descending order, the latest variant (highest sequence) will be added first
-			if r.ChannelID == v.ChannelID && r.Cursor == v.Cursor {
+			if isSameUpstreamRelease(v, r, isSemverRequired) {
 				continue ALL_VERSIONS_LOOP
 			}
 		}
