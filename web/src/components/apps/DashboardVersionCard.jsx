@@ -2,7 +2,9 @@ import React from "react";
 import { Link, withRouter } from "react-router-dom";
 import ReactTooltip from "react-tooltip"
 
-import dayjs from "dayjs";
+import filter from "lodash/filter";
+import orderBy from "lodash/orderBy";
+import findIndex from "lodash/findIndex";
 import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
 import Modal from "react-modal";
@@ -907,16 +909,28 @@ class DashboardVersionCard extends React.Component {
       return null;
     }
 
+    let latestVersion = downstream?.latestVersion;
+    let newVersionsAfterUpgrade = null;
+    let versionsToSkip = downstream?.pendingVersions?.length - 1;
+    const requiredVersions = downstream?.pendingVersions?.length > 0 ? filter(downstream.pendingVersions, ["isRequired", true]) : [];
+    if (this.props.currentVersion?.deployedAt && requiredVersions.length > 0) { // If there is a version already deployed, and there is at least one required pending versions, set latestVersion to the earliest required version
+      const sortedVersions = orderBy(requiredVersions, ["createdOn", "desc"]);
+      latestVersion = sortedVersions[0];
+      const indexOfLatestVersion = findIndex(downstream?.pendingVersions, ["versionLabel", latestVersion.versionLabel]);
+      versionsToSkip = (downstream?.pendingVersions?.length - 1) - indexOfLatestVersion;
+      if (indexOfLatestVersion > 0) {
+        newVersionsAfterUpgrade = ` Additional versions are available after you deploy this required version.`;
+      }
+    }
     const app = this.props.app;
-    const latestVersion = downstream?.latestVersion;
     const downstreamSource = latestVersion?.source;
     const gitopsEnabled = downstream?.gitops?.enabled;
-    const versionsToSkip = downstream?.pendingVersions?.length - 1;
     const isNew = secondsAgo(latestVersion?.createdOn) < 10;
+    
 
     return (
       <div className="u-marginTop--20">
-        <p className="u-fontSize--normal u-lineHeight--normal u-textColor--header u-fontWeight--medium">Latest available version</p>
+        <p className="u-fontSize--normal u-lineHeight--normal u-textColor--header u-fontWeight--medium">New version available</p>
         {gitopsEnabled &&
           <div className="gitops-enabled-block u-fontSize--small u-fontWeight--medium flex alignItems--center u-textColor--header u-marginTop--10">
             <span className={`icon gitopsService--${downstream?.gitops?.provider} u-marginRight--10`}/>Gitops is enabled for this application. Versions are tracked {app?.isAirgap ? "at" : "on"}&nbsp;<a target="_blank" rel="noopener noreferrer" href={downstream?.gitops?.uri} className="replicated-link">{app.isAirgap ? downstream?.gitops?.uri : Utilities.toTitleCase(downstream?.gitops?.provider)}</a>
@@ -928,6 +942,9 @@ class DashboardVersionCard extends React.Component {
               <div className="flex alignItems--center">
                 <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">{latestVersion.versionLabel || latestVersion.title}</p>
                 <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">Sequence {latestVersion.sequence}</p>
+                {latestVersion.isRequired &&
+                  <span className="status-tag required u-marginLeft--10"> Required </span>
+                }
               </div>
               <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5"> Released {Utilities.dateFormat(latestVersion?.createdOn, "MM/DD/YY @ hh:mm a z")} </p>
               <div className="u-marginTop--5 flex flex-auto alignItems--center">
@@ -941,7 +958,7 @@ class DashboardVersionCard extends React.Component {
           </div>
           {this.renderVersionDownloadStatus(latestVersion)}
         </div>
-        {versionsToSkip > 0 && <p className="u-fontSize--small u-fontWeight--medium u-textColor--header u-marginTop--10">{versionsToSkip} version{versionsToSkip > 1 && "s"} will be skipped in upgrading to {downstream?.pendingVersions[0]?.versionLabel}.</p>}
+        {versionsToSkip > 0 && <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--header u-marginTop--10">{versionsToSkip} version{versionsToSkip > 1 && "s"} will be skipped in upgrading to {latestVersion?.versionLabel}.{newVersionsAfterUpgrade}</p>}
       </div>
     );
   }
