@@ -17,6 +17,13 @@ type SequenceCursor struct {
 	cursor uint64
 }
 
+func MustParse(s string) Cursor {
+	if c, err := strconv.ParseUint(s, 10, 64); err == nil {
+		return SequenceCursor{cursor: c}
+	}
+	panic(errors.Errorf("cannot use %q to construct cursor", s))
+}
+
 func NewCursor(s string) (Cursor, error) {
 	if c, err := strconv.ParseUint(s, 10, 64); err == nil {
 		return SequenceCursor{cursor: c}, nil
