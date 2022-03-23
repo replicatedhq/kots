@@ -19,6 +19,7 @@ import (
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/cursor"
 	"github.com/replicatedhq/kots/pkg/filestore"
 	gitopstypes "github.com/replicatedhq/kots/pkg/gitops/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -1061,6 +1062,14 @@ func (s *KOTSStore) appVersionFromRow(row scannable) (*versiontypes.AppVersion, 
 	v.CreatedOn = createdAt.Time
 	if deployedAt.Valid {
 		v.DeployedAt = &deployedAt.Time
+	}
+
+	if sv, err := semver.ParseTolerant(v.VersionLabel); err == nil {
+		v.Semver = &sv
+	}
+
+	if c, err := cursor.NewCursor(v.UpdateCursor); err == nil {
+		v.Cursor = &c
 	}
 
 	v.Status = status.String
