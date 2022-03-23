@@ -565,9 +565,34 @@ func isAppVersionDeployable(version *downstreamtypes.DownstreamVersion, appVersi
 		return true, ""
 	}
 
+	// rollback support is determined across all versions from all channels
+	// versions below the current veresion in the list are considered past versions
+	versionIndex := -1
+	for i, v := range appVersions.AllVersions {
+		if v.Sequence == version.Sequence {
+			versionIndex = i
+			break
+		}
+	}
+	deployedVersionIndex := -1
+	for i, v := range appVersions.AllVersions {
+		if v.Sequence == appVersions.CurrentVersion.Sequence {
+			deployedVersionIndex = i
+			break
+		}
+	}
+	if versionIndex > deployedVersionIndex {
+		// this is a past version
+		// rollback support is based off of the latest version
+		latestVersion := appVersions.AllVersions[0]
+		if latestVersion.KotsApplication == nil || !latestVersion.KotsApplication.Spec.AllowRollback {
+			return false, "Rollback is not supported."
+		}
+	}
+
+	// if semantic versioning is not enabled, only require versions from the same channel AND with a lower cursor/channel sequence
 	allVersions := []*downstreamtypes.DownstreamVersion{}
 	if !isSemverRequired {
-		// semantic versioning is not enabled, only require releases from the same channel AND with a lower cursor/channel sequence
 		for _, v := range appVersions.AllVersions {
 			if v.ChannelID == version.ChannelID {
 				allVersions = append(allVersions, v)
@@ -578,7 +603,7 @@ func isAppVersionDeployable(version *downstreamtypes.DownstreamVersion, appVersi
 		allVersions = appVersions.AllVersions
 	}
 
-	versionIndex := -1
+	versionIndex = -1
 	for i, v := range allVersions {
 		if v.Sequence == version.Sequence {
 			versionIndex = i
@@ -586,7 +611,7 @@ func isAppVersionDeployable(version *downstreamtypes.DownstreamVersion, appVersi
 		}
 	}
 
-	deployedVersionIndex := -1
+	deployedVersionIndex = -1
 	for i, v := range allVersions {
 		if v.Sequence == appVersions.CurrentVersion.Sequence {
 			deployedVersionIndex = i
@@ -597,15 +622,6 @@ func isAppVersionDeployable(version *downstreamtypes.DownstreamVersion, appVersi
 	if deployedVersionIndex == -1 {
 		// the deployed version is from a different channel
 		return true, ""
-	}
-
-	if versionIndex > deployedVersionIndex {
-		// this is a past version, check if rollback is supported
-		// rollback support is based off of the latest version
-		latestVersion := appVersions.AllVersions[0]
-		if latestVersion.KotsApplication == nil || !latestVersion.KotsApplication.Spec.AllowRollback {
-			return false, "Rollback is not supported."
-		}
 	}
 
 	// find required versions between the deployed version and the desired version
