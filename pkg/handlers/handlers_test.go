@@ -66,12 +66,12 @@ var HandlerPolicyTests = map[string][]HandlerPolicyTest{
 			ExpectStatus: http.StatusOK,
 		},
 	},
-	"IsKotsVersionCompatibleWithApp": {
+	"CanInstallAppVersion": {
 		{
 			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
 			SessionRoles: []string{rbac.ClusterAdminRoleID},
 			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
-				handlerRecorder.IsKotsVersionCompatibleWithApp(gomock.Any(), gomock.Any())
+				handlerRecorder.CanInstallAppVersion(gomock.Any(), gomock.Any())
 			},
 			ExpectStatus: http.StatusOK,
 		},

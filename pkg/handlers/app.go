@@ -4,9 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/airgap"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/api/handlers/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
@@ -19,6 +22,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/session"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/version"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 func (h *Handler) GetPendingApp(w http.ResponseWriter, r *http.Request) {
@@ -421,20 +425,25 @@ func (h *Handler) RemoveApp(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, response)
 }
 
-type IsKotsVersionCompatibleWithAppRequest struct {
-	AppSpec   string `json:"appSpec"`
-	IsInstall bool   `json:"isInstall"`
+type CanInstallAppVersionRequest struct {
+	AppSpec    string `json:"appSpec"`
+	AirgapSpec string `json:"airgapSpec"`
+	IsInstall  bool   `json:"isInstall"`
 }
 
-type IsKotsVersionCompatibleWithAppResponse struct {
-	IsCompatible bool   `json:"isCompatible"`
-	Error        string `json:"error,omitempty"`
+type CanInstallAppVersionResponse struct {
+	CanInstall bool   `json:"canInstall"`
+	Error      string `json:"error,omitempty"`
 }
 
-func (h *Handler) IsKotsVersionCompatibleWithApp(w http.ResponseWriter, r *http.Request) {
-	response := IsKotsVersionCompatibleWithAppResponse{}
+func (h *Handler) CanInstallAppVersion(w http.ResponseWriter, r *http.Request) {
+	appSlug := mux.Vars(r)["appSlug"]
 
-	request := IsKotsVersionCompatibleWithAppRequest{}
+	response := CanInstallAppVersionResponse{
+		CanInstall: false,
+	}
+
+	request := CanInstallAppVersionRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		response.Error = "failed to parse request body"
 		logger.Error(errors.Wrap(err, response.Error))
@@ -442,29 +451,71 @@ func (h *Handler) IsKotsVersionCompatibleWithApp(w http.ResponseWriter, r *http.
 		return
 	}
 
-	if request.AppSpec == "" {
-		response.IsCompatible = true
-		JSON(w, http.StatusOK, response)
-		return
+	if request.AppSpec != "" {
+		response.CanInstall = false
+
+		kotsApp, err := kotsutil.LoadKotsAppFromContents([]byte(request.AppSpec))
+		if err != nil {
+			response.Error = "failed to load kots app from contents"
+			logger.Error(errors.Wrap(err, response.Error))
+			JSON(w, http.StatusInternalServerError, response)
+			return
+		}
+
+		if kotsApp != nil {
+			response.CanInstall = kotsutil.IsKotsVersionCompatibleWithApp(*kotsApp, request.IsInstall)
+		}
+
+		if !response.CanInstall {
+			response.Error = kotsutil.GetIncompatbileKotsVersionMessage(*kotsApp, request.IsInstall)
+			JSON(w, http.StatusOK, response)
+			return
+		}
 	}
 
-	kotsApp, err := kotsutil.LoadKotsAppFromContents([]byte(request.AppSpec))
-	if err != nil {
-		response.Error = "failed to load kots app from contents"
-		logger.Error(errors.Wrap(err, response.Error))
-		JSON(w, http.StatusInternalServerError, response)
-		return
+	if request.AirgapSpec != "" {
+		response.CanInstall = false
+
+		a, err := store.GetStore().GetAppFromSlug(appSlug)
+		if err != nil {
+			response.Error = "failed to get kots app"
+			logger.Error(errors.Wrap(err, response.Error))
+			JSON(w, http.StatusInternalServerError, response)
+			return
+		}
+
+		decode := scheme.Codecs.UniversalDeserializer().Decode
+		decoded, gvk, err := decode([]byte(request.AirgapSpec), nil, nil)
+		if err != nil {
+			response.Error = "failed to decode airgap spec"
+			logger.Error(errors.Wrap(err, response.Error))
+			JSON(w, http.StatusInternalServerError, response)
+			return
+		}
+
+		if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "Airgap" {
+			response.Error = fmt.Sprintf("invalid airgap spec gvk: %s", gvk.String())
+			logger.Error(errors.Wrap(err, response.Error))
+			JSON(w, http.StatusInternalServerError, response)
+			return
+		}
+
+		missingPrereqs, err := airgap.GetMissingRequiredVersions(a, decoded.(*kotsv1beta1.Airgap))
+		if err != nil {
+			response.Error = "failed to get release prerequisites"
+			logger.Error(errors.Wrap(err, response.Error))
+			JSON(w, http.StatusInternalServerError, response)
+			return
+		}
+
+		if len(missingPrereqs) > 0 {
+			response.Error = fmt.Sprintf("This airgap bundle requires the following releases to be installed first: %s", strings.Join(missingPrereqs, ", "))
+			JSON(w, http.StatusOK, response)
+			return
+		}
 	}
 
-	if kotsApp != nil {
-		response.IsCompatible = kotsutil.IsKotsVersionCompatibleWithApp(*kotsApp, request.IsInstall)
-	} else {
-		response.IsCompatible = true
-	}
-
-	if !response.IsCompatible {
-		response.Error = kotsutil.GetIncompatbileKotsVersionMessage(*kotsApp, request.IsInstall)
-	}
-
+	// if we get here, everything passes
+	response.CanInstall = true
 	JSON(w, http.StatusOK, response)
 }

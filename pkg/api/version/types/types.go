@@ -3,6 +3,8 @@ package types
 import (
 	"time"
 
+	"github.com/blang/semver"
+	"github.com/replicatedhq/kots/pkg/cursor"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 )
 
@@ -16,6 +18,9 @@ type AppVersion struct {
 	Status       string              `json:"status"`
 	CreatedOn    time.Time           `json:"createdOn"`
 	DeployedAt   *time.Time          `json:"deployedAt"`
+
+	Semver *semver.Version `json:"-"`
+	Cursor *cursor.Cursor  `json:"-"`
 }
 
 type RealizedLink struct {
