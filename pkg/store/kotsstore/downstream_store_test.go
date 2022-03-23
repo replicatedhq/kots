@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/blang/semver"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/stretchr/testify/assert"
 )
@@ -390,7 +391,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			expectedCause:        "",
 		},
 		{
-			name: "non-semver -- deployed version is from a different channel, not required, required releases in between from same channel, same variants",
+			name: "non-semver -- deployed version is from a different channel, not required, required releases in between from same channel, same variants as version",
 			version: &downstreamtypes.DownstreamVersion{
 				Sequence:   3,
 				ChannelID:  "channel-id-1",
@@ -805,6 +806,1075 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			expectedIsDeployable: false,
 			expectedCause:        "This version cannot be deployed because version 3.0 is required and must be deployed first.",
 		},
+		/* ---- Non semver rollback tests begin here ---- */
+		{
+			name: "non-semver -- disabled rollback -- deployed version is from a different channel, not required, no required releases in between",
+			version: &downstreamtypes.DownstreamVersion{
+				Sequence:  0,
+				ChannelID: "channel-id-2",
+				Cursor:    1,
+			},
+			appVersions: &downstreamtypes.DownstreamVersions{
+				AllVersions: []*downstreamtypes.DownstreamVersion{
+					{
+						Sequence:  1,
+						ChannelID: "channel-id-1",
+						Cursor:    2,
+					},
+					{
+						Sequence:  0,
+						ChannelID: "channel-id-2",
+						Cursor:    1,
+					},
+				},
+				CurrentVersion: &downstreamtypes.DownstreamVersion{
+					Sequence:  1,
+					ChannelID: "channel-id-1",
+					Cursor:    2,
+				},
+			},
+			expectedIsDeployable: false,
+			expectedCause:        "Rollback is not supported.",
+		},
+		{
+			name: "non-semver -- disabled rollback for latest version, enabled rollback for deployed version -- deployed version is from a different channel, not required, no required releases in between",
+			version: &downstreamtypes.DownstreamVersion{
+				Sequence:  0,
+				ChannelID: "channel-id-2",
+				Cursor:    1,
+			},
+			appVersions: &downstreamtypes.DownstreamVersions{
+				AllVersions: []*downstreamtypes.DownstreamVersion{
+					{
+						Sequence:  2,
+						ChannelID: "channel-id-1",
+						Cursor:    2,
+					},
+					{
+						Sequence:  1,
+						ChannelID: "channel-id-1",
+						Cursor:    1,
+						KotsApplication: &kotsv1beta1.Application{
+							Spec: kotsv1beta1.ApplicationSpec{
+								AllowRollback: true,
+							},
+						},
+					},
+					{
+						Sequence:  0,
+						ChannelID: "channel-id-2",
+						Cursor:    1,
+					},
+				},
+				CurrentVersion: &downstreamtypes.DownstreamVersion{
+					Sequence:  1,
+					ChannelID: "channel-id-1",
+					Cursor:    1,
+					KotsApplication: &kotsv1beta1.Application{
+						Spec: kotsv1beta1.ApplicationSpec{
+							AllowRollback: true,
+						},
+					},
+				},
+			},
+			expectedIsDeployable: false,
+			expectedCause:        "Rollback is not supported.",
+		},
+		{
+			name: "non-semver -- allow rollback -- deployed version is from a different channel, not required, no required releases in between",
+			version: &downstreamtypes.DownstreamVersion{
+				Sequence:  0,
+				ChannelID: "channel-id-2",
+				Cursor:    1,
+			},
+			appVersions: &downstreamtypes.DownstreamVersions{
+				AllVersions: []*downstreamtypes.DownstreamVersion{
+					{
+						Sequence:  1,
+						ChannelID: "channel-id-1",
+						Cursor:    2,
+						KotsApplication: &kotsv1beta1.Application{
+							Spec: kotsv1beta1.ApplicationSpec{
+								AllowRollback: true,
+							},
+						},
+					},
+					{
+						Sequence:  0,
+						ChannelID: "channel-id-2",
+						Cursor:    1,
+					},
+				},
+				CurrentVersion: &downstreamtypes.DownstreamVersion{
+					Sequence:  1,
+					ChannelID: "channel-id-1",
+					Cursor:    2,
+					KotsApplication: &kotsv1beta1.Application{
+						Spec: kotsv1beta1.ApplicationSpec{
+							AllowRollback: true,
+						},
+					},
+				},
+			},
+			expectedIsDeployable: true,
+			expectedCause:        "",
+		},
+		{
+			name: "non-semver -- disable rollback -- deployed version is from a different channel, is required, no required releases in between",
+			version: &downstreamtypes.DownstreamVersion{
+				Sequence:  0,
+				ChannelID: "channel-id-1",
+				Cursor:    1,
+			},
+			appVersions: &downstreamtypes.DownstreamVersions{
+				AllVersions: []*downstreamtypes.DownstreamVersion{
+					{
+						Sequence:   1,
+						ChannelID:  "channel-id-2",
+						IsRequired: true,
+						Cursor:     2,
+					},
+					{
+						Sequence:  0,
+						ChannelID: "channel-id-1",
+						Cursor:    1,
+					},
+				},
+				CurrentVersion: &downstreamtypes.DownstreamVersion{
+					Sequence:   1,
+					ChannelID:  "channel-id-2",
+					IsRequired: true,
+					Cursor:     2,
+				},
+			},
+			expectedIsDeployable: false,
+			expectedCause:        "Rollback is not supported.",
+		},
+		{
+			name: "non-semver -- allow rollback -- deployed version is from a different channel, is required, no required releases in between",
+			version: &downstreamtypes.DownstreamVersion{
+				Sequence:  0,
+				ChannelID: "channel-id-1",
+				Cursor:    1,
+			},
+			appVersions: &downstreamtypes.DownstreamVersions{
+				AllVersions: []*downstreamtypes.DownstreamVersion{
+					{
+						Sequence:   1,
+						ChannelID:  "channel-id-2",
+						IsRequired: true,
+						Cursor:     2,
+						KotsApplication: &kotsv1beta1.Application{
+							Spec: kotsv1beta1.ApplicationSpec{
+								AllowRollback: true,
+							},
+						},
+					},
+					{
+						Sequence:  0,
+						ChannelID: "channel-id-1",
+						Cursor:    1,
+					},
+				},
+				CurrentVersion: &downstreamtypes.DownstreamVersion{
+					Sequence:   1,
+					ChannelID:  "channel-id-2",
+					IsRequired: true,
+					Cursor:     2,
+					KotsApplication: &kotsv1beta1.Application{
+						Spec: kotsv1beta1.ApplicationSpec{
+							AllowRollback: true,
+						},
+					},
+				},
+			},
+			expectedIsDeployable: true,
+			expectedCause:        "",
+		},
+		{
+			name: "non-semver -- allow rollback -- deployed version is from a different channel, is required, required releases in between from same channel as version",
+			version: &downstreamtypes.DownstreamVersion{
+				Sequence:  0,
+				ChannelID: "channel-id-2",
+				Cursor:    1,
+			},
+			appVersions: &downstreamtypes.DownstreamVersions{
+				AllVersions: []*downstreamtypes.DownstreamVersion{
+					{
+						Sequence:  3,
+						ChannelID: "channel-id-1",
+						Cursor:    2,
+						KotsApplication: &kotsv1beta1.Application{
+							Spec: kotsv1beta1.ApplicationSpec{
+								AllowRollback: true,
+							},
+						},
+					},
+					{
+						Sequence:   2,
+						ChannelID:  "channel-id-1",
+						IsRequired: true,
+						Cursor:     1,
+					},
+					{
+						Sequence:   1,
+						ChannelID:  "channel-id-2",
+						IsRequired: true,
+						Cursor:     2,
+					},
+					{
+						Sequence:  0,
+						ChannelID: "channel-id-2",
+						Cursor:    1,
+					},
+				},
+				CurrentVersion: &downstreamtypes.DownstreamVersion{
+					Sequence:   2,
+					ChannelID:  "channel-id-1",
+					IsRequired: true,
+					Cursor:     1,
+				},
+			},
+			expectedIsDeployable: true,
+			expectedCause:        "",
+		},
+		{
+			name: "non-semver -- allow rollback -- deployed version is from a different channel, not required, required releases in between from same channel, same variants as version",
+			version: &downstreamtypes.DownstreamVersion{
+				Sequence:   0,
+				ChannelID:  "channel-id-1",
+				IsRequired: true,
+				Cursor:     3,
+			},
+			appVersions: &downstreamtypes.DownstreamVersions{
+				AllVersions: []*downstreamtypes.DownstreamVersion{
+					{
+						Sequence:  3,
+						ChannelID: "channel-id-2",
+						Cursor:    1,
+						KotsApplication: &kotsv1beta1.Application{
+							Spec: kotsv1beta1.ApplicationSpec{
+								AllowRollback: true,
+							},
+						},
+					},
+					{
+						Sequence:   2,
+						ChannelID:  "channel-id-1",
+						IsRequired: true,
+						Cursor:     3,
+					},
+					{
+						Sequence:   1,
+						ChannelID:  "channel-id-1",
+						IsRequired: true,
+						Cursor:     3,
+					},
+					{
+						Sequence:   0,
+						ChannelID:  "channel-id-1",
+						IsRequired: true,
+						Cursor:     3,
+					},
+				},
+				CurrentVersion: &downstreamtypes.DownstreamVersion{
+					Sequence:  3,
+					ChannelID: "channel-id-2",
+					Cursor:    1,
+					KotsApplication: &kotsv1beta1.Application{
+						Spec: kotsv1beta1.ApplicationSpec{
+							AllowRollback: true,
+						},
+					},
+				},
+			},
+			expectedIsDeployable: true,
+			expectedCause:        "",
+		},
+		{
+			name: "non-semver -- allow rollback -- deployed version is from a different channel, not required, required releases in between from same channel, different variants",
+			version: &downstreamtypes.DownstreamVersion{
+				Sequence:   0,
+				ChannelID:  "channel-id-1",
+				IsRequired: true,
+				Cursor:     2,
+			},
+			appVersions: &downstreamtypes.DownstreamVersions{
+				AllVersions: []*downstreamtypes.DownstreamVersion{
+					{
+						Sequence:  3,
+						ChannelID: "channel-id-2",
+						Cursor:    1,
+						KotsApplication: &kotsv1beta1.Application{
+							Spec: kotsv1beta1.ApplicationSpec{
+								AllowRollback: true,
+							},
+						},
+					},
+					{
+						Sequence:   2,
+						ChannelID:  "channel-id-1",
+						IsRequired: true,
+						Cursor:     4,
+					},
+					{
+						Sequence:   1,
+						ChannelID:  "channel-id-1",
+						IsRequired: true,
+						Cursor:     3,
+					},
+					{
+						Sequence:   0,
+						ChannelID:  "channel-id-1",
+						IsRequired: true,
+						Cursor:     2,
+					},
+				},
+				CurrentVersion: &downstreamtypes.DownstreamVersion{
+					Sequence:  3,
+					ChannelID: "channel-id-2",
+					Cursor:    1,
+					KotsApplication: &kotsv1beta1.Application{
+						Spec: kotsv1beta1.ApplicationSpec{
+							AllowRollback: true,
+						},
+					},
+				},
+			},
+			expectedIsDeployable: true,
+			expectedCause:        "",
+		},
+		{
+			name: "non-semver -- allow rollback -- deployed version is from same channel, is required, no required releases in between",
+			version: &downstreamtypes.DownstreamVersion{
+				Sequence:  0,
+				ChannelID: "channel-id-1",
+				Cursor:    1,
+			},
+			appVersions: &downstreamtypes.DownstreamVersions{
+				AllVersions: []*downstreamtypes.DownstreamVersion{
+					{
+						Sequence:   1,
+						ChannelID:  "channel-id-1",
+						IsRequired: true,
+						Cursor:     2,
+						KotsApplication: &kotsv1beta1.Application{
+							Spec: kotsv1beta1.ApplicationSpec{
+								AllowRollback: true,
+							},
+						},
+					},
+					{
+						Sequence:  0,
+						ChannelID: "channel-id-1",
+						Cursor:    1,
+					},
+				},
+				CurrentVersion: &downstreamtypes.DownstreamVersion{
+					Sequence:   1,
+					ChannelID:  "channel-id-1",
+					IsRequired: true,
+					Cursor:     2,
+					KotsApplication: &kotsv1beta1.Application{
+						Spec: kotsv1beta1.ApplicationSpec{
+							AllowRollback: true,
+						},
+					},
+				},
+			},
+			expectedIsDeployable: false,
+			expectedCause:        "One or more non-reversible versions have been deployed since this version.",
+		},
+		{
+			name: "non-semver -- allow rollback -- deployed version is from same channel, is required, required releases in between from different channel",
+			version: &downstreamtypes.DownstreamVersion{
+				Sequence:  0,
+				ChannelID: "channel-id-2",
+				Cursor:    1,
+			},
+			appVersions: &downstreamtypes.DownstreamVersions{
+				AllVersions: []*downstreamtypes.DownstreamVersion{
+					{
+						Sequence:  3,
+						ChannelID: "channel-id-1",
+						Cursor:    2,
+						KotsApplication: &kotsv1beta1.Application{
+							Spec: kotsv1beta1.ApplicationSpec{
+								AllowRollback: true,
+							},
+						},
+					},
+					{
+						Sequence:   2,
+						ChannelID:  "channel-id-2",
+						IsRequired: true,
+						Cursor:     2,
+					},
+					{
+						Sequence:   1,
+						ChannelID:  "channel-id-1",
+						IsRequired: true,
+						Cursor:     2,
+					},
+					{
+						Sequence:  0,
+						ChannelID: "channel-id-2",
+						Cursor:    1,
+					},
+				},
+				CurrentVersion: &downstreamtypes.DownstreamVersion{
+					Sequence:   2,
+					ChannelID:  "channel-id-2",
+					IsRequired: true,
+					Cursor:     2,
+				},
+			},
+			expectedIsDeployable: false,
+			expectedCause:        "One or more non-reversible versions have been deployed since this version.",
+		},
+		{
+			name: "non-semver -- allow rollback -- deployed version is from same channel, not required, required releases in between from different channel",
+			version: &downstreamtypes.DownstreamVersion{
+				Sequence:  0,
+				ChannelID: "channel-id-2",
+				Cursor:    1,
+			},
+			appVersions: &downstreamtypes.DownstreamVersions{
+				AllVersions: []*downstreamtypes.DownstreamVersion{
+					{
+						Sequence:  3,
+						ChannelID: "channel-id-1",
+						Cursor:    2,
+						KotsApplication: &kotsv1beta1.Application{
+							Spec: kotsv1beta1.ApplicationSpec{
+								AllowRollback: true,
+							},
+						},
+					},
+					{
+						Sequence:  2,
+						ChannelID: "channel-id-2",
+						Cursor:    2,
+					},
+					{
+						Sequence:   1,
+						ChannelID:  "channel-id-1",
+						IsRequired: true,
+						Cursor:     2,
+					},
+					{
+						Sequence:  0,
+						ChannelID: "channel-id-2",
+						Cursor:    1,
+					},
+				},
+				CurrentVersion: &downstreamtypes.DownstreamVersion{
+					Sequence:  2,
+					ChannelID: "channel-id-2",
+					Cursor:    2,
+				},
+			},
+			expectedIsDeployable: true,
+			expectedCause:        "",
+		},
+		{
+			name: "non-semver -- allow rollback -- deployed version is from same channel, not required, required releases in between from same channel, same variants as version",
+			version: &downstreamtypes.DownstreamVersion{
+				Sequence:   0,
+				ChannelID:  "channel-id-1",
+				IsRequired: true,
+				Cursor:     3,
+			},
+			appVersions: &downstreamtypes.DownstreamVersions{
+				AllVersions: []*downstreamtypes.DownstreamVersion{
+					{
+						Sequence:  3,
+						ChannelID: "channel-id-1",
+						Cursor:    4,
+						KotsApplication: &kotsv1beta1.Application{
+							Spec: kotsv1beta1.ApplicationSpec{
+								AllowRollback: true,
+							},
+						},
+					},
+					{
+						Sequence:   2,
+						ChannelID:  "channel-id-1",
+						IsRequired: true,
+						Cursor:     3,
+					},
+					{
+						Sequence:   1,
+						ChannelID:  "channel-id-1",
+						IsRequired: true,
+						Cursor:     3,
+					},
+					{
+						Sequence:   0,
+						ChannelID:  "channel-id-1",
+						IsRequired: true,
+						Cursor:     3,
+					},
+				},
+				CurrentVersion: &downstreamtypes.DownstreamVersion{
+					Sequence:  3,
+					ChannelID: "channel-id-1",
+					Cursor:    4,
+					KotsApplication: &kotsv1beta1.Application{
+						Spec: kotsv1beta1.ApplicationSpec{
+							AllowRollback: true,
+						},
+					},
+				},
+			},
+			expectedIsDeployable: true,
+			expectedCause:        "",
+		},
+		{
+			name: "non-semver -- allow rollback -- deployed version is from same channel, is required, required releases in between from same channel, same variants as deployed version",
+			version: &downstreamtypes.DownstreamVersion{
+				Sequence:  0,
+				ChannelID: "channel-id-1",
+				Cursor:    3,
+			},
+			appVersions: &downstreamtypes.DownstreamVersions{
+				AllVersions: []*downstreamtypes.DownstreamVersion{
+					{
+						Sequence:   3,
+						ChannelID:  "channel-id-1",
+						IsRequired: true,
+						Cursor:     4,
+						KotsApplication: &kotsv1beta1.Application{
+							Spec: kotsv1beta1.ApplicationSpec{
+								AllowRollback: true,
+							},
+						},
+					},
+					{
+						Sequence:   2,
+						ChannelID:  "channel-id-1",
+						IsRequired: true,
+						Cursor:     4,
+						KotsApplication: &kotsv1beta1.Application{
+							Spec: kotsv1beta1.ApplicationSpec{
+								AllowRollback: true,
+							},
+						},
+					},
+					{
+						Sequence:   1,
+						ChannelID:  "channel-id-1",
+						IsRequired: true,
+						Cursor:     4,
+						KotsApplication: &kotsv1beta1.Application{
+							Spec: kotsv1beta1.ApplicationSpec{
+								AllowRollback: true,
+							},
+						},
+					},
+					{
+						Sequence:  0,
+						ChannelID: "channel-id-1",
+						Cursor:    3,
+					},
+				},
+				CurrentVersion: &downstreamtypes.DownstreamVersion{
+					Sequence:   3,
+					ChannelID:  "channel-id-1",
+					IsRequired: true,
+					Cursor:     4,
+					KotsApplication: &kotsv1beta1.Application{
+						Spec: kotsv1beta1.ApplicationSpec{
+							AllowRollback: true,
+						},
+					},
+				},
+			},
+			expectedIsDeployable: false,
+			expectedCause:        "One or more non-reversible versions have been deployed since this version.",
+		},
+		{
+			name: "non-semver -- allow rollback -- deployed version is from same channel, not required, required releases in between from same channel, different variants, lower cursor, same version",
+			version: &downstreamtypes.DownstreamVersion{
+				Sequence:     0,
+				ChannelID:    "channel-id-1",
+				Cursor:       4,
+				VersionLabel: "4.0",
+				KotsApplication: &kotsv1beta1.Application{
+					Spec: kotsv1beta1.ApplicationSpec{
+						AllowRollback: true,
+					},
+				},
+			},
+			appVersions: &downstreamtypes.DownstreamVersions{
+				AllVersions: []*downstreamtypes.DownstreamVersion{
+					{
+						Sequence:     4,
+						ChannelID:    "channel-id-1",
+						Cursor:       4,
+						VersionLabel: "4.0",
+						KotsApplication: &kotsv1beta1.Application{
+							Spec: kotsv1beta1.ApplicationSpec{
+								AllowRollback: true,
+							},
+						},
+					},
+					{
+						Sequence:     3,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						Cursor:       1,
+						VersionLabel: "1.0",
+					},
+					{
+						Sequence:     2,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						Cursor:       2,
+						VersionLabel: "2.0",
+					},
+					{
+						Sequence:     1,
+						ChannelID:    "channel-id-1",
+						Cursor:       3,
+						IsRequired:   true,
+						VersionLabel: "3.0",
+					},
+					{
+						Sequence:     0,
+						ChannelID:    "channel-id-1",
+						Cursor:       4,
+						VersionLabel: "4.0",
+						KotsApplication: &kotsv1beta1.Application{
+							Spec: kotsv1beta1.ApplicationSpec{
+								AllowRollback: true,
+							},
+						},
+					},
+				},
+				CurrentVersion: &downstreamtypes.DownstreamVersion{
+					Sequence:     4,
+					ChannelID:    "channel-id-1",
+					Cursor:       4,
+					VersionLabel: "4.0",
+					KotsApplication: &kotsv1beta1.Application{
+						Spec: kotsv1beta1.ApplicationSpec{
+							AllowRollback: true,
+						},
+					},
+				},
+			},
+			expectedIsDeployable: true,
+			expectedCause:        "",
+		},
+		{
+			name: "non-semver -- allow rollback -- deployed version is from same channel, not required, required releases in between from same channel, different variants, lower cursor, different version",
+			version: &downstreamtypes.DownstreamVersion{
+				Sequence:     0,
+				ChannelID:    "channel-id-1",
+				Cursor:       1,
+				VersionLabel: "1.0",
+			},
+			appVersions: &downstreamtypes.DownstreamVersions{
+				AllVersions: []*downstreamtypes.DownstreamVersion{
+					{
+						Sequence:     4,
+						ChannelID:    "channel-id-1",
+						Cursor:       5,
+						VersionLabel: "5.0",
+						KotsApplication: &kotsv1beta1.Application{
+							Spec: kotsv1beta1.ApplicationSpec{
+								AllowRollback: true,
+							},
+						},
+					},
+					{
+						Sequence:     3,
+						ChannelID:    "channel-id-1",
+						Cursor:       4,
+						IsRequired:   true,
+						VersionLabel: "4.0",
+					},
+					{
+						Sequence:     2,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						Cursor:       3,
+						VersionLabel: "3.0",
+					},
+					{
+						Sequence:     1,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						Cursor:       2,
+						VersionLabel: "2.0",
+					},
+					{
+						Sequence:     0,
+						ChannelID:    "channel-id-1",
+						Cursor:       1,
+						VersionLabel: "1.0",
+					},
+				},
+				CurrentVersion: &downstreamtypes.DownstreamVersion{
+					Sequence:     4,
+					ChannelID:    "channel-id-1",
+					Cursor:       5,
+					VersionLabel: "5.0",
+					KotsApplication: &kotsv1beta1.Application{
+						Spec: kotsv1beta1.ApplicationSpec{
+							AllowRollback: true,
+						},
+					},
+				},
+			},
+			expectedIsDeployable: false,
+			expectedCause:        "One or more non-reversible versions have been deployed since this version.",
+		},
+		{
+			name: "non-semver -- allow rollback -- deployed version is from same channel, not required, required releases in between from same channel, different variants, 2 higher cursor and 1 lower cursor from different channel, same version",
+			version: &downstreamtypes.DownstreamVersion{
+				Sequence:     0,
+				ChannelID:    "channel-id-1",
+				Cursor:       4,
+				VersionLabel: "4.0",
+				KotsApplication: &kotsv1beta1.Application{
+					Spec: kotsv1beta1.ApplicationSpec{
+						AllowRollback: true,
+					},
+				},
+			},
+			appVersions: &downstreamtypes.DownstreamVersions{
+				AllVersions: []*downstreamtypes.DownstreamVersion{
+					{
+						Sequence:     4,
+						ChannelID:    "channel-id-1",
+						Cursor:       4,
+						VersionLabel: "4.0",
+						KotsApplication: &kotsv1beta1.Application{
+							Spec: kotsv1beta1.ApplicationSpec{
+								AllowRollback: true,
+							},
+						},
+					},
+					{
+						Sequence:     3,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						Cursor:       6,
+						VersionLabel: "6.0",
+					},
+					{
+						Sequence:     2,
+						ChannelID:    "channel-id-2",
+						IsRequired:   true,
+						Cursor:       2,
+						VersionLabel: "2.0",
+					},
+					{
+						Sequence:     1,
+						ChannelID:    "channel-id-1",
+						Cursor:       5,
+						IsRequired:   true,
+						VersionLabel: "5.0",
+					},
+					{
+						Sequence:     0,
+						ChannelID:    "channel-id-1",
+						Cursor:       4,
+						VersionLabel: "4.0",
+						KotsApplication: &kotsv1beta1.Application{
+							Spec: kotsv1beta1.ApplicationSpec{
+								AllowRollback: true,
+							},
+						},
+					},
+				},
+				CurrentVersion: &downstreamtypes.DownstreamVersion{
+					Sequence:     4,
+					ChannelID:    "channel-id-1",
+					Cursor:       4,
+					VersionLabel: "4.0",
+					KotsApplication: &kotsv1beta1.Application{
+						Spec: kotsv1beta1.ApplicationSpec{
+							AllowRollback: true,
+						},
+					},
+				},
+			},
+			expectedIsDeployable: true,
+			expectedCause:        "",
+		},
+		{
+			name: "non-semver -- allow rollback -- deployed version is from same channel, not required, required releases in between from same channel, different variants, 2 higher cursor and 1 lower cursor from different channel, different version",
+			version: &downstreamtypes.DownstreamVersion{
+				Sequence:     0,
+				ChannelID:    "channel-id-1",
+				Cursor:       2,
+				VersionLabel: "2.0",
+			},
+			appVersions: &downstreamtypes.DownstreamVersions{
+				AllVersions: []*downstreamtypes.DownstreamVersion{
+					{
+						Sequence:     4,
+						ChannelID:    "channel-id-1",
+						Cursor:       5,
+						VersionLabel: "5.0",
+						KotsApplication: &kotsv1beta1.Application{
+							Spec: kotsv1beta1.ApplicationSpec{
+								AllowRollback: true,
+							},
+						},
+					},
+					{
+						Sequence:     3,
+						ChannelID:    "channel-id-1",
+						Cursor:       4,
+						IsRequired:   true,
+						VersionLabel: "4.0",
+					},
+					{
+						Sequence:     2,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						Cursor:       3,
+						VersionLabel: "3.0",
+					},
+					{
+						Sequence:     1,
+						ChannelID:    "channel-id-2",
+						IsRequired:   true,
+						Cursor:       1,
+						VersionLabel: "1.0",
+					},
+					{
+						Sequence:     0,
+						ChannelID:    "channel-id-1",
+						Cursor:       2,
+						VersionLabel: "2.0",
+					},
+				},
+				CurrentVersion: &downstreamtypes.DownstreamVersion{
+					Sequence:     4,
+					ChannelID:    "channel-id-1",
+					Cursor:       5,
+					VersionLabel: "5.0",
+					KotsApplication: &kotsv1beta1.Application{
+						Spec: kotsv1beta1.ApplicationSpec{
+							AllowRollback: true,
+						},
+					},
+				},
+			},
+			expectedIsDeployable: false,
+			expectedCause:        "One or more non-reversible versions have been deployed since this version.",
+		},
+		{
+			name: "non-semver -- allow rollback -- deployed version is from same channel, not required, required releases in between from same channel, different variants, 2 higher cursor than deployed and 1 lower cursor from different channel, different version",
+			version: &downstreamtypes.DownstreamVersion{
+				Sequence:     0,
+				ChannelID:    "channel-id-1",
+				Cursor:       2,
+				VersionLabel: "2.0",
+			},
+			appVersions: &downstreamtypes.DownstreamVersions{
+				AllVersions: []*downstreamtypes.DownstreamVersion{
+					{
+						Sequence:     4,
+						ChannelID:    "channel-id-1",
+						Cursor:       5,
+						VersionLabel: "5.0",
+						KotsApplication: &kotsv1beta1.Application{
+							Spec: kotsv1beta1.ApplicationSpec{
+								AllowRollback: true,
+							},
+						},
+					},
+					{
+						Sequence:     3,
+						ChannelID:    "channel-id-1",
+						Cursor:       6,
+						IsRequired:   true,
+						VersionLabel: "6.0",
+					},
+					{
+						Sequence:     2,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						Cursor:       7,
+						VersionLabel: "7.0",
+					},
+					{
+						Sequence:     1,
+						ChannelID:    "channel-id-2",
+						IsRequired:   true,
+						Cursor:       1,
+						VersionLabel: "1.0",
+					},
+					{
+						Sequence:     0,
+						ChannelID:    "channel-id-1",
+						Cursor:       2,
+						VersionLabel: "2.0",
+					},
+				},
+				CurrentVersion: &downstreamtypes.DownstreamVersion{
+					Sequence:     4,
+					ChannelID:    "channel-id-1",
+					Cursor:       5,
+					VersionLabel: "5.0",
+					KotsApplication: &kotsv1beta1.Application{
+						Spec: kotsv1beta1.ApplicationSpec{
+							AllowRollback: true,
+						},
+					},
+				},
+			},
+			expectedIsDeployable: true,
+			expectedCause:        "",
+		},
+		{
+			name: "non-semver -- allow rollback -- deployed version is from same channel, not required, required and non-required releases in between from same channel, different variants",
+			version: &downstreamtypes.DownstreamVersion{
+				Sequence:     1,
+				ChannelID:    "channel-id-1",
+				Cursor:       2,
+				VersionLabel: "2.0",
+			},
+			appVersions: &downstreamtypes.DownstreamVersions{
+				AllVersions: []*downstreamtypes.DownstreamVersion{
+					{
+						Sequence:     5,
+						ChannelID:    "channel-id-1",
+						Cursor:       6,
+						VersionLabel: "6.0",
+						KotsApplication: &kotsv1beta1.Application{
+							Spec: kotsv1beta1.ApplicationSpec{
+								AllowRollback: true,
+							},
+						},
+					},
+					{
+						Sequence:     4,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						Cursor:       5,
+						VersionLabel: "5.0",
+					},
+					{
+						Sequence:     3,
+						ChannelID:    "channel-id-1",
+						Cursor:       4,
+						VersionLabel: "4.0",
+					},
+					{
+						Sequence:     2,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						Cursor:       3,
+						VersionLabel: "3.0",
+					},
+					{
+						Sequence:     1,
+						ChannelID:    "channel-id-1",
+						Cursor:       2,
+						VersionLabel: "2.0",
+					},
+					{
+						Sequence:     0,
+						ChannelID:    "channel-id-1",
+						Cursor:       1,
+						IsRequired:   true,
+						VersionLabel: "1.0",
+					},
+				},
+				CurrentVersion: &downstreamtypes.DownstreamVersion{
+					Sequence:     5,
+					ChannelID:    "channel-id-1",
+					Cursor:       6,
+					VersionLabel: "6.0",
+					KotsApplication: &kotsv1beta1.Application{
+						Spec: kotsv1beta1.ApplicationSpec{
+							AllowRollback: true,
+						},
+					},
+				},
+			},
+			expectedIsDeployable: false,
+			expectedCause:        "One or more non-reversible versions have been deployed since this version.",
+		},
+		{
+			name: "non-semver -- allow rollback -- deployed version is from same channel, not required, required releases in between from same channel and same variants",
+			version: &downstreamtypes.DownstreamVersion{
+				Sequence:     1,
+				ChannelID:    "channel-id-1",
+				Cursor:       2,
+				VersionLabel: "2.0",
+			},
+			appVersions: &downstreamtypes.DownstreamVersions{
+				AllVersions: []*downstreamtypes.DownstreamVersion{
+					{
+						Sequence:     5,
+						ChannelID:    "channel-id-1",
+						Cursor:       6,
+						VersionLabel: "4.0",
+						KotsApplication: &kotsv1beta1.Application{
+							Spec: kotsv1beta1.ApplicationSpec{
+								AllowRollback: true,
+							},
+						},
+					},
+					{
+						Sequence:     4,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						Cursor:       3,
+						VersionLabel: "3.0",
+					},
+					{
+						Sequence:     3,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						Cursor:       3,
+						VersionLabel: "3.0",
+					},
+					{
+						Sequence:     2,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						Cursor:       3,
+						VersionLabel: "3.0",
+					},
+					{
+						Sequence:     1,
+						ChannelID:    "channel-id-1",
+						Cursor:       2,
+						VersionLabel: "2.0",
+					},
+					{
+						Sequence:     0,
+						ChannelID:    "channel-id-1",
+						Cursor:       1,
+						IsRequired:   true,
+						VersionLabel: "1.0",
+					},
+				},
+				CurrentVersion: &downstreamtypes.DownstreamVersion{
+					Sequence:     5,
+					ChannelID:    "channel-id-1",
+					Cursor:       6,
+					VersionLabel: "4.0",
+					KotsApplication: &kotsv1beta1.Application{
+						Spec: kotsv1beta1.ApplicationSpec{
+							AllowRollback: true,
+						},
+					},
+				},
+			},
+			expectedIsDeployable: false,
+			expectedCause:        "One or more non-reversible versions have been deployed since this version.",
+		},
+		/* ---- Non semver rollback tests end here ---- */
 		/* ---- Non semver tests end here ---- */
 
 		/* ---- Semver tests begin here ---- */
@@ -971,7 +2041,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			expectedCause:        "This version cannot be deployed because versions 2.0, 3.0 are required and must be deployed first.",
 		},
 		{
-			name: "semver -- deployed version is from a different channel, not required, required releases in between from same channel, same variants",
+			name: "semver -- deployed version is from a different channel, not required, required releases in between from same channel, same variants as version",
 			version: &downstreamtypes.DownstreamVersion{
 				Sequence:     3,
 				ChannelID:    "channel-id-1",
