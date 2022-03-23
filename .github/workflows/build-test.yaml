@@ -377,7 +377,7 @@ jobs:
           ./support-bundle -n "${KOTS_NAMESPACE}" https://kots.io
           BUNDLE="$(ls -1 | grep 'support-bundle-.*.tar.gz')"
           aws s3 cp "${BUNDLE}" "s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
-          echo "::notice ::support bundle uploaded to s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
+          echo "::notice ::support bundle uploaded to aws replicated-dev account s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
 
 
   validate-minimal-rbac:
@@ -473,7 +473,7 @@ jobs:
           ./support-bundle -n "${KOTS_NAMESPACE}" https://kots.io
           BUNDLE="$(ls -1 | grep 'support-bundle-.*.tar.gz')"
           aws s3 cp "${BUNDLE}" "s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
-          echo "::notice ::support bundle uploaded to s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
+          echo "::notice ::support bundle uploaded to aws replicated-dev account s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
 
 
   validate-backup-and-restore:
@@ -594,7 +594,7 @@ jobs:
           ./support-bundle -n "${KOTS_NAMESPACE}" https://kots.io
           BUNDLE="$(ls -1 | grep 'support-bundle-.*.tar.gz')"
           aws s3 cp "${BUNDLE}" "s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
-          echo "::notice ::support bundle uploaded to s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
+          echo "::notice ::support bundle uploaded to aws replicated-dev account s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
 
 
   validate-no-required-config:
@@ -697,7 +697,7 @@ jobs:
           ./support-bundle -n "${KOTS_NAMESPACE}" https://kots.io
           BUNDLE="$(ls -1 | grep 'support-bundle-.*.tar.gz')"
           aws s3 cp "${BUNDLE}" "s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
-          echo "::notice ::support bundle uploaded to s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
+          echo "::notice ::support bundle uploaded to aws replicated-dev account s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
 
 
   validate-multi-namespace:
@@ -810,7 +810,7 @@ jobs:
           ./support-bundle -n "${KOTS_NAMESPACE}" https://kots.io
           BUNDLE="$(ls -1 | grep 'support-bundle-.*.tar.gz')"
           aws s3 cp "${BUNDLE}" "s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
-          echo "::notice ::support bundle uploaded to s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
+          echo "::notice ::support bundle uploaded to aws replicated-dev account s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
 
 
   validate-kots-pull:
@@ -905,7 +905,7 @@ jobs:
           ./support-bundle -n "${KOTS_NAMESPACE}" https://kots.io
           BUNDLE="$(ls -1 | grep 'support-bundle-.*.tar.gz')"
           aws s3 cp "${BUNDLE}" "s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
-          echo "::notice ::support bundle uploaded to s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
+          echo "::notice ::support bundle uploaded to aws replicated-dev account s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
 
 
   validate-app-version-label:
@@ -1019,7 +1019,7 @@ jobs:
           ./support-bundle -n "${KOTS_NAMESPACE}" https://kots.io
           BUNDLE="$(ls -1 | grep 'support-bundle-.*.tar.gz')"
           aws s3 cp "${BUNDLE}" "s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
-          echo "::notice ::support bundle uploaded to s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
+          echo "::notice ::support bundle uploaded to aws replicated-dev account s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
 
 
   validate-strict-preflight-checks:
@@ -1121,7 +1121,7 @@ jobs:
           ./support-bundle -n "${KOTS_NAMESPACE}" https://kots.io
           BUNDLE="$(ls -1 | grep 'support-bundle-.*.tar.gz')"
           aws s3 cp "${BUNDLE}" "s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
-          echo "::notice ::support bundle uploaded to s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
+          echo "::notice ::support bundle uploaded to aws replicated-dev account s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
 
 
   # this job will validate that all validate-* jobs succeed and is used for the github branch protection rule
