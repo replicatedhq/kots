@@ -6,6 +6,7 @@ import (
 
 	"github.com/blang/semver"
 	v1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/cursor"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 )
@@ -22,8 +23,9 @@ type Downstream struct {
 type DownstreamVersion struct {
 	VersionLabel               string                             `json:"versionLabel"`
 	Semver                     *semver.Version                    `json:"semver,omitempty"`
+	UpdateCursor               string                             `json:"updateCursor"`
+	Cursor                     *cursor.Cursor                     `json:"-"`
 	ChannelID                  string                             `json:"channelId,omitempty"`
-	Cursor                     int64                              `json:"cursor,omitempty"`
 	IsRequired                 bool                               `json:"isRequired"`
 	IsDeployable               bool                               `json:"isDeployable"`
 	NonDeployableCause         string                             `json:"nonDeployableCause,omitempty"`
@@ -125,10 +127,13 @@ func (v byCursor) Swap(i, j int) {
 	v[i], v[j] = v[j], v[i]
 }
 func (v byCursor) Less(i, j int) bool {
-	if v[i].Cursor == v[j].Cursor {
+	if v[i].Cursor == nil || v[j].Cursor == nil {
 		return v[i].Sequence < v[j].Sequence
 	}
-	return v[i].Cursor < v[j].Cursor
+	if (*v[i].Cursor).Equal(*v[j].Cursor) {
+		return v[i].Sequence < v[j].Sequence
+	}
+	return (*v[i].Cursor).Before(*v[j].Cursor)
 }
 
 // TODO @salah add test for this

@@ -4,13 +4,13 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
+	"github.com/replicatedhq/kots/pkg/cursor"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
@@ -454,10 +454,12 @@ func (s *KOTSStore) downstreamVersionFromRow(appID string, row scannable) (*down
 		v.Semver = &sv
 	}
 
-	v.ChannelID = channelID.String
-	if updateCursor.Valid {
-		v.Cursor, _ = strconv.ParseInt(updateCursor.String, 10, 64)
+	v.UpdateCursor = updateCursor.String
+	if c, err := cursor.NewCursor(v.UpdateCursor); err == nil {
+		v.Cursor = &c
 	}
+
+	v.ChannelID = channelID.String
 
 	v.Status = getDownstreamVersionStatus(types.DownstreamVersionStatus(status.String), hasError)
 	v.ParentSequence = parentSequence.Int64
@@ -544,7 +546,7 @@ func (s *KOTSStore) IsAppVersionDeployable(appID string, sequence int64) (bool, 
 }
 
 func isSameUpstreamRelease(v1 *downstreamtypes.DownstreamVersion, v2 *downstreamtypes.DownstreamVersion, isSemverRequired bool) bool {
-	if v1.ChannelID == v2.ChannelID && v1.Cursor == v2.Cursor {
+	if v1.ChannelID == v2.ChannelID && v1.UpdateCursor == v2.UpdateCursor {
 		return true
 	}
 	if !isSemverRequired {
@@ -556,7 +558,6 @@ func isSameUpstreamRelease(v1 *downstreamtypes.DownstreamVersion, v2 *downstream
 	return v1.Semver.EQ(*v2.Semver)
 }
 
-// TODO @salah write tests for this
 func isAppVersionDeployable(version *downstreamtypes.DownstreamVersion, appVersions *downstreamtypes.DownstreamVersions, isSemverRequired bool) (bool, string) {
 	if version.HasFailingStrictPreflights {
 		return false, "Deployment is disabled as a strict analyzer in this version's preflight checks has failed or has not been run."

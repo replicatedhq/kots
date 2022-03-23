@@ -6,6 +6,7 @@ import (
 	"github.com/blang/semver"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
+	"github.com/replicatedhq/kots/pkg/cursor"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,54 +21,50 @@ func Test_isSameUpstreamRelease(t *testing.T) {
 		{
 			name: "non-semver, same channel, different cursor",
 			v1: &downstreamtypes.DownstreamVersion{
-				ChannelID: "channel-id-1",
-				Cursor:    2,
+				ChannelID:    "channel-id-1",
+				UpdateCursor: "2",
 			},
 			v2: &downstreamtypes.DownstreamVersion{
-				ChannelID: "channel-id-1",
-				Cursor:    3,
+				ChannelID:    "channel-id-1",
+				UpdateCursor: "3",
 			},
 			expected: false,
 		},
 		{
 			name: "non-semver, same cursor, different channel",
 			v1: &downstreamtypes.DownstreamVersion{
-				ChannelID: "channel-id-1",
-				Cursor:    2,
+				ChannelID:    "channel-id-1",
+				UpdateCursor: "2",
 			},
 			v2: &downstreamtypes.DownstreamVersion{
-				ChannelID: "channel-id-2",
-				Cursor:    2,
+				ChannelID:    "channel-id-2",
+				UpdateCursor: "2",
 			},
 			expected: false,
 		},
 		{
 			name: "non-semver, same cursor, same channel",
 			v1: &downstreamtypes.DownstreamVersion{
-				ChannelID: "channel-id-1",
-				Cursor:    2,
+				ChannelID:    "channel-id-1",
+				UpdateCursor: "2",
 			},
 			v2: &downstreamtypes.DownstreamVersion{
-				ChannelID: "channel-id-1",
-				Cursor:    2,
+				ChannelID:    "channel-id-1",
+				UpdateCursor: "2",
 			},
 			expected: true,
 		},
 		{
 			name: "semver, same channel, same cursor, same semver",
 			v1: &downstreamtypes.DownstreamVersion{
-				ChannelID: "channel-id-1",
-				Cursor:    2,
-				Semver: &semver.Version{
-					Major: 3,
-				},
+				ChannelID:    "channel-id-1",
+				UpdateCursor: "2",
+				VersionLabel: "3.0",
 			},
 			v2: &downstreamtypes.DownstreamVersion{
-				ChannelID: "channel-id-1",
-				Cursor:    2,
-				Semver: &semver.Version{
-					Major: 3,
-				},
+				ChannelID:    "channel-id-1",
+				UpdateCursor: "2",
+				VersionLabel: "3.0",
 			},
 			isSemverRequired: true,
 			expected:         true,
@@ -75,18 +72,14 @@ func Test_isSameUpstreamRelease(t *testing.T) {
 		{
 			name: "semver, same channel, same cursor, different semver",
 			v1: &downstreamtypes.DownstreamVersion{
-				ChannelID: "channel-id-1",
-				Cursor:    2,
-				Semver: &semver.Version{
-					Major: 3,
-				},
+				ChannelID:    "channel-id-1",
+				UpdateCursor: "2",
+				VersionLabel: "3.0",
 			},
 			v2: &downstreamtypes.DownstreamVersion{
-				ChannelID: "channel-id-1",
-				Cursor:    2,
-				Semver: &semver.Version{
-					Major: 4,
-				},
+				ChannelID:    "channel-id-1",
+				UpdateCursor: "2",
+				VersionLabel: "4.0",
 			},
 			isSemverRequired: true,
 			expected:         true,
@@ -94,18 +87,14 @@ func Test_isSameUpstreamRelease(t *testing.T) {
 		{
 			name: "semver, different channel, same cursor, different semver",
 			v1: &downstreamtypes.DownstreamVersion{
-				ChannelID: "channel-id-1",
-				Cursor:    2,
-				Semver: &semver.Version{
-					Major: 3,
-				},
+				ChannelID:    "channel-id-1",
+				UpdateCursor: "2",
+				VersionLabel: "3.0",
 			},
 			v2: &downstreamtypes.DownstreamVersion{
-				ChannelID: "channel-id-2",
-				Cursor:    2,
-				Semver: &semver.Version{
-					Major: 4,
-				},
+				ChannelID:    "channel-id-2",
+				UpdateCursor: "2",
+				VersionLabel: "4.0",
 			},
 			isSemverRequired: true,
 			expected:         false,
@@ -113,18 +102,14 @@ func Test_isSameUpstreamRelease(t *testing.T) {
 		{
 			name: "semver, different channel, same cursor, same semver",
 			v1: &downstreamtypes.DownstreamVersion{
-				ChannelID: "channel-id-1",
-				Cursor:    2,
-				Semver: &semver.Version{
-					Major: 4,
-				},
+				ChannelID:    "channel-id-1",
+				UpdateCursor: "2",
+				VersionLabel: "4.0",
 			},
 			v2: &downstreamtypes.DownstreamVersion{
-				ChannelID: "channel-id-2",
-				Cursor:    2,
-				Semver: &semver.Version{
-					Major: 4,
-				},
+				ChannelID:    "channel-id-2",
+				UpdateCursor: "2",
+				VersionLabel: "4.0",
 			},
 			isSemverRequired: true,
 			expected:         true,
@@ -132,18 +117,14 @@ func Test_isSameUpstreamRelease(t *testing.T) {
 		{
 			name: "semver, same channel, different cursor, different semver",
 			v1: &downstreamtypes.DownstreamVersion{
-				ChannelID: "channel-id-1",
-				Cursor:    2,
-				Semver: &semver.Version{
-					Major: 3,
-				},
+				ChannelID:    "channel-id-1",
+				UpdateCursor: "2",
+				VersionLabel: "3.0",
 			},
 			v2: &downstreamtypes.DownstreamVersion{
-				ChannelID: "channel-id-1",
-				Cursor:    3,
-				Semver: &semver.Version{
-					Major: 4,
-				},
+				ChannelID:    "channel-id-1",
+				UpdateCursor: "3",
+				VersionLabel: "4.0",
 			},
 			isSemverRequired: true,
 			expected:         false,
@@ -151,18 +132,14 @@ func Test_isSameUpstreamRelease(t *testing.T) {
 		{
 			name: "semver, same channel, different cursor, same semver",
 			v1: &downstreamtypes.DownstreamVersion{
-				ChannelID: "channel-id-1",
-				Cursor:    2,
-				Semver: &semver.Version{
-					Major: 3,
-				},
+				ChannelID:    "channel-id-1",
+				UpdateCursor: "2",
+				VersionLabel: "3.0",
 			},
 			v2: &downstreamtypes.DownstreamVersion{
-				ChannelID: "channel-id-1",
-				Cursor:    3,
-				Semver: &semver.Version{
-					Major: 3,
-				},
+				ChannelID:    "channel-id-1",
+				UpdateCursor: "3",
+				VersionLabel: "3.0",
 			},
 			isSemverRequired: true,
 			expected:         true,
@@ -170,18 +147,14 @@ func Test_isSameUpstreamRelease(t *testing.T) {
 		{
 			name: "semver, different channel, different cursor, same semver",
 			v1: &downstreamtypes.DownstreamVersion{
-				ChannelID: "channel-id-1",
-				Cursor:    2,
-				Semver: &semver.Version{
-					Major: 4,
-				},
+				ChannelID:    "channel-id-1",
+				UpdateCursor: "2",
+				VersionLabel: "4.0",
 			},
 			v2: &downstreamtypes.DownstreamVersion{
-				ChannelID: "channel-id-2",
-				Cursor:    3,
-				Semver: &semver.Version{
-					Major: 4,
-				},
+				ChannelID:    "channel-id-2",
+				UpdateCursor: "3",
+				VersionLabel: "4.0",
 			},
 			isSemverRequired: true,
 			expected:         true,
@@ -189,18 +162,14 @@ func Test_isSameUpstreamRelease(t *testing.T) {
 		{
 			name: "semver, different channel, different cursor, different semver",
 			v1: &downstreamtypes.DownstreamVersion{
-				ChannelID: "channel-id-1",
-				Cursor:    2,
-				Semver: &semver.Version{
-					Major: 3,
-				},
+				ChannelID:    "channel-id-1",
+				UpdateCursor: "2",
+				VersionLabel: "3.0",
 			},
 			v2: &downstreamtypes.DownstreamVersion{
-				ChannelID: "channel-id-2",
-				Cursor:    3,
-				Semver: &semver.Version{
-					Major: 4,
-				},
+				ChannelID:    "channel-id-2",
+				UpdateCursor: "3",
+				VersionLabel: "4.0",
 			},
 			isSemverRequired: true,
 			expected:         false,
@@ -208,15 +177,13 @@ func Test_isSameUpstreamRelease(t *testing.T) {
 		{
 			name: "semver and non-semver, same channel, same cursor",
 			v1: &downstreamtypes.DownstreamVersion{
-				ChannelID: "channel-id-1",
-				Cursor:    2,
-				Semver: &semver.Version{
-					Major: 3,
-				},
+				ChannelID:    "channel-id-1",
+				UpdateCursor: "2",
+				VersionLabel: "3.0",
 			},
 			v2: &downstreamtypes.DownstreamVersion{
-				ChannelID: "channel-id-1",
-				Cursor:    2,
+				ChannelID:    "channel-id-1",
+				UpdateCursor: "2",
 			},
 			isSemverRequired: true,
 			expected:         true,
@@ -224,15 +191,13 @@ func Test_isSameUpstreamRelease(t *testing.T) {
 		{
 			name: "semver and non-semver, different channel, same cursor",
 			v1: &downstreamtypes.DownstreamVersion{
-				ChannelID: "channel-id-1",
-				Cursor:    2,
-				Semver: &semver.Version{
-					Major: 3,
-				},
+				ChannelID:    "channel-id-1",
+				UpdateCursor: "2",
+				VersionLabel: "3.0",
 			},
 			v2: &downstreamtypes.DownstreamVersion{
-				ChannelID: "channel-id-2",
-				Cursor:    2,
+				ChannelID:    "channel-id-2",
+				UpdateCursor: "2",
 			},
 			isSemverRequired: true,
 			expected:         false,
@@ -240,15 +205,13 @@ func Test_isSameUpstreamRelease(t *testing.T) {
 		{
 			name: "semver and non-semver, same channel, different cursor",
 			v1: &downstreamtypes.DownstreamVersion{
-				ChannelID: "channel-id-1",
-				Cursor:    2,
-				Semver: &semver.Version{
-					Major: 3,
-				},
+				ChannelID:    "channel-id-1",
+				UpdateCursor: "2",
+				VersionLabel: "3.0",
 			},
 			v2: &downstreamtypes.DownstreamVersion{
-				ChannelID: "channel-id-1",
-				Cursor:    3,
+				ChannelID:    "channel-id-1",
+				UpdateCursor: "3",
 			},
 			isSemverRequired: true,
 			expected:         false,
@@ -257,6 +220,22 @@ func Test_isSameUpstreamRelease(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			v1c := cursor.MustParse(test.v1.UpdateCursor)
+			test.v1.Cursor = &v1c
+
+			v2c := cursor.MustParse(test.v2.UpdateCursor)
+			test.v2.Cursor = &v2c
+
+			v1s, err := semver.ParseTolerant(test.v1.VersionLabel)
+			if err == nil {
+				test.v1.Semver = &v1s
+			}
+
+			v2s, err := semver.ParseTolerant(test.v2.VersionLabel)
+			if err == nil {
+				test.v2.Semver = &v2s
+			}
+
 			same := isSameUpstreamRelease(test.v1, test.v2, test.isSemverRequired)
 			assert.Equal(t, test.expected, same)
 		})
@@ -277,6 +256,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			version: &downstreamtypes.DownstreamVersion{
 				HasFailingStrictPreflights: true,
 			},
+			appVersions:          &downstreamtypes.DownstreamVersions{},
 			expectedIsDeployable: false,
 			expectedCause:        "Deployment is disabled as a strict analyzer in this version's preflight checks has failed or has not been run.",
 		},
@@ -393,41 +373,41 @@ func Test_isAppVersionDeployable(t *testing.T) {
 		{
 			name: "non-semver -- deployed version is from a different channel, not required, required releases in between from same channel, same variants as version",
 			version: &downstreamtypes.DownstreamVersion{
-				Sequence:   3,
-				ChannelID:  "channel-id-1",
-				IsRequired: true,
-				Cursor:     3,
+				Sequence:     3,
+				ChannelID:    "channel-id-1",
+				IsRequired:   true,
+				UpdateCursor: "3",
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
-						Sequence:   3,
-						ChannelID:  "channel-id-1",
-						IsRequired: true,
-						Cursor:     3,
+						Sequence:     3,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						UpdateCursor: "3",
 					},
 					{
-						Sequence:   2,
-						ChannelID:  "channel-id-1",
-						IsRequired: true,
-						Cursor:     3,
+						Sequence:     2,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						UpdateCursor: "3",
 					},
 					{
-						Sequence:   1,
-						ChannelID:  "channel-id-1",
-						IsRequired: true,
-						Cursor:     3,
+						Sequence:     1,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						UpdateCursor: "3",
 					},
 					{
-						Sequence:  0,
-						ChannelID: "channel-id-2",
-						Cursor:    1,
+						Sequence:     0,
+						ChannelID:    "channel-id-2",
+						UpdateCursor: "1",
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
-					Sequence:  0,
-					ChannelID: "channel-id-2",
-					Cursor:    1,
+					Sequence:     0,
+					ChannelID:    "channel-id-2",
+					UpdateCursor: "1",
 				},
 			},
 			expectedIsDeployable: true,
@@ -436,41 +416,41 @@ func Test_isAppVersionDeployable(t *testing.T) {
 		{
 			name: "non-semver -- deployed version is from a different channel, not required, required releases in between from same channel, different variants",
 			version: &downstreamtypes.DownstreamVersion{
-				Sequence:   3,
-				ChannelID:  "channel-id-1",
-				IsRequired: true,
-				Cursor:     4,
+				Sequence:     3,
+				ChannelID:    "channel-id-1",
+				IsRequired:   true,
+				UpdateCursor: "4",
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
-						Sequence:   3,
-						ChannelID:  "channel-id-1",
-						IsRequired: true,
-						Cursor:     4,
+						Sequence:     3,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						UpdateCursor: "4",
 					},
 					{
-						Sequence:   2,
-						ChannelID:  "channel-id-1",
-						IsRequired: true,
-						Cursor:     3,
+						Sequence:     2,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						UpdateCursor: "3",
 					},
 					{
-						Sequence:   1,
-						ChannelID:  "channel-id-1",
-						IsRequired: true,
-						Cursor:     2,
+						Sequence:     1,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						UpdateCursor: "2",
 					},
 					{
-						Sequence:  0,
-						ChannelID: "channel-id-2",
-						Cursor:    1,
+						Sequence:     0,
+						ChannelID:    "channel-id-2",
+						UpdateCursor: "1",
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
-					Sequence:  0,
-					ChannelID: "channel-id-2",
-					Cursor:    1,
+					Sequence:     0,
+					ChannelID:    "channel-id-2",
+					UpdateCursor: "1",
 				},
 			},
 			expectedIsDeployable: true,
@@ -479,41 +459,41 @@ func Test_isAppVersionDeployable(t *testing.T) {
 		{
 			name: "non-semver -- deployed version is from same channel, not required, required releases in between from same channel, same variants as version",
 			version: &downstreamtypes.DownstreamVersion{
-				Sequence:   3,
-				ChannelID:  "channel-id-1",
-				IsRequired: true,
-				Cursor:     2,
+				Sequence:     3,
+				ChannelID:    "channel-id-1",
+				IsRequired:   true,
+				UpdateCursor: "2",
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
-						Sequence:   3,
-						ChannelID:  "channel-id-1",
-						IsRequired: true,
-						Cursor:     2,
+						Sequence:     3,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						UpdateCursor: "2",
 					},
 					{
-						Sequence:   2,
-						ChannelID:  "channel-id-1",
-						IsRequired: true,
-						Cursor:     2,
+						Sequence:     2,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						UpdateCursor: "2",
 					},
 					{
-						Sequence:   1,
-						ChannelID:  "channel-id-1",
-						IsRequired: true,
-						Cursor:     2,
+						Sequence:     1,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						UpdateCursor: "2",
 					},
 					{
-						Sequence:  0,
-						ChannelID: "channel-id-1",
-						Cursor:    1,
+						Sequence:     0,
+						ChannelID:    "channel-id-1",
+						UpdateCursor: "1",
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
-					Sequence:  0,
-					ChannelID: "channel-id-1",
-					Cursor:    1,
+					Sequence:     0,
+					ChannelID:    "channel-id-1",
+					UpdateCursor: "1",
 				},
 			},
 			expectedIsDeployable: true,
@@ -522,43 +502,43 @@ func Test_isAppVersionDeployable(t *testing.T) {
 		{
 			name: "non-semver -- deployed version is from same channel, not required, required releases in between from same channel, same variants as deployed version",
 			version: &downstreamtypes.DownstreamVersion{
-				Sequence:   3,
-				ChannelID:  "channel-id-1",
-				IsRequired: true,
-				Cursor:     2,
+				Sequence:     3,
+				ChannelID:    "channel-id-1",
+				IsRequired:   true,
+				UpdateCursor: "2",
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
-						Sequence:   3,
-						ChannelID:  "channel-id-1",
-						IsRequired: true,
-						Cursor:     2,
+						Sequence:     3,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						UpdateCursor: "2",
 					},
 					{
-						Sequence:   2,
-						ChannelID:  "channel-id-1",
-						IsRequired: true,
-						Cursor:     1,
+						Sequence:     2,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						UpdateCursor: "1",
 					},
 					{
-						Sequence:   1,
-						ChannelID:  "channel-id-1",
-						IsRequired: true,
-						Cursor:     1,
+						Sequence:     1,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						UpdateCursor: "1",
 					},
 					{
-						Sequence:   0,
-						ChannelID:  "channel-id-1",
-						IsRequired: true,
-						Cursor:     1,
+						Sequence:     0,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						UpdateCursor: "1",
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
-					Sequence:   0,
-					ChannelID:  "channel-id-1",
-					IsRequired: true,
-					Cursor:     1,
+					Sequence:     0,
+					ChannelID:    "channel-id-1",
+					IsRequired:   true,
+					UpdateCursor: "1",
 				},
 			},
 			expectedIsDeployable: true,
@@ -569,7 +549,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			version: &downstreamtypes.DownstreamVersion{
 				Sequence:     4,
 				ChannelID:    "channel-id-1",
-				Cursor:       5,
+				UpdateCursor: "5",
 				VersionLabel: "5.0",
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
@@ -577,34 +557,34 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					{
 						Sequence:     4,
 						ChannelID:    "channel-id-1",
-						Cursor:       5,
+						UpdateCursor: "5",
 						VersionLabel: "5.0",
 					},
 					{
 						Sequence:     3,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       4,
+						UpdateCursor: "4",
 						VersionLabel: "4.0",
 					},
 					{
 						Sequence:     2,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       3,
+						UpdateCursor: "3",
 						VersionLabel: "3.0",
 					},
 					{
 						Sequence:     1,
 						ChannelID:    "channel-id-1",
-						Cursor:       2,
+						UpdateCursor: "2",
 						IsRequired:   true,
 						VersionLabel: "2.0",
 					},
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-1",
-						Cursor:       1,
+						UpdateCursor: "1",
 						IsRequired:   true,
 						VersionLabel: "1.0",
 					},
@@ -612,7 +592,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     1,
 					ChannelID:    "channel-id-1",
-					Cursor:       2,
+					UpdateCursor: "2",
 					IsRequired:   true,
 					VersionLabel: "2.0",
 				},
@@ -625,7 +605,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			version: &downstreamtypes.DownstreamVersion{
 				Sequence:     5,
 				ChannelID:    "channel-id-1",
-				Cursor:       2,
+				UpdateCursor: "2",
 				IsRequired:   true,
 				VersionLabel: "2.0",
 			},
@@ -634,7 +614,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					{
 						Sequence:     5,
 						ChannelID:    "channel-id-1",
-						Cursor:       2,
+						UpdateCursor: "2",
 						IsRequired:   true,
 						VersionLabel: "2.0",
 					},
@@ -642,34 +622,34 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						Sequence:     4,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       4,
+						UpdateCursor: "4",
 						VersionLabel: "4.0",
 					},
 					{
 						Sequence:     3,
 						ChannelID:    "channel-id-2",
 						IsRequired:   true,
-						Cursor:       1,
+						UpdateCursor: "1",
 						VersionLabel: "3.1",
 					},
 					{
 						Sequence:     2,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       3,
+						UpdateCursor: "3",
 						VersionLabel: "3.0",
 					},
 					{
 						Sequence:     1,
 						ChannelID:    "channel-id-1",
-						Cursor:       2,
+						UpdateCursor: "2",
 						IsRequired:   true,
 						VersionLabel: "2.0",
 					},
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-1",
-						Cursor:       1,
+						UpdateCursor: "1",
 						IsRequired:   true,
 						VersionLabel: "1.0",
 					},
@@ -677,7 +657,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     1,
 					ChannelID:    "channel-id-1",
-					Cursor:       2,
+					UpdateCursor: "2",
 					IsRequired:   true,
 					VersionLabel: "2.0",
 				},
@@ -690,7 +670,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			version: &downstreamtypes.DownstreamVersion{
 				Sequence:     5,
 				ChannelID:    "channel-id-1",
-				Cursor:       6,
+				UpdateCursor: "6",
 				VersionLabel: "6.0",
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
@@ -698,39 +678,39 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					{
 						Sequence:     5,
 						ChannelID:    "channel-id-1",
-						Cursor:       6,
+						UpdateCursor: "6",
 						VersionLabel: "6.0",
 					},
 					{
 						Sequence:     4,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       5,
+						UpdateCursor: "5",
 						VersionLabel: "5.0",
 					},
 					{
 						Sequence:     3,
 						ChannelID:    "channel-id-1",
-						Cursor:       4,
+						UpdateCursor: "4",
 						VersionLabel: "4.0",
 					},
 					{
 						Sequence:     2,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       3,
+						UpdateCursor: "3",
 						VersionLabel: "3.0",
 					},
 					{
 						Sequence:     1,
 						ChannelID:    "channel-id-1",
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "2.0",
 					},
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-1",
-						Cursor:       1,
+						UpdateCursor: "1",
 						IsRequired:   true,
 						VersionLabel: "1.0",
 					},
@@ -738,7 +718,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     1,
 					ChannelID:    "channel-id-1",
-					Cursor:       2,
+					UpdateCursor: "2",
 					VersionLabel: "2.0",
 				},
 			},
@@ -750,7 +730,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			version: &downstreamtypes.DownstreamVersion{
 				Sequence:     5,
 				ChannelID:    "channel-id-1",
-				Cursor:       6,
+				UpdateCursor: "6",
 				VersionLabel: "4.0",
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
@@ -758,40 +738,40 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					{
 						Sequence:     5,
 						ChannelID:    "channel-id-1",
-						Cursor:       6,
+						UpdateCursor: "6",
 						VersionLabel: "4.0",
 					},
 					{
 						Sequence:     4,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       3,
+						UpdateCursor: "3",
 						VersionLabel: "3.0",
 					},
 					{
 						Sequence:     3,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       3,
+						UpdateCursor: "3",
 						VersionLabel: "3.0",
 					},
 					{
 						Sequence:     2,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       3,
+						UpdateCursor: "3",
 						VersionLabel: "3.0",
 					},
 					{
 						Sequence:     1,
 						ChannelID:    "channel-id-1",
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "2.0",
 					},
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-1",
-						Cursor:       1,
+						UpdateCursor: "1",
 						IsRequired:   true,
 						VersionLabel: "1.0",
 					},
@@ -799,7 +779,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     1,
 					ChannelID:    "channel-id-1",
-					Cursor:       2,
+					UpdateCursor: "2",
 					VersionLabel: "2.0",
 				},
 			},
@@ -810,27 +790,27 @@ func Test_isAppVersionDeployable(t *testing.T) {
 		{
 			name: "non-semver -- disabled rollback -- deployed version is from a different channel, not required, no required releases in between",
 			version: &downstreamtypes.DownstreamVersion{
-				Sequence:  0,
-				ChannelID: "channel-id-2",
-				Cursor:    1,
+				Sequence:     0,
+				ChannelID:    "channel-id-2",
+				UpdateCursor: "1",
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
-						Sequence:  1,
-						ChannelID: "channel-id-1",
-						Cursor:    2,
+						Sequence:     1,
+						ChannelID:    "channel-id-1",
+						UpdateCursor: "2",
 					},
 					{
-						Sequence:  0,
-						ChannelID: "channel-id-2",
-						Cursor:    1,
+						Sequence:     0,
+						ChannelID:    "channel-id-2",
+						UpdateCursor: "1",
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
-					Sequence:  1,
-					ChannelID: "channel-id-1",
-					Cursor:    2,
+					Sequence:     1,
+					ChannelID:    "channel-id-1",
+					UpdateCursor: "2",
 				},
 			},
 			expectedIsDeployable: false,
@@ -839,21 +819,21 @@ func Test_isAppVersionDeployable(t *testing.T) {
 		{
 			name: "non-semver -- disabled rollback for latest version, enabled rollback for deployed version -- deployed version is from a different channel, not required, no required releases in between",
 			version: &downstreamtypes.DownstreamVersion{
-				Sequence:  0,
-				ChannelID: "channel-id-2",
-				Cursor:    1,
+				Sequence:     0,
+				ChannelID:    "channel-id-2",
+				UpdateCursor: "1",
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
-						Sequence:  2,
-						ChannelID: "channel-id-1",
-						Cursor:    2,
+						Sequence:     2,
+						ChannelID:    "channel-id-1",
+						UpdateCursor: "2",
 					},
 					{
-						Sequence:  1,
-						ChannelID: "channel-id-1",
-						Cursor:    1,
+						Sequence:     1,
+						ChannelID:    "channel-id-1",
+						UpdateCursor: "1",
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -861,15 +841,15 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						},
 					},
 					{
-						Sequence:  0,
-						ChannelID: "channel-id-2",
-						Cursor:    1,
+						Sequence:     0,
+						ChannelID:    "channel-id-2",
+						UpdateCursor: "1",
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
-					Sequence:  1,
-					ChannelID: "channel-id-1",
-					Cursor:    1,
+					Sequence:     1,
+					ChannelID:    "channel-id-1",
+					UpdateCursor: "1",
 					KotsApplication: &kotsv1beta1.Application{
 						Spec: kotsv1beta1.ApplicationSpec{
 							AllowRollback: true,
@@ -883,16 +863,16 @@ func Test_isAppVersionDeployable(t *testing.T) {
 		{
 			name: "non-semver -- allow rollback -- deployed version is from a different channel, not required, no required releases in between",
 			version: &downstreamtypes.DownstreamVersion{
-				Sequence:  0,
-				ChannelID: "channel-id-2",
-				Cursor:    1,
+				Sequence:     0,
+				ChannelID:    "channel-id-2",
+				UpdateCursor: "1",
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
-						Sequence:  1,
-						ChannelID: "channel-id-1",
-						Cursor:    2,
+						Sequence:     1,
+						ChannelID:    "channel-id-1",
+						UpdateCursor: "2",
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -900,15 +880,15 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						},
 					},
 					{
-						Sequence:  0,
-						ChannelID: "channel-id-2",
-						Cursor:    1,
+						Sequence:     0,
+						ChannelID:    "channel-id-2",
+						UpdateCursor: "1",
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
-					Sequence:  1,
-					ChannelID: "channel-id-1",
-					Cursor:    2,
+					Sequence:     1,
+					ChannelID:    "channel-id-1",
+					UpdateCursor: "2",
 					KotsApplication: &kotsv1beta1.Application{
 						Spec: kotsv1beta1.ApplicationSpec{
 							AllowRollback: true,
@@ -922,29 +902,29 @@ func Test_isAppVersionDeployable(t *testing.T) {
 		{
 			name: "non-semver -- disable rollback -- deployed version is from a different channel, is required, no required releases in between",
 			version: &downstreamtypes.DownstreamVersion{
-				Sequence:  0,
-				ChannelID: "channel-id-1",
-				Cursor:    1,
+				Sequence:     0,
+				ChannelID:    "channel-id-1",
+				UpdateCursor: "1",
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
-						Sequence:   1,
-						ChannelID:  "channel-id-2",
-						IsRequired: true,
-						Cursor:     2,
+						Sequence:     1,
+						ChannelID:    "channel-id-2",
+						IsRequired:   true,
+						UpdateCursor: "2",
 					},
 					{
-						Sequence:  0,
-						ChannelID: "channel-id-1",
-						Cursor:    1,
+						Sequence:     0,
+						ChannelID:    "channel-id-1",
+						UpdateCursor: "1",
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
-					Sequence:   1,
-					ChannelID:  "channel-id-2",
-					IsRequired: true,
-					Cursor:     2,
+					Sequence:     1,
+					ChannelID:    "channel-id-2",
+					IsRequired:   true,
+					UpdateCursor: "2",
 				},
 			},
 			expectedIsDeployable: false,
@@ -953,17 +933,17 @@ func Test_isAppVersionDeployable(t *testing.T) {
 		{
 			name: "non-semver -- allow rollback -- deployed version is from a different channel, is required, no required releases in between",
 			version: &downstreamtypes.DownstreamVersion{
-				Sequence:  0,
-				ChannelID: "channel-id-1",
-				Cursor:    1,
+				Sequence:     0,
+				ChannelID:    "channel-id-1",
+				UpdateCursor: "1",
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
-						Sequence:   1,
-						ChannelID:  "channel-id-2",
-						IsRequired: true,
-						Cursor:     2,
+						Sequence:     1,
+						ChannelID:    "channel-id-2",
+						IsRequired:   true,
+						UpdateCursor: "2",
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -971,16 +951,16 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						},
 					},
 					{
-						Sequence:  0,
-						ChannelID: "channel-id-1",
-						Cursor:    1,
+						Sequence:     0,
+						ChannelID:    "channel-id-1",
+						UpdateCursor: "1",
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
-					Sequence:   1,
-					ChannelID:  "channel-id-2",
-					IsRequired: true,
-					Cursor:     2,
+					Sequence:     1,
+					ChannelID:    "channel-id-2",
+					IsRequired:   true,
+					UpdateCursor: "2",
 					KotsApplication: &kotsv1beta1.Application{
 						Spec: kotsv1beta1.ApplicationSpec{
 							AllowRollback: true,
@@ -994,16 +974,16 @@ func Test_isAppVersionDeployable(t *testing.T) {
 		{
 			name: "non-semver -- allow rollback -- deployed version is from a different channel, is required, required releases in between from same channel as version",
 			version: &downstreamtypes.DownstreamVersion{
-				Sequence:  0,
-				ChannelID: "channel-id-2",
-				Cursor:    1,
+				Sequence:     0,
+				ChannelID:    "channel-id-2",
+				UpdateCursor: "1",
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
-						Sequence:  3,
-						ChannelID: "channel-id-1",
-						Cursor:    2,
+						Sequence:     3,
+						ChannelID:    "channel-id-1",
+						UpdateCursor: "2",
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -1011,28 +991,28 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						},
 					},
 					{
-						Sequence:   2,
-						ChannelID:  "channel-id-1",
-						IsRequired: true,
-						Cursor:     1,
+						Sequence:     2,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						UpdateCursor: "1",
 					},
 					{
-						Sequence:   1,
-						ChannelID:  "channel-id-2",
-						IsRequired: true,
-						Cursor:     2,
+						Sequence:     1,
+						ChannelID:    "channel-id-2",
+						IsRequired:   true,
+						UpdateCursor: "2",
 					},
 					{
-						Sequence:  0,
-						ChannelID: "channel-id-2",
-						Cursor:    1,
+						Sequence:     0,
+						ChannelID:    "channel-id-2",
+						UpdateCursor: "1",
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
-					Sequence:   2,
-					ChannelID:  "channel-id-1",
-					IsRequired: true,
-					Cursor:     1,
+					Sequence:     2,
+					ChannelID:    "channel-id-1",
+					IsRequired:   true,
+					UpdateCursor: "1",
 				},
 			},
 			expectedIsDeployable: true,
@@ -1041,17 +1021,17 @@ func Test_isAppVersionDeployable(t *testing.T) {
 		{
 			name: "non-semver -- allow rollback -- deployed version is from a different channel, not required, required releases in between from same channel, same variants as version",
 			version: &downstreamtypes.DownstreamVersion{
-				Sequence:   0,
-				ChannelID:  "channel-id-1",
-				IsRequired: true,
-				Cursor:     3,
+				Sequence:     0,
+				ChannelID:    "channel-id-1",
+				IsRequired:   true,
+				UpdateCursor: "3",
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
-						Sequence:  3,
-						ChannelID: "channel-id-2",
-						Cursor:    1,
+						Sequence:     3,
+						ChannelID:    "channel-id-2",
+						UpdateCursor: "1",
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -1059,28 +1039,28 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						},
 					},
 					{
-						Sequence:   2,
-						ChannelID:  "channel-id-1",
-						IsRequired: true,
-						Cursor:     3,
+						Sequence:     2,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						UpdateCursor: "3",
 					},
 					{
-						Sequence:   1,
-						ChannelID:  "channel-id-1",
-						IsRequired: true,
-						Cursor:     3,
+						Sequence:     1,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						UpdateCursor: "3",
 					},
 					{
-						Sequence:   0,
-						ChannelID:  "channel-id-1",
-						IsRequired: true,
-						Cursor:     3,
+						Sequence:     0,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						UpdateCursor: "3",
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
-					Sequence:  3,
-					ChannelID: "channel-id-2",
-					Cursor:    1,
+					Sequence:     3,
+					ChannelID:    "channel-id-2",
+					UpdateCursor: "1",
 					KotsApplication: &kotsv1beta1.Application{
 						Spec: kotsv1beta1.ApplicationSpec{
 							AllowRollback: true,
@@ -1094,17 +1074,17 @@ func Test_isAppVersionDeployable(t *testing.T) {
 		{
 			name: "non-semver -- allow rollback -- deployed version is from a different channel, not required, required releases in between from same channel, different variants",
 			version: &downstreamtypes.DownstreamVersion{
-				Sequence:   0,
-				ChannelID:  "channel-id-1",
-				IsRequired: true,
-				Cursor:     2,
+				Sequence:     0,
+				ChannelID:    "channel-id-1",
+				IsRequired:   true,
+				UpdateCursor: "2",
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
-						Sequence:  3,
-						ChannelID: "channel-id-2",
-						Cursor:    1,
+						Sequence:     3,
+						ChannelID:    "channel-id-2",
+						UpdateCursor: "1",
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -1112,28 +1092,28 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						},
 					},
 					{
-						Sequence:   2,
-						ChannelID:  "channel-id-1",
-						IsRequired: true,
-						Cursor:     4,
+						Sequence:     2,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						UpdateCursor: "4",
 					},
 					{
-						Sequence:   1,
-						ChannelID:  "channel-id-1",
-						IsRequired: true,
-						Cursor:     3,
+						Sequence:     1,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						UpdateCursor: "3",
 					},
 					{
-						Sequence:   0,
-						ChannelID:  "channel-id-1",
-						IsRequired: true,
-						Cursor:     2,
+						Sequence:     0,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						UpdateCursor: "2",
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
-					Sequence:  3,
-					ChannelID: "channel-id-2",
-					Cursor:    1,
+					Sequence:     3,
+					ChannelID:    "channel-id-2",
+					UpdateCursor: "1",
 					KotsApplication: &kotsv1beta1.Application{
 						Spec: kotsv1beta1.ApplicationSpec{
 							AllowRollback: true,
@@ -1147,17 +1127,17 @@ func Test_isAppVersionDeployable(t *testing.T) {
 		{
 			name: "non-semver -- allow rollback -- deployed version is from same channel, is required, no required releases in between",
 			version: &downstreamtypes.DownstreamVersion{
-				Sequence:  0,
-				ChannelID: "channel-id-1",
-				Cursor:    1,
+				Sequence:     0,
+				ChannelID:    "channel-id-1",
+				UpdateCursor: "1",
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
-						Sequence:   1,
-						ChannelID:  "channel-id-1",
-						IsRequired: true,
-						Cursor:     2,
+						Sequence:     1,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						UpdateCursor: "2",
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -1165,16 +1145,16 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						},
 					},
 					{
-						Sequence:  0,
-						ChannelID: "channel-id-1",
-						Cursor:    1,
+						Sequence:     0,
+						ChannelID:    "channel-id-1",
+						UpdateCursor: "1",
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
-					Sequence:   1,
-					ChannelID:  "channel-id-1",
-					IsRequired: true,
-					Cursor:     2,
+					Sequence:     1,
+					ChannelID:    "channel-id-1",
+					IsRequired:   true,
+					UpdateCursor: "2",
 					KotsApplication: &kotsv1beta1.Application{
 						Spec: kotsv1beta1.ApplicationSpec{
 							AllowRollback: true,
@@ -1188,16 +1168,16 @@ func Test_isAppVersionDeployable(t *testing.T) {
 		{
 			name: "non-semver -- allow rollback -- deployed version is from same channel, is required, required releases in between from different channel",
 			version: &downstreamtypes.DownstreamVersion{
-				Sequence:  0,
-				ChannelID: "channel-id-2",
-				Cursor:    1,
+				Sequence:     0,
+				ChannelID:    "channel-id-2",
+				UpdateCursor: "1",
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
-						Sequence:  3,
-						ChannelID: "channel-id-1",
-						Cursor:    2,
+						Sequence:     3,
+						ChannelID:    "channel-id-1",
+						UpdateCursor: "2",
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -1205,28 +1185,28 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						},
 					},
 					{
-						Sequence:   2,
-						ChannelID:  "channel-id-2",
-						IsRequired: true,
-						Cursor:     2,
+						Sequence:     2,
+						ChannelID:    "channel-id-2",
+						IsRequired:   true,
+						UpdateCursor: "2",
 					},
 					{
-						Sequence:   1,
-						ChannelID:  "channel-id-1",
-						IsRequired: true,
-						Cursor:     2,
+						Sequence:     1,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						UpdateCursor: "2",
 					},
 					{
-						Sequence:  0,
-						ChannelID: "channel-id-2",
-						Cursor:    1,
+						Sequence:     0,
+						ChannelID:    "channel-id-2",
+						UpdateCursor: "1",
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
-					Sequence:   2,
-					ChannelID:  "channel-id-2",
-					IsRequired: true,
-					Cursor:     2,
+					Sequence:     2,
+					ChannelID:    "channel-id-2",
+					IsRequired:   true,
+					UpdateCursor: "2",
 				},
 			},
 			expectedIsDeployable: false,
@@ -1235,16 +1215,16 @@ func Test_isAppVersionDeployable(t *testing.T) {
 		{
 			name: "non-semver -- allow rollback -- deployed version is from same channel, not required, required releases in between from different channel",
 			version: &downstreamtypes.DownstreamVersion{
-				Sequence:  0,
-				ChannelID: "channel-id-2",
-				Cursor:    1,
+				Sequence:     0,
+				ChannelID:    "channel-id-2",
+				UpdateCursor: "1",
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
-						Sequence:  3,
-						ChannelID: "channel-id-1",
-						Cursor:    2,
+						Sequence:     3,
+						ChannelID:    "channel-id-1",
+						UpdateCursor: "2",
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -1252,26 +1232,26 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						},
 					},
 					{
-						Sequence:  2,
-						ChannelID: "channel-id-2",
-						Cursor:    2,
+						Sequence:     2,
+						ChannelID:    "channel-id-2",
+						UpdateCursor: "2",
 					},
 					{
-						Sequence:   1,
-						ChannelID:  "channel-id-1",
-						IsRequired: true,
-						Cursor:     2,
+						Sequence:     1,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						UpdateCursor: "2",
 					},
 					{
-						Sequence:  0,
-						ChannelID: "channel-id-2",
-						Cursor:    1,
+						Sequence:     0,
+						ChannelID:    "channel-id-2",
+						UpdateCursor: "1",
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
-					Sequence:  2,
-					ChannelID: "channel-id-2",
-					Cursor:    2,
+					Sequence:     2,
+					ChannelID:    "channel-id-2",
+					UpdateCursor: "2",
 				},
 			},
 			expectedIsDeployable: true,
@@ -1280,17 +1260,17 @@ func Test_isAppVersionDeployable(t *testing.T) {
 		{
 			name: "non-semver -- allow rollback -- deployed version is from same channel, not required, required releases in between from same channel, same variants as version",
 			version: &downstreamtypes.DownstreamVersion{
-				Sequence:   0,
-				ChannelID:  "channel-id-1",
-				IsRequired: true,
-				Cursor:     3,
+				Sequence:     0,
+				ChannelID:    "channel-id-1",
+				IsRequired:   true,
+				UpdateCursor: "3",
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
-						Sequence:  3,
-						ChannelID: "channel-id-1",
-						Cursor:    4,
+						Sequence:     3,
+						ChannelID:    "channel-id-1",
+						UpdateCursor: "4",
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -1298,28 +1278,28 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						},
 					},
 					{
-						Sequence:   2,
-						ChannelID:  "channel-id-1",
-						IsRequired: true,
-						Cursor:     3,
+						Sequence:     2,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						UpdateCursor: "3",
 					},
 					{
-						Sequence:   1,
-						ChannelID:  "channel-id-1",
-						IsRequired: true,
-						Cursor:     3,
+						Sequence:     1,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						UpdateCursor: "3",
 					},
 					{
-						Sequence:   0,
-						ChannelID:  "channel-id-1",
-						IsRequired: true,
-						Cursor:     3,
+						Sequence:     0,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						UpdateCursor: "3",
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
-					Sequence:  3,
-					ChannelID: "channel-id-1",
-					Cursor:    4,
+					Sequence:     3,
+					ChannelID:    "channel-id-1",
+					UpdateCursor: "4",
 					KotsApplication: &kotsv1beta1.Application{
 						Spec: kotsv1beta1.ApplicationSpec{
 							AllowRollback: true,
@@ -1333,17 +1313,17 @@ func Test_isAppVersionDeployable(t *testing.T) {
 		{
 			name: "non-semver -- allow rollback -- deployed version is from same channel, is required, required releases in between from same channel, same variants as deployed version",
 			version: &downstreamtypes.DownstreamVersion{
-				Sequence:  0,
-				ChannelID: "channel-id-1",
-				Cursor:    3,
+				Sequence:     0,
+				ChannelID:    "channel-id-1",
+				UpdateCursor: "3",
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
-						Sequence:   3,
-						ChannelID:  "channel-id-1",
-						IsRequired: true,
-						Cursor:     4,
+						Sequence:     3,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						UpdateCursor: "4",
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -1351,10 +1331,10 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						},
 					},
 					{
-						Sequence:   2,
-						ChannelID:  "channel-id-1",
-						IsRequired: true,
-						Cursor:     4,
+						Sequence:     2,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						UpdateCursor: "4",
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -1362,10 +1342,10 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						},
 					},
 					{
-						Sequence:   1,
-						ChannelID:  "channel-id-1",
-						IsRequired: true,
-						Cursor:     4,
+						Sequence:     1,
+						ChannelID:    "channel-id-1",
+						IsRequired:   true,
+						UpdateCursor: "4",
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -1373,16 +1353,16 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						},
 					},
 					{
-						Sequence:  0,
-						ChannelID: "channel-id-1",
-						Cursor:    3,
+						Sequence:     0,
+						ChannelID:    "channel-id-1",
+						UpdateCursor: "3",
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
-					Sequence:   3,
-					ChannelID:  "channel-id-1",
-					IsRequired: true,
-					Cursor:     4,
+					Sequence:     3,
+					ChannelID:    "channel-id-1",
+					IsRequired:   true,
+					UpdateCursor: "4",
 					KotsApplication: &kotsv1beta1.Application{
 						Spec: kotsv1beta1.ApplicationSpec{
 							AllowRollback: true,
@@ -1398,7 +1378,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			version: &downstreamtypes.DownstreamVersion{
 				Sequence:     0,
 				ChannelID:    "channel-id-1",
-				Cursor:       4,
+				UpdateCursor: "4",
 				VersionLabel: "4.0",
 				KotsApplication: &kotsv1beta1.Application{
 					Spec: kotsv1beta1.ApplicationSpec{
@@ -1411,7 +1391,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					{
 						Sequence:     4,
 						ChannelID:    "channel-id-1",
-						Cursor:       4,
+						UpdateCursor: "4",
 						VersionLabel: "4.0",
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
@@ -1423,27 +1403,27 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						Sequence:     3,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       1,
+						UpdateCursor: "1",
 						VersionLabel: "1.0",
 					},
 					{
 						Sequence:     2,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "2.0",
 					},
 					{
 						Sequence:     1,
 						ChannelID:    "channel-id-1",
-						Cursor:       3,
+						UpdateCursor: "3",
 						IsRequired:   true,
 						VersionLabel: "3.0",
 					},
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-1",
-						Cursor:       4,
+						UpdateCursor: "4",
 						VersionLabel: "4.0",
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
@@ -1455,7 +1435,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     4,
 					ChannelID:    "channel-id-1",
-					Cursor:       4,
+					UpdateCursor: "4",
 					VersionLabel: "4.0",
 					KotsApplication: &kotsv1beta1.Application{
 						Spec: kotsv1beta1.ApplicationSpec{
@@ -1472,7 +1452,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			version: &downstreamtypes.DownstreamVersion{
 				Sequence:     0,
 				ChannelID:    "channel-id-1",
-				Cursor:       1,
+				UpdateCursor: "1",
 				VersionLabel: "1.0",
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
@@ -1480,7 +1460,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					{
 						Sequence:     4,
 						ChannelID:    "channel-id-1",
-						Cursor:       5,
+						UpdateCursor: "5",
 						VersionLabel: "5.0",
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
@@ -1491,7 +1471,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					{
 						Sequence:     3,
 						ChannelID:    "channel-id-1",
-						Cursor:       4,
+						UpdateCursor: "4",
 						IsRequired:   true,
 						VersionLabel: "4.0",
 					},
@@ -1499,27 +1479,27 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						Sequence:     2,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       3,
+						UpdateCursor: "3",
 						VersionLabel: "3.0",
 					},
 					{
 						Sequence:     1,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "2.0",
 					},
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-1",
-						Cursor:       1,
+						UpdateCursor: "1",
 						VersionLabel: "1.0",
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     4,
 					ChannelID:    "channel-id-1",
-					Cursor:       5,
+					UpdateCursor: "5",
 					VersionLabel: "5.0",
 					KotsApplication: &kotsv1beta1.Application{
 						Spec: kotsv1beta1.ApplicationSpec{
@@ -1536,7 +1516,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			version: &downstreamtypes.DownstreamVersion{
 				Sequence:     0,
 				ChannelID:    "channel-id-1",
-				Cursor:       4,
+				UpdateCursor: "4",
 				VersionLabel: "4.0",
 				KotsApplication: &kotsv1beta1.Application{
 					Spec: kotsv1beta1.ApplicationSpec{
@@ -1549,7 +1529,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					{
 						Sequence:     4,
 						ChannelID:    "channel-id-1",
-						Cursor:       4,
+						UpdateCursor: "4",
 						VersionLabel: "4.0",
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
@@ -1561,27 +1541,27 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						Sequence:     3,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       6,
+						UpdateCursor: "6",
 						VersionLabel: "6.0",
 					},
 					{
 						Sequence:     2,
 						ChannelID:    "channel-id-2",
 						IsRequired:   true,
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "2.0",
 					},
 					{
 						Sequence:     1,
 						ChannelID:    "channel-id-1",
-						Cursor:       5,
+						UpdateCursor: "5",
 						IsRequired:   true,
 						VersionLabel: "5.0",
 					},
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-1",
-						Cursor:       4,
+						UpdateCursor: "4",
 						VersionLabel: "4.0",
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
@@ -1593,7 +1573,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     4,
 					ChannelID:    "channel-id-1",
-					Cursor:       4,
+					UpdateCursor: "4",
 					VersionLabel: "4.0",
 					KotsApplication: &kotsv1beta1.Application{
 						Spec: kotsv1beta1.ApplicationSpec{
@@ -1610,7 +1590,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			version: &downstreamtypes.DownstreamVersion{
 				Sequence:     0,
 				ChannelID:    "channel-id-1",
-				Cursor:       2,
+				UpdateCursor: "2",
 				VersionLabel: "2.0",
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
@@ -1618,7 +1598,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					{
 						Sequence:     4,
 						ChannelID:    "channel-id-1",
-						Cursor:       5,
+						UpdateCursor: "5",
 						VersionLabel: "5.0",
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
@@ -1629,7 +1609,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					{
 						Sequence:     3,
 						ChannelID:    "channel-id-1",
-						Cursor:       4,
+						UpdateCursor: "4",
 						IsRequired:   true,
 						VersionLabel: "4.0",
 					},
@@ -1637,27 +1617,27 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						Sequence:     2,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       3,
+						UpdateCursor: "3",
 						VersionLabel: "3.0",
 					},
 					{
 						Sequence:     1,
 						ChannelID:    "channel-id-2",
 						IsRequired:   true,
-						Cursor:       1,
+						UpdateCursor: "1",
 						VersionLabel: "1.0",
 					},
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-1",
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "2.0",
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     4,
 					ChannelID:    "channel-id-1",
-					Cursor:       5,
+					UpdateCursor: "5",
 					VersionLabel: "5.0",
 					KotsApplication: &kotsv1beta1.Application{
 						Spec: kotsv1beta1.ApplicationSpec{
@@ -1674,7 +1654,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			version: &downstreamtypes.DownstreamVersion{
 				Sequence:     0,
 				ChannelID:    "channel-id-1",
-				Cursor:       2,
+				UpdateCursor: "2",
 				VersionLabel: "2.0",
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
@@ -1682,7 +1662,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					{
 						Sequence:     4,
 						ChannelID:    "channel-id-1",
-						Cursor:       5,
+						UpdateCursor: "5",
 						VersionLabel: "5.0",
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
@@ -1693,7 +1673,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					{
 						Sequence:     3,
 						ChannelID:    "channel-id-1",
-						Cursor:       6,
+						UpdateCursor: "6",
 						IsRequired:   true,
 						VersionLabel: "6.0",
 					},
@@ -1701,27 +1681,27 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						Sequence:     2,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       7,
+						UpdateCursor: "7",
 						VersionLabel: "7.0",
 					},
 					{
 						Sequence:     1,
 						ChannelID:    "channel-id-2",
 						IsRequired:   true,
-						Cursor:       1,
+						UpdateCursor: "1",
 						VersionLabel: "1.0",
 					},
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-1",
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "2.0",
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     4,
 					ChannelID:    "channel-id-1",
-					Cursor:       5,
+					UpdateCursor: "5",
 					VersionLabel: "5.0",
 					KotsApplication: &kotsv1beta1.Application{
 						Spec: kotsv1beta1.ApplicationSpec{
@@ -1738,7 +1718,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			version: &downstreamtypes.DownstreamVersion{
 				Sequence:     1,
 				ChannelID:    "channel-id-1",
-				Cursor:       2,
+				UpdateCursor: "2",
 				VersionLabel: "2.0",
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
@@ -1746,7 +1726,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					{
 						Sequence:     5,
 						ChannelID:    "channel-id-1",
-						Cursor:       6,
+						UpdateCursor: "6",
 						VersionLabel: "6.0",
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
@@ -1758,32 +1738,32 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						Sequence:     4,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       5,
+						UpdateCursor: "5",
 						VersionLabel: "5.0",
 					},
 					{
 						Sequence:     3,
 						ChannelID:    "channel-id-1",
-						Cursor:       4,
+						UpdateCursor: "4",
 						VersionLabel: "4.0",
 					},
 					{
 						Sequence:     2,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       3,
+						UpdateCursor: "3",
 						VersionLabel: "3.0",
 					},
 					{
 						Sequence:     1,
 						ChannelID:    "channel-id-1",
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "2.0",
 					},
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-1",
-						Cursor:       1,
+						UpdateCursor: "1",
 						IsRequired:   true,
 						VersionLabel: "1.0",
 					},
@@ -1791,7 +1771,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     5,
 					ChannelID:    "channel-id-1",
-					Cursor:       6,
+					UpdateCursor: "6",
 					VersionLabel: "6.0",
 					KotsApplication: &kotsv1beta1.Application{
 						Spec: kotsv1beta1.ApplicationSpec{
@@ -1808,7 +1788,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			version: &downstreamtypes.DownstreamVersion{
 				Sequence:     1,
 				ChannelID:    "channel-id-1",
-				Cursor:       2,
+				UpdateCursor: "2",
 				VersionLabel: "2.0",
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
@@ -1816,7 +1796,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					{
 						Sequence:     5,
 						ChannelID:    "channel-id-1",
-						Cursor:       6,
+						UpdateCursor: "6",
 						VersionLabel: "4.0",
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
@@ -1828,33 +1808,33 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						Sequence:     4,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       3,
+						UpdateCursor: "3",
 						VersionLabel: "3.0",
 					},
 					{
 						Sequence:     3,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       3,
+						UpdateCursor: "3",
 						VersionLabel: "3.0",
 					},
 					{
 						Sequence:     2,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       3,
+						UpdateCursor: "3",
 						VersionLabel: "3.0",
 					},
 					{
 						Sequence:     1,
 						ChannelID:    "channel-id-1",
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "2.0",
 					},
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-1",
-						Cursor:       1,
+						UpdateCursor: "1",
 						IsRequired:   true,
 						VersionLabel: "1.0",
 					},
@@ -1862,7 +1842,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     5,
 					ChannelID:    "channel-id-1",
-					Cursor:       6,
+					UpdateCursor: "6",
 					VersionLabel: "4.0",
 					KotsApplication: &kotsv1beta1.Application{
 						Spec: kotsv1beta1.ApplicationSpec{
@@ -1883,41 +1863,29 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			version: &downstreamtypes.DownstreamVersion{
 				Sequence:     1,
 				ChannelID:    "channel-id-1",
-				Cursor:       1,
+				UpdateCursor: "1",
 				VersionLabel: "2.0",
-				Semver: &semver.Version{
-					Major: 2,
-				},
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
 						Sequence:     1,
 						ChannelID:    "channel-id-1",
-						Cursor:       1,
+						UpdateCursor: "1",
 						VersionLabel: "2.0",
-						Semver: &semver.Version{
-							Major: 2,
-						},
 					},
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-2",
-						Cursor:       1,
+						UpdateCursor: "1",
 						VersionLabel: "1.0",
-						Semver: &semver.Version{
-							Major: 1,
-						},
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     0,
 					ChannelID:    "channel-id-2",
-					Cursor:       1,
+					UpdateCursor: "1",
 					VersionLabel: "1.0",
-					Semver: &semver.Version{
-						Major: 1,
-					},
 				},
 			},
 			isSemverRequired:     true,
@@ -1929,43 +1897,31 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			version: &downstreamtypes.DownstreamVersion{
 				Sequence:     1,
 				ChannelID:    "channel-id-1",
-				Cursor:       1,
+				UpdateCursor: "1",
 				VersionLabel: "2.0",
-				Semver: &semver.Version{
-					Major: 2,
-				},
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
 						Sequence:     1,
 						ChannelID:    "channel-id-1",
-						Cursor:       1,
+						UpdateCursor: "1",
 						VersionLabel: "2.0",
-						Semver: &semver.Version{
-							Major: 2,
-						},
 					},
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-2",
 						IsRequired:   true,
-						Cursor:       1,
+						UpdateCursor: "1",
 						VersionLabel: "1.0",
-						Semver: &semver.Version{
-							Major: 1,
-						},
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     0,
 					ChannelID:    "channel-id-2",
 					IsRequired:   true,
-					Cursor:       1,
+					UpdateCursor: "1",
 					VersionLabel: "1.0",
-					Semver: &semver.Version{
-						Major: 1,
-					},
 				},
 			},
 			isSemverRequired:     true,
@@ -1977,63 +1933,45 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			version: &downstreamtypes.DownstreamVersion{
 				Sequence:     3,
 				ChannelID:    "channel-id-1",
-				Cursor:       4,
+				UpdateCursor: "4",
 				VersionLabel: "4.0",
-				Semver: &semver.Version{
-					Major: 4,
-				},
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
 						Sequence:     3,
 						ChannelID:    "channel-id-1",
-						Cursor:       4,
+						UpdateCursor: "4",
 						VersionLabel: "4.0",
-						Semver: &semver.Version{
-							Major: 4,
-						},
 					},
 					{
 						Sequence:     2,
 						ChannelID:    "channel-id-2",
 						IsRequired:   true,
-						Cursor:       3,
+						UpdateCursor: "3",
 						VersionLabel: "3.0",
-						Semver: &semver.Version{
-							Major: 3,
-						},
 					},
 					{
 						Sequence:     1,
 						ChannelID:    "channel-id-2",
 						IsRequired:   true,
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "2.0",
-						Semver: &semver.Version{
-							Major: 2,
-						},
 					},
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-2",
 						IsRequired:   true,
-						Cursor:       1,
+						UpdateCursor: "1",
 						VersionLabel: "1.0",
-						Semver: &semver.Version{
-							Major: 1,
-						},
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     0,
 					ChannelID:    "channel-id-2",
 					IsRequired:   true,
-					Cursor:       1,
+					UpdateCursor: "1",
 					VersionLabel: "1.0",
-					Semver: &semver.Version{
-						Major: 1,
-					},
 				},
 			},
 			isSemverRequired:     true,
@@ -2046,11 +1984,8 @@ func Test_isAppVersionDeployable(t *testing.T) {
 				Sequence:     3,
 				ChannelID:    "channel-id-1",
 				IsRequired:   true,
-				Cursor:       2,
+				UpdateCursor: "2",
 				VersionLabel: "2.0",
-				Semver: &semver.Version{
-					Major: 2,
-				},
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
@@ -2058,50 +1993,35 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						Sequence:     3,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "2.0",
-						Semver: &semver.Version{
-							Major: 2,
-						},
 					},
 					{
 						Sequence:     2,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "2.0",
-						Semver: &semver.Version{
-							Major: 2,
-						},
 					},
 					{
 						Sequence:     1,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "2.0",
-						Semver: &semver.Version{
-							Major: 2,
-						},
 					},
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-2",
-						Cursor:       1,
+						UpdateCursor: "1",
 						VersionLabel: "1.0",
-						Semver: &semver.Version{
-							Major: 1,
-						},
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     0,
 					ChannelID:    "channel-id-2",
-					Cursor:       1,
+					UpdateCursor: "1",
 					VersionLabel: "1.0",
-					Semver: &semver.Version{
-						Major: 1,
-					},
 				},
 			},
 			isSemverRequired:     true,
@@ -2114,11 +2034,8 @@ func Test_isAppVersionDeployable(t *testing.T) {
 				Sequence:     3,
 				ChannelID:    "channel-id-1",
 				IsRequired:   true,
-				Cursor:       4,
+				UpdateCursor: "4",
 				VersionLabel: "4.0",
-				Semver: &semver.Version{
-					Major: 4,
-				},
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
@@ -2126,50 +2043,35 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						Sequence:     3,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       4,
+						UpdateCursor: "4",
 						VersionLabel: "4.0",
-						Semver: &semver.Version{
-							Major: 4,
-						},
 					},
 					{
 						Sequence:     2,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       3,
+						UpdateCursor: "3",
 						VersionLabel: "3.0",
-						Semver: &semver.Version{
-							Major: 3,
-						},
 					},
 					{
 						Sequence:     1,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "2.0",
-						Semver: &semver.Version{
-							Major: 2,
-						},
 					},
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-2",
-						Cursor:       1,
+						UpdateCursor: "1",
 						VersionLabel: "1.0",
-						Semver: &semver.Version{
-							Major: 1,
-						},
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     0,
 					ChannelID:    "channel-id-2",
-					Cursor:       1,
+					UpdateCursor: "1",
 					VersionLabel: "1.0",
-					Semver: &semver.Version{
-						Major: 1,
-					},
 				},
 			},
 			isSemverRequired:     true,
@@ -2182,11 +2084,8 @@ func Test_isAppVersionDeployable(t *testing.T) {
 				Sequence:     3,
 				ChannelID:    "channel-id-1",
 				IsRequired:   true,
-				Cursor:       2,
+				UpdateCursor: "2",
 				VersionLabel: "2.0",
-				Semver: &semver.Version{
-					Major: 2,
-				},
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
@@ -2194,50 +2093,35 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						Sequence:     3,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "2.0",
-						Semver: &semver.Version{
-							Major: 2,
-						},
 					},
 					{
 						Sequence:     2,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "2.0",
-						Semver: &semver.Version{
-							Major: 2,
-						},
 					},
 					{
 						Sequence:     1,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "2.0",
-						Semver: &semver.Version{
-							Major: 2,
-						},
 					},
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-1",
-						Cursor:       1,
+						UpdateCursor: "1",
 						VersionLabel: "1.0",
-						Semver: &semver.Version{
-							Major: 1,
-						},
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     0,
 					ChannelID:    "channel-id-1",
-					Cursor:       1,
+					UpdateCursor: "1",
 					VersionLabel: "1.0",
-					Semver: &semver.Version{
-						Major: 1,
-					},
 				},
 			},
 			isSemverRequired:     true,
@@ -2250,11 +2134,8 @@ func Test_isAppVersionDeployable(t *testing.T) {
 				Sequence:     3,
 				ChannelID:    "channel-id-1",
 				IsRequired:   true,
-				Cursor:       2,
+				UpdateCursor: "2",
 				VersionLabel: "2.0",
-				Semver: &semver.Version{
-					Major: 2,
-				},
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
@@ -2262,52 +2143,37 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						Sequence:     3,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "2.0",
-						Semver: &semver.Version{
-							Major: 2,
-						},
 					},
 					{
 						Sequence:     2,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       1,
+						UpdateCursor: "1",
 						VersionLabel: "1.0",
-						Semver: &semver.Version{
-							Major: 1,
-						},
 					},
 					{
 						Sequence:     1,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       1,
+						UpdateCursor: "1",
 						VersionLabel: "1.0",
-						Semver: &semver.Version{
-							Major: 1,
-						},
 					},
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       1,
+						UpdateCursor: "1",
 						VersionLabel: "1.0",
-						Semver: &semver.Version{
-							Major: 1,
-						},
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     0,
 					ChannelID:    "channel-id-1",
 					IsRequired:   true,
-					Cursor:       1,
+					UpdateCursor: "1",
 					VersionLabel: "1.0",
-					Semver: &semver.Version{
-						Major: 1,
-					},
 				},
 			},
 			isSemverRequired:     true,
@@ -2319,73 +2185,52 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			version: &downstreamtypes.DownstreamVersion{
 				Sequence:     4,
 				ChannelID:    "channel-id-1",
-				Cursor:       5,
+				UpdateCursor: "5",
 				VersionLabel: "5.0",
-				Semver: &semver.Version{
-					Major: 5,
-				},
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
 						Sequence:     4,
 						ChannelID:    "channel-id-1",
-						Cursor:       5,
+						UpdateCursor: "5",
 						VersionLabel: "5.0",
-						Semver: &semver.Version{
-							Major: 5,
-						},
 					},
 					{
 						Sequence:     3,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       4,
+						UpdateCursor: "4",
 						VersionLabel: "4.0",
-						Semver: &semver.Version{
-							Major: 4,
-						},
 					},
 					{
 						Sequence:     2,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       3,
+						UpdateCursor: "3",
 						VersionLabel: "3.0",
-						Semver: &semver.Version{
-							Major: 3,
-						},
 					},
 					{
 						Sequence:     1,
 						ChannelID:    "channel-id-1",
-						Cursor:       2,
+						UpdateCursor: "2",
 						IsRequired:   true,
 						VersionLabel: "2.0",
-						Semver: &semver.Version{
-							Major: 2,
-						},
 					},
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-1",
-						Cursor:       1,
+						UpdateCursor: "1",
 						IsRequired:   true,
 						VersionLabel: "1.0",
-						Semver: &semver.Version{
-							Major: 1,
-						},
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     1,
 					ChannelID:    "channel-id-1",
-					Cursor:       2,
+					UpdateCursor: "2",
 					IsRequired:   true,
 					VersionLabel: "2.0",
-					Semver: &semver.Version{
-						Major: 2,
-					},
 				},
 			},
 			isSemverRequired:     true,
@@ -2397,86 +2242,61 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			version: &downstreamtypes.DownstreamVersion{
 				Sequence:     5,
 				ChannelID:    "channel-id-1",
-				Cursor:       2,
+				UpdateCursor: "2",
 				IsRequired:   true,
 				VersionLabel: "5.0",
-				Semver: &semver.Version{
-					Major: 5,
-				},
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
 						Sequence:     5,
 						ChannelID:    "channel-id-1",
-						Cursor:       2,
+						UpdateCursor: "2",
 						IsRequired:   true,
 						VersionLabel: "5.0",
-						Semver: &semver.Version{
-							Major: 5,
-						},
 					},
 					{
 						Sequence:     4,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       4,
+						UpdateCursor: "4",
 						VersionLabel: "4.0",
-						Semver: &semver.Version{
-							Major: 4,
-						},
 					},
 					{
 						Sequence:     3,
 						ChannelID:    "channel-id-2",
 						IsRequired:   true,
-						Cursor:       1,
+						UpdateCursor: "1",
 						VersionLabel: "3.1",
-						Semver: &semver.Version{
-							Major: 3,
-							Minor: 1,
-						},
 					},
 					{
 						Sequence:     2,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       3,
+						UpdateCursor: "3",
 						VersionLabel: "3.0",
-						Semver: &semver.Version{
-							Major: 3,
-						},
 					},
 					{
 						Sequence:     1,
 						ChannelID:    "channel-id-1",
-						Cursor:       2,
+						UpdateCursor: "2",
 						IsRequired:   true,
 						VersionLabel: "2.0",
-						Semver: &semver.Version{
-							Major: 2,
-						},
 					},
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-1",
-						Cursor:       1,
+						UpdateCursor: "1",
 						IsRequired:   true,
 						VersionLabel: "1.0",
-						Semver: &semver.Version{
-							Major: 1,
-						},
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     1,
 					ChannelID:    "channel-id-1",
-					Cursor:       2,
+					UpdateCursor: "2",
 					IsRequired:   true,
 					VersionLabel: "2.0",
-					Semver: &semver.Version{
-						Major: 2,
-					},
 				},
 			},
 			isSemverRequired:     true,
@@ -2488,80 +2308,56 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			version: &downstreamtypes.DownstreamVersion{
 				Sequence:     5,
 				ChannelID:    "channel-id-1",
-				Cursor:       6,
+				UpdateCursor: "6",
 				VersionLabel: "6.0",
-				Semver: &semver.Version{
-					Major: 6,
-				},
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
 						Sequence:     5,
 						ChannelID:    "channel-id-1",
-						Cursor:       6,
+						UpdateCursor: "6",
 						VersionLabel: "6.0",
-						Semver: &semver.Version{
-							Major: 6,
-						},
 					},
 					{
 						Sequence:     4,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       5,
+						UpdateCursor: "5",
 						VersionLabel: "5.0",
-						Semver: &semver.Version{
-							Major: 5,
-						},
 					},
 					{
 						Sequence:     3,
 						ChannelID:    "channel-id-1",
-						Cursor:       4,
+						UpdateCursor: "4",
 						VersionLabel: "4.0",
-						Semver: &semver.Version{
-							Major: 4,
-						},
 					},
 					{
 						Sequence:     2,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       3,
+						UpdateCursor: "3",
 						VersionLabel: "3.0",
-						Semver: &semver.Version{
-							Major: 3,
-						},
 					},
 					{
 						Sequence:     1,
 						ChannelID:    "channel-id-1",
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "2.0",
-						Semver: &semver.Version{
-							Major: 2,
-						},
 					},
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-1",
-						Cursor:       1,
+						UpdateCursor: "1",
 						IsRequired:   true,
 						VersionLabel: "1.0",
-						Semver: &semver.Version{
-							Major: 1,
-						},
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     1,
 					ChannelID:    "channel-id-1",
-					Cursor:       2,
+					UpdateCursor: "2",
 					VersionLabel: "2.0",
-					Semver: &semver.Version{
-						Major: 2,
-					},
 				},
 			},
 			isSemverRequired:     true,
@@ -2573,81 +2369,57 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			version: &downstreamtypes.DownstreamVersion{
 				Sequence:     5,
 				ChannelID:    "channel-id-1",
-				Cursor:       6,
+				UpdateCursor: "6",
 				VersionLabel: "4.0",
-				Semver: &semver.Version{
-					Major: 4,
-				},
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
 						Sequence:     5,
 						ChannelID:    "channel-id-1",
-						Cursor:       6,
+						UpdateCursor: "6",
 						VersionLabel: "4.0",
-						Semver: &semver.Version{
-							Major: 4,
-						},
 					},
 					{
 						Sequence:     4,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       3,
+						UpdateCursor: "3",
 						VersionLabel: "3.0",
-						Semver: &semver.Version{
-							Major: 3,
-						},
 					},
 					{
 						Sequence:     3,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       3,
+						UpdateCursor: "3",
 						VersionLabel: "3.0",
-						Semver: &semver.Version{
-							Major: 3,
-						},
 					},
 					{
 						Sequence:     2,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       3,
+						UpdateCursor: "3",
 						VersionLabel: "3.0",
-						Semver: &semver.Version{
-							Major: 3,
-						},
 					},
 					{
 						Sequence:     1,
 						ChannelID:    "channel-id-1",
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "2.0",
-						Semver: &semver.Version{
-							Major: 2,
-						},
 					},
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-1",
-						Cursor:       1,
+						UpdateCursor: "1",
 						IsRequired:   true,
 						VersionLabel: "1.0",
-						Semver: &semver.Version{
-							Major: 1,
-						},
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     1,
 					ChannelID:    "channel-id-1",
-					Cursor:       2,
+					UpdateCursor: "2",
 					VersionLabel: "2.0",
-					Semver: &semver.Version{
-						Major: 2,
-					},
 				},
 			},
 			isSemverRequired:     true,
@@ -2660,41 +2432,29 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			version: &downstreamtypes.DownstreamVersion{
 				Sequence:     0,
 				ChannelID:    "channel-id-2",
-				Cursor:       1,
+				UpdateCursor: "1",
 				VersionLabel: "1.0",
-				Semver: &semver.Version{
-					Major: 1,
-				},
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
 						Sequence:     1,
 						ChannelID:    "channel-id-1",
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "2.0",
-						Semver: &semver.Version{
-							Major: 2,
-						},
 					},
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-2",
-						Cursor:       1,
+						UpdateCursor: "1",
 						VersionLabel: "1.0",
-						Semver: &semver.Version{
-							Major: 1,
-						},
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     1,
 					ChannelID:    "channel-id-1",
-					Cursor:       2,
+					UpdateCursor: "2",
 					VersionLabel: "2.0",
-					Semver: &semver.Version{
-						Major: 2,
-					},
 				},
 			},
 			isSemverRequired:     true,
@@ -2706,31 +2466,22 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			version: &downstreamtypes.DownstreamVersion{
 				Sequence:     0,
 				ChannelID:    "channel-id-2",
-				Cursor:       1,
+				UpdateCursor: "1",
 				VersionLabel: "1.0",
-				Semver: &semver.Version{
-					Major: 1,
-				},
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
 						Sequence:     2,
 						ChannelID:    "channel-id-1",
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "3.0",
-						Semver: &semver.Version{
-							Major: 3,
-						},
 					},
 					{
 						Sequence:     1,
 						ChannelID:    "channel-id-1",
-						Cursor:       1,
+						UpdateCursor: "1",
 						VersionLabel: "2.0",
-						Semver: &semver.Version{
-							Major: 2,
-						},
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -2740,21 +2491,15 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-2",
-						Cursor:       1,
+						UpdateCursor: "1",
 						VersionLabel: "1.0",
-						Semver: &semver.Version{
-							Major: 1,
-						},
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     1,
 					ChannelID:    "channel-id-1",
-					Cursor:       1,
+					UpdateCursor: "1",
 					VersionLabel: "2.0",
-					Semver: &semver.Version{
-						Major: 2,
-					},
 					KotsApplication: &kotsv1beta1.Application{
 						Spec: kotsv1beta1.ApplicationSpec{
 							AllowRollback: true,
@@ -2771,22 +2516,16 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			version: &downstreamtypes.DownstreamVersion{
 				Sequence:     0,
 				ChannelID:    "channel-id-2",
-				Cursor:       1,
+				UpdateCursor: "1",
 				VersionLabel: "1.0",
-				Semver: &semver.Version{
-					Major: 1,
-				},
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
 						Sequence:     1,
 						ChannelID:    "channel-id-1",
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "2.0",
-						Semver: &semver.Version{
-							Major: 2,
-						},
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -2796,21 +2535,15 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-2",
-						Cursor:       1,
+						UpdateCursor: "1",
 						VersionLabel: "1.0",
-						Semver: &semver.Version{
-							Major: 1,
-						},
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     1,
 					ChannelID:    "channel-id-1",
-					Cursor:       2,
+					UpdateCursor: "2",
 					VersionLabel: "2.0",
-					Semver: &semver.Version{
-						Major: 2,
-					},
 					KotsApplication: &kotsv1beta1.Application{
 						Spec: kotsv1beta1.ApplicationSpec{
 							AllowRollback: true,
@@ -2827,11 +2560,8 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			version: &downstreamtypes.DownstreamVersion{
 				Sequence:     0,
 				ChannelID:    "channel-id-1",
-				Cursor:       1,
+				UpdateCursor: "1",
 				VersionLabel: "1.0",
-				Semver: &semver.Version{
-					Major: 1,
-				},
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
@@ -2839,31 +2569,22 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						Sequence:     1,
 						ChannelID:    "channel-id-2",
 						IsRequired:   true,
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "2.0",
-						Semver: &semver.Version{
-							Major: 2,
-						},
 					},
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-1",
-						Cursor:       1,
+						UpdateCursor: "1",
 						VersionLabel: "1.0",
-						Semver: &semver.Version{
-							Major: 1,
-						},
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     1,
 					ChannelID:    "channel-id-2",
 					IsRequired:   true,
-					Cursor:       2,
+					UpdateCursor: "2",
 					VersionLabel: "2.0",
-					Semver: &semver.Version{
-						Major: 2,
-					},
 				},
 			},
 			isSemverRequired:     true,
@@ -2875,11 +2596,8 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			version: &downstreamtypes.DownstreamVersion{
 				Sequence:     0,
 				ChannelID:    "channel-id-1",
-				Cursor:       1,
+				UpdateCursor: "1",
 				VersionLabel: "1.0",
-				Semver: &semver.Version{
-					Major: 1,
-				},
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
@@ -2887,11 +2605,8 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						Sequence:     1,
 						ChannelID:    "channel-id-2",
 						IsRequired:   true,
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "2.0",
-						Semver: &semver.Version{
-							Major: 2,
-						},
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -2901,22 +2616,16 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-1",
-						Cursor:       1,
+						UpdateCursor: "1",
 						VersionLabel: "1.0",
-						Semver: &semver.Version{
-							Major: 1,
-						},
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     1,
 					ChannelID:    "channel-id-2",
 					IsRequired:   true,
-					Cursor:       2,
+					UpdateCursor: "2",
 					VersionLabel: "2.0",
-					Semver: &semver.Version{
-						Major: 2,
-					},
 					KotsApplication: &kotsv1beta1.Application{
 						Spec: kotsv1beta1.ApplicationSpec{
 							AllowRollback: true,
@@ -2933,22 +2642,16 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			version: &downstreamtypes.DownstreamVersion{
 				Sequence:     0,
 				ChannelID:    "channel-id-2",
-				Cursor:       1,
+				UpdateCursor: "1",
 				VersionLabel: "1.0",
-				Semver: &semver.Version{
-					Major: 1,
-				},
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
 						Sequence:     3,
 						ChannelID:    "channel-id-1",
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "4.0",
-						Semver: &semver.Version{
-							Major: 4,
-						},
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -2959,41 +2662,29 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						Sequence:     2,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       1,
+						UpdateCursor: "1",
 						VersionLabel: "3.0",
-						Semver: &semver.Version{
-							Major: 3,
-						},
 					},
 					{
 						Sequence:     1,
 						ChannelID:    "channel-id-2",
 						IsRequired:   true,
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "2.0",
-						Semver: &semver.Version{
-							Major: 2,
-						},
 					},
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-2",
-						Cursor:       1,
+						UpdateCursor: "1",
 						VersionLabel: "1.0",
-						Semver: &semver.Version{
-							Major: 1,
-						},
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     2,
 					ChannelID:    "channel-id-1",
 					IsRequired:   true,
-					Cursor:       1,
+					UpdateCursor: "1",
 					VersionLabel: "3.0",
-					Semver: &semver.Version{
-						Major: 3,
-					},
 				},
 			},
 			isSemverRequired:     true,
@@ -3006,22 +2697,16 @@ func Test_isAppVersionDeployable(t *testing.T) {
 				Sequence:     0,
 				ChannelID:    "channel-id-1",
 				IsRequired:   true,
-				Cursor:       3,
+				UpdateCursor: "3",
 				VersionLabel: "3.0",
-				Semver: &semver.Version{
-					Major: 3,
-				},
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
 						Sequence:     3,
 						ChannelID:    "channel-id-2",
-						Cursor:       1,
+						UpdateCursor: "1",
 						VersionLabel: "4.0",
-						Semver: &semver.Version{
-							Major: 4,
-						},
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -3032,41 +2717,29 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						Sequence:     2,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       3,
+						UpdateCursor: "3",
 						VersionLabel: "3.0",
-						Semver: &semver.Version{
-							Major: 3,
-						},
 					},
 					{
 						Sequence:     1,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       3,
+						UpdateCursor: "3",
 						VersionLabel: "3.0",
-						Semver: &semver.Version{
-							Major: 3,
-						},
 					},
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       3,
+						UpdateCursor: "3",
 						VersionLabel: "3.0",
-						Semver: &semver.Version{
-							Major: 3,
-						},
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     3,
 					ChannelID:    "channel-id-2",
-					Cursor:       1,
+					UpdateCursor: "1",
 					VersionLabel: "4.0",
-					Semver: &semver.Version{
-						Major: 4,
-					},
 					KotsApplication: &kotsv1beta1.Application{
 						Spec: kotsv1beta1.ApplicationSpec{
 							AllowRollback: true,
@@ -3084,22 +2757,16 @@ func Test_isAppVersionDeployable(t *testing.T) {
 				Sequence:     0,
 				ChannelID:    "channel-id-1",
 				IsRequired:   true,
-				Cursor:       2,
+				UpdateCursor: "2",
 				VersionLabel: "1.0",
-				Semver: &semver.Version{
-					Major: 1,
-				},
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
 						Sequence:     3,
 						ChannelID:    "channel-id-2",
-						Cursor:       1,
+						UpdateCursor: "1",
 						VersionLabel: "4.0",
-						Semver: &semver.Version{
-							Major: 4,
-						},
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -3110,41 +2777,29 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						Sequence:     2,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       4,
+						UpdateCursor: "4",
 						VersionLabel: "3.0",
-						Semver: &semver.Version{
-							Major: 3,
-						},
 					},
 					{
 						Sequence:     1,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       3,
+						UpdateCursor: "3",
 						VersionLabel: "2.0",
-						Semver: &semver.Version{
-							Major: 2,
-						},
 					},
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "1.0",
-						Semver: &semver.Version{
-							Major: 1,
-						},
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     3,
 					ChannelID:    "channel-id-2",
-					Cursor:       1,
+					UpdateCursor: "1",
 					VersionLabel: "4.0",
-					Semver: &semver.Version{
-						Major: 4,
-					},
 					KotsApplication: &kotsv1beta1.Application{
 						Spec: kotsv1beta1.ApplicationSpec{
 							AllowRollback: true,
@@ -3161,11 +2816,8 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			version: &downstreamtypes.DownstreamVersion{
 				Sequence:     0,
 				ChannelID:    "channel-id-1",
-				Cursor:       1,
+				UpdateCursor: "1",
 				VersionLabel: "1.0",
-				Semver: &semver.Version{
-					Major: 1,
-				},
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
@@ -3173,11 +2825,8 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						Sequence:     1,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "2.0",
-						Semver: &semver.Version{
-							Major: 2,
-						},
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -3187,22 +2836,16 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-1",
-						Cursor:       1,
+						UpdateCursor: "1",
 						VersionLabel: "1.0",
-						Semver: &semver.Version{
-							Major: 1,
-						},
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     1,
 					ChannelID:    "channel-id-1",
 					IsRequired:   true,
-					Cursor:       2,
+					UpdateCursor: "2",
 					VersionLabel: "2.0",
-					Semver: &semver.Version{
-						Major: 2,
-					},
 					KotsApplication: &kotsv1beta1.Application{
 						Spec: kotsv1beta1.ApplicationSpec{
 							AllowRollback: true,
@@ -3219,22 +2862,16 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			version: &downstreamtypes.DownstreamVersion{
 				Sequence:     0,
 				ChannelID:    "channel-id-2",
-				Cursor:       1,
+				UpdateCursor: "1",
 				VersionLabel: "1.0",
-				Semver: &semver.Version{
-					Major: 1,
-				},
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
 						Sequence:     3,
 						ChannelID:    "channel-id-1",
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "4.0",
-						Semver: &semver.Version{
-							Major: 4,
-						},
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -3245,41 +2882,29 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						Sequence:     2,
 						ChannelID:    "channel-id-2",
 						IsRequired:   true,
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "3.0",
-						Semver: &semver.Version{
-							Major: 3,
-						},
 					},
 					{
 						Sequence:     1,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "2.0",
-						Semver: &semver.Version{
-							Major: 2,
-						},
 					},
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-2",
-						Cursor:       1,
+						UpdateCursor: "1",
 						VersionLabel: "1.0",
-						Semver: &semver.Version{
-							Major: 1,
-						},
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     2,
 					ChannelID:    "channel-id-2",
 					IsRequired:   true,
-					Cursor:       2,
+					UpdateCursor: "2",
 					VersionLabel: "3.0",
-					Semver: &semver.Version{
-						Major: 3,
-					},
 				},
 			},
 			isSemverRequired:     true,
@@ -3291,22 +2916,16 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			version: &downstreamtypes.DownstreamVersion{
 				Sequence:     0,
 				ChannelID:    "channel-id-2",
-				Cursor:       1,
+				UpdateCursor: "1",
 				VersionLabel: "1.0",
-				Semver: &semver.Version{
-					Major: 1,
-				},
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
 						Sequence:     3,
 						ChannelID:    "channel-id-1",
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "4.0",
-						Semver: &semver.Version{
-							Major: 4,
-						},
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -3316,40 +2935,28 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					{
 						Sequence:     2,
 						ChannelID:    "channel-id-2",
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "3.0",
-						Semver: &semver.Version{
-							Major: 3,
-						},
 					},
 					{
 						Sequence:     1,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "2.0",
-						Semver: &semver.Version{
-							Major: 2,
-						},
 					},
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-2",
-						Cursor:       1,
+						UpdateCursor: "1",
 						VersionLabel: "1.0",
-						Semver: &semver.Version{
-							Major: 1,
-						},
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     2,
 					ChannelID:    "channel-id-2",
-					Cursor:       2,
+					UpdateCursor: "2",
 					VersionLabel: "3.0",
-					Semver: &semver.Version{
-						Major: 3,
-					},
 				},
 			},
 			isSemverRequired:     true,
@@ -3362,22 +2969,16 @@ func Test_isAppVersionDeployable(t *testing.T) {
 				Sequence:     0,
 				ChannelID:    "channel-id-1",
 				IsRequired:   true,
-				Cursor:       3,
+				UpdateCursor: "3",
 				VersionLabel: "3.0",
-				Semver: &semver.Version{
-					Major: 3,
-				},
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
 						Sequence:     3,
 						ChannelID:    "channel-id-1",
-						Cursor:       4,
+						UpdateCursor: "4",
 						VersionLabel: "4.0",
-						Semver: &semver.Version{
-							Major: 4,
-						},
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -3388,41 +2989,29 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						Sequence:     2,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       3,
+						UpdateCursor: "3",
 						VersionLabel: "3.0",
-						Semver: &semver.Version{
-							Major: 3,
-						},
 					},
 					{
 						Sequence:     1,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       3,
+						UpdateCursor: "3",
 						VersionLabel: "3.0",
-						Semver: &semver.Version{
-							Major: 3,
-						},
 					},
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       3,
+						UpdateCursor: "3",
 						VersionLabel: "3.0",
-						Semver: &semver.Version{
-							Major: 3,
-						},
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     3,
 					ChannelID:    "channel-id-1",
-					Cursor:       4,
+					UpdateCursor: "4",
 					VersionLabel: "4.0",
-					Semver: &semver.Version{
-						Major: 4,
-					},
 					KotsApplication: &kotsv1beta1.Application{
 						Spec: kotsv1beta1.ApplicationSpec{
 							AllowRollback: true,
@@ -3439,11 +3028,8 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			version: &downstreamtypes.DownstreamVersion{
 				Sequence:     0,
 				ChannelID:    "channel-id-1",
-				Cursor:       3,
+				UpdateCursor: "3",
 				VersionLabel: "3.0",
-				Semver: &semver.Version{
-					Major: 3,
-				},
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
@@ -3451,11 +3037,8 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						Sequence:     3,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       4,
+						UpdateCursor: "4",
 						VersionLabel: "4.0",
-						Semver: &semver.Version{
-							Major: 4,
-						},
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -3466,11 +3049,8 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						Sequence:     2,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       4,
+						UpdateCursor: "4",
 						VersionLabel: "4.0",
-						Semver: &semver.Version{
-							Major: 4,
-						},
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -3481,11 +3061,8 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						Sequence:     1,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       4,
+						UpdateCursor: "4",
 						VersionLabel: "4.0",
-						Semver: &semver.Version{
-							Major: 4,
-						},
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -3495,22 +3072,16 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-1",
-						Cursor:       3,
+						UpdateCursor: "3",
 						VersionLabel: "3.0",
-						Semver: &semver.Version{
-							Major: 3,
-						},
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     3,
 					ChannelID:    "channel-id-1",
 					IsRequired:   true,
-					Cursor:       4,
+					UpdateCursor: "4",
 					VersionLabel: "4.0",
-					Semver: &semver.Version{
-						Major: 4,
-					},
 					KotsApplication: &kotsv1beta1.Application{
 						Spec: kotsv1beta1.ApplicationSpec{
 							AllowRollback: true,
@@ -3527,22 +3098,16 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			version: &downstreamtypes.DownstreamVersion{
 				Sequence:     0,
 				ChannelID:    "channel-id-1",
-				Cursor:       5,
+				UpdateCursor: "5",
 				VersionLabel: "1.0",
-				Semver: &semver.Version{
-					Major: 1,
-				},
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
 						Sequence:     3,
 						ChannelID:    "channel-id-1",
-						Cursor:       4,
+						UpdateCursor: "4",
 						VersionLabel: "4.0",
-						Semver: &semver.Version{
-							Major: 4,
-						},
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -3552,41 +3117,29 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					{
 						Sequence:     2,
 						ChannelID:    "channel-id-1",
-						Cursor:       3,
+						UpdateCursor: "3",
 						IsRequired:   true,
 						VersionLabel: "3.0",
-						Semver: &semver.Version{
-							Major: 3,
-						},
 					},
 					{
 						Sequence:     1,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "2.0",
-						Semver: &semver.Version{
-							Major: 2,
-						},
 					},
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-1",
-						Cursor:       5,
+						UpdateCursor: "5",
 						VersionLabel: "1.0",
-						Semver: &semver.Version{
-							Major: 1,
-						},
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     3,
 					ChannelID:    "channel-id-1",
-					Cursor:       4,
+					UpdateCursor: "4",
 					VersionLabel: "4.0",
-					Semver: &semver.Version{
-						Major: 4,
-					},
 					KotsApplication: &kotsv1beta1.Application{
 						Spec: kotsv1beta1.ApplicationSpec{
 							AllowRollback: true,
@@ -3603,22 +3156,16 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			version: &downstreamtypes.DownstreamVersion{
 				Sequence:     0,
 				ChannelID:    "channel-id-1",
-				Cursor:       2,
+				UpdateCursor: "2",
 				VersionLabel: "1.0",
-				Semver: &semver.Version{
-					Major: 1,
-				},
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
 						Sequence:     4,
 						ChannelID:    "channel-id-1",
-						Cursor:       5,
+						UpdateCursor: "5",
 						VersionLabel: "5.0",
-						Semver: &semver.Version{
-							Major: 5,
-						},
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -3628,51 +3175,36 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					{
 						Sequence:     3,
 						ChannelID:    "channel-id-1",
-						Cursor:       4,
+						UpdateCursor: "4",
 						IsRequired:   true,
 						VersionLabel: "4.0",
-						Semver: &semver.Version{
-							Major: 4,
-						},
 					},
 					{
 						Sequence:     2,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       3,
+						UpdateCursor: "3",
 						VersionLabel: "3.0",
-						Semver: &semver.Version{
-							Major: 3,
-						},
 					},
 					{
 						Sequence:     1,
 						ChannelID:    "channel-id-2",
 						IsRequired:   true,
-						Cursor:       1,
+						UpdateCursor: "1",
 						VersionLabel: "2.0",
-						Semver: &semver.Version{
-							Major: 2,
-						},
 					},
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-1",
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "1.0",
-						Semver: &semver.Version{
-							Major: 1,
-						},
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     4,
 					ChannelID:    "channel-id-1",
-					Cursor:       5,
+					UpdateCursor: "5",
 					VersionLabel: "5.0",
-					Semver: &semver.Version{
-						Major: 5,
-					},
 					KotsApplication: &kotsv1beta1.Application{
 						Spec: kotsv1beta1.ApplicationSpec{
 							AllowRollback: true,
@@ -3689,22 +3221,16 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			version: &downstreamtypes.DownstreamVersion{
 				Sequence:     0,
 				ChannelID:    "channel-id-1",
-				Cursor:       2,
+				UpdateCursor: "2",
 				VersionLabel: "1.0",
-				Semver: &semver.Version{
-					Major: 1,
-				},
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
 						Sequence:     4,
 						ChannelID:    "channel-id-1",
-						Cursor:       5,
+						UpdateCursor: "5",
 						VersionLabel: "5.0",
-						Semver: &semver.Version{
-							Major: 5,
-						},
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -3714,51 +3240,36 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					{
 						Sequence:     3,
 						ChannelID:    "channel-id-1",
-						Cursor:       6,
+						UpdateCursor: "6",
 						IsRequired:   true,
 						VersionLabel: "4.0",
-						Semver: &semver.Version{
-							Major: 4,
-						},
 					},
 					{
 						Sequence:     2,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       7,
+						UpdateCursor: "7",
 						VersionLabel: "3.0",
-						Semver: &semver.Version{
-							Major: 3,
-						},
 					},
 					{
 						Sequence:     1,
 						ChannelID:    "channel-id-2",
 						IsRequired:   true,
-						Cursor:       1,
+						UpdateCursor: "1",
 						VersionLabel: "2.0",
-						Semver: &semver.Version{
-							Major: 2,
-						},
 					},
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-1",
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "1.0",
-						Semver: &semver.Version{
-							Major: 1,
-						},
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     4,
 					ChannelID:    "channel-id-1",
-					Cursor:       5,
+					UpdateCursor: "5",
 					VersionLabel: "5.0",
-					Semver: &semver.Version{
-						Major: 5,
-					},
 					KotsApplication: &kotsv1beta1.Application{
 						Spec: kotsv1beta1.ApplicationSpec{
 							AllowRollback: true,
@@ -3775,22 +3286,16 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			version: &downstreamtypes.DownstreamVersion{
 				Sequence:     1,
 				ChannelID:    "channel-id-1",
-				Cursor:       2,
+				UpdateCursor: "2",
 				VersionLabel: "2.0",
-				Semver: &semver.Version{
-					Major: 2,
-				},
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
 						Sequence:     5,
 						ChannelID:    "channel-id-1",
-						Cursor:       6,
+						UpdateCursor: "6",
 						VersionLabel: "6.0",
-						Semver: &semver.Version{
-							Major: 6,
-						},
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -3801,59 +3306,41 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						Sequence:     4,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       5,
+						UpdateCursor: "5",
 						VersionLabel: "5.0",
-						Semver: &semver.Version{
-							Major: 5,
-						},
 					},
 					{
 						Sequence:     3,
 						ChannelID:    "channel-id-1",
-						Cursor:       4,
+						UpdateCursor: "4",
 						VersionLabel: "4.0",
-						Semver: &semver.Version{
-							Major: 4,
-						},
 					},
 					{
 						Sequence:     2,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       3,
+						UpdateCursor: "3",
 						VersionLabel: "3.0",
-						Semver: &semver.Version{
-							Major: 3,
-						},
 					},
 					{
 						Sequence:     1,
 						ChannelID:    "channel-id-1",
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "2.0",
-						Semver: &semver.Version{
-							Major: 2,
-						},
 					},
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-1",
-						Cursor:       1,
+						UpdateCursor: "1",
 						IsRequired:   true,
 						VersionLabel: "1.0",
-						Semver: &semver.Version{
-							Major: 1,
-						},
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     5,
 					ChannelID:    "channel-id-1",
-					Cursor:       6,
+					UpdateCursor: "6",
 					VersionLabel: "6.0",
-					Semver: &semver.Version{
-						Major: 6,
-					},
 					KotsApplication: &kotsv1beta1.Application{
 						Spec: kotsv1beta1.ApplicationSpec{
 							AllowRollback: true,
@@ -3870,22 +3357,16 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			version: &downstreamtypes.DownstreamVersion{
 				Sequence:     1,
 				ChannelID:    "channel-id-1",
-				Cursor:       2,
+				UpdateCursor: "2",
 				VersionLabel: "2.0",
-				Semver: &semver.Version{
-					Major: 2,
-				},
 			},
 			appVersions: &downstreamtypes.DownstreamVersions{
 				AllVersions: []*downstreamtypes.DownstreamVersion{
 					{
 						Sequence:     5,
 						ChannelID:    "channel-id-1",
-						Cursor:       6,
+						UpdateCursor: "6",
 						VersionLabel: "4.0",
-						Semver: &semver.Version{
-							Major: 4,
-						},
 						KotsApplication: &kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -3896,60 +3377,42 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						Sequence:     4,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       3,
+						UpdateCursor: "3",
 						VersionLabel: "3.0",
-						Semver: &semver.Version{
-							Major: 3,
-						},
 					},
 					{
 						Sequence:     3,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       3,
+						UpdateCursor: "3",
 						VersionLabel: "3.0",
-						Semver: &semver.Version{
-							Major: 3,
-						},
 					},
 					{
 						Sequence:     2,
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
-						Cursor:       3,
+						UpdateCursor: "3",
 						VersionLabel: "3.0",
-						Semver: &semver.Version{
-							Major: 3,
-						},
 					},
 					{
 						Sequence:     1,
 						ChannelID:    "channel-id-1",
-						Cursor:       2,
+						UpdateCursor: "2",
 						VersionLabel: "2.0",
-						Semver: &semver.Version{
-							Major: 2,
-						},
 					},
 					{
 						Sequence:     0,
 						ChannelID:    "channel-id-1",
-						Cursor:       1,
+						UpdateCursor: "1",
 						IsRequired:   true,
 						VersionLabel: "1.0",
-						Semver: &semver.Version{
-							Major: 1,
-						},
 					},
 				},
 				CurrentVersion: &downstreamtypes.DownstreamVersion{
 					Sequence:     5,
 					ChannelID:    "channel-id-1",
-					Cursor:       6,
+					UpdateCursor: "6",
 					VersionLabel: "4.0",
-					Semver: &semver.Version{
-						Major: 4,
-					},
 					KotsApplication: &kotsv1beta1.Application{
 						Spec: kotsv1beta1.ApplicationSpec{
 							AllowRollback: true,
@@ -3967,6 +3430,37 @@ func Test_isAppVersionDeployable(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			if test.version.UpdateCursor != "" {
+				vc := cursor.MustParse(test.version.UpdateCursor)
+				test.version.Cursor = &vc
+			}
+			vs, err := semver.ParseTolerant(test.version.VersionLabel)
+			if err == nil {
+				test.version.Semver = &vs
+			}
+
+			for _, v := range test.appVersions.AllVersions {
+				if v.UpdateCursor != "" {
+					c := cursor.MustParse(v.UpdateCursor)
+					v.Cursor = &c
+				}
+				s, err := semver.ParseTolerant(v.VersionLabel)
+				if err == nil {
+					v.Semver = &s
+				}
+			}
+
+			if test.appVersions.CurrentVersion != nil {
+				if test.appVersions.CurrentVersion.UpdateCursor != "" {
+					cvc := cursor.MustParse(test.appVersions.CurrentVersion.UpdateCursor)
+					test.appVersions.CurrentVersion.Cursor = &cvc
+				}
+				cvs, err := semver.ParseTolerant(test.appVersions.CurrentVersion.VersionLabel)
+				if err == nil {
+					test.appVersions.CurrentVersion.Semver = &cvs
+				}
+			}
+
 			isDeployable, cause := isAppVersionDeployable(test.version, test.appVersions, test.isSemverRequired)
 			assert.Equal(t, test.expectedIsDeployable, isDeployable)
 			assert.Equal(t, test.expectedCause, cause)
