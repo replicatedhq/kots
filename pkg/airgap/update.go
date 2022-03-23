@@ -106,7 +106,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 	if len(missingPrereqs) > 0 {
 		return util.ActionableError{
 			NoRetry: true,
-			Message: fmt.Sprintf("This airgap bundle cannot be deployed because versions %s are required and must be uploaded first.", strings.Join(missingPrereqs, ", ")),
+			Message: fmt.Sprintf("This airgap bundle cannot be uploaded because versions %s are required and must be uploaded first.", strings.Join(missingPrereqs, ", ")),
 		}
 	}
 
