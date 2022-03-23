@@ -16,10 +16,10 @@ jobs:
     # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
     # only run this workflow if:
     #   not a fork or user is dependabot or PR is labeled with '@actions/safe-to-test'
-    if: >
-      github.event.pull_request.head.repo.full_name == github.repository ||
-      github.event.pull_request.user.login == 'dependabot[bot]' ||
-      contains(github.event.pull_request.labels.*.name, '@actions/safe-to-test')
+    # if: >
+    #   github.event.pull_request.head.repo.full_name == github.repository ||
+    #   github.event.pull_request.user.login == 'dependabot[bot]' ||
+    #   contains(github.event.pull_request.labels.*.name, '@actions/safe-to-test')
     steps:
       - name: ok
         run: echo "yes"
@@ -442,9 +442,9 @@ jobs:
         k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
     steps:
       - uses: actions/checkout@v2
-        with:
-          ref: ${{github.event.pull_request.head.ref}}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
+        # with:
+        #   ref: ${{github.event.pull_request.head.ref}}
+        #   repository: ${{github.event.pull_request.head.repo.full_name}}
 
       - uses: replicatedhq/action-k3s@main
         id: k3s
