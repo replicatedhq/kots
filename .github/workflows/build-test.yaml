@@ -5,10 +5,6 @@ on:
     branches:
       - divolgin/tests
 
-concurrency:
-  group: ${{ github.head_ref }}
-  cancel-in-progress: true
-
 jobs:
   build-web:
     runs-on: ubuntu-18.04
@@ -160,8 +156,10 @@ jobs:
       matrix:
         k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v2
+        # with:
+        #   ref: ${{github.event.pull_request.head.ref}}
+        #   repository: ${{github.event.pull_request.head.repo.full_name}}
 
       - uses: replicatedhq/action-k3s@main
         id: k3s
