@@ -189,7 +189,7 @@ func Test_getMissingRequiredVersions(t *testing.T) {
 				v.Cursor = &c
 			}
 
-			// cusor based
+			// cursor based
 			tt.license.Spec.IsSemverRequired = false
 			got, err := getMissingRequiredVersions(tt.airgap, tt.license, tt.installedVersions)
 			req.NoError(err)

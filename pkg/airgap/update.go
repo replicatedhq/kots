@@ -106,7 +106,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 	if len(missingPrereqs) > 0 {
 		return util.ActionableError{
 			NoRetry: true,
-			Message: fmt.Sprintf("This airgap bundle requires the following releases to be installed first: %s", strings.Join(missingPrereqs, ", ")),
+			Message: fmt.Sprintf("This airgap bundle cannot be deployed because versions %s are required and must be uploaded first.", strings.Join(missingPrereqs, ", ")),
 		}
 	}
 
@@ -339,16 +339,12 @@ func getMissingRequiredVersions(airgap *kotsv1beta1.Airgap, license *kotsv1beta1
 	for _, requiredRelease := range airgap.Spec.RequiredReleases {
 		laterReleaseInstalled := false
 		for _, appVersion := range installedVersions {
-			if license.Spec.IsSemverRequired {
-				// semvers can be compared across channels
-				if appVersion.Semver == nil {
-					return nil, errors.Errorf("semver required but version %s does not have semver", appVersion.VersionLabel)
-				}
-				requiredVersion, err := semver.ParseTolerant(requiredRelease.VersionLabel)
-				if err != nil {
-					return nil, errors.Wrapf(err, "failed to parse required version label %q", requiredRelease.VersionLabel)
-				}
-				if requiredVersion.LE(*appVersion.Semver) {
+			requiredSemver, requiredSemverErr := semver.ParseTolerant(requiredRelease.VersionLabel)
+
+			// semvers can be compared across channels
+			// if a semmver is missing, fallback to comparing the cursor but only if channel is the same
+			if license.Spec.IsSemverRequired && appVersion.Semver != nil && requiredSemverErr == nil {
+				if requiredSemver.LE(*appVersion.Semver) {
 					laterReleaseInstalled = true
 					break
 				}
