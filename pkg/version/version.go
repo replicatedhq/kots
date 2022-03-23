@@ -64,6 +64,8 @@ func DeployVersion(appID string, sequence int64) error {
 
 	db := persistence.MustGetDBSession()
 
+	logger.Info("deploying app version", zap.String("appId", appID), zap.Int64("sequence", sequence))
+
 	tx, err := db.Begin()
 	if err != nil {
 		return errors.Wrap(err, "failed to begin")
