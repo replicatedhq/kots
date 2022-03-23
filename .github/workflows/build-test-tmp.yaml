@@ -1,0 +1,251 @@
+name: build-test
+
+on:
+  push:
+    branches:
+      - divolgin/tests
+
+jobs:
+  build-web:
+    runs-on: ubuntu-18.04
+    env:
+      YARN_CACHE_FOLDER: /home/runner/work/kots/.cache/yarn
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - uses: actions/cache@v2
+        with:
+          path: ${{ env.YARN_CACHE_FOLDER }}
+          key: ${{ runner.os }}-kotsweb-nodecache-${{ hashFiles('./web/yarn.lock') }}
+          restore-keys: ${{ runner.os }}-kotsweb-nodecache-
+
+      - name: Get tags
+        id: get_tag
+        uses: ./actions/version-tag
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v2
+        with:
+          node-version: '17.x'
+
+      - name: Build web
+        env:
+          GIT_COMMIT: ${{ github.sha }}
+          GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+        run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C web deps build-kotsadm
+
+      - name: Upload web artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: web
+          path: ./web/dist
+
+
+  build-kotsadm:
+    runs-on: ubuntu-18.04
+    needs: [build-web]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '^1.17.4'
+
+      - name: setup env
+        run: |
+          echo "GOPATH=$(go env GOPATH)" >> $GITHUB_ENV
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+
+      - id: go-cache-paths
+        run: |
+          echo "::set-output name=go-build::$(go env GOCACHE)"
+          echo "::set-output name=go-mod::$(go env GOMODCACHE)"
+
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ${{ steps.go-cache-paths.outputs.go-build }}
+            ${{ steps.go-cache-paths.outputs.go-mod }}
+          key: ${{ runner.os }}-kots-gocache-${{ hashFiles('./kurl_proxy/go.sum') }}
+          restore-keys: ${{ runner.os }}-kots-gocache-
+
+      - name: Build kots
+        run: |
+          export $(cat .image.env | sed 's/#.*//g' | xargs) && make ci-test kots
+          chmod +x bin/kots
+      - uses: actions/upload-artifact@v2
+        with:
+          name: kots
+          path: bin/kots
+
+      - name: Download web artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: web
+          path: ./web/dist
+      - name: Build kotsadm
+        run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make build
+      - name: build and push kotsadm for e2e
+        uses: docker/build-push-action@v2
+        with:
+          tags: ttl.sh/automated-${{ github.run_id }}/kotsadm:2h
+          context: ./
+          file: ./deploy/Dockerfile
+          push: true
+
+
+  build-migrations:
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: build and push migrations for e2e
+        uses: docker/build-push-action@v2
+        with:
+          tags: ttl.sh/automated-${{ github.run_id }}/kotsadm-migrations:2h
+          context: ./migrations
+          file: ./migrations/deploy/Dockerfile
+          push: true
+
+
+  push-minio:
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: load environment variables from .image.env
+        uses: falti/dotenv-action@v0.2
+        id: dotenv
+        with:
+          path: .image.env
+
+      - name: push minio for e2e
+        run: |
+          docker pull minio/minio:${{ steps.dotenv.outputs.minio_tag }}
+          docker tag minio/minio:${{ steps.dotenv.outputs.minio_tag }} ttl.sh/automated-${{ github.run_id }}/minio:2h
+          docker push ttl.sh/automated-${{ github.run_id }}/minio:2h
+
+
+  push-postgres:
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: load environment variables from .image.env
+        uses: falti/dotenv-action@v0.2
+        id: dotenv
+        with:
+          path: .image.env
+
+      - name: push postgres for CI
+        run: |
+          docker pull postgres:${{ steps.dotenv.outputs.postgres_alpine_tag }}
+          docker tag postgres:${{ steps.dotenv.outputs.postgres_alpine_tag }} ttl.sh/automated-${{ github.run_id }}/postgres:2h
+          docker push ttl.sh/automated-${{ github.run_id }}/postgres:2h
+
+
+  validate-backup-and-restore:
+    runs-on: ubuntu-18.04
+    needs: [build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
+    steps:
+      - uses: actions/checkout@v2
+        # with:
+        #   ref: ${{github.event.pull_request.head.ref}}
+        #   repository: ${{github.event.pull_request.head.repo.full_name}}
+
+      - uses: replicatedhq/action-k3s@main
+        id: k3s
+        with:
+          version: ${{ matrix.k8s_version }}
+          ports: '30000:30000'
+
+      - name: download kots binary
+        uses: actions/download-artifact@v2
+        with:
+          name: kots
+          path: bin/
+
+      - run: chmod +x bin/kots
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '17.x'
+
+      - name: setup testim
+        run: npm i -g @testim/testim-cli
+        shell: bash
+
+      ## testim tests
+      - name: aws credentials setup
+        run: |
+          cat > aws-credentials << EOL
+          [default]
+          aws_access_key_id=${{ secrets.TESTIM_AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key=${{ secrets.TESTIM_AWS_SECRET_ACCESS_KEY }}
+          EOL
+
+      - name: delete velero if exists
+        run: kubectl delete ns velero --ignore-not-found
+
+      - name: velero install
+        run: |
+          curl -LO https://github.com/vmware-tanzu/velero/releases/download/v1.7.1/velero-v1.7.1-linux-amd64.tar.gz && tar zxvf velero-v1.7.1-linux-amd64.tar.gz && \
+          ./velero-v1.7.1-linux-amd64/velero install \
+          --provider aws \
+          --plugins velero/velero-plugin-for-aws:v1.3.0 \
+          --bucket kots-testim-snapshots \
+          --backup-location-config region=us-east-1 \
+          --snapshot-location-config region=us-east-1 \
+          --secret-file ./aws-credentials \
+          --prefix /automated-backup-and-restore-test-${{ github.run_id }}-${{ matrix.k8s_version }}-$RANDOM \
+          --use-restic
+
+      - name: get testim branch
+        if: startsWith(github.ref, 'refs/heads/')
+        id: get_testim_branch
+        run: |
+          BRANCH=${GITHUB_REF/refs\/heads\//}
+          if [ "$BRANCH" == "main" ]; then
+            BRANCH="master"
+          fi
+          echo ::set-output name=TESTIM_BRANCH::${BRANCH:-master}
+
+      - name: prepare backup-and-restore online install
+        run: |
+          set -x
+          echo "++++++running from branch"
+          ./bin/kots \
+          install backup-and-restore/automated \
+          --no-port-forward \
+          --namespace backup-and-restore \
+          --shared-password password \
+          --kotsadm-registry ttl.sh \
+          --kotsadm-namespace automated-${{ github.run_id }} \
+          --kotsadm-tag 2h
+
+      - name: execute suite backup-and-restore
+        run: |
+          set +e
+          kubectl apply -f deploy/build-test-pipeline/selenium-standalone.yaml -n backup-and-restore
+          kubectl wait --timeout=60s -n backup-and-restore deployment/grid --for condition=available
+          sleep 4
+          testim --turbo-mode --base-url kotsadm:3000 --host localhost --port 30000 --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite backup-and-restore
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "------pods:"
+            kubectl -n backup-and-restore get pods
+            echo "------kotsadm logs"
+            kubectl -n backup-and-restore logs deployment/kotsadm
+            echo "------previous kotsadm logs"
+            kubectl -n backup-and-restore logs -p deployment/kotsadm
+          fi
+          exit $EXIT_CODE
+
