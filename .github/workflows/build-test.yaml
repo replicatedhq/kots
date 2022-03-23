@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   can-run-ci:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
     # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
     # only run this workflow if:
@@ -38,7 +38,7 @@ jobs:
 
 
   build-web:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [can-run-ci]
     env:
       YARN_CACHE_FOLDER: /home/runner/work/kots/.cache/yarn
@@ -81,7 +81,7 @@ jobs:
 
 
   build-kotsadm:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [can-run-ci, build-web]
     steps:
       # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
@@ -140,7 +140,7 @@ jobs:
 
 
   build-kurl-proxy:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [can-run-ci]
     steps:
       # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
@@ -187,7 +187,7 @@ jobs:
 
 
   build-migrations:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [can-run-ci]
     steps:
       - uses: actions/checkout@v2
@@ -204,7 +204,7 @@ jobs:
 
 
   push-minio:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [can-run-ci]
     steps:
       - uses: actions/checkout@v2
@@ -226,7 +226,7 @@ jobs:
 
 
   push-postgres:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [can-run-ci]
     steps:
       - uses: actions/checkout@v2
@@ -248,7 +248,7 @@ jobs:
 
 
   validate-smoke-test:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [can-run-ci, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
     strategy:
       fail-fast: false
@@ -360,7 +360,7 @@ jobs:
 
 
   validate-minimal-rbac:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [can-run-ci, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
     strategy:
       fail-fast: false
@@ -435,7 +435,7 @@ jobs:
 
 
   validate-backup-and-restore:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [can-run-ci, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
     strategy:
       fail-fast: false
@@ -535,7 +535,7 @@ jobs:
 
 
   validate-no-required-config:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [can-run-ci, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
     strategy:
       fail-fast: false
@@ -617,7 +617,7 @@ jobs:
 
 
   validate-multi-namespace:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [can-run-ci, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
     strategy:
       fail-fast: false
@@ -709,7 +709,7 @@ jobs:
 
 
   validate-kots-pull:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [can-run-ci, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
     strategy:
       fail-fast: false
@@ -783,7 +783,7 @@ jobs:
 
 
   validate-app-version-label:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [can-run-ci, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
     strategy:
       fail-fast: false
@@ -876,7 +876,7 @@ jobs:
 
 
   validate-strict-preflight-checks:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [can-run-ci, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
     strategy:
       fail-fast: false
@@ -958,7 +958,7 @@ jobs:
 
   # this job will validate that all validate-* jobs succeed and is used for the github branch protection rule
   validate-success:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [validate-smoke-test, validate-minimal-rbac, validate-backup-and-restore, validate-no-required-config, validate-multi-namespace, validate-kots-pull, validate-app-version-label, validate-strict-preflight-checks]
     steps:
       - run: echo "Validate success"
