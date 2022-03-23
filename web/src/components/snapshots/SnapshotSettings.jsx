@@ -32,7 +32,7 @@ class SnapshotSettings extends Component {
     checkForVeleroAndRestic: false
   };
 
-  fetchSnapshotSettings = async (isCheckForVelero) => {
+  fetchSnapshotSettings = (isCheckForVelero) => {
     this.setState({
       isLoadingSnapshotSettings: true,
       snapshotSettingsErr: false,
