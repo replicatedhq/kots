@@ -509,7 +509,7 @@ func (h *Handler) CanInstallAppVersion(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if len(missingPrereqs) > 0 {
-			response.Error = fmt.Sprintf("This airgap bundle requires the following releases to be installed first: %s", strings.Join(missingPrereqs, ", "))
+			response.Error = fmt.Sprintf("This airgap bundle cannot be deployed because versions %s are required and must be uploaded first.", strings.Join(missingPrereqs, ", "))
 			JSON(w, http.StatusOK, response)
 			return
 		}

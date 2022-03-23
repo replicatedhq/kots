@@ -68,7 +68,7 @@ export class AirgapUploader {
       try {
         const appSpec = await Utilities.getAppSpecFromAirgapBundle(this.resumableFile.file);
         const airgapSpec = await Utilities.getAirgapMetaFromAirgapBundle(this.resumableFile.file);
-        installableResponse = await this.checkReleaseInstallable(appSpec, airgapSpec);
+        installableResponse = await this.canInstallRelease(appSpec, airgapSpec);
       } catch(err) {
         console.log(err);
       }
@@ -162,7 +162,7 @@ export class AirgapUploader {
     }
   }
 
-  checkReleaseInstallable = async (appSpec, airgapSpec) => {
+  canInstallRelease = async (appSpec, airgapSpec) => {
     const res = await fetch(`${process.env.API_ENDPOINT}/app/${this.appSlug}/can-install`, {
       headers: {
         "Authorization": Utilities.getToken(),
