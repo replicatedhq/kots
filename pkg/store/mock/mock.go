@@ -3443,6 +3443,21 @@ func (mr *MockVersionStoreMockRecorder) GetAppVersionBaseSequence(appID, version
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppVersionBaseSequence", reflect.TypeOf((*MockVersionStore)(nil).GetAppVersionBaseSequence), appID, versionLabel)
 }
 
+// GetAppVersions mocks base method.
+func (m *MockVersionStore) GetAppVersions(appID string) ([]*types1.AppVersion, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAppVersions", appID)
+	ret0, _ := ret[0].([]*types1.AppVersion)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAppVersions indicates an expected call of GetAppVersions.
+func (mr *MockVersionStoreMockRecorder) GetAppVersions(appID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppVersions", reflect.TypeOf((*MockVersionStore)(nil).GetAppVersions), appID)
+}
+
 // GetCurrentUpdateCursor mocks base method.
 func (m *MockVersionStore) GetCurrentUpdateCursor(appID, channelID string) (string, string, bool, error) {
 	m.ctrl.T.Helper()
