@@ -914,7 +914,7 @@ class DashboardVersionCard extends React.Component {
     const requiredVersions = downstream?.pendingVersions?.length > 0 ? filter(downstream.pendingVersions, ["isRequired", true]) : [];
     if (this.props.currentVersion && requiredVersions.length > 0) { // If there is a version already deployed, and there is at least one required pending versions, set nextAppVersion to the earliest required version
       nextAppVersion = requiredVersions[requiredVersions.length - 1];
-      const indexOfNextAppVersion = findIndex(downstream?.pendingVersions, ["versionLabel", nextAppVersion.versionLabel]);
+      const indexOfNextAppVersion = findIndex(downstream?.pendingVersions, ["sequence", nextAppVersion.sequence]);
       versionsToSkip = (downstream?.pendingVersions?.length - 1) - indexOfNextAppVersion;
       if (indexOfNextAppVersion > 0) {
         newVersionsAfterUpgrade = ` Additional versions are available after you deploy this required version.`;
