@@ -933,8 +933,8 @@ func releaseToFiles(release *Release) ([]types.UpstreamFile, error) {
 // GetApplicationMetadata will return any available application yaml from
 // the upstream. If there is no application.yaml, it will return
 // a placeholder one
-func GetApplicationMetadata(upstream *url.URL) ([]byte, error) {
-	metadata, err := getApplicationMetadataFromHost("replicated.app", upstream)
+func GetApplicationMetadata(upstream *url.URL, versionLabel string) ([]byte, error) {
+	metadata, err := getApplicationMetadataFromHost("replicated.app", upstream, versionLabel)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get metadata from replicated.app")
 	}
@@ -946,19 +946,31 @@ func GetApplicationMetadata(upstream *url.URL) ([]byte, error) {
 	return metadata, nil
 }
 
-func getApplicationMetadataFromHost(host string, upstream *url.URL) ([]byte, error) {
+func getApplicationMetadataFromHost(host string, upstream *url.URL, versionLabel string) ([]byte, error) {
 	r, err := parseReplicatedURL(upstream)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse replicated upstream")
 	}
 
-	url := fmt.Sprintf("https://%s/metadata/%s", host, r.AppSlug)
-
-	if r.Channel != nil {
-		url = fmt.Sprintf("%s/%s", url, *r.Channel)
+	if r.VersionLabel != nil && *r.VersionLabel != "" && versionLabel != "" && *r.VersionLabel != versionLabel {
+		return nil, errors.Errorf("version label in upstream (%q) does not match version label in parameter (%q)", *r.VersionLabel, versionLabel)
 	}
 
-	getReq, err := http.NewRequest("GET", url, nil)
+	getUrl := fmt.Sprintf("https://%s/metadata/%s", host, url.PathEscape(r.AppSlug))
+
+	if r.Channel != nil {
+		getUrl = fmt.Sprintf("%s/%s", getUrl, url.PathEscape(*r.Channel))
+	}
+
+	v := url.Values{}
+	if r.VersionLabel != nil && *r.VersionLabel != "" {
+		v.Set("versionLabel", *r.VersionLabel)
+	} else if versionLabel != "" {
+		v.Set("versionLabel", versionLabel)
+	}
+	getUrl = fmt.Sprintf("%s?%s", getUrl, v.Encode())
+
+	getReq, err := http.NewRequest("GET", getUrl, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to call newrequest")
 	}
