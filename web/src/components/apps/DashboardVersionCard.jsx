@@ -3,7 +3,7 @@ import { Link, withRouter } from "react-router-dom";
 import ReactTooltip from "react-tooltip"
 
 import filter from "lodash/filter";
-import orderBy from "lodash/orderBy";
+import sortBy from "lodash/sortBy";
 import findIndex from "lodash/findIndex";
 import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
@@ -909,23 +909,23 @@ class DashboardVersionCard extends React.Component {
       return null;
     }
 
-    let latestVersion = downstream?.latestVersion;
+    let nextAppVersion = downstream?.latestVersion;
     let newVersionsAfterUpgrade = null;
     let versionsToSkip = downstream?.pendingVersions?.length - 1;
     const requiredVersions = downstream?.pendingVersions?.length > 0 ? filter(downstream.pendingVersions, ["isRequired", true]) : [];
-    if (this.props.currentVersion?.deployedAt && requiredVersions.length > 0) { // If there is a version already deployed, and there is at least one required pending versions, set latestVersion to the earliest required version
-      const sortedVersions = orderBy(requiredVersions, ["createdOn", "desc"]);
-      latestVersion = sortedVersions[0];
-      const indexOfLatestVersion = findIndex(downstream?.pendingVersions, ["versionLabel", latestVersion.versionLabel]);
-      versionsToSkip = (downstream?.pendingVersions?.length - 1) - indexOfLatestVersion;
-      if (indexOfLatestVersion > 0) {
+    if (this.props.currentVersion && requiredVersions.length > 0) { // If there is a version already deployed, and there is at least one required pending versions, set nextAppVersion to the earliest required version
+      const sortedVersions = sortBy(requiredVersions, [(item) => { return item.cursor }]);
+      nextAppVersion = sortedVersions[0];
+      const indexOfNextAppVersion = findIndex(downstream?.pendingVersions, ["versionLabel", nextAppVersion.versionLabel]);
+      versionsToSkip = (downstream?.pendingVersions?.length - 1) - indexOfNextAppVersion;
+      if (indexOfNextAppVersion > 0) {
         newVersionsAfterUpgrade = ` Additional versions are available after you deploy this required version.`;
       }
     }
     const app = this.props.app;
-    const downstreamSource = latestVersion?.source;
+    const downstreamSource = nextAppVersion?.source;
     const gitopsEnabled = downstream?.gitops?.enabled;
-    const isNew = secondsAgo(latestVersion?.createdOn) < 10;
+    const isNew = secondsAgo(nextAppVersion?.createdOn) < 10;
     
 
     return (
@@ -940,25 +940,25 @@ class DashboardVersionCard extends React.Component {
           <div className={`flex ${isNew && !app?.isAirgap ? "is-new" : ""}`}>
             <div className="flex-column">
               <div className="flex alignItems--center">
-                <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">{latestVersion.versionLabel || latestVersion.title}</p>
-                <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">Sequence {latestVersion.sequence}</p>
-                {latestVersion.isRequired &&
+                <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">{nextAppVersion.versionLabel || nextAppVersion.title}</p>
+                <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">Sequence {nextAppVersion.sequence}</p>
+                {nextAppVersion.isRequired &&
                   <span className="status-tag required u-marginLeft--10"> Required </span>
                 }
               </div>
-              <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5"> Released {Utilities.dateFormat(latestVersion?.createdOn, "MM/DD/YY @ hh:mm a z")} </p>
+              <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5"> Released {Utilities.dateFormat(nextAppVersion?.createdOn, "MM/DD/YY @ hh:mm a z")} </p>
               <div className="u-marginTop--5 flex flex-auto alignItems--center">
-                {this.renderSourceAndDiff(latestVersion)}
+                {this.renderSourceAndDiff(nextAppVersion)}
               </div>
             </div>
             <div className="flex alignItems--center u-paddingLeft--20">
               <p className="u-fontSize--small u-fontWeight--bold u-textColor--lightAccent u-lineHeight--default">{downstreamSource}</p>
             </div>
-            {this.renderVersionAction(latestVersion)}
+            {this.renderVersionAction(nextAppVersion)}
           </div>
-          {this.renderVersionDownloadStatus(latestVersion)}
+          {this.renderVersionDownloadStatus(nextAppVersion)}
         </div>
-        {versionsToSkip > 0 && <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--header u-marginTop--10">{versionsToSkip} version{versionsToSkip > 1 && "s"} will be skipped in upgrading to {latestVersion?.versionLabel}.{newVersionsAfterUpgrade}</p>}
+        {versionsToSkip > 0 && <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--header u-marginTop--10">{versionsToSkip} version{versionsToSkip > 1 && "s"} will be skipped in upgrading to {nextAppVersion?.versionLabel}.{newVersionsAfterUpgrade}</p>}
       </div>
     );
   }
