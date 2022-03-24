@@ -32,7 +32,7 @@ class SnapshotSettings extends Component {
     checkForVeleroAndRestic: false
   };
 
-  fetchSnapshotSettings = async (isCheckForVelero) => {
+  fetchSnapshotSettings = (isCheckForVelero) => {
     this.setState({
       isLoadingSnapshotSettings: true,
       snapshotSettingsErr: false,
@@ -41,7 +41,7 @@ class SnapshotSettings extends Component {
       minimalRBACKotsadmNamespace: "",
     });
 
-    fetch(`${process.env.API_ENDPOINT}/snapshots/settings`, {
+    return fetch(`${process.env.API_ENDPOINT}/snapshots/settings`, {
       method: "GET",
       headers: {
         "Authorization": Utilities.getToken(),
