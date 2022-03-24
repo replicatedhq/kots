@@ -1,6 +1,9 @@
 package updatechecker
 
 import (
+	"strings"
+	"testing"
+
 	"github.com/blang/semver"
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
@@ -9,8 +12,6 @@ import (
 	preflighttypes "github.com/replicatedhq/kots/pkg/preflight/types"
 	mock_store "github.com/replicatedhq/kots/pkg/store/mock"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
-	"strings"
-	"testing"
 )
 
 func TestAutoDeployDoesNotExecuteIfDisabled(t *testing.T) {
@@ -43,7 +44,7 @@ func TestAutoDeployFailedToGetAppVersionsErrors(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockStore := mock_store.NewMockStore(ctrl)
-	mockStore.EXPECT().GetAppVersions(opts.AppID, clusterID, true).Return(downstreamVersions, errors.New("app version error"))
+	mockStore.EXPECT().GetDownstreamVersions(opts.AppID, clusterID, true).Return(downstreamVersions, errors.New("app version error"))
 
 	store = mockStore
 
@@ -68,7 +69,7 @@ func TestAutoDeployAppVersionsIsEmptyErrors(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockStore := mock_store.NewMockStore(ctrl)
-	mockStore.EXPECT().GetAppVersions(opts.AppID, clusterID, true).Return(downstreamVersions, nil)
+	mockStore.EXPECT().GetDownstreamVersions(opts.AppID, clusterID, true).Return(downstreamVersions, nil)
 
 	store = mockStore
 
@@ -93,7 +94,7 @@ func TestAutoDeployCurrentVersionIsNilDoesNothing(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockStore := mock_store.NewMockStore(ctrl)
-	mockStore.EXPECT().GetAppVersions(opts.AppID, clusterID, true).Return(downstreamVersions, nil)
+	mockStore.EXPECT().GetDownstreamVersions(opts.AppID, clusterID, true).Return(downstreamVersions, nil)
 
 	store = mockStore
 
@@ -120,7 +121,7 @@ func TestAutoDeployCurrentVersionSemverIsNilDoesNothing(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockStore := mock_store.NewMockStore(ctrl)
-	mockStore.EXPECT().GetAppVersions(opts.AppID, clusterID, true).Return(downstreamVersions, nil)
+	mockStore.EXPECT().GetDownstreamVersions(opts.AppID, clusterID, true).Return(downstreamVersions, nil)
 
 	store = mockStore
 
@@ -152,7 +153,7 @@ func TestAutoDeploySequenceQuitsIfCurrentVersionSequenceIsGreaterThanOrEqualToMo
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockStore := mock_store.NewMockStore(ctrl)
-	mockStore.EXPECT().GetAppVersions(opts.AppID, clusterID, true).Return(downstreamVersions, nil)
+	mockStore.EXPECT().GetDownstreamVersions(opts.AppID, clusterID, true).Return(downstreamVersions, nil)
 
 	store = mockStore
 
@@ -184,7 +185,7 @@ func TestAutoDeploySequenceDeploysSequenceUpgradeIfCurrentVersionLessThanMostRec
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockStore := mock_store.NewMockStore(ctrl)
-	mockStore.EXPECT().GetAppVersions(opts.AppID, clusterID, true).Return(downstreamVersions, nil)
+	mockStore.EXPECT().GetDownstreamVersions(opts.AppID, clusterID, true).Return(downstreamVersions, nil)
 	mockStore.EXPECT().GetApp(appID).Return(nil, errors.New("quitting early so as not to test the waitForPreflightsToFinish method"))
 
 	store = mockStore
@@ -210,7 +211,7 @@ func TestAutoDeploySemverRequiredAllVersionsIndexIsNil(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockStore := mock_store.NewMockStore(ctrl)
-	mockStore.EXPECT().GetAppVersions(opts.AppID, clusterID, true).Return(downstreamVersions, nil)
+	mockStore.EXPECT().GetDownstreamVersions(opts.AppID, clusterID, true).Return(downstreamVersions, nil)
 	// do not call waitForPreflightsToFinish
 
 	store = mockStore
@@ -240,7 +241,7 @@ func TestAutoDeploySemverRequiredAllVersionsHasNilSemver(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockStore := mock_store.NewMockStore(ctrl)
-	mockStore.EXPECT().GetAppVersions(opts.AppID, clusterID, true).Return(downstreamVersions, nil)
+	mockStore.EXPECT().GetDownstreamVersions(opts.AppID, clusterID, true).Return(downstreamVersions, nil)
 	// do not call waitForPreflightsToFinish
 
 	store = mockStore
@@ -281,7 +282,7 @@ func TestAutoDeploySemverRequiredNoNewVersionToDeploy(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockStore := mock_store.NewMockStore(ctrl)
-	mockStore.EXPECT().GetAppVersions(opts.AppID, clusterID, true).Return(downstreamVersions, nil)
+	mockStore.EXPECT().GetDownstreamVersions(opts.AppID, clusterID, true).Return(downstreamVersions, nil)
 	// do not call waitForPreflightsToFinish
 
 	store = mockStore
@@ -317,7 +318,7 @@ func TestAutoDeploySemverRequiredPatchUpdateMajorsDontMatch(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockStore := mock_store.NewMockStore(ctrl)
-	mockStore.EXPECT().GetAppVersions(opts.AppID, clusterID, true).Return(downstreamVersions, nil)
+	mockStore.EXPECT().GetDownstreamVersions(opts.AppID, clusterID, true).Return(downstreamVersions, nil)
 	// do not call waitForPreflightsToFinish
 
 	store = mockStore
@@ -356,7 +357,7 @@ func TestAutoDeploySemverRequiredPatchUpdateMajorsMatchMinorsDontMatch(t *testin
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockStore := mock_store.NewMockStore(ctrl)
-	mockStore.EXPECT().GetAppVersions(opts.AppID, clusterID, true).Return(downstreamVersions, nil)
+	mockStore.EXPECT().GetDownstreamVersions(opts.AppID, clusterID, true).Return(downstreamVersions, nil)
 	// do not call waitForPreflightsToFinish
 
 	store = mockStore
@@ -400,7 +401,7 @@ func TestAutoDeploySemverRequiredPatchUpdateMajorsMatchMinorsMatchWillUpgrade(t 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockStore := mock_store.NewMockStore(ctrl)
-	mockStore.EXPECT().GetAppVersions(opts.AppID, clusterID, true).Return(downstreamVersions, nil)
+	mockStore.EXPECT().GetDownstreamVersions(opts.AppID, clusterID, true).Return(downstreamVersions, nil)
 	mockStore.EXPECT().GetApp(appID).Return(nil, errors.New("quitting early so as not to test the waitForPreflightsToFinish method"))
 
 	store = mockStore
@@ -438,7 +439,7 @@ func TestAutoDeploySemverRequiredMinorUpdateMajorsDontMatch(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockStore := mock_store.NewMockStore(ctrl)
-	mockStore.EXPECT().GetAppVersions(opts.AppID, clusterID, true).Return(downstreamVersions, nil)
+	mockStore.EXPECT().GetDownstreamVersions(opts.AppID, clusterID, true).Return(downstreamVersions, nil)
 	// do not call waitForPreflightsToFinish
 
 	store = mockStore
@@ -479,7 +480,7 @@ func TestAutoDeploySemverRequiredMinorUpdateMajorsMatchWillUpgrade(t *testing.T)
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockStore := mock_store.NewMockStore(ctrl)
-	mockStore.EXPECT().GetAppVersions(opts.AppID, clusterID, true).Return(downstreamVersions, nil)
+	mockStore.EXPECT().GetDownstreamVersions(opts.AppID, clusterID, true).Return(downstreamVersions, nil)
 	mockStore.EXPECT().GetApp(appID).Return(nil, errors.New("quitting early so as not to test the waitForPreflightsToFinish method"))
 
 	store = mockStore
@@ -517,7 +518,7 @@ func TestAutoDeploySemverRequiredMajorUpdateWillUpgrade(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockStore := mock_store.NewMockStore(ctrl)
-	mockStore.EXPECT().GetAppVersions(opts.AppID, clusterID, true).Return(downstreamVersions, nil)
+	mockStore.EXPECT().GetDownstreamVersions(opts.AppID, clusterID, true).Return(downstreamVersions, nil)
 	mockStore.EXPECT().GetApp(appID).Return(nil, errors.New("quitting early so as not to test the waitForPreflightsToFinish method"))
 
 	store = mockStore

@@ -594,7 +594,7 @@ func isAppVersionDeployable(version *downstreamtypes.DownstreamVersion, appVersi
 		// this is a past version
 		// rollback support is based off of the latest version
 		latestVersion := appVersions.AllVersions[0]
-		if latestVersion.KotsApplication == nil || !latestVersion.KotsApplication.Spec.AllowRollback {
+		if latestVersion.KOTSKinds == nil || !latestVersion.KOTSKinds.KotsApplication.Spec.AllowRollback {
 			return false, "Rollback is not supported."
 		}
 	}
