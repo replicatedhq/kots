@@ -321,6 +321,9 @@ export default function AppVersionHistoryRow(props) {
           <div className="flex alignItems--center">
             <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">{version.versionLabel || version.title}</p>
             <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10" style={{ marginTop: "2px" }}>Sequence {version.sequence}</p>
+            {version.isRequired &&
+              <span className="status-tag required u-marginLeft--10"> Required </span>
+            }
           </div>
           <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5"> Released <span className="u-fontWeight--bold">{version.upstreamReleasedAt ? Utilities.dateFormat(version.upstreamReleasedAt, "MM/DD/YY @ hh:mm a z") : Utilities.dateFormat(version.createdOn, "MM/DD/YY @ hh:mm a z")}</span></p>
           <div className="u-marginTop--5 flex flex-auto alignItems--center">
@@ -330,11 +333,6 @@ export default function AppVersionHistoryRow(props) {
         </div>
         <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex1 justifyContent--center`}>
           <p className="u-fontSize--small u-fontWeight--bold u-textColor--lightAccent u-lineHeight--default">{version.source}</p>
-          {version.isRequired &&
-            <div className="u-marginTop--10">
-              <span className="status-tag required"> Required </span>
-            </div>
-          }
           <div className="flex flex-auto u-marginTop--10"> {gitopsEnabled && version.status !== "pending_download" ? renderViewPreflights(version, props.app, props.match) : renderVersionStatus(version, props.app, props.handleViewLogs)}</div>
         </div>
         <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex-auto alignItems--flexEnd justifyContent--center`}>
