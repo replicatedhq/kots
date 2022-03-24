@@ -3,7 +3,6 @@ import { Link, withRouter } from "react-router-dom";
 import ReactTooltip from "react-tooltip"
 
 import filter from "lodash/filter";
-import sortBy from "lodash/sortBy";
 import findIndex from "lodash/findIndex";
 import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
@@ -914,8 +913,7 @@ class DashboardVersionCard extends React.Component {
     let versionsToSkip = downstream?.pendingVersions?.length - 1;
     const requiredVersions = downstream?.pendingVersions?.length > 0 ? filter(downstream.pendingVersions, ["isRequired", true]) : [];
     if (this.props.currentVersion && requiredVersions.length > 0) { // If there is a version already deployed, and there is at least one required pending versions, set nextAppVersion to the earliest required version
-      const sortedVersions = sortBy(requiredVersions, [(item) => { return item.cursor }]);
-      nextAppVersion = sortedVersions[0];
+      nextAppVersion = requiredVersions[requiredVersions.length - 1];
       const indexOfNextAppVersion = findIndex(downstream?.pendingVersions, ["versionLabel", nextAppVersion.versionLabel]);
       versionsToSkip = (downstream?.pendingVersions?.length - 1) - indexOfNextAppVersion;
       if (indexOfNextAppVersion > 0) {
