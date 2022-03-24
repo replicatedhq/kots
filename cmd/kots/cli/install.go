@@ -142,7 +142,7 @@ func InstallCmd() *cobra.Command {
 					return errors.Wrapf(err, "failed to get metadata from %s", airgapBundle)
 				}
 			} else if !v.GetBool("airgap") {
-				applicationMetadata, err = pull.PullApplicationMetadata(upstream)
+				applicationMetadata, err = pull.PullApplicationMetadata(upstream, v.GetString("app-version-label"))
 				if err != nil {
 					log.Info("Unable to pull application metadata. This can be ignored, but custom branding will not be available in the Admin Console until a license is installed. This may also cause the Admin Console to run without minimal role-based-access-control (RBAC) privileges, which may be required by the application.")
 				}
