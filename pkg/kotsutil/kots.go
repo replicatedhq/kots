@@ -719,6 +719,7 @@ type InstallationParams struct {
 	EnableImageDeletion    bool
 	EnsureRBAC             bool
 	SkipRBACCheck          bool
+	UseMinimalRBAC         bool
 	StrictSecurityContext  bool
 	WaitDuration           time.Duration
 	WithMinio              bool
@@ -750,6 +751,7 @@ func GetInstallationParams(configMapName string) (InstallationParams, error) {
 	autoConfig.RegistryIsReadOnly, _ = strconv.ParseBool(kotsadmConfigMap.Data["registry-is-read-only"])
 	autoConfig.EnsureRBAC, _ = strconv.ParseBool(kotsadmConfigMap.Data["ensure-rbac"])
 	autoConfig.SkipRBACCheck, _ = strconv.ParseBool(kotsadmConfigMap.Data["skip-rbac-check"])
+	autoConfig.UseMinimalRBAC, _ = strconv.ParseBool(kotsadmConfigMap.Data["use-minimal-rbac"])
 	autoConfig.StrictSecurityContext, _ = strconv.ParseBool(kotsadmConfigMap.Data["strict-security-context"])
 	autoConfig.WaitDuration, _ = time.ParseDuration(kotsadmConfigMap.Data["wait-duration"])
 	autoConfig.WithMinio, _ = strconv.ParseBool(kotsadmConfigMap.Data["with-minio"])

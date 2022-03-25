@@ -18,6 +18,7 @@ func KotsadmConfigMap(deployOptions types.DeployOptions) *corev1.ConfigMap {
 		"skip-compatibility-check":  fmt.Sprintf("%v", deployOptions.SkipCompatibilityCheck),
 		"ensure-rbac":               fmt.Sprintf("%v", deployOptions.EnsureRBAC),
 		"skip-rbac-check":           fmt.Sprintf("%v", deployOptions.SkipRBACCheck),
+		"use-minimal-rbac":          fmt.Sprintf("%v", deployOptions.UseMinimalRBAC),
 		"strict-security-context":   fmt.Sprintf("%v", deployOptions.StrictSecurityContext),
 		"wait-duration":             fmt.Sprintf("%v", deployOptions.Timeout),
 		"with-minio":                fmt.Sprintf("%v", deployOptions.IncludeMinio),
