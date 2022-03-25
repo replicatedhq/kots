@@ -74,8 +74,8 @@ jobs:
           path: ./web/dist
 
 
-  build-kotsadm:
-    runs-on: ubuntu-20.04
+  build-kots:
+    runs-on: ubuntu-18.04
     needs: [can-run-ci, build-web]
 
     steps:
@@ -124,7 +124,7 @@ jobs:
 
 
   build-kotsadm:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [can-run-ci, build-web, build-kots]
     steps:
       - uses: actions/setup-go@v2
