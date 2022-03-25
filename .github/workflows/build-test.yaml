@@ -721,7 +721,7 @@ jobs:
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
             echo "------pods:"
-            kubectl -n no-config get pods
+            kubectl -n $APP_NAME get pods
             echo "------kotsadm logs"
             kubectl -n $APP_NAME logs deployment/kotsadm
             echo "------previous kotsadm logs"
@@ -1132,21 +1132,20 @@ jobs:
           APP_NAME: strict-preflight-checks
         run: |
           set +e
-          kubectl apply -f deploy/build-test-pipeline/selenium-standalone.yaml -n $APP_NAME
-          kubectl wait --timeout=60s -n $APP_NAME deployment/grid --for condition=available
           ./bin/kots admin-console -n $APP_NAME &
+          ADMIN_CONSOLE_PID=$!
           sleep 10
-          echo "KOTSADM_API_TOKEN=`kubectl -n $APP_NAME get secret kotsadm-authstring -o json | jq -r '.data."kotsadm-authstring"' | base64 -d`" > .env
-          testim --base-url kotsadm:3000 --host localhost --port 30000 --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --branch `${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }}` --report-file testim-report.xml --suite $APP_NAME
+          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --grid "Testim-grid" --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite $APP_NAME --tunnel --tunnel-port 8800
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
             echo "------pods:"
-            kubectl -n no-config get pods
+            kubectl -n $APP_NAME get pods
             echo "------kotsadm logs"
             kubectl -n $APP_NAME logs deployment/kotsadm
             echo "------previous kotsadm logs"
             kubectl -n $APP_NAME logs -p deployment/kotsadm
           fi
+          kill $ADMIN_CONSOLE_PID
           exit $EXIT_CODE
 
       - name: Generate support bundle on failure
