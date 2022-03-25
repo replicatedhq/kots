@@ -192,7 +192,7 @@ function renderVersionAction(version, nothingToCommitDiff, app, history, actionF
         <div className="flex alignItems--center">
           <button
             className={classNames("btn u-marginLeft--10", { "secondary dark": isRollback, "secondary blue": isSecondaryBtn, "primary blue": isPrimaryButton })}
-            disabled={version.status === "deploying" || !version.isDeployable}
+            disabled={disableActionButton(version)}
             onClick={() => needsConfiguration ? history.push(`/app/${app.slug}/config/${version.sequence}`) : isRollback ? actionFn(version, true) : actionFn(version)}
           >
             <span
@@ -209,6 +209,19 @@ function renderVersionAction(version, nothingToCommitDiff, app, history, actionF
       }
     </div>
   );
+}
+
+function disableActionButton(version) {
+  if (version.status === "deploying") {
+    return true;
+  }
+  if (version.status === "pending_config") {
+    return false;
+  }
+  if (version.status === "pending_download") {
+    return false;
+  }
+  return !version.isDeployable;
 }
 
 function renderViewPreflights(version, app, match) {
