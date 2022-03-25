@@ -136,7 +136,6 @@ func (v byCursor) Less(i, j int) bool {
 	return (*v[i].Cursor).Before(*v[j].Cursor)
 }
 
-// TODO @salah add test for this
 func SortDownstreamVersionsByCursor(allVersions []*DownstreamVersion) {
 	sort.Sort(sort.Reverse(byCursor(allVersions)))
 }

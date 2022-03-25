@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/blang/semver"
+	"github.com/replicatedhq/kots/pkg/cursor"
 	"github.com/stretchr/testify/require"
 )
 
@@ -476,4 +477,279 @@ func Test_SortDownstreamVersions(t *testing.T) {
 func semverMustParseForTest(str string) *semver.Version {
 	v := semver.MustParse(str)
 	return &v
+}
+
+func Test_SortDownstreamVersionsByCursor(t *testing.T) {
+	tests := []struct {
+		name     string
+		versions []*DownstreamVersion
+		want     []*DownstreamVersion
+	}{
+		{
+			name: "basic - no change",
+			versions: []*DownstreamVersion{
+				{
+					UpdateCursor: "3",
+					Cursor:       cursorMustParseForTest("3"),
+					Sequence:     3,
+				},
+				{
+					UpdateCursor: "2",
+					Cursor:       cursorMustParseForTest("2"),
+					Sequence:     2,
+				},
+				{
+					UpdateCursor: "1",
+					Cursor:       cursorMustParseForTest("1"),
+					Sequence:     1,
+				},
+			},
+			want: []*DownstreamVersion{
+				{
+					UpdateCursor: "3",
+					Cursor:       cursorMustParseForTest("3"),
+					Sequence:     3,
+				},
+				{
+					UpdateCursor: "2",
+					Cursor:       cursorMustParseForTest("2"),
+					Sequence:     2,
+				},
+				{
+					UpdateCursor: "1",
+					Cursor:       cursorMustParseForTest("1"),
+					Sequence:     1,
+				},
+			},
+		},
+		{
+			name: "basic - reverse",
+			versions: []*DownstreamVersion{
+				{
+					UpdateCursor: "1",
+					Cursor:       cursorMustParseForTest("1"),
+					Sequence:     1,
+				},
+				{
+					UpdateCursor: "2",
+					Cursor:       cursorMustParseForTest("2"),
+					Sequence:     2,
+				},
+				{
+					UpdateCursor: "3",
+					Cursor:       cursorMustParseForTest("3"),
+					Sequence:     3,
+				},
+			},
+			want: []*DownstreamVersion{
+				{
+					UpdateCursor: "3",
+					Cursor:       cursorMustParseForTest("3"),
+					Sequence:     3,
+				},
+				{
+					UpdateCursor: "2",
+					Cursor:       cursorMustParseForTest("2"),
+					Sequence:     2,
+				},
+				{
+					UpdateCursor: "1",
+					Cursor:       cursorMustParseForTest("1"),
+					Sequence:     1,
+				},
+			},
+		},
+		{
+			name: "random",
+			versions: []*DownstreamVersion{
+				{
+					UpdateCursor: "2",
+					Cursor:       cursorMustParseForTest("2"),
+					Sequence:     2,
+				},
+				{
+					UpdateCursor: "1",
+					Cursor:       cursorMustParseForTest("1"),
+					Sequence:     1,
+				},
+				{
+					UpdateCursor: "3",
+					Cursor:       cursorMustParseForTest("3"),
+					Sequence:     3,
+				},
+			},
+			want: []*DownstreamVersion{
+				{
+					UpdateCursor: "3",
+					Cursor:       cursorMustParseForTest("3"),
+					Sequence:     3,
+				},
+				{
+					UpdateCursor: "2",
+					Cursor:       cursorMustParseForTest("2"),
+					Sequence:     2,
+				},
+				{
+					UpdateCursor: "1",
+					Cursor:       cursorMustParseForTest("1"),
+					Sequence:     1,
+				},
+			},
+		},
+		{
+			name: "same cursor, different sequence",
+			versions: []*DownstreamVersion{
+				{
+					UpdateCursor: "3",
+					Cursor:       cursorMustParseForTest("3"),
+					Sequence:     1,
+				},
+				{
+					UpdateCursor: "3",
+					Cursor:       cursorMustParseForTest("3"),
+					Sequence:     3,
+				},
+				{
+					UpdateCursor: "3",
+					Cursor:       cursorMustParseForTest("3"),
+					Sequence:     2,
+				},
+			},
+			want: []*DownstreamVersion{
+				{
+					UpdateCursor: "3",
+					Cursor:       cursorMustParseForTest("3"),
+					Sequence:     3,
+				},
+				{
+					UpdateCursor: "3",
+					Cursor:       cursorMustParseForTest("3"),
+					Sequence:     2,
+				},
+				{
+					UpdateCursor: "3",
+					Cursor:       cursorMustParseForTest("3"),
+					Sequence:     1,
+				},
+			},
+		},
+		{
+			name: "higher cursor, lower sequence",
+			versions: []*DownstreamVersion{
+				{
+					UpdateCursor: "3",
+					Cursor:       cursorMustParseForTest("3"),
+					Sequence:     1,
+				},
+				{
+					UpdateCursor: "2",
+					Cursor:       cursorMustParseForTest("2"),
+					Sequence:     2,
+				},
+				{
+					UpdateCursor: "1",
+					Cursor:       cursorMustParseForTest("1"),
+					Sequence:     3,
+				},
+			},
+			want: []*DownstreamVersion{
+				{
+					UpdateCursor: "3",
+					Cursor:       cursorMustParseForTest("3"),
+					Sequence:     1,
+				},
+				{
+					UpdateCursor: "2",
+					Cursor:       cursorMustParseForTest("2"),
+					Sequence:     2,
+				},
+				{
+					UpdateCursor: "1",
+					Cursor:       cursorMustParseForTest("1"),
+					Sequence:     3,
+				},
+			},
+		},
+		{
+			name: "mixed",
+			versions: []*DownstreamVersion{
+				{
+					UpdateCursor: "3",
+					Cursor:       cursorMustParseForTest("3"),
+					Sequence:     1,
+				},
+				{
+					UpdateCursor: "1",
+					Cursor:       cursorMustParseForTest("1"),
+					Sequence:     5,
+				},
+				{
+					UpdateCursor: "3",
+					Cursor:       cursorMustParseForTest("3"),
+					Sequence:     3,
+				},
+				{
+					UpdateCursor: "2",
+					Cursor:       cursorMustParseForTest("2"),
+					Sequence:     4,
+				},
+				{
+					UpdateCursor: "3",
+					Cursor:       cursorMustParseForTest("3"),
+					Sequence:     2,
+				},
+				{
+					UpdateCursor: "4",
+					Cursor:       cursorMustParseForTest("4"),
+					Sequence:     0,
+				},
+			},
+			want: []*DownstreamVersion{
+				{
+					UpdateCursor: "4",
+					Cursor:       cursorMustParseForTest("4"),
+					Sequence:     0,
+				},
+				{
+					UpdateCursor: "3",
+					Cursor:       cursorMustParseForTest("3"),
+					Sequence:     3,
+				},
+				{
+					UpdateCursor: "3",
+					Cursor:       cursorMustParseForTest("3"),
+					Sequence:     2,
+				},
+				{
+					UpdateCursor: "3",
+					Cursor:       cursorMustParseForTest("3"),
+					Sequence:     1,
+				},
+				{
+					UpdateCursor: "2",
+					Cursor:       cursorMustParseForTest("2"),
+					Sequence:     4,
+				},
+				{
+					UpdateCursor: "1",
+					Cursor:       cursorMustParseForTest("1"),
+					Sequence:     5,
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := require.New(t)
+
+			SortDownstreamVersionsByCursor(tt.versions)
+
+			req.Equal(tt.want, tt.versions)
+		})
+	}
+}
+
+func cursorMustParseForTest(str string) *cursor.Cursor {
+	c := cursor.MustParse(str)
+	return &c
 }
