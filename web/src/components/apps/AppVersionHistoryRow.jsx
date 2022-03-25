@@ -192,12 +192,12 @@ function renderVersionAction(version, nothingToCommitDiff, app, history, actionF
         <div className="flex alignItems--center">
           <button
             className={classNames("btn u-marginLeft--10", { "secondary dark": isRollback, "secondary blue": isSecondaryBtn, "primary blue": isPrimaryButton })}
-            disabled={disableActionButton(version)}
+            disabled={isActionButtonDisabled(version)}
             onClick={() => needsConfiguration ? history.push(`/app/${app.slug}/config/${version.sequence}`) : isRollback ? actionFn(version, true) : actionFn(version)}
           >
             <span
               key={version.nonDeployableCause}
-              data-tip-disable={version.isDeployable}
+              data-tip-disable={!isActionButtonDisabled(version)}
               data-tip={version.nonDeployableCause}
               data-for="disable-deployment-tooltip"
             >
@@ -211,7 +211,7 @@ function renderVersionAction(version, nothingToCommitDiff, app, history, actionF
   );
 }
 
-function disableActionButton(version) {
+function isActionButtonDisabled(version) {
   if (version.status === "deploying") {
     return true;
   }
