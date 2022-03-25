@@ -48,9 +48,6 @@ jobs:
       # this action checks out the remote branch and runs CI
       - name: Checkout
         uses: actions/checkout@v2
-        with:
-          ref: ${{github.event.pull_request.head.ref}}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
 
       - uses: actions/cache@v2
         with:
@@ -87,10 +84,8 @@ jobs:
       # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
       # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
       # this action creates a branch based on remote branch and runs the tests
-      - uses: actions/checkout@v2
-        with:
-          ref: ${{github.event.pull_request.head.ref}}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
+      - name: Checkout
+        uses: actions/checkout@v2
 
       - uses: actions/setup-go@v2
         with:
@@ -146,10 +141,8 @@ jobs:
       # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
       # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
       # this action creates a branch based on remote branch and runs the tests
-      - uses: actions/checkout@v2
-        with:
-          ref: ${{github.event.pull_request.head.ref}}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
+      - name: Checkout
+        uses: actions/checkout@v2
 
       - uses: actions/setup-go@v2
         with:
@@ -190,10 +183,8 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [can-run-ci]
     steps:
-      - uses: actions/checkout@v2
-        with:
-          ref: ${{github.event.pull_request.head.ref}}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
+      - name: Checkout
+        uses: actions/checkout@v2
       - name: build and push migrations for e2e
         uses: docker/build-push-action@v2
         with:
@@ -207,10 +198,8 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [can-run-ci]
     steps:
-      - uses: actions/checkout@v2
-        with:
-          ref: ${{github.event.pull_request.head.ref}}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
+      - name: Checkout
+        uses: actions/checkout@v2
 
       - name: load environment variables from .image.env
         uses: falti/dotenv-action@v0.2
@@ -229,10 +218,8 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [can-run-ci]
     steps:
-      - uses: actions/checkout@v2
-        with:
-          ref: ${{github.event.pull_request.head.ref}}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
+      - name: Checkout
+        uses: actions/checkout@v2
 
       - name: load environment variables from .image.env
         uses: falti/dotenv-action@v0.2
@@ -253,12 +240,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
+        k8s_version: [v1.23.3-k3s1]
     steps:
-      - uses: actions/checkout@v2
-        with:
-          ref: ${{github.event.pull_request.head.ref}}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
+      - name: Checkout
+        uses: actions/checkout@v2
 
       - uses: replicatedhq/action-k3s@main
         id: k3s
@@ -386,12 +371,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
+        k8s_version: [v1.23.3-k3s1]
     steps:
-      - uses: actions/checkout@v2
-        with:
-          ref: ${{github.event.pull_request.head.ref}}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
+      - name: Checkout
+        uses: actions/checkout@v2
 
       - uses: replicatedhq/action-k3s@main
         id: k3s
@@ -482,12 +465,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
+        k8s_version: [v1.23.3-k3s1]
     steps:
-      - uses: actions/checkout@v2
-        with:
-          ref: ${{github.event.pull_request.head.ref}}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
+      - name: Checkout
+        uses: actions/checkout@v2
 
       - uses: replicatedhq/action-k3s@main
         id: k3s
@@ -603,12 +584,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
+        k8s_version: [v1.23.3-k3s1]
     steps:
-      - uses: actions/checkout@v2
-        with:
-          ref: ${{github.event.pull_request.head.ref}}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
+      - name: Checkout
+        uses: actions/checkout@v2
 
       - uses: replicatedhq/action-k3s@main
         id: k3s
@@ -706,12 +685,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
+        k8s_version: [v1.23.3-k3s1]
     steps:
-      - uses: actions/checkout@v2
-        with:
-          ref: ${{github.event.pull_request.head.ref}}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
+      - name: Checkout
+        uses: actions/checkout@v2
 
       - uses: replicatedhq/action-k3s@main
         id: k3s
@@ -819,7 +796,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
+        k8s_version: [v1.23.3-k3s1]
     steps:
       - uses: replicatedhq/action-k3s@main
         id: k3s
@@ -914,7 +891,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
+        k8s_version: [v1.23.3-k3s1]
     steps:
       - uses: replicatedhq/action-k3s@main
         id: k3s
@@ -1028,12 +1005,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
+        k8s_version: [v1.23.3-k3s1]
     steps:
-      - uses: actions/checkout@v2
-        with:
-          ref: ${{github.event.pull_request.head.ref}}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
+      - name: Checkout
+        uses: actions/checkout@v2
 
       - uses: replicatedhq/action-k3s@main
         id: k3s
