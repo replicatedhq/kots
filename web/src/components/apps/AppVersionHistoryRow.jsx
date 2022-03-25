@@ -202,8 +202,8 @@ function renderVersionAction(version, nothingToCommitDiff, app, history, actionF
               data-for="disable-deployment-tooltip"
             >
               {deployButtonStatus(downstream, version, app, adminConsoleMetadata)}
-              <ReactTooltip effect="solid" id="disable-deployment-tooltip" />
             </span>
+            <ReactTooltip effect="solid" id="disable-deployment-tooltip" />
           </button>
         </div>
       }
