@@ -2,8 +2,8 @@ name: build-test
 
 on:
   pull_request_target:
-  # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets. 
-  # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+    # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets. 
+    # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
     types: [opened, synchronize, reopened, labeled]
 
 concurrency:
@@ -45,7 +45,7 @@ jobs:
     steps:
       # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets. 
       # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
-      # this action checksout the remote branch and runs CI
+      # this action checks out the remote branch and runs CI
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -96,7 +96,7 @@ jobs:
 
       # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets. 
       # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
-      # this action checksout the remote branch and runs CI
+      # this action checks out the remote branch and runs CI
       - uses: actions/checkout@v2
         with:
           ref: ${{github.event.pull_request.head.ref}}
@@ -314,7 +314,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
+        k8s_version: [v1.23.3-k3s1]
     steps:
       - uses: replicatedhq/action-k3s@main
         id: k3s
@@ -401,6 +401,7 @@ jobs:
           set +e
           ./bin/kots admin-console -n smoke-test &
           ADMIN_CONSOLE_PID=$!
+          sleep 10
           testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --grid "Testim-grid" --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite smoke-test --tunnel --tunnel-port 8800
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
@@ -444,7 +445,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
+        k8s_version: [v1.23.3-k3s1]
     steps:
       - uses: replicatedhq/action-k3s@main
         id: k3s
@@ -496,14 +497,17 @@ jobs:
           set +e
           ./bin/kots admin-console -n minimal-rbac &
           ADMIN_CONSOLE_PID=$!
+          sleep 10
           testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --grid "Testim-grid" --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite minimal-rbac --tunnel --tunnel-port 8800
           EXIT_CODE=$?
-          echo "------pods:"
-          kubectl -n minimal-rbac get pods
-          echo "------kotsadm logs"
-          kubectl -n minimal-rbac logs deployment/kotsadm
-          echo "------previous kotsadm logs"
-          kubectl -n minimal-rbac logs -p deployment/kotsadm
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "------pods:"
+            kubectl -n minimal-rbac get pods
+            echo "------kotsadm logs"
+            kubectl -n minimal-rbac logs deployment/kotsadm
+            echo "------previous kotsadm logs"
+            kubectl -n minimal-rbac logs -p deployment/kotsadm
+          fi
           kill $ADMIN_CONSOLE_PID
           exit $EXIT_CODE
 
@@ -535,7 +539,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
+        k8s_version: [v1.23.3-k3s1]
     steps:
       - uses: replicatedhq/action-k3s@main
         id: k3s
@@ -611,14 +615,17 @@ jobs:
           set +e
           ./bin/kots admin-console -n backup-and-restore &
           ADMIN_CONSOLE_PID=$!
+          sleep 10
           testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --grid "Testim-grid" --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite backup-and-restore --tunnel --tunnel-port 8800
           EXIT_CODE=$?
-          echo "------pods:"
-          kubectl -n backup-and-restore get pods
-          echo "------kotsadm logs"
-          kubectl -n backup-and-restore logs deployment/kotsadm
-          echo "------previous kotsadm logs"
-          kubectl -n backup-and-restore logs -p deployment/kotsadm
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "------pods:"
+            kubectl -n backup-and-restore get pods
+            echo "------kotsadm logs"
+            kubectl -n backup-and-restore logs deployment/kotsadm
+            echo "------previous kotsadm logs"
+            kubectl -n backup-and-restore logs -p deployment/kotsadm
+          fi
           kill $ADMIN_CONSOLE_PID
           exit $EXIT_CODE
 
@@ -650,7 +657,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
+        k8s_version: [v1.23.3-k3s1]
     steps:
       - uses: replicatedhq/action-k3s@main
         id: k3s
@@ -707,17 +714,19 @@ jobs:
           ./bin/kots admin-console -n $APP_NAME &
           ADMIN_CONSOLE_PID=$!
 
-          sleep 5
+          sleep 10
           echo "KOTSADM_API_TOKEN=`kubectl -n $APP_NAME get secret kotsadm-authstring -o json | jq -r '.data."kotsadm-authstring"' | base64 -d`" > .env
 
           testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --grid "Testim-grid" --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite $APP_NAME --tunnel --tunnel-port 8800
           EXIT_CODE=$?
-          echo "------pods:"
-          kubectl -n no-config get pods
-          echo "------kotsadm logs"
-          kubectl -n $APP_NAME logs deployment/kotsadm
-          echo "------previous kotsadm logs"
-          kubectl -n $APP_NAME logs -p deployment/kotsadm
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "------pods:"
+            kubectl -n no-config get pods
+            echo "------kotsadm logs"
+            kubectl -n $APP_NAME logs deployment/kotsadm
+            echo "------previous kotsadm logs"
+            kubectl -n $APP_NAME logs -p deployment/kotsadm
+          fi
           kill $ADMIN_CONSOLE_PID
           exit $EXIT_CODE
 
@@ -749,7 +758,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
+        k8s_version: [v1.23.3-k3s1]
     steps:
       - uses: replicatedhq/action-k3s@main
         id: k3s
@@ -807,7 +816,7 @@ jobs:
           ./bin/kots admin-console -n $APP_NAME &
           ADMIN_CONSOLE_PID=$!
 
-          sleep 5
+          sleep 10
           echo "KOTSADM_API_TOKEN=`kubectl -n $APP_NAME get secret kotsadm-authstring -o json | jq -r '.data."kotsadm-authstring"' | base64 -d`" > .env
 
           # HACK: with limitted RBAC secrets are not applied by kotsadm
@@ -819,12 +828,14 @@ jobs:
 
           testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --grid "Testim-grid" --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite $SUITE_NAME --tunnel --tunnel-port 8800
           EXIT_CODE=$?
-          echo "------pods:"
-          kubectl get pods -A
-          echo "------kotsadm logs"
-          kubectl -n $APP_NAME logs deployment/kotsadm
-          echo "------previous kotsadm logs"
-          kubectl -n $APP_NAME logs -p deployment/kotsadm
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "------pods:"
+            kubectl get pods -A
+            echo "------kotsadm logs"
+            kubectl -n $APP_NAME logs deployment/kotsadm
+            echo "------previous kotsadm logs"
+            kubectl -n $APP_NAME logs -p deployment/kotsadm
+          fi
           kill $ADMIN_CONSOLE_PID
           exit $EXIT_CODE
 
@@ -856,7 +867,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
+        k8s_version: [v1.23.3-k3s1]
     steps:
       - uses: replicatedhq/action-k3s@main
         id: k3s
@@ -950,7 +961,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
+        k8s_version: [v1.23.3-k3s1]
     steps:
       - uses: replicatedhq/action-k3s@main
         id: k3s
@@ -1064,7 +1075,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1]
+        k8s_version: [v1.23.3-k3s1]
     steps:
       - uses: actions/checkout@v2
         with:
@@ -1123,10 +1134,10 @@ jobs:
           set +e
           kubectl apply -f deploy/build-test-pipeline/selenium-standalone.yaml -n $APP_NAME
           kubectl wait --timeout=60s -n $APP_NAME deployment/grid --for condition=available
-          ./bin/kots admin-console -n $APP_NAME deployment/grid &
-          sleep 4
+          ./bin/kots admin-console -n $APP_NAME &
+          sleep 10
           echo "KOTSADM_API_TOKEN=`kubectl -n $APP_NAME get secret kotsadm-authstring -o json | jq -r '.data."kotsadm-authstring"' | base64 -d`" > .env
-          testim --turbo-mode --base-url kotsadm:3000 --host localhost --port 30000 --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --branch `${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }}` --report-file testim-report.xml --suite $APP_NAME
+          testim --base-url kotsadm:3000 --host localhost --port 30000 --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --branch `${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }}` --report-file testim-report.xml --suite $APP_NAME
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
             echo "------pods:"
