@@ -75,7 +75,7 @@ jobs:
 
 
   build-kots:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [can-run-ci, build-web]
 
     steps:
