@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -29,6 +30,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 )
+
+var supportBundleSecretMtx sync.Mutex
 
 func (s *KOTSStore) migrateSupportBundlesFromPostgres() error {
 	logger.Debug("migrating support bundles from postgres")
@@ -356,6 +359,8 @@ func (s *KOTSStore) CreateSupportBundle(id string, appID string, archivePath str
 
 // UpdateSupportBundle updates the support bundle definition in the secret
 func (s *KOTSStore) UpdateSupportBundle(bundle *types.SupportBundle) error {
+	supportBundleSecretMtx.Lock()
+	defer supportBundleSecretMtx.Unlock()
 
 	now := time.Now()
 	bundle.UpdatedAt = &now
@@ -451,6 +456,9 @@ func (s *KOTSStore) GetSupportBundleAnalysis(id string) (*types.SupportBundleAna
 }
 
 func (s *KOTSStore) SetSupportBundleAnalysis(id string, results []byte) error {
+	supportBundleSecretMtx.Lock()
+	defer supportBundleSecretMtx.Unlock()
+
 	insights, err := insightsFromResults(results)
 	if err != nil {
 		return errors.Wrap(err, "failed to convert results to insights")
