@@ -13,7 +13,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
       with:
-        token: ${{ secrets.GITHUB_TOKEN }} # needed to git push nightly tag
+        token: ${{ secrets.NIGHTLY_GH_PAT }} # needed to git push nightly tag
 
     - name: Get tags
       id: get_tag
@@ -40,7 +40,7 @@ jobs:
 
     - name: Run Update Script
       env:
-        GITHUB_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_AUTH_TOKEN: ${{ secrets.NIGHTLY_GH_PAT }}
       run: |
         go run ./cmd/imagedeps
 
@@ -48,7 +48,7 @@ jobs:
       uses: peter-evans/create-pull-request@v3
       id: cpr
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}
+        token: ${{ secrets.NIGHTLY_GH_PAT }}
         commit-message: update kots image dependency tags
         title: 'Automated Kots Image Dependency Tag Update'
         branch: automation/image-dependencies
