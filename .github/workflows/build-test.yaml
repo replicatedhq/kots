@@ -1284,6 +1284,6 @@ jobs:
   # this job will validate that all validate-* jobs succeed and is used for the github branch protection rule
   validate-success:
     runs-on: ubuntu-20.04
-    needs: [validate-smoke-test, validate-minimal-rbac, validate-backup-and-restore, validate-no-required-config, validate-multi-namespace, validate-kots-pull, validate-app-version-label, validate-strict-preflight-checks]
+    needs: [validate-smoke-test, validate-minimal-rbac, validate-minimal-rbac-override, validate-backup-and-restore, validate-no-required-config, validate-multi-namespace, validate-kots-pull, validate-app-version-label, validate-strict-preflight-checks]
     steps:
       - run: echo "Validate success"
