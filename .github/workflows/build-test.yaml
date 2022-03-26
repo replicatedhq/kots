@@ -554,16 +554,6 @@ jobs:
 
       - run: chmod +x bin/kots
 
-      - uses: actions/setup-node@v2
-        with:
-          node-version: '17.x'
-
-      - name: setup testIM
-        run: npm i -g @testim/testim-cli
-        shell: bash
-
-      ## this is not a testim test
-
       - name: minimal rbac override on command line
         env:
           APP_SLUG: minimal-rbac
@@ -578,7 +568,7 @@ jobs:
             --shared-password password \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
-            --kotsadm-tag 12h \
+            --kotsadm-tag 2h \
             --use-minimal-rbac
 
           if kubectl get roles -n $APP_SLUG | grep -q kotsadm; then
@@ -593,8 +583,7 @@ jobs:
             exit -1
           fi
 
-
-      - name: no minimal rbac overrdie on command line
+      - name: no minimal rbac override on command line
         env:
           APP_SLUG: minimal-rbac
           APP_VERSION_LABEL: "0.0.1"
@@ -608,7 +597,7 @@ jobs:
             --shared-password password \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
-            --kotsadm-tag 12h
+            --kotsadm-tag 2h
 
           if kubectl get roles -n $APP_SLUG | grep -q kotsadm; then
             echo "Found kotsadm role in cluster scoped install"
