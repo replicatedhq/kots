@@ -70,7 +70,7 @@ class DashboardVersionCard extends React.Component {
         secondSequence: splitSearch[2]
       });
     }
-    if (lastProps.currentVersion !== this.props.currentVersion) {
+    if (lastProps.downstream?.pendingVersions?.length !== this.props.downstream?.pendingVersions?.length) {
       this.getNextAppVersion();
     }
   }
