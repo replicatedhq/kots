@@ -772,63 +772,35 @@ jobs:
 
       - run: chmod +x bin/kots
 
-      - uses: actions/setup-node@v2
-        with:
-          node-version: '17.x'
-
-      - name: setup testIM
-        run: npm i -g @testim/testim-cli
-        shell: bash
-
-      ## testim tests
-
-      - name: get testim branch
-        if: startsWith(github.ref, 'refs/heads/')
-        id: get_testim_branch
-        shell: bash
-        run: |
-          BRANCH=${GITHUB_REF/refs\/heads\//}
-          if [ "$BRANCH" == "main" ]; then
-            BRANCH="master"
-          fi
-          echo ::set-output name=TESTIM_BRANCH::${BRANCH:-master}
-
-      - name: prepare no-required-config online install
+      - name: run test
         env:
-          APP_NAME: no-required-config
-        run: |
-          ./bin/kots \
-          install $APP_NAME/automated \
-          --no-port-forward \
-          --namespace $APP_NAME \
-          --shared-password password \
-          --kotsadm-registry ttl.sh \
-          --kotsadm-namespace automated-${{ github.run_id }} \
-          --kotsadm-tag 2h
-
-      - name: execute suite no-required-config
-        env:
-          APP_NAME: no-required-config
+          APP_SLUG: no-required-config
         run: |
           set +e
-          ./bin/kots admin-console -n $APP_NAME &
-          ADMIN_CONSOLE_PID=$!
+          echo ${{ secrets.NO_REQUIRED_CONFIG_LICENSE }} | base64 -d > license.yaml
+          ./bin/kots \
+            install $APP_SLUG/automated \
+            --license-file license.yaml \
+            --no-port-forward \
+            --namespace $APP_SLUG \
+            --shared-password password \
+            --kotsadm-registry ttl.sh \
+            --kotsadm-namespace automated-${{ github.run_id }} \
+            --kotsadm-tag 2h
 
-          sleep 10
-          echo "KOTSADM_API_TOKEN=`kubectl -n $APP_NAME get secret kotsadm-authstring -o json | jq -r '.data."kotsadm-authstring"' | base64 -d`" > .env
+          COUNTER=1
+          while [ $(./bin/kots get apps --namespace $APP_SLUG | awk 'NR>1{print $1}') != "$APP_SLUG" ] || [ $(./bin/kots get apps --namespace $APP_SLUG | awk 'NR>1{print $2}') != "ready" ]; do
+            COUNTER=$[$COUNTER +1]
+            if [ $COUNTER -gt 120 ]; then
+              echo "Timed out waiting for app to be installed and ready"
+              ./bin/kots get apps --namespace $APP_SLUG
+              exit -1
+            fi
+            sleep 1
+          done
 
-          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --grid "Testim-grid" --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite $APP_NAME --tunnel --tunnel-port 8800
-          EXIT_CODE=$?
-          if [ $EXIT_CODE -ne 0 ]; then
-            echo "------pods:"
-            kubectl -n $APP_NAME get pods
-            echo "------kotsadm logs"
-            kubectl -n $APP_NAME logs deployment/kotsadm
-            echo "------previous kotsadm logs"
-            kubectl -n $APP_NAME logs -p deployment/kotsadm
-          fi
-          kill $ADMIN_CONSOLE_PID
-          exit $EXIT_CODE
+          printf "App is deployed successfully and is ready\n\n"
+          ./bin/kots get apps --namespace $APP_SLUG
 
       - name: Generate support bundle on failure
         if: failure()
