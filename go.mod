@@ -12,7 +12,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/ahmetalpbalkan/go-cursor v0.0.0-20131010032410-8136607ea412
 	github.com/aws/aws-sdk-go v1.38.49
-	github.com/bitnami-labs/sealed-secrets v0.14.1
+	github.com/bitnami-labs/sealed-secrets v0.17.4
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/containerd/containerd v1.5.7
 	github.com/containers/image/v5 v5.17.0
@@ -77,14 +77,14 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	gotest.tools v2.2.0+incompatible
 	helm.sh/helm/v3 v3.7.1
-	k8s.io/api v0.23.1
+	k8s.io/api v0.23.4
 	k8s.io/apiextensions-apiserver v0.23.0
-	k8s.io/apimachinery v0.23.1
+	k8s.io/apimachinery v0.23.4
 	k8s.io/cli-runtime v0.23.1
-	k8s.io/client-go v0.23.1
+	k8s.io/client-go v0.23.4
 	k8s.io/cluster-bootstrap v0.22.1
 	k8s.io/helm v2.14.3+incompatible
-	k8s.io/klog/v2 v2.30.0
+	k8s.io/klog/v2 v2.40.1
 	k8s.io/kubelet v0.0.0
 	k8s.io/kubernetes v1.23.1
 	k8s.io/utils v0.0.0-20210930125809-cb0fa318a74b
@@ -95,8 +95,6 @@ require (
 	sigs.k8s.io/kustomize/kyaml v0.13.0
 	sigs.k8s.io/yaml v1.3.0
 )
-
-require golang.org/x/mod v0.5.1 // indirect
 
 require (
 	cloud.google.com/go v0.93.3 // indirect
@@ -401,7 +399,6 @@ require (
 )
 
 replace (
-	golang.org/x/crypto v0.0.0-20220112180741-5e0467b6c7ce => github.com/dmacvicar/golang-x-crypto v0.0.0-20220126233154-a96af8f07497
 	github.com/go-openapi/jsonpointer => github.com/go-openapi/jsonpointer v0.19.5
 	github.com/go-openapi/jsonreference => github.com/go-openapi/jsonreference v0.19.6
 	github.com/go-openapi/loads => github.com/go-openapi/loads v0.20.1
@@ -413,6 +410,7 @@ replace (
 	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.5.5
 	github.com/jmoiron/sqlx v1.2.0 => github.com/longquanzheng/sqlx v0.0.0-20191125235044-053e6130695c
 	github.com/longhorn/longhorn-manager => github.com/replicatedhq/longhorn-manager v1.1.2-0.20210622201804-05b01947b99d
+	golang.org/x/crypto v0.0.0-20220112180741-5e0467b6c7ce => github.com/dmacvicar/golang-x-crypto v0.0.0-20220126233154-a96af8f07497
 	gopkg.in/square/go-jose.v2 => gopkg.in/square/go-jose.v2 v2.2.2
 	k8s.io/api => github.com/k3s-io/kubernetes/staging/src/k8s.io/api v1.23.1-k3s1
 	k8s.io/apiextensions-apiserver => github.com/k3s-io/kubernetes/staging/src/k8s.io/apiextensions-apiserver v1.23.0-k3s1
