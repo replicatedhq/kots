@@ -42,8 +42,22 @@ spec:
                 type: string
               channelName:
                 type: string
+              isRequired:
+                type: boolean
               releaseNotes:
                 type: string
+              requiredReleases:
+                items:
+                  description: AirgapStatus defines airgap release metadata
+                  properties:
+                    releaseNotes:
+                      type: string
+                    updateCursor:
+                      type: string
+                    versionLabel:
+                      type: string
+                  type: object
+                type: array
               signature:
                 format: byte
                 type: string

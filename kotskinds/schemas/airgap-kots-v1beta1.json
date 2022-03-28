@@ -26,8 +26,29 @@
         "channelName": {
           "type": "string"
         },
+        "isRequired": {
+          "type": "boolean"
+        },
         "releaseNotes": {
           "type": "string"
+        },
+        "requiredReleases": {
+          "type": "array",
+          "items": {
+            "description": "AirgapStatus defines airgap release metadata",
+            "type": "object",
+            "properties": {
+              "releaseNotes": {
+                "type": "string"
+              },
+              "updateCursor": {
+                "type": "string"
+              },
+              "versionLabel": {
+                "type": "string"
+              }
+            }
+          }
         },
         "signature": {
           "type": "string",
