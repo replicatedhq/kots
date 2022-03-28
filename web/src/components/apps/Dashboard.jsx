@@ -256,14 +256,18 @@ class Dashboard extends Component {
         }
         this.setState({ 
           downstream: app.downstreams[0],
-         });
+        });
       } else {
         this.setState({ loadingApp: false, gettingAppErrMsg: `Unexpected status code: ${res.status}`, displayErrorModal: true });
       }
     } catch (err) {
-      console.log(err)
+      console.log(err);
       this.setState({ loadingApp: false, gettingAppErrMsg: err ? err.message : "Something went wrong, please try again.", displayErrorModal: true });
     }
+  }
+
+  startFetchAppDownstreamJob = () => {
+    this.state.fetchAppDownstreamJob.start(this.fetchAppDownstream, 2000);
   }
 
   updateStatus = () => {
@@ -292,7 +296,7 @@ class Dashboard extends Component {
             if (this.props.updateCallback) {
               this.props.updateCallback();
             }
-            this.state.fetchAppDownstreamJob.start(this.fetchAppDownstream, 2000);
+            this.startFetchAppDownstreamJob();
 
           } else {
             this.setState({
@@ -592,6 +596,7 @@ class Dashboard extends Component {
                   uploadingAirgapFile={uploadingAirgapFile}
                   airgapUploadError={airgapUploadError}
                   refetchData={this.props.updateCallback}
+                  downloadCallback={this.startFetchAppDownstreamJob}
                   uploadProgress={this.state.uploadProgress}
                   uploadSize={this.state.uploadSize}
                   uploadResuming={this.state.uploadResuming}

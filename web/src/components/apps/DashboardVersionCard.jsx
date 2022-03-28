@@ -70,7 +70,7 @@ class DashboardVersionCard extends React.Component {
         secondSequence: splitSearch[2]
       });
     }
-    if (lastProps.downstream?.pendingVersions?.length !== this.props.downstream?.pendingVersions?.length) {
+    if (lastProps.downstream !== this.props.downstream) {
       this.getNextAppVersion();
     }
   }
@@ -854,6 +854,9 @@ class DashboardVersionCard extends React.Component {
             if (this.props.refetchData) {
               this.props.refetchData();
             }
+            if (this.props.downloadCallback) {
+              this.props.downloadCallback();
+            }
           } else {
             this.setState({
               versionDownloadStatuses: {
@@ -1015,8 +1018,8 @@ class DashboardVersionCard extends React.Component {
         </div>
         {(this.state.numOfSkippedVersions > 0 || this.state.numOfRemainingVersions > 0) && (
           <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--header u-marginTop--10">
-            {this.state.numOfSkippedVersions} version{this.state.numOfSkippedVersions > 1 && "s"} will be skipped in upgrading to {nextAppVersion.versionLabel}.
-            {this.state.numOfRemainingVersions > 0 && " Additional versions are available after you deploy this required version."}
+            {this.state.numOfSkippedVersions > 0 ? `${this.state.numOfSkippedVersions} version${this.state.numOfSkippedVersions > 1 && "s"} will be skipped in upgrading to ${nextAppVersion.versionLabel}. ` : ""}
+            {this.state.numOfRemainingVersions > 0 ? "Additional versions are available after you deploy this required version." : ""}
           </p>
         )}
       </div>

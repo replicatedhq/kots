@@ -93,6 +93,8 @@ class AppVersionHistory extends Component {
         this.setState({ showDiffOverlay: true, firstSequence, secondSequence });
       }
     }
+
+    this._mounted = true;
   }
 
   componentDidUpdate = async (lastProps) => {
@@ -107,6 +109,7 @@ class AppVersionHistory extends Component {
     for (const j in this.versionDownloadStatusJobs) {
       this.versionDownloadStatusJobs[j].stop();
     }
+    this._mounted = false;
   }
 
   fetchKotsDownstreamHistory = async () => {
@@ -144,7 +147,7 @@ class AppVersionHistory extends Component {
       const response = await res.json();
       const versionHistory = response.versionHistory;
 
-      if (isAwaitingResults(versionHistory)) {
+      if (isAwaitingResults(versionHistory) && this._mounted) {
         this.state.versionHistoryJob.start(this.fetchKotsDownstreamHistory, 2000);
       } else {
         this.state.versionHistoryJob.stop();
