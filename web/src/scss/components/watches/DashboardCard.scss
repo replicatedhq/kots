@@ -12,13 +12,19 @@
   }
 
   &.graph {
+    display: inline-block;
     min-height: auto;
     max-height: none;
     height: auto;
-    margin-right: 30px;
-
-    &:last-child {
+    margin-right: 20px;
+    margin-top: 10px;
+    width: 344px;
+    
+    &:nth-child(3n) {
       margin-right: 0;
+    }
+    &:nth-child(n+4) {
+      margin-top: 20px;
     }
   }
 
@@ -26,7 +32,6 @@
     background-color: $error-color-light;
   }
 }
-
 
 .legends {
   &.legends::-webkit-scrollbar {
