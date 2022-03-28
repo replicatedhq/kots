@@ -287,3 +287,11 @@ spec:
               message: "Not all nodes are online."
           - pass:
               message: "All nodes are online."
+    - clusterPodStatuses:
+        checkName: contour pods unhealthy
+        namespaces:
+          - projectcontour
+        outcomes:
+          - fail:
+              when: "!= Healthy" # Catch all unhealthy pods. A pod is considered healthy if it has a status of Completed, or Running and all of its containers are ready.
+              message: A Contour pod, {{ .Name }}, is unhealthy with a status of {{ .Status.Reason }}. Restarting the pod may fix the issue.
