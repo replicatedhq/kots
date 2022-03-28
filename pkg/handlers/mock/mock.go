@@ -694,6 +694,18 @@ func (mr *MockKOTSHandlerMockRecorder) GetLicense(w, r interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLicense", reflect.TypeOf((*MockKOTSHandler)(nil).GetLicense), w, r)
 }
 
+// GetNextAppVersion mocks base method.
+func (m *MockKOTSHandler) GetNextAppVersion(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetNextAppVersion", w, r)
+}
+
+// GetNextAppVersion indicates an expected call of GetNextAppVersion.
+func (mr *MockKOTSHandlerMockRecorder) GetNextAppVersion(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNextAppVersion", reflect.TypeOf((*MockKOTSHandler)(nil).GetNextAppVersion), w, r)
+}
+
 // GetOnlineInstallStatus mocks base method.
 func (m *MockKOTSHandler) GetOnlineInstallStatus(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()

@@ -284,9 +284,9 @@ func (s *KOTSStore) GetAppVersionArchive(appID string, sequence int64, dstPath s
 // GetAppVersionBaseSequence returns the base sequence for a given version label.
 // if the "versionLabel" param is empty or is not a valid semver, the sequence of the latest version will be returned.
 func (s *KOTSStore) GetAppVersionBaseSequence(appID string, versionLabel string) (int64, error) {
-	appVersions, err := s.FindAppVersions(appID, true)
+	appVersions, err := s.FindDownstreamVersions(appID, true)
 	if err != nil {
-		return -1, errors.Wrapf(err, "failed to find app versions for app %s", appID)
+		return -1, errors.Wrapf(err, "failed to find app downstream versions for app %s", appID)
 	}
 
 	mockVersion := &downstreamtypes.DownstreamVersion{
@@ -816,9 +816,9 @@ func (s *KOTSStore) GetAppVersions(appID string) ([]*versiontypes.AppVersion, er
 }
 
 func (s *KOTSStore) GetLatestAppVersion(appID string, downloadedOnly bool) (*versiontypes.AppVersion, error) {
-	downstreamVersions, err := s.FindAppVersions(appID, downloadedOnly)
+	downstreamVersions, err := s.FindDownstreamVersions(appID, downloadedOnly)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to find app versions")
+		return nil, errors.Wrap(err, "failed to find app downstream versions")
 	}
 	if len(downstreamVersions.AllVersions) == 0 {
 		return nil, errors.New("no app versions found")
@@ -832,9 +832,9 @@ func (s *KOTSStore) UpdateNextAppVersionDiffSummary(appID string, baseSequence i
 		return errors.Wrap(err, "failed to get app")
 	}
 
-	appVersions, err := s.FindAppVersions(a.ID, true)
+	appVersions, err := s.FindDownstreamVersions(a.ID, true)
 	if err != nil {
-		return errors.Wrapf(err, "failed to find app versions for app %s", appID)
+		return errors.Wrapf(err, "failed to find app downstream versions for app %s", appID)
 	}
 
 	nextSequence := int64(-1)

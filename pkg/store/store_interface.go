@@ -151,7 +151,7 @@ type DownstreamStore interface {
 	// GetDownstreamVersions returns a sorted list of app releases. The sort order is determined by semver being enabled in the license.
 	GetDownstreamVersions(appID string, clusterID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error)
 	// Same as GetDownstreamVersions, but finds a cluster where app is deployed
-	FindAppVersions(appID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error)
+	FindDownstreamVersions(appID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error)
 	IsAppVersionDeployable(appID string, sequence int64) (bool, string, error)
 	GetDownstreamOutput(appID string, clusterID string, sequence int64) (*downstreamtypes.DownstreamOutput, error)
 	IsDownstreamDeploySuccessful(appID string, clusterID string, sequence int64) (bool, error)

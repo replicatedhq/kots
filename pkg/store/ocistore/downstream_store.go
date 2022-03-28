@@ -57,7 +57,7 @@ func (s *OCIStore) GetDownstreamVersions(appID string, clusterID string, downloa
 	return nil, ErrNotImplemented
 }
 
-func (s *OCIStore) FindAppVersions(appID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error) {
+func (s *OCIStore) FindDownstreamVersions(appID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error) {
 	return nil, ErrNotImplemented
 }
 

@@ -68,9 +68,20 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		}
 
 		errMsg := finalError.Error()
-
 		if cause, ok := errors.Cause(finalError).(util.ActionableError); ok {
 			errMsg = cause.Error()
+		}
+
+		var kotsApplication *kotsv1beta1.Application
+		var license *kotsv1beta1.License
+		if cause, ok := errors.Cause(finalError).(upstream.IncompatibleAppError); ok {
+			errMsg = cause.Error()
+			kotsApplication = cause.KotsApplication
+			license = cause.License
+			finalError = util.ActionableError{
+				NoRetry: true,
+				Message: cause.Error(),
+			}
 		}
 
 		if update.AppSequence != nil || finalSequence != nil {
@@ -80,18 +91,6 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 				logger.Error(errors.Wrapf(err, "failed to set %s task status", taskID))
 			}
 			return
-		}
-
-		var kotsApplication *kotsv1beta1.Application
-		var license *kotsv1beta1.License
-		if cause, ok := errors.Cause(finalError).(upstream.IncompatibleAppError); ok {
-			kotsApplication = cause.KotsApplication
-			license = cause.License
-			isInstall := false // this is calculated based on sequence and will always be false here
-			finalError = util.ActionableError{
-				NoRetry: true,
-				Message: kotsutil.GetIncompatbileKotsVersionMessage(*cause.KotsApplication, isInstall),
-			}
 		}
 
 		// no version has been created for the update yet, create the version as pending download

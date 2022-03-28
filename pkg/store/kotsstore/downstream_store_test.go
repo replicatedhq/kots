@@ -8,6 +8,7 @@ import (
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/cursor"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -260,6 +261,24 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			appVersions:          &downstreamtypes.DownstreamVersions{},
 			expectedIsDeployable: false,
 			expectedCause:        "Deployment is disabled as a strict analyzer in this version's preflight checks has failed or has not been run.",
+		},
+		{
+			name: "pending download",
+			version: &downstreamtypes.DownstreamVersion{
+				Status: types.VersionPendingDownload,
+			},
+			appVersions:          &downstreamtypes.DownstreamVersions{},
+			expectedIsDeployable: false,
+			expectedCause:        "Version is pending download.",
+		},
+		{
+			name: "pending config",
+			version: &downstreamtypes.DownstreamVersion{
+				Status: types.VersionPendingConfig,
+			},
+			appVersions:          &downstreamtypes.DownstreamVersions{},
+			expectedIsDeployable: false,
+			expectedCause:        "Version is pending configuration.",
 		},
 		{
 			name:                 "no version is deployed yet",

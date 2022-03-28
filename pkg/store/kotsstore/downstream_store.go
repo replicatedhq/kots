@@ -173,7 +173,7 @@ func (s *KOTSStore) GetIgnoreRBACErrors(appID string, sequence int64) (bool, err
 func (s *KOTSStore) GetLatestDownstreamVersion(appID string, clusterID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersion, error) {
 	downstreamVersions, err := s.GetDownstreamVersions(appID, clusterID, downloadedOnly)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to find app versions")
+		return nil, errors.Wrap(err, "failed to find app downstream versions")
 	}
 	if len(downstreamVersions.AllVersions) == 0 {
 		return nil, errors.New("no app versions found")
@@ -370,7 +370,7 @@ func (s *KOTSStore) GetDownstreamVersions(appID string, clusterID string, downlo
 	return result, nil
 }
 
-func (s *KOTSStore) FindAppVersions(appID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error) {
+func (s *KOTSStore) FindDownstreamVersions(appID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error) {
 	downstreams, err := s.ListDownstreamsForApp(appID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app downstreams")
@@ -496,7 +496,6 @@ func (s *KOTSStore) downstreamVersionFromRow(appID string, row scannable) (*down
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to load installation spec")
 		}
-
 		v.KOTSKinds.Installation = *installation
 		v.YamlErrors = v.KOTSKinds.Installation.Spec.YAMLErrors
 	}
@@ -519,11 +518,10 @@ func (s *KOTSStore) downstreamVersionFromRow(appID string, row scannable) (*down
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to load installation spec")
 		}
-
 		v.KOTSKinds.KotsApplication = *app
 	}
-
 	v.NeedsKotsUpgrade = needsKotsUpgrade(&v.KOTSKinds.KotsApplication)
+
 	v.HasFailingStrictPreflights, err = s.hasFailingStrictPreflights(preflightSpecStr, preflightResult)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get strict preflight results")
@@ -533,9 +531,9 @@ func (s *KOTSStore) downstreamVersionFromRow(appID string, row scannable) (*down
 }
 
 func (s *KOTSStore) IsAppVersionDeployable(appID string, sequence int64) (bool, string, error) {
-	versions, err := s.FindAppVersions(appID, false)
+	versions, err := s.FindDownstreamVersions(appID, false)
 	if err != nil {
-		return false, "", errors.Wrap(err, "failed to find app versions")
+		return false, "", errors.Wrap(err, "failed to find app downstream versions")
 	}
 	for _, v := range versions.AllVersions {
 		if v.Sequence == sequence {
@@ -561,6 +559,14 @@ func isSameUpstreamRelease(v1 *downstreamtypes.DownstreamVersion, v2 *downstream
 func isAppVersionDeployable(version *downstreamtypes.DownstreamVersion, appVersions *downstreamtypes.DownstreamVersions, isSemverRequired bool) (bool, string) {
 	if version.HasFailingStrictPreflights {
 		return false, "Deployment is disabled as a strict analyzer in this version's preflight checks has failed or has not been run."
+	}
+
+	if version.Status == types.VersionPendingDownload {
+		return false, "Version is pending download."
+	}
+
+	if version.Status == types.VersionPendingConfig {
+		return false, "Version is pending configuration."
 	}
 
 	if appVersions.CurrentVersion == nil {

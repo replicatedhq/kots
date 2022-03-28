@@ -187,7 +187,7 @@ class AppConfig extends Component {
     // check is current deployed config latest
     const currentDeployedSequence = app?.downstreams[0]?.currentVersion?.parentSequence;
     if (currentDeployedSequence != undefined) {
-      return currentDeployedSequence
+      return currentDeployedSequence;
     } else {
       return app?.downstreams[0]?.pendingVersions?.[0]?.parentSequence;
     }

@@ -40,6 +40,10 @@ class DashboardVersionCard extends React.Component {
       kotsUpdateStatus: undefined,
       kotsUpdateMessage: undefined,
       kotsUpdateError: undefined,
+      nextAppVersion: null,
+      numOfSkippedVersions: 0,
+      numOfRemainingVersions: 0,
+      nextAppVersionErrMsg: "",
     }
     this.cardTitleText = React.createRef();
 
@@ -65,6 +69,9 @@ class DashboardVersionCard extends React.Component {
         firstSequence: splitSearch[1],
         secondSequence: splitSearch[2]
       });
+    }
+    if (lastProps.currentVersion !== this.props.currentVersion) {
+      this.getNextAppVersion();
     }
   }
 
@@ -126,8 +133,43 @@ class DashboardVersionCard extends React.Component {
         this.setState({ logsLoading: false, viewLogsErrMsg: `Failed to view logs, unexpected status code, ${res.status}` });
       }
     } catch (err) {
-      console.log(err)
+      console.log(err);
       this.setState({ logsLoading: false, viewLogsErrMsg: err ? `Failed to view logs: ${err.message}` : "Something went wrong, please try again." });
+    }
+  }
+
+  getNextAppVersion = async () => {
+    try {
+      const { app } = this.props;
+
+      const res = await fetch(`${process.env.API_ENDPOINT}/app/${app?.slug}/next-app-version`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "GET",
+      });
+
+      if (!res.ok) {
+        const response = await res.json();
+        this.setState({
+          nextAppVersionErrMsg: response.error,
+        });
+        return;
+      }
+
+      const response = await res.json();
+      this.setState({
+        nextAppVersion: response.nextAppVersion,
+        numOfSkippedVersions: response.numOfSkippedVersions,
+        numOfRemainingVersions: response.numOfRemainingVersions,
+        nextAppVersionErrMsg: "",
+      });
+    } catch (err) {
+      console.log(err);
+      this.setState({
+        nextAppVersionErrMsg: err ? `Failed to get next deployable version: ${err.message}` : "Something went wrong, please try again.",
+      });
     }
   }
 
@@ -554,8 +596,6 @@ class DashboardVersionCard extends React.Component {
     const needsConfiguration = version.status === "pending_config";
     const isPendingDownload = version.status === "pending_download";
     const isSecondaryActionBtn = needsConfiguration || isPendingDownload;
-    const isDeploying = version.status === "deploying";
-    const isDownloading = this.state.versionDownloadStatuses?.[version.sequence]?.downloadingVersion;
 
     return (
       <div className="flex flex1 alignItems--center justifyContent--flexEnd">
@@ -565,7 +605,7 @@ class DashboardVersionCard extends React.Component {
         <div className="flex-column justifyContent--center u-marginLeft--10">
           <button
             className={classNames("btn", { "secondary blue": isSecondaryActionBtn, "primary blue": !isSecondaryActionBtn })}
-            disabled={isDeploying || isDownloading || !version.isDeployable}
+            disabled={this.isActionButtonDisabled(version)}
             onClick={() => {
               if (needsConfiguration) {
                 this.props.history.push(`/app/${app?.slug}/config/${version.sequence}`);
@@ -584,7 +624,7 @@ class DashboardVersionCard extends React.Component {
           >
             <span
               key={version.nonDeployableCause}
-              data-tip-disable={version.isDeployable}
+              data-tip-disable={!this.isActionButtonDisabled(version)}
               data-tip={version.nonDeployableCause}
               data-for="disable-deployment-tooltip"
             >
@@ -595,6 +635,22 @@ class DashboardVersionCard extends React.Component {
         </div>
       </div>
     );
+  }
+
+  isActionButtonDisabled = version => {
+    if (this.state.versionDownloadStatuses?.[version.sequence]?.downloadingVersion) {
+      return true;
+    }
+    if (version.status === "deploying") {
+      return true;
+    }
+    if (version.status === "pending_config") {
+      return false;
+    }
+    if (version.status === "pending_download") {
+      return false;
+    }
+    return !version.isDeployable;
   }
 
   renderVersionDownloadStatus = version => {
@@ -646,7 +702,7 @@ class DashboardVersionCard extends React.Component {
     })
       .then(async (res) => {
         if (!res.ok) {
-        const response = await res.json();
+          const response = await res.json();
           this.setState({
             kotsUpdateRunning: false,
             kotsUpdateStatus: "failed",
@@ -908,28 +964,24 @@ class DashboardVersionCard extends React.Component {
       return this.renderUpdateProgress();
     }
 
-    const downstream = this.props.downstream;
-    if (!downstream?.latestVersion || downstream?.latestVersion?.sequence === downstream?.currentVersion?.sequence) {
+    if (this.state.nextAppVersionErrMsg) {
+      return (
+        <div className="error-block-wrapper u-marginTop--20 u-marginBottom--10 flex flex1">
+          <span className="u-textColor--error">{this.state.nextAppVersionErrMsg}</span>
+        </div>
+      );
+    }
+
+    const nextAppVersion = this.state.nextAppVersion;
+    if (!nextAppVersion) {
       return null;
     }
 
-    let nextAppVersion = downstream?.latestVersion;
-    let newVersionsAfterUpgrade = null;
-    let versionsToSkip = downstream?.pendingVersions?.length - 1;
-    const requiredVersions = downstream?.pendingVersions?.length > 0 ? filter(downstream.pendingVersions, ["isRequired", true]) : [];
-    if (this.props.currentVersion && requiredVersions.length > 0) { // If there is a version already deployed, and there is at least one required pending versions, set nextAppVersion to the earliest required version
-      nextAppVersion = requiredVersions[requiredVersions.length - 1];
-      const indexOfNextAppVersion = findIndex(downstream?.pendingVersions, ["sequence", nextAppVersion.sequence]);
-      versionsToSkip = (downstream?.pendingVersions?.length - 1) - indexOfNextAppVersion;
-      if (indexOfNextAppVersion > 0) {
-        newVersionsAfterUpgrade = ` Additional versions are available after you deploy this required version.`;
-      }
-    }
     const app = this.props.app;
+    const downstream = this.props.downstream;
     const downstreamSource = nextAppVersion?.source;
     const gitopsEnabled = downstream?.gitops?.enabled;
     const isNew = secondsAgo(nextAppVersion?.createdOn) < 10;
-    
 
     return (
       <div className="u-marginTop--20">
@@ -961,7 +1013,12 @@ class DashboardVersionCard extends React.Component {
           </div>
           {this.renderVersionDownloadStatus(nextAppVersion)}
         </div>
-        {versionsToSkip > 0 && <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--header u-marginTop--10">{versionsToSkip} version{versionsToSkip > 1 && "s"} will be skipped in upgrading to {nextAppVersion?.versionLabel}.{newVersionsAfterUpgrade}</p>}
+        {(this.state.numOfSkippedVersions > 0 || this.state.numOfRemainingVersions > 0) && (
+          <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--header u-marginTop--10">
+            {this.state.numOfSkippedVersions} version{this.state.numOfSkippedVersions > 1 && "s"} will be skipped in upgrading to {nextAppVersion.versionLabel}.
+            {this.state.numOfRemainingVersions > 0 && " Additional versions are available after you deploy this required version."}
+          </p>
+        )}
       </div>
     );
   }
