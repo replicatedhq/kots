@@ -84,14 +84,12 @@ function renderVersionAction(version, nothingToCommitDiff, app, history, actionF
   const downstream = app.downstreams[0];
 
   if (version.status === "pending_download") {
-
     let buttonText = "Download";
     if (isDownloading) {
       buttonText = "Downloading";
     } else if (version.needsKotsUpgrade) {
       buttonText = "Upgrade";
     }
-
     return (
       <div className="flex flex1 justifyContent--flexEnd alignItems--center">
         {renderReleaseNotes(version, showReleaseNotes)}
@@ -136,13 +134,14 @@ function renderVersionAction(version, nothingToCommitDiff, app, history, actionF
   const isSecondaryBtn = isPastVersion || needsConfiguration || isRedeploy && !isRollback;
   const isPrimaryButton = !isSecondaryBtn && !isRedeploy && !isRollback;
   const editableConfig = isCurrentVersion || isLatestVersion || isPendingVersion?.semver;
-  const blockDeployment = version.hasFailingStrictPreflights
+
   let tooltipTip;
   if (editableConfig) {
     tooltipTip = "Edit config";
   } else {
     tooltipTip = "View config"
   }
+
   const preflightState = getPreflightState(version);
   let checksStatusText;
   if (preflightState.preflightsFailed) {
@@ -150,6 +149,7 @@ function renderVersionAction(version, nothingToCommitDiff, app, history, actionF
   } else if (preflightState.preflightState === "warn") {
     checksStatusText = "Checks passed with warnings"
   }
+
   return (
     <div className="flex flex1 justifyContent--flexEnd alignItems--center">
       {renderReleaseNotes(version, showReleaseNotes)}
@@ -192,22 +192,36 @@ function renderVersionAction(version, nothingToCommitDiff, app, history, actionF
         <div className="flex alignItems--center">
           <button
             className={classNames("btn u-marginLeft--10", { "secondary dark": isRollback, "secondary blue": isSecondaryBtn, "primary blue": isPrimaryButton })}
-            disabled={version.status === "deploying" || blockDeployment}
+            disabled={isActionButtonDisabled(version)}
             onClick={() => needsConfiguration ? history.push(`/app/${app.slug}/config/${version.sequence}`) : isRollback ? actionFn(version, true) : actionFn(version)}
           >
             <span
-              data-tip-disable={!blockDeployment}
-              data-tip="Deployment is disabled as a strict analyzer in this version's preflight checks has failed or has not been run"
+              key={version.nonDeployableCause}
+              data-tip-disable={!isActionButtonDisabled(version)}
+              data-tip={version.nonDeployableCause}
               data-for="disable-deployment-tooltip"
             >
               {deployButtonStatus(downstream, version, app, adminConsoleMetadata)}
             </span>
+            <ReactTooltip effect="solid" id="disable-deployment-tooltip" />
           </button>
-          <ReactTooltip effect="solid" id="disable-deployment-tooltip" />
         </div>
       }
     </div>
   );
+}
+
+function isActionButtonDisabled(version) {
+  if (version.status === "deploying") {
+    return true;
+  }
+  if (version.status === "pending_config") {
+    return false;
+  }
+  if (version.status === "pending_download") {
+    return false;
+  }
+  return !version.isDeployable;
 }
 
 function renderViewPreflights(version, app, match) {
@@ -300,12 +314,12 @@ export default function AppVersionHistoryRow(props) {
   const hideSourceDiff = version?.source.includes("Airgap Install") || version?.source.includes("Online Install");
 
   let actionFn = props.deployVersion;
-  if (version.status === "failed" || version.status === "deployed") {
-    actionFn = props.redeployVersion;
-  } else if (version.needsKotsUpgrade) {
+  if (version.needsKotsUpgrade) {
     actionFn = props.upgradeAdminConsole;
   } else if (version.status === "pending_download") {
     actionFn = props.downloadVersion;
+  } else if (version.status === "failed" || version.status === "deployed") {
+    actionFn = props.redeployVersion;
   }
 
   return (
@@ -320,6 +334,9 @@ export default function AppVersionHistoryRow(props) {
           <div className="flex alignItems--center">
             <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">{version.versionLabel || version.title}</p>
             <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10" style={{ marginTop: "2px" }}>Sequence {version.sequence}</p>
+            {version.isRequired &&
+              <span className="status-tag required u-marginLeft--10"> Required </span>
+            }
           </div>
           <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5"> Released <span className="u-fontWeight--bold">{version.upstreamReleasedAt ? Utilities.dateFormat(version.upstreamReleasedAt, "MM/DD/YY @ hh:mm a z") : Utilities.dateFormat(version.createdOn, "MM/DD/YY @ hh:mm a z")}</span></p>
           <div className="u-marginTop--5 flex flex-auto alignItems--center">

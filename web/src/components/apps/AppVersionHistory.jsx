@@ -93,6 +93,8 @@ class AppVersionHistory extends Component {
         this.setState({ showDiffOverlay: true, firstSequence, secondSequence });
       }
     }
+
+    this._mounted = true;
   }
 
   componentDidUpdate = async (lastProps) => {
@@ -107,6 +109,7 @@ class AppVersionHistory extends Component {
     for (const j in this.versionDownloadStatusJobs) {
       this.versionDownloadStatusJobs[j].stop();
     }
+    this._mounted = false;
   }
 
   fetchKotsDownstreamHistory = async () => {
@@ -144,7 +147,7 @@ class AppVersionHistory extends Component {
       const response = await res.json();
       const versionHistory = response.versionHistory;
 
-      if (isAwaitingResults(versionHistory)) {
+      if (isAwaitingResults(versionHistory) && this._mounted) {
         this.state.versionHistoryJob.start(this.fetchKotsDownstreamHistory, 2000);
       } else {
         this.state.versionHistoryJob.stop();
@@ -1375,7 +1378,7 @@ class AppVersionHistory extends Component {
             className="Modal DefaultSize"
           >
             <div className="Modal-body">
-            <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">{this.state.confirmType === "rollback" ? "Rollback to" : this.state.confirmType === "redeploy" ? "Redeploy" : "Deploy"} {this.state.versionToDeploy?.versionLabel} (Sequence {this.state.versionToDeploy?.sequence})?</p>
+              <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">{this.state.confirmType === "rollback" ? "Rollback to" : this.state.confirmType === "redeploy" ? "Redeploy" : "Deploy"} {this.state.versionToDeploy?.versionLabel} (Sequence {this.state.versionToDeploy?.sequence})?</p>
               {isPastVersion && this.props.app?.autoDeploy !== "disabled" ? 
                 <div className="info-box">
                   <span className="u-fontSize--small u-textColor--header u-lineHeight--normal u-fontWeight--medium">You have automatic deploys enabled. {this.state.confirmType === "rollback" ? "Rolling back to" : this.state.confirmType === "redeploy" ? "Redeploying" : "Deploying"} this version will disable automatic deploys. You can turn it back on after this version finishes deployment.</span>

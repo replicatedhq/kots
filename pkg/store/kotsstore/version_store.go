@@ -19,6 +19,7 @@ import (
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/cursor"
 	"github.com/replicatedhq/kots/pkg/filestore"
 	gitopstypes "github.com/replicatedhq/kots/pkg/gitops/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -284,9 +285,9 @@ func (s *KOTSStore) GetAppVersionArchive(appID string, sequence int64, dstPath s
 // GetAppVersionBaseSequence returns the base sequence for a given version label.
 // if the "versionLabel" param is empty or is not a valid semver, the sequence of the latest version will be returned.
 func (s *KOTSStore) GetAppVersionBaseSequence(appID string, versionLabel string) (int64, error) {
-	appVersions, err := s.FindAppVersions(appID, true)
+	appVersions, err := s.FindDownstreamVersions(appID, true)
 	if err != nil {
-		return -1, errors.Wrapf(err, "failed to find app versions for app %s", appID)
+		return -1, errors.Wrapf(err, "failed to find app downstream versions for app %s", appID)
 	}
 
 	mockVersion := &downstreamtypes.DownstreamVersion{
@@ -391,6 +392,7 @@ func (s *KOTSStore) CreatePendingDownloadAppVersion(appID string, update upstrea
 			ChannelID:    update.ChannelID,
 			ChannelName:  update.ChannelName,
 			VersionLabel: update.VersionLabel,
+			IsRequired:   update.IsRequired,
 			ReleasedAt:   releasedAt,
 			ReleaseNotes: update.ReleaseNotes,
 		},
@@ -408,8 +410,8 @@ func (s *KOTSStore) CreatePendingDownloadAppVersion(appID string, update upstrea
 
 	for _, d := range downstreams {
 		err = s.addAppVersionToDownstream(tx, a.ID, d.ClusterID, newSequence,
-			kotsKinds.Installation.Spec.VersionLabel, types.VersionPendingDownload, "Upstream Update",
-			"", "", "", false, false)
+			kotsKinds.Installation.Spec.VersionLabel, types.VersionPendingDownload,
+			"Upstream Update", "", "", "", false, false)
 		if err != nil {
 			return 0, errors.Wrap(err, "failed to create downstream version")
 		}
@@ -591,8 +593,8 @@ func (s *KOTSStore) upsertAppVersion(tx *sql.Tx, appID string, sequence int64, b
 		}
 
 		err = s.addAppVersionToDownstream(tx, appID, d.ClusterID, sequence,
-			kotsKinds.Installation.Spec.VersionLabel, downstreamStatus, source,
-			diffSummary, diffSummaryError, commitURL, commitURL != "", skipPreflights)
+			kotsKinds.Installation.Spec.VersionLabel, downstreamStatus,
+			source, diffSummary, diffSummaryError, commitURL, commitURL != "", skipPreflights)
 		if err != nil {
 			return errors.Wrap(err, "failed to create downstream version")
 		}
@@ -679,12 +681,13 @@ func (s *KOTSStore) upsertAppVersionRecord(tx *sql.Tx, appID string, sequence in
 	if kotsKinds.Installation.Spec.ReleasedAt != nil {
 		releasedAt = &kotsKinds.Installation.Spec.ReleasedAt.Time
 	}
-	query := `insert into app_version (app_id, sequence, created_at, version_label, release_notes, update_cursor, channel_id, channel_name, upstream_released_at, encryption_key,
+	query := `insert into app_version (app_id, sequence, created_at, version_label, is_required, release_notes, update_cursor, channel_id, channel_name, upstream_released_at, encryption_key,
 		supportbundle_spec, analyzer_spec, preflight_spec, app_spec, kots_app_spec, kots_installation_spec, kots_license, config_spec, config_values, backup_spec, identity_spec)
-		values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
+		values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
 		ON CONFLICT(app_id, sequence) DO UPDATE SET
 		created_at = EXCLUDED.created_at,
 		version_label = EXCLUDED.version_label,
+		is_required = EXCLUDED.is_required,
 		release_notes = EXCLUDED.release_notes,
 		update_cursor = EXCLUDED.update_cursor,
 		channel_id = EXCLUDED.channel_id,
@@ -704,6 +707,7 @@ func (s *KOTSStore) upsertAppVersionRecord(tx *sql.Tx, appID string, sequence in
 		identity_spec = EXCLUDED.identity_spec`
 	_, err = tx.Exec(query, appID, sequence, time.Now(),
 		kotsKinds.Installation.Spec.VersionLabel,
+		kotsKinds.Installation.Spec.IsRequired,
 		kotsKinds.Installation.Spec.ReleaseNotes,
 		kotsKinds.Installation.Spec.UpdateCursor,
 		kotsKinds.Installation.Spec.ChannelID,
@@ -772,72 +776,49 @@ func (s *KOTSStore) addAppVersionToDownstream(tx *sql.Tx, appID string, clusterI
 
 func (s *KOTSStore) GetAppVersion(appID string, sequence int64) (*versiontypes.AppVersion, error) {
 	db := persistence.MustGetDBSession()
-	query := `select sequence, created_at, status, applied_at, kots_installation_spec, kots_app_spec, kots_license from app_version where app_id = $1 and sequence = $2`
+	query := `select app_id, sequence, update_cursor, channel_id, version_label, created_at, status, applied_at, kots_installation_spec, kots_app_spec, kots_license from app_version where app_id = $1 and sequence = $2`
 	row := db.QueryRow(query, appID, sequence)
 
-	var status sql.NullString
-	var deployedAt persistence.NullStringTime
-	var createdAt persistence.NullStringTime
-	var installationSpec sql.NullString
-	var kotsAppSpec sql.NullString
-	var licenseSpec sql.NullString
-
-	v := versiontypes.AppVersion{
-		AppID: appID,
+	v, err := s.appVersionFromRow(row)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get app version from row")
 	}
-	if err := row.Scan(&v.Sequence, &createdAt, &status, &createdAt, &installationSpec, &kotsAppSpec, &licenseSpec); err != nil {
+
+	return v, nil
+}
+
+func (s *KOTSStore) GetAppVersions(appID string) ([]*versiontypes.AppVersion, error) {
+	db := persistence.MustGetDBSession()
+	query := `select app_id, sequence, update_cursor, channel_id, version_label, created_at, status, applied_at, kots_installation_spec, kots_app_spec, kots_license from app_version where app_id = $1`
+
+	rows, err := db.Query(query, appID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to query db")
+	}
+
+	versions := []*versiontypes.AppVersion{}
+	for rows.Next() {
+		v, err := s.appVersionFromRow(rows)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get app version from row")
+		}
+		versions = append(versions, v)
+	}
+
+	if err := rows.Err(); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ErrNotFound
+			return versions, nil
 		}
-		return nil, errors.Wrap(err, "failed to scan")
+		return nil, errors.Wrap(err, "failed to iterate over rows")
 	}
 
-	v.KOTSKinds = &kotsutil.KotsKinds{}
-
-	if installationSpec.Valid && installationSpec.String != "" {
-		installation, err := kotsutil.LoadInstallationFromContents([]byte(installationSpec.String))
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to read installation spec")
-		}
-		if installation != nil {
-			v.KOTSKinds.Installation = *installation
-		}
-	}
-
-	if kotsAppSpec.Valid && kotsAppSpec.String != "" {
-		kotsApp, err := kotsutil.LoadKotsAppFromContents([]byte(kotsAppSpec.String))
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to read kotsapp spec")
-		}
-		if kotsApp != nil {
-			v.KOTSKinds.KotsApplication = *kotsApp
-		}
-	}
-
-	if licenseSpec.Valid && licenseSpec.String != "" {
-		license, err := kotsutil.LoadLicenseFromBytes([]byte(licenseSpec.String))
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to read license spec")
-		}
-		if license != nil {
-			v.KOTSKinds.License = license
-		}
-	}
-
-	v.CreatedOn = createdAt.Time
-	if deployedAt.Valid {
-		v.DeployedAt = &deployedAt.Time
-	}
-
-	v.Status = status.String
-
-	return &v, nil
+	return versions, nil
 }
 
 func (s *KOTSStore) GetLatestAppVersion(appID string, downloadedOnly bool) (*versiontypes.AppVersion, error) {
-	downstreamVersions, err := s.FindAppVersions(appID, downloadedOnly)
+	downstreamVersions, err := s.FindDownstreamVersions(appID, downloadedOnly)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to find app versions")
+		return nil, errors.Wrap(err, "failed to find app downstream versions")
 	}
 	if len(downstreamVersions.AllVersions) == 0 {
 		return nil, errors.New("no app versions found")
@@ -851,9 +832,9 @@ func (s *KOTSStore) UpdateNextAppVersionDiffSummary(appID string, baseSequence i
 		return errors.Wrap(err, "failed to get app")
 	}
 
-	appVersions, err := s.FindAppVersions(a.ID, true)
+	appVersions, err := s.FindDownstreamVersions(a.ID, true)
 	if err != nil {
-		return errors.Wrapf(err, "failed to find app versions for app %s", appID)
+		return errors.Wrapf(err, "failed to find app downstream versions for app %s", appID)
 	}
 
 	nextSequence := int64(-1)
@@ -959,24 +940,25 @@ func (s *KOTSStore) getNextAppSequence(db queryable, appID string) (int64, error
 	return newSequence, nil
 }
 
-func (s *KOTSStore) GetCurrentUpdateCursor(appID string, channelID string) (string, string, error) {
+func (s *KOTSStore) GetCurrentUpdateCursor(appID string, channelID string) (string, string, bool, error) {
 	db := persistence.MustGetDBSession()
-	query := `SELECT update_cursor, version_label FROM app_version WHERE app_id = $1 AND channel_id = $2 AND update_cursor::INT IN (
+	query := `SELECT update_cursor, version_label, is_required FROM app_version WHERE app_id = $1 AND channel_id = $2 AND update_cursor::INT IN (
 		SELECT MAX(update_cursor::INT) FROM app_version WHERE app_id = $1 AND channel_id = $2
 	) ORDER BY sequence DESC LIMIT 1`
 	row := db.QueryRow(query, appID, channelID)
 
 	var updateCursor sql.NullString
 	var versionLabel sql.NullString
+	var isRequired sql.NullBool
 
-	if err := row.Scan(&updateCursor, &versionLabel); err != nil {
+	if err := row.Scan(&updateCursor, &versionLabel, &isRequired); err != nil {
 		if err == sql.ErrNoRows {
-			return "", "", nil
+			return "", "", false, nil
 		}
-		return "", "", errors.Wrap(err, "failed to scan")
+		return "", "", false, errors.Wrap(err, "failed to scan")
 	}
 
-	return updateCursor.String, versionLabel.String, nil
+	return updateCursor.String, versionLabel.String, isRequired.Bool, nil
 }
 
 func (s *KOTSStore) HasStrictPreflights(appID string, sequence int64) (bool, error) {
@@ -1017,4 +999,78 @@ func (s *KOTSStore) renderPreflightSpec(appID string, appSlug string, sequence i
 	}
 
 	return nil, nil
+}
+
+func (s *KOTSStore) appVersionFromRow(row scannable) (*versiontypes.AppVersion, error) {
+	v := &versiontypes.AppVersion{}
+
+	var status sql.NullString
+	var deployedAt persistence.NullStringTime
+	var createdAt persistence.NullStringTime
+	var installationSpec sql.NullString
+	var kotsAppSpec sql.NullString
+	var licenseSpec sql.NullString
+	var updateCursor sql.NullString
+	var channelID sql.NullString
+	var versionLabel sql.NullString
+
+	if err := row.Scan(&v.AppID, &v.Sequence, &updateCursor, &channelID, &versionLabel, &createdAt, &status, &createdAt, &installationSpec, &kotsAppSpec, &licenseSpec); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrNotFound
+		}
+		return nil, errors.Wrap(err, "failed to scan")
+	}
+
+	v.KOTSKinds = &kotsutil.KotsKinds{}
+
+	v.UpdateCursor = updateCursor.String
+	v.ChannelID = channelID.String
+	v.VersionLabel = versionLabel.String
+
+	if installationSpec.Valid && installationSpec.String != "" {
+		installation, err := kotsutil.LoadInstallationFromContents([]byte(installationSpec.String))
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to read installation spec")
+		}
+		if installation != nil {
+			v.KOTSKinds.Installation = *installation
+		}
+	}
+
+	if kotsAppSpec.Valid && kotsAppSpec.String != "" {
+		kotsApp, err := kotsutil.LoadKotsAppFromContents([]byte(kotsAppSpec.String))
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to read kotsapp spec")
+		}
+		if kotsApp != nil {
+			v.KOTSKinds.KotsApplication = *kotsApp
+		}
+	}
+
+	if licenseSpec.Valid && licenseSpec.String != "" {
+		license, err := kotsutil.LoadLicenseFromBytes([]byte(licenseSpec.String))
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to read license spec")
+		}
+		if license != nil {
+			v.KOTSKinds.License = license
+		}
+	}
+
+	v.CreatedOn = createdAt.Time
+	if deployedAt.Valid {
+		v.DeployedAt = &deployedAt.Time
+	}
+
+	if sv, err := semver.ParseTolerant(v.VersionLabel); err == nil {
+		v.Semver = &sv
+	}
+
+	if c, err := cursor.NewCursor(v.UpdateCursor); err == nil {
+		v.Cursor = &c
+	}
+
+	v.Status = status.String
+
+	return v, nil
 }

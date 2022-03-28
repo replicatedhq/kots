@@ -382,7 +382,7 @@ func isVersionConfigEditable(app *apptypes.App, sequence int64) (bool, error) {
 	}
 
 	for _, d := range downstreams {
-		versions, err := store.GetStore().GetAppVersions(app.ID, d.ClusterID, true)
+		versions, err := store.GetStore().GetDownstreamVersions(app.ID, d.ClusterID, true)
 		if err != nil {
 			return false, errors.Wrap(err, "failed to get downstream versions")
 		}

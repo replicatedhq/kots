@@ -6,6 +6,7 @@ import (
 
 	"github.com/blang/semver"
 	v1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/cursor"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 )
@@ -22,6 +23,12 @@ type Downstream struct {
 type DownstreamVersion struct {
 	VersionLabel               string                             `json:"versionLabel"`
 	Semver                     *semver.Version                    `json:"semver,omitempty"`
+	UpdateCursor               string                             `json:"updateCursor"`
+	Cursor                     *cursor.Cursor                     `json:"-"`
+	ChannelID                  string                             `json:"channelId,omitempty"`
+	IsRequired                 bool                               `json:"isRequired"`
+	IsDeployable               bool                               `json:"isDeployable"`
+	NonDeployableCause         string                             `json:"nonDeployableCause,omitempty"`
 	Status                     storetypes.DownstreamVersionStatus `json:"status"`
 	CreatedOn                  *time.Time                         `json:"createdOn"`
 	ParentSequence             int64                              `json:"parentSequence"`
@@ -109,6 +116,28 @@ func SortDownstreamVersions(versions *DownstreamVersions, bySemver bool) {
 			}
 		}
 	}
+}
+
+type byCursor []*DownstreamVersion
+
+func (v byCursor) Len() int {
+	return len(v)
+}
+func (v byCursor) Swap(i, j int) {
+	v[i], v[j] = v[j], v[i]
+}
+func (v byCursor) Less(i, j int) bool {
+	if v[i].Cursor == nil || v[j].Cursor == nil {
+		return v[i].Sequence < v[j].Sequence
+	}
+	if (*v[i].Cursor).Equal(*v[j].Cursor) {
+		return v[i].Sequence < v[j].Sequence
+	}
+	return (*v[i].Cursor).Before(*v[j].Cursor)
+}
+
+func SortDownstreamVersionsByCursor(allVersions []*DownstreamVersion) {
+	sort.Sort(sort.Reverse(byCursor(allVersions)))
 }
 
 type DownstreamOutput struct {

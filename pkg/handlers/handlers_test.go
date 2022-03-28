@@ -66,12 +66,13 @@ var HandlerPolicyTests = map[string][]HandlerPolicyTest{
 			ExpectStatus: http.StatusOK,
 		},
 	},
-	"IsKotsVersionCompatibleWithApp": {
+	"CanInstallAppVersion": {
 		{
+			Vars:         map[string]string{"appSlug": "my-app"},
 			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
 			SessionRoles: []string{rbac.ClusterAdminRoleID},
 			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
-				handlerRecorder.IsKotsVersionCompatibleWithApp(gomock.Any(), gomock.Any())
+				handlerRecorder.CanInstallAppVersion(gomock.Any(), gomock.Any())
 			},
 			ExpectStatus: http.StatusOK,
 		},
@@ -349,6 +350,17 @@ var HandlerPolicyTests = map[string][]HandlerPolicyTest{
 			SessionRoles: []string{rbac.ClusterAdminRoleID},
 			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
 				handlerRecorder.GetAppVersionHistory(gomock.Any(), gomock.Any())
+			},
+			ExpectStatus: http.StatusOK,
+		},
+	},
+	"GetNextAppVersion": {
+		{
+			Vars:         map[string]string{"appSlug": "my-app"},
+			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
+			SessionRoles: []string{rbac.ClusterAdminRoleID},
+			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
+				handlerRecorder.GetNextAppVersion(gomock.Any(), gomock.Any())
 			},
 			ExpectStatus: http.StatusOK,
 		},

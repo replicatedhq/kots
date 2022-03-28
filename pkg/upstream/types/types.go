@@ -28,6 +28,7 @@ type Upstream struct {
 	ChannelID     string
 	ChannelName   string
 	VersionLabel  string
+	IsRequired    bool
 	ReleaseNotes  string
 	ReleasedAt    *time.Time
 	EncryptionKey string
@@ -38,6 +39,7 @@ type Update struct {
 	ChannelName  string     `json:"channelName"`
 	Cursor       string     `json:"cursor"`
 	VersionLabel string     `json:"versionLabel"`
+	IsRequired   bool       `json:"isRequired"`
 	ReleaseNotes string     `json:"releaseNotes"`
 	ReleasedAt   *time.Time `json:"releasedAt"`
 	AppSequence  *int64     `json:"appSequence"` // can have a sequence if update is available as a pending download app version
@@ -65,30 +67,31 @@ type WriteOptions struct {
 }
 
 type FetchOptions struct {
-	RootDir                string
-	UseAppDir              bool
-	HelmRepoName           string
-	HelmRepoURI            string
-	HelmOptions            []string
-	LocalPath              string
-	License                *kotsv1beta1.License
-	ConfigValues           *kotsv1beta1.ConfigValues
-	IdentityConfig         *kotsv1beta1.IdentityConfig
-	Airgap                 *kotsv1beta1.Airgap
-	EncryptionKey          string
-	LastUpdateCheckAt      *time.Time
-	CurrentCursor          string
-	CurrentChannelID       string
-	CurrentChannelName     string
-	CurrentVersionLabel    string
-	ChannelChanged         bool
-	AppSlug                string
-	AppSequence            int64
-	AppVersionLabel        string
-	LocalRegistry          LocalRegistry
-	ReportingInfo          *reportingtypes.ReportingInfo
-	IdentityPostgresConfig *kotsv1beta1.IdentityPostgresConfig
-	SkipCompatibilityCheck bool
+	RootDir                  string
+	UseAppDir                bool
+	HelmRepoName             string
+	HelmRepoURI              string
+	HelmOptions              []string
+	LocalPath                string
+	License                  *kotsv1beta1.License
+	ConfigValues             *kotsv1beta1.ConfigValues
+	IdentityConfig           *kotsv1beta1.IdentityConfig
+	Airgap                   *kotsv1beta1.Airgap
+	EncryptionKey            string
+	LastUpdateCheckAt        *time.Time
+	CurrentCursor            string
+	CurrentChannelID         string
+	CurrentChannelName       string
+	CurrentVersionLabel      string
+	CurrentVersionIsRequired bool
+	ChannelChanged           bool
+	AppSlug                  string
+	AppSequence              int64
+	AppVersionLabel          string
+	LocalRegistry            LocalRegistry
+	ReportingInfo            *reportingtypes.ReportingInfo
+	IdentityPostgresConfig   *kotsv1beta1.IdentityPostgresConfig
+	SkipCompatibilityCheck   bool
 }
 
 type LocalRegistry struct {

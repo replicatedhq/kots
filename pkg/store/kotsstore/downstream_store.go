@@ -4,11 +4,13 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"fmt"
+	"strings"
 
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
+	"github.com/replicatedhq/kots/pkg/cursor"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
@@ -169,9 +171,9 @@ func (s *KOTSStore) GetIgnoreRBACErrors(appID string, sequence int64) (bool, err
 }
 
 func (s *KOTSStore) GetLatestDownstreamVersion(appID string, clusterID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersion, error) {
-	downstreamVersions, err := s.GetAppVersions(appID, clusterID, downloadedOnly)
+	downstreamVersions, err := s.GetDownstreamVersions(appID, clusterID, downloadedOnly)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to find app versions")
+		return nil, errors.Wrap(err, "failed to find app downstream versions")
 	}
 	if len(downstreamVersions.AllVersions) == 0 {
 		return nil, errors.New("no app versions found")
@@ -208,6 +210,9 @@ func (s *KOTSStore) GetCurrentVersion(appID string, clusterID string) (*downstre
 	av.kots_installation_spec,
 	av.kots_app_spec,
 	av.version_label,
+	av.channel_id,
+	av.update_cursor,
+	av.is_required,
 	av.preflight_spec
  FROM
 	 app_downstream_version AS adv
@@ -229,6 +234,9 @@ func (s *KOTSStore) GetCurrentVersion(appID string, clusterID string) (*downstre
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get version from row")
 	}
+
+	// this is the currently deployed version, and should be re-deployable
+	v.IsDeployable = true
 
 	return v, nil
 }
@@ -257,7 +265,7 @@ func (s *KOTSStore) GetStatusForVersion(appID string, clusterID string, sequence
 	return types.DownstreamVersionStatus(versionStatus), nil
 }
 
-func (s *KOTSStore) GetAppVersions(appID string, clusterID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error) {
+func (s *KOTSStore) GetDownstreamVersions(appID string, clusterID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error) {
 	currentVersion, err := s.GetCurrentVersion(appID, clusterID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get current version")
@@ -283,6 +291,9 @@ func (s *KOTSStore) GetAppVersions(appID string, clusterID string, downloadedOnl
 	av.kots_installation_spec,
 	av.kots_app_spec,
 	av.version_label,
+	av.channel_id,
+	av.update_cursor,
+	av.is_required,
 	av.preflight_spec
  FROM
 	 app_downstream_version AS adv
@@ -337,6 +348,11 @@ func (s *KOTSStore) GetAppVersions(appID string, clusterID string, downloadedOnl
 	}
 	downstreamtypes.SortDownstreamVersions(result, license.Spec.IsSemverRequired)
 
+	// we need to check all versions to determine if a version is deployable or not
+	for _, v := range result.AllVersions {
+		v.IsDeployable, v.NonDeployableCause = isAppVersionDeployable(v, result, license.Spec.IsSemverRequired)
+	}
+
 	if currentVersion == nil {
 		result.PendingVersions = result.AllVersions
 		result.PastVersions = []*downstreamtypes.DownstreamVersion{}
@@ -354,7 +370,7 @@ func (s *KOTSStore) GetAppVersions(appID string, clusterID string, downloadedOnl
 	return result, nil
 }
 
-func (s *KOTSStore) FindAppVersions(appID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error) {
+func (s *KOTSStore) FindDownstreamVersions(appID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error) {
 	downstreams, err := s.ListDownstreamsForApp(appID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app downstreams")
@@ -365,7 +381,7 @@ func (s *KOTSStore) FindAppVersions(appID string, downloadedOnly bool) (*downstr
 
 	for _, d := range downstreams {
 		clusterID := d.ClusterID
-		downstreamVersions, err := s.GetAppVersions(appID, clusterID, downloadedOnly)
+		downstreamVersions, err := s.GetDownstreamVersions(appID, clusterID, downloadedOnly)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to get downstream versions for cluster %s", clusterID)
 		}
@@ -382,6 +398,8 @@ func (s *KOTSStore) downstreamVersionFromRow(appID string, row scannable) (*down
 
 	var createdOn persistence.NullStringTime
 	var versionLabel sql.NullString
+	var channelID sql.NullString
+	var updateCursor sql.NullString
 	var status sql.NullString
 	var parentSequence sql.NullInt64
 	var deployedAt persistence.NullStringTime
@@ -418,6 +436,9 @@ func (s *KOTSStore) downstreamVersionFromRow(appID string, row scannable) (*down
 		&kotsInstallationSpecStr,
 		&kotsAppSpecStr,
 		&versionLabel,
+		&channelID,
+		&updateCursor,
+		&v.IsRequired,
 		&preflightSpecStr,
 	); err != nil {
 		return nil, errors.Wrap(err, "failed to scan")
@@ -432,6 +453,13 @@ func (s *KOTSStore) downstreamVersionFromRow(appID string, row scannable) (*down
 	if err == nil {
 		v.Semver = &sv
 	}
+
+	v.UpdateCursor = updateCursor.String
+	if c, err := cursor.NewCursor(v.UpdateCursor); err == nil {
+		v.Cursor = &c
+	}
+
+	v.ChannelID = channelID.String
 
 	v.Status = getDownstreamVersionStatus(types.DownstreamVersionStatus(status.String), hasError)
 	v.ParentSequence = parentSequence.Int64
@@ -468,7 +496,6 @@ func (s *KOTSStore) downstreamVersionFromRow(appID string, row scannable) (*down
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to load installation spec")
 		}
-
 		v.KOTSKinds.Installation = *installation
 		v.YamlErrors = v.KOTSKinds.Installation.Spec.YAMLErrors
 	}
@@ -491,17 +518,176 @@ func (s *KOTSStore) downstreamVersionFromRow(appID string, row scannable) (*down
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to load installation spec")
 		}
-
 		v.KOTSKinds.KotsApplication = *app
 	}
-
 	v.NeedsKotsUpgrade = needsKotsUpgrade(&v.KOTSKinds.KotsApplication)
+
 	v.HasFailingStrictPreflights, err = s.hasFailingStrictPreflights(preflightSpecStr, preflightResult)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get strict preflight results")
 	}
 
 	return v, nil
+}
+
+func (s *KOTSStore) IsAppVersionDeployable(appID string, sequence int64) (bool, string, error) {
+	versions, err := s.FindDownstreamVersions(appID, false)
+	if err != nil {
+		return false, "", errors.Wrap(err, "failed to find app downstream versions")
+	}
+	for _, v := range versions.AllVersions {
+		if v.Sequence == sequence {
+			return v.IsDeployable, v.NonDeployableCause, nil
+		}
+	}
+	return false, "", errors.Errorf("version %d not found", sequence)
+}
+
+func isSameUpstreamRelease(v1 *downstreamtypes.DownstreamVersion, v2 *downstreamtypes.DownstreamVersion, isSemverRequired bool) bool {
+	if v1.ChannelID == v2.ChannelID && v1.UpdateCursor == v2.UpdateCursor {
+		return true
+	}
+	if !isSemverRequired {
+		return false
+	}
+	if v1.Semver == nil || v2.Semver == nil {
+		return false
+	}
+	return v1.Semver.EQ(*v2.Semver)
+}
+
+func isAppVersionDeployable(version *downstreamtypes.DownstreamVersion, appVersions *downstreamtypes.DownstreamVersions, isSemverRequired bool) (bool, string) {
+	if version.HasFailingStrictPreflights {
+		return false, "Deployment is disabled as a strict analyzer in this version's preflight checks has failed or has not been run."
+	}
+
+	if version.Status == types.VersionPendingDownload {
+		return false, "Version is pending download."
+	}
+
+	if version.Status == types.VersionPendingConfig {
+		return false, "Version is pending configuration."
+	}
+
+	if appVersions.CurrentVersion == nil {
+		// no version has been deployed yet, treat as an initial install where any version can be deployed at first.
+		return true, ""
+	}
+
+	if version.Sequence == appVersions.CurrentVersion.Sequence {
+		// version is currently deployed, so previous required versions should've already been deployed.
+		// also, we shouldn't block re-deploying if a previous release is edited later by the vendor to be required.
+		return true, ""
+	}
+
+	// rollback support is determined across all versions from all channels
+	// versions below the current veresion in the list are considered past versions
+	versionIndex := -1
+	for i, v := range appVersions.AllVersions {
+		if v.Sequence == version.Sequence {
+			versionIndex = i
+			break
+		}
+	}
+	deployedVersionIndex := -1
+	for i, v := range appVersions.AllVersions {
+		if v.Sequence == appVersions.CurrentVersion.Sequence {
+			deployedVersionIndex = i
+			break
+		}
+	}
+	if versionIndex > deployedVersionIndex {
+		// this is a past version
+		// rollback support is based off of the latest version
+		latestVersion := appVersions.AllVersions[0]
+		if latestVersion.KOTSKinds == nil || !latestVersion.KOTSKinds.KotsApplication.Spec.AllowRollback {
+			return false, "Rollback is not supported."
+		}
+	}
+
+	// if semantic versioning is not enabled, only require versions from the same channel AND with a lower cursor/channel sequence
+	allVersions := []*downstreamtypes.DownstreamVersion{}
+	if !isSemverRequired {
+		for _, v := range appVersions.AllVersions {
+			if v.ChannelID == version.ChannelID {
+				allVersions = append(allVersions, v)
+			}
+		}
+		downstreamtypes.SortDownstreamVersionsByCursor(allVersions)
+	} else {
+		allVersions = appVersions.AllVersions
+	}
+
+	versionIndex = -1
+	for i, v := range allVersions {
+		if v.Sequence == version.Sequence {
+			versionIndex = i
+			break
+		}
+	}
+
+	deployedVersionIndex = -1
+	for i, v := range allVersions {
+		if v.Sequence == appVersions.CurrentVersion.Sequence {
+			deployedVersionIndex = i
+			break
+		}
+	}
+
+	if deployedVersionIndex == -1 {
+		// the deployed version is from a different channel
+		return true, ""
+	}
+
+	// find required versions between the deployed version and the desired version
+	requiredVersions := []*downstreamtypes.DownstreamVersion{}
+ALL_VERSIONS_LOOP:
+	for i, v := range allVersions {
+		if !v.IsRequired {
+			continue
+		}
+		if isSameUpstreamRelease(v, version, isSemverRequired) {
+			// variants of the same upstream release don't block each other
+			continue
+		}
+		if versionIndex > deployedVersionIndex {
+			// this is a past version
+			// >= because if the deployed version is required, rolling back isn't allowed
+			if i >= deployedVersionIndex && i < versionIndex {
+				return false, "One or more non-reversible versions have been deployed since this version."
+			}
+			continue
+		}
+		// this is a pending version
+		if isSameUpstreamRelease(v, appVersions.CurrentVersion, isSemverRequired) {
+			// variants of the deployed upstream release are not required
+			continue
+		}
+		for _, r := range requiredVersions {
+			// variants of the same upstream release are only required once
+			// since the list is sorted in descending order, the latest variant (highest sequence) will be added first
+			if isSameUpstreamRelease(v, r, isSemverRequired) {
+				continue ALL_VERSIONS_LOOP
+			}
+		}
+		if i > versionIndex && i < deployedVersionIndex {
+			requiredVersions = append(requiredVersions, v)
+		}
+	}
+
+	if len(requiredVersions) > 0 {
+		versionLabels := []string{}
+		for _, v := range requiredVersions {
+			versionLabels = append([]string{v.VersionLabel}, versionLabels...)
+		}
+		versionLabelsStr := strings.Join(versionLabels, ", ")
+		if len(requiredVersions) == 1 {
+			return false, fmt.Sprintf("This version cannot be deployed because version %s is required and must be deployed first.", versionLabelsStr)
+		}
+		return false, fmt.Sprintf("This version cannot be deployed because versions %s are required and must be deployed first.", versionLabelsStr)
+	}
+
+	return true, ""
 }
 
 func getReleaseNotes(appID string, parentSequence int64) (string, error) {

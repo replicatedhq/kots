@@ -3,11 +3,12 @@ package updatechecker
 import (
 	"encoding/json"
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/replicatedhq/kots/pkg/preflight"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"sync"
-	"time"
 
 	"github.com/pkg/errors"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
@@ -211,7 +212,7 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 		return nil, errors.Wrap(err, "failed to get app")
 	}
 
-	updateCursor, versionLabel, err := store.GetCurrentUpdateCursor(a.ID, latestLicense.Spec.ChannelID)
+	updateCursor, versionLabel, isRequired, err := store.GetCurrentUpdateCursor(a.ID, latestLicense.Spec.ChannelID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get current update cursor")
 	}
@@ -222,15 +223,16 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 	}
 
 	getUpdatesOptions := kotspull.GetUpdatesOptions{
-		License:             latestLicense,
-		LastUpdateCheckAt:   lastUpdateCheckAt,
-		CurrentCursor:       updateCursor,
-		CurrentChannelID:    latestLicense.Spec.ChannelID,
-		CurrentChannelName:  latestLicense.Spec.ChannelName,
-		CurrentVersionLabel: versionLabel,
-		ChannelChanged:      a.ChannelChanged,
-		Silent:              false,
-		ReportingInfo:       reporting.GetReportingInfo(a.ID),
+		License:                  latestLicense,
+		LastUpdateCheckAt:        lastUpdateCheckAt,
+		CurrentCursor:            updateCursor,
+		CurrentChannelID:         latestLicense.Spec.ChannelID,
+		CurrentChannelName:       latestLicense.Spec.ChannelName,
+		CurrentVersionLabel:      versionLabel,
+		CurrentVersionIsRequired: isRequired,
+		ChannelChanged:           a.ChannelChanged,
+		Silent:                   false,
+		ReportingInfo:            reporting.GetReportingInfo(a.ID),
 	}
 
 	// get updates
@@ -249,7 +251,7 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 	d := downstreams[0]
 
 	// get app version labels and sequence numbers
-	appVersions, err := store.GetAppVersions(opts.AppID, d.ClusterID, false)
+	appVersions, err := store.GetDownstreamVersions(opts.AppID, d.ClusterID, false)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get app versions for app %s", opts.AppID)
 	}
@@ -366,7 +368,7 @@ func ensureDesiredVersionIsDeployed(opts CheckForUpdatesOpts, clusterID string) 
 }
 
 func getVersionToDeploy(opts CheckForUpdatesOpts, clusterID string, availableReleases []UpdateCheckRelease) *UpdateCheckRelease {
-	appVersions, err := store.GetAppVersions(opts.AppID, clusterID, true)
+	appVersions, err := store.GetDownstreamVersions(opts.AppID, clusterID, true)
 	if err != nil {
 		return nil
 	}
@@ -409,7 +411,7 @@ func getVersionToDeploy(opts CheckForUpdatesOpts, clusterID string, availableRel
 }
 
 func deployLatestVersion(opts CheckForUpdatesOpts, clusterID string) error {
-	appVersions, err := store.GetAppVersions(opts.AppID, clusterID, true)
+	appVersions, err := store.GetDownstreamVersions(opts.AppID, clusterID, true)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get app versions for app %s", opts.AppID)
 	}
@@ -426,7 +428,7 @@ func deployLatestVersion(opts CheckForUpdatesOpts, clusterID string) error {
 }
 
 func deployVersionLabel(opts CheckForUpdatesOpts, clusterID string, versionLabel string) error {
-	appVersions, err := store.GetAppVersions(opts.AppID, clusterID, true)
+	appVersions, err := store.GetDownstreamVersions(opts.AppID, clusterID, true)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get app versions for app %s", opts.AppID)
 	}
@@ -459,7 +461,7 @@ func autoDeploy(opts CheckForUpdatesOpts, clusterID string, autoDeploy apptypes.
 		return nil
 	}
 
-	appVersions, err := store.GetAppVersions(opts.AppID, clusterID, true)
+	appVersions, err := store.GetDownstreamVersions(opts.AppID, clusterID, true)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get app versions for app %s", opts.AppID)
 	}

@@ -42,6 +42,8 @@ spec:
                 type: string
               encryptionKey:
                 type: string
+              isRequired:
+                type: boolean
               knownImages:
                 items:
                   properties:

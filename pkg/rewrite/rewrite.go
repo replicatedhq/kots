@@ -70,14 +70,15 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	}
 
 	fetchOptions := &upstreamtypes.FetchOptions{
-		RootDir:             rewriteOptions.RootDir,
-		LocalPath:           rewriteOptions.UpstreamPath,
-		CurrentCursor:       rewriteOptions.Installation.Spec.UpdateCursor,
-		CurrentVersionLabel: rewriteOptions.Installation.Spec.VersionLabel,
-		EncryptionKey:       rewriteOptions.Installation.Spec.EncryptionKey,
-		License:             rewriteOptions.License,
-		AppSequence:         rewriteOptions.AppSequence,
-		AppSlug:             rewriteOptions.AppSlug,
+		RootDir:                  rewriteOptions.RootDir,
+		LocalPath:                rewriteOptions.UpstreamPath,
+		CurrentCursor:            rewriteOptions.Installation.Spec.UpdateCursor,
+		CurrentVersionLabel:      rewriteOptions.Installation.Spec.VersionLabel,
+		CurrentVersionIsRequired: rewriteOptions.Installation.Spec.IsRequired,
+		EncryptionKey:            rewriteOptions.Installation.Spec.EncryptionKey,
+		License:                  rewriteOptions.License,
+		AppSequence:              rewriteOptions.AppSequence,
+		AppSlug:                  rewriteOptions.AppSlug,
 		LocalRegistry: upstreamtypes.LocalRegistry{
 			Host:      rewriteOptions.RegistryEndpoint,
 			Namespace: rewriteOptions.RegistryNamespace,

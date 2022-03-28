@@ -9,7 +9,7 @@ type KOTSHandler interface {
 	ExchangePlatformLicense(w http.ResponseWriter, r *http.Request)
 	ResumeInstallOnline(w http.ResponseWriter, r *http.Request)
 	GetOnlineInstallStatus(w http.ResponseWriter, r *http.Request)
-	IsKotsVersionCompatibleWithApp(w http.ResponseWriter, r *http.Request)
+	CanInstallAppVersion(w http.ResponseWriter, r *http.Request)
 
 	// Support Bundles
 	GetSupportBundle(w http.ResponseWriter, r *http.Request) // TODO: appSlug
@@ -44,6 +44,7 @@ type KOTSHandler interface {
 	GetApp(w http.ResponseWriter, r *http.Request)
 	GetAppStatus(w http.ResponseWriter, r *http.Request)
 	GetAppVersionHistory(w http.ResponseWriter, r *http.Request)
+	GetNextAppVersion(w http.ResponseWriter, r *http.Request)
 	GetUpdateDownloadStatus(w http.ResponseWriter, r *http.Request) // NOTE: appSlug is unused
 	GetPendingApp(w http.ResponseWriter, r *http.Request)
 

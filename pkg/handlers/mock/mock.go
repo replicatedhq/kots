@@ -70,6 +70,18 @@ func (mr *MockKOTSHandlerMockRecorder) AppUpdateCheck(w, r interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AppUpdateCheck", reflect.TypeOf((*MockKOTSHandler)(nil).AppUpdateCheck), w, r)
 }
 
+// CanInstallAppVersion mocks base method.
+func (m *MockKOTSHandler) CanInstallAppVersion(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "CanInstallAppVersion", w, r)
+}
+
+// CanInstallAppVersion indicates an expected call of CanInstallAppVersion.
+func (mr *MockKOTSHandlerMockRecorder) CanInstallAppVersion(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanInstallAppVersion", reflect.TypeOf((*MockKOTSHandler)(nil).CanInstallAppVersion), w, r)
+}
+
 // CancelRestore mocks base method.
 func (m *MockKOTSHandler) CancelRestore(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
@@ -682,6 +694,18 @@ func (mr *MockKOTSHandlerMockRecorder) GetLicense(w, r interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLicense", reflect.TypeOf((*MockKOTSHandler)(nil).GetLicense), w, r)
 }
 
+// GetNextAppVersion mocks base method.
+func (m *MockKOTSHandler) GetNextAppVersion(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetNextAppVersion", w, r)
+}
+
+// GetNextAppVersion indicates an expected call of GetNextAppVersion.
+func (mr *MockKOTSHandlerMockRecorder) GetNextAppVersion(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNextAppVersion", reflect.TypeOf((*MockKOTSHandler)(nil).GetNextAppVersion), w, r)
+}
+
 // GetOnlineInstallStatus mocks base method.
 func (m *MockKOTSHandler) GetOnlineInstallStatus(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
@@ -908,18 +932,6 @@ func (m *MockKOTSHandler) InitGitOpsConnection(w http.ResponseWriter, r *http.Re
 func (mr *MockKOTSHandlerMockRecorder) InitGitOpsConnection(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitGitOpsConnection", reflect.TypeOf((*MockKOTSHandler)(nil).InitGitOpsConnection), w, r)
-}
-
-// IsKotsVersionCompatibleWithApp mocks base method.
-func (m *MockKOTSHandler) IsKotsVersionCompatibleWithApp(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "IsKotsVersionCompatibleWithApp", w, r)
-}
-
-// IsKotsVersionCompatibleWithApp indicates an expected call of IsKotsVersionCompatibleWithApp.
-func (mr *MockKOTSHandlerMockRecorder) IsKotsVersionCompatibleWithApp(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsKotsVersionCompatibleWithApp", reflect.TypeOf((*MockKOTSHandler)(nil).IsKotsVersionCompatibleWithApp), w, r)
 }
 
 // ListApps mocks base method.

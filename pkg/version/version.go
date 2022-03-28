@@ -62,6 +62,17 @@ func DeployVersion(appID string, sequence int64) error {
 		}
 	}
 
+	isDeployable, nonDeployableCause, err := store.GetStore().IsAppVersionDeployable(appID, sequence)
+	if err != nil {
+		return errors.Wrap(err, "failed to check if version is deployable")
+	}
+	if !isDeployable {
+		return util.ActionableError{
+			NoRetry: true,
+			Message: nonDeployableCause,
+		}
+	}
+
 	db := persistence.MustGetDBSession()
 
 	logger.Info("deploying app version", zap.String("appId", appID), zap.Int64("sequence", sequence))

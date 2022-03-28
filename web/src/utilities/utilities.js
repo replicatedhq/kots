@@ -721,13 +721,13 @@ export const Utilities = {
     }
   },
 
-  getAppArchiveFromAirgapBundle(bundle) {
+  getFileFromAirgapBundle(bundle, filename) {
     return new Promise((resolve, reject) => {
       try {
         const extract = tar.extract();
         const gzunipStream = zlib.createGunzip();
         fileReaderStream(bundle).pipe(gzunipStream).pipe(extract).on("entry", (header, stream, next) => {
-          if (header.name !== "app.tar.gz") {
+          if (header.name !== filename) {
             next();
             return;
           }
@@ -751,7 +751,7 @@ export const Utilities = {
   getAppSpecFromAirgapBundle(bundleArchive) {
     return new Promise((resolve, reject) => {
       try {
-        this.getAppArchiveFromAirgapBundle(bundleArchive).then(appArchive => {
+        this.getFileFromAirgapBundle(bundleArchive, "app.tar.gz").then(appArchive => {
           if (!appArchive) {
             resolve();
             return;
@@ -796,7 +796,20 @@ export const Utilities = {
         reject(err);
       }
     });
-  }
+  },
+
+  getAirgapMetaFromAirgapBundle(bundleArchive) {
+    return new Promise((resolve, reject) => {
+      try {
+        this.getFileFromAirgapBundle(bundleArchive, "airgap.yaml").then(metaFile => {
+          resolve(metaFile.text());
+          return;
+        });
+      } catch (err) {
+        reject(err);
+      }
+    });
+  },
 };
 
 

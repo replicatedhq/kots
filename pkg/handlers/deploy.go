@@ -16,6 +16,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
 )
 
@@ -97,7 +98,7 @@ func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	versions, err := store.GetStore().GetAppVersions(a.ID, downstreams[0].ClusterID, true)
+	versions, err := store.GetStore().GetDownstreamVersions(a.ID, downstreams[0].ClusterID, true)
 	if err != nil {
 		errMsg := "failed to get app versions"
 		logger.Error(errors.Wrap(err, errMsg))
@@ -125,9 +126,13 @@ func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := version.DeployVersion(a.ID, int64(sequence)); err != nil {
-		errMsg := "failed to queue version for deployment"
-		logger.Error(errors.Wrap(err, errMsg))
-		deployAppVersionResponse.Error = errMsg
+		cause := errors.Cause(err)
+		if _, ok := cause.(util.ActionableError); ok {
+			deployAppVersionResponse.Error = cause.Error()
+		} else {
+			deployAppVersionResponse.Error = "failed to queue version for deployment"
+		}
+		logger.Error(errors.Wrap(err, "failed to queue version for deployment"))
 		JSON(w, http.StatusInternalServerError, deployAppVersionResponse)
 		return
 	}

@@ -64,15 +64,17 @@ export class AirgapUploader {
       // first, validate that the release is compatible with the current kots version.
       // don't block the upload process if compatibility couldn't be determined here
       // since this is just to fail early and the api will recheck for compatibility later on.
-      let compatibilityResponse;
+      let installableResponse;
       try {
         const appSpec = await Utilities.getAppSpecFromAirgapBundle(this.resumableFile.file);
-        compatibilityResponse = await this.checkKotsVersionCompatibility(appSpec);
+        const airgapSpec = await Utilities.getAirgapMetaFromAirgapBundle(this.resumableFile.file);
+        installableResponse = await this.canInstallRelease(appSpec, airgapSpec);
       } catch(err) {
         console.log(err);
       }
-      if (compatibilityResponse?.isCompatible === false) {
-        throw new Error(compatibilityResponse?.error);
+
+      if (installableResponse?.canInstall === false) {
+        throw new Error(installableResponse?.error);
       }
 
       this.processParams = processParams;
@@ -160,13 +162,14 @@ export class AirgapUploader {
     }
   }
 
-  checkKotsVersionCompatibility = async appSpec => {
-    const res = await fetch(`${process.env.API_ENDPOINT}/app/iscompatible`, {
+  canInstallRelease = async (appSpec, airgapSpec) => {
+    const res = await fetch(`${process.env.API_ENDPOINT}/app/${this.appSlug}/can-install`, {
       headers: {
         "Authorization": Utilities.getToken(),
       },
       body: JSON.stringify({
         appSpec: appSpec || "",
+        airgapSpec: airgapSpec || "",
         isInstall: !this.isUpdate,
       }),
       method: "POST",

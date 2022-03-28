@@ -187,7 +187,7 @@ class AppConfig extends Component {
     // check is current deployed config latest
     const currentDeployedSequence = app?.downstreams[0]?.currentVersion?.parentSequence;
     if (currentDeployedSequence != undefined) {
-      return currentDeployedSequence
+      return currentDeployedSequence;
     } else {
       return app?.downstreams[0]?.pendingVersions?.[0]?.parentSequence;
     }
@@ -235,7 +235,7 @@ class AppConfig extends Component {
     const { fromLicenseFlow, history, match } = this.props;
     const sequence = this.getSequence();
     const slug = this.getSlug();
-    const createNewVersion = !fromLicenseFlow && match.params.sequence == undefined; // this logic might need to be changed when we add support for editing the config for previous versions (if that will need to create a new version)
+    const createNewVersion = !fromLicenseFlow && match.params.sequence == undefined;
 
     fetch(`${process.env.API_ENDPOINT}/app/${slug}/config`, {
       method: "PUT",

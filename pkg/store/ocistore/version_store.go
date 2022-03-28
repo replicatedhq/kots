@@ -301,6 +301,7 @@ func (s *OCIStore) CreatePendingDownloadAppVersion(appID string, update upstream
 			ChannelID:    update.ChannelID,
 			ChannelName:  update.ChannelName,
 			VersionLabel: update.VersionLabel,
+			IsRequired:   update.IsRequired,
 			ReleasedAt:   releasedAt,
 			ReleaseNotes: update.ReleaseNotes,
 		},
@@ -558,6 +559,35 @@ func (s *OCIStore) GetAppVersion(appID string, sequence int64) (*versiontypes.Ap
 	return &appVersion, nil
 }
 
+func (s *OCIStore) GetAppVersions(appID string) ([]*versiontypes.AppVersion, error) {
+	configMapName, err := s.appVersionConfigMapNameForApp(appID)
+	if err != nil {
+		return nil, errors.New("failed to get configmap name for app version")
+	}
+
+	configMap, err := s.getConfigmap(configMapName)
+	if err != nil {
+		return nil, errors.New("failed to get app version config map")
+	}
+
+	if configMap.Data == nil {
+		return nil, ErrNotFound
+	}
+
+	appVersions := []*versiontypes.AppVersion{}
+	for _, data := range configMap.Data {
+		v := &versiontypes.AppVersion{}
+		if err := json.Unmarshal([]byte(data), v); err != nil {
+			return nil, errors.Wrap(err, "failed to unmarshal app version")
+		}
+		v.AppID = appID
+
+		appVersions = append(appVersions, v)
+	}
+
+	return appVersions, nil
+}
+
 func (s *OCIStore) GetLatestAppVersion(appID string, downloadedOnly bool) (*versiontypes.AppVersion, error) {
 	return nil, ErrNotImplemented
 }
@@ -605,8 +635,8 @@ func (s *OCIStore) GetNextAppSequence(appID string) (int64, error) {
 	return maxSequence + 1, nil
 }
 
-func (s *OCIStore) GetCurrentUpdateCursor(appID string, channelID string) (string, string, error) {
-	return "", "", ErrNotImplemented
+func (s *OCIStore) GetCurrentUpdateCursor(appID string, channelID string) (string, string, bool, error) {
+	return "", "", false, ErrNotImplemented
 }
 
 func (s *OCIStore) HasStrictPreflights(appID string, sequence int64) (bool, error) {

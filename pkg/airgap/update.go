@@ -6,11 +6,13 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/api/version/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/cursor"
 	identity "github.com/replicatedhq/kots/pkg/kotsadmidentity"
@@ -94,6 +96,18 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 	airgap, err := pull.FindAirgapMetaInDir(airgapRoot)
 	if err != nil {
 		return errors.Wrap(err, "failed to parse license from file")
+	}
+
+	missingPrereqs, err := GetMissingRequiredVersions(a, airgap)
+	if err != nil {
+		return errors.Wrapf(err, "failed to check required versions")
+	}
+
+	if len(missingPrereqs) > 0 {
+		return util.ActionableError{
+			NoRetry: true,
+			Message: fmt.Sprintf("This airgap bundle cannot be uploaded because versions %s are required and must be uploaded first.", strings.Join(missingPrereqs, ", ")),
+		}
 	}
 
 	archiveDir, baseSequence, err := store.GetStore().GetAppVersionBaseArchive(a.ID, airgap.Spec.VersionLabel)
@@ -300,4 +314,65 @@ func canInstall(beforeKotsKinds *kotsutil.KotsKinds, afterKotsKinds *kotsutil.Ko
 	}
 
 	return nil
+}
+
+func GetMissingRequiredVersions(app *apptypes.App, airgap *kotsv1beta1.Airgap) ([]string, error) {
+	appVersions, err := store.GetStore().GetAppVersions(app.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get downstream versions")
+	}
+
+	license, err := kotsutil.LoadLicenseFromBytes([]byte(app.License))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to load license")
+	}
+
+	return getMissingRequiredVersions(airgap, license, appVersions)
+}
+
+func getMissingRequiredVersions(airgap *kotsv1beta1.Airgap, license *kotsv1beta1.License, installedVersions []*types.AppVersion) ([]string, error) {
+	missingVersions := make([]string, 0)
+	if len(installedVersions) == 0 {
+		return missingVersions, nil
+	}
+
+	for _, requiredRelease := range airgap.Spec.RequiredReleases {
+		laterReleaseInstalled := false
+		for _, appVersion := range installedVersions {
+			requiredSemver, requiredSemverErr := semver.ParseTolerant(requiredRelease.VersionLabel)
+
+			// semvers can be compared across channels
+			// if a semmver is missing, fallback to comparing the cursor but only if channel is the same
+			if license.Spec.IsSemverRequired && appVersion.Semver != nil && requiredSemverErr == nil {
+				if requiredSemver.LE(*appVersion.Semver) {
+					laterReleaseInstalled = true
+					break
+				}
+			} else {
+				// cursors can only be compared on the same channel
+				if appVersion.ChannelID != airgap.Spec.ChannelID {
+					continue
+				}
+				if appVersion.Cursor == nil {
+					return nil, errors.Errorf("cursor required but version %s does not have cursor", appVersion.UpdateCursor)
+				}
+				requiredCursor, err := cursor.NewCursor(requiredRelease.UpdateCursor)
+				if err != nil {
+					return nil, errors.Wrapf(err, "failed to parse required update cursor %q", requiredRelease.UpdateCursor)
+				}
+				if requiredCursor.Before(*appVersion.Cursor) || requiredCursor.Equal(*appVersion.Cursor) {
+					laterReleaseInstalled = true
+					break
+				}
+			}
+		}
+
+		if !laterReleaseInstalled {
+			missingVersions = append([]string{requiredRelease.VersionLabel}, missingVersions...)
+		} else {
+			break
+		}
+	}
+
+	return missingVersions, nil
 }
