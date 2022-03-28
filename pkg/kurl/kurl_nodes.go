@@ -75,6 +75,11 @@ func GetNodes(client kubernetes.Interface) (*types.KurlNodes, error) {
 			}
 		}
 
+		nodeLabelArray := []string{}
+		for k, v := range node.Labels {
+			nodeLabelArray = append(nodeLabelArray, fmt.Sprintf("%s:%s", k, v))
+		}
+
 		toReturn.Nodes = append(toReturn.Nodes, types.Node{
 			Name:           node.Name,
 			IsConnected:    isConnected(node),
@@ -84,6 +89,7 @@ func GetNodes(client kubernetes.Interface) (*types.KurlNodes, error) {
 			CPU:            cpuCapacity,
 			Memory:         memoryCapacity,
 			Pods:           podCapacity,
+			Labels:         nodeLabelArray,
 			Conditions:     findNodeConditions(node.Status.Conditions),
 		})
 	}

@@ -15,6 +15,7 @@ type Node struct {
 	CPU            CapacityAvailable `json:"cpu"`
 	Memory         CapacityAvailable `json:"memory"`
 	Pods           CapacityAvailable `json:"pods"`
+	Labels         []string          `json:"labels"`
 	Conditions     NodeConditions    `json:"conditions"`
 }
 

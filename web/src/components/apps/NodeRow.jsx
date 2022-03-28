@@ -1,6 +1,7 @@
 import React from "react";
 import classNames from "classnames";
 import Loader from "../shared/Loader";
+import ReactTooltip from "react-tooltip"
 import { rbacRoles } from "../../constants/rbac";
 import { getPercentageStatus, Utilities } from "../../utilities/utilities";
 
@@ -128,6 +129,25 @@ export default function NodeRow(props) {
               {node?.conditions?.memoryPressure ? "No Space on Memory" : "No Memory Pressure"}
             </p>
           </div>
+        </div>
+        <div className="u-marginTop--10">
+          {node?.labels.length > 0 ?
+            node.labels.sort().map((label, i) => {
+              let labelToShow;
+              const labelParts = label.split("/");
+              if (labelParts.length > 1) {
+                labelToShow = labelParts[1]
+              } else {
+                labelToShow = labelParts[0]
+              }
+              return (
+                <div key={i} className="node-label u-cursor--default" data-tip data-for={`${labelParts[1]}-${i}`}>
+                  <span>{labelToShow.replace(":", "=")}</span>
+                  <ReactTooltip id={`${labelParts[1]}-${i}`} type="light" effect="solid" borderColor="#C4C4C4" textColor="#4A4A4A" border={true} className="u-textColor--secondary">{labelParts[0]}</ReactTooltip>
+                </div>
+              )
+            })
+          : null}
         </div>
         <div className="u-marginTop--15">
           <p className="u-textColor--bodyCopy u-fontSize--small u-fontWeight--normal">For more details run <span className="inline-code">kubectl describe node {node?.name}</span></p>
