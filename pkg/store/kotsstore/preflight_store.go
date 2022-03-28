@@ -150,7 +150,7 @@ func (s *KOTSStore) hasFailingStrictPreflights(preflightSpecStr sql.NullString, 
 		if err := json.Unmarshal([]byte(preflightResultStr.String), &preflightResult); err != nil {
 			return false, errors.Wrap(err, "failed to unmarshal preflightResults")
 		}
-		hasFailingStrictPreflights = hasFailingStrictPreflights && kotsutil.IsStrictPreflightFailing(&preflightResult)
+		hasFailingStrictPreflights = hasFailingStrictPreflights && troubleshootpreflight.HasStrictAnalyzersFailed(&preflightResult)
 	}
 	return hasFailingStrictPreflights, nil
 }
@@ -162,7 +162,7 @@ func (s *KOTSStore) hasStrictPreflights(preflightSpecStr sql.NullString) (bool, 
 		if err != nil {
 			return false, errors.Wrap(err, "failed to load preflights from spec")
 		}
-		hasStrictPreflights, err = kotsutil.HasStrictPreflights(preflight)
+		hasStrictPreflights, err = troubleshootpreflight.HasStrictAnalyzers(preflight)
 		if err != nil {
 			return false, errors.Wrap(err, "failed to check strict preflights from spec")
 		}
