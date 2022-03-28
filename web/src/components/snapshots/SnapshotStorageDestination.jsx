@@ -1027,6 +1027,7 @@ class SnapshotStorageDestination extends Component {
             isKurlEnabled={this.props.isKurlEnabled}
             isVeleroRunning={snapshotSettings?.isVeleroRunning} 
             isVeleroInstalled={!!snapshotSettings?.veleroVersion}
+            updatingSettings={updatingSettings}
             openConfigureSnapshotsMinimalRBACModal={this.props.openConfigureSnapshotsMinimalRBACModal}
           />
         </div>

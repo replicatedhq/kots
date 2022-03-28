@@ -308,7 +308,7 @@ class SnapshotSchedule extends Component {
   }
 
   render() {
-    const { isVeleroInstalled } = this.props;
+    const { isVeleroInstalled, updatingSettings } = this.props;
     const { hasValidCron, updatingSchedule, updateConfirm, loadingConfig, updateScheduleErrMsg } = this.state;
     const selectedRetentionUnit = RETENTION_UNITS.find((ru) => {
       return ru.value === this.state.selectedRetentionUnit?.value;
@@ -331,7 +331,7 @@ class SnapshotSchedule extends Component {
     return (
       <div className="flex-auto">
         <div className="flex flex-column">
-          {!isAppConfig && !this.props.isVeleroRunning &&
+          {!isAppConfig && !this.props.isVeleroRunning && !updatingSettings &&
             <div className="Info--wrapper flex flex1 u-marginBottom--15">
               <span className="icon info-icon flex-auto u-marginTop--5" />
               <div className="flex flex-column u-marginLeft--5">
