@@ -42,12 +42,12 @@ class SnapshotSettings extends Component {
     });
 
     return fetch(`${process.env.API_ENDPOINT}/snapshots/settings`, {
-      method: "GET",
-      headers: {
-        "Authorization": Utilities.getToken(),
-        "Content-Type": "application/json",
-      }
-    })
+        method: "GET",
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        }
+      })
       .then(async res => {
         if (!res.ok && res.status === 409) {
           const result = await res.json();
@@ -86,7 +86,7 @@ class SnapshotSettings extends Component {
           snapshotSettingsErr: true,
           snapshotSettingsErrMsg: err,
         })
-      })
+      });
   }
 
   componentDidMount() {
@@ -105,7 +105,7 @@ class SnapshotSettings extends Component {
 
   pollSnapshotSettingsOnUpdate = () => {
     this.setState({ checkForVeleroAndRestic: true });
-    this.state.snapshotSettingsJob.start(this.fetchSnapshotSettings, 2000)
+    this.state.snapshotSettingsJob.start(this.fetchSnapshotSettings, 2000);
   }
 
   componentDidUpdate(_, lastState) {
@@ -114,7 +114,6 @@ class SnapshotSettings extends Component {
         this.props.history.replace("/snapshots/settings?configure=true");
         this.setState({ showConfigureSnapshotsModal: true });
       }
-
 
       if (this.state.checkForVeleroAndRestic) {
         if (this.state.snapshotSettings?.veleroPod !== lastState.snapshotSettings?.veleroPod && !isEmpty(this.state.snapshotSettings?.veleroPod)) {
@@ -151,7 +150,10 @@ class SnapshotSettings extends Component {
   }
 
   toggleSnapshotView = (isEmptyView) => {
-    this.setState({ toggleSnapshotView: !this.state.toggleSnapshotView, isEmptyView: isEmptyView ? isEmptyView : false });
+    this.setState({
+      toggleSnapshotView: !this.state.toggleSnapshotView,
+      isEmptyView: isEmptyView ? isEmptyView : false
+    });
   }
 
   updateSettings = (payload) => {
@@ -216,7 +218,11 @@ class SnapshotSettings extends Component {
   }
 
   renderNotVeleroMessage = () => {
-    return <p className="u-textColor--error u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginTop--12">Not able to find Velero</p>
+    return (
+      <p className="u-textColor--error u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginTop--12">
+        Not able to find Velero
+      </p>
+    );
   }
 
   openConfigureSnapshotsMinimalRBACModal = (kotsadmRequiresVeleroAccess, minimalRBACKotsadmNamespace) => {
@@ -242,7 +248,16 @@ class SnapshotSettings extends Component {
   }
 
   render() {
-    const { isLoadingSnapshotSettings, snapshotSettings, hideCheckVeleroButton, updateConfirm, updatingSettings, updateErrorMsg, isEmptyView, checkForVeleroAndRestic } = this.state;
+    const {
+      isLoadingSnapshotSettings,
+      snapshotSettings,
+      hideCheckVeleroButton,
+      updateConfirm,
+      updatingSettings,
+      updateErrorMsg,
+      isEmptyView,
+      checkForVeleroAndRestic
+    } = this.state;
     const isLicenseUpload = !!this.props.history.location.search;
 
     if (isLoadingSnapshotSettings && !checkForVeleroAndRestic) {
@@ -258,12 +273,12 @@ class SnapshotSettings extends Component {
         <Helmet>
           <title>Snapshot Settings</title>
         </Helmet>
-        {!isVeleroCorrectVersion(snapshotSettings) && !checkForVeleroAndRestic ?
+        {!isVeleroCorrectVersion(snapshotSettings) && !checkForVeleroAndRestic &&
           <div className="VeleroWarningBlock">
             <span className="icon small-warning-icon" />
-            <p> To use snapshots reliably, install Velero version 1.5.1 or greater </p>
+            <p>To use snapshots reliably, install Velero version 1.5.1 or greater</p>
           </div>
-          : null}
+        }
         <div className="container flex-column flex1u-paddingTop--30 u-paddingBottom--20 u-marginTop--10 alignItems--center">
           <SnapshotStorageDestination
             snapshotSettings={snapshotSettings}
