@@ -65,6 +65,8 @@ type UpdateGlobalSnapshotSettingsRequest struct {
 	Other      *kotssnapshottypes.StoreOther  `json:"other"`
 	Internal   bool                           `json:"internal"`
 	FileSystem *FileSystemOptions             `json:"fileSystem"`
+
+	CACertData []byte `json:"ca_cert_data"`
 }
 
 type ConfigureFileSystemSnapshotProviderResponse struct {
@@ -223,6 +225,8 @@ func (h *Handler) UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Re
 		KotsadmNamespace: kotsadmNamespace,
 		RegistryOptions:  &registryOptions,
 		IsMinioDisabled:  globalSnapshotSettingsResponse.IsMinioDisabled,
+
+		CACertData: updateGlobalSnapshotSettingsRequest.CACertData,
 	}
 	updatedStore, err := kotssnapshot.ConfigureStore(r.Context(), options)
 	if err != nil {
