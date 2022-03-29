@@ -78,7 +78,7 @@ class SupportBundleList extends React.Component {
     const { loading, errorMsg, supportBundles } = this.state;
 
     const appTitle = watch.watchName || watch.name;
-    const downstreams = watch.downstreams || [];
+    const downstream = watch.downstream;
 
     if (loading) {
       return (
@@ -89,7 +89,7 @@ class SupportBundleList extends React.Component {
     }
 
     let bundlesNode;
-    if (downstreams.length) {
+    if (downstream) {
       if (supportBundles?.length) {
         bundlesNode = (
           supportBundles.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).map(bundle => (
@@ -151,7 +151,7 @@ class SupportBundleList extends React.Component {
                   </div>
                 </div>
               </div>
-              <div className={`${downstreams.length ? "flex1 flex-column u-overflow--auto" : ""}`}>
+              <div className={`${watch.downstream ? "flex1 flex-column u-overflow--auto" : ""}`}>
                 {bundlesNode}
               </div>
             </div>

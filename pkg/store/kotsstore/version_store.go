@@ -970,7 +970,17 @@ func (s *KOTSStore) HasStrictPreflights(appID string, sequence int64) (bool, err
 	if err := row.Scan(&preflightSpecStr); err != nil {
 		return false, errors.Wrap(err, "failed to scan")
 	}
-	return s.hasStrictPreflights(preflightSpecStr)
+
+	var preflightSpec *troubleshootv1beta2.Preflight
+	if preflightSpecStr.String != "" {
+		s, err := kotsutil.LoadPreflightFromContents([]byte(preflightSpecStr.String))
+		if err != nil {
+			return false, errors.Wrap(err, "failed to load preflights from spec")
+		}
+		preflightSpec = s
+	}
+
+	return s.hasStrictPreflights(preflightSpec)
 }
 
 func (s *KOTSStore) renderPreflightSpec(appID string, appSlug string, sequence int64, isAirgap bool, kotsKinds *kotsutil.KotsKinds, renderer rendertypes.Renderer) (*troubleshootv1beta2.Preflight, error) {

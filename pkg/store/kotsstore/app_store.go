@@ -11,7 +11,6 @@ import (
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/gitops"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/segmentio/ksuid"
@@ -187,39 +186,39 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 	}
 
 	if app.CurrentSequence != -1 { // this means that there's at least 1 version available
-		latestVersion, err := s.GetLatestAppVersion(app.ID, true)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get latest app version")
-		}
+		// latestVersion, err := s.GetLatestAppVersion(app.ID, true)
+		// if err != nil {
+		// 	return nil, errors.Wrap(err, "failed to get latest app version")
+		// }
 
-		query = `select preflight_spec, config_spec from app_version where app_id = $1 AND sequence = $2`
-		row = db.QueryRow(query, id, latestVersion.Sequence)
+		// query = `select preflight_spec, config_spec from app_version where app_id = $1 AND sequence = $2`
+		// row = db.QueryRow(query, id, latestVersion.Sequence)
 
-		var preflightSpec sql.NullString
-		var configSpec sql.NullString
+		// var preflightSpec sql.NullString
+		// var configSpec sql.NullString
 
-		if err := row.Scan(&preflightSpec, &configSpec); err != nil {
-			return nil, errors.Wrap(err, "failed to scan app_version")
-		}
+		// if err := row.Scan(&preflightSpec, &configSpec); err != nil {
+		// 	return nil, errors.Wrap(err, "failed to scan app_version")
+		// }
 
-		if preflightSpec.String != "" {
-			preflight, err := kotsutil.LoadPreflightFromContents([]byte(preflightSpec.String))
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to load preflights from spec")
-			}
-			if len(preflight.Spec.Analyzers) > 0 {
-				app.HasPreflight = true
-			}
-		}
-		if configSpec.String != "" {
-			config, err := kotsutil.LoadConfigFromBytes([]byte(configSpec.String))
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to load config from spec")
-			}
-			if len(config.Spec.Groups) > 0 {
-				app.IsConfigurable = true
-			}
-		}
+		// if preflightSpec.String != "" {
+		// 	preflight, err := kotsutil.LoadPreflightFromContents([]byte(preflightSpec.String))
+		// 	if err != nil {
+		// 		return nil, errors.Wrap(err, "failed to load preflights from spec")
+		// 	}
+		// 	if len(preflight.Spec.Analyzers) > 0 {
+		// 		app.HasPreflight = true
+		// 	}
+		// }
+		// if configSpec.String != "" {
+		// 	config, err := kotsutil.LoadConfigFromBytes([]byte(configSpec.String))
+		// 	if err != nil {
+		// 		return nil, errors.Wrap(err, "failed to load config from spec")
+		// 	}
+		// 	if len(config.Spec.Groups) > 0 {
+		// 		app.IsConfigurable = true
+		// 	}
+		// }
 	}
 
 	isGitOps, err := s.IsGitOpsEnabledForApp(id)

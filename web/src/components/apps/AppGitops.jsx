@@ -54,11 +54,11 @@ class AppGitops extends Component {
   }
 
   getInitialOwnerRepo = (props) => {
-    if (!props.app?.downstreams?.length) {
+    if (!props.app?.downstream) {
       return "";
     }
 
-    const gitops = props.app.downstreams[0].gitops;
+    const gitops = props.app.downstream.gitops;
     if (!gitops?.uri) {
       return "";
     }
@@ -100,8 +100,8 @@ class AppGitops extends Component {
 
     const appId = this.props.app?.id;
     let clusterId;
-    if (this.props.app?.downstreams?.length) {
-      clusterId = this.props.app.downstreams[0].cluster.id;
+    if (this.props.app?.downstream) {
+      clusterId = this.props.app.downstream.cluster.id;
     }
 
     try {
@@ -159,7 +159,7 @@ class AppGitops extends Component {
     } = repoDetails;
 
     const { app } = this.props;
-    const downstream = app.downstreams[0];
+    const downstream = app?.downstream;
     const clusterId = downstream?.cluster?.id;
 
     const gitops = downstream?.gitops;
@@ -262,8 +262,8 @@ class AppGitops extends Component {
 
     const appId = this.props.app?.id;
     let clusterId;
-    if (this.props.app?.downstreams?.length) {
-      clusterId = this.props.app.downstreams[0].cluster.id;
+    if (this.props.app?.downstream) {
+      clusterId = this.props.app.downstream.cluster.id;
     }
 
     try {
@@ -314,7 +314,7 @@ class AppGitops extends Component {
   }
 
   componentDidMount() {
-    const gitops = this.props.app.downstreams[0].gitops;
+    const gitops = this.props.app.downstream.gitops;
     const gitopsEnabled = gitops?.enabled;
     if (!gitopsEnabled) {
       this.props.history.push(`/app/${this.props.app.slug}`);
@@ -325,19 +325,13 @@ class AppGitops extends Component {
     const { app } = this.props;
     const appTitle = app.name;
 
-    if (!app.downstreams || app.downstreams.length === 0) {
+    if (!app.downstream) {
       return (
         <div />
       );
     }
 
-    if (this.props.app.downstreams.length !== 1) {
-      return (
-        <div>This feature is only available for applications that have exactly 1 downstream.</div>
-      );
-    }
-
-    const gitops = app.downstreams[0].gitops;
+    const gitops = app.downstream.gitops;
 
     const {
       ownerRepo,

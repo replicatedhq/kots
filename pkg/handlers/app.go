@@ -172,116 +172,98 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		return nil, errors.Wrap(err, "failed to get license")
 	}
 
-	latestAppVersion, err := store.GetStore().GetLatestAppVersion(a.ID, true)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get latest app version")
-	}
-
-	isIdentityServiceSupportedForVersion, err := store.GetStore().IsIdentityServiceSupportedForVersion(a.ID, latestAppVersion.Sequence)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to check if identity service is supported for version %d", latestAppVersion.Sequence)
-	}
-	isAppIdentityServiceSupported := isIdentityServiceSupportedForVersion && license.Spec.IsIdentityServiceSupported
-
-	allowRollback, err := store.GetStore().IsRollbackSupportedForVersion(a.ID, latestAppVersion.Sequence)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to check if rollback is supported")
-	}
-
-	targetKotsVersion, err := store.GetStore().GetTargetKotsVersionForVersion(a.ID, latestAppVersion.Sequence)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get target kots version")
-	}
-
 	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list downstreams for app")
 	}
+	if len(downstreams) == 0 {
+		return nil, errors.New("no downstreams for app")
+	}
+	d := downstreams[0]
 
-	responseDownstreams := []types.ResponseDownstream{}
-	for _, d := range downstreams {
-		parentSequence, err := store.GetStore().GetCurrentParentSequence(a.ID, d.ClusterID)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get current parent sequence for downstream")
-		}
+	appVersions, err := store.GetStore().GetDownstreamVersions(a.ID, d.ClusterID, true)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get downstream versions")
+	}
+	latestVersion := appVersions.AllVersions[0]
 
-		links, err := version.GetRealizedLinksFromAppSpec(a.ID, parentSequence)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get realized links from app spec")
-		}
+	isIdentityServiceSupportedForVersion, err := store.GetStore().IsIdentityServiceSupportedForVersion(a.ID, latestVersion.ParentSequence)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to check if identity service is supported for version %d", latestVersion.ParentSequence)
+	}
+	isAppIdentityServiceSupported := isIdentityServiceSupportedForVersion && license.Spec.IsIdentityServiceSupported
 
-		appVersions, err := store.GetStore().GetDownstreamVersions(a.ID, d.ClusterID, true)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get downstream versions")
-		}
+	allowRollback, err := store.GetStore().IsRollbackSupportedForVersion(a.ID, latestVersion.ParentSequence)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to check if rollback is supported")
+	}
 
-		latestVersion, err := store.GetStore().GetLatestDownstreamVersion(a.ID, d.ClusterID, false)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get latest downstream version")
-		}
+	targetKotsVersion, err := store.GetStore().GetTargetKotsVersionForVersion(a.ID, latestVersion.ParentSequence)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get target kots version")
+	}
 
-		downstreamGitOps, err := gitops.GetDownstreamGitOps(a.ID, d.ClusterID)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get downstream gitops")
-		}
-		responseGitOps := types.ResponseGitOps{}
-		if downstreamGitOps != nil {
-			responseGitOps = types.ResponseGitOps{
-				Enabled:     true,
-				Provider:    downstreamGitOps.Provider,
-				Uri:         downstreamGitOps.RepoURI,
-				Hostname:    downstreamGitOps.Hostname,
-				HTTPPort:    downstreamGitOps.HTTPPort,
-				SSHPort:     downstreamGitOps.SSHPort,
-				Path:        downstreamGitOps.Path,
-				Branch:      downstreamGitOps.Branch,
-				Format:      downstreamGitOps.Format,
-				Action:      downstreamGitOps.Action,
-				DeployKey:   downstreamGitOps.PublicKey,
-				IsConnected: downstreamGitOps.IsConnected,
-			}
-		}
+	parentSequence, err := store.GetStore().GetCurrentParentSequence(a.ID, d.ClusterID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get current parent sequence for downstream")
+	}
 
-		cluster := types.ResponseCluster{
-			ID:   d.ClusterID,
-			Slug: d.ClusterSlug,
-		}
+	links, err := version.GetRealizedLinksFromAppSpec(a.ID, parentSequence)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get realized links from app spec")
+	}
 
-		responseDownstream := types.ResponseDownstream{
-			Name:            d.Name,
-			Links:           links,
-			CurrentVersion:  appVersions.CurrentVersion,
-			PendingVersions: appVersions.PendingVersions,
-			PastVersions:    appVersions.PastVersions,
-			LatestVersion:   latestVersion,
-			GitOps:          responseGitOps,
-			Cluster:         cluster,
+	downstreamGitOps, err := gitops.GetDownstreamGitOps(a.ID, d.ClusterID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get downstream gitops")
+	}
+	responseGitOps := types.ResponseGitOps{}
+	if downstreamGitOps != nil {
+		responseGitOps = types.ResponseGitOps{
+			Enabled:     true,
+			Provider:    downstreamGitOps.Provider,
+			Uri:         downstreamGitOps.RepoURI,
+			Hostname:    downstreamGitOps.Hostname,
+			HTTPPort:    downstreamGitOps.HTTPPort,
+			SSHPort:     downstreamGitOps.SSHPort,
+			Path:        downstreamGitOps.Path,
+			Branch:      downstreamGitOps.Branch,
+			Format:      downstreamGitOps.Format,
+			Action:      downstreamGitOps.Action,
+			DeployKey:   downstreamGitOps.PublicKey,
+			IsConnected: downstreamGitOps.IsConnected,
 		}
+	}
 
-		responseDownstreams = append(responseDownstreams, responseDownstream)
+	cluster := types.ResponseCluster{
+		ID:   d.ClusterID,
+		Slug: d.ClusterSlug,
+	}
+
+	responseDownstream := types.ResponseDownstream{
+		Name:            d.Name,
+		Links:           links,
+		CurrentVersion:  appVersions.CurrentVersion,
+		PendingVersions: appVersions.PendingVersions,
+		PastVersions:    appVersions.PastVersions,
+		LatestVersion:   latestVersion,
+		GitOps:          responseGitOps,
+		Cluster:         cluster,
 	}
 
 	// check snapshots for the parent sequence of the deployed version
-	allowSnapshots := false
-	if len(downstreams) > 0 {
-		parentSequence, err := store.GetStore().GetCurrentParentSequence(a.ID, downstreams[0].ClusterID)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get current parent sequence for downstream")
-		}
-
-		s, err := store.GetStore().IsSnapshotsSupportedForVersion(a, parentSequence, &render.Renderer{})
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to check if snapshots is allowed")
-		}
-		allowSnapshots = s && license.Spec.IsSnapshotSupported
+	s, err := store.GetStore().IsSnapshotsSupportedForVersion(a, parentSequence, &render.Renderer{})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to check if snapshots is allowed")
 	}
+	allowSnapshots := s && license.Spec.IsSnapshotSupported
 
 	responseApp := types.ResponseApp{
 		ID:                             a.ID,
 		Slug:                           a.Slug,
 		Name:                           a.Name,
 		IsAirgap:                       a.IsAirgap,
-		CurrentSequence:                latestAppVersion.Sequence,
+		CurrentSequence:                latestVersion.ParentSequence,
 		UpstreamURI:                    a.UpstreamURI,
 		IconURI:                        a.IconURI,
 		CreatedAt:                      a.CreatedAt,
@@ -301,7 +283,7 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		AllowSnapshots:                 allowSnapshots,
 		TargetKotsVersion:              targetKotsVersion,
 		LicenseType:                    license.Spec.LicenseType,
-		Downstreams:                    responseDownstreams,
+		Downstream:                     responseDownstream,
 	}
 
 	return &responseApp, nil

@@ -82,7 +82,7 @@ class AppDetailPage extends Component {
 
     // Enforce initial app configuration (if exists)
     if (app !== lastState.app && app) {
-      const downstream = app.downstreams?.length && app.downstreams[0];
+      const downstream = app?.downstream;
       if (downstream?.pendingVersions?.length) {
         const firstVersion = downstream.pendingVersions.find(version => version?.sequence === 0);
         if (firstVersion?.status === "pending_config") {
@@ -290,7 +290,7 @@ class AppDetailPage extends Component {
       return centeredLoader;
     }
 
-    const downstream = app?.downstreams?.length && app.downstreams[0];
+    const downstream = app?.downstream;
     if (downstream?.currentVersion && isAwaitingResults([downstream.currentVersion])) {
       this.state.getAppJob.start(this.getApp, 2000);
     } else {
@@ -349,7 +349,7 @@ class AppDetailPage extends Component {
                     <Route exact path="/app/:slug" render={() =>
                       <Dashboard
                         app={app}
-                        cluster={app.downstreams?.length && app.downstreams[0]?.cluster}
+                        cluster={app.downstream?.cluster}
                         updateCallback={this.refetchData}
                         onActiveInitSession={this.props.onActiveInitSession}
                         toggleIsBundleUploading={this.toggleIsBundleUploading}
@@ -372,7 +372,6 @@ class AppDetailPage extends Component {
                         match={this.props.match}
                         makeCurrentVersion={this.makeCurrentRelease}
                         makingCurrentVersionErrMsg={this.state.makingCurrentReleaseErrMsg}
-                        updateCallback={this.refetchData}
                         toggleIsBundleUploading={this.toggleIsBundleUploading}
                         isBundleUploading={isBundleUploading}
                         refreshAppData={this.getApp}

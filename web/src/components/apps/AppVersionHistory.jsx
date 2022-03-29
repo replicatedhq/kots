@@ -21,6 +21,7 @@ import SkipPreflightsModal from "../shared/modals/SkipPreflightsModal";
 import { Utilities, isAwaitingResults, secondsAgo, getPreflightResultState, getGitProviderDiffUrl, getCommitHashFromUrl } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
 import { AirgapUploader } from "../../utilities/airgapUploader";
+import { FixedSizeList as List } from "react-window";
 import ReactTooltip from "react-tooltip"
 
 import "@src/scss/components/apps/AppVersionHistory.scss";
@@ -148,7 +149,7 @@ class AppVersionHistory extends Component {
       const versionHistory = response.versionHistory;
 
       if (isAwaitingResults(versionHistory) && this._mounted) {
-        this.state.versionHistoryJob.start(this.fetchKotsDownstreamHistory, 2000);
+        this.state.versionHistoryJob.start(this.fetchKotsDownstreamHistory, 5000);
       } else {
         this.state.versionHistoryJob.stop();
       }
@@ -291,7 +292,7 @@ class AppVersionHistory extends Component {
 
   renderSourceAndDiff = version => {
     const { app } = this.props;
-    const downstream = app.downstreams?.length && app.downstreams[0];
+    const downstream = app?.downstream;
     const diffSummary = this.getVersionDiffSummary(version);
     const hasDiffSummaryError = version.diffSummaryError && version.diffSummaryError.length > 0;
 
@@ -574,11 +575,11 @@ class AppVersionHistory extends Component {
 
   deployVersion = (version, force = false, continueWithFailedPreflights = false) => {
     const { app } = this.props;
-    const clusterSlug = app.downstreams?.length && app.downstreams[0].cluster?.slug;
+    const clusterSlug = app.downstream.cluster?.slug;
     if (!clusterSlug) {
       return;
     }
-    const downstream = app.downstreams?.length && app.downstreams[0];
+    const downstream = app?.downstream;
     const yamlErrorDetails = this.yamlErrorsDetails(downstream, version);
 
 
@@ -638,7 +639,7 @@ class AppVersionHistory extends Component {
 
   redeployVersion = (version, isRollback = false) => {
     const { app } = this.props;
-    const clusterSlug = app.downstreams?.length && app.downstreams[0].cluster?.slug;
+    const clusterSlug = app.downstream.cluster?.slug;
     if (!clusterSlug) {
       return;
     }
@@ -823,7 +824,7 @@ class AppVersionHistory extends Component {
   handleViewLogs = async (version, isFailing) => {
     try {
       const { app } = this.props;
-      const clusterId = app.downstreams?.length && app.downstreams[0].cluster?.id;
+      const clusterId = app.downstream.cluster?.id;
 
       this.setState({ logsLoading: true, showLogsModal: true, viewLogsErrMsg: "" });
 
@@ -859,7 +860,7 @@ class AppVersionHistory extends Component {
       selectedDiffReleases,
       checkedReleasesToDiff,
     } = this.state;
-    const downstream = app.downstreams.length && app.downstreams[0];
+    const downstream = app?.downstream;
     const gitopsEnabled = downstream.gitops?.enabled;
     const versionHistory = this.state.versionHistory?.length ? this.state.versionHistory : [];
     return (
@@ -1051,13 +1052,13 @@ class AppVersionHistory extends Component {
     )
   }
 
-  renderAppVersionHistoryRow = version => {
+  renderAppVersionHistoryRow = (version, style) => {
     if (this.state.selectedDiffReleases && version.status === "pending_download") {
       // non-downloaded versions can't be diffed
       return null;
     }
 
-    const downstream = this.props.app.downstreams?.length && this.props.app.downstreams[0];
+    const downstream = this.props.app.downstream;
     const gitopsEnabled = downstream?.gitops?.enabled;
     const nothingToCommit = gitopsEnabled && !version.commitUrl;
     const yamlErrorsDetails = this.yamlErrorsDetails(downstream, version);
@@ -1066,6 +1067,7 @@ class AppVersionHistory extends Component {
 
     return (
       <AppVersionHistoryRow
+        style={style}
         key={version.sequence}
         app={this.props.app}
         match={this.props.match}
@@ -1135,7 +1137,7 @@ class AppVersionHistory extends Component {
       );
     }
 
-    const downstream = app.downstreams.length && app.downstreams[0];
+    const downstream = app?.downstream;
     const gitopsEnabled = downstream.gitops?.enabled;
     const currentDownstreamVersion = downstream?.currentVersion;
 
@@ -1156,7 +1158,7 @@ class AppVersionHistory extends Component {
     }
 
     return (
-      <div className="flex flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
+      <div className="flex flex-column flex1 u-position--relative u-overflow--hidden u-padding--20">
         <Helmet>
           <title>{`${app.name} Version History`}</title>
         </Helmet>
@@ -1210,7 +1212,7 @@ class AppVersionHistory extends Component {
                                 <ReactTooltip effect="solid" className="replicated-tooltip" />
                               </div>}
                             <div>
-                              <Link to={`/app/${app?.slug}/downstreams/${app.downstreams[0].cluster?.slug}/version-history/preflight/${currentDownstreamVersion?.sequence}`}
+                              <Link to={`/app/${app?.slug}/downstreams/${app.downstream.cluster?.slug}/version-history/preflight/${currentDownstreamVersion?.sequence}`}
                                 className="icon preflightChecks--icon u-marginRight--10 u-cursor--pointer"
                                 data-tip="View preflight checks" />
                               <ReactTooltip effect="solid" className="replicated-tooltip" />
@@ -1222,7 +1224,7 @@ class AppVersionHistory extends Component {
                             </div>
                             {app.isConfigurable &&
                               <div>
-                                <Link to={`/app/${app?.slug}/config/${app?.downstreams[0]?.currentVersion?.parentSequence}`} className="icon configEdit--icon u-cursor--pointer" data-tip="Edit config" />
+                                <Link to={`/app/${app?.slug}/config/${app?.downstream?.currentVersion?.parentSequence}`} className="icon configEdit--icon u-cursor--pointer" data-tip="Edit config" />
                                 <ReactTooltip effect="solid" className="replicated-tooltip" />
                               </div>}
                           </div> : null}
@@ -1269,7 +1271,7 @@ class AppVersionHistory extends Component {
                           {versionHistory.length > 1 && this.renderDiffBtn()}
                         </div>
                       </div>
-                      {this.renderAppVersionHistoryRow(versionHistory[0])}
+                      {this.renderAppVersionHistoryRow(downstream?.latestVersion, null)}
                     </div>
                     {this.renderUpdateProgress()}
                     {otherAvailableVersions.length > 0 &&
@@ -1277,7 +1279,14 @@ class AppVersionHistory extends Component {
                         <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy">Other available versions</p>
                       </div>
                     }
-                    {otherAvailableVersions?.map((version) => this.renderAppVersionHistoryRow(version))}
+                    <List
+                      height={1000}
+                      itemCount={otherAvailableVersions?.length}
+                      itemSize={100}
+                    >
+                      {({ index, style }) => this.renderAppVersionHistoryRow(otherAvailableVersions[index], style)}
+                    </List>
+                    {/* {otherAvailableVersions?.map((version) => this.renderAppVersionHistoryRow(version))} */}
                   </div>
                 :
                 <div className="flex-column flex1 alignItems--center justifyContent--center">

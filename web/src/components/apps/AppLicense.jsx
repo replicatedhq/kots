@@ -169,7 +169,7 @@ class AppLicense extends Component {
 
     const { app } = this.props;
     const expiresAt = getLicenseExpiryDate(appLicense);
-    const gitops = app?.downstreams?.length && app.downstreams[0]?.gitops;
+    const gitops = app.downstream?.gitops;
     const appName = app?.name || "Your application";
 
 

@@ -81,7 +81,7 @@ function renderReleaseNotes(version, showReleaseNotes) {
 }
 
 function renderVersionAction(version, nothingToCommitDiff, app, history, actionFn, showReleaseNotes, viewLogs, isDownloading, adminConsoleMetadata) {
-  const downstream = app.downstreams[0];
+  const downstream = app?.downstream;
 
   if (version.status === "pending_download") {
     let buttonText = "Download";
@@ -150,6 +150,7 @@ function renderVersionAction(version, nothingToCommitDiff, app, history, actionF
     checksStatusText = "Checks passed with warnings"
   }
 
+  
   return (
     <div className="flex flex1 justifyContent--flexEnd alignItems--center">
       {renderReleaseNotes(version, showReleaseNotes)}
@@ -162,7 +163,7 @@ function renderVersionAction(version, nothingToCommitDiff, app, history, actionF
           </div>
         :
         <div>
-          <Link to={`/app/${app?.slug}/downstreams/${app?.downstreams[0].cluster?.slug}/version-history/preflight/${version?.sequence}`}
+          <Link to={`/app/${app?.slug}/downstreams/${app?.downstream.cluster?.slug}/version-history/preflight/${version?.sequence}`}
             className="icon preflightChecks--icon u-marginRight--10 u-cursor--pointer u-position--relative"
             data-tip="View preflight checks">
             {preflightState.preflightsFailed || preflightState.preflightState === "warn" ?
@@ -225,7 +226,7 @@ function isActionButtonDisabled(version) {
 }
 
 function renderViewPreflights(version, app, match) {
-  const downstream = app.downstreams[0];
+  const downstream = app?.downstream;
   const clusterSlug = downstream.cluster?.slug;
   return (
     <Link className="u-marginTop--10" to={`/app/${match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version?.sequence}`}>
@@ -235,7 +236,7 @@ function renderViewPreflights(version, app, match) {
 }
 
 function renderVersionStatus(version, app, viewLogs) {
-  const downstream = app.downstreams?.length && app.downstreams[0];
+  const downstream = app?.downstream;
   if (!downstream) {
     return null;
   }
@@ -305,11 +306,15 @@ function renderVersionStatus(version, app, viewLogs) {
   }
 }
 
-export default function AppVersionHistoryRow(props) {
+const AppVersionHistoryRow = React.memo(props => {
   const { version, selectedDiffReleases, nothingToCommit,
     isChecked, isNew, renderSourceAndDiff, handleSelectReleasesToDiff,
     yamlErrorsDetails, gitopsEnabled, toggleShowDetailsModal,
     renderVersionDownloadStatus, isDownloading } = props;
+
+  if (version.sequence === 50) {
+    console.log("re-rendering sequence 50!")
+  }
   
   const hideSourceDiff = version?.source.includes("Airgap Install") || version?.source.includes("Online Install");
 
@@ -325,6 +330,7 @@ export default function AppVersionHistoryRow(props) {
   return (
     <div
       key={version.sequence}
+      style={props.style}
       className={classNames(`VersionHistoryRowWrapper ${version.status} flex-column flex-auto`, { "overlay": selectedDiffReleases, "disabled": nothingToCommit, "selected": (isChecked && !nothingToCommit), "is-new": isNew })}
       onClick={() => selectedDiffReleases && !nothingToCommit && handleSelectReleasesToDiff(version, !isChecked)}
     >
@@ -355,4 +361,6 @@ export default function AppVersionHistoryRow(props) {
       {renderVersionDownloadStatus(version)}
     </div>
   )
-}
+});
+
+export default AppVersionHistoryRow;

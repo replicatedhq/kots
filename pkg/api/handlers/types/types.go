@@ -44,7 +44,7 @@ type ResponseApp struct {
 	TargetKotsVersion              string `json:"targetKotsVersion"`
 	LicenseType                    string `json:"licenseType"`
 
-	Downstreams []ResponseDownstream `json:"downstreams"`
+	Downstream ResponseDownstream `json:"downstream"`
 }
 
 type ResponseDownstream struct {
