@@ -109,7 +109,7 @@ class DashboardVersionCard extends React.Component {
   handleViewLogs = async (version, isFailing) => {
     try {
       const { app } = this.props;
-      const clusterId = app.downstreams?.length && app.downstreams[0].cluster?.id;
+      const clusterId = app.downstream.cluster?.id;
 
       this.setState({ logsLoading: true, showLogsModal: true, viewLogsErrMsg: "", versionFailing: false });
 
@@ -265,7 +265,7 @@ class DashboardVersionCard extends React.Component {
           </div>
         :
         <div>
-          <Link to={`/app/${app?.slug}/downstreams/${app?.downstreams[0].cluster?.slug}/version-history/preflight/${version?.sequence}`}
+          <Link to={`/app/${app?.slug}/downstreams/${app?.downstream.cluster?.slug}/version-history/preflight/${version?.sequence}`}
             className="icon preflightChecks--icon u-marginLeft--10 u-cursor--pointer u-position--relative"
             data-tip="View preflight checks">
               {preflightState.preflightsFailed || preflightState.preflightState === "warn" ?
@@ -373,7 +373,7 @@ class DashboardVersionCard extends React.Component {
 
   renderSourceAndDiff = version => {
     const { app } = this.props;
-    const downstream = app.downstreams?.length && app.downstreams[0];
+    const downstream = app?.downstream;
     const diffSummary = this.getVersionDiffSummary(version);
     const hasDiffSummaryError = version.diffSummaryError && version.diffSummaryError.length > 0;
 
@@ -428,11 +428,11 @@ class DashboardVersionCard extends React.Component {
 
   deployVersion = (version, force = false, continueWithFailedPreflights = false, redeploy = false) => {
     const { app } = this.props;
-    const clusterSlug = app.downstreams?.length && app.downstreams[0].cluster?.slug;
+    const clusterSlug = app.downstream.cluster?.slug;
     if (!clusterSlug) {
       return;
     }
-    const downstream = app.downstreams?.length && app.downstreams[0];
+    const downstream = app?.downstream;
     const yamlErrorDetails = this.yamlErrorsDetails(downstream, version);
 
     if (!force) {
@@ -543,7 +543,7 @@ class DashboardVersionCard extends React.Component {
 
   renderGitopsVersionAction = version => {
     const { app } = this.props;
-    const downstream = app.downstreams?.length && app.downstreams[0];
+    const downstream = app?.downstream;
     const nothingToCommit = downstream?.gitops?.enabled && !downstream?.latestVersion?.commitUrl;
 
     if (version.status === "pending_download") {
@@ -587,7 +587,7 @@ class DashboardVersionCard extends React.Component {
   
   renderVersionAction = version => {
     const { app } = this.props;
-    const downstream = app.downstreams[0];
+    const downstream = app?.downstream;
 
     if (downstream.gitops?.enabled) {
       return this.renderGitopsVersionAction(version);

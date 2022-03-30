@@ -237,7 +237,7 @@ class GitOpsDeploymentManager extends React.Component {
 
       if (this.isSingleApp()) {
         const app = this.state.appsList[0];
-        const downstream = app.downstreams[0];
+        const downstream = app?.downstream;
         const clusterId = downstream?.cluster?.id;
 
         await this.updateAppGitOps(app.id, clusterId, gitOpsInput);
@@ -329,11 +329,11 @@ class GitOpsDeploymentManager extends React.Component {
   }
 
   enableAppGitOps = async app => {
-    if (!app.downstreams?.length) {
+    if (!app.downstream) {
       return;
     }
 
-    const downstream = app.downstreams[0];
+    const downstream = app?.downstream;
     const gitops = downstream?.gitops;
     if (gitops?.enabled) {
       return;
@@ -583,7 +583,7 @@ class GitOpsDeploymentManager extends React.Component {
     return (
       <div>
         {this.state.appsList.map(app => {
-          const downstream = app.downstreams?.length && app.downstreams[0];
+          const downstream = app?.downstream;
           const gitops = downstream?.gitops;
           const gitopsEnabled = gitops?.enabled;
           const gitopsConnected = gitops?.isConnected;

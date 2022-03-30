@@ -10,9 +10,11 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/blang/semver"
+	"github.com/lib/pq"
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -41,6 +43,16 @@ import (
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 )
+
+var cachedKOTSKinds = map[int64]CachedKOTSKinds{}
+var cachedKOTSKindsMtx sync.Mutex
+
+type CachedKOTSKinds struct {
+	KOTSKinds kotsutil.KotsKinds
+
+	// Do not read the status from the cache. This is just used to decide when to update the cache for a particular version.
+	Status types.DownstreamVersionStatus
+}
 
 func (s *KOTSStore) ensureApplicationMetadata(applicationMetadata string, namespace string, upstreamURI string) error {
 	clientset, err := k8sutil.GetClientset()
@@ -775,8 +787,12 @@ func (s *KOTSStore) addAppVersionToDownstream(tx *sql.Tx, appID string, clusterI
 }
 
 func (s *KOTSStore) GetAppVersion(appID string, sequence int64) (*versiontypes.AppVersion, error) {
+	if err := s.CacheKOTSKinds(appID); err != nil {
+		return nil, errors.Wrap(err, "failed to cache kots kinds")
+	}
+
 	db := persistence.MustGetDBSession()
-	query := `select app_id, sequence, update_cursor, channel_id, version_label, created_at, status, applied_at, kots_installation_spec, kots_app_spec, kots_license from app_version where app_id = $1 and sequence = $2`
+	query := `select app_id, sequence, update_cursor, channel_id, version_label, created_at, status, applied_at from app_version where app_id = $1 and sequence = $2`
 	row := db.QueryRow(query, appID, sequence)
 
 	v, err := s.appVersionFromRow(row)
@@ -788,8 +804,12 @@ func (s *KOTSStore) GetAppVersion(appID string, sequence int64) (*versiontypes.A
 }
 
 func (s *KOTSStore) GetAppVersions(appID string) ([]*versiontypes.AppVersion, error) {
+	if err := s.CacheKOTSKinds(appID); err != nil {
+		return nil, errors.Wrap(err, "failed to cache kots kinds")
+	}
+
 	db := persistence.MustGetDBSession()
-	query := `select app_id, sequence, update_cursor, channel_id, version_label, created_at, status, applied_at, kots_installation_spec, kots_app_spec, kots_license from app_version where app_id = $1`
+	query := `select app_id, sequence, update_cursor, channel_id, version_label, created_at, status, applied_at from app_version where app_id = $1`
 
 	rows, err := db.Query(query, appID)
 	if err != nil {
@@ -815,15 +835,178 @@ func (s *KOTSStore) GetAppVersions(appID string) ([]*versiontypes.AppVersion, er
 	return versions, nil
 }
 
-func (s *KOTSStore) GetLatestAppVersion(appID string, downloadedOnly bool) (*versiontypes.AppVersion, error) {
-	downstreamVersions, err := s.FindDownstreamVersions(appID, downloadedOnly)
+// GetLatestAppSequence returns the sequence of the latest app version.
+// Note: when semantic versioning is enabled, the highest app sequence is not necessarily the sequence of the latest version
+// since patch releases come into play. This function handles both semantic and non-semantic versions.
+// if downloadedOnly param is set to true, the sequence of the latest downloaded app version will be returned
+func (s *KOTSStore) GetLatestAppSequence(appID string, downloadedOnly bool) (int64, error) {
+	db := persistence.MustGetDBSession()
+	query := `SELECT sequence, parent_sequence, version_label FROM app_downstream_version WHERE app_id=$1`
+
+	if downloadedOnly {
+		query += fmt.Sprintf(` AND status != '%s'`, types.VersionPendingDownload)
+	}
+
+	rows, err := db.Query(query, appID)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to find app downstream versions")
+		return 0, errors.Wrap(err, "failed to query")
 	}
-	if len(downstreamVersions.AllVersions) == 0 {
-		return nil, errors.New("no app versions found")
+	defer rows.Close()
+
+	result := &downstreamtypes.DownstreamVersions{
+		AllVersions: []*downstreamtypes.DownstreamVersion{},
 	}
-	return s.GetAppVersion(appID, downstreamVersions.AllVersions[0].ParentSequence)
+	for rows.Next() {
+		v := &downstreamtypes.DownstreamVersion{}
+		var versionLabel sql.NullString
+		if err := rows.Scan(
+			&v.Sequence,
+			&v.ParentSequence,
+			&versionLabel,
+		); err != nil {
+			return 0, errors.Wrap(err, "failed to scan")
+		}
+		if sv, err := semver.ParseTolerant(versionLabel.String); err == nil {
+			v.Semver = &sv
+		}
+		result.AllVersions = append(result.AllVersions, v)
+	}
+
+	if len(result.AllVersions) == 0 {
+		return 0, errors.Wrap(err, "no versions found for app")
+	}
+
+	license, err := s.GetLatestLicenseForApp(appID)
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to get app license")
+	}
+	downstreamtypes.SortDownstreamVersions(result, license.Spec.IsSemverRequired)
+
+	return result.AllVersions[0].ParentSequence, nil
+}
+
+// CacheKOTSKinds queries the kots kinds for versions not present in the cache and then adds them to the cache.
+// this cache is used later to speed up other queries.
+// Note: use parent sequence instead of sequence so that these kots kinds can be used by both app versions and app downstream versions
+func (s *KOTSStore) CacheKOTSKinds(appID string) error {
+	t := time.Now()
+
+	downstreams, err := s.ListDownstreamsForApp(appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to list downstreams")
+	}
+	if len(downstreams) == 0 {
+		return errors.Errorf("no downstreams found for app %q", appID)
+	}
+	clusterID := downstreams[0].ClusterID
+
+	db := persistence.MustGetDBSession()
+	query := `SELECT parent_sequence, status FROM app_downstream_version WHERE app_id=$1 AND cluster_id=$2`
+
+	rows, err := db.Query(query, appID, clusterID)
+	if err != nil {
+		return errors.Wrap(err, "failed to query sequences")
+	}
+	defer rows.Close()
+
+	sequencesToQuery := []int64{}
+	for rows.Next() {
+		var s int64
+		var status sql.NullString
+		if err := rows.Scan(&s, &status); err != nil {
+			return errors.Wrap(err, "failed to scan sequence")
+		}
+		cache, ok := cachedKOTSKinds[s]
+		if !ok {
+			sequencesToQuery = append(sequencesToQuery, s)
+			continue
+		}
+		if cache.Status == types.VersionPendingDownload && cache.Status != types.DownstreamVersionStatus(status.String) {
+			// if the cached kots kinds are for a pending download app version, and the status changed (which means the version has been downloaded),
+			// then update the cache with the downloaded kots kinds for that version
+			sequencesToQuery = append(sequencesToQuery, s)
+			continue
+		}
+	}
+
+	query = `SELECT
+	adv.parent_sequence,
+	adv.status,
+	av.kots_installation_spec,
+	av.kots_app_spec,
+	av.preflight_spec,
+	av.kots_license
+ FROM
+	 app_downstream_version AS adv
+ LEFT JOIN
+	 app_version AS av
+ ON
+	 adv.app_id = av.app_id AND adv.parent_sequence = av.sequence
+ WHERE
+	 adv.app_id = $1 AND
+	 adv.cluster_id = $2 AND
+	 adv.parent_sequence = ANY($3)`
+
+	kotsKindsRows, err := db.Query(query, appID, clusterID, pq.Array(sequencesToQuery))
+	if err != nil {
+		return errors.Wrap(err, "failed to query")
+	}
+	defer kotsKindsRows.Close()
+
+	for kotsKindsRows.Next() {
+		var sequence int64
+		var status sql.NullString
+		var kotsInstallationSpecStr sql.NullString
+		var kotsAppSpecStr sql.NullString
+		var preflightSpecStr sql.NullString
+		var licenseSpec sql.NullString
+
+		if err := kotsKindsRows.Scan(&sequence, &status, &kotsInstallationSpecStr, &kotsAppSpecStr, &preflightSpecStr, &licenseSpec); err != nil {
+			return errors.Wrap(err, "failed to scan sequence")
+		}
+
+		kotsKinds := &kotsutil.KotsKinds{}
+
+		if kotsInstallationSpecStr.String != "" {
+			installation, err := kotsutil.LoadInstallationFromContents([]byte(kotsInstallationSpecStr.String))
+			if err != nil {
+				return errors.Wrap(err, "failed to load installation spec")
+			}
+			kotsKinds.Installation = *installation
+		}
+		if kotsAppSpecStr.String != "" {
+			app, err := kotsutil.LoadKotsAppFromContents([]byte(kotsAppSpecStr.String))
+			if err != nil {
+				return errors.Wrap(err, "failed to load installation spec")
+			}
+			kotsKinds.KotsApplication = *app
+		}
+		if preflightSpecStr.String != "" {
+			preflight, err := kotsutil.LoadPreflightFromContents([]byte(preflightSpecStr.String))
+			if err != nil {
+				return errors.Wrap(err, "failed to load preflights from spec")
+			}
+			kotsKinds.Preflight = preflight
+		}
+		if licenseSpec.String != "" {
+			license, err := kotsutil.LoadLicenseFromBytes([]byte(licenseSpec.String))
+			if err != nil {
+				return errors.Wrap(err, "failed to read license spec")
+			}
+			kotsKinds.License = license
+		}
+
+		cachedKOTSKindsMtx.Lock()
+		cachedKOTSKinds[sequence] = CachedKOTSKinds{
+			KOTSKinds: *kotsKinds,
+			Status:    types.DownstreamVersionStatus(status.String),
+		}
+		cachedKOTSKindsMtx.Unlock()
+	}
+
+	fmt.Println(time.Since(t).Milliseconds(), " ms -- cache kots kinds")
+
+	return nil
 }
 
 func (s *KOTSStore) UpdateNextAppVersionDiffSummary(appID string, baseSequence int64) error {
@@ -970,7 +1153,17 @@ func (s *KOTSStore) HasStrictPreflights(appID string, sequence int64) (bool, err
 	if err := row.Scan(&preflightSpecStr); err != nil {
 		return false, errors.Wrap(err, "failed to scan")
 	}
-	return s.hasStrictPreflights(preflightSpecStr)
+
+	var preflightSpec *troubleshootv1beta2.Preflight
+	if preflightSpecStr.String != "" {
+		s, err := kotsutil.LoadPreflightFromContents([]byte(preflightSpecStr.String))
+		if err != nil {
+			return false, errors.Wrap(err, "failed to load preflights from spec")
+		}
+		preflightSpec = s
+	}
+
+	return s.hasStrictPreflights(preflightSpec)
 }
 
 func (s *KOTSStore) renderPreflightSpec(appID string, appSlug string, sequence int64, isAirgap bool, kotsKinds *kotsutil.KotsKinds, renderer rendertypes.Renderer) (*troubleshootv1beta2.Preflight, error) {
@@ -1004,17 +1197,15 @@ func (s *KOTSStore) renderPreflightSpec(appID string, appSlug string, sequence i
 func (s *KOTSStore) appVersionFromRow(row scannable) (*versiontypes.AppVersion, error) {
 	v := &versiontypes.AppVersion{}
 
+	// IMPORTANT: please add kots kinds to CacheKOTSKinds instead because they make this query slower
 	var status sql.NullString
 	var deployedAt persistence.NullStringTime
 	var createdAt persistence.NullStringTime
-	var installationSpec sql.NullString
-	var kotsAppSpec sql.NullString
-	var licenseSpec sql.NullString
 	var updateCursor sql.NullString
 	var channelID sql.NullString
 	var versionLabel sql.NullString
 
-	if err := row.Scan(&v.AppID, &v.Sequence, &updateCursor, &channelID, &versionLabel, &createdAt, &status, &createdAt, &installationSpec, &kotsAppSpec, &licenseSpec); err != nil {
+	if err := row.Scan(&v.AppID, &v.Sequence, &updateCursor, &channelID, &versionLabel, &createdAt, &status, &createdAt); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, ErrNotFound
 		}
@@ -1027,34 +1218,9 @@ func (s *KOTSStore) appVersionFromRow(row scannable) (*versiontypes.AppVersion, 
 	v.ChannelID = channelID.String
 	v.VersionLabel = versionLabel.String
 
-	if installationSpec.Valid && installationSpec.String != "" {
-		installation, err := kotsutil.LoadInstallationFromContents([]byte(installationSpec.String))
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to read installation spec")
-		}
-		if installation != nil {
-			v.KOTSKinds.Installation = *installation
-		}
-	}
-
-	if kotsAppSpec.Valid && kotsAppSpec.String != "" {
-		kotsApp, err := kotsutil.LoadKotsAppFromContents([]byte(kotsAppSpec.String))
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to read kotsapp spec")
-		}
-		if kotsApp != nil {
-			v.KOTSKinds.KotsApplication = *kotsApp
-		}
-	}
-
-	if licenseSpec.Valid && licenseSpec.String != "" {
-		license, err := kotsutil.LoadLicenseFromBytes([]byte(licenseSpec.String))
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to read license spec")
-		}
-		if license != nil {
-			v.KOTSKinds.License = license
-		}
+	v.KOTSKinds = &kotsutil.KotsKinds{}
+	if c, ok := cachedKOTSKinds[v.Sequence]; ok {
+		v.KOTSKinds = &c.KOTSKinds
 	}
 
 	v.CreatedOn = createdAt.Time

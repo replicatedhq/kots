@@ -64,8 +64,8 @@ func Start(clusterToken string) error {
 
 	lastDeployedSequences = make(map[string]int64, 0)
 
-	startLoop(deployLoop, 1)
-	startLoop(restoreLoop, 1)
+	startLoop(deployLoop, 5)
+	startLoop(restoreLoop, 5)
 
 	return nil
 }

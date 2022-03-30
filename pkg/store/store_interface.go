@@ -145,7 +145,6 @@ type DownstreamStore interface {
 	UpdateDownstreamVersionStatus(appID string, sequence int64, status string, statusInfo string) error
 	GetDownstreamVersionStatus(appID string, sequence int64) (types.DownstreamVersionStatus, error)
 	GetIgnoreRBACErrors(appID string, sequence int64) (bool, error)
-	GetLatestDownstreamVersion(appID string, clusterID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersion, error)
 	GetCurrentVersion(appID string, clusterID string) (*downstreamtypes.DownstreamVersion, error)
 	GetStatusForVersion(appID string, clusterID string, sequence int64) (types.DownstreamVersionStatus, error)
 	// GetDownstreamVersions returns a sorted list of app releases. The sort order is determined by semver being enabled in the license.
@@ -185,7 +184,7 @@ type VersionStore interface {
 	CreateAppVersion(appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error)
 	GetAppVersion(appID string, sequence int64) (*versiontypes.AppVersion, error)
 	GetAppVersions(appID string) ([]*versiontypes.AppVersion, error)
-	GetLatestAppVersion(appID string, downloadedOnly bool) (*versiontypes.AppVersion, error)
+	GetLatestAppSequence(appID string, downloadedOnly bool) (int64, error)
 	UpdateNextAppVersionDiffSummary(appID string, baseSequence int64) error
 	UpdateAppVersionInstallationSpec(appID string, sequence int64, spec kotsv1beta1.Installation) error
 	GetNextAppSequence(appID string) (int64, error)

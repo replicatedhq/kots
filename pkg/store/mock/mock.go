@@ -688,34 +688,19 @@ func (mr *MockStoreMockRecorder) GetIgnoreRBACErrors(appID, sequence interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIgnoreRBACErrors", reflect.TypeOf((*MockStore)(nil).GetIgnoreRBACErrors), appID, sequence)
 }
 
-// GetLatestAppVersion mocks base method.
-func (m *MockStore) GetLatestAppVersion(appID string, downloadedOnly bool) (*types1.AppVersion, error) {
+// GetLatestAppSequence mocks base method.
+func (m *MockStore) GetLatestAppSequence(appID string, downloadedOnly bool) (int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLatestAppVersion", appID, downloadedOnly)
-	ret0, _ := ret[0].(*types1.AppVersion)
+	ret := m.ctrl.Call(m, "GetLatestAppSequence", appID, downloadedOnly)
+	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetLatestAppVersion indicates an expected call of GetLatestAppVersion.
-func (mr *MockStoreMockRecorder) GetLatestAppVersion(appID, downloadedOnly interface{}) *gomock.Call {
+// GetLatestAppSequence indicates an expected call of GetLatestAppSequence.
+func (mr *MockStoreMockRecorder) GetLatestAppSequence(appID, downloadedOnly interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestAppVersion", reflect.TypeOf((*MockStore)(nil).GetLatestAppVersion), appID, downloadedOnly)
-}
-
-// GetLatestDownstreamVersion mocks base method.
-func (m *MockStore) GetLatestDownstreamVersion(appID, clusterID string, downloadedOnly bool) (*types0.DownstreamVersion, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLatestDownstreamVersion", appID, clusterID, downloadedOnly)
-	ret0, _ := ret[0].(*types0.DownstreamVersion)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetLatestDownstreamVersion indicates an expected call of GetLatestDownstreamVersion.
-func (mr *MockStoreMockRecorder) GetLatestDownstreamVersion(appID, clusterID, downloadedOnly interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestDownstreamVersion", reflect.TypeOf((*MockStore)(nil).GetLatestDownstreamVersion), appID, clusterID, downloadedOnly)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestAppSequence", reflect.TypeOf((*MockStore)(nil).GetLatestAppSequence), appID, downloadedOnly)
 }
 
 // GetLatestLicenseForApp mocks base method.
@@ -3032,21 +3017,6 @@ func (mr *MockDownstreamStoreMockRecorder) GetIgnoreRBACErrors(appID, sequence i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIgnoreRBACErrors", reflect.TypeOf((*MockDownstreamStore)(nil).GetIgnoreRBACErrors), appID, sequence)
 }
 
-// GetLatestDownstreamVersion mocks base method.
-func (m *MockDownstreamStore) GetLatestDownstreamVersion(appID, clusterID string, downloadedOnly bool) (*types0.DownstreamVersion, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLatestDownstreamVersion", appID, clusterID, downloadedOnly)
-	ret0, _ := ret[0].(*types0.DownstreamVersion)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetLatestDownstreamVersion indicates an expected call of GetLatestDownstreamVersion.
-func (mr *MockDownstreamStoreMockRecorder) GetLatestDownstreamVersion(appID, clusterID, downloadedOnly interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestDownstreamVersion", reflect.TypeOf((*MockDownstreamStore)(nil).GetLatestDownstreamVersion), appID, clusterID, downloadedOnly)
-}
-
 // GetParentSequenceForSequence mocks base method.
 func (m *MockDownstreamStore) GetParentSequenceForSequence(appID, clusterID string, sequence int64) (int64, error) {
 	m.ctrl.T.Helper()
@@ -3475,19 +3445,19 @@ func (mr *MockVersionStoreMockRecorder) GetCurrentUpdateCursor(appID, channelID 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentUpdateCursor", reflect.TypeOf((*MockVersionStore)(nil).GetCurrentUpdateCursor), appID, channelID)
 }
 
-// GetLatestAppVersion mocks base method.
-func (m *MockVersionStore) GetLatestAppVersion(appID string, downloadedOnly bool) (*types1.AppVersion, error) {
+// GetLatestAppSequence mocks base method.
+func (m *MockVersionStore) GetLatestAppSequence(appID string, downloadedOnly bool) (int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLatestAppVersion", appID, downloadedOnly)
-	ret0, _ := ret[0].(*types1.AppVersion)
+	ret := m.ctrl.Call(m, "GetLatestAppSequence", appID, downloadedOnly)
+	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetLatestAppVersion indicates an expected call of GetLatestAppVersion.
-func (mr *MockVersionStoreMockRecorder) GetLatestAppVersion(appID, downloadedOnly interface{}) *gomock.Call {
+// GetLatestAppSequence indicates an expected call of GetLatestAppSequence.
+func (mr *MockVersionStoreMockRecorder) GetLatestAppSequence(appID, downloadedOnly interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestAppVersion", reflect.TypeOf((*MockVersionStore)(nil).GetLatestAppVersion), appID, downloadedOnly)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestAppSequence", reflect.TypeOf((*MockVersionStore)(nil).GetLatestAppSequence), appID, downloadedOnly)
 }
 
 // GetNextAppSequence mocks base method.

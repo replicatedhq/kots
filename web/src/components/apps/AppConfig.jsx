@@ -185,11 +185,11 @@ class AppConfig extends Component {
     }
 
     // check is current deployed config latest
-    const currentDeployedSequence = app?.downstreams[0]?.currentVersion?.parentSequence;
+    const currentDeployedSequence = app?.downstream?.currentVersion?.parentSequence;
     if (currentDeployedSequence != undefined) {
       return currentDeployedSequence;
     } else {
-      return app?.downstreams[0]?.pendingVersions?.[0]?.parentSequence;
+      return app?.downstream?.latestVersion?.parentSequence;
     }
   }
 
@@ -389,10 +389,10 @@ class AppConfig extends Component {
       sequence = parseInt(match.params.sequence);
     }
 
-    const currentSequence = app?.downstreams[0]?.currentVersion?.parentSequence;
-    const pendingSequenceInxex = findIndex(app?.downstreams[0]?.pendingVersions, function(v) { return v.parentSequence == sequence });
-    const pastSequenceIndex = findIndex(app?.downstreams[0]?.pastVersions, function(v) { return v.parentSequence == sequence });
-    const pendingVersions = app?.downstreams[0]?.pendingVersions;
+    const currentSequence = app?.downstream?.currentVersion?.parentSequence;
+    const pendingSequenceInxex = findIndex(app?.downstream?.pendingVersions, function(v) { return v.parentSequence == sequence });
+    const pastSequenceIndex = findIndex(app?.downstream?.pastVersions, function(v) { return v.parentSequence == sequence });
+    const pendingVersions = app?.downstream?.pendingVersions;
 
     if (size(pendingVersions) > 0 && (currentSequence === sequence)) {
       return (
@@ -409,7 +409,7 @@ class AppConfig extends Component {
         </div>
       )
     } else if (pendingSequenceInxex > -1) {
-      const numVersionsNewer = app?.downstreams[0]?.pendingVersions?.length - pendingSequenceInxex;
+      const numVersionsNewer = app?.downstream?.pendingVersions?.length - pendingSequenceInxex;
       return (
         <div className="ConfigInfo newer justifyContent--center">
           <p className="flex alignItems--center u-marginRight--5"> <span className="icon info-icon flex u-marginRight--5" /> This config is {numVersionsNewer} version{numVersionsNewer === 1 ? "" : "s"} newer than the currently deployed config. </p>
@@ -424,9 +424,9 @@ class AppConfig extends Component {
     const { match } = this.props;
     if (!match.params.sequence) {return false;}
     const sequence = parseInt(match.params.sequence);
-    const isCurrentVersion = app.downstreams[0]?.currentVersion?.sequence === sequence;
+    const isCurrentVersion = app.downstream?.currentVersion?.sequence === sequence;
     const isLatestVersion = app.currentSequence === sequence;
-    const pendingVersion = find(app.downstreams[0]?.pendingVersions, { sequence: sequence });
+    const pendingVersion = find(app.downstream?.pendingVersions, { sequence: sequence });
     return !isLatestVersion && !isCurrentVersion && !pendingVersion?.semver;
   }
 
@@ -448,7 +448,7 @@ class AppConfig extends Component {
   navigateToUpdatedConfig = (app) => {
     this.setState({ showNextStepModal: false });
 
-    const pendingVersions = app?.downstreams[0]?.pendingVersions;
+    const pendingVersions = app?.downstream?.pendingVersions;
     this.props.history.push(`/app/${app?.slug}/config/${pendingVersions[0].parentSequence}`)
   }
 
@@ -476,7 +476,7 @@ class AppConfig extends Component {
       );
     }
 
-    const gitops = app?.downstreams?.length && app.downstreams[0]?.gitops;
+    const gitops = app.downstream?.gitops;
     const isNewVersion = !fromLicenseFlow && match.params.sequence == undefined;
 
     return (

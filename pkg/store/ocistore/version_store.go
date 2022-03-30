@@ -588,8 +588,8 @@ func (s *OCIStore) GetAppVersions(appID string) ([]*versiontypes.AppVersion, err
 	return appVersions, nil
 }
 
-func (s *OCIStore) GetLatestAppVersion(appID string, downloadedOnly bool) (*versiontypes.AppVersion, error) {
-	return nil, ErrNotImplemented
+func (s *OCIStore) GetLatestAppSequence(appID string, downloadedOnly bool) (int64, error) {
+	return 0, ErrNotImplemented
 }
 
 func (s *OCIStore) UpdateNextAppVersionDiffSummary(appID string, baseSequence int64) error {

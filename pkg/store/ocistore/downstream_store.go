@@ -41,10 +41,6 @@ func (s *OCIStore) GetIgnoreRBACErrors(appID string, sequence int64) (bool, erro
 	return false, ErrNotImplemented
 }
 
-func (s *OCIStore) GetLatestDownstreamVersion(appID string, clusterID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersion, error) {
-	return nil, ErrNotImplemented
-}
-
 func (s *OCIStore) GetCurrentVersion(appID string, clusterID string) (*downstreamtypes.DownstreamVersion, error) {
 	return nil, ErrNotImplemented
 }

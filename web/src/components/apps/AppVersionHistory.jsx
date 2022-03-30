@@ -22,6 +22,7 @@ import { Utilities, isAwaitingResults, secondsAgo, getPreflightResultState, getG
 import { Repeater } from "../../utilities/repeater";
 import { AirgapUploader } from "../../utilities/airgapUploader";
 import ReactTooltip from "react-tooltip"
+import Pager from "../shared/Pager";
 
 import "@src/scss/components/apps/AppVersionHistory.scss";
 dayjs.extend(relativeTime);
@@ -71,6 +72,8 @@ class AppVersionHistory extends Component {
     kotsUpdateStatus: undefined,
     kotsUpdateMessage: undefined,
     kotsUpdateError: undefined,
+    currentPage: 0,
+    pageSize: 20,
   }
 
   // moving this out of the state because new repeater instances were getting created
@@ -291,7 +294,7 @@ class AppVersionHistory extends Component {
 
   renderSourceAndDiff = version => {
     const { app } = this.props;
-    const downstream = app.downstreams?.length && app.downstreams[0];
+    const downstream = app?.downstream;
     const diffSummary = this.getVersionDiffSummary(version);
     const hasDiffSummaryError = version.diffSummaryError && version.diffSummaryError.length > 0;
 
@@ -574,11 +577,11 @@ class AppVersionHistory extends Component {
 
   deployVersion = (version, force = false, continueWithFailedPreflights = false) => {
     const { app } = this.props;
-    const clusterSlug = app.downstreams?.length && app.downstreams[0].cluster?.slug;
+    const clusterSlug = app.downstream.cluster?.slug;
     if (!clusterSlug) {
       return;
     }
-    const downstream = app.downstreams?.length && app.downstreams[0];
+    const downstream = app?.downstream;
     const yamlErrorDetails = this.yamlErrorsDetails(downstream, version);
 
 
@@ -638,7 +641,7 @@ class AppVersionHistory extends Component {
 
   redeployVersion = (version, isRollback = false) => {
     const { app } = this.props;
-    const clusterSlug = app.downstreams?.length && app.downstreams[0].cluster?.slug;
+    const clusterSlug = app.downstream.cluster?.slug;
     if (!clusterSlug) {
       return;
     }
@@ -823,7 +826,7 @@ class AppVersionHistory extends Component {
   handleViewLogs = async (version, isFailing) => {
     try {
       const { app } = this.props;
-      const clusterId = app.downstreams?.length && app.downstreams[0].cluster?.id;
+      const clusterId = app.downstream.cluster?.id;
 
       this.setState({ logsLoading: true, showLogsModal: true, viewLogsErrMsg: "" });
 
@@ -859,7 +862,7 @@ class AppVersionHistory extends Component {
       selectedDiffReleases,
       checkedReleasesToDiff,
     } = this.state;
-    const downstream = app.downstreams.length && app.downstreams[0];
+    const downstream = app?.downstream;
     const gitopsEnabled = downstream.gitops?.enabled;
     const versionHistory = this.state.versionHistory?.length ? this.state.versionHistory : [];
     return (
@@ -1051,13 +1054,51 @@ class AppVersionHistory extends Component {
     )
   }
 
+  renderOtherAvailableVersions = () => {
+    // This is kinda hacky. This finds the equivalent downstream version because the midstream
+    // version type does not contain metadata like version label or release notes.
+    const otherAvailableVersions = this.state.versionHistory.filter((_, idx) => idx !== 0);
+    if (!otherAvailableVersions?.length) {
+      return null;
+    }
+
+    const { currentPage, pageSize } = this.state;
+    const totalCount = otherAvailableVersions.length;
+    const startIndex = currentPage * pageSize;
+    const endIndex = currentPage * pageSize + pageSize;
+    const versionsToRender = otherAvailableVersions.slice(startIndex, endIndex);
+
+    return (
+      <div>
+        <div className="flex u-marginBottom--15 u-marginTop--30">
+          <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy">Other available versions</p>
+        </div>
+        {versionsToRender?.map((version) => this.renderAppVersionHistoryRow(version))}
+        <Pager
+          pagerType="releases"
+          currentPage={currentPage}
+          pageSize={pageSize}
+          totalCount={totalCount}
+          loading={false}
+          currentPageLength={versionsToRender.length}
+          goToPage={this.onGotoPage}
+        />
+      </div>
+    )
+  }
+
+  onGotoPage = (page, ev) => {
+    ev.preventDefault();
+    this.setState({ currentPage: page })
+  }
+
   renderAppVersionHistoryRow = version => {
     if (this.state.selectedDiffReleases && version.status === "pending_download") {
       // non-downloaded versions can't be diffed
       return null;
     }
 
-    const downstream = this.props.app.downstreams?.length && this.props.app.downstreams[0];
+    const downstream = this.props.app.downstream;
     const gitopsEnabled = downstream?.gitops?.enabled;
     const nothingToCommit = gitopsEnabled && !version.commitUrl;
     const yamlErrorsDetails = this.yamlErrorsDetails(downstream, version);
@@ -1135,13 +1176,9 @@ class AppVersionHistory extends Component {
       );
     }
 
-    const downstream = app.downstreams.length && app.downstreams[0];
+    const downstream = app?.downstream;
     const gitopsEnabled = downstream.gitops?.enabled;
     const currentDownstreamVersion = downstream?.currentVersion;
-
-    // This is kinda hacky. This finds the equivalent downstream version because the midstream
-    // version type does not contain metadata like version label or release notes.
-    const otherAvailableVersions = versionHistory.filter((i, idx) => idx !== 0);
     const isPastVersion = find(downstream?.pastVersions, { sequence: this.state.versionToDeploy?.sequence });
   
     let checkingUpdateTextShort = checkingUpdateMessage;
@@ -1210,7 +1247,7 @@ class AppVersionHistory extends Component {
                                 <ReactTooltip effect="solid" className="replicated-tooltip" />
                               </div>}
                             <div>
-                              <Link to={`/app/${app?.slug}/downstreams/${app.downstreams[0].cluster?.slug}/version-history/preflight/${currentDownstreamVersion?.sequence}`}
+                              <Link to={`/app/${app?.slug}/downstreams/${app.downstream.cluster?.slug}/version-history/preflight/${currentDownstreamVersion?.sequence}`}
                                 className="icon preflightChecks--icon u-marginRight--10 u-cursor--pointer"
                                 data-tip="View preflight checks" />
                               <ReactTooltip effect="solid" className="replicated-tooltip" />
@@ -1222,7 +1259,7 @@ class AppVersionHistory extends Component {
                             </div>
                             {app.isConfigurable &&
                               <div>
-                                <Link to={`/app/${app?.slug}/config/${app?.downstreams[0]?.currentVersion?.parentSequence}`} className="icon configEdit--icon u-cursor--pointer" data-tip="Edit config" />
+                                <Link to={`/app/${app?.slug}/config/${app?.downstream?.currentVersion?.parentSequence}`} className="icon configEdit--icon u-cursor--pointer" data-tip="Edit config" />
                                 <ReactTooltip effect="solid" className="replicated-tooltip" />
                               </div>}
                           </div> : null}
@@ -1272,12 +1309,7 @@ class AppVersionHistory extends Component {
                       {this.renderAppVersionHistoryRow(versionHistory[0])}
                     </div>
                     {this.renderUpdateProgress()}
-                    {otherAvailableVersions.length > 0 &&
-                      <div className="flex u-marginBottom--15 u-marginTop--30">
-                        <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy">Other available versions</p>
-                      </div>
-                    }
-                    {otherAvailableVersions?.map((version) => this.renderAppVersionHistoryRow(version))}
+                    {this.renderOtherAvailableVersions()}
                   </div>
                 :
                 <div className="flex-column flex1 alignItems--center justifyContent--center">

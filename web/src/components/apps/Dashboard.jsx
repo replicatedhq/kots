@@ -70,9 +70,9 @@ class Dashboard extends Component {
     this.setState({
       appName: app.name,
       iconUri: app.iconUri,
-      currentVersion: app.downstreams[0]?.currentVersion,
-      downstream: app.downstreams[0],
-      links: app.downstreams[0]?.links
+      currentVersion: app.downstream?.currentVersion,
+      downstream: app.downstream,
+      links: app.downstream?.links
     });
   }
 
@@ -249,13 +249,13 @@ class Dashboard extends Component {
       });
       if (res.ok && res.status == 200) {
         const app = await res.json();
-        if (app?.downstreams?.length > 0 && app?.downstreams[0].pendingVersions?.length > 0) {
-          if (!isAwaitingResults(app.downstreams[0].pendingVersions)) {
+        if (app?.downstream?.pendingVersions?.length > 0) {
+          if (!isAwaitingResults(app.downstream.pendingVersions)) {
             this.state.fetchAppDownstreamJob.stop();
           }
         }
         this.setState({ 
-          downstream: app.downstreams[0],
+          downstream: app.downstream,
         });
       } else {
         this.setState({ loadingApp: false, gettingAppErrMsg: `Unexpected status code: ${res.status}`, displayErrorModal: true });
