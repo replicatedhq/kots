@@ -61,7 +61,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 		}
 
 		if status != "deployed" {
-			if err := store.GetStore().SetDownstreamVersionPendingPreflight(appID, sequence); err != nil {
+			if err := store.GetStore().SetDownstreamVersionStatus(appID, sequence, storetypes.VersionPendingPreflight, ""); err != nil {
 				return errors.Wrapf(err, "failed to set downstream version %d pending preflight", sequence)
 			}
 		}
@@ -136,8 +136,8 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 			return errors.Wrap(err, "failed to get version status")
 		}
 		if status != "deployed" {
-			if err := store.GetStore().SetDownstreamVersionReady(appID, sequence); err != nil {
-				return errors.Wrap(err, "failed to set downstream version ready")
+			if err := store.GetStore().SetDownstreamVersionStatus(appID, sequence, storetypes.VersionPending, ""); err != nil {
+				return errors.Wrap(err, "failed to set downstream version status to pending")
 			}
 		}
 	}

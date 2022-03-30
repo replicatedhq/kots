@@ -586,7 +586,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 		}
 	}
 
-	if err := store.GetStore().SetDownstreamVersionPendingPreflight(updateApp.ID, int64(sequence)); err != nil {
+	if err := store.GetStore().SetDownstreamVersionStatus(updateApp.ID, int64(sequence), storetypes.VersionPendingPreflight, ""); err != nil {
 		updateAppConfigResponse.Error = "failed to set downstream status to 'pending preflight'"
 		return updateAppConfigResponse, err
 	}
