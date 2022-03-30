@@ -840,14 +840,23 @@ func (s *KOTSStore) GetAppVersions(appID string) ([]*versiontypes.AppVersion, er
 // since patch releases come into play. This function handles both semantic and non-semantic versions.
 // if downloadedOnly param is set to true, the sequence of the latest downloaded app version will be returned
 func (s *KOTSStore) GetLatestAppSequence(appID string, downloadedOnly bool) (int64, error) {
+	downstreams, err := s.ListDownstreamsForApp(appID)
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to list downstreams")
+	}
+	if len(downstreams) == 0 {
+		return 0, errors.Errorf("no downstreams found for app %q", appID)
+	}
+	clusterID := downstreams[0].ClusterID
+
 	db := persistence.MustGetDBSession()
-	query := `SELECT sequence, parent_sequence, version_label FROM app_downstream_version WHERE app_id=$1`
+	query := `SELECT sequence, parent_sequence, version_label FROM app_downstream_version WHERE app_id=$1 AND cluster_id=$2`
 
 	if downloadedOnly {
 		query += fmt.Sprintf(` AND status != '%s'`, types.VersionPendingDownload)
 	}
 
-	rows, err := db.Query(query, appID)
+	rows, err := db.Query(query, appID, clusterID)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to query")
 	}
