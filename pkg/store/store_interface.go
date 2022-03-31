@@ -136,7 +136,7 @@ type AppStore interface {
 }
 
 type DownstreamStore interface {
-	GetCurrentSequence(appID string, clusterID string) (int64, error)
+	GetCurrentDownstreamSequence(appID string, clusterID string) (int64, error)
 	GetCurrentParentSequence(appID string, clusterID string) (int64, error)
 	GetParentSequenceForSequence(appID string, clusterID string, sequence int64) (int64, error)
 	GetPreviouslyDeployedSequence(appID string, clusterID string) (int64, error)
@@ -145,12 +145,17 @@ type DownstreamStore interface {
 	UpdateDownstreamVersionStatus(appID string, sequence int64, status string, statusInfo string) error
 	GetDownstreamVersionStatus(appID string, sequence int64) (types.DownstreamVersionStatus, error)
 	GetIgnoreRBACErrors(appID string, sequence int64) (bool, error)
-	GetCurrentVersion(appID string, clusterID string) (*downstreamtypes.DownstreamVersion, error)
+	GetCurrentDownstreamVersion(appID string, clusterID string) (*downstreamtypes.DownstreamVersion, error)
+	GetDownstreamVersion(appID string, clusterID string, sequence int64) (*downstreamtypes.DownstreamVersion, error)
 	GetStatusForVersion(appID string, clusterID string, sequence int64) (types.DownstreamVersionStatus, error)
-	// GetDownstreamVersions returns a sorted list of app releases. The sort order is determined by semver being enabled in the license.
+	// GetDownstreamVersions returns a sorted list of app releases without additional details. The sort order is determined by semver being enabled in the license.
+	// The current and latest downloaded versions will have additional details.
 	GetDownstreamVersions(appID string, clusterID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error)
+	// Same as GetDownstreamVersions, but returns additional details for all included releases.
+	GetDownstreamVersionsWithDetails(appID string, clusterID string, downloadedOnly bool, currentPage int, pageSize int) (*downstreamtypes.DownstreamVersions, error)
 	// Same as GetDownstreamVersions, but finds a cluster where app is deployed
 	FindDownstreamVersions(appID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error)
+	TotalNumOfDownstreamVersions(appID string, clusterID string, downloadedOnly bool) (int64, error)
 	IsAppVersionDeployable(appID string, sequence int64) (bool, string, error)
 	GetDownstreamOutput(appID string, clusterID string, sequence int64) (*downstreamtypes.DownstreamOutput, error)
 	IsDownstreamDeploySuccessful(appID string, clusterID string, sequence int64) (bool, error)
@@ -183,7 +188,6 @@ type VersionStore interface {
 	UpdateAppVersion(appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) error
 	CreateAppVersion(appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error)
 	GetAppVersion(appID string, sequence int64) (*versiontypes.AppVersion, error)
-	GetAppVersions(appID string) ([]*versiontypes.AppVersion, error)
 	GetLatestAppSequence(appID string, downloadedOnly bool) (int64, error)
 	UpdateNextAppVersionDiffSummary(appID string, baseSequence int64) error
 	UpdateAppVersionInstallationSpec(appID string, sequence int64, spec kotsv1beta1.Installation) error

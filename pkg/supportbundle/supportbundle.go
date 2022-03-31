@@ -37,7 +37,7 @@ const (
 func Collect(appID string, clusterID string) (string, error) {
 	sequence := int64(0)
 
-	currentVersion, err := store.GetStore().GetCurrentVersion(appID, clusterID)
+	currentVersion, err := store.GetStore().GetCurrentDownstreamVersion(appID, clusterID)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get current downstream version")
 	}

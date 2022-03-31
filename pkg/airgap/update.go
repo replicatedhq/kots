@@ -12,7 +12,7 @@ import (
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/pkg/api/version/types"
+	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/cursor"
 	identity "github.com/replicatedhq/kots/pkg/kotsadmidentity"
@@ -317,7 +317,7 @@ func canInstall(beforeKotsKinds *kotsutil.KotsKinds, afterKotsKinds *kotsutil.Ko
 }
 
 func GetMissingRequiredVersions(app *apptypes.App, airgap *kotsv1beta1.Airgap) ([]string, error) {
-	appVersions, err := store.GetStore().GetAppVersions(app.ID)
+	appVersions, err := store.GetStore().FindDownstreamVersions(app.ID, true)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get downstream versions")
 	}
@@ -327,10 +327,10 @@ func GetMissingRequiredVersions(app *apptypes.App, airgap *kotsv1beta1.Airgap) (
 		return nil, errors.Wrap(err, "failed to load license")
 	}
 
-	return getMissingRequiredVersions(airgap, license, appVersions)
+	return getMissingRequiredVersions(airgap, license, appVersions.AllVersions)
 }
 
-func getMissingRequiredVersions(airgap *kotsv1beta1.Airgap, license *kotsv1beta1.License, installedVersions []*types.AppVersion) ([]string, error) {
+func getMissingRequiredVersions(airgap *kotsv1beta1.Airgap, license *kotsv1beta1.License, installedVersions []*downstreamtypes.DownstreamVersion) ([]string, error) {
 	missingVersions := make([]string, 0)
 	if len(installedVersions) == 0 {
 		return missingVersions, nil

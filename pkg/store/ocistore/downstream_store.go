@@ -5,7 +5,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/store/types"
 )
 
-func (s *OCIStore) GetCurrentSequence(appID string, clusterID string) (int64, error) {
+func (s *OCIStore) GetCurrentDownstreamSequence(appID string, clusterID string) (int64, error) {
 	return 0, ErrNotImplemented
 }
 
@@ -41,7 +41,11 @@ func (s *OCIStore) GetIgnoreRBACErrors(appID string, sequence int64) (bool, erro
 	return false, ErrNotImplemented
 }
 
-func (s *OCIStore) GetCurrentVersion(appID string, clusterID string) (*downstreamtypes.DownstreamVersion, error) {
+func (s *OCIStore) GetCurrentDownstreamVersion(appID string, clusterID string) (*downstreamtypes.DownstreamVersion, error) {
+	return nil, ErrNotImplemented
+}
+
+func (s *OCIStore) GetDownstreamVersion(appID string, clusterID string, sequence int64) (*downstreamtypes.DownstreamVersion, error) {
 	return nil, ErrNotImplemented
 }
 
@@ -53,8 +57,16 @@ func (s *OCIStore) GetDownstreamVersions(appID string, clusterID string, downloa
 	return nil, ErrNotImplemented
 }
 
+func (s *OCIStore) GetDownstreamVersionsWithDetails(appID string, clusterID string, downloadedOnly bool, currentPage int, pageSize int) (*downstreamtypes.DownstreamVersions, error) {
+	return nil, ErrNotImplemented
+}
+
 func (s *OCIStore) FindDownstreamVersions(appID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error) {
 	return nil, ErrNotImplemented
+}
+
+func (s *OCIStore) TotalNumOfDownstreamVersions(appID string, clusterID string, downloadedOnly bool) (int64, error) {
+	return 0, ErrNotImplemented
 }
 
 func (s *OCIStore) IsAppVersionDeployable(appID string, sequence int64) (bool, string, error) {

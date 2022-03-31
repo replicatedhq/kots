@@ -9,7 +9,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	preflighttypes "github.com/replicatedhq/kots/pkg/preflight/types"
-	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 )
 
@@ -113,7 +112,7 @@ func (s *KOTSStore) preflightResultFromRow(row scannable) (*preflighttypes.Prefl
 
 	var preflightResult sql.NullString
 	var preflightResultCreatedAt sql.NullTime
-	var preflightSpecStr sql.NullString
+	var preflightSpec sql.NullString
 
 	if err := row.Scan(
 		&preflightResult,
@@ -121,7 +120,7 @@ func (s *KOTSStore) preflightResultFromRow(row scannable) (*preflighttypes.Prefl
 		&r.Skipped,
 		&r.AppSlug,
 		&r.ClusterSlug,
-		&preflightSpecStr,
+		&preflightSpec,
 	); err != nil {
 		return nil, errors.Wrap(err, "failed to scan")
 	}
@@ -129,15 +128,6 @@ func (s *KOTSStore) preflightResultFromRow(row scannable) (*preflighttypes.Prefl
 	r.Result = preflightResult.String
 	if preflightResultCreatedAt.Valid {
 		r.CreatedAt = &preflightResultCreatedAt.Time
-	}
-
-	var preflightSpec *troubleshootv1beta2.Preflight
-	if preflightSpecStr.String != "" {
-		s, err := kotsutil.LoadPreflightFromContents([]byte(preflightSpecStr.String))
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to load preflights from spec")
-		}
-		preflightSpec = s
 	}
 
 	var err error
@@ -149,12 +139,13 @@ func (s *KOTSStore) preflightResultFromRow(row scannable) (*preflighttypes.Prefl
 	return r, nil
 }
 
-func (s *KOTSStore) hasFailingStrictPreflights(preflightSpec *troubleshootv1beta2.Preflight, preflightResultStr sql.NullString) (bool, error) {
-	hasFailingStrictPreflights, err := s.hasStrictPreflights(preflightSpec)
+func (s *KOTSStore) hasFailingStrictPreflights(preflightSpecStr sql.NullString, preflightResultStr sql.NullString) (bool, error) {
+	hasFailingStrictPreflights, err := s.hasStrictPreflights(preflightSpecStr)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to check for strict preflight")
 	}
-	if preflightResultStr.String != "" {
+
+	if preflightResultStr.Valid && preflightResultStr.String != "" {
 		preflightResult := troubleshootpreflight.UploadPreflightResults{}
 		if err := json.Unmarshal([]byte(preflightResultStr.String), &preflightResult); err != nil {
 			return false, errors.Wrap(err, "failed to unmarshal preflightResults")
@@ -164,14 +155,17 @@ func (s *KOTSStore) hasFailingStrictPreflights(preflightSpec *troubleshootv1beta
 	return hasFailingStrictPreflights, nil
 }
 
-func (s *KOTSStore) hasStrictPreflights(preflightSpec *troubleshootv1beta2.Preflight) (bool, error) {
+func (s *KOTSStore) hasStrictPreflights(preflightSpecStr sql.NullString) (bool, error) {
 	hasStrictPreflights := false
-	if preflightSpec != nil {
-		h, err := troubleshootpreflight.HasStrictAnalyzers(preflightSpec)
+	if preflightSpecStr.Valid && preflightSpecStr.String != "" {
+		preflight, err := kotsutil.LoadPreflightFromContents([]byte(preflightSpecStr.String))
+		if err != nil {
+			return false, errors.Wrap(err, "failed to load preflights from spec")
+		}
+		hasStrictPreflights, err = troubleshootpreflight.HasStrictAnalyzers(preflight)
 		if err != nil {
 			return false, errors.Wrap(err, "failed to check strict preflights from spec")
 		}
-		hasStrictPreflights = h
 	}
 	return hasStrictPreflights, nil
 }
