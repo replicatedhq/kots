@@ -99,32 +99,8 @@ func (s *KOTSStore) GetPreviouslyDeployedSequence(appID string, clusterID string
 	return -1, nil
 }
 
-// SetDownstreamVersionReady sets the status for the downstream version with the given sequence and app id to "pending"
-func (s *KOTSStore) SetDownstreamVersionReady(appID string, sequence int64) error {
-	db := persistence.MustGetDBSession()
-	query := `update app_downstream_version set status = 'pending' where app_id = $1 and sequence = $2`
-	_, err := db.Exec(query, appID, sequence)
-	if err != nil {
-		return errors.Wrap(err, "failed to set downstream version ready")
-	}
-
-	return nil
-}
-
-// SetDownstreamVersionPendingPreflight sets the status for the downstream version with the given sequence and app id to "pending_preflight"
-func (s *KOTSStore) SetDownstreamVersionPendingPreflight(appID string, sequence int64) error {
-	db := persistence.MustGetDBSession()
-	query := `update app_downstream_version set status = 'pending_preflight' where app_id = $1 and sequence = $2`
-	_, err := db.Exec(query, appID, sequence)
-	if err != nil {
-		return errors.Wrap(err, "failed to set downstream version pending preflight")
-	}
-
-	return nil
-}
-
-// UpdateDownstreamVersionStatus updates the status and status info for the downstream version with the given sequence and app id
-func (s *KOTSStore) UpdateDownstreamVersionStatus(appID string, sequence int64, status string, statusInfo string) error {
+// SetDownstreamVersionStatus updates the status and status info for the downstream version with the given sequence and app id
+func (s *KOTSStore) SetDownstreamVersionStatus(appID string, sequence int64, status types.DownstreamVersionStatus, statusInfo string) error {
 	db := persistence.MustGetDBSession()
 	query := `update app_downstream_version set status = $1, status_info = $2 where app_id = $3 and sequence = $4`
 	_, err := db.Exec(query, status, statusInfo, appID, sequence)

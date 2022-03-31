@@ -19,6 +19,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
+	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
 	supportbundletypes "github.com/replicatedhq/kots/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/pkg/updatechecker"
@@ -209,6 +210,9 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 		}
 		if !needsConfig {
 			if opts.SkipPreflights && !hasStrictPreflights {
+				if err := store.GetStore().SetDownstreamVersionStatus(opts.PendingApp.ID, newSequence, storetypes.VersionPending, ""); err != nil {
+					return nil, errors.Wrap(err, "failed to set downstream version status to pending")
+				}
 				if err := version.DeployVersion(opts.PendingApp.ID, newSequence); err != nil {
 					return nil, errors.Wrap(err, "failed to deploy version")
 				}
@@ -218,7 +222,7 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 					}
 				}()
 			} else {
-				err := store.GetStore().SetDownstreamVersionPendingPreflight(opts.PendingApp.ID, newSequence)
+				err := store.GetStore().SetDownstreamVersionStatus(opts.PendingApp.ID, newSequence, storetypes.VersionPendingPreflight, "")
 				if err != nil {
 					return nil, errors.Wrap(err, "failed to set downstream version status to 'pending preflight'")
 				}
@@ -233,6 +237,9 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 	}
 
 	if !kotsKinds.IsConfigurable() && opts.SkipPreflights && !hasStrictPreflights {
+		if err := store.GetStore().SetDownstreamVersionStatus(opts.PendingApp.ID, newSequence, storetypes.VersionPending, ""); err != nil {
+			return nil, errors.Wrap(err, "failed to set downstream version status to pending")
+		}
 		// app is not configurable and preflights are skipped, so just deploy the app
 		if err := version.DeployVersion(opts.PendingApp.ID, newSequence); err != nil {
 			return nil, errors.Wrap(err, "failed to deploy version")
