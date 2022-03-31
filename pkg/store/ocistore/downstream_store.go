@@ -57,12 +57,24 @@ func (s *OCIStore) GetDownstreamVersions(appID string, clusterID string, downloa
 	return nil, ErrNotImplemented
 }
 
-func (s *OCIStore) GetDownstreamVersionsWithDetails(appID string, clusterID string, downloadedOnly bool, currentPage int, pageSize int) (*downstreamtypes.DownstreamVersions, error) {
+func (s *OCIStore) GetDownstreamVersionsWithDetails(appID string, clusterID string, downloadedOnly bool, currentPage int, pageSize int) ([]*downstreamtypes.DownstreamVersion, error) {
 	return nil, ErrNotImplemented
+}
+
+func (s *OCIStore) AddDownstreamVersionDetails(appID string, clusterID string, version *downstreamtypes.DownstreamVersion, checkIfDeployable bool) error {
+	return ErrNotImplemented
+}
+
+func (s *OCIStore) AddDownstreamVersionsDetails(appID string, clusterID string, versions []*downstreamtypes.DownstreamVersion, checkIfDeployable bool) error {
+	return ErrNotImplemented
 }
 
 func (s *OCIStore) FindDownstreamVersions(appID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error) {
 	return nil, ErrNotImplemented
+}
+
+func (s *OCIStore) GetNextDownstreamVersion(appID string, clusterID string) (nextVersion *downstreamtypes.DownstreamVersion, numOfSkippedVersions int, numOfRemainingVersions int, finalError error) {
+	return nil, 0, 0, ErrNotImplemented
 }
 
 func (s *OCIStore) TotalNumOfDownstreamVersions(appID string, clusterID string, downloadedOnly bool) (int64, error) {

@@ -116,6 +116,11 @@ func DeleteUnusedImages(appID string, ignoreRollback bool) error {
 				return errors.Wrapf(err, "failed to get app versions for downstream %s", d.ClusterID)
 			}
 
+			// current version already has additional details, get details for pending versions
+			if err := store.GetStore().AddDownstreamVersionsDetails(a.ID, d.ClusterID, downstreamVersions.PendingVersions, false); err != nil {
+				return errors.Wrapf(err, "failed to add details for pending versions for downstream %s", d.ClusterID)
+			}
+
 			activeVersions = append(activeVersions, downstreamVersions.CurrentVersion)
 			activeVersions = append(activeVersions, downstreamVersions.PendingVersions...)
 		}

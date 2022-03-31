@@ -348,7 +348,7 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := GetAppVersionsResponse{
-		VersionHistory: appVersions.AllVersions,
+		VersionHistory: appVersions,
 		TotalCount:     totalCount,
 	}
 
@@ -539,81 +539,36 @@ func (h *Handler) GetNextAppVersion(w http.ResponseWriter, r *http.Request) {
 		errMsg := "failed to get app from slug"
 		logger.Error(errors.Wrap(err, errMsg))
 		getNextAppVersionResponse.Error = errMsg
-		w.WriteHeader(http.StatusBadRequest)
+		JSON(w, http.StatusBadRequest, getNextAppVersionResponse)
 		return
 	}
 
-	versions, err := store.GetStore().FindDownstreamVersions(a.ID, false)
+	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
 	if err != nil {
-		errMsg := "failed to find app downstream versions"
+		errMsg := "failed to list downstreams for app"
 		logger.Error(errors.Wrap(err, errMsg))
 		getNextAppVersionResponse.Error = errMsg
-		w.WriteHeader(http.StatusInternalServerError)
+		JSON(w, http.StatusInternalServerError, getNextAppVersionResponse)
 		return
-	}
-
-	if len(versions.AllVersions) == 0 {
-		errMsg := "no versions found for app"
+	} else if len(downstreams) == 0 {
+		errMsg := "no downstreams for app"
 		logger.Error(errors.New(errMsg))
 		getNextAppVersionResponse.Error = errMsg
-		w.WriteHeader(http.StatusInternalServerError)
+		JSON(w, http.StatusInternalServerError, getNextAppVersionResponse)
+		return
+	}
+	clusterID := downstreams[0].ClusterID
+
+	nextVersion, numOfSkippedVersions, numOfRemainingVersions, err := store.GetStore().GetNextDownstreamVersion(a.ID, clusterID)
+	if err != nil {
+		errMsg := "failed to get next downtream version"
+		logger.Error(errors.Wrap(err, errMsg))
+		getNextAppVersionResponse.Error = errMsg
+		JSON(w, http.StatusInternalServerError, getNextAppVersionResponse)
 		return
 	}
 
-	if versions.CurrentVersion == nil {
-		// no version has been deployed yet, next app version is the latest version
-		getNextAppVersionResponse.NextAppVersion = versions.AllVersions[0]
-		getNextAppVersionResponse.NumOfSkippedVersions = len(versions.AllVersions) - 1
-		getNextAppVersionResponse.NumOfRemainingVersions = 0
-		JSON(w, http.StatusOK, getNextAppVersionResponse)
-		return
-	}
-
-	if len(versions.PendingVersions) == 0 {
-		// latest version is already deployed, there's no next app version
-		getNextAppVersionResponse.NextAppVersion = nil
-		getNextAppVersionResponse.NumOfSkippedVersions = 0
-		getNextAppVersionResponse.NumOfRemainingVersions = 0
-		JSON(w, http.StatusOK, getNextAppVersionResponse)
-		return
-	}
-
-	// find required versions
-	requiredVersions := []*downstreamtypes.DownstreamVersion{}
-	for _, v := range versions.PendingVersions {
-		if v.IsRequired {
-			requiredVersions = append(requiredVersions, v)
-		}
-	}
-
-	var nextAppVersion *downstreamtypes.DownstreamVersion
-	if len(requiredVersions) > 0 {
-		// next app version is the earliest pending required version
-		nextAppVersion = requiredVersions[len(requiredVersions)-1]
-	} else {
-		// next app version is the latest pending version
-		nextAppVersion = versions.PendingVersions[0]
-	}
-
-	nextAppVersionIndex := -1
-	for i, v := range versions.PendingVersions {
-		if v.Sequence == nextAppVersion.Sequence {
-			nextAppVersionIndex = i
-			break
-		}
-	}
-
-	numOfSkippedVersions, numOfRemainingVersions := 0, 0
-	for i := range versions.PendingVersions {
-		if i < nextAppVersionIndex {
-			numOfRemainingVersions++
-		}
-		if i > nextAppVersionIndex {
-			numOfSkippedVersions++
-		}
-	}
-
-	getNextAppVersionResponse.NextAppVersion = nextAppVersion
+	getNextAppVersionResponse.NextAppVersion = nextVersion
 	getNextAppVersionResponse.NumOfSkippedVersions = numOfSkippedVersions
 	getNextAppVersionResponse.NumOfRemainingVersions = numOfRemainingVersions
 

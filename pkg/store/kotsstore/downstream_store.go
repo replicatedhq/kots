@@ -181,18 +181,6 @@ func (s *KOTSStore) GetCurrentDownstreamVersion(appID string, clusterID string) 
 		return nil, nil
 	}
 
-	v, err := s.GetDownstreamVersion(appID, clusterID, currentSequence)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get downstream version")
-	}
-
-	// this is the currently deployed version, and should be re-deployable
-	v.IsDeployable = true
-
-	return v, nil
-}
-
-func (s *KOTSStore) GetDownstreamVersion(appID string, clusterID string, sequence int64) (*downstreamtypes.DownstreamVersion, error) {
 	db := persistence.MustGetDBSession()
 	query := `SELECT
 	adv.created_at,
@@ -224,19 +212,19 @@ func (s *KOTSStore) GetDownstreamVersion(appID string, clusterID string, sequenc
 	 adv.app_id = $1 AND
 	 adv.cluster_id = $2 AND
 	 adv.sequence = $3`
-	row := db.QueryRow(query, appID, clusterID, sequence)
+	row := db.QueryRow(query, appID, clusterID, currentSequence)
 
 	v, err := s.downstreamVersionFromRow(appID, row)
 	if err != nil {
-		if errors.Cause(err) == sql.ErrNoRows {
-			return nil, nil
-		}
 		return nil, errors.Wrap(err, "failed to get version from row")
 	}
 
-	if err := s.injectDetailsForVersions(appID, clusterID, []*downstreamtypes.DownstreamVersion{v}); err != nil {
-		return nil, errors.Wrap(err, "failed to inject details")
+	// checking if a version is deployable requires querying all versions
+	// save some time here and don't check that because current version is always re-deployable
+	if err := s.AddDownstreamVersionDetails(appID, clusterID, v, false); err != nil {
+		return nil, errors.Wrap(err, "failed to add details")
 	}
+	v.IsDeployable = true
 
 	return v, nil
 }
@@ -349,8 +337,10 @@ func (s *KOTSStore) GetDownstreamVersions(appID string, clusterID string, downlo
 		if v.Status == types.VersionPendingDownload {
 			continue
 		}
-		if err := s.injectDetailsForVersions(appID, clusterID, []*downstreamtypes.DownstreamVersion{v}); err != nil {
-			return nil, errors.Wrap(err, "failed to inject details for latest downloaded version")
+		// checking if a version is deployable requires getting all versions again.
+		// check if latest version is deployable separately to avoid cycle dependencies between functions.
+		if err := s.AddDownstreamVersionDetails(appID, clusterID, v, false); err != nil {
+			return nil, errors.Wrap(err, "failed to add details to latest downloaded version")
 		}
 		v.IsDeployable, v.NonDeployableCause = isAppVersionDeployable(v, result, license.Spec.IsSemverRequired)
 		break
@@ -375,7 +365,7 @@ func (s *KOTSStore) GetDownstreamVersions(appID string, clusterID string, downlo
 	return result, nil
 }
 
-func (s *KOTSStore) GetDownstreamVersionsWithDetails(appID string, clusterID string, downloadedOnly bool, currentPage int, pageSize int) (*downstreamtypes.DownstreamVersions, error) {
+func (s *KOTSStore) GetDownstreamVersionsWithDetails(appID string, clusterID string, downloadedOnly bool, currentPage int, pageSize int) ([]*downstreamtypes.DownstreamVersion, error) {
 	t := time.Now()
 
 	versions, err := s.GetDownstreamVersions(appID, clusterID, downloadedOnly)
@@ -386,10 +376,7 @@ func (s *KOTSStore) GetDownstreamVersionsWithDetails(appID string, clusterID str
 	// filter non-desired versions
 	startIndex := currentPage * pageSize
 	endIndex := currentPage*pageSize + pageSize
-	desiredVersions := &downstreamtypes.DownstreamVersions{
-		CurrentVersion: versions.CurrentVersion,
-		AllVersions:    []*downstreamtypes.DownstreamVersion{},
-	}
+	desiredVersions := []*downstreamtypes.DownstreamVersion{}
 	for i, v := range versions.AllVersions {
 		if currentPage != -1 && i < startIndex {
 			continue
@@ -397,42 +384,23 @@ func (s *KOTSStore) GetDownstreamVersionsWithDetails(appID string, clusterID str
 		if pageSize != -1 && i >= endIndex {
 			break
 		}
-		desiredVersions.AllVersions = append(desiredVersions.AllVersions, v)
+		desiredVersions = append(desiredVersions, v)
 	}
 
-	if err := s.injectDetailsForVersions(appID, clusterID, desiredVersions.AllVersions); err != nil {
-		return nil, errors.Wrap(err, "failed to inject details for versions")
+	if err := s.AddDownstreamVersionsDetails(appID, clusterID, desiredVersions, true); err != nil {
+		return nil, errors.Wrap(err, "failed to add details for desired versions")
 	}
 
-	// we need to check all versions (not just the desired ones) to determine if a version is deployable or not
-	license, err := s.GetLatestLicenseForApp(appID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get app license")
-	}
-	for _, v := range desiredVersions.AllVersions {
-		v.IsDeployable, v.NonDeployableCause = isAppVersionDeployable(v, versions, license.Spec.IsSemverRequired)
-	}
-
-	fmt.Println(time.Since(t).Milliseconds(), " ms -- get app versions with details", len(desiredVersions.AllVersions))
-
-	if desiredVersions.CurrentVersion == nil {
-		desiredVersions.PendingVersions = desiredVersions.AllVersions
-		desiredVersions.PastVersions = []*downstreamtypes.DownstreamVersion{}
-		return desiredVersions, nil
-	}
-
-	for i, v := range desiredVersions.AllVersions {
-		if v.Sequence == desiredVersions.CurrentVersion.Sequence {
-			desiredVersions.PendingVersions = desiredVersions.AllVersions[:i]
-			desiredVersions.PastVersions = desiredVersions.AllVersions[i+1:]
-			break
-		}
-	}
+	fmt.Println(time.Since(t).Milliseconds(), " ms -- get app versions with details", len(desiredVersions))
 
 	return desiredVersions, nil
 }
 
-func (s *KOTSStore) injectDetailsForVersions(appID string, clusterID string, versions []*downstreamtypes.DownstreamVersion) error {
+func (s *KOTSStore) AddDownstreamVersionDetails(appID string, clusterID string, version *downstreamtypes.DownstreamVersion, checkIfDeployable bool) error {
+	return s.AddDownstreamVersionsDetails(appID, clusterID, []*downstreamtypes.DownstreamVersion{version}, checkIfDeployable)
+}
+
+func (s *KOTSStore) AddDownstreamVersionsDetails(appID string, clusterID string, versions []*downstreamtypes.DownstreamVersion, checkIfDeployable bool) error {
 	sequencesToQuery := []int64{}
 	for _, v := range versions {
 		sequencesToQuery = append(sequencesToQuery, v.Sequence)
@@ -557,6 +525,20 @@ func (s *KOTSStore) injectDetailsForVersions(appID string, clusterID string, ver
 		return errors.Wrap(err, "failed to iterate over rows")
 	}
 
+	if checkIfDeployable {
+		allVersions, err := s.GetDownstreamVersions(appID, clusterID, false)
+		if err != nil {
+			return errors.Wrapf(err, "failed to get downstream versions without details")
+		}
+		license, err := s.GetLatestLicenseForApp(appID)
+		if err != nil {
+			return errors.Wrap(err, "failed to get app license")
+		}
+		for _, v := range versions {
+			v.IsDeployable, v.NonDeployableCause = isAppVersionDeployable(v, allVersions, license.Spec.IsSemverRequired)
+		}
+	}
+
 	return nil
 }
 
@@ -581,6 +563,76 @@ func (s *KOTSStore) FindDownstreamVersions(appID string, downloadedOnly bool) (*
 	}
 
 	return nil, errors.New("app has no versions")
+}
+
+func (s *KOTSStore) GetNextDownstreamVersion(appID string, clusterID string) (nextVersion *downstreamtypes.DownstreamVersion, numOfSkippedVersions int, numOfRemainingVersions int, finalError error) {
+	t := time.Now()
+
+	defer func() {
+		if nextVersion != nil {
+			if err := s.AddDownstreamVersionDetails(appID, clusterID, nextVersion, true); err != nil {
+				finalError = errors.Wrap(err, "failed to add details")
+				return
+			}
+		}
+		fmt.Println(time.Since(t).Milliseconds(), " ms -- get next downstream version")
+	}()
+
+	versions, err := s.GetDownstreamVersions(appID, clusterID, false)
+	if err != nil {
+		finalError = errors.Wrap(err, "failed to get app downstream versions")
+		return
+	}
+	if len(versions.AllVersions) == 0 {
+		finalError = errors.New("no versions found for app")
+		return
+	}
+
+	if versions.CurrentVersion == nil {
+		// no version has been deployed yet, next app version is the latest version
+		nextVersion = versions.AllVersions[0]
+		return
+	}
+
+	if len(versions.PendingVersions) == 0 {
+		// latest version is already deployed, there's no next app version
+		return
+	}
+
+	// find required versions
+	requiredVersions := []*downstreamtypes.DownstreamVersion{}
+	for _, v := range versions.PendingVersions {
+		if v.IsRequired {
+			requiredVersions = append(requiredVersions, v)
+		}
+	}
+
+	if len(requiredVersions) > 0 {
+		// next app version is the earliest pending required version
+		nextVersion = requiredVersions[len(requiredVersions)-1]
+	} else {
+		// next app version is the latest pending version
+		nextVersion = versions.PendingVersions[0]
+	}
+
+	nextVersionIndex := -1
+	for i, v := range versions.PendingVersions {
+		if v.Sequence == nextVersion.Sequence {
+			nextVersionIndex = i
+			break
+		}
+	}
+
+	for i := range versions.PendingVersions {
+		if i < nextVersionIndex {
+			numOfRemainingVersions++
+		}
+		if i > nextVersionIndex {
+			numOfSkippedVersions++
+		}
+	}
+
+	return
 }
 
 func (s *KOTSStore) TotalNumOfDownstreamVersions(appID string, clusterID string, downloadedOnly bool) (int64, error) {
@@ -683,27 +735,20 @@ func (s *KOTSStore) IsAppVersionDeployable(appID string, sequence int64) (bool, 
 	}
 	clusterID := downstreams[0].ClusterID
 
-	// get the version with details
-	v, err := s.GetDownstreamVersion(appID, clusterID, sequence)
-	if err != nil {
-		return false, "", errors.Wrap(err, "failed to get downstream version")
-	}
-	if v == nil {
-		return false, "", errors.New("version not found")
-	}
-
-	// we need to check all versions to determine if a version is deployable or not
 	versions, err := s.GetDownstreamVersions(appID, clusterID, false)
 	if err != nil {
-		return false, "", errors.Wrapf(err, "failed to get downstream versions without details")
+		return false, "", errors.Wrap(err, "failed to get downstream versions")
 	}
-	license, err := s.GetLatestLicenseForApp(appID)
-	if err != nil {
-		return false, "", errors.Wrap(err, "failed to get app license")
+	for _, v := range versions.AllVersions {
+		if v.Sequence == sequence {
+			if err := s.AddDownstreamVersionDetails(appID, clusterID, v, true); err != nil {
+				return false, "", errors.Wrap(err, "failed to add details")
+			}
+			return v.IsDeployable, v.NonDeployableCause, nil
+		}
 	}
-	isDeployable, nonDeployableCause := isAppVersionDeployable(v, versions, license.Spec.IsSemverRequired)
 
-	return isDeployable, nonDeployableCause, nil
+	return false, "", errors.Errorf("version %d not found", sequence)
 }
 
 func isSameUpstreamRelease(v1 *downstreamtypes.DownstreamVersion, v2 *downstreamtypes.DownstreamVersion, isSemverRequired bool) bool {
