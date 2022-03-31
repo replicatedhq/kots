@@ -354,12 +354,12 @@ class SnapshotStorageDestination extends Component {
   }
 
   getProviderPayload = (provider, bucket, path) => {
-    const ca_cert_data = this.state.caCertificate.data;
+    const caCertData = this.state.caCertificate.data;
     return Object.assign({
       provider,
       bucket,
       path,
-      ca_cert_data
+      caCertData
     }, this.getCurrentProviderStores(provider));
   }
 

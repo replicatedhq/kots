@@ -66,7 +66,7 @@ type UpdateGlobalSnapshotSettingsRequest struct {
 	Internal   bool                           `json:"internal"`
 	FileSystem *FileSystemOptions             `json:"fileSystem"`
 
-	CACertData []byte `json:"ca_cert_data"`
+	CACertData []byte `json:"caCertData"`
 }
 
 type ConfigureFileSystemSnapshotProviderResponse struct {
