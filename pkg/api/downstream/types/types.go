@@ -61,7 +61,6 @@ type DownloadStatus struct {
 
 type DownstreamVersions struct {
 	CurrentVersion  *DownstreamVersion
-	LatestVersion   *DownstreamVersion
 	PendingVersions []*DownstreamVersion
 	PastVersions    []*DownstreamVersion
 	AllVersions     []*DownstreamVersion
