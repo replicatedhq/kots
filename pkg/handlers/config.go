@@ -487,25 +487,25 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 
 	// we don't merge, this is a wholesale replacement of the config values
 	// so we don't need the complex logic in kots, we can just write
-	values := kotsKinds.ConfigValues.Spec.Values
-	updatedValues, err := updateAppConfigValues(values, configGroups, kotsKinds.Installation.Spec.EncryptionKey)
+	if kotsKinds.ConfigValues != nil {
+		values := kotsKinds.ConfigValues.Spec.Values
+		updatedValues, err := updateAppConfigValues(values, configGroups, kotsKinds.Installation.Spec.EncryptionKey)
+		if err != nil {
+			updateAppConfigResponse.Error = "failed to update config values"
+			return updateAppConfigResponse, err
+		}
+		kotsKinds.ConfigValues.Spec.Values = updatedValues
 
-	if kotsKinds.ConfigValues == nil {
-		updateAppConfigResponse.Error = "no config values found"
-		return updateAppConfigResponse, errors.New("no config values found")
-	}
+		configValuesSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
+		if err != nil {
+			updateAppConfigResponse.Error = "failed to marshal config values spec"
+			return updateAppConfigResponse, err
+		}
 
-	kotsKinds.ConfigValues.Spec.Values = updatedValues
-
-	configValuesSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
-	if err != nil {
-		updateAppConfigResponse.Error = "failed to marshal config values spec"
-		return updateAppConfigResponse, err
-	}
-
-	if err := ioutil.WriteFile(filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"), []byte(configValuesSpec), 0644); err != nil {
-		updateAppConfigResponse.Error = "failed to write config.yaml to upstream/userdata"
-		return updateAppConfigResponse, err
+		if err := ioutil.WriteFile(filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"), []byte(configValuesSpec), 0644); err != nil {
+			updateAppConfigResponse.Error = "failed to write config.yaml to upstream/userdata"
+			return updateAppConfigResponse, err
+		}
 	}
 
 	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(updateApp.ID)

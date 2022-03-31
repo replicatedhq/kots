@@ -15,6 +15,7 @@ type Midstream struct {
 	DocForPatches          []k8sdoc.K8sDoc
 	AppPullSecret          *corev1.Secret
 	AdminConsolePullSecret *corev1.Secret
+	DockerHubPullSecret    *corev1.Secret
 	IdentitySpec           *kotsv1beta1.Identity
 	IdentityConfig         *kotsv1beta1.IdentityConfig
 }
@@ -42,7 +43,8 @@ func CreateMidstream(b *base.Base, images []kustomizetypes.Image, objects []k8sd
 
 	if pullSecrets != nil {
 		m.AppPullSecret = pullSecrets.AppSecret
-		m.AdminConsolePullSecret = &pullSecrets.AdminConsoleSecret
+		m.AdminConsolePullSecret = pullSecrets.AdminConsoleSecret
+		m.DockerHubPullSecret = pullSecrets.DockerHubSecret
 	}
 
 	return &m, nil

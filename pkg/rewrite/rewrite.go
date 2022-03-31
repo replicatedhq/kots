@@ -23,6 +23,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
@@ -312,7 +313,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 }
 
 func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options RewriteOptions, b *base.Base, license *kotsv1beta1.License, upstreamDir string, log *logger.CLILogger) (*midstream.Midstream, error) {
-	var pullSecrets *registry.ImagePullSecrets
+	var pullSecrets registry.ImagePullSecrets
 	var images []kustomizetypes.Image
 	var objects []k8sdoc.K8sDoc
 
@@ -334,7 +335,11 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options Rewrit
 	}
 
 	// do not fail on being unable to get dockerhub credentials, since they're just used to increase the rate limit
-	dockerHubRegistryCreds, _ := registry.GetDockerHubCredentials(clientset, options.K8sNamespace)
+	var dockerHubRegistryCreds registry.Credentials
+	dockerhubSecret, _ := registry.GetDockerHubPullSecret(clientset, util.PodNamespace, options.K8sNamespace, options.AppSlug)
+	if dockerhubSecret != nil {
+		dockerHubRegistryCreds, _ = registry.GetCredentialsForRegistryFromConfigJSON(dockerhubSecret.Data[".dockerconfigjson"], registry.DockerHubRegistryName)
+	}
 
 	// TODO (ethan): rewrite dex image?
 
@@ -485,7 +490,8 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options Rewrit
 		objects = findResult.Docs
 	}
 
-	m, err := midstream.CreateMidstream(b, images, objects, pullSecrets, identitySpec, identityConfig)
+	pullSecrets.DockerHubSecret = dockerhubSecret
+	m, err := midstream.CreateMidstream(b, images, objects, &pullSecrets, identitySpec, identityConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create midstream")
 	}

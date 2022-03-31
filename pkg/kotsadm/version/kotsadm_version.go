@@ -75,7 +75,7 @@ func KotsadmPullSecret(namespace string, options types.KotsadmOptions) *corev1.S
 
 	secrets, _ := registry.PullSecretForRegistries([]string{options.OverrideRegistry}, options.Username, options.Password, namespace, "")
 
-	secret := &secrets.AdminConsoleSecret
+	secret := secrets.AdminConsoleSecret
 	secret.ObjectMeta.Name = types.PrivateKotsadmRegistrySecret
 	secret.ObjectMeta.Labels = types.GetKotsadmLabels()
 

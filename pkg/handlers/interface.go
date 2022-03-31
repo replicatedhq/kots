@@ -80,6 +80,7 @@ type KOTSHandler interface {
 
 	GetKotsadmRegistry(w http.ResponseWriter, r *http.Request)
 	GetImageRewriteStatus(w http.ResponseWriter, r *http.Request)
+	DockerHubSecretUpdated(w http.ResponseWriter, r *http.Request)
 	UpdateAppRegistry(w http.ResponseWriter, r *http.Request)
 	GetAppRegistry(w http.ResponseWriter, r *http.Request)
 	ValidateAppRegistry(w http.ResponseWriter, r *http.Request)
