@@ -205,7 +205,7 @@ class SnapshotStorageDestination extends Component {
 
   setFields = () => {
     const { snapshotSettings } = this.props;
-    if (!snapshotSettings) {return;}
+    if (!snapshotSettings) return;
     const { store } = snapshotSettings;
 
     if (store?.aws) {
@@ -308,7 +308,7 @@ class SnapshotStorageDestination extends Component {
   }
 
   handleCACertificateFieldClick = () => {
-    this.setState({ showCACertificateField: true});
+    this.setState({ showCACertificateField: true });
   }
 
   onGcsEditorChange = (value) => {
@@ -330,9 +330,9 @@ class SnapshotStorageDestination extends Component {
         break;
       case "other":
         s3CompatibleFieldErrors = this.validateSnapshotProviderS3Compatible();
-        this.setState({s3CompatibleFieldErrors});
-        if(Object.keys(s3CompatibleFieldErrors).length > 0){
-            break;
+        this.setState({ s3CompatibleFieldErrors });
+        if (Object.keys(s3CompatibleFieldErrors).length > 0) {
+          break;
         }
         await this.snapshotProviderS3Compatible();
         break;
@@ -350,7 +350,7 @@ class SnapshotStorageDestination extends Component {
     const urlRe = /\b(https?):\/\/[-A-Za-z0-9+&@#/%?=~_|!:,.;]*[-A-Za-z0-9+&@#/%=~_|]/
 
     if (!urlRe.test(this.state.s3CompatibleEndpoint)) {
-      return { "endpoint" : "Please enter a valid endpoint with protocol" }
+      return { "endpoint": "Please enter a valid endpoint with protocol" }
     }
     return {}
   }
@@ -643,12 +643,12 @@ class SnapshotStorageDestination extends Component {
                 Bucket
               </p>
               <input
-              type="text"
-              className="Input"
-              placeholder="Bucket name"
-              value={this.state.azureBucket}
-              onChange={(e) => this.handleFormChange("azureBucket", e)}
-            />
+                type="text"
+                className="Input"
+                placeholder="Bucket name"
+                value={this.state.azureBucket}
+                onChange={(e) => this.handleFormChange("azureBucket", e)}
+              />
             </div>
             <div className="flex u-marginBottom--30">
               <div className="flex1 u-paddingRight--5">
@@ -877,7 +877,7 @@ class SnapshotStorageDestination extends Component {
                   type="text"
                   className="Input"
                   placeholder="/path/to/destination"
-                  value={this.state.s3CompatiblePath} 
+                  value={this.state.s3CompatiblePath}
                   nChange={(e) => this.handleFormChange("s3CompatiblePath", e)}
                 />
               </div>
@@ -1038,7 +1038,7 @@ class SnapshotStorageDestination extends Component {
             >
               {this.state.configuringFileSystemProvider ? "Configuring" : "Configure"}
             </button>
-            <button 
+            <button
               type="button"
               className="btn secondary"
               onClick={this.hideConfigureFileSystemProviderModal}
@@ -1133,62 +1133,62 @@ class SnapshotStorageDestination extends Component {
     } = this.props;
 
     const availableDestinations = [];
-    // if (snapshotSettings?.veleroPlugins) {
-      // for (const veleroPlugin of snapshotSettings?.veleroPlugins) {
-      //   if (veleroPlugin.includes("velero-plugin-for-gcp")) {
-      //       availableDestinations.push({
-      //         value: "gcp",
-      //         label: "Google Cloud Storage",
-      //       });
-      //   } else if (veleroPlugin.includes("velero-plugin-for-aws")) {
-      //     availableDestinations.push({
-      //       value: "aws",
-      //       label: "Amazon S3",
-      //     });
-      //     availableDestinations.push({
-      //       value: "other",
-      //       label: "Other S3-Compatible Storage",
-      //     });
-      //     if (snapshotSettings.isKurl && !snapshotSettings?.isMinioDisabled) {
-      //       availableDestinations.push({
-      //         value: "internal",
-      //         label: "Internal Storage (Default)",
-      //       });
-      //     }
-      //     // Checks for legacy behavior where minio was used for hostpath and nfs
-      //     if (!snapshotSettings?.isMinioDisabled) {
-      //       availableDestinations.push({
-      //         value: "nfs",
-      //         label: "Network File System (NFS)",
-      //       });
-      //       availableDestinations.push({
-      //         value: "hostpath",
-      //         label: "Host Path",
-      //       });
-      //     }
-      //   } else if (veleroPlugin.includes("velero-plugin-for-microsoft-azure")) {
-      //     availableDestinations.push({
-      //       value: "azure",
-      //       label: "Azure Blob Storage",
-      //     });
+    if (snapshotSettings?.veleroPlugins) {
+      for (const veleroPlugin of snapshotSettings?.veleroPlugins) {
+        if (veleroPlugin.includes("velero-plugin-for-gcp")) {
+          availableDestinations.push({
+            value: "gcp",
+            label: "Google Cloud Storage",
+          });
+        } else if (veleroPlugin.includes("velero-plugin-for-aws")) {
+          availableDestinations.push({
+            value: "aws",
+            label: "Amazon S3",
+          });
+          availableDestinations.push({
+            value: "other",
+            label: "Other S3-Compatible Storage",
+          });
+          if (snapshotSettings.isKurl && !snapshotSettings?.isMinioDisabled) {
+            availableDestinations.push({
+              value: "internal",
+              label: "Internal Storage (Default)",
+            });
+          }
+          // Checks for legacy behavior where minio was used for hostpath and nfs
+          if (!snapshotSettings?.isMinioDisabled) {
+            availableDestinations.push({
+              value: "nfs",
+              label: "Network File System (NFS)",
+            });
+            availableDestinations.push({
+              value: "hostpath",
+              label: "Host Path",
+            });
+          }
+        } else if (veleroPlugin.includes("velero-plugin-for-microsoft-azure")) {
+          availableDestinations.push({
+            value: "azure",
+            label: "Azure Blob Storage",
+          });
 
-      //   } else if (veleroPlugin.includes("local-volume-provider") && snapshotSettings?.isMinioDisabled) {
-      //       availableDestinations.push({
-      //           value: "nfs",
-      //           label: "Network File System (NFS)",
-      //       });
-      //       availableDestinations.push({
-      //           value: "hostpath",
-      //           label: "Host Path",
-      //       });
-      //       if (snapshotSettings.isKurl) {
-      //         availableDestinations.push({
-      //           value: "internal",
-      //           label: "Internal Storage (Default)",
-      //         });
-      //       }
-      //   }
-      // }
+        } else if (veleroPlugin.includes("local-volume-provider") && snapshotSettings?.isMinioDisabled) {
+          availableDestinations.push({
+            value: "nfs",
+            label: "Network File System (NFS)",
+          });
+          availableDestinations.push({
+            value: "hostpath",
+            label: "Host Path",
+          });
+          if (snapshotSettings.isKurl) {
+            availableDestinations.push({
+              value: "internal",
+              label: "Internal Storage (Default)",
+            });
+          }
+        }
+      }
       availableDestinations.push({
         value: "aws",
         label: "Amazon S3",
@@ -1197,8 +1197,8 @@ class SnapshotStorageDestination extends Component {
         value: "other",
         label: "Other S3-Compatible Storage",
       });
-      availableDestinations.sort( (a,b) => a.label.localeCompare(b.label) );
-    // }
+      availableDestinations.sort((a, b) => a.label.localeCompare(b.label));
+    }
 
     const selectedDestination = availableDestinations.find((d) =>
       d.value === this.state.selectedDestination.value
@@ -1269,8 +1269,8 @@ class SnapshotStorageDestination extends Component {
                       />
                       : availableDestinations.length === 1
                         ? <div className="u-textColor--primary u-fontWeight--medium flex alignItems--center">
-                            {this.getDestinationLabel(availableDestinations[0], availableDestinations[0].label)}
-                          </div>
+                          {this.getDestinationLabel(availableDestinations[0], availableDestinations[0].label)}
+                        </div>
                         : null
                     }
                   </div>
@@ -1278,14 +1278,16 @@ class SnapshotStorageDestination extends Component {
                 {true &&
                   <>
                     {this.renderDestinationFields()}
-                    {this.state.showCACertificateField
-                      ? <UploadCACertificate certificate={this.state.caCertificate} handleSetCACert={this.handleSetCACert} />
-                      : <button
-                          className="AddCAButton replicated-link u-fontSize--normal"
-                          onClick={this.handleCACertificateFieldClick}
-                        >
-                          + Add a CA Certificate
-                        </button>
+                    {this.state.showCACertificateField &&
+                      <UploadCACertificate certificate={this.state.caCertificate} handleSetCACert={this.handleSetCACert} />
+                    }
+                    {!this.state.showCACertificateField &&
+                      <button
+                        className="AddCAButton replicated-link u-fontSize--normal"
+                        onClick={this.handleCACertificateFieldClick}
+                      >
+                        + Add a CA Certificate
+                      </button>
                     }
                     <div className="flex">
                       <button
@@ -1315,10 +1317,10 @@ class SnapshotStorageDestination extends Component {
               </form>
             </div>
           </div>
-          <SnapshotSchedule 
+          <SnapshotSchedule
             apps={this.props.apps}
             isKurlEnabled={this.props.isKurlEnabled}
-            isVeleroRunning={snapshotSettings?.isVeleroRunning} 
+            isVeleroRunning={snapshotSettings?.isVeleroRunning}
             isVeleroInstalled={!!snapshotSettings?.veleroVersion}
             updatingSettings={updatingSettings}
             openConfigureSnapshotsMinimalRBACModal={this.props.openConfigureSnapshotsMinimalRBACModal}

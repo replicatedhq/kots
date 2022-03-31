@@ -9,30 +9,20 @@ const UploadCACertificate = ({
   handleSetCACert
 }) => {
   const handleDrop = async (files) => {
-    const content = await getFileContent(files[0]);
-    // const parsedCert = (new TextDecoder("utf-8")).decode(content);
+    let binary = "";
+    const bytes = new Uint8Array(await getFileContent(files[0]))
+    const len = bytes.byteLength;
+
+    for (let i = 0; i < len; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+
+    const content = window.btoa(binary);
+
     handleSetCACert({
       name: files[0].name,
       data: content
     });
-    // let certificate;
-    // try {
-    //   certificate = yaml.loadAll(parsedCert);
-    // } catch (e) {
-    //   console.log(e);
-    //   this.setState({ errorMessage: "Faild to parse license file" });
-    //   return;
-    // }
-    // const hasMultiApp = certificate.length > 1;
-    // if (hasMultiApp) {
-    //   this.setAvailableAppOptions(certificate);
-    // }
-    // this.setState({
-    //   licenseFile: files[0],
-    //   licenseFileContent: hasMultiApp ? keyBy(certificate, (option) => { return option.spec.appSlug }) : certificate[0],
-    //   errorMessage: "",
-    //   hasMultiApp,
-    // });
   }
 
   const clearFile = () => {
@@ -64,7 +54,7 @@ const UploadCACertificate = ({
           </div>
         </div>
       }
-      {isEmpty(certificate.name) && 
+      {isEmpty(certificate.name) &&
         <Dropzone
           className="Dropzone-wrapper u-marginBottom--30"
           accept={[".pem", ".cer", ".crt", ".ca", ".key"]}
@@ -76,7 +66,7 @@ const UploadCACertificate = ({
             <div>
               <p className="u-fontSize--normal u-textColor--secondary u-lineHeight--normal">
                 Drag your cert here or
-                <span className="u-linkColor u-textDecoration--underlineOnHover" style={{paddingLeft: "4px"}}>
+                <span className="u-linkColor u-textDecoration--underlineOnHover" style={{ paddingLeft: "4px" }}>
                   choose a file
                 </span>
               </p>
