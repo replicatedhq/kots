@@ -13,6 +13,7 @@ import { Utilities } from "../../utilities/utilities";
 import "../../scss/components/shared/SnapshotForm.scss";
 
 import SnapshotSchedule from "./SnapshotSchedule";
+import UploadCACertificate from "./UploadCACertificate";
 import {
   DESTINATIONS,
   AZURE_CLOUD_NAMES,
@@ -24,7 +25,9 @@ import {
 class SnapshotStorageDestination extends Component {
   state = {
     determiningDestination: true,
-    selectedDestination: {},
+    selectedDestination: {
+      value: "aws"
+    },
     updatingSettings: false,
     s3bucket: "",
     s3Region: "",
@@ -44,6 +47,11 @@ class SnapshotStorageDestination extends Component {
       value: "AzurePublicCloud",
       label: "Public",
     },
+    caCertificate: {
+      name: "",
+      data: []
+    },
+    showCACertificateField: false,
 
     gcsBucket: "",
     gcsPath: "",
@@ -116,27 +124,35 @@ class SnapshotStorageDestination extends Component {
 
     if (provider === "aws") {
       return (
-        snapshotSettings?.store?.aws?.region !== s3Region || snapshotSettings?.store?.aws?.accessKeyID !== s3KeyId ||
-        snapshotSettings?.store?.aws?.secretAccessKey !== s3KeySecret || snapshotSettings?.store?.aws?.useInstanceRole !== useIamAws
+        snapshotSettings?.store?.aws?.region !== s3Region
+        || snapshotSettings?.store?.aws?.accessKeyID !== s3KeyId
+        || snapshotSettings?.store?.aws?.secretAccessKey !== s3KeySecret
+        || snapshotSettings?.store?.aws?.useInstanceRole !== useIamAws
       )
     }
     if (provider === "gcp") {
-      return (snapshotSettings?.store?.gcp?.useInstanceRole !== gcsUseIam || snapshotSettings?.store?.gcp?.serviceAccount !== gcsServiceAccount ||
-        snapshotSettings?.store?.gcp?.jsonFile !== gcsJsonFile
+      return (snapshotSettings?.store?.gcp?.useInstanceRole !== gcsUseIam
+        || snapshotSettings?.store?.gcp?.serviceAccount !== gcsServiceAccount
+        || snapshotSettings?.store?.gcp?.jsonFile !== gcsJsonFile
       )
     }
     if (provider === "azure") {
       return (
-        snapshotSettings?.store?.azure?.resourceGroup !== azureResourceGroupName || snapshotSettings?.store?.azure?.storageAccount !== azureStorageAccountId ||
-        snapshotSettings?.store?.azure?.subscriptionId !== azureSubscriptionId || snapshotSettings?.store?.azure?.tenantId !== azureTenantId ||
-        snapshotSettings?.store?.azure?.clientId !== azureClientId || snapshotSettings?.store?.azure?.clientSecret !== azureClientSecret ||
-        snapshotSettings?.store?.azure?.cloudName !== selectedAzureCloudName.value
+        snapshotSettings?.store?.azure?.resourceGroup !== azureResourceGroupName
+        || snapshotSettings?.store?.azure?.storageAccount !== azureStorageAccountId
+        || snapshotSettings?.store?.azure?.subscriptionId !== azureSubscriptionId
+        || snapshotSettings?.store?.azure?.tenantId !== azureTenantId
+        || snapshotSettings?.store?.azure?.clientId !== azureClientId
+        || snapshotSettings?.store?.azure?.clientSecret !== azureClientSecret
+        || snapshotSettings?.store?.azure?.cloudName !== selectedAzureCloudName.value
       )
     }
     if (provider === "other") {
       return (
-        snapshotSettings?.store?.other?.region !== s3CompatibleRegion || snapshotSettings?.store?.other?.accessKeyID !== s3CompatibleKeyId ||
-        snapshotSettings?.store?.other?.secretAccessKey !== s3CompatibleKeySecret || snapshotSettings?.store?.other?.endpoint !== s3CompatibleEndpoint
+        snapshotSettings?.store?.other?.region !== s3CompatibleRegion
+        || snapshotSettings?.store?.other?.accessKeyID !== s3CompatibleKeyId
+        || snapshotSettings?.store?.other?.secretAccessKey !== s3CompatibleKeySecret
+        || snapshotSettings?.store?.other?.endpoint !== s3CompatibleEndpoint
       )
     }
   }
@@ -291,6 +307,10 @@ class SnapshotStorageDestination extends Component {
     this.setState({ selectedAzureCloudName: azureCloudName });
   }
 
+  handleCACertificateFieldClick = () => {
+    this.setState({ showCACertificateField: true});
+  }
+
   onGcsEditorChange = (value) => {
     this.setState({ gcsJsonFile: value });
   }
@@ -330,17 +350,23 @@ class SnapshotStorageDestination extends Component {
     const urlRe = /\b(https?):\/\/[-A-Za-z0-9+&@#/%?=~_|!:,.;]*[-A-Za-z0-9+&@#/%=~_|]/
 
     if (!urlRe.test(this.state.s3CompatibleEndpoint)) {
-      return { "endpoint" : "Please enter a valid endpoint with protocol"}
+      return { "endpoint" : "Please enter a valid endpoint with protocol" }
     }
     return {}
   }
 
   getProviderPayload = (provider, bucket, path) => {
+    const ca_cert_data = this.state.caCertificate.data;
     return Object.assign({
       provider,
       bucket,
-      path
+      path,
+      ca_cert_data
     }, this.getCurrentProviderStores(provider));
+  }
+
+  handleSetCACert = (caCertificate) => {
+    this.setState({ caCertificate });
   }
 
   snapshotProviderAWS = async () => {
@@ -489,9 +515,8 @@ class SnapshotStorageDestination extends Component {
   renderIcons = (destination) => {
     if (destination) {
       return <span className={`icon snapshotDestination--${destination.value}`} />;
-    } else {
-      return;
     }
+    return;
   }
 
   getDestinationLabel = (destination, label) => {
@@ -1108,64 +1133,72 @@ class SnapshotStorageDestination extends Component {
     } = this.props;
 
     const availableDestinations = [];
-    if (snapshotSettings?.veleroPlugins) {
-      for (const veleroPlugin of snapshotSettings?.veleroPlugins) {
-        if (veleroPlugin.includes("velero-plugin-for-gcp")) {
-            availableDestinations.push({
-              value: "gcp",
-              label: "Google Cloud Storage",
-            });
-        } else if (veleroPlugin.includes("velero-plugin-for-aws")) {
-              availableDestinations.push({
-              value: "aws",
-              label: "Amazon S3",
-            });
-            availableDestinations.push({
-              value: "other",
-              label: "Other S3-Compatible Storage",
-            });
-            if (snapshotSettings.isKurl && !snapshotSettings?.isMinioDisabled) {
-              availableDestinations.push({
-                value: "internal",
-                label: "Internal Storage (Default)",
-              });
-            }
-            // Checks for legacy behavior where minio was used for hostpath and nfs
-            if (!snapshotSettings?.isMinioDisabled) {
-                availableDestinations.push({
-                    value: "nfs",
-                    label: "Network File System (NFS)",
-                });
-                availableDestinations.push({
-                    value: "hostpath",
-                    label: "Host Path",
-                });
-            }
-        } else if (veleroPlugin.includes("velero-plugin-for-microsoft-azure")) {
-            availableDestinations.push({
-              value: "azure",
-              label: "Azure Blob Storage",
-            });
+    // if (snapshotSettings?.veleroPlugins) {
+      // for (const veleroPlugin of snapshotSettings?.veleroPlugins) {
+      //   if (veleroPlugin.includes("velero-plugin-for-gcp")) {
+      //       availableDestinations.push({
+      //         value: "gcp",
+      //         label: "Google Cloud Storage",
+      //       });
+      //   } else if (veleroPlugin.includes("velero-plugin-for-aws")) {
+      //     availableDestinations.push({
+      //       value: "aws",
+      //       label: "Amazon S3",
+      //     });
+      //     availableDestinations.push({
+      //       value: "other",
+      //       label: "Other S3-Compatible Storage",
+      //     });
+      //     if (snapshotSettings.isKurl && !snapshotSettings?.isMinioDisabled) {
+      //       availableDestinations.push({
+      //         value: "internal",
+      //         label: "Internal Storage (Default)",
+      //       });
+      //     }
+      //     // Checks for legacy behavior where minio was used for hostpath and nfs
+      //     if (!snapshotSettings?.isMinioDisabled) {
+      //       availableDestinations.push({
+      //         value: "nfs",
+      //         label: "Network File System (NFS)",
+      //       });
+      //       availableDestinations.push({
+      //         value: "hostpath",
+      //         label: "Host Path",
+      //       });
+      //     }
+      //   } else if (veleroPlugin.includes("velero-plugin-for-microsoft-azure")) {
+      //     availableDestinations.push({
+      //       value: "azure",
+      //       label: "Azure Blob Storage",
+      //     });
 
-        } else if (veleroPlugin.includes("local-volume-provider") && snapshotSettings?.isMinioDisabled) {
-            availableDestinations.push({
-                value: "nfs",
-                label: "Network File System (NFS)",
-            });
-            availableDestinations.push({
-                value: "hostpath",
-                label: "Host Path",
-            });
-            if (snapshotSettings.isKurl) {
-              availableDestinations.push({
-                value: "internal",
-                label: "Internal Storage (Default)",
-              });
-            }
-        }
-      }
+      //   } else if (veleroPlugin.includes("local-volume-provider") && snapshotSettings?.isMinioDisabled) {
+      //       availableDestinations.push({
+      //           value: "nfs",
+      //           label: "Network File System (NFS)",
+      //       });
+      //       availableDestinations.push({
+      //           value: "hostpath",
+      //           label: "Host Path",
+      //       });
+      //       if (snapshotSettings.isKurl) {
+      //         availableDestinations.push({
+      //           value: "internal",
+      //           label: "Internal Storage (Default)",
+      //         });
+      //       }
+      //   }
+      // }
+      availableDestinations.push({
+        value: "aws",
+        label: "Amazon S3",
+      });
+      availableDestinations.push({
+        value: "other",
+        label: "Other S3-Compatible Storage",
+      });
       availableDestinations.sort( (a,b) => a.label.localeCompare(b.label) );
-    }
+    // }
 
     const selectedDestination = availableDestinations.find((d) =>
       d.value === this.state.selectedDestination.value
@@ -1215,11 +1248,11 @@ class SnapshotStorageDestination extends Component {
                       + Add a new storage destination
                     </span>
                   </div>
-                  {!snapshotSettings?.isVeleroRunning && !checkForVeleroAndRestic && isKurlEnabled &&
+                  {/*!snapshotSettings?.isVeleroRunning && !checkForVeleroAndRestic && isKurlEnabled &&
                     <div className="flex-auto u-fontWeight--bold u-fontSize--small u-textColor--error u-marginBottom--10">
                       Please fix Velero so that the deployment is running. For help troubleshooting this issue visit <a href="https://velero.io/docs/main/troubleshooting/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">https://velero.io/docs/main/troubleshooting/</a>.
                     </div>
-                  }
+              */}
                   <div className="flex1">
                     {availableDestinations.length > 1
                       ? <Select
@@ -1242,11 +1275,24 @@ class SnapshotStorageDestination extends Component {
                     }
                   </div>
                 </div>
-                {!this.state.determiningDestination &&
+                {true &&
                   <>
                     {this.renderDestinationFields()}
+                    {this.state.showCACertificateField
+                      ? <UploadCACertificate certificate={this.state.caCertificate} handleSetCACert={this.handleSetCACert} />
+                      : <button
+                          className="AddCAButton replicated-link u-fontSize--normal"
+                          onClick={this.handleCACertificateFieldClick}
+                        >
+                          + Add a CA Certificate
+                        </button>
+                    }
                     <div className="flex">
-                      <button className="btn primary blue" disabled={updatingSettings} onClick={this.onSubmit}>
+                      <button
+                        className="btn primary blue"
+                        disabled={updatingSettings}
+                        onClick={this.onSubmit}
+                      >
                         {updatingSettings ? "Updating" : "Update storage settings"}
                       </button>
                       {updatingSettings &&
@@ -1279,7 +1325,7 @@ class SnapshotStorageDestination extends Component {
           />
         </div>
 
-        {this.props.showConfigureSnapshotsModal &&
+        {false &&
           <ConfigureSnapshots
             snapshotSettings={this.props.snapshotSettings}
             fetchSnapshotSettings={this.props.fetchSnapshotSettings}
@@ -1317,17 +1363,31 @@ class SnapshotStorageDestination extends Component {
             className="Modal SmallSize"
           >
             <div className="Modal-body">
-              <p className="u-fontSize--largest u-fontWeight--bold u-textColor--secondary u-marginBottom--10">Next steps</p>
-              <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy u-lineHeight--normal"> Run the following command for instructions on how to set up Velero: </p>
+              <p className="u-fontSize--largest u-fontWeight--bold u-textColor--secondary u-marginBottom--10">
+                Next steps
+              </p>
+              <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy u-lineHeight--normal">
+                Run the following command for instructions on how to set up Velero:
+              </p>
               <CodeSnippet
                 language="bash"
                 canCopy={true}
-                onCopyText={<span className="u-textColor--success">Command has been copied to your clipboard</span>}
+                onCopyText={
+                  <span className="u-textColor--success">
+                    Command has been copied to your clipboard
+                  </span>
+                }
               >
                 {`kubectl kots velero print-fs-instructions --namespace ${this.state.configureFileSystemProviderNamespace}`}
               </CodeSnippet>
               <div className="u-marginTop--10 flex justifyContent--flexStart">
-                <button type="button" className="btn blue primary" onClick={this.hideConfigureFileSystemProviderNextStepsModal}>Ok, got it!</button>
+                <button
+                  type="button"
+                  className="btn blue primary"
+                  onClick={this.hideConfigureFileSystemProviderNextStepsModal}
+                >
+                  Ok, got it!
+                </button>
               </div>
             </div>
           </Modal>
@@ -1343,10 +1403,27 @@ class SnapshotStorageDestination extends Component {
             className="Modal MediumSize"
           >
             <div className="Modal-body">
-              <p className="u-fontSize--large u-textColor--error u-marginBottom--20">{resetFileSystemWarningMessage} Would you like to continue?</p>
+              <p className="u-fontSize--large u-textColor--error u-marginBottom--20">
+                {resetFileSystemWarningMessage} Would you like to continue?
+              </p>
               <div className="u-marginTop--10 flex justifyContent--flexStart">
-                <button type="button" className="btn blue primary u-marginRight--10" onClick={this.state.showConfigureFileSystemProviderModal ? () => this.configureFileSystemProvider(true) : () => this.snapshotProviderFileSystem(true)}>Yes</button>
-                <button type="button" className="btn secondary" onClick={this.hideResetFileSystemWarningModal}>No</button>
+                <button
+                  type="button"
+                  className="btn blue primary u-marginRight--10"
+                  onClick={this.state.showConfigureFileSystemProviderModal
+                    ? () => this.configureFileSystemProvider(true)
+                    : () => this.snapshotProviderFileSystem(true)
+                  }
+                >
+                  Yes
+                </button>
+                <button
+                  type="button"
+                  className="btn secondary"
+                  onClick={this.hideResetFileSystemWarningModal}
+                >
+                  No
+                </button>
               </div>
             </div>
           </Modal>
