@@ -32,10 +32,6 @@ const UploadCACertificate = ({
     });
   }
 
-  React.useEffect(() => {
-    console.log(certificate, isEmpty(certificate.name))
-  }, [certificate]);
-
   return (
     <>
       <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
@@ -97,6 +93,3 @@ const UploadCACertificate = ({
 }
 
 export default UploadCACertificate;
-
-// Reach out to Jonquil about docs
-// Follow up with Andrew about API endpoint

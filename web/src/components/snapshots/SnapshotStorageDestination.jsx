@@ -25,9 +25,7 @@ import {
 class SnapshotStorageDestination extends Component {
   state = {
     determiningDestination: true,
-    selectedDestination: {
-      value: "aws"
-    },
+    selectedDestination: {},
     updatingSettings: false,
     s3bucket: "",
     s3Region: "",
@@ -1189,14 +1187,6 @@ class SnapshotStorageDestination extends Component {
           }
         }
       }
-      availableDestinations.push({
-        value: "aws",
-        label: "Amazon S3",
-      });
-      availableDestinations.push({
-        value: "other",
-        label: "Other S3-Compatible Storage",
-      });
       availableDestinations.sort((a, b) => a.label.localeCompare(b.label));
     }
 
@@ -1248,11 +1238,11 @@ class SnapshotStorageDestination extends Component {
                       + Add a new storage destination
                     </span>
                   </div>
-                  {/*!snapshotSettings?.isVeleroRunning && !checkForVeleroAndRestic && isKurlEnabled &&
+                  {!snapshotSettings?.isVeleroRunning && !checkForVeleroAndRestic && isKurlEnabled &&
                     <div className="flex-auto u-fontWeight--bold u-fontSize--small u-textColor--error u-marginBottom--10">
                       Please fix Velero so that the deployment is running. For help troubleshooting this issue visit <a href="https://velero.io/docs/main/troubleshooting/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">https://velero.io/docs/main/troubleshooting/</a>.
                     </div>
-              */}
+                  }
                   <div className="flex1">
                     {availableDestinations.length > 1
                       ? <Select
@@ -1275,7 +1265,7 @@ class SnapshotStorageDestination extends Component {
                     }
                   </div>
                 </div>
-                {true &&
+                {!this.state.determiningDestination &&
                   <>
                     {this.renderDestinationFields()}
                     {this.state.showCACertificateField &&
@@ -1327,7 +1317,7 @@ class SnapshotStorageDestination extends Component {
           />
         </div>
 
-        {false &&
+        {this.props.showConfigureSnapshotsModal &&
           <ConfigureSnapshots
             snapshotSettings={this.props.snapshotSettings}
             fetchSnapshotSettings={this.props.fetchSnapshotSettings}
