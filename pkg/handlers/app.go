@@ -209,6 +209,13 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		return nil, errors.Wrap(err, "failed to get current parent sequence for downstream")
 	}
 
+	// check snapshots for the parent sequence of the deployed version
+	s, err := store.GetStore().IsSnapshotsSupportedForVersion(a, parentSequence, &render.Renderer{})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to check if snapshots is allowed")
+	}
+	allowSnapshots := s && license.Spec.IsSnapshotSupported
+
 	links, err := version.GetRealizedLinksFromAppSpec(a.ID, parentSequence)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get realized links from app spec")
@@ -250,13 +257,6 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		GitOps:          responseGitOps,
 		Cluster:         cluster,
 	}
-
-	// check snapshots for the parent sequence of the deployed version
-	s, err := store.GetStore().IsSnapshotsSupportedForVersion(a, parentSequence, &render.Renderer{})
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to check if snapshots is allowed")
-	}
-	allowSnapshots := s && license.Spec.IsSnapshotSupported
 
 	responseApp := types.ResponseApp{
 		ID:                             a.ID,
