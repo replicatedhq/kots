@@ -73,21 +73,6 @@ const UploadCACertificate = ({
           </div>
         </Dropzone>
       }
-
-      {/* TODO: Update this link to the docs!! */}
-      {/* <p className="u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-marginTop--15 u-marginBottom--30">
-        For more information about uploading CA certificates, including details on how to upload multiple certificates,
-        <a
-          href="https://docs.replicated.com/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="replicated-link"
-          style={{ paddingLeft: "4px"}}
-        >
-          check out our docs
-        </a>
-        .
-      </p> */}
     </>
   )
 }
