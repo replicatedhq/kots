@@ -247,7 +247,6 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		CurrentVersion:  appVersions.CurrentVersion,
 		PendingVersions: appVersions.PendingVersions,
 		PastVersions:    appVersions.PastVersions,
-		LatestVersion:   latestVersion,
 		GitOps:          responseGitOps,
 		Cluster:         cluster,
 	}
@@ -290,7 +289,7 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 	return &responseApp, nil
 }
 
-type GetAppVersionsResponse struct {
+type GetAppVersionHistoryResponse struct {
 	VersionHistory []*downstreamtypes.DownstreamVersion `json:"versionHistory"`
 	TotalCount     int64                                `json:"totalCount"`
 }
@@ -298,15 +297,15 @@ type GetAppVersionsResponse struct {
 func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 
-	pageSize := 10
+	pageSize := 20
 	currentPage := 0
-
 	if val := r.URL.Query().Get("pageSize"); val != "" {
 		pageSize, _ = strconv.Atoi(val)
 	}
 	if val := r.URL.Query().Get("currentPage"); val != "" {
 		currentPage, _ = strconv.Atoi(val)
 	}
+	pinLatest, _ := strconv.ParseBool(r.URL.Query().Get("pinLatest"))
 
 	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
@@ -331,7 +330,7 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 
 	clusterID := downstreams[0].ClusterID
 
-	appVersions, err := store.GetStore().GetDownstreamVersionsWithDetails(foundApp.ID, clusterID, false, currentPage, pageSize)
+	appVersions, err := store.GetStore().GetDownstreamVersionHistory(foundApp.ID, clusterID, currentPage, pageSize, pinLatest)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get downstream versions")
 		logger.Error(err)
@@ -347,7 +346,7 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := GetAppVersionsResponse{
+	response := GetAppVersionHistoryResponse{
 		VersionHistory: appVersions,
 		TotalCount:     totalCount,
 	}

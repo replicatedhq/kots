@@ -791,17 +791,11 @@ func (s *KOTSStore) GetAppVersion(appID string, sequence int64) (*versiontypes.A
 // This function handles both semantic and non-semantic versions.
 // If downloadedOnly param is set to true, the sequence of the latest downloaded app version will be returned.
 func (s *KOTSStore) GetLatestAppSequence(appID string, downloadedOnly bool) (int64, error) {
-	t := time.Now()
-
 	versions, err := s.FindDownstreamVersions(appID, downloadedOnly)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get latest downstream version")
 	}
-	latestVersion := versions.AllVersions[0]
-
-	fmt.Println(time.Since(t).Milliseconds(), " ms -- get latest app sequence")
-
-	return latestVersion.ParentSequence, nil
+	return versions.AllVersions[0].ParentSequence, nil
 }
 
 func (s *KOTSStore) UpdateNextAppVersionDiffSummary(appID string, baseSequence int64) error {

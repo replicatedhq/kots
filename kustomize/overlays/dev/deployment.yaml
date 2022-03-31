@@ -19,6 +19,13 @@ spec:
       serviceAccountName: kotsadm
       containers:
         - name: kotsadm
+          resources:
+            limits:
+              cpu: 1
+              memory: 2Gi
+            requests:
+              cpu: 100m
+              memory: 100Mi
           volumeMounts:
             - mountPath: /backup
               name: backup

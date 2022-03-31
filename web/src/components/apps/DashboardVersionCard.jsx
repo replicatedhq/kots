@@ -544,7 +544,7 @@ class DashboardVersionCard extends React.Component {
   renderGitopsVersionAction = version => {
     const { app } = this.props;
     const downstream = app?.downstream;
-    const nothingToCommit = downstream?.gitops?.enabled && !downstream?.latestVersion?.commitUrl;
+    const nothingToCommit = downstream?.gitops?.enabled && !version?.commitUrl;
 
     if (version.status === "pending_download") {
       const isDownloading = this.state.versionDownloadStatuses?.[version.sequence]?.downloadingVersion;

@@ -189,7 +189,7 @@ class AppConfig extends Component {
     if (currentDeployedSequence != undefined) {
       return currentDeployedSequence;
     } else {
-      return app?.downstream?.latestVersion?.parentSequence;
+      return app?.currentSequence;
     }
   }
 

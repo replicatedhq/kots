@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/blang/semver"
 	"github.com/lib/pq"
@@ -254,8 +253,6 @@ func (s *KOTSStore) GetStatusForVersion(appID string, clusterID string, sequence
 }
 
 func (s *KOTSStore) GetDownstreamVersions(appID string, clusterID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error) {
-	t := time.Now()
-
 	currentVersion, err := s.GetCurrentDownstreamVersion(appID, clusterID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get current version")
@@ -346,8 +343,6 @@ func (s *KOTSStore) GetDownstreamVersions(appID string, clusterID string, downlo
 		break
 	}
 
-	fmt.Println(time.Since(t).Milliseconds(), " ms -- get app versions", len(result.AllVersions))
-
 	if currentVersion == nil {
 		result.PendingVersions = result.AllVersions
 		result.PastVersions = []*downstreamtypes.DownstreamVersion{}
@@ -365,19 +360,47 @@ func (s *KOTSStore) GetDownstreamVersions(appID string, clusterID string, downlo
 	return result, nil
 }
 
-func (s *KOTSStore) GetDownstreamVersionsWithDetails(appID string, clusterID string, downloadedOnly bool, currentPage int, pageSize int) ([]*downstreamtypes.DownstreamVersion, error) {
-	t := time.Now()
+func (s *KOTSStore) FindDownstreamVersions(appID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error) {
+	downstreams, err := s.ListDownstreamsForApp(appID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get app downstreams")
+	}
+	if len(downstreams) == 0 {
+		return nil, errors.New("app has no downstreams")
+	}
 
-	versions, err := s.GetDownstreamVersions(appID, clusterID, downloadedOnly)
+	for _, d := range downstreams {
+		clusterID := d.ClusterID
+		downstreamVersions, err := s.GetDownstreamVersions(appID, clusterID, downloadedOnly)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to get downstream versions for cluster %s", clusterID)
+		}
+		if len(downstreamVersions.AllVersions) > 0 {
+			return downstreamVersions, nil
+		}
+	}
+
+	return nil, errors.New("app has no versions")
+}
+
+func (s *KOTSStore) GetDownstreamVersionHistory(appID string, clusterID string, currentPage int, pageSize int, pinLatest bool) ([]*downstreamtypes.DownstreamVersion, error) {
+	versions, err := s.GetDownstreamVersions(appID, clusterID, false)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get downstream versions without details")
 	}
 
-	// filter non-desired versions
 	startIndex := currentPage * pageSize
 	endIndex := currentPage*pageSize + pageSize
+	if pinLatest {
+		startIndex++
+		endIndex++
+	}
 	desiredVersions := []*downstreamtypes.DownstreamVersion{}
 	for i, v := range versions.AllVersions {
+		if pinLatest && i == 0 {
+			desiredVersions = append(desiredVersions, v)
+			continue
+		}
 		if currentPage != -1 && i < startIndex {
 			continue
 		}
@@ -391,8 +414,6 @@ func (s *KOTSStore) GetDownstreamVersionsWithDetails(appID string, clusterID str
 		return nil, errors.Wrap(err, "failed to add details for desired versions")
 	}
 
-	fmt.Println(time.Since(t).Milliseconds(), " ms -- get app versions with details", len(desiredVersions))
-
 	return desiredVersions, nil
 }
 
@@ -403,7 +424,14 @@ func (s *KOTSStore) AddDownstreamVersionDetails(appID string, clusterID string, 
 func (s *KOTSStore) AddDownstreamVersionsDetails(appID string, clusterID string, versions []*downstreamtypes.DownstreamVersion, checkIfDeployable bool) error {
 	sequencesToQuery := []int64{}
 	for _, v := range versions {
+		if v == nil {
+			continue
+		}
 		sequencesToQuery = append(sequencesToQuery, v.Sequence)
+	}
+
+	if len(sequencesToQuery) == 0 {
+		return nil
 	}
 
 	db := persistence.MustGetDBSession()
@@ -542,32 +570,7 @@ func (s *KOTSStore) AddDownstreamVersionsDetails(appID string, clusterID string,
 	return nil
 }
 
-func (s *KOTSStore) FindDownstreamVersions(appID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error) {
-	downstreams, err := s.ListDownstreamsForApp(appID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get app downstreams")
-	}
-	if len(downstreams) == 0 {
-		return nil, errors.New("app has no downstreams")
-	}
-
-	for _, d := range downstreams {
-		clusterID := d.ClusterID
-		downstreamVersions, err := s.GetDownstreamVersions(appID, clusterID, downloadedOnly)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to get downstream versions for cluster %s", clusterID)
-		}
-		if len(downstreamVersions.AllVersions) > 0 {
-			return downstreamVersions, nil
-		}
-	}
-
-	return nil, errors.New("app has no versions")
-}
-
 func (s *KOTSStore) GetNextDownstreamVersion(appID string, clusterID string) (nextVersion *downstreamtypes.DownstreamVersion, numOfSkippedVersions int, numOfRemainingVersions int, finalError error) {
-	t := time.Now()
-
 	defer func() {
 		if nextVersion != nil {
 			if err := s.AddDownstreamVersionDetails(appID, clusterID, nextVersion, true); err != nil {
@@ -575,7 +578,6 @@ func (s *KOTSStore) GetNextDownstreamVersion(appID string, clusterID string) (ne
 				return
 			}
 		}
-		fmt.Println(time.Since(t).Milliseconds(), " ms -- get next downstream version")
 	}()
 
 	versions, err := s.GetDownstreamVersions(appID, clusterID, false)

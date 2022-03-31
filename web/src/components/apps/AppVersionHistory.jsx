@@ -74,7 +74,7 @@ class AppVersionHistory extends Component {
     kotsUpdateError: undefined,
     totalCount: 0,
     currentPage: 0,
-    pageSize: 10,
+    pageSize: 20,
     loadingPage: false,
   }
 
@@ -129,13 +129,8 @@ class AppVersionHistory extends Component {
     });
 
     try {
-      let { currentPage, pageSize } = this.state;
-      if (currentPage === 0) {
-        // latest version is rendered separately and is discarded from the list, so get one more version
-        pageSize++;
-      }
-
-      const res = await fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/versions?currentPage=${currentPage}&pageSize=${pageSize}`, {
+      const { currentPage, pageSize } = this.state;
+      const res = await fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/versions?currentPage=${currentPage}&pageSize=${pageSize}&pinLatest=true`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -162,12 +157,6 @@ class AppVersionHistory extends Component {
         this.state.versionHistoryJob.start(this.fetchKotsDownstreamHistory, 2000);
       } else {
         this.state.versionHistoryJob.stop();
-      }
-
-      const downstream = this.props.app?.downstream;
-      if (versionHistory?.length && versionHistory[0].sequence == downstream?.latestVersion?.sequence) {
-        // exclude latest version from the list because it's rendered separately
-        versionHistory.shift();
       }
 
       this.setState({
@@ -1072,8 +1061,8 @@ class AppVersionHistory extends Component {
   renderOtherAvailableVersions = () => {
     // This is kinda hacky. This finds the equivalent downstream version because the midstream
     // version type does not contain metadata like version label or release notes.
-    const versionHistory = this.state.versionHistory;
-    if (!versionHistory?.length) {
+    const otherAvailableVersions = this.state.versionHistory?.slice(1); // exclude latest version
+    if (!otherAvailableVersions?.length) {
       return null;
     }
 
@@ -1084,14 +1073,14 @@ class AppVersionHistory extends Component {
         <div className="flex u-marginBottom--15 u-marginTop--30">
           <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy">Other available versions</p>
         </div>
-        {versionHistory?.map((version) => this.renderAppVersionHistoryRow(version))}
+        {otherAvailableVersions?.map((version) => this.renderAppVersionHistoryRow(version))}
         <Pager
           pagerType="releases"
           currentPage={currentPage}
           pageSize={pageSize}
           totalCount={totalCount}
           loading={loadingPage}
-          currentPageLength={versionHistory.length}
+          currentPageLength={otherAvailableVersions.length}
           goToPage={this.onGotoPage}
         />
       </div>
@@ -1285,7 +1274,7 @@ class AppVersionHistory extends Component {
 
               <div className={`TableDiff--Wrapper flex-column flex1 alignSelf--start ${gitopsEnabled ? "gitops-enabled" : ""}`}>
                 <div className={`flex-column flex1 version ${showDiffOverlay ? "u-visibility--hidden" : ""}`}>
-                {downstream?.latestVersion ?
+                {versionHistory?.length > 0 ?
                   <div>
                     <div>
                       <div className="flex justifyContent--spaceBetween u-marginBottom--15">
@@ -1317,10 +1306,10 @@ class AppVersionHistory extends Component {
                             </div>
                             }
                           </div>
-                          {versionHistory.length && this.renderDiffBtn()}
+                          {versionHistory.length > 1 && this.renderDiffBtn()}
                         </div>
                       </div>
-                      {this.renderAppVersionHistoryRow(downstream?.latestVersion)}
+                      {this.renderAppVersionHistoryRow(versionHistory[0])}
                     </div>
                     {this.renderUpdateProgress()}
                     {this.renderOtherAvailableVersions()}

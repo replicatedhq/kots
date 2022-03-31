@@ -53,7 +53,6 @@ type ResponseDownstream struct {
 	CurrentVersion  *downstreamtypes.DownstreamVersion   `json:"currentVersion"`
 	PendingVersions []*downstreamtypes.DownstreamVersion `json:"pendingVersions"`
 	PastVersions    []*downstreamtypes.DownstreamVersion `json:"pastVersions"`
-	LatestVersion   *downstreamtypes.DownstreamVersion   `json:"latestVersion"`
 	GitOps          ResponseGitOps                       `json:"gitops"`
 	Cluster         ResponseCluster                      `json:"cluster"`
 }
