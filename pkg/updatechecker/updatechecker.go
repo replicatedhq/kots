@@ -597,7 +597,7 @@ func deployVersion(opts CheckForUpdatesOpts, clusterID string, appVersions *down
 		}
 	}
 
-	downstreamSequence, err := store.GetCurrentSequence(opts.AppID, clusterID)
+	downstreamSequence, err := store.GetCurrentDownstreamSequence(opts.AppID, clusterID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get current downstream parent sequence")
 	}

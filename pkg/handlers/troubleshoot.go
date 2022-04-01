@@ -248,7 +248,7 @@ func (h *Handler) GetSupportBundleCommand(w http.ResponseWriter, r *http.Request
 		JSON(w, http.StatusOK, response)
 		return
 	} else if len(downstreams) > 0 {
-		currentVersion, err := store.GetStore().GetCurrentVersion(foundApp.ID, downstreams[0].ClusterID)
+		currentVersion, err := store.GetStore().GetCurrentDownstreamVersion(foundApp.ID, downstreams[0].ClusterID)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to get deployed app sequence"))
 			JSON(w, http.StatusOK, response)

@@ -70,9 +70,9 @@ class Dashboard extends Component {
     this.setState({
       appName: app.name,
       iconUri: app.iconUri,
-      currentVersion: app.downstreams[0]?.currentVersion,
-      downstream: app.downstreams[0],
-      links: app.downstreams[0]?.links
+      currentVersion: app.downstream?.currentVersion,
+      downstream: app.downstream,
+      links: app.downstream?.links
     });
   }
 
@@ -249,13 +249,13 @@ class Dashboard extends Component {
       });
       if (res.ok && res.status == 200) {
         const app = await res.json();
-        if (app?.downstreams?.length > 0 && app?.downstreams[0].pendingVersions?.length > 0) {
-          if (!isAwaitingResults(app.downstreams[0].pendingVersions)) {
+        if (app?.downstream?.pendingVersions?.length > 0) {
+          if (!isAwaitingResults(app.downstream.pendingVersions)) {
             this.state.fetchAppDownstreamJob.stop();
           }
         }
         this.setState({ 
-          downstream: app.downstreams[0],
+          downstream: app.downstream,
         });
         // wait a couple of seconds to avoid any race condiditons with the update checker then refetch the app to ensure we have the latest everything
         // this is hacky and I hate it but it's just building up more evidence in my case for having the FE be able to listen to BE envents

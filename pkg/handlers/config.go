@@ -520,13 +520,13 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 		return updateAppConfigResponse, err
 	}
 
-	latestVersion, err := store.GetStore().GetLatestAppVersion(app.ID, true)
+	latestSequence, err := store.GetStore().GetLatestAppSequence(app.ID, true)
 	if err != nil {
-		updateAppConfigResponse.Error = "failed to get latest app version"
+		updateAppConfigResponse.Error = "failed to get latest app sequence"
 		return updateAppConfigResponse, err
 	}
 
-	if latestVersion.Sequence != sequence {
+	if latestSequence != sequence {
 		// We are modifying an old version, registry settings may not match what the user has set
 		// for the app.  Midstream in version archive is the only place we can get them from.
 		versionRegistrySettings, err := midstream.LoadPrivateRegistryInfo(archiveDir)
@@ -731,9 +731,9 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	latestVersion, err := store.GetStore().GetLatestAppVersion(foundApp.ID, true)
+	latestSequence, err := store.GetStore().GetLatestAppSequence(foundApp.ID, true)
 	if err != nil {
-		setAppConfigValuesResponse.Error = "failed to get latest app version"
+		setAppConfigValuesResponse.Error = "failed to get latest app sequence"
 		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
 		JSON(w, http.StatusInternalServerError, setAppConfigValuesResponse)
 		return
@@ -748,7 +748,7 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 	}
 	defer os.RemoveAll(archiveDir)
 
-	err = store.GetStore().GetAppVersionArchive(foundApp.ID, latestVersion.Sequence, archiveDir)
+	err = store.GetStore().GetAppVersionArchive(foundApp.ID, latestSequence, archiveDir)
 	if err != nil {
 		setAppConfigValuesResponse.Error = "failed to get app version archive"
 		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
@@ -853,7 +853,7 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 
 	createNewVersion := true
 	isPrimaryVersion := true // see comment in updateAppConfig
-	resp, err := updateAppConfig(foundApp, latestVersion.Sequence, renderedConfig.Spec.Groups, createNewVersion, isPrimaryVersion, setAppConfigValuesRequest.SkipPreflights, setAppConfigValuesRequest.Deploy)
+	resp, err := updateAppConfig(foundApp, latestSequence, renderedConfig.Spec.Groups, createNewVersion, isPrimaryVersion, setAppConfigValuesRequest.SkipPreflights, setAppConfigValuesRequest.Deploy)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to create new version"))
 		JSON(w, http.StatusInternalServerError, resp)

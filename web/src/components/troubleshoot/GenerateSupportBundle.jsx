@@ -19,10 +19,7 @@ class GenerateSupportBundle extends React.Component {
   constructor(props) {
     super(props);
 
-    const clustersArray = props.watch.downstreams;
     this.state = {
-      clusters: [],
-      selectedCluster: clustersArray.length ? clustersArray[0].cluster : "",
       displayUploadModal: false,
       totalBundles: null,
       showRunCommand: false,
@@ -41,13 +38,6 @@ class GenerateSupportBundle extends React.Component {
   }
 
   componentDidMount() {
-    const { watch } = this.props;
-    const clusters = watch.downstreams;
-    if (watch) {
-      const watchClusters = clusters.map(c => c.cluster);
-      const NEW_ADDED_CLUSTER = { title: NEW_CLUSTER };
-      this.setState({ clusters: [NEW_ADDED_CLUSTER, ...watchClusters] });
-    }
     this.listSupportBundles();
   }
 
@@ -58,13 +48,6 @@ class GenerateSupportBundle extends React.Component {
   componentDidUpdate(lastProps, lastState) {
     const { watch, history } = this.props;
     const { totalBundles, loadingSupportBundles, supportBundles, networkErr } = this.state;
-    const clusters = watch.downstream;
-
-    if (watch !== lastProps.watch && clusters) {
-      const watchClusters = clusters.map(c => c.cluster);
-      const NEW_ADDED_CLUSTER = { title: NEW_CLUSTER };
-      this.setState({ clusters: [NEW_ADDED_CLUSTER, ...watchClusters] });
-    }
 
     if (!loadingSupportBundles) {
       if (totalBundles === null) {
@@ -278,9 +261,8 @@ class GenerateSupportBundle extends React.Component {
   }
 
   render() {
-    const { selectedCluster, displayUploadModal, showRunCommand, isGeneratingBundle, generateBundleErrMsg, errorMsg } = this.state;
+    const { displayUploadModal, showRunCommand, isGeneratingBundle, generateBundleErrMsg, errorMsg } = this.state;
     const { watch } = this.props;
-    const watchClusters = watch.downstreams;
     const appTitle = watch.watchName || watch.name;
 
     return (
@@ -289,7 +271,7 @@ class GenerateSupportBundle extends React.Component {
           <title>{`${appTitle} Troubleshoot`}</title>
         </Helmet>
         <div className="GenerateSupportBundle">
-          {!watchClusters.length && !this.state.supportBundles?.length ?
+          {!watch.downstream && !this.state.supportBundles?.length ?
             <Link to={`/watch/${watch.slug}/troubleshoot`} className="replicated-link u-marginRight--5"> &lt; Support Bundle List </Link> : null
           }
           <div className="u-marginTop--15">
@@ -309,7 +291,7 @@ class GenerateSupportBundle extends React.Component {
                 </div>
                 :
                 <div className="flex alignItems--center u-marginTop--20">
-                  <button className="btn primary blue" type="button" onClick={this.collectBundle.bind(this, watchClusters[0].cluster.id)}>Analyze {appTitle}</button>
+                  <button className="btn primary blue" type="button" onClick={this.collectBundle.bind(this, watch.downstream?.cluster?.id)}>Analyze {appTitle}</button>
                   <span className="replicated-link flex alignItems--center u-fontSize--small u-marginLeft--20" onClick={this.toggleRedactorModal}><span className="icon clickable redactor-spec-icon u-marginRight--5" /> Configure redaction</span>
                 </div>
               }

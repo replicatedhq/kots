@@ -712,7 +712,7 @@ export const Utilities = {
 
   checkIsDeployedConfigLatest(app) {
     let latestSequence = app?.currentSequence;
-    let deployedSequence = app?.downstreams[0]?.currentVersion?.parentSequence;
+    let deployedSequence = app?.downstream?.currentVersion?.parentSequence;
   
     if (deployedSequence === latestSequence) {
       return true;

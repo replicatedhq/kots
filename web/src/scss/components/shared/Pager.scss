@@ -1,0 +1,18 @@
+.Pager {
+  padding: 20px 0;
+  .icon.previous {
+    transform: rotate(90deg) translate(-1px, 0);
+    transition: transform .2s ease-in-out;
+  }
+  .icon.next {
+    transform: rotate(-90deg) translate(1px, 0);
+    transition: transform .2s ease-in-out;
+  }
+  
+  .arrow-wrapper p:hover .icon.next {
+    transform: rotate(-90deg) translate(1px, 3px);
+  }
+  .arrow-wrapper p:hover .icon.icon.previous {
+    transform: rotate(90deg) translate(-1px, 3px);
+  }
+}

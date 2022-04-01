@@ -22,6 +22,7 @@ import { Utilities, isAwaitingResults, secondsAgo, getPreflightResultState, getG
 import { Repeater } from "../../utilities/repeater";
 import { AirgapUploader } from "../../utilities/airgapUploader";
 import ReactTooltip from "react-tooltip"
+import Pager from "../shared/Pager";
 
 import "@src/scss/components/apps/AppVersionHistory.scss";
 dayjs.extend(relativeTime);
@@ -54,7 +55,7 @@ class AppVersionHistory extends Component {
     displayShowDetailsModal: false,
     yamlErrorDetails: [],
     deployView: false,
-    selectedSequence: "",
+    selectedSequence: -1,
     releaseWithErr: {},
     versionHistoryJob: new Repeater(),
     loadingVersionHistory: true,
@@ -71,6 +72,10 @@ class AppVersionHistory extends Component {
     kotsUpdateStatus: undefined,
     kotsUpdateMessage: undefined,
     kotsUpdateError: undefined,
+    totalCount: 0,
+    currentPage: 0,
+    pageSize: 20,
+    loadingPage: false,
   }
 
   // moving this out of the state because new repeater instances were getting created
@@ -124,7 +129,8 @@ class AppVersionHistory extends Component {
     });
 
     try {
-      const res = await fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/versions`, {
+      const { currentPage, pageSize } = this.state;
+      const res = await fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/versions?currentPage=${currentPage}&pageSize=${pageSize}&pinLatest=true`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -156,6 +162,7 @@ class AppVersionHistory extends Component {
       this.setState({
         loadingVersionHistory: false,
         versionHistory: versionHistory,
+        totalCount: response.totalCount,
       });
     } catch (err) {
       this.setState({
@@ -289,9 +296,9 @@ class AppVersionHistory extends Component {
     }
   }
 
-  renderSourceAndDiff = version => {
+  renderDiff = version => {
     const { app } = this.props;
-    const downstream = app.downstreams?.length && app.downstreams[0];
+    const downstream = app?.downstream;
     const diffSummary = this.getVersionDiffSummary(version);
     const hasDiffSummaryError = version.diffSummaryError && version.diffSummaryError.length > 0;
 
@@ -312,23 +319,21 @@ class AppVersionHistory extends Component {
           <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-textColor--bodyCopy">Unable to generate diff <span className="replicated-link" onClick={() => this.toggleDiffErrModal(version)}>Why?</span></span>
         </div>
       );
-    } else {
+    } else if (diffSummary) {
       return (
         <div className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal">
-          {diffSummary ?
-            (diffSummary.filesChanged > 0 ?
-              <div className="DiffSummary u-marginRight--10">
-                <span className="files">{diffSummary.filesChanged} files changed </span>
-                {!downstream.gitops?.enabled &&
-                  <span className="u-fontSize--small replicated-link u-marginLeft--5" onClick={() => this.setState({ showDiffOverlay: true, firstSequence: previousSequence, secondSequence: version.parentSequence})}>View diff</span>
-                }
-              </div>
-              :
-              <div className="DiffSummary">
-                <span className="files">No changes to show. <span className="replicated-link" onClick={() => this.toggleNoChangesModal(version)}>Why?</span></span>
-              </div>
-            )
-            : <span>&nbsp;</span>}
+          {diffSummary.filesChanged > 0 ?
+            <div className="DiffSummary u-marginRight--10">
+              <span className="files">{diffSummary.filesChanged} files changed </span>
+              {!downstream.gitops?.enabled &&
+                <span className="u-fontSize--small replicated-link u-marginLeft--5" onClick={() => this.setState({ showDiffOverlay: true, firstSequence: previousSequence, secondSequence: version.parentSequence})}>View diff</span>
+              }
+            </div>
+            :
+            <div className="DiffSummary">
+              <span className="files">No changes to show. <span className="replicated-link" onClick={() => this.toggleNoChangesModal(version)}>Why?</span></span>
+            </div>
+          }
         </div>
       );
     }
@@ -574,21 +579,18 @@ class AppVersionHistory extends Component {
 
   deployVersion = (version, force = false, continueWithFailedPreflights = false) => {
     const { app } = this.props;
-    const clusterSlug = app.downstreams?.length && app.downstreams[0].cluster?.slug;
+    const clusterSlug = app.downstream.cluster?.slug;
     if (!clusterSlug) {
       return;
     }
-    const downstream = app.downstreams?.length && app.downstreams[0];
-    const yamlErrorDetails = this.yamlErrorsDetails(downstream, version);
-
 
     if (!force) {
-      if (yamlErrorDetails) {
+      if (version.yamlErrors) {
         this.setState({
           displayShowDetailsModal: !this.state.displayShowDetailsModal,
           deployView: true,
           versionToDeploy: version,
-          yamlErrorDetails
+          yamlErrorDetails: version.yamlErrors,
         });
         return;
       }
@@ -638,7 +640,7 @@ class AppVersionHistory extends Component {
 
   redeployVersion = (version, isRollback = false) => {
     const { app } = this.props;
-    const clusterSlug = app.downstreams?.length && app.downstreams[0].cluster?.slug;
+    const clusterSlug = app.downstream.cluster?.slug;
     if (!clusterSlug) {
       return;
     }
@@ -823,7 +825,7 @@ class AppVersionHistory extends Component {
   handleViewLogs = async (version, isFailing) => {
     try {
       const { app } = this.props;
-      const clusterId = app.downstreams?.length && app.downstreams[0].cluster?.id;
+      const clusterId = app.downstream.cluster?.id;
 
       this.setState({ logsLoading: true, showLogsModal: true, viewLogsErrMsg: "" });
 
@@ -859,7 +861,7 @@ class AppVersionHistory extends Component {
       selectedDiffReleases,
       checkedReleasesToDiff,
     } = this.state;
-    const downstream = app.downstreams.length && app.downstreams[0];
+    const downstream = app?.downstream;
     const gitopsEnabled = downstream.gitops?.enabled;
     const versionHistory = this.state.versionHistory?.length ? this.state.versionHistory : [];
     return (
@@ -942,21 +944,6 @@ class AppVersionHistory extends Component {
     return {
       firstHash: getCommitHashFromUrl(firstCommitUrl),
       secondHash: getCommitHashFromUrl(secondCommitUrl)
-    }
-  }
-
-  yamlErrorsDetails = (downstream, version) => {
-    const pendingVersion = downstream?.pendingVersions?.find(v => v.sequence === version?.sequence);
-    const pastVersion = downstream?.pastVersions?.find(v => v.sequence === version?.sequence);
-
-    if (downstream?.currentVersion?.sequence === version?.sequence) {
-      return downstream?.currentVersion?.yamlErrors ? downstream?.currentVersion?.yamlErrors : false;
-    } else if (pendingVersion?.yamlErrors) {
-      return pendingVersion?.yamlErrors;
-    } else if (pastVersion?.yamlErrors) {
-      return pastVersion?.yamlErrors;
-    } else {
-      return false;
     }
   }
 
@@ -1051,16 +1038,52 @@ class AppVersionHistory extends Component {
     )
   }
 
+  renderOtherAvailableVersions = () => {
+    // This is kinda hacky. This finds the equivalent downstream version because the midstream
+    // version type does not contain metadata like version label or release notes.
+    const otherAvailableVersions = this.state.versionHistory?.slice(1); // exclude latest version
+    if (!otherAvailableVersions?.length) {
+      return null;
+    }
+
+    const { currentPage, pageSize, totalCount, loadingPage } = this.state;
+
+    return (
+      <div>
+        <div className="flex u-marginBottom--15 u-marginTop--30">
+          <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy">Other available versions</p>
+        </div>
+        {otherAvailableVersions?.map((version) => this.renderAppVersionHistoryRow(version))}
+        <Pager
+          pagerType="releases"
+          currentPage={currentPage}
+          pageSize={pageSize}
+          totalCount={totalCount}
+          loading={loadingPage}
+          currentPageLength={otherAvailableVersions.length}
+          goToPage={this.onGotoPage}
+        />
+      </div>
+    )
+  }
+
+  onGotoPage = (page, ev) => {
+    ev.preventDefault();
+    this.setState({ currentPage: page, loadingPage: true }, async () => {
+      await this.fetchKotsDownstreamHistory();
+      this.setState({ loadingPage: false });
+    });
+  }
+
   renderAppVersionHistoryRow = version => {
     if (this.state.selectedDiffReleases && version.status === "pending_download") {
       // non-downloaded versions can't be diffed
       return null;
     }
 
-    const downstream = this.props.app.downstreams?.length && this.props.app.downstreams[0];
+    const downstream = this.props.app.downstream;
     const gitopsEnabled = downstream?.gitops?.enabled;
     const nothingToCommit = gitopsEnabled && !version.commitUrl;
-    const yamlErrorsDetails = this.yamlErrorsDetails(downstream, version);
     const isChecked = !!this.state.checkedReleasesToDiff.find(diffRelease => diffRelease.parentSequence === version.parentSequence);
     const isNew = secondsAgo(version.createdOn) < 10;
 
@@ -1076,8 +1099,7 @@ class AppVersionHistory extends Component {
         isChecked={isChecked}
         isNew={isNew}
         showReleaseNotes={this.showReleaseNotes}
-        renderSourceAndDiff={this.renderSourceAndDiff}
-        yamlErrorsDetails={yamlErrorsDetails}
+        renderDiff={this.renderDiff}
         toggleShowDetailsModal={this.toggleShowDetailsModal}
         gitopsEnabled={gitopsEnabled}
         deployVersion={this.deployVersion}
@@ -1135,13 +1157,9 @@ class AppVersionHistory extends Component {
       );
     }
 
-    const downstream = app.downstreams.length && app.downstreams[0];
+    const downstream = app?.downstream;
     const gitopsEnabled = downstream.gitops?.enabled;
     const currentDownstreamVersion = downstream?.currentVersion;
-
-    // This is kinda hacky. This finds the equivalent downstream version because the midstream
-    // version type does not contain metadata like version label or release notes.
-    const otherAvailableVersions = versionHistory.filter((i, idx) => idx !== 0);
     const isPastVersion = find(downstream?.pastVersions, { sequence: this.state.versionToDeploy?.sequence });
   
     let checkingUpdateTextShort = checkingUpdateMessage;
@@ -1210,7 +1228,7 @@ class AppVersionHistory extends Component {
                                 <ReactTooltip effect="solid" className="replicated-tooltip" />
                               </div>}
                             <div>
-                              <Link to={`/app/${app?.slug}/downstreams/${app.downstreams[0].cluster?.slug}/version-history/preflight/${currentDownstreamVersion?.sequence}`}
+                              <Link to={`/app/${app?.slug}/downstreams/${app.downstream.cluster?.slug}/version-history/preflight/${currentDownstreamVersion?.sequence}`}
                                 className="icon preflightChecks--icon u-marginRight--10 u-cursor--pointer"
                                 data-tip="View preflight checks" />
                               <ReactTooltip effect="solid" className="replicated-tooltip" />
@@ -1222,7 +1240,7 @@ class AppVersionHistory extends Component {
                             </div>
                             {app.isConfigurable &&
                               <div>
-                                <Link to={`/app/${app?.slug}/config/${app?.downstreams[0]?.currentVersion?.parentSequence}`} className="icon configEdit--icon u-cursor--pointer" data-tip="Edit config" />
+                                <Link to={`/app/${app?.slug}/config/${app?.downstream?.currentVersion?.parentSequence}`} className="icon configEdit--icon u-cursor--pointer" data-tip="Edit config" />
                                 <ReactTooltip effect="solid" className="replicated-tooltip" />
                               </div>}
                           </div> : null}
@@ -1234,7 +1252,7 @@ class AppVersionHistory extends Component {
 
               <div className={`TableDiff--Wrapper flex-column flex1 alignSelf--start ${gitopsEnabled ? "gitops-enabled" : ""}`}>
                 <div className={`flex-column flex1 version ${showDiffOverlay ? "u-visibility--hidden" : ""}`}>
-                {versionHistory.length >= 1 ?
+                {versionHistory?.length > 0 ?
                   <div>
                     <div>
                       <div className="flex justifyContent--spaceBetween u-marginBottom--15">
@@ -1272,12 +1290,7 @@ class AppVersionHistory extends Component {
                       {this.renderAppVersionHistoryRow(versionHistory[0])}
                     </div>
                     {this.renderUpdateProgress()}
-                    {otherAvailableVersions.length > 0 &&
-                      <div className="flex u-marginBottom--15 u-marginTop--30">
-                        <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy">Other available versions</p>
-                      </div>
-                    }
-                    {otherAvailableVersions?.map((version) => this.renderAppVersionHistoryRow(version))}
+                    {this.renderOtherAvailableVersions()}
                   </div>
                 :
                 <div className="flex-column flex1 alignItems--center justifyContent--center">

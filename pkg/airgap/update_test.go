@@ -5,7 +5,7 @@ import (
 
 	"github.com/blang/semver"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/pkg/api/version/types"
+	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/cursor"
 	"github.com/stretchr/testify/require"
 )
@@ -16,7 +16,7 @@ func Test_getMissingRequiredVersions(t *testing.T) {
 		name              string
 		airgap            *kotsv1beta1.Airgap
 		license           *kotsv1beta1.License
-		installedVersions []*types.AppVersion
+		installedVersions []*downstreamtypes.DownstreamVersion
 		wantSemver        []string
 		wantNoSemver      []string
 	}{
@@ -36,7 +36,7 @@ func Test_getMissingRequiredVersions(t *testing.T) {
 			license: &kotsv1beta1.License{
 				Spec: kotsv1beta1.LicenseSpec{},
 			},
-			installedVersions: []*types.AppVersion{},
+			installedVersions: []*downstreamtypes.DownstreamVersion{},
 			wantNoSemver:      []string{},
 			wantSemver:        []string{},
 		},
@@ -64,7 +64,7 @@ func Test_getMissingRequiredVersions(t *testing.T) {
 			license: &kotsv1beta1.License{
 				Spec: kotsv1beta1.LicenseSpec{},
 			},
-			installedVersions: []*types.AppVersion{
+			installedVersions: []*downstreamtypes.DownstreamVersion{
 				{
 					ChannelID:    channelID,
 					VersionLabel: "0.1.124",
@@ -98,7 +98,7 @@ func Test_getMissingRequiredVersions(t *testing.T) {
 			license: &kotsv1beta1.License{
 				Spec: kotsv1beta1.LicenseSpec{},
 			},
-			installedVersions: []*types.AppVersion{
+			installedVersions: []*downstreamtypes.DownstreamVersion{
 				{
 					ChannelID:    channelID,
 					VersionLabel: "0.1.117",
@@ -132,7 +132,7 @@ func Test_getMissingRequiredVersions(t *testing.T) {
 			license: &kotsv1beta1.License{
 				Spec: kotsv1beta1.LicenseSpec{},
 			},
-			installedVersions: []*types.AppVersion{
+			installedVersions: []*downstreamtypes.DownstreamVersion{
 				{
 					ChannelID:    channelID,
 					VersionLabel: "0.1.113",
@@ -166,7 +166,7 @@ func Test_getMissingRequiredVersions(t *testing.T) {
 			license: &kotsv1beta1.License{
 				Spec: kotsv1beta1.LicenseSpec{},
 			},
-			installedVersions: []*types.AppVersion{
+			installedVersions: []*downstreamtypes.DownstreamVersion{
 				{
 					ChannelID:    "different-channel",
 					VersionLabel: "0.1.117",

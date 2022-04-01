@@ -135,7 +135,7 @@ export default class DashboardLicenseCard extends React.Component {
     const { syncingLicense, showNextStepModal, message, messageType } = this.state;
     const expiresAt = getLicenseExpiryDate(appLicense);
     const isCommunityLicense = appLicense?.licenseType === "community";
-    const gitops = app?.downstreams?.length && app.downstreams[0]?.gitops;
+    const gitops = app.downstream?.gitops;
     const appName = app?.name || "Your application";
     const expiredLicenseClassName = Utilities.checkIsDateExpired(expiresAt) ? "expired-license" : "";
     const appLicenseClassName = appLicense && size(appLicense) === 0 ? "no-license" : "dashboard-card";

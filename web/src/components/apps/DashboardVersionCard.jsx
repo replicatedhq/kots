@@ -2,14 +2,13 @@ import React from "react";
 import { Link, withRouter } from "react-router-dom";
 import ReactTooltip from "react-tooltip"
 
-import filter from "lodash/filter";
-import findIndex from "lodash/findIndex";
 import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
 import Modal from "react-modal";
 import AirgapUploadProgress from "../AirgapUploadProgress";
 import Loader from "../shared/Loader";
 import MountAware from "../shared/MountAware";
+import ShowDetailsModal from "@src/components/modals/ShowDetailsModal";
 import ShowLogsModal from "@src/components/modals/ShowLogsModal";
 import DeployWarningModal from "../shared/modals/DeployWarningModal";
 import SkipPreflightsModal from "../shared/modals/SkipPreflightsModal";
@@ -29,6 +28,10 @@ class DashboardVersionCard extends React.Component {
       logs: null,
       selectedTab: null,
       displayConfirmDeploymentModal: false,
+      displayShowDetailsModal: false,
+      yamlErrorDetails: [],
+      deployView: false,
+      selectedSequence: -1,
       showDiffModal: false,
       showNoChangesModal: false,
       releaseWithNoChanges: {},
@@ -109,7 +112,7 @@ class DashboardVersionCard extends React.Component {
   handleViewLogs = async (version, isFailing) => {
     try {
       const { app } = this.props;
-      const clusterId = app.downstreams?.length && app.downstreams[0].cluster?.id;
+      const clusterId = app.downstream.cluster?.id;
 
       this.setState({ logsLoading: true, showLogsModal: true, viewLogsErrMsg: "", versionFailing: false });
 
@@ -208,6 +211,10 @@ class DashboardVersionCard extends React.Component {
     });
   }
 
+  toggleShowDetailsModal = (yamlErrorDetails, selectedSequence) => {
+    this.setState({ displayShowDetailsModal: !this.state.displayShowDetailsModal, deployView: false, yamlErrorDetails, selectedSequence });
+  }
+
   getPreflightState = (version) => {
     let preflightsFailed = false;
     let preflightState = "";
@@ -265,7 +272,7 @@ class DashboardVersionCard extends React.Component {
           </div>
         :
         <div>
-          <Link to={`/app/${app?.slug}/downstreams/${app?.downstreams[0].cluster?.slug}/version-history/preflight/${version?.sequence}`}
+          <Link to={`/app/${app?.slug}/downstreams/${app?.downstream.cluster?.slug}/version-history/preflight/${version?.sequence}`}
             className="icon preflightChecks--icon u-marginLeft--10 u-cursor--pointer u-position--relative"
             data-tip="View preflight checks">
               {preflightState.preflightsFailed || preflightState.preflightState === "warn" ?
@@ -371,77 +378,65 @@ class DashboardVersionCard extends React.Component {
     }
   }
 
-  renderSourceAndDiff = version => {
+  renderDiff = version => {
     const { app } = this.props;
-    const downstream = app.downstreams?.length && app.downstreams[0];
+    const downstream = app?.downstream;
     const diffSummary = this.getVersionDiffSummary(version);
     const hasDiffSummaryError = version.diffSummaryError && version.diffSummaryError.length > 0;
 
     if (hasDiffSummaryError) {
       return (
-        <div className="flex flex1 alignItems--center">
+        <div className="flex flex1 alignItems--center u-marginTop--5">
           <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-textColor--bodyCopy">Unable to generate diff <span className="replicated-link" onClick={() => this.toggleDiffErrModal(version)}>Why?</span></span>
         </div>
       );
-    } else if (version.source === "Online Install") {
+    } else if (diffSummary) {
       return (
-        <div className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal">
-          <span>Online Install</span>
-        </div>
-      );
-    } else {
-      return (
-        <div className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal">
-          {diffSummary ?
-            (diffSummary.filesChanged > 0 ?
-              <div className="DiffSummary u-marginRight--10">
-                <span className="files">{diffSummary.filesChanged} files changed </span>
-                {!downstream.gitops?.enabled &&
-                  <Link className="u-fontSize--small replicated-link u-marginLeft--5" to={`${this.props.location.pathname}?diff/${this.props.currentVersion?.sequence}/${version.parentSequence}`}>View diff</Link>
-                }
-              </div>
-              :
-              <div className="DiffSummary">
-                <span className="files">No changes to show. <span className="replicated-link" onClick={() => this.toggleNoChangesModal(version)}>Why?</span></span>
-              </div>
-            )
-            : <span>&nbsp;</span>}
+        <div className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginTop--5">
+          {diffSummary.filesChanged > 0 ?
+            <div className="DiffSummary u-marginRight--10">
+              <span className="files">{diffSummary.filesChanged} files changed </span>
+              {!downstream.gitops?.enabled &&
+                <Link className="u-fontSize--small replicated-link u-marginLeft--5" to={`${this.props.location.pathname}?diff/${this.props.currentVersion?.sequence}/${version.parentSequence}`}>View diff</Link>
+              }
+            </div>
+            :
+            <div className="DiffSummary">
+              <span className="files">No changes to show. <span className="replicated-link" onClick={() => this.toggleNoChangesModal(version)}>Why?</span></span>
+            </div>
+          }
         </div>
       );
     }
   }
 
-  yamlErrorsDetails = (downstream, version) => {
-    const pendingVersion = downstream?.pendingVersions?.find(v => v.sequence === version?.sequence);
-    const pastVersion = downstream?.pastVersions?.find(v => v.sequence === version?.sequence);
-
-    if (downstream?.currentVersion?.sequence === version?.sequence) {
-      return downstream?.currentVersion?.yamlErrors ? downstream?.currentVersion?.yamlErrors : false;
-    } else if (pendingVersion?.yamlErrors) {
-      return pendingVersion?.yamlErrors;
-    } else if (pastVersion?.yamlErrors) {
-      return pastVersion?.yamlErrors;
-    } else {
-      return false;
+  renderYamlErrors = (version) => {
+    if (!version.yamlErrors) {
+      return null;
     }
+    return (
+      <div className="flex alignItems--center u-marginTop--5">
+        <span className="icon error-small" />
+        <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5 u-textColor--error">{version.yamlErrors?.length} Invalid file{version.yamlErrors?.length !== 1 ? "s" : ""} </span>
+        <span className="replicated-link u-marginLeft--5 u-fontSize--small" onClick={() => this.toggleShowDetailsModal(version.yamlErrors, version.sequence)}> See details </span>
+      </div>
+    )
   }
 
   deployVersion = (version, force = false, continueWithFailedPreflights = false, redeploy = false) => {
     const { app } = this.props;
-    const clusterSlug = app.downstreams?.length && app.downstreams[0].cluster?.slug;
+    const clusterSlug = app.downstream.cluster?.slug;
     if (!clusterSlug) {
       return;
     }
-    const downstream = app.downstreams?.length && app.downstreams[0];
-    const yamlErrorDetails = this.yamlErrorsDetails(downstream, version);
 
     if (!force) {
-      if (yamlErrorDetails) {
+      if (version.yamlErrors) {
         this.setState({
           displayShowDetailsModal: !this.state.displayShowDetailsModal,
           deployView: true,
           versionToDeploy: version,
-          yamlErrorDetails
+          yamlErrorDetails: version.yamlErrors,
         });
         return;
       }
@@ -543,8 +538,8 @@ class DashboardVersionCard extends React.Component {
 
   renderGitopsVersionAction = version => {
     const { app } = this.props;
-    const downstream = app.downstreams?.length && app.downstreams[0];
-    const nothingToCommit = downstream?.gitops?.enabled && !downstream?.latestVersion?.commitUrl;
+    const downstream = app?.downstream;
+    const nothingToCommit = downstream?.gitops?.enabled && !version?.commitUrl;
 
     if (version.status === "pending_download") {
       const isDownloading = this.state.versionDownloadStatuses?.[version.sequence]?.downloadingVersion;
@@ -587,7 +582,7 @@ class DashboardVersionCard extends React.Component {
   
   renderVersionAction = version => {
     const { app } = this.props;
-    const downstream = app.downstreams[0];
+    const downstream = app?.downstream;
 
     if (downstream.gitops?.enabled) {
       return this.renderGitopsVersionAction(version);
@@ -1005,9 +1000,8 @@ class DashboardVersionCard extends React.Component {
                 }
               </div>
               <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5"> Released {Utilities.dateFormat(nextAppVersion?.createdOn, "MM/DD/YY @ hh:mm a z")} </p>
-              <div className="u-marginTop--5 flex flex-auto alignItems--center">
-                {this.renderSourceAndDiff(nextAppVersion)}
-              </div>
+              {this.renderDiff(nextAppVersion)}
+              {this.renderYamlErrors(nextAppVersion)}
             </div>
             <div className="flex alignItems--center u-paddingLeft--20">
               <p className="u-fontSize--small u-fontWeight--bold u-textColor--lightAccent u-lineHeight--default">{downstreamSource}</p>
@@ -1196,12 +1190,26 @@ class DashboardVersionCard extends React.Component {
               </div>
             </Modal>
           }
+          {this.state.displayShowDetailsModal &&
+            <ShowDetailsModal
+              displayShowDetailsModal={this.state.displayShowDetailsModal}
+              toggleShowDetailsModal={this.toggleShowDetailsModal}
+              yamlErrorDetails={this.state.yamlErrorDetails}
+              deployView={this.state.deployView}
+              forceDeploy={this.onForceDeployClick}
+              showDeployWarningModal={this.state.showDeployWarningModal}
+              showSkipModal={this.state.showSkipModal}
+              slug={this.props.match.params.slug}
+              sequence={this.state.selectedSequence}
+            />}
+
           {this.state.showDeployWarningModal &&
-          <DeployWarningModal
-            showDeployWarningModal={this.state.showDeployWarningModal}
-            hideDeployWarningModal={() => this.setState({ showDeployWarningModal: false })}
-            onForceDeployClick={this.onForceDeployClick}
-          />}
+            <DeployWarningModal
+              showDeployWarningModal={this.state.showDeployWarningModal}
+              hideDeployWarningModal={() => this.setState({ showDeployWarningModal: false })}
+              onForceDeployClick={this.onForceDeployClick}
+            />
+          }
           {this.state.showSkipModal &&
             <SkipPreflightsModal
               showSkipModal={true}

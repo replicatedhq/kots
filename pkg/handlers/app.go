@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -172,108 +173,89 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		return nil, errors.Wrap(err, "failed to get license")
 	}
 
-	latestAppVersion, err := store.GetStore().GetLatestAppVersion(a.ID, true)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get latest app version")
-	}
-
-	isIdentityServiceSupportedForVersion, err := store.GetStore().IsIdentityServiceSupportedForVersion(a.ID, latestAppVersion.Sequence)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to check if identity service is supported for version %d", latestAppVersion.Sequence)
-	}
-	isAppIdentityServiceSupported := isIdentityServiceSupportedForVersion && license.Spec.IsIdentityServiceSupported
-
-	allowRollback, err := store.GetStore().IsRollbackSupportedForVersion(a.ID, latestAppVersion.Sequence)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to check if rollback is supported")
-	}
-
-	targetKotsVersion, err := store.GetStore().GetTargetKotsVersionForVersion(a.ID, latestAppVersion.Sequence)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get target kots version")
-	}
-
 	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list downstreams for app")
 	}
+	if len(downstreams) == 0 {
+		return nil, errors.New("no downstreams for app")
+	}
+	d := downstreams[0]
 
-	responseDownstreams := []types.ResponseDownstream{}
-	for _, d := range downstreams {
-		parentSequence, err := store.GetStore().GetCurrentParentSequence(a.ID, d.ClusterID)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get current parent sequence for downstream")
-		}
+	appVersions, err := store.GetStore().GetDownstreamVersions(a.ID, d.ClusterID, true)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get downstream versions")
+	}
+	latestVersion := appVersions.AllVersions[0]
 
-		links, err := version.GetRealizedLinksFromAppSpec(a.ID, parentSequence)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get realized links from app spec")
-		}
+	isIdentityServiceSupportedForVersion, err := store.GetStore().IsIdentityServiceSupportedForVersion(a.ID, latestVersion.ParentSequence)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to check if identity service is supported for version %d", latestVersion.ParentSequence)
+	}
+	isAppIdentityServiceSupported := isIdentityServiceSupportedForVersion && license.Spec.IsIdentityServiceSupported
 
-		appVersions, err := store.GetStore().GetDownstreamVersions(a.ID, d.ClusterID, true)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get downstream versions")
-		}
+	allowRollback, err := store.GetStore().IsRollbackSupportedForVersion(a.ID, latestVersion.ParentSequence)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to check if rollback is supported")
+	}
 
-		latestVersion, err := store.GetStore().GetLatestDownstreamVersion(a.ID, d.ClusterID, false)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get latest downstream version")
-		}
+	targetKotsVersion, err := store.GetStore().GetTargetKotsVersionForVersion(a.ID, latestVersion.ParentSequence)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get target kots version")
+	}
 
-		downstreamGitOps, err := gitops.GetDownstreamGitOps(a.ID, d.ClusterID)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get downstream gitops")
-		}
-		responseGitOps := types.ResponseGitOps{}
-		if downstreamGitOps != nil {
-			responseGitOps = types.ResponseGitOps{
-				Enabled:     true,
-				Provider:    downstreamGitOps.Provider,
-				Uri:         downstreamGitOps.RepoURI,
-				Hostname:    downstreamGitOps.Hostname,
-				HTTPPort:    downstreamGitOps.HTTPPort,
-				SSHPort:     downstreamGitOps.SSHPort,
-				Path:        downstreamGitOps.Path,
-				Branch:      downstreamGitOps.Branch,
-				Format:      downstreamGitOps.Format,
-				Action:      downstreamGitOps.Action,
-				DeployKey:   downstreamGitOps.PublicKey,
-				IsConnected: downstreamGitOps.IsConnected,
-			}
-		}
-
-		cluster := types.ResponseCluster{
-			ID:   d.ClusterID,
-			Slug: d.ClusterSlug,
-		}
-
-		responseDownstream := types.ResponseDownstream{
-			Name:            d.Name,
-			Links:           links,
-			CurrentVersion:  appVersions.CurrentVersion,
-			PendingVersions: appVersions.PendingVersions,
-			PastVersions:    appVersions.PastVersions,
-			LatestVersion:   latestVersion,
-			GitOps:          responseGitOps,
-			Cluster:         cluster,
-		}
-
-		responseDownstreams = append(responseDownstreams, responseDownstream)
+	parentSequence, err := store.GetStore().GetCurrentParentSequence(a.ID, d.ClusterID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get current parent sequence for downstream")
 	}
 
 	// check snapshots for the parent sequence of the deployed version
-	allowSnapshots := false
-	if len(downstreams) > 0 {
-		parentSequence, err := store.GetStore().GetCurrentParentSequence(a.ID, downstreams[0].ClusterID)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get current parent sequence for downstream")
-		}
+	s, err := store.GetStore().IsSnapshotsSupportedForVersion(a, parentSequence, &render.Renderer{})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to check if snapshots is allowed")
+	}
+	allowSnapshots := s && license.Spec.IsSnapshotSupported
 
-		s, err := store.GetStore().IsSnapshotsSupportedForVersion(a, parentSequence, &render.Renderer{})
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to check if snapshots is allowed")
+	links, err := version.GetRealizedLinksFromAppSpec(a.ID, parentSequence)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get realized links from app spec")
+	}
+
+	downstreamGitOps, err := gitops.GetDownstreamGitOps(a.ID, d.ClusterID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get downstream gitops")
+	}
+	responseGitOps := types.ResponseGitOps{}
+	if downstreamGitOps != nil {
+		responseGitOps = types.ResponseGitOps{
+			Enabled:     true,
+			Provider:    downstreamGitOps.Provider,
+			Uri:         downstreamGitOps.RepoURI,
+			Hostname:    downstreamGitOps.Hostname,
+			HTTPPort:    downstreamGitOps.HTTPPort,
+			SSHPort:     downstreamGitOps.SSHPort,
+			Path:        downstreamGitOps.Path,
+			Branch:      downstreamGitOps.Branch,
+			Format:      downstreamGitOps.Format,
+			Action:      downstreamGitOps.Action,
+			DeployKey:   downstreamGitOps.PublicKey,
+			IsConnected: downstreamGitOps.IsConnected,
 		}
-		allowSnapshots = s && license.Spec.IsSnapshotSupported
+	}
+
+	cluster := types.ResponseCluster{
+		ID:   d.ClusterID,
+		Slug: d.ClusterSlug,
+	}
+
+	responseDownstream := types.ResponseDownstream{
+		Name:            d.Name,
+		Links:           links,
+		CurrentVersion:  appVersions.CurrentVersion,
+		PendingVersions: appVersions.PendingVersions,
+		PastVersions:    appVersions.PastVersions,
+		GitOps:          responseGitOps,
+		Cluster:         cluster,
 	}
 
 	responseApp := types.ResponseApp{
@@ -281,7 +263,7 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		Slug:                           a.Slug,
 		Name:                           a.Name,
 		IsAirgap:                       a.IsAirgap,
-		CurrentSequence:                latestAppVersion.Sequence,
+		CurrentSequence:                latestVersion.ParentSequence,
 		UpstreamURI:                    a.UpstreamURI,
 		IconURI:                        a.IconURI,
 		CreatedAt:                      a.CreatedAt,
@@ -301,19 +283,44 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		AllowSnapshots:                 allowSnapshots,
 		TargetKotsVersion:              targetKotsVersion,
 		LicenseType:                    license.Spec.LicenseType,
-		Downstreams:                    responseDownstreams,
+		Downstream:                     responseDownstream,
 	}
 
 	return &responseApp, nil
 }
 
-type GetAppVersionsResponse struct {
+type GetAppVersionHistoryResponse struct {
 	VersionHistory []*downstreamtypes.DownstreamVersion `json:"versionHistory"`
+	TotalCount     int64                                `json:"totalCount"`
 }
 
 func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
-	appSlug := mux.Vars(r)["appSlug"]
+	pageSize := 20
+	currentPage := 0
+	pinLatest, _ := strconv.ParseBool(r.URL.Query().Get("pinLatest"))
 
+	if val := r.URL.Query().Get("pageSize"); val != "" {
+		ps, err := strconv.Atoi(val)
+		if err != nil {
+			err = errors.Wrap(err, "failed to parse page size")
+			logger.Error(err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		pageSize = ps
+	}
+	if val := r.URL.Query().Get("currentPage"); val != "" {
+		cp, err := strconv.Atoi(val)
+		if err != nil {
+			err = errors.Wrap(err, "failed to parse current page")
+			logger.Error(err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		currentPage = cp
+	}
+
+	appSlug := mux.Vars(r)["appSlug"]
 	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get app from slug")
@@ -337,7 +344,7 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 
 	clusterID := downstreams[0].ClusterID
 
-	appVersions, err := store.GetStore().GetDownstreamVersions(foundApp.ID, clusterID, false)
+	appVersions, err := store.GetStore().GetDownstreamVersionHistory(foundApp.ID, clusterID, currentPage, pageSize, pinLatest)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get downstream versions")
 		logger.Error(err)
@@ -345,8 +352,17 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := GetAppVersionsResponse{
-		VersionHistory: appVersions.AllVersions,
+	totalCount, err := store.GetStore().TotalNumOfDownstreamVersions(foundApp.ID, clusterID, false)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get total number of downstream versions")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	response := GetAppVersionHistoryResponse{
+		VersionHistory: appVersions,
+		TotalCount:     totalCount,
 	}
 
 	JSON(w, http.StatusOK, response)
@@ -397,7 +413,7 @@ func (h *Handler) RemoveApp(w http.ResponseWriter, r *http.Request) {
 		}
 
 		for _, d := range downstreams {
-			currentVersion, err := store.GetStore().GetCurrentVersion(app.ID, d.ClusterID)
+			currentVersion, err := store.GetStore().GetCurrentDownstreamVersion(app.ID, d.ClusterID)
 			if err != nil {
 				response.Error = "failed to get current downstream version"
 				logger.Error(errors.Wrap(err, response.Error))
@@ -536,81 +552,36 @@ func (h *Handler) GetNextAppVersion(w http.ResponseWriter, r *http.Request) {
 		errMsg := "failed to get app from slug"
 		logger.Error(errors.Wrap(err, errMsg))
 		getNextAppVersionResponse.Error = errMsg
-		w.WriteHeader(http.StatusBadRequest)
+		JSON(w, http.StatusBadRequest, getNextAppVersionResponse)
 		return
 	}
 
-	versions, err := store.GetStore().FindDownstreamVersions(a.ID, false)
+	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
 	if err != nil {
-		errMsg := "failed to find app downstream versions"
+		errMsg := "failed to list downstreams for app"
 		logger.Error(errors.Wrap(err, errMsg))
 		getNextAppVersionResponse.Error = errMsg
-		w.WriteHeader(http.StatusInternalServerError)
+		JSON(w, http.StatusInternalServerError, getNextAppVersionResponse)
 		return
-	}
-
-	if len(versions.AllVersions) == 0 {
-		errMsg := "no versions found for app"
+	} else if len(downstreams) == 0 {
+		errMsg := "no downstreams for app"
 		logger.Error(errors.New(errMsg))
 		getNextAppVersionResponse.Error = errMsg
-		w.WriteHeader(http.StatusInternalServerError)
+		JSON(w, http.StatusInternalServerError, getNextAppVersionResponse)
+		return
+	}
+	clusterID := downstreams[0].ClusterID
+
+	nextVersion, numOfSkippedVersions, numOfRemainingVersions, err := store.GetStore().GetNextDownstreamVersion(a.ID, clusterID)
+	if err != nil {
+		errMsg := "failed to get next downtream version"
+		logger.Error(errors.Wrap(err, errMsg))
+		getNextAppVersionResponse.Error = errMsg
+		JSON(w, http.StatusInternalServerError, getNextAppVersionResponse)
 		return
 	}
 
-	if versions.CurrentVersion == nil {
-		// no version has been deployed yet, next app version is the latest version
-		getNextAppVersionResponse.NextAppVersion = versions.AllVersions[0]
-		getNextAppVersionResponse.NumOfSkippedVersions = len(versions.AllVersions) - 1
-		getNextAppVersionResponse.NumOfRemainingVersions = 0
-		JSON(w, http.StatusOK, getNextAppVersionResponse)
-		return
-	}
-
-	if len(versions.PendingVersions) == 0 {
-		// latest version is already deployed, there's no next app version
-		getNextAppVersionResponse.NextAppVersion = nil
-		getNextAppVersionResponse.NumOfSkippedVersions = 0
-		getNextAppVersionResponse.NumOfRemainingVersions = 0
-		JSON(w, http.StatusOK, getNextAppVersionResponse)
-		return
-	}
-
-	// find required versions
-	requiredVersions := []*downstreamtypes.DownstreamVersion{}
-	for _, v := range versions.PendingVersions {
-		if v.IsRequired {
-			requiredVersions = append(requiredVersions, v)
-		}
-	}
-
-	var nextAppVersion *downstreamtypes.DownstreamVersion
-	if len(requiredVersions) > 0 {
-		// next app version is the earliest pending required version
-		nextAppVersion = requiredVersions[len(requiredVersions)-1]
-	} else {
-		// next app version is the latest pending version
-		nextAppVersion = versions.PendingVersions[0]
-	}
-
-	nextAppVersionIndex := -1
-	for i, v := range versions.PendingVersions {
-		if v.Sequence == nextAppVersion.Sequence {
-			nextAppVersionIndex = i
-			break
-		}
-	}
-
-	numOfSkippedVersions, numOfRemainingVersions := 0, 0
-	for i := range versions.PendingVersions {
-		if i < nextAppVersionIndex {
-			numOfRemainingVersions++
-		}
-		if i > nextAppVersionIndex {
-			numOfSkippedVersions++
-		}
-	}
-
-	getNextAppVersionResponse.NextAppVersion = nextAppVersion
+	getNextAppVersionResponse.NextAppVersion = nextVersion
 	getNextAppVersionResponse.NumOfSkippedVersions = numOfSkippedVersions
 	getNextAppVersionResponse.NumOfRemainingVersions = numOfRemainingVersions
 

@@ -787,43 +787,18 @@ func (s *KOTSStore) GetAppVersion(appID string, sequence int64) (*versiontypes.A
 	return v, nil
 }
 
-func (s *KOTSStore) GetAppVersions(appID string) ([]*versiontypes.AppVersion, error) {
-	db := persistence.MustGetDBSession()
-	query := `select app_id, sequence, update_cursor, channel_id, version_label, created_at, status, applied_at, kots_installation_spec, kots_app_spec, kots_license from app_version where app_id = $1`
-
-	rows, err := db.Query(query, appID)
+// GetLatestAppSequence returns the sequence of the latest app version.
+// This function handles both semantic and non-semantic versions.
+// If downloadedOnly param is set to true, the sequence of the latest downloaded app version will be returned.
+func (s *KOTSStore) GetLatestAppSequence(appID string, downloadedOnly bool) (int64, error) {
+	versions, err := s.FindDownstreamVersions(appID, downloadedOnly)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to query db")
+		return 0, errors.Wrap(err, "failed to get latest downstream version")
 	}
-
-	versions := []*versiontypes.AppVersion{}
-	for rows.Next() {
-		v, err := s.appVersionFromRow(rows)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get app version from row")
-		}
-		versions = append(versions, v)
+	if len(versions.AllVersions) == 0 {
+		return 0, errors.New("no versions found for app")
 	}
-
-	if err := rows.Err(); err != nil {
-		if err == sql.ErrNoRows {
-			return versions, nil
-		}
-		return nil, errors.Wrap(err, "failed to iterate over rows")
-	}
-
-	return versions, nil
-}
-
-func (s *KOTSStore) GetLatestAppVersion(appID string, downloadedOnly bool) (*versiontypes.AppVersion, error) {
-	downstreamVersions, err := s.FindDownstreamVersions(appID, downloadedOnly)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to find app downstream versions")
-	}
-	if len(downstreamVersions.AllVersions) == 0 {
-		return nil, errors.New("no app versions found")
-	}
-	return s.GetAppVersion(appID, downstreamVersions.AllVersions[0].ParentSequence)
+	return versions.AllVersions[0].ParentSequence, nil
 }
 
 func (s *KOTSStore) UpdateNextAppVersionDiffSummary(appID string, baseSequence int64) error {
@@ -970,6 +945,7 @@ func (s *KOTSStore) HasStrictPreflights(appID string, sequence int64) (bool, err
 	if err := row.Scan(&preflightSpecStr); err != nil {
 		return false, errors.Wrap(err, "failed to scan")
 	}
+
 	return s.hasStrictPreflights(preflightSpecStr)
 }
 

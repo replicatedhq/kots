@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 
 	"github.com/pkg/errors"
@@ -30,6 +31,9 @@ func GetVersionsCmd() *cobra.Command {
 		RunE: getVersionsCmd,
 	}
 
+	cmd.Flags().Int("current-page", 0, "offset by page size at which to start retrieving versions")
+	cmd.Flags().Int("page-size", 20, "number of versions to return (defaults to 20)")
+	cmd.Flags().Bool("pin-latest", false, "set to true to always return the latest version at the beginning")
 	cmd.Flags().StringP("output", "o", "", "output format (currently supported: json)")
 
 	return cmd
@@ -95,7 +99,12 @@ func getVersionsCmd(cmd *cobra.Command, args []string) error {
 		os.Exit(2) // not returning error here as we don't want to show the entire stack trace to normal users
 	}
 
-	url := fmt.Sprintf("http://localhost:%d/api/v1/app/%s/versions", localPort, appSlug)
+	urlVals := url.Values{}
+	urlVals.Set("currentPage", fmt.Sprintf("%d", v.GetInt("current-page")))
+	urlVals.Set("pageSize", fmt.Sprintf("%d", v.GetInt("page-size")))
+	urlVals.Set("pinLatest", fmt.Sprintf("%t", v.GetBool("pin-latest")))
+
+	url := fmt.Sprintf("http://localhost:%d/api/v1/app/%s/versions?%s", localPort, url.PathEscape(appSlug), urlVals.Encode())
 	appVersions, err := getAppVersions(url, authSlug)
 	if err != nil {
 		return errors.Wrap(err, "failed to get app versions")
@@ -121,7 +130,7 @@ func getVersionsCmd(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func getAppVersions(url string, authSlug string) (*handlers.GetAppVersionsResponse, error) {
+func getAppVersions(url string, authSlug string) (*handlers.GetAppVersionHistoryResponse, error) {
 	newReq, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create request")
@@ -144,7 +153,7 @@ func getAppVersions(url string, authSlug string) (*handlers.GetAppVersionsRespon
 		return nil, errors.Wrap(err, "failed to read")
 	}
 
-	appVersions := handlers.GetAppVersionsResponse{}
+	appVersions := handlers.GetAppVersionHistoryResponse{}
 	if err := json.Unmarshal(b, &appVersions); err != nil {
 		return nil, errors.Wrap(err, "failed to unmarshal app versions")
 	}
