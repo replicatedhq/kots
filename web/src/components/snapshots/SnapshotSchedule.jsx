@@ -270,7 +270,11 @@ class SnapshotSchedule extends Component {
           return
         }
         this.setState({ updatingSchedule: false, updateConfirm: true, updateScheduleErrMsg: " " });
-        setTimeout(() => {
+
+        if (this.confirmTimeout) {
+          clearTimeout(this.confirmTimeout)
+        }
+        this.confirmTimeout = setTimeout(() => {
           this.setState({ updateConfirm: false })
         }, 5000);
       })
