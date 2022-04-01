@@ -295,18 +295,32 @@ type GetAppVersionHistoryResponse struct {
 }
 
 func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
-	appSlug := mux.Vars(r)["appSlug"]
-
 	pageSize := 20
 	currentPage := 0
-	if val := r.URL.Query().Get("pageSize"); val != "" {
-		pageSize, _ = strconv.Atoi(val)
-	}
-	if val := r.URL.Query().Get("currentPage"); val != "" {
-		currentPage, _ = strconv.Atoi(val)
-	}
 	pinLatest, _ := strconv.ParseBool(r.URL.Query().Get("pinLatest"))
 
+	if val := r.URL.Query().Get("pageSize"); val != "" {
+		ps, err := strconv.Atoi(val)
+		if err != nil {
+			err = errors.Wrap(err, "failed to parse page size")
+			logger.Error(err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		pageSize = ps
+	}
+	if val := r.URL.Query().Get("currentPage"); val != "" {
+		cp, err := strconv.Atoi(val)
+		if err != nil {
+			err = errors.Wrap(err, "failed to parse current page")
+			logger.Error(err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		currentPage = cp
+	}
+
+	appSlug := mux.Vars(r)["appSlug"]
 	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get app from slug")

@@ -30,7 +30,7 @@ export default function ShowDetailsModal(props) {
                 <div className="flex flex-column u-marginLeft--10">
                   <div className="flex flex1 alignItems--center">
                     <span className="u-fontSize--large u-fontWeight--bold u-textColor--primary u-lineHeight--normal"> {err.path} </span>
-                    <Link to={`/app/${slug}/tree/${sequence}?${err.path}`}className="replicated-link u-marginLeft--5  u-marginTop--5 u-fontSize--small"> View </Link>
+                    <Link to={`/app/${slug}/tree/${sequence}?${err.path}`}className="replicated-link u-marginLeft--5 u-marginTop--5 u-fontSize--small"> View </Link>
                   </div>
                   <span className="u-fontSize--small u-fontWeight--medium u-textColor--error u-lineHeight--normal"> error: {err.error} </span>
                 </div>

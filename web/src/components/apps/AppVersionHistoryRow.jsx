@@ -10,12 +10,16 @@ import Loader from "../shared/Loader";
 import { Utilities, getPreflightResultState } from "../../utilities/utilities";
 
 class AppVersionHistoryRow extends Component {
-  renderSourceAndDiff = (version) => {
+  renderDiff = (version) => {
     const hideSourceDiff = version.source?.includes("Airgap Install") || version.source?.includes("Online Install");
     if (hideSourceDiff) {
       return null;
     }
-    return this.props.renderSourceAndDiff(version);
+    return (
+      <div className="u-marginTop--5">
+        {this.props.renderDiff(version)}
+      </div>
+    );
   }
 
   handleSelectReleasesToDiff = () => {
@@ -29,15 +33,14 @@ class AppVersionHistoryRow extends Component {
   }
 
   renderYamlErrors = (version) => {
-    const yamlErrorsDetails = this.props.yamlErrorsDetails;
-    if (!yamlErrorsDetails) {
+    if (!version.yamlErrors) {
       return null;
     }
     return (
-      <div className="flex alignItems--center u-marginLeft--5">
+      <div className="flex alignItems--center u-marginTop--5">
         <span className="icon error-small" />
-        <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5 u-textColor--error">{yamlErrorsDetails?.length} Invalid file{yamlErrorsDetails?.length !== 1 ? "s" : ""} </span>
-        <span className="replicated-link u-marginLeft--5 u-fontSize--small" onClick={() => this.props.toggleShowDetailsModal(yamlErrorsDetails, version.sequence)}> See details </span>
+        <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5 u-textColor--error">{version.yamlErrors?.length} Invalid file{version.yamlErrors?.length !== 1 ? "s" : ""} </span>
+        <span className="replicated-link u-marginLeft--5 u-fontSize--small" onClick={() => this.props.toggleShowDetailsModal(version.yamlErrors, version.sequence)}> See details </span>
       </div>
     )
   }
@@ -362,10 +365,8 @@ class AppVersionHistoryRow extends Component {
               }
             </div>
             <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5"> Released <span className="u-fontWeight--bold">{version.upstreamReleasedAt ? Utilities.dateFormat(version.upstreamReleasedAt, "MM/DD/YY @ hh:mm a z") : Utilities.dateFormat(version.createdOn, "MM/DD/YY @ hh:mm a z")}</span></p>
-            <div className="u-marginTop--5 flex flex-auto alignItems--center">
-              {this.renderSourceAndDiff(version)}
-              {this.renderYamlErrors(version)}
-            </div>
+            {this.renderDiff(version)}
+            {this.renderYamlErrors(version)}
           </div>
           <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex1 justifyContent--center`}>
             <p className="u-fontSize--small u-fontWeight--bold u-textColor--lightAccent u-lineHeight--default">{version.source}</p>

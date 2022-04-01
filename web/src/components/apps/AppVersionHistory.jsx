@@ -55,7 +55,7 @@ class AppVersionHistory extends Component {
     displayShowDetailsModal: false,
     yamlErrorDetails: [],
     deployView: false,
-    selectedSequence: "",
+    selectedSequence: -1,
     releaseWithErr: {},
     versionHistoryJob: new Repeater(),
     loadingVersionHistory: true,
@@ -296,7 +296,7 @@ class AppVersionHistory extends Component {
     }
   }
 
-  renderSourceAndDiff = version => {
+  renderDiff = version => {
     const { app } = this.props;
     const downstream = app?.downstream;
     const diffSummary = this.getVersionDiffSummary(version);
@@ -319,23 +319,21 @@ class AppVersionHistory extends Component {
           <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-textColor--bodyCopy">Unable to generate diff <span className="replicated-link" onClick={() => this.toggleDiffErrModal(version)}>Why?</span></span>
         </div>
       );
-    } else {
+    } else if (diffSummary) {
       return (
         <div className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal">
-          {diffSummary ?
-            (diffSummary.filesChanged > 0 ?
-              <div className="DiffSummary u-marginRight--10">
-                <span className="files">{diffSummary.filesChanged} files changed </span>
-                {!downstream.gitops?.enabled &&
-                  <span className="u-fontSize--small replicated-link u-marginLeft--5" onClick={() => this.setState({ showDiffOverlay: true, firstSequence: previousSequence, secondSequence: version.parentSequence})}>View diff</span>
-                }
-              </div>
-              :
-              <div className="DiffSummary">
-                <span className="files">No changes to show. <span className="replicated-link" onClick={() => this.toggleNoChangesModal(version)}>Why?</span></span>
-              </div>
-            )
-            : <span>&nbsp;</span>}
+          {diffSummary.filesChanged > 0 ?
+            <div className="DiffSummary u-marginRight--10">
+              <span className="files">{diffSummary.filesChanged} files changed </span>
+              {!downstream.gitops?.enabled &&
+                <span className="u-fontSize--small replicated-link u-marginLeft--5" onClick={() => this.setState({ showDiffOverlay: true, firstSequence: previousSequence, secondSequence: version.parentSequence})}>View diff</span>
+              }
+            </div>
+            :
+            <div className="DiffSummary">
+              <span className="files">No changes to show. <span className="replicated-link" onClick={() => this.toggleNoChangesModal(version)}>Why?</span></span>
+            </div>
+          }
         </div>
       );
     }
@@ -585,17 +583,14 @@ class AppVersionHistory extends Component {
     if (!clusterSlug) {
       return;
     }
-    const downstream = app?.downstream;
-    const yamlErrorDetails = this.yamlErrorsDetails(downstream, version);
-
 
     if (!force) {
-      if (yamlErrorDetails) {
+      if (version.yamlErrors) {
         this.setState({
           displayShowDetailsModal: !this.state.displayShowDetailsModal,
           deployView: true,
           versionToDeploy: version,
-          yamlErrorDetails
+          yamlErrorDetails: version.yamlErrors,
         });
         return;
       }
@@ -952,21 +947,6 @@ class AppVersionHistory extends Component {
     }
   }
 
-  yamlErrorsDetails = (downstream, version) => {
-    const pendingVersion = downstream?.pendingVersions?.find(v => v.sequence === version?.sequence);
-    const pastVersion = downstream?.pastVersions?.find(v => v.sequence === version?.sequence);
-
-    if (downstream?.currentVersion?.sequence === version?.sequence) {
-      return downstream?.currentVersion?.yamlErrors ? downstream?.currentVersion?.yamlErrors : false;
-    } else if (pendingVersion?.yamlErrors) {
-      return pendingVersion?.yamlErrors;
-    } else if (pastVersion?.yamlErrors) {
-      return pastVersion?.yamlErrors;
-    } else {
-      return false;
-    }
-  }
-
   toggleShowDetailsModal = (yamlErrorDetails, selectedSequence) => {
     this.setState({ displayShowDetailsModal: !this.state.displayShowDetailsModal, deployView: false, yamlErrorDetails, selectedSequence });
   }
@@ -1104,7 +1084,6 @@ class AppVersionHistory extends Component {
     const downstream = this.props.app.downstream;
     const gitopsEnabled = downstream?.gitops?.enabled;
     const nothingToCommit = gitopsEnabled && !version.commitUrl;
-    const yamlErrorsDetails = this.yamlErrorsDetails(downstream, version);
     const isChecked = !!this.state.checkedReleasesToDiff.find(diffRelease => diffRelease.parentSequence === version.parentSequence);
     const isNew = secondsAgo(version.createdOn) < 10;
 
@@ -1120,8 +1099,7 @@ class AppVersionHistory extends Component {
         isChecked={isChecked}
         isNew={isNew}
         showReleaseNotes={this.showReleaseNotes}
-        renderSourceAndDiff={this.renderSourceAndDiff}
-        yamlErrorsDetails={yamlErrorsDetails}
+        renderDiff={this.renderDiff}
         toggleShowDetailsModal={this.toggleShowDetailsModal}
         gitopsEnabled={gitopsEnabled}
         deployVersion={this.deployVersion}
