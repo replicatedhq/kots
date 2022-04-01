@@ -242,8 +242,8 @@ class AppVersionHistoryRow extends Component {
               >
                 {this.deployButtonStatus(version)}
               </span>
-              <ReactTooltip effect="solid" id="disable-deployment-tooltip" />
             </button>
+            <ReactTooltip effect="solid" id="disable-deployment-tooltip" />
           </div>
         }
       </div>
