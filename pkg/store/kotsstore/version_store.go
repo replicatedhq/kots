@@ -795,6 +795,9 @@ func (s *KOTSStore) GetLatestAppSequence(appID string, downloadedOnly bool) (int
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get latest downstream version")
 	}
+	if len(versions.AllVersions) == 0 {
+		return 0, errors.New("no versions found for app")
+	}
 	return versions.AllVersions[0].ParentSequence, nil
 }
 
