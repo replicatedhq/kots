@@ -139,7 +139,7 @@ func (h *Handler) SyncLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !kotsadm.IsAirgap() && currentLicense.Spec.ChannelID != latestLicense.Spec.ChannelID {
+	if !foundApp.IsAirgap && currentLicense.Spec.ChannelID != latestLicense.Spec.ChannelID {
 		// channel changed and this is an online installation, fetch the latest release for the new channel
 		go func(appID string) {
 			opts := updatechecker.CheckForUpdatesOpts{
@@ -624,7 +624,7 @@ func (h *Handler) ChangeLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !kotsadm.IsAirgap() && currentLicense.Spec.ChannelID != newLicense.Spec.ChannelID {
+	if !foundApp.IsAirgap && currentLicense.Spec.ChannelID != newLicense.Spec.ChannelID {
 		// channel changed and this is an online installation, fetch the latest release for the new channel
 		go func(appID string) {
 			opts := updatechecker.CheckForUpdatesOpts{
