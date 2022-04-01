@@ -73,7 +73,8 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 
 	synced := false
 	if updatedLicense.Spec.LicenseSequence != currentLicense.Spec.LicenseSequence ||
-		updatedLicense.Spec.LicenseSequence != kotsKinds.License.Spec.LicenseSequence {
+		updatedLicense.Spec.LicenseSequence != kotsKinds.License.Spec.LicenseSequence ||
+		updatedLicense.Spec.LicenseID != currentLicense.Spec.LicenseID {
 
 		channelChanged := false
 		if updatedLicense.Spec.ChannelID != currentLicense.Spec.ChannelID {
