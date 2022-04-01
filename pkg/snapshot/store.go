@@ -108,6 +108,7 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 		store.Internal = nil
 		store.FileSystem = nil
 
+		store.AWS.Region = options.AWS.Region
 		store.AWS.UseInstanceRole = options.AWS.UseInstanceRole
 		if store.AWS.UseInstanceRole {
 			store.AWS.AccessKeyID = ""
@@ -122,16 +123,11 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 				}
 				store.AWS.SecretAccessKey = options.AWS.SecretAccessKey
 			}
-			if options.AWS.Region != "" {
-				store.AWS.Region = options.AWS.Region
-			}
-		}
-
-		if !store.AWS.UseInstanceRole {
 			if store.AWS.AccessKeyID == "" || store.AWS.SecretAccessKey == "" || store.AWS.Region == "" {
 				return nil, &InvalidStoreDataError{Message: "missing access key id and/or secret access key and/or region"}
 			}
 		}
+
 	} else if options.Google != nil {
 		if store.Google == nil {
 			store.Google = &types.StoreGoogle{}
@@ -428,51 +424,41 @@ func updateGlobalStore(ctx context.Context, store *types.Store, kotsadmNamespace
 			"s3Url":  resolvedEndpoint.URL,
 		}
 
-		if store.AWS.UseInstanceRole {
-			// delete the secret
-			if currentSecretErr == nil {
-				err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Delete(ctx, "cloud-credentials", metav1.DeleteOptions{})
-				if err != nil {
-					return nil, errors.Wrap(err, "failed to delete aws secret")
-				}
+		awsCredentials, err := BuildAWSCredentials(store.AWS.AccessKeyID, store.AWS.SecretAccessKey)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to format aws credentials")
+		}
+
+		// create or update the secret
+		if kuberneteserrors.IsNotFound(currentSecretErr) {
+			// create
+			toCreate := corev1.Secret{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "Secret",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "cloud-credentials",
+					Namespace: kotsadmVeleroBackendStorageLocation.Namespace,
+				},
+				Data: map[string][]byte{
+					"cloud": awsCredentials,
+				},
+			}
+			_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Create(ctx, &toCreate, metav1.CreateOptions{})
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to create aws secret")
 			}
 		} else {
-			awsCredentials, err := BuildAWSCredentials(store.AWS.AccessKeyID, store.AWS.SecretAccessKey)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to format aws credentials")
+			// update
+			if currentSecret.Data == nil {
+				currentSecret.Data = map[string][]byte{}
 			}
 
-			// create or update the secret
-			if kuberneteserrors.IsNotFound(currentSecretErr) {
-				// create
-				toCreate := corev1.Secret{
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: "v1",
-						Kind:       "Secret",
-					},
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "cloud-credentials",
-						Namespace: kotsadmVeleroBackendStorageLocation.Namespace,
-					},
-					Data: map[string][]byte{
-						"cloud": awsCredentials,
-					},
-				}
-				_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Create(ctx, &toCreate, metav1.CreateOptions{})
-				if err != nil {
-					return nil, errors.Wrap(err, "failed to create aws secret")
-				}
-			} else {
-				// update
-				if currentSecret.Data == nil {
-					currentSecret.Data = map[string][]byte{}
-				}
-
-				currentSecret.Data["cloud"] = awsCredentials
-				_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Update(ctx, currentSecret, metav1.UpdateOptions{})
-				if err != nil {
-					return nil, errors.Wrap(err, "failed to update aws secret")
-				}
+			currentSecret.Data["cloud"] = awsCredentials
+			_, err = clientset.CoreV1().Secrets(kotsadmVeleroBackendStorageLocation.Namespace).Update(ctx, currentSecret, metav1.UpdateOptions{})
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to update aws secret")
 			}
 		}
 	} else if store.Other != nil {
@@ -809,12 +795,8 @@ func GetGlobalStore(ctx context.Context, kotsadmNamespace string, kotsadmVeleroB
 			return nil, errors.Wrap(err, "failed to read aws secret")
 		}
 
-		if kuberneteserrors.IsNotFound(err) {
-			_, isS3Compatible := kotsadmVeleroBackendStorageLocation.Spec.Config["s3Url"]
-			if !isS3Compatible {
-				store.AWS.UseInstanceRole = true
-			}
-		} else if err == nil {
+		// craig: can we omit `&& !kuberneteserrors.IsNotFound(err)` above and get rid of the `if err == nil` below or is it necessary for some cases?
+		if err == nil {
 			awsCfg, err := ini.Load(awsSecret.Data["cloud"])
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to load aws credentials")
@@ -834,6 +816,9 @@ func GetGlobalStore(ctx context.Context, kotsadmNamespace string, kotsadmVeleroB
 					} else if store.AWS != nil {
 						store.AWS.AccessKeyID = section.Key("aws_access_key_id").Value()
 						store.AWS.SecretAccessKey = section.Key("aws_secret_access_key").Value()
+						if store.AWS.AccessKeyID == "" && store.AWS.SecretAccessKey == "" {
+							store.AWS.UseInstanceRole = true // cloud-credentials present, values empty, assume instance role
+						}
 					}
 				}
 			}
@@ -1164,6 +1149,10 @@ func validateAWS(storeAWS *types.StoreAWS, bucket string) error {
 	})
 
 	if err != nil {
+		if err == credentials.ErrNoValidProvidersFoundInChain && storeAWS.UseInstanceRole {
+			// error returned when instance does not have proper role and empty creds are passed
+			return errors.New("failed to validate instance role")
+		}
 		return errors.Wrap(err, "bucket does not exist")
 	}
 
