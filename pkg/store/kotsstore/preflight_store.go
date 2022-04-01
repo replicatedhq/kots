@@ -167,6 +167,5 @@ func (s *KOTSStore) hasStrictPreflights(preflightSpecStr sql.NullString) (bool, 
 			return false, errors.Wrap(err, "failed to check strict preflights from spec")
 		}
 	}
-	// no preflight spec, so return false, nil
 	return hasStrictPreflights, nil
 }

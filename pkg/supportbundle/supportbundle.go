@@ -37,7 +37,7 @@ const (
 func Collect(appID string, clusterID string) (string, error) {
 	sequence := int64(0)
 
-	currentVersion, err := store.GetStore().GetCurrentVersion(appID, clusterID)
+	currentVersion, err := store.GetStore().GetCurrentDownstreamVersion(appID, clusterID)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get current downstream version")
 	}
@@ -234,9 +234,9 @@ func CreateSupportBundleAnalysis(appID string, archivePath string, bundle *types
 		return err
 	}
 
-	latestVersion, err := store.GetStore().GetLatestAppVersion(foundApp.ID, true)
+	latestSequence, err := store.GetStore().GetLatestAppSequence(foundApp.ID, true)
 	if err != nil {
-		return errors.Wrap(err, "failed to get latest app version")
+		return errors.Wrap(err, "failed to get latest app sequence")
 	}
 
 	archiveDir, err := ioutil.TempDir("", "kotsadm")
@@ -247,7 +247,7 @@ func CreateSupportBundleAnalysis(appID string, archivePath string, bundle *types
 	}
 	defer os.RemoveAll(archiveDir)
 
-	err = store.GetStore().GetAppVersionArchive(foundApp.ID, latestVersion.Sequence, archiveDir)
+	err = store.GetStore().GetAppVersionArchive(foundApp.ID, latestSequence, archiveDir)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get app version archive")
 		logger.Error(err)

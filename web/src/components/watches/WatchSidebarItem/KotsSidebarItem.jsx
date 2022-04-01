@@ -6,16 +6,9 @@ export default function KotsSidebarItem(props) {
   const { className, app } = props;
   const { iconUri, name, slug } = app;
 
-  let downstreamPendingLengths = [];
-  app.downstreams?.map((d) => { 
-    if (d.currentVersion) {
-      downstreamPendingLengths.push(d.pendingVersions?.length);
-    }
-  });
-
   let versionsBehind;
-  if (downstreamPendingLengths?.length) {
-    versionsBehind = Math.max(...downstreamPendingLengths);
+  if (app.downstream?.currentVersion) {
+    versionsBehind = app.downstream?.pendingVersions?.length;
   }
 
   const isBehind = versionsBehind >= 2
@@ -23,13 +16,13 @@ export default function KotsSidebarItem(props) {
     : versionsBehind;
 
   let versionsBehindText =  "Up to date";
-  if (!app.downstreams?.length) {
-    versionsBehindText = "No downstreams found"
+  if (!app.downstream) {
+    versionsBehindText = "No downstream found"
   } else if (isBehind) {
     versionsBehindText = `${isBehind} ${isBehind >= 2 || typeof isBehind === "string" ? "versions" : "version"} behind`
   }
 
-  const gitopsEnabled = app.downstreams?.length > 0 && app.downstreams[0].gitops?.enabled;
+  const gitopsEnabled = app.downstream?.gitops?.enabled;
 
   return (
     <div className={classNames("sidebar-link", className)}>
@@ -44,7 +37,7 @@ export default function KotsSidebarItem(props) {
                 <div className={classNames("icon", {
                   "checkmark-icon": !isBehind,
                   "exclamationMark--icon": isBehind,
-                  "grayCircleMinus--icon": !app.downstreams?.length
+                  "grayCircleMinus--icon": !app.downstream
                 })}
                 />
                 <span className={classNames("u-marginLeft--5 u-fontSize--normal u-fontWeight--medium", {

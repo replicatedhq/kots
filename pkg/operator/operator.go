@@ -65,8 +65,8 @@ func Start(clusterToken string) error {
 
 	lastDeployedSequences = make(map[string]int64, 0)
 
-	startLoop(deployLoop, 1)
-	startLoop(restoreLoop, 1)
+	startLoop(deployLoop, 2)
+	startLoop(restoreLoop, 2)
 
 	return nil
 }
@@ -119,7 +119,7 @@ func processDeployForApp(a *apptypes.App) (bool, error) {
 		return false, nil
 	}
 
-	deployedVersion, err := store.GetStore().GetCurrentVersion(a.ID, clusterID)
+	deployedVersion, err := store.GetStore().GetCurrentDownstreamVersion(a.ID, clusterID)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get current downstream version")
 	} else if deployedVersion == nil {
@@ -543,7 +543,7 @@ func checkRestoreComplete(a *apptypes.App, restore *velerov1.Restore) error {
 }
 
 func undeployApp(a *apptypes.App, d *downstreamtypes.Downstream, isRestore bool) error {
-	deployedVersion, err := store.GetStore().GetCurrentVersion(a.ID, d.ClusterID)
+	deployedVersion, err := store.GetStore().GetCurrentDownstreamVersion(a.ID, d.ClusterID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get current downstream version")
 	}

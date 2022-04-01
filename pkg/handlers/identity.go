@@ -254,9 +254,9 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	latestVersion, err := store.GetStore().GetLatestAppVersion(a.ID, true)
+	latestSequence, err := store.GetStore().GetLatestAppSequence(a.ID, true)
 	if err != nil {
-		err = errors.Wrap(err, "failed to get latest app version")
+		err = errors.Wrap(err, "failed to get latest app sequence")
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -271,7 +271,7 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 	}
 	defer os.RemoveAll(archiveDir)
 
-	err = store.GetStore().GetAppVersionArchive(a.ID, latestVersion.Sequence, archiveDir)
+	err = store.GetStore().GetAppVersionArchive(a.ID, latestSequence, archiveDir)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get current app version archive")
 		logger.Error(err)
@@ -463,7 +463,7 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &latestVersion.Sequence, archiveDir, "Identity Service", false, &version.DownstreamGitOps{}, render.Renderer{})
+	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &latestSequence, archiveDir, "Identity Service", false, &version.DownstreamGitOps{}, render.Renderer{})
 	if err != nil {
 		err = errors.Wrap(err, "failed to create an app version")
 		logger.Error(err)
@@ -655,9 +655,9 @@ func (h *Handler) GetAppIdentityServiceConfig(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	latestVersion, err := store.GetStore().GetLatestAppVersion(a.ID, true)
+	latestSequence, err := store.GetStore().GetLatestAppSequence(a.ID, true)
 	if err != nil {
-		err = errors.Wrap(err, "failed to get latest app version")
+		err = errors.Wrap(err, "failed to get latest app sequence")
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -672,7 +672,7 @@ func (h *Handler) GetAppIdentityServiceConfig(w http.ResponseWriter, r *http.Req
 	}
 	defer os.RemoveAll(archiveDir)
 
-	err = store.GetStore().GetAppVersionArchive(a.ID, latestVersion.Sequence, archiveDir)
+	err = store.GetStore().GetAppVersionArchive(a.ID, latestSequence, archiveDir)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get current app version archive")
 		logger.Error(err)

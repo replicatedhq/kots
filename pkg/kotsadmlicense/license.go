@@ -18,9 +18,9 @@ import (
 )
 
 func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kotsv1beta1.License, bool, error) {
-	latestVersion, err := store.GetStore().GetLatestAppVersion(a.ID, true)
+	latestSequence, err := store.GetStore().GetLatestAppSequence(a.ID, true)
 	if err != nil {
-		return nil, false, errors.Wrap(err, "failed to get latest app version")
+		return nil, false, errors.Wrap(err, "failed to get latest app sequence")
 	}
 
 	currentLicense, err := store.GetStore().GetLatestLicenseForApp(a.ID)
@@ -61,9 +61,9 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 
 	// Because an older version can be edited, it is possible to have latest version with an outdated license.
 	// So even if global license sequence is already latest, we still need to create a new app version in this case.
-	err = store.GetStore().GetAppVersionArchive(a.ID, latestVersion.Sequence, archiveDir)
+	err = store.GetStore().GetAppVersionArchive(a.ID, latestSequence, archiveDir)
 	if err != nil {
-		return nil, false, errors.Wrap(err, "failed to get latest app version")
+		return nil, false, errors.Wrap(err, "failed to get latest app sequence")
 	}
 
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
@@ -79,7 +79,7 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 		if updatedLicense.Spec.ChannelID != currentLicense.Spec.ChannelID {
 			channelChanged = true
 		}
-		newSequence, err := store.GetStore().UpdateAppLicense(a.ID, latestVersion.Sequence, archiveDir, updatedLicense, licenseString, channelChanged, failOnVersionCreate, &version.DownstreamGitOps{}, &render.Renderer{})
+		newSequence, err := store.GetStore().UpdateAppLicense(a.ID, latestSequence, archiveDir, updatedLicense, licenseString, channelChanged, failOnVersionCreate, &version.DownstreamGitOps{}, &render.Renderer{})
 		if err != nil {
 			return nil, false, errors.Wrap(err, "failed to update license")
 		}

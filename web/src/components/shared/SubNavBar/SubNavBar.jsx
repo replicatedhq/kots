@@ -15,15 +15,15 @@ export default function SubNavBar(props) {
     slug = `helm/${app.id}`;
   }
 
-  let configSequence = app?.downstreams[0]?.currentVersion?.parentSequence;
-  let kotsSequence = app?.downstreams[0]?.currentVersion?.parentSequence;
+  let configSequence = app?.downstream?.currentVersion?.parentSequence;
+  let kotsSequence = app?.downstream?.currentVersion?.parentSequence;
 
   // file view always shows top version on the list
   // config view always shows the deployed version, falling back to the top version if nothing is deployed
-  if (app?.downstreams[0]?.pendingVersions?.length) {
-    kotsSequence = app?.downstreams[0]?.pendingVersions[0]?.parentSequence;
-    if (!app?.downstreams[0]?.currentVersion) {
-      configSequence = app?.downstreams[0]?.pendingVersions[0]?.parentSequence;
+  if (app?.downstream?.pendingVersions?.length) {
+    kotsSequence = app?.downstream?.pendingVersions[0]?.parentSequence;
+    if (!app?.downstream?.currentVersion) {
+      configSequence = app?.downstream?.pendingVersions[0]?.parentSequence;
     }
   }
 

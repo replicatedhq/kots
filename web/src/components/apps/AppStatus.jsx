@@ -62,7 +62,7 @@ export default class AppStatus extends React.Component {
             {Utilities.toTitleCase(appStatus)}
           </span>
           <span onClick={this.props.onViewAppStatusDetails} className="card-link u-marginLeft--10"> Details </span>
-          <Link to={`${url}/config/${app?.downstreams[0]?.currentVersion?.sequence}`} className="card-link u-marginLeft--10 u-borderLeft--gray u-paddingLeft--10">Edit config</Link>
+          <Link to={`${url}/config/${app?.downstream?.currentVersion?.sequence}`} className="card-link u-marginLeft--10 u-borderLeft--gray u-paddingLeft--10">Edit config</Link>
         </div>
         :
         <div className="flex alignItems--center">

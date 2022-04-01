@@ -300,6 +300,41 @@ func Test_isAppVersionDeployable(t *testing.T) {
 			expectedIsDeployable: true,
 			expectedCause:        "",
 		},
+		{
+			name: "rollback is determined by latest downloaded version",
+			version: &downstreamtypes.DownstreamVersion{
+				Sequence: 0,
+			},
+			appVersions: &downstreamtypes.DownstreamVersions{
+				AllVersions: []*downstreamtypes.DownstreamVersion{
+					{
+						Sequence: 3,
+						Status:   types.VersionPendingDownload,
+					},
+					{
+						Sequence: 2,
+						KOTSKinds: &kotsutil.KotsKinds{
+							KotsApplication: kotsv1beta1.Application{
+								Spec: kotsv1beta1.ApplicationSpec{
+									AllowRollback: true,
+								},
+							},
+						},
+					},
+					{
+						Sequence: 1,
+					},
+					{
+						Sequence: 0,
+					},
+				},
+				CurrentVersion: &downstreamtypes.DownstreamVersion{
+					Sequence: 1,
+				},
+			},
+			expectedIsDeployable: true,
+			expectedCause:        "",
+		},
 		/* ---- Non semver tests begin here ---- */
 		{
 			name: "non-semver -- deployed version is from a different channel, not required, no required releases in between",

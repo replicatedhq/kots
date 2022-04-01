@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/blang/semver"
+	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
@@ -17,7 +18,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/store/types"
 )
 
-func (s *KOTSStore) GetCurrentSequence(appID string, clusterID string) (int64, error) {
+func (s *KOTSStore) GetCurrentDownstreamSequence(appID string, clusterID string) (int64, error) {
 	db := persistence.MustGetDBSession()
 	query := `select current_sequence from app_downstream where app_id = $1 and cluster_id = $2`
 	row := db.QueryRow(query, appID, clusterID)
@@ -35,7 +36,7 @@ func (s *KOTSStore) GetCurrentSequence(appID string, clusterID string) (int64, e
 }
 
 func (s *KOTSStore) GetCurrentParentSequence(appID string, clusterID string) (int64, error) {
-	currentSequence, err := s.GetCurrentSequence(appID, clusterID)
+	currentSequence, err := s.GetCurrentDownstreamSequence(appID, clusterID)
 	if err != nil {
 		return -1, errors.Wrap(err, "failed to get current parent sequence")
 	}
@@ -146,19 +147,8 @@ func (s *KOTSStore) GetIgnoreRBACErrors(appID string, sequence int64) (bool, err
 	return shouldIgnore.Bool, nil
 }
 
-func (s *KOTSStore) GetLatestDownstreamVersion(appID string, clusterID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersion, error) {
-	downstreamVersions, err := s.GetDownstreamVersions(appID, clusterID, downloadedOnly)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to find app downstream versions")
-	}
-	if len(downstreamVersions.AllVersions) == 0 {
-		return nil, errors.New("no app versions found")
-	}
-	return downstreamVersions.AllVersions[0], nil
-}
-
-func (s *KOTSStore) GetCurrentVersion(appID string, clusterID string) (*downstreamtypes.DownstreamVersion, error) {
-	currentSequence, err := s.GetCurrentSequence(appID, clusterID)
+func (s *KOTSStore) GetCurrentDownstreamVersion(appID string, clusterID string) (*downstreamtypes.DownstreamVersion, error) {
+	currentSequence, err := s.GetCurrentDownstreamSequence(appID, clusterID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get current sequence")
 	}
@@ -174,22 +164,15 @@ func (s *KOTSStore) GetCurrentVersion(appID string, clusterID string) (*downstre
 	adv.parent_sequence,
 	adv.applied_at,
 	adv.source,
-	adv.diff_summary,
-	adv.diff_summary_error,
-	adv.preflight_result,
-	adv.preflight_result_created_at,
 	adv.preflight_skipped,
 	adv.git_commit_url,
 	adv.git_deployable,
 	ado.is_error,
 	av.upstream_released_at,
-	av.kots_installation_spec,
-	av.kots_app_spec,
 	av.version_label,
 	av.channel_id,
 	av.update_cursor,
-	av.is_required,
-	av.preflight_spec
+	av.is_required
  FROM
 	 app_downstream_version AS adv
  LEFT JOIN
@@ -211,7 +194,11 @@ func (s *KOTSStore) GetCurrentVersion(appID string, clusterID string) (*downstre
 		return nil, errors.Wrap(err, "failed to get version from row")
 	}
 
-	// this is the currently deployed version, and should be re-deployable
+	// checking if a version is deployable requires querying all versions
+	// save some time here and don't check that because current version is always re-deployable
+	if err := s.AddDownstreamVersionDetails(appID, clusterID, v, false); err != nil {
+		return nil, errors.Wrap(err, "failed to add details")
+	}
 	v.IsDeployable = true
 
 	return v, nil
@@ -242,7 +229,7 @@ func (s *KOTSStore) GetStatusForVersion(appID string, clusterID string, sequence
 }
 
 func (s *KOTSStore) GetDownstreamVersions(appID string, clusterID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error) {
-	currentVersion, err := s.GetCurrentVersion(appID, clusterID)
+	currentVersion, err := s.GetCurrentDownstreamVersion(appID, clusterID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get current version")
 	}
@@ -255,22 +242,15 @@ func (s *KOTSStore) GetDownstreamVersions(appID string, clusterID string, downlo
 	adv.parent_sequence,
 	adv.applied_at,
 	adv.source,
-	adv.diff_summary,
-	adv.diff_summary_error,
-	adv.preflight_result,
-	adv.preflight_result_created_at,
 	adv.preflight_skipped,
 	adv.git_commit_url,
 	adv.git_deployable,
 	ado.is_error,
 	av.upstream_released_at,
-	av.kots_installation_spec,
-	av.kots_app_spec,
 	av.version_label,
 	av.channel_id,
 	av.update_cursor,
-	av.is_required,
-	av.preflight_spec
+	av.is_required
  FROM
 	 app_downstream_version AS adv
  LEFT JOIN
@@ -324,9 +304,19 @@ func (s *KOTSStore) GetDownstreamVersions(appID string, clusterID string, downlo
 	}
 	downstreamtypes.SortDownstreamVersions(result, license.Spec.IsSemverRequired)
 
-	// we need to check all versions to determine if a version is deployable or not
+	// retrieve additional details about the latest downloaded version,
+	// since it's used for detecting things like if a certain feature is enabled or not.
 	for _, v := range result.AllVersions {
+		if v.Status == types.VersionPendingDownload {
+			continue
+		}
+		// checking if a version is deployable requires getting all versions again.
+		// check if latest version is deployable separately to avoid cycle dependencies between functions.
+		if err := s.AddDownstreamVersionDetails(appID, clusterID, v, false); err != nil {
+			return nil, errors.Wrap(err, "failed to add details to latest downloaded version")
+		}
 		v.IsDeployable, v.NonDeployableCause = isAppVersionDeployable(v, result, license.Spec.IsSemverRequired)
+		break
 	}
 
 	if currentVersion == nil {
@@ -369,6 +359,278 @@ func (s *KOTSStore) FindDownstreamVersions(appID string, downloadedOnly bool) (*
 	return nil, errors.New("app has no versions")
 }
 
+func (s *KOTSStore) GetDownstreamVersionHistory(appID string, clusterID string, currentPage int, pageSize int, pinLatest bool) ([]*downstreamtypes.DownstreamVersion, error) {
+	versions, err := s.GetDownstreamVersions(appID, clusterID, false)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get downstream versions without details")
+	}
+
+	startIndex := currentPage * pageSize
+	endIndex := currentPage*pageSize + pageSize
+	if pinLatest {
+		startIndex++
+		endIndex++
+	}
+	desiredVersions := []*downstreamtypes.DownstreamVersion{}
+	for i, v := range versions.AllVersions {
+		if pinLatest && i == 0 {
+			desiredVersions = append(desiredVersions, v)
+			continue
+		}
+		if currentPage != -1 && i < startIndex {
+			continue
+		}
+		if pageSize != -1 && i >= endIndex {
+			break
+		}
+		desiredVersions = append(desiredVersions, v)
+	}
+
+	if err := s.AddDownstreamVersionsDetails(appID, clusterID, desiredVersions, true); err != nil {
+		return nil, errors.Wrap(err, "failed to add details for desired versions")
+	}
+
+	return desiredVersions, nil
+}
+
+func (s *KOTSStore) AddDownstreamVersionDetails(appID string, clusterID string, version *downstreamtypes.DownstreamVersion, checkIfDeployable bool) error {
+	return s.AddDownstreamVersionsDetails(appID, clusterID, []*downstreamtypes.DownstreamVersion{version}, checkIfDeployable)
+}
+
+func (s *KOTSStore) AddDownstreamVersionsDetails(appID string, clusterID string, versions []*downstreamtypes.DownstreamVersion, checkIfDeployable bool) error {
+	sequencesToQuery := []int64{}
+	for _, v := range versions {
+		if v == nil {
+			continue
+		}
+		sequencesToQuery = append(sequencesToQuery, v.Sequence)
+	}
+
+	if len(sequencesToQuery) == 0 {
+		return nil
+	}
+
+	db := persistence.MustGetDBSession()
+	query := `SELECT
+	adv.sequence,
+	adv.diff_summary,
+	adv.diff_summary_error,
+	adv.preflight_result,
+	adv.preflight_result_created_at,
+	av.kots_installation_spec,
+	av.kots_app_spec,
+	av.preflight_spec
+ FROM
+	 app_downstream_version AS adv
+ LEFT JOIN
+	 app_version AS av
+ ON
+	 adv.app_id = av.app_id AND adv.parent_sequence = av.sequence
+ WHERE
+	 adv.app_id = $1 AND
+	 adv.cluster_id = $2 AND
+	 adv.sequence = ANY($3)
+ ORDER BY
+ 	 adv.sequence DESC`
+
+	rows, err := db.Query(query, appID, clusterID, pq.Array(sequencesToQuery))
+	if err != nil {
+		return errors.Wrap(err, "failed to query")
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var sequence int64
+		var diffSummary sql.NullString
+		var diffSummaryError sql.NullString
+		var preflightResult sql.NullString
+		var preflightResultCreatedAt persistence.NullStringTime
+		var kotsInstallationSpecStr sql.NullString
+		var kotsAppSpecStr sql.NullString
+		var preflightSpecStr sql.NullString
+
+		if err := rows.Scan(
+			&sequence,
+			&diffSummary,
+			&diffSummaryError,
+			&preflightResult,
+			&preflightResultCreatedAt,
+			&kotsInstallationSpecStr,
+			&kotsAppSpecStr,
+			&preflightSpecStr,
+		); err != nil {
+			return errors.Wrap(err, "failed to scan")
+		}
+
+		// find the version
+		var version *downstreamtypes.DownstreamVersion
+		for _, v := range versions {
+			if v.Sequence == sequence {
+				version = v
+				break
+			}
+		}
+
+		version.DiffSummary = diffSummary.String
+		version.DiffSummaryError = diffSummaryError.String
+
+		version.PreflightResult = preflightResult.String
+		if preflightResultCreatedAt.Valid {
+			version.PreflightResultCreatedAt = &preflightResultCreatedAt.Time
+		}
+
+		releaseNotes, err := getReleaseNotes(appID, version.ParentSequence)
+		if err != nil {
+			return errors.Wrap(err, "failed to get release notes")
+		}
+		version.ReleaseNotes = releaseNotes
+
+		if version.Status == types.VersionPendingDownload {
+			downloadTaskID := fmt.Sprintf("update-download.%d", version.Sequence)
+			downloadStatus, downloadStatusMessage, err := s.GetTaskStatus(downloadTaskID)
+			if err != nil {
+				// don't fail on this
+				logger.Error(errors.Wrap(err, fmt.Sprintf("failed to get %s task status", downloadTaskID)))
+			}
+			version.DownloadStatus = downstreamtypes.DownloadStatus{
+				Message: downloadStatusMessage,
+				Status:  downloadStatus,
+			}
+		}
+
+		version.KOTSKinds = &kotsutil.KotsKinds{}
+
+		if kotsInstallationSpecStr.String != "" {
+			installation, err := kotsutil.LoadInstallationFromContents([]byte(kotsInstallationSpecStr.String))
+			if err != nil {
+				return errors.Wrap(err, "failed to load installation spec")
+			}
+			version.KOTSKinds.Installation = *installation
+			version.YamlErrors = version.KOTSKinds.Installation.Spec.YAMLErrors
+		}
+
+		if kotsAppSpecStr.String != "" {
+			app, err := kotsutil.LoadKotsAppFromContents([]byte(kotsAppSpecStr.String))
+			if err != nil {
+				return errors.Wrap(err, "failed to load installation spec")
+			}
+			version.KOTSKinds.KotsApplication = *app
+		}
+		version.NeedsKotsUpgrade = needsKotsUpgrade(&version.KOTSKinds.KotsApplication)
+
+		p, err := s.hasFailingStrictPreflights(preflightSpecStr, preflightResult)
+		if err != nil {
+			return errors.Wrap(err, "failed to get strict preflight results")
+		}
+		version.HasFailingStrictPreflights = p
+	}
+
+	if err := rows.Err(); err != nil {
+		return errors.Wrap(err, "failed to iterate over rows")
+	}
+
+	if checkIfDeployable {
+		allVersions, err := s.GetDownstreamVersions(appID, clusterID, false)
+		if err != nil {
+			return errors.Wrapf(err, "failed to get downstream versions without details")
+		}
+		license, err := s.GetLatestLicenseForApp(appID)
+		if err != nil {
+			return errors.Wrap(err, "failed to get app license")
+		}
+		for _, v := range versions {
+			v.IsDeployable, v.NonDeployableCause = isAppVersionDeployable(v, allVersions, license.Spec.IsSemverRequired)
+		}
+	}
+
+	return nil
+}
+
+func (s *KOTSStore) GetNextDownstreamVersion(appID string, clusterID string) (nextVersion *downstreamtypes.DownstreamVersion, numOfSkippedVersions int, numOfRemainingVersions int, finalError error) {
+	defer func() {
+		if nextVersion != nil {
+			if err := s.AddDownstreamVersionDetails(appID, clusterID, nextVersion, true); err != nil {
+				finalError = errors.Wrap(err, "failed to add details")
+				return
+			}
+		}
+	}()
+
+	versions, err := s.GetDownstreamVersions(appID, clusterID, false)
+	if err != nil {
+		finalError = errors.Wrap(err, "failed to get app downstream versions")
+		return
+	}
+	if len(versions.AllVersions) == 0 {
+		finalError = errors.New("no versions found for app")
+		return
+	}
+
+	if versions.CurrentVersion == nil {
+		// no version has been deployed yet, next app version is the latest version
+		nextVersion = versions.AllVersions[0]
+		return
+	}
+
+	if len(versions.PendingVersions) == 0 {
+		// latest version is already deployed, there's no next app version
+		return
+	}
+
+	// find required versions
+	requiredVersions := []*downstreamtypes.DownstreamVersion{}
+	for _, v := range versions.PendingVersions {
+		if v.IsRequired {
+			requiredVersions = append(requiredVersions, v)
+		}
+	}
+
+	if len(requiredVersions) > 0 {
+		// next app version is the earliest pending required version
+		nextVersion = requiredVersions[len(requiredVersions)-1]
+	} else {
+		// next app version is the latest pending version
+		nextVersion = versions.PendingVersions[0]
+	}
+
+	nextVersionIndex := -1
+	for i, v := range versions.PendingVersions {
+		if v.Sequence == nextVersion.Sequence {
+			nextVersionIndex = i
+			break
+		}
+	}
+
+	for i := range versions.PendingVersions {
+		if i < nextVersionIndex {
+			numOfRemainingVersions++
+		}
+		if i > nextVersionIndex {
+			numOfSkippedVersions++
+		}
+	}
+
+	return
+}
+
+func (s *KOTSStore) TotalNumOfDownstreamVersions(appID string, clusterID string, downloadedOnly bool) (int64, error) {
+	db := persistence.MustGetDBSession()
+	query := `SELECT count(1) FROM app_downstream_version WHERE app_id = $1 AND cluster_id = $2`
+
+	if downloadedOnly {
+		query += fmt.Sprintf(` AND status != '%s'`, types.VersionPendingDownload)
+	}
+
+	row := db.QueryRow(query, appID, clusterID)
+
+	var count int64
+	if err := row.Scan(&count); err != nil {
+		return 0, errors.Wrap(err, "failed to scan")
+	}
+
+	return count, nil
+}
+
 func (s *KOTSStore) downstreamVersionFromRow(appID string, row scannable) (*downstreamtypes.DownstreamVersion, error) {
 	v := &downstreamtypes.DownstreamVersion{}
 
@@ -380,18 +642,11 @@ func (s *KOTSStore) downstreamVersionFromRow(appID string, row scannable) (*down
 	var parentSequence sql.NullInt64
 	var deployedAt persistence.NullStringTime
 	var source sql.NullString
-	var diffSummary sql.NullString
-	var diffSummaryError sql.NullString
-	var preflightResult sql.NullString
-	var preflightResultCreatedAt persistence.NullStringTime
 	var preflightSkipped sql.NullBool
-	var preflightSpecStr sql.NullString
 	var commitURL sql.NullString
 	var gitDeployable sql.NullBool
 	var hasError sql.NullBool
 	var upstreamReleasedAt persistence.NullStringTime
-	var kotsInstallationSpecStr sql.NullString
-	var kotsAppSpecStr sql.NullString
 
 	if err := row.Scan(
 		&createdOn,
@@ -400,22 +655,15 @@ func (s *KOTSStore) downstreamVersionFromRow(appID string, row scannable) (*down
 		&parentSequence,
 		&deployedAt,
 		&source,
-		&diffSummary,
-		&diffSummaryError,
-		&preflightResult,
-		&preflightResultCreatedAt,
 		&preflightSkipped,
 		&commitURL,
 		&gitDeployable,
 		&hasError,
 		&upstreamReleasedAt,
-		&kotsInstallationSpecStr,
-		&kotsAppSpecStr,
 		&versionLabel,
 		&channelID,
 		&updateCursor,
 		&v.IsRequired,
-		&preflightSpecStr,
 	); err != nil {
 		return nil, errors.Wrap(err, "failed to scan")
 	}
@@ -444,78 +692,40 @@ func (s *KOTSStore) downstreamVersionFromRow(appID string, row scannable) (*down
 		v.DeployedAt = &deployedAt.Time
 	}
 	v.Source = source.String
-	v.DiffSummary = diffSummary.String
-	v.DiffSummaryError = diffSummaryError.String
-	v.PreflightResult = preflightResult.String
-
-	if preflightResultCreatedAt.Valid {
-		v.PreflightResultCreatedAt = &preflightResultCreatedAt.Time
-	}
 	v.PreflightSkipped = preflightSkipped.Bool
 	v.CommitURL = commitURL.String
 	v.GitDeployable = gitDeployable.Bool
 
-	releaseNotes, err := getReleaseNotes(appID, v.ParentSequence)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get release notes")
-	}
-	v.ReleaseNotes = releaseNotes
-
 	if upstreamReleasedAt.Valid {
 		v.UpstreamReleasedAt = &upstreamReleasedAt.Time
-	}
-
-	v.KOTSKinds = &kotsutil.KotsKinds{}
-
-	if kotsInstallationSpecStr.String != "" {
-		installation, err := kotsutil.LoadInstallationFromContents([]byte(kotsInstallationSpecStr.String))
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to load installation spec")
-		}
-		v.KOTSKinds.Installation = *installation
-		v.YamlErrors = v.KOTSKinds.Installation.Spec.YAMLErrors
-	}
-
-	if v.Status == types.VersionPendingDownload {
-		downloadTaskID := fmt.Sprintf("update-download.%d", v.Sequence)
-		downloadStatus, downloadStatusMessage, err := s.GetTaskStatus(downloadTaskID)
-		if err != nil {
-			// don't fail on this
-			logger.Error(errors.Wrap(err, fmt.Sprintf("failed to get %s task status", downloadTaskID)))
-		}
-		v.DownloadStatus = downstreamtypes.DownloadStatus{
-			Message: downloadStatusMessage,
-			Status:  downloadStatus,
-		}
-	}
-
-	if kotsAppSpecStr.String != "" {
-		app, err := kotsutil.LoadKotsAppFromContents([]byte(kotsAppSpecStr.String))
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to load installation spec")
-		}
-		v.KOTSKinds.KotsApplication = *app
-	}
-	v.NeedsKotsUpgrade = needsKotsUpgrade(&v.KOTSKinds.KotsApplication)
-
-	v.HasFailingStrictPreflights, err = s.hasFailingStrictPreflights(preflightSpecStr, preflightResult)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get strict preflight results")
 	}
 
 	return v, nil
 }
 
 func (s *KOTSStore) IsAppVersionDeployable(appID string, sequence int64) (bool, string, error) {
-	versions, err := s.FindDownstreamVersions(appID, false)
+	downstreams, err := s.ListDownstreamsForApp(appID)
 	if err != nil {
-		return false, "", errors.Wrap(err, "failed to find app downstream versions")
+		return false, "", errors.Wrap(err, "failed to get app downstreams")
+	}
+	if len(downstreams) == 0 {
+		return false, "", errors.New("app has no downstreams")
+	}
+	clusterID := downstreams[0].ClusterID
+
+	versions, err := s.GetDownstreamVersions(appID, clusterID, false)
+	if err != nil {
+		return false, "", errors.Wrap(err, "failed to get downstream versions")
 	}
 	for _, v := range versions.AllVersions {
 		if v.Sequence == sequence {
+			if err := s.AddDownstreamVersionDetails(appID, clusterID, v, true); err != nil {
+				return false, "", errors.Wrap(err, "failed to add details")
+			}
 			return v.IsDeployable, v.NonDeployableCause, nil
 		}
 	}
+
 	return false, "", errors.Errorf("version %d not found", sequence)
 }
 
@@ -574,10 +784,15 @@ func isAppVersionDeployable(version *downstreamtypes.DownstreamVersion, appVersi
 	}
 	if versionIndex > deployedVersionIndex {
 		// this is a past version
-		// rollback support is based off of the latest version
-		latestVersion := appVersions.AllVersions[0]
-		if latestVersion.KOTSKinds == nil || !latestVersion.KOTSKinds.KotsApplication.Spec.AllowRollback {
-			return false, "Rollback is not supported."
+		// rollback support is based off of the latest downloaded version
+		for _, v := range appVersions.AllVersions {
+			if v.Status == types.VersionPendingDownload {
+				continue
+			}
+			if v.KOTSKinds == nil || !v.KOTSKinds.KotsApplication.Spec.AllowRollback {
+				return false, "Rollback is not supported."
+			}
+			break
 		}
 	}
 

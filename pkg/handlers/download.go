@@ -51,7 +51,7 @@ func (h *Handler) DownloadApp(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	latestVersion, err := store.GetStore().GetLatestAppVersion(a.ID, true)
+	latestSequence, err := store.GetStore().GetLatestAppSequence(a.ID, true)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -66,7 +66,7 @@ func (h *Handler) DownloadApp(w http.ResponseWriter, r *http.Request) {
 	}
 	defer os.RemoveAll(archivePath)
 
-	err = store.GetStore().GetAppVersionArchive(a.ID, latestVersion.Sequence, archivePath)
+	err = store.GetStore().GetAppVersionArchive(a.ID, latestSequence, archivePath)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)

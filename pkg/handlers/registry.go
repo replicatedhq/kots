@@ -170,14 +170,14 @@ func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 			skipImagePush = true
 		}
 
-		latestVersion, err := store.GetStore().GetLatestAppVersion(foundApp.ID, true)
+		latestSequence, err := store.GetStore().GetLatestAppSequence(foundApp.ID, true)
 		if err != nil {
-			logger.Error(errors.Wrapf(err, "failed to get latest app version for app %s", foundApp.Slug))
+			logger.Error(errors.Wrapf(err, "failed to get latest app sequence for app %s", foundApp.Slug))
 			return
 		}
 
 		appDir, err := registry.RewriteImages(
-			foundApp.ID, latestVersion.Sequence, updateAppRegistryRequest.Hostname,
+			foundApp.ID, latestSequence, updateAppRegistryRequest.Hostname,
 			updateAppRegistryRequest.Username, registryPassword,
 			updateAppRegistryRequest.Namespace, skipImagePush, nil)
 		if err != nil {
@@ -198,7 +198,7 @@ func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		}
 		defer os.RemoveAll(appDir)
 
-		newSequence, err := store.GetStore().CreateAppVersion(foundApp.ID, &latestVersion.Sequence, appDir, "Registry Change", false, &version.DownstreamGitOps{}, render.Renderer{})
+		newSequence, err := store.GetStore().CreateAppVersion(foundApp.ID, &latestSequence, appDir, "Registry Change", false, &version.DownstreamGitOps{}, render.Renderer{})
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to create app version"))
 			return
@@ -239,9 +239,9 @@ func registrySettingsChanged(app *apptypes.App, new UpdateAppRegistryRequest, cu
 
 	// Because an old version can be editted, we may need to push images if registry hostname has changed
 	// TODO: Handle namespace changes too
-	latestVersion, err := store.GetStore().GetLatestAppVersion(app.ID, true)
+	latestSequence, err := store.GetStore().GetLatestAppSequence(app.ID, true)
 	if err != nil {
-		return false, errors.Wrap(err, "failed to get latest app version")
+		return false, errors.Wrap(err, "failed to get latest app sequence")
 	}
 
 	archiveDir, err := ioutil.TempDir("", "kotsadm-")
@@ -250,7 +250,7 @@ func registrySettingsChanged(app *apptypes.App, new UpdateAppRegistryRequest, cu
 	}
 	defer os.RemoveAll(archiveDir)
 
-	err = store.GetStore().GetAppVersionArchive(app.ID, latestVersion.Sequence, archiveDir)
+	err = store.GetStore().GetAppVersionArchive(app.ID, latestSequence, archiveDir)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get version archive")
 	}
