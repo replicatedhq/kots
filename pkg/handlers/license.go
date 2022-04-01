@@ -556,10 +556,9 @@ type ChangeLicenseRequest struct {
 }
 
 type ChangeLicenseResponse struct {
-	Success          bool            `json:"success"`
-	Error            string          `json:"error,omitempty"`
-	DeleteAppCommand string          `json:"deleteAppCommand,omitempty"`
-	License          LicenseResponse `json:"license"`
+	Success bool            `json:"success"`
+	Error   string          `json:"error,omitempty"`
+	License LicenseResponse `json:"license"`
 }
 
 func (h *Handler) ChangeLicense(w http.ResponseWriter, r *http.Request) {
@@ -576,67 +575,6 @@ func (h *Handler) ChangeLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	licenseString := changeLicenseRequest.LicenseData
-
-	// validate the license
-	unverifiedLicense, err := kotsutil.LoadLicenseFromBytes([]byte(licenseString))
-	if err != nil {
-		errMsg := "failed to load license from bytes"
-		logger.Error(errors.Wrap(err, errMsg))
-		changeLicenseResponse.Error = errMsg
-		JSON(w, http.StatusBadRequest, changeLicenseResponse)
-		return
-	}
-	newLicense, err := kotspull.VerifySignature(unverifiedLicense)
-	if err != nil {
-		errMsg := "license signature is not valid"
-		logger.Error(errors.Wrap(err, errMsg))
-		changeLicenseResponse.Error = errMsg
-		JSON(w, http.StatusBadRequest, changeLicenseResponse)
-		return
-	}
-
-	if !kotsadm.IsAirgap() {
-		// sync license
-		logger.Info("syncing new license with server to retrieve latest version")
-		licenseData, err := kotslicense.GetLatestLicense(newLicense)
-		if err != nil {
-			errMsg := "failed to get latest license"
-			logger.Error(errors.Wrap(err, errMsg))
-			changeLicenseResponse.Error = errMsg
-			JSON(w, http.StatusInternalServerError, changeLicenseResponse)
-			return
-		}
-		newLicense = licenseData.License
-		licenseString = string(licenseData.LicenseBytes)
-	} else {
-		// check if new license supports airgap mode
-		if !newLicense.Spec.IsAirgapSupported {
-			errMsg := "New license does not support airgapped installations"
-			logger.Error(errors.New(errMsg))
-			changeLicenseResponse.Error = errMsg
-			JSON(w, http.StatusBadRequest, changeLicenseResponse)
-			return
-		}
-	}
-
-	// check license expiration
-	expired, err := kotspull.LicenseIsExpired(newLicense)
-	if err != nil {
-		errMsg := "failed to check if license is expired"
-		logger.Error(errors.Wrap(err, errMsg))
-		changeLicenseResponse.Error = errMsg
-		JSON(w, http.StatusInternalServerError, changeLicenseResponse)
-		return
-	}
-	if expired {
-		errMsg := "License is expired"
-		logger.Error(errors.New(errMsg))
-		changeLicenseResponse.Error = errMsg
-		JSON(w, http.StatusBadRequest, changeLicenseResponse)
-		return
-	}
-
 	appSlug := mux.Vars(r)["appSlug"]
 	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
@@ -647,72 +585,15 @@ func (h *Handler) ChangeLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentLicense, err := store.GetStore().GetLatestLicenseForApp(foundApp.ID)
+	newLicense, err := license.Change(foundApp, changeLicenseRequest.LicenseData)
 	if err != nil {
-		errMsg := "failed to get current license"
-		logger.Error(errors.Wrap(err, errMsg))
-		changeLicenseResponse.Error = errMsg
+		logger.Error(errors.Wrap(err, "failed to change license"))
+		changeLicenseResponse.Error = errors.Cause(err).Error()
 		JSON(w, http.StatusInternalServerError, changeLicenseResponse)
 		return
 	}
 
-	if currentLicense.Spec.LicenseID == newLicense.Spec.LicenseID {
-		errMsg := "New license is the same as the current license"
-		logger.Error(errors.New(errMsg))
-		changeLicenseResponse.Error = errMsg
-		JSON(w, http.StatusBadRequest, changeLicenseResponse)
-		return
-	}
-
-	if currentLicense.Spec.AppSlug != newLicense.Spec.AppSlug {
-		errMsg := "New license is for a different application"
-		logger.Error(errors.New(errMsg))
-		changeLicenseResponse.Error = errMsg
-		JSON(w, http.StatusBadRequest, changeLicenseResponse)
-		return
-	}
-
-	// check if license already exists
-	existingLicense, err := license.CheckIfLicenseExists([]byte(licenseString))
-	if err != nil {
-		errMsg := "failed to get app from slug"
-		logger.Error(errors.Wrap(err, errMsg))
-		changeLicenseResponse.Error = errMsg
-		JSON(w, http.StatusInternalServerError, changeLicenseResponse)
-		return
-	}
-	if existingLicense != nil {
-		resolved, err := kotslicense.ResolveExistingLicense(newLicense)
-		if err != nil {
-			logger.Error(errors.Wrap(err, "failed to resolve existing license conflict"))
-		}
-		if !resolved {
-			errMsg := "License already exists"
-			logger.Error(errors.New(errMsg))
-			changeLicenseResponse.Error = errMsg
-			changeLicenseResponse.DeleteAppCommand = fmt.Sprintf("kubectl kots remove %s -n %s --force", existingLicense.Spec.AppSlug, util.PodNamespace)
-			JSON(w, http.StatusBadRequest, changeLicenseResponse)
-			return
-		}
-	}
-
-	latestLicense, synced, err := license.Sync(foundApp, licenseString, true)
-	if err != nil {
-		errMsg := "failed to sync license"
-		logger.Error(errors.Wrap(err, errMsg))
-		changeLicenseResponse.Error = errMsg
-		JSON(w, http.StatusInternalServerError, changeLicenseResponse)
-		return
-	}
-	if !synced {
-		errMsg := "License was not synced"
-		logger.Error(errors.New(errMsg))
-		changeLicenseResponse.Error = errMsg
-		JSON(w, http.StatusInternalServerError, changeLicenseResponse)
-		return
-	}
-
-	licenseResponse, err := licenseResponseFromLicense(latestLicense, foundApp)
+	licenseResponse, err := licenseResponseFromLicense(newLicense, foundApp)
 	if err != nil {
 		errMsg := "failed to get license response from license"
 		logger.Error(errors.Wrap(err, errMsg))

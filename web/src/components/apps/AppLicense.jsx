@@ -199,9 +199,10 @@ class AppLicense extends Component {
       .then(async (licenseResponse) => {
         this.setState({
           appLicense: licenseResponse.license,
-          licenseChangeMessage: "",
           showNextStepModal: true,
           showLicenseChangeModal: false,
+          licenseChangeFile: null,
+          licenseChangeMessage: "",
         });
 
         if (this.props.changeCallback) {
@@ -225,7 +226,11 @@ class AppLicense extends Component {
   }
 
   hideLicenseChangeModal = () => {
-    this.setState({ showLicenseChangeModal: false });
+    this.setState({
+      showLicenseChangeModal: false,
+      licenseChangeFile: null,
+      licenseChangeMessage: "",
+    });
   }
 
   showLicenseChangeModal = () => {
@@ -339,7 +344,9 @@ class AppLicense extends Component {
               </div>
               <div className="flex-column flex-auto alignItems--flexEnd justifyContent--center">
                 <div className="flex alignItems--center">
-                  <button className="btn secondary blue u-marginRight--10" disabled={changingLicense} onClick={this.showLicenseChangeModal}>{changingLicense ? "Changing" : "Change license"}</button>
+                  {appLicense?.licenseType === "community" &&
+                    <button className="btn secondary blue u-marginRight--10" disabled={changingLicense} onClick={this.showLicenseChangeModal}>{changingLicense ? "Changing" : "Change license"}</button>
+                  }
                   {app.isAirgap ?
                     <Dropzone
                       className="Dropzone-wrapper"
@@ -415,7 +422,7 @@ class AppLicense extends Component {
           >
             <div className="u-marginTop--10 u-padding--20">
               <p className="u-fontSize--larger u-fontWeight--bold u-textColor--primary u-marginBottom--10">Change your license</p>
-              <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--10">The new license must belong to the same application.</p>
+              <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--10">The new license must be for the same application as your current license.</p>
               <div className={`FileUpload-wrapper flex1 ${licenseChangeFile ? "has-file" : ""}`}>
                 {licenseChangeFile ?
                   <div className="has-file-wrapper">
@@ -448,20 +455,25 @@ class AppLicense extends Component {
                   "u-textColor--primary": licenseChangeMessageType === "info",
                 })}>{licenseChangeMessage}</p>
               }
-              {licenseChangeFile &&
-                <div className="flex-auto flex-column">
-                  <div>
-                    <button
-                      type="button"
-                      className="btn primary large flex-auto"
-                      onClick={this.changeAppLicense}
-                      disabled={changingLicense}
-                    >
-                      {changingLicense ? "Changing" : "Change license"}
-                    </button>
-                  </div>
-                </div>
-              }
+              <div className="flex flex-auto">
+                <button
+                  type="button"
+                  className="btn secondary large u-marginRight--10"
+                  onClick={this.hideLicenseChangeModal}
+                >
+                  Cancel
+                </button>
+                {licenseChangeFile &&
+                  <button
+                    type="button"
+                    className="btn primary large"
+                    onClick={this.changeAppLicense}
+                    disabled={changingLicense}
+                  >
+                    {changingLicense ? "Changing" : "Change license"}
+                  </button>
+                }
+              </div>
             </div>
           </Modal>
         }
