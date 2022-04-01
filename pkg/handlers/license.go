@@ -23,6 +23,7 @@ import (
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/registry"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/updatechecker"
 	"github.com/replicatedhq/kots/pkg/util"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -122,12 +123,33 @@ func (h *Handler) SyncLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	currentLicense, err := store.GetStore().GetLatestLicenseForApp(foundApp.ID)
+	if err != nil {
+		syncLicenseResponse.Error = "failed to get current license"
+		logger.Error(errors.Wrap(err, syncLicenseResponse.Error))
+		JSON(w, http.StatusInternalServerError, syncLicenseResponse)
+		return
+	}
+
 	latestLicense, synced, err := license.Sync(foundApp, syncLicenseRequest.LicenseData, true)
 	if err != nil {
 		syncLicenseResponse.Error = "failed to sync license"
 		logger.Error(errors.Wrap(err, syncLicenseResponse.Error))
 		JSON(w, http.StatusInternalServerError, syncLicenseResponse)
 		return
+	}
+
+	if !kotsadm.IsAirgap() && currentLicense.Spec.ChannelID != latestLicense.Spec.ChannelID {
+		// channel changed and this is an online installation, fetch the latest release for the new channel
+		go func(appID string) {
+			opts := updatechecker.CheckForUpdatesOpts{
+				AppID: appID,
+			}
+			_, err := updatechecker.CheckForUpdates(opts)
+			if err != nil {
+				logger.Error(errors.Wrap(err, "failed to fetch the latest release for the new channel"))
+			}
+		}(foundApp.ID)
 	}
 
 	licenseResponse, err := licenseResponseFromLicense(latestLicense, foundApp)
@@ -585,12 +607,34 @@ func (h *Handler) ChangeLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	currentLicense, err := store.GetStore().GetLatestLicenseForApp(foundApp.ID)
+	if err != nil {
+		errMsg := "failed to get current license"
+		logger.Error(errors.Wrap(err, errMsg))
+		changeLicenseResponse.Error = errMsg
+		JSON(w, http.StatusInternalServerError, changeLicenseResponse)
+		return
+	}
+
 	newLicense, err := license.Change(foundApp, changeLicenseRequest.LicenseData)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to change license"))
 		changeLicenseResponse.Error = errors.Cause(err).Error()
 		JSON(w, http.StatusInternalServerError, changeLicenseResponse)
 		return
+	}
+
+	if !kotsadm.IsAirgap() && currentLicense.Spec.ChannelID != newLicense.Spec.ChannelID {
+		// channel changed and this is an online installation, fetch the latest release for the new channel
+		go func(appID string) {
+			opts := updatechecker.CheckForUpdatesOpts{
+				AppID: appID,
+			}
+			_, err := updatechecker.CheckForUpdates(opts)
+			if err != nil {
+				logger.Error(errors.Wrap(err, "failed to fetch the latest release for the new channel"))
+			}
+		}(foundApp.ID)
 	}
 
 	licenseResponse, err := licenseResponseFromLicense(newLicense, foundApp)

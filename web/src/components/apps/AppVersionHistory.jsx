@@ -89,6 +89,9 @@ class AppVersionHistory extends Component {
       this.getAirgapConfig()
     }
 
+    // check if there are any updates in progress
+    this.state.appUpdateChecker.start(this.getAppUpdateStatus, 1000);
+
     const url = window.location.pathname;
     if (url.includes("/diff")) {
       const { params } = this.props.match;
