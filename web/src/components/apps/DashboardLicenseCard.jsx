@@ -137,11 +137,20 @@ export default class DashboardLicenseCard extends React.Component {
     const isCommunityLicense = appLicense?.licenseType === "community";
     const gitops = app.downstream?.gitops;
     const appName = app?.name || "Your application";
+    const expiredLicenseClassName = Utilities.checkIsDateExpired(expiresAt) ? "expired-license" : "";
+    const appLicenseClassName = appLicense && size(appLicense) === 0 ? "no-license" : "dashboard-card";
 
     return (
-      <div className={`${isCommunityLicense ? "community-license" : appLicense && size(appLicense) === 0 ? "no-license" : "dashboard-card"} ${Utilities.checkIsDateExpired(expiresAt) ? "expired-license" : ""} flex-column`}>
+      <div className={`${isCommunityLicense ? "CommunityLicense--wrapper" : appLicenseClassName} ${expiredLicenseClassName} flex-column`}>
         <div className="flex flex1 justifyContent--spaceBetween alignItems--center">
-          <p className={`u-fontSize--large u-textColor--${Utilities.checkIsDateExpired(expiresAt) ? "error": "primary"} u-fontWeight--bold`}>License {Utilities.checkIsDateExpired(expiresAt) && "is expired"} {isCommunityLicense && <span className="CommunityEditionTag u-marginLeft--5"> Community Edition </span>}</p>
+          <p className={`u-fontSize--large u-textColor--${Utilities.checkIsDateExpired(expiresAt) ? "error": "primary"} u-fontWeight--bold`}>
+            License {Utilities.checkIsDateExpired(expiresAt) && "is expired"}
+            {isCommunityLicense &&
+              <span className="CommunityEditionTag u-marginLeft--5">
+                Community Edition
+              </span>
+            }
+          </p>
             {app?.isAirgap ?
               <Dropzone
                 className="Dropzone-wrapper flex alignItems--center"

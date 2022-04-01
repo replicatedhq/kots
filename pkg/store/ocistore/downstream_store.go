@@ -21,15 +21,7 @@ func (s *OCIStore) GetPreviouslyDeployedSequence(appID string, clusterID string)
 	return 0, ErrNotImplemented
 }
 
-func (s *OCIStore) SetDownstreamVersionReady(appID string, sequence int64) error {
-	return ErrNotImplemented
-}
-
-func (s *OCIStore) SetDownstreamVersionPendingPreflight(appID string, sequence int64) error {
-	return ErrNotImplemented
-}
-
-func (s *OCIStore) UpdateDownstreamVersionStatus(appID string, sequence int64, status string, statusInfo string) error {
+func (s *OCIStore) SetDownstreamVersionStatus(appID string, sequence int64, status types.DownstreamVersionStatus, statusInfo string) error {
 	return ErrNotImplemented
 }
 

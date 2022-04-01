@@ -31,6 +31,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
+	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
 	supportbundletypes "github.com/replicatedhq/kots/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -146,7 +147,7 @@ func deployVersionForApp(a *apptypes.App, deployedVersion *downstreamtypes.Downs
 	var deployError error
 	defer func() {
 		if deployError != nil {
-			err := store.GetStore().UpdateDownstreamVersionStatus(a.ID, deployedVersion.Sequence, "failed", deployError.Error())
+			err := store.GetStore().SetDownstreamVersionStatus(a.ID, deployedVersion.Sequence, storetypes.VersionFailed, deployError.Error())
 			if err != nil {
 				logger.Error(errors.Wrap(err, "failed to update downstream status"))
 			}

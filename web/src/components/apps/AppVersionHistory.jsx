@@ -84,7 +84,7 @@ class AppVersionHistory extends Component {
 
   componentDidMount() {
     this.fetchKotsDownstreamHistory();
-
+    this.props.refreshAppData()
     if (this.props.app?.isAirgap && !this.state.airgapUploader) {
       this.getAirgapConfig()
     }

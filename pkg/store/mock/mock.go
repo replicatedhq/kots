@@ -1457,32 +1457,18 @@ func (mr *MockStoreMockRecorder) SetAutoDeploy(appID, autoDeploy interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAutoDeploy", reflect.TypeOf((*MockStore)(nil).SetAutoDeploy), appID, autoDeploy)
 }
 
-// SetDownstreamVersionPendingPreflight mocks base method.
-func (m *MockStore) SetDownstreamVersionPendingPreflight(appID string, sequence int64) error {
+// SetDownstreamVersionStatus mocks base method.
+func (m *MockStore) SetDownstreamVersionStatus(appID string, sequence int64, status types11.DownstreamVersionStatus, statusInfo string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetDownstreamVersionPendingPreflight", appID, sequence)
+	ret := m.ctrl.Call(m, "SetDownstreamVersionStatus", appID, sequence, status, statusInfo)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// SetDownstreamVersionPendingPreflight indicates an expected call of SetDownstreamVersionPendingPreflight.
-func (mr *MockStoreMockRecorder) SetDownstreamVersionPendingPreflight(appID, sequence interface{}) *gomock.Call {
+// SetDownstreamVersionStatus indicates an expected call of SetDownstreamVersionStatus.
+func (mr *MockStoreMockRecorder) SetDownstreamVersionStatus(appID, sequence, status, statusInfo interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetDownstreamVersionPendingPreflight", reflect.TypeOf((*MockStore)(nil).SetDownstreamVersionPendingPreflight), appID, sequence)
-}
-
-// SetDownstreamVersionReady mocks base method.
-func (m *MockStore) SetDownstreamVersionReady(appID string, sequence int64) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetDownstreamVersionReady", appID, sequence)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetDownstreamVersionReady indicates an expected call of SetDownstreamVersionReady.
-func (mr *MockStoreMockRecorder) SetDownstreamVersionReady(appID, sequence interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetDownstreamVersionReady", reflect.TypeOf((*MockStore)(nil).SetDownstreamVersionReady), appID, sequence)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetDownstreamVersionStatus", reflect.TypeOf((*MockStore)(nil).SetDownstreamVersionStatus), appID, sequence, status, statusInfo)
 }
 
 // SetEmbeddedClusterAuthToken mocks base method.
@@ -1765,20 +1751,6 @@ func (m *MockStore) UpdateDownstreamDeployStatus(appID, clusterID string, sequen
 func (mr *MockStoreMockRecorder) UpdateDownstreamDeployStatus(appID, clusterID, sequence, isError, output interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateDownstreamDeployStatus", reflect.TypeOf((*MockStore)(nil).UpdateDownstreamDeployStatus), appID, clusterID, sequence, isError, output)
-}
-
-// UpdateDownstreamVersionStatus mocks base method.
-func (m *MockStore) UpdateDownstreamVersionStatus(appID string, sequence int64, status, statusInfo string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateDownstreamVersionStatus", appID, sequence, status, statusInfo)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateDownstreamVersionStatus indicates an expected call of UpdateDownstreamVersionStatus.
-func (mr *MockStoreMockRecorder) UpdateDownstreamVersionStatus(appID, sequence, status, statusInfo interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateDownstreamVersionStatus", reflect.TypeOf((*MockStore)(nil).UpdateDownstreamVersionStatus), appID, sequence, status, statusInfo)
 }
 
 // UpdateNextAppVersionDiffSummary mocks base method.
@@ -3213,32 +3185,18 @@ func (mr *MockDownstreamStoreMockRecorder) IsDownstreamDeploySuccessful(appID, c
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsDownstreamDeploySuccessful", reflect.TypeOf((*MockDownstreamStore)(nil).IsDownstreamDeploySuccessful), appID, clusterID, sequence)
 }
 
-// SetDownstreamVersionPendingPreflight mocks base method.
-func (m *MockDownstreamStore) SetDownstreamVersionPendingPreflight(appID string, sequence int64) error {
+// SetDownstreamVersionStatus mocks base method.
+func (m *MockDownstreamStore) SetDownstreamVersionStatus(appID string, sequence int64, status types11.DownstreamVersionStatus, statusInfo string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetDownstreamVersionPendingPreflight", appID, sequence)
+	ret := m.ctrl.Call(m, "SetDownstreamVersionStatus", appID, sequence, status, statusInfo)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// SetDownstreamVersionPendingPreflight indicates an expected call of SetDownstreamVersionPendingPreflight.
-func (mr *MockDownstreamStoreMockRecorder) SetDownstreamVersionPendingPreflight(appID, sequence interface{}) *gomock.Call {
+// SetDownstreamVersionStatus indicates an expected call of SetDownstreamVersionStatus.
+func (mr *MockDownstreamStoreMockRecorder) SetDownstreamVersionStatus(appID, sequence, status, statusInfo interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetDownstreamVersionPendingPreflight", reflect.TypeOf((*MockDownstreamStore)(nil).SetDownstreamVersionPendingPreflight), appID, sequence)
-}
-
-// SetDownstreamVersionReady mocks base method.
-func (m *MockDownstreamStore) SetDownstreamVersionReady(appID string, sequence int64) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetDownstreamVersionReady", appID, sequence)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetDownstreamVersionReady indicates an expected call of SetDownstreamVersionReady.
-func (mr *MockDownstreamStoreMockRecorder) SetDownstreamVersionReady(appID, sequence interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetDownstreamVersionReady", reflect.TypeOf((*MockDownstreamStore)(nil).SetDownstreamVersionReady), appID, sequence)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetDownstreamVersionStatus", reflect.TypeOf((*MockDownstreamStore)(nil).SetDownstreamVersionStatus), appID, sequence, status, statusInfo)
 }
 
 // TotalNumOfDownstreamVersions mocks base method.
@@ -3268,20 +3226,6 @@ func (m *MockDownstreamStore) UpdateDownstreamDeployStatus(appID, clusterID stri
 func (mr *MockDownstreamStoreMockRecorder) UpdateDownstreamDeployStatus(appID, clusterID, sequence, isError, output interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateDownstreamDeployStatus", reflect.TypeOf((*MockDownstreamStore)(nil).UpdateDownstreamDeployStatus), appID, clusterID, sequence, isError, output)
-}
-
-// UpdateDownstreamVersionStatus mocks base method.
-func (m *MockDownstreamStore) UpdateDownstreamVersionStatus(appID string, sequence int64, status, statusInfo string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateDownstreamVersionStatus", appID, sequence, status, statusInfo)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateDownstreamVersionStatus indicates an expected call of UpdateDownstreamVersionStatus.
-func (mr *MockDownstreamStoreMockRecorder) UpdateDownstreamVersionStatus(appID, sequence, status, statusInfo interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateDownstreamVersionStatus", reflect.TypeOf((*MockDownstreamStore)(nil).UpdateDownstreamVersionStatus), appID, sequence, status, statusInfo)
 }
 
 // MockSnapshotStore is a mock of SnapshotStore interface.

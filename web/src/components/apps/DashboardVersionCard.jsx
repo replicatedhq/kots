@@ -624,9 +624,9 @@ class DashboardVersionCard extends React.Component {
               data-for="disable-deployment-tooltip"
             >
               {this.actionButtonStatus(version)}
-              <ReactTooltip effect="solid" id="disable-deployment-tooltip" />
             </span>
           </button>
+          <ReactTooltip effect="solid" id="disable-deployment-tooltip" />
         </div>
       </div>
     );
