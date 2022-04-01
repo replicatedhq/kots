@@ -372,6 +372,7 @@ class AppDetailPage extends Component {
                         match={this.props.match}
                         makeCurrentVersion={this.makeCurrentRelease}
                         makingCurrentVersionErrMsg={this.state.makingCurrentReleaseErrMsg}
+                        updateCallback={this.refetchData}
                         toggleIsBundleUploading={this.toggleIsBundleUploading}
                         isBundleUploading={isBundleUploading}
                         refreshAppData={this.getApp}
