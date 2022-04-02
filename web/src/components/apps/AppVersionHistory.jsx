@@ -1058,7 +1058,7 @@ class AppVersionHistory extends Component {
           pagerType="releases"
           currentPage={currentPage}
           pageSize={pageSize}
-          totalCount={totalCount}
+          totalCount={totalCount - 1}
           loading={loadingPage}
           currentPageLength={otherAvailableVersions.length}
           goToPage={this.onGotoPage}
