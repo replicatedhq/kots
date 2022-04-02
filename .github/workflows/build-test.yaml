@@ -889,6 +889,13 @@ jobs:
             --kotsadm-namespace automated-${{ github.run_id }} \
             --kotsadm-tag 2h
 
+          # HACK: with limitted RBAC secrets are not applied by kotsadm
+          echo ${{ secrets.MULTI_NAMESPACE_REGISTRY_AUTH }} | base64 -d > replicated-registry-auth.json
+          kubectl -n nginx-test create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
+          kubectl -n redis-test create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
+          kubectl -n redis-test create secret generic multi-namespace-yeti-redis-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
+          kubectl -n postgres-test create secret generic multi-namespace-yeti-registry --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=./replicated-registry-auth.json
+
           COUNTER=1
           while [ $(./bin/kots get apps --namespace $APP_SLUG | awk 'NR>1{print $2}') != "ready" ]; do
             COUNTER=$[$COUNTER +1]
