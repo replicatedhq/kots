@@ -1115,7 +1115,7 @@ jobs:
 
           # TODO: deploy and check secrets are actually created and images are pulled
           ./bin/kots docker ensure-secret --dockerhub-username replicatedtests --dockerhub-password ${{ secrets.DOCKERHUB_RATELIMIT_PASSWORD }} -n $APP_SLUG
-          ./bin/kots download --n $APP_SLUG --slug $APP_SLUG
+          ./bin/kots download -n $APP_SLUG --slug $APP_SLUG
           if grep ${APP_SLUG}-kotsadm-dockerhub -w ./${APP_SLUG}/overlays/midstream/secret.yaml; then
             echo "Found DockerHub secret in ${APP_SLUG} latest version"
           else
