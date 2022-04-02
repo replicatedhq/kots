@@ -298,6 +298,18 @@ func (mr *MockKOTSHandlerMockRecorder) DisableAppGitOps(w, r interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DisableAppGitOps", reflect.TypeOf((*MockKOTSHandler)(nil).DisableAppGitOps), w, r)
 }
 
+// DockerHubSecretUpdated mocks base method.
+func (m *MockKOTSHandler) DockerHubSecretUpdated(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "DockerHubSecretUpdated", w, r)
+}
+
+// DockerHubSecretUpdated indicates an expected call of DockerHubSecretUpdated.
+func (mr *MockKOTSHandlerMockRecorder) DockerHubSecretUpdated(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DockerHubSecretUpdated", reflect.TypeOf((*MockKOTSHandler)(nil).DockerHubSecretUpdated), w, r)
+}
+
 // DownloadAppVersion mocks base method.
 func (m *MockKOTSHandler) DownloadAppVersion(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()

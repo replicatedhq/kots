@@ -11,11 +11,12 @@ import (
 )
 
 type CLILogger struct {
-	spinnerStopCh chan bool
-	spinnerMsg    string
-	spinnerArgs   []interface{}
-	isSilent      bool
-	isVerbose     bool
+	spinnerStopCh    chan bool
+	spinnerMsg       string
+	spinnerArgs      []interface{}
+	isSpinnerRunning bool
+	isSilent         bool
+	isVerbose        bool
 }
 
 func NewCLILogger() *CLILogger {
@@ -115,6 +116,7 @@ func (l *CLILogger) ActionWithSpinner(msg string, args ...interface{}) {
 	l.spinnerStopCh = make(chan bool)
 	l.spinnerMsg = msg
 	l.spinnerArgs = args
+	l.isSpinnerRunning = true
 
 	go func() {
 		for {
@@ -151,6 +153,7 @@ func (l *CLILogger) ChildActionWithSpinner(msg string, args ...interface{}) {
 	l.spinnerStopCh = make(chan bool)
 	l.spinnerMsg = msg
 	l.spinnerArgs = args
+	l.isSpinnerRunning = true
 
 	go func() {
 		for {
@@ -168,7 +171,7 @@ func (l *CLILogger) ChildActionWithSpinner(msg string, args ...interface{}) {
 }
 
 func (l *CLILogger) FinishChildSpinner() {
-	if l == nil || l.isSilent {
+	if l == nil || l.isSilent || !l.isSpinnerRunning {
 		return
 	}
 
@@ -186,11 +189,12 @@ func (l *CLILogger) FinishChildSpinner() {
 	fmt.Printf("  \n")
 
 	l.spinnerStopCh <- true
+	l.isSpinnerRunning = false
 	close(l.spinnerStopCh)
 }
 
 func (l *CLILogger) FinishSpinner() {
-	if l == nil || l.isSilent {
+	if l == nil || l.isSilent || !l.isSpinnerRunning {
 		return
 	}
 
@@ -208,11 +212,12 @@ func (l *CLILogger) FinishSpinner() {
 	fmt.Printf("  \n")
 
 	l.spinnerStopCh <- true
+	l.isSpinnerRunning = false
 	close(l.spinnerStopCh)
 }
 
 func (l *CLILogger) FinishSpinnerWithError() {
-	if l == nil || l.isSilent {
+	if l == nil || l.isSilent || !l.isSpinnerRunning {
 		return
 	}
 
@@ -230,12 +235,13 @@ func (l *CLILogger) FinishSpinnerWithError() {
 	fmt.Printf("  \n")
 
 	l.spinnerStopCh <- true
+	l.isSpinnerRunning = false
 	close(l.spinnerStopCh)
 }
 
 // FinishSpinnerWithWarning if no color is provided, color.FgYellow will be used
 func (l *CLILogger) FinishSpinnerWithWarning(c *color.Color) {
-	if l == nil || l.isSilent {
+	if l == nil || l.isSilent || !l.isSpinnerRunning {
 		return
 	}
 
@@ -255,6 +261,7 @@ func (l *CLILogger) FinishSpinnerWithWarning(c *color.Color) {
 	fmt.Printf("  \n")
 
 	l.spinnerStopCh <- true
+	l.isSpinnerRunning = false
 	close(l.spinnerStopCh)
 }
 

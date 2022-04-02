@@ -75,6 +75,49 @@ type ValidateAppRegistryResponse struct {
 	Error   string `json:"error,omitempty"`
 }
 
+type DockerHubSecretUpdatedResponse struct {
+	Success bool   `json:"success"`
+	Error   string `json:"error,omitempty"`
+}
+
+func (h *Handler) DockerHubSecretUpdated(w http.ResponseWriter, r *http.Request) {
+	ensureDockerHubSecretResponse := DockerHubSecretUpdatedResponse{
+		Success: false,
+	}
+
+	apps, err := store.GetStore().ListInstalledApps()
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to list installed apps"))
+		ensureDockerHubSecretResponse.Error = err.Error()
+		JSON(w, http.StatusInternalServerError, ensureDockerHubSecretResponse)
+		return
+	}
+
+	for _, app := range apps {
+		latestSequence, err := store.GetStore().GetLatestAppSequence(app.ID, true)
+		if err != nil {
+			logger.Error(errors.Wrapf(err, "failed to get latest app version for app %s", app.Slug))
+			logger.Error(errors.Wrap(err, ensureDockerHubSecretResponse.Error))
+			JSON(w, http.StatusInternalServerError, ensureDockerHubSecretResponse)
+			return
+		}
+
+		createNewVersion := true
+		isPrimaryVersion := true
+		skipPrefligths := false
+		deploy := false
+		resp, err := updateAppConfig(app, latestSequence, nil, createNewVersion, isPrimaryVersion, skipPrefligths, deploy)
+		if err != nil {
+			logger.Error(err)
+			JSON(w, http.StatusInternalServerError, resp)
+			return
+		}
+	}
+
+	ensureDockerHubSecretResponse.Success = true
+	JSON(w, http.StatusOK, ensureDockerHubSecretResponse)
+}
+
 func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 	updateAppRegistryResponse := UpdateAppRegistryResponse{
 		Success: false,

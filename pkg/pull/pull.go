@@ -517,7 +517,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 }
 
 func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOptions, u *upstreamtypes.Upstream, b *base.Base, license *kotsv1beta1.License, identityConfig *kotsv1beta1.IdentityConfig, upstreamDir string, pushImages bool, log *logger.CLILogger) (*midstream.Midstream, error) {
-	var pullSecrets *registry.ImagePullSecrets
+	var pullSecrets registry.ImagePullSecrets
 	var images []kustomizetypes.Image
 	var objects []k8sdoc.K8sDoc
 
@@ -534,7 +534,11 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOp
 	}
 
 	// do not fail on being unable to get dockerhub credentials, since they're just used to increase the rate limit
-	dockerHubRegistryCreds, _ := registry.GetDockerHubCredentials(clientset, options.Namespace)
+	var dockerHubRegistryCreds registry.Credentials
+	dockerhubSecret, _ := registry.GetDockerHubPullSecret(clientset, util.PodNamespace, options.Namespace, options.AppSlug)
+	if dockerhubSecret != nil {
+		dockerHubRegistryCreds, _ = registry.GetCredentialsForRegistryFromConfigJSON(dockerhubSecret.Data[".dockerconfigjson"], registry.DockerHubRegistryName)
+	}
 
 	if options.RewriteImages {
 
@@ -758,7 +762,8 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOp
 		objects = findResult.Docs
 	}
 
-	m, err := midstream.CreateMidstream(b, images, objects, pullSecrets, identitySpec, identityConfig)
+	pullSecrets.DockerHubSecret = dockerhubSecret
+	m, err := midstream.CreateMidstream(b, images, objects, &pullSecrets, identitySpec, identityConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create midstream")
 	}

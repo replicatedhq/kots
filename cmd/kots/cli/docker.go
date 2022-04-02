@@ -1,12 +1,21 @@
 package cli
 
 import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"time"
+
+	cursor "github.com/ahmetalpbalkan/go-cursor"
 	"github.com/containers/image/v5/docker"
 	"github.com/containers/image/v5/types"
 	"github.com/pkg/errors"
 
+	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -45,6 +54,8 @@ func DockerEnsureSecretCmd() *cobra.Command {
 				return errors.New("--dockerhub-password flag is required")
 			}
 
+			log := logger.NewCLILogger()
+
 			// validate credentials
 			sysCtx := &types.SystemContext{DockerDisableV1Ping: true}
 			if err := docker.CheckAuth(cmd.Context(), sysCtx, dockerHubUsername, dockerHubPassword, registry.DockerHubRegistryName); err != nil {
@@ -62,9 +73,79 @@ func DockerEnsureSecretCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get clientset")
 			}
 
-			if err := registry.EnsureDockerHubSecret(dockerHubUsername, dockerHubPassword, namespace, clientset); err != nil {
+			err = registry.EnsureDockerHubSecret(dockerHubUsername, dockerHubPassword, namespace, clientset)
+			if err != nil {
+				if err == registry.ErrDockerHubCredentialsExist {
+					log.Info("New application version will not be created because secret %q with the same credentials already exists.", registry.DockerHubSecretName)
+					return nil
+				}
+
 				return errors.Wrap(err, "failed to ensure dockerhub secret")
 			}
+
+			fmt.Print(cursor.Hide())
+			defer fmt.Print(cursor.Show())
+
+			getPodName := func() (string, error) {
+				return k8sutil.WaitForKotsadm(clientset, namespace, time.Second*5)
+			}
+
+			stopCh := make(chan struct{})
+			defer close(stopCh)
+
+			log.ActionWithSpinner("Updating applications")
+			defer log.FinishSpinnerWithError()
+
+			localPort, errChan, err := k8sutil.PortForward(0, 3000, namespace, getPodName, false, stopCh, log)
+			if err != nil {
+				return errors.Wrap(err, "failed to start port forwarding")
+			}
+
+			go func() {
+				select {
+				case err := <-errChan:
+					if err != nil {
+						log.Error(err)
+					}
+				case <-stopCh:
+				}
+			}()
+
+			authSlug, err := auth.GetOrCreateAuthSlug(clientset, namespace)
+			if err != nil {
+				return errors.Wrap(err, "failed to get kotsadm auth slug")
+			}
+
+			url := fmt.Sprintf("http://localhost:%d/api/v1/docker/secret-updated", localPort)
+			newRequest, err := http.NewRequest("POST", url, nil)
+			if err != nil {
+				return errors.Wrap(err, "failed to create http request")
+			}
+			newRequest.Header.Add("Authorization", authSlug)
+			newRequest.Header.Add("Content-Type", "application/json")
+
+			resp, err := http.DefaultClient.Do(newRequest)
+			if err != nil {
+				return errors.Wrap(err, "failed to execute http request")
+			}
+			defer resp.Body.Close()
+
+			b, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return errors.Wrap(err, "failed to read server response")
+			}
+
+			response := struct {
+				Success bool   `json:"success"`
+				Error   string `json:"error"`
+			}{}
+			_ = json.Unmarshal(b, &response)
+
+			if resp.StatusCode != http.StatusOK {
+				return errors.Wrapf(errors.New(response.Error), "unexpected status code from %v", resp.StatusCode)
+			}
+
+			log.FinishSpinner()
 
 			return nil
 		},

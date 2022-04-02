@@ -12,6 +12,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/template"
 	yaml "gopkg.in/yaml.v2"
+	corev1 "k8s.io/api/core/v1"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 	k8syaml "sigs.k8s.io/yaml"
 )
@@ -207,6 +208,18 @@ func (m *Midstream) writePullSecret(options WriteOptions) (string, error) {
 		secretBytes = append(secretBytes, b...)
 	}
 
+	if m.DockerHubPullSecret != nil {
+		if secretBytes != nil {
+			secretBytes = append(secretBytes, []byte("\n---\n")...)
+		}
+
+		b, err := k8syaml.Marshal(m.DockerHubPullSecret)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to marshal kots pull secret")
+		}
+		secretBytes = append(secretBytes, b...)
+	}
+
 	if secretBytes == nil {
 		return "", nil
 	}
@@ -236,22 +249,32 @@ func (m *Midstream) writeObjectsWithPullSecret(options WriteOptions) error {
 	}
 	defer f.Close()
 
+	secrets := []*corev1.Secret{}
+	if m.AppPullSecret != nil {
+		secrets = append(secrets, m.AppPullSecret)
+	}
+	if m.DockerHubPullSecret != nil {
+		secrets = append(secrets, m.DockerHubPullSecret)
+	}
+
 	for _, o := range m.DocForPatches {
-		withPullSecret := o.PatchWithPullSecret(m.AppPullSecret)
-		if withPullSecret == nil {
-			continue
-		}
+		for _, secret := range secrets {
+			withPullSecret := o.PatchWithPullSecret(secret)
+			if withPullSecret == nil {
+				continue
+			}
 
-		b, err := yaml.Marshal(withPullSecret)
-		if err != nil {
-			return errors.Wrap(err, "failed to marshal object")
-		}
+			b, err := yaml.Marshal(withPullSecret)
+			if err != nil {
+				return errors.Wrap(err, "failed to marshal object")
+			}
 
-		if _, err := f.Write([]byte("---\n")); err != nil {
-			return errors.Wrap(err, "failed to write doc separator")
-		}
-		if _, err := f.Write(b); err != nil {
-			return errors.Wrap(err, "failed to write object")
+			if _, err := f.Write([]byte("---\n")); err != nil {
+				return errors.Wrap(err, "failed to write doc separator")
+			}
+			if _, err := f.Write(b); err != nil {
+				return errors.Wrap(err, "failed to write object")
+			}
 		}
 	}
 

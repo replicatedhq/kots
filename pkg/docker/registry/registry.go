@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"sync"
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -35,12 +36,22 @@ type Credentials struct {
 }
 
 type ImagePullSecrets struct {
-	AdminConsoleSecret corev1.Secret // this field is always populated
+	AdminConsoleSecret *corev1.Secret
 	AppSecret          *corev1.Secret
+	DockerHubSecret    *corev1.Secret
 }
 
 const DockerHubRegistryName = "index.docker.io"
 const DockerHubSecretName = "kotsadm-dockerhub"
+
+var ErrDockerHubCredentialsExist = errors.New("dockerhub credentials exists")
+var dockerHubSecretMutex sync.Mutex
+
+// try to ensure secrets are created first if using a helm install
+var secretAnnotations = map[string]string{
+	"helm.sh/hook":        "pre-install,pre-upgrade",
+	"helm.sh/hook-weight": "-9999",
+}
 
 func ProxyEndpointFromLicense(license *kotsv1beta1.License) *RegistryProxyInfo {
 	defaultInfo := &RegistryProxyInfo{
@@ -88,7 +99,7 @@ func SecretNameFromPrefix(namePrefix string) string {
 	return fmt.Sprintf("%s-registry", namePrefix)
 }
 
-func PullSecretForRegistries(registries []string, username, password string, kuberneteNamespace string, namePrefix string) (*ImagePullSecrets, error) {
+func PullSecretForRegistries(registries []string, username, password string, appNamespace string, namePrefix string) (ImagePullSecrets, error) {
 	dockercfgAuth := DockercfgAuth{
 		Auth: base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", username, password))),
 	}
@@ -105,25 +116,19 @@ func PullSecretForRegistries(registries []string, username, password string, kub
 
 	secretData, err := json.Marshal(dockerCfgJSON)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to marshal pull secret data")
+		return ImagePullSecrets{}, errors.Wrap(err, "failed to marshal pull secret data")
 	}
 
-	// try to ensure this is created first if using a helm install
-	annotations := map[string]string{
-		"helm.sh/hook":        "pre-install,pre-upgrade",
-		"helm.sh/hook-weight": "-9999",
-	}
-
-	secrets := &ImagePullSecrets{
-		AdminConsoleSecret: corev1.Secret{
+	secrets := ImagePullSecrets{
+		AdminConsoleSecret: &corev1.Secret{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "v1",
 				Kind:       "Secret",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        "kotsadm-replicated-registry",
-				Namespace:   kuberneteNamespace,
-				Annotations: annotations,
+				Namespace:   appNamespace,
+				Annotations: secretAnnotations,
 			},
 			Type: corev1.SecretTypeDockerConfigJson,
 			Data: map[string][]byte{
@@ -143,8 +148,8 @@ func PullSecretForRegistries(registries []string, username, password string, kub
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        SecretNameFromPrefix(namePrefix),
-			Namespace:   kuberneteNamespace,
-			Annotations: annotations,
+			Namespace:   appNamespace,
+			Annotations: secretAnnotations,
 		},
 		Type: corev1.SecretTypeDockerConfigJson,
 		Data: map[string][]byte{
@@ -156,22 +161,38 @@ func PullSecretForRegistries(registries []string, username, password string, kub
 }
 
 func EnsureDockerHubSecret(username string, password string, namespace string, clientset *kubernetes.Clientset) error {
-	_, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), DockerHubSecretName, metav1.GetOptions{})
+	dockerHubSecretMutex.Lock()
+	defer dockerHubSecretMutex.Unlock()
+
+	newSecret, err := PullSecretForDockerHub(username, password, namespace)
+	if err != nil {
+		return errors.Wrap(err, "failed to build pull secret for dockerhub")
+	}
+
+	existingSecret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), DockerHubSecretName, metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
-			return errors.Wrap(err, "failed to get existing dockerhub secret")
-		}
-
-		secret, err := PullSecretForDockerHub(username, password, namespace)
-		if err != nil {
 			return errors.Wrap(err, "failed to get pull secret for dockerhub")
 		}
 
-		// secret not found, create it
-		_, err = clientset.CoreV1().Secrets(namespace).Create(context.TODO(), secret, metav1.CreateOptions{})
+		_, err = clientset.CoreV1().Secrets(namespace).Create(context.TODO(), newSecret, metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create dockerhub secret")
 		}
+
+		return nil
+	}
+
+	// Ignore error, if JSON is bad or missing, we should replace it anyway
+	existingCreds, _ := GetCredentialsForRegistryFromConfigJSON(existingSecret.Data[".dockerconfigjson"], DockerHubRegistryName)
+	if existingCreds.Username == username && existingCreds.Password == password {
+		return ErrDockerHubCredentialsExist
+	}
+
+	existingSecret.Data = newSecret.DeepCopy().Data
+	_, err = clientset.CoreV1().Secrets(namespace).Update(context.TODO(), newSecret, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update dockerhub secret")
 	}
 
 	return nil
@@ -228,6 +249,36 @@ func GetDockerHubCredentials(clientset kubernetes.Interface, namespace string) (
 	return GetCredentialsForRegistryFromConfigJSON(dockerConfigJson, DockerHubRegistryName)
 }
 
+func GetDockerHubPullSecret(clientset kubernetes.Interface, namespace string, appNamespace string, namePrefix string) (*corev1.Secret, error) {
+	if namePrefix == "" {
+		return nil, nil
+	}
+
+	secret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), DockerHubSecretName, metav1.GetOptions{})
+	if err != nil {
+		if kuberneteserrors.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, errors.Wrap(err, "failed to get existing dockerhub secret")
+	}
+
+	cleanSecret := &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        fmt.Sprintf("%s-%s", namePrefix, DockerHubSecretName),
+			Namespace:   appNamespace,
+			Annotations: secretAnnotations,
+		},
+		Type: corev1.SecretTypeDockerConfigJson,
+		Data: secret.DeepCopy().Data,
+	}
+
+	return cleanSecret, nil
+}
+
 func GetCredentialsForRegistryFromConfigJSON(configJson []byte, registry string) (Credentials, error) {
 	creds, err := GetCredentialsFromConfigJSON(configJson)
 	if err != nil {
@@ -243,6 +294,10 @@ func GetCredentialsForRegistryFromConfigJSON(configJson []byte, registry string)
 }
 
 func GetCredentialsFromConfigJSON(configJson []byte) (map[string]Credentials, error) {
+	if len(configJson) == 0 {
+		return nil, errors.New("docker config JSON data is empty")
+	}
+
 	dockerCfgJSON := DockerCfgJSON{}
 	err := json.Unmarshal(configJson, &dockerCfgJSON)
 	if err != nil {
