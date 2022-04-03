@@ -190,6 +190,8 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 
 	r.Name("SyncLicense").Path("/api/v1/app/{appSlug}/license").Methods("PUT").
 		HandlerFunc(middleware.EnforceAccess(policy.AppLicenseWrite, handler.SyncLicense))
+	r.Name("ChangeLicense").Path("/api/v1/app/{appSlug}/change-license").Methods("PUT").
+		HandlerFunc(middleware.EnforceAccess(policy.AppLicenseWrite, handler.ChangeLicense))
 	r.Name("GetLicense").Path("/api/v1/app/{appSlug}/license").Methods("GET").
 		HandlerFunc(middleware.EnforceAccess(policy.AppLicenseRead, handler.GetLicense))
 

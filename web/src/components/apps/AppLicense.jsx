@@ -22,7 +22,12 @@ class AppLicense extends Component {
       message: "",
       messageType: "info",
       showNextStepModal: false,
-      entitlementsToShow: []
+      entitlementsToShow: [],
+      showLicenseChangeModal: false,
+      licenseChangeFile: null,
+      changingLicense: false,
+      licenseChangeMessage: "",
+      licenseChangeMessageType: "info",
     }
   }
 
@@ -53,7 +58,7 @@ class AppLicense extends Component {
 
   onDrop = async (files) => {
     const content = await getFileContent(files[0]);
-    const contentStr = (new TextDecoder("utf-8")).decode(content)
+    const contentStr = (new TextDecoder("utf-8")).decode(content);
     const airgapLicense = await yaml.safeLoad(contentStr);
     const { appLicense } = this.state;
 
@@ -141,8 +146,95 @@ class AppLicense extends Component {
       });
   }
 
+  onLicenseChangeDrop = async (files) => {
+    this.setState({
+      licenseChangeFile: files[0],
+      licenseChangeMessage: "",
+    });
+  }
+
+  clearLicenseChangeFile = () => {
+    this.setState({ licenseChangeFile: null, licenseChangeMessage: "" });
+  }
+
+  changeAppLicense = async () => {
+    if (!this.state.licenseChangeFile) {
+      return;
+    }
+
+    const content = await getFileContent(this.state.licenseChangeFile);
+    const licenseData = (new TextDecoder("utf-8")).decode(content);
+
+    this.setState({
+      changingLicense: true,
+      licenseChangeMessage: "",
+      licenseChangeMessageType: "info",
+    });
+
+    const { app } = this.props;
+
+    const payload = {
+      licenseData,
+    };
+
+    fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/change-license`, {
+      method: "PUT",
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload)
+    })
+      .then(async response => {
+        if (!response.ok) {
+          if (response.status == 401) {
+            Utilities.logoutUser();
+            return;
+          }
+          const res = await response.json();
+          throw new Error(res?.error);
+        }
+        return response.json();
+      })
+      .then(async (licenseResponse) => {
+        this.setState({
+          appLicense: licenseResponse.license,
+          showNextStepModal: true,
+          showLicenseChangeModal: false,
+          licenseChangeFile: null,
+          licenseChangeMessage: "",
+        });
+
+        if (this.props.changeCallback) {
+          this.props.changeCallback();
+        }
+      })
+      .catch(err => {
+        console.log(err);
+        this.setState({
+          licenseChangeMessage: err ? err.message : "Something went wrong",
+          licenseChangeMessageType: "error"
+        });
+      })
+      .finally(() => {
+        this.setState({ changingLicense: false });
+      });
+  }
+
   hideNextStepModal = () => {
     this.setState({ showNextStepModal: false });
+  }
+
+  hideLicenseChangeModal = () => {
+    this.setState({
+      showLicenseChangeModal: false,
+      licenseChangeFile: null,
+      licenseChangeMessage: "",
+    });
+  }
+
+  showLicenseChangeModal = () => {
+    this.setState({ showLicenseChangeModal: true });
   }
 
   toggleShowDetails = (entitlement) => {
@@ -157,7 +249,18 @@ class AppLicense extends Component {
   }
 
   render() {
-    const { appLicense, loading, message, messageType, showNextStepModal } = this.state;
+    const {
+      appLicense,
+      loading,
+      message,
+      messageType,
+      showNextStepModal,
+      showLicenseChangeModal,
+      licenseChangeFile,
+      changingLicense,
+      licenseChangeMessage,
+      licenseChangeMessageType
+    } = this.state;
 
     if (!appLicense) {
       return (
@@ -240,18 +343,23 @@ class AppLicense extends Component {
                 </div>
               </div>
               <div className="flex-column flex-auto alignItems--flexEnd justifyContent--center">
-                {app.isAirgap ?
-                  <Dropzone
-                    className="Dropzone-wrapper"
-                    accept={["application/x-yaml", ".yaml", ".yml"]}
-                    onDropAccepted={this.onDrop}
-                    multiple={false}
-                  >
-                    <button className="btn primary blue" disabled={loading}>{loading ? "Uploading" : "Upload license"}</button>
-                  </Dropzone>
-                  :
-                  <button className="btn primary blue" disabled={loading} onClick={this.syncAppLicense.bind(this, "")}>{loading ? "Syncing" : "Sync license"}</button>
-                }
+                <div className="flex alignItems--center">
+                  {appLicense?.licenseType === "community" &&
+                    <button className="btn secondary blue u-marginRight--10" disabled={changingLicense} onClick={this.showLicenseChangeModal}>{changingLicense ? "Changing" : "Change license"}</button>
+                  }
+                  {app.isAirgap ?
+                    <Dropzone
+                      className="Dropzone-wrapper"
+                      accept={["application/x-yaml", ".yaml", ".yml"]}
+                      onDropAccepted={this.onDrop}
+                      multiple={false}
+                    >
+                      <button className="btn primary blue" disabled={loading}>{loading ? "Uploading" : "Upload license"}</button>
+                    </Dropzone>
+                    :
+                    <button className="btn primary blue" disabled={loading} onClick={() => this.syncAppLicense("")}>{loading ? "Syncing" : "Sync license"}</button>
+                  }
+                </div>
                 {message &&
                   <p className={classNames("u-fontWeight--bold u-fontSize--small u-marginTop--10", {
                     "u-textColor--error": messageType === "error",
@@ -302,6 +410,73 @@ class AppLicense extends Component {
             </div>
           }
         </Modal>
+
+        {showLicenseChangeModal &&
+          <Modal
+            isOpen={showLicenseChangeModal}
+            onRequestClose={this.hideLicenseChangeModal}
+            shouldReturnFocusAfterClose={false}
+            contentLabel="Change License"
+            ariaHideApp={false}
+            className="Modal SmallSize"
+          >
+            <div className="u-marginTop--10 u-padding--20">
+              <p className="u-fontSize--larger u-fontWeight--bold u-textColor--primary u-marginBottom--10">Change your license</p>
+              <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--10">The new license must be for the same application as your current license.</p>
+              <div className={`FileUpload-wrapper flex1 ${licenseChangeFile ? "has-file" : ""}`}>
+                {licenseChangeFile ?
+                  <div className="has-file-wrapper">
+                    <div className="flex">
+                      <div className="icon u-yamlLtGray-small u-marginRight--10" />
+                      <div>
+                        <p className="u-fontSize--normal u-textColor--primary u-fontWeight--medium">{licenseChangeFile.name}</p>
+                        <span className="replicated-link u-fontSize--small" onClick={this.clearLicenseChangeFile}>Select a different file</span>
+                      </div>
+                    </div>
+                  </div>
+                  :
+                  <Dropzone
+                    className="Dropzone-wrapper"
+                    accept={["application/x-yaml", ".yaml", ".yml"]}
+                    onDropAccepted={this.onLicenseChangeDrop}
+                    multiple={false}
+                  >
+                    <div className="u-textAlign--center">
+                      <div className="icon u-yamlLtGray-lrg u-marginBottom--10" />
+                      <p className="u-fontSize--normal u-textColor--secondary u-fontWeight--medium u-lineHeight--normal">Drag your new license here or <span className="u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover">choose a file</span></p>
+                      <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--normal u-lineHeight--normal u-marginTop--10">This will be a .yaml file. Please contact your account rep if you are unable to locate your new license file.</p>
+                    </div>
+                  </Dropzone>
+                }
+              </div>
+              {licenseChangeMessage &&
+                <p className={classNames("u-fontWeight--bold u-fontSize--small u-marginTop--10 u-marginBottom--20", {
+                  "u-textColor--error": licenseChangeMessageType === "error",
+                  "u-textColor--primary": licenseChangeMessageType === "info",
+                })}>{licenseChangeMessage}</p>
+              }
+              <div className="flex flex-auto">
+                <button
+                  type="button"
+                  className="btn secondary large u-marginRight--10"
+                  onClick={this.hideLicenseChangeModal}
+                >
+                  Cancel
+                </button>
+                {licenseChangeFile &&
+                  <button
+                    type="button"
+                    className="btn primary large"
+                    onClick={this.changeAppLicense}
+                    disabled={changingLicense}
+                  >
+                    {changingLicense ? "Changing" : "Change license"}
+                  </button>
+                }
+              </div>
+            </div>
+          </Modal>
+        }
       </div>
     );
   }

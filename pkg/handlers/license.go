@@ -11,6 +11,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
@@ -22,6 +23,7 @@ import (
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/registry"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/updatechecker"
 	"github.com/replicatedhq/kots/pkg/util"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -121,6 +123,14 @@ func (h *Handler) SyncLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	currentLicense, err := store.GetStore().GetLatestLicenseForApp(foundApp.ID)
+	if err != nil {
+		syncLicenseResponse.Error = "failed to get current license"
+		logger.Error(errors.Wrap(err, syncLicenseResponse.Error))
+		JSON(w, http.StatusInternalServerError, syncLicenseResponse)
+		return
+	}
+
 	latestLicense, synced, err := license.Sync(foundApp, syncLicenseRequest.LicenseData, true)
 	if err != nil {
 		syncLicenseResponse.Error = "failed to sync license"
@@ -129,9 +139,22 @@ func (h *Handler) SyncLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	entitlements, expiresAt, err := getLicenseEntitlements(latestLicense)
+	if !foundApp.IsAirgap && currentLicense.Spec.ChannelID != latestLicense.Spec.ChannelID {
+		// channel changed and this is an online installation, fetch the latest release for the new channel
+		go func(appID string) {
+			opts := updatechecker.CheckForUpdatesOpts{
+				AppID: appID,
+			}
+			_, err := updatechecker.CheckForUpdates(opts)
+			if err != nil {
+				logger.Error(errors.Wrap(err, "failed to fetch the latest release for the new channel"))
+			}
+		}(foundApp.ID)
+	}
+
+	licenseResponse, err := licenseResponseFromLicense(latestLicense, foundApp)
 	if err != nil {
-		syncLicenseResponse.Error = "failed to get license entitlements"
+		syncLicenseResponse.Error = "failed to get license response from license"
 		logger.Error(errors.Wrap(err, syncLicenseResponse.Error))
 		JSON(w, http.StatusInternalServerError, syncLicenseResponse)
 		return
@@ -139,23 +162,7 @@ func (h *Handler) SyncLicense(w http.ResponseWriter, r *http.Request) {
 
 	syncLicenseResponse.Success = true
 	syncLicenseResponse.Synced = synced
-	syncLicenseResponse.License = LicenseResponse{
-		ID:                             latestLicense.Spec.LicenseID,
-		Assignee:                       latestLicense.Spec.CustomerName,
-		ChannelName:                    latestLicense.Spec.ChannelName,
-		LicenseSequence:                latestLicense.Spec.LicenseSequence,
-		LicenseType:                    latestLicense.Spec.LicenseType,
-		Entitlements:                   entitlements,
-		ExpiresAt:                      expiresAt,
-		IsAirgapSupported:              latestLicense.Spec.IsAirgapSupported,
-		IsGitOpsSupported:              latestLicense.Spec.IsGitOpsSupported,
-		IsIdentityServiceSupported:     latestLicense.Spec.IsIdentityServiceSupported,
-		IsGeoaxisSupported:             latestLicense.Spec.IsGeoaxisSupported,
-		IsSemverRequired:               latestLicense.Spec.IsSemverRequired,
-		IsSnapshotSupported:            latestLicense.Spec.IsSnapshotSupported,
-		LastSyncedAt:                   foundApp.LastLicenseSync,
-		IsSupportBundleUploadSupported: latestLicense.Spec.IsSupportBundleUploadSupported,
-	}
+	syncLicenseResponse.License = *licenseResponse
 
 	JSON(w, http.StatusOK, syncLicenseResponse)
 }
@@ -182,32 +189,16 @@ func (h *Handler) GetLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	entitlements, expiresAt, err := getLicenseEntitlements(license)
+	licenseResponse, err := licenseResponseFromLicense(license, foundApp)
 	if err != nil {
-		getLicenseResponse.Error = "failed to get license entitlements"
+		getLicenseResponse.Error = "failed to get license response from license"
 		logger.Error(errors.Wrap(err, getLicenseResponse.Error))
 		JSON(w, http.StatusInternalServerError, getLicenseResponse)
 		return
 	}
 
 	getLicenseResponse.Success = true
-	getLicenseResponse.License = LicenseResponse{
-		ID:                             license.Spec.LicenseID,
-		Assignee:                       license.Spec.CustomerName,
-		ChannelName:                    license.Spec.ChannelName,
-		LicenseSequence:                license.Spec.LicenseSequence,
-		LicenseType:                    license.Spec.LicenseType,
-		Entitlements:                   entitlements,
-		ExpiresAt:                      expiresAt,
-		IsAirgapSupported:              license.Spec.IsAirgapSupported,
-		IsGitOpsSupported:              license.Spec.IsGitOpsSupported,
-		IsIdentityServiceSupported:     license.Spec.IsIdentityServiceSupported,
-		IsGeoaxisSupported:             license.Spec.IsGeoaxisSupported,
-		IsSemverRequired:               license.Spec.IsSemverRequired,
-		IsSnapshotSupported:            license.Spec.IsSnapshotSupported,
-		LastSyncedAt:                   foundApp.LastLicenseSync,
-		IsSupportBundleUploadSupported: license.Spec.IsSupportBundleUploadSupported,
-	}
+	getLicenseResponse.License = *licenseResponse
 
 	JSON(w, http.StatusOK, getLicenseResponse)
 }
@@ -580,4 +571,110 @@ func (h *Handler) GetPlatformLicenseCompatibility(w http.ResponseWriter, r *http
 
 	JSON(w, http.StatusOK, platformLicense)
 	return
+}
+
+type ChangeLicenseRequest struct {
+	LicenseData string `json:"licenseData"`
+}
+
+type ChangeLicenseResponse struct {
+	Success bool            `json:"success"`
+	Error   string          `json:"error,omitempty"`
+	License LicenseResponse `json:"license"`
+}
+
+func (h *Handler) ChangeLicense(w http.ResponseWriter, r *http.Request) {
+	changeLicenseResponse := ChangeLicenseResponse{
+		Success: false,
+	}
+
+	changeLicenseRequest := ChangeLicenseRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&changeLicenseRequest); err != nil {
+		errMsg := "failed to decode request body"
+		logger.Error(errors.Wrap(err, errMsg))
+		changeLicenseResponse.Error = errMsg
+		JSON(w, http.StatusBadRequest, changeLicenseResponse)
+		return
+	}
+
+	appSlug := mux.Vars(r)["appSlug"]
+	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
+	if err != nil {
+		errMsg := "failed to get app from slug"
+		logger.Error(errors.Wrap(err, errMsg))
+		changeLicenseResponse.Error = errMsg
+		JSON(w, http.StatusInternalServerError, changeLicenseResponse)
+		return
+	}
+
+	currentLicense, err := store.GetStore().GetLatestLicenseForApp(foundApp.ID)
+	if err != nil {
+		errMsg := "failed to get current license"
+		logger.Error(errors.Wrap(err, errMsg))
+		changeLicenseResponse.Error = errMsg
+		JSON(w, http.StatusInternalServerError, changeLicenseResponse)
+		return
+	}
+
+	newLicense, err := license.Change(foundApp, changeLicenseRequest.LicenseData)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to change license"))
+		changeLicenseResponse.Error = errors.Cause(err).Error()
+		JSON(w, http.StatusInternalServerError, changeLicenseResponse)
+		return
+	}
+
+	if !foundApp.IsAirgap && currentLicense.Spec.ChannelID != newLicense.Spec.ChannelID {
+		// channel changed and this is an online installation, fetch the latest release for the new channel
+		go func(appID string) {
+			opts := updatechecker.CheckForUpdatesOpts{
+				AppID: appID,
+			}
+			_, err := updatechecker.CheckForUpdates(opts)
+			if err != nil {
+				logger.Error(errors.Wrap(err, "failed to fetch the latest release for the new channel"))
+			}
+		}(foundApp.ID)
+	}
+
+	licenseResponse, err := licenseResponseFromLicense(newLicense, foundApp)
+	if err != nil {
+		errMsg := "failed to get license response from license"
+		logger.Error(errors.Wrap(err, errMsg))
+		changeLicenseResponse.Error = errMsg
+		JSON(w, http.StatusInternalServerError, changeLicenseResponse)
+		return
+	}
+
+	changeLicenseResponse.Success = true
+	changeLicenseResponse.License = *licenseResponse
+
+	JSON(w, 200, changeLicenseResponse)
+}
+
+func licenseResponseFromLicense(license *kotsv1beta1.License, app *apptypes.App) (*LicenseResponse, error) {
+	entitlements, expiresAt, err := getLicenseEntitlements(license)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get license entitlements")
+	}
+
+	response := LicenseResponse{
+		ID:                             license.Spec.LicenseID,
+		Assignee:                       license.Spec.CustomerName,
+		ChannelName:                    license.Spec.ChannelName,
+		LicenseSequence:                license.Spec.LicenseSequence,
+		LicenseType:                    license.Spec.LicenseType,
+		Entitlements:                   entitlements,
+		ExpiresAt:                      expiresAt,
+		IsAirgapSupported:              license.Spec.IsAirgapSupported,
+		IsGitOpsSupported:              license.Spec.IsGitOpsSupported,
+		IsIdentityServiceSupported:     license.Spec.IsIdentityServiceSupported,
+		IsGeoaxisSupported:             license.Spec.IsGeoaxisSupported,
+		IsSemverRequired:               license.Spec.IsSemverRequired,
+		IsSnapshotSupported:            license.Spec.IsSnapshotSupported,
+		LastSyncedAt:                   app.LastLicenseSync,
+		IsSupportBundleUploadSupported: license.Spec.IsSupportBundleUploadSupported,
+	}
+
+	return &response, nil
 }

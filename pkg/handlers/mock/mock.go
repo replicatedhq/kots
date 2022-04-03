@@ -94,6 +94,18 @@ func (mr *MockKOTSHandlerMockRecorder) CancelRestore(w, r interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelRestore", reflect.TypeOf((*MockKOTSHandler)(nil).CancelRestore), w, r)
 }
 
+// ChangeLicense mocks base method.
+func (m *MockKOTSHandler) ChangeLicense(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ChangeLicense", w, r)
+}
+
+// ChangeLicense indicates an expected call of ChangeLicense.
+func (mr *MockKOTSHandlerMockRecorder) ChangeLicense(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeLicense", reflect.TypeOf((*MockKOTSHandler)(nil).ChangeLicense), w, r)
+}
+
 // CheckAirgapBundleChunk mocks base method.
 func (m *MockKOTSHandler) CheckAirgapBundleChunk(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()

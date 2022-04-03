@@ -402,6 +402,7 @@ class AppDetailPage extends Component {
                       <AppLicense
                         app={app}
                         syncCallback={this.refetchData}
+                        changeCallback={this.refetchData}
                       />
                     } />
                     <Route exact path="/app/:slug/registry-settings" render={() =>

@@ -9,6 +9,7 @@ import (
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/render"
@@ -51,6 +52,10 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 		}
 		updatedLicense = licenseData.License
 		licenseString = string(licenseData.LicenseBytes)
+	}
+
+	if currentLicense.Spec.LicenseID != updatedLicense.Spec.LicenseID {
+		return nil, false, errors.New("license ids do not match")
 	}
 
 	archiveDir, err := ioutil.TempDir("", "kotsadm")
@@ -96,6 +101,105 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 	}
 
 	return updatedLicense, synced, nil
+}
+
+func Change(a *apptypes.App, newLicenseString string) (*kotsv1beta1.License, error) {
+	if newLicenseString == "" {
+		return nil, errors.New("license cannot be empty")
+	}
+
+	unverifiedLicense, err := kotsutil.LoadLicenseFromBytes([]byte(newLicenseString))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to load license from bytes")
+	}
+
+	newLicense, err := kotspull.VerifySignature(unverifiedLicense)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to verify license")
+	}
+
+	if !a.IsAirgap {
+		licenseData, err := kotslicense.GetLatestLicense(newLicense)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get latest license")
+		}
+		newLicense = licenseData.License
+		newLicenseString = string(licenseData.LicenseBytes)
+	} else {
+		// check if new license supports airgap mode
+		if !newLicense.Spec.IsAirgapSupported {
+			return nil, errors.New("New license does not support airgapped installations")
+		}
+	}
+
+	expired, err := kotspull.LicenseIsExpired(newLicense)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to check if license is expired")
+	}
+	if expired {
+		return nil, errors.New("License is expired")
+	}
+
+	currentLicense, err := store.GetStore().GetLatestLicenseForApp(a.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get current license")
+	}
+
+	if currentLicense.Spec.LicenseType != "community" {
+		return nil, errors.New("Changing from a non-community license is not supported")
+	}
+	if currentLicense.Spec.LicenseID == newLicense.Spec.LicenseID {
+		return nil, errors.New("New license is the same as the current license")
+	}
+	if currentLicense.Spec.AppSlug != newLicense.Spec.AppSlug {
+		return nil, errors.New("New license is for a different application")
+	}
+
+	// check if license already exists
+	existingLicense, err := CheckIfLicenseExists([]byte(newLicenseString))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to check if license exists")
+	}
+	if existingLicense != nil {
+		resolved, err := kotslicense.ResolveExistingLicense(newLicense)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to resolve existing license conflict"))
+		}
+		if !resolved {
+			return nil, errors.New("License already exists")
+		}
+	}
+
+	latestSequence, err := store.GetStore().GetLatestAppSequence(a.ID, true)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get latest app sequence")
+	}
+
+	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create temp dir")
+	}
+	defer os.RemoveAll(archiveDir)
+
+	err = store.GetStore().GetAppVersionArchive(a.ID, latestSequence, archiveDir)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get latest app sequence")
+	}
+
+	channelChanged := false
+	if newLicense.Spec.ChannelID != currentLicense.Spec.ChannelID {
+		channelChanged = true
+	}
+	newSequence, err := store.GetStore().UpdateAppLicense(a.ID, latestSequence, archiveDir, newLicense, newLicenseString, channelChanged, true, &version.DownstreamGitOps{}, &render.Renderer{})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to update license")
+	}
+
+	if err := preflight.Run(a.ID, a.Slug, newSequence, a.IsAirgap, archiveDir); err != nil {
+		return nil, errors.Wrap(err, "failed to run preflights")
+	}
+
+	return newLicense, nil
 }
 
 func CheckIfLicenseExists(license []byte) (*kotsv1beta1.License, error) {
