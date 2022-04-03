@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
-	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -119,7 +118,7 @@ func Change(a *apptypes.App, newLicenseString string) (*kotsv1beta1.License, err
 		return nil, errors.Wrap(err, "failed to verify license")
 	}
 
-	if !kotsadm.IsAirgap() {
+	if !a.IsAirgap {
 		licenseData, err := kotslicense.GetLatestLicense(newLicense)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get latest license")
