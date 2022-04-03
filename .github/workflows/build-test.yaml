@@ -1385,9 +1385,110 @@ jobs:
           echo "::notice ::support bundle uploaded to aws replicated-dev account s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
 
 
+  validate-change-license:
+    runs-on: ubuntu-20.04
+    needs: [can-run-ci, build-kotsadm, build-kurl-proxy, build-migrations, push-minio, push-postgres]
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_version: [v1.23.3-k3s1] # there's no need to run this test on multiple k3s versions
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+
+      - uses: replicatedhq/action-k3s@main
+        id: k3s
+        with:
+          version: ${{ matrix.k8s_version }}
+          ports: '30000:30000'
+
+      - name: download kots binary
+        uses: actions/download-artifact@v2
+        with:
+          name: kots
+          path: bin/
+
+      - run: chmod +x bin/kots
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '17.x'
+
+      - name: setup testim
+        run: npm i -g @testim/testim-cli
+
+      ## testim tests
+      - name: get testim branch
+        if: startsWith(github.ref, 'refs/heads/')
+        id: get_testim_branch
+        run: |
+          BRANCH=${GITHUB_REF/refs\/heads\//}
+          if [ "$BRANCH" == "main" ]; then
+            BRANCH="master"
+          fi
+          echo ::set-output name=TESTIM_BRANCH::${BRANCH:-master}
+
+      - name: prepare change-license online install
+        env:
+          APP_SLUG: change-license
+        run: |
+          ./bin/kots \
+            install $APP_SLUG/automated \
+            --no-port-forward \
+            --namespace $APP_SLUG \
+            --shared-password password \
+            --kotsadm-registry ttl.sh \
+            --kotsadm-namespace automated-${{ github.run_id }} \
+            --kotsadm-tag 2h
+
+      - name: execute suite change-license
+        env:
+          APP_SLUG: change-license
+        run: |
+          set +e
+          ./bin/kots admin-console -n $APP_SLUG &
+          ADMIN_CONSOLE_PID=$!
+          sleep 10
+          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --grid "Testim-grid" --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite $APP_SLUG --tunnel --tunnel-port 8800
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "------pods:"
+            kubectl -n $APP_SLUG get pods
+            echo "------kotsadm logs"
+            kubectl -n $APP_SLUG logs deployment/kotsadm
+            echo "------previous kotsadm logs"
+            kubectl -n $APP_SLUG logs -p deployment/kotsadm
+          fi
+          kill $ADMIN_CONSOLE_PID
+          exit $EXIT_CODE
+
+      - name: Generate support bundle on failure
+        if: failure()
+        env:
+          # aws replicated dev account e2e-kots-support-bundle user
+          AWS_ACCESS_KEY_ID: ${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+          KOTS_NAMESPACE: change-license
+        run: |
+          RELEASE="$(
+            curl -sfL https://api.github.com/repos/replicatedhq/troubleshoot/releases/latest | \
+            grep '"tag_name":' | \
+            sed -E 's/.*"(v[^"]+)".*/\1/'
+          )"
+          curl -fsLO "https://github.com/replicatedhq/troubleshoot/releases/download/${RELEASE}/support-bundle_linux_amd64.tar.gz"
+          tar xzf support-bundle_linux_amd64.tar.gz
+          ./support-bundle -n "${KOTS_NAMESPACE}" https://kots.io
+          BUNDLE="$(ls -1 | grep 'support-bundle-.*.tar.gz')"
+          aws s3 cp "${BUNDLE}" "s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
+          echo "::notice ::support bundle uploaded to aws replicated-dev account s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
+
+
   # this job will validate that all validate-* jobs succeed and is used for the github branch protection rule
   validate-success:
     runs-on: ubuntu-20.04
-    needs: [validate-smoke-test, validate-minimal-rbac, validate-minimal-rbac-override, validate-backup-and-restore, validate-no-required-config, validate-multi-namespace, validate-kots-pull, validate-app-version-label, validate-strict-preflight-checks]
+    needs: [validate-smoke-test, validate-minimal-rbac, validate-minimal-rbac-override, validate-backup-and-restore, validate-no-required-config, validate-multi-namespace, validate-kots-pull, validate-app-version-label, validate-strict-preflight-checks, validate-version-history-pagination, validate-change-license]
     steps:
       - run: echo "Validate success"
