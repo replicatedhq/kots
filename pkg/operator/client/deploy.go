@@ -246,6 +246,47 @@ func (c *Client) ensureNamespacePresent(name string) error {
 	return nil
 }
 
+func (c *Client) ensureImagePullSecretsPresent(namespace string, imagePullSecrets []string) error {
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return errors.Wrap(err, "failed to get clientset")
+	}
+
+	for _, secret := range imagePullSecrets {
+		decode := scheme.Codecs.UniversalDeserializer().Decode
+		obj, _, err := decode([]byte(secret), nil, nil)
+		if err != nil {
+			return errors.Wrap(err, "failed to decode")
+		}
+
+		secret := obj.(*corev1.Secret)
+		secret.Namespace = namespace
+
+		fmt.Println("secret", secret.Name)
+
+		foundSecret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), secret.Name, metav1.GetOptions{})
+		if err != nil {
+			if kuberneteserrors.IsNotFound(err) {
+				// create it
+				_, err := clientset.CoreV1().Secrets(namespace).Create(context.TODO(), secret, metav1.CreateOptions{})
+				if err != nil {
+					return errors.Wrap(err, "failed to create secret")
+				}
+			} else {
+				return errors.Wrap(err, "failed to get secret")
+			}
+		} else {
+			// Update it
+			foundSecret.Data[".dockerconfigjson"] = secret.Data[".dockerconfigjson"]
+			if _, err := clientset.CoreV1().Secrets(namespace).Update(context.TODO(), secret, metav1.UpdateOptions{}); err != nil {
+				return errors.Wrap(err, "failed to update secret")
+			}
+		}
+	}
+
+	return nil
+}
+
 func (c *Client) ensureResourcesPresent(deployArgs operatortypes.DeployAppArgs) (*deployResult, error) {
 	var deployRes deployResult
 

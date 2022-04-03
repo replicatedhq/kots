@@ -54,11 +54,7 @@ type DesiredState struct {
 }
 
 type Client struct {
-	TargetNamespace string
-
-	watchedNamespaces []string
-	imagePullSecrets  []string
-
+	TargetNamespace   string
 	appStateMonitor   *appstate.Monitor
 	HookStopChans     []chan struct{}
 	namespaceStopChan chan struct{}
@@ -90,7 +86,6 @@ func (c *Client) Shutdown() {
 	log.Println("Shutting down the operator client")
 
 	c.shutdownHooksInformer()
-	c.shutdownNamespacesInformer()
 
 	if c.appStateMonitor != nil {
 		c.appStateMonitor.Shutdown()
@@ -165,11 +160,6 @@ func (c *Client) DeployApp(deployArgs operatortypes.DeployAppArgs) {
 		log.Printf("failed to deploy helm charts: %v", helmError)
 		return
 	}
-
-	c.shutdownNamespacesInformer()
-	if len(c.watchedNamespaces) > 0 {
-		c.runNamespacesInformer()
-	}
 }
 
 func (c *Client) deployManifests(deployArgs operatortypes.DeployAppArgs) (*deployResult, error) {
@@ -183,10 +173,13 @@ func (c *Client) deployManifests(deployArgs operatortypes.DeployAppArgs) (*deplo
 		if additionalNamespace == "*" {
 			continue
 		}
-
 		if err := c.ensureNamespacePresent(additionalNamespace); err != nil {
 			// we don't fail here...
 			log.Printf("error creating namespace: %s", err.Error())
+		}
+		if err := c.ensureImagePullSecretsPresent(additionalNamespace, deployArgs.ImagePullSecrets); err != nil {
+			// we don't fail here...
+			log.Printf("error ensuring image pull secrets for namespace %s: %s", additionalNamespace, err.Error())
 		}
 		if _, ok := c.ExistingInformers[additionalNamespace]; !ok {
 			c.ExistingInformers[additionalNamespace] = true
@@ -197,8 +190,6 @@ func (c *Client) deployManifests(deployArgs operatortypes.DeployAppArgs) (*deplo
 			}
 		}
 	}
-	c.imagePullSecrets = deployArgs.ImagePullSecrets
-	c.watchedNamespaces = deployArgs.AdditionalNamespaces
 
 	result, err := c.ensureResourcesPresent(deployArgs)
 	if err != nil {
