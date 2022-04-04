@@ -299,10 +299,10 @@ jobs:
       uses: bruceadams/get-release@v1.2.3   # no v1 tag
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    - name: Make kotsadm airgap archive
+    - name: Make kotsadm airgap archive with minio image
       run: |
         tar czf ./kotsadm.tar.gz -C ./ ./docker-archive
-    - name: Upload airgap bundle
+    - name: Upload airgap bundle with minio image
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -310,6 +310,20 @@ jobs:
         upload_url: https://uploads.github.com/repos/replicatedhq/kots/releases/${{ steps.get_release.outputs.id }}/assets?name=kotsadm.tar.gz
         asset_path: ./kotsadm.tar.gz
         asset_name: kotsadm.tar.gz
+        asset_content_type: application/gzip
+    - name: Make kotsadm airgap archive without minio image
+      run: |
+        rm -rf ./docker-archive/minio
+        rm -f ./kotsadm.tar.gz
+        tar czf ./kotsadm-nominio.tar.gz -C ./ ./docker-archive
+    - name: Upload airgap bundle without minio image
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: https://uploads.github.com/repos/replicatedhq/kots/releases/${{ steps.get_release.outputs.id }}/assets?name=kotsadm-nominio.tar.gz
+        asset_path: ./kotsadm-nominio.tar.gz
+        asset_name: kotsadm-nominio.tar.gz
         asset_content_type: application/gzip
 
   regression-test-setup:
