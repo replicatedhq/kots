@@ -2,8 +2,7 @@ import React from "react";
 import Modal from "react-modal";
 import SnapshotInstallationBox from "./SnapshotInstallationBox";
 import CodeSnippet from "../shared/CodeSnippet";
-import { FILE_SYSTEM_NFS_TYPE } from "./SnapshotStorageDestination";
-import { FILE_SYSTEM_HOSTPATH_TYPE } from "./SnapshotStorageDestination";
+import { FILE_SYSTEM_NFS_TYPE, FILE_SYSTEM_HOSTPATH_TYPE } from "./SnapshotStorageDestination.data";
 
 const VELERO_IS_NOT_INSTALLED_TAB = "velero-not-installed";
 const VELERO_IS_INSTALLED_TAB = "velero-installed";

@@ -42,3 +42,33 @@
   border-radius: 4px;
   padding: 10px;
 }
+
+.AddCAButton {
+  background-color: transparent;
+  border: none;
+  margin-bottom: 20px;
+  width: max-content;
+  text-align: left;
+}
+
+.cert-dropzone-wrapper {
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 12px;
+  border: 2px dashed #C4C8CA;
+  border-radius: 2px;
+}
+
+.ca-cert-file-wrapper {
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 12px;
+  border: 2px dashed #C4C8CA;
+  border-radius: 2px;
+}
