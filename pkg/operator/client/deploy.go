@@ -262,8 +262,6 @@ func (c *Client) ensureImagePullSecretsPresent(namespace string, imagePullSecret
 		secret := obj.(*corev1.Secret)
 		secret.Namespace = namespace
 
-		fmt.Println("secret", secret.Name)
-
 		foundSecret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), secret.Name, metav1.GetOptions{})
 		if err != nil {
 			if kuberneteserrors.IsNotFound(err) {

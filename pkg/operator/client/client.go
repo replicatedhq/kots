@@ -54,7 +54,11 @@ type DesiredState struct {
 }
 
 type Client struct {
-	TargetNamespace   string
+	TargetNamespace string
+
+	watchedNamespaces []string
+	imagePullSecrets  []string
+
 	appStateMonitor   *appstate.Monitor
 	HookStopChans     []chan struct{}
 	namespaceStopChan chan struct{}
@@ -86,9 +90,15 @@ func (c *Client) Shutdown() {
 	log.Println("Shutting down the operator client")
 
 	c.shutdownHooksInformer()
+	c.shutdownNamespacesInformer()
 
 	if c.appStateMonitor != nil {
 		c.appStateMonitor.Shutdown()
+	}
+
+	c.shutdownNamespacesInformer()
+	if len(c.watchedNamespaces) > 0 {
+		c.runNamespacesInformer()
 	}
 }
 
@@ -190,6 +200,8 @@ func (c *Client) deployManifests(deployArgs operatortypes.DeployAppArgs) (*deplo
 			}
 		}
 	}
+	c.imagePullSecrets = deployArgs.ImagePullSecrets
+	c.watchedNamespaces = deployArgs.AdditionalNamespaces
 
 	result, err := c.ensureResourcesPresent(deployArgs)
 	if err != nil {
