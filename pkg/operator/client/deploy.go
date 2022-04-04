@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -35,6 +36,7 @@ import (
 )
 
 var metadataAccessor = meta.NewAccessor()
+var imagePullSecretsMtx sync.Mutex
 
 type commandResult struct {
 	hasErr      bool
@@ -247,6 +249,9 @@ func (c *Client) ensureNamespacePresent(name string) error {
 }
 
 func (c *Client) ensureImagePullSecretsPresent(namespace string, imagePullSecrets []string) error {
+	imagePullSecretsMtx.Lock()
+	defer imagePullSecretsMtx.Unlock()
+
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get clientset")
