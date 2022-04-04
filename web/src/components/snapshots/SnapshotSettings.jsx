@@ -141,9 +141,14 @@ class SnapshotSettings extends Component {
             veleroUpdated: false,
             resticUpdated: false
           });
-          setTimeout(() => {
+
+          if (this.confirmTimeout) {
+            clearTimeout(this.confirmTimeout)
+          }
+          this.confirmTimeout = setTimeout(() => {
             this.setState({ updateConfirm: false })
-          }, 3000);
+          }, 5000);
+
           this.state.snapshotSettingsJob.stop();
         }
       }
@@ -155,7 +160,7 @@ class SnapshotSettings extends Component {
   }
 
   updateSettings = (payload) => {
-    this.setState({ updatingSettings: true, updateErrorMsg: "" });
+    this.setState({ updatingSettings: true, updateErrorMsg: "", updateConfirm: false });
       
     this.pollSnapshotSettingsOnUpdate();
 
