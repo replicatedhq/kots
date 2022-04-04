@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -68,6 +69,13 @@ func requireValidSession(kotsStore store.Store, w http.ResponseWriter, r *http.R
 	// we don't currently have roles, all valid tokens are valid sessions
 	if sess == nil || sess.ID == "" {
 		err := errors.New("no session in auth header")
+		response := ErrorResponse{Error: err.Error()}
+		JSON(w, http.StatusUnauthorized, response)
+		return nil, err
+	}
+
+	if time.Now().After(sess.ExpiresAt) {
+		err := errors.New("session expired")
 		response := ErrorResponse{Error: err.Error()}
 		JSON(w, http.StatusUnauthorized, response)
 		return nil, err
