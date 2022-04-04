@@ -95,11 +95,6 @@ func (c *Client) Shutdown() {
 	if c.appStateMonitor != nil {
 		c.appStateMonitor.Shutdown()
 	}
-
-	c.shutdownNamespacesInformer()
-	if len(c.watchedNamespaces) > 0 {
-		c.runNamespacesInformer()
-	}
 }
 
 func (c *Client) runAppStateMonitor() error {
@@ -169,6 +164,11 @@ func (c *Client) DeployApp(deployArgs operatortypes.DeployAppArgs) {
 		helmResult.multiStderr = [][]byte{[]byte(helmError.Error())}
 		log.Printf("failed to deploy helm charts: %v", helmError)
 		return
+	}
+
+	c.shutdownNamespacesInformer()
+	if len(c.watchedNamespaces) > 0 {
+		c.runNamespacesInformer()
 	}
 }
 
