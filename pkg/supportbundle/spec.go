@@ -448,7 +448,7 @@ func getDefaultDynamicCollectors(app *apptypes.App, imageName string, pullSecret
 	}
 
 	if license != nil {
-		s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+		s := serializer.NewSerializerWithOptions(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme, serializer.SerializerOptions{Yaml: true, Pretty: false, Strict: false})
 		var b bytes.Buffer
 		if err := s.Encode(license, &b); err != nil {
 			logger.Errorf("Failed to marshal license: %v", err)
@@ -458,7 +458,7 @@ func getDefaultDynamicCollectors(app *apptypes.App, imageName string, pullSecret
 					CollectorMeta: troubleshootv1beta2.CollectorMeta{
 						CollectorName: "license.yaml",
 					},
-					Name: "kots/admin-console",
+					Name: "kots/admin_console",
 					Data: b.String(),
 				},
 			})
@@ -470,7 +470,7 @@ func getDefaultDynamicCollectors(app *apptypes.App, imageName string, pullSecret
 			CollectorMeta: troubleshootv1beta2.CollectorMeta{
 				CollectorName: "namespace.txt",
 			},
-			Name: "kots/admin-console",
+			Name: "kots/admin_console",
 			Data: util.PodNamespace,
 		},
 	})
@@ -717,7 +717,7 @@ func makeAppVersionArchiveCollector(app *apptypes.App, dirPrefix string) (*troub
 			Namespace:     util.PodNamespace,
 			ContainerName: "kotsadm", // can we assume this? kotsadm-api
 			ContainerPath: fileName,
-			Name:          fmt.Sprintf("kots/admin-console/app/%s", app.Slug),
+			Name:          fmt.Sprintf("kots/admin_console/app/%s", app.Slug),
 		},
 	}, nil
 }
