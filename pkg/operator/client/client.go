@@ -183,10 +183,13 @@ func (c *Client) deployManifests(deployArgs operatortypes.DeployAppArgs) (*deplo
 		if additionalNamespace == "*" {
 			continue
 		}
-
 		if err := c.ensureNamespacePresent(additionalNamespace); err != nil {
 			// we don't fail here...
 			log.Printf("error creating namespace: %s", err.Error())
+		}
+		if err := c.ensureImagePullSecretsPresent(additionalNamespace, deployArgs.ImagePullSecrets); err != nil {
+			// we don't fail here...
+			log.Printf("error ensuring image pull secrets for namespace %s: %s", additionalNamespace, err.Error())
 		}
 		if _, ok := c.ExistingInformers[additionalNamespace]; !ok {
 			c.ExistingInformers[additionalNamespace] = true

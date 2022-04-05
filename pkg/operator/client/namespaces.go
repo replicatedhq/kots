@@ -1,16 +1,12 @@
 package client
 
 import (
-	"context"
 	"log"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	corev1 "k8s.io/api/core/v1"
-	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/informers"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -44,38 +40,9 @@ func (c *Client) runNamespacesInformer() error {
 					continue
 				}
 
-				for _, secret := range c.imagePullSecrets {
-					decode := scheme.Codecs.UniversalDeserializer().Decode
-					obj, _, err := decode([]byte(secret), nil, nil)
-					if err != nil {
-						log.Print(err)
-						return
-					}
-
-					secret := obj.(*corev1.Secret)
-					secret.Namespace = addedNamespace.Name
-
-					foundSecret, err := clientset.CoreV1().Secrets(addedNamespace.Name).Get(context.TODO(), secret.Name, metav1.GetOptions{})
-					if err != nil {
-						if kuberneteserrors.IsNotFound(err) {
-							// create it
-							_, err := clientset.CoreV1().Secrets(addedNamespace.Name).Create(context.TODO(), secret, metav1.CreateOptions{})
-							if err != nil {
-								log.Print(err)
-								return
-							}
-						} else {
-							log.Print(err)
-							return
-						}
-					} else {
-						// Update it
-						foundSecret.Data[".dockerconfigjson"] = secret.Data[".dockerconfigjson"]
-						if _, err := clientset.CoreV1().Secrets(addedNamespace.Name).Update(context.TODO(), secret, metav1.UpdateOptions{}); err != nil {
-							log.Print(err)
-							return
-						}
-					}
+				if err := c.ensureImagePullSecretsPresent(addedNamespace.Name, c.imagePullSecrets); err != nil {
+					// we don't fail here...
+					log.Printf("error ensuring image pull secrets for namespace %s: %s", addedNamespace.Name, err.Error())
 				}
 			}
 		},
