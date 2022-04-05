@@ -1,5 +1,9 @@
 icon: https://github.com/okteto/polling/raw/master/icon.png
 deploy:
+  - |
+    envsubst < helm/okteto/velero/values.tmpl.yaml > helm/okteto/velero/values.yaml
+    helm repo add vmware-tanzu https://vmware-tanzu.github.io/helm-charts
+    helm upgrade velero vmware-tanzu/velero --install --namespace ${OKTETO_NAMESPACE} -f ./helm/okteto/velero/values.yaml --skip-crds
   - okteto build -f ./okteto.Dockerfile -t okteto.dev/kotsadm:${OKTETO_GIT_COMMIT} .
   - okteto build -f ./web/okteto.Dockerfile --build-arg OKTETO_NAMESPACE=${OKTETO_NAMESPACE} -t okteto.dev/kotsadm-web:${OKTETO_GIT_COMMIT} web
   - okteto build -f ./migrations/okteto.Dockerfile -t okteto.dev/kotsadm-migrations:${OKTETO_GIT_COMMIT} migrations
@@ -11,4 +15,3 @@ deploy:
   - cd kustomize/overlays/okteto && kustomize edit set image kurl_proxy=okteto.dev/kurl_proxy:${OKTETO_GIT_COMMIT}
 
   - kubectl apply -k kustomize/overlays/okteto
-
