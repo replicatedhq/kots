@@ -30,6 +30,9 @@ spec:
         - name: create-velero-bucket
           image: busybox:1.28
           command: [ 'mkdir', '-p', '/data/velero' ]
+          volumeMounts:
+            - mountPath: /data
+              name: miniodata  # this is where the data is stored
       containers:
       - args:
           - server
