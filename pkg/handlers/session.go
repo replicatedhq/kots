@@ -75,6 +75,12 @@ func requireValidSession(kotsStore store.Store, w http.ResponseWriter, r *http.R
 	}
 
 	if time.Now().After(sess.ExpiresAt) {
+		if err := kotsStore.DeleteSession(sess.ID); err != nil {
+			err := errors.Wrapf(err, "session expired. failed to delete expired session %s", sess.ID)
+			response := ErrorResponse{Error: err.Error()}
+			JSON(w, http.StatusInternalServerError, response)
+			return nil, err
+		}
 		err := errors.New("session expired")
 		response := ErrorResponse{Error: err.Error()}
 		JSON(w, http.StatusUnauthorized, response)
