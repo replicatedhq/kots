@@ -327,8 +327,8 @@ credentials:
   secretContents:
     cloud: |
       [default]
-      aws_access_key_id=fake
-      aws_secret_access_key=fake
+      aws_access_key_id=not-a-key
+      aws_secret_access_key=not-a-secret
   # additional key/value pairs to be used as environment variables such as "DIGITALOCEAN_TOKEN: <your-key>". Values will be stored in the secret.
   extraEnvVars: {}
   # Name of a pre-existing secret (if any) in the Velero namespace
