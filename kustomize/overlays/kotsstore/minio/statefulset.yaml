@@ -26,6 +26,10 @@ spec:
       securityContext:
         runAsUser: 1001
         fsGroup: 1001
+      initContainers:
+        - name: create-velero-bucket
+          image: busybox:1.28
+          command: [ 'mkdir', '-p', '/data/velero' ]
       containers:
       - args:
           - server
