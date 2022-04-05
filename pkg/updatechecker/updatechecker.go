@@ -311,6 +311,8 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 }
 
 func processUpdates(opts CheckForUpdatesOpts, appID string, clusterID string, updates []upstreamtypes.Update) error {
+	lastUpdateCheckAt := time.Now()
+
 	for index, update := range updates {
 		appSequence, err := upstream.DownloadUpdate(appID, update, opts.SkipPreflights, opts.SkipCompatibilityCheck)
 		if appSequence != nil {
@@ -329,7 +331,7 @@ func processUpdates(opts CheckForUpdatesOpts, appID string, clusterID string, up
 			logger.Error(err)
 		}
 	}
-	if err := app.SetLastUpdateAtTime(appID); err != nil {
+	if err := app.SetLastUpdateAtTime(appID, lastUpdateCheckAt); err != nil {
 		return errors.Wrap(err, "failed to update last updated at time")
 	}
 	if err := ensureDesiredVersionIsDeployed(opts, clusterID); err != nil {

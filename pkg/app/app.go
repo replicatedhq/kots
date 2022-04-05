@@ -9,10 +9,10 @@ import (
 )
 
 // SetLastUpdateAtTime sets the time that the client last checked for an update to now
-func SetLastUpdateAtTime(appID string) error {
+func SetLastUpdateAtTime(appID string, t time.Time) error {
 	db := persistence.MustGetDBSession()
 	query := `update app set last_update_check_at = $1 where id = $2`
-	_, err := db.Exec(query, time.Now(), appID)
+	_, err := db.Exec(query, t, appID)
 	if err != nil {
 		return errors.Wrap(err, "failed to update last_update_check_at")
 	}
