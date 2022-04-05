@@ -2,6 +2,7 @@ package snapshot
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -129,16 +130,19 @@ func CheckKotsadmVeleroAccess(ctx context.Context, kotsadmNamespace string) (req
 		return
 	}
 
-	_, err = clientset.RbacV1().Roles(verifiedVeleroNamespace).Get(ctx, "kotsadm-role", metav1.GetOptions{})
-	if err != nil {
-		requiresAccess = true
-		return
-	}
+	skipRbac := veleroConfigMap.Data["skipRbac"] == "true"
+	if !skipRbac {
+		_, err = clientset.RbacV1().Roles(verifiedVeleroNamespace).Get(ctx, "kotsadm-role", metav1.GetOptions{})
+		if err != nil {
+			requiresAccess = true
+			return
+		}
 
-	_, err = clientset.RbacV1().RoleBindings(verifiedVeleroNamespace).Get(ctx, "kotsadm-rolebinding", metav1.GetOptions{})
-	if err != nil {
-		requiresAccess = true
-		return
+		_, err = clientset.RbacV1().RoleBindings(verifiedVeleroNamespace).Get(ctx, "kotsadm-rolebinding", metav1.GetOptions{})
+		if err != nil {
+			requiresAccess = true
+			return
+		}
 	}
 
 	requiresAccess = false
@@ -184,7 +188,7 @@ func EnsureVeleroPermissions(ctx context.Context, clientset kubernetes.Interface
 	return nil
 }
 
-func EnsureVeleroNamespaceConfigMap(ctx context.Context, clientset kubernetes.Interface, veleroNamespace string, kotsadmNamespace string) error {
+func EnsureVeleroNamespaceConfigMap(ctx context.Context, clientset kubernetes.Interface, veleroNamespace string, kotsadmNamespace string, skipRbac bool) error {
 	existingConfigMap, err := clientset.CoreV1().ConfigMaps(kotsadmNamespace).Get(ctx, VeleroNamespaceConfigMapName, metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
@@ -203,6 +207,7 @@ func EnsureVeleroNamespaceConfigMap(ctx context.Context, clientset kubernetes.In
 			},
 			Data: map[string]string{
 				"veleroNamespace": veleroNamespace,
+				"skipRbac":        strconv.FormatBool(skipRbac),
 			},
 		}
 
@@ -218,6 +223,7 @@ func EnsureVeleroNamespaceConfigMap(ctx context.Context, clientset kubernetes.In
 		existingConfigMap.Data = make(map[string]string)
 	}
 	existingConfigMap.Data["veleroNamespace"] = veleroNamespace
+	existingConfigMap.Data["skipRbac"] = strconv.FormatBool(skipRbac)
 
 	_, err = clientset.CoreV1().ConfigMaps(kotsadmNamespace).Update(ctx, existingConfigMap, metav1.UpdateOptions{})
 	if err != nil {
@@ -259,7 +265,7 @@ func DetectVeleroNamespace(ctx context.Context, clientset kubernetes.Interface, 
 	}
 
 	backupStorageLocations, err := veleroClient.BackupStorageLocations(veleroNamespace).List(ctx, metav1.ListOptions{})
-	if kuberneteserrors.IsNotFound(err) {
+	if err != nil {
 		backupStorageLocations, err = veleroClient.BackupStorageLocations(kotsadmNamespace).List(ctx, metav1.ListOptions{})
 	}
 
@@ -335,10 +341,9 @@ func DetectVelero(ctx context.Context, kotsadmNamespace string) (*VeleroStatus, 
 			}
 
 			veleroStatus.Status = status
-			goto DeploymentFound
+			break
 		}
 	}
-DeploymentFound:
 
 	daemonsets, err := listPossibleResticDaemonsets(ctx, clientset, veleroNamespace)
 	if err != nil {
@@ -357,10 +362,9 @@ DeploymentFound:
 			veleroStatus.ResticVersion = matches[4]
 			veleroStatus.ResticStatus = status
 
-			goto ResticFound
+			break
 		}
 	}
-ResticFound:
 
 	return &veleroStatus, nil
 }
@@ -449,6 +453,7 @@ func listPossibleVeleroDeployments(ctx context.Context, clientset *kubernetes.Cl
 	deployments, err := clientset.AppsV1().Deployments(namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: "component=velero",
 	})
+
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list deployments")
 	}
@@ -502,7 +507,7 @@ func restartVelero(ctx context.Context, kotsadmNamespace string) error {
 
 	for _, veleroDeployment := range veleroDeployments {
 		pods, err := clientset.CoreV1().Pods(veleroNamespace).List(ctx, metav1.ListOptions{
-			LabelSelector: labels.SelectorFromSet(veleroDeployment.Labels).String(),
+			LabelSelector: labels.SelectorFromSet(veleroDeployment.Spec.Selector.MatchLabels).String(),
 		})
 		if err != nil {
 			return errors.Wrap(err, "failed to list pods in velero deployment")

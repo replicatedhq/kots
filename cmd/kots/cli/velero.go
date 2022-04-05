@@ -81,11 +81,14 @@ func VeleroEnsurePermissionsCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get clientset")
 			}
 
-			if err := snapshot.EnsureVeleroPermissions(cmd.Context(), clientset, veleroNamespace, kotsadmNamespace); err != nil {
-				return err
+			skipRbac := v.GetBool("skip-rbac")
+			if !skipRbac {
+				if err := snapshot.EnsureVeleroPermissions(cmd.Context(), clientset, veleroNamespace, kotsadmNamespace); err != nil {
+					return err
+				}
 			}
 
-			if err := snapshot.EnsureVeleroNamespaceConfigMap(cmd.Context(), clientset, veleroNamespace, kotsadmNamespace); err != nil {
+			if err := snapshot.EnsureVeleroNamespaceConfigMap(cmd.Context(), clientset, veleroNamespace, kotsadmNamespace, skipRbac); err != nil {
 				return err
 			}
 
@@ -94,6 +97,7 @@ func VeleroEnsurePermissionsCmd() *cobra.Command {
 	}
 
 	cmd.Flags().String("velero-namespace", "", "namespace in which velero is installed")
+	cmd.Flags().Bool("skip-rbac", false, "skip creating RBAC role/rolebinding")
 
 	return cmd
 }

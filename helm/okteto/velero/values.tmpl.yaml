@@ -344,7 +344,7 @@ backupsEnabled: true
 snapshotsEnabled: true
 
 # Whether to deploy the restic daemonset.
-deployRestic: false
+deployRestic: true
 
 restic:
   podVolumePath: /var/lib/kubelet/pods
