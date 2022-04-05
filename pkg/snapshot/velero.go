@@ -260,7 +260,7 @@ func DetectVeleroNamespace(ctx context.Context, clientset kubernetes.Interface, 
 
 	backupStorageLocations, err := veleroClient.BackupStorageLocations(veleroNamespace).List(ctx, metav1.ListOptions{})
 	if kuberneteserrors.IsNotFound(err) {
-		return "", nil
+		backupStorageLocations, err = veleroClient.BackupStorageLocations(kotsadmNamespace).List(ctx, metav1.ListOptions{})
 	}
 
 	if err != nil {
@@ -400,7 +400,7 @@ func getVeleroPod(ctx context.Context, clientset *kubernetes.Clientset, namespac
 		"deploy":    "velero",
 	}
 
-	veleroPods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
+	veleroPods, err := clientset.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: labels.SelectorFromSet(veleroLabels).String(),
 	})
 	if err != nil {

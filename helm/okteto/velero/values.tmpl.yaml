@@ -22,7 +22,9 @@ annotations: {}
 # secret.reloader.stakater.com/reload: "<VELERO_SECRET_NAME>"
 
 # Labels to add to the Velero deployment's. Optional.
-labels: {}
+labels:
+  component: velero
+  deploy: velero
 
 # Annotations to add to the Velero deployment's pod template. Optional.
 #
