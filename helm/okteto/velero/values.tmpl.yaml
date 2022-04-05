@@ -22,9 +22,7 @@ annotations: {}
 # secret.reloader.stakater.com/reload: "<VELERO_SECRET_NAME>"
 
 # Labels to add to the Velero deployment's. Optional.
-labels:
-  component: velero
-  deploy: velero
+labels: {}
 
 # Annotations to add to the Velero deployment's pod template. Optional.
 #
@@ -35,7 +33,9 @@ podAnnotations: {}
 
 # Additional pod labels for Velero deployment's template. Optional
 # ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
-podLabels: {}
+podLabels:
+  component: velero
+  deploy: velero
 
 # Resource requests/limits to specify for the Velero deployment.
 # https://velero.io/docs/v1.6/customize-installation/#customize-resource-requests-and-limits
