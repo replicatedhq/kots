@@ -353,7 +353,7 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 		return nil, errors.Wrap(err, "failed to try to reset restic repositories")
 	}
 
-	// most plugins (all?) require that velero be restared after updating
+	// most plugins (all?) require that velero be restarted after updating
 	if err := restartVelero(ctx, options.KotsadmNamespace); err != nil {
 		return nil, errors.Wrap(err, "failed to try to restart velero")
 	}
