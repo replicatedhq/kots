@@ -99,7 +99,9 @@ export default class FileInput extends React.Component {
                           {this.props.filenamesText}
                           <span onClick={() => this.handleRemoveFile(this.props.name)} className="icon gray-trash-small clickable u-marginLeft--5 u-top--3" />
                         </div>
-                        <p className="u-linkColor u-textDecoration--underlineOnHover u-fontSize--small u-marginLeft--30 u-marginTop--5">Select a different file</p>
+                        <label htmlFor={`${this.props.name} selector`} className="u-position--relative">
+                          <p className="u-linkColor u-textDecoration--underlineOnHover u-fontSize--small u-marginLeft--30 u-marginTop--5">Select a different file</p>
+                        </label>
                       </div>
                     :
                       <label htmlFor={`${this.props.name} selector`} className="u-position--relative">
