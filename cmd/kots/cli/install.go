@@ -472,7 +472,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().String("ingress-config", "", "path to a kots.Ingress resource file")
 	cmd.Flags().MarkHidden("ingress-config")
 
-	// option to check if the user has cluster-wide previliges to install application
+	// option to check if the user has cluster-wide privileges to install application
 	cmd.Flags().Bool("skip-rbac-check", false, "set to true to bypass rbac check")
 	return cmd
 }
