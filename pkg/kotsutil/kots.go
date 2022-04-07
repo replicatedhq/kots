@@ -641,6 +641,21 @@ func LoadBackupFromContents(content []byte) (*velerov1.Backup, error) {
 	return obj.(*velerov1.Backup), nil
 }
 
+func LoadApplicationFromContents(content []byte) (*applicationv1beta1.Application, error) {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+
+	obj, gvk, err := decode(content, nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode content")
+	}
+
+	if gvk.String() != "app.k8s.io/v1beta1, Kind=Application" {
+		return nil, errors.Errorf("unexpected gvk: %s", gvk.String())
+	}
+
+	return obj.(*applicationv1beta1.Application), nil
+}
+
 func SupportBundleToCollector(sb *troubleshootv1beta2.SupportBundle) *troubleshootv1beta2.Collector {
 	return &troubleshootv1beta2.Collector{
 		TypeMeta: metav1.TypeMeta{
