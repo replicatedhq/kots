@@ -1297,7 +1297,7 @@ func TestHandlerPolicies(t *testing.T) {
 					sess := &sessiontypes.Session{
 						ID:        ksuid.New().String(),
 						IssuedAt:  time.Now(),
-						ExpiresAt: time.Now().Add(time.Hour),
+						ExpiresAt: time.Now().Add(handlers.SessionTimeout),
 						Roles:     test.SessionRoles,
 						HasRBAC:   true,
 					}

@@ -1809,6 +1809,20 @@ func (mr *MockStoreMockRecorder) UpdateScheduledSnapshot(snapshotID, backupName 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateScheduledSnapshot", reflect.TypeOf((*MockStore)(nil).UpdateScheduledSnapshot), snapshotID, backupName)
 }
 
+// UpdateSessionExpiresAt mocks base method.
+func (m *MockStore) UpdateSessionExpiresAt(sessionID string, expiresAt time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateSessionExpiresAt", sessionID, expiresAt)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateSessionExpiresAt indicates an expected call of UpdateSessionExpiresAt.
+func (mr *MockStoreMockRecorder) UpdateSessionExpiresAt(sessionID, expiresAt interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSessionExpiresAt", reflect.TypeOf((*MockStore)(nil).UpdateSessionExpiresAt), sessionID, expiresAt)
+}
+
 // UpdateSupportBundle mocks base method.
 func (m *MockStore) UpdateSupportBundle(bundle *types12.SupportBundle) error {
 	m.ctrl.T.Helper()
@@ -2538,6 +2552,20 @@ func (m *MockSessionStore) GetSession(sessionID string) (*types10.Session, error
 func (mr *MockSessionStoreMockRecorder) GetSession(sessionID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSession", reflect.TypeOf((*MockSessionStore)(nil).GetSession), sessionID)
+}
+
+// UpdateSessionExpiresAt mocks base method.
+func (m *MockSessionStore) UpdateSessionExpiresAt(sessionID string, expiresAt time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateSessionExpiresAt", sessionID, expiresAt)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateSessionExpiresAt indicates an expected call of UpdateSessionExpiresAt.
+func (mr *MockSessionStoreMockRecorder) UpdateSessionExpiresAt(sessionID, expiresAt interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSessionExpiresAt", reflect.TypeOf((*MockSessionStore)(nil).UpdateSessionExpiresAt), sessionID, expiresAt)
 }
 
 // MockAppStatusStore is a mock of AppStatusStore interface.

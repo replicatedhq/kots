@@ -165,3 +165,32 @@ func (s *OCIStore) updateSessionSecret(secret *corev1.Secret) error {
 
 	return nil
 }
+
+func (s *OCIStore) UpdateSessionExpiresAt(id string, expiresAt time.Time) error {
+	secret, err := s.getSessionSecret()
+	if err != nil {
+		return errors.Wrap(err, "failed to get session secret")
+	}
+
+	data, ok := secret.Data[id]
+	if !ok {
+		return nil
+	}
+
+	session := sessiontypes.Session{}
+	if err := json.Unmarshal(data, &session); err != nil {
+		return errors.Wrap(err, "failed to unmarshal session")
+	}
+
+	session.ExpiresAt = expiresAt
+	b, err := json.Marshal(session)
+	if err != nil {
+		return errors.Wrap(err, "failed to encoded session")
+	}
+
+	secret.Data[id] = b
+	if err := s.updateSessionSecret(secret); err != nil {
+		return errors.Wrap(err, "failed to update session secret")
+	}
+	return nil
+}

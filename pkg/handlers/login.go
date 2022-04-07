@@ -40,7 +40,7 @@ const (
 	PasswordAuth    LoginMethod = "shared-password"
 	IdentityService LoginMethod = "identity-service"
 
-	sessionTimeout = time.Hour * time.Duration(12)
+	SessionTimeout = time.Hour * 12
 )
 
 func getRedirectOnErrorURL(redirectURL string, errorMsg string) string {
@@ -94,7 +94,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	// TODO: super user permissions
 	roles := session.GetSessionRolesFromRBAC(nil, identity.DefaultGroups)
 
-	issuedAt, expiresAt := time.Now(), time.Now().Add(sessionTimeout)
+	issuedAt, expiresAt := time.Now(), time.Now().Add(SessionTimeout)
 	createdSession, err := store.GetStore().CreateSession(foundUser, issuedAt, expiresAt, roles)
 	if err != nil {
 		logger.Error(err)
@@ -337,7 +337,7 @@ func (h *Handler) OIDCLoginCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	issuedAt, expiresAt := time.Now(), time.Now().Add(sessionTimeout)
+	issuedAt, expiresAt := time.Now(), time.Now().Add(SessionTimeout)
 	createdSession, err := store.GetStore().CreateSession(user, issuedAt, expiresAt, roles) // idToken.IssuedAt, idToken.Expiry
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to create session"))
