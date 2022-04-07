@@ -8,6 +8,26 @@ LVP_VERSION := v0.1.0
 BUILDFLAGS = -tags='netgo containers_image_ostree_stub exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp' -installsuffix netgo
 EXPERIMENTAL_BUILDFLAGS = -tags 'netgo -tags containers_image_ostree_stub -tags exclude_graphdriver_devicemapper -tags exclude_graphdriver_btrfs -tags containers_image_openpgp -tags kots_experimental' -installsuffix netgo
 
+define sendMetrics
+@if [ -z "${PROJECT_NAME}" ]; then \
+    echo "PROJECT_NAME not defined"; \
+    exit 1; \
+fi
+@curl -X POST "https://api.datadoghq.com/api/v1/series" \
+-H "Content-Type: text/json" \
+-H "DD-API-KEY: ${DD_API_KEY}" \
+-d "{\"series\": [{\"metric\": \"build.time\",\"points\": [[$$(date +%s), $$(expr $$(date +%s) - $$(cat start-time))]],\"tags\": [\"service:${PROJECT_NAME}\"]}]}"
+endef
+
+.PHONY: capture-start-time
+capture-start-time:
+	@echo $$(date +%s) > start-time
+
+.PHONY: report-metric
+report-metric:
+	@$(if ${DD_API_KEY}, $(call sendMetrics))
+	@rm start-time
+
 .PHONY: test
 test:
 	go test $(BUILDFLAGS) ./pkg/... ./cmd/... -coverprofile cover.out
@@ -21,7 +41,11 @@ ci-test:
 	go test $(BUILDFLAGS) ./pkg/... ./cmd/... ./integration/... -coverprofile cover.out
 
 .PHONY: kots
-kots: fmt vet
+kots: PROJECT_NAME = kots
+kots: fmt vet capture-start-time kots-real report-metric
+
+.PHONY: kots-real
+kots-real:
 	go build ${LDFLAGS} -o bin/kots $(BUILDFLAGS) github.com/replicatedhq/kots/cmd/kots
 
 .PHONY: kots-experimental
@@ -48,8 +72,11 @@ mock:
 	mockgen -source=pkg/handlers/interface.go -destination=pkg/handlers/mock/mock.go
 
 .PHONY: build
-build: kots
-build:
+build: PROJECT_NAME = kotsadm
+build: capture-start-time build-real report-metric
+
+.PHONY: build-real
+build-real:
 	mkdir -p web/dist
 	touch web/dist/THIS_IS_OKTETO  # we need this for go:embed, but it's not actually used in dev
 	go build ${LDFLAGS} ${GCFLAGS} -o bin/kotsadm $(BUILDFLAGS) ./cmd/kotsadm
