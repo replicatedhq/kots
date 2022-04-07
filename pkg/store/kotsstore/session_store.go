@@ -316,7 +316,8 @@ func (s *KOTSStore) DeleteExpiredSessions() error {
 	for id, data := range secret.Data {
 		session := sessiontypes.Session{}
 		if err := json.Unmarshal(data, &session); err != nil {
-			return errors.Wrap(err, "failed to unmarshal session")
+			logger.Error(errors.Wrap(err, "failed to unmarshal session while deleting expired sessions"))
+			continue
 		}
 		if time.Now().After(session.ExpiresAt) {
 			updateSessionSecret = true
