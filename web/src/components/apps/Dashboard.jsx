@@ -249,10 +249,8 @@ class Dashboard extends Component {
       });
       if (res.ok && res.status == 200) {
         const app = await res.json();
-        if (app?.downstream?.pendingVersions?.length > 0) {
-          if (!isAwaitingResults(app.downstream.pendingVersions)) {
-            this.state.fetchAppDownstreamJob.stop();
-          }
+        if (!isAwaitingResults(app.downstream.pendingVersions)) {
+          this.state.fetchAppDownstreamJob.stop();
         }
         this.setState({ 
           downstream: app.downstream,
@@ -261,7 +259,7 @@ class Dashboard extends Component {
         // this is hacky and I hate it but it's just building up more evidence in my case for having the FE be able to listen to BE envents
         // if that was in place we would have no need for this becuase the latest version would just be pushed down.
         setTimeout(() => {
-          this.props.refreshAppData()
+          this.props.refreshAppData();
         }, 2000);
       } else {
         this.setState({ loadingApp: false, gettingAppErrMsg: `Unexpected status code: ${res.status}`, displayErrorModal: true });
