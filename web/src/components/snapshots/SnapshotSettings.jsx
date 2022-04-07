@@ -115,7 +115,6 @@ class SnapshotSettings extends Component {
         this.setState({ showConfigureSnapshotsModal: true });
       }
 
-
       if (this.state.checkForVeleroAndRestic) {
         if (this.state.snapshotSettings?.veleroPod !== lastState.snapshotSettings?.veleroPod && !isEmpty(this.state.snapshotSettings?.veleroPod)) {
           this.setState({ veleroUpdated: true });
@@ -142,10 +141,7 @@ class SnapshotSettings extends Component {
             resticUpdated: false
           });
 
-          if (this.confirmTimeout) {
-            clearTimeout(this.confirmTimeout)
-          }
-          this.confirmTimeout = setTimeout(() => {
+          setTimeout(() => {
             this.setState({ updateConfirm: false })
           }, 5000);
 
@@ -162,8 +158,6 @@ class SnapshotSettings extends Component {
   updateSettings = (payload) => {
     this.setState({ updatingSettings: true, updateErrorMsg: "", updateConfirm: false });
       
-    this.pollSnapshotSettingsOnUpdate();
-
     fetch(`${process.env.API_ENDPOINT}/snapshots/settings`, {
       method: "PUT",
       headers: {
@@ -203,7 +197,7 @@ class SnapshotSettings extends Component {
           this.setState({
             snapshotSettings: settingsResponse,
             updateErrorMsg: ""
-          });
+          }, this.pollSnapshotSettingsOnUpdate);
         } else {
           this.setState({
             updatingSettings: false,
