@@ -9,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/session"
 	"github.com/replicatedhq/kots/pkg/session/types"
 	"github.com/replicatedhq/kots/pkg/store"
@@ -75,10 +76,21 @@ func requireValidSession(kotsStore store.Store, w http.ResponseWriter, r *http.R
 	}
 
 	if time.Now().After(sess.ExpiresAt) {
+		if err := kotsStore.DeleteSession(sess.ID); err != nil {
+			logger.Error(errors.Wrapf(err, "session expired. failed to delete expired session %s", sess.ID))
+		}
 		err := errors.New("session expired")
 		response := ErrorResponse{Error: err.Error()}
 		JSON(w, http.StatusUnauthorized, response)
 		return nil, err
+	}
+
+	// give the user the full session timeout if they have been active at least an hour
+	if time.Now().Add(SessionTimeout - time.Hour).After(sess.ExpiresAt){
+		sess.ExpiresAt = time.Now().Add(SessionTimeout)
+		if err := kotsStore.UpdateSessionExpiresAt(sess.ID, sess.ExpiresAt); err != nil {
+			logger.Error(errors.Wrapf(err, "failed to update session expiry %s", sess.ID))
+		}
 	}
 
 	return sess, nil

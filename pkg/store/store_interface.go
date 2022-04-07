@@ -106,6 +106,7 @@ type SessionStore interface {
 	CreateSession(user *usertypes.User, issuedAt time.Time, expiresAt time.Time, roles []string) (*sessiontypes.Session, error)
 	DeleteSession(sessionID string) error
 	GetSession(sessionID string) (*sessiontypes.Session, error)
+	UpdateSessionExpiresAt(sessionID string, expiresAt time.Time) error
 }
 
 type AppStatusStore interface {
