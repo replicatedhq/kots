@@ -2,6 +2,8 @@ FROM golang:1.17 as builder
 
 EXPOSE 2345
 
+ENV GOCACHE "/.cache/gocache/"
+ENV GOMODCACHE "/.cache/gomodcache/"
 ENV DEBUG_KOTSADM=1
 
 RUN curl -k https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
@@ -140,23 +142,27 @@ RUN cd /tmp && curl -fsSL -o helm.tar.gz "${HELM3_URL}" \
   && ln -s "${KOTS_HELM_BIN_DIR}/helm3" "${KOTS_HELM_BIN_DIR}/helm" \
   && rm -rf helm.tar.gz linux-amd64
 
-RUN go install github.com/go-delve/delve/cmd/dlv@v1.8.0
+RUN --mount=target=$GOMODCACHE,id=gomodcache,type=cache \
+    --mount=target=$GOCACHE,id=gocache,type=cache \
+    go install github.com/go-delve/delve/cmd/dlv@v1.8.0
 
 ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots
 WORKDIR $PROJECTPATH
 
 COPY go.mod go.sum ./
-RUN --mount=target=/go/pkg/mod,type=cache go mod download
+RUN --mount=target=$GOMODCACHE,id=kots-gomodcache,type=cache go mod download
 
 COPY . .
 
-RUN --mount=target=/root/.cache,type=cache mkdir -p web/dist \
-    && touch web/dist/README.md \
-    && make build
+RUN --mount=target=$GOMODCACHE,id=kots-gomodcache,type=cache \
+    --mount=target=$GOCACHE,id=kots-gocache,type=cache \
+    make build
 
-## Hack, but let's save that buildkit cache for okteto dev pods
-RUN --mount=target=/root/.cache,type=cache mkdir -p /tmp/.cache && \
-  cp -r /root/.cache/* /tmp/.cache
-RUN rm -rf /root/.cache && mv /tmp/.cache /root/.cache
+RUN --mount=target=/tmp/.cache/gocache,id=kots-gocache,type=cache \
+    --mount=target=/tmp/.cache/gomodcache,id=kots-gomodcache,type=cache \
+    mkdir -p $GOCACHE \
+    && cp -r /tmp/.cache/gocache/* $GOCACHE \
+    && mkdir -p $GOMODCACHE \
+    && cp -r /tmp/.cache/gomodcache/* $GOMODCACHE
 
 ENTRYPOINT [ "./bin/kotsadm", "api"]
