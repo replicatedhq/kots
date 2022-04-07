@@ -107,6 +107,7 @@ type SessionStore interface {
 	DeleteSession(sessionID string) error
 	GetSession(sessionID string) (*sessiontypes.Session, error)
 	UpdateSessionExpiresAt(sessionID string, expiresAt time.Time) error
+	DeleteExpiredSessions() error
 }
 
 type AppStatusStore interface {

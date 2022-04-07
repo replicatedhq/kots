@@ -269,6 +269,20 @@ func (mr *MockStoreMockRecorder) DeleteDownstreamDeployStatus(appID, clusterID, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteDownstreamDeployStatus", reflect.TypeOf((*MockStore)(nil).DeleteDownstreamDeployStatus), appID, clusterID, sequence)
 }
 
+// DeleteExpiredSessions mocks base method.
+func (m *MockStore) DeleteExpiredSessions() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteExpiredSessions")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteExpiredSessions indicates an expected call of DeleteExpiredSessions.
+func (mr *MockStoreMockRecorder) DeleteExpiredSessions() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteExpiredSessions", reflect.TypeOf((*MockStore)(nil).DeleteExpiredSessions))
+}
+
 // DeletePendingScheduledInstanceSnapshots mocks base method.
 func (m *MockStore) DeletePendingScheduledInstanceSnapshots(clusterID string) error {
 	m.ctrl.T.Helper()
@@ -2523,6 +2537,20 @@ func (m *MockSessionStore) CreateSession(user *types14.User, issuedAt, expiresAt
 func (mr *MockSessionStoreMockRecorder) CreateSession(user, issuedAt, expiresAt, roles interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSession", reflect.TypeOf((*MockSessionStore)(nil).CreateSession), user, issuedAt, expiresAt, roles)
+}
+
+// DeleteExpiredSessions mocks base method.
+func (m *MockSessionStore) DeleteExpiredSessions() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteExpiredSessions")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteExpiredSessions indicates an expected call of DeleteExpiredSessions.
+func (mr *MockSessionStoreMockRecorder) DeleteExpiredSessions() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteExpiredSessions", reflect.TypeOf((*MockSessionStore)(nil).DeleteExpiredSessions))
 }
 
 // DeleteSession mocks base method.

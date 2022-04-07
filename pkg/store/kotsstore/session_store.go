@@ -302,3 +302,33 @@ func (s *KOTSStore) UpdateSessionExpiresAt(id string, expiresAt time.Time) error
 	}
 	return nil
 }
+
+func (s *KOTSStore) DeleteExpiredSessions() error {
+	sessionLock.Lock()
+	defer sessionLock.Unlock()
+
+	secret, err := s.getSessionSecret()
+	if err != nil {
+		return errors.Wrap(err, "failed to get session secret")
+	}
+
+	updateSessionSecret := false
+	for id, data := range secret.Data {
+		session := sessiontypes.Session{}
+		if err := json.Unmarshal(data, &session); err != nil {
+			return errors.Wrap(err, "failed to unmarshal session")
+		}
+		if time.Now().After(session.ExpiresAt) {
+			updateSessionSecret = true
+			delete(secret.Data, id)
+		}
+	}
+
+	if updateSessionSecret {
+		if err := s.saveSessionSecret(secret); err != nil {
+			return errors.Wrap(err, "failed to update session secret")
+		}
+	}
+
+	return nil
+}
