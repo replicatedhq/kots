@@ -5,6 +5,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Modal from "react-modal";
 import find from "lodash/find";
+import isEmpty from "lodash/isEmpty";
 import get from "lodash/get";
 import MountAware from "../shared/MountAware";
 import Loader from "../shared/Loader";
@@ -57,6 +58,7 @@ class AppVersionHistory extends Component {
     deployView: false,
     selectedSequence: -1,
     releaseWithErr: {},
+    latestAvailableVersion: {},
     versionHistoryJob: new Repeater(),
     loadingVersionHistory: true,
     versionHistory: [],
@@ -83,6 +85,14 @@ class AppVersionHistory extends Component {
   versionDownloadStatusJobs = {}
 
   componentDidMount() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const pageNumber = urlParams.get("page");
+    if (pageNumber) {
+      this.setState({ currentPage: parseInt(pageNumber) });
+    } else {
+      this.props.history.push(`${this.props.location.pathname}?page=0`);
+    }
+
     this.fetchKotsDownstreamHistory();
     this.props.refreshAppData()
     if (this.props.app?.isAirgap && !this.state.airgapUploader) {
@@ -93,8 +103,8 @@ class AppVersionHistory extends Component {
     this.state.appUpdateChecker.start(this.getAppUpdateStatus, 1000);
 
     const url = window.location.pathname;
+    const { params } = this.props.match;
     if (url.includes("/diff")) {
-      const { params } = this.props.match;
       const firstSequence = params.firstSequence;
       const secondSequence = params.secondSequence;
       if (firstSequence !== undefined && secondSequence !== undefined) { // undefined because a sequence can be zero!
@@ -120,6 +130,47 @@ class AppVersionHistory extends Component {
     this._mounted = false;
   }
 
+  fetchOnlyLatestVersoin = async () => {
+    const { match } = this.props;
+    const appSlug = match.params.slug;
+
+    try {
+      const res = await fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/versions?currentPage=0&pageSize=1&pinLatest=true`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "GET",
+      });
+      if (!res.ok) {
+        if (res.status === 401) {
+          Utilities.logoutUser();
+          return;
+        }
+        this.setState({
+          loadingVersionHistory: false,
+          errorTitle: "Failed to get latest version",
+          errorMsg: `Unexpected status code: ${res.status}`,
+          displayErrorModal: true,
+        });
+        return;
+      }
+      const response = await res.json();
+      const versionHistory = response.versionHistory;
+
+      this.setState({
+        latestAvailableVersion: versionHistory[0]
+      });
+    } catch (err) {
+      this.setState({
+        loadingVersionHistory: false,
+        errorTitle: "Failed to get latest version",
+        errorMsg: err ? err.message : "Something went wrong, please try again.",
+        displayErrorModal: true,
+      });
+    }
+  }
+
   fetchKotsDownstreamHistory = async () => {
     const { match } = this.props;
     const appSlug = match.params.slug;
@@ -133,7 +184,7 @@ class AppVersionHistory extends Component {
 
     try {
       const { currentPage, pageSize } = this.state;
-      const res = await fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/versions?currentPage=${currentPage}&pageSize=${pageSize}&pinLatest=true`, {
+      const res = await fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/versions?currentPage=${currentPage}&pageSize=${pageSize}`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -167,6 +218,13 @@ class AppVersionHistory extends Component {
         versionHistory: versionHistory,
         totalCount: response.totalCount,
       });
+      if (currentPage === 0) {
+        this.setState({
+          latestAvailableVersion: versionHistory[0]
+        });
+      } else if (isEmpty(this.state.latestAvailableVersion)) {
+        this.fetchOnlyLatestVersoin();
+      }
     } catch (err) {
       this.setState({
         loadingVersionHistory: false,
@@ -175,6 +233,13 @@ class AppVersionHistory extends Component {
         displayErrorModal: true,
       });
     }
+  }
+
+  setPageSize = (e) => {
+    this.setState({ pageSize: parseInt(e.target.value), currentPage: 0 }, () => {
+      this.fetchKotsDownstreamHistory();
+      this.props.history.push(`${this.props.location.pathname}?page=0`);
+    });
   }
 
   getAirgapConfig = async () => {
@@ -1044,7 +1109,7 @@ class AppVersionHistory extends Component {
   renderOtherAvailableVersions = () => {
     // This is kinda hacky. This finds the equivalent downstream version because the midstream
     // version type does not contain metadata like version label or release notes.
-    const otherAvailableVersions = this.state.versionHistory?.slice(1); // exclude latest version
+    const otherAvailableVersions = this.state.versionHistory;
     if (!otherAvailableVersions?.length) {
       return null;
     }
@@ -1052,16 +1117,24 @@ class AppVersionHistory extends Component {
     const { currentPage, pageSize, totalCount, loadingPage } = this.state;
 
     return (
-      <div>
-        <div className="flex u-marginBottom--15 u-marginTop--30">
-          <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy">Other available versions</p>
+      <div className="TableDiff--Wrapper u-marginTop--30">
+        <div className="flex u-marginBottom--15 justifyContent--spaceBetween">
+          <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy">All versions</p>
+          <div className="flex flex-auto alignItems--center">
+            <span className="flex-auto u-marginRight--5 u-fontSize--small u-textColor--secondary u-lineHeight--normal u-fontWeight--medium">Results per page:</span>
+            <select className="Select" onChange={(e) => this.setPageSize(e)}>
+              <option value="20">20</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
+          </div>
         </div>
         {otherAvailableVersions?.map((version) => this.renderAppVersionHistoryRow(version))}
         <Pager
           pagerType="releases"
           currentPage={currentPage}
           pageSize={pageSize}
-          totalCount={totalCount - 1}
+          totalCount={totalCount}
           loading={loadingPage}
           currentPageLength={otherAvailableVersions.length}
           goToPage={this.onGotoPage}
@@ -1073,13 +1146,14 @@ class AppVersionHistory extends Component {
   onGotoPage = (page, ev) => {
     ev.preventDefault();
     this.setState({ currentPage: page, loadingPage: true }, async () => {
+      this.props.history.push(`${this.props.location.pathname}?page=${page}`);
       await this.fetchKotsDownstreamHistory();
       this.setState({ loadingPage: false });
     });
   }
 
   renderAppVersionHistoryRow = version => {
-    if (this.state.selectedDiffReleases && version.status === "pending_download") {
+    if (!version || isEmpty(version) || this.state.selectedDiffReleases && version.status === "pending_download") {
       // non-downloaded versions can't be diffed
       return null;
     }
@@ -1142,6 +1216,7 @@ class AppVersionHistory extends Component {
       errorTitle,
       errorMsg,
       displayErrorModal,
+      latestAvailableVersion,
       airgapUploader,
       checkingForUpdates,
       checkingUpdateMessage
@@ -1253,13 +1328,13 @@ class AppVersionHistory extends Component {
                 </div>
               </div>
 
-              <div className={`TableDiff--Wrapper flex-column flex1 alignSelf--start ${gitopsEnabled ? "gitops-enabled" : ""}`}>
+              <div className={`flex-column flex1 alignSelf--start ${gitopsEnabled ? "gitops-enabled" : ""}`}>
                 <div className={`flex-column flex1 version ${showDiffOverlay ? "u-visibility--hidden" : ""}`}>
                 {versionHistory?.length > 0 ?
                   <div>
-                    <div>
-                      <div className="flex justifyContent--spaceBetween u-marginBottom--15">
-                        <p className="u-fontSize--normal u-fontWeight--medium u-textColor--header">Latest available version</p>
+                    <div className="TableDiff--Wrapper">
+                      <div className="flex justifyContent--spaceBetween">
+                        <p className="u-fontSize--normal u-fontWeight--medium u-textColor--header u-marginBottom--15">Latest available version</p>
                         <div className="flex alignItems--center">
                           <div className="flex alignItems--center">
                             {app?.isAirgap && airgapUploader ?
@@ -1290,7 +1365,7 @@ class AppVersionHistory extends Component {
                           {versionHistory.length > 1 && this.renderDiffBtn()}
                         </div>
                       </div>
-                      {this.renderAppVersionHistoryRow(versionHistory[0])}
+                      {this.renderAppVersionHistoryRow(latestAvailableVersion)}
                     </div>
                     {this.renderUpdateProgress()}
                     {this.renderOtherAvailableVersions()}

@@ -19,7 +19,7 @@ class Pager extends React.Component {
   }
 
   render() {
-    if (this.props.currentPage === 0 && this.props.totalCount < this.props.pageSize) {
+    if (this.props.currentPage === 0 && this.props.totalCount <= this.props.pageSize) {
       return null;
     }
 
@@ -32,7 +32,7 @@ class Pager extends React.Component {
                 className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-cursor--pointer u-display--inlineBlock"
                 onClick={!this.props.loading ? (e) => this.handleGoToPage(this.props.currentPage - 1, e) : null}
               >
-                <span className="icon clickable u-dropdownArrowIcon previous"></span> Newer
+                <span className="icon clickable u-dropdownArrowIcon previous"></span> Prev
               </p>
             </div>
             : null}
@@ -56,7 +56,7 @@ class Pager extends React.Component {
                 className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-cursor--pointer u-display--inlineBlock"
                 onClick={!this.props.loading ? (e) => this.handleGoToPage(this.props.currentPage + 1, e) : null}
               >
-                Older <span className="icon clickable u-dropdownArrowIcon next"></span>
+                Next <span className="icon clickable u-dropdownArrowIcon next"></span>
               </p>
             </div>
             : null}
