@@ -76,10 +76,22 @@ func (m *MockKOTSHandler) CanInstallAppVersion(w http.ResponseWriter, r *http.Re
 	m.ctrl.Call(m, "CanInstallAppVersion", w, r)
 }
 
+// GetAutomatedInstallStatus mocks base method.
+func (m *MockKOTSHandler) GetAutomatedInstallStatus(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetAutomatedInstallStatus", w, r)
+}
+
 // CanInstallAppVersion indicates an expected call of CanInstallAppVersion.
 func (mr *MockKOTSHandlerMockRecorder) CanInstallAppVersion(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanInstallAppVersion", reflect.TypeOf((*MockKOTSHandler)(nil).CanInstallAppVersion), w, r)
+}
+
+// GetAutomatedInstallStatus indicates an expected call of GetAutomatedInstallStatus.
+func (mr *MockKOTSHandlerMockRecorder) GetAutomatedInstallStatus(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAutomatedInstallStatus", reflect.TypeOf((*MockKOTSHandler)(nil).GetAutomatedInstallStatus), w, r)
 }
 
 // CancelRestore mocks base method.

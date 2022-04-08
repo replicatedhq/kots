@@ -20,7 +20,7 @@ var (
 	taskStatusLock = sync.Mutex{}
 )
 
-type taskStatus struct {
+type TaskStatus struct {
 	Message   string    `json:"message"`
 	Status    string    `json:"status"`
 	UpdatedAt time.Time `json:"updatedAt"`
@@ -49,7 +49,7 @@ func (s *KOTSStore) migrationTasksFromPostgres() error {
 		var status sql.NullString
 		var message sql.NullString
 
-		ts := taskStatus{}
+		ts := TaskStatus{}
 		if err := rows.Scan(&id, &ts.UpdatedAt, &message, &status); err != nil {
 			return errors.Wrap(err, "failed to scan task status")
 		}
@@ -151,7 +151,7 @@ func (s *KOTSStore) UpdateTaskStatusTimestamp(id string) error {
 		return nil // copied from s3pgstore
 	}
 
-	ts := taskStatus{}
+	ts := TaskStatus{}
 	if err := json.Unmarshal([]byte(data), &ts); err != nil {
 		return errors.Wrap(err, "failed to unmarshal task status")
 	}
@@ -237,7 +237,7 @@ func (s *KOTSStore) GetTaskStatus(id string) (string, string, error) {
 		return "", "", nil
 	}
 
-	ts := taskStatus{}
+	ts := TaskStatus{}
 	if err := json.Unmarshal([]byte(marshalled), &ts); err != nil {
 		return "", "", errors.Wrap(err, "error unmarshalling task status")
 	}

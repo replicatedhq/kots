@@ -22,6 +22,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/session"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/store/kotsstore"
 	"github.com/replicatedhq/kots/pkg/version"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -577,4 +578,19 @@ func (h *Handler) GetLatestDeployableVersion(w http.ResponseWriter, r *http.Requ
 	getLatestDeployableVersionResponse.NumOfRemainingVersions = numOfRemainingVersions
 
 	JSON(w, http.StatusOK, getLatestDeployableVersionResponse)
+}
+
+func (h *Handler) GetAutomatedInstallStatus(w http.ResponseWriter, r *http.Request) {
+	status, msg, err := store.GetStore().GetTaskStatus(fmt.Sprintf("automated-install-slug-%s", mux.Vars(r)["appSlug"]))
+	if err != nil {
+		logger.Error(errors.Wrapf(err, "failed to get install status for app %s", mux.Vars(r)["appSlug"]))
+		w.WriteHeader(500)
+		return
+	}
+	response := kotsstore.TaskStatus{
+		Status:  status,
+		Message: msg,
+	}
+
+	JSON(w, 200, response)
 }

@@ -3,6 +3,7 @@ package cli
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -30,6 +31,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/metrics"
 	"github.com/replicatedhq/kots/pkg/pull"
+	"github.com/replicatedhq/kots/pkg/store/kotsstore"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -328,13 +330,14 @@ func InstallCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to forward port")
 			}
 
+			apiEndpoint := fmt.Sprintf("http://localhost:%d/api/v1", adminConsolePort)
+
 			if deployOptions.AirgapRootDir != "" {
 				log.ActionWithoutSpinner("Uploading app archive")
 
 				var tryAgain bool
 				var err error
 
-				apiEndpoint := fmt.Sprintf("http://localhost:%d/api/v1", adminConsolePort)
 				for i := 0; i < 5; i++ {
 					tryAgain, err = uploadAirgapArchive(deployOptions, clientset, apiEndpoint, filepath.Join(deployOptions.AirgapRootDir, "app.tar.gz"))
 					if err == nil {
@@ -372,6 +375,12 @@ func InstallCmd() *cobra.Command {
 			}()
 
 			m.ReportInstallFinish()
+
+			if deployOptions.License != nil {
+				if err := validateAutomatedInstall(deployOptions, clientset, apiEndpoint); err != nil {
+					return errors.Wrap(err, "failed to validate automated install")
+				}
+			}
 
 			isPortForwarding := !v.GetBool("no-port-forward")
 			if isPortForwarding {
@@ -744,4 +753,52 @@ func CheckRBAC() error {
 		return RBACError
 	}
 	return nil
+}
+
+func validateAutomatedInstall(deployOptions kotsadmtypes.DeployOptions, clientset *kubernetes.Clientset, apiEndpoint string) error {
+	authSlug, err := auth.GetOrCreateAuthSlug(clientset, deployOptions.Namespace)
+	if err != nil {
+		return errors.Wrap(err, "failed to get kotsadm auth slug")
+	}
+	url := fmt.Sprintf("%s/app/%s/automated/status", apiEndpoint, deployOptions.License.Spec.AppSlug)
+	taskStatus, err := getAutomatedInstallStatus(url, authSlug)
+	if err != nil {
+		return errors.Wrap(err, "failed to get automated install status")
+	}
+	if taskStatus.Status == "failed" {
+		return errors.New(taskStatus.Message)
+	}
+	// TODO: Retry until wait-duration is exceeded
+	return nil
+}
+
+func getAutomatedInstallStatus(url string, authSlug string) (*kotsstore.TaskStatus, error) {
+	newReq, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create request")
+	}
+	newReq.Header.Add("Content-Type", "application/json")
+	newReq.Header.Add("Authorization", authSlug)
+
+	resp, err := http.DefaultClient.Do(newReq)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to execute request")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return nil, errors.Errorf("unexpected status code %d", resp.StatusCode)
+	}
+
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read")
+	}
+
+	taskStatus := kotsstore.TaskStatus{}
+	if err := json.Unmarshal(b, &taskStatus); err != nil {
+		return nil, errors.Wrap(err, "failed to unmarshal task status")
+	}
+
+	return &taskStatus, nil
 }

@@ -41,6 +41,8 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 		HandlerFunc(middleware.EnforceAccess(policy.AppCreate, handler.GetOnlineInstallStatus))
 	r.Name("CanInstallAppVersion").Path("/api/v1/app/{appSlug}/can-install").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.AppCreate, handler.CanInstallAppVersion))
+	r.Name("GetAutomatedInstallStatus").Path("/api/v1/app/{appSlug}/automated/status").Methods("GET").
+		HandlerFunc(middleware.EnforceAccess(policy.AppCreate, handler.GetAutomatedInstallStatus))
 
 	// Support Bundles
 	r.Name("GetSupportBundle").Path("/api/v1/troubleshoot/supportbundle/{bundleSlug}").Methods("GET").
