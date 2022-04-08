@@ -300,45 +300,40 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 			Name:  "API_ADVERTISE_ENDPOINT",
 			Value: "http://localhost:8800",
 		},
-	}
-	if deployOptions.IncludeMinio {
-		s3env := []corev1.EnvVar{
-			{
-				Name:  "S3_ENDPOINT",
-				Value: "http://kotsadm-minio:9000",
-			},
-			{
-				Name:  "S3_BUCKET_NAME",
-				Value: "kotsadm",
-			},
-			{
-				Name: "S3_ACCESS_KEY_ID",
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: "kotsadm-minio",
-						},
-						Key: "accesskey",
+		{
+			Name:  "S3_ENDPOINT",
+			Value: "http://kotsadm-minio:9000",
+		},
+		{
+			Name:  "S3_BUCKET_NAME",
+			Value: "kotsadm",
+		},
+		{
+			Name: "S3_ACCESS_KEY_ID",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "kotsadm-minio",
 					},
+					Key: "accesskey",
 				},
 			},
-			{
-				Name: "S3_SECRET_ACCESS_KEY",
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: "kotsadm-minio",
-						},
-						Key: "secretkey",
+		},
+		{
+			Name: "S3_SECRET_ACCESS_KEY",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "kotsadm-minio",
 					},
+					Key: "secretkey",
 				},
 			},
-			{
-				Name:  "S3_BUCKET_ENDPOINT",
-				Value: "true",
-			},
-		}
-		env = append(env, s3env...)
+		},
+		{
+			Name:  "S3_BUCKET_ENDPOINT",
+			Value: "true",
+		},
 	}
 
 	env = append(env, GetProxyEnv(deployOptions)...)
