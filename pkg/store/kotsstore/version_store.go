@@ -40,6 +40,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/application/api/v1beta1"
 )
 
 func (s *KOTSStore) ensureApplicationMetadata(applicationMetadata string, namespace string, upstreamURI string) error {
@@ -508,6 +509,12 @@ func (s *KOTSStore) upsertAppVersion(tx *sql.Tx, appID string, sequence int64, b
 	}
 	kotsKinds.Preflight = renderedPreflight
 
+	renderedApplication, err := s.renderApplicationSpec(appID, a.Slug, sequence, a.IsAirgap, kotsKinds, renderer)
+	if err != nil {
+		return errors.Wrap(err, "failed to render app application spec")
+	}
+	kotsKinds.Application = renderedApplication
+
 	if err := s.upsertAppVersionRecord(tx, appID, sequence, appName, appIcon, kotsKinds); err != nil {
 		return errors.Wrap(err, "failed to upsert app version record")
 	}
@@ -972,6 +979,34 @@ func (s *KOTSStore) renderPreflightSpec(appID string, appSlug string, sequence i
 			return nil, errors.Wrap(err, "failed to load rendered preflight")
 		}
 		return preflight, nil
+	}
+
+	return nil, nil
+}
+
+func (s *KOTSStore) renderApplicationSpec(appID string, appSlug string, sequence int64, isAirgap bool, kotsKinds *kotsutil.KotsKinds, renderer rendertypes.Renderer) (*v1beta1.Application, error) {
+	if kotsKinds.Application != nil {
+		// render the application file
+		// we need to convert to bytes first, so that we can reuse the renderfile function
+		renderedMarshalledPreflights, err := kotsKinds.Marshal("app.k8s.io", "v1beta1", "Application")
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to marshal application")
+		}
+
+		registrySettings, err := s.GetRegistryDetailsForApp(appID)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get registry settings for app")
+		}
+
+		renderedApplication, err := renderer.RenderFile(kotsKinds, registrySettings, appSlug, sequence, isAirgap, util.PodNamespace, []byte(renderedMarshalledPreflights))
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to render application")
+		}
+		application, err := kotsutil.LoadApplicationFromContents(renderedApplication)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to load rendered application")
+		}
+		return application, nil
 	}
 
 	return nil, nil
