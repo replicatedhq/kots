@@ -7,9 +7,14 @@ import (
 var (
 	PostgresURI string
 	SQLiteURI   string
+	mockDB      *sql.DB
 )
 
 func MustGetDBSession() *sql.DB {
+	if mockDB != nil {
+		return mockDB
+	}
+
 	if SQLiteURI != "" {
 		return mustGetSQLiteSession()
 	}
@@ -23,4 +28,8 @@ func IsSQlite() bool {
 
 func IsPostgres() bool {
 	return PostgresURI != ""
+}
+
+func InitMockDB(mock *sql.DB) {
+	mockDB = mock
 }
