@@ -208,35 +208,32 @@ func InstallCmd() *cobra.Command {
 			simultaneousUploads, _ := strconv.Atoi(v.GetString("airgap-upload-parallelism"))
 
 			deployOptions := kotsadmtypes.DeployOptions{
-				Namespace:                 namespace,
-				Context:                   v.GetString("context"),
-				SharedPassword:            sharedPassword,
-				ApplicationMetadata:       applicationMetadata,
-				UpstreamURI:               upstream,
-				License:                   license,
-				ConfigValues:              configValues,
-				Airgap:                    isAirgap,
-				ProgressWriter:            os.Stdout,
-				StorageBaseURI:            v.GetString("storage-base-uri"),
-				StorageBaseURIPlainHTTP:   v.GetBool("storage-base-uri-plainhttp"),
-				IncludeDockerDistribution: v.GetBool("with-dockerdistribution"),
-				Timeout:                   time.Minute * 2,
-				HTTPProxyEnvValue:         v.GetString("http-proxy"),
-				HTTPSProxyEnvValue:        v.GetString("https-proxy"),
-				NoProxyEnvValue:           v.GetString("no-proxy"),
-				SkipPreflights:            v.GetBool("skip-preflights"),
-				SkipCompatibilityCheck:    v.GetBool("skip-compatibility-check"),
-				AppVersionLabel:           v.GetString("app-version-label"),
-				EnsureRBAC:                v.GetBool("ensure-rbac"),
-				SkipRBACCheck:             v.GetBool("skip-rbac-check"),
-				UseMinimalRBAC:            v.GetBool("use-minimal-rbac"),
-				InstallID:                 m.InstallID,
-				SimultaneousUploads:       simultaneousUploads,
-				DisableImagePush:          v.GetBool("disable-image-push"),
-				AirgapBundle:              v.GetString("airgap-bundle"),
-				IncludeMinio:              v.GetBool("with-minio"),
-				IncludeMinioSnapshots:     v.GetBool("with-minio"),
-				StrictSecurityContext:     v.GetBool("strict-security-context"),
+				Namespace:              namespace,
+				Context:                v.GetString("context"),
+				SharedPassword:         sharedPassword,
+				ApplicationMetadata:    applicationMetadata,
+				UpstreamURI:            upstream,
+				License:                license,
+				ConfigValues:           configValues,
+				Airgap:                 isAirgap,
+				ProgressWriter:         os.Stdout,
+				Timeout:                time.Minute * 2,
+				HTTPProxyEnvValue:      v.GetString("http-proxy"),
+				HTTPSProxyEnvValue:     v.GetString("https-proxy"),
+				NoProxyEnvValue:        v.GetString("no-proxy"),
+				SkipPreflights:         v.GetBool("skip-preflights"),
+				SkipCompatibilityCheck: v.GetBool("skip-compatibility-check"),
+				AppVersionLabel:        v.GetString("app-version-label"),
+				EnsureRBAC:             v.GetBool("ensure-rbac"),
+				SkipRBACCheck:          v.GetBool("skip-rbac-check"),
+				UseMinimalRBAC:         v.GetBool("use-minimal-rbac"),
+				InstallID:              m.InstallID,
+				SimultaneousUploads:    simultaneousUploads,
+				DisableImagePush:       v.GetBool("disable-image-push"),
+				AirgapBundle:           v.GetString("airgap-bundle"),
+				IncludeMinio:           v.GetBool("with-minio"),
+				IncludeMinioSnapshots:  v.GetBool("with-minio"),
+				StrictSecurityContext:  v.GetBool("strict-security-context"),
 
 				KotsadmOptions: *registryConfig,
 
@@ -450,11 +447,7 @@ func InstallCmd() *cobra.Command {
 	// options for the alpha feature of using a reg instead of s3 for storage
 	cmd.Flags().String("storage-base-uri", "", "an s3 or oci-registry uri to use for kots persistent storage in the cluster")
 	cmd.Flags().Bool("with-minio", true, "when set, kots will deploy a local minio instance for storage")
-	cmd.Flags().Bool("with-dockerdistribution", false, "when set, kots install will deploy a local instance of docker distribution for storage")
-	cmd.Flags().Bool("storage-base-uri-plainhttp", false, "when set, use plain http (not https) connecting to the local oci storage")
 	cmd.Flags().MarkHidden("storage-base-uri")
-	cmd.Flags().MarkHidden("with-dockerdistribution")
-	cmd.Flags().MarkHidden("storage-base-uri-plainhttp")
 
 	cmd.Flags().Bool("ensure-rbac", true, "when set, kots will create the roles and rolebindings necessary to manage applications")
 	cmd.Flags().Bool("use-minimal-rbac", false, "when set, kots will be namespace scoped if application supports namespace scoped installations")

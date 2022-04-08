@@ -120,10 +120,7 @@ func Upgrade(clientset *kubernetes.Clientset, upgradeOptions types.UpgradeOption
 	deployOptions.KotsadmOptions = upgradeOptions.KotsadmOptions
 	deployOptions.EnsureRBAC = upgradeOptions.EnsureRBAC
 	deployOptions.SimultaneousUploads = upgradeOptions.SimultaneousUploads
-	deployOptions.StorageBaseURI = upgradeOptions.StorageBaseURI
-	deployOptions.StorageBaseURIPlainHTTP = upgradeOptions.StorageBaseURIPlainHTTP
 	deployOptions.IncludeMinio = upgradeOptions.IncludeMinio
-	deployOptions.IncludeDockerDistribution = upgradeOptions.IncludeDockerDistribution
 	deployOptions.StrictSecurityContext = upgradeOptions.StrictSecurityContext
 
 	// Attempt migrations to fail early.
@@ -454,13 +451,7 @@ func ensureStorage(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 		return nil
 	}
 
-	if deployOptions.IncludeDockerDistribution {
-		if err := ensureDistribution(deployOptions, clientset); err != nil {
-			return errors.Wrap(err, "failed to ensure docker distribution")
-		}
-	} else if deployOptions.IncludeMinio {
-		// note that this is an else if.  if docker distribution _replaces_ minio
-		// in a kots install
+	if deployOptions.IncludeMinio {
 		if err := ensureMinio(deployOptions, clientset); err != nil {
 			return errors.Wrap(err, "failed to ensure minio")
 		}

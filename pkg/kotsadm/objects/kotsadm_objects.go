@@ -2,9 +2,6 @@ package kotsadm
 
 import (
 	"fmt"
-	"strconv"
-	"strings"
-
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/ingress"
@@ -303,54 +300,40 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 			Name:  "API_ADVERTISE_ENDPOINT",
 			Value: "http://localhost:8800",
 		},
-	}
-	if strings.HasPrefix(deployOptions.StorageBaseURI, "docker://") {
-		env = append(env, corev1.EnvVar{
-			Name:  "STORAGE_BASEURI",
-			Value: deployOptions.StorageBaseURI,
-		})
-		env = append(env, corev1.EnvVar{
-			Name:  "STORAGE_BASEURI_PLAINHTTP",
-			Value: strconv.FormatBool(deployOptions.StorageBaseURIPlainHTTP),
-		})
-	} else {
-		s3env := []corev1.EnvVar{
-			{
-				Name:  "S3_ENDPOINT",
-				Value: "http://kotsadm-minio:9000",
-			},
-			{
-				Name:  "S3_BUCKET_NAME",
-				Value: "kotsadm",
-			},
-			{
-				Name: "S3_ACCESS_KEY_ID",
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: "kotsadm-minio",
-						},
-						Key: "accesskey",
+		{
+			Name:  "S3_ENDPOINT",
+			Value: "http://kotsadm-minio:9000",
+		},
+		{
+			Name:  "S3_BUCKET_NAME",
+			Value: "kotsadm",
+		},
+		{
+			Name: "S3_ACCESS_KEY_ID",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "kotsadm-minio",
 					},
+					Key: "accesskey",
 				},
 			},
-			{
-				Name: "S3_SECRET_ACCESS_KEY",
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: "kotsadm-minio",
-						},
-						Key: "secretkey",
+		},
+		{
+			Name: "S3_SECRET_ACCESS_KEY",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "kotsadm-minio",
 					},
+					Key: "secretkey",
 				},
 			},
-			{
-				Name:  "S3_BUCKET_ENDPOINT",
-				Value: "true",
-			},
-		}
-		env = append(env, s3env...)
+		},
+		{
+			Name:  "S3_BUCKET_ENDPOINT",
+			Value: "true",
+		},
 	}
 
 	env = append(env, GetProxyEnv(deployOptions)...)
@@ -857,17 +840,6 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 			Name:  "API_ADVERTISE_ENDPOINT",
 			Value: "http://localhost:8800",
 		},
-	}
-
-	if strings.HasPrefix(deployOptions.StorageBaseURI, "docker://") {
-		env = append(env, corev1.EnvVar{
-			Name:  "STORAGE_BASEURI",
-			Value: deployOptions.StorageBaseURI,
-		})
-		env = append(env, corev1.EnvVar{
-			Name:  "STORAGE_BASEURI_PLAINHTTP",
-			Value: strconv.FormatBool(deployOptions.StorageBaseURIPlainHTTP),
-		})
 	}
 
 	env = append(env, GetProxyEnv(deployOptions)...)
