@@ -86,7 +86,7 @@ func requireValidSession(kotsStore store.Store, w http.ResponseWriter, r *http.R
 	}
 
 	// give the user the full session timeout if they have been active at least an hour
-	if time.Now().Add(SessionTimeout - time.Hour).After(sess.ExpiresAt){
+	if time.Now().Add(SessionTimeout - time.Hour).After(sess.ExpiresAt) {
 		sess.ExpiresAt = time.Now().Add(SessionTimeout)
 		if err := kotsStore.UpdateSessionExpiresAt(sess.ID, sess.ExpiresAt); err != nil {
 			logger.Error(errors.Wrapf(err, "failed to update session expiry %s", sess.ID))

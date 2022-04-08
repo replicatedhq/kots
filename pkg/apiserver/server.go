@@ -22,6 +22,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/policy"
 	"github.com/replicatedhq/kots/pkg/rbac"
+	"github.com/replicatedhq/kots/pkg/session"
 	"github.com/replicatedhq/kots/pkg/snapshotscheduler"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
@@ -127,6 +128,10 @@ func Start(params *APIServerParams) {
 
 	if err := snapshotscheduler.Start(); err != nil {
 		log.Println("Failed to start snapshot scheduler", err)
+	}
+
+	if err := session.StartSessionPurgeCronJob(); err != nil {
+		log.Println("Failed to start session purge cron job", err)
 	}
 
 	waitForAirgap, err := automation.NeedToWaitForAirgapApp()
