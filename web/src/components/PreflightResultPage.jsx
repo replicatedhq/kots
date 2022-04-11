@@ -37,51 +37,42 @@ class PreflightResultPage extends Component {
     }
   }
 
-  deployKotsDownstream = async (force = false) => {
+  deployKotsDownstream = async (continueWithFailedPreflights = false, isSkipPreflights = false) => {
     this.setState({ errorMessage: "" });
     try {
       const { history, match } = this.props;
       const { slug } = match.params;
       const { preflightResultData } = this.state;
 
-      const preflightResults = JSON.parse(preflightResultData?.result);
-      const preflightState = getPreflightResultState(preflightResults);
-      if (preflightState !== "pass") {
-        if (!force) {
-          this.showWarningModal();
-          return;
+      if (!isSkipPreflights) {
+        const preflightResults = JSON.parse(preflightResultData?.result);
+        const preflightState = getPreflightResultState(preflightResults);
+        if (preflightState !== "pass") {
+          if (!continueWithFailedPreflights) {
+            this.showWarningModal();
+            return;
+          }
         }
-        const sequence = match.params.sequence ? parseInt(match.params.sequence, 10) : 0;
-        await this.deployKotsVersion(slug, sequence, force);
       }
 
-      history.push(`/app/${slug}`);
-    } catch (err) {
-      console.log(err);
-      this.setState({
-        errorMessage: err ? `Encountered an error while trying to deploy downstream version: ${err.message}` : "Something went wrong, please try again."
-      });
-    }
-  }
-
-  deployKotsVersion = async (appSlug, sequence, force) => {
-    this.setState({ errorMessage: "" });
-    try {
-      await fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/sequence/${sequence}/deploy`, {
+      const sequence = match.params.sequence ? parseInt(match.params.sequence, 10) : 0;
+      await fetch(`${process.env.API_ENDPOINT}/app/${slug}/sequence/${sequence}/deploy`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
         },
         method: "POST",
         body: JSON.stringify({
-          isSkipPreflights: false,
-          continueWithFailedPreflights: force ? true : false
+          isSkipPreflights: isSkipPreflights,
+          continueWithFailedPreflights: !!continueWithFailedPreflights
         }),
       });
+
+      history.push(`/app/${slug}`);
     } catch (err) {
       console.log(err);
       this.setState({
-        errorMessage: err ? `Encountered an error while trying to deploy version: ${err.message}` : "Something went wrong, please try again."
+        errorMessage: err ? `Encountered an error while trying to deploy downstream version: ${err.message}` : "Something went wrong, please try again."
       });
     }
   }
@@ -288,26 +279,6 @@ class PreflightResultPage extends Component {
     }
   }
 
-  sendPreflightsReport = async (appsList) => {
-    const { slug } = this.props.match.params;
-
-    if (appsList?.length > 0) {
-      const currentApp = appsList?.find(a => a.slug === slug);
-
-      if (!currentApp.isAirgap) {
-        fetch(`${process.env.API_ENDPOINT}/app/${slug}/preflight/report`, {
-          headers: {
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            "Authorization": Utilities.getToken(),
-          },
-          method: "POST",
-        })
-      }
-    }
-    this.props.history.push(`/app/${slug}`)
-  }
-
   render() {
     const { slug } = this.props.match.params;
     const { showSkipModal, showWarningModal, preflightResultData, errorMessage } = this.state;
@@ -395,7 +366,7 @@ class PreflightResultPage extends Component {
                   type="button"
                   className="btn primary blue"
                   disabled={blockDeployment}
-                  onClick={() => this.deployKotsDownstream(false)}
+                  onClick={() => this.deployKotsDownstream()}
                 >
                   <span
                     data-tip-disable={!blockDeployment}
@@ -423,7 +394,7 @@ class PreflightResultPage extends Component {
           <SkipPreflightsModal
             showSkipModal={showSkipModal}
             hideSkipModal={this.hideSkipModal}
-            sendPreflightsReport={this.sendPreflightsReport}
+            deployKotsDownstream={this.deployKotsDownstream}
             appsList={this.props.appsList}
           />
         }
