@@ -34,6 +34,12 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+const (
+	AutomatedInstallRunning = "running"
+	AutomatedInstallSuccess = "success"
+	AutomatedInstallFailed  = "failed"
+)
+
 // AutomateInstall will process any bits left in strategic places
 // from the kots install command, so that the admin console
 // will finish that installation
@@ -102,7 +108,7 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 		zap.String("appSlug", appSlug))
 
 	taskID := fmt.Sprintf("automated-install-slug-%s", appSlug)
-	if err := store.GetStore().SetTaskStatus(taskID, "Installing app...", "running"); err != nil {
+	if err := store.GetStore().SetTaskStatus(taskID, "Installing app...", AutomatedInstallRunning); err != nil {
 		logger.Error(errors.Wrap(err, "failed to set task status"))
 	}
 
@@ -123,11 +129,11 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 
 	defer func() {
 		if finalError == nil {
-			if err := store.GetStore().SetTaskStatus(taskID, "Install complete", "succeeded"); err != nil {
+			if err := store.GetStore().SetTaskStatus(taskID, "Install complete", AutomatedInstallSuccess); err != nil {
 				logger.Error(errors.Wrap(err, "failed to set error on install task status"))
 			}
 		} else {
-			if err := store.GetStore().SetTaskStatus(taskID, finalError.Error(), "failed"); err != nil {
+			if err := store.GetStore().SetTaskStatus(taskID, finalError.Error(), AutomatedInstallFailed); err != nil {
 				logger.Error(errors.Wrap(err, "failed to set error on install task status"))
 			}
 		}

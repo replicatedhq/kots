@@ -22,6 +22,7 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/auth"
+	"github.com/replicatedhq/kots/pkg/automation"
 	"github.com/replicatedhq/kots/pkg/identity"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
@@ -374,13 +375,13 @@ func InstallCmd() *cobra.Command {
 				}
 			}()
 
-			m.ReportInstallFinish()
-
 			if deployOptions.License != nil {
 				if err := validateAutomatedInstall(deployOptions, clientset, apiEndpoint); err != nil {
 					return errors.Wrap(err, "failed to validate automated install")
 				}
 			}
+
+			m.ReportInstallFinish()
 
 			isPortForwarding := !v.GetBool("no-port-forward")
 			if isPortForwarding {
@@ -761,15 +762,24 @@ func validateAutomatedInstall(deployOptions kotsadmtypes.DeployOptions, clientse
 		return errors.Wrap(err, "failed to get kotsadm auth slug")
 	}
 	url := fmt.Sprintf("%s/app/%s/automated/status", apiEndpoint, deployOptions.License.Spec.AppSlug)
-	taskStatus, err := getAutomatedInstallStatus(url, authSlug)
-	if err != nil {
-		return errors.Wrap(err, "failed to get automated install status")
+
+	startTime := time.Now()
+
+	for time.Since(startTime) < deployOptions.Timeout {
+		taskStatus, err := getAutomatedInstallStatus(url, authSlug)
+		if err != nil {
+			return errors.Wrap(err, "failed to get automated install status")
+		}
+		switch taskStatus.Status {
+		case automation.AutomatedInstallFailed:
+			return errors.New(taskStatus.Message)
+		case automation.AutomatedInstallSuccess:
+			return nil
+		}
+		time.Sleep(time.Second)
 	}
-	if taskStatus.Status == "failed" {
-		return errors.New(taskStatus.Message)
-	}
-	// TODO: Retry until wait-duration is exceeded
-	return nil
+
+	return errors.New("timeout waiting for automated install. Use the --wait-duration flag to increase timeout.")
 }
 
 func getAutomatedInstallStatus(url string, authSlug string) (*kotsstore.TaskStatus, error) {
