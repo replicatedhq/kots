@@ -283,6 +283,9 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 	}
 
 	if len(updates) == 0 {
+		if err := app.SetLastUpdatedNow(a.ID); err != nil {
+			return nil, errors.Wrap(err, "failed to update last updated at time")
+		}
 		if err := ensureDesiredVersionIsDeployed(opts, d.ClusterID); err != nil {
 			return nil, errors.Wrapf(err, "failed to ensure desired version is deployed")
 		}
