@@ -52,7 +52,7 @@ func printLvpFileSystemVeleroInstructions(c *LvpFileSystemVeleroConfig, log *log
 	veleroOnlineCommand := fmt.Sprintf(`velero install \
 	--no-secret \
 	--provider %s \
-	--plugins replicated/local-volume-provider:v0.1.0 \
+	--plugins replicated/local-volume-provider:v0.3.1 \
 	--bucket %s \%s
 	--backup-location-config %s \
 	--use-restic`, c.Provider, c.Bucket, prefix, backupConfig)
@@ -76,7 +76,7 @@ func printLvpFileSystemVeleroInstructions(c *LvpFileSystemVeleroConfig, log *log
 	--no-secret \
 	--provider %s \
 	--image %s/velero:%s \
-	--plugins %s/local-volume-provider:v0.1.0 \
+	--plugins %s/local-volume-provider:v0.3.1 \
 	--bucket %s \%s
 	--backup-location-config %s \
 	--use-restic`, c.Provider, red("<private.registry.host>"), red("<velero-version>"), red("<private.registry.host>"), c.Bucket, prefix, backupConfig)
@@ -92,7 +92,7 @@ func printLvpFileSystemVeleroInstructions(c *LvpFileSystemVeleroConfig, log *log
 	  replicated.com/nfs: ObjectStore
 	  replicated.com/hostpath: ObjectStore
 	data:
-	  fileserverImage: %s/local-volume-fileserver:v0.1.0
+	  fileserverImage: %s/local-volume-provider:v0.3.1
 	  securityContextRunAsUser: "1001"
 	  securityContextFsGroup: "1001"
 	`, red("<private.registry.host>"))
@@ -105,8 +105,7 @@ func printLvpFileSystemVeleroInstructions(c *LvpFileSystemVeleroConfig, log *log
 	log.Info("	* For all clusters EXCEPT Openshift, create the following ConfigMap: \n%s", lvpConfigMap)
 	log.Info("- For %s, follow these steps:", bold("airgapped installations"))
 	log.Info("	* Prepare velero images (you will need %s and %s images for plugins): %s",
-		red("replicated/local-volume-provider:v0.1.0"),
-		red("replicated/local-volume-filesever:v0.1.0"),
+		red("replicated/local-volume-provider:v0.3.1"),
 		blue("https://velero.io/docs/v1.6/on-premises/#air-gapped-deployments"))
 	log.Info("	* Install velero (replace with actual values): \n\n%s", veleroAirgapCommand)
 	log.Info("	* Configure restic restore helper to use the prepared image: %s", blue("https://velero.io/docs/v1.6/restic/#customize-restore-helper-container"))
