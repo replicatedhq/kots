@@ -20,11 +20,6 @@ func SetLastUpdateAtTime(appID string, t time.Time) error {
 	return nil
 }
 
-// SetLastUpdatedNow sets the time that the client last checked for an update to now
-func SetLastUpdatedNow(appID string) error {
-	return SetLastUpdateAtTime(appID, time.Now())
-}
-
 func InitiateRestore(snapshotName string, appID string) error {
 	db := persistence.MustGetDBSession()
 	query := `update app set restore_in_progress_name = $1 where id = $2`

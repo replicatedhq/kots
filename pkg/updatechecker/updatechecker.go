@@ -235,6 +235,8 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 		ReportingInfo:            reporting.GetReportingInfo(a.ID),
 	}
 
+	thisUpdateCheckAt := time.Now()
+
 	// get updates
 	updates, err := kotspull.GetUpdates(fmt.Sprintf("replicated://%s", latestLicense.Spec.AppSlug), getUpdatesOptions)
 	if err != nil {
@@ -283,7 +285,7 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 	}
 
 	if len(updates) == 0 {
-		if err := app.SetLastUpdatedNow(a.ID); err != nil {
+		if err := app.SetLastUpdateAtTime(a.ID, thisUpdateCheckAt); err != nil {
 			return nil, errors.Wrap(err, "failed to update last updated at time")
 		}
 		if err := ensureDesiredVersionIsDeployed(opts, d.ClusterID); err != nil {
@@ -299,12 +301,12 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 	}
 
 	if opts.Wait {
-		if err := processUpdates(opts, a.ID, d.ClusterID, updates); err != nil {
+		if err := processUpdates(opts, a.ID, d.ClusterID, updates, thisUpdateCheckAt); err != nil {
 			return nil, errors.Wrap(err, "failed to process updates")
 		}
 	} else {
 		go func() {
-			if err := processUpdates(opts, a.ID, d.ClusterID, updates); err != nil {
+			if err := processUpdates(opts, a.ID, d.ClusterID, updates, thisUpdateCheckAt); err != nil {
 				logger.Error(errors.Wrap(err, "failed to process updates"))
 			}
 		}()
@@ -313,9 +315,7 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 	return &ucr, nil
 }
 
-func processUpdates(opts CheckForUpdatesOpts, appID string, clusterID string, updates []upstreamtypes.Update) error {
-	lastUpdateCheckAt := time.Now()
-
+func processUpdates(opts CheckForUpdatesOpts, appID string, clusterID string, updates []upstreamtypes.Update, updateCheckTime time.Time) error {
 	for index, update := range updates {
 		appSequence, err := upstream.DownloadUpdate(appID, update, opts.SkipPreflights, opts.SkipCompatibilityCheck)
 		if appSequence != nil {
@@ -334,7 +334,7 @@ func processUpdates(opts CheckForUpdatesOpts, appID string, clusterID string, up
 			logger.Error(err)
 		}
 	}
-	if err := app.SetLastUpdateAtTime(appID, lastUpdateCheckAt); err != nil {
+	if err := app.SetLastUpdateAtTime(appID, updateCheckTime); err != nil {
 		return errors.Wrap(err, "failed to update last updated at time")
 	}
 	if err := ensureDesiredVersionIsDeployed(opts, clusterID); err != nil {
