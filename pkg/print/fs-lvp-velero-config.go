@@ -104,7 +104,7 @@ func printLvpFileSystemVeleroInstructions(c *LvpFileSystemVeleroConfig, log *log
 	log.Info("	* Run the this Velero install command: \n\n%s", veleroOnlineCommand)
 	log.Info("	* For all clusters EXCEPT Openshift, create the following ConfigMap: \n%s", lvpConfigMap)
 	log.Info("- For %s, follow these steps:", bold("airgapped installations"))
-	log.Info("	* Prepare velero images (you will need %s and %s images for plugins): %s",
+	log.Info("	* Prepare velero images (you will need %s for plugins): %s",
 		red("replicated/local-volume-provider:v0.3.1"),
 		blue("https://velero.io/docs/v1.6/on-premises/#air-gapped-deployments"))
 	log.Info("	* Install velero (replace with actual values): \n\n%s", veleroAirgapCommand)
