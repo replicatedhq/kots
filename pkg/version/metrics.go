@@ -90,10 +90,9 @@ func GetMetricCharts(appID string, sequence int64, prometheusAddress string) ([]
 
 	var kotsAppSpecStr sql.NullString
 	if err := row.Scan(&kotsAppSpecStr); err != nil {
-		if err == sql.ErrNoRows {
-			return []MetricChart{}, nil
+		if err != sql.ErrNoRows {
+			return nil, errors.Wrap(err, "failed to scan")
 		}
-		return nil, errors.Wrap(err, "failed to scan")
 	}
 
 	graphs := DefaultMetricGraphs
