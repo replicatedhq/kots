@@ -2,7 +2,7 @@ import React from "react";
 import Modal from "react-modal";
 
 export default function SkipPreflightsModal(props) {
-  const { showSkipModal, hideSkipModal, onForceDeployClick, sendPreflightsReport, appsList } = props;
+  const { showSkipModal, hideSkipModal, deployKotsDownstream, onForceDeployClick } = props;
 
   return (
     <Modal
@@ -22,9 +22,9 @@ export default function SkipPreflightsModal(props) {
           <div className="u-marginTop--30 flex flex-column">
             <button type="button" className="btn blue primary" onClick={hideSkipModal}>Wait for Preflights to finish</button>
             {onForceDeployClick ?
-              <span className="u-fontSize--normal u-fontWeight--medium u-textDecoration--underline u-textColor--bodyCopy u-marginTop--15 u-cursor--pointer" onClick={() => onForceDeployClick(false)}>Ignore Preflights and deploy</span>
+              <span className="u-fontSize--normal u-fontWeight--medium u-textDecoration--underline u-textColor--bodyCopy u-marginTop--15 u-cursor--pointer" onClick={() => onForceDeployClick(true)}>Ignore Preflights and deploy</span>
               :
-              <span className="u-fontSize--normal u-fontWeight--medium u-textDecoration--underline u-textColor--bodyCopy u-marginTop--15 u-cursor--pointer" onClick={() => sendPreflightsReport(appsList)}>Ignore Preflights and continue</span>}
+              <span className="u-fontSize--normal u-fontWeight--medium u-textDecoration--underline u-textColor--bodyCopy u-marginTop--15 u-cursor--pointer" onClick={() => deployKotsDownstream(false, true)}>Ignore Preflights and deploy</span>}
           </div>
         </div>
       </div>

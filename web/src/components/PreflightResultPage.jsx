@@ -288,26 +288,6 @@ class PreflightResultPage extends Component {
     }
   }
 
-  sendPreflightsReport = async (appsList) => {
-    const { slug } = this.props.match.params;
-
-    if (appsList?.length > 0) {
-      const currentApp = appsList?.find(a => a.slug === slug);
-
-      if (!currentApp.isAirgap) {
-        fetch(`${process.env.API_ENDPOINT}/app/${slug}/preflight/report`, {
-          headers: {
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            "Authorization": Utilities.getToken(),
-          },
-          method: "POST",
-        })
-      }
-    }
-    this.props.history.push(`/app/${slug}`)
-  }
-
   render() {
     const { slug } = this.props.match.params;
     const { showSkipModal, showWarningModal, preflightResultData, errorMessage } = this.state;
@@ -423,8 +403,7 @@ class PreflightResultPage extends Component {
           <SkipPreflightsModal
             showSkipModal={showSkipModal}
             hideSkipModal={this.hideSkipModal}
-            sendPreflightsReport={this.sendPreflightsReport}
-            appsList={this.props.appsList}
+            deployKotsDownstream={this.deployKotsDownstream}
           />
         }
 
