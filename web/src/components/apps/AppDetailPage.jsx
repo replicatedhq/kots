@@ -91,6 +91,16 @@ class AppDetailPage extends Component {
         }
       }
     }
+
+    // poll version status if it's awaiting results
+    const downstream = app?.downstream;
+    if (downstream?.currentVersion && isAwaitingResults([downstream.currentVersion])) {
+      console.log("start polling")
+      this.state.getAppJob.start(this.getApp, 2000);
+    } else {
+      this.state.getAppJob.stop();
+      console.log("stop polling")
+    }
   }
 
   componentWillUnmount() {
@@ -289,16 +299,6 @@ class AppDetailPage extends Component {
 
     if (!rootDidInitialAppFetch) {
       return centeredLoader;
-    }
-
-    // poll version status if it's awaiting results
-    const downstream = app?.downstream;
-    if (downstream?.currentVersion && isAwaitingResults([downstream.currentVersion])) {
-      console.log("start polling")
-      this.state.getAppJob.start(this.getApp, 2000);
-    } else {
-      this.state.getAppJob.stop();
-      console.log("stop polling")
     }
 
     return (
