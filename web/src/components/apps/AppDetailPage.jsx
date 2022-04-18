@@ -290,6 +290,7 @@ class AppDetailPage extends Component {
       return centeredLoader;
     }
 
+    // poll version status if it's awaiting results
     const downstream = app?.downstream;
     if (downstream?.currentVersion && isAwaitingResults([downstream.currentVersion])) {
       this.state.getAppJob.start(this.getApp, 2000);
