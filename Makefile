@@ -3,7 +3,7 @@ CURRENT_USER := $(shell id -u -n)
 MINIO_TAG ?= RELEASE.2022-01-08T03-11-54Z
 POSTGRES_ALPINE_TAG ?= 10.19-alpine
 DEX_TAG ?= v2.30.0
-LVP_VERSION := v0.1.0
+LVP_VERSION := v0.3.3
 
 BUILDFLAGS = -tags='netgo containers_image_ostree_stub exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp' -installsuffix netgo
 EXPERIMENTAL_BUILDFLAGS = -tags 'netgo -tags containers_image_ostree_stub -tags exclude_graphdriver_devicemapper -tags exclude_graphdriver_btrfs -tags containers_image_openpgp -tags kots_experimental' -installsuffix netgo
@@ -139,9 +139,6 @@ build-release:
 
 	mkdir -p bin/docker-archive/local-volume-provider
 	skopeo copy docker://replicated/local-volume-provider:${LVP_VERSION} docker-archive:bin/docker-archive/local-volume-provider/${LVP_VERSION}
-
-	mkdir -p bin/docker-archive/local-volume-fileserver
-	skopeo copy docker://replicated/local-volume-fileserver:${LVP_VERSION} docker-archive:bin/docker-archive/local-volume-fileserver/${LVP_VERSION}
 
 .PHONY: project-pact-tests
 project-pact-tests:
