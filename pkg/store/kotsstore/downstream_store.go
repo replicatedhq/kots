@@ -367,6 +367,12 @@ func (s *KOTSStore) GetDownstreamVersionHistory(appID string, clusterID string, 
 
 	desiredVersions := []*downstreamtypes.DownstreamVersion{}
 
+	if pinLatest {
+		if len(versions.AllVersions) > 0 {
+			desiredVersions = append(desiredVersions, versions.AllVersions[0])
+		}
+	}
+
 	if pinLatestDeployable {
 		latestDeployableVersion, _, _, err := s.getLatestDeployableDownstreamVersion(appID, clusterID, versions)
 		if err != nil {
@@ -379,15 +385,7 @@ func (s *KOTSStore) GetDownstreamVersionHistory(appID string, clusterID string, 
 
 	startIndex := currentPage * pageSize
 	endIndex := currentPage*pageSize + pageSize
-	if pinLatest {
-		startIndex++
-		endIndex++
-	}
 	for i, v := range versions.AllVersions {
-		if pinLatest && i == 0 {
-			desiredVersions = append(desiredVersions, v)
-			continue
-		}
 		if currentPage != -1 && i < startIndex {
 			continue
 		}
