@@ -527,9 +527,9 @@ func getDefaultDynamicAnalyzers(app *apptypes.App) []*troubleshootv1beta2.Analyz
 	analyzers := make([]*troubleshootv1beta2.Analyze, 0)
 	analyzers = append(analyzers, makeAPIReplicaAnalyzer())
 
-	license, err := store.GetStore().GetLicenseForAppVersion(app.ID, app.CurrentSequence)
+	license, err := store.GetStore().GetLatestLicenseForApp(app.ID)
 	if err != nil {
-		logger.Errorf("Failed to get license for dynamic analyzers for app id %s sequence %d: %v", app.ID, app.CurrentSequence, err)
+		logger.Errorf("Failed to get latest license for app %s: %v", app.Slug, err)
 	} else if license.Spec.IsSnapshotSupported {
 		analyzers = append(analyzers, &troubleshootv1beta2.Analyze{
 			TextAnalyze: &troubleshootv1beta2.TextAnalyze{
@@ -542,7 +542,7 @@ func getDefaultDynamicAnalyzers(app *apptypes.App) []*troubleshootv1beta2.Analyz
 					{
 						Fail: &troubleshootv1beta2.SingleOutcome{
 							When:    "true",
-							Message: "NFS client errors were found. Refer to [documentation](https://docs.replicated.com/enterprise/snapshots-configuring-nfs) on how to configure NFS snapshots.",
+							Message: "An NFS client package might be missing. Refer to [documentation](https://docs.replicated.com/enterprise/snapshots-configuring-nfs) on how to configure NFS snapshots.",
 							URI:     "https://docs.replicated.com/enterprise/snapshots-configuring-nfs",
 						},
 					},
