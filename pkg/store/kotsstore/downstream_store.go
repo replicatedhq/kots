@@ -376,7 +376,7 @@ func (s *KOTSStore) GetDownstreamVersionHistory(appID string, clusterID string, 
 	if pinLatestDeployable {
 		latestDeployableVersion, _, _, err := s.getLatestDeployableDownstreamVersion(appID, clusterID, versions)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to get next downstream version")
+			return nil, errors.Wrapf(err, "failed to get latest deployable downstream version")
 		}
 		if latestDeployableVersion != nil {
 			desiredVersions = append(desiredVersions, latestDeployableVersion)
