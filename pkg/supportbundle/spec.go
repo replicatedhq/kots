@@ -527,6 +527,36 @@ func getDefaultDynamicAnalyzers(app *apptypes.App) []*troubleshootv1beta2.Analyz
 	analyzers := make([]*troubleshootv1beta2.Analyze, 0)
 	analyzers = append(analyzers, makeAPIReplicaAnalyzer())
 
+	license, err := store.GetStore().GetLicenseForAppVersion(app.ID, app.CurrentSequence)
+	if err != nil {
+		logger.Errorf("Failed to get license for dynamic analyzers for app id %s sequence %d: %v", app.ID, app.CurrentSequence, err)
+	} else if license.Spec.IsSnapshotSupported {
+		analyzers = append(analyzers, &troubleshootv1beta2.Analyze{
+			TextAnalyze: &troubleshootv1beta2.TextAnalyze{
+				AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
+					CheckName: "NFS Client Package",
+				},
+				FileName:     fmt.Sprintf("cluster-resources/events/%s.json", util.PodNamespace),
+				RegexPattern: "bad option; for several filesystems \\(e\\.g\\. nfs, cifs\\) you might need a \\/sbin\\/mount\\..+type.+ helper program\\.",
+				Outcomes: []*troubleshootv1beta2.Outcome{
+					{
+						Fail: &troubleshootv1beta2.SingleOutcome{
+							When:    "true",
+							Message: "NFS client errors were found. Refer to [documentation](https://docs.replicated.com/enterprise/snapshots-configuring-nfs) on how to configure NFS snapshots.",
+							URI:     "https://docs.replicated.com/enterprise/snapshots-configuring-nfs",
+						},
+					},
+					{
+						Pass: &troubleshootv1beta2.SingleOutcome{
+							When:    "false",
+							Message: "No NFS client errors were found.",
+						},
+					},
+				},
+			},
+		})
+	}
+
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		logger.Errorf("Failed to get clientset for dynamic kurl analyzers: %v", err)
