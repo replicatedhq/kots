@@ -13,7 +13,7 @@ jobs:
       image: schemahero/schemahero:0.12.2
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Generate fixtures
         run: |
@@ -37,7 +37,7 @@ jobs:
       options: --user root
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Download schema artifact
       uses: actions/download-artifact@v2
@@ -62,7 +62,7 @@ jobs:
     needs: [generate-fixtures]
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - uses: azure/docker-login@v1
       with:
@@ -86,7 +86,7 @@ jobs:
     needs: [publish-fixtures]
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - uses: azure/docker-login@v1
       env:
@@ -110,7 +110,7 @@ jobs:
       options: --user root
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Setup Node.js environment
       uses: actions/setup-node@v2
@@ -137,7 +137,7 @@ jobs:
       options: --user root
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Setup Node.js environment
       uses: actions/setup-node@v2
@@ -166,7 +166,7 @@ jobs:
       options: --user root
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Setup Go
       uses: actions/setup-go@v2
@@ -204,7 +204,7 @@ jobs:
         echo "::set-output name=go-build::$(go env GOCACHE)"
         echo "::set-output name=go-mod::$(go env GOMODCACHE)"
     - name: Checkout
-      uses: actions/checkout@v1 # not @v2 because of: https://github.com/actions/checkout/issues/126
+      uses: actions/checkout@v3 # not @v2 because of: https://github.com/actions/checkout/issues/126
 
     - uses: actions/cache@v2
       with:
@@ -253,7 +253,7 @@ jobs:
         echo "::set-output name=go-build::$(go env GOCACHE)"
         echo "::set-output name=go-mod::$(go env GOMODCACHE)"
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - uses: actions/cache@v2
       with:
@@ -306,7 +306,7 @@ jobs:
         echo "::set-output name=go-build::$(go env GOCACHE)"
         echo "::set-output name=go-mod::$(go env GOMODCACHE)"
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - uses: actions/cache@v2
       with:
@@ -353,7 +353,7 @@ jobs:
     needs: [build-schema-migrations]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Read image tags from env file
         uses: falti/dotenv-action@v0.2
         id: dotenv
@@ -381,7 +381,7 @@ jobs:
     needs: [build-schema-migrations]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Read image tags from env file
         uses: falti/dotenv-action@v0.2
         id: dotenv
@@ -408,7 +408,7 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Read image tags from env file
         uses: falti/dotenv-action@v0.2
         id: dotenv
@@ -436,7 +436,7 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Read image tags from env file
         uses: falti/dotenv-action@v0.2
         id: dotenv
@@ -464,7 +464,7 @@ jobs:
     needs: [build_kurl_proxy_alpha]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Scan kurl-proxy for vulnerabilities
         id: scan
         uses: aquasecurity/trivy-action@master
@@ -487,7 +487,7 @@ jobs:
     needs: [release_go_api_alpha]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Scan kotsadm for vulnerabilities
         id: scan
         uses: aquasecurity/trivy-action@master
@@ -510,7 +510,7 @@ jobs:
     needs: [build-schema-migrations]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Scan migrations for vulnerabilities
         id: scan
         uses: aquasecurity/trivy-action@master

@@ -12,7 +12,7 @@ jobs:
       image: schemahero/schemahero:0.12.2
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Generate fixtures
         run: |
           /schemahero fixtures \
@@ -33,7 +33,7 @@ jobs:
       options: --user root
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Download schema artifact
       uses: actions/download-artifact@v2
       with:
@@ -52,7 +52,7 @@ jobs:
     needs: [generate-fixtures]
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - uses: azure/docker-login@v1
       env:
         DOCKER_CONFIG: ./migrations/.docker
@@ -80,7 +80,7 @@ jobs:
       options: --user root
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Build web
       env:
@@ -100,7 +100,7 @@ jobs:
     needs: [build-schema-migrations]
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - uses: actions/setup-go@v2
       with:
@@ -143,7 +143,7 @@ jobs:
         echo "::set-output name=go-build::$(go env GOCACHE)"
         echo "::set-output name=go-mod::$(go env GOMODCACHE)"
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - uses: actions/cache@v2
       with:
@@ -178,7 +178,7 @@ jobs:
     needs: [build-web, build-go-api]
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Download go_api artifact
       uses: actions/download-artifact@v2
       with:
@@ -218,7 +218,7 @@ jobs:
         echo "::set-output name=go-build::$(go env GOCACHE)"
         echo "::set-output name=go-mod::$(go env GOMODCACHE)"
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - uses: actions/cache@v2
       with:
         path: ${{ steps.go-cache-paths.outputs.go-build }}
@@ -268,7 +268,7 @@ jobs:
     needs: [release-go-api-tagged, build-kurl-proxy]
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Generate Kurl Addon PR
       env:
         GIT_TAG: ${{ github.ref_name }}
@@ -335,7 +335,7 @@ jobs:
       last_release_tag: ${{ steps.get_latest_release_tag.outputs.release }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Copy assets
       uses: ./actions/copy-assets
       env:
@@ -372,7 +372,7 @@ jobs:
       GIT_TAG: ${{ github.ref_name }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - uses: kceb/pull-request-url-action@v2
       id: pr_url
     - name: Expose git commit data
