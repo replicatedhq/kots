@@ -145,11 +145,11 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
 
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       with:
         path: ${{ steps.go-cache-paths.outputs.go-build }}
         key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       with:
         path: ${{ steps.go-cache-paths.outputs.go-mod }}
         key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
@@ -219,11 +219,11 @@ jobs:
         echo "::set-output name=go-mod::$(go env GOMODCACHE)"
     - name: Checkout
       uses: actions/checkout@v2
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       with:
         path: ${{ steps.go-cache-paths.outputs.go-build }}
         key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       with:
         path: ${{ steps.go-cache-paths.outputs.go-mod }}
         key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
