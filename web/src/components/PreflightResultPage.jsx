@@ -297,6 +297,7 @@ class PreflightResultPage extends Component {
       }
     }
     this.props.history.push(`/app/${slug}`)
+    this.deployKotsDownstream(false, true);
   }
 
   render() {
@@ -415,8 +416,6 @@ class PreflightResultPage extends Component {
             showSkipModal={showSkipModal}
             hideSkipModal={this.hideSkipModal}
             deployKotsDownstream={this.deployKotsDownstream}
-            sendPreflightsReport={this.sendPreflightsReport}
-            appsList={this.props.appsList}
           />
         }
 

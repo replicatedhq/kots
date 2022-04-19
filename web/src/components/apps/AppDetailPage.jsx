@@ -54,6 +54,16 @@ class AppDetailPage extends Component {
   componentDidUpdate(_, lastState) {
     const { getThemeState, setThemeState, match, appsList, history } = this.props;
     const { app, loadingApp } = this.state;
+    console.log("did update")
+    // poll version status if it's awaiting results
+    const downstream = app?.downstream;
+    if (downstream?.currentVersion && isAwaitingResults([downstream.currentVersion])) {
+      console.log("start polling")
+      this.state.getAppJob.start(this.getApp, 2000);
+    } else {
+      this.state.getAppJob.stop();
+      console.log("stop polling")
+    }
 
     // Used for a fresh reload
     if (history.location.pathname === "/apps") {
@@ -90,16 +100,6 @@ class AppDetailPage extends Component {
           return;
         }
       }
-    }
-
-    // poll version status if it's awaiting results
-    const downstream = app?.downstream;
-    if (downstream?.currentVersion && isAwaitingResults([downstream.currentVersion])) {
-      console.log("start polling")
-      this.state.getAppJob.start(this.getApp, 2000);
-    } else {
-      this.state.getAppJob.stop();
-      console.log("stop polling")
     }
   }
 

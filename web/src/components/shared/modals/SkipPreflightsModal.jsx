@@ -4,12 +4,6 @@ import Modal from "react-modal";
 export default function SkipPreflightsModal(props) {
   const { showSkipModal, hideSkipModal, deployKotsDownstream, sendPreflightsReport, appsList } = props;
 
-  function sendReportAndDeploy(appsList){
-    console.log("+++APP LIST: " + appsList);
-    sendPreflightsReport(appsList);
-    deployKotsDownstream(false, true);
-  }
-
   return (
     <Modal
       isOpen={showSkipModal}
@@ -27,7 +21,7 @@ export default function SkipPreflightsModal(props) {
             Preflight checks help ensure your current environment matches the requirements necessary for the application deployment to be successful.</p>
           <div className="u-marginTop--30 flex flex-column">
             <button type="button" className="btn blue primary" onClick={hideSkipModal}>Wait for Preflights to finish</button>
-              <span className="u-fontSize--normal u-fontWeight--medium u-textDecoration--underline u-textColor--bodyCopy u-marginTop--15 u-cursor--pointer" onClick={() => sendReportAndDeploy(appsList)}>Ignore preflights and deploy</span>
+              <span className="u-fontSize--normal u-fontWeight--medium u-textDecoration--underline u-textColor--bodyCopy u-marginTop--15 u-cursor--pointer" onClick={() => deployKotsDownstream(false, true)}>Ignore preflights and deploy</span>
           </div>
         </div>
       </div>
