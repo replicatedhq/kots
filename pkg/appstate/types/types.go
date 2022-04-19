@@ -86,6 +86,26 @@ func MinState(ss ...State) (min State) {
 	return
 }
 
+func MaxState(ss ...State) (max State) {
+	if len(ss) == 0 {
+		return StateMissing
+	}
+	for _, s := range ss {
+		if s == StateReady || max == StateReady {
+			return StateReady
+		} else if s == StateUpdating || max == StateUpdating {
+			max = StateUpdating
+		} else if s == StateDegraded || max == StateDegraded {
+			max = StateDegraded
+		} else if s == StateUnavailable || max == StateUnavailable {
+			max = StateUnavailable
+		} else if s == StateMissing || max == StateMissing {
+			max = StateMissing
+		}
+	}
+	return
+}
+
 func (a ResourceStates) Len() int {
 	return len(a)
 }

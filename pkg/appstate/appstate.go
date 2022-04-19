@@ -212,17 +212,19 @@ func (m *AppMonitor) runInformers(ctx context.Context, informers []types.StatusI
 		}()
 	}
 
-	kindImpls := map[string]runControllerFunc{
-		DeploymentResourceKind:            runDeploymentController,
-		IngressResourceKind:               runIngressController,
-		PersistentVolumeClaimResourceKind: runPersistentVolumeClaimController,
-		ServiceResourceKind:               runServiceController,
-		StatefulSetResourceKind:           runStatefulSetController,
+	kindImpls := map[string][]runControllerFunc{
+		DeploymentResourceKind:            {runDeploymentController},
+		IngressResourceKind:               {runIngressV1Controller, runIngressV1Beta1Controller},
+		PersistentVolumeClaimResourceKind: {runPersistentVolumeClaimController},
+		ServiceResourceKind:               {runServiceController},
+		StatefulSetResourceKind:           {runStatefulSetController},
 	}
 	for namespace, kinds := range namespaceKinds {
 		for kind, informers := range kinds {
-			if impl, ok := kindImpls[kind]; ok {
-				goRun(impl, namespace, informers)
+			if impls, ok := kindImpls[kind]; ok {
+				for _, impl := range impls {
+					goRun(impl, namespace, informers)
+				}
 			} else {
 				log.Printf("Informer requested for unsupported resource kind %v", kind)
 			}
@@ -234,7 +236,7 @@ func (m *AppMonitor) runInformers(ctx context.Context, informers []types.StatusI
 		case <-ctx.Done():
 			return
 		case resourceState := <-resourceStateCh:
-			appStatus.ResourceStates, _ = resourceStatesApplyNew(appStatus.ResourceStates, informers, resourceState)
+			appStatus.ResourceStates = reduceResourceStates(appStatus.ResourceStates, resourceState)
 			appStatus.UpdatedAt = time.Now() // TODO: this should come from the informer
 			m.appStatusCh <- appStatus
 		}

@@ -1,7 +1,9 @@
 package appstate
 
 import (
+	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/replicatedhq/kots/pkg/appstate/types"
 )
@@ -40,18 +42,33 @@ func buildResourceStatesFromStatusInformers(informers []types.StatusInformer) ty
 	return next
 }
 
-func resourceStatesApplyNew(resourceStates types.ResourceStates, informers []types.StatusInformer, resourceState types.ResourceState) (next types.ResourceStates, didChange bool) {
+// different informers can be watching the same object but using a different api version (e.g. ingress with api version networking.k8s.io/v1 or extensions/v1beta1).
+// depending on the version of the kubernetes cluster, one of those api versions / objects could be missing or unsupported.
+// this function handles that by getting the maximum state of the same object reported by the informers.
+func reduceResourceStates(resourceStates types.ResourceStates, resourceState types.ResourceState) (next types.ResourceStates) {
+	m := map[string]types.State{}
+
+	// existing resource states
 	for _, r := range resourceStates {
-		if resourceState.Kind == r.Kind &&
-			resourceState.Namespace == r.Namespace &&
-			resourceState.Name == r.Name &&
-			resourceState.State != r.State {
-			didChange = true
-			next = append(next, resourceState)
-		} else {
-			next = append(next, r)
-		}
+		key := fmt.Sprintf("%s/%s/%s", r.Namespace, r.Kind, r.Name)
+		m[key] = types.MaxState(m[key], r.State)
 	}
+
+	// new resource state
+	key := fmt.Sprintf("%s/%s/%s", resourceState.Namespace, resourceState.Kind, resourceState.Name)
+	m[key] = types.MaxState(m[key], resourceState.State)
+
+	// convert back to resource states
+	for k, v := range m {
+		parts := strings.Split(k, "/")
+		next = append(next, types.ResourceState{
+			Namespace: parts[0],
+			Kind:      parts[1],
+			Name:      parts[2],
+			State:     v,
+		})
+	}
+
 	sort.Sort(next)
 	return
 }

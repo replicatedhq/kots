@@ -29,7 +29,7 @@ func Undeploy(ctx context.Context, clientset kubernetes.Interface, namespace, na
 }
 
 func deleteIngress(ctx context.Context, clientset kubernetes.Interface, namespace, namePrefix string) error {
-	err := clientset.ExtensionsV1beta1().Ingresses(namespace).Delete(ctx, prefixName(namePrefix, "dex"), metav1.DeleteOptions{})
+	err := clientset.NetworkingV1().Ingresses(namespace).Delete(ctx, prefixName(namePrefix, "dex"), metav1.DeleteOptions{})
 	if kuberneteserrors.IsNotFound(err) {
 		return nil
 	}
