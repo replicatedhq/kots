@@ -44,7 +44,7 @@ type KOTSHandler interface {
 	GetApp(w http.ResponseWriter, r *http.Request)
 	GetAppStatus(w http.ResponseWriter, r *http.Request)
 	GetAppVersionHistory(w http.ResponseWriter, r *http.Request)
-	GetNextAppVersion(w http.ResponseWriter, r *http.Request)
+	GetLatestDeployableVersion(w http.ResponseWriter, r *http.Request)
 	GetUpdateDownloadStatus(w http.ResponseWriter, r *http.Request) // NOTE: appSlug is unused
 	GetPendingApp(w http.ResponseWriter, r *http.Request)
 

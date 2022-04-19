@@ -359,10 +359,22 @@ func (s *KOTSStore) FindDownstreamVersions(appID string, downloadedOnly bool) (*
 	return nil, errors.New("app has no versions")
 }
 
-func (s *KOTSStore) GetDownstreamVersionHistory(appID string, clusterID string, currentPage int, pageSize int, pinLatest bool) ([]*downstreamtypes.DownstreamVersion, error) {
+func (s *KOTSStore) GetDownstreamVersionHistory(appID string, clusterID string, currentPage int, pageSize int, pinLatest bool, pinLatestDeployable bool) ([]*downstreamtypes.DownstreamVersion, error) {
 	versions, err := s.GetDownstreamVersions(appID, clusterID, false)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get downstream versions without details")
+	}
+
+	desiredVersions := []*downstreamtypes.DownstreamVersion{}
+
+	if pinLatestDeployable {
+		latestDeployableVersion, _, _, err := s.getLatestDeployableDownstreamVersion(appID, clusterID, versions)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to get next downstream version")
+		}
+		if latestDeployableVersion != nil {
+			desiredVersions = append(desiredVersions, latestDeployableVersion)
+		}
 	}
 
 	startIndex := currentPage * pageSize
@@ -371,7 +383,6 @@ func (s *KOTSStore) GetDownstreamVersionHistory(appID string, clusterID string, 
 		startIndex++
 		endIndex++
 	}
-	desiredVersions := []*downstreamtypes.DownstreamVersion{}
 	for i, v := range versions.AllVersions {
 		if pinLatest && i == 0 {
 			desiredVersions = append(desiredVersions, v)
@@ -546,21 +557,26 @@ func (s *KOTSStore) AddDownstreamVersionsDetails(appID string, clusterID string,
 	return nil
 }
 
-func (s *KOTSStore) GetNextDownstreamVersion(appID string, clusterID string) (nextVersion *downstreamtypes.DownstreamVersion, numOfSkippedVersions int, numOfRemainingVersions int, finalError error) {
+func (s *KOTSStore) GetLatestDeployableDownstreamVersion(appID string, clusterID string) (latestDeployableVersion *downstreamtypes.DownstreamVersion, numOfSkippedVersions int, numOfRemainingVersions int, finalError error) {
+	versions, err := s.GetDownstreamVersions(appID, clusterID, false)
+	if err != nil {
+		finalError = errors.Wrap(err, "failed to get app downstream versions")
+		return
+	}
+
+	return s.getLatestDeployableDownstreamVersion(appID, clusterID, versions)
+}
+
+func (s *KOTSStore) getLatestDeployableDownstreamVersion(appID string, clusterID string, versions *downstreamtypes.DownstreamVersions) (latestDeployableVersion *downstreamtypes.DownstreamVersion, numOfSkippedVersions int, numOfRemainingVersions int, finalError error) {
 	defer func() {
-		if nextVersion != nil {
-			if err := s.AddDownstreamVersionDetails(appID, clusterID, nextVersion, true); err != nil {
+		if latestDeployableVersion != nil {
+			if err := s.AddDownstreamVersionDetails(appID, clusterID, latestDeployableVersion, true); err != nil {
 				finalError = errors.Wrap(err, "failed to add details")
 				return
 			}
 		}
 	}()
 
-	versions, err := s.GetDownstreamVersions(appID, clusterID, false)
-	if err != nil {
-		finalError = errors.Wrap(err, "failed to get app downstream versions")
-		return
-	}
 	if len(versions.AllVersions) == 0 {
 		finalError = errors.New("no versions found for app")
 		return
@@ -568,7 +584,7 @@ func (s *KOTSStore) GetNextDownstreamVersion(appID string, clusterID string) (ne
 
 	if versions.CurrentVersion == nil {
 		// no version has been deployed yet, next app version is the latest version
-		nextVersion = versions.AllVersions[0]
+		latestDeployableVersion = versions.AllVersions[0]
 		return
 	}
 
@@ -587,25 +603,25 @@ func (s *KOTSStore) GetNextDownstreamVersion(appID string, clusterID string) (ne
 
 	if len(requiredVersions) > 0 {
 		// next app version is the earliest pending required version
-		nextVersion = requiredVersions[len(requiredVersions)-1]
+		latestDeployableVersion = requiredVersions[len(requiredVersions)-1]
 	} else {
 		// next app version is the latest pending version
-		nextVersion = versions.PendingVersions[0]
+		latestDeployableVersion = versions.PendingVersions[0]
 	}
 
-	nextVersionIndex := -1
+	latestDeployableVersionIndex := -1
 	for i, v := range versions.PendingVersions {
-		if v.Sequence == nextVersion.Sequence {
-			nextVersionIndex = i
+		if v.Sequence == latestDeployableVersion.Sequence {
+			latestDeployableVersionIndex = i
 			break
 		}
 	}
 
 	for i := range versions.PendingVersions {
-		if i < nextVersionIndex {
+		if i < latestDeployableVersionIndex {
 			numOfRemainingVersions++
 		}
-		if i > nextVersionIndex {
+		if i > latestDeployableVersionIndex {
 			numOfSkippedVersions++
 		}
 	}

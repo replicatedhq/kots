@@ -133,7 +133,7 @@ class AppVersionHistory extends Component {
 
     try {
       const { currentPage, pageSize } = this.state;
-      const res = await fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/versions?currentPage=${currentPage}&pageSize=${pageSize}&pinLatest=true`, {
+      const res = await fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/versions?currentPage=${currentPage}&pageSize=${pageSize}&pinLatestDeployable=true`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
@@ -1259,7 +1259,7 @@ class AppVersionHistory extends Component {
                   <div>
                     <div>
                       <div className="flex justifyContent--spaceBetween u-marginBottom--15">
-                        <p className="u-fontSize--normal u-fontWeight--medium u-textColor--header">Latest available version</p>
+                        <p className="u-fontSize--normal u-fontWeight--medium u-textColor--header">New version available</p>
                         <div className="flex alignItems--center">
                           <div className="flex alignItems--center">
                             {app?.isAirgap && airgapUploader ?
