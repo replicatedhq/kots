@@ -184,7 +184,7 @@ class AppVersionHistory extends Component {
 
     try {
       const { currentPage, pageSize } = this.state;
-      const res = await fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/versions?currentPage=${currentPage}&pageSize=${pageSize}`, {
+      const res = await fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/versions?currentPage=${currentPage}&pageSize=${pageSize}&pinLatestDeployable=true`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",

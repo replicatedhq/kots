@@ -298,6 +298,7 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 	pageSize := 20
 	currentPage := 0
 	pinLatest, _ := strconv.ParseBool(r.URL.Query().Get("pinLatest"))
+	pinLatestDeployable, _ := strconv.ParseBool(r.URL.Query().Get("pinLatestDeployable"))
 
 	if val := r.URL.Query().Get("pageSize"); val != "" {
 		ps, err := strconv.Atoi(val)
@@ -344,7 +345,7 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 
 	clusterID := downstreams[0].ClusterID
 
-	appVersions, err := store.GetStore().GetDownstreamVersionHistory(foundApp.ID, clusterID, currentPage, pageSize, pinLatest)
+	appVersions, err := store.GetStore().GetDownstreamVersionHistory(foundApp.ID, clusterID, currentPage, pageSize, pinLatest, pinLatestDeployable)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get downstream versions")
 		logger.Error(err)
@@ -536,23 +537,23 @@ func (h *Handler) CanInstallAppVersion(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, response)
 }
 
-type GetNextAppVersionResponse struct {
-	NextAppVersion         *downstreamtypes.DownstreamVersion `json:"nextAppVersion"`
-	NumOfSkippedVersions   int                                `json:"numOfSkippedVersions"`
-	NumOfRemainingVersions int                                `json:"numOfRemainingVersions"`
-	Error                  string                             `json:"error"`
+type GetLatestDeployableVersionResponse struct {
+	LatestDeployableVersion *downstreamtypes.DownstreamVersion `json:"latestDeployableVersion"`
+	NumOfSkippedVersions    int                                `json:"numOfSkippedVersions"`
+	NumOfRemainingVersions  int                                `json:"numOfRemainingVersions"`
+	Error                   string                             `json:"error"`
 }
 
-func (h *Handler) GetNextAppVersion(w http.ResponseWriter, r *http.Request) {
-	getNextAppVersionResponse := GetNextAppVersionResponse{}
+func (h *Handler) GetLatestDeployableVersion(w http.ResponseWriter, r *http.Request) {
+	getLatestDeployableVersionResponse := GetLatestDeployableVersionResponse{}
 
 	appSlug := mux.Vars(r)["appSlug"]
 	a, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
 		errMsg := "failed to get app from slug"
 		logger.Error(errors.Wrap(err, errMsg))
-		getNextAppVersionResponse.Error = errMsg
-		JSON(w, http.StatusBadRequest, getNextAppVersionResponse)
+		getLatestDeployableVersionResponse.Error = errMsg
+		JSON(w, http.StatusBadRequest, getLatestDeployableVersionResponse)
 		return
 	}
 
@@ -560,30 +561,30 @@ func (h *Handler) GetNextAppVersion(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		errMsg := "failed to list downstreams for app"
 		logger.Error(errors.Wrap(err, errMsg))
-		getNextAppVersionResponse.Error = errMsg
-		JSON(w, http.StatusInternalServerError, getNextAppVersionResponse)
+		getLatestDeployableVersionResponse.Error = errMsg
+		JSON(w, http.StatusInternalServerError, getLatestDeployableVersionResponse)
 		return
 	} else if len(downstreams) == 0 {
 		errMsg := "no downstreams for app"
 		logger.Error(errors.New(errMsg))
-		getNextAppVersionResponse.Error = errMsg
-		JSON(w, http.StatusInternalServerError, getNextAppVersionResponse)
+		getLatestDeployableVersionResponse.Error = errMsg
+		JSON(w, http.StatusInternalServerError, getLatestDeployableVersionResponse)
 		return
 	}
 	clusterID := downstreams[0].ClusterID
 
-	nextVersion, numOfSkippedVersions, numOfRemainingVersions, err := store.GetStore().GetNextDownstreamVersion(a.ID, clusterID)
+	latestDeployableVersion, numOfSkippedVersions, numOfRemainingVersions, err := store.GetStore().GetLatestDeployableDownstreamVersion(a.ID, clusterID)
 	if err != nil {
 		errMsg := "failed to get next downtream version"
 		logger.Error(errors.Wrap(err, errMsg))
-		getNextAppVersionResponse.Error = errMsg
-		JSON(w, http.StatusInternalServerError, getNextAppVersionResponse)
+		getLatestDeployableVersionResponse.Error = errMsg
+		JSON(w, http.StatusInternalServerError, getLatestDeployableVersionResponse)
 		return
 	}
 
-	getNextAppVersionResponse.NextAppVersion = nextVersion
-	getNextAppVersionResponse.NumOfSkippedVersions = numOfSkippedVersions
-	getNextAppVersionResponse.NumOfRemainingVersions = numOfRemainingVersions
+	getLatestDeployableVersionResponse.LatestDeployableVersion = latestDeployableVersion
+	getLatestDeployableVersionResponse.NumOfSkippedVersions = numOfSkippedVersions
+	getLatestDeployableVersionResponse.NumOfRemainingVersions = numOfRemainingVersions
 
-	JSON(w, http.StatusOK, getNextAppVersionResponse)
+	JSON(w, http.StatusOK, getLatestDeployableVersionResponse)
 }

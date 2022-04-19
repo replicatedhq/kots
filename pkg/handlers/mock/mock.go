@@ -718,16 +718,16 @@ func (mr *MockKOTSHandlerMockRecorder) GetLicense(w, r interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLicense", reflect.TypeOf((*MockKOTSHandler)(nil).GetLicense), w, r)
 }
 
-// GetNextAppVersion mocks base method.
-func (m *MockKOTSHandler) GetNextAppVersion(w http.ResponseWriter, r *http.Request) {
+// GetLatestDeployableVersion mocks base method.
+func (m *MockKOTSHandler) GetLatestDeployableVersion(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetNextAppVersion", w, r)
+	m.ctrl.Call(m, "GetLatestDeployableVersion", w, r)
 }
 
-// GetNextAppVersion indicates an expected call of GetNextAppVersion.
-func (mr *MockKOTSHandlerMockRecorder) GetNextAppVersion(w, r interface{}) *gomock.Call {
+// GetLatestDeployableVersion indicates an expected call of GetLatestDeployableVersion.
+func (mr *MockKOTSHandlerMockRecorder) GetLatestDeployableVersion(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNextAppVersion", reflect.TypeOf((*MockKOTSHandler)(nil).GetNextAppVersion), w, r)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestDeployableVersion", reflect.TypeOf((*MockKOTSHandler)(nil).GetLatestDeployableVersion), w, r)
 }
 
 // GetOnlineInstallStatus mocks base method.

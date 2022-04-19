@@ -43,10 +43,10 @@ class DashboardVersionCard extends React.Component {
       kotsUpdateStatus: undefined,
       kotsUpdateMessage: undefined,
       kotsUpdateError: undefined,
-      nextAppVersion: null,
+      latestDeployableVersion: null,
       numOfSkippedVersions: 0,
       numOfRemainingVersions: 0,
-      nextAppVersionErrMsg: "",
+      latestDeployableVersionErrMsg: "",
     }
     this.cardTitleText = React.createRef();
 
@@ -74,7 +74,7 @@ class DashboardVersionCard extends React.Component {
       });
     }
     if (lastProps.downstream !== this.props.downstream) {
-      this.getNextAppVersion();
+      this.getLatestDeployableVersion();
     }
   }
 
@@ -141,7 +141,7 @@ class DashboardVersionCard extends React.Component {
     }
   }
 
-  getNextAppVersion = async () => {
+  getLatestDeployableVersion = async () => {
     try {
       const { app } = this.props;
 
@@ -156,22 +156,22 @@ class DashboardVersionCard extends React.Component {
       if (!res.ok) {
         const response = await res.json();
         this.setState({
-          nextAppVersionErrMsg: response.error,
+          latestDeployableVersionErrMsg: response.error,
         });
         return;
       }
 
       const response = await res.json();
       this.setState({
-        nextAppVersion: response.nextAppVersion,
+        latestDeployableVersion: response.latestDeployableVersion,
         numOfSkippedVersions: response.numOfSkippedVersions,
         numOfRemainingVersions: response.numOfRemainingVersions,
-        nextAppVersionErrMsg: "",
+        latestDeployableVersionErrMsg: "",
       });
     } catch (err) {
       console.log(err);
       this.setState({
-        nextAppVersionErrMsg: err ? `Failed to get next deployable version: ${err.message}` : "Something went wrong, please try again.",
+        latestDeployableVersionErrMsg: err ? `Failed to get next deployable version: ${err.message}` : "Something went wrong, please try again.",
       });
     }
   }
@@ -962,24 +962,24 @@ class DashboardVersionCard extends React.Component {
       return this.renderUpdateProgress();
     }
 
-    if (this.state.nextAppVersionErrMsg) {
+    if (this.state.latestDeployableVersionErrMsg) {
       return (
         <div className="error-block-wrapper u-marginTop--20 u-marginBottom--10 flex flex1">
-          <span className="u-textColor--error">{this.state.nextAppVersionErrMsg}</span>
+          <span className="u-textColor--error">{this.state.latestDeployableVersionErrMsg}</span>
         </div>
       );
     }
 
-    const nextAppVersion = this.state.nextAppVersion;
-    if (!nextAppVersion) {
+    const latestDeployableVersion = this.state.latestDeployableVersion;
+    if (!latestDeployableVersion) {
       return null;
     }
 
     const app = this.props.app;
     const downstream = this.props.downstream;
-    const downstreamSource = nextAppVersion?.source;
+    const downstreamSource = latestDeployableVersion?.source;
     const gitopsEnabled = downstream?.gitops?.enabled;
-    const isNew = secondsAgo(nextAppVersion?.createdOn) < 10;
+    const isNew = secondsAgo(latestDeployableVersion?.createdOn) < 10;
 
     return (
       <div className="u-marginTop--20">
@@ -993,26 +993,26 @@ class DashboardVersionCard extends React.Component {
           <div className={`flex ${isNew && !app?.isAirgap ? "is-new" : ""}`}>
             <div className="flex-column">
               <div className="flex alignItems--center">
-                <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">{nextAppVersion.versionLabel || nextAppVersion.title}</p>
-                <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">Sequence {nextAppVersion.sequence}</p>
-                {nextAppVersion.isRequired &&
+                <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">{latestDeployableVersion.versionLabel || latestDeployableVersion.title}</p>
+                <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">Sequence {latestDeployableVersion.sequence}</p>
+                {latestDeployableVersion.isRequired &&
                   <span className="status-tag required u-marginLeft--10"> Required </span>
                 }
               </div>
-              <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5"> Released {Utilities.dateFormat(nextAppVersion?.createdOn, "MM/DD/YY @ hh:mm a z")} </p>
-              {this.renderDiff(nextAppVersion)}
-              {this.renderYamlErrors(nextAppVersion)}
+              <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5"> Released {Utilities.dateFormat(latestDeployableVersion?.createdOn, "MM/DD/YY @ hh:mm a z")} </p>
+              {this.renderDiff(latestDeployableVersion)}
+              {this.renderYamlErrors(latestDeployableVersion)}
             </div>
             <div className="flex alignItems--center u-paddingLeft--20">
               <p className="u-fontSize--small u-fontWeight--bold u-textColor--lightAccent u-lineHeight--default">{downstreamSource}</p>
             </div>
-            {this.renderVersionAction(nextAppVersion)}
+            {this.renderVersionAction(latestDeployableVersion)}
           </div>
-          {this.renderVersionDownloadStatus(nextAppVersion)}
+          {this.renderVersionDownloadStatus(latestDeployableVersion)}
         </div>
         {(this.state.numOfSkippedVersions > 0 || this.state.numOfRemainingVersions > 0) && (
           <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--header u-marginTop--10">
-            {this.state.numOfSkippedVersions > 0 ? `${this.state.numOfSkippedVersions} version${this.state.numOfSkippedVersions > 1 && "s"} will be skipped in upgrading to ${nextAppVersion.versionLabel}. ` : ""}
+            {this.state.numOfSkippedVersions > 0 ? `${this.state.numOfSkippedVersions} version${this.state.numOfSkippedVersions > 1 && "s"} will be skipped in upgrading to ${latestDeployableVersion.versionLabel}. ` : ""}
             {this.state.numOfRemainingVersions > 0 ? "Additional versions are available after you deploy this required version." : ""}
           </p>
         )}
