@@ -58,7 +58,6 @@ class AppVersionHistory extends Component {
     deployView: false,
     selectedSequence: -1,
     releaseWithErr: {},
-    latestAvailableVersion: {},
     versionHistoryJob: new Repeater(),
     loadingVersionHistory: true,
     versionHistory: [],
@@ -174,7 +173,6 @@ class AppVersionHistory extends Component {
 
       this.setState({
         loadingVersionHistory: false,
-        latestAvailableVersion: versionHistory[0],
         versionHistory: versionHistory,
         totalCount: response.totalCount,
       });
@@ -1059,11 +1057,11 @@ class AppVersionHistory extends Component {
     )
   }
 
-  renderOtherAvailableVersions = () => {
+  renderAllVersions = () => {
     // This is kinda hacky. This finds the equivalent downstream version because the midstream
     // version type does not contain metadata like version label or release notes.
-    const otherAvailableVersions = this.state.versionHistory?.slice(1);
-    if (!otherAvailableVersions?.length) {
+    const allVersions = this.state.versionHistory?.slice(1); // exclude pinned version
+    if (!allVersions?.length) {
       return null;
     }
 
@@ -1082,14 +1080,14 @@ class AppVersionHistory extends Component {
             </select>
           </div>
         </div>
-        {otherAvailableVersions?.map((version) => this.renderAppVersionHistoryRow(version))}
+        {allVersions?.map((version) => this.renderAppVersionHistoryRow(version))}
         <Pager
           pagerType="releases"
           currentPage={currentPage}
           pageSize={pageSize}
           totalCount={totalCount}
           loading={loadingPage}
-          currentPageLength={otherAvailableVersions.length}
+          currentPageLength={allVersions.length}
           goToPage={this.onGotoPage}
         />
       </div>
@@ -1169,7 +1167,6 @@ class AppVersionHistory extends Component {
       errorTitle,
       errorMsg,
       displayErrorModal,
-      latestAvailableVersion,
       airgapUploader,
       checkingForUpdates,
       checkingUpdateMessage
@@ -1318,10 +1315,10 @@ class AppVersionHistory extends Component {
                           {versionHistory.length > 1 && this.renderDiffBtn()}
                         </div>
                       </div>
-                      {this.renderAppVersionHistoryRow(latestAvailableVersion)}
+                      {this.renderAppVersionHistoryRow(versionHistory[0])}
                     </div>
                     {this.renderUpdateProgress()}
-                    {this.renderOtherAvailableVersions()}
+                    {this.renderAllVersions()}
                   </div>
                 :
                 <div className="flex-column flex1 alignItems--center justifyContent--center">
