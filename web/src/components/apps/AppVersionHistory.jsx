@@ -1287,7 +1287,7 @@ class AppVersionHistory extends Component {
                   <div>
                     <div className="TableDiff--Wrapper">
                       <div className="flex justifyContent--spaceBetween">
-                        <p className="u-fontSize--normal u-fontWeight--medium u-textColor--header u-marginBottom--15">Latest available version</p>
+                        <p className="u-fontSize--normal u-fontWeight--medium u-textColor--header u-marginBottom--15">New version available</p>
                         <div className="flex alignItems--center">
                           <div className="flex alignItems--center">
                             {app?.isAirgap && airgapUploader ?
