@@ -66,6 +66,13 @@ type DownstreamVersions struct {
 	AllVersions     []*DownstreamVersion
 }
 
+type DownstreamVersionHistory struct {
+	VersionHistory         []*DownstreamVersion `json:"versionHistory"`
+	TotalCount             int                  `json:"totalCount"`
+	NumOfSkippedVersions   int                  `json:"numOfSkippedVersions"`
+	NumOfRemainingVersions int                  `json:"numOfRemainingVersions"`
+}
+
 type bySequence []*DownstreamVersion
 
 func (v bySequence) Len() int {

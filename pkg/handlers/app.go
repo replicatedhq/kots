@@ -290,8 +290,7 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 }
 
 type GetAppVersionHistoryResponse struct {
-	VersionHistory []*downstreamtypes.DownstreamVersion `json:"versionHistory"`
-	TotalCount     int64                                `json:"totalCount"`
+	downstreamtypes.DownstreamVersionHistory `json:",inline"`
 }
 
 func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
@@ -345,7 +344,7 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 
 	clusterID := downstreams[0].ClusterID
 
-	appVersions, err := store.GetStore().GetDownstreamVersionHistory(foundApp.ID, clusterID, currentPage, pageSize, pinLatest, pinLatestDeployable)
+	history, err := store.GetStore().GetDownstreamVersionHistory(foundApp.ID, clusterID, currentPage, pageSize, pinLatest, pinLatestDeployable)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get downstream versions")
 		logger.Error(err)
@@ -353,17 +352,8 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	totalCount, err := store.GetStore().TotalNumOfDownstreamVersions(foundApp.ID, clusterID, false)
-	if err != nil {
-		err = errors.Wrap(err, "failed to get total number of downstream versions")
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
 	response := GetAppVersionHistoryResponse{
-		VersionHistory: appVersions,
-		TotalCount:     totalCount,
+		DownstreamVersionHistory: *history,
 	}
 
 	JSON(w, http.StatusOK, response)
