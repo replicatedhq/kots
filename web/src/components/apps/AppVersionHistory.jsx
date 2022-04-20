@@ -130,47 +130,6 @@ class AppVersionHistory extends Component {
     this._mounted = false;
   }
 
-  fetchOnlyLatestVersoin = async () => {
-    const { match } = this.props;
-    const appSlug = match.params.slug;
-
-    try {
-      const res = await fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/versions?currentPage=0&pageSize=1&pinLatest=true`, {
-        headers: {
-          "Authorization": Utilities.getToken(),
-          "Content-Type": "application/json",
-        },
-        method: "GET",
-      });
-      if (!res.ok) {
-        if (res.status === 401) {
-          Utilities.logoutUser();
-          return;
-        }
-        this.setState({
-          loadingVersionHistory: false,
-          errorTitle: "Failed to get latest version",
-          errorMsg: `Unexpected status code: ${res.status}`,
-          displayErrorModal: true,
-        });
-        return;
-      }
-      const response = await res.json();
-      const versionHistory = response.versionHistory;
-
-      this.setState({
-        latestAvailableVersion: versionHistory[0]
-      });
-    } catch (err) {
-      this.setState({
-        loadingVersionHistory: false,
-        errorTitle: "Failed to get latest version",
-        errorMsg: err ? err.message : "Something went wrong, please try again.",
-        displayErrorModal: true,
-      });
-    }
-  }
-
   fetchKotsDownstreamHistory = async () => {
     const { match } = this.props;
     const appSlug = match.params.slug;
@@ -215,16 +174,10 @@ class AppVersionHistory extends Component {
 
       this.setState({
         loadingVersionHistory: false,
+        latestAvailableVersion: versionHistory[0],
         versionHistory: versionHistory,
         totalCount: response.totalCount,
       });
-      if (currentPage === 0) {
-        this.setState({
-          latestAvailableVersion: versionHistory[0]
-        });
-      } else if (isEmpty(this.state.latestAvailableVersion)) {
-        this.fetchOnlyLatestVersoin();
-      }
     } catch (err) {
       this.setState({
         loadingVersionHistory: false,
@@ -1109,7 +1062,7 @@ class AppVersionHistory extends Component {
   renderOtherAvailableVersions = () => {
     // This is kinda hacky. This finds the equivalent downstream version because the midstream
     // version type does not contain metadata like version label or release notes.
-    const otherAvailableVersions = this.state.versionHistory;
+    const otherAvailableVersions = this.state.versionHistory?.slice(1);
     if (!otherAvailableVersions?.length) {
       return null;
     }
