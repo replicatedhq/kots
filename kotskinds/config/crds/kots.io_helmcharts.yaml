@@ -75,6 +75,9 @@ spec:
               values:
                 additionalProperties: {}
                 type: object
+              weight:
+                format: int64
+                type: integer
             required:
             - chart
             type: object

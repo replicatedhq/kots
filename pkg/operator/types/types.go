@@ -2,6 +2,7 @@ package types
 
 import (
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -26,6 +27,7 @@ type DeployAppArgs struct {
 	AnnotateSlug         bool                  `json:"annotate_slug"`
 	IsRestore            bool                  `json:"is_restore"`
 	RestoreLabelSelector *metav1.LabelSelector `json:"restore_label_selector"`
+	KotsKinds            *kotsutil.KotsKinds
 }
 
 type AppInformersArgs struct {

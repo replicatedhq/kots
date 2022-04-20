@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -506,33 +507,20 @@ func (c *Client) clearNamespace(slug string, namespace string, isRestore bool, r
 	return clear, nil
 }
 
-func (c *Client) installWithHelm(helmDir string, targetNamespace string) (*commandResult, error) {
+func (c *Client) installWithHelm(helmDir string, targetNamespace string, kotsCharts []*v1beta1.HelmChart) (*commandResult, error) {
 	version := "3"
 	chartsDir := filepath.Join(helmDir, "charts")
-	dirs, err := ioutil.ReadDir(chartsDir)
+
+	orderedDirs, err := getSortedCharts(chartsDir, kotsCharts)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to read archive dir")
+		return nil, errors.Wrap(err, "failed to get sorted helm charts")
 	}
 
 	var hasErr bool
 	var multiStdout, multiStderr [][]byte
-	for _, dir := range dirs {
-		installDir := filepath.Join(chartsDir, dir.Name())
-		chartfilePath := filepath.Join(installDir, "Chart.yaml")
-		chartFile, err := ioutil.ReadFile(chartfilePath)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to parse %s", chartfilePath)
-		}
-
-		cname := struct {
-			ChartName string `yaml:"name"`
-		}{}
-		err = yaml.Unmarshal(chartFile, &cname)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to unmarshal %s", chartfilePath)
-		}
-
-		args := []string{"upgrade", "-i", cname.ChartName, installDir, "--timeout", "3600s"}
+	for _, dir := range orderedDirs {
+		installDir := filepath.Join(chartsDir, dir.Dir)
+		args := []string{"upgrade", "-i", dir.ChartName, installDir, "--timeout", "3600s"}
 
 		if targetNamespace != "" && targetNamespace != "." {
 			args = append(args, "-n", targetNamespace)
@@ -549,10 +537,10 @@ func (c *Client) installWithHelm(helmDir string, targetNamespace string) (*comma
 		}
 
 		if len(stdout) > 0 {
-			multiStdout = append(multiStdout, []byte(fmt.Sprintf("------- %s -------", cname.ChartName)), stdout)
+			multiStdout = append(multiStdout, []byte(fmt.Sprintf("------- %s -------", dir.ChartName)), stdout)
 		}
 		if len(stderr) > 0 {
-			multiStderr = append(multiStderr, []byte(fmt.Sprintf("------- %s -------", cname.ChartName)), stderr)
+			multiStderr = append(multiStderr, []byte(fmt.Sprintf("------- %s -------", dir.ChartName)), stderr)
 		}
 	}
 
@@ -562,6 +550,64 @@ func (c *Client) installWithHelm(helmDir string, targetNamespace string) (*comma
 		multiStdout: multiStdout,
 	}
 	return result, nil
+}
+
+type orderedDir struct {
+	Dir          string
+	Weight       int64
+	ChartName    string
+	ChartVersion string
+}
+
+func getSortedCharts(chartsDir string, kotsCharts []*v1beta1.HelmChart) ([]orderedDir, error) {
+	dirs, err := ioutil.ReadDir(chartsDir)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read archive dir")
+	}
+
+	// get a list of the charts to be applied
+	orderedDirs := []orderedDir{}
+	for _, dir := range dirs {
+		installDir := filepath.Join(chartsDir, dir.Name())
+		chartfilePath := filepath.Join(installDir, "Chart.yaml")
+		chartFile, err := ioutil.ReadFile(chartfilePath)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to parse %s", chartfilePath)
+		}
+
+		cname := struct {
+			ChartName    string `yaml:"name"`
+			ChartVersion string `yaml:"version"`
+		}{}
+		err = yaml.Unmarshal(chartFile, &cname)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to unmarshal %s", chartfilePath)
+		}
+
+		orderedDirs = append(orderedDirs, orderedDir{
+			Dir:          dir.Name(),
+			ChartName:    cname.ChartName,
+			ChartVersion: cname.ChartVersion,
+		})
+	}
+
+	// look through the list of kotsChart objects for each orderedDir, and if the name+version matches, use that weight
+	// if there is no match, do not treat this as a fatal error
+	for idx, dir := range orderedDirs {
+		for _, kotsChart := range kotsCharts {
+			if kotsChart.Spec.Chart.ChartVersion == dir.ChartVersion && kotsChart.Spec.Chart.Name == dir.ChartName {
+				orderedDirs[idx].Weight = kotsChart.Spec.Weight
+			}
+		}
+	}
+
+	sort.Slice(orderedDirs, func(i, j int) bool {
+		if orderedDirs[i].Weight != orderedDirs[j].Weight {
+			return orderedDirs[i].Weight < orderedDirs[j].Weight
+		}
+		return orderedDirs[i].ChartName < orderedDirs[j].ChartName
+	})
+	return orderedDirs, nil
 }
 
 func (c *Client) uninstallWithHelm(helmDir string, targetNamespace string, charts []string) error {

@@ -76,6 +76,10 @@
         "values": {
           "type": "object",
           "additionalProperties": {}
+        },
+        "weight": {
+          "type": "integer",
+          "format": "int64"
         }
       }
     },

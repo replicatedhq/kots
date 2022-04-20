@@ -318,6 +318,7 @@ func deployVersionForApp(a *apptypes.App, deployedVersion *downstreamtypes.Downs
 		Action:               "deploy",
 		Wait:                 false,
 		AnnotateSlug:         os.Getenv("ANNOTATE_SLUG") != "",
+		KotsKinds:            kotsKinds,
 	}
 	go operatorClient.DeployApp(deployArgs) // this happens async and results are reported once the process is complete.
 
@@ -607,6 +608,7 @@ func undeployApp(a *apptypes.App, d *downstreamtypes.Downstream, isRestore bool)
 		ClearPVCs:            true,
 		IsRestore:            isRestore,
 		RestoreLabelSelector: restoreLabelSelector,
+		KotsKinds:            kotsKinds,
 	}
 	go operatorClient.DeployApp(undeployArgs) // this happens async and progress/status is polled later.
 
