@@ -1,8 +1,8 @@
-on:
-  push:
-    branches:
-      - main
-
+#on:
+#  push:
+#    branches:
+#      - main
+on: push
 name: Metrics
 
 env:

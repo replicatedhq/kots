@@ -6,8 +6,11 @@ WORKDIR $PROJECTPATH
 COPY go.mod go.sum ./
 RUN go mod download
 
-COPY . .
+COPY Makefile Makefile.build ./
+COPY cmd cmd
 
 RUN make build
+
+COPY assets assets
 
 ENTRYPOINT ["./bin/kurl_proxy"]
