@@ -151,16 +151,16 @@ ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots
 WORKDIR $PROJECTPATH
 
 COPY go.mod go.sum ./
-RUN --mount=target=$GOMODCACHE,id=kots1-gomodcache,type=cache go mod download
+RUN --mount=target=$GOMODCACHE,id=kots-gomodcache,type=cache go mod download
 
 COPY . .
 
-RUN --mount=target=$GOMODCACHE,id=kots1-gomodcache,type=cache \
-    --mount=target=$GOCACHE,id=kots1-gocache,type=cache \
+RUN --mount=target=$GOMODCACHE,id=kots-gomodcache,type=cache \
+    --mount=target=$GOCACHE,id=kots-gocache,type=cache \
     make build
 
-RUN --mount=target=/tmp/.cache/gocache,id=kots1-gocache,type=cache \
-    --mount=target=/tmp/.cache/gomodcache,id=kots1-gomodcache,type=cache \
+RUN --mount=target=/tmp/.cache/gocache,id=kots-gocache,type=cache \
+    --mount=target=/tmp/.cache/gomodcache,id=kots-gomodcache,type=cache \
     mkdir -p $GOCACHE \
     && cp -r /tmp/.cache/gocache/* $GOCACHE \
     && mkdir -p $GOMODCACHE \
