@@ -1,0 +1,24 @@
+on:
+  push:
+    branches:
+      - main
+
+name: Metrics
+
+env:
+  DOCKER_BUILDKIT: 1
+
+jobs:
+  docker-image-size:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [[kots, .], [web, web], [kurl-proxy, kurl_proxy], [migrations, migrations]]
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          docker build -t ${{ matrix.service[0] }} -f ${{ matrix.service[1] }}/okteto.Dockerfile ${{ matrix.service[1] }}/
+          curl -X POST "https://api.datadoghq.com/api/v1/series" \
+            -H "Content-Type: text/json" \
+            -H "DD-API-KEY: ${{secrets.DD_API_KEY}}" \
+            -d "{\"series\": [ { \"metric\": \"build.size.docker\",\"points\": [[ $(date +%s), $(docker inspect -f \"{{.Size}}\" ${{ matrix.service[0] }}) ]],\"tags\": [ \"service:${{ matrix.service[0] }}\" ] } ] }"

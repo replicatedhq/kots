@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.3
 FROM golang:1.17 as builder
 
 EXPOSE 2345
