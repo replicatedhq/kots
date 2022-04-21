@@ -359,24 +359,38 @@ func (s *KOTSStore) FindDownstreamVersions(appID string, downloadedOnly bool) (*
 	return nil, errors.New("app has no versions")
 }
 
-func (s *KOTSStore) GetDownstreamVersionHistory(appID string, clusterID string, currentPage int, pageSize int, pinLatest bool) ([]*downstreamtypes.DownstreamVersion, error) {
+func (s *KOTSStore) GetDownstreamVersionHistory(appID string, clusterID string, currentPage int, pageSize int, pinLatest bool, pinLatestDeployable bool) (*downstreamtypes.DownstreamVersionHistory, error) {
+	history := &downstreamtypes.DownstreamVersionHistory{}
+
 	versions, err := s.GetDownstreamVersions(appID, clusterID, false)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get downstream versions without details")
 	}
+	history.TotalCount = len(versions.AllVersions)
+
+	desiredVersions := []*downstreamtypes.DownstreamVersion{}
+
+	if pinLatest {
+		if len(versions.AllVersions) > 0 {
+			desiredVersions = append(desiredVersions, versions.AllVersions[0])
+		}
+	}
+
+	if pinLatestDeployable {
+		latestDeployableVersion, numOfSkippedVersions, numOfRemainingVersions, err := s.getLatestDeployableDownstreamVersion(appID, clusterID, versions)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to get latest deployable downstream version")
+		}
+		if latestDeployableVersion != nil {
+			desiredVersions = append(desiredVersions, latestDeployableVersion)
+		}
+		history.NumOfSkippedVersions = numOfSkippedVersions
+		history.NumOfRemainingVersions = numOfRemainingVersions
+	}
 
 	startIndex := currentPage * pageSize
 	endIndex := currentPage*pageSize + pageSize
-	if pinLatest {
-		startIndex++
-		endIndex++
-	}
-	desiredVersions := []*downstreamtypes.DownstreamVersion{}
 	for i, v := range versions.AllVersions {
-		if pinLatest && i == 0 {
-			desiredVersions = append(desiredVersions, v)
-			continue
-		}
 		if currentPage != -1 && i < startIndex {
 			continue
 		}
@@ -389,8 +403,9 @@ func (s *KOTSStore) GetDownstreamVersionHistory(appID string, clusterID string, 
 	if err := s.AddDownstreamVersionsDetails(appID, clusterID, desiredVersions, true); err != nil {
 		return nil, errors.Wrap(err, "failed to add details for desired versions")
 	}
+	history.VersionHistory = desiredVersions
 
-	return desiredVersions, nil
+	return history, nil
 }
 
 func (s *KOTSStore) AddDownstreamVersionDetails(appID string, clusterID string, version *downstreamtypes.DownstreamVersion, checkIfDeployable bool) error {
@@ -546,21 +561,26 @@ func (s *KOTSStore) AddDownstreamVersionsDetails(appID string, clusterID string,
 	return nil
 }
 
-func (s *KOTSStore) GetNextDownstreamVersion(appID string, clusterID string) (nextVersion *downstreamtypes.DownstreamVersion, numOfSkippedVersions int, numOfRemainingVersions int, finalError error) {
+func (s *KOTSStore) GetLatestDeployableDownstreamVersion(appID string, clusterID string) (latestDeployableVersion *downstreamtypes.DownstreamVersion, numOfSkippedVersions int, numOfRemainingVersions int, finalError error) {
+	versions, err := s.GetDownstreamVersions(appID, clusterID, false)
+	if err != nil {
+		finalError = errors.Wrap(err, "failed to get app downstream versions")
+		return
+	}
+
+	return s.getLatestDeployableDownstreamVersion(appID, clusterID, versions)
+}
+
+func (s *KOTSStore) getLatestDeployableDownstreamVersion(appID string, clusterID string, versions *downstreamtypes.DownstreamVersions) (latestDeployableVersion *downstreamtypes.DownstreamVersion, numOfSkippedVersions int, numOfRemainingVersions int, finalError error) {
 	defer func() {
-		if nextVersion != nil {
-			if err := s.AddDownstreamVersionDetails(appID, clusterID, nextVersion, true); err != nil {
+		if latestDeployableVersion != nil {
+			if err := s.AddDownstreamVersionDetails(appID, clusterID, latestDeployableVersion, true); err != nil {
 				finalError = errors.Wrap(err, "failed to add details")
 				return
 			}
 		}
 	}()
 
-	versions, err := s.GetDownstreamVersions(appID, clusterID, false)
-	if err != nil {
-		finalError = errors.Wrap(err, "failed to get app downstream versions")
-		return
-	}
 	if len(versions.AllVersions) == 0 {
 		finalError = errors.New("no versions found for app")
 		return
@@ -568,7 +588,7 @@ func (s *KOTSStore) GetNextDownstreamVersion(appID string, clusterID string) (ne
 
 	if versions.CurrentVersion == nil {
 		// no version has been deployed yet, next app version is the latest version
-		nextVersion = versions.AllVersions[0]
+		latestDeployableVersion = versions.AllVersions[0]
 		return
 	}
 
@@ -587,48 +607,30 @@ func (s *KOTSStore) GetNextDownstreamVersion(appID string, clusterID string) (ne
 
 	if len(requiredVersions) > 0 {
 		// next app version is the earliest pending required version
-		nextVersion = requiredVersions[len(requiredVersions)-1]
+		latestDeployableVersion = requiredVersions[len(requiredVersions)-1]
 	} else {
 		// next app version is the latest pending version
-		nextVersion = versions.PendingVersions[0]
+		latestDeployableVersion = versions.PendingVersions[0]
 	}
 
-	nextVersionIndex := -1
+	latestDeployableVersionIndex := -1
 	for i, v := range versions.PendingVersions {
-		if v.Sequence == nextVersion.Sequence {
-			nextVersionIndex = i
+		if v.Sequence == latestDeployableVersion.Sequence {
+			latestDeployableVersionIndex = i
 			break
 		}
 	}
 
 	for i := range versions.PendingVersions {
-		if i < nextVersionIndex {
+		if i < latestDeployableVersionIndex {
 			numOfRemainingVersions++
 		}
-		if i > nextVersionIndex {
+		if i > latestDeployableVersionIndex {
 			numOfSkippedVersions++
 		}
 	}
 
 	return
-}
-
-func (s *KOTSStore) TotalNumOfDownstreamVersions(appID string, clusterID string, downloadedOnly bool) (int64, error) {
-	db := persistence.MustGetDBSession()
-	query := `SELECT count(1) FROM app_downstream_version WHERE app_id = $1 AND cluster_id = $2`
-
-	if downloadedOnly {
-		query += fmt.Sprintf(` AND status != '%s'`, types.VersionPendingDownload)
-	}
-
-	row := db.QueryRow(query, appID, clusterID)
-
-	var count int64
-	if err := row.Scan(&count); err != nil {
-		return 0, errors.Wrap(err, "failed to scan")
-	}
-
-	return count, nil
 }
 
 func (s *KOTSStore) downstreamVersionFromRow(appID string, row scannable) (*downstreamtypes.DownstreamVersion, error) {

@@ -34,6 +34,7 @@ func GetVersionsCmd() *cobra.Command {
 	cmd.Flags().Int("current-page", 0, "offset by page size at which to start retrieving versions")
 	cmd.Flags().Int("page-size", 20, "number of versions to return (defaults to 20)")
 	cmd.Flags().Bool("pin-latest", false, "set to true to always return the latest version at the beginning")
+	cmd.Flags().Bool("pin-latest-deployable", false, "set to true to always return the latest deployable version at the beginning")
 	cmd.Flags().StringP("output", "o", "", "output format (currently supported: json)")
 
 	return cmd
@@ -103,6 +104,7 @@ func getVersionsCmd(cmd *cobra.Command, args []string) error {
 	urlVals.Set("currentPage", fmt.Sprintf("%d", v.GetInt("current-page")))
 	urlVals.Set("pageSize", fmt.Sprintf("%d", v.GetInt("page-size")))
 	urlVals.Set("pinLatest", fmt.Sprintf("%t", v.GetBool("pin-latest")))
+	urlVals.Set("pinLatestDeployable", fmt.Sprintf("%t", v.GetBool("pin-latest-deployable")))
 
 	url := fmt.Sprintf("http://localhost:%d/api/v1/app/%s/versions?%s", localPort, url.PathEscape(appSlug), urlVals.Encode())
 	appVersions, err := getAppVersions(url, authSlug)

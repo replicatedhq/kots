@@ -694,6 +694,18 @@ func (mr *MockKOTSHandlerMockRecorder) GetKurlNodes(w, r interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKurlNodes", reflect.TypeOf((*MockKOTSHandler)(nil).GetKurlNodes), w, r)
 }
 
+// GetLatestDeployableVersion mocks base method.
+func (m *MockKOTSHandler) GetLatestDeployableVersion(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetLatestDeployableVersion", w, r)
+}
+
+// GetLatestDeployableVersion indicates an expected call of GetLatestDeployableVersion.
+func (mr *MockKOTSHandlerMockRecorder) GetLatestDeployableVersion(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestDeployableVersion", reflect.TypeOf((*MockKOTSHandler)(nil).GetLatestDeployableVersion), w, r)
+}
+
 // GetLatestPreflightResultsForSequenceZero mocks base method.
 func (m *MockKOTSHandler) GetLatestPreflightResultsForSequenceZero(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
@@ -716,18 +728,6 @@ func (m *MockKOTSHandler) GetLicense(w http.ResponseWriter, r *http.Request) {
 func (mr *MockKOTSHandlerMockRecorder) GetLicense(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLicense", reflect.TypeOf((*MockKOTSHandler)(nil).GetLicense), w, r)
-}
-
-// GetNextAppVersion mocks base method.
-func (m *MockKOTSHandler) GetNextAppVersion(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetNextAppVersion", w, r)
-}
-
-// GetNextAppVersion indicates an expected call of GetNextAppVersion.
-func (mr *MockKOTSHandlerMockRecorder) GetNextAppVersion(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNextAppVersion", reflect.TypeOf((*MockKOTSHandler)(nil).GetNextAppVersion), w, r)
 }
 
 // GetOnlineInstallStatus mocks base method.

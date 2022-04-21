@@ -151,12 +151,11 @@ type DownstreamStore interface {
 	GetDownstreamVersions(appID string, clusterID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error)
 	// Same as GetDownstreamVersions, but finds a cluster where app is deployed
 	FindDownstreamVersions(appID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error)
-	GetDownstreamVersionHistory(appID string, clusterID string, currentPage int, pageSize int, pinLatest bool) ([]*downstreamtypes.DownstreamVersion, error)
+	GetDownstreamVersionHistory(appID string, clusterID string, currentPage int, pageSize int, pinLatest bool, pinLatestDeployable bool) (*downstreamtypes.DownstreamVersionHistory, error)
 	AddDownstreamVersionDetails(appID string, clusterID string, version *downstreamtypes.DownstreamVersion, checkIfDeployable bool) error
 	AddDownstreamVersionsDetails(appID string, clusterID string, versions []*downstreamtypes.DownstreamVersion, checkIfDeployable bool) error
-	// GetNextDownstreamVersion returns the latest allowed version to upgrade to from the currently deployed version
-	GetNextDownstreamVersion(appID string, clusterID string) (nextVersion *downstreamtypes.DownstreamVersion, numOfSkippedVersions int, numOfRemainingVersions int, finalError error)
-	TotalNumOfDownstreamVersions(appID string, clusterID string, downloadedOnly bool) (int64, error)
+	// GetLatestDeployableDownstreamVersion returns the latest allowed version to upgrade to from the currently deployed version
+	GetLatestDeployableDownstreamVersion(appID string, clusterID string) (latestDeployableVersion *downstreamtypes.DownstreamVersion, numOfSkippedVersions int, numOfRemainingVersions int, finalError error)
 	IsAppVersionDeployable(appID string, sequence int64) (bool, string, error)
 	GetDownstreamOutput(appID string, clusterID string, sequence int64) (*downstreamtypes.DownstreamOutput, error)
 	IsDownstreamDeploySuccessful(appID string, clusterID string, sequence int64) (bool, error)
