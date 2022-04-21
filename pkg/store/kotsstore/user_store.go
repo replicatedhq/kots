@@ -12,6 +12,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/util"
+	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -227,6 +228,67 @@ func (s *KOTSStore) flagSuccessfulLoginInDatabase() error {
 	query = `insert into kotsadm_params (key, value) values ($1, $2)`
 	if _, err := db.Exec(query, "failed.login.count", "0"); err != nil {
 		return errors.Wrap(err, "failed to reset failed login count")
+	}
+
+	return nil
+}
+
+// SetSharedPasswordBcrypt - set the shared password bcrypt hash in the kotsadm secret
+func (s *KOTSStore) SetSharedPasswordBcrypt(bcryptPassword []byte) error {
+	if persistence.IsSQlite() {
+		return s.setSharedPasswordBcryptInDatabase(bcryptPassword)
+	}
+
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return errors.Wrap(err, "failed to get k8s clientset")
+	}
+
+	existingSecret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), passwordSecretName, metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to lookup secret")
+		}
+
+		newSecret := &corev1.Secret{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "v1",
+				Kind:       "Secret",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      passwordSecretName,
+				Namespace: util.PodNamespace,
+			},
+			Data: map[string][]byte{
+				"passwordBcrypt": []byte(bcryptPassword),
+			},
+		}
+
+		_, err := clientset.CoreV1().Secrets(util.PodNamespace).Create(context.TODO(), newSecret, metav1.CreateOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to create secret")
+		}
+	} else {
+		existingSecret.Data["passwordBcrypt"] = []byte(bcryptPassword)
+		delete(existingSecret.Labels, "numAttempts")
+		delete(existingSecret.Labels, "lastFailure")
+
+		_, err := clientset.CoreV1().Secrets(util.PodNamespace).Update(context.TODO(), existingSecret, metav1.UpdateOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to update secret")
+		}
+	}
+
+	return nil
+}
+
+// setSharedPasswordBcryptInDatabase - set the shared password bcrypt hash in the sqlite database
+func (s *KOTSStore) setSharedPasswordBcryptInDatabase(bcryptPassword []byte) error {
+	db := persistence.MustGetDBSession()
+
+	query := `update kotsadm_params set value = $1 where key = $2`
+	if _, err := db.Exec(query, bcryptPassword, "password.bcrypt"); err != nil {
+		return errors.Wrap(err, "failed to insert password bcrypt")
 	}
 
 	return nil

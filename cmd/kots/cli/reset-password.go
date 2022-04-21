@@ -56,6 +56,11 @@ func ResetPasswordCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to set new password")
 			}
 
+			// delete all sessions to force password change
+			if err := deleteAllSessions(namespace); err != nil {
+				log.ActionWithoutSpinner("failed to delete all sessions: %s", err)
+			}
+
 			log.ActionWithoutSpinner("The admin console password has been reset")
 			return nil
 		},
@@ -142,6 +147,32 @@ func setKotsadmPassword(password string, namespace string) error {
 		if err != nil {
 			return errors.Wrap(err, "failed to update secret")
 		}
+	}
+
+	return nil
+}
+
+// delete all sessions from the kotsadm-sessions secret
+func deleteAllSessions(namespace string) error {
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return errors.Wrap(err, "failed to create k8s client")
+	}
+
+	existingSecret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), "kotsadm-sessions", metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to lookup secret")
+		}
+
+		return nil
+	}
+
+	existingSecret.Data = map[string][]byte{}
+
+	_, err = clientset.CoreV1().Secrets(namespace).Update(context.TODO(), existingSecret, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update secret")
 	}
 
 	return nil

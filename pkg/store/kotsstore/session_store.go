@@ -333,3 +333,21 @@ func (s *KOTSStore) DeleteExpiredSessions() error {
 
 	return nil
 }
+
+// DeleteAllSessions - delete all sessions from kotsadm-sessions secret
+func (s *KOTSStore) DeleteAllSessions() error {
+	sessionLock.Lock()
+	defer sessionLock.Unlock()
+
+	secret, err := s.getSessionSecret()
+	if err != nil {
+		return errors.Wrap(err, "failed to get session secret")
+	}
+
+	secret.Data = map[string][]byte{}
+	if err := s.saveSessionSecret(secret); err != nil {
+		return errors.Wrap(err, "failed to delete all sessions from secret")
+	}
+
+	return nil
+}
