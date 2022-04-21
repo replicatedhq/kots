@@ -9,7 +9,8 @@ export default class FileInput extends React.Component {
     super(props);
     this.state = {
       errText: "",
-      fileAdded: false
+      fileAdded: false,
+      showDownloadIcon: true,
     }
   }
 
@@ -24,6 +25,10 @@ export default class FileInput extends React.Component {
     }
   }
 
+  handleDownloadFile = () => {
+    this.props.handleDownloadFile(this.props.filenamesText)
+  }
+
   handleOnChange = (ev) => {
     this.setState({ errText: "" });
 
@@ -35,7 +40,7 @@ export default class FileInput extends React.Component {
       if (error) {
         this.setState({ errText: error });
       } else if (this.props.onChange) {
-        this.setState({ fileAdded: true })
+        this.setState({ fileAdded: true, showDownloadIcon: false });
         this.props.onChange(files);
       }
     });
@@ -97,7 +102,8 @@ export default class FileInput extends React.Component {
                         <div>
                           <span className={`icon u-smallCheckGreen u-marginRight--10 u-top--3`}></span>
                           {this.props.filenamesText}
-                          <span onClick={() => this.handleRemoveFile(this.props.name)} className="icon gray-trash-small clickable u-marginLeft--5 u-top--3" />
+                          <span onClick={() => this.handleRemoveFile(this.props.name)} className="icon gray-trash-small clickable u-marginLeft--10 u-top--3" />
+                          {this.state.showDownloadIcon && <span onClick={this.handleDownloadFile} className="icon gray-download-small clickable u-marginLeft--10 u-top--3" />}
                         </div>
                         <label htmlFor={`${this.props.name} selector`} className="u-position--relative">
                           <p className="u-linkColor u-textDecoration--underlineOnHover u-fontSize--small u-marginLeft--30 u-marginTop--5">Select a different file</p>

@@ -35,6 +35,8 @@ export class AppConfigRenderer extends React.Component {
           handleChange={this.props.handleChange || (() => { return; })}
           getData={this.props.getData || (() => { return; })}
           readonly={readonly}
+          configSequence={this.props.configSequence}
+          appSlug={this.props.appSlug}
         />
       </div>
     )

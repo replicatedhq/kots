@@ -64,6 +64,69 @@ type CurrentAppConfigResponse struct {
 	ConfigGroups []kotsv1beta1.ConfigGroup `json:"configGroups"`
 }
 
+type DownloadFileFromConfigResponse struct {
+	Success bool   `json:"success"`
+	Error   string `json:"error,omitempty"`
+}
+
+func (h *Handler) DownloadFileFromConfig(w http.ResponseWriter, r *http.Request) {
+	downloadFileFromConfigResponse := DownloadFileFromConfigResponse{
+		Success: false,
+	}
+
+	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
+	if err != nil {
+		logger.Error(err)
+		downloadFileFromConfigResponse.Error = "failed to get app from app slug"
+		JSON(w, http.StatusInternalServerError, downloadFileFromConfigResponse)
+		return
+	}
+
+	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
+	if err != nil {
+		logger.Error(err)
+		downloadFileFromConfigResponse.Error = "failed to parse app sequence"
+		JSON(w, http.StatusInternalServerError, downloadFileFromConfigResponse)
+		return
+	}
+
+	filename := mux.Vars(r)["filename"]
+	if filename == "" {
+		logger.Error(err)
+		downloadFileFromConfigResponse.Error = "failed to parse filename, parameter was empty"
+		JSON(w, http.StatusInternalServerError, downloadFileFromConfigResponse)
+		return
+	}
+
+	archiveDir, err := ioutil.TempDir("", "kotsadmconfig")
+	if err != nil {
+		logger.Error(err)
+		downloadFileFromConfigResponse.Error = "failed to create temp directory"
+		JSON(w, http.StatusInternalServerError, downloadFileFromConfigResponse)
+	}
+	defer os.RemoveAll(archiveDir)
+
+	configValue, err := getAppConfigValueForFile(foundApp, int64(sequence), filename, archiveDir)
+	if err != nil {
+		logger.Error(err)
+		downloadFileFromConfigResponse.Error = "failed to get app config"
+		JSON(w, http.StatusInternalServerError, downloadFileFromConfigResponse)
+		return
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(configValue)
+	if err != nil {
+		logger.Error(err)
+		downloadFileFromConfigResponse.Error = "failed to decode config value"
+		JSON(w, http.StatusInternalServerError, downloadFileFromConfigResponse)
+	}
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
+	w.Header().Set("Content-Length", strconv.Itoa(len(decoded)))
+	w.WriteHeader(http.StatusOK)
+	w.Write(decoded)
+}
+
 func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 	updateAppConfigResponse := UpdateAppConfigResponse{
 		Success: false,
@@ -431,6 +494,26 @@ func shouldCreateNewAppVersion(appID string, sequence int64) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func getAppConfigValueForFile(downloadApp *apptypes.App, sequence int64, filename string, archiveDir string) (string, error) {
+	err := store.GetStore().GetAppVersionArchive(downloadApp.ID, sequence, archiveDir)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get app version archive")
+	}
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to load kots kinds from archive")
+	}
+
+	for _, v := range kotsKinds.ConfigValues.Spec.Values {
+		if v.Filename == filename {
+			return v.Value, nil
+		}
+	}
+
+	return "", errors.New("could not find requested file")
 }
 
 // if isPrimaryVersion is false, missing a required config field will not cause a failure, and instead will create

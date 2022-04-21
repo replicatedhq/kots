@@ -139,6 +139,8 @@ export default class ConfigRender extends React.Component {
           handleAddItem={this.handleAddItem}
           handleRemoveItem={this.handleRemoveItem}
           readonly={readonly}
+          configSequence={this.props.configSequence}
+          appSlug={this.props.appSlug}
         />
       </div>
     );

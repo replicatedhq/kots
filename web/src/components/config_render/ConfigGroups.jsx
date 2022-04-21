@@ -34,6 +34,8 @@ export default class ConfigGroups extends React.Component {
             item={fields[fieldName]}
             handleChange={(itemName, value, data) => this.handleGroupChange(fieldName, itemName, value, data)}
             readonly={readonly}
+            configSequence={this.props.configSequence}
+            appSlug={this.props.appSlug}
           />
         ))
         }

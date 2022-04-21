@@ -114,6 +114,8 @@ export default class ConfigGroup extends React.Component {
               handleRemoveItem={this.handleRemoveItem}
               hidden={item.hidden}
               when={item.when}
+              configSequence={this.props.configSequence}
+              appSlug={this.props.appSlug}
               readonly={isReadOnly}
             />
           </div>

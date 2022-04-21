@@ -516,7 +516,7 @@ class AppConfig extends Component {
             {this.renderConfigInfo(app)}
             <div className={classNames("ConfigOuterWrapper u-paddingTop--30", { "u-marginTop--20": fromLicenseFlow })}>
               <div className="ConfigInnerWrapper">
-                <AppConfigRenderer groups={configGroups} getData={this.handleConfigChange} readonly={this.isConfigReadOnly(app)} />
+                <AppConfigRenderer groups={configGroups} getData={this.handleConfigChange} readonly={this.isConfigReadOnly(app)} configSequence={match.params.sequence} appSlug={app.slug} />
               </div>
             </div>
             {savingConfig ?
