@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/replicatedhq/kots/pkg/handlers"
+	"github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -379,6 +381,13 @@ func InstallCmd() *cobra.Command {
 				if err := validateAutomatedInstall(deployOptions, clientset, apiEndpoint); err != nil {
 					return errors.Wrap(err, "failed to validate automated install")
 				}
+				log.Debug("automated install validated successfully")
+			}
+			if !deployOptions.SkipPreflights {
+				if err := validatePreflightStatus(deployOptions, clientset, apiEndpoint); err != nil {
+					return errors.Wrap(err, "failed to validate preflight status")
+				}
+				log.Debug("preflights validated successfully")
 			}
 
 			m.ReportInstallFinish()
@@ -811,4 +820,98 @@ func getAutomatedInstallStatus(url string, authSlug string) (*kotsstore.TaskStat
 	}
 
 	return &taskStatus, nil
+}
+
+func validatePreflightStatus(deployOptions kotsadmtypes.DeployOptions, clientset *kubernetes.Clientset, apiEndpoint string) error {
+	authSlug, err := auth.GetOrCreateAuthSlug(clientset, deployOptions.Namespace)
+	if err != nil {
+		return errors.Wrap(err, "failed to get kotsadm auth slug")
+	}
+	url := fmt.Sprintf("%s/app/%s/sequence/0/preflight/result", apiEndpoint, deployOptions.License.Spec.AppSlug)
+
+	startTime := time.Now()
+
+	for time.Since(startTime) < deployOptions.Timeout {
+		response, err := getPreflightResponse(url, authSlug)
+		if err != nil {
+			return errors.Wrap(err, "failed to get preflight status")
+		}
+
+		if !checkPreflightsComplete(response) {
+			continue
+		}
+
+		return checkPreflightResults(response)
+	}
+
+	return errors.New("timeout waiting for preflights to finish. Use the --wait-duration flag to increase timeout.")
+}
+
+func getPreflightResponse(url string, authSlug string) (*handlers.GetPreflightResultResponse, error) {
+	newReq, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create request")
+	}
+	newReq.Header.Add("Content-Type", "application/json")
+	newReq.Header.Add("Authorization", authSlug)
+
+	resp, err := http.DefaultClient.Do(newReq)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to execute request")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.Errorf("unexpected status code %d", resp.StatusCode)
+	}
+
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read")
+	}
+
+	var response handlers.GetPreflightResultResponse
+	_ = json.Unmarshal(b, &response)
+
+	return &response, nil
+}
+
+func checkPreflightsComplete(response *handlers.GetPreflightResultResponse) bool {
+	var collectProgress *preflight.CollectProgress
+	_ = json.Unmarshal([]byte(response.PreflightProgress), &collectProgress)
+
+	if collectProgress != nil {
+		time.Sleep(time.Second)
+		return false
+	}
+
+	return true
+}
+
+func checkPreflightResults(response *handlers.GetPreflightResultResponse) error {
+	var results preflight.UploadPreflightResults
+	_ = json.Unmarshal([]byte(response.PreflightResult.Result), &results)
+
+	var isWarn, isFail bool
+	for _, result := range results.Results {
+		if result.IsWarn {
+			isWarn = true
+		}
+		if result.IsFail {
+			isFail = true
+		}
+	}
+
+	if isWarn && isFail {
+		return errors.New("There are preflight check failures and warnings for the application. The app was not deployed.")
+	}
+
+	if isWarn {
+		return errors.New("There are preflight check warnings for the application. The app was not deployed.")
+	}
+	if isFail {
+		return errors.New("There are preflight check failures for the application. The app was not deployed.")
+	}
+
+	return nil
 }
