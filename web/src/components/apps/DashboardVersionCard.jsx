@@ -1012,7 +1012,7 @@ class DashboardVersionCard extends React.Component {
         </div>
         {(this.state.numOfSkippedVersions > 0 || this.state.numOfRemainingVersions > 0) && (
           <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--header u-marginTop--10">
-            {this.state.numOfSkippedVersions > 0 ? `${this.state.numOfSkippedVersions} version${this.state.numOfSkippedVersions > 1 && "s"} will be skipped in upgrading to ${latestDeployableVersion.versionLabel}. ` : ""}
+            {this.state.numOfSkippedVersions > 0 ? `${this.state.numOfSkippedVersions} version${this.state.numOfSkippedVersions > 1 ? "s" : ""} will be skipped in upgrading to ${latestDeployableVersion.versionLabel}. ` : ""}
             {this.state.numOfRemainingVersions > 0 ? "Additional versions are available after you deploy this required version." : ""}
           </p>
         )}

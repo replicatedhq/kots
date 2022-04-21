@@ -73,6 +73,8 @@ class AppVersionHistory extends Component {
     kotsUpdateStatus: undefined,
     kotsUpdateMessage: undefined,
     kotsUpdateError: undefined,
+    numOfSkippedVersions: 0,
+    numOfRemainingVersions: 0,
     totalCount: 0,
     currentPage: 0,
     pageSize: 20,
@@ -174,6 +176,8 @@ class AppVersionHistory extends Component {
       this.setState({
         loadingVersionHistory: false,
         versionHistory: versionHistory,
+        numOfSkippedVersions: response.numOfSkippedVersions,
+        numOfRemainingVersions: response.numOfRemainingVersions,
         totalCount: response.totalCount,
       });
     } catch (err) {
@@ -1316,6 +1320,12 @@ class AppVersionHistory extends Component {
                         </div>
                       </div>
                       {this.renderAppVersionHistoryRow(versionHistory[0])}
+                      {(this.state.numOfSkippedVersions > 0 || this.state.numOfRemainingVersions > 0) && (
+                        <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--header u-marginTop--10">
+                          {this.state.numOfSkippedVersions > 0 ? `${this.state.numOfSkippedVersions} version${this.state.numOfSkippedVersions > 1 ? "s" : ""} will be skipped in upgrading to ${versionHistory[0].versionLabel}. ` : ""}
+                          {this.state.numOfRemainingVersions > 0 ? "Additional versions are available after you deploy this required version." : ""}
+                        </p>
+                      )}
                     </div>
                     {this.renderUpdateProgress()}
                     {this.renderAllVersions()}
