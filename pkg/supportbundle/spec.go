@@ -542,7 +542,7 @@ func getDefaultDynamicAnalyzers(app *apptypes.App) []*troubleshootv1beta2.Analyz
 					{
 						Fail: &troubleshootv1beta2.SingleOutcome{
 							When:    "true",
-							Message: "An NFS client package might be missing. Refer to [documentation](https://docs.replicated.com/enterprise/snapshots-configuring-nfs) on how to configure NFS snapshots.",
+							Message: "An NFS client package might be missing. Refer to the [documentation](https://docs.replicated.com/enterprise/snapshots-configuring-nfs) on how to configure NFS snapshots.",
 							URI:     "https://docs.replicated.com/enterprise/snapshots-configuring-nfs",
 						},
 					},
