@@ -215,6 +215,17 @@ func deleteUnusedImages(ctx context.Context, registry types.RegistrySettings, us
 	digestsInRegistry := map[string]string{}
 	for _, r := range searchResult {
 		imageName := path.Join(registry.Hostname, r.Name)
+
+		parts := strings.Split(imageName, "/")
+		if len(parts) < 2 {
+			continue
+		}
+
+		registryNamespace := parts[1]
+		if registryNamespace != registry.Namespace {
+			continue
+		}
+
 		ref, err := docker.ParseReference(fmt.Sprintf("//%s", imageName))
 		if err != nil {
 			logger.Errorf("failed to parse registry image ref %q: %v", imageName, err)
