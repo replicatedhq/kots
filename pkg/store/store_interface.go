@@ -108,7 +108,6 @@ type SessionStore interface {
 	GetSession(sessionID string) (*sessiontypes.Session, error)
 	UpdateSessionExpiresAt(sessionID string, expiresAt time.Time) error
 	DeleteExpiredSessions() error
-	DeleteAllSessions() error
 }
 
 type AppStatusStore interface {
@@ -209,9 +208,9 @@ type LicenseStore interface {
 
 type UserStore interface {
 	GetSharedPasswordBcrypt() ([]byte, error)
+	GetPasswordUpdatedAt() (*time.Time, error)
 	FlagInvalidPassword() error
 	FlagSuccessfulLogin() error
-	SetSharedPasswordBcrypt(bcryptPassword []byte) error
 }
 
 type ClusterStore interface {

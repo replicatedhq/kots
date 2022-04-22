@@ -255,20 +255,6 @@ func (mr *MockStoreMockRecorder) CreateSupportBundle(bundleID, appID, archivePat
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSupportBundle", reflect.TypeOf((*MockStore)(nil).CreateSupportBundle), bundleID, appID, archivePath, marshalledTree)
 }
 
-// DeleteAllSessions mocks base method.
-func (m *MockStore) DeleteAllSessions() error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteAllSessions")
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteAllSessions indicates an expected call of DeleteAllSessions.
-func (mr *MockStoreMockRecorder) DeleteAllSessions() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAllSessions", reflect.TypeOf((*MockStore)(nil).DeleteAllSessions))
-}
-
 // DeleteDownstreamDeployStatus mocks base method.
 func (m *MockStore) DeleteDownstreamDeployStatus(appID, clusterID string, sequence int64) error {
 	m.ctrl.T.Helper()
@@ -834,6 +820,21 @@ func (m *MockStore) GetParentSequenceForSequence(appID, clusterID string, sequen
 func (mr *MockStoreMockRecorder) GetParentSequenceForSequence(appID, clusterID, sequence interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetParentSequenceForSequence", reflect.TypeOf((*MockStore)(nil).GetParentSequenceForSequence), appID, clusterID, sequence)
+}
+
+// GetPasswordUpdatedAt mocks base method.
+func (m *MockStore) GetPasswordUpdatedAt() (*time.Time, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPasswordUpdatedAt")
+	ret0, _ := ret[0].(*time.Time)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPasswordUpdatedAt indicates an expected call of GetPasswordUpdatedAt.
+func (mr *MockStoreMockRecorder) GetPasswordUpdatedAt() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPasswordUpdatedAt", reflect.TypeOf((*MockStore)(nil).GetPasswordUpdatedAt))
 }
 
 // GetPendingAirgapUploadApp mocks base method.
@@ -1623,20 +1624,6 @@ func (m *MockStore) SetRedactions(bundleID string, redacts redact.RedactionList)
 func (mr *MockStoreMockRecorder) SetRedactions(bundleID, redacts interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRedactions", reflect.TypeOf((*MockStore)(nil).SetRedactions), bundleID, redacts)
-}
-
-// SetSharedPasswordBcrypt mocks base method.
-func (m *MockStore) SetSharedPasswordBcrypt(bcryptPassword []byte) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetSharedPasswordBcrypt", bcryptPassword)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetSharedPasswordBcrypt indicates an expected call of SetSharedPasswordBcrypt.
-func (mr *MockStoreMockRecorder) SetSharedPasswordBcrypt(bcryptPassword interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetSharedPasswordBcrypt", reflect.TypeOf((*MockStore)(nil).SetSharedPasswordBcrypt), bcryptPassword)
 }
 
 // SetSnapshotSchedule mocks base method.
@@ -2550,20 +2537,6 @@ func (m *MockSessionStore) CreateSession(user *types14.User, issuedAt, expiresAt
 func (mr *MockSessionStoreMockRecorder) CreateSession(user, issuedAt, expiresAt, roles interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSession", reflect.TypeOf((*MockSessionStore)(nil).CreateSession), user, issuedAt, expiresAt, roles)
-}
-
-// DeleteAllSessions mocks base method.
-func (m *MockSessionStore) DeleteAllSessions() error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteAllSessions")
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteAllSessions indicates an expected call of DeleteAllSessions.
-func (mr *MockSessionStoreMockRecorder) DeleteAllSessions() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAllSessions", reflect.TypeOf((*MockSessionStore)(nil).DeleteAllSessions))
 }
 
 // DeleteExpiredSessions mocks base method.
@@ -3872,6 +3845,21 @@ func (mr *MockUserStoreMockRecorder) FlagSuccessfulLogin() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FlagSuccessfulLogin", reflect.TypeOf((*MockUserStore)(nil).FlagSuccessfulLogin))
 }
 
+// GetPasswordUpdatedAt mocks base method.
+func (m *MockUserStore) GetPasswordUpdatedAt() (*time.Time, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPasswordUpdatedAt")
+	ret0, _ := ret[0].(*time.Time)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPasswordUpdatedAt indicates an expected call of GetPasswordUpdatedAt.
+func (mr *MockUserStoreMockRecorder) GetPasswordUpdatedAt() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPasswordUpdatedAt", reflect.TypeOf((*MockUserStore)(nil).GetPasswordUpdatedAt))
+}
+
 // GetSharedPasswordBcrypt mocks base method.
 func (m *MockUserStore) GetSharedPasswordBcrypt() ([]byte, error) {
 	m.ctrl.T.Helper()
@@ -3885,20 +3873,6 @@ func (m *MockUserStore) GetSharedPasswordBcrypt() ([]byte, error) {
 func (mr *MockUserStoreMockRecorder) GetSharedPasswordBcrypt() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSharedPasswordBcrypt", reflect.TypeOf((*MockUserStore)(nil).GetSharedPasswordBcrypt))
-}
-
-// SetSharedPasswordBcrypt mocks base method.
-func (m *MockUserStore) SetSharedPasswordBcrypt(bcryptPassword []byte) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetSharedPasswordBcrypt", bcryptPassword)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetSharedPasswordBcrypt indicates an expected call of SetSharedPasswordBcrypt.
-func (mr *MockUserStoreMockRecorder) SetSharedPasswordBcrypt(bcryptPassword interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetSharedPasswordBcrypt", reflect.TypeOf((*MockUserStore)(nil).SetSharedPasswordBcrypt), bcryptPassword)
 }
 
 // MockClusterStore is a mock of ClusterStore interface.

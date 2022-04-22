@@ -2,14 +2,14 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/identity"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/password"
 	"github.com/replicatedhq/kots/pkg/store"
-	"github.com/replicatedhq/kots/pkg/user"
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
@@ -26,6 +26,19 @@ type PasswordChangeResponse struct {
 
 //  ChangePassword - change password for kots
 func (h *Handler) ChangePassword(w http.ResponseWriter, r *http.Request) {
+	var passwordChangeRequest PasswordChangeRequest
+	if err := json.NewDecoder(r.Body).Decode(&passwordChangeRequest); err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if err := password.ValidatePasswordInput(passwordChangeRequest.CurrentPassword, passwordChangeRequest.NewPassword); err != nil {
+		logger.Error(err)
+		JSON(w, http.StatusBadRequest, NewErrorResponse(err))
+		return
+	}
+
 	identityConfig, err := identity.GetConfig(r.Context(), util.PodNamespace)
 	if err != nil {
 		logger.Error(err)
@@ -38,37 +51,34 @@ func (h *Handler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var passwordChangeRequest PasswordChangeRequest
-	if err := json.NewDecoder(r.Body).Decode(&passwordChangeRequest); err != nil {
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
 		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
+		JSON(w, http.StatusInternalServerError, NewErrorResponse(err))
 		return
 	}
 
-	if err := user.ValidatePasswordInput(passwordChangeRequest.CurrentPassword, passwordChangeRequest.NewPassword); err != nil {
-		JSON(w, http.StatusBadRequest, NewErrorResponse(err))
+	if err := password.ValidateCurrentPassword(store.GetStore(), passwordChangeRequest.CurrentPassword); err != nil {
+		logger.Error(err)
+		if errors.Is(err, password.ErrCurrentPasswordDoesNotMatch) {
+			JSON(w, http.StatusBadRequest, NewErrorResponse(err))
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	// change password
-	if err := user.ChangePassword(store.GetStore(), passwordChangeRequest.CurrentPassword, passwordChangeRequest.NewPassword); err != nil {
-		if err == user.ErrInvalidPassword {
-			JSON(w, http.StatusBadRequest, NewErrorResponse(fmt.Errorf("Your current password does not match")))
-			return
-		}
-
+	if err := password.ChangePassword(clientset, util.PodNamespace, passwordChangeRequest.NewPassword); err != nil {
 		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
+		JSON(w, http.StatusInternalServerError, NewErrorResponse(err))
 		return
-	}
-
-	//  delete all sessions to force password change
-	if err := store.GetStore().DeleteAllSessions(); err != nil {
-		logger.Error(errors.Wrapf(err, "failed to delete all sessions"))
 	}
 
 	passwordChangeResponse := PasswordChangeResponse{
 		Success: true,
 	}
+
+	logger.Info("password changed successfully")
 	JSON(w, http.StatusOK, passwordChangeResponse)
 }

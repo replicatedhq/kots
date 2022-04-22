@@ -12,7 +12,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/util"
-	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -233,63 +232,34 @@ func (s *KOTSStore) flagSuccessfulLoginInDatabase() error {
 	return nil
 }
 
-// SetSharedPasswordBcrypt - set the shared password bcrypt hash in the kotsadm secret
-func (s *KOTSStore) SetSharedPasswordBcrypt(bcryptPassword []byte) error {
-	if persistence.IsSQlite() {
-		return s.setSharedPasswordBcryptInDatabase(bcryptPassword)
-	}
-
+// GetPasswordUpdatedAt - returns the time the password was last updated
+func (s *KOTSStore) GetPasswordUpdatedAt() (*time.Time, error) {
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
-		return errors.Wrap(err, "failed to get k8s clientset")
+		return nil, errors.Wrap(err, "failed to get k8s clientset")
 	}
 
-	existingSecret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), passwordSecretName, metav1.GetOptions{})
+	passwordSecret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), util.PasswordSecretName, metav1.GetOptions{})
 	if err != nil {
-		if !kuberneteserrors.IsNotFound(err) {
-			return errors.Wrap(err, "failed to lookup secret")
+		if kuberneteserrors.IsNotFound(err) {
+			//  similar to fallback case when password secret is not found and uses the default password from environment variable
+			return &time.Time{}, nil
 		}
+		return nil, errors.Wrap(err, "failed to get password secret")
+	}
 
-		newSecret := &corev1.Secret{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
-				Kind:       "Secret",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      passwordSecretName,
-				Namespace: util.PodNamespace,
-			},
-			Data: map[string][]byte{
-				"passwordBcrypt": []byte(bcryptPassword),
-			},
-		}
-
-		_, err := clientset.CoreV1().Secrets(util.PodNamespace).Create(context.TODO(), newSecret, metav1.CreateOptions{})
+	var passwordUpdatedAt time.Time
+	updatedAtBytes, ok := passwordSecret.Data["passwordUpdatedAt"]
+	if ok {
+		updatedAt, err := time.Parse(time.RFC3339, string(updatedAtBytes))
 		if err != nil {
-			return errors.Wrap(err, "failed to create secret")
+			return nil, errors.Wrap(err, "failed to parse passwordUpdatedAt")
 		}
+		passwordUpdatedAt = updatedAt
 	} else {
-		existingSecret.Data["passwordBcrypt"] = []byte(bcryptPassword)
-		delete(existingSecret.Labels, "numAttempts")
-		delete(existingSecret.Labels, "lastFailure")
-
-		_, err := clientset.CoreV1().Secrets(util.PodNamespace).Update(context.TODO(), existingSecret, metav1.UpdateOptions{})
-		if err != nil {
-			return errors.Wrap(err, "failed to update secret")
-		}
+		// backward compatibility, for older secrets with no passwordUpdatedAt value
+		passwordUpdatedAt = time.Time{}
 	}
 
-	return nil
-}
-
-// setSharedPasswordBcryptInDatabase - set the shared password bcrypt hash in the sqlite database
-func (s *KOTSStore) setSharedPasswordBcryptInDatabase(bcryptPassword []byte) error {
-	db := persistence.MustGetDBSession()
-
-	query := `update kotsadm_params set value = $1 where key = $2`
-	if _, err := db.Exec(query, bcryptPassword, "password.bcrypt"); err != nil {
-		return errors.Wrap(err, "failed to insert password bcrypt")
-	}
-
-	return nil
+	return &passwordUpdatedAt, nil
 }

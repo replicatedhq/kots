@@ -60,7 +60,7 @@ var (
 // Password change
 
 var (
-	PasswordChange = Must(NewPolicy(ActionWrite, "passwordchange."))
+	PasswordChange = Must(NewPolicy(ActionWrite, "passwordupdate."))
 )
 
 // Kotsadm Identity Service

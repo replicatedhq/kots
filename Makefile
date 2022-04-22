@@ -39,7 +39,7 @@ integration-cli:
 .PHONY: ci-test
 ci-test:
 	go test $(BUILDFLAGS) ./pkg/... ./cmd/... ./integration/... -coverprofile cover.out
-
+# go test -tags='netgo containers_image_ostree_stub exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp' -installsuffix netgo
 .PHONY: kots
 kots: PROJECT_NAME = kots
 kots: fmt vet capture-start-time kots-real report-metric

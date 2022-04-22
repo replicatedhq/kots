@@ -85,6 +85,20 @@ func requireValidSession(kotsStore store.Store, w http.ResponseWriter, r *http.R
 		return nil, err
 	}
 
+	passwordUpdatedAt, err := kotsStore.GetPasswordUpdatedAt()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get password updated at")
+	}
+	if passwordUpdatedAt.After(sess.IssuedAt) {
+		if err := kotsStore.DeleteSession(sess.ID); err != nil {
+			logger.Error(errors.Wrapf(err, "password was updated after session created. failed to delete invalid session %s", sess.ID))
+		}
+		err := errors.New("password changed, please login again")
+		response := ErrorResponse{Error: err.Error()}
+		JSON(w, http.StatusUnauthorized, response)
+		return nil, err
+	}
+
 	// give the user the full session timeout if they have been active at least an hour
 	if time.Now().Add(SessionTimeout - time.Hour).After(sess.ExpiresAt) {
 		sess.ExpiresAt = time.Now().Add(SessionTimeout)

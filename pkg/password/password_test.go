@@ -1,4 +1,4 @@
-package user
+package password
 
 import (
 	"fmt"
@@ -148,8 +148,8 @@ func Test_validatePassword_userStoreError(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mockStore := getMockStore(t)
 			mockStore.EXPECT().GetSharedPasswordBcrypt().Return(tt.args.mockGetSharedPasswordBcryptResponse, tt.args.mockGetSharedPasswordBcryptErrResponse)
-			if err := validatePassword(mockStore, tt.args.currentPassword); (err != nil) != tt.wantErr {
-				t.Errorf("validatePassword() error = %v, wantErr %v", err, tt.wantErr)
+			if err := ValidateCurrentPassword(mockStore, tt.args.currentPassword); (err != nil) != tt.wantErr {
+				t.Errorf("ValidateCurrentPassword() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
