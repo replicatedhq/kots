@@ -249,8 +249,10 @@ class Dashboard extends Component {
       });
       if (res.ok && res.status == 200) {
         const app = await res.json();
-        if (!isAwaitingResults(app.downstream.pendingVersions)) {
-          this.state.fetchAppDownstreamJob.stop();
+        if (app?.downstream?.pendingVersions?.length > 0) {
+          if (!isAwaitingResults(app.downstream.pendingVersions)) {
+            this.state.fetchAppDownstreamJob.stop();
+          }
         }
         this.setState({ 
           downstream: app.downstream,
