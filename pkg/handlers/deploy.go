@@ -90,6 +90,13 @@ func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if status == storetypes.VersionDeployed {
+		logger.Info(fmt.Sprintf("not deploying version %d because it's already deployed", int64(sequence)))
+		deployAppVersionResponse.Success = true
+		JSON(w, http.StatusOK, deployAppVersionResponse)
+		return
+	}
+
 	if status == storetypes.VersionPendingDownload || status == storetypes.VersionPendingConfig {
 		errMsg := fmt.Sprintf("not deploying version %d because it's %s", int64(sequence), status)
 		logger.Error(errors.New(errMsg))
