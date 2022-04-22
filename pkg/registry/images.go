@@ -214,7 +214,20 @@ func deleteUnusedImages(ctx context.Context, registry types.RegistrySettings, us
 
 	digestsInRegistry := map[string]string{}
 	for _, r := range searchResult {
+		// the registry can be shared with other internal or external applications, specially if an external registry is configured.
+		// ONLY delete images from the configured application's registry namespace to avoid deleting non-related user data.
+		parts := strings.Split(r.Name, "/")
+		registryNamespace := ""
+		if len(parts) > 1 {
+			// e.g.: my/namespace/imagename => my/namespace
+			registryNamespace = path.Join(parts[:len(parts)-1]...)
+		}
+		if registryNamespace != registry.Namespace {
+			continue
+		}
+
 		imageName := path.Join(registry.Hostname, r.Name)
+
 		ref, err := docker.ParseReference(fmt.Sprintf("//%s", imageName))
 		if err != nil {
 			logger.Errorf("failed to parse registry image ref %q: %v", imageName, err)
