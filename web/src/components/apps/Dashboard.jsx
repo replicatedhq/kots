@@ -249,11 +249,11 @@ class Dashboard extends Component {
       });
       if (res.ok && res.status == 200) {
         const app = await res.json();
-        if (app?.downstream?.pendingVersions?.length > 0) {
+        // if (app?.downstream?.pendingVersions?.length > 0) {
           if (!isAwaitingResults(app.downstream.pendingVersions)) {
             this.state.fetchAppDownstreamJob.stop();
           }
-        }
+        // }
         this.setState({ 
           downstream: app.downstream,
         });

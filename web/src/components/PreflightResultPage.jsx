@@ -51,38 +51,26 @@ class PreflightResultPage extends Component {
           this.showWarningModal();
           return;
         }
-        const sequence = match.params.sequence ? parseInt(match.params.sequence, 10) : 0;
-        await this.deployKotsVersion(slug, sequence, continueWithFailedPreflights);
       }
-
-      history.push(`/app/${slug}`);
-    } catch (err) {
-      console.log(err);
-      this.setState({
-        errorMessage: err ? `Encountered an error while trying to deploy downstream version: ${err.message}` : "Something went wrong, please try again."
-      });
-    }
-  }
-
-
-  deployKotsVersion = async (appSlug, sequence, continueWithFailedPreflights) => {
-    this.setState({ errorMessage: "" });
-    try {
-      await fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/sequence/${sequence}/deploy`, {
+      
+      const sequence = match.params.sequence ? parseInt(match.params.sequence, 10) : 0;
+      await fetch(`${process.env.API_ENDPOINT}/app/${slug}/sequence/${sequence}/deploy`, {
         headers: {
           "Authorization": Utilities.getToken(),
           "Content-Type": "application/json",
         },
         method: "POST",
         body: JSON.stringify({
-          isSkipPreflights: false,
-          continueWithFailedPreflights: continueWithFailedPreflights
+          isSkipPreflights: isSkipPreflights,
+          continueWithFailedPreflights: !!continueWithFailedPreflights
         }),
       });
+
+      history.push(`/app/${slug}`);
     } catch (err) {
       console.log(err);
       this.setState({
-        errorMessage: err ? `Encountered an error while trying to deploy version: ${err.message}` : "Something went wrong, please try again."
+        errorMessage: err ? `Encountered an error while trying to deploy downstream version: ${err.message}` : "Something went wrong, please try again."
       });
     }
   }
