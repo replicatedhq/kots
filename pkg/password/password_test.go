@@ -290,7 +290,7 @@ func Test_setSharedPasswordBcrypt(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "expect error when existing secret updated successfully and sessions delete err",
+			name: "expect no error when existing secret updated successfully and sessions delete err",
 			args: args{
 				clientset:      newMockClientForDeleteSessionsErr(),
 				namespace:      "test",
