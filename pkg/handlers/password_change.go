@@ -29,7 +29,7 @@ func (h *Handler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	var passwordChangeRequest PasswordChangeRequest
 	if err := json.NewDecoder(r.Body).Decode(&passwordChangeRequest); err != nil {
 		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 

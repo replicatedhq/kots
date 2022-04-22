@@ -87,7 +87,9 @@ func requireValidSession(kotsStore store.Store, w http.ResponseWriter, r *http.R
 
 	passwordUpdatedAt, err := kotsStore.GetPasswordUpdatedAt()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get password updated at")
+		response := ErrorResponse{Error: "failed to validate session with current password"}
+		JSON(w, http.StatusUnauthorized, response)
+		return nil, err
 	}
 	if passwordUpdatedAt.After(sess.IssuedAt) {
 		if err := kotsStore.DeleteSession(sess.ID); err != nil {

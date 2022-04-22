@@ -66,7 +66,7 @@ func ChangePassword(clientset *kubernetes.Clientset, namespace string, newPasswo
 }
 
 // setSharedPasswordBcrypt - set the shared password bcrypt hash in the kotsadm secret
-func setSharedPasswordBcrypt(clientset *kubernetes.Clientset, namespace string, bcryptPassword []byte) error {
+func setSharedPasswordBcrypt(clientset kubernetes.Interface, namespace string, bcryptPassword []byte) error {
 
 	secretData := map[string][]byte{
 		"passwordBcrypt":    []byte(bcryptPassword),
@@ -112,7 +112,7 @@ func setSharedPasswordBcrypt(clientset *kubernetes.Clientset, namespace string, 
 }
 
 // deleteAllSessions - delete all sessions in the session secret, log errors if they occur
-func deleteAllSessions(clientset *kubernetes.Clientset, namespace string) {
+func deleteAllSessions(clientset kubernetes.Interface, namespace string) {
 	sessionSecret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",

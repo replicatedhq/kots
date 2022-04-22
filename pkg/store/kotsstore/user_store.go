@@ -257,8 +257,8 @@ func (s *KOTSStore) GetPasswordUpdatedAt() (*time.Time, error) {
 		}
 		passwordUpdatedAt = updatedAt
 	} else {
-		// backward compatibility, for older secrets with no passwordUpdatedAt value
-		passwordUpdatedAt = time.Time{}
+		// backward compatibility, for older secret/ newly created secert with no passwordUpdatedAt value
+		passwordUpdatedAt = passwordSecret.CreationTimestamp.Time
 	}
 
 	return &passwordUpdatedAt, nil
