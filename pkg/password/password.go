@@ -2,6 +2,7 @@ package password
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -14,6 +15,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
+
+// passwordLock - mutex to prevent multiple password changes at the same time
+var passwordLock = sync.Mutex{}
 
 var (
 	ErrCurrentPasswordDoesNotMatch  = errors.New("current password does not match")
@@ -35,6 +39,9 @@ func ValidatePasswordInput(currentPassword string, newPassword string) error {
 
 // ValidateCurrentPassword - will compare the password with the stored password and return an error if they don't match
 func ValidateCurrentPassword(kotsStore store.Store, currentPassword string) error {
+	passwordLock.Lock()
+	defer passwordLock.Unlock()
+
 	shaBytes, err := kotsStore.GetSharedPasswordBcrypt()
 	if err != nil {
 		return errors.Wrap(err, "failed to get current shared password bcrypt")
@@ -53,6 +60,9 @@ func ValidateCurrentPassword(kotsStore store.Store, currentPassword string) erro
 
 // ChangePassword - will change the password in the kotsadm secret
 func ChangePassword(clientset *kubernetes.Clientset, namespace string, newPassword string) error {
+	passwordLock.Lock()
+	defer passwordLock.Unlock()
+
 	shaBytes, err := bcrypt.GenerateFromPassword([]byte(newPassword), 10)
 	if err != nil {
 		return errors.Wrap(err, "failed to generate new encrypted password")
@@ -67,7 +77,6 @@ func ChangePassword(clientset *kubernetes.Clientset, namespace string, newPasswo
 
 // setSharedPasswordBcrypt - set the shared password bcrypt hash in the kotsadm secret
 func setSharedPasswordBcrypt(clientset kubernetes.Interface, namespace string, bcryptPassword []byte) error {
-
 	secretData := map[string][]byte{
 		"passwordBcrypt":    []byte(bcryptPassword),
 		"passwordUpdatedAt": []byte(time.Now().Format(time.RFC3339)),
