@@ -377,17 +377,23 @@ func InstallCmd() *cobra.Command {
 				}
 			}()
 
+			authSlug, err := auth.GetOrCreateAuthSlug(clientset, deployOptions.Namespace)
+			if err != nil {
+				return errors.Wrap(err, "failed to get kotsadm auth slug")
+			}
+
 			if deployOptions.License != nil {
-				if err := validateAutomatedInstall(deployOptions, clientset, apiEndpoint); err != nil {
+				if err := ValidateAutomatedInstall(deployOptions, authSlug, apiEndpoint); err != nil {
 					return errors.Wrap(err, "failed to validate automated install")
 				}
 				log.Debug("automated install validated successfully")
-			}
-			if !deployOptions.SkipPreflights {
-				if err := validatePreflightStatus(deployOptions, clientset, apiEndpoint); err != nil {
-					return errors.Wrap(err, "failed to validate preflight status")
+
+				if !deployOptions.SkipPreflights {
+					if err := ValidatePreflightStatus(deployOptions, authSlug, apiEndpoint); err != nil {
+						return errors.Wrap(err, "failed to validate preflight status")
+					}
+					log.Debug("preflights validated successfully")
 				}
-				log.Debug("preflights validated successfully")
 			}
 
 			m.ReportInstallFinish()
@@ -765,11 +771,7 @@ func CheckRBAC() error {
 	return nil
 }
 
-func validateAutomatedInstall(deployOptions kotsadmtypes.DeployOptions, clientset *kubernetes.Clientset, apiEndpoint string) error {
-	authSlug, err := auth.GetOrCreateAuthSlug(clientset, deployOptions.Namespace)
-	if err != nil {
-		return errors.Wrap(err, "failed to get kotsadm auth slug")
-	}
+func ValidateAutomatedInstall(deployOptions kotsadmtypes.DeployOptions, authSlug string, apiEndpoint string) error {
 	url := fmt.Sprintf("%s/app/%s/automated/status", apiEndpoint, deployOptions.License.Spec.AppSlug)
 
 	startTime := time.Now()
@@ -811,7 +813,7 @@ func getAutomatedInstallStatus(url string, authSlug string) (*kotsstore.TaskStat
 
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to read")
+		return nil, errors.Wrap(err, "failed to read response body")
 	}
 
 	taskStatus := kotsstore.TaskStatus{}
@@ -822,11 +824,7 @@ func getAutomatedInstallStatus(url string, authSlug string) (*kotsstore.TaskStat
 	return &taskStatus, nil
 }
 
-func validatePreflightStatus(deployOptions kotsadmtypes.DeployOptions, clientset *kubernetes.Clientset, apiEndpoint string) error {
-	authSlug, err := auth.GetOrCreateAuthSlug(clientset, deployOptions.Namespace)
-	if err != nil {
-		return errors.Wrap(err, "failed to get kotsadm auth slug")
-	}
+func ValidatePreflightStatus(deployOptions kotsadmtypes.DeployOptions, authSlug string, apiEndpoint string) error {
 	url := fmt.Sprintf("%s/app/%s/sequence/0/preflight/result", apiEndpoint, deployOptions.License.Spec.AppSlug)
 
 	startTime := time.Now()
@@ -837,11 +835,23 @@ func validatePreflightStatus(deployOptions kotsadmtypes.DeployOptions, clientset
 			return errors.Wrap(err, "failed to get preflight status")
 		}
 
-		if !checkPreflightsComplete(response) {
+		preflightsComplete, err := checkPreflightsComplete(response)
+		if err != nil {
+			return errors.Wrap(err, "failed to unmarshal collect progress for preflights")
+		}
+		if !preflightsComplete {
 			continue
 		}
 
-		return checkPreflightResults(response)
+		resultsAvailable, err := checkPreflightResults(response)
+		if err != nil {
+			return err
+		}
+		if !resultsAvailable {
+			continue
+		}
+
+		return nil
 	}
 
 	return errors.New("timeout waiting for preflights to finish. Use the --wait-duration flag to increase timeout.")
@@ -867,30 +877,45 @@ func getPreflightResponse(url string, authSlug string) (*handlers.GetPreflightRe
 
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to read")
+		return nil, errors.Wrap(err, "failed to read response body")
 	}
 
 	var response handlers.GetPreflightResultResponse
-	_ = json.Unmarshal(b, &response)
+	if err = json.Unmarshal(b, &response); err != nil {
+		return nil, errors.Wrap(err, "failed to unmarshal the preflight response")
+	}
 
 	return &response, nil
 }
 
-func checkPreflightsComplete(response *handlers.GetPreflightResultResponse) bool {
-	var collectProgress *preflight.CollectProgress
-	_ = json.Unmarshal([]byte(response.PreflightProgress), &collectProgress)
-
-	if collectProgress != nil {
-		time.Sleep(time.Second)
-		return false
+func checkPreflightsComplete(response *handlers.GetPreflightResultResponse) (bool, error) {
+	if response.PreflightProgress == "" {
+		return true, nil
 	}
 
-	return true
+	var collectProgress *preflight.CollectProgress
+	err := json.Unmarshal([]byte(response.PreflightProgress), &collectProgress)
+	if err != nil {
+		return false, err
+	}
+
+	if collectProgress != nil && collectProgress.TotalCount < 1 {
+		return false, nil
+	}
+
+	return true, nil
 }
 
-func checkPreflightResults(response *handlers.GetPreflightResultResponse) error {
+func checkPreflightResults(response *handlers.GetPreflightResultResponse) (bool, error) {
+	if response.PreflightResult.Result == "" {
+		return false, nil
+	}
+
 	var results preflight.UploadPreflightResults
-	_ = json.Unmarshal([]byte(response.PreflightResult.Result), &results)
+	err := json.Unmarshal([]byte(response.PreflightResult.Result), &results)
+	if err != nil {
+		return false, errors.Wrap(err, fmt.Sprintf("failed to unmarshal upload preflight results from response: %v", response.PreflightResult.Result))
+	}
 
 	var isWarn, isFail bool
 	for _, result := range results.Results {
@@ -903,15 +928,15 @@ func checkPreflightResults(response *handlers.GetPreflightResultResponse) error 
 	}
 
 	if isWarn && isFail {
-		return errors.New("There are preflight check failures and warnings for the application. The app was not deployed.")
+		return false, errors.New("There are preflight check failures and warnings for the application. The app was not deployed.")
 	}
 
 	if isWarn {
-		return errors.New("There are preflight check warnings for the application. The app was not deployed.")
+		return false, errors.New("There are preflight check warnings for the application. The app was not deployed.")
 	}
 	if isFail {
-		return errors.New("There are preflight check failures for the application. The app was not deployed.")
+		return false, errors.New("There are preflight check failures for the application. The app was not deployed.")
 	}
 
-	return nil
+	return true, nil
 }
