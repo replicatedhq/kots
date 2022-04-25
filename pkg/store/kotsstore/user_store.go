@@ -231,3 +231,35 @@ func (s *KOTSStore) flagSuccessfulLoginInDatabase() error {
 
 	return nil
 }
+
+// GetPasswordUpdatedAt - returns the time the password was last updated
+func (s *KOTSStore) GetPasswordUpdatedAt() (*time.Time, error) {
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get k8s clientset")
+	}
+
+	passwordSecret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), util.PasswordSecretName, metav1.GetOptions{})
+	if err != nil {
+		if kuberneteserrors.IsNotFound(err) {
+			//  similar to fallback case when password secret is not found and uses the default password from environment variable
+			return &time.Time{}, nil
+		}
+		return nil, errors.Wrap(err, "failed to get password secret")
+	}
+
+	var passwordUpdatedAt time.Time
+	updatedAtBytes, ok := passwordSecret.Data["passwordUpdatedAt"]
+	if ok {
+		updatedAt, err := time.Parse(time.RFC3339, string(updatedAtBytes))
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to parse passwordUpdatedAt")
+		}
+		passwordUpdatedAt = updatedAt
+	} else {
+		// backward compatibility, for older secret/ newly created secret with no passwordUpdatedAt value
+		passwordUpdatedAt = passwordSecret.CreationTimestamp.Time
+	}
+
+	return &passwordUpdatedAt, nil
+}

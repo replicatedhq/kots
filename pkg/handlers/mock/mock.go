@@ -106,6 +106,18 @@ func (mr *MockKOTSHandlerMockRecorder) ChangeLicense(w, r interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeLicense", reflect.TypeOf((*MockKOTSHandler)(nil).ChangeLicense), w, r)
 }
 
+// ChangePassword mocks base method.
+func (m *MockKOTSHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ChangePassword", w, r)
+}
+
+// ChangePassword indicates an expected call of ChangePassword.
+func (mr *MockKOTSHandlerMockRecorder) ChangePassword(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangePassword", reflect.TypeOf((*MockKOTSHandler)(nil).ChangePassword), w, r)
+}
+
 // CheckAirgapBundleChunk mocks base method.
 func (m *MockKOTSHandler) CheckAirgapBundleChunk(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()

@@ -822,6 +822,21 @@ func (mr *MockStoreMockRecorder) GetParentSequenceForSequence(appID, clusterID, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetParentSequenceForSequence", reflect.TypeOf((*MockStore)(nil).GetParentSequenceForSequence), appID, clusterID, sequence)
 }
 
+// GetPasswordUpdatedAt mocks base method.
+func (m *MockStore) GetPasswordUpdatedAt() (*time.Time, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPasswordUpdatedAt")
+	ret0, _ := ret[0].(*time.Time)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPasswordUpdatedAt indicates an expected call of GetPasswordUpdatedAt.
+func (mr *MockStoreMockRecorder) GetPasswordUpdatedAt() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPasswordUpdatedAt", reflect.TypeOf((*MockStore)(nil).GetPasswordUpdatedAt))
+}
+
 // GetPendingAirgapUploadApp mocks base method.
 func (m *MockStore) GetPendingAirgapUploadApp() (*types.PendingApp, error) {
 	m.ctrl.T.Helper()
@@ -3828,6 +3843,21 @@ func (m *MockUserStore) FlagSuccessfulLogin() error {
 func (mr *MockUserStoreMockRecorder) FlagSuccessfulLogin() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FlagSuccessfulLogin", reflect.TypeOf((*MockUserStore)(nil).FlagSuccessfulLogin))
+}
+
+// GetPasswordUpdatedAt mocks base method.
+func (m *MockUserStore) GetPasswordUpdatedAt() (*time.Time, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPasswordUpdatedAt")
+	ret0, _ := ret[0].(*time.Time)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPasswordUpdatedAt indicates an expected call of GetPasswordUpdatedAt.
+func (mr *MockUserStoreMockRecorder) GetPasswordUpdatedAt() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPasswordUpdatedAt", reflect.TypeOf((*MockUserStore)(nil).GetPasswordUpdatedAt))
 }
 
 // GetSharedPasswordBcrypt mocks base method.

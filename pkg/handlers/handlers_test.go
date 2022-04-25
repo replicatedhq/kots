@@ -1244,6 +1244,16 @@ var HandlerPolicyTests = map[string][]HandlerPolicyTest{
 			ExpectStatus: http.StatusOK,
 		},
 	},
+	"ChangePassword": {
+		{
+			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
+			SessionRoles: []string{rbac.ClusterAdminRoleID},
+			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
+				handlerRecorder.ChangePassword(gomock.Any(), gomock.Any())
+			},
+			ExpectStatus: http.StatusOK,
+		},
+	},
 }
 
 type HandlerPolicyTest struct {
@@ -1315,6 +1325,9 @@ func TestHandlerPolicies(t *testing.T) {
 					kotsStoreMock.EXPECT().
 						GetSession(sess.ID).
 						Return(sess, nil)
+					kotsStoreMock.EXPECT().
+						GetPasswordUpdatedAt().
+						Return(&time.Time{}, nil)
 
 					test.Calls(kotsStoreMock.EXPECT(), kotsHandlersMock.EXPECT())
 

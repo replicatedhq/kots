@@ -41,7 +41,7 @@ func Test_requireValidSession(t *testing.T) {
 	sessionJWT := signJWT(t, sess)
 
 	mockStore.EXPECT().GetSession(sess.ID).Return(sess, nil)
-
+	mockStore.EXPECT().GetPasswordUpdatedAt().Return(&time.Time{}, nil).MaxTimes(2)
 	type args struct {
 		kotsStore store.Store
 		w         http.ResponseWriter
@@ -222,6 +222,7 @@ func Test_requireValidSession_extendSession(t *testing.T) {
 	}
 
 	mockStore.EXPECT().GetSession(extendSession.ID).Return(extendSession, nil)
+	mockStore.EXPECT().GetPasswordUpdatedAt().Return(&time.Time{}, nil)
 	mockStore.EXPECT().UpdateSessionExpiresAt(extendSession.ID, gomock.Any()).Return(nil)
 
 	want = nil
@@ -252,6 +253,7 @@ func Test_requireValidSession_extendSession_withUpdateErr(t *testing.T) {
 	}
 
 	mockStore.EXPECT().GetSession(extendSession.ID).Return(extendSession, nil).MaxTimes(2)
+	mockStore.EXPECT().GetPasswordUpdatedAt().Return(&time.Time{}, nil).MaxTimes(2)
 	mockStore.EXPECT().UpdateSessionExpiresAt(extendSession.ID, gomock.Any()).Return(fmt.Errorf("error while updating secret"))
 
 	want = nil
@@ -265,4 +267,101 @@ func Test_requireValidSession_extendSession_withUpdateErr(t *testing.T) {
 	got, err = requireValidSession(mockStore, w, r)
 	req.NoError(err)
 	req.Equal(extendSession, got)
+}
+
+func Test_requireValidSession_FailedToFetchPasswordUpdated_AfterSessionIssuedErr(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockStore := mock_store.NewMockStore(ctrl)
+
+	extendSession := &types.Session{
+		ID:        "session-id",
+		IssuedAt:  time.Now(),
+		ExpiresAt: time.Now().Add(12 * time.Hour).Add(-1 * time.Hour), // simulate a scenario where user is still using the session after one hour
+	}
+	extendSessionJWT := signJWT(t, extendSession)
+
+	w := httptest.NewRecorder()
+	r := &http.Request{
+		Header: http.Header{
+			"Authorization": []string{fmt.Sprintf("Bearer %v", extendSessionJWT)},
+		},
+	}
+
+	mockStore.EXPECT().GetSession(extendSession.ID).Return(extendSession, nil).MaxTimes(2)
+	mockStore.EXPECT().GetPasswordUpdatedAt().Return(nil, fmt.Errorf("failed to fetch password updatedAt"))
+
+	want = nil
+	req := require.New(t)
+	got, err := requireValidSession(mockStore, w, r)
+	req.Error(err)
+	req.Equal("failed to fetch password updatedAt", err.Error())
+	req.Equal(want, got)
+	req.Equal(401, w.Code)
+}
+
+func Test_requireValidSession_PasswordUpdated_AfterSessionIssuedErr(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockStore := mock_store.NewMockStore(ctrl)
+
+	session := &types.Session{
+		ID:        "session-id",
+		IssuedAt:  time.Now(),
+		ExpiresAt: time.Now().Add(12 * time.Hour).Add(-1 * time.Hour), // simulate a scenario where user is still using the session after one hour
+	}
+	sessionJWT := signJWT(t, session)
+
+	w := httptest.NewRecorder()
+	r := &http.Request{
+		Header: http.Header{
+			"Authorization": []string{fmt.Sprintf("Bearer %v", sessionJWT)},
+		},
+	}
+
+	passwordUpdatedAt := time.Now().Add(1 * time.Hour)
+	mockStore.EXPECT().GetSession(session.ID).Return(session, nil).MaxTimes(2)
+	mockStore.EXPECT().GetPasswordUpdatedAt().Return(&passwordUpdatedAt, nil)
+	mockStore.EXPECT().DeleteSession(session.ID).Return(nil)
+
+	want = nil
+	req := require.New(t)
+	got, err := requireValidSession(mockStore, w, r)
+	req.Error(err)
+	req.Equal("password changed, please login again", err.Error())
+	req.Equal(want, got)
+	req.Equal(401, w.Code)
+}
+
+func Test_requireValidSession_PasswordUpdated_AfterSessionIssuedErr_logDeleteSessionErr(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockStore := mock_store.NewMockStore(ctrl)
+
+	session := &types.Session{
+		ID:        "session-id",
+		IssuedAt:  time.Now(),
+		ExpiresAt: time.Now().Add(12 * time.Hour).Add(-1 * time.Hour), // simulate a scenario where user is still using the session after one hour
+	}
+	sessionJWT := signJWT(t, session)
+
+	w := httptest.NewRecorder()
+	r := &http.Request{
+		Header: http.Header{
+			"Authorization": []string{fmt.Sprintf("Bearer %v", sessionJWT)},
+		},
+	}
+
+	passwordUpdatedAt := time.Now().Add(1 * time.Hour)
+	mockStore.EXPECT().GetSession(session.ID).Return(session, nil).MaxTimes(2)
+	mockStore.EXPECT().GetPasswordUpdatedAt().Return(&passwordUpdatedAt, nil)
+	mockStore.EXPECT().DeleteSession(session.ID).Return(fmt.Errorf("failed to delete session"))
+
+	want = nil
+	req := require.New(t)
+	got, err := requireValidSession(mockStore, w, r)
+	req.Error(err)
+	req.Equal("password changed, please login again", err.Error())
+	req.Equal(want, got)
+	req.Equal(401, w.Code)
 }

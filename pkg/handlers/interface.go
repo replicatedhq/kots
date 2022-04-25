@@ -143,4 +143,7 @@ type KOTSHandler interface {
 	CreateGitOps(w http.ResponseWriter, r *http.Request)
 	ResetGitOps(w http.ResponseWriter, r *http.Request)
 	GetGitOpsRepo(w http.ResponseWriter, r *http.Request)
+
+	// Password change
+	ChangePassword(w http.ResponseWriter, r *http.Request)
 }

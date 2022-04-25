@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"context"
 	"fmt"
 	"os"
 
@@ -9,12 +8,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/password"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"golang.org/x/crypto/bcrypt"
-	corev1 "k8s.io/api/core/v1"
-	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func ResetPasswordCmd() *cobra.Command {
@@ -98,51 +94,14 @@ func promptForNewPassword() (string, error) {
 	}
 }
 
-func setKotsadmPassword(password string, namespace string) error {
-	bcryptPassword, err := bcrypt.GenerateFromPassword([]byte(password), 10)
-	if err != nil {
-		return errors.Wrap(err, "failed to create encrypt password")
-	}
-
+func setKotsadmPassword(newPassword string, namespace string) error {
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to create k8s client")
 	}
 
-	existingSecret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), "kotsadm-password", metav1.GetOptions{})
-	if err != nil {
-		if !kuberneteserrors.IsNotFound(err) {
-			return errors.Wrap(err, "failed to lookup secret")
-		}
-
-		newSecret := &corev1.Secret{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "v1",
-				Kind:       "Secret",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "kotsadm-password",
-				Namespace: namespace,
-			},
-			Data: map[string][]byte{
-				"passwordBcrypt": []byte(bcryptPassword),
-			},
-		}
-
-		_, err := clientset.CoreV1().Secrets(namespace).Create(context.TODO(), newSecret, metav1.CreateOptions{})
-		if err != nil {
-			return errors.Wrap(err, "failed to create secret")
-		}
-	} else {
-		existingSecret.Data["passwordBcrypt"] = []byte(bcryptPassword)
-		delete(existingSecret.Labels, "numAttempts")
-		delete(existingSecret.Labels, "lastFailure")
-
-		_, err := clientset.CoreV1().Secrets(namespace).Update(context.TODO(), existingSecret, metav1.UpdateOptions{})
-		if err != nil {
-			return errors.Wrap(err, "failed to update secret")
-		}
+	if err := password.ChangePassword(clientset, namespace, newPassword); err != nil {
+		return errors.Wrap(err, "failed to set new password")
 	}
-
 	return nil
 }

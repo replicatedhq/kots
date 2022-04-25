@@ -282,6 +282,10 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 		HandlerFunc(middleware.EnforceAccess(policy.GitopsWrite, handler.ResetGitOps))
 	r.Name("GetGitOpsRepo").Path("/api/v1/gitops/get").Methods("GET").
 		HandlerFunc(middleware.EnforceAccess(policy.GitopsRead, handler.GetGitOpsRepo))
+
+	// Password change
+	r.Name("ChangePassword").Path("/api/v1/password/change").Methods("PUT").
+		HandlerFunc(middleware.EnforceAccess(policy.PasswordChange, handler.ChangePassword))
 }
 
 func JSON(w http.ResponseWriter, code int, payload interface{}) {

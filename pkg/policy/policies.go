@@ -57,6 +57,12 @@ var (
 	PrometheussettingsWrite = Must(NewPolicy(ActionWrite, "prometheussettings."))
 )
 
+// Password change
+
+var (
+	PasswordChange = Must(NewPolicy(ActionWrite, "passwordupdate."))
+)
+
 // Kotsadm Identity Service
 
 var (

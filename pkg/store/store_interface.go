@@ -208,6 +208,7 @@ type LicenseStore interface {
 
 type UserStore interface {
 	GetSharedPasswordBcrypt() ([]byte, error)
+	GetPasswordUpdatedAt() (*time.Time, error)
 	FlagInvalidPassword() error
 	FlagSuccessfulLogin() error
 }
