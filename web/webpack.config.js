@@ -34,7 +34,6 @@ module.exports = function (env) {
       publicPath: "/",
       filename: "[name].[fullhash].js"
     },
-
     resolve: {
       extensions: [".js", ".mjs", ".jsx", ".css", ".scss", ".png", ".jpg", ".svg", ".ico"],
       fallback: {
@@ -48,7 +47,8 @@ module.exports = function (env) {
         tty: require.resolve("tty-browserify")
       },
       alias: {
-        "@src": path.resolve(__dirname, "src")
+        "@src": path.resolve(__dirname, "src"),
+        "handlebars" : "handlebars/dist/handlebars.js"
       },
       mainFields: ["browser", "main"],
     },
@@ -110,7 +110,7 @@ module.exports = function (env) {
               }
             }
           ]
-        },
+        }
       ],
     },
     plugins: [
