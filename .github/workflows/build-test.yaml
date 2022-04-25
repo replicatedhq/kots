@@ -845,7 +845,7 @@ jobs:
               echo "Timed out waiting for app to be ready"
               ./bin/kots get apps --namespace $APP_SLUG
               echo "kotsadm logs:"
-              kubectl logs -l app=kotsadm --tail=100
+              kubectl logs -l app=kotsadm --tail=100 --namespace $APP_SLUG
               exit -1
             fi
             sleep 1
@@ -1017,7 +1017,7 @@ jobs:
               echo "Timed out waiting for app to be installed with correct version label: $APP_VERSION_LABEL"
               ./bin/kots get apps --namespace $APP_SLUG
               echo "kotsadm logs:"
-              kubectl logs -l app=kotsadm --tail=100
+              kubectl logs -l app=kotsadm --tail=100 --namespace $APP_SLUG
               exit -1
             fi
             sleep 1
@@ -1071,7 +1071,7 @@ jobs:
               echo "Timed out waiting for app to be installed with latest version label: $LATEST_APP_VERSION_LABEL"
               ./bin/kots get apps --namespace $APP_SLUG
               echo "kotsadm logs:"
-              kubectl logs -l app=kotsadm --tail=100
+              kubectl logs -l app=kotsadm --tail=100 --namespace $APP_SLUG
               exit -1
             fi
             sleep 1
