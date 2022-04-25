@@ -258,6 +258,12 @@ func InstallCmd() *cobra.Command {
 			}
 			deployOptions.Timeout = timeout
 
+			preflightsTimeout, err := time.ParseDuration(v.GetString("preflights-wait-duration"))
+			if err != nil {
+				return errors.Wrap(err, "failed to parse timeout value")
+			}
+			deployOptions.PreflightsTimeout = preflightsTimeout
+
 			if v.GetBool("copy-proxy-env") {
 				deployOptions.HTTPProxyEnvValue = os.Getenv("HTTP_PROXY")
 				if deployOptions.HTTPProxyEnvValue == "" {
@@ -442,7 +448,8 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().Bool("port-forward", true, "set to false to disable automatic port forward")
 	cmd.Flags().MarkDeprecated("port-forward", "please use --no-port-forward instead")
 	cmd.Flags().Bool("no-port-forward", false, "set to true to disable automatic port forward")
-	cmd.Flags().String("wait-duration", "2m", "timeout out to be used while waiting for individual components to be ready.  must be in Go duration format (eg: 10s, 2m)")
+	cmd.Flags().String("wait-duration", "2m", "timeout to be used while waiting for preflights to complete. must be in Go duration format (eg: 10s, 2m)")
+	cmd.Flags().String("preflights-wait-duration", "15m", "timeout to be used while waiting for individual components to be ready. must be in Go duration format (eg: 10s, 2m)")
 	cmd.Flags().String("http-proxy", "", "sets HTTP_PROXY environment variable in all KOTS Admin Console components")
 	cmd.Flags().String("https-proxy", "", "sets HTTPS_PROXY environment variable in all KOTS Admin Console components")
 	cmd.Flags().String("no-proxy", "", "sets NO_PROXY environment variable in all KOTS Admin Console components")
@@ -829,7 +836,7 @@ func ValidatePreflightStatus(deployOptions kotsadmtypes.DeployOptions, authSlug 
 
 	startTime := time.Now()
 
-	for time.Since(startTime) < deployOptions.Timeout {
+	for time.Since(startTime) < deployOptions.PreflightsTimeout {
 		response, err := getPreflightResponse(url, authSlug)
 		if err != nil {
 			return errors.Wrap(err, "failed to get preflight status")
@@ -854,7 +861,7 @@ func ValidatePreflightStatus(deployOptions kotsadmtypes.DeployOptions, authSlug 
 		return nil
 	}
 
-	return errors.New("timeout waiting for preflights to finish. Use the --wait-duration flag to increase timeout.")
+	return errors.New("timeout waiting for preflights to finish. Use the --preflights-wait-duration flag to increase timeout.")
 }
 
 func getPreflightResponse(url string, authSlug string) (*handlers.GetPreflightResultResponse, error) {

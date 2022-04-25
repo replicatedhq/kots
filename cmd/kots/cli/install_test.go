@@ -39,19 +39,21 @@ var _ = Describe("Install", func() {
 			}
 
 			validDeployOptions = kotsadmtypes.DeployOptions{
-				Namespace: "test-namespace",
-				Timeout:   time.Second,
-				License:   validLicense,
+				Namespace:         "test-namespace",
+				Timeout:           time.Second,
+				PreflightsTimeout: time.Second,
+				License:           validLicense,
 			}
 
 			server = ghttp.NewServer()
 		})
 
-		It("returns an error when the timeout deploy option is satisfied", func() {
+		It("returns an error when the preflight timeout deploy option is satisfied", func() {
 			deployOptions := kotsadmtypes.DeployOptions{
-				Namespace: "test-namespace",
-				Timeout:   time.Nanosecond,
-				License:   validLicense,
+				Namespace:         "test-namespace",
+				Timeout:           time.Nanosecond,
+				PreflightsTimeout: time.Nanosecond,
+				License:           validLicense,
 			}
 
 			inProgressPreflightResponse, err := createPreflightResponse(false, false, true, false)
@@ -145,9 +147,10 @@ var _ = Describe("Install", func() {
 
 		It("rechecks the endpoint if preflight response is empty", func() {
 			longerTimeoutDeployOptions := kotsadmtypes.DeployOptions{
-				Namespace: "test-namespace",
-				Timeout:   2 * time.Second,
-				License:   validLicense,
+				Namespace:         "test-namespace",
+				Timeout:           2 * time.Second,
+				PreflightsTimeout: 2 * time.Second,
+				License:           validLicense,
 			}
 			server.AllowUnhandledRequests = false
 
@@ -182,9 +185,10 @@ var _ = Describe("Install", func() {
 
 		It("rechecks the endpoint if preflight checks are still being collected", func() {
 			longerTimeoutDeployOptions := kotsadmtypes.DeployOptions{
-				Namespace: "test-namespace",
-				Timeout:   2 * time.Second,
-				License:   validLicense,
+				Namespace:         "test-namespace",
+				Timeout:           2 * time.Second,
+				PreflightsTimeout: 2 * time.Second,
+				License:           validLicense,
 			}
 			server.AllowUnhandledRequests = false
 

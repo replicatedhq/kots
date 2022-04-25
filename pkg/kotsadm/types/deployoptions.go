@@ -35,6 +35,7 @@ type DeployOptions struct {
 	IncludeMinio           bool
 	IncludeMinioSnapshots  bool
 	Timeout                time.Duration
+	PreflightsTimeout      time.Duration
 	HTTPProxyEnvValue      string
 	HTTPSProxyEnvValue     string
 	NoProxyEnvValue        string
