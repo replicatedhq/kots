@@ -1,6 +1,7 @@
 import React from "react";
 import dayjs from "dayjs";
-import Handlebars from "handlebars/runtime";
+import localizedFormat from "dayjs/plugin/localizedFormat"
+import Handlebars from "handlebars";
 import Modal from "react-modal";
 import { getValueFormat } from "@grafana/ui"
 import { XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, LineSeries, DiscreteColorLegend, Crosshair } from "react-vis";
@@ -9,6 +10,7 @@ import { Repeater } from "../../utilities/repeater";
 import ConfigureGraphs from "../shared/ConfigureGraphs";
 import "../../scss/components/watches/DashboardCard.scss";
 import "@src/scss/components/apps/AppLicense.scss";
+dayjs.extend(localizedFormat)
 
 export default class DashboardGraphsCard extends React.Component {
 
