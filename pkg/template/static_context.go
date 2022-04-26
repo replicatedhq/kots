@@ -596,5 +596,14 @@ func (ctx StaticCtx) yamlEscape(plain string) string {
 	if err != nil {
 		return ""
 	}
-	return string(marshalled)
+
+	// it is possible for this function to produce multiline yaml, so we indent it a bunch for safety
+	indented := indent(20, string(marshalled))
+	return indented
+}
+
+// copied from sprig
+func indent(spaces int, v string) string {
+	pad := strings.Repeat(" ", spaces)
+	return pad + strings.Replace(v, "\n", "\n"+pad, -1)
 }

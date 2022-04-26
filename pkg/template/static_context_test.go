@@ -169,4 +169,20 @@ func TestYamlEscape(t *testing.T) {
 	err := yaml.Unmarshal([]byte(encoded), &decoded)
 	req.NoError(err)
 	req.Equal(allchars, decoded)
+
+	exampleYamlTpl := `
+abc:
+  xyz: %s`
+	exampleYaml := fmt.Sprintf(exampleYamlTpl, encoded)
+	type xyz struct {
+		XYZ string `yaml:"xyz"`
+	}
+	type abc struct {
+		ABC xyz `yaml:"abc"`
+	}
+
+	abcTest := abc{}
+	err = yaml.Unmarshal([]byte(exampleYaml), &abcTest)
+	req.NoError(err)
+	req.Equal(allchars, abcTest.ABC.XYZ)
 }
