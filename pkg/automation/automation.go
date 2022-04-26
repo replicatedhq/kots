@@ -143,7 +143,6 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 	if err != nil {
 		return appSlug, errors.Wrap(err, "failed to verify license signature")
 	}
-	appSlug = verifiedLicense.Spec.AppSlug
 
 	if !kotsadm.IsAirgap() {
 		licenseData, err := kotslicense.GetLatestLicense(verifiedLicense)

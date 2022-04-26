@@ -584,7 +584,7 @@ func (h *Handler) GetAutomatedInstallStatus(w http.ResponseWriter, r *http.Reque
 	status, msg, err := store.GetStore().GetTaskStatus(fmt.Sprintf("automated-install-slug-%s", mux.Vars(r)["appSlug"]))
 	if err != nil {
 		logger.Error(errors.Wrapf(err, "failed to get install status for app %s", mux.Vars(r)["appSlug"]))
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	response := kotsstore.TaskStatus{
@@ -592,5 +592,5 @@ func (h *Handler) GetAutomatedInstallStatus(w http.ResponseWriter, r *http.Reque
 		Message: msg,
 	}
 
-	JSON(w, 200, response)
+	JSON(w, http.StatusOK, response)
 }

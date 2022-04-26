@@ -449,7 +449,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().MarkDeprecated("port-forward", "please use --no-port-forward instead")
 	cmd.Flags().Bool("no-port-forward", false, "set to true to disable automatic port forward")
 	cmd.Flags().String("wait-duration", "2m", "timeout to be used while waiting for preflights to complete. must be in Go duration format (eg: 10s, 2m)")
-	cmd.Flags().String("preflights-wait-duration", "15m", "timeout to be used while waiting for individual components to be ready. must be in Go duration format (eg: 10s, 2m)")
+	cmd.Flags().String("preflights-wait-duration", "15m", "timeout to be used while waiting for preflights to complete. must be in Go duration format (eg: 10s, 2m)")
 	cmd.Flags().String("http-proxy", "", "sets HTTP_PROXY environment variable in all KOTS Admin Console components")
 	cmd.Flags().String("https-proxy", "", "sets HTTPS_PROXY environment variable in all KOTS Admin Console components")
 	cmd.Flags().String("no-proxy", "", "sets NO_PROXY environment variable in all KOTS Admin Console components")
@@ -814,7 +814,7 @@ func getAutomatedInstallStatus(url string, authSlug string) (*kotsstore.TaskStat
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		return nil, errors.Errorf("unexpected status code %d", resp.StatusCode)
 	}
 
