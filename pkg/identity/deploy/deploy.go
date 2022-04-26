@@ -17,7 +17,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/template"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
+	networkingv1 "k8s.io/api/networking/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -564,7 +564,7 @@ func ensureIngress(ctx context.Context, clientset kubernetes.Interface, namespac
 	return ingress.EnsureIngress(ctx, clientset, namespace, dexIngress)
 }
 
-func ingressResource(options Options) *extensionsv1beta1.Ingress {
+func ingressResource(options Options) *networkingv1.Ingress {
 	ingressSpec := options.IdentityConfigSpec.IngressConfig
 	if ingressSpec.Ingress == nil {
 		return nil
@@ -573,7 +573,7 @@ func ingressResource(options Options) *extensionsv1beta1.Ingress {
 		*ingressSpec.Ingress,
 		prefixName(options.NamePrefix, "dex"),
 		types.ServiceName(options.NamePrefix),
-		int(types.ServicePort()),
+		types.ServicePort(),
 		AdditionalLabels(options.NamePrefix, options.AdditionalLabels),
 	)
 }

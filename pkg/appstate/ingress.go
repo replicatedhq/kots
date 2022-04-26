@@ -5,10 +5,9 @@ import (
 	"time"
 
 	"github.com/replicatedhq/kots/pkg/appstate/types"
-	extensions "k8s.io/api/extensions/v1beta1"
+	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
@@ -28,15 +27,15 @@ func runIngressController(
 ) {
 	listwatch := &cache.ListWatch{
 		ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
-			return clientset.ExtensionsV1beta1().Ingresses(targetNamespace).List(context.TODO(), options)
+			return clientset.NetworkingV1().Ingresses(targetNamespace).List(context.TODO(), options)
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return clientset.ExtensionsV1beta1().Ingresses(targetNamespace).Watch(context.TODO(), options)
+			return clientset.NetworkingV1().Ingresses(targetNamespace).Watch(context.TODO(), options)
 		},
 	}
 	informer := cache.NewSharedInformer(
 		listwatch,
-		&extensions.Ingress{},
+		&networkingv1.Ingress{},
 		// NOTE: ingresses rely on endpoint and service status as well so unless we add
 		// additional informers, we have to resync more frequently.
 		10*time.Second,
@@ -90,12 +89,12 @@ func (h *ingressEventHandler) ObjectDeleted(obj interface{}) {
 	h.resourceStateCh <- makeIngressResourceState(r, types.StateMissing)
 }
 
-func (h *ingressEventHandler) cast(obj interface{}) *extensions.Ingress {
-	r, _ := obj.(*extensions.Ingress)
+func (h *ingressEventHandler) cast(obj interface{}) *networkingv1.Ingress {
+	r, _ := obj.(*networkingv1.Ingress)
 	return r
 }
 
-func (h *ingressEventHandler) getInformer(r *extensions.Ingress) (types.StatusInformer, bool) {
+func (h *ingressEventHandler) getInformer(r *networkingv1.Ingress) (types.StatusInformer, bool) {
 	if r != nil {
 		for _, informer := range h.informers {
 			if r.Namespace == informer.Namespace && r.Name == informer.Name {
@@ -106,7 +105,7 @@ func (h *ingressEventHandler) getInformer(r *extensions.Ingress) (types.StatusIn
 	return types.StatusInformer{}, false
 }
 
-func makeIngressResourceState(r *extensions.Ingress, state types.State) types.ResourceState {
+func makeIngressResourceState(r *networkingv1.Ingress, state types.State) types.ResourceState {
 	return types.ResourceState{
 		Kind:      IngressResourceKind,
 		Name:      r.Name,
@@ -115,17 +114,21 @@ func makeIngressResourceState(r *extensions.Ingress, state types.State) types.Re
 	}
 }
 
-func calculateIngressState(clientset kubernetes.Interface, r *extensions.Ingress) types.State {
+func calculateIngressState(clientset kubernetes.Interface, r *networkingv1.Ingress) types.State {
 	var states []types.State
 	// https://github.com/kubernetes/kubectl/blob/6b77b0790ab40d2a692ad80e9e4c962e784bb9b8/pkg/describe/versioned/describe.go#L2367
-	backend := r.Spec.Backend
+	backend := r.Spec.DefaultBackend
 	ns := r.Namespace
 	if backend == nil {
 		// Ingresses that don't specify a default backend inherit the
 		// default backend in the kube-system namespace.
-		backend = &extensions.IngressBackend{
-			ServiceName: "default-http-backend",
-			ServicePort: intstr.IntOrString{Type: intstr.Int, IntVal: 80},
+		backend = &networkingv1.IngressBackend{
+			Service: &networkingv1.IngressServiceBackend{
+				Name: "default-http-backend",
+				Port: networkingv1.ServiceBackendPort{
+					Number: 80,
+				},
+			},
 		}
 		ns = metav1.NamespaceSystem
 	}
@@ -140,15 +143,18 @@ func calculateIngressState(clientset kubernetes.Interface, r *extensions.Ingress
 	return types.MinState(states...)
 }
 
-func ingressGetStateFromBackend(clientset kubernetes.Interface, namespace string, backend extensions.IngressBackend) (minState types.State) {
-	service, _ := clientset.CoreV1().Services(namespace).Get(context.TODO(), backend.ServiceName, metav1.GetOptions{})
+func ingressGetStateFromBackend(clientset kubernetes.Interface, namespace string, backend networkingv1.IngressBackend) (minState types.State) {
+	if backend.Service == nil {
+		return types.StateUnavailable
+	}
+	service, _ := clientset.CoreV1().Services(namespace).Get(context.TODO(), backend.Service.Name, metav1.GetOptions{})
 	if service == nil {
 		return types.StateUnavailable
 	}
 	return serviceGetStateFromEndpoints(clientset, service)
 }
 
-func ingressGetStateFromExternalIP(ing *extensions.Ingress) types.State {
+func ingressGetStateFromExternalIP(ing *networkingv1.Ingress) types.State {
 	lbIps := loadBalancerStatusIPs(ing.Status.LoadBalancer)
 	if len(lbIps) > 0 {
 		return types.StateReady
