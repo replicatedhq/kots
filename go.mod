@@ -22,7 +22,7 @@ require (
 	github.com/docker/go-units v0.4.0
 	github.com/fatih/color v1.13.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-git/go-git/v5 v5.2.0
+	github.com/go-git/go-git/v5 v5.4.2
 	github.com/go-logfmt/logfmt v0.5.0
 	github.com/go-test/deep v1.0.7
 	github.com/golang-jwt/jwt v3.2.2+incompatible
@@ -97,6 +97,8 @@ require (
 )
 
 require (
+	github.com/ProtonMail/go-crypto v0.0.0-20210428141323-04723f9f07d7 // indirect
+	github.com/acomagu/bufpipe v1.0.3 // indirect
 	github.com/containerd/containerd v1.5.7 // indirect
 	github.com/opencontainers/image-spec v1.0.2-0.20210819154149-5ad6f50d6283 // indirect
 	oras.land/oras-go v0.4.0 // indirect
@@ -184,7 +186,7 @@ require (
 	github.com/go-asn1-ber/asn1-ber v1.5.1 // indirect
 	github.com/go-errors/errors v1.0.1 // indirect
 	github.com/go-git/gcfg v1.5.0 // indirect
-	github.com/go-git/go-billy/v5 v5.0.0 // indirect
+	github.com/go-git/go-billy/v5 v5.3.1 // indirect
 	github.com/go-ldap/ldap/v3 v3.3.0 // indirect
 	github.com/go-logr/logr v1.2.0 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
@@ -245,7 +247,7 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
-	github.com/kevinburke/ssh_config v0.0.0-20190725054713-01f96b0aa0cd // indirect
+	github.com/kevinburke/ssh_config v0.0.0-20201106050909-4977a11b4351 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
@@ -326,7 +328,7 @@ require (
 	github.com/vbatts/tar-split v0.11.2 // indirect
 	github.com/vbauerster/mpb/v7 v7.1.5 // indirect
 	github.com/vmware/govmomi v0.20.3 // indirect
-	github.com/xanzy/ssh-agent v0.2.1 // indirect
+	github.com/xanzy/ssh-agent v0.3.0 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190809123943-df4f5c81cb3b // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
