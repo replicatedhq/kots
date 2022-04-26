@@ -1,0 +1,19 @@
+.warning-container {
+  padding: 10px;
+  background-color: rgba(247, 181, 0, 0.15);
+  border-radius: 4px;
+  justify-content: space-evenly;
+  align-items: center;
+
+  .icon {
+    width: 100%;
+    max-width: 40px;
+  }
+
+  .warning-text {
+    width: 85%;
+    color: #F7B500;
+    line-height: 24px;
+    font-size: 14px;
+  }
+}

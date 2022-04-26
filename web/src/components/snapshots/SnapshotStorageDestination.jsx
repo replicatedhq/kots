@@ -203,7 +203,7 @@ class SnapshotStorageDestination extends Component {
 
   setFields = () => {
     const { snapshotSettings } = this.props;
-    if (!snapshotSettings) return;
+    if (!snapshotSettings) {return;}
     const { store } = snapshotSettings;
 
     if (store?.aws) {

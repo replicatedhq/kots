@@ -3089,4 +3089,6 @@
 <rect width="63" height="60" fill="white" transform="translate(118.5 452)"/>
 </clipPath>
 </defs>
+<path fill-rule="evenodd" clip-rule="evenodd" d="M25 50C38.8071 50 50 38.8071 50 25C50 11.1929 38.8071 0 25 0C11.1929 0 0 11.1929 0 25C0 38.8071 11.1929 50 25 50Z" fill="#44BB66" transform="translate(252 782)"/>
+<path d="M12.5 25.4864L21.8069 34.0503C22.1879 34.4009 22.781 34.3763 23.1316 33.9953C23.1485 33.9768 23.1648 33.9577 23.1802 33.938L37.5 15.625" stroke="white" stroke-width="4" stroke-linecap="round" transform="translate(252 782)"/>
 </svg>
