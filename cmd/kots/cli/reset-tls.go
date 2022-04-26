@@ -42,22 +42,31 @@ func ResetTLSCmd() *cobra.Command {
 
 			err := deleteKotsTLSSecret(namespace)
 			if err != nil {
-				return err
+				return errors.Wrap(err, "failed to delete TLS secret")
 			}
 
 			err = resetKurlProxyPod(namespace)
 			if err != nil {
-				return err
+				return errors.Wrap(err, "failed to reset curl proxy pod")
 			}
 
 			err = checkTLSSecret(namespace, time.Second*10)
 			if err != nil {
-				return err
+				return errors.Wrap(err, "failed to check TLS secret")
+			}
+
+			if v.GetBool("accept-anonymous-uploads") {
+				err = annotateTLSSecret(namespace)
+				if err != nil {
+					return errors.Wrap(err, "failed to annotate TLS secret")
+				}
 			}
 
 			return nil
 		},
 	}
+
+	cmd.Flags().Bool("accept-anonymous-uploads", false, "when set, will allow uploading a new certificate prior to authenticating")
 
 	return cmd
 }
@@ -138,6 +147,32 @@ func checkTLSSecret(namespace string, timeout time.Duration) error {
 		if time.Now().Sub(start) > timeout {
 			return fmt.Errorf("timeout waiting for tls configuration")
 		}
+	}
+
+	return nil
+}
+
+func annotateTLSSecret(namespace string) error {
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return errors.Wrap(err, "failed to create k8s client")
+	}
+
+	secret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), "kotsadm-tls", metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to get secret")
+		}
+	}
+
+	if secret.Annotations == nil {
+		secret.Annotations = make(map[string]string)
+	}
+	secret.Annotations["acceptAnonymousUploads"] = "1"
+
+	_, err = clientset.CoreV1().Secrets(namespace).Update(context.TODO(), secret, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update secret")
 	}
 
 	return nil
