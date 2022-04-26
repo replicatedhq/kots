@@ -15,7 +15,6 @@ require (
 	github.com/aws/aws-sdk-go v1.38.49
 	github.com/bitnami-labs/sealed-secrets v0.14.1
 	github.com/blang/semver v3.5.1+incompatible
-	github.com/containerd/containerd v1.5.7
 	github.com/containers/image/v5 v5.17.0
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/dexidp/dex v0.0.0-20210802203454-3fac2ab6bc3b
@@ -28,7 +27,7 @@ require (
 	github.com/go-test/deep v1.0.7
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang/mock v1.6.0
-	github.com/google/go-github/v39 v39.0.0
+	github.com/google/go-github/v39 v39.2.0
 	github.com/google/gofuzz v1.2.0
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
@@ -44,8 +43,9 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.8
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/mitchellh/hashstructure v1.1.0
+	github.com/onsi/ginkgo/v2 v2.1.3
+	github.com/onsi/gomega v1.19.0
 	github.com/open-policy-agent/opa v0.24.0
-	github.com/opencontainers/image-spec v1.0.2-0.20210819154149-5ad6f50d6283
 	github.com/openshift/client-go v0.0.0-20210503124028-ac0910aac9fa
 	github.com/otiai10/copy v1.0.2
 	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2
@@ -89,12 +89,17 @@ require (
 	k8s.io/kubelet v0.0.0
 	k8s.io/kubernetes v1.23.1
 	k8s.io/utils v0.0.0-20210930125809-cb0fa318a74b
-	oras.land/oras-go v0.4.0
 	sigs.k8s.io/application v0.8.3
 	sigs.k8s.io/controller-runtime v0.11.0
 	sigs.k8s.io/kustomize/api v0.10.1
 	sigs.k8s.io/kustomize/kyaml v0.13.0
 	sigs.k8s.io/yaml v1.3.0
+)
+
+require (
+	github.com/containerd/containerd v1.5.7 // indirect
+	github.com/opencontainers/image-spec v1.0.2-0.20210819154149-5ad6f50d6283 // indirect
+	oras.land/oras-go v0.4.0 // indirect
 )
 
 require (

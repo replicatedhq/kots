@@ -3,7 +3,10 @@ package cli
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"github.com/replicatedhq/kots/pkg/handlers"
+	"github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -21,6 +24,7 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/auth"
+	"github.com/replicatedhq/kots/pkg/automation"
 	"github.com/replicatedhq/kots/pkg/identity"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
@@ -30,6 +34,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/metrics"
 	"github.com/replicatedhq/kots/pkg/pull"
+	"github.com/replicatedhq/kots/pkg/store/kotsstore"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -253,6 +258,12 @@ func InstallCmd() *cobra.Command {
 			}
 			deployOptions.Timeout = timeout
 
+			preflightsTimeout, err := time.ParseDuration(v.GetString("preflights-wait-duration"))
+			if err != nil {
+				return errors.Wrap(err, "failed to parse timeout value")
+			}
+			deployOptions.PreflightsTimeout = preflightsTimeout
+
 			if v.GetBool("copy-proxy-env") {
 				deployOptions.HTTPProxyEnvValue = os.Getenv("HTTP_PROXY")
 				if deployOptions.HTTPProxyEnvValue == "" {
@@ -328,13 +339,14 @@ func InstallCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to forward port")
 			}
 
+			apiEndpoint := fmt.Sprintf("http://localhost:%d/api/v1", adminConsolePort)
+
 			if deployOptions.AirgapRootDir != "" {
 				log.ActionWithoutSpinner("Uploading app archive")
 
 				var tryAgain bool
 				var err error
 
-				apiEndpoint := fmt.Sprintf("http://localhost:%d/api/v1", adminConsolePort)
 				for i := 0; i < 5; i++ {
 					tryAgain, err = uploadAirgapArchive(deployOptions, clientset, apiEndpoint, filepath.Join(deployOptions.AirgapRootDir, "app.tar.gz"))
 					if err == nil {
@@ -370,6 +382,25 @@ func InstallCmd() *cobra.Command {
 				case <-stopCh:
 				}
 			}()
+
+			authSlug, err := auth.GetOrCreateAuthSlug(clientset, deployOptions.Namespace)
+			if err != nil {
+				return errors.Wrap(err, "failed to get kotsadm auth slug")
+			}
+
+			if deployOptions.License != nil {
+				if err := ValidateAutomatedInstall(deployOptions, authSlug, apiEndpoint); err != nil {
+					return errors.Wrap(err, "failed to validate automated install")
+				}
+				log.Debug("automated install validated successfully")
+
+				if !deployOptions.SkipPreflights {
+					if err := ValidatePreflightStatus(deployOptions, authSlug, apiEndpoint); err != nil {
+						return errors.Wrap(err, "failed to validate preflight status")
+					}
+					log.Debug("preflights validated successfully")
+				}
+			}
 
 			m.ReportInstallFinish()
 
@@ -417,7 +448,8 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().Bool("port-forward", true, "set to false to disable automatic port forward")
 	cmd.Flags().MarkDeprecated("port-forward", "please use --no-port-forward instead")
 	cmd.Flags().Bool("no-port-forward", false, "set to true to disable automatic port forward")
-	cmd.Flags().String("wait-duration", "2m", "timeout out to be used while waiting for individual components to be ready.  must be in Go duration format (eg: 10s, 2m)")
+	cmd.Flags().String("wait-duration", "2m", "timeout to be used while waiting for preflights to complete. must be in Go duration format (eg: 10s, 2m)")
+	cmd.Flags().String("preflights-wait-duration", "15m", "timeout to be used while waiting for preflights to complete. must be in Go duration format (eg: 10s, 2m)")
 	cmd.Flags().String("http-proxy", "", "sets HTTP_PROXY environment variable in all KOTS Admin Console components")
 	cmd.Flags().String("https-proxy", "", "sets HTTPS_PROXY environment variable in all KOTS Admin Console components")
 	cmd.Flags().String("no-proxy", "", "sets NO_PROXY environment variable in all KOTS Admin Console components")
@@ -744,4 +776,174 @@ func CheckRBAC() error {
 		return RBACError
 	}
 	return nil
+}
+
+func ValidateAutomatedInstall(deployOptions kotsadmtypes.DeployOptions, authSlug string, apiEndpoint string) error {
+	url := fmt.Sprintf("%s/app/%s/automated/status", apiEndpoint, deployOptions.License.Spec.AppSlug)
+
+	startTime := time.Now()
+
+	for time.Since(startTime) < deployOptions.Timeout {
+		taskStatus, err := getAutomatedInstallStatus(url, authSlug)
+		if err != nil {
+			return errors.Wrap(err, "failed to get automated install status")
+		}
+		switch taskStatus.Status {
+		case automation.AutomatedInstallFailed:
+			return errors.New(taskStatus.Message)
+		case automation.AutomatedInstallSuccess:
+			return nil
+		}
+		time.Sleep(time.Second)
+	}
+
+	return errors.New("timeout waiting for automated install. Use the --wait-duration flag to increase timeout.")
+}
+
+func getAutomatedInstallStatus(url string, authSlug string) (*kotsstore.TaskStatus, error) {
+	newReq, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create request")
+	}
+	newReq.Header.Add("Content-Type", "application/json")
+	newReq.Header.Add("Authorization", authSlug)
+
+	resp, err := http.DefaultClient.Do(newReq)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to execute request")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.Errorf("unexpected status code %d", resp.StatusCode)
+	}
+
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read response body")
+	}
+
+	taskStatus := kotsstore.TaskStatus{}
+	if err := json.Unmarshal(b, &taskStatus); err != nil {
+		return nil, errors.Wrap(err, "failed to unmarshal task status")
+	}
+
+	return &taskStatus, nil
+}
+
+func ValidatePreflightStatus(deployOptions kotsadmtypes.DeployOptions, authSlug string, apiEndpoint string) error {
+	url := fmt.Sprintf("%s/app/%s/sequence/0/preflight/result", apiEndpoint, deployOptions.License.Spec.AppSlug)
+
+	startTime := time.Now()
+
+	for time.Since(startTime) < deployOptions.PreflightsTimeout {
+		response, err := getPreflightResponse(url, authSlug)
+		if err != nil {
+			return errors.Wrap(err, "failed to get preflight status")
+		}
+
+		preflightsComplete, err := checkPreflightsComplete(response)
+		if err != nil {
+			return errors.Wrap(err, "failed to unmarshal collect progress for preflights")
+		}
+		if !preflightsComplete {
+			continue
+		}
+
+		resultsAvailable, err := checkPreflightResults(response)
+		if err != nil {
+			return err
+		}
+		if !resultsAvailable {
+			continue
+		}
+
+		return nil
+	}
+
+	return errors.New("timeout waiting for preflights to finish. Use the --preflights-wait-duration flag to increase timeout.")
+}
+
+func getPreflightResponse(url string, authSlug string) (*handlers.GetPreflightResultResponse, error) {
+	newReq, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create request")
+	}
+	newReq.Header.Add("Content-Type", "application/json")
+	newReq.Header.Add("Authorization", authSlug)
+
+	resp, err := http.DefaultClient.Do(newReq)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to execute request")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.Errorf("unexpected status code %d", resp.StatusCode)
+	}
+
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read response body")
+	}
+
+	var response handlers.GetPreflightResultResponse
+	if err = json.Unmarshal(b, &response); err != nil {
+		return nil, errors.Wrap(err, "failed to unmarshal the preflight response")
+	}
+
+	return &response, nil
+}
+
+func checkPreflightsComplete(response *handlers.GetPreflightResultResponse) (bool, error) {
+	if response.PreflightProgress == "" {
+		return true, nil
+	}
+
+	var collectProgress *preflight.CollectProgress
+	err := json.Unmarshal([]byte(response.PreflightProgress), &collectProgress)
+	if err != nil {
+		return false, err
+	}
+
+	if collectProgress != nil && collectProgress.TotalCount < 1 {
+		return false, nil
+	}
+
+	return true, nil
+}
+
+func checkPreflightResults(response *handlers.GetPreflightResultResponse) (bool, error) {
+	if response.PreflightResult.Result == "" {
+		return false, nil
+	}
+
+	var results preflight.UploadPreflightResults
+	err := json.Unmarshal([]byte(response.PreflightResult.Result), &results)
+	if err != nil {
+		return false, errors.Wrap(err, fmt.Sprintf("failed to unmarshal upload preflight results from response: %v", response.PreflightResult.Result))
+	}
+
+	var isWarn, isFail bool
+	for _, result := range results.Results {
+		if result.IsWarn {
+			isWarn = true
+		}
+		if result.IsFail {
+			isFail = true
+		}
+	}
+
+	if isWarn && isFail {
+		return false, errors.New("There are preflight check failures and warnings for the application. The app was not deployed.")
+	}
+
+	if isWarn {
+		return false, errors.New("There are preflight check warnings for the application. The app was not deployed.")
+	}
+	if isFail {
+		return false, errors.New("There are preflight check failures for the application. The app was not deployed.")
+	}
+
+	return true, nil
 }

@@ -31,7 +31,7 @@ var (
 
 type cachedTaskStatus struct {
 	expirationTime time.Time
-	taskStatus     taskStatus
+	taskStatus     TaskStatus
 }
 
 type KOTSStore struct {
