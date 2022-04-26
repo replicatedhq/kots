@@ -924,8 +924,8 @@ func (s *KOTSStore) getNextAppSequence(db queryable, appID string) (int64, error
 
 func (s *KOTSStore) GetCurrentUpdateCursor(appID string, channelID string) (string, string, bool, error) {
 	db := persistence.MustGetDBSession()
-	query := `SELECT update_cursor, version_label, is_required FROM app_version WHERE app_id = $1 AND channel_id = $2 AND update_cursor::INT IN (
-		SELECT MAX(update_cursor::INT) FROM app_version WHERE app_id = $1 AND channel_id = $2
+	query := `SELECT update_cursor, version_label, is_required FROM app_version WHERE app_id = $1 AND channel_id = $2 AND sequence IN (
+		SELECT MAX(sequence) FROM app_version WHERE app_id = $1 AND channel_id = $2
 	) ORDER BY sequence DESC LIMIT 1`
 	row := db.QueryRow(query, appID, channelID)
 
