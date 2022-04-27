@@ -604,7 +604,7 @@ func undeployApp(a *apptypes.App, d *downstreamtypes.Downstream, isRestore bool)
 		Action:               "undeploy",
 		Wait:                 true,
 		ClearNamespaces:      backup.Spec.IncludedNamespaces,
-		ClearPVCs:            true,
+		ClearPVCs:            false,
 		IsRestore:            isRestore,
 		RestoreLabelSelector: restoreLabelSelector,
 	}
