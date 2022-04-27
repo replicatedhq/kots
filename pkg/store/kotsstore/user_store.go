@@ -248,7 +248,7 @@ func (s *KOTSStore) GetPasswordUpdatedAt() (*time.Time, error) {
 		return nil, errors.Wrap(err, "failed to get password secret")
 	}
 
-	passwordUpdatedAt := new(time.Time)
+	var passwordUpdatedAt *time.Time
 	updatedAtBytes, ok := passwordSecret.Data["passwordUpdatedAt"]
 	if ok {
 		updatedAt, err := time.Parse(time.RFC3339, string(updatedAtBytes))
@@ -256,9 +256,6 @@ func (s *KOTSStore) GetPasswordUpdatedAt() (*time.Time, error) {
 			return nil, errors.Wrap(err, "failed to parse passwordUpdatedAt")
 		}
 		passwordUpdatedAt = &updatedAt
-	} else {
-		// backward compatibility, for older secret/ newly created secret with no passwordUpdatedAt value
-		passwordUpdatedAt = nil
 	}
 
 	return passwordUpdatedAt, nil
