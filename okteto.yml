@@ -11,7 +11,8 @@ build:
   kotsadm-web:
     context: web
     dockerfile: web/okteto.Dockerfile
-    args: OKTETO_NAMESPACE=${OKTETO_NAMESPACE}
+    args:
+      - OKTETO_NAMESPACE=${OKTETO_NAMESPACE}
 
 deploy:
   - cd kustomize/overlays/okteto && kustomize edit set image kotsadm=${OKTETO_BUILD_KOTSADM_IMAGE}
