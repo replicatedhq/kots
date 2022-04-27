@@ -49,8 +49,9 @@ const ChangePasswordModal = ({ closeModal, isOpen }) => {
 
   const identityServiceContent = (
     <>
-      <p className="modal-text u-marginTop--20">
-        Your session is currently authenticated via an identify provider and must be changed through that identify provider.
+      <h3 className="u-marginTop--20">Unable to change password</h3>
+      <p className="modal-text">
+        Your session is currently authenticated using an identify provider and must be changed through that identify provider.
       </p>
       <button className="btn primary u-marginBottom--20" onClick={handleClose}>
         OK
