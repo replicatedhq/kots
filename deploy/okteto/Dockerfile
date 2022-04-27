@@ -166,7 +166,5 @@ RUN cd /tmp && curl -fsSL -o helm.tar.gz "${HELM3_URL}" \
   && rm -rf helm.tar.gz linux-amd64
 
 COPY --from=builder $PROJECTPATH/bin/kotsadm $PROJECTPATH/bin/kots ./
-#COPY --from=builder $PROJECTPATH/bin/kotsadm ./kotsadm
-#COPY --from=builder $PROJECTPATH/bin/kots ./kots
 
-ENTRYPOINT [ "./bin/kotsadm", "api"]
+ENTRYPOINT [ "kotsadm", "api"]
