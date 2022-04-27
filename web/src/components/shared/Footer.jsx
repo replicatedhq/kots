@@ -1,12 +1,13 @@
 import * as React from "react";
 import { withRouter } from "react-router-dom";
 import semverjs from "semver";
-import { getBuildVersion } from "../../utilities/utilities";
-import "../../scss/components/shared/Footer.scss";
+import { getBuildVersion, Utilities } from "@src/utilities/utilities";
+import "@src/scss/components/shared/Footer.scss";
+import ChangePassword from "./ChangePassword";
 
 export class Footer extends React.Component {
   state = {
-    targetKotsVersion: ""
+    targetKotsVersion: "",
   }
 
   componentDidMount() {
@@ -81,6 +82,7 @@ export class Footer extends React.Component {
               </div>
             }
           </div>
+          {Utilities.isLoggedIn() && <ChangePassword />}
         </div>
       </div>
     );
