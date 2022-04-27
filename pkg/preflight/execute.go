@@ -47,7 +47,7 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta2.Pr
 			}
 
 			// TODO: We need a nice title to display
-			progresBytes, err := json.Marshal(map[string]interface{}{
+			progressBytes, err := json.Marshal(map[string]interface{}{
 				"completedCount": progress.CompletedCount,
 				"totalCount":     progress.TotalCount,
 				"currentName":    progress.CurrentName,
@@ -60,7 +60,7 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta2.Pr
 
 			completeMx.Lock()
 			if !isComplete {
-				_ = store.GetStore().SetPreflightProgress(appID, sequence, string(progresBytes))
+				_ = store.GetStore().SetPreflightProgress(appID, sequence, string(progressBytes))
 			}
 			completeMx.Unlock()
 		}

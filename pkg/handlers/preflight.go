@@ -80,7 +80,7 @@ func (h *Handler) GetLatestPreflightResultsForSequenceZero(w http.ResponseWriter
 
 	result, err := store.GetStore().GetPreflightResults(foundApp.ID, 0)
 	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to get reflight result"))
+		logger.Error(errors.Wrap(err, "failed to get preflight result"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

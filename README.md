@@ -52,3 +52,31 @@ command.
 ```shell
 cosign verify-blob -key sbom/key.pub -signature sbom/kots-sbom.tgz.sig sbom/kots-sbom.tgz
 ```
+
+# Development
+
+## Okteto
+
+### Known issues
+
+1. Kots cannot be installed through the CLI.
+2. When a manifest yaml file changes, the only supported way to apply it right now is to redeploy the whole pipeline.
+
+### Unsupported workflows
+
+1. Deploying a vendor application for debugging.  While this could work, it's unsupported, and a different cluster should be used. 
+
+### How To
+
+#### Deploying an application to a different namespace from Kots Admin
+
+If you need to test deploying an application to a different namespace, you'll need to first create the additional namespace in Okteto.
+Your permissions will be the same between both namespaces, and you will be able to create deploy/resources there.
+
+##### Use the Kots CLI while Kots Admin is running
+
+1. `okteto up` - Put the the kots pod into dev mode
+2. `make run` - Runs Kots Admin
+3. In a new terminal, navigate to the kots project.
+4. `okteto exec bash` - Runs bash interactively in the kots pod.
+5. `./bin/kost {{COMMAND}}` - Run the kots commands you need. 

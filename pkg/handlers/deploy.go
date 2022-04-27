@@ -48,7 +48,7 @@ func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
+	sequence, err := strconv.ParseInt(mux.Vars(r)["sequence"], 10, 64)
 	if err != nil {
 		errMsg := "failed to parse sequence number"
 		logger.Error(errors.Wrap(err, errMsg))
@@ -81,19 +81,27 @@ func (h *Handler) DeployAppVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	deployedSequence, err := store.GetStore().GetCurrentParentSequence(a.ID, downstreams[0].ClusterID)
+	if err != nil {
+		errMsg := fmt.Sprintf("failed to get deployed sequence")
+		logger.Error(errors.Wrap(err, errMsg))
+		deployAppVersionResponse.Error = errMsg
+		JSON(w, http.StatusInternalServerError, deployAppVersionResponse)
+		return
+	}
+	if sequence == deployedSequence {
+		logger.Info(fmt.Sprintf("not deploying version %d because it's currently deployed", int64(sequence)))
+		deployAppVersionResponse.Success = true
+		JSON(w, http.StatusOK, deployAppVersionResponse)
+		return
+	}
+
 	status, err := store.GetStore().GetStatusForVersion(a.ID, downstreams[0].ClusterID, int64(sequence))
 	if err != nil {
 		errMsg := fmt.Sprintf("failed to get status for version %d", sequence)
 		logger.Error(errors.Wrap(err, errMsg))
 		deployAppVersionResponse.Error = errMsg
 		JSON(w, http.StatusInternalServerError, deployAppVersionResponse)
-		return
-	}
-
-	if status == storetypes.VersionDeployed {
-		logger.Info(fmt.Sprintf("not deploying version %d because it's already deployed", int64(sequence)))
-		deployAppVersionResponse.Success = true
-		JSON(w, http.StatusOK, deployAppVersionResponse)
 		return
 	}
 

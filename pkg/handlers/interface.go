@@ -10,6 +10,7 @@ type KOTSHandler interface {
 	ResumeInstallOnline(w http.ResponseWriter, r *http.Request)
 	GetOnlineInstallStatus(w http.ResponseWriter, r *http.Request)
 	CanInstallAppVersion(w http.ResponseWriter, r *http.Request)
+	GetAutomatedInstallStatus(w http.ResponseWriter, r *http.Request)
 
 	// Support Bundles
 	GetSupportBundle(w http.ResponseWriter, r *http.Request) // TODO: appSlug
