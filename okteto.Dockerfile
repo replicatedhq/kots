@@ -1,15 +1,37 @@
 # syntax=docker/dockerfile:1.3
 FROM golang:1.17 as builder
 
-EXPOSE 2345
-
 ENV GOCACHE "/.cache/gocache/"
 ENV GOMODCACHE "/.cache/gomodcache/"
 ENV DEBUG_KOTSADM=1
 
-RUN curl -k https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
-  && echo "deb http://apt.postgresql.org/pub/repos/apt/ buster-pgdg main" > /etc/apt/sources.list.d/PostgreSQL.list \
-  && apt-get update && apt-get install -y --no-install-recommends gnupg2 postgresql-client-10 python3-pip ca-certificates \
+ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots
+WORKDIR $PROJECTPATH
+
+RUN --mount=target=$GOMODCACHE,type=cache \
+    --mount=target=$GOCACHE,type=cache \
+    go install github.com/go-delve/delve/cmd/dlv@v1.8.0
+
+COPY go.mod go.sum ./
+RUN --mount=target=$GOMODCACHE,type=cache go mod download
+
+COPY . .
+
+RUN --mount=target=$GOMODCACHE,type=cache \
+    --mount=target=$GOCACHE,type=cache \
+    make build kots
+
+FROM debian:bookworm
+
+EXPOSE 2345
+
+ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots
+WORKDIR $PROJECTPATH
+
+RUN apt update && apt install --no-install-recommends gnupg2 curl -y \
+  && curl -k https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
+  && echo "deb http://apt.postgresql.org/pub/repos/apt/ bookworm-pgdg main" > /etc/apt/sources.list.d/PostgreSQL.list \
+  && apt update && apt install -y --no-install-recommends postgresql-client-10 python3-pip ca-certificates \
   && pip install s3cmd \
   && rm -rf /var/lib/apt/lists/*
 
@@ -143,27 +165,8 @@ RUN cd /tmp && curl -fsSL -o helm.tar.gz "${HELM3_URL}" \
   && ln -s "${KOTS_HELM_BIN_DIR}/helm3" "${KOTS_HELM_BIN_DIR}/helm" \
   && rm -rf helm.tar.gz linux-amd64
 
-RUN --mount=target=$GOMODCACHE,id=gomodcache,type=cache \
-    --mount=target=$GOCACHE,id=gocache,type=cache \
-    go install github.com/go-delve/delve/cmd/dlv@v1.8.0
-
-ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots
-WORKDIR $PROJECTPATH
-
-COPY go.mod go.sum ./
-RUN --mount=target=$GOMODCACHE,id=kots-gomodcache,type=cache go mod download
-
-COPY . .
-
-RUN --mount=target=$GOMODCACHE,id=kots-gomodcache,type=cache \
-    --mount=target=$GOCACHE,id=kots-gocache,type=cache \
-    make build
-
-RUN --mount=target=/tmp/.cache/gocache,id=kots-gocache,type=cache \
-    --mount=target=/tmp/.cache/gomodcache,id=kots-gomodcache,type=cache \
-    mkdir -p $GOCACHE \
-    && cp -r /tmp/.cache/gocache/* $GOCACHE \
-    && mkdir -p $GOMODCACHE \
-    && cp -r /tmp/.cache/gomodcache/* $GOMODCACHE
+COPY --from=builder $PROJECTPATH/bin/kotsadm $PROJECTPATH/bin/kots ./
+#COPY --from=builder $PROJECTPATH/bin/kotsadm ./kotsadm
+#COPY --from=builder $PROJECTPATH/bin/kots ./kots
 
 ENTRYPOINT [ "./bin/kotsadm", "api"]
