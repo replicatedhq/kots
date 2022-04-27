@@ -20,9 +20,9 @@ import (
 var passwordLock = sync.Mutex{}
 
 var (
-	ErrCurrentPasswordDoesNotMatch  = errors.New("current password does not match")
-	ErrNewPasswordTooShort          = errors.New("new password must be at least 6 characters")
-	ErrNewPasswordShouldBeDifferent = errors.New("new password should be different from current password")
+	ErrCurrentPasswordDoesNotMatch  = errors.New("The current password provided is incorrect.")
+	ErrNewPasswordTooShort          = errors.New("The new password must be at least 6 characters.")
+	ErrNewPasswordShouldBeDifferent = errors.New("The new password must be different from the current password.")
 )
 
 // ValidatePasswordInput - will validate length and complexity of new password and check if it is different from current password
