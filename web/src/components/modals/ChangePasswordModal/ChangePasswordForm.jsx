@@ -13,11 +13,6 @@ const ChangePasswordForm = ({ handleClose, handleSetIsSuccessful }) => {
     newPassword: "",
     confirmPassword: ""
   });
-  const [showPassword, setShowPassword] = React.useState({
-    current: false,
-    new: false,
-    confirm: false,
-  });
 
   const updateFormStatus = (loadingStatus, errStatus, message) => {
     setErr({
@@ -80,10 +75,6 @@ const ChangePasswordForm = ({ handleClose, handleSetIsSuccessful }) => {
     }
   }
 
-  const handleShowPassword = () => {
-    setShowPassword(!showPassword);
-  }
-
   return (
     <form
       className="change-password-form flex-column"
@@ -93,7 +84,7 @@ const ChangePasswordForm = ({ handleClose, handleSetIsSuccessful }) => {
         label="Current password"
         id="current-password"
         placeholder="current password"
-        type={showPassword.current ? "text" : "password"}
+        type="password"
         value={inputs.currentPassword}
         onChange={e => setInputs({ ...inputs, currentPassword: e.target.value })}
       />
@@ -101,7 +92,7 @@ const ChangePasswordForm = ({ handleClose, handleSetIsSuccessful }) => {
         label="New password"
         id="new-password"
         placeholder="new password"
-        type={showPassword.new ? "text" : "password"}
+        type="password"
         value={inputs.newPassword}
         onChange={e => setInputs({ ...inputs, newPassword: e.target.value })}
       />
@@ -110,7 +101,7 @@ const ChangePasswordForm = ({ handleClose, handleSetIsSuccessful }) => {
         id="new-password-confirm"
         placeholder="confirm new password"
         value={inputs.confirmPassword}
-        type={showPassword.confirm ? "text" : "password"}
+        type="password"
         onChange={e => setInputs({ ...inputs, confirmPassword: e.target.value })}
       />
       <div className="flex change-password-submit-section">

@@ -11,6 +11,7 @@ const ChangePasswordModal = ({ closeModal, isOpen }) => {
 
   const handleClose = () => {
     closeModal();
+    setIsSuccessful(false);
   }
 
   const handleSetIsSuccessful = (val) => setIsSuccessful(val);
@@ -37,10 +38,10 @@ const ChangePasswordModal = ({ closeModal, isOpen }) => {
           <>
             <span className="icon success-checkmark-icon-bright u-marginTop--20" />
             <h3>Your password has been changed</h3>
-            <p className="u-fontSize--normal">
-              You will be redirected to the login page in a few seconds. If not, please log in below.
+            <p className="password-success-message">
+              Password changed successfully. You will be redirected to log in again. Alternatively, click below to log in.
             </p>
-            <Link to="/secure-console" className="btn primary u-marginBottom--20">Log in</Link>
+            <Link to="/secure-console" className="btn primary u-marginBottom--20" onClick={handleClose}>Log in</Link>
           </>
         }
       </div>
