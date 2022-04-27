@@ -123,6 +123,11 @@ func getTagFinder(opts ...func(c *configuration)) tagFinderFn {
 			if err != nil {
 				return nil, fmt.Errorf("failed to get release tag for %s %w", imageName, err)
 			}
+		case schemaheroReference:
+			latestReleaseTag, err = getLatestTagFromGithub(config.releaseFinder, "schemahero", "schemahero", matcherFn)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get release tag for schemahero/schemahero %w", err)
+			}
 
 		default:
 			return nil, fmt.Errorf("don't know how to deal with %q image", imageName)
@@ -142,10 +147,7 @@ type GithubReleaseSorter []*github.RepositoryRelease
 func (r GithubReleaseSorter) Len() int { return len(r) }
 
 func (r GithubReleaseSorter) Less(i, j int) bool {
-	if r[i].PublishedAt.Before(r[j].PublishedAt.Time) {
-		return true
-	}
-	return false
+	return r[i].PublishedAt.Before(r[j].PublishedAt.Time)
 }
 
 func (r GithubReleaseSorter) Swap(i, j int) {
@@ -192,6 +194,10 @@ func getLatestTagFromGithub(getReleases getReleaseFn, owner, repo string, match 
 	var matches []*github.RepositoryRelease
 	for _, release := range releases {
 		if release.TagName != nil && match(*release.TagName) {
+			// exclude pre-releases
+			if release.Prerelease != nil && *release.Prerelease {
+				continue
+			}
 			matches = append(matches, release)
 		}
 	}
