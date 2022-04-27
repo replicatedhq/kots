@@ -1,5 +1,7 @@
 import React from "react";
 
+import "@src/scss/components/shared/forms/InputField.scss";
+
 const InputField = ({
   label,
   placeholder,

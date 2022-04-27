@@ -2,6 +2,8 @@ import React from "react";
 import InputField from "../../shared/forms/InputField";
 import { Utilities } from "@src/utilities/utilities";
 
+import "@src/scss/components/modals/ChangePasswordModal/ChangePasswordForm.scss";
+
 const ChangePasswordForm = ({ handleClose, handleSetIsSuccessful }) => {
   const [err, setErr] = React.useState({
     status: false,
@@ -24,7 +26,7 @@ const ChangePasswordForm = ({ handleClose, handleSetIsSuccessful }) => {
 
   const validatePassword = () => {
     if (!inputs.currentPassword || inputs.currentPassword.length === "0") {
-      updateFormStatus(false, true, "Current password is required");
+      updateFormStatus(false, true, "Current password is required.");
       return false;
     }
     if (!inputs.newPassword || !inputs.confirmPassword || inputs.newPassword.length === "0" || inputs.confirmPassword.length === "0") {

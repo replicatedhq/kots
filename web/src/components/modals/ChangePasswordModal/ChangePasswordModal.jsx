@@ -4,7 +4,7 @@ import Warning from "../../shared/Warning";
 import ChangePasswordForm from "./ChangePasswordForm";
 import { Link } from "react-router-dom";
 
-import "@src/scss/components/modals/ChangePasswordModal.scss";
+import "@src/scss/components/modals/ChangePasswordModal/ChangePasswordModal.scss";
 
 const ChangePasswordModal = ({ closeModal, isOpen }) => {
   const [isSuccessful, setIsSuccessful] = React.useState(false);
