@@ -13,6 +13,7 @@ import (
 )
 
 const (
+	schemaheroReference               = "schemahero"
 	minioReference                    = "minio"
 	dexReference                      = "dex"
 	postgresAlpineReference           = "postgres-alpine"
