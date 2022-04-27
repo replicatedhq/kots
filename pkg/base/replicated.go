@@ -295,7 +295,7 @@ func renderReplicatedHelmBase(u *upstreamtypes.Upstream, renderOptions *RenderOp
 func upstreamFileToBaseFile(upstreamFile upstreamtypes.UpstreamFile, builder template.Builder, log *logger.CLILogger) (BaseFile, error) {
 	rendered, err := builder.RenderTemplate(upstreamFile.Path, string(upstreamFile.Content))
 	if err != nil {
-		log.Error(errors.Errorf("Failed to render file %s. Contents are %s", upstreamFile.Path, upstreamFile.Content))
+		log.Error(errors.Wrapf(err, "failed to render file %s. Contents are %s", upstreamFile.Path, upstreamFile.Content))
 		return BaseFile{}, errors.Wrap(err, "failed to render file template")
 	}
 
@@ -319,6 +319,7 @@ func findAllKotsHelmCharts(upstreamFiles []upstreamtypes.UpstreamFile, builder t
 
 		helmChart, err := parseHelmChart(baseFile.Content)
 		if err != nil {
+			fmt.Printf("Failed HelmChart contents:\n%s\n", string(baseFile.Content))
 			return nil, errors.Wrapf(err, "failed to parse rendered HelmChart %s", baseFile.Path)
 		}
 

@@ -31,7 +31,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/util"
 	analyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	discovery "k8s.io/client-go/discovery"
@@ -95,6 +95,8 @@ func (ctx StaticCtx) FuncMap() template.FuncMap {
 
 	funcMap["HTTPProxy"] = ctx.httpProxy
 	funcMap["NoProxy"] = ctx.noProxy
+
+	funcMap["YamlEscape"] = ctx.yamlEscape
 
 	return funcMap
 }
@@ -587,4 +589,21 @@ func (ctx StaticCtx) noProxy() string {
 
 func (ctx StaticCtx) kotsVersion() string {
 	return strings.TrimPrefix(buildversion.Version(), "v")
+}
+
+func (ctx StaticCtx) yamlEscape(plain string) string {
+	marshalled, err := yaml.Marshal(plain)
+	if err != nil {
+		return ""
+	}
+
+	// it is possible for this function to produce multiline yaml, so we indent it a bunch for safety
+	indented := indent(20, string(marshalled))
+	return indented
+}
+
+// copied from sprig
+func indent(spaces int, v string) string {
+	pad := strings.Repeat(" ", spaces)
+	return pad + strings.Replace(v, "\n", "\n"+pad, -1)
 }

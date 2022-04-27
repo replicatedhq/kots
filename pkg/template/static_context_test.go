@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v2"
 )
 
 func TestStaticContext_kubeSeal_badCert(t *testing.T) {
@@ -151,4 +152,37 @@ func getCert(s string) (*x509.Certificate, error) {
 	}
 
 	return x509.ParseCertificate(block.Bytes)
+}
+
+func TestYamlEscape(t *testing.T) {
+	req := require.New(t)
+
+	allchars := ""
+	for i := 0; i <= 255; i++ {
+		allchars += string(byte(i))
+	}
+
+	encoded := StaticCtx{}.yamlEscape(allchars)
+	req.Greater(len(encoded), len(allchars)) // the encoded version will be wrapped in quotes, and have escape characters
+
+	decoded := ""
+	err := yaml.Unmarshal([]byte(encoded), &decoded)
+	req.NoError(err)
+	req.Equal(allchars, decoded)
+
+	exampleYamlTpl := `
+abc:
+  xyz: %s`
+	exampleYaml := fmt.Sprintf(exampleYamlTpl, encoded)
+	type xyz struct {
+		XYZ string `yaml:"xyz"`
+	}
+	type abc struct {
+		ABC xyz `yaml:"abc"`
+	}
+
+	abcTest := abc{}
+	err = yaml.Unmarshal([]byte(exampleYaml), &abcTest)
+	req.NoError(err)
+	req.Equal(allchars, abcTest.ABC.XYZ)
 }
