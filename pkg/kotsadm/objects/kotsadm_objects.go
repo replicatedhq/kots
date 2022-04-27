@@ -2,6 +2,7 @@ package kotsadm
 
 import (
 	"fmt"
+
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/ingress"
@@ -10,7 +11,7 @@ import (
 	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
+	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -1250,6 +1251,6 @@ func KotsadmService(namespace string, nodePort int32) *corev1.Service {
 	return service
 }
 
-func KotsadmIngress(namespace string, ingressConfig kotsv1beta1.IngressResourceConfig) *extensionsv1beta1.Ingress {
+func KotsadmIngress(namespace string, ingressConfig kotsv1beta1.IngressResourceConfig) *networkingv1.Ingress {
 	return ingress.IngressFromConfig(ingressConfig, "kotsadm", "kotsadm", 3000, nil)
 }

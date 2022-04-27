@@ -21,7 +21,7 @@ func EnsureIngress(ctx context.Context, namespace string, clientset *kubernetes.
 }
 
 func DeleteIngress(ctx context.Context, namespace string, clientset *kubernetes.Clientset) error {
-	err := clientset.ExtensionsV1beta1().Ingresses(namespace).Delete(ctx, "kotsadm", metav1.DeleteOptions{})
+	err := clientset.NetworkingV1().Ingresses(namespace).Delete(ctx, "kotsadm", metav1.DeleteOptions{})
 	if kuberneteserrors.IsNotFound(err) {
 		err = nil
 	}

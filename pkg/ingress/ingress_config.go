@@ -3,16 +3,14 @@ package ingress
 import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
-	extensions "k8s.io/api/extensions/v1beta1"
-	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
+	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func IngressFromConfig(ingressConfig kotsv1beta1.IngressResourceConfig, name string, serviceName string, servicePort int, additionalLabels map[string]string) *extensionsv1beta1.Ingress {
-	ingressTLS := []extensions.IngressTLS{}
+func IngressFromConfig(ingressConfig kotsv1beta1.IngressResourceConfig, name string, serviceName string, servicePort int32, additionalLabels map[string]string) *networkingv1.Ingress {
+	ingressTLS := []networkingv1.IngressTLS{}
 	if ingressConfig.TLSSecretName != "" {
-		tls := extensions.IngressTLS{
+		tls := networkingv1.IngressTLS{
 			SecretName: ingressConfig.TLSSecretName,
 		}
 		if ingressConfig.Host != "" {
@@ -28,9 +26,11 @@ func IngressFromConfig(ingressConfig kotsv1beta1.IngressResourceConfig, name str
 		annotations[k] = v
 	}
 
-	return &extensionsv1beta1.Ingress{
+	pathType := networkingv1.PathTypeImplementationSpecific
+
+	return &networkingv1.Ingress{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "extensions/v1beta1",
+			APIVersion: "networking.k8s.io/v1",
 			Kind:       "Ingress",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -38,18 +38,23 @@ func IngressFromConfig(ingressConfig kotsv1beta1.IngressResourceConfig, name str
 			Labels:      kotsadmtypes.GetKotsadmLabels(additionalLabels),
 			Annotations: annotations,
 		},
-		Spec: extensionsv1beta1.IngressSpec{
-			Rules: []extensionsv1beta1.IngressRule{
+		Spec: networkingv1.IngressSpec{
+			Rules: []networkingv1.IngressRule{
 				{
 					Host: ingressConfig.Host,
-					IngressRuleValue: extensionsv1beta1.IngressRuleValue{
-						HTTP: &extensionsv1beta1.HTTPIngressRuleValue{
-							Paths: []extensionsv1beta1.HTTPIngressPath{
+					IngressRuleValue: networkingv1.IngressRuleValue{
+						HTTP: &networkingv1.HTTPIngressRuleValue{
+							Paths: []networkingv1.HTTPIngressPath{
 								{
-									Path: ingressConfig.Path,
-									Backend: extensionsv1beta1.IngressBackend{
-										ServiceName: serviceName,
-										ServicePort: intstr.FromInt(servicePort),
+									Path:     ingressConfig.Path,
+									PathType: &pathType,
+									Backend: networkingv1.IngressBackend{
+										Service: &networkingv1.IngressServiceBackend{
+											Name: serviceName,
+											Port: networkingv1.ServiceBackendPort{
+												Number: servicePort,
+											},
+										},
 									},
 								},
 							},
