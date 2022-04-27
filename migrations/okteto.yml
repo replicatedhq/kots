@@ -1,9 +1,0 @@
-name: kotsadm-migrations
-command: bash
-sync:
-  - tables/:/go/src/github.com/replicatedhq/kots/tables
-workdir: /go/src/github.com/replicatedhq/kots/tables
-resources:
-  limits:
-    cpu: "1"
-    memory: 1Gi
