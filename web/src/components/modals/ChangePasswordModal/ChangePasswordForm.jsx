@@ -4,7 +4,7 @@ import { Utilities } from "@src/utilities/utilities";
 
 import "@src/scss/components/modals/ChangePasswordModal/ChangePasswordForm.scss";
 
-const ChangePasswordForm = ({ handleClose, handleSetIsSuccessful }) => {
+const ChangePasswordForm = ({ handleClose, handleSetPasswordChangeSuccessful }) => {
   const [err, setErr] = React.useState({
     status: false,
     message: ""
@@ -64,15 +64,15 @@ const ChangePasswordForm = ({ handleClose, handleSetIsSuccessful }) => {
             msg = res.status === 401 ? "User unauthorized. Please try again" : "There was an error changing your password. Please try again.";
           }
           updateFormStatus(false, true, msg);
-          handleSetIsSuccessful(false);
+          handleSetPasswordChangeSuccessful(false);
           return;
         }
-        handleSetIsSuccessful(true);
+        handleSetPasswordChangeSuccessful(true);
       })
       .catch((err) => {
         console.log("Login failed:", err);
         updateFormStatus(false, true, "There was an error changing your password. Please try again.");
-        handleSetIsSuccessful(false);
+        handleSetPasswordChangeSuccessful(false);
       });
     }
   }

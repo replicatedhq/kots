@@ -7,15 +7,15 @@ import { Link } from "react-router-dom";
 import "@src/scss/components/modals/ChangePasswordModal/ChangePasswordModal.scss";
 
 const ChangePasswordModal = ({ closeModal, isOpen }) => {
-  const [isSuccessful, setIsSuccessful] = React.useState(false);
+  const [passwordChangeSuccessful, setPasswordChangeSuccessful] = React.useState(false);
   const [identityServiceEnabled, setIdentityServiceEnabled] = React.useState(false);
 
   const handleClose = () => {
     closeModal();
-    setIsSuccessful(false);
+    setPasswordChangeSuccessful(false);
   }
 
-  const handleSetIsSuccessful = (val) => setIsSuccessful(val);
+  const handleSetPasswordChangeSuccessful = (val) => setPasswordChangeSuccessful(val);
 
   React.useEffect(() => {
     const getLoginInfo = async () => {
@@ -37,7 +37,7 @@ const ChangePasswordModal = ({ closeModal, isOpen }) => {
   
         const loginInfo = await response.json();
         if (loginInfo?.method === "identity-service") {
-          setIdentityServiceEnabled(true);
+          return setIdentityServiceEnabled(true);
         }
         setIdentityServiceEnabled(false);
       } catch(err) {
@@ -61,16 +61,16 @@ const ChangePasswordModal = ({ closeModal, isOpen }) => {
 
   const standardContent = (
     <>
-      {!isSuccessful &&
+      {!passwordChangeSuccessful &&
         <>
           <h3>Change Admin Console Password</h3>
           <Warning>
             Changing the password for the Admin Console will invalidate and log out of all current sessions. Proceed with caution.
           </Warning>
-          <ChangePasswordForm handleClose={handleClose} handleSetIsSuccessful={handleSetIsSuccessful} />
+          <ChangePasswordForm handleClose={handleClose} handleSetPasswordChangeSuccessful={handleSetPasswordChangeSuccessful} />
         </>
       }
-      {isSuccessful &&
+      {passwordChangeSuccessful &&
         <>
           <span className="icon success-checkmark-icon-bright u-marginTop--20" />
           <h3>Your password has been changed</h3>
@@ -93,7 +93,7 @@ const ChangePasswordModal = ({ closeModal, isOpen }) => {
       ariaHideApp={false}
       className="Modal MediumSize ChangePasswordModal"
     >
-      <div className={`Modal-body flex-column ${isSuccessful || identityServiceEnabled && "alignItems--center"}`}>
+      <div className={`Modal-body flex-column ${(passwordChangeSuccessful || identityServiceEnabled) && "alignItems--center"}`}>
         {identityServiceEnabled
           ? identityServiceContent
           : standardContent
