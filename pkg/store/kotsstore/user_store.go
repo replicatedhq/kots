@@ -243,23 +243,23 @@ func (s *KOTSStore) GetPasswordUpdatedAt() (*time.Time, error) {
 	if err != nil {
 		if kuberneteserrors.IsNotFound(err) {
 			//  similar to fallback case when password secret is not found and uses the default password from environment variable
-			return &time.Time{}, nil
+			return nil, nil
 		}
 		return nil, errors.Wrap(err, "failed to get password secret")
 	}
 
-	var passwordUpdatedAt time.Time
+	passwordUpdatedAt := new(time.Time)
 	updatedAtBytes, ok := passwordSecret.Data["passwordUpdatedAt"]
 	if ok {
 		updatedAt, err := time.Parse(time.RFC3339, string(updatedAtBytes))
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to parse passwordUpdatedAt")
 		}
-		passwordUpdatedAt = updatedAt
+		passwordUpdatedAt = &updatedAt
 	} else {
 		// backward compatibility, for older secret/ newly created secret with no passwordUpdatedAt value
-		passwordUpdatedAt = passwordSecret.CreationTimestamp.Time
+		passwordUpdatedAt = nil
 	}
 
-	return &passwordUpdatedAt, nil
+	return passwordUpdatedAt, nil
 }

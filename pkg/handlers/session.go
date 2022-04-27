@@ -91,7 +91,7 @@ func requireValidSession(kotsStore store.Store, w http.ResponseWriter, r *http.R
 		JSON(w, http.StatusUnauthorized, response)
 		return nil, err
 	}
-	if passwordUpdatedAt.After(sess.IssuedAt) {
+	if passwordUpdatedAt != nil && passwordUpdatedAt.After(sess.IssuedAt) {
 		if err := kotsStore.DeleteSession(sess.ID); err != nil {
 			logger.Error(errors.Wrapf(err, "password was updated after session created. failed to delete invalid session %s", sess.ID))
 		}
