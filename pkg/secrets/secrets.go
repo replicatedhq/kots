@@ -3,25 +3,19 @@ package secrets
 import (
 	"context"
 	"io/ioutil"
+	"k8s.io/client-go/kubernetes"
 	"os"
 	"path/filepath"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func ReplaceSecretsInPath(archiveDir string) error {
+func ReplaceSecretsInPath(archiveDir string, clientset kubernetes.Interface) error {
 	logger.Debug("checking for secrets replacers")
-
-	// look for a license secret
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return errors.Wrap(err, "failed to get k8s clientset")
-	}
 
 	secrets, err := clientset.CoreV1().Secrets(util.PodNamespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: "kots.io/buildphase=secret",
@@ -45,7 +39,7 @@ func ReplaceSecretsInPath(archiveDir string) error {
 	case "sealedsecrets":
 		return replaceSecretsWithSealedSecrets(archiveDir, secret.Data)
 	default:
-		return errors.Errorf("unkknown secret type %q", secretType)
+		return errors.Errorf("unknown secret type %q", secretType)
 	}
 }
 
@@ -55,7 +49,7 @@ func getSecretsInPath(archiveDir string) ([]string, error) {
 
 	err := filepath.Walk(archiveDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return err
+			return errors.Wrap(err, "could not walk through the archive directory")
 		}
 
 		if info.IsDir() {

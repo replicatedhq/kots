@@ -24,6 +24,10 @@ func replaceSecretsWithSealedSecrets(archivePath string, config map[string][]byt
 		return errors.Wrap(err, "failed to get secrets in path")
 	}
 
+	if len(secretPaths) == 0 {
+		return nil
+	}
+
 	block, _ := pem.Decode(config["cert.pem"])
 	if block == nil {
 		return errors.New("unable to read public key from secret")
@@ -58,9 +62,9 @@ func replaceSecretsWithSealedSecrets(archivePath string, config map[string][]byt
 		if secret.Namespace == "" {
 			if os.Getenv("DEV_NAMESPACE") != "" {
 				secret.Namespace = os.Getenv("DEV_NAMESPACE")
+			} else {
+				secret.Namespace = util.PodNamespace
 			}
-
-			secret.Namespace = util.PodNamespace
 		}
 
 		sealedSecret, err := sealedsecretsv1alpha1.NewSealedSecret(codecFactory, cert.PublicKey.(*rsa.PublicKey), secret)
