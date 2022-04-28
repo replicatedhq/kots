@@ -5,8 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/replicatedhq/kots/pkg/handlers"
-	"github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -18,6 +16,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/replicatedhq/kots/pkg/handlers"
+	"github.com/replicatedhq/troubleshoot/pkg/preflight"
 
 	cursor "github.com/ahmetalpbalkan/go-cursor"
 	"github.com/manifoldco/promptui"
@@ -35,6 +36,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/metrics"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/store/kotsstore"
+	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -389,16 +391,28 @@ func InstallCmd() *cobra.Command {
 			}
 
 			if deployOptions.License != nil {
-				if err := ValidateAutomatedInstall(deployOptions, authSlug, apiEndpoint); err != nil {
-					return errors.Wrap(err, "failed to validate automated install")
-				}
-				log.Debug("automated install validated successfully")
-
-				if !deployOptions.SkipPreflights {
-					if err := ValidatePreflightStatus(deployOptions, authSlug, apiEndpoint); err != nil {
-						return errors.Wrap(err, "failed to validate preflight status")
+				if err = func() error {
+					log.ChildActionWithSpinner("Waiting for installation to complete")
+					defer log.FinishChildSpinner()
+					status, err := ValidateAutomatedInstall(deployOptions, authSlug, apiEndpoint)
+					if err != nil {
+						return errors.Wrap(err, "failed to validate installation")
 					}
-					log.Debug("preflights validated successfully")
+
+					// NOTE: status will be empty if isAirgapWithoutBundle
+					fmt.Printf("version status: %v\n", status)
+					// No status - Don't wait for preflights
+					// Pending preflight - Wait for preflights
+					// Pending config - Message to user
+
+					if status == storetypes.VersionPendingPreflight {
+						if err := ValidatePreflightStatus(deployOptions, authSlug, apiEndpoint); err != nil {
+							return errors.Wrap(err, "failed to validate preflight results")
+						}
+					}
+					return nil
+				}(); err != nil {
+					return err
 				}
 			}
 
@@ -778,7 +792,7 @@ func CheckRBAC() error {
 	return nil
 }
 
-func ValidateAutomatedInstall(deployOptions kotsadmtypes.DeployOptions, authSlug string, apiEndpoint string) error {
+func ValidateAutomatedInstall(deployOptions kotsadmtypes.DeployOptions, authSlug string, apiEndpoint string) (storetypes.DownstreamVersionStatus, error) {
 	url := fmt.Sprintf("%s/app/%s/automated/status", apiEndpoint, deployOptions.License.Spec.AppSlug)
 
 	startTime := time.Now()
@@ -786,18 +800,24 @@ func ValidateAutomatedInstall(deployOptions kotsadmtypes.DeployOptions, authSlug
 	for time.Since(startTime) < deployOptions.Timeout {
 		taskStatus, err := getAutomatedInstallStatus(url, authSlug)
 		if err != nil {
-			return errors.Wrap(err, "failed to get automated install status")
+			return "", errors.Wrap(err, "failed to get automated install status")
 		}
+		taskMessage := automation.AutomateInstallTaskMessage{}
+		err = json.Unmarshal([]byte(taskStatus.Message), &taskMessage)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to unmarshal automated install task message")
+		}
+
 		switch taskStatus.Status {
 		case automation.AutomatedInstallFailed:
-			return errors.New(taskStatus.Message)
+			return "", errors.New(taskMessage.Error)
 		case automation.AutomatedInstallSuccess:
-			return nil
+			return taskMessage.VersionStatus, nil
 		}
 		time.Sleep(time.Second)
 	}
 
-	return errors.New("timeout waiting for automated install. Use the --wait-duration flag to increase timeout.")
+	return "", errors.New("timeout waiting for automated install. Use the --wait-duration flag to increase timeout.")
 }
 
 func getAutomatedInstallStatus(url string, authSlug string) (*kotsstore.TaskStatus, error) {
@@ -832,7 +852,7 @@ func getAutomatedInstallStatus(url string, authSlug string) (*kotsstore.TaskStat
 }
 
 func ValidatePreflightStatus(deployOptions kotsadmtypes.DeployOptions, authSlug string, apiEndpoint string) error {
-	url := fmt.Sprintf("%s/app/%s/sequence/0/preflight/result", apiEndpoint, deployOptions.License.Spec.AppSlug)
+	url := fmt.Sprintf("%s/app/%s/preflight/result", apiEndpoint, deployOptions.License.Spec.AppSlug)
 
 	startTime := time.Now()
 

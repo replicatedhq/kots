@@ -3,6 +3,9 @@ package cli_test
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"time"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
@@ -14,8 +17,6 @@ import (
 	preflighttypes "github.com/replicatedhq/kots/pkg/preflight/types"
 	"github.com/replicatedhq/kots/pkg/store/kotsstore"
 	"github.com/replicatedhq/troubleshoot/pkg/preflight"
-	"net/http"
-	"time"
 )
 
 var _ = Describe("Install", func() {
@@ -358,7 +359,7 @@ var _ = Describe("Install", func() {
 			)
 
 			server.AllowUnhandledRequests = true
-			err := ValidateAutomatedInstall(deployOptions, authSlug, server.URL())
+			_, err := ValidateAutomatedInstall(deployOptions, authSlug, server.URL())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("timeout waiting for automated install"))
 		})
@@ -375,7 +376,7 @@ var _ = Describe("Install", func() {
 				),
 			)
 
-			err := ValidateAutomatedInstall(validDeployOptions, authSlug, server.URL())
+			_, err := ValidateAutomatedInstall(validDeployOptions, authSlug, server.URL())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("failed to get automated install status"))
 			Expect(err.Error()).To(ContainSubstring("unexpected status code"))
@@ -393,7 +394,7 @@ var _ = Describe("Install", func() {
 				),
 			)
 
-			err := ValidateAutomatedInstall(validDeployOptions, authSlug, "Invalid server URL")
+			_, err := ValidateAutomatedInstall(validDeployOptions, authSlug, "Invalid server URL")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("failed to execute request"))
 		})
@@ -410,7 +411,7 @@ var _ = Describe("Install", func() {
 				),
 			)
 
-			err := ValidateAutomatedInstall(validDeployOptions, authSlug, server.URL())
+			_, err := ValidateAutomatedInstall(validDeployOptions, authSlug, server.URL())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("failed to read response body"))
 		})
@@ -427,7 +428,7 @@ var _ = Describe("Install", func() {
 				),
 			)
 
-			err := ValidateAutomatedInstall(validDeployOptions, authSlug, server.URL())
+			_, err := ValidateAutomatedInstall(validDeployOptions, authSlug, server.URL())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("failed to unmarshal task status"))
 		})
@@ -465,7 +466,7 @@ var _ = Describe("Install", func() {
 				),
 			)
 
-			err = ValidateAutomatedInstall(longerTimeoutDeployOptions, authSlug, server.URL())
+			_, err = ValidateAutomatedInstall(longerTimeoutDeployOptions, authSlug, server.URL())
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -484,7 +485,7 @@ var _ = Describe("Install", func() {
 				),
 			)
 
-			err = ValidateAutomatedInstall(validDeployOptions, authSlug, server.URL())
+			_, err = ValidateAutomatedInstall(validDeployOptions, authSlug, server.URL())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("failed-task-status"))
 		})
@@ -504,7 +505,7 @@ var _ = Describe("Install", func() {
 				),
 			)
 
-			err = ValidateAutomatedInstall(validDeployOptions, authSlug, server.URL())
+			_, err = ValidateAutomatedInstall(validDeployOptions, authSlug, server.URL())
 			Expect(err).ToNot(HaveOccurred())
 		})
 	})
