@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"io/ioutil"
 	"log"
 	"os"
@@ -281,7 +282,12 @@ func (c *Client) deployHelmCharts(deployArgs operatortypes.DeployAppArgs) (*comm
 		}
 	}
 	if len(deployArgs.Charts) > 0 {
-		installResult, err = c.installWithHelm(curHelmDir, targetNamespace)
+		kotsCharts := []*v1beta1.HelmChart{}
+		if deployArgs.KotsKinds != nil {
+			kotsCharts = deployArgs.KotsKinds.HelmCharts
+		}
+
+		installResult, err = c.installWithHelm(curHelmDir, targetNamespace, kotsCharts)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to install helm charts")
 		}

@@ -1,6 +1,7 @@
 package base
 
 import (
+	_ "embed"
 	"reflect"
 	"testing"
 
@@ -687,6 +688,567 @@ func Test_removeFileFromUpstream(t *testing.T) {
 			result := removeFileFromUpstream(test.files, test.path)
 
 			assert.Equal(t, test.want, result)
+		})
+	}
+}
+
+//go:embed testdata/postgresql-10.13.8.tgz
+var postgresqlChart []byte
+
+func Test_renderReplicatedHelm(t *testing.T) {
+
+	tests := []struct {
+		name          string
+		upstream      *upstreamtypes.Upstream
+		renderOptions *RenderOptions
+		expectedBase  Base
+		expectedHelm  []Base
+	}{
+		{
+			name: "basic test",
+			upstream: &upstreamtypes.Upstream{
+				Files: []upstreamtypes.UpstreamFile{
+					{
+						Path: "config.yaml",
+						Content: []byte(`
+apiVersion: kots.io/v1beta1 
+kind: Config 
+metadata: 
+  creationTimestamp: null 
+  name: config-sample 
+spec:  
+  groups:
+  - name: "podInfo"
+    description: "info for pod"
+    items:
+    - name: "podName"
+      type: "text"
+      default: "test"
+      value: "testPod"
+`,
+						),
+					},
+					{
+						Path: "userdata/config.yaml",
+						Content: []byte(`apiVersion: kots.io/v1beta1
+kind: ConfigValues
+metadata:
+  name: test-app
+spec:
+  values:
+    podName:
+      value: "testvalue"
+`,
+						),
+					},
+					{
+						Path: "deployment.yaml",
+						Content: []byte(`
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-deploy
+  namespace: my-app
+spec:
+  template:
+    spec:
+      containers:
+        - name: repl{{ ConfigOption "podName"}}
+          image: httpd
+`),
+					},
+				},
+			},
+			renderOptions: &RenderOptions{
+				Log: logger.NewCLILogger(),
+			},
+			expectedBase: Base{Files: []BaseFile{
+				{
+					Path: "config.yaml",
+					Content: []byte(`
+apiVersion: kots.io/v1beta1 
+kind: Config 
+metadata: 
+  creationTimestamp: null 
+  name: config-sample 
+spec:  
+  groups:
+  - name: "podInfo"
+    description: "info for pod"
+    items:
+    - name: "podName"
+      type: "text"
+      default: "test"
+      value: "testPod"
+`),
+				},
+				{
+					Path: "userdata/config.yaml",
+					Content: []byte(`apiVersion: kots.io/v1beta1
+kind: ConfigValues
+metadata:
+  name: test-app
+spec:
+  values:
+    podName:
+      value: "testvalue"
+`),
+				},
+				{
+					Path: "deployment.yaml",
+					Content: []byte(`
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-deploy
+  namespace: my-app
+spec:
+  template:
+    spec:
+      containers:
+        - name: testvalue
+          image: httpd
+`),
+				},
+			}},
+		},
+		{
+			name: "helm install test",
+			upstream: &upstreamtypes.Upstream{
+				Files: []upstreamtypes.UpstreamFile{
+					{
+						Path: "config.yaml",
+						Content: []byte(`
+apiVersion: kots.io/v1beta1 
+kind: Config 
+metadata: 
+  creationTimestamp: null 
+  name: config-sample 
+spec:  
+  groups:
+  - name: "podInfo"
+    description: "info for pod"
+    items:
+    - name: "podName"
+      type: "text"
+      default: "test"
+      value: "testPod"
+`,
+						),
+					},
+					{
+						Path: "userdata/config.yaml",
+						Content: []byte(`apiVersion: kots.io/v1beta1
+kind: ConfigValues
+metadata:
+  name: test-app
+spec:
+  values:
+    podName:
+      value: "testvalue"
+`,
+						),
+					},
+					{
+						Path: "postgresql.yaml",
+						Content: []byte(`
+apiVersion: kots.io/v1beta1
+kind: HelmChart
+metadata:
+  name: postgresql
+spec:
+  # chart identifies a matching chart from a .tgz
+  chart:
+    name: postgresql
+    chartVersion: 10.13.8
+  helmVersion: v3
+  useHelmInstall: true
+  weight: 42
+  values:
+    postgresqlPassword: "abc123"
+`),
+					},
+					{
+						Path:    "postgresql-10.13.8.tgz",
+						Content: postgresqlChart,
+					},
+				},
+			},
+			renderOptions: &RenderOptions{
+				Log: logger.NewCLILogger(),
+			},
+			expectedBase: Base{Files: []BaseFile{
+				{
+					Path: "config.yaml",
+					Content: []byte(`
+apiVersion: kots.io/v1beta1 
+kind: Config 
+metadata: 
+  creationTimestamp: null 
+  name: config-sample 
+spec:  
+  groups:
+  - name: "podInfo"
+    description: "info for pod"
+    items:
+    - name: "podName"
+      type: "text"
+      default: "test"
+      value: "testPod"
+`),
+				},
+				{
+					Path: "userdata/config.yaml",
+					Content: []byte(`apiVersion: kots.io/v1beta1
+kind: ConfigValues
+metadata:
+  name: test-app
+spec:
+  values:
+    podName:
+      value: "testvalue"
+`),
+				},
+				{
+					Path: "postgresql.yaml",
+					Content: []byte(`
+apiVersion: kots.io/v1beta1
+kind: HelmChart
+metadata:
+  name: postgresql
+spec:
+  # chart identifies a matching chart from a .tgz
+  chart:
+    name: postgresql
+    chartVersion: 10.13.8
+  helmVersion: v3
+  useHelmInstall: true
+  weight: 42
+  values:
+    postgresqlPassword: "abc123"
+`),
+				},
+			}},
+			expectedHelm: []Base{
+				{
+					Path: "charts/postgresql",
+					Files: []BaseFile{
+						{
+							Path: "secrets.yaml",
+							Content: []byte(`# Source: postgresql/templates/secrets.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgresql
+  labels:
+    app.kubernetes.io/name: postgresql
+    helm.sh/chart: postgresql-10.13.8
+    app.kubernetes.io/instance: postgresql
+    app.kubernetes.io/managed-by: Helm
+  namespace: 
+type: Opaque
+data:
+  postgresql-password: "YWJjMTIz"`),
+						},
+						{
+							Path: "statefulset.yaml",
+							Content: []byte(`# Source: postgresql/templates/statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgresql-postgresql
+  labels:
+    app.kubernetes.io/name: postgresql
+    helm.sh/chart: postgresql-10.13.8
+    app.kubernetes.io/instance: postgresql
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: primary
+  annotations:
+  namespace: 
+spec:
+  serviceName: postgresql-headless
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: postgresql
+      app.kubernetes.io/instance: postgresql
+      role: primary
+  template:
+    metadata:
+      name: postgresql
+      labels:
+        app.kubernetes.io/name: postgresql
+        helm.sh/chart: postgresql-10.13.8
+        app.kubernetes.io/instance: postgresql
+        app.kubernetes.io/managed-by: Helm
+        role: primary
+        app.kubernetes.io/component: primary
+    spec:      
+      affinity:
+        podAffinity:
+          
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: postgresql
+                    app.kubernetes.io/instance: postgresql
+                    app.kubernetes.io/component: primary
+                namespaces:
+                  - ""
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+        nodeAffinity:
+          
+      securityContext:
+        fsGroup: 1001
+      automountServiceAccountToken: false
+      containers:
+        - name: postgresql
+          image: docker.io/bitnami/postgresql:11.14.0-debian-10-r0
+          imagePullPolicy: "IfNotPresent"
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+          securityContext:
+            runAsUser: 1001
+          env:
+            - name: BITNAMI_DEBUG
+              value: "false"
+            - name: POSTGRESQL_PORT_NUMBER
+              value: "5432"
+            - name: POSTGRESQL_VOLUME_DIR
+              value: "/bitnami/postgresql"
+            - name: PGDATA
+              value: "/bitnami/postgresql/data"
+            - name: POSTGRES_USER
+              value: "postgres"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgresql
+                  key: postgresql-password
+            - name: POSTGRESQL_ENABLE_LDAP
+              value: "no"
+            - name: POSTGRESQL_ENABLE_TLS
+              value: "no"
+            - name: POSTGRESQL_LOG_HOSTNAME
+              value: "false"
+            - name: POSTGRESQL_LOG_CONNECTIONS
+              value: "false"
+            - name: POSTGRESQL_LOG_DISCONNECTIONS
+              value: "false"
+            - name: POSTGRESQL_PGAUDIT_LOG_CATALOG
+              value: "off"
+            - name: POSTGRESQL_CLIENT_MIN_MESSAGES
+              value: "error"
+            - name: POSTGRESQL_SHARED_PRELOAD_LIBRARIES
+              value: "pgaudit"
+          ports:
+            - name: tcp-postgresql
+              containerPort: 5432
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - exec pg_isready -U "postgres" -h 127.0.0.1 -p 5432
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 6
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - -e
+                - |
+                  exec pg_isready -U "postgres" -h 127.0.0.1 -p 5432
+                  [ -f /opt/bitnami/postgresql/tmp/.initialized ] || [ -f /bitnami/postgresql/.initialized ]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 6
+          volumeMounts:
+            - name: dshm
+              mountPath: /dev/shm
+            - name: data
+              mountPath: /bitnami/postgresql
+              subPath: 
+      volumes:
+        - name: dshm
+          emptyDir:
+            medium: Memory
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - "ReadWriteOnce"
+        resources:
+          requests:
+            storage: "8Gi"`),
+						},
+						{
+							Path: "svc-headless.yaml",
+							Content: []byte(`# Source: postgresql/templates/svc-headless.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql-headless
+  labels:
+    app.kubernetes.io/name: postgresql
+    helm.sh/chart: postgresql-10.13.8
+    app.kubernetes.io/instance: postgresql
+    app.kubernetes.io/managed-by: Helm
+    # Use this annotation in addition to the actual publishNotReadyAddresses
+    # field below because the annotation will stop being respected soon but the
+    # field is broken in some versions of Kubernetes:
+    # https://github.com/kubernetes/kubernetes/issues/58662
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+  namespace: 
+spec:
+  type: ClusterIP
+  clusterIP: None
+  # We want all pods in the StatefulSet to have their addresses published for
+  # the sake of the other Postgresql pods even before they're ready, since they
+  # have to be able to talk to each other in order to become ready.
+  publishNotReadyAddresses: true
+  ports:
+    - name: tcp-postgresql
+      port: 5432
+      targetPort: tcp-postgresql
+  selector:
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/instance: postgresql`),
+						},
+						{
+							Path: "svc.yaml",
+							Content: []byte(`# Source: postgresql/templates/svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql
+  labels:
+    app.kubernetes.io/name: postgresql
+    helm.sh/chart: postgresql-10.13.8
+    app.kubernetes.io/instance: postgresql
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+  namespace: 
+spec:
+  type: ClusterIP
+  ports:
+    - name: tcp-postgresql
+      port: 5432
+      targetPort: tcp-postgresql
+  selector:
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/instance: postgresql
+    role: primary`),
+						},
+					},
+					ErrorFiles: []BaseFile{},
+					AdditionalFiles: []BaseFile{
+						{
+							Path: "Chart.yaml",
+							Content: []byte(`annotations:
+  category: Database
+apiVersion: v2
+appVersion: 11.14.0
+dependencies:
+- name: common
+  repository: https://charts.bitnami.com/bitnami
+  version: 1.x.x
+description: Chart for PostgreSQL, an object-relational database management system
+  (ORDBMS) with an emphasis on extensibility and on standards-compliance.
+home: https://github.com/bitnami/charts/tree/master/bitnami/postgresql
+icon: https://bitnami.com/assets/stacks/postgresql/img/postgresql-stack-220x234.png
+keywords:
+- postgresql
+- postgres
+- database
+- sql
+- replication
+- cluster
+maintainers:
+- email: containers@bitnami.com
+  name: Bitnami
+- email: cedric@desaintmartin.fr
+  name: desaintmartin
+name: postgresql
+sources:
+- https://github.com/bitnami/bitnami-docker-postgresql
+- https://www.postgresql.org/
+version: 10.13.8
+`),
+						},
+						{
+							Path: "Chart.lock",
+							Content: []byte(`dependencies:
+- name: common
+  repository: https://charts.bitnami.com/bitnami
+  version: 1.10.1
+digest: sha256:84f150f2d532eb5cb38ad0201fc071d7a1c43d1e815330cd8dedd5bc268575ec
+generated: "2021-10-29T07:02:39.999761537Z"
+`),
+						},
+					},
+				},
+				{
+					Path:       "charts/postgresql/charts/common",
+					Files:      []BaseFile{},
+					ErrorFiles: []BaseFile{},
+					AdditionalFiles: []BaseFile{
+						{
+							Path: "Chart.yaml",
+							Content: []byte(`annotations:
+  category: Infrastructure
+apiVersion: v2
+appVersion: 1.10.0
+description: A Library Helm Chart for grouping common logic between bitnami charts.
+  This chart is not deployable by itself.
+home: https://github.com/bitnami/charts/tree/master/bitnami/common
+icon: https://bitnami.com/downloads/logos/bitnami-mark.png
+keywords:
+- common
+- helper
+- template
+- function
+- bitnami
+maintainers:
+- email: containers@bitnami.com
+  name: Bitnami
+name: common
+sources:
+- https://github.com/bitnami/charts
+- http://www.bitnami.com/
+type: library
+version: 1.10.1
+`),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			req := require.New(t)
+
+			base, helmBase, err := renderReplicated(test.upstream, test.renderOptions)
+			req.NoError(err)
+
+			req.ElementsMatch(test.expectedHelm, helmBase)
+			req.ElementsMatch(test.expectedBase.Files, base.Files)
 		})
 	}
 }
