@@ -189,6 +189,8 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 		HandlerFunc(middleware.EnforceAccess(policy.AppDownstreamConfigWrite, handler.LiveAppConfig))
 	r.Name("SetAppConfigValues").Path("/api/v1/app/{appSlug}/config/values").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.AppDownstreamConfigWrite, handler.SetAppConfigValues))
+	r.Name("DownloadFileFromConfig").Path("/api/v1/app/{appSlug}/config/{sequence}/{filename}/download").Methods("GET").
+		HandlerFunc(middleware.EnforceAccess(policy.AppDownstreamConfigRead, handler.DownloadFileFromConfig))
 
 	r.Name("SyncLicense").Path("/api/v1/app/{appSlug}/license").Methods("PUT").
 		HandlerFunc(middleware.EnforceAccess(policy.AppLicenseWrite, handler.SyncLicense))

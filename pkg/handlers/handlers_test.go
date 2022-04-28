@@ -798,7 +798,17 @@ var HandlerPolicyTests = map[string][]HandlerPolicyTest{
 			ExpectStatus: http.StatusOK,
 		},
 	},
-
+	"DownloadFileFromConfig": {
+		{
+			Vars:         map[string]string{"appSlug": "my-app", "sequence": "0", "filename": "my-file"},
+			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
+			SessionRoles: []string{rbac.ClusterAdminRoleID},
+			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {
+				handlerRecorder.DownloadFileFromConfig(gomock.Any(), gomock.Any())
+			},
+			ExpectStatus: http.StatusOK,
+		},
+	},
 	"SyncLicense": {
 		{
 			Vars:         map[string]string{"appSlug": "my-app"},

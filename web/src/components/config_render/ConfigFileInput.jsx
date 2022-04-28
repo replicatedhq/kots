@@ -2,6 +2,7 @@ import React from "react";
 import FileInput from "./FileInput";
 import ConfigItemTitle from "./ConfigItemTitle";
 import map from "lodash/map";
+import { Utilities } from "../../utilities/utilities";
 export default class ConfigFileInput extends React.Component {
 
   handleOnChange = (files) => {
@@ -19,6 +20,37 @@ export default class ConfigFileInput extends React.Component {
         );
       }
     }
+  }
+
+  handleDownloadFile = async (fileName) => {
+    const url = `${process.env.API_ENDPOINT}/app/${this.props.appSlug}/config/${this.props.configSequence}/${fileName}/download`;
+    fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/octet-stream",
+        "Authorization": Utilities.getToken(),
+      }
+    }).then((response) => {
+      if (!response.ok) {
+        throw Error(response.statusText); // TODO: handle error
+      }
+      return response.blob();
+    }).then((blob) => {
+      const downloadURL = window.URL.createObjectURL(
+        new Blob([blob]),
+      );
+      const link = document.createElement("a");
+      link.href = downloadURL;
+      link.setAttribute(
+        "download",
+        fileName,
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+    }).catch(function(error) {
+      console.log(error); // TODO handle error
+    });
   }
 
   getFilenamesText = () => {
@@ -68,7 +100,9 @@ export default class ConfigFileInput extends React.Component {
                 multiple={this.props.repeatable}
                 onChange={this.handleOnChange}
                 filenamesText={this.getFilenamesText()}
-                handleRemoveFile={(itemName, itemToRemove) => this.props.handleRemoveItem(itemName, itemToRemove)}/>
+                handleRemoveFile={(itemName, itemToRemove) => this.props.handleRemoveItem(itemName, itemToRemove)}
+                handleDownloadFile={(fileName) => this.handleDownloadFile(fileName)}
+              />
             </span>
           </div>
         </div>
