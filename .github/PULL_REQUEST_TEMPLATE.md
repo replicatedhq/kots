@@ -29,6 +29,14 @@ Usage: `Fixes #<issue number>`, or `Fixes (paste link of issue)`.
 Fixes #
 
 #### Special notes for your reviewer:
+<!--
+Any additional special notes for your reviewer.
+-->
+
+## Steps to reproduce
+<!---
+Please provide minimum instructions for how someone can view/test/verify your changes.
+-->
 
 #### Does this PR introduce a user-facing change?
 <!--
