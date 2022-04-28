@@ -143,23 +143,6 @@ class AppVersionHistoryRow extends Component {
       );
     }
   
-    if (downstream.gitops?.enabled) {
-      if (version.gitDeployable === false) {
-        return (<div className={this.props.nothingToCommit && this.props.selectedDiffReleases && "u-opacity--half"}>Nothing to commit</div>);
-      }
-      if (!version.commitUrl) {
-        return null;
-      }
-      return (
-        <button
-          className="btn primary blue"
-          onClick={() => window.open(version.commitUrl, "_blank")}
-        >
-          View
-        </button>
-      );
-    }
-  
     const isCurrentVersion = version.sequence === downstream.currentVersion?.sequence;
     const isLatestVersion = version.sequence === app.currentSequence;
     const isPendingVersion = find(downstream.pendingVersions, { sequence: version.sequence });
@@ -179,6 +162,23 @@ class AppVersionHistoryRow extends Component {
       tooltipTip = "Edit config";
     } else {
       tooltipTip = "View config"
+    }
+
+    if (downstream.gitops?.enabled) {
+      if (version.gitDeployable === false) {
+        return (<div className={this.props.nothingToCommit && this.props.selectedDiffReleases && "u-opacity--half"}>Nothing to commit</div>);
+      }
+      if (!version.commitUrl) {
+        return null;
+      }
+      return (
+        <button
+          className="btn primary blue u-marginLeft--10"
+          onClick={() => window.open(version.commitUrl, "_blank")}
+        >
+          View commit
+        </button>
+      );
     }
   
     const preflightState = this.getPreflightState(version);

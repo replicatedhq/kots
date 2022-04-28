@@ -210,7 +210,7 @@ export default class AutomaticUpdatesModal extends React.Component {
           }
           <div className="flex-column flex1">
             <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal">Automatically check for updates</p>
-            <span className="u-fontSize--small u-marginTop--5 u-textColor--info u-marginBottom--15">Choose how frequently your application checks for updates. A custom schedule can be defined with a cron expression.</span>
+            <span className="u-fontSize--normal u-marginTop--5 u-textColor--info u-lineHeight--more u-marginBottom--15">Choose how frequently your application checks for updates. A custom schedule can be defined with a cron expression.</span>
             <div className="flex flex1">
               <Select
                 className="replicated-select-container flex1"
@@ -246,46 +246,48 @@ export default class AutomaticUpdatesModal extends React.Component {
               </div>
             </div>
           </div>
-          <div className="flex-column flex1 u-marginTop--15">
-            <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal">Automatically deploy new versions</p>
-            { isSemverRequired ?
-                <>
-                  <span className="u-marginTop--5 u-marginBottom--15 u-fontSize--small u-textColor--info u-fontWeight--medium">Choose which versions will be deployed automatically. New versions will never be deployed automatically when you manually check for updates.</span>
-                  <Select
-                  className="replicated-select-container flex1"
-                  classNamePrefix="replicated-select"
-                  placeholder="Automatically deploy new versions"
-                  options={SEMVER_AUTO_DEPLOY_OPTIONS}
-                  isSearchable={false}
-                  getOptionValue={(option) => option.label}
-                  value={selectedAutoDeploy}
-                  onChange={this.handleAutoDeployOptionChange}
-                  isOptionSelected={(option) => { option.value === selectedAutoDeploy }}
-                  />
-                </>
-                :
-                <>
-                  <span className="u-marginTop--5 u-marginBottom--15 u-fontSize--small u-textColor--info u-fontWeight--medium">Choose whether new versions will be deployed automatically. New versions will never be deployed automatically when you manually check for updates.</span>
-                  <div className="BoxedCheckbox-wrapper flex1 u-textAlign--left">
-                    <div className={`flex-auto flex ${"sequence" === selectedAutoDeploy.value ? "is-active" : ""}`}>
-                      <input
-                        type="checkbox"
-                        className="u-cursor--pointer"
-                        id="sequenceAutoUpdatesEnabled"
-                        checked={"sequence" === selectedAutoDeploy.value}
-                        onChange={(e) => { this.handleSequenceAutoUpdatesChange(e.target.checked); }}
-                      />
-                      <label htmlFor="sequenceAutoUpdatesEnabled" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none" style={{ marginTop: "2px" }}>
-                        <div className="flex flex-column u-marginLeft--5 justifyContent--center">
-                          <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium">Enable automatic deployment</p>
-                        </div>
-                      </label>
+          {!gitopsEnabled &&
+            <div className="flex-column flex1 u-marginTop--15">
+              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal">Automatically deploy new versions</p>
+              { isSemverRequired ?
+                  <>
+                    <span className="u-marginTop--5 u-marginBottom--15 u-fontSize--normal u-textColor--info u-lineHeight--more u-fontWeight--medium">Choose which versions will be deployed automatically. New versions will never be deployed automatically when you manually check for updates.</span>
+                    <Select
+                    className="replicated-select-container flex1"
+                    classNamePrefix="replicated-select"
+                    placeholder="Automatically deploy new versions"
+                    options={SEMVER_AUTO_DEPLOY_OPTIONS}
+                    isSearchable={false}
+                    getOptionValue={(option) => option.label}
+                    value={selectedAutoDeploy}
+                    onChange={this.handleAutoDeployOptionChange}
+                    isOptionSelected={(option) => { option.value === selectedAutoDeploy }}
+                    />
+                  </>
+                  :
+                  <>
+                    <span className="u-marginTop--5 u-marginBottom--15 u-fontSize--normal u-textColor--info u-lineHeight--more u-fontWeight--medium">Choose whether new versions will be deployed automatically. New versions will never be deployed automatically when you manually check for updates.</span>
+                    <div className="BoxedCheckbox-wrapper flex1 u-textAlign--left">
+                      <div className={`flex-auto flex ${"sequence" === selectedAutoDeploy.value ? "is-active" : ""}`}>
+                        <input
+                          type="checkbox"
+                          className="u-cursor--pointer"
+                          id="sequenceAutoUpdatesEnabled"
+                          checked={"sequence" === selectedAutoDeploy.value}
+                          onChange={(e) => { this.handleSequenceAutoUpdatesChange(e.target.checked); }}
+                        />
+                        <label htmlFor="sequenceAutoUpdatesEnabled" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none" style={{ marginTop: "2px" }}>
+                          <div className="flex flex-column u-marginLeft--5 justifyContent--center">
+                            <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium">Enable automatic deployment</p>
+                          </div>
+                        </label>
+                      </div>
                     </div>
-                  </div>
-                </>
-            }
-          </div>
-          {configureAutomaticUpdatesErr && <span className="u-textColor--error u-fontSize--small u-fontWeight--bold u-marginTop--15">Error: {configureAutomaticUpdatesErr}</span>}
+                  </>
+              }
+            </div>
+          }
+          {configureAutomaticUpdatesErr && <span className="u-textColor--error u-fontSize--normal u-fontWeight--bold u-marginTop--15">Error: {configureAutomaticUpdatesErr}</span>}
           <div className="flex u-marginTop--20">
             <button className="btn primary blue" onClick={this.onConfigureAutomaticUpdates}>Update</button>
             <button className="btn secondary u-marginLeft--10" onClick={onRequestClose}>Cancel</button>

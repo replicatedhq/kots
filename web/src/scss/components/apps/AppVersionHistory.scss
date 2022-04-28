@@ -238,6 +238,10 @@ $cell-width: 140px;
     background-color: $really-light-accent;
   }
 
+  &.no-max {
+    max-width: none;
+  }
+
   &.gitops-enabled {
     margin-top: 30px;
   }

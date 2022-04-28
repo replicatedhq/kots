@@ -26,6 +26,7 @@ import ReactTooltip from "react-tooltip"
 import Pager from "../shared/Pager";
 
 import "@src/scss/components/apps/AppVersionHistory.scss";
+import DashboardGitOpsCard from "./DashboardGitOpsCard";
 dayjs.extend(relativeTime);
 
 class AppVersionHistory extends Component {
@@ -1072,7 +1073,7 @@ class AppVersionHistory extends Component {
     const { currentPage, pageSize, totalCount, loadingPage } = this.state;
 
     return (
-      <div className="TableDiff--Wrapper u-marginTop--30">
+      <div className="TableDiff--Wrapper">
         <div className="flex u-marginBottom--15 justifyContent--spaceBetween">
           <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy">All versions</p>
           <div className="flex flex-auto alignItems--center">
@@ -1210,11 +1211,6 @@ class AppVersionHistory extends Component {
         <Helmet>
           <title>{`${app.name} Version History`}</title>
         </Helmet>
-        {gitopsEnabled &&
-          <div className="edit-files-banner gitops-enabled-banner u-fontSize--small u-fontWeight--normal u-textColor--secondary flex alignItems--center justifyContent--center">
-            <span className={`icon gitopsService--${downstream.gitops?.provider} u-marginRight--10`}/>Gitops is enabled for this application. Versions are tracked {app.isAirgap ? "at" : "on"}&nbsp;<a target="_blank" rel="noopener noreferrer" href={downstream.gitops?.uri} className="replicated-link">{app.isAirgap ? downstream.gitops?.uri : Utilities.toTitleCase(downstream.gitops?.provider)}</a>
-          </div>
-        }
         <div className="flex-column flex1">
           <div className="flex flex1 justifyContent--center">
             <div className="flex1 flex AppVersionHistory">
@@ -1236,57 +1232,77 @@ class AppVersionHistory extends Component {
                 </div>
               }
 
-              <div className="flex-column flex1" style={{ maxWidth: "370px", marginRight: "20px" }}>
-                <div className="TableDiff--Wrapper currentVersionCard--wrapper">
-                  <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold">{currentDownstreamVersion?.versionLabel ? "Currently deployed version" : "No current version deployed"}</p>
-                  <div className="currentVersion--wrapper u-marginTop--10">
-                    <div className="flex flex1">
-                      {app?.iconUri &&
-                        <div className="flex-auto u-marginRight--10">
-                          <div className="watch-icon" style={{ backgroundImage: `url(${app?.iconUri})` }}></div>
-                        </div>
-                      }
-                      <div className="flex1 flex-column">
-                        <div className="flex alignItems--center u-marginTop--5">
-                          <p className="u-fontSize--header2 u-fontWeight--bold u-textColor--primary"> {currentDownstreamVersion ? currentDownstreamVersion.versionLabel : "---"}</p>
-                          <p className="u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10"> {currentDownstreamVersion ? `Sequence ${currentDownstreamVersion?.sequence}` : null}</p>
-                        </div>
-                        {currentDownstreamVersion?.deployedAt ? <p className="u-fontSize--small u-lineHeight--normal u-textColor--info u-fontWeight--medium u-marginTop--10">{currentDownstreamVersion?.status === "deploying" ? "Deploy started at" : "Deployed"} {Utilities.dateFormat(currentDownstreamVersion.deployedAt, "MM/DD/YY @ hh:mm a z")}</p> : null}
-                        {currentDownstreamVersion ?
-                          <div className="flex alignItems--center u-marginTop--10">
-                            {currentDownstreamVersion?.releaseNotes &&
+              {!gitopsEnabled &&
+                <div className="flex-column flex1" style={{ maxWidth: "370px", marginRight: "20px" }}>
+                  <div className="TableDiff--Wrapper currentVersionCard--wrapper">
+                    <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold">{currentDownstreamVersion?.versionLabel ? "Currently deployed version" : "No current version deployed"}</p>
+                    <div className="currentVersion--wrapper u-marginTop--10">
+                      <div className="flex flex1">
+                        {app?.iconUri &&
+                          <div className="flex-auto u-marginRight--10">
+                            <div className="watch-icon" style={{ backgroundImage: `url(${app?.iconUri})` }}></div>
+                          </div>
+                        }
+                        <div className="flex1 flex-column">
+                          <div className="flex alignItems--center u-marginTop--5">
+                            <p className="u-fontSize--header2 u-fontWeight--bold u-textColor--primary"> {currentDownstreamVersion ? currentDownstreamVersion.versionLabel : "---"}</p>
+                            <p className="u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10"> {currentDownstreamVersion ? `Sequence ${currentDownstreamVersion?.sequence}` : null}</p>
+                          </div>
+                          {currentDownstreamVersion?.deployedAt ? <p className="u-fontSize--small u-lineHeight--normal u-textColor--info u-fontWeight--medium u-marginTop--10">{currentDownstreamVersion?.status === "deploying" ? "Deploy started at" : "Deployed"} {Utilities.dateFormat(currentDownstreamVersion.deployedAt, "MM/DD/YY @ hh:mm a z")}</p> : null}
+                          {currentDownstreamVersion ?
+                            <div className="flex alignItems--center u-marginTop--10">
+                              {currentDownstreamVersion?.releaseNotes &&
+                                <div>
+                                  <span className="icon releaseNotes--icon u-marginRight--10 u-cursor--pointer" onClick={() => this.showReleaseNotes(currentDownstreamVersion?.releaseNotes)} data-tip="View release notes" />
+                                  <ReactTooltip effect="solid" className="replicated-tooltip" />
+                                </div>}
                               <div>
-                                <span className="icon releaseNotes--icon u-marginRight--10 u-cursor--pointer" onClick={() => this.showReleaseNotes(currentDownstreamVersion?.releaseNotes)} data-tip="View release notes" />
+                                <Link to={`/app/${app?.slug}/downstreams/${app.downstream.cluster?.slug}/version-history/preflight/${currentDownstreamVersion?.sequence}`}
+                                  className="icon preflightChecks--icon u-marginRight--10 u-cursor--pointer"
+                                  data-tip="View preflight checks" />
                                 <ReactTooltip effect="solid" className="replicated-tooltip" />
-                              </div>}
-                            <div>
-                              <Link to={`/app/${app?.slug}/downstreams/${app.downstream.cluster?.slug}/version-history/preflight/${currentDownstreamVersion?.sequence}`}
-                                className="icon preflightChecks--icon u-marginRight--10 u-cursor--pointer"
-                                data-tip="View preflight checks" />
-                              <ReactTooltip effect="solid" className="replicated-tooltip" />
-                            </div>
-                            <div>
-                              <span className="icon deployLogs--icon u-cursor--pointer" onClick={() => this.handleViewLogs(currentDownstreamVersion, currentDownstreamVersion?.status === "failed")} data-tip="View deploy logs" />
-                              <ReactTooltip effect="solid" className="replicated-tooltip" />
-                              {currentDownstreamVersion?.status === "failed" ? <span className="icon version-row-preflight-status-icon preflight-checks-failed-icon logs" /> : null}
-                            </div>
-                            {app.isConfigurable &&
+                              </div>
                               <div>
-                                <Link to={`/app/${app?.slug}/config/${app?.downstream?.currentVersion?.parentSequence}`} className="icon configEdit--icon u-cursor--pointer" data-tip="Edit config" />
+                                <span className="icon deployLogs--icon u-cursor--pointer" onClick={() => this.handleViewLogs(currentDownstreamVersion, currentDownstreamVersion?.status === "failed")} data-tip="View deploy logs" />
                                 <ReactTooltip effect="solid" className="replicated-tooltip" />
-                              </div>}
-                          </div> : null}
+                                {currentDownstreamVersion?.status === "failed" ? <span className="icon version-row-preflight-status-icon preflight-checks-failed-icon logs" /> : null}
+                              </div>
+                              {app.isConfigurable &&
+                                <div>
+                                  <Link to={`/app/${app?.slug}/config/${app?.downstream?.currentVersion?.parentSequence}`} className="icon configEdit--icon u-cursor--pointer" data-tip="Edit config" />
+                                  <ReactTooltip effect="solid" className="replicated-tooltip" />
+                                </div>}
+                            </div> : null}
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              }
+
 
               <div className={`flex-column flex1 alignSelf--start ${gitopsEnabled ? "gitops-enabled" : ""}`}>
                 <div className={`flex-column flex1 version ${showDiffOverlay ? "u-visibility--hidden" : ""}`}>
-                {versionHistory?.length > 0 ?
-                  <div>
-                    <div className="TableDiff--Wrapper">
+                {(versionHistory.length === 0 && gitopsEnabled) || versionHistory?.length > 0 ?
+                  <>
+                  {gitopsEnabled ?
+                    <div style={{ maxWidth: "1030px" }} className="u-width--full u-marginBottom--30">
+                      <DashboardGitOpsCard
+                        gitops={downstream?.gitops}
+                        isAirgap={app?.isAirgap}
+                        appSlug={app?.slug}
+                        checkingForUpdates={checkingForUpdates}
+                        latestConfigSequence={versionHistory[0]?.parentSequence}
+                        isBundleUploading={this.props.isBundleUploading}
+                        checkingUpdateText={checkingUpdateMessage}
+                        checkingUpdateTextShort={checkingUpdateTextShort}
+                        noUpdatesAvalable={this.props.noUpdatesAvalable}
+                        onCheckForUpdates={this.onCheckForUpdates}
+                        showAutomaticUpdatesModal={this.toggleAutomaticUpdatesModal}
+                      />
+                    </div>
+                  :  
+                    <div className="TableDiff--Wrapper u-marginBottom--30">
                       <div className="flex justifyContent--spaceBetween">
                         <p className="u-fontSize--normal u-fontWeight--medium u-textColor--header u-marginBottom--15">New version available</p>
                         <div className="flex alignItems--center">
@@ -1316,7 +1332,7 @@ class AppVersionHistory extends Component {
                             </div>
                             }
                           </div>
-                          {versionHistory.length > 1 && this.renderDiffBtn()}
+                          {versionHistory.length > 1 && !gitopsEnabled ? this.renderDiffBtn() : null}
                         </div>
                       </div>
                       {this.renderAppVersionHistoryRow(versionHistory[0])}
@@ -1327,15 +1343,20 @@ class AppVersionHistory extends Component {
                         </p>
                       )}
                     </div>
-                    {this.renderUpdateProgress()}
-                    {this.renderAllVersions()}
-                  </div>
+                  }
+                  {versionHistory?.length > 0 ?
+                    <>
+                      {this.renderUpdateProgress()}
+                      {this.renderAllVersions()}
+                    </>
+                  : null}
+                  </>
                 :
                 <div className="flex-column flex1 alignItems--center justifyContent--center">
                   <p className="u-fontSize--large u-fontWeight--bold u-textColor--primary">No versions have been deployed.</p>
                 </div>
                 }
-                </div>
+              </div>
 
                 {/* Diff overlay */}
                 {showDiffOverlay &&

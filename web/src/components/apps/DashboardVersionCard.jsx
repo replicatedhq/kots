@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, withRouter } from "react-router-dom";
 import ReactTooltip from "react-tooltip"
-
+import DashboardGitOpsCard from "./DashboardGitOpsCard";
 import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
 import Modal from "react-modal";
@@ -1023,6 +1023,8 @@ class DashboardVersionCard extends React.Component {
   render() {
     const { app, currentVersion, checkingForUpdates, checkingUpdateText, isBundleUploading, airgapUploader } = this.props;
 
+    const gitopsEnabled = this.props.downstream?.gitops?.enabled;
+
     let checkingUpdateTextShort = checkingUpdateText;
     if (checkingUpdateTextShort && checkingUpdateTextShort.length > 30) {
       checkingUpdateTextShort = checkingUpdateTextShort.slice(0, 30) + "...";
@@ -1032,6 +1034,24 @@ class DashboardVersionCard extends React.Component {
     let shortKotsUpdateMessage = this.state.kotsUpdateMessage;
     if (shortKotsUpdateMessage && shortKotsUpdateMessage.length > 60) {
       shortKotsUpdateMessage = shortKotsUpdateMessage.substring(0, 60) + "...";
+    }
+
+    if (gitopsEnabled) {
+      return (
+        <DashboardGitOpsCard 
+          gitops={this.props.downstream?.gitops}
+          isAirgap={app?.isAirgap}
+          appSlug={app?.slug}
+          checkingForUpdates={checkingForUpdates}
+          latestConfigSequence={app?.downstream?.pendingVersions[0]?.parentSequence}
+          isBundleUploading={isBundleUploading}
+          checkingUpdateText={checkingUpdateText}
+          checkingUpdateTextShort={checkingUpdateTextShort}
+          noUpdatesAvalable={this.props.noUpdatesAvalable}
+          onCheckForUpdates={this.props.onCheckForUpdates}
+          showAutomaticUpdatesModal={this.props.showAutomaticUpdatesModal}
+        />
+      );
     }
 
     return (

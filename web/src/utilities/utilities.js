@@ -263,6 +263,25 @@ export function getGitOpsServiceSite(provider, hostname = "") {
   }
 }
 
+export function getReadableGitOpsProviderName(provider) {
+  switch (provider) {
+    case "github":
+      return "GitHub";
+    case "github_enterprise":
+      return "GitHub Enterprise";
+    case "gitlab":
+      return "GitLab";
+    case "gitlab_enterprise":
+      return "GitLab Enterprise";
+    case "bitbucket":
+      return "Bitbucket";
+    case "bitbucket_server":
+      return "Bitbucket Server";
+    default:
+      return "GitHub";
+  }
+}
+
 export function getAddKeyUri(gitops, ownerRepo) {
   const gitUri = gitops?.uri;
   const provider = gitops?.provider;
