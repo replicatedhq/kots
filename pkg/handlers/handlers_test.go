@@ -1338,7 +1338,7 @@ func TestHandlerPolicies(t *testing.T) {
 						Return(sess, nil)
 					kotsStoreMock.EXPECT().
 						GetPasswordUpdatedAt().
-						Return(&time.Time{}, nil)
+						Return(nil, nil)
 
 					test.Calls(kotsStoreMock.EXPECT(), kotsHandlersMock.EXPECT())
 

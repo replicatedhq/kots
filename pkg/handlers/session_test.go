@@ -41,7 +41,7 @@ func Test_requireValidSession(t *testing.T) {
 	sessionJWT := signJWT(t, sess)
 
 	mockStore.EXPECT().GetSession(sess.ID).Return(sess, nil)
-	mockStore.EXPECT().GetPasswordUpdatedAt().Return(&time.Time{}, nil).MaxTimes(2)
+	mockStore.EXPECT().GetPasswordUpdatedAt().Return(nil, nil).MaxTimes(2)
 	type args struct {
 		kotsStore store.Store
 		w         http.ResponseWriter
@@ -253,7 +253,7 @@ func Test_requireValidSession_extendSession_withUpdateErr(t *testing.T) {
 	}
 
 	mockStore.EXPECT().GetSession(extendSession.ID).Return(extendSession, nil).MaxTimes(2)
-	mockStore.EXPECT().GetPasswordUpdatedAt().Return(&time.Time{}, nil).MaxTimes(2)
+	mockStore.EXPECT().GetPasswordUpdatedAt().Return(nil, nil).MaxTimes(2)
 	mockStore.EXPECT().UpdateSessionExpiresAt(extendSession.ID, gomock.Any()).Return(fmt.Errorf("error while updating secret"))
 
 	want = nil
