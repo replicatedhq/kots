@@ -391,28 +391,26 @@ func InstallCmd() *cobra.Command {
 			}
 
 			if deployOptions.License != nil {
-				if err = func() error {
-					log.ChildActionWithSpinner("Waiting for installation to complete")
-					defer log.FinishChildSpinner()
-					status, err := ValidateAutomatedInstall(deployOptions, authSlug, apiEndpoint)
-					if err != nil {
-						return errors.Wrap(err, "failed to validate installation")
-					}
+				log.ActionWithSpinner("Waiting for installation to complete")
+				status, err := ValidateAutomatedInstall(deployOptions, authSlug, apiEndpoint)
+				if err != nil {
+					log.FinishSpinnerWithError()
+					return errors.Wrap(err, "failed to validate installation")
+				}
+				log.FinishSpinner()
 
-					// NOTE: status will be empty if isAirgapWithoutBundle
-					fmt.Printf("version status: %v\n", status)
-					// No status - Don't wait for preflights
-					// Pending preflight - Wait for preflights
-					// Pending config - Message to user
-
+				switch status {
+				case storetypes.VersionPendingPreflight:
 					if status == storetypes.VersionPendingPreflight {
+						log.ActionWithSpinner("Waiting for preflight checks to complete")
 						if err := ValidatePreflightStatus(deployOptions, authSlug, apiEndpoint); err != nil {
+							log.FinishSpinnerWithError()
 							return errors.Wrap(err, "failed to validate preflight results")
 						}
+						log.FinishSpinner()
 					}
-					return nil
-				}(); err != nil {
-					return err
+				case storetypes.VersionPendingConfig:
+					log.ActionWithoutSpinner("License installation successful, but additional configuration is required")
 				}
 			}
 

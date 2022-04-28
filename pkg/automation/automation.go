@@ -57,7 +57,6 @@ type AutomateInstallTaskMessage struct {
 // from the kots install command, so that the admin console
 // will finish that installation
 func AutomateInstall(opts AutomateInstallOptions) error {
-	fmt.Println("STARTING AUTOMATED ONLINE INSTALL")
 	logger.Debug("looking for any automated installs to complete")
 
 	// look for a license secret

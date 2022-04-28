@@ -135,7 +135,6 @@ func Start(params *APIServerParams) {
 	}
 
 	waitForAirgap, err := automation.NeedToWaitForAirgapApp()
-	fmt.Println("Wait for airgap", waitForAirgap)
 	if err != nil {
 		log.Println("Failed to check if airgap install is in progress", err)
 	} else if !waitForAirgap {
