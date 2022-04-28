@@ -40,10 +40,10 @@ const (
 	AutomatedInstallFailed  = "failed"
 )
 
-// AutomateInstall will process any bits left in strategic places
+// AutomateOnlineInstall will process any bits left in strategic places
 // from the kots install command, so that the admin console
 // will finish that installation
-func AutomateInstall() error {
+func AutomateOnlineInstall() error {
 	logger.Debug("looking for any automated installs to complete")
 
 	// look for a license secret
@@ -79,7 +79,7 @@ func AutomateInstall() error {
 	}
 
 	for _, licenseSecret := range licenseSecrets.Items {
-		appSlug, err := installLicenseSecret(clientset, licenseSecret)
+		appSlug, err := installLicenseSecret(clientset, licenseSecret, map[string][]byte{})
 		if err != nil {
 			logger.Error(errors.Wrapf(err, "failed to install license for app %s", appSlug))
 		}
@@ -89,7 +89,7 @@ func AutomateInstall() error {
 	return nil
 }
 
-func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.Secret) (appSlug string, finalError error) {
+func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.Secret, additionalFiles map[string][]byte) (appSlug string, finalError error) {
 	license, ok := licenseSecret.Data["license"]
 	if !ok {
 		return appSlug, fmt.Errorf("license secret %q does not contain a license field", licenseSecret.Name)
@@ -190,16 +190,39 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 		return appSlug, errors.Wrap(err, "failed to create app record")
 	}
 
-	// airgap data is the airgap manifest + app specs + image list laoded from configmaps
-	airgapData, err := getAirgapData(clientset, verifiedLicense)
-	if err != nil {
-		return appSlug, errors.Wrapf(err, "failed to load airgap data for %s", appSlug)
-	}
+	if !kotsadm.IsAirgap() {
+		createAppOpts := online.CreateOnlineAppOpts{
+			PendingApp: &onlinetypes.PendingApp{
+				ID:           a.ID,
+				Slug:         a.Slug,
+				Name:         a.Name,
+				LicenseData:  string(license),
+				VersionLabel: instParams.AppVersionLabel,
+			},
+			UpstreamURI:            upstreamURI,
+			IsAutomated:            true,
+			SkipPreflights:         instParams.SkipPreflights,
+			SkipCompatibilityCheck: instParams.SkipCompatibilityCheck,
+		}
+		_, err = online.CreateAppFromOnline(createAppOpts)
+		if err != nil {
+			return appSlug, errors.Wrap(err, "failed to create online app")
+		}
+	} else {
+		// airgap data is the airgap manifest + app specs + image list laoded from configmaps
+		airgapData, err := getAirgapData(clientset, verifiedLicense)
+		if err != nil {
+			return appSlug, errors.Wrapf(err, "failed to load airgap data for %s", appSlug)
+		}
 
-	// check for the airgap flag in the annotations
-	objMeta := licenseSecret.GetObjectMeta()
-	annotations := objMeta.GetAnnotations()
-	if instParams.SkipImagePush && airgapData != nil {
+		if len(airgapData) == 0 {
+			return appSlug, errors.Errorf("failed to find airgap automation data")
+		}
+
+		for k, v := range additionalFiles {
+			airgapData[k] = v
+		}
+
 		// Images have been pushed and there is airgap app data available, so this is an airgap install.
 		airgapFilesDir, err := ioutil.TempDir("", "headless-airgap")
 		if err != nil {
@@ -240,31 +263,12 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 		if err != nil {
 			return appSlug, errors.Wrap(err, "failed to create airgap app")
 		}
-	} else if annotations["kots.io/airgap"] != "true" {
-		// Otherwise there is no airgap data, so this is an online install.
-		createAppOpts := online.CreateOnlineAppOpts{
-			PendingApp: &onlinetypes.PendingApp{
-				ID:           a.ID,
-				Slug:         a.Slug,
-				Name:         a.Name,
-				LicenseData:  string(license),
-				VersionLabel: instParams.AppVersionLabel,
-			},
-			UpstreamURI:            upstreamURI,
-			IsAutomated:            true,
-			SkipPreflights:         instParams.SkipPreflights,
-			SkipCompatibilityCheck: instParams.SkipCompatibilityCheck,
-		}
-		_, err := online.CreateAppFromOnline(createAppOpts)
-		if err != nil {
-			return appSlug, errors.Wrap(err, "failed to create online app")
-		}
 	}
 
 	return appSlug, nil
 }
 
-func AirgapInstall(appSlug string, additionalFiles map[string][]byte) error {
+func AutomateAirgapInstall(appSlug string, additionalFiles map[string][]byte) (finalError error) {
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get k8s client set")
@@ -298,128 +302,12 @@ func AirgapInstall(appSlug string, additionalFiles map[string][]byte) error {
 	}
 
 	licenseSecret := licenseSecrets.Items[0]
-	license, ok := licenseSecret.Data["license"]
-	if !ok {
-		appSlug := ""
-		if licenseSecret.Labels != nil {
-			appSlug = licenseSecret.Labels["kots.io/app"]
-		}
-		cleanup(&licenseSecret, appSlug)
-		return errors.Errorf("license secret %q does not contain a license field", licenseSecret.Name)
-	}
 
-	unverifiedLicense, err := kotsutil.LoadLicenseFromBytes(license)
+	appSlug, err = installLicenseSecret(clientset, licenseSecret, additionalFiles)
 	if err != nil {
-		cleanup(&licenseSecret, unverifiedLicense.Spec.AppSlug)
-		return errors.Wrap(err, "failed to unmarshal license data")
+		logger.Error(errors.Wrapf(err, "failed to install license for app %s", appSlug))
 	}
-
-	logger.Debug("automated license install found",
-		zap.String("appSlug", unverifiedLicense.Spec.AppSlug))
-
-	verifiedLicense, err := kotspull.VerifySignature(unverifiedLicense)
-	if err != nil {
-		cleanup(&licenseSecret, unverifiedLicense.Spec.AppSlug)
-		return errors.Wrap(err, "failed to verify license signature")
-	}
-
-	// check license expiration
-	expired, err := kotspull.LicenseIsExpired(verifiedLicense)
-	if err != nil {
-		cleanup(&licenseSecret, verifiedLicense.Spec.AppSlug)
-		return errors.Wrapf(err, "failed to check is license is expired for app %s", verifiedLicense.Spec.AppSlug)
-	}
-	if expired {
-		cleanup(&licenseSecret, verifiedLicense.Spec.AppSlug)
-		return errors.Errorf("license is expired for app %s", verifiedLicense.Spec.AppSlug)
-	}
-
-	// check if license already exists
-	existingLicense, err := kotsadmlicense.CheckIfLicenseExists(license)
-	if err != nil {
-		cleanup(&licenseSecret, verifiedLicense.Spec.AppSlug)
-		return errors.Wrapf(err, "failed to check if license already exists for app %s", verifiedLicense.Spec.AppSlug)
-	}
-	if existingLicense != nil {
-		resolved, err := kotslicense.ResolveExistingLicense(verifiedLicense)
-		if err != nil {
-			logger.Error(errors.Wrap(err, "failed to resolve existing license conflict"))
-		}
-		if !resolved {
-			cleanup(&licenseSecret, verifiedLicense.Spec.AppSlug)
-			return errors.Errorf("license already exists for app %s", verifiedLicense.Spec.AppSlug)
-		}
-	}
-
-	instParams, err := kotsutil.GetInstallationParams(kotsadmtypes.KotsadmConfigMap)
-	if err != nil {
-		return errors.Wrap(err, "failed to get existing kotsadm config map")
-	}
-
-	desiredAppName := strings.Replace(verifiedLicense.Spec.AppSlug, "-", " ", 0)
-	upstreamURI := fmt.Sprintf("replicated://%s", verifiedLicense.Spec.AppSlug)
-
-	a, err := store.GetStore().CreateApp(desiredAppName, upstreamURI, string(license), verifiedLicense.Spec.IsAirgapSupported, instParams.SkipImagePush, instParams.RegistryIsReadOnly)
-	if err != nil {
-		return errors.Wrap(err, "failed to create app record")
-	}
-
-	// airgap data is the airgap manifest + app specs + image list laoded from configmaps
-	airgapData, err := getAirgapData(clientset, verifiedLicense)
-	if err != nil {
-		return errors.Wrapf(err, "failed to load airgap data for %s", verifiedLicense.Spec.AppSlug)
-	}
-
-	if len(airgapData) == 0 {
-		return errors.Errorf("failed to find airgap automation data")
-	}
-
-	for k, v := range additionalFiles {
-		airgapData[k] = v
-	}
-
-	// Images have been pushed and there is airgap app data available, so this is an airgap install.
-	airgapFilesDir, err := ioutil.TempDir("", "headless-airgap")
-	if err != nil {
-		return errors.Wrap(err, "failed to create temp dir")
-	}
-	defer os.RemoveAll(airgapFilesDir)
-
-	for filename, data := range airgapData {
-		err := ioutil.WriteFile(filepath.Join(airgapFilesDir, filename), data, 0644)
-		if err != nil {
-			return errors.Wrapf(err, "failed to create file %s", filename)
-		}
-	}
-
-	kotsadmOpts, err := kotsadm.GetKotsadmOptionsFromCluster(util.PodNamespace, clientset)
-	if err != nil {
-		return errors.Wrap(err, "failed to load registry info")
-	}
-
-	createAppOpts := airgap.CreateAirgapAppOpts{
-		PendingApp: &airgaptypes.PendingApp{
-			ID:          a.ID,
-			Slug:        a.Slug,
-			Name:        a.Name,
-			LicenseData: string(license),
-		},
-		AirgapPath:             airgapFilesDir,
-		RegistryHost:           kotsadmOpts.OverrideRegistry,
-		RegistryNamespace:      kotsadmOpts.OverrideNamespace,
-		RegistryUsername:       kotsadmOpts.Username,
-		RegistryPassword:       kotsadmOpts.Password,
-		RegistryIsReadOnly:     instParams.RegistryIsReadOnly,
-		IsAutomated:            true,
-		SkipPreflights:         instParams.SkipPreflights,
-		SkipCompatibilityCheck: instParams.SkipCompatibilityCheck,
-	}
-	err = airgap.CreateAppFromAirgap(createAppOpts)
-	if err != nil {
-		return errors.Wrap(err, "failed to create airgap app")
-	}
-
-	cleanup(&licenseSecret, verifiedLicense.Spec.AppSlug)
+	cleanup(&licenseSecret, appSlug)
 
 	return nil
 }
