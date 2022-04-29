@@ -62,7 +62,7 @@ var _ = Describe("Install", func() {
 
 			server.AppendHandlers(
 				ghttp.CombineHandlers(
-					ghttp.VerifyRequest("GET", fmt.Sprintf("/app/%s/sequence/0/preflight/result", appSlug)),
+					ghttp.VerifyRequest("GET", fmt.Sprintf("/app/%s/preflight/result", appSlug)),
 					ghttp.VerifyHeader(http.Header{
 						"Authorization": []string{authSlug},
 						"Content-Type":  []string{"application/json"},
@@ -80,7 +80,7 @@ var _ = Describe("Install", func() {
 		It("returns an error when it cannot get a preflight response", func() {
 			server.AppendHandlers(
 				ghttp.CombineHandlers(
-					ghttp.VerifyRequest("GET", fmt.Sprintf("/app/%s/sequence/0/preflight/result", appSlug)),
+					ghttp.VerifyRequest("GET", fmt.Sprintf("/app/%s/preflight/result", appSlug)),
 					ghttp.VerifyHeader(http.Header{
 						"Authorization": []string{authSlug},
 						"Content-Type":  []string{"application/json"},
@@ -98,7 +98,7 @@ var _ = Describe("Install", func() {
 		It("returns an error when there is an issue with the request", func() {
 			server.AppendHandlers(
 				ghttp.CombineHandlers(
-					ghttp.VerifyRequest("GET", fmt.Sprintf("/app/%s/sequence/0/preflight/result", appSlug)),
+					ghttp.VerifyRequest("GET", fmt.Sprintf("/app/%s/preflight/result", appSlug)),
 					ghttp.VerifyHeader(http.Header{
 						"Authorization": []string{authSlug},
 						"Content-Type":  []string{"application/json"},
@@ -115,7 +115,7 @@ var _ = Describe("Install", func() {
 		It("returns an error when there is an issue with the response", func() {
 			server.AppendHandlers(
 				ghttp.CombineHandlers(
-					ghttp.VerifyRequest("GET", fmt.Sprintf("/app/%s/sequence/0/preflight/result", appSlug)),
+					ghttp.VerifyRequest("GET", fmt.Sprintf("/app/%s/preflight/result", appSlug)),
 					ghttp.VerifyHeader(http.Header{
 						"Authorization": []string{authSlug},
 						"Content-Type":  []string{"application/json"},
@@ -132,7 +132,7 @@ var _ = Describe("Install", func() {
 		It("returns an error when the preflight response is invalid", func() {
 			server.AppendHandlers(
 				ghttp.CombineHandlers(
-					ghttp.VerifyRequest("GET", fmt.Sprintf("/app/%s/sequence/0/preflight/result", appSlug)),
+					ghttp.VerifyRequest("GET", fmt.Sprintf("/app/%s/preflight/result", appSlug)),
 					ghttp.VerifyHeader(http.Header{
 						"Authorization": []string{authSlug},
 						"Content-Type":  []string{"application/json"},
@@ -163,7 +163,7 @@ var _ = Describe("Install", func() {
 
 			server.AppendHandlers(
 				ghttp.CombineHandlers(
-					ghttp.VerifyRequest("GET", fmt.Sprintf("/app/%s/sequence/0/preflight/result", appSlug)),
+					ghttp.VerifyRequest("GET", fmt.Sprintf("/app/%s/preflight/result", appSlug)),
 					ghttp.VerifyHeader(http.Header{
 						"Authorization": []string{authSlug},
 						"Content-Type":  []string{"application/json"},
@@ -171,7 +171,7 @@ var _ = Describe("Install", func() {
 					ghttp.RespondWith(http.StatusOK, pendingResults),
 				),
 				ghttp.CombineHandlers(
-					ghttp.VerifyRequest("GET", fmt.Sprintf("/app/%s/sequence/0/preflight/result", appSlug)),
+					ghttp.VerifyRequest("GET", fmt.Sprintf("/app/%s/preflight/result", appSlug)),
 					ghttp.VerifyHeader(http.Header{
 						"Authorization": []string{authSlug},
 						"Content-Type":  []string{"application/json"},
@@ -201,7 +201,7 @@ var _ = Describe("Install", func() {
 
 			server.AppendHandlers(
 				ghttp.CombineHandlers(
-					ghttp.VerifyRequest("GET", fmt.Sprintf("/app/%s/sequence/0/preflight/result", appSlug)),
+					ghttp.VerifyRequest("GET", fmt.Sprintf("/app/%s/preflight/result", appSlug)),
 					ghttp.VerifyHeader(http.Header{
 						"Authorization": []string{authSlug},
 						"Content-Type":  []string{"application/json"},
@@ -209,7 +209,7 @@ var _ = Describe("Install", func() {
 					ghttp.RespondWith(http.StatusOK, inProgressPreflightResponse),
 				),
 				ghttp.CombineHandlers(
-					ghttp.VerifyRequest("GET", fmt.Sprintf("/app/%s/sequence/0/preflight/result", appSlug)),
+					ghttp.VerifyRequest("GET", fmt.Sprintf("/app/%s/preflight/result", appSlug)),
 					ghttp.VerifyHeader(http.Header{
 						"Authorization": []string{authSlug},
 						"Content-Type":  []string{"application/json"},
@@ -230,7 +230,7 @@ var _ = Describe("Install", func() {
 
 			server.AppendHandlers(
 				ghttp.CombineHandlers(
-					ghttp.VerifyRequest("GET", fmt.Sprintf("/app/%s/sequence/0/preflight/result", appSlug)),
+					ghttp.VerifyRequest("GET", fmt.Sprintf("/app/%s/preflight/result", appSlug)),
 					ghttp.VerifyHeader(http.Header{
 						"Authorization": []string{authSlug},
 						"Content-Type":  []string{"application/json"},
@@ -253,7 +253,7 @@ var _ = Describe("Install", func() {
 			})
 			server.AppendHandlers(
 				ghttp.CombineHandlers(
-					ghttp.VerifyRequest("GET", fmt.Sprintf("/app/%s/sequence/0/preflight/result", appSlug)),
+					ghttp.VerifyRequest("GET", fmt.Sprintf("/app/%s/preflight/result", appSlug)),
 					ghttp.VerifyHeader(http.Header{
 						"Authorization": []string{authSlug},
 						"Content-Type":  []string{"application/json"},
@@ -273,7 +273,7 @@ var _ = Describe("Install", func() {
 
 			server.AppendHandlers(
 				ghttp.CombineHandlers(
-					ghttp.VerifyRequest("GET", fmt.Sprintf("/app/%s/sequence/0/preflight/result", appSlug)),
+					ghttp.VerifyRequest("GET", fmt.Sprintf("/app/%s/preflight/result", appSlug)),
 					ghttp.VerifyHeader(http.Header{
 						"Authorization": []string{authSlug},
 						"Content-Type":  []string{"application/json"},
@@ -297,7 +297,7 @@ var _ = Describe("Install", func() {
 
 			server.AppendHandlers(
 				ghttp.CombineHandlers(
-					ghttp.VerifyRequest("GET", fmt.Sprintf("/app/%s/sequence/0/preflight/result", appSlug)),
+					ghttp.VerifyRequest("GET", fmt.Sprintf("/app/%s/preflight/result", appSlug)),
 					ghttp.VerifyHeader(http.Header{
 						"Authorization": []string{authSlug},
 						"Content-Type":  []string{"application/json"},
@@ -441,10 +441,10 @@ var _ = Describe("Install", func() {
 			}
 			server.AllowUnhandledRequests = false
 
-			runningResponse, err := createTaskStatus(automation.AutomatedInstallRunning, "")
+			runningResponse, err := createTaskStatus(automation.AutomatedInstallRunning, `{"message":"Installing app...","versionStatus":"","error":""}`)
 			Expect(err).ToNot(HaveOccurred())
 
-			successResponse, err := createTaskStatus(automation.AutomatedInstallSuccess, "")
+			successResponse, err := createTaskStatus(automation.AutomatedInstallSuccess, `{"message":"Install complete","versionStatus":"deployed","error":""}`)
 			Expect(err).ToNot(HaveOccurred())
 
 			server.AppendHandlers(
@@ -471,7 +471,7 @@ var _ = Describe("Install", func() {
 		})
 
 		It("returns an error if the task status failed", func() {
-			failedResponse, err := createTaskStatus(automation.AutomatedInstallFailed, "failed-task-status")
+			failedResponse, err := createTaskStatus(automation.AutomatedInstallFailed, `{"message":"","versionStatus":"","error":"failed-task-error"}`)
 			Expect(err).ToNot(HaveOccurred())
 
 			server.AppendHandlers(
@@ -487,11 +487,11 @@ var _ = Describe("Install", func() {
 
 			_, err = ValidateAutomatedInstall(validDeployOptions, authSlug, server.URL())
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("failed-task-status"))
+			Expect(err.Error()).To(ContainSubstring("failed-task-error"))
 		})
 
 		It("does not return an error if the task status was successful", func() {
-			success, err := createTaskStatus(automation.AutomatedInstallSuccess, "")
+			success, err := createTaskStatus(automation.AutomatedInstallSuccess, `{"message":"Install complete","versionStatus":"deployed","error":""}`)
 			Expect(err).ToNot(HaveOccurred())
 
 			server.AppendHandlers(
