@@ -112,9 +112,9 @@ jobs:
         path: |
           ~/.cache/go-build
           ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        key: ${{ runner.os }}-go-kurlproxy-${{ hashFiles('**/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-
+          ${{ runner.os }}-go-kurlproxy-
 
     - name: Build kurl_proxy
       env:
@@ -158,9 +158,9 @@ jobs:
         path: |
           ~/.cache/go-build
           ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        key: ${{ runner.os }}-go-kots-${{ hashFiles('**/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-
+          ${{ runner.os }}-go-kots-
 
     - name: Download web artifact
       uses: actions/download-artifact@v2
@@ -173,7 +173,7 @@ jobs:
         GIT_COMMIT: ${{ github.sha }}
         GIT_TAG: ${{ github.ref_name }}
         SCOPE_DSN_PUBLIC: ""
-      run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make test build kots
+      run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make ci-test kots build
 
     - name: Upload Go API artifact
       uses: actions/upload-artifact@v2
@@ -228,9 +228,9 @@ jobs:
         path: |
           ~/.cache/go-build
           ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        key: ${{ runner.os }}-go-goreleaser-${{ hashFiles('**/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-
+          ${{ runner.os }}-go-goreleaser-
 
     - name: Unshallow
       run: git fetch --prune --unshallow

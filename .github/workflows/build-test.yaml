@@ -119,9 +119,9 @@ jobs:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          key: ${{ runner.os }}-go-kots-${{ hashFiles('**/go.sum') }}
           restore-keys: |
-            ${{ runner.os }}-go-
+            ${{ runner.os }}-go-kots-
 
       - name: Download web artifact
         uses: actions/download-artifact@v2
@@ -169,11 +169,11 @@ jobs:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          key: ${{ runner.os }}-go-kurlproxy-${{ hashFiles('**/go.sum') }}
           restore-keys: |
-            ${{ runner.os }}-go-
+            ${{ runner.os }}-go-kurlproxy-
 
-      - run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C kurl_proxy build
+      - run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C kurl_proxy test build
 
       - name: build and push kurl_proxy for e2e
         uses: docker/build-push-action@v2
