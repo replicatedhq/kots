@@ -8,7 +8,7 @@ on:
 jobs:
 
   generate-schema:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     container:
       image: schemahero/schemahero:0.12.2
     steps:
@@ -30,7 +30,7 @@ jobs:
 
 
   generate-fixtures:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [generate-schema]
     container:
       image: replicated/gitops-builder:buildkite
@@ -58,7 +58,7 @@ jobs:
 
 
   publish-fixtures:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [generate-fixtures]
     steps:
     - name: Checkout
@@ -82,7 +82,7 @@ jobs:
 
 
   build-schema-migrations:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [publish-fixtures]
     steps:
     - name: Checkout
@@ -103,7 +103,7 @@ jobs:
 
 
   test_web:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [build-schema-migrations]
     container:
       image: replicated/gitops-builder:buildkite
@@ -130,7 +130,7 @@ jobs:
 
 
   build_web:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [build-schema-migrations]
     container:
       image: replicated/gitops-builder:buildkite
@@ -159,11 +159,8 @@ jobs:
 
 
   build_kurl_proxy:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [build-schema-migrations]
-    container:
-      image: replicated/gitops-builder:buildkite-go14-node10
-      options: --user root
     steps:
     - name: Setup Go
       uses: actions/setup-go@v2
@@ -199,11 +196,8 @@ jobs:
 
 
   build_go_api:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [test_web, build_web, build_kurl_proxy]
-    container:
-      image: replicated/gitops-builder:buildkite-go14-node10
-      options: --user root
     steps:
     - uses: actions/setup-go@v2
       with:
@@ -247,7 +241,7 @@ jobs:
 
 
   release_go_api_alpha:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [build_web, build_go_api]
     steps:
 
@@ -278,7 +272,7 @@ jobs:
 
 
   build_kurl_proxy_alpha:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [build_kurl_proxy]
     steps:
     - uses: azure/docker-login@v1
@@ -306,7 +300,7 @@ jobs:
 
 
   build_kurl_addon_alpha:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [release_go_api_alpha, build_kurl_proxy_alpha]
     steps:
       - name: Build kURL addon alpha package
@@ -321,7 +315,7 @@ jobs:
 
 
   scan_postgres_alpine:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [build-schema-migrations]
     steps:
       - name: Checkout
@@ -349,7 +343,7 @@ jobs:
 
 
   scan_postgres_debian_stretch:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [build-schema-migrations]
     steps:
       - name: Checkout
@@ -377,7 +371,7 @@ jobs:
 
 
   scan_minio:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -405,7 +399,7 @@ jobs:
 
 
   scan_dex:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -432,7 +426,7 @@ jobs:
 
 
   scan_kurl_proxy:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [build_kurl_proxy_alpha]
     steps:
       - name: Checkout
@@ -455,7 +449,7 @@ jobs:
 
 
   scan_kotsadm:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [release_go_api_alpha]
     steps:
       - name: Checkout
@@ -478,7 +472,7 @@ jobs:
 
 
   scan_migrations:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [build-schema-migrations]
     steps:
       - name: Checkout

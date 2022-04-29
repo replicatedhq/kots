@@ -7,7 +7,7 @@ on:
 
 jobs:
   generate-schema:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     container:
       image: schemahero/schemahero:0.12.2
     steps:
@@ -26,7 +26,7 @@ jobs:
           path: ./migrations/fixtures/schema/fixtures.sql
 
   generate-fixtures:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [generate-schema]
     container:
       image: replicated/gitops-builder:buildkite
@@ -73,7 +73,7 @@ jobs:
         path: ./migrations/bin/docker-archive
 
   build-web:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [build-schema-migrations]
     container:
       image: replicated/gitops-builder:buildkite-go17-node17
@@ -96,7 +96,7 @@ jobs:
         path: ./web/dist
 
   build-kurl-proxy:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [build-schema-migrations]
     steps:
     - uses: actions/setup-go@v2
@@ -142,7 +142,7 @@ jobs:
         docker push kotsadm/kurl-proxy:v0.0.0-nightly
 
   build-go-api:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [build-web]
     steps:
     - uses: actions/setup-go@v2
@@ -215,7 +215,7 @@ jobs:
         path: ./bin/docker-archive
 
   goreleaser:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [build-web]
     steps:
     - uses: actions/setup-go@v2
@@ -269,7 +269,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   generate-kurl-addon-pr:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [release-go-api-tagged, build-kurl-proxy]
     steps:
     - name: Checkout
@@ -286,7 +286,7 @@ jobs:
           "https://api.github.com/repos/replicatedhq/kurl/dispatches"
 
   build-airgap:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [release-go-api-tagged, goreleaser, build-schema-migrations]
     steps:
     - name: Download migrations
@@ -370,7 +370,7 @@ jobs:
       KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL: ${{ secrets.KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL }}
 
   start-kgrid-test:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [goreleaser, release-go-api-tagged]
     if: startsWith(github.ref, 'refs/tags/v') && endsWith(github.ref, '-nightly')
     env:
@@ -414,7 +414,7 @@ jobs:
 
   validate-min-kots-version:
     if: startsWith(github.ref, 'refs/tags/v') && endsWith(github.ref, '-nightly')
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [goreleaser, release-go-api-tagged]
     strategy:
       fail-fast: false
@@ -479,7 +479,7 @@ jobs:
 
   validate-target-kots-version:
     if: startsWith(github.ref, 'refs/tags/v') && endsWith(github.ref, '-nightly')
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [goreleaser, release-go-api-tagged]
     strategy:
       fail-fast: false
@@ -544,7 +544,7 @@ jobs:
 
   validate-range-kots-version:
     if: startsWith(github.ref, 'refs/tags/v') && endsWith(github.ref, '-nightly')
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     needs: [goreleaser, release-go-api-tagged]
     strategy:
       fail-fast: false
