@@ -1434,9 +1434,94 @@ jobs:
           echo "::notice ::support bundle uploaded to aws replicated-dev account s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
 
 
+  validate-helm-install-order:
+    runs-on: ubuntu-20.04
+    needs: [ can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_version: [ v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1 ]
+    steps:
+      - uses: replicatedhq/action-k3s@main
+        id: k3s
+        with:
+          version: ${{ matrix.k8s_version }}
+
+      - name: download kots binary
+        uses: actions/download-artifact@v2
+        with:
+          name: kots
+          path: bin/
+
+      - run: chmod +x bin/kots
+
+      - name: run the test
+        env:
+          APP_SLUG: helm-install-order
+        run: |
+          set +e
+          echo ${{ secrets.HELM_INSTALL_ORDER_LICENSE }} | base64 -d > license.yaml
+          ./bin/kots \
+            install $APP_SLUG/automated \
+            --license-file license.yaml \
+            --no-port-forward \
+            --namespace $APP_SLUG \
+            --shared-password password \
+            --kotsadm-registry ttl.sh \
+            --kotsadm-namespace automated-${{ github.run_id }} \
+            --skip-preflights \
+            --kotsadm-tag 2h
+
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "------pods:"
+            kubectl -n $APP_SLUG get pods
+            echo "------kotsadm logs"
+            kubectl logs -l app=kotsadm --tail=100 --namespace $APP_SLUG
+            exit $EXIT_CODE
+          fi
+
+          COUNTER=1
+          while [ "$(./bin/kots get apps --namespace $APP_SLUG | awk 'NR>1{print $2}')" != "ready" ]; do
+            COUNTER=$[$COUNTER +1]
+            if [ $COUNTER -gt 120 ]; then
+              echo "Timed out waiting for app to be ready"
+              ./bin/kots get apps --namespace $APP_SLUG
+              echo "kotsadm logs:"
+              kubectl logs -l app=kotsadm --tail=100 --namespace $APP_SLUG
+              exit -1
+            fi
+            sleep 1
+          done
+
+          printf "App is installed successfully and is ready\n\n"
+          ./bin/kots get apps --namespace $APP_SLUG
+
+      - name: Generate support bundle on failure
+        if: failure()
+        env:
+          # aws replicated dev account e2e-kots-support-bundle user
+          AWS_ACCESS_KEY_ID: ${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+          KOTS_NAMESPACE: helm-install-order
+        run: |
+          RELEASE="$(
+            curl -sfL https://api.github.com/repos/replicatedhq/troubleshoot/releases/latest | \
+            grep '"tag_name":' | \
+            sed -E 's/.*"(v[^"]+)".*/\1/'
+          )"
+          curl -fsLO "https://github.com/replicatedhq/troubleshoot/releases/download/${RELEASE}/support-bundle_linux_amd64.tar.gz"
+          tar xzf support-bundle_linux_amd64.tar.gz
+          ./support-bundle -n "${KOTS_NAMESPACE}" https://kots.io
+          BUNDLE="$(ls -1 | grep 'support-bundle-.*.tar.gz')"
+          aws s3 cp "${BUNDLE}" "s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
+          echo "::notice ::support bundle uploaded to aws replicated-dev account s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
+
+
   # this job will validate that all validate-* jobs succeed and is used for the github branch protection rule
   validate-success:
     runs-on: ubuntu-20.04
-    needs: [ validate-smoke-test, validate-minimal-rbac, validate-minimal-rbac-override, validate-backup-and-restore, validate-no-required-config, validate-multi-namespace, validate-kots-pull, validate-app-version-label, validate-strict-preflight-checks, validate-version-history-pagination, validate-change-license ]
+    needs: [ validate-smoke-test, validate-minimal-rbac, validate-minimal-rbac-override, validate-backup-and-restore, validate-no-required-config, validate-multi-namespace, validate-kots-pull, validate-app-version-label, validate-strict-preflight-checks, validate-version-history-pagination, validate-change-license, validate-helm-install-order ]
     steps:
       - run: echo "Validate success"
