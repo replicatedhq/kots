@@ -169,15 +169,18 @@ class AppVersionHistoryRow extends Component {
         return (<div className={this.props.nothingToCommit && this.props.selectedDiffReleases && "u-opacity--half"}>Nothing to commit</div>);
       }
       if (!version.commitUrl) {
-        return null;
+        return this.renderReleaseNotes(version);
       }
       return (
-        <button
-          className="btn primary blue u-marginLeft--10"
-          onClick={() => window.open(version.commitUrl, "_blank")}
-        >
-          View commit
-        </button>
+        <div className="flex flex1 justifyContent--flexEnd alignItems--center">
+          {this.renderReleaseNotes(version)}
+          <button
+            className="btn primary blue u-marginLeft--10"
+            onClick={() => window.open(version.commitUrl, "_blank")}
+          >
+            View commit
+          </button>
+        </div>
       );
     }
   
