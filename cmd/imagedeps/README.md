@@ -27,7 +27,7 @@ is useful to restrict release tags to a major version, or to filter out garbage 
 minio minio/minio
 postgres-alpine postgres ^10.\d+-alpine$
 postgres-debian postgres ^10.\d+$
-dex ghcr.io/dexipd/dex
+dex ghcr.io/dexidp/dex
 ```
 The preceding image spec will produce the following environment and Go files. Note how the override tags are applied 
 to the Postgres definitions. 
@@ -44,7 +44,7 @@ const (
 	Minio = "minio/minio:RELEASE.2021-09-15T04-54-25Z"
 	PostgresAlpine = "postgres:10.17-alpine"
 	PostgresDebian = "postgres:10.17"
-	Dex = "ghcr.io/dexipd/dex:v2.30.0"
+	Dex = "ghcr.io/dexidp/dex:v2.30.0"
 )
 ```
 
