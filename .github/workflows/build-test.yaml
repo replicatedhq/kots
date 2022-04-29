@@ -954,14 +954,17 @@ jobs:
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
             echo "Failed to apply spec"
+            echo "------pods:"
             kubectl get pods -A
+            echo "------kotsadm logs"
+            kubectl logs -l app=kotsadm --tail=100 --namespace $APP_SLUG
             exit $EXIT_CODE
           fi
 
           echo "Waiting for pods to start"
 
           COUNTER=1
-          while [ $(kubectl get pods --no-headers | grep -v Running | grep -v Completed | wc -l) -gt 0 ]; do
+          while [ "$(kubectl get pods --no-headers | grep -v Running | grep -v Completed | wc -l)" -gt 0 ]; do
             COUNTER=$[$COUNTER +1]
             if [ $COUNTER -gt 120 ]; then
               echo "Timed out waiting for pods to start"
