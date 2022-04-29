@@ -21,3 +21,5 @@ ENV HOME /home/schemahero
 COPY --chown=schemahero:schemahero ./tables ./tables
 
 CMD ["apply"]
+
+ENTRYPOINT [ "/schemahero" ]
