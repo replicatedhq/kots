@@ -401,14 +401,12 @@ func InstallCmd() *cobra.Command {
 
 				switch status {
 				case storetypes.VersionPendingPreflight:
-					if status == storetypes.VersionPendingPreflight {
-						log.ActionWithSpinner("Waiting for preflight checks to complete")
-						if err := ValidatePreflightStatus(deployOptions, authSlug, apiEndpoint); err != nil {
-							log.FinishSpinnerWithError()
-							return errors.Wrap(err, "failed to validate preflight results")
-						}
-						log.FinishSpinner()
+					log.ActionWithSpinner("Waiting for preflight checks to complete")
+					if err := ValidatePreflightStatus(deployOptions, authSlug, apiEndpoint); err != nil {
+						log.FinishSpinnerWithError()
+						return errors.Wrap(err, "failed to validate preflight results")
 					}
+					log.FinishSpinner()
 				case storetypes.VersionPendingConfig:
 					log.ActionWithoutSpinnerWarning("Additional app configuration is required. Please login to the Admin Console to continue", nil)
 				}
