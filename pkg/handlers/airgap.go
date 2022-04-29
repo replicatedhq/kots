@@ -535,10 +535,11 @@ func (h *Handler) UploadInitialAirgapApp(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	files := map[string][]byte{
-		archiveHeader.Filename: appArchive,
+	opts := automation.AutomateInstallOptions{
+		AppSlug:         appSlug,
+		AdditionalFiles: map[string][]byte{archiveHeader.Filename: appArchive},
 	}
-	err = automation.AirgapInstall(appSlug, files)
+	err = automation.AutomateInstall(opts)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to install app"))
 		w.WriteHeader(http.StatusInternalServerError)
