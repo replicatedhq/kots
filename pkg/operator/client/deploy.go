@@ -136,6 +136,14 @@ func (c *Client) diffAndRemovePreviousManifests(deployArgs operatortypes.DeployA
 		if _, ok := decodedCurrentMap[k]; ok {
 			continue
 		}
+
+		if strings.Contains(k, "v1beta1") {
+			v1Key := strings.Replace(k, "v1beta1", "v1", -1)
+			if _, ok := decodedCurrentMap[v1Key]; ok {
+				logger.Infof("skipping delete for the key: %s", v1Key)
+				continue
+			}
+		}
 		if !previous.delete {
 			continue
 		}
