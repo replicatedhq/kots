@@ -410,7 +410,7 @@ func InstallCmd() *cobra.Command {
 						log.FinishSpinner()
 					}
 				case storetypes.VersionPendingConfig:
-					log.ActionWithoutSpinner("License installation successful, but additional configuration is required")
+					log.ActionWithoutSpinnerWarning("Additional app configuration is required. Please login to the Admin Console to continue", nil)
 				}
 			}
 

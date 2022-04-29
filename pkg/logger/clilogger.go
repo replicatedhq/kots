@@ -87,6 +87,26 @@ func (l *CLILogger) ActionWithoutSpinner(msg string, args ...interface{}) {
 	fmt.Println(fmt.Sprintf(msg, args...))
 }
 
+func (l *CLILogger) ActionWithoutSpinnerWarning(msg string, c *color.Color, args ...interface{}) {
+	if l == nil || l.isSilent {
+		return
+	}
+
+	if msg == "" {
+		fmt.Println("")
+		return
+	}
+
+	if c == nil {
+		c = color.New(color.FgYellow)
+	}
+
+	fmt.Printf("  • ")
+	fmt.Printf(msg, args...)
+	c.Printf(" !")
+	fmt.Printf("  \n")
+}
+
 func (l *CLILogger) ChildActionWithoutSpinner(msg string, args ...interface{}) {
 	if l == nil || l.isSilent {
 		return
