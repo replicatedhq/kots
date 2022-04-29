@@ -238,7 +238,7 @@ jobs:
     - name: Unshallow
       run: git fetch --prune --unshallow
     - run: sudo apt-get update -y
-    - run: sudo apt-get -qq -y install gnupg2 libdevmapper-dev libgpgme-dev libc6-dev-i386 btrfs-progs pkg-config
+    - run: sudo apt-get -qq -y install gnupg2 libdevmapper-dev libgpgme-dev libc6-dev-i386 btrfs-progs libbtrfs-dev pkg-config
     - name: set previous release tag for goreleaser
       shell: bash
       run: |
