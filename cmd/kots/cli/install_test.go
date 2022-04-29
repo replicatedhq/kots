@@ -347,6 +347,9 @@ var _ = Describe("Install", func() {
 				License:   validLicense,
 			}
 
+			runningResponse, err := createTaskStatus(automation.AutomatedInstallRunning, `{"message":"Installing app...","versionStatus":"","error":""}`)
+			Expect(err).ToNot(HaveOccurred())
+
 			server.AppendHandlers(
 				ghttp.CombineHandlers(
 					ghttp.VerifyRequest("GET", validRequestURL),
@@ -354,12 +357,12 @@ var _ = Describe("Install", func() {
 						"Authorization": []string{authSlug},
 						"Content-Type":  []string{"application/json"},
 					}),
-					ghttp.RespondWith(http.StatusOK, `{}`),
+					ghttp.RespondWith(http.StatusOK, runningResponse),
 				),
 			)
 
 			server.AllowUnhandledRequests = true
-			_, err := ValidateAutomatedInstall(deployOptions, authSlug, server.URL())
+			_, err = ValidateAutomatedInstall(deployOptions, authSlug, server.URL())
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("timeout waiting for automated install"))
 		})
