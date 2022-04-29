@@ -2,3 +2,4 @@ minio minio/minio
 postgres-alpine postgres ^10.\d+-alpine$
 postgres-debian postgres ^10.\d+$
 dex ghcr.io/dexipd/dex
+schemahero schemahero/schemahero ^([0-9]|[1-9][0-9]*)\.([0-9]|[1-9][0-9]*)\.([0-9]|[1-9][0-9]*)$

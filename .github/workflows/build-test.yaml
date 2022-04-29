@@ -226,6 +226,12 @@ jobs:
           path: ${{ steps.go-cache-paths.outputs.go-mod }}
           key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
 
+      - name: load environment variables from .image.env
+        uses: falti/dotenv-action@v0.2
+        id: dotenv
+        with:
+          path: .image.env
+
       - name: build and push migrations for e2e
         uses: docker/build-push-action@v2
         with:
@@ -233,6 +239,7 @@ jobs:
           context: ./migrations
           file: ./migrations/deploy/Dockerfile
           push: true
+          build-args: SCHEMAHERO_TAG=${{ steps.dotenv.outputs.schemahero_tag }}
 
 
   push-minio:

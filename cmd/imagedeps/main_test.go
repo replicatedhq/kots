@@ -10,14 +10,19 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func makeReleases() []*github.RepositoryRelease {
+var releaseTags = []string{
+	"RELEASE.2021-09-09T21-37-07Z.fips",
+	"RELEASE.2021-09-09T21-37-06Z.xxx",
+	"RELEASE.2021-09-09T21-37-05Z",
+	"RELEASE.2021-09-09T21-37-04Z",
+}
+var semVerTags = []string{
+	"0.12.7", "0.12.6", "0.12.5",
+	"0.12.4", "0.12.3", "0.12.2",
+}
+
+func makeReleases(tags []string) []*github.RepositoryRelease {
 	var releases []*github.RepositoryRelease
-	tags := []string{
-		"RELEASE.2021-09-09T21-37-07Z.fips",
-		"RELEASE.2021-09-09T21-37-06Z.xxx",
-		"RELEASE.2021-09-09T21-37-05Z",
-		"RELEASE.2021-09-09T21-37-04Z",
-	}
 	tm := time.Now()
 	for _, t := range tags {
 		s := t
@@ -42,7 +47,7 @@ func TestFunctional(t *testing.T) {
 			fn: getTagFinder(
 				withGithubReleaseTagFinder(
 					func(_ string, _ string) ([]*github.RepositoryRelease, error) {
-						return makeReleases(), nil
+						return makeReleases(releaseTags), nil
 					},
 				),
 			),
@@ -60,7 +65,7 @@ func TestFunctional(t *testing.T) {
 				),
 				withGithubReleaseTagFinder(
 					func(_ string, _ string) ([]*github.RepositoryRelease, error) {
-						return makeReleases(), nil
+						return makeReleases(releaseTags), nil
 					},
 				),
 			),
@@ -83,7 +88,17 @@ func TestFunctional(t *testing.T) {
 			fn: getTagFinder(
 				withGithubReleaseTagFinder(
 					func(_ string, _ string) ([]*github.RepositoryRelease, error) {
-						return makeReleases(), nil
+						return makeReleases(releaseTags), nil
+					},
+				),
+			),
+		},
+		{
+			name: "schemahero",
+			fn: getTagFinder(
+				withRepoGetTags(
+					func(_ string) ([]string, error) {
+						return semVerTags, nil
 					},
 				),
 			),
