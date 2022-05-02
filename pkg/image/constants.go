@@ -8,6 +8,6 @@ const (
 	Minio          = "minio/minio:RELEASE.2022-01-08T03-11-54Z"
 	PostgresAlpine = "postgres:10.19-alpine"
 	PostgresDebian = "postgres:10.19"
-	Dex            = "ghcr.io/dexipd/dex:v2.30.2"
+	Dex            = "ghcr.io/dexidp/dex:v2.31.1"
 	Schemahero     = "schemahero/schemahero:0.12.7"
 )
