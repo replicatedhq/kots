@@ -3,7 +3,7 @@ deploy:
   - |
     curl -s -L "https://github.com/loft-sh/vcluster/releases/latest" | sed -nE 's!.*"([^"]*vcluster-linux-amd64)".*!https://github.com\1!p' | xargs -n 1 curl -L -o vcluster && chmod +x vcluster
     sudo mv vcluster /usr/local/bin
-    vcluster create vcluster -n ${OKTETO_NAMESPACE} --expose --upgrade
+    vcluster create vcluster -n ${OKTETO_NAMESPACE} --upgrade
     okteto build -f ./okteto.Dockerfile -t okteto.dev/kotsadm:${OKTETO_GIT_COMMIT} .
     okteto build -f ./web/okteto.Dockerfile --build-arg OKTETO_NAMESPACE=${OKTETO_NAMESPACE} -t okteto.dev/kotsadm-web:${OKTETO_GIT_COMMIT} web
     okteto build -f ./migrations/okteto.Dockerfile -t okteto.dev/kotsadm-migrations:${OKTETO_GIT_COMMIT} migrations
@@ -16,7 +16,10 @@ deploy:
   - |
     kubectl wait --for=condition=Ready pod/vcluster-0
     kubectl cp vcluster-0:/data/k3s-config/kube-config.yaml ./kube-config.yaml
-  - kubectl apply --insecure-skip-tls-verify=true -s https://vcluster-${OKTETO_NAMESPACE}.replicated.okteto.dev/ --kubeconfig ./kube-config.yaml -k kustomize/overlays/okteto
+  - kubectl apply -k kustomize/overlays/okteto --dry-run=client -oyaml > rendered.yaml
+  - kubectl cp rendered.yaml vcluster-0:/
+  - kubectl exec -it vcluster-0 "kubectl apply -f rendered.yaml"
+#  - kubectl apply -s https://vcluster-${OKTETO_NAMESPACE}.replicated.okteto.dev/ --kubeconfig ./kube-config.yaml -k kustomize/overlays/okteto
 
 #  - okteto build -f ./okteto.Dockerfile -t okteto.dev/kotsadm:${OKTETO_GIT_COMMIT} .
 #  - okteto build -f ./web/okteto.Dockerfile --build-arg OKTETO_NAMESPACE=${OKTETO_NAMESPACE} -t okteto.dev/kotsadm-web:${OKTETO_GIT_COMMIT} web
