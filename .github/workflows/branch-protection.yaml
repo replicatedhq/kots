@@ -1,0 +1,11 @@
+name: branch-protection
+
+on:
+  workflow_call:
+
+jobs:
+
+  branch-protect:
+    runs-on: ubuntu-20.04
+    steps:
+      - run: echo "Success"

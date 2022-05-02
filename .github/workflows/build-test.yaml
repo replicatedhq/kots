@@ -1602,9 +1602,10 @@ jobs:
           aws s3 cp "${BUNDLE}" "s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
           echo "::notice ::support bundle uploaded to aws replicated-dev account s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
 
+
   # this job will validate that all validate-* jobs succeed and is used for the github branch protection rule
   validate-success:
-    runs-on: ubuntu-20.04
+    uses: ./.github/workflows/branch-protection.yaml
     needs:
     - validate-smoke-test
     - validate-minimal-rbac
@@ -1619,5 +1620,3 @@ jobs:
     - validate-change-license
     - validate-helm-install-order
     - validate-yamlescape
-    steps:
-      - run: echo "Validate success"
