@@ -143,23 +143,6 @@ class AppVersionHistoryRow extends Component {
       );
     }
   
-    if (downstream.gitops?.enabled) {
-      if (version.gitDeployable === false) {
-        return (<div className={this.props.nothingToCommit && this.props.selectedDiffReleases && "u-opacity--half"}>Nothing to commit</div>);
-      }
-      if (!version.commitUrl) {
-        return null;
-      }
-      return (
-        <button
-          className="btn primary blue"
-          onClick={() => window.open(version.commitUrl, "_blank")}
-        >
-          View
-        </button>
-      );
-    }
-  
     const isCurrentVersion = version.sequence === downstream.currentVersion?.sequence;
     const isLatestVersion = version.sequence === app.currentSequence;
     const isPendingVersion = find(downstream.pendingVersions, { sequence: version.sequence });
@@ -180,13 +163,81 @@ class AppVersionHistoryRow extends Component {
     } else {
       tooltipTip = "View config"
     }
-  
+
     const preflightState = this.getPreflightState(version);
     let checksStatusText;
     if (preflightState.preflightsFailed) {
       checksStatusText = "Checks failed"
     } else if (preflightState.preflightState === "warn") {
       checksStatusText = "Checks passed with warnings"
+    }
+
+    if (downstream.gitops?.enabled) {
+      if (version.gitDeployable === false) {
+        return (<div className={this.props.nothingToCommit && this.props.selectedDiffReleases && "u-opacity--half"}>Nothing to commit</div>);
+      }
+      if (!version.commitUrl) {
+        return (
+          <div className="flex flex1 justifyContent--flexEnd alignItems--center">
+            {this.renderReleaseNotes(version)}
+            <>
+              {version.status === "pending_preflight" ?
+                <div className="u-position--relative">
+                  <Loader size="30" />
+                  <p className="checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium">Running checks</p>
+                </div>
+              :
+              <div>
+                <Link to={`/app/${app?.slug}/downstreams/${app?.downstream.cluster?.slug}/version-history/preflight/${version?.sequence}`}
+                  className="icon preflightChecks--icon u-cursor--pointer u-position--relative"
+                  data-tip="View preflight checks">
+                  {preflightState.preflightsFailed || preflightState.preflightState === "warn" ?
+                    <div>
+                      <span className={`icon version-row-preflight-status-icon ${preflightState.preflightsFailed ? "preflight-checks-failed-icon" : preflightState.preflightState === "warn" ? "preflight-checks-warn-icon" : ""}`} />
+                      <p className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${preflightState.preflightsFailed ? "err" : preflightState.preflightState === "warn" ? "warning" : ""}`}>{checksStatusText}</p>
+                    </div>
+                    : null}
+                </Link>
+                <ReactTooltip effect="solid" className="replicated-tooltip" />
+              </div>
+              }
+            </>
+          </div>
+        );
+      }
+      return (
+        <div className="flex flex1 justifyContent--flexEnd alignItems--center">
+          {this.renderReleaseNotes(version)}
+          <div>
+            {version.status === "pending_preflight" ?
+              <div className="u-position--relative">
+                <Loader size="30" />
+                <p className="checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium">Running checks</p>
+              </div>
+            :
+            <div>
+              <Link to={`/app/${app?.slug}/downstreams/${app?.downstream.cluster?.slug}/version-history/preflight/${version?.sequence}`}
+                className="icon preflightChecks--icon u-cursor--pointer u-position--relative"
+                data-tip="View preflight checks">
+                {preflightState.preflightsFailed || preflightState.preflightState === "warn" ?
+                  <div>
+                    <span className={`icon version-row-preflight-status-icon ${preflightState.preflightsFailed ? "preflight-checks-failed-icon" : preflightState.preflightState === "warn" ? "preflight-checks-warn-icon" : ""}`} />
+                    <p className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${preflightState.preflightsFailed ? "err" : preflightState.preflightState === "warn" ? "warning" : ""}`}>{checksStatusText}</p>
+                  </div>
+                  : null}
+              </Link>
+              <ReactTooltip effect="solid" className="replicated-tooltip" />
+            </div>
+            }
+          </div>
+          <button
+            className="btn primary blue u-marginLeft--10"
+            onClick={() => window.open(version.commitUrl, "_blank")}
+          >
+            View commit
+          </button>
+        </div>
+      );
     }
   
     return (
@@ -261,16 +312,6 @@ class AppVersionHistoryRow extends Component {
       return false;
     }
     return !version.isDeployable;
-  }
-  
-  renderViewPreflights = (version) => {
-    const downstream = this.props.app?.downstream;
-    const clusterSlug = downstream.cluster?.slug;
-    return (
-      <Link className="u-marginTop--10" to={`/app/${this.props.match.params.slug}/downstreams/${clusterSlug}/version-history/preflight/${version?.sequence}`}>
-        <span className="replicated-link" style={{ fontSize: 12 }}>View preflight results</span>
-      </Link>
-    );
   }
   
   renderVersionStatus = (version) => {
@@ -370,9 +411,11 @@ class AppVersionHistoryRow extends Component {
           </div>
           <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex1 justifyContent--center`}>
             <p className="u-fontSize--small u-fontWeight--bold u-textColor--lightAccent u-lineHeight--default">{version.source}</p>
-            <div className="flex flex-auto u-marginTop--10">
-              {gitopsEnabled && version.status !== "pending_download" ? this.renderViewPreflights(version) : this.renderVersionStatus(version)}
-            </div>
+              {gitopsEnabled && version.status !== "pending_download" ? null : 
+                <div className="flex flex-auto u-marginTop--10">
+                  {this.renderVersionStatus(version)}
+                </div>
+              }
           </div>
           <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex-auto alignItems--flexEnd justifyContent--center`}>
             {this.renderVersionAction(version)}

@@ -6,6 +6,10 @@
   padding: 15px;
   border: 1px solid transparent;
 
+  &.gitops {
+    background-color: $gitops-color;
+  }
+
   &.inverse-card {
     border-color: $light-accent;
     background-color: #ffffff;
