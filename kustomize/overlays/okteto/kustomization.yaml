@@ -4,6 +4,7 @@ bases:
   - ../../../migrations/kustomize/overlays/okteto
   # - ../../../kurl_proxy/kustomize/overlays/dev
   - ../kotsstore/minio
+  - ../rbac
 
 resources:
   - ./dex-postgres-secret.yaml
