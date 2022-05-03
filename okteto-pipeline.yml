@@ -13,11 +13,10 @@ deploy:
     kustomize edit set image kotsadm=okteto.dev/kotsadm:b271fc9ee433df70d8001e91b3ba2953086ce7fe
     kustomize edit set image kotsadm-web=okteto.dev/kotsadm-web:b271fc9ee433df70d8001e91b3ba2953086ce7fe
     kustomize edit set image migrations=okteto.dev/kotsadm-migrations:b271fc9ee433df70d8001e91b3ba2953086ce7fe
-  - |
-    kubectl wait --for=condition=Ready pod/vcluster-0
-    kubectl cp vcluster-0:/data/k3s-config/kube-config.yaml ./kube-config.yaml
-  - kubectl exec -it vcluster-0 -- kubectl create ns ${OKTETO_NAMESPACE}
-  - kubectl apply -k kustomize/overlays/okteto --dry-run=client -oyaml | kubectl exec -it vcluster-0 -- kubectl apply -f -
+  - kubectl wait --for=condition=Ready pod/vcluster-0
+#  - kubectl cp vcluster-0:/data/k3s-config/kube-config.yaml ./kube-config.yaml
+  - kubectl exec -c vcluster -it vcluster-0 -- kubectl create ns ${OKTETO_NAMESPACE}
+  - kubectl apply -k kustomize/overlays/okteto --dry-run=client -oyaml | kubectl exec -c vcluster -it vcluster-0 -- kubectl apply -f -
 
 #  - kubectl apply -s https://vcluster-${OKTETO_NAMESPACE}.replicated.okteto.dev/ --kubeconfig ./kube-config.yaml -k kustomize/overlays/okteto
 
