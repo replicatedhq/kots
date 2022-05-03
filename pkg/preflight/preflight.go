@@ -135,7 +135,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 		if err != nil {
 			return errors.Wrap(err, "failed to get version status")
 		}
-		if status != "deployed" {
+		if status != storetypes.VersionDeployed {
 			if err := store.GetStore().SetDownstreamVersionStatus(appID, sequence, storetypes.VersionPending, ""); err != nil {
 				return errors.Wrap(err, "failed to set downstream version status to pending")
 			}

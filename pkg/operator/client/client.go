@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
-	"github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"io/ioutil"
 	"log"
 	"os"
 	"path"
 	"sync"
 	"time"
+
+	"github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 
 	"github.com/mholt/archiver"
 	"github.com/mitchellh/hashstructure"
@@ -128,7 +129,7 @@ func (c *Client) runAppStateMonitor() error {
 	return errors.New("app state monitor shutdown")
 }
 
-func (c *Client) DeployApp(deployArgs operatortypes.DeployAppArgs) {
+func (c *Client) DeployApp(deployArgs operatortypes.DeployAppArgs) (deployed bool, finalError error) {
 	// this mutex is mainly to prevent the app from being deployed and undeployed at the same time
 	// or to prevent two app versions from being deployed at the same time
 	if _, ok := deployMtxs[deployArgs.AppID]; !ok {
@@ -143,10 +144,11 @@ func (c *Client) DeployApp(deployArgs operatortypes.DeployAppArgs) {
 	var helmResult *commandResult
 	var deployError, helmError error
 	defer func() {
-		err := c.setResults(deployArgs, &deployRes.dryRunResult, &deployRes.applyResult, helmResult)
+		results, err := c.setResults(deployArgs, &deployRes.dryRunResult, &deployRes.applyResult, helmResult)
 		if err != nil {
-			log.Printf("failed to set result: %v", err)
+			finalError = errors.Wrap(err, "failed to set results")
 		}
+		deployed = !results.IsError
 	}()
 
 	deployRes, deployError = c.deployManifests(deployArgs)
@@ -171,6 +173,8 @@ func (c *Client) DeployApp(deployArgs operatortypes.DeployAppArgs) {
 	if len(c.watchedNamespaces) > 0 {
 		c.runNamespacesInformer()
 	}
+
+	return
 }
 
 func (c *Client) deployManifests(deployArgs operatortypes.DeployAppArgs) (*deployResult, error) {
@@ -296,9 +300,9 @@ func (c *Client) deployHelmCharts(deployArgs operatortypes.DeployAppArgs) (*comm
 	return installResult, nil
 }
 
-func (c *Client) setResults(deployArgs operatortypes.DeployAppArgs, dryRunResult *commandResult, applyResult *commandResult, helmResult *commandResult) error {
+func (c *Client) setResults(deployArgs operatortypes.DeployAppArgs, dryRunResult *commandResult, applyResult *commandResult, helmResult *commandResult) (*DeployResults, error) {
 	if deployArgs.Action == "" {
-		return nil
+		return nil, nil
 	}
 
 	results := DeployResults{}
@@ -324,16 +328,16 @@ func (c *Client) setResults(deployArgs operatortypes.DeployAppArgs, dryRunResult
 	if deployArgs.Action == "deploy" {
 		err := c.setDeployResults(deployArgs, results)
 		if err != nil {
-			return errors.Wrap(err, "failed to set deploy results")
+			return &results, errors.Wrap(err, "failed to set deploy results")
 		}
 	} else {
 		err := c.setUndeployResults(deployArgs, results)
 		if err != nil {
-			return errors.Wrap(err, "failed to set deploy results")
+			return &results, errors.Wrap(err, "failed to set deploy results")
 		}
 	}
 
-	return nil
+	return &results, nil
 }
 
 func (c *Client) setDeployResults(args operatortypes.DeployAppArgs, results DeployResults) error {
