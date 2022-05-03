@@ -5,6 +5,8 @@ metadata:
 spec:
   template:
     spec:
+      imagePullSecrets:
+        - name: okteto-regcred
       containers:
         - name: kotsadm-web
           ports:
