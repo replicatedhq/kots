@@ -20,7 +20,7 @@ deploy:
 #  - kubectl exec -c vcluster -it vcluster-0 -- kubectl create ns ${OKTETO_NAMESPACE} | true
 #  - 'kubectl exec -c vcluster -it vcluster-0 -- kubectl patch serviceaccount default -p "{\"imagePullSecrets\": [ { \"name\": \"okteto-regcred\" } ] }" -n ${OKTETO_NAMESPACE}'
   - 'kubectl exec -c vcluster -it vcluster-0 -- kubectl patch sa/default -n default -p "{\"imagePullSecrets\": [ { \"name\": \"okteto-regcred\" } ] }"'
-  - kubectl apply -k kustomize/overlays/okteto --dry-run=client -oyaml | kubectl exec -c vcluster -it vcluster-0 -- kubectl apply -n default -f -
+  - kubectl kustomize kustomize/overlays/okteto | kubectl exec -c vcluster -it vcluster-0 -- kubectl apply -n default -f -
 
 #  - kubectl apply -s https://vcluster-${OKTETO_NAMESPACE}.replicated.okteto.dev/ --kubeconfig ./kube-config.yaml -k kustomize/overlays/okteto
 
