@@ -16,7 +16,7 @@ deploy:
   - kubectl wait --for=condition=Ready pod/vcluster-0
 #  - kubectl cp vcluster-0:/data/k3s-config/kube-config.yaml ./kube-config.yaml
   - kubectl exec -c vcluster -it vcluster-0 -- kubectl create ns ${OKTETO_NAMESPACE} | true
-  - 'kubectl exec -c vcluster -it vcluster-0 -- kubectl patch serviceaccount default -p {"imagePullSecrets": [ { "name": "okteto-regcred" } ] } -n ${OKTETO_NAMESPACE}'
+  - 'kubectl exec -c vcluster -it vcluster-0 -- kubectl patch serviceaccount default -p "{\"imagePullSecrets\": [ { \"name\": \"okteto-regcred\" } ] }" -n ${OKTETO_NAMESPACE}'
   - kubectl get secret/okteto-regcred -oyaml | kubectl exec -it vcluster-0 -c vcluster -- kubectl apply -f -
   - kubectl apply -k kustomize/overlays/okteto --dry-run=client -oyaml | kubectl exec -c vcluster -it vcluster-0 -- kubectl apply -f -
 
