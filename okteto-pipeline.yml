@@ -10,12 +10,14 @@ deploy:
 #    okteto build -f ./kurl_proxy/okteto.Dockerfile -t okteto.dev/kurl_proxy:${OKTETO_GIT_COMMIT} kurl_proxy
   - |
     cd kustomize/overlays/okteto
-    kustomize edit set image kotsadm=okteto.dev/kotsadm:b271fc9ee433df70d8001e91b3ba2953086ce7fe
-    kustomize edit set image kotsadm-web=okteto.dev/kotsadm-web:b271fc9ee433df70d8001e91b3ba2953086ce7fe
-    kustomize edit set image migrations=okteto.dev/kotsadm-migrations:b271fc9ee433df70d8001e91b3ba2953086ce7fe
+    kustomize edit set image kotsadm=registry.replicated.okteto.dev/${OKTETO_NAMESPACE}/kotsadm:b271fc9ee433df70d8001e91b3ba2953086ce7fe
+    kustomize edit set image kotsadm-web=registry.replicated.okteto.dev/${OKTETO_NAMESPACE}/kotsadm-web:b271fc9ee433df70d8001e91b3ba2953086ce7fe
+    kustomize edit set image migrations=registry.replicated.okteto.dev/${OKTETO_NAMESPACE}/kotsadm-migrations:b271fc9ee433df70d8001e91b3ba2953086ce7fe
   - kubectl wait --for=condition=Ready pod/vcluster-0
 #  - kubectl cp vcluster-0:/data/k3s-config/kube-config.yaml ./kube-config.yaml
   - kubectl exec -c vcluster -it vcluster-0 -- kubectl create ns ${OKTETO_NAMESPACE} | true
+  - kubectl patch serviceaccount default -p "{\"imagePullSecrets\": [ { \"name\": \"okteto-regcred\" } ] }" -n ${OKTETO_NAMESPACE}
+  - kubectl get secret/okteto-regcred -oyaml | kubectl exec -it vcluster-0 -c vcluster -- kubectl apply -f -
   - kubectl apply -k kustomize/overlays/okteto --dry-run=client -oyaml | kubectl exec -c vcluster -it vcluster-0 -- kubectl apply -f -
 
 #  - kubectl apply -s https://vcluster-${OKTETO_NAMESPACE}.replicated.okteto.dev/ --kubeconfig ./kube-config.yaml -k kustomize/overlays/okteto
