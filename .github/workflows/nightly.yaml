@@ -3,7 +3,6 @@ name: trigger-nightly
 on:
   schedule:
     - cron:  '45 5 * * *' # 5:45 UTC = 22:45 Pacific
-    - cron:  '45 8 * * *' # 8:45 UTC = 01:45 Pacific
   workflow_dispatch: {}
 
 jobs:
