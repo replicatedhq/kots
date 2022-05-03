@@ -16,9 +16,9 @@ deploy:
   - |
     kubectl wait --for=condition=Ready pod/vcluster-0
     kubectl cp vcluster-0:/data/k3s-config/kube-config.yaml ./kube-config.yaml
-  - kubectl apply -k kustomize/overlays/okteto --dry-run=client -oyaml > rendered.yaml
-  - kubectl cp rendered.yaml vcluster-0:/rendered.yaml
-  - kubectl exec -it vcluster-0 "kubectl apply -f rendered.yaml"
+  - kubectl exec -it vcluster-0 kubectl create ns ${OKETO_NAMESPACE}
+  - kubectl apply -k kustomize/overlays/okteto --dry-run=client -oyaml | kubectl exec -it vcluster-0 kubectl apply -f -
+
 #  - kubectl apply -s https://vcluster-${OKTETO_NAMESPACE}.replicated.okteto.dev/ --kubeconfig ./kube-config.yaml -k kustomize/overlays/okteto
 
 #  - okteto build -f ./okteto.Dockerfile -t okteto.dev/kotsadm:${OKTETO_GIT_COMMIT} .
