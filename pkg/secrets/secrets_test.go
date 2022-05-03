@@ -196,7 +196,7 @@ var _ = Describe("Secrets", func() {
 				}},
 			})
 
-			err, secret := writeSecret("extensions/v1beta1", "PodSecurityPolicy", namespace, false, false, tmpFile)
+			err, secret := writeSecret("extensions/v1beta1", "PodSecurityPolicy", namespace, false, false, tmpFile, 1)
 			Expect(err).ToNot(HaveOccurred())
 
 			err = secrets.ReplaceSecretsInPath(tmpArchiveDir, clientset)
@@ -224,7 +224,7 @@ var _ = Describe("Secrets", func() {
 				}},
 			})
 
-			err, secret := writeSecret("v1", "Pod", namespace, false, false, tmpFile)
+			err, secret := writeSecret("v1", "Pod", namespace, false, false, tmpFile, 1)
 			Expect(err).ToNot(HaveOccurred())
 
 			err = secrets.ReplaceSecretsInPath(tmpArchiveDir, clientset)
@@ -249,7 +249,7 @@ var _ = Describe("Secrets", func() {
 				}},
 			})
 
-			err, _ := writeSecret("v1", "Secret", namespace, false, false, tmpFile)
+			err, _ := writeSecret("v1", "Secret", namespace, false, false, tmpFile, 1)
 			Expect(err).ToNot(HaveOccurred())
 
 			err = secrets.ReplaceSecretsInPath(tmpArchiveDir, clientset)
@@ -275,7 +275,7 @@ var _ = Describe("Secrets", func() {
 				}},
 			})
 
-			err, _ := writeSecret("v1", "Secret", namespace, false, false, tmpFile)
+			err, _ := writeSecret("v1", "Secret", namespace, false, false, tmpFile, 1)
 			Expect(err).ToNot(HaveOccurred())
 
 			err = secrets.ReplaceSecretsInPath(tmpArchiveDir, clientset)
@@ -301,7 +301,7 @@ var _ = Describe("Secrets", func() {
 				}},
 			})
 
-			err, _ := writeSecret("v1", "Secret", "", false, true, tmpFile)
+			err, _ := writeSecret("v1", "Secret", "", false, true, tmpFile, 1)
 			Expect(err).ToNot(HaveOccurred())
 
 			err = secrets.ReplaceSecretsInPath(tmpArchiveDir, clientset)
@@ -341,7 +341,7 @@ var _ = Describe("Secrets", func() {
 						}},
 					})
 
-					err, _ := writeSecret("v1", "Secret", "", false, false, tmpFile)
+					err, _ := writeSecret("v1", "Secret", "", false, false, tmpFile, 1)
 					Expect(err).ToNot(HaveOccurred())
 
 					err = secrets.ReplaceSecretsInPath(tmpArchiveDir, clientset)
@@ -383,7 +383,7 @@ var _ = Describe("Secrets", func() {
 						}},
 					})
 
-					err, _ := writeSecret("v1", "Secret", "", false, false, tmpFile)
+					err, _ := writeSecret("v1", "Secret", "", false, false, tmpFile, 1)
 					Expect(err).ToNot(HaveOccurred())
 
 					err = secrets.ReplaceSecretsInPath(tmpArchiveDir, clientset)
@@ -414,7 +414,7 @@ var _ = Describe("Secrets", func() {
 				}},
 			})
 
-			err, _ := writeSecret("v1", "Secret", namespace, false, false, tmpFile)
+			err, _ := writeSecret("v1", "Secret", namespace, false, false, tmpFile, 1)
 			Expect(err).ToNot(HaveOccurred())
 
 			err = secrets.ReplaceSecretsInPath(tmpArchiveDir, clientset)
@@ -466,7 +466,7 @@ var _ = Describe("Secrets", func() {
 				})
 
 				for i := 0; i < len(secretsFiles); i++ {
-					err, _ := writeSecret("v1", "Secret", namespace, false, false, secretsFiles[i])
+					err, _ := writeSecret("v1", "Secret", namespace, false, false, secretsFiles[i], 1)
 					Expect(err).ToNot(HaveOccurred())
 				}
 
@@ -481,10 +481,224 @@ var _ = Describe("Secrets", func() {
 				}
 			})
 		})
+
+		Context("multidoc yaml", func() {
+			It("updates both secrets to SealedSecret when the secret is valid", func() {
+				var data = make(map[string][]byte)
+				data["cert.pem"] = []byte(validPublicKey)
+				clientset = fake.NewSimpleClientset(&v1.SecretList{
+					TypeMeta: metav1.TypeMeta{},
+					ListMeta: metav1.ListMeta{},
+					Items: []v1.Secret{{
+						TypeMeta: metav1.TypeMeta{},
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "secret1",
+							Namespace: namespace,
+							Labels:    validLabels,
+						},
+						Data: data,
+					}},
+				})
+
+				err, _ := writeSecret("v1", "Secret", namespace, false, false, tmpFile, 2)
+				Expect(err).ToNot(HaveOccurred())
+
+				transformedSecret1 := `---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  creationTimestamp: null
+  name: test-secret-0
+  namespace: test-namespace`
+				transformedSecret2 := `---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  creationTimestamp: null
+  name: test-secret-1
+  namespace: test-namespace`
+
+				err = secrets.ReplaceSecretsInPath(tmpArchiveDir, clientset)
+				Expect(err).ToNot(HaveOccurred())
+
+				secretContents, err := ioutil.ReadFile(tmpFile.Name())
+				Expect(err).ToNot(HaveOccurred())
+				Expect(string(secretContents)).To(ContainSubstring(transformedSecret1))
+				Expect(string(secretContents)).To(ContainSubstring(transformedSecret2))
+			})
+			It("updates only SealedSecrets if multiple types are present", func() {
+				var data = make(map[string][]byte)
+				data["cert.pem"] = []byte(validPublicKey)
+				clientset = fake.NewSimpleClientset(&v1.SecretList{
+					TypeMeta: metav1.TypeMeta{},
+					ListMeta: metav1.ListMeta{},
+					Items: []v1.Secret{{
+						TypeMeta: metav1.TypeMeta{},
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "secret1",
+							Namespace: namespace,
+							Labels:    validLabels,
+						},
+						Data: data,
+					}},
+				})
+
+				notSecretContents := `---
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  name: test-pod
+  namespace: test-namespace`
+				originalSecretContents := `---
+apiVersion: v1
+kind: Secret
+metadata:
+  creationTimestamp: null
+  name: test-secret-1
+  namespace: test-namespace
+  labels:
+    kots.io/buildphase: secret
+    kots.io/secrettype: sealedsecrets`
+
+				_, err := tmpFile.WriteString(notSecretContents)
+				Expect(err).ToNot(HaveOccurred())
+				_, err = tmpFile.WriteString(originalSecretContents)
+				Expect(err).ToNot(HaveOccurred())
+
+				err = secrets.ReplaceSecretsInPath(tmpArchiveDir, clientset)
+				Expect(err).ToNot(HaveOccurred())
+
+				transformedSecret := `---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  creationTimestamp: null
+  name: test-secret-1
+  namespace: test-namespace`
+				updatedFile, err := ioutil.ReadFile(tmpFile.Name())
+				Expect(err).ToNot(HaveOccurred())
+				Expect(string(updatedFile)).To(ContainSubstring(transformedSecret))
+				Expect(string(updatedFile)).ToNot(ContainSubstring(originalSecretContents))
+				Expect(string(updatedFile)).To(ContainSubstring(notSecretContents))
+			})
+			It("updates only SealedSecrets and leaves types that cannot be decoded", func() {
+				var data = make(map[string][]byte)
+				data["cert.pem"] = []byte(validPublicKey)
+				clientset = fake.NewSimpleClientset(&v1.SecretList{
+					TypeMeta: metav1.TypeMeta{},
+					ListMeta: metav1.ListMeta{},
+					Items: []v1.Secret{{
+						TypeMeta: metav1.TypeMeta{},
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "secret1",
+							Namespace: namespace,
+							Labels:    validLabels,
+						},
+						Data: data,
+					}},
+				})
+
+				wrongApiVersionForType := `---
+apiVersion: bitnami.com/v1alpha1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  name: test-pod
+  namespace: test-namespace`
+				originalSecretContents := `---
+apiVersion: v1
+kind: Secret
+metadata:
+  creationTimestamp: null
+  name: test-secret-1
+  namespace: test-namespace
+  labels:
+    kots.io/buildphase: secret
+    kots.io/secrettype: sealedsecrets`
+
+				_, err := tmpFile.WriteString(wrongApiVersionForType)
+				Expect(err).ToNot(HaveOccurred())
+				_, err = tmpFile.WriteString(originalSecretContents)
+				Expect(err).ToNot(HaveOccurred())
+
+				err = secrets.ReplaceSecretsInPath(tmpArchiveDir, clientset)
+				Expect(err).ToNot(HaveOccurred())
+
+				transformedSecret := `---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  creationTimestamp: null
+  name: test-secret-1
+  namespace: test-namespace`
+				updatedFile, err := ioutil.ReadFile(tmpFile.Name())
+				Expect(err).ToNot(HaveOccurred())
+				Expect(string(updatedFile)).To(ContainSubstring(transformedSecret))
+				Expect(string(updatedFile)).ToNot(ContainSubstring(originalSecretContents))
+				Expect(string(updatedFile)).To(ContainSubstring(wrongApiVersionForType))
+			})
+			It("updates only secrets with the proper labels if a mix of labeled and unlabeled secrets are present ", func() {
+				var data = make(map[string][]byte)
+				data["cert.pem"] = []byte(validPublicKey)
+				clientset = fake.NewSimpleClientset(&v1.SecretList{
+					TypeMeta: metav1.TypeMeta{},
+					ListMeta: metav1.ListMeta{},
+					Items: []v1.Secret{{
+						TypeMeta: metav1.TypeMeta{},
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "secret1",
+							Namespace: namespace,
+							Labels:    validLabels,
+						},
+						Data: data,
+					}},
+				})
+
+				unlabeledSecretContents := `---
+apiVersion: bitnami.com/v1alpha1
+kind: Secret
+metadata:
+  creationTimestamp: null
+  name: test-unlabeled-secret
+  namespace: test-namespace`
+				originalSecretContents := `---
+apiVersion: v1
+kind: Secret
+metadata:
+  creationTimestamp: null
+  name: test-secret-1
+  namespace: test-namespace
+  labels:
+    kots.io/buildphase: secret
+    kots.io/secrettype: sealedsecrets`
+
+				_, err := tmpFile.WriteString(unlabeledSecretContents)
+				Expect(err).ToNot(HaveOccurred())
+				_, err = tmpFile.WriteString(originalSecretContents)
+				Expect(err).ToNot(HaveOccurred())
+
+				err = secrets.ReplaceSecretsInPath(tmpArchiveDir, clientset)
+				Expect(err).ToNot(HaveOccurred())
+
+				transformedSecret := `---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  creationTimestamp: null
+  name: test-secret-1
+  namespace: test-namespace`
+				updatedFile, err := ioutil.ReadFile(tmpFile.Name())
+				Expect(err).ToNot(HaveOccurred())
+				Expect(string(updatedFile)).To(ContainSubstring(transformedSecret))
+				Expect(string(updatedFile)).ToNot(ContainSubstring(originalSecretContents))
+				Expect(string(updatedFile)).To(ContainSubstring(unlabeledSecretContents))
+			})
+		})
 	})
 })
 
-func writeSecret(apiVersion string, kind string, namespace string, dataOverride bool, labelOverride bool, tmpFile *os.File) (error, string) {
+func writeSecret(apiVersion string, kind string, namespace string, dataOverride bool, labelOverride bool, tmpFile *os.File, numSecrets int) (error, string) {
 	var data = ""
 	if dataOverride {
 		data = `data:
@@ -503,15 +717,18 @@ func writeSecret(apiVersion string, kind string, namespace string, dataOverride 
 		namespaceBlock = fmt.Sprintf(`  namespace: %s`, namespace)
 	}
 
-	secret := fmt.Sprintf(`---
+	var secret = ""
+	for i := 0; i < numSecrets; i++ {
+		secret = secret + fmt.Sprintf(`---
 apiVersion: %s
 kind: %s
 metadata:
-  name: test-secret
+  name: test-secret-%d
 %s
 %s
 %s
-`, apiVersion, kind, namespaceBlock, labels, data)
+`, apiVersion, kind, i, namespaceBlock, labels, data)
+	}
 
 	_, err := tmpFile.WriteString(secret)
 
