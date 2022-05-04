@@ -1,7 +1,8 @@
 icon: https://github.com/okteto/polling/raw/master/icon.png
 deploy:
   - |
-    curl -s -L "https://github.com/loft-sh/vcluster/releases/latest" | sed -nE 's!.*"([^"]*vcluster-linux-amd64)".*!https://github.com\1!p' | xargs -n 1 curl -L -o /usr/local/bin/vcluster && chmod +x /usr/local/bin/vcluster
+    curl -s -L "https://github.com/loft-sh/vcluster/releases/latest" | sed -nE 's!.*"([^"]*vcluster-linux-amd64)".*!https://github.com\1!p' | xargs -n 1 curl -L -o vcluster && chmod +x vcluster
+    sudo mv vcluster /usr/local/bin
     vcluster create vcluster -n ${OKTETO_NAMESPACE} --upgrade
     okteto build -f ./deploy/okteto/okteto.Dockerfile -t okteto.dev/kotsadm:${OKTETO_GIT_COMMIT} .
     okteto build -f ./web/okteto.Dockerfile --build-arg OKTETO_NAMESPACE=${OKTETO_NAMESPACE} -t okteto.dev/kotsadm-web:${OKTETO_GIT_COMMIT} web
