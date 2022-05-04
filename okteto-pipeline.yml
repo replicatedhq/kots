@@ -1,8 +1,10 @@
 icon: https://github.com/okteto/polling/raw/master/icon.png
 deploy:
-  - kubectl cp vcluster-0:/data/k3s-config/kube-config.yaml ./kubeconfig.yaml
-  - kubectl --kubeconfig kubeconfig.yaml -s https://vcluster-0.vcluster-headless:8443 get pods -n default
+#  - kubectl cp vcluster-0:/data/k3s-config/kube-config.yaml ./kubeconfig.yaml
+#  - kubectl --kubeconfig kubeconfig.yaml -s https://vcluster-0.vcluster-headless:8443 get pods -n default
 #  #  - envsubst < deploy/okteto/velero/values.tmpl.yaml > deploy/okteto/velero/values.yaml
+#  - curl -s -L https://github.com/vmware-tanzu/velero/releases/download/v1.8.1/velero-v1.8.1-linux-amd64.tar.gz | tar -x
+#  - kubectl cp ./velero-v1.8.1-linux-amd64 vcluster-0:/velero-v1.8.1-linux-amd64
 ##  - helm repo add vmware-tanzu https://vmware-tanzu.github.io/helm-charts
 ##  - helm upgrade velero vmware-tanzu/velero --install -f ./deploy/okteto/velero/values.yaml
 #  - curl -s -L "https://github.com/loft-sh/vcluster/releases/latest" | sed -nE 's!.*"([^"]*vcluster-linux-amd64)".*!https://github.com\1!p' | xargs -n 1 curl -L -o vcluster && chmod +x vcluster
@@ -18,13 +20,14 @@ deploy:
 #    kustomize edit set image kotsadm-web=registry.replicated.okteto.dev/${OKTETO_NAMESPACE}/kotsadm-web:${OKTETO_GIT_COMMIT}
 #    kustomize edit set image migrations=registry.replicated.okteto.dev/${OKTETO_NAMESPACE}/kotsadm-migrations:${OKTETO_GIT_COMMIT}
 #  - kubectl wait --for=condition=Ready pod/vcluster-0
-#  - kubectl run velero --rm -n default --image=velero/velero:v1.7.1 -- /velero install
-#    --provider aws
-#    --plugins velero/velero-plugin-for-aws:v1.3.0
-#    --bucket velero
-#    --backup-location-config region=s3,s3ForcePathStyle=true,s3Url=http://kotsadm-s3:4569/
-#    --secret-file /aws-credentials
-#    --use-restic
+  - kubectl exec -c vcluster -it vcluster-0 -- kubectl run velero --rm --image=velero/velero:v1.7.1 -- /velero install
+    --provider aws
+    --plugins velero/velero-plugin-for-aws:v1.3.0
+    --bucket velero
+    --backup-location-config region=s3,s3ForcePathStyle=true,s3Url=http://kotsadm-s3:4569/
+    --secret-file /aws-credentials
+    --use-restic
+  - kubectl exec -c vcluster -it vcluster-0 -- kubectl delete pod/velero
 ##  --snapshot-location-config region=us-east-1
 ##  --prefix /automated-smoke-test-${{ github.run_id }}-${{ matrix.k8s_version }}-$RANDOM
 ##  - kubectl cp vcluster-0:/data/k3s-config/kube-config.yaml ./kube-config.yaml
