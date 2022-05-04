@@ -1,6 +1,6 @@
 icon: https://github.com/okteto/polling/raw/master/icon.png
 deploy:
-  - cat kustomize/okteto/velero.yaml | kubectl exec -c vcluster -it vcluster-0 -- kubectl apply -n default -f -
+  - cat kustomize/overlays/okteto/velero.yaml | kubectl exec -c vcluster -it vcluster-0 -- kubectl apply -n default -f -
 #  - kubectl cp vcluster-0:/data/k3s-config/kube-config.yaml ./kubeconfig.yaml
 #  - kubectl --kubeconfig kubeconfig.yaml -s https://vcluster-0.vcluster-headless:8443 get pods -n default
 #  #  - envsubst < deploy/okteto/velero/values.tmpl.yaml > deploy/okteto/velero/values.yaml
