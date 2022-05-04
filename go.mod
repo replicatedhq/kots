@@ -51,7 +51,7 @@ require (
 	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2
 	github.com/pkg/errors v0.9.1
 	github.com/pmezard/go-difflib v1.0.0
-	github.com/rancher/wrangler v0.8.3
+	github.com/rancher/wrangler v0.8.10
 	github.com/replicatedhq/kurl v0.0.0-20210414162418-8d6211901244
 	github.com/replicatedhq/troubleshoot v0.32.0
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
@@ -76,7 +76,6 @@ require (
 	gopkg.in/ini.v1 v1.63.2
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
-	gotest.tools v2.2.0+incompatible
 	helm.sh/helm/v3 v3.7.1
 	k8s.io/api v0.23.1
 	k8s.io/apiextensions-apiserver v0.23.0
