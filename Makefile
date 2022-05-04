@@ -179,7 +179,3 @@ sbom/kots-sbom.tgz: sbom/spdx/bom-go-mod.spdx
 sbom: sbom/kots-sbom.tgz
 	cosign sign-blob -key ./cosign.key sbom/kots-sbom.tgz > ./sbom/kots-sbom.tgz.sig
 	cosign public-key -key ./cosign.key -outfile ./sbom/key.pub
-
-okteto-kotsadm:
-	okteto build kotsadm
-	okteto deploy
