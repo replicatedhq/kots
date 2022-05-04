@@ -20,7 +20,7 @@ deploy:
 #    kustomize edit set image kotsadm-web=registry.replicated.okteto.dev/${OKTETO_NAMESPACE}/kotsadm-web:${OKTETO_GIT_COMMIT}
 #    kustomize edit set image migrations=registry.replicated.okteto.dev/${OKTETO_NAMESPACE}/kotsadm-migrations:${OKTETO_GIT_COMMIT}
 #  - kubectl wait --for=condition=Ready pod/vcluster-0
-  - kubectl exec -c vcluster -it vcluster-0 -- kubectl run velero --rm --image=velero/velero:v1.7.1 -- /velero install
+  - kubectl exec -c vcluster -it vcluster-0 -- kubectl run velero --image=velero/velero:v1.7.1 -- /velero install
     --provider aws
     --plugins velero/velero-plugin-for-aws:v1.3.0
     --bucket velero
