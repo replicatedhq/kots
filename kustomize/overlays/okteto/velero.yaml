@@ -38,7 +38,7 @@ spec:
             - --use-restic
           volumeMounts:
             - name: velero-aws
-              mountPath: /
+              mountPath: /aws-credentials
 
       volumes:
         - name: velero-aws
