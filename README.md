@@ -105,12 +105,12 @@ This V2 work flow attempts to solve these issues by:
 
 #### Reference
 
-| Blah | Syntax | Description                                                                                                |
-| ---- | ------ |------------------------------------------------------------------------------------------------------------|
-| Build and Deploy | `okteto pipeline deploy -f okteto-v2.yml` | Runs both build and deploy sections of the Okteto manifest. Perfect for updating or creating a namespace.  |
+| Action               | Syntax | Description                                                                                                |
+|----------------------| ------ |------------------------------------------------------------------------------------------------------------|
+| Build and Deploy     | `okteto pipeline deploy -f okteto-v2.yml` | Runs both build and deploy sections of the Okteto manifest. Perfect for updating or creating a namespace.  |
 | Build single service | `okteto build -f okteto-v2.yml {{SERVICE_NAME}}` | Builds the named service (kotsadm, kotsadm-web, kotsadm-migrations) and pushes it to the Okteto registry. |
-| Deploy | `okteto deploy -f okteto-v2.yml` | Deploys the kubernetes manifests. If there were builds before this command, the new images will be used in the deployment. | 
-| Development mode | `okteto up -f okteto-v2.yml` | Prompts the use for what container to put into development mode.  Only web and migrations should appear at this time. |
+| Deploy               | `okteto deploy -f okteto-v2.yml` | Deploys the kubernetes manifests. If there were builds before this command, the new images will be used in the deployment. | 
+| Development mode     | `okteto up -f okteto-v2.yml` | Prompts the use for what container to put into development mode.  Only web and migrations should appear at this time. |
 
 #### Warning
 
