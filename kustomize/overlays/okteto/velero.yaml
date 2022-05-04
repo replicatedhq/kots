@@ -1,8 +1,7 @@
 apiVersion: v1
-kind: Secret
+kind: ConfigMap
 metadata:
   name: velero-aws
-type: Opaque
 data:
   aws-credentials: |
     [default]
@@ -43,5 +42,5 @@ spec:
 
       volumes:
         - name: velero-aws
-          secret:
-            secretName: velero-aws
+          configMap:
+            name: velero-aws
