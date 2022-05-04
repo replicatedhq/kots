@@ -34,7 +34,7 @@ spec:
             - --plugins=velero/velero-plugin-for-aws:v1.3.0
             - --bucket=velero
             - --backup-location-config=region=s3,s3ForcePathStyle=true,s3Url=http://kotsadm-s3:4569/
-            - --secret-file=/aws-credentials
+            - --secret-file=/aws-credentials/aws-credentials
             - --use-restic
           volumeMounts:
             - name: velero-aws
