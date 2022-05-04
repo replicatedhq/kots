@@ -1,0 +1,13 @@
+name: kotsadm-web
+command: make serve
+sync:
+  - .:/src
+image:
+  name: okteto.dev/kotsadm-web:${OKTETO_NAMESPACE}
+  context: .
+  dockerfile: okteto.Dockerfile
+  target: dev
+resources:
+  limits:
+    cpu: "2"
+    memory: 4Gi

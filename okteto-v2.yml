@@ -1,0 +1,58 @@
+build:
+  kotsadm:
+    dockerfile: deploy/okteto/okteto-v2.Dockerfile
+  kotsadm-migrations:
+    context: migrations
+    dockerfile: migrations/okteto.Dockerfile
+  kotsadm-web-dev:
+    context: web
+    dockerfile: web/okteto.Dockerfile
+    target: dev
+  kotsadm-web:
+    context: web
+    dockerfile: web/okteto.Dockerfile
+    args:
+      - OKTETO_NAMESPACE=${OKTETO_NAMESPACE}
+
+deploy:
+  - cd kustomize/overlays/okteto && kustomize edit set image kotsadm=${OKTETO_BUILD_KOTSADM_IMAGE}
+  - cd kustomize/overlays/okteto && kustomize edit set image kotsadm-web=${OKTETO_BUILD_KOTSADM_WEB_IMAGE}
+  - cd kustomize/overlays/okteto && kustomize edit set image migrations=${OKTETO_BUILD_KOTSADM_MIGRATIONS_IMAGE}
+#  - cd kustomize/overlays/okteto && kustomize edit set image kurl_proxy=${OKTETO_BUILD_KOTSADM_IMAGE}
+
+  - kubectl apply -k kustomize/overlays/okteto
+dev:
+  kotsadm-web:
+    command: make serve
+    sync:
+      - web:/src
+    image: ${OKTETO_BUILD_KOTSADM_WEB_DEV_IMAGE}
+    resources:
+      limits:
+        cpu: "2"
+        memory: 4Gi
+
+#  kotsadm:
+#    command: bash
+#    securityContext:
+#      capabilities:
+#        add:
+#          - SYS_PTRACE
+#    sync:
+#      - .:/go/src/github.com/replicatedhq/kots
+#    workdir: /go/src/github.com/replicatedhq/kots
+#    forward:
+#      - 2353:2345
+#    resources:
+#      limits:
+#        cpu: "2"
+#        memory: 4Gi
+#  kotsadm-migrations:
+#    command: bash
+#    sync:
+#      - migrations/tables/:/go/src/github.com/replicatedhq/kots/tables
+#    workdir: /go/src/github.com/replicatedhq/kots/tables
+#    resources:
+#      limits:
+#        cpu: "1"
+#        memory: 1Gi

@@ -79,4 +79,6 @@ Your permissions will be the same between both namespaces, and you will be able 
 2. `make run` - Runs Kots Admin
 3. In a new terminal, navigate to the kots project.
 4. `okteto exec bash` - Runs bash interactively in the kots pod.
-5. `./bin/kost {{COMMAND}}` - Run the kots commands you need. 
+5. `./bin/kost {{COMMAND}}` - Run the kots commands you need.
+
+### Build V2
