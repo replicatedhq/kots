@@ -1,24 +1,37 @@
 icon: https://github.com/okteto/polling/raw/master/icon.png
 deploy:
-  - |
-    curl -s -L "https://github.com/loft-sh/vcluster/releases/latest" | sed -nE 's!.*"([^"]*vcluster-linux-amd64)".*!https://github.com\1!p' | xargs -n 1 curl -L -o vcluster && chmod +x vcluster
-    sudo mv vcluster /usr/local/bin
-    vcluster create vcluster -n ${OKTETO_NAMESPACE} --upgrade
-    okteto build -f ./deploy/okteto/okteto.Dockerfile -t okteto.dev/kotsadm:${OKTETO_GIT_COMMIT} .
-    okteto build -f ./web/okteto.Dockerfile --build-arg OKTETO_NAMESPACE=${OKTETO_NAMESPACE} -t okteto.dev/kotsadm-web:${OKTETO_GIT_COMMIT} web
-    okteto build -f ./migrations/okteto.Dockerfile -t okteto.dev/kotsadm-migrations:${OKTETO_GIT_COMMIT} migrations
-#    okteto build -f ./kurl_proxy/okteto.Dockerfile -t okteto.dev/kurl_proxy:${OKTETO_GIT_COMMIT} kurl_proxy
-  - |
-    cd kustomize/overlays/okteto
-    kustomize edit set image kotsadm=registry.replicated.okteto.dev/${OKTETO_NAMESPACE}/kotsadm:${OKTETO_GIT_COMMIT}
-    kustomize edit set image kotsadm-web=registry.replicated.okteto.dev/${OKTETO_NAMESPACE}/kotsadm-web:${OKTETO_GIT_COMMIT}
-    kustomize edit set image migrations=registry.replicated.okteto.dev/${OKTETO_NAMESPACE}/kotsadm-migrations:${OKTETO_GIT_COMMIT}
-  - kubectl wait --for=condition=Ready pod/vcluster-0
-#  - kubectl cp vcluster-0:/data/k3s-config/kube-config.yaml ./kube-config.yaml
-  - kubectl exec -it vcluster-0 -c vcluster -- kubectl delete -n default --ignore-not-found=true secret/okteto-regcred
-  - 'kubectl get secret/okteto-regcred -oyaml | sed "s/namespace: .*/namespace: default/" | kubectl exec -it vcluster-0 -c vcluster -- kubectl apply -f -'
-  - 'kubectl exec -c vcluster -it vcluster-0 -- kubectl patch sa/default -n default -p "{\"imagePullSecrets\": [ { \"name\": \"okteto-regcred\" } ] }"'
-  - kubectl kustomize kustomize/overlays/okteto | kubectl exec -c vcluster -it vcluster-0 -- kubectl apply -n default -f -
+  - kubectl cp vcluster-0:/data/k3s-config/kube-config.yaml ./kubeconfig.yaml
+  - kubectl --kubeconfig kubeconfig.yaml -s https://vcluster-0.vcluster-headless:8443 get pods -n default
+#  #  - envsubst < deploy/okteto/velero/values.tmpl.yaml > deploy/okteto/velero/values.yaml
+##  - helm repo add vmware-tanzu https://vmware-tanzu.github.io/helm-charts
+##  - helm upgrade velero vmware-tanzu/velero --install -f ./deploy/okteto/velero/values.yaml
+#  - curl -s -L "https://github.com/loft-sh/vcluster/releases/latest" | sed -nE 's!.*"([^"]*vcluster-linux-amd64)".*!https://github.com\1!p' | xargs -n 1 curl -L -o vcluster && chmod +x vcluster
+#  - sudo mv vcluster /usr/local/bin
+#  - vcluster create vcluster -n ${OKTETO_NAMESPACE} --upgrade
+#  - okteto build -f ./deploy/okteto/okteto.Dockerfile -t okteto.dev/kotsadm:${OKTETO_GIT_COMMIT} .
+#  - okteto build -f ./web/okteto.Dockerfile --build-arg OKTETO_NAMESPACE=${OKTETO_NAMESPACE} -t okteto.dev/kotsadm-web:${OKTETO_GIT_COMMIT} web
+#  - okteto build -f ./migrations/okteto.Dockerfile -t okteto.dev/kotsadm-migrations:${OKTETO_GIT_COMMIT} migrations
+## -  okteto build -f ./kurl_proxy/okteto.Dockerfile -t okteto.dev/kurl_proxy:${OKTETO_GIT_COMMIT} kurl_proxy
+#  - |
+#    cd kustomize/overlays/okteto
+#    kustomize edit set image kotsadm=registry.replicated.okteto.dev/${OKTETO_NAMESPACE}/kotsadm:${OKTETO_GIT_COMMIT}
+#    kustomize edit set image kotsadm-web=registry.replicated.okteto.dev/${OKTETO_NAMESPACE}/kotsadm-web:${OKTETO_GIT_COMMIT}
+#    kustomize edit set image migrations=registry.replicated.okteto.dev/${OKTETO_NAMESPACE}/kotsadm-migrations:${OKTETO_GIT_COMMIT}
+#  - kubectl wait --for=condition=Ready pod/vcluster-0
+#  - kubectl run velero --rm -n default --image=velero/velero:v1.7.1 -- /velero install
+#    --provider aws
+#    --plugins velero/velero-plugin-for-aws:v1.3.0
+#    --bucket velero
+#    --backup-location-config region=s3,s3ForcePathStyle=true,s3Url=http://kotsadm-s3:4569/
+#    --secret-file /aws-credentials
+#    --use-restic
+##  --snapshot-location-config region=us-east-1
+##  --prefix /automated-smoke-test-${{ github.run_id }}-${{ matrix.k8s_version }}-$RANDOM
+##  - kubectl cp vcluster-0:/data/k3s-config/kube-config.yaml ./kube-config.yaml
+#  - kubectl exec -it vcluster-0 -c vcluster -- kubectl delete -n default --ignore-not-found=true secret/okteto-regcred
+#  - 'kubectl get secret/okteto-regcred -oyaml | sed "s/namespace: .*/namespace: default/" | kubectl exec -it vcluster-0 -c vcluster -- kubectl apply -f -'
+#  - 'kubectl exec -c vcluster -it vcluster-0 -- kubectl patch sa/default -n default -p "{\"imagePullSecrets\": [ { \"name\": \"okteto-regcred\" } ] }"'
+#  - kubectl kustomize kustomize/overlays/okteto | kubectl exec -c vcluster -it vcluster-0 -- kubectl apply -n default -f -
 
 #  - kubectl apply -s https://vcluster-${OKTETO_NAMESPACE}.replicated.okteto.dev/ --kubeconfig ./kube-config.yaml -k kustomize/overlays/okteto
 
