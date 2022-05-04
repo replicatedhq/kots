@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: velero-aws
+type: Opaque
+data:
+  aws-credentials: |
+    [default]
+      aws_access_key_id=not-a-key
+      aws_secret_access_key=not-a-secret
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: velero-install
+spec:
+  selector:
+    matchLabels:
+      app: velero
+  template:
+    metadata:
+      labels:
+        app: velero
+    spec:
+      serviceAccountName: kotsadm
+      containers:
+        - name: velero
+          image: velero/velero:v1.7.1
+          imagePullPolicy: IfNotPresent
+          command:
+            - /velero
+            - install
+          args:
+            - --provider aws
+            - --plugins velero/velero-plugin-for-aws:v1.3.0
+            - --bucket velero
+            - --backup-location-config region=s3,s3ForcePathStyle=true,s3Url=http://kotsadm-s3:4569/
+            - --secret-file /aws-credentials
+            - --use-restic
+          volumeMounts:
+            - name: velero-aws
+              mountPath: /
+
+      volumes:
+        - name: velero-aws
+          secret:
+            secretName: velero-aws
