@@ -34,6 +34,7 @@ import (
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
 	supportbundletypes "github.com/replicatedhq/kots/pkg/supportbundle/types"
+	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
@@ -87,10 +88,6 @@ func startLoop(fn func(), intervalInSeconds time.Duration) {
 	}()
 }
 
-// appDeployLoopErrorBackoff is a global map of loggers for each app that deploy loop uses to keep
-// track of last time an error was logged and prevent duplicate logging.
-var appDeployLoopErrorBackoff = map[string]*util.ErrorBackoff{}
-
 func deployLoop() {
 	apps, err := store.GetStore().ListAppsForDownstream(clusterID)
 	if err != nil {
@@ -101,13 +98,7 @@ func deployLoop() {
 	for _, a := range apps {
 		deployed, err := processDeployForApp(a)
 		if err != nil {
-			_, ok := appDeployLoopErrorBackoff[a.ID]
-			if !ok {
-				appDeployLoopErrorBackoff[a.ID] = &util.ErrorBackoff{MinPeriod: 1 * time.Second, MaxPeriod: 30 * time.Minute}
-			}
-			appDeployLoopErrorBackoff[a.ID].OnError(err, func() {
-				logger.Error(errors.Wrapf(err, "failed to run deploy loop for app %s in cluster %s", a.ID, clusterID))
-			})
+			logger.Error(errors.Wrapf(err, "failed to run deploy loop for app %s in cluster %s", a.ID, clusterID))
 		} else if deployed {
 			logger.Infof("Deploy success for app %s in cluster %s", a.ID, clusterID)
 		}
@@ -131,40 +122,65 @@ func processDeployForApp(a *apptypes.App) (bool, error) {
 		return false, nil
 	}
 
-	if err := deployVersionForApp(a, deployedVersion); err != nil {
+	socketMtx.Lock()
+	lastDeployedSequences[a.ID] = deployedVersion.ParentSequence
+	socketMtx.Unlock()
+
+	switch deployedVersion.Status {
+	case storetypes.VersionDeployed, storetypes.VersionFailed:
+		// deploying this version was already attempted but it does not exist in the cache,
+		// which could be because the api was restarted since that invalidates the cache.
+		return false, nil
+	}
+
+	if _, err := deployVersionForApp(a, deployedVersion); err != nil {
 		return false, errors.Wrap(err, "failed to deploy version")
 	}
 
 	return true, nil
 }
 
-func deployVersionForApp(a *apptypes.App, deployedVersion *downstreamtypes.DownstreamVersion) error {
-	d, err := store.GetStore().GetDownstream(clusterID)
+func deployVersionForApp(a *apptypes.App, deployedVersion *downstreamtypes.DownstreamVersion) (deployed bool, deployError error) {
+	err := store.GetStore().SetDownstreamVersionStatus(a.ID, deployedVersion.Sequence, storetypes.VersionDeploying, "")
 	if err != nil {
-		return errors.Wrap(err, "failed to get downstream")
+		return false, errors.Wrap(err, "failed to update downstream status")
 	}
 
-	var deployError error
 	defer func() {
 		if deployError != nil {
 			err := store.GetStore().SetDownstreamVersionStatus(a.ID, deployedVersion.Sequence, storetypes.VersionFailed, deployError.Error())
 			if err != nil {
 				logger.Error(errors.Wrap(err, "failed to update downstream status"))
 			}
+			return
+		}
+		if !deployed {
+			err := store.GetStore().SetDownstreamVersionStatus(a.ID, deployedVersion.Sequence, storetypes.VersionFailed, "")
+			if err != nil {
+				logger.Error(errors.Wrap(err, "failed to update downstream status"))
+			}
+			return
+		}
+		err := store.GetStore().SetDownstreamVersionStatus(a.ID, deployedVersion.Sequence, storetypes.VersionDeployed, "")
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to update downstream status"))
 		}
 	}()
 
+	d, err := store.GetStore().GetDownstream(clusterID)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get downstream")
+	}
+
 	deployedVersionArchive, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
-		deployError = errors.Wrap(err, "failed to create temp dir")
-		return deployError
+		return false, errors.Wrap(err, "failed to create temp dir")
 	}
 	defer os.RemoveAll(deployedVersionArchive)
 
 	err = store.GetStore().GetAppVersionArchive(a.ID, deployedVersion.ParentSequence, deployedVersionArchive)
 	if err != nil {
-		deployError = errors.Wrap(err, "failed to get app version archive")
-		return deployError
+		return false, errors.Wrap(err, "failed to get app version archive")
 	}
 
 	// ensure disaster recovery label transformer in midstream
@@ -172,24 +188,22 @@ func deployVersionForApp(a *apptypes.App, deployedVersion *downstreamtypes.Downs
 		"kots.io/app-slug": a.Slug,
 	}
 	if err := midstream.EnsureDisasterRecoveryLabelTransformer(deployedVersionArchive, additionalLabels); err != nil {
-		deployError = errors.Wrap(err, "failed to ensure disaster recovery label transformer")
-		return deployError
+		return false, errors.Wrap(err, "failed to ensure disaster recovery label transformer")
 	}
 
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(deployedVersionArchive)
 	if err != nil {
-		deployError = errors.Wrap(err, "failed to load kotskinds")
-		return deployError
+		return false, errors.Wrap(err, "failed to load kotskinds")
 	}
 
 	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(a.ID)
 	if err != nil {
-		return errors.Wrap(err, "failed to get registry settings for app")
+		return false, errors.Wrap(err, "failed to get registry settings for app")
 	}
 
 	builder, err := render.NewBuilder(kotsKinds, registrySettings, a.Slug, deployedVersion.Sequence, a.IsAirgap, util.PodNamespace)
 	if err != nil {
-		return errors.Wrap(err, "failed to get template builder")
+		return false, errors.Wrap(err, "failed to get template builder")
 	}
 
 	requireIdentityProvider := false
@@ -197,8 +211,7 @@ func deployVersionForApp(a *apptypes.App, deployedVersion *downstreamtypes.Downs
 		if kotsKinds.Identity.Spec.RequireIdentityProvider.Type == multitype.String {
 			requireIdentityProvider, err = builder.Bool(kotsKinds.Identity.Spec.RequireIdentityProvider.StrVal, false)
 			if err != nil {
-				deployError = errors.Wrap(err, "failed to build kotsv1beta1.Identity.spec.requireIdentityProvider")
-				return deployError
+				return false, errors.Wrap(err, "failed to build kotsv1beta1.Identity.spec.requireIdentityProvider")
 			}
 		} else {
 			requireIdentityProvider = kotsKinds.Identity.Spec.RequireIdentityProvider.BoolVal
@@ -206,8 +219,7 @@ func deployVersionForApp(a *apptypes.App, deployedVersion *downstreamtypes.Downs
 	}
 
 	if requireIdentityProvider && !identitydeploy.IsEnabled(kotsKinds.Identity, kotsKinds.IdentityConfig) {
-		deployError = errors.New("identity service is required but is not enabled")
-		return deployError
+		return false, errors.New("identity service is required but is not enabled")
 	}
 
 	kustomizeBinPath := kotsKinds.GetKustomizeBinaryPath()
@@ -218,29 +230,25 @@ func deployVersionForApp(a *apptypes.App, deployedVersion *downstreamtypes.Downs
 		if ee, ok := err.(*exec.ExitError); ok {
 			err = fmt.Errorf("kustomize stderr: %q", string(ee.Stderr))
 		}
-		deployError = errors.Wrap(err, "failed to run kustomize")
-		return deployError
+		return false, errors.Wrap(err, "failed to run kustomize")
 	}
 	base64EncodedManifests := base64.StdEncoding.EncodeToString(renderedManifests)
 
 	chartArchive, err := renderChartsArchive(deployedVersionArchive, d.Name, kustomizeBinPath)
 	if err != nil {
-		deployError = errors.Wrap(err, "failed to run kustomize on currently deployed charts")
-		return deployError
+		return false, errors.Wrap(err, "failed to run kustomize on currently deployed charts")
 	}
 
 	imagePullSecrets := []string{}
 	secretFilename := filepath.Join(deployedVersionArchive, "overlays", "midstream", "secret.yaml")
 	_, err = os.Stat(secretFilename)
 	if err != nil && !os.IsNotExist(err) {
-		deployError = errors.Wrap(err, "failed to os stat image pull secret file")
-		return deployError
+		return false, errors.Wrap(err, "failed to os stat image pull secret file")
 	}
 	if err == nil {
 		b, err := ioutil.ReadFile(secretFilename)
 		if err != nil {
-			deployError = errors.Wrap(err, "failed to read image pull secret file")
-			return deployError
+			return false, errors.Wrap(err, "failed to read image pull secret file")
 		}
 		imagePullSecrets = strings.Split(string(b), "\n---\n")
 	}
@@ -250,34 +258,29 @@ func deployVersionForApp(a *apptypes.App, deployedVersion *downstreamtypes.Downs
 	previouslyDeployedChartArchive := []byte{}
 	previouslyDeployedSequence, err := store.GetStore().GetPreviouslyDeployedSequence(a.ID, clusterID)
 	if err != nil {
-		deployError = errors.Wrap(err, "failed to get previously deployed sequence")
-		return deployError
+		return false, errors.Wrap(err, "failed to get previously deployed sequence")
 	}
 	if previouslyDeployedSequence != -1 {
 		previouslyDeployedParentSequence, err := store.GetStore().GetParentSequenceForSequence(a.ID, clusterID, previouslyDeployedSequence)
 		if err != nil {
-			deployError = errors.Wrap(err, "failed to get previously deployed parent sequence")
-			return deployError
+			return false, errors.Wrap(err, "failed to get previously deployed parent sequence")
 		}
 
 		if previouslyDeployedParentSequence != -1 {
 			previouslyDeployedVersionArchive, err := ioutil.TempDir("", "kotsadm")
 			if err != nil {
-				deployError = errors.Wrap(err, "failed to create temp dir")
-				return deployError
+				return false, errors.Wrap(err, "failed to create temp dir")
 			}
 			defer os.RemoveAll(previouslyDeployedVersionArchive)
 
 			err = store.GetStore().GetAppVersionArchive(a.ID, previouslyDeployedParentSequence, previouslyDeployedVersionArchive)
 			if err != nil {
-				deployError = errors.Wrap(err, "failed to get previously deployed app version archive")
-				return deployError
+				return false, errors.Wrap(err, "failed to get previously deployed app version archive")
 			}
 
 			previousKotsKinds, err := kotsutil.LoadKotsKindsFromPath(previouslyDeployedVersionArchive)
 			if err != nil {
-				deployError = errors.Wrap(err, "failed to load kotskinds for previously deployed app version")
-				return deployError
+				return false, errors.Wrap(err, "failed to load kotskinds for previously deployed app version")
 			}
 
 			cmd := exec.Command(previousKotsKinds.GetKustomizeBinaryPath(), "build", filepath.Join(previouslyDeployedVersionArchive, "overlays", "downstreams", d.Name))
@@ -286,18 +289,15 @@ func deployVersionForApp(a *apptypes.App, deployedVersion *downstreamtypes.Downs
 				if ee, ok := err.(*exec.ExitError); ok {
 					err = fmt.Errorf("kustomize stderr: %q", string(ee.Stderr))
 				}
-				deployError = errors.Wrap(err, "failed to run kustomize for previously deployed app version")
-				return deployError
+				return false, errors.Wrap(err, "failed to run kustomize for previously deployed app version")
 			}
 
 			base64EncodedPreviousManifests = base64.StdEncoding.EncodeToString(previousRenderedManifests)
 			// Run kustomization on the charts as well
 			previouslyDeployedChartArchive, err = renderChartsArchive(previouslyDeployedVersionArchive, d.Name, kustomizeBinPath)
 			if err != nil {
-				deployError = errors.Wrap(err, "failed to run kustomize on previously deployed charts")
-				return deployError
+				return false, errors.Wrap(err, "failed to run kustomize on previously deployed charts")
 			}
-
 		}
 	}
 
@@ -320,12 +320,19 @@ func deployVersionForApp(a *apptypes.App, deployedVersion *downstreamtypes.Downs
 		AnnotateSlug:         os.Getenv("ANNOTATE_SLUG") != "",
 		KotsKinds:            kotsKinds,
 	}
-	go operatorClient.DeployApp(deployArgs) // this happens async and results are reported once the process is complete.
+	deployed, err = operatorClient.DeployApp(deployArgs)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to deploy app")
+	}
 
-	socketMtx.Lock()
-	lastDeployedSequences[a.ID] = deployedVersion.ParentSequence
-	socketMtx.Unlock()
+	if err := applyStatusInformers(a, deployedVersion, kotsKinds, builder); err != nil {
+		return false, errors.Wrap(err, "failed to apply status informers")
+	}
 
+	return deployed, nil
+}
+
+func applyStatusInformers(a *apptypes.App, deployedVersion *downstreamtypes.DownstreamVersion, kotsKinds *kotsutil.KotsKinds, builder *template.Builder) error {
 	renderedInformers := []appstatetypes.StatusInformerString{}
 
 	// deploy status informers
@@ -354,7 +361,7 @@ func deployVersionForApp(a *apptypes.App, deployedVersion *downstreamtypes.Downs
 			Informers: renderedInformers,
 			Sequence:  deployedVersion.Sequence,
 		}
-		go operatorClient.ApplyAppInformers(informersArgs)
+		operatorClient.ApplyAppInformers(informersArgs)
 	} else {
 		// no informers, set state to ready
 		defaultReadyState := appstatetypes.ResourceStates{

@@ -223,9 +223,8 @@ func (s *KOTSStore) GetStatusForVersion(appID string, clusterID string, sequence
 	if err := row.Scan(&status, &hasError); err != nil {
 		return "", errors.Wrap(err, "failed to scan")
 	}
-	versionStatus := getDownstreamVersionStatus(types.DownstreamVersionStatus(status.String), hasError)
 
-	return types.DownstreamVersionStatus(versionStatus), nil
+	return types.DownstreamVersionStatus(status.String), nil
 }
 
 func (s *KOTSStore) GetDownstreamVersions(appID string, clusterID string, downloadedOnly bool) (*downstreamtypes.DownstreamVersions, error) {
@@ -687,7 +686,7 @@ func (s *KOTSStore) downstreamVersionFromRow(appID string, row scannable) (*down
 
 	v.ChannelID = channelID.String
 
-	v.Status = getDownstreamVersionStatus(types.DownstreamVersionStatus(status.String), hasError)
+	v.Status = types.DownstreamVersionStatus(status.String)
 	v.ParentSequence = parentSequence.Int64
 
 	if deployedAt.Valid {
@@ -897,25 +896,6 @@ func getReleaseNotes(appID string, parentSequence int64) (string, error) {
 	}
 
 	return releaseNotes.String, nil
-}
-
-func getDownstreamVersionStatus(status types.DownstreamVersionStatus, hasError sql.NullBool) types.DownstreamVersionStatus {
-	s := types.VersionUnknown
-
-	// first check if operator has reported back.
-	// and if it hasn't, we should not show "deployed" to the user.
-
-	if hasError.Valid && !hasError.Bool {
-		s = status
-	} else if hasError.Valid && hasError.Bool {
-		s = types.VersionFailed
-	} else if status == types.VersionDeployed {
-		s = types.VersionDeploying
-	} else if status != types.DownstreamVersionStatus("") {
-		s = status
-	}
-
-	return s
 }
 
 func needsKotsUpgrade(app *kotsv1beta1.Application) bool {

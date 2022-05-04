@@ -89,8 +89,8 @@ func DeployVersion(appID string, sequence int64) error {
 		return errors.Wrap(err, "failed to update app downstream current sequence")
 	}
 
-	query = `update app_downstream_version set status = 'deployed', applied_at = $3 where sequence = $1 and app_id = $2`
-	_, err = tx.Exec(query, sequence, appID, time.Now())
+	query = `update app_downstream_version set status = $3, applied_at = $4 where sequence = $1 and app_id = $2`
+	_, err = tx.Exec(query, sequence, appID, storetypes.VersionDeploying, time.Now())
 	if err != nil {
 		return errors.Wrap(err, "failed to update app downstream version status")
 	}
