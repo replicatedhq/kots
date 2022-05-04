@@ -148,7 +148,9 @@ func (c *Client) DeployApp(deployArgs operatortypes.DeployAppArgs) (deployed boo
 		if err != nil {
 			finalError = errors.Wrap(err, "failed to set results")
 		}
-		deployed = !results.IsError
+		if results != nil {
+			deployed = !results.IsError
+		}
 	}()
 
 	deployRes, deployError = c.deployManifests(deployArgs)
