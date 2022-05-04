@@ -15,10 +15,12 @@ build:
       - OKTETO_NAMESPACE=${OKTETO_NAMESPACE}
 
 deploy:
-  - cd kustomize/overlays/okteto && kustomize edit set image kotsadm=${OKTETO_BUILD_KOTSADM_IMAGE}
-  - cd kustomize/overlays/okteto && kustomize edit set image kotsadm-web=${OKTETO_BUILD_KOTSADM_WEB_IMAGE}
-  - cd kustomize/overlays/okteto && kustomize edit set image migrations=${OKTETO_BUILD_KOTSADM_MIGRATIONS_IMAGE}
-#  - cd kustomize/overlays/okteto && kustomize edit set image kurl_proxy=${OKTETO_BUILD_KOTSADM_IMAGE}
+  - |
+    cd kustomize/overlays/okteto
+    kustomize edit set image kotsadm=${OKTETO_BUILD_KOTSADM_IMAGE}
+    kustomize edit set image kotsadm-web=${OKTETO_BUILD_KOTSADM_WEB_IMAGE}
+    kustomize edit set image migrations=${OKTETO_BUILD_KOTSADM_MIGRATIONS_IMAGE}
+#  kustomize edit set image kurl_proxy=${OKTETO_BUILD_KOTSADM_IMAGE}
 
   - kubectl apply -k kustomize/overlays/okteto
 dev:
@@ -31,7 +33,16 @@ dev:
       limits:
         cpu: "2"
         memory: 4Gi
+  kotsadm-migrations:
+    command: bash
+    sync:
+      - migrations/tables:/go/src/github.com/replicatedhq/kots/tables
+    resources:
+      limits:
+        cpu: "1"
+        memory: 1Gi
 
+# These shouldn't be needed anymore
 #  kotsadm:
 #    command: bash
 #    securityContext:
