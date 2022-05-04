@@ -1,5 +1,6 @@
 icon: https://github.com/okteto/polling/raw/master/icon.png
 deploy:
+  - cat kustomize/okteto/velero.yaml | kubectl exec -c vcluster -it vcluster-0 -- kubectl apply -n default -f -
 #  - kubectl cp vcluster-0:/data/k3s-config/kube-config.yaml ./kubeconfig.yaml
 #  - kubectl --kubeconfig kubeconfig.yaml -s https://vcluster-0.vcluster-headless:8443 get pods -n default
 #  #  - envsubst < deploy/okteto/velero/values.tmpl.yaml > deploy/okteto/velero/values.yaml
@@ -20,16 +21,18 @@ deploy:
 #    kustomize edit set image kotsadm-web=registry.replicated.okteto.dev/${OKTETO_NAMESPACE}/kotsadm-web:${OKTETO_GIT_COMMIT}
 #    kustomize edit set image migrations=registry.replicated.okteto.dev/${OKTETO_NAMESPACE}/kotsadm-migrations:${OKTETO_GIT_COMMIT}
 #  - kubectl wait --for=condition=Ready pod/vcluster-0
-  - kubectl exec -c vcluster -it vcluster-0 -- kubectl run velero --image=velero/velero:v1.7.1 -- /velero install
-    --provider aws
-    --plugins velero/velero-plugin-for-aws:v1.3.0
-    --bucket velero
-    --backup-location-config region=s3,s3ForcePathStyle=true,s3Url=http://kotsadm-s3:4569/
-    --secret-file /aws-credentials
-    --use-restic
-  - kubectl exec -c vcluster -it vcluster-0 -- kubectl delete pod/velero
+
+#  - kubectl exec -c vcluster -it vcluster-0 -- kubectl run velero --image=velero/velero:v1.7.1 -- /velero install
+#    --provider aws
+#    --plugins velero/velero-plugin-for-aws:v1.3.0
+#    --bucket velero
+#    --backup-location-config region=s3,s3ForcePathStyle=true,s3Url=http://kotsadm-s3:4569/
+#    --secret-file /aws-credentials
+#    --use-restic
+#  - kubectl exec -c vcluster -it vcluster-0 -- kubectl delete pod/velero
 ##  --snapshot-location-config region=us-east-1
 ##  --prefix /automated-smoke-test-${{ github.run_id }}-${{ matrix.k8s_version }}-$RANDOM
+
 ##  - kubectl cp vcluster-0:/data/k3s-config/kube-config.yaml ./kube-config.yaml
 #  - kubectl exec -it vcluster-0 -c vcluster -- kubectl delete -n default --ignore-not-found=true secret/okteto-regcred
 #  - 'kubectl get secret/okteto-regcred -oyaml | sed "s/namespace: .*/namespace: default/" | kubectl exec -it vcluster-0 -c vcluster -- kubectl apply -f -'
