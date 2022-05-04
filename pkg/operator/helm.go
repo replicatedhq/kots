@@ -8,6 +8,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
@@ -43,8 +44,8 @@ func escapeGoTemplates(content []byte) []byte {
 	return goTemplateRegex.ReplaceAllFunc(content, replace)
 }
 
-func renderChartsArchive(deployedVersionArchive string, name string, kustomizeBinPath string) ([]byte, error) {
-	archiveChartDir := filepath.Join(deployedVersionArchive, "overlays", "downstreams", name, "charts")
+func renderChartsArchive(deployedVersionArchive string, downstreamName string, kustomizeBinPath string) ([]byte, error) {
+	archiveChartDir := filepath.Join(deployedVersionArchive, "overlays", "downstreams", downstreamName, "charts")
 	_, err := os.Stat(archiveChartDir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -125,6 +126,38 @@ func renderChartsArchive(deployedVersionArchive string, name string, kustomizeBi
 	}
 
 	return archive, nil
+}
+
+func getChartsImagePullSecrets(deployedVersionArchive string) ([]string, error) {
+	archiveChartDir := filepath.Join(deployedVersionArchive, "overlays", "midstream", "charts")
+	chartDirs, err := ioutil.ReadDir(archiveChartDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, errors.Wrap(err, "failed to read charts directory")
+	}
+
+	imagePullSecrets := []string{}
+	for _, chartDir := range chartDirs {
+		if !chartDir.IsDir() {
+			continue
+		}
+
+		secretFilename := filepath.Join(archiveChartDir, chartDir.Name(), "secret.yaml")
+		secretData, err := ioutil.ReadFile(secretFilename)
+		if err != nil {
+			if os.IsNotExist(err) {
+				continue
+			}
+			return nil, errors.Wrap(err, "failed to read helm tar.gz file")
+		}
+
+		secrets := strings.Split(string(secretData), "\n---\n")
+		imagePullSecrets = append(imagePullSecrets, secrets...)
+	}
+
+	return imagePullSecrets, nil
 }
 
 func saveHelmFile(rootDir string, relDir string, filename string, content []byte) error {

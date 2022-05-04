@@ -1,6 +1,7 @@
 package operator
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
@@ -38,7 +39,10 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 var operatorClient *client.Client
@@ -252,6 +256,14 @@ func deployVersionForApp(a *apptypes.App, deployedVersion *downstreamtypes.Downs
 		}
 		imagePullSecrets = strings.Split(string(b), "\n---\n")
 	}
+
+	chartPullSecrets, err := getChartsImagePullSecrets(deployedVersionArchive)
+	if err != nil {
+		deployError = errors.Wrap(err, "failed to read image pull secret files from charts")
+		return false, deployError
+	}
+	imagePullSecrets = append(imagePullSecrets, chartPullSecrets...)
+	imagePullSecrets = deduplicateSecrets(imagePullSecrets)
 
 	// get previous manifests (if any)
 	base64EncodedPreviousManifests := ""
@@ -637,4 +649,35 @@ func RedeployAppVersion(appID string, sequence int64) error {
 	socketMtx.Unlock()
 
 	return nil
+}
+
+func deduplicateSecrets(secretSpecs []string) []string {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+
+	uniqueSecrets := map[string]*corev1.Secret{}
+	for _, secretSpec := range secretSpecs {
+		obj, gvk, err := decode([]byte(secretSpec), nil, nil)
+		if err != nil {
+			continue
+		}
+
+		if gvk.Group != "" || gvk.Version != "v1" || gvk.Kind != "Secret" {
+			continue
+		}
+		secret := obj.(*corev1.Secret)
+		uniqueSecrets[secret.Name] = secret
+	}
+
+	secretSpecs = []string{}
+	for _, secret := range uniqueSecrets {
+		s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+		var b bytes.Buffer
+		if err := s.Encode(secret, &b); err != nil {
+			logger.Error(errors.Wrapf(err, "failed to serialize secret %s", secret.Name))
+			continue
+		}
+		secretSpecs = append(secretSpecs, b.String())
+	}
+
+	return secretSpecs
 }
