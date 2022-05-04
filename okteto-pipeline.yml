@@ -2,9 +2,8 @@ icon: https://github.com/okteto/polling/raw/master/icon.png
 deploy:
   - |
     curl -s -L "https://github.com/loft-sh/vcluster/releases/latest" | sed -nE 's!.*"([^"]*vcluster-linux-amd64)".*!https://github.com\1!p' | xargs -n 1 curl -L -o vcluster && chmod +x vcluster
-    sudo mv vcluster /usr/local/bin
-    vcluster create vcluster -n ${OKTETO_NAMESPACE} --upgrade
-    okteto build -f ./okteto.Dockerfile -t okteto.dev/kotsadm:${OKTETO_GIT_COMMIT} .
+    ./vcluster create vcluster -n ${OKTETO_NAMESPACE} --upgrade
+    okteto build -f ./deploy/okteto/okteto.Dockerfile -t okteto.dev/kotsadm:${OKTETO_GIT_COMMIT} .
     okteto build -f ./web/okteto.Dockerfile --build-arg OKTETO_NAMESPACE=${OKTETO_NAMESPACE} -t okteto.dev/kotsadm-web:${OKTETO_GIT_COMMIT} web
     okteto build -f ./migrations/okteto.Dockerfile -t okteto.dev/kotsadm-migrations:${OKTETO_GIT_COMMIT} migrations
 #    okteto build -f ./kurl_proxy/okteto.Dockerfile -t okteto.dev/kurl_proxy:${OKTETO_GIT_COMMIT} kurl_proxy
@@ -17,8 +16,6 @@ deploy:
 #  - kubectl cp vcluster-0:/data/k3s-config/kube-config.yaml ./kube-config.yaml
   - kubectl exec -it vcluster-0 -c vcluster -- kubectl delete -n default --ignore-not-found=true secret/okteto-regcred
   - 'kubectl get secret/okteto-regcred -oyaml | sed "s/namespace: .*/namespace: default/" | kubectl exec -it vcluster-0 -c vcluster -- kubectl apply -f -'
-#  - kubectl exec -c vcluster -it vcluster-0 -- kubectl create ns ${OKTETO_NAMESPACE} | true
-#  - 'kubectl exec -c vcluster -it vcluster-0 -- kubectl patch serviceaccount default -p "{\"imagePullSecrets\": [ { \"name\": \"okteto-regcred\" } ] }" -n ${OKTETO_NAMESPACE}'
   - 'kubectl exec -c vcluster -it vcluster-0 -- kubectl patch sa/default -n default -p "{\"imagePullSecrets\": [ { \"name\": \"okteto-regcred\" } ] }"'
   - kubectl kustomize kustomize/overlays/okteto | kubectl exec -c vcluster -it vcluster-0 -- kubectl apply -n default -f -
 
