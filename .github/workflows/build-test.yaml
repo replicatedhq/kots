@@ -1518,6 +1518,7 @@ jobs:
           aws s3 cp "${BUNDLE}" "s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
           echo "::notice ::support bundle uploaded to aws replicated-dev account s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
 
+
   validate-yamlescape:
     runs-on: ubuntu-20.04
     needs: [ can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
@@ -1602,6 +1603,121 @@ jobs:
           aws s3 cp "${BUNDLE}" "s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
           echo "::notice ::support bundle uploaded to aws replicated-dev account s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
 
+
+  validate-no-redeploy-on-restart:
+    runs-on: ubuntu-20.04
+    needs: [ can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_version: [ v1.23.3-k3s1 ]
+    steps:
+      - uses: replicatedhq/action-k3s@main
+        id: k3s
+        with:
+          version: ${{ matrix.k8s_version }}
+
+      - name: download kots binary
+        uses: actions/download-artifact@v2
+        with:
+          name: kots
+          path: bin/
+
+      - run: chmod +x bin/kots
+
+      - name: run the test
+        env:
+          APP_SLUG: no-redeploy-on-restart
+        run: |
+          set +e
+          echo ${{ secrets.NO_REDEPLOY_ON_RESTART_LICENSE }} | base64 -d > license.yaml
+          ./bin/kots \
+            install $APP_SLUG/automated \
+            --license-file license.yaml \
+            --no-port-forward \
+            --namespace $APP_SLUG \
+            --shared-password password \
+            --kotsadm-registry ttl.sh \
+            --kotsadm-namespace automated-${{ github.run_id }} \
+            --skip-preflights \
+            --kotsadm-tag 2h
+
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "------pods:"
+            kubectl -n $APP_SLUG get pods
+            echo "------kotsadm logs"
+            kubectl logs -l app=kotsadm --tail=100 --namespace $APP_SLUG
+            exit $EXIT_CODE
+          fi
+
+          # wait for application job to be created
+          COUNTER=1
+          while [ "$(kubectl get jobs -l app=example,component=job -n $APP_SLUG --ignore-not-found | awk 'NR>1' | wc -l)" == "0" ]; do
+            COUNTER=$[$COUNTER +1]
+            if [ $COUNTER -gt 60 ]; then
+              echo "Timed out waiting for job to be created"
+              exit -1
+            fi
+            sleep 1
+          done
+
+          # delete the application job and restart the admin console
+          kubectl delete jobs -n $APP_SLUG --all
+          kubectl delete pods -l app=kotsadm -n $APP_SLUG
+
+          # wait for old kotsadm pod to terminate
+          COUNTER=1
+          while [ "$(kubectl get pods -l app=kotsadm -n $APP_SLUG | awk 'NR>1' | wc -l)" != "1" ]; do
+            COUNTER=$[$COUNTER +1]
+            if [ $COUNTER -gt 60 ]; then
+              echo "More than 1 kotsadm pod found"
+              exit -1
+            fi
+            sleep 1
+          done
+
+          # wait for new kotsadm to become ready
+          COUNTER=1
+          while [ "$(kubectl get pods -l app=kotsadm -n $APP_SLUG | awk 'NR>1{print $3}')" != "Running" ]; do
+            COUNTER=$[$COUNTER +1]
+            if [ $COUNTER -gt 60 ]; then
+              echo "Timed out waiting for kotsadm to be ready"
+              exit -1
+            fi
+            sleep 1
+          done
+
+          # validate that the application wasn't re-deployed and the job wasn't re-created
+          if [ "$(kubectl get jobs -l app=example,component=job -n $APP_SLUG --ignore-not-found | awk 'NR>1' | wc -l)" != "0" ]; then
+              echo "App should not be re-deployed after restart"
+              exit -1
+          fi
+
+          printf "Success. App was not re-deployed after restart\n\n"
+
+
+      - name: Generate support bundle on failure
+        if: failure()
+        env:
+          # aws replicated dev account e2e-kots-support-bundle user
+          AWS_ACCESS_KEY_ID: ${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+          KOTS_NAMESPACE: helm-install-order
+        run: |
+          RELEASE="$(
+            curl -sfL https://api.github.com/repos/replicatedhq/troubleshoot/releases/latest | \
+            grep '"tag_name":' | \
+            sed -E 's/.*"(v[^"]+)".*/\1/'
+          )"
+          curl -fsLO "https://github.com/replicatedhq/troubleshoot/releases/download/${RELEASE}/support-bundle_linux_amd64.tar.gz"
+          tar xzf support-bundle_linux_amd64.tar.gz
+          ./support-bundle -n "${KOTS_NAMESPACE}" https://kots.io
+          BUNDLE="$(ls -1 | grep 'support-bundle-.*.tar.gz')"
+          aws s3 cp "${BUNDLE}" "s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
+          echo "::notice ::support bundle uploaded to aws replicated-dev account s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
+
   # this job will validate that all validate-* jobs succeed and is used for the github branch protection rule
   validate-success:
     runs-on: ubuntu-20.04
@@ -1619,5 +1735,6 @@ jobs:
     - validate-change-license
     - validate-helm-install-order
     - validate-yamlescape
+    - validate-no-redeploy-on-restart
     steps:
       - run: echo "Validate success"
