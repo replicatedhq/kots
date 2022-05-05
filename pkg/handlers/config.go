@@ -658,13 +658,9 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 		}
 		sequence = newSequence
 	} else {
-		if err := kotsadmconfig.UpdateConfigValuesInDB(archiveDir, updateApp.ID, int64(sequence)); err != nil {
-			updateAppConfigResponse.Error = "failed to update config values in db"
-			return updateAppConfigResponse, err
-		}
-
-		if err := store.GetStore().CreateAppVersionArchive(updateApp.ID, int64(sequence), archiveDir); err != nil {
-			updateAppConfigResponse.Error = "failed to create app version archive"
+		err := store.GetStore().UpdateAppVersion(updateApp.ID, sequence, nil, archiveDir, "Config Change", false, &version.DownstreamGitOps{}, render.Renderer{})
+		if err != nil {
+			updateAppConfigResponse.Error = "failed to update app version"
 			return updateAppConfigResponse, err
 		}
 	}

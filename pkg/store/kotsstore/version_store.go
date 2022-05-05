@@ -519,7 +519,12 @@ func (s *KOTSStore) upsertAppVersion(tx *sql.Tx, appID string, sequence int64, b
 		return errors.Wrap(err, "failed to upsert app version record")
 	}
 
-	if err := secrets.ReplaceSecretsInPath(filesInDir); err != nil {
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return errors.Wrap(err, "failed to get k8s clientset")
+	}
+
+	if err := secrets.ReplaceSecretsInPath(filesInDir, clientset); err != nil {
 		return errors.Wrap(err, "failed to replace secrets")
 	}
 	if err := s.CreateAppVersionArchive(appID, sequence, filesInDir); err != nil {

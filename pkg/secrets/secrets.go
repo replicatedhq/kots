@@ -1,27 +1,22 @@
 package secrets
 
 import (
+	"bytes"
 	"context"
 	"io/ioutil"
+	"k8s.io/client-go/kubernetes"
 	"os"
 	"path/filepath"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func ReplaceSecretsInPath(archiveDir string) error {
+func ReplaceSecretsInPath(archiveDir string, clientset kubernetes.Interface) error {
 	logger.Debug("checking for secrets replacers")
-
-	// look for a license secret
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return errors.Wrap(err, "failed to get k8s clientset")
-	}
 
 	secrets, err := clientset.CoreV1().Secrets(util.PodNamespace).List(context.TODO(), metav1.ListOptions{
 		LabelSelector: "kots.io/buildphase=secret",
@@ -45,12 +40,12 @@ func ReplaceSecretsInPath(archiveDir string) error {
 	case "sealedsecrets":
 		return replaceSecretsWithSealedSecrets(archiveDir, secret.Data)
 	default:
-		return errors.Errorf("unkknown secret type %q", secretType)
+		return errors.Errorf("unknown secret type %q", secretType)
 	}
 }
 
-func getSecretsInPath(archiveDir string) ([]string, error) {
-	secretPaths := []string{}
+func findPathsWithSecrets(archiveDir string) ([]string, error) {
+	var paths []string
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 
 	err := filepath.Walk(archiveDir, func(path string, info os.FileInfo, err error) error {
@@ -67,22 +62,26 @@ func getSecretsInPath(archiveDir string) ([]string, error) {
 			return err
 		}
 
-		_, gvk, err := decode(contents, nil, nil)
-		if err != nil {
-			return nil
+		multiDocYaml := bytes.Split(contents, []byte("\n---\n"))
+		for _, doc := range multiDocYaml {
+			_, gvk, err := decode(doc, nil, nil)
+			if err != nil {
+				// not a yaml file
+				continue
+			}
+			if gvk.Group != "" || gvk.Version != "v1" || gvk.Kind != "Secret" {
+				continue
+			}
+			paths = append(paths, path)
+			break
 		}
 
-		if gvk.Group != "" || gvk.Version != "v1" || gvk.Kind != "Secret" {
-			return nil
-		}
-
-		secretPaths = append(secretPaths, path)
 		return nil
 	})
 
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "could not walk through the archive directory")
 	}
 
-	return secretPaths, nil
+	return paths, nil
 }
