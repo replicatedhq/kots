@@ -14,6 +14,7 @@ metadata:
   name: velero-install
 spec:
   backoffLimit: 3
+  ttlSecondsAfterFinished: 0
   template:
     metadata:
       name: velero-install
@@ -38,7 +39,6 @@ spec:
           volumeMounts:
             - name: velero-aws
               mountPath: /aws-credentials
-
       volumes:
         - name: velero-aws
           configMap:
