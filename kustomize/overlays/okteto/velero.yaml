@@ -22,7 +22,7 @@ spec:
       serviceAccountName: kotsadm
       containers:
         - name: velero
-          image: velero/velero:v1.7.1
+          image: velero/velero:v1.7.2
           imagePullPolicy: IfNotPresent
           command:
             - /velero
