@@ -526,8 +526,8 @@ func checkRestoreComplete(a *apptypes.App, restore *velerov1.Restore) error {
 
 		// mark the sequence as deployed both in the db and sequences history
 		// so that the admin console does not try to re-deploy it
-		if err := version.DeployVersion(a.ID, sequence); err != nil {
-			return errors.Wrap(err, "failed to mark app version as deployed")
+		if err := store.GetStore().SetDownstreamVersionStatus(a.ID, sequence, storetypes.VersionDeployed, ""); err != nil {
+			return errors.Wrap(err, "failed to set downstream version status to deployed")
 		}
 		socketMtx.Lock()
 		lastDeployedSequences[a.ID] = sequence
