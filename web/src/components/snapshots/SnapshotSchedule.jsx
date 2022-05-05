@@ -95,11 +95,7 @@ class SnapshotSchedule extends Component {
     } else {
       nextState[field] = e.target.value;
     }
-    this.setState(nextState, () => {
-      if (field === "frequency") {
-        this.getReadableCronExpression();
-      }
-    });
+    this.setState(nextState);
   }
 
   getReadableCronExpression = () => {
@@ -406,12 +402,22 @@ class SnapshotSchedule extends Component {
                         isOptionSelected={(option) => { option.value === selectedSchedule }}
                       />
                     </div>
-                    {this.state.selectedSchedule.value === "custom" &&
-                      <div className="flex1 u-paddingLeft--5">
-                        <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Cron expression</p>
-                        <input type="text" className="Input" placeholder="0 0 * * MON" value={this.state.frequency} onChange={(e) => { this.handleFormChange("frequency", e) }} />
-                      </div>
-                    }
+                    <div className="flex1 u-paddingLeft--5">
+                      <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Cron expression</p>
+                      <input
+                        type="text"
+                        className="Input"
+                        placeholder="0 0 * * MON"
+                        value={this.state.frequency}
+                        onChange={(e) => { 
+                          const schedule = find(SCHEDULES, { value: e.target.value });
+                          const selectedSchedule = schedule ? schedule : find(SCHEDULES, { value: "custom" });
+                          this.setState({ frequency: e.target.value, selectedSchedule }, () => {
+                            this.getReadableCronExpression();
+                          });
+                        }} 
+                      />
+                    </div>
                   </div>
                   {hasValidCron ?
                     <p className="cron-expression-text">{this.state.humanReadableCron}</p>
