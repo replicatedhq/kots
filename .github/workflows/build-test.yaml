@@ -1653,7 +1653,7 @@ jobs:
 
           # wait for application job to be created
           COUNTER=1
-          while [ "$(kubectl get jobs -l app=example,component=job -n test --ignore-not-found | awk 'NR>1' | wc -l)" == "0" ]; do
+          while [ "$(kubectl get jobs -l app=example,component=job -n $APP_SLUG --ignore-not-found | awk 'NR>1' | wc -l)" == "0" ]; do
             COUNTER=$[$COUNTER +1]
             if [ $COUNTER -gt 60 ]; then
               echo "Timed out waiting for job to be created"
@@ -1663,12 +1663,12 @@ jobs:
           done
 
           # delete the application job and restart the admin console
-          kubectl delete jobs -n test --all
-          kubectl delete pods -l app=kotsadm -n default
+          kubectl delete jobs -n $APP_SLUG --all
+          kubectl delete pods -l app=kotsadm -n $APP_SLUG
 
           # wait for old kotsadm pod to terminate
           COUNTER=1
-          while [ "$(kubectl get pods -l app=kotsadm -n default | awk 'NR>1' | wc -l)" != "1" ]; do
+          while [ "$(kubectl get pods -l app=kotsadm -n $APP_SLUG | awk 'NR>1' | wc -l)" != "1" ]; do
             COUNTER=$[$COUNTER +1]
             if [ $COUNTER -gt 60 ]; then
               echo "More than 1 kotsadm pod found"
@@ -1679,7 +1679,7 @@ jobs:
 
           # wait for new kotsadm to become ready
           COUNTER=1
-          while [ "$(kubectl get pods -l app=kotsadm -n default | awk 'NR>1{print $3}')" != "Running" ]; do
+          while [ "$(kubectl get pods -l app=kotsadm -n $APP_SLUG | awk 'NR>1{print $3}')" != "Running" ]; do
             COUNTER=$[$COUNTER +1]
             if [ $COUNTER -gt 60 ]; then
               echo "Timed out waiting for kotsadm to be ready"
@@ -1689,7 +1689,7 @@ jobs:
           done
 
           # validate that the application wasn't re-deployed and the job wasn't re-created
-          if [ "$(kubectl get jobs -l app=example,component=job -n test --ignore-not-found | awk 'NR>1' | wc -l)" != "0" ]; then
+          if [ "$(kubectl get jobs -l app=example,component=job -n $APP_SLUG --ignore-not-found | awk 'NR>1' | wc -l)" != "0" ]; then
               echo "App should not be re-deployed after restart"
               exit -1
           fi
