@@ -8,18 +8,15 @@ data:
       aws_access_key_id=not-a-key
       aws_secret_access_key=not-a-secret
 ---
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: batch/v1
+kind: Job
 metadata:
   name: velero-install
 spec:
-  selector:
-    matchLabels:
-      app: velero
+  backoffLimit: 3
   template:
     metadata:
-      labels:
-        app: velero
+      name: velero-install
     spec:
       serviceAccountName: kotsadm
       containers:
@@ -34,6 +31,7 @@ spec:
             - --plugins=velero/velero-plugin-for-aws:v1.3.0
             - --bucket=velero
             - --backup-location-config=region=s3,s3ForcePathStyle=true,s3Url=http://kotsadm-s3:4569/
+            - --snapshot-location-config=region=s3,s3ForcePathStyle=true,s3Url=http://kotsadm-s3:4569/
             - --secret-file=/aws-credentials/aws-credentials
             - --use-restic
           volumeMounts:
