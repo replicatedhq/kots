@@ -13,8 +13,6 @@ import { Repeater } from "../../utilities/repeater";
 
 import "../../scss/components/troubleshoot/GenerateSupportBundle.scss";
 
-const NEW_CLUSTER = "Create a new downstream cluster";
-
 class GenerateSupportBundle extends React.Component {
   constructor(props) {
     super(props);
@@ -24,6 +22,7 @@ class GenerateSupportBundle extends React.Component {
       totalBundles: null,
       showRunCommand: false,
       isGeneratingBundle: false,
+      initialLoading: true,
       displayRedactorModal: false,
       loadingSupportBundles: false,
       supportBundles: [],
@@ -38,11 +37,12 @@ class GenerateSupportBundle extends React.Component {
   }
 
   componentDidMount() {
-    this.listSupportBundles();
+    this.checkIfSupportBundleIsBeingGenerated();
   }
 
   componentWillUnmount() {
     this.state.listSupportBundlesJob.stop();
+    this.state.pollForBundleAnalysisProgress.stop();
   }
 
   componentDidUpdate(lastProps, lastState) {
@@ -81,6 +81,69 @@ class GenerateSupportBundle extends React.Component {
     }
   }
 
+  checkIfSupportBundleIsBeingGenerated() {
+    this.setState({
+      loadingSupportBundles: true,
+      errorMsg: "",
+      displayErrorModal: false,
+      networkErr: false
+    });
+
+    fetch(`${process.env.API_ENDPOINT}/troubleshoot/app/${this.props.watch?.slug}/supportbundles`, {
+      headers: {
+        "Authorization": Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      method: "GET",
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          this.setState({
+            loadingSupportBundles: false,
+            errorMsg: `Unexpected status code: ${res.status}`,
+            displayErrorModal: true,
+            networkErr: false
+          });
+          return;
+        }
+        const response = await res.json();
+        const bundleRunning = response.supportBundles.find((bundle) => bundle.status === "running");
+        if (bundleRunning) {
+          console.log(bundleRunning);
+          this.setState({
+            newBundleSlug: bundleRunning.slug,
+            isGeneratingBundle: true,
+            generateBundleErrMsg: "",
+            supportBundles: response.supportBundles,
+            loadingSupportBundles: false,
+            errorMsg: "",
+            displayErrorModal: false,
+            networkErr: false,
+            initialLoading: false,
+          });
+
+          this.state.pollForBundleAnalysisProgress.start(this.pollForBundleAnalysisProgress, 1000);
+        } else {
+          this.setState({
+            initialLoading: false,
+            supportBundles: response.supportBundles,
+            loadingSupportBundles: false,
+            errorMsg: "",
+            displayErrorModal: false,
+            networkErr: false
+          });
+        }
+      })
+      .catch((err) => {
+        console.log(err)
+        this.setState({
+          loadingSupportBundles: false,
+          errorMsg: err ? err.message : "Something went wrong, please try again.",
+          displayErrorModal: true, networkErr: true
+        });
+      });
+  }
+
   listSupportBundles = () => {
     return new Promise((resolve, reject) => {
       this.setState({ loadingSupportBundles: true, errorMsg: "", displayErrorModal: false, networkErr: false });
@@ -94,7 +157,11 @@ class GenerateSupportBundle extends React.Component {
       })
         .then(async (res) => {
           if (!res.ok) {
-            this.setState({ loadingSupportBundles: false, errorMsg: `Unexpected status code: ${res.status}`, displayErrorModal: true, networkErr: false });
+            this.setState({
+              loadingSupportBundles: false,
+              errorMsg: `Unexpected status code: ${res.status}`,
+              displayErrorModal: true, networkErr: false
+            });
             return;
           }
           const response = await res.json();
@@ -110,7 +177,12 @@ class GenerateSupportBundle extends React.Component {
         })
         .catch((err) => {
           console.log(err)
-          this.setState({ loadingSupportBundles: false, errorMsg: err ? err.message : "Something went wrong, please try again.", displayErrorModal: true, networkErr: true });
+          this.setState({
+            loadingSupportBundles: false,
+            errorMsg: err ? err.message : "Something went wrong, please try again.",
+            displayErrorModal: true,
+            networkErr: true
+          });
           reject(err);
         });
     });
@@ -159,6 +231,9 @@ class GenerateSupportBundle extends React.Component {
 
   pollForBundleAnalysisProgress = async () => {
     const { newBundleSlug } = this.state;
+    if (!newBundleSlug) {
+      return;
+    }
     fetch(`${process.env.API_ENDPOINT}/troubleshoot/supportbundle/${newBundleSlug}`, {
       headers: {
         "Content-Type": "application/json",
@@ -212,7 +287,7 @@ class GenerateSupportBundle extends React.Component {
           return;
         }
         const response = await res.json();
-        this.setState( { newBundleSlug: response.slug });
+        this.setState({ newBundleSlug: response.slug });
         this.state.pollForBundleAnalysisProgress.start(this.pollForBundleAnalysisProgress, 1000);
       })
       .catch((err) => {
@@ -261,7 +336,14 @@ class GenerateSupportBundle extends React.Component {
   }
 
   render() {
-    const { displayUploadModal, showRunCommand, isGeneratingBundle, generateBundleErrMsg, errorMsg } = this.state;
+    const {
+      displayUploadModal,
+      showRunCommand,
+      isGeneratingBundle,
+      initialLoading,
+      generateBundleErrMsg,
+      errorMsg
+    } = this.state;
     const { watch } = this.props;
     const appTitle = watch.watchName || watch.name;
 
@@ -285,16 +367,17 @@ class GenerateSupportBundle extends React.Component {
           <div className="flex1 flex-column u-paddingRight--30">
             <div>
               {generateBundleErrMsg && <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{generateBundleErrMsg}</p>}
-              {isGeneratingBundle ?
+              {isGeneratingBundle && (
                 <div className="u-marginTop--20 flex-column justifyContent--center alignItems--center flex1 u-minWidth--full">
                   <SupportBundleCollectProgress appTitle={appTitle} progressData={this.state.bundleAnalysisProgress} analysisResultCheckCount={this.state.analysisResultCheckCount} />
                 </div>
-                :
+              )}
+              {!initialLoading && !isGeneratingBundle && (
                 <div className="flex alignItems--center u-marginTop--20">
                   <button className="btn primary blue" type="button" onClick={this.collectBundle.bind(this, watch.downstream?.cluster?.id)}>Analyze {appTitle}</button>
                   <span className="replicated-link flex alignItems--center u-fontSize--small u-marginLeft--20" onClick={this.toggleRedactorModal}><span className="icon clickable redactor-spec-icon u-marginRight--5" /> Configure redaction</span>
                 </div>
-              }
+              )}
               {showRunCommand ?
                 <div>
                   <div className="u-marginTop--40">
