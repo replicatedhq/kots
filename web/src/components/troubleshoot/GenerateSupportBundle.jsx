@@ -231,6 +231,8 @@ class GenerateSupportBundle extends React.Component {
   pollForBundleAnalysisProgress = async () => {
     const { newBundleSlug } = this.state;
     if (!newBundleSlug) {
+      // component may start polling before bundle slug is set
+      // this is to prevent an api call if the slug is not set
       return;
     }
     fetch(`${process.env.API_ENDPOINT}/troubleshoot/supportbundle/${newBundleSlug}`, {
