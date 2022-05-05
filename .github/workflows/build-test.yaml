@@ -1677,16 +1677,11 @@ jobs:
             sleep 1
           done
 
-          # wait for new kotsadm to become ready
-          COUNTER=1
-          while [ "$(kubectl get pods -l app=kotsadm -n $APP_SLUG | awk 'NR>1{print $3}')" != "Running" ]; do
-            COUNTER=$[$COUNTER +1]
-            if [ $COUNTER -gt 60 ]; then
-              echo "Timed out waiting for kotsadm to be ready"
-              exit -1
-            fi
-            sleep 1
-          done
+          # wait for new kotsadm pod to become ready
+          kubectl wait --for=condition=ready pod -l app=kotsadm -n $APP_SLUG --timeout=60s
+
+          # delay in case the app takes a bit to be deployed
+          sleep 20
 
           # validate that the application wasn't re-deployed and the job wasn't re-created
           if [ "$(kubectl get jobs -l app=example,component=job -n $APP_SLUG --ignore-not-found | awk 'NR>1' | wc -l)" != "0" ]; then
