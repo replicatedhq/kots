@@ -18,7 +18,7 @@ import (
 )
 
 func replaceSecretsWithSealedSecrets(archivePath string, config map[string][]byte) error {
-	secretPaths, err := getSecretsInPath(archivePath)
+	secretPaths, err := findPathsWithSecrets(archivePath)
 	if err != nil {
 		return errors.Wrap(err, "failed to get secrets in path")
 	}
@@ -46,26 +46,24 @@ func replaceSecretsWithSealedSecrets(archivePath string, config map[string][]byt
 			return errors.Wrap(err, "failed to read file")
 		}
 
-		multiDocYaml := bytes.Split(contents, []byte("---\n"))
-		var secrets []byte
-		var nonSecrets []byte
-		for i := 0; i < len(multiDocYaml); i++ {
-			object := multiDocYaml[i]
+		multiDocYaml := bytes.Split(contents, []byte("\n---\n"))
+		var secrets [][]byte
+		var nonSecrets [][]byte
+
+		for _, object := range multiDocYaml {
 			if string(object) == "" {
 				continue
 			}
 
 			decoded, _, err := decode(object, nil, nil)
 			if err != nil {
-				nonSecrets = append(nonSecrets, []byte("---\n")...)
-				nonSecrets = append(nonSecrets, multiDocYaml[i]...)
+				nonSecrets = append(nonSecrets, object)
 				continue
 			}
 
 			secret, ok := decoded.(*v1.Secret)
 			if !ok {
-				nonSecrets = append(nonSecrets, []byte("---\n")...)
-				nonSecrets = append(nonSecrets, multiDocYaml[i]...)
+				nonSecrets = append(nonSecrets, object)
 				continue
 			}
 
@@ -73,11 +71,19 @@ func replaceSecretsWithSealedSecrets(archivePath string, config map[string][]byt
 			if err != nil {
 				return err
 			}
-			secrets = append(secrets, []byte("---\n")...)
-			secrets = append(secrets, secretBytes...)
+			secrets = append(secrets, secretBytes)
 		}
 
-		fileContents := append(secrets, nonSecrets...)
+		var fileContents []byte
+		if len(nonSecrets) > 0 {
+			fileContents = append(fileContents, []byte("\n---\n")...)
+			fileContents = append(fileContents, bytes.Join(nonSecrets, []byte("\n---\n"))...)
+		}
+		if len(secrets) > 0 {
+			fileContents = append(fileContents, []byte("\n---\n")...)
+			fileContents = append(fileContents, bytes.Join(secrets, []byte("\n---\n"))...)
+		}
+
 		if err := ioutil.WriteFile(secretPath, fileContents, 0644); err != nil {
 			return errors.Wrap(err, "failed to write sealed secret")
 		}

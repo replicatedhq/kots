@@ -1,6 +1,7 @@
 package secrets
 
 import (
+	"bytes"
 	"context"
 	"io/ioutil"
 	"k8s.io/client-go/kubernetes"
@@ -43,13 +44,13 @@ func ReplaceSecretsInPath(archiveDir string, clientset kubernetes.Interface) err
 	}
 }
 
-func getSecretsInPath(archiveDir string) ([]string, error) {
-	secretPaths := []string{}
+func findPathsWithSecrets(archiveDir string) ([]string, error) {
+	var paths []string
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 
 	err := filepath.Walk(archiveDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return errors.Wrap(err, "could not walk through the archive directory")
+			return err
 		}
 
 		if info.IsDir() {
@@ -61,22 +62,26 @@ func getSecretsInPath(archiveDir string) ([]string, error) {
 			return err
 		}
 
-		_, gvk, err := decode(contents, nil, nil)
-		if err != nil {
-			return nil
+		multiDocYaml := bytes.Split(contents, []byte("\n---\n"))
+		for _, doc := range multiDocYaml {
+			_, gvk, err := decode(doc, nil, nil)
+			if err != nil {
+				// not a yaml file
+				continue
+			}
+			if gvk.Group != "" || gvk.Version != "v1" || gvk.Kind != "Secret" {
+				continue
+			}
+			paths = append(paths, path)
+			break
 		}
 
-		if gvk.Group != "" || gvk.Version != "v1" || gvk.Kind != "Secret" {
-			return nil
-		}
-
-		secretPaths = append(secretPaths, path)
 		return nil
 	})
 
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "could not walk through the archive directory")
 	}
 
-	return secretPaths, nil
+	return paths, nil
 }

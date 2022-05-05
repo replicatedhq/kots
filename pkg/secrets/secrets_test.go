@@ -235,6 +235,41 @@ var _ = Describe("Secrets", func() {
 			Expect(string(secretContents)).To(Equal(secret))
 		})
 
+		It("does not update the secret if the labels are not correct", func() {
+			var labels = make(map[string]string)
+			labels["notASecretLabel"] = "also-not-a-secret"
+			clientset = fake.NewSimpleClientset(&v1.SecretList{
+				TypeMeta: metav1.TypeMeta{},
+				ListMeta: metav1.ListMeta{},
+				Items: []v1.Secret{{
+					TypeMeta: metav1.TypeMeta{},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "secret1",
+						Namespace: namespace,
+						Labels:    labels,
+					},
+				}},
+			})
+
+			wronglyLabeledSecret := fmt.Sprintf(`---
+apiVersion: v1
+kind: "Secret"
+metadata:
+  name: secret1
+  namespace: %s
+  labels:
+    notASecretLabel: also-not-a-secret`, namespace)
+			_, err := tmpFile.WriteString(wronglyLabeledSecret)
+			Expect(err).ToNot(HaveOccurred())
+
+			err = secrets.ReplaceSecretsInPath(tmpArchiveDir, clientset)
+			Expect(err).ToNot(HaveOccurred())
+
+			secretContents, err := ioutil.ReadFile(tmpFile.Name())
+			Expect(err).ToNot(HaveOccurred())
+			Expect(string(secretContents)).To(ContainSubstring(wronglyLabeledSecret))
+		})
+
 		It("returns an error if the certificate key is missing", func() {
 			clientset = fake.NewSimpleClientset(&v1.SecretList{
 				TypeMeta: metav1.TypeMeta{},
@@ -549,7 +584,8 @@ kind: Pod
 metadata:
   creationTimestamp: null
   name: test-pod
-  namespace: test-namespace`
+  namespace: test-namespace
+`
 				originalSecretContents := `---
 apiVersion: v1
 kind: Secret
@@ -605,7 +641,8 @@ kind: Pod
 metadata:
   creationTimestamp: null
   name: test-pod
-  namespace: test-namespace`
+  namespace: test-namespace
+`
 				originalSecretContents := `---
 apiVersion: v1
 kind: Secret
@@ -661,7 +698,8 @@ kind: Secret
 metadata:
   creationTimestamp: null
   name: test-unlabeled-secret
-  namespace: test-namespace`
+  namespace: test-namespace
+`
 				originalSecretContents := `---
 apiVersion: v1
 kind: Secret
@@ -688,11 +726,16 @@ metadata:
   creationTimestamp: null
   name: test-secret-1
   namespace: test-namespace`
+
+				undesiredExtraWhitespace := `---
+
+`
 				updatedFile, err := ioutil.ReadFile(tmpFile.Name())
 				Expect(err).ToNot(HaveOccurred())
 				Expect(string(updatedFile)).To(ContainSubstring(transformedSecret))
 				Expect(string(updatedFile)).ToNot(ContainSubstring(originalSecretContents))
 				Expect(string(updatedFile)).To(ContainSubstring(unlabeledSecretContents))
+				Expect(string(updatedFile)).ToNot(ContainSubstring(undesiredExtraWhitespace))
 			})
 		})
 	})
