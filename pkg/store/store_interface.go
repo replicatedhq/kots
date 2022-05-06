@@ -144,6 +144,7 @@ type DownstreamStore interface {
 	GetPreviouslyDeployedSequence(appID string, clusterID string) (int64, error)
 	SetDownstreamVersionStatus(appID string, sequence int64, status types.DownstreamVersionStatus, statusInfo string) error
 	GetDownstreamVersionStatus(appID string, sequence int64) (types.DownstreamVersionStatus, error)
+	GetDownstreamVersionSource(appID string, sequence int64) (string, error)
 	GetIgnoreRBACErrors(appID string, sequence int64) (bool, error)
 	GetCurrentDownstreamVersion(appID string, clusterID string) (*downstreamtypes.DownstreamVersion, error)
 	GetStatusForVersion(appID string, clusterID string, sequence int64) (types.DownstreamVersionStatus, error)
