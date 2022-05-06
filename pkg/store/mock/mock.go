@@ -1377,6 +1377,20 @@ func (mr *MockStoreMockRecorder) ListSupportBundles(appID interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSupportBundles", reflect.TypeOf((*MockStore)(nil).ListSupportBundles), appID)
 }
 
+// MarkAsCurrentDownstreamVersion mocks base method.
+func (m *MockStore) MarkAsCurrentDownstreamVersion(appID string, sequence int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MarkAsCurrentDownstreamVersion", appID, sequence)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// MarkAsCurrentDownstreamVersion indicates an expected call of MarkAsCurrentDownstreamVersion.
+func (mr *MockStoreMockRecorder) MarkAsCurrentDownstreamVersion(appID, sequence interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkAsCurrentDownstreamVersion", reflect.TypeOf((*MockStore)(nil).MarkAsCurrentDownstreamVersion), appID, sequence)
+}
+
 // RemoveApp mocks base method.
 func (m *MockStore) RemoveApp(appID string) error {
 	m.ctrl.T.Helper()
@@ -3269,6 +3283,20 @@ func (m *MockDownstreamStore) IsDownstreamDeploySuccessful(appID, clusterID stri
 func (mr *MockDownstreamStoreMockRecorder) IsDownstreamDeploySuccessful(appID, clusterID, sequence interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsDownstreamDeploySuccessful", reflect.TypeOf((*MockDownstreamStore)(nil).IsDownstreamDeploySuccessful), appID, clusterID, sequence)
+}
+
+// MarkAsCurrentDownstreamVersion mocks base method.
+func (m *MockDownstreamStore) MarkAsCurrentDownstreamVersion(appID string, sequence int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MarkAsCurrentDownstreamVersion", appID, sequence)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// MarkAsCurrentDownstreamVersion indicates an expected call of MarkAsCurrentDownstreamVersion.
+func (mr *MockDownstreamStoreMockRecorder) MarkAsCurrentDownstreamVersion(appID, sequence interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkAsCurrentDownstreamVersion", reflect.TypeOf((*MockDownstreamStore)(nil).MarkAsCurrentDownstreamVersion), appID, sequence)
 }
 
 // SetDownstreamVersionStatus mocks base method.
