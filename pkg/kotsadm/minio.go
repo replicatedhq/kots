@@ -249,7 +249,7 @@ func MigrateExistingMinioFilesystemDeployments(log *logger.CLILogger, deployOpti
 
 	// validate backups
 	log.Info("Validating backups have migrated")
-	currentBackups, err := snapshot.ListInstanceBackups(context.TODO(), snapshot.ListInstanceBackupsOptions{Namespace: deployOptions.Namespace})
+	currentBackups, err := snapshot.ListAllBackups(context.TODO(), snapshot.ListInstanceBackupsOptions{Namespace: deployOptions.Namespace})
 	if err != nil {
 		return errors.Wrap(err, "failed to list revised backups")
 	}
