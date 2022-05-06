@@ -121,6 +121,14 @@ class SnapshotSchedule extends Component {
     });
   }
 
+  handleCronChange = (e) => {
+    const schedule = find(SCHEDULES, { value: e.target.value });
+    const selectedSchedule = schedule ? schedule : find(SCHEDULES, { value: "custom" });
+    this.setState({ frequency: e.target.value, selectedSchedule }, () => {
+      this.getReadableCronExpression();
+    });
+  }
+
   handleRetentionUnitChange = (retentionUnit) => {
     this.setState({ selectedRetentionUnit: retentionUnit });
   }
@@ -409,13 +417,7 @@ class SnapshotSchedule extends Component {
                         className="Input"
                         placeholder="0 0 * * MON"
                         value={this.state.frequency}
-                        onChange={(e) => { 
-                          const schedule = find(SCHEDULES, { value: e.target.value });
-                          const selectedSchedule = schedule ? schedule : find(SCHEDULES, { value: "custom" });
-                          this.setState({ frequency: e.target.value, selectedSchedule }, () => {
-                            this.getReadableCronExpression();
-                          });
-                        }} 
+                        onChange={(e) => this.handleCronChange(e)} 
                       />
                     </div>
                   </div>
