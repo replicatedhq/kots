@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/blang/semver"
 	"github.com/lib/pq"
@@ -98,6 +99,34 @@ func (s *KOTSStore) GetPreviouslyDeployedSequence(appID string, clusterID string
 	}
 
 	return -1, nil
+}
+
+func (s *KOTSStore) MarkAsCurrentDownstreamVersion(appID string, sequence int64) error {
+	db := persistence.MustGetDBSession()
+
+	tx, err := db.Begin()
+	if err != nil {
+		return errors.Wrap(err, "failed to begin")
+	}
+	defer tx.Rollback()
+
+	query := `update app_downstream set current_sequence = $1 where app_id = $2`
+	_, err = tx.Exec(query, sequence, appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to update app downstream current sequence")
+	}
+
+	query = `update app_downstream_version set status = $3, applied_at = $4 where sequence = $1 and app_id = $2`
+	_, err = tx.Exec(query, sequence, appID, types.VersionDeployed, time.Now())
+	if err != nil {
+		return errors.Wrap(err, "failed to update app downstream version status")
+	}
+
+	if err := tx.Commit(); err != nil {
+		return errors.Wrap(err, "failed to commit")
+	}
+
+	return nil
 }
 
 // SetDownstreamVersionStatus updates the status and status info for the downstream version with the given sequence and app id

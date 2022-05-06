@@ -142,6 +142,7 @@ type DownstreamStore interface {
 	GetCurrentParentSequence(appID string, clusterID string) (int64, error)
 	GetParentSequenceForSequence(appID string, clusterID string, sequence int64) (int64, error)
 	GetPreviouslyDeployedSequence(appID string, clusterID string) (int64, error)
+	MarkAsCurrentDownstreamVersion(appID string, sequence int64) error
 	SetDownstreamVersionStatus(appID string, sequence int64, status types.DownstreamVersionStatus, statusInfo string) error
 	GetDownstreamVersionStatus(appID string, sequence int64) (types.DownstreamVersionStatus, error)
 	GetDownstreamVersionSource(appID string, sequence int64) (string, error)
