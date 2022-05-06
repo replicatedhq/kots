@@ -651,15 +651,19 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 	}
 
 	if createNewVersion {
-		newSequence, err := store.GetStore().CreateAppVersion(updateApp.ID, &sequence, archiveDir, "Config Change", false, &version.DownstreamGitOps{}, render.Renderer{})
+		newSequence, err := store.GetStore().CreateAppVersion(updateApp.ID, &sequence, archiveDir, "Config Change", skipPreflights, &version.DownstreamGitOps{}, render.Renderer{})
 		if err != nil {
 			updateAppConfigResponse.Error = "failed to create an app version"
 			return updateAppConfigResponse, err
 		}
 		sequence = newSequence
 	} else {
-		err := store.GetStore().UpdateAppVersion(updateApp.ID, sequence, nil, archiveDir, "Config Change", false, &version.DownstreamGitOps{}, render.Renderer{})
+		source, err := store.GetStore().GetDownstreamVersionSource(updateApp.ID, sequence)
 		if err != nil {
+			updateAppConfigResponse.Error = "failed to get existing downstream version source"
+			return updateAppConfigResponse, err
+		}
+		if err := store.GetStore().UpdateAppVersion(updateApp.ID, sequence, nil, archiveDir, source, skipPreflights, &version.DownstreamGitOps{}, render.Renderer{}); err != nil {
 			updateAppConfigResponse.Error = "failed to update app version"
 			return updateAppConfigResponse, err
 		}

@@ -129,6 +129,23 @@ func (s *KOTSStore) GetDownstreamVersionStatus(appID string, sequence int64) (ty
 	return types.DownstreamVersionStatus(status.String), nil
 }
 
+// GetDownstreamVersionSource gets the source for the downstream version with the given sequence and app id
+func (s *KOTSStore) GetDownstreamVersionSource(appID string, sequence int64) (string, error) {
+	db := persistence.MustGetDBSession()
+	query := `select source from app_downstream_version where app_id = $1 and sequence = $2`
+	row := db.QueryRow(query, appID, sequence)
+	var source sql.NullString
+	err := row.Scan(&source)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", nil
+		}
+		return "", errors.Wrap(err, "failed to get downstream version")
+	}
+
+	return source.String, nil
+}
+
 func (s *KOTSStore) GetIgnoreRBACErrors(appID string, sequence int64) (bool, error) {
 	db := persistence.MustGetDBSession()
 	query := `SELECT preflight_ignore_permissions FROM app_downstream_version
