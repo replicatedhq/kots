@@ -12,6 +12,10 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+var (
+	ErrWaitForPodTimeout = errors.New("timeout waiting for pod")
+)
+
 func GetPodLogs(ctx context.Context, clientset kubernetes.Interface, pod *corev1.Pod, follow bool, maxLines *int64) ([]byte, error) {
 	defaultMaxLines := int64(10000)
 
@@ -76,7 +80,7 @@ func WaitForPod(ctx context.Context, clientset kubernetes.Interface, namespace s
 		time.Sleep(time.Second)
 
 		if time.Now().Sub(start) > timeoutWaitingForPod {
-			return errors.New("timeout waiting for pod")
+			return ErrWaitForPodTimeout
 		}
 	}
 }
