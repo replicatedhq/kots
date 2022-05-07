@@ -18,6 +18,7 @@ import (
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -99,8 +100,9 @@ func CreateS3BucketUsingAPod(ctx context.Context, clientset kubernetes.Interface
 	createBucketPodOutput := CreateBucketPodOutput{}
 
 	scanner := bufio.NewScanner(bytes.NewReader(logs))
+	var line string
 	for scanner.Scan() {
-		line := scanner.Text()
+		line = scanner.Text()
 
 		if err := json.Unmarshal([]byte(line), &createBucketPodOutput); err != nil {
 			continue
@@ -110,11 +112,22 @@ func CreateS3BucketUsingAPod(ctx context.Context, clientset kubernetes.Interface
 	}
 
 	if !createBucketPodOutput.Success {
-		return errors.Errorf("failed to create bucket, please check %s pod logs for more details", createBucketPod.Name)
+		// Last line is the error
+		if len(line) > 0 {
+			return util.ActionableError{
+				Message: fmt.Sprintf("failed to create S3 bucket: %s", line),
+			}
+		}
+		return util.ActionableError{
+			Message: fmt.Sprintf("failed to create bucket, please check %s pod logs for more details", createBucketPod.Name),
+		}
 	}
 
 	// only delete the pod on success
-	clientset.CoreV1().Pods(podOptions.Namespace).Delete(ctx, createBucketPod.Name, metav1.DeleteOptions{})
+	err = clientset.CoreV1().Pods(podOptions.Namespace).Delete(ctx, createBucketPod.Name, metav1.DeleteOptions{})
+	if err != nil {
+		logger.Errorf("failed to delete bucket creating pod %s: %v", createBucketPod.Name, err)
+	}
 
 	return nil
 }
