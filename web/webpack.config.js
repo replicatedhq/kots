@@ -50,7 +50,7 @@ module.exports = function (env) {
         "@src": path.resolve(__dirname, "src"),
         "handlebars" : "handlebars/dist/handlebars.js"
       },
-      mainFields: ["browser", "main"],
+      mainFields: ["browser", "main"], 
     },
     module: {
       rules: [
@@ -67,6 +67,11 @@ module.exports = function (env) {
             "css-loader",
             "postcss-loader"
           ],
+          sideEffects: true,
+        },
+        {
+          test: /\.ttf$/,
+          use: [{loader: 'file-loader'}],
           sideEffects: true,
         },
         {
