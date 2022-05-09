@@ -237,8 +237,17 @@ func getHttpServer(fingerprint string, acceptAnonymousUploads bool) *http.Server
 			c.Redirect(http.StatusFound, target.String())
 			return
 		}
+		
+		app, err := kotsadmApplication()
+
+		if err != nil {
+			log.Printf("No kotsadm application metadata: %v", err) // continue
+		}
+		appIcon := template.URL(app.Spec.Icon)
 		c.HTML(http.StatusOK, "insecure.html", gin.H{
 			"fingerprintSHA1": fingerprint,
+			"AppIcon":  appIcon,
+			"AppTitle": app.Spec.Title,
 		})
 	})
 	r.NoRoute(func(c *gin.Context) {
