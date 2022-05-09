@@ -148,4 +148,7 @@ type KOTSHandler interface {
 
 	// Password change
 	ChangePassword(w http.ResponseWriter, r *http.Request)
+
+	// Is Helm Managed
+	IsHelmManaged(w http.ResponseWriter, r *http.Request)
 }

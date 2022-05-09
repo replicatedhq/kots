@@ -1,11 +1,14 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -15,6 +18,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/api/handlers/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/gitops"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/rbac"
@@ -24,8 +28,21 @@ import (
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/store/kotsstore"
 	"github.com/replicatedhq/kots/pkg/version"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 )
+
+var helmAppCache map[string]*types.ResponseApp
+
+func getHelmAppCache() map[string]*types.ResponseApp {
+	if helmAppCache == nil {
+		helmAppCache = make(map[string]*types.ResponseApp)
+		return helmAppCache
+	}
+
+	return helmAppCache
+}
 
 func (h *Handler) GetPendingApp(w http.ResponseWriter, r *http.Request) {
 	sess := session.ContextGetSession(r)
@@ -81,6 +98,22 @@ func (h *Handler) GetPendingApp(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, pendingAppResponse)
 }
 
+func responseAppFromHelmSecret(s v1.Secret) (*types.ResponseApp, error) {
+	unixIntValue, err := strconv.ParseInt(s.Labels["modifiedAt"], 10, 64)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get unix timestamp from modifiedAt label")
+	}
+	updatedTs := time.Unix(unixIntValue, 0)
+
+	return &types.ResponseApp{
+		Name:      s.Labels["name"],
+		Slug:      s.Labels["name"],
+		CreatedAt: s.CreationTimestamp.Time,
+		UpdatedAt: &updatedTs,
+		IconURI:   "https://cncf-branding.netlify.app/img/projects/helm/horizontal/color/helm-horizontal-color.png",
+	}, nil
+}
+
 func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 	sess := session.ContextGetSession(r)
 	if sess == nil {
@@ -89,35 +122,72 @@ func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	apps, err := store.GetStore().ListInstalledApps()
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	defaultRoles := rbac.DefaultRoles() // TODO (ethan): this should be set in the handler
-
 	responseApps := []types.ResponseApp{}
-	for _, a := range apps {
-		if sess.HasRBAC { // handle pre-rbac sessions
-			allow, err := rbac.CheckAccess(r.Context(), defaultRoles, "read", fmt.Sprintf("app.%s", a.Slug), sess.Roles)
-			if err != nil {
-				logger.Error(errors.Wrapf(err, "failed to check access for app %s", a.Slug))
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			} else if !allow {
-				continue
-			}
-		}
-
-		responseApp, err := responseAppFromApp(a)
+	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
+	if isHelmManaged == "true" {
+		cache := getHelmAppCache()
+		clientSet, err := k8sutil.GetClientset()
 		if err != nil {
 			logger.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		responseApps = append(responseApps, *responseApp)
+
+		namespaces, err := clientSet.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		for _, ns := range namespaces.Items {
+			secrets, err := clientSet.CoreV1().Secrets(ns.Name).List(context.TODO(), metav1.ListOptions{LabelSelector: "owner=helm"})
+			if err != nil {
+				logger.Error(errors.New(fmt.Sprintf("failed to list secrets for namespace: %s\n", ns.Name)))
+				continue
+			}
+
+			for _, s := range secrets.Items {
+				app, err := responseAppFromHelmSecret(s)
+				if err != nil {
+					logger.Error(err)
+					continue
+				}
+				responseApps = append(responseApps, *app)
+				cache[app.Name] = app
+			}
+		}
+	} else {
+
+		apps, err := store.GetStore().ListInstalledApps()
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		defaultRoles := rbac.DefaultRoles() // TODO (ethan): this should be set in the handler
+
+		for _, a := range apps {
+			if sess.HasRBAC { // handle pre-rbac sessions
+				allow, err := rbac.CheckAccess(r.Context(), defaultRoles, "read", fmt.Sprintf("app.%s", a.Slug), sess.Roles)
+				if err != nil {
+					logger.Error(errors.Wrapf(err, "failed to check access for app %s", a.Slug))
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				} else if !allow {
+					continue
+				}
+			}
+
+			responseApp, err := responseAppFromApp(a)
+			if err != nil {
+				logger.Error(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			responseApps = append(responseApps, *responseApp)
+		}
 	}
 
 	listAppsResponse := types.ListAppsResponse{
@@ -151,18 +221,24 @@ func (h *Handler) GetAppStatus(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) GetApp(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
-	a, err := store.GetStore().GetAppFromSlug(appSlug)
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	responseApp, err := responseAppFromApp(a)
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+	responseApp := new(types.ResponseApp)
+	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
+	if isHelmManaged == "true" {
+		cache := getHelmAppCache()
+		responseApp = cache[appSlug]
+	} else {
+		a, err := store.GetStore().GetAppFromSlug(appSlug)
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		responseApp, err = responseAppFromApp(a)
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 	}
 
 	JSON(w, http.StatusOK, responseApp)

@@ -119,8 +119,7 @@ class Dashboard extends Component {
 
     this.state.updateChecker.start(this.updateStatus, 1000);
     this.state.getAppDashboardJob.start(this.getAppDashboard, 2000);
-
-    if (app) {
+    if (app && this.props.isHelmManaged != true) {
       this.setWatchState(app);
       this.getAppLicense(app);
     }
@@ -159,6 +158,10 @@ class Dashboard extends Component {
 
   getAppDashboard = () => {
     return new Promise((resolve, reject) => {
+      if (this.props.cluster?.id == "" && this.props.isHelmManaged == true){
+        this.props.cluster.id = 0;
+      }
+
       fetch(`${process.env.API_ENDPOINT}/app/${this.props.app?.slug}/cluster/${this.props.cluster?.id}/dashboard`, {
         headers: {
           "Authorization": Utilities.getToken(),
@@ -615,6 +618,7 @@ class Dashboard extends Component {
                   viewAirgapUpdateError={(err) => this.toggleViewAirgapUpdateError(err)}
                   showAutomaticUpdatesModal={this.showAutomaticUpdatesModal}
                   noUpdatesAvalable={this.state.noUpdatesAvalable}
+                  isHelmManaged={this.props.isHelmManaged}
                 />
               </div>
               <div className="flex1 flex-column u-paddingLeft--15">
@@ -652,6 +656,7 @@ class Dashboard extends Component {
                 metrics={this.state.dashboard?.metrics}
                 appSlug={app.slug}
                 clusterId={this.props.cluster?.id}
+                isHelmManaged={this.props.isHelmManaged}
               />
             </div>
           </div>

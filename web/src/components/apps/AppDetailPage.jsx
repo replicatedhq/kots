@@ -47,7 +47,8 @@ class AppDetailPage extends Component {
       makingCurrentRelease: false,
       displayErrorModal: false,
       isVeleroInstalled: false,
-      redeployVersionErrMsg: ""
+      redeployVersionErrMsg: "",
+      isHelmManaged: false
     }
   }
 
@@ -58,6 +59,7 @@ class AppDetailPage extends Component {
     // Used for a fresh reload
     if (history.location.pathname === "/apps") {
       this.checkForFirstApp();
+      this.checkIsHelmManaged();
       return;
     }
 
@@ -206,6 +208,7 @@ class AppDetailPage extends Component {
 
   componentDidMount() {
     const { history } = this.props;
+    this.checkIsHelmManaged();
 
     if (history.location.pathname === "/apps") {
       this.checkForFirstApp();
@@ -263,6 +266,27 @@ class AppDetailPage extends Component {
     }
   }
 
+  checkIsHelmManaged = async () => {
+    try {
+      const res = await fetch(`${process.env.API_ENDPOINT}/isHelmManaged`, {
+        headers: {
+          "Authorization": Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "GET",
+      });
+      if (res.ok && res.status == 200) {
+        const response = await res.json();
+        this.setState({ isHelmManaged: response.isHelmManaged })
+      } else {
+        this.setState({ isHelmManaged: false });
+      }
+    } catch (err) {
+      console.log(err)
+      this.setState({ isHelmManaged: false });
+    }
+  }
+
   render() {
     const {
       match,
@@ -277,7 +301,8 @@ class AppDetailPage extends Component {
       isBundleUploading,
       requiredKotsUpdateMessage,
       gettingAppErrMsg,
-      isVeleroInstalled
+      isVeleroInstalled,
+      isHelmManaged
     } = this.state;
 
     const centeredLoader = (
@@ -362,6 +387,7 @@ class AppDetailPage extends Component {
                         refreshAppData={this.getApp}
                         snapshotInProgressApps={this.props.snapshotInProgressApps}
                         ping={this.props.ping}
+                        isHelmManaged={isHelmManaged}
                       />}
                     />
 
