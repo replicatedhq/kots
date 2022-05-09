@@ -14,7 +14,6 @@ import (
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
-	"github.com/replicatedhq/kots/pkg/persistence"
 )
 
 var (
@@ -109,12 +108,6 @@ func (v kustomizeFuzzyVersion) Match(userString string) bool {
 }
 
 func discoverKustomizeVersions(fileSystem fs.FS) ([]kustomizeFuzzyVersion, error) {
-	// in the kots run workflow, binaries exist under {kotsdatadir}/binaries
-	if persistence.IsSQlite() {
-		version := newKustomizeFuzzyVersion(0, filepath.Join(os.Getenv("KOTS_DATA_DIR"), "binaries/kustomize"))
-		return []kustomizeFuzzyVersion{version}, nil
-	}
-
 	if binDirPath := os.Getenv("KOTS_KUSTOMIZE_BIN_DIR"); binDirPath != "" {
 		versions, err := discoverKustomizeVersionsFromDir(fileSystem, binDirPath)
 		return versions, errors.Wrap(err, "discover kustomize versions from dir")

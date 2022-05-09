@@ -391,6 +391,11 @@ func updateGlobalStore(ctx context.Context, store *types.Store, kotsadmNamespace
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
+	//config, err := rest.InClusterConfig()
+	//cl, _ := dynamic.NewForConfig(config)
+	//var monboDBResource = schema.GroupVersionResource{Group: "mongodbcommunity.mongodb.com", Version: "v1", Resource: "mongodbcommunity"}
+	//mdb, _ := cl.Resource(monboDBResource).Get(ctx, "", metav1.GetOptions{})
+	//mdb.UnstructuredContent()
 
 	clientset, err := kubernetes.NewForConfig(cfg)
 	if err != nil {

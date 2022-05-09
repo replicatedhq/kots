@@ -26,17 +26,6 @@ var (
 // but the data may be in the cluster or the database, depending on the
 // configuration.
 func (s *KOTSStore) GetSharedPasswordBcrypt() ([]byte, error) {
-	// again, this isn't the right abstraction for this...  but it's
-	// the store we have and could use some refactoring into the
-	// store we want
-
-	// for installations runnning in sqlite, we store
-	// the bcrypted password in the params table
-	if persistence.IsSQlite() {
-		return s.getSharedPaswordBcryptFromDatabase()
-	}
-
-	// for installations not running in sqlite, we use the k8s api
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get k8s clientset")
@@ -101,10 +90,6 @@ func (s *KOTSStore) getSharedPaswordBcryptFromDatabase() ([]byte, error) {
 }
 
 func (s *KOTSStore) FlagInvalidPassword() error {
-	if persistence.IsSQlite() {
-		return s.flagInvalidPasswordInDatabase()
-	}
-
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get k8s clientset")
@@ -176,10 +161,6 @@ func (s *KOTSStore) flagInvalidPasswordInDatabase() error {
 }
 
 func (s *KOTSStore) FlagSuccessfulLogin() error {
-	if persistence.IsSQlite() {
-		return s.flagSuccessfulLoginInDatabase()
-	}
-
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get k8s clientset")
@@ -215,9 +196,6 @@ func (s *KOTSStore) FlagSuccessfulLogin() error {
 
 func (s *KOTSStore) flagSuccessfulLoginInDatabase() error {
 	db := persistence.MustGetDBSession()
-
-	// sqlite has a nice insert or replace, but let's be
-	// nice and make sure this is pg copmatible
 
 	query := `delete from kotsadm_params where key = $1`
 	if _, err := db.Exec(query, "failed.login.count"); err != nil {

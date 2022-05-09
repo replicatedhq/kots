@@ -1,25 +1,22 @@
+//go:build !testing
+
 package persistence
 
 import (
 	"database/sql"
 	"fmt"
-
 	_ "github.com/lib/pq"
 )
 
-var postgresDB *sql.DB
-
-func mustGetPGSession() *sql.DB {
-	if postgresDB != nil {
-		return postgresDB
+func MustGetDBSession() *sql.DB {
+	if db != nil {
+		return db
 	}
-
-	db, err := sql.Open("postgres", PostgresURI)
+	newDB, err := sql.Open("postgres", uri)
 	if err != nil {
 		fmt.Printf("error connecting to postgres: %v\n", err)
 		panic(err)
 	}
-
-	postgresDB = db
+	db = newDB
 	return db
 }

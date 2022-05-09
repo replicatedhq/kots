@@ -14,7 +14,6 @@ import (
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
-	"github.com/replicatedhq/kots/pkg/persistence"
 )
 
 var (
@@ -110,12 +109,6 @@ func (v kubectlFuzzyVersion) Match(userString string) bool {
 }
 
 func discoverKubectlVersions(fileSystem fs.FS) ([]kubectlFuzzyVersion, error) {
-	// in the kots run workflow, binaries exist under {kotsdatadir}/binaries
-	if persistence.IsSQlite() {
-		version := newKubectlFuzzyVersion(0, 0, filepath.Join(os.Getenv("KOTS_DATA_DIR"), "binaries/kubectl"))
-		return []kubectlFuzzyVersion{version}, nil
-	}
-
 	if binDirPath := os.Getenv("KOTS_KUBECTL_BIN_DIR"); binDirPath != "" {
 		versions, err := discoverKubectlVersionsFromDir(fileSystem, binDirPath)
 		return versions, errors.Wrap(err, "discover kubectl versions from dir")
