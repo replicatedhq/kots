@@ -13,5 +13,12 @@ spec:
     spec:
       containers:
         - name: kotsadm-web
+          resources:
+            requests:
+              cpu: 10m
+              memory: 20Mi
+            limits:
+              cpu: 20m
+              memory: 45Mi
           image: kotsadm-web
           imagePullPolicy: IfNotPresent
