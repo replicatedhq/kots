@@ -1,7 +1,7 @@
 icon: https://github.com/okteto/polling/raw/master/icon.png
 deploy:
   - |
-    envsubst < helm/okteto/velero/values.tmpl.yaml > helm/okteto/velero/values.yaml
+#    envsubst < helm/okteto/velero/values.tmpl.yaml > helm/okteto/velero/values.yaml
     helm repo add vmware-tanzu https://vmware-tanzu.github.io/helm-charts
     helm upgrade velero vmware-tanzu/velero --install --namespace ${OKTETO_NAMESPACE} -f ./helm/okteto/velero/values.yaml --skip-crds
 #  - okteto build -f ./okteto.Dockerfile -t okteto.dev/kotsadm:${OKTETO_GIT_COMMIT} .
