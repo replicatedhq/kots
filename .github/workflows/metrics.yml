@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [[kots, deploy/okteto, .], [web, web, web], [kurl-proxy, kurl_proxy, kurl_proxy], [migrations, migrations, migration]]
+        service: [[kots, deploy/okteto, .], [web, web, web], [kurl-proxy, kurl_proxy, kurl_proxy], [migrations, migrations, migrations]]
     steps:
       - uses: actions/checkout@v2
       - run: |
