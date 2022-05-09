@@ -29,6 +29,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	"go.uber.org/multierr"
+	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -520,12 +521,56 @@ func getDefaultDynamicCollectors(app *apptypes.App, imageName string, pullSecret
 		})
 	}
 
+	if license != nil && license.Spec.IsSnapshotSupported {
+		fsMinioErrors := snapshot.GetFileSystemMinioErrors(context.TODO(), clientset)
+		if len(fsMinioErrors) > 0 {
+			data, _ := yaml.Marshal(fsMinioErrors)
+			if len(data) > 0 {
+				collectors = append(collectors, &troubleshootv1beta2.Collect{
+					Data: &troubleshootv1beta2.Data{
+						CollectorMeta: troubleshootv1beta2.CollectorMeta{
+							CollectorName: "fs-minio-events.yaml",
+						},
+						Name: "kots/admin_console",
+						Data: string(data),
+					},
+				})
+			}
+		}
+	}
+
 	return collectors
 }
 
 func getDefaultDynamicAnalyzers(app *apptypes.App) []*troubleshootv1beta2.Analyze {
 	analyzers := make([]*troubleshootv1beta2.Analyze, 0)
 	analyzers = append(analyzers, makeAPIReplicaAnalyzer())
+
+	analyzers = append(analyzers, &troubleshootv1beta2.Analyze{
+		TextAnalyze: &troubleshootv1beta2.TextAnalyze{
+			AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
+				CheckName: "NFS Client Package",
+			},
+			IgnoreIfNoFiles: true,
+			FileName:        "kots/admin_console/fs-minio-events.yaml",
+			RegexPattern:    "bad option; for several filesystems \\(e\\.g\\. nfs, cifs\\) you might need a \\/sbin\\/mount\\..+type.+ helper program\\.",
+			Outcomes: []*troubleshootv1beta2.Outcome{
+				{
+					Fail: &troubleshootv1beta2.SingleOutcome{
+						When:    "true",
+						Message: "An NFS client package might be missing. Refer to the [documentation](https://docs.replicated.com/enterprise/snapshots-configuring-nfs) on how to configure NFS snapshots.",
+						URI:     "https://docs.replicated.com/enterprise/snapshots-configuring-nfs",
+					},
+				},
+				{
+					Pass: &troubleshootv1beta2.SingleOutcome{
+						When:    "false",
+						Message: "No NFS client errors were found.",
+					},
+				},
+			},
+		},
+	})
 
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {

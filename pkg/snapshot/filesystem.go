@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -19,6 +20,7 @@ import (
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/logger"
 	kotss3 "github.com/replicatedhq/kots/pkg/s3"
 	types "github.com/replicatedhq/kots/pkg/snapshot/types"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -28,6 +30,8 @@ import (
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/utils/pointer"
@@ -39,6 +43,12 @@ const (
 	FileSystemMinioDeploymentName, FileSystemMinioServiceName                 = "kotsadm-fs-minio", "kotsadm-fs-minio"
 	FileSystemMinioProvider, FileSystemMinioBucketName, FileSystemMinioRegion = "aws", "velero", "minio"
 	FileSystemMinioServicePort                                                = 9000
+)
+
+const (
+	fsMinioCheckTag   = "kotsadm-fs-minio-check"
+	fsMinioResetTag   = "kotsadm-fs-minio-reset"
+	fsMinioKeysSHATag = "kotsadm-fs-minio-keys-sha"
 )
 
 type FileSystemDeployOptions struct {
@@ -548,7 +558,40 @@ func shouldResetFileSystemMount(ctx context.Context, clientset kubernetes.Interf
 	}
 
 	if err := k8sutil.WaitForPod(ctx, clientset, deployOptions.Namespace, checkPod.Name, time.Minute*2); err != nil {
-		finalErr = errors.Wrap(err, "failed to wait for file system minio check pod to complete")
+		genericErr := errors.Wrap(err, "failed to wait for file system minio check pod to complete")
+		if err != k8sutil.ErrWaitForPodTimeout {
+			finalErr = genericErr
+			return
+		}
+
+		logs, _ := k8sutil.GetPodLogs(ctx, clientset, checkPod, true, nil)
+		if len(logs) > 0 {
+			finalErr = util.ActionableError{
+				Message: string(logs),
+			}
+			return
+		}
+
+		selectorMap := map[string]string{
+			"involvedObject.name": checkPod.Name,
+		}
+		events, _ := clientset.CoreV1().Events(deployOptions.Namespace).List(ctx, metav1.ListOptions{
+			FieldSelector: fields.SelectorFromSet(selectorMap).String(),
+		})
+
+		if events != nil {
+			for _, event := range events.Items {
+				// TODO: Super hacky. There should be a better way to find meaningful messages.
+				if strings.Contains(event.Message, "Output:") {
+					finalErr = util.ActionableError{
+						Message: string(event.Message),
+					}
+					return
+				}
+			}
+		}
+
+		finalErr = genericErr
 		return
 	}
 
@@ -584,7 +627,12 @@ func shouldResetFileSystemMount(ctx context.Context, clientset kubernetes.Interf
 	writable = checkPodOutput.Writable
 
 	// only delete pod if we know we have an actionable output
-	clientset.CoreV1().Pods(deployOptions.Namespace).Delete(ctx, checkPod.Name, metav1.DeleteOptions{})
+	listOpts := metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(checkPod.ObjectMeta.Labels).String(),
+	}
+	if err := clientset.CoreV1().Pods(deployOptions.Namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, listOpts); err != nil {
+		logger.Errorf("failed to delete file system minio check pod %s: %v", checkPod.Name, err)
+	}
 
 	if !checkPodOutput.HasMinioConfig {
 		shouldReset = false
@@ -760,25 +808,24 @@ func createFileSystemMinioKeysSHAPod(ctx context.Context, clientset kubernetes.I
 }
 
 func fileSystemMinioCheckPod(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryOptions kotsadmtypes.KotsadmOptions) (*corev1.Pod, error) {
-	podName := fmt.Sprintf("kotsadm-fs-minio-check-%d", time.Now().Unix())
 	command := []string{"/fs-minio-check.sh"}
-	return fileSystemMinioConfigPod(clientset, deployOptions, registryOptions, podName, command, nil, true)
+	return fileSystemMinioConfigPod(clientset, deployOptions, registryOptions, fsMinioCheckTag, command, nil, true)
 }
 
 func fileSystemMinioResetPod(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryOptions kotsadmtypes.KotsadmOptions) (*corev1.Pod, error) {
-	podName := fmt.Sprintf("kotsadm-fs-minio-reset-%d", time.Now().Unix())
 	command := []string{"/fs-minio-reset.sh"}
-	return fileSystemMinioConfigPod(clientset, deployOptions, registryOptions, podName, command, nil, false)
+	return fileSystemMinioConfigPod(clientset, deployOptions, registryOptions, fsMinioResetTag, command, nil, false)
 }
 
 func fileSystemMinioKeysSHAPod(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryOptions kotsadmtypes.KotsadmOptions, minioKeysSHA string) (*corev1.Pod, error) {
-	podName := fmt.Sprintf("kotsadm-fs-minio-keys-sha-%d", time.Now().Unix())
 	command := []string{"/fs-minio-keys-sha.sh"}
 	args := []string{minioKeysSHA}
-	return fileSystemMinioConfigPod(clientset, deployOptions, registryOptions, podName, command, args, false)
+	return fileSystemMinioConfigPod(clientset, deployOptions, registryOptions, fsMinioKeysSHATag, command, args, false)
 }
 
-func fileSystemMinioConfigPod(clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryOptions kotsadmtypes.KotsadmOptions, podName string, command []string, args []string, readOnly bool) (*corev1.Pod, error) {
+func fileSystemMinioConfigPod(clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryOptions kotsadmtypes.KotsadmOptions, podCheckTag string, command []string, args []string, readOnly bool) (*corev1.Pod, error) {
+	podName := fmt.Sprintf("%s-%d", podCheckTag, time.Now().Unix())
+
 	var securityContext corev1.PodSecurityContext
 	if !deployOptions.IsOpenShift {
 		securityContext = corev1.PodSecurityContext{
@@ -809,7 +856,8 @@ func fileSystemMinioConfigPod(clientset kubernetes.Interface, deployOptions File
 			Name:      podName,
 			Namespace: deployOptions.Namespace,
 			Labels: map[string]string{
-				"app": "kotsadm-fs-minio",
+				"app":   "kotsadm-fs-minio",
+				"check": podCheckTag,
 			},
 		},
 		Spec: corev1.PodSpec{
@@ -1116,4 +1164,66 @@ func IsFileSystemMinioDisabled(kotsadmNamespace string) (bool, error) {
 	}
 
 	return false, nil
+}
+
+// Finds the latest FS utility pod of every kind and looks for errors in the events for the pods.
+func GetFileSystemMinioErrors(ctx context.Context, clientset kubernetes.Interface) map[string]string {
+	result := make(map[string]string)
+
+	checkTags := []string{
+		fsMinioCheckTag,
+		fsMinioResetTag,
+		fsMinioKeysSHATag,
+	}
+
+	for _, checkTag := range checkTags {
+		podSelectorSet := map[string]string{
+			"app":   "kotsadm-fs-minio",
+			"check": checkTag,
+		}
+
+		pods, err := clientset.CoreV1().Pods(util.PodNamespace).List(ctx, metav1.ListOptions{
+			LabelSelector: fields.SelectorFromSet(podSelectorSet).String(),
+		})
+		if err != nil {
+			if !kuberneteserrors.IsNotFound(err) {
+				logger.Errorf("failed to list %s pods: %v", checkTag, err)
+			}
+			continue
+		}
+
+		var latestPod *corev1.Pod
+		for _, pod := range pods.Items {
+			if latestPod == nil || pod.CreationTimestamp.After(latestPod.CreationTimestamp.Time) {
+				latestPod = &pod
+			}
+		}
+
+		if latestPod == nil {
+			continue
+		}
+
+		eventSelectorSet := map[string]string{
+			"involvedObject.name": latestPod.Name,
+		}
+		events, err := clientset.CoreV1().Events(util.PodNamespace).List(ctx, metav1.ListOptions{
+			FieldSelector: fields.SelectorFromSet(eventSelectorSet).String(),
+		})
+		if err != nil {
+			if !kuberneteserrors.IsNotFound(err) {
+				logger.Errorf("failed to list %s events: %v", latestPod.Name, err)
+			}
+			continue
+		}
+
+		messages := []string{}
+		for _, event := range events.Items {
+			messages = append(messages, event.Message)
+		}
+		if len(messages) > 0 {
+			result[checkTag] = strings.Join(messages, "\n")
+		}
+	}
+
+	return result
 }

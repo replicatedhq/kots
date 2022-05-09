@@ -189,6 +189,11 @@ func (h *Handler) UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Re
 					JSON(w, http.StatusBadRequest, globalSnapshotSettingsResponse)
 					return
 				}
+				if err, ok := errors.Cause(err).(util.ActionableError); ok {
+					globalSnapshotSettingsResponse.Error = err.Error()
+					JSON(w, http.StatusBadRequest, globalSnapshotSettingsResponse)
+					return
+				}
 
 				logger.Error(err)
 				globalSnapshotSettingsResponse.Error = "failed to configure file system provider"
@@ -408,6 +413,11 @@ func (h *Handler) ConfigureFileSystemSnapshotProvider(w http.ResponseWriter, r *
 				JSON(w, http.StatusBadRequest, response)
 				return
 			}
+			if err, ok := errors.Cause(err).(util.ActionableError); ok {
+				response.Error = err.Error()
+				JSON(w, http.StatusBadRequest, response)
+				return
+			}
 
 			errMsg := "failed to configure file system provider"
 			response.Error = errMsg
@@ -459,7 +469,7 @@ func configureMinioFileSystemProvider(ctx context.Context, clientset kubernetes.
 	// }
 
 	if err := kotssnapshot.DeployFileSystemMinio(ctx, clientset, deployOptions, registryOptions); err != nil {
-		return err
+		return errors.Wrap(err, "failed to deploy file system minio")
 	}
 
 	err := k8sutil.WaitForDeploymentReady(ctx, clientset, namespace, kotssnapshot.FileSystemMinioDeploymentName, time.Minute*3)
