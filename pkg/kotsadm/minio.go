@@ -227,9 +227,16 @@ func MigrateExistingMinioFilesystemDeployments(log *logger.CLILogger, deployOpti
 			}
 			log.Info("Minio backup storage location restored")
 
-			err = clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Delete(context.TODO(), snapshot.SnapshotMigrationArtifactName, metav1.DeleteOptions{})
+			configMap, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Get(context.TODO(), snapshot.SnapshotMigrationArtifactName, metav1.GetOptions{})
 			if err != nil {
-				log.Error(errors.Wrap(err, "failed to delete config map"))
+				if !kuberneteserrors.IsNotFound(err) {
+					log.Error(errors.Wrap(err, "failed to lookup config map"))
+				}
+			} else {
+				err = clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Delete(context.TODO(), configMap.Name, metav1.DeleteOptions{})
+				if err != nil {
+					log.Error(errors.Wrap(err, "failed to delete config map"))
+				}
 			}
 		}
 	}()
