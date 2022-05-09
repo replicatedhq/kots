@@ -81,6 +81,11 @@ Your permissions will be the same between both namespaces, and you will be able 
 4. `okteto exec bash` - Runs bash interactively in the kots pod.
 5. `./bin/kost {{COMMAND}}` - Run the kots commands you need.
 
+#### Running KOTS in Helm managed mode
+Steps to run in Helm managed mode:
+1. `okteto pipeline deploy`
+2. Ensure your local context is set to your okteto environment
+2. Set the `IS_HELM_MANAGED` environment variable for the kots deployment `kubectl set env deployment/kotsadm IS_HELM_MANAGED=true`
 ### Build V2 (EXPERIMENTAL)
 
 #### Description
@@ -135,4 +140,3 @@ Because this new workflow is experimental, we still have the old workflow in the
 2. `okteto up -f okteto-v2.yml`
 3. Select kotsadm-web.
 4. Make code changes to kotsadm web.
-

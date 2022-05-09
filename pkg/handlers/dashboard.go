@@ -21,6 +21,19 @@ type GetAppDashboardResponse struct {
 func (h *Handler) GetAppDashboard(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 	clusterID := mux.Vars(r)["clusterId"]
+	appStatus := new(appstatetypes.AppStatus)
+	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
+	if isHelmManaged == "true" {
+		appStatus.State = "ready"
+		getAppDashboardResponse := GetAppDashboardResponse{
+			AppStatus:         appStatus,
+			Metrics:           nil,
+			PrometheusAddress: "",
+		}
+
+		JSON(w, 200, getAppDashboardResponse)
+		return
+	}
 
 	a, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
@@ -29,7 +42,7 @@ func (h *Handler) GetAppDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	appStatus, err := store.GetStore().GetAppStatus(a.ID)
+	appStatus, err = store.GetStore().GetAppStatus(a.ID)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)

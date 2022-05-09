@@ -994,6 +994,18 @@ func (mr *MockKOTSHandlerMockRecorder) InitGitOpsConnection(w, r interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitGitOpsConnection", reflect.TypeOf((*MockKOTSHandler)(nil).InitGitOpsConnection), w, r)
 }
 
+// IsHelmManaged mocks base method.
+func (m *MockKOTSHandler) IsHelmManaged(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "IsHelmManaged", w, r)
+}
+
+// IsHelmManaged indicates an expected call of IsHelmManaged.
+func (mr *MockKOTSHandlerMockRecorder) IsHelmManaged(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsHelmManaged", reflect.TypeOf((*MockKOTSHandler)(nil).IsHelmManaged), w, r)
+}
+
 // ListApps mocks base method.
 func (m *MockKOTSHandler) ListApps(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
