@@ -45,6 +45,7 @@ import (
 
 const (
 	DefaultBackupStorageLocation  = "default"
+	SnapshotMigrationArtifactName = "kotsadm-velero-migration"
 	SnapshotStoreHostPathProvider = "replicated.com/hostpath"
 	SnapshotStoreNFSProvider      = "replicated.com/nfs"
 	SnapshotStorePVCProvider      = "replicated.com/pvc"
@@ -329,6 +330,11 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 		clientset, err := k8sutil.GetClientset()
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get k8s clientset")
+		}
+
+		if _, err := clientset.CoreV1().ConfigMaps(options.KotsadmNamespace).Get(context.TODO(), SnapshotMigrationArtifactName, metav1.GetOptions{}); err == nil {
+			// Found migration artifact, append prefix
+			store.Path = "/velero"
 		}
 
 		storeFileSystem, err := BuildLvpStoreFileSystem(ctx, clientset, options.KotsadmNamespace, options.FileSystem)
@@ -1397,15 +1403,12 @@ func validateLvpFileSystem(ctx context.Context, store *types.Store, options Vali
 		ForceReset:       false,
 		FileSystemConfig: *store.FileSystem.Config,
 	}
-	isLegacyMinioDeployment, writable, err := ValidateFileSystemDeployment(ctx, clientset, deployOptions, *options.RegistryOptions)
+	_, writable, err := ValidateFileSystemDeployment(ctx, clientset, deployOptions, *options.RegistryOptions)
 	if err != nil {
 		return errors.Wrap(err, "could not validate lvp file system")
 	}
 	if !writable {
 		return errors.New("the volume path is not writable")
-	}
-	if isLegacyMinioDeployment {
-		store.Path = "/velero"
 	}
 	return nil
 }
