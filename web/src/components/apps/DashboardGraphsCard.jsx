@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import localizedFormat from "dayjs/plugin/localizedFormat"
 import Handlebars from "handlebars";
 import Modal from "react-modal";
-import { getValueFormat } from "@grafana/ui"
+import { getValueFormat } from "@grafana/data"
 import { XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, LineSeries, DiscreteColorLegend, Crosshair } from "react-vis";
 import { Utilities } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
