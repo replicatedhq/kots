@@ -15,11 +15,11 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [[kots, deploy/okteto], [web, web], [kurl-proxy, kurl_proxy], [migrations, migrations]]
+        service: [[kots, deploy/okteto, .], [web, web, .], [kurl-proxy, kurl_proxy, .], [migrations, migrations, .]]
     steps:
       - uses: actions/checkout@v2
       - run: |
-          docker build -t ${{ matrix.service[0] }} -f ${{ matrix.service[1] }}/okteto.Dockerfile ${{ matrix.service[1] }}/
+          docker build -t ${{ matrix.service[0] }} -f ${{ matrix.service[1] }}/okteto.Dockerfile ${{ matrix.service[2] }}/
           curl -X POST "https://api.datadoghq.com/api/v1/series" \
             -H "Content-Type: text/json" \
             -H "DD-API-KEY: ${{secrets.DD_API_KEY}}" \
