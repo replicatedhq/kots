@@ -1,33 +1,36 @@
 import React from "react";
 import Modal from "react-modal";
-import MonacoEditor from "@monaco-editor/react";
 import Loader from "../shared/Loader";
 import { Link } from "react-router-dom"
+import MonacoEditor from "@monaco-editor/react";
+import { loader } from "@monaco-editor/react"
+
+loader.config({ paths: { vs: "/vs" } })
 
 export default function ShowLogsModal(props) {
   const { showLogsModal, hideLogsModal, viewLogsErrMsg, logs, selectedTab, logsLoading, renderLogsTabs, versionFailing, troubleshootUrl } = props;
 
   return (
     <Modal
-    isOpen={showLogsModal}
-    onRequestClose={hideLogsModal}
-    shouldReturnFocusAfterClose={false}
-    contentLabel="View logs"
-    ariaHideApp={false}
-    className="Modal logs-modal"
-  >
-    <div className="Modal-body flex flex1">
-      {viewLogsErrMsg ?
-        <div className="flex1 flex-column justifyContent--center alignItems--center">
-          <span className="icon redWarningIcon" />
-          <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{viewLogsErrMsg}</p>
-        </div>
-        :
-        !logs || !selectedTab || logsLoading ? (
-          <div className="flex-column flex1 alignItems--center justifyContent--center">
-            <Loader size="60" />
+      isOpen={showLogsModal}
+      onRequestClose={hideLogsModal}
+      shouldReturnFocusAfterClose={false}
+      contentLabel="View logs"
+      ariaHideApp={false}
+      className="Modal logs-modal"
+    >
+      <div className="Modal-body flex flex1">
+        {viewLogsErrMsg ?
+          <div className="flex1 flex-column justifyContent--center alignItems--center">
+            <span className="icon redWarningIcon" />
+            <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{viewLogsErrMsg}</p>
           </div>
-        ) : (
+          :
+          !logs || !selectedTab || logsLoading ? (
+            <div className="flex-column flex1 alignItems--center justifyContent--center">
+              <Loader size="60" />
+            </div>
+          ) : (
             <div className="flex-column flex1">
               <div className="flex-column flex1">
                 {!logs.renderError && renderLogsTabs}
@@ -52,7 +55,7 @@ export default function ShowLogsModal(props) {
               </div>
             </div>
           )}
-    </div>
-  </Modal>
+      </div>
+    </Modal>
   );
 }
