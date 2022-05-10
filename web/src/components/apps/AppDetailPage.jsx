@@ -59,7 +59,6 @@ class AppDetailPage extends Component {
     // Used for a fresh reload
     if (history.location.pathname === "/apps") {
       this.checkForFirstApp();
-      this.isHelmManaged();
       return;
     }
 
@@ -215,7 +214,7 @@ class AppDetailPage extends Component {
     }
     this.getApp();
     this.checkIsVeleroInstalled();
-    this.isHelmManaged();
+    this.checkIsHelmManaged();
   }
 
   getApp = async (slug = this.props.match.params.slug) => {
@@ -266,7 +265,7 @@ class AppDetailPage extends Component {
     }
   }
 
-  isHelmManaged = async () => {
+  checkIsHelmManaged = async () => {
     try {
       const res = await fetch(`${process.env.API_ENDPOINT}/isHelmManaged`, {
         headers: {

@@ -170,14 +170,10 @@ func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 		}
 
 		wg.Wait()
-		for {
-			select {
-			case app := <-resultsChannel:
-				responseApps = append(responseApps, *app)
-				helmAppCache[app.Name] = app
-			default:
-				break
-			}
+		close(resultsChannel)
+		for app := range resultsChannel {
+			responseApps = append(responseApps, *app)
+			helmAppCache[app.Name] = app
 		}
 	} else {
 
