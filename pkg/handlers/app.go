@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -141,6 +142,8 @@ func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		resultsChannel := make(chan *types.ResponseApp, len(namespaces.Items))
+		wg := new(sync.WaitGroup)
 		// get helm secrets across all namespaces
 		for _, ns := range namespaces.Items {
 			secrets, err := clientSet.CoreV1().Secrets(ns.Name).List(context.TODO(), metav1.ListOptions{LabelSelector: "owner=helm"})
@@ -150,46 +153,56 @@ func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 			}
 
 			for _, s := range secrets.Items {
-				app, err := responseAppFromHelmSecret(s)
-				if err != nil {
-					logger.Error(err)
-					w.WriteHeader(http.StatusInternalServerError)
-					return
-				}
-				responseApps = append(responseApps, *app)
-				helmAppCache[s.Labels["name"]] = app
-			}
-		}
-	}
-
-	apps, err := store.GetStore().ListInstalledApps()
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	defaultRoles := rbac.DefaultRoles() // TODO (ethan): this should be set in the handler
-
-	for _, a := range apps {
-		if sess.HasRBAC { // handle pre-rbac sessions
-			allow, err := rbac.CheckAccess(r.Context(), defaultRoles, "read", fmt.Sprintf("app.%s", a.Slug), sess.Roles)
-			if err != nil {
-				logger.Error(errors.Wrapf(err, "failed to check access for app %s", a.Slug))
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			} else if !allow {
-				continue
+				wg.Add(1)
+				go func(wg *sync.WaitGroup) {
+					app, err := responseAppFromHelmSecret(s)
+					if err != nil {
+						logger.Error(err)
+						w.WriteHeader(http.StatusInternalServerError)
+						return
+					}
+					resultsChannel <- app
+					wg.Done()
+				}(wg)
 			}
 		}
 
-		responseApp, err := responseAppFromApp(a)
+		wg.Wait()
+		for res := range resultsChannel {
+			responseApps = append(responseApps, *res)
+			helmAppCache[res.Name] = res
+		}
+	} else {
+
+		apps, err := store.GetStore().ListInstalledApps()
 		if err != nil {
 			logger.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		responseApps = append(responseApps, *responseApp)
+
+		defaultRoles := rbac.DefaultRoles() // TODO (ethan): this should be set in the handler
+
+		for _, a := range apps {
+			if sess.HasRBAC { // handle pre-rbac sessions
+				allow, err := rbac.CheckAccess(r.Context(), defaultRoles, "read", fmt.Sprintf("app.%s", a.Slug), sess.Roles)
+				if err != nil {
+					logger.Error(errors.Wrapf(err, "failed to check access for app %s", a.Slug))
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				} else if !allow {
+					continue
+				}
+			}
+
+			responseApp, err := responseAppFromApp(a)
+			if err != nil {
+				logger.Error(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			responseApps = append(responseApps, *responseApp)
+		}
 	}
 
 	listAppsResponse := types.ListAppsResponse{
