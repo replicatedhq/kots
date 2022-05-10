@@ -383,7 +383,7 @@ jobs:
     needs: [goreleaser, release-go-api-tagged]
     if: github.ref_type == 'branch'
     env:
-      GIT_TAG: ${{ env.TAG }}
+      GIT_TAG: $TAG
     steps:
     - name: Checkout
       uses: actions/checkout@v2
