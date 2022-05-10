@@ -128,7 +128,7 @@ export default class DashboardGraphsCard extends React.Component {
     let yAxisTickFormat = null;
     if (chart.tickFormat) {
       const valueFormatter = getValueFormat(chart.tickFormat);
-      yAxisTickFormat = (v) => `${valueFormatter(v)}`;
+      yAxisTickFormat = (v) => `${Math.round(valueFormatter(v).text)} ${valueFormatter(v).suffix}`;
       return yAxisTickFormat(value);
     } else if (chart.tickTemplate) {
       try {
@@ -169,7 +169,7 @@ export default class DashboardGraphsCard extends React.Component {
     let yAxisTickFormat = null;
     if (chart.tickFormat) {
       const valueFormatter = getValueFormat(chart.tickFormat);
-      yAxisTickFormat = (v) => `${valueFormatter(v)}`;
+      yAxisTickFormat = (v) => `${Math.round(valueFormatter(v).text)} ${valueFormatter(v).suffix}`;
     } else if (chart.tickTemplate) {
       try {
         const template = Handlebars.compile(chart.tickTemplate);
