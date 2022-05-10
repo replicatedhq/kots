@@ -43,7 +43,14 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-const DefaultBackupStorageLocation = "default"
+const (
+	DefaultBackupStorageLocation  = "default"
+	SnapshotMigrationArtifactName = "kotsadm-velero-migration"
+	SnapshotStoreHostPathProvider = "replicated.com/hostpath"
+	SnapshotStoreNFSProvider      = "replicated.com/nfs"
+	SnapshotStorePVCProvider      = "replicated.com/pvc"
+	SnapshotStorePVCBucket        = "velero-internal-snapshots"
+)
 
 type ConfigureStoreOptions struct {
 	Provider   string
@@ -282,8 +289,8 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 		store.Other = nil
 		store.FileSystem = nil
 
-		store.Provider = "replicated.com/pvc"
-		store.Bucket = "velero-internal-snapshots"
+		store.Provider = SnapshotStorePVCProvider
+		store.Bucket = SnapshotStorePVCBucket
 	} else if options.FileSystem != nil && !options.IsMinioDisabled {
 		// Legacy Minio Provider
 
@@ -325,6 +332,11 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 			return nil, errors.Wrap(err, "failed to get k8s clientset")
 		}
 
+		if _, err := clientset.CoreV1().ConfigMaps(options.KotsadmNamespace).Get(context.TODO(), SnapshotMigrationArtifactName, metav1.GetOptions{}); err == nil {
+			// Found migration artifact, append prefix
+			store.Path = "/velero"
+		}
+
 		storeFileSystem, err := BuildLvpStoreFileSystem(ctx, clientset, options.KotsadmNamespace, options.FileSystem)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to build file system store")
@@ -332,7 +344,7 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 		store.FileSystem = storeFileSystem
 	}
 
-	if !options.SkipValidation && !options.IsMinioDisabled {
+	if !options.SkipValidation {
 		validateStoreOptions := ValidateStoreOptions{
 			KotsadmNamespace:  options.KotsadmNamespace,
 			RegistryOptions:   options.RegistryOptions,
@@ -569,9 +581,9 @@ func updateGlobalStore(ctx context.Context, store *types.Store, kotsadmNamespace
 			return nil, errors.Wrap(err, "failed to update file system store for minio")
 		}
 	} else if store.FileSystem != nil {
-		err = updateLvpFileSystemStore(ctx, store, clientset, currentSecret, currentSecretErr, kotsadmVeleroBackendStorageLocation)
+		err = updateLvpFileSystemStore(ctx, store, kotsadmVeleroBackendStorageLocation)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to update file system store for minio")
+			return nil, errors.Wrap(err, "failed to update file system store for lvp")
 		}
 	} else if store.Google != nil {
 		if store.Google.UseInstanceRole {
@@ -729,7 +741,7 @@ func updateMinioFileSystemStore(ctx context.Context, store *types.Store, clients
 	return nil
 }
 
-func updateLvpFileSystemStore(ctx context.Context, store *types.Store, clientset kubernetes.Interface, currentSecret *corev1.Secret, currentSecretErr error, bsl *velerov1.BackupStorageLocation) error {
+func updateLvpFileSystemStore(ctx context.Context, store *types.Store, bsl *velerov1.BackupStorageLocation) error {
 	if store.FileSystem.Config == nil {
 		return errors.New("missing file system config")
 	}
@@ -869,14 +881,14 @@ func GetGlobalStore(ctx context.Context, kotsadmNamespace string, kotsadmVeleroB
 			JSONFile:        jsonFile,
 			UseInstanceRole: jsonFile == "",
 		}
-	case "replicated.com/hostpath":
+	case SnapshotStoreHostPathProvider:
 		path := kotsadmVeleroBackendStorageLocation.Spec.Config["path"]
 		store.FileSystem = &types.StoreFileSystem{
 			Config: &types.FileSystemConfig{
 				HostPath: &path,
 			},
 		}
-	case "replicated.com/nfs":
+	case SnapshotStoreNFSProvider:
 		store.FileSystem = &types.StoreFileSystem{
 			Config: &types.FileSystemConfig{
 				NFS: &types.NFSConfig{
@@ -885,7 +897,7 @@ func GetGlobalStore(ctx context.Context, kotsadmNamespace string, kotsadmVeleroB
 				},
 			},
 		}
-	case "replicated.com/pvc":
+	case SnapshotStorePVCProvider:
 		store.Internal = &types.StoreInternal{}
 	}
 
@@ -1091,9 +1103,18 @@ func validateStore(ctx context.Context, store *types.Store, options ValidateStor
 		return nil
 	}
 
+	// Internal with Minio
+	if store.Internal != nil && store.Provider == "aws" {
+		if err := validateInternalS3(ctx, store.Internal, store.Bucket, options); err != nil {
+			return errors.Wrap(err, "failed to validate Internal S3 configuration")
+		}
+		return nil
+	}
+
+	// Internal with PVC
 	if store.Internal != nil {
-		if err := validateInternal(ctx, store.Internal, store.Bucket, options); err != nil {
-			return errors.Wrap(err, "failed to validate Internal configuration")
+		if err := validateInternalPVC(store.Provider, store.Bucket); err != nil {
+			return errors.Wrap(err, "failed to validate Internal PVC configuration")
 		}
 		return nil
 	}
@@ -1301,7 +1322,7 @@ func validateOther(ctx context.Context, storeOther *types.StoreOther, bucket str
 	return nil
 }
 
-func validateInternal(ctx context.Context, storeInternal *types.StoreInternal, bucket string, options ValidateStoreOptions) error {
+func validateInternalS3(ctx context.Context, storeInternal *types.StoreInternal, bucket string, options ValidateStoreOptions) error {
 	if options.ValidateUsingAPod {
 		clientset, err := k8sutil.GetClientset()
 		if err != nil {
@@ -1352,6 +1373,19 @@ func validateInternal(ctx context.Context, storeInternal *types.StoreInternal, b
 	return nil
 }
 
+// validateInternalPVC checks that the internal store is configured to use PVC
+func validateInternalPVC(provider string, bucket string) error {
+	if provider != SnapshotStorePVCProvider {
+		return fmt.Errorf("failed to validate provider %s", provider)
+	}
+
+	if bucket != SnapshotStorePVCBucket {
+		return fmt.Errorf("failed to validate bucket %s", bucket)
+	}
+
+	return nil
+}
+
 // validateLvpFileSystem checks that the fs configuration can be mounted, that the chosen directory is writable and
 // also test for legacy minio files. If minio files are detected, the store is updated with the /velero prefix
 func validateLvpFileSystem(ctx context.Context, store *types.Store, options ValidateStoreOptions) error {
@@ -1369,15 +1403,12 @@ func validateLvpFileSystem(ctx context.Context, store *types.Store, options Vali
 		ForceReset:       false,
 		FileSystemConfig: *store.FileSystem.Config,
 	}
-	isLegacyMinioDeployment, writable, err := ValidateFileSystemDeployment(ctx, clientset, deployOptions, *options.RegistryOptions)
+	_, writable, err := ValidateFileSystemDeployment(ctx, clientset, deployOptions, *options.RegistryOptions)
 	if err != nil {
 		return errors.Wrap(err, "could not validate lvp file system")
 	}
 	if !writable {
 		return errors.New("the volume path is not writable")
-	}
-	if isLegacyMinioDeployment {
-		store.Path = "/velero"
 	}
 	return nil
 }
@@ -1515,9 +1546,9 @@ func resetResticRepositories(ctx context.Context, kotsadmNamespace string) error
 // configuration
 func GetLvpProvider(fsConfig *types.FileSystemConfig) string {
 	if fsConfig.HostPath != nil {
-		return "replicated.com/hostpath"
+		return SnapshotStoreHostPathProvider
 	}
-	return "replicated.com/nfs"
+	return SnapshotStoreNFSProvider
 }
 
 // GetLvpBucket returns the bucket/volume name used for the LVP backup. It includes a hash of the
