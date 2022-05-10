@@ -487,7 +487,7 @@ jobs:
           exit $EXIT_CODE
 
   validate-target-kots-version:
-    github.ref_type == 'branch'
+    if: github.ref_type == 'branch'
     runs-on: ubuntu-20.04
     needs: [goreleaser, release-go-api-tagged]
     strategy:
