@@ -370,7 +370,7 @@ jobs:
     uses: replicatedhq/kots/.github/workflows/regression.yaml@main
     with:
       version_tag_old: ${{ needs.regression-test-setup.outputs.last_release_tag }}
-      version_tag_new: `$TAG`
+      version_tag_new: `${process.env.TAG}`
     secrets:
       E2E_TESTIM_AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
       E2E_TESTIM_AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
