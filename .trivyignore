@@ -1,0 +1,4 @@
+# github.com/dexidp/dex doesn't support semantic versioning of go modules.
+# to fix CVE-2020-27847(CRITICAL), need to import tag v2.27.0 which points commit: 0.0.0-20201214084049-0f9e2888ab65
+# this cve can be ignored as we are using right go module tag/commit
+CVE-2020-27847

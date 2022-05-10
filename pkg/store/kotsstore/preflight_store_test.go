@@ -22,7 +22,7 @@ var (
 				{
 					ClusterVersion: &troubleshootv1beta2.ClusterVersion{
 						AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
-							Strict: multitype.BoolOrString{StrVal: "true"},
+							Strict: &multitype.BoolOrString{StrVal: "true"},
 						},
 					},
 				},
@@ -40,7 +40,7 @@ var (
 				{
 					ClusterVersion: &troubleshootv1beta2.ClusterVersion{
 						AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
-							Strict: multitype.BoolOrString{StrVal: "false"},
+							Strict: &multitype.BoolOrString{StrVal: "false"},
 						},
 					},
 				},
