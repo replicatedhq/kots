@@ -143,7 +143,9 @@ func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 		}
 
 		resultsChannel := make(chan *types.ResponseApp, len(namespaces.Items))
+		defer close(resultsChannel)
 		wg := new(sync.WaitGroup)
+
 		// get helm secrets across all namespaces
 		for _, ns := range namespaces.Items {
 			secrets, err := clientSet.CoreV1().Secrets(ns.Name).List(context.TODO(), metav1.ListOptions{LabelSelector: "owner=helm"})
@@ -154,7 +156,7 @@ func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 
 			for _, s := range secrets.Items {
 				wg.Add(1)
-				go func(wg *sync.WaitGroup) {
+				go func(wg *sync.WaitGroup, s v1.Secret) {
 					app, err := responseAppFromHelmSecret(s)
 					if err != nil {
 						logger.Error(err)
@@ -163,7 +165,7 @@ func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 					}
 					resultsChannel <- app
 					wg.Done()
-				}(wg)
+				}(wg, s)
 			}
 		}
 
