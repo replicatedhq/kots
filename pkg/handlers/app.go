@@ -147,25 +147,25 @@ func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 
 		// get helm secrets across all namespaces
 		for _, ns := range namespaces.Items {
-			secrets, err := clientSet.CoreV1().Secrets(ns.Name).List(context.TODO(), metav1.ListOptions{LabelSelector: "owner=helm"})
-			if err != nil {
-				logger.Error(errors.New("failed to get list secrets"))
-				continue
-			}
-
-			for _, s := range secrets.Items {
+			go func(wg *sync.WaitGroup, namespace string) {
 				wg.Add(1)
-				go func(wg *sync.WaitGroup, s v1.Secret) {
+				defer wg.Done()
+				secrets, err := clientSet.CoreV1().Secrets(namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "owner=helm"})
+				if err != nil {
+					logger.Error(errors.New(fmt.Sprintf("failed to list secrets for namespace: %s\n", namespace)))
+					return
+				}
+
+				for _, s := range secrets.Items {
 					defer wg.Done()
 					app, err := responseAppFromHelmSecret(s)
 					if err != nil {
 						logger.Error(err)
-						w.WriteHeader(http.StatusInternalServerError)
 						return
 					}
 					resultsChannel <- app
-				}(wg, s)
-			}
+				}
+			}(wg, ns.Name)
 		}
 
 		wg.Wait()
