@@ -157,7 +157,6 @@ func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 				}
 
 				for _, s := range secrets.Items {
-					defer wg.Done()
 					app, err := responseAppFromHelmSecret(s)
 					if err != nil {
 						logger.Error(err)
