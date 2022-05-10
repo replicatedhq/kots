@@ -9,5 +9,5 @@ const (
 	PostgresAlpine = "postgres:10.20-alpine"
 	PostgresDebian = "postgres:10.20"
 	Dex            = "ghcr.io/dexidp/dex:v2.31.1"
-	Schemahero     = "schemahero/schemahero:0.13.0"
+	Schemahero     = "schemahero/schemahero:0.13.1"
 )

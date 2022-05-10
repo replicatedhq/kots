@@ -2,7 +2,7 @@ SHELL:=/bin/bash
 PROJECT_NAME ?= kotsadm-migrations
 POSTGRES_ALPINE_TAG ?= 10.20-alpine
 POSTGRES_DEBIAN_TAG ?= 10.20
-SCHEMAHERO_TAG ?= 0.13.0
+SCHEMAHERO_TAG ?= 0.13.1
 
 .PHONY: schema-alpha
 schema-alpha: IMAGE = kotsadm/${PROJECT_NAME}:alpha
