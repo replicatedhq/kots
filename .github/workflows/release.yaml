@@ -2,20 +2,22 @@ name: release
 
 on:
   push:
+    tags:
+      - "v*.*.*"
     branches:
       - main
       - seanrester/sc-48130/change-kots-release-nightly-testing-to-be
 
+env:
+  TAG: ${{ github.ref_type == 'tag' ? github.ref_name : `v2022.5.10-${{github.sha}}-nightly` }}
+
 jobs:
-  blah:
+  generate-schema:
     runs-on: ubuntu-20.04
+    container:
+      image: schemahero/schemahero:0.12.2
     steps:
-      - run: echo ${{ github }}
-#  generate-schema:
-#    runs-on: ubuntu-20.04
-#    container:
-#      image: schemahero/schemahero:0.12.2
-#    steps:
+      - run: echo $TAG
 #      - name: Checkout
 #        uses: actions/checkout@v2
 #      - name: Generate fixtures
