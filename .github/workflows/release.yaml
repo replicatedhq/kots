@@ -10,7 +10,7 @@ jobs:
   blah:
     runs-on: ubuntu-20.04
     steps:
-      - run: echo ${{ github.ref_name }}
+      - run: echo ${{ github }}
 #  generate-schema:
 #    runs-on: ubuntu-20.04
 #    container:
