@@ -179,3 +179,17 @@ sbom/kots-sbom.tgz: sbom/spdx/bom-go-mod.spdx
 sbom: sbom/kots-sbom.tgz
 	cosign sign-blob -key ./cosign.key sbom/kots-sbom.tgz > ./sbom/kots-sbom.tgz.sig
 	cosign public-key -key ./cosign.key -outfile ./sbom/key.pub
+
+# npm packages scans are ignored(only go modules are scanned)
+.PHONY: scan
+scan: 
+	trivy fs \
+		--security-checks vuln \
+		--exit-code=1 \
+		--severity="HIGH,CRITICAL" \
+		--ignore-unfixed \
+		--skip-files actions/version-tag/package-lock.json \
+		--skip-files migrations/fixtures/yarn.lock \
+		--skip-files web/yarn.lock \
+		--ignorefile .trivyignore \
+		./
