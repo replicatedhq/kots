@@ -168,9 +168,14 @@ func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 		}
 
 		wg.Wait()
-		for res := range resultsChannel {
-			responseApps = append(responseApps, *res)
-			helmAppCache[res.Name] = res
+		for {
+			select {
+			case app := <-resultsChannel:
+				responseApps = append(responseApps, *app)
+				helmAppCache[app.Name] = app
+			default:
+				break
+			}
 		}
 	} else {
 
