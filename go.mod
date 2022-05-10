@@ -18,7 +18,7 @@ require (
 	github.com/containers/image/v5 v5.19.3
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/dexidp/dex v0.0.0-20201214084049-0f9e2888ab65
-	github.com/docker/distribution v2.7.1+incompatible
+	github.com/docker/distribution v2.8.1+incompatible
 	github.com/docker/go-units v0.4.0
 	github.com/fatih/color v1.13.0
 	github.com/ghodss/yaml v1.0.0
