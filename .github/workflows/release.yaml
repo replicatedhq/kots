@@ -9,7 +9,7 @@ on:
       - seanrester/sc-48130/change-kots-release-nightly-testing-to-be
 
 env:
-  TAG: ${{ github.ref_type == 'tag' ? github.ref_name : "v2022.5.10-${{github.sha}}-nightly" }}
+  TAG: ${{ github.ref_type == 'tag' ? github.ref_name : "v2022.5.10--nightly" }}
 
 jobs:
   generate-schema:
