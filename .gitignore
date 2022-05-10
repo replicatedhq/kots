@@ -15,7 +15,6 @@ bin/
 vendor
 .idea/
 .vscode/
-web/public
 
 # goreleaser
 /dist

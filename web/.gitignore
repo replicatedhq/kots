@@ -5,6 +5,7 @@ cypress/videos
 
 # dependencies
 /node_modules
+/public/vs
 
 # testing
 /coverage
