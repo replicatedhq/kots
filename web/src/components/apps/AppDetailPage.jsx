@@ -59,6 +59,7 @@ class AppDetailPage extends Component {
     // Used for a fresh reload
     if (history.location.pathname === "/apps") {
       this.checkForFirstApp();
+      this.checkIsHelmManaged();
       return;
     }
 
