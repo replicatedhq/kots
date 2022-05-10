@@ -1767,8 +1767,8 @@ github.com/replicatedhq/kurl v0.0.0-20210414162418-8d6211901244 h1:aSORttMXeqRXg
 github.com/replicatedhq/kurl v0.0.0-20210414162418-8d6211901244/go.mod h1:SoROyLOtkt95R1COPVzdCi5FZbMmATPHohQQzW9V9ds=
 github.com/replicatedhq/termui/v3 v3.1.1-0.20200811145416-f40076d26851/go.mod h1:JDxG6+uubnk9/BZ2yUsyAJJwlptjrnmB2MPF5d2Xe/8=
 github.com/replicatedhq/troubleshoot v0.10.18/go.mod h1:8oFRnMJlFjzJ490eq72iLEN7DGJjkgLx22Z1vX6WwU0=
-github.com/replicatedhq/troubleshoot v0.33.1-0.20220510010840-cb5e3c22e0d4 h1:0bqlLMaMEaUjeYm6F877vq3gPEG8BhyqKvuRZWSHdUI=
-github.com/replicatedhq/troubleshoot v0.33.1-0.20220510010840-cb5e3c22e0d4/go.mod h1:JhIj3fehbj0tjrK2ikhDpvIwisouLn6JNE/PdZiYuCg=
+github.com/replicatedhq/troubleshoot v0.33.1 h1:fbv0ryHy6weWonCGbQr3uE2kosE7/MQSBK6VciLLnq0=
+github.com/replicatedhq/troubleshoot v0.33.1/go.mod h1:JhIj3fehbj0tjrK2ikhDpvIwisouLn6JNE/PdZiYuCg=
 github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq h1:PwPggruelq2336c1Ayg5STFqgbn/QB1tWLQwrVlU7ZQ=
 github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq/go.mod h1:Txa7LopbYCU8aRgmNe0n+y/EPMz50NbCPcVVJBquwag=
 github.com/rivo/uniseg v0.2.0 h1:S1pD9weZBuJdFmowNwbpi7BJ8TNftyUImj/0WQi72jY=
