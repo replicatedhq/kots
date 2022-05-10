@@ -147,8 +147,8 @@ func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 
 		// get helm secrets across all namespaces
 		for _, ns := range namespaces.Items {
+			wg.Add(1)
 			go func(wg *sync.WaitGroup, namespace string) {
-				wg.Add(1)
 				defer wg.Done()
 				secrets, err := clientSet.CoreV1().Secrets(namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "owner=helm"})
 				if err != nil {
