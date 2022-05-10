@@ -9,7 +9,7 @@
   "private": true,
   "scripts": {
     "test:unit": "jest",
-    "postinstall": "cp -R node_modules/monaco-editor/min/vs/ ./public/vs",
+    "postinstall": "mkdir -p public/vs && cp -R node_modules/monaco-editor/min/vs/ ./public/vs",
     "start": "VENDOR_WEB_ENV=dev webpack-dev-server --env dev"
   },
   "jest": {
