@@ -143,7 +143,6 @@ func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 		}
 
 		resultsChannel := make(chan *types.ResponseApp, len(namespaces.Items))
-		defer close(resultsChannel)
 		wg := new(sync.WaitGroup)
 
 		// get helm secrets across all namespaces
@@ -157,6 +156,7 @@ func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 			for _, s := range secrets.Items {
 				wg.Add(1)
 				go func(wg *sync.WaitGroup, s v1.Secret) {
+					defer wg.Done()
 					app, err := responseAppFromHelmSecret(s)
 					if err != nil {
 						logger.Error(err)
@@ -164,7 +164,6 @@ func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 						return
 					}
 					resultsChannel <- app
-					wg.Done()
 				}(wg, s)
 			}
 		}
