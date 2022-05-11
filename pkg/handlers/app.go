@@ -481,7 +481,7 @@ func (h *Handler) CanInstallAppVersion(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if request.AirgapSpec != "" {
+	if request.AirgapSpec != "" && !request.IsInstall { // any version can be installed initially
 		response.CanInstall = false
 
 		a, err := store.GetStore().GetAppFromSlug(appSlug)
