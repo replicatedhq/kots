@@ -227,7 +227,7 @@ export default class DashboardGraphsCard extends React.Component {
   }
 
   render() {
-    if (this.props.isHelmManaged == true){
+    if (this.props.isHelmManaged === true){
       return(
         <div></div>
       )

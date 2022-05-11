@@ -119,7 +119,7 @@ class Dashboard extends Component {
 
     this.state.updateChecker.start(this.updateStatus, 1000);
     this.state.getAppDashboardJob.start(this.getAppDashboard, 2000);
-    if (app && this.props.isHelmManaged != true) {
+    if (app && this.props.isHelmManaged !== true) {
       this.setWatchState(app);
       this.getAppLicense(app);
     }
@@ -158,7 +158,8 @@ class Dashboard extends Component {
 
   getAppDashboard = () => {
     return new Promise((resolve, reject) => {
-      if (this.props.cluster?.id == "" && this.props.isHelmManaged == true){
+      if (this.props.cluster?.id == "" && this.props.isHelmManaged === true){
+        // TODO: use a callback to update the state in the parent component
         this.props.cluster.id = 0;
       }
 
