@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/blang/semver"
-	"github.com/mholt/archiver"
+	"github.com/mholt/archiver/v3"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"

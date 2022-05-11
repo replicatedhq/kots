@@ -13,7 +13,7 @@ import (
 
 	"github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 
-	"github.com/mholt/archiver"
+	"github.com/mholt/archiver/v3"
 	"github.com/mitchellh/hashstructure"
 	"github.com/pkg/errors"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"

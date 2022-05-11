@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/mholt/archiver"
+	"github.com/mholt/archiver/v3"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/supportbundle/types"
 )

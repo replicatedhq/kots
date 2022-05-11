@@ -11,7 +11,7 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
-	"github.com/mholt/archiver"
+	"github.com/mholt/archiver/v3"
 	"github.com/pkg/errors"
 	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
 	upstream "github.com/replicatedhq/kots/pkg/kotsadmupstream"
