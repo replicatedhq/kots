@@ -1,0 +1,19 @@
+{
+  "name": "version_tag",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "build": "ncc build index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "module": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@actions/core": "^1.5.0",
+    "@actions/exec": "^1.1.1",
+    "@actions/github": "^5.0.0",
+    "@vercel/ncc": "^0.33.4"
+  }
+}

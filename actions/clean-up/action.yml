@@ -1,0 +1,5 @@
+name: Regression test clean up
+description: 'Cleans up regression test infrastructure after 24 hours.'
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
