@@ -1,5 +1,4 @@
-import core from '@actions/core';
-import exec from '@actions/exec'
+import { getExecOutput, exec } from '@actions/exec'
 
 const tests = [
   {
@@ -69,12 +68,12 @@ const tests = [
     terraform_script: "existing-airgapped-upgrade-minimum.sh",
   }
 ];
-const workspaceOutput = await exec.exec.getExecOutput('terraform', ['workspace', 'list'], { cwd: 'automation/kots-regression-automation/jumpbox' })
+const workspaceOutput = await getExecOutput('terraform', ['workspace', 'list'], { cwd: 'automation/kots-regression-automation/jumpbox' })
 const automationWorkspaces = workspaceOutput.match(/automation-.*/g);
 
 for(const automationWorkspace of automationWorkspaces) {
-  exec.exec('terraform', [ 'init' ], { cwd: 'automation/kots-regression-automation/jumpbox' });
-  const { stdout: completionTimestamp } = await exec.getExecOutput(
+  exec('terraform', [ 'init' ], { cwd: 'automation/kots-regression-automation/jumpbox' });
+  const { stdout: completionTimestamp } = await getExecOutput(
     'terraform', ['output', 'completion_timestamp'],
     {
       env: {
@@ -86,15 +85,15 @@ for(const automationWorkspace of automationWorkspaces) {
   const currentTime = new Date();
   if(currentTime.getTime() - completionTime.getTime() > (1000 * 60 * 60 * 24)) {
     for(const test of tests) {
-      exec.exec('terraform', [ 'init', '-backend-config', test.backend_config, '-reconfigure' ], { cwd: 'automation/kots-regression-automation/cluster' });
-      exec.exec(test.terraform_script, [ 'destroy' ], {
+      exec('terraform', [ 'init', '-backend-config', test.backend_config, '-reconfigure' ], { cwd: 'automation/kots-regression-automation/cluster' });
+      exec(test.terraform_script, [ 'destroy' ], {
         cwd: 'automation/kots-regression-automation/cluster',
         env: {
           TF_WORKSPACE: automationWorkspace
         },
       });
     }
-    exec.exec('terraform', [ 'destroy', '-auto-approve' ], {
+    exec('terraform', [ 'destroy', '-auto-approve' ], {
       cwd: 'automation/kots-regression-automation/jumpbox',
       env: {
         TF_WORKSPACE: automationWorkspace
