@@ -1,0 +1,31 @@
+name: regression-test-cleanup
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 * * * *'
+
+
+concurrency: regression-test-cleanup
+
+jobs:
+  generate-tag:
+    runs-on: ubuntu-20.04
+    container:
+      image: hashicorp/terraform:1.0.11
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          repository: replicatedhq/kots-regression-automation
+          token: ${{ secrets.E2E_GH_PAT }}
+          path: automation
+          ref: main
+      - name: View context attributes
+        uses: ./actions/clean-up
+        with:
+          AWS_DEFAULT_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
