@@ -16,7 +16,7 @@ type GetUpdatesOptions struct {
 	Namespace                string
 	LocalPath                string
 	License                  *kotsv1beta1.License
-	LastUpdateCheckAt        time.Time
+	LastUpdateCheckAt        *time.Time
 	CurrentCursor            string
 	CurrentChannelID         string
 	CurrentChannelName       string
@@ -29,7 +29,7 @@ type GetUpdatesOptions struct {
 
 // GetUpdates will retrieve all later versions of the application specified in upstreamURI
 // using the options specified in getUpdatesOptions. It returns a list of versions.
-func GetUpdates(upstreamURI string, getUpdatesOptions GetUpdatesOptions) ([]upstreamtypes.Update, error) {
+func GetUpdates(upstreamURI string, getUpdatesOptions GetUpdatesOptions) (*upstreamtypes.UpdateCheckResult, error) {
 	log := logger.NewCLILogger()
 
 	if getUpdatesOptions.Silent {
@@ -41,7 +41,7 @@ func GetUpdates(upstreamURI string, getUpdatesOptions GetUpdatesOptions) ([]upst
 	fetchOptions := upstreamtypes.FetchOptions{}
 	fetchOptions.HelmRepoURI = getUpdatesOptions.HelmRepoURI
 	fetchOptions.LocalPath = getUpdatesOptions.LocalPath
-	fetchOptions.LastUpdateCheckAt = &getUpdatesOptions.LastUpdateCheckAt
+	fetchOptions.LastUpdateCheckAt = getUpdatesOptions.LastUpdateCheckAt
 	fetchOptions.CurrentCursor = getUpdatesOptions.CurrentCursor
 	fetchOptions.CurrentChannelID = getUpdatesOptions.CurrentChannelID
 	fetchOptions.CurrentChannelName = getUpdatesOptions.CurrentChannelName

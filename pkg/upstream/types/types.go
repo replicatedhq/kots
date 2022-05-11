@@ -45,6 +45,11 @@ type Update struct {
 	AppSequence  *int64     `json:"appSequence"` // can have a sequence if update is available as a pending download app version
 }
 
+type UpdateCheckResult struct {
+	UpdateCheckTime time.Time `json:"updateCheckTime"`
+	Updates         []Update  `json:"updates"`
+}
+
 type WriteOptions struct {
 	RootDir              string
 	Namespace            string
