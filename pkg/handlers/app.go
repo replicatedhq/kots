@@ -143,7 +143,7 @@ func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 		for _, ns := range namespaces.Items {
 			secrets, err := clientSet.CoreV1().Secrets(ns.Name).List(context.TODO(), metav1.ListOptions{LabelSelector: "owner=helm"})
 			if err != nil {
-				logger.Error(errors.New(fmt.Sprintf("failed to list secrets for namespace: %s\n", ns.Name)))
+				logger.Warnf(fmt.Sprintf("failed to list secrets for namespace: %s\n", ns.Name))
 				continue
 			}
 
