@@ -8,9 +8,11 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
+	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/snapshot"
 	velerov1api "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
+	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -224,6 +226,18 @@ func MigrateExistingMinioFilesystemDeployments(log *logger.CLILogger, deployOpti
 				return
 			}
 			log.Info("Minio backup storage location restored")
+
+			configMap, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Get(context.TODO(), snapshot.SnapshotMigrationArtifactName, metav1.GetOptions{})
+			if err != nil {
+				if !kuberneteserrors.IsNotFound(err) {
+					log.Error(errors.Wrap(err, "failed to lookup config map"))
+				}
+			} else {
+				err = clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Delete(context.TODO(), configMap.Name, metav1.DeleteOptions{})
+				if err != nil {
+					log.Error(errors.Wrap(err, "failed to delete config map"))
+				}
+			}
 		}
 	}()
 
@@ -249,7 +263,7 @@ func MigrateExistingMinioFilesystemDeployments(log *logger.CLILogger, deployOpti
 
 	// validate backups
 	log.Info("Validating backups have migrated")
-	currentBackups, err := snapshot.ListInstanceBackups(context.TODO(), snapshot.ListInstanceBackupsOptions{Namespace: deployOptions.Namespace})
+	currentBackups, err := snapshot.ListAllBackups(context.TODO(), snapshot.ListInstanceBackupsOptions{Namespace: deployOptions.Namespace})
 	if err != nil {
 		return errors.Wrap(err, "failed to list revised backups")
 	}
@@ -258,6 +272,23 @@ func MigrateExistingMinioFilesystemDeployments(log *logger.CLILogger, deployOpti
 		if !sliceHasBackup(currentBackups, prevBackup.ObjectMeta.Name) {
 			return errors.Errorf("failed to find backup %s in the new Velero deployment", prevBackup.Name)
 		}
+	}
+
+	// Leave migration artifact
+	configMap := &corev1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ConfigMap",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   snapshot.SnapshotMigrationArtifactName,
+			Labels: kotsadmtypes.GetKotsadmLabels(),
+		},
+	}
+
+	_, err = clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Create(context.TODO(), configMap, metav1.CreateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to create config map")
 	}
 
 	// Cleanup on success

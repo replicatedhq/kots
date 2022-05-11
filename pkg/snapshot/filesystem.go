@@ -966,12 +966,12 @@ func GetCurrentLvpFileSystemConfig(ctx context.Context, namespace string) (*type
 	var fileSystemConfig *types.FileSystemConfig
 
 	switch bsl.Spec.Provider {
-	case "replicated.com/hostpath":
+	case SnapshotStoreHostPathProvider:
 		fileSystemConfig = &types.FileSystemConfig{}
 		hostPath := bsl.Spec.Config["path"]
 		fileSystemConfig.HostPath = &hostPath
 		return fileSystemConfig, nil
-	case "replicated.com/nfs":
+	case SnapshotStoreNFSProvider:
 		fileSystemConfig = &types.FileSystemConfig{
 			NFS: &types.NFSConfig{
 				Path:   bsl.Spec.Config["path"],
@@ -1073,9 +1073,9 @@ func EnsureLocalVolumeProviderConfigMap(deployOptions FileSystemDeployOptions, v
 
 	var pluginConfigMapLabel string
 	if fsConfig.HostPath != nil {
-		pluginConfigMapLabel = "replicated.com/hostpath"
+		pluginConfigMapLabel = SnapshotStoreHostPathProvider
 	} else {
-		pluginConfigMapLabel = "replicated.com/nfs"
+		pluginConfigMapLabel = SnapshotStoreNFSProvider
 	}
 
 	listOpts := metav1.ListOptions{
@@ -1094,9 +1094,9 @@ func EnsureLocalVolumeProviderConfigMap(deployOptions FileSystemDeployOptions, v
 				Name:      "local-volume-provider-config",
 				Namespace: veleroNamespace,
 				Labels: map[string]string{
-					"velero.io/plugin-config": "",
-					"replicated.com/nfs":      "ObjectStore",
-					"replicated.com/hostpath": "ObjectStore",
+					"velero.io/plugin-config":     "",
+					SnapshotStoreNFSProvider:      "ObjectStore",
+					SnapshotStoreHostPathProvider: "ObjectStore",
 				},
 			},
 			// These values are the settings used for the minio filesystem deployment
