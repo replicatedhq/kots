@@ -69,12 +69,12 @@ const tests = [
     terraform_script: "existing-airgapped-upgrade-minimum.sh",
   }
 ];
-const workspaceOutput = await executeWithOutput('terraform', ['workspace', 'list'], { cwd: 'automation/kots-regression-automation/jumpbox' })
+const workspaceOutput = await exec.exec.getExecOutput('terraform', ['workspace', 'list'], { cwd: 'automation/kots-regression-automation/jumpbox' })
 const automationWorkspaces = workspaceOutput.match(/automation-.*/g);
 
 for(const automationWorkspace of automationWorkspaces) {
   exec.exec('terraform', [ 'init' ], { cwd: 'automation/kots-regression-automation/jumpbox' });
-  const { output: completionTimestamp } = await executeWithOutput(
+  const { stdout: completionTimestamp } = await exec.getExecOutput(
     'terraform', ['output', 'completion_timestamp'],
     {
       env: {
@@ -100,31 +100,5 @@ for(const automationWorkspace of automationWorkspaces) {
         TF_WORKSPACE: automationWorkspace
       },
     });
-  }
-
-}
-
-async function executeWithOutput(command, args, additionalOptions) {
-  let output = '';
-  let error = '';
-
-  const options = {
-    ... additionalOptions,
-    listeners: {
-      stdout: (data) => {
-        output += data.toString();
-      },
-      stderr: (data) => {
-        error += data.toString();
-      }
-    }
-  }
-
-  const exitCode = await exec.exec('terraform', ['workspace', 'list'], options);
-
-  return {
-    error,
-    output,
-    exitCode
   }
 }
