@@ -79,11 +79,11 @@ const tests = [
     terraform_script: "existing-airgapped-upgrade-minimum.sh",
   }
 ];
+(0,_actions_exec__WEBPACK_IMPORTED_MODULE_0__.exec)('terraform', [ 'init' ], { cwd: 'automation/jumpbox' });
 const workspaceOutput = await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_0__.getExecOutput)('terraform', ['workspace', 'list'], { cwd: 'automation/jumpbox' })
 const automationWorkspaces = workspaceOutput.match(/automation-.*/g);
 
 for(const automationWorkspace of automationWorkspaces) {
-  (0,_actions_exec__WEBPACK_IMPORTED_MODULE_0__.exec)('terraform', [ 'init' ], { cwd: 'automation/jumpbox' });
   const { stdout: completionTimestamp } = await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_0__.getExecOutput)(
     'terraform', ['output', 'completion_timestamp'],
     {
