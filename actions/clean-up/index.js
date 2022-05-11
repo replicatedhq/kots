@@ -68,33 +68,33 @@ const tests = [
     terraform_script: "existing-airgapped-upgrade-minimum.sh",
   }
 ];
-const workspaceOutput = await getExecOutput('terraform', ['workspace', 'list'], { cwd: 'automation/kots-regression-automation/jumpbox' })
+const workspaceOutput = await getExecOutput('terraform', ['workspace', 'list'], { cwd: 'automation/jumpbox' })
 const automationWorkspaces = workspaceOutput.match(/automation-.*/g);
 
 for(const automationWorkspace of automationWorkspaces) {
-  exec('terraform', [ 'init' ], { cwd: 'automation/kots-regression-automation/jumpbox' });
+  exec('terraform', [ 'init' ], { cwd: 'automation/jumpbox' });
   const { stdout: completionTimestamp } = await getExecOutput(
     'terraform', ['output', 'completion_timestamp'],
     {
       env: {
         TF_WORKSPACE: automationWorkspace
       },
-      cwd: 'automation/kots-regression-automation/jumpbox'
+      cwd: 'automation/jumpbox'
     });
   const completionTime = new Date(completionTimestamp);
   const currentTime = new Date();
   if(currentTime.getTime() - completionTime.getTime() > (1000 * 60 * 60 * 24)) {
     for(const test of tests) {
-      exec('terraform', [ 'init', '-backend-config', test.backend_config, '-reconfigure' ], { cwd: 'automation/kots-regression-automation/cluster' });
+      exec('terraform', [ 'init', '-backend-config', test.backend_config, '-reconfigure' ], { cwd: 'automation/cluster' });
       exec(test.terraform_script, [ 'destroy' ], {
-        cwd: 'automation/kots-regression-automation/cluster',
+        cwd: 'automation/cluster',
         env: {
           TF_WORKSPACE: automationWorkspace
         },
       });
     }
     exec('terraform', [ 'destroy', '-auto-approve' ], {
-      cwd: 'automation/kots-regression-automation/jumpbox',
+      cwd: 'automation/jumpbox',
       env: {
         TF_WORKSPACE: automationWorkspace
       },
