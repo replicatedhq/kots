@@ -95,7 +95,7 @@ func (this ReplicatedCursor) Equal(other ReplicatedCursor) bool {
 	return this.ChannelName == other.ChannelName && this.Cursor == other.Cursor
 }
 
-func getUpdatesReplicated(u *url.URL, fetchOptions *types.FetchOptions) ([]types.Update, error) {
+func getUpdatesReplicated(u *url.URL, fetchOptions *types.FetchOptions) (*types.UpdateCheckResult, error) {
 	currentCursor := ReplicatedCursor{
 		ChannelID:   fetchOptions.CurrentChannelID,
 		ChannelName: fetchOptions.CurrentChannelName,
@@ -108,7 +108,8 @@ func getUpdatesReplicated(u *url.URL, fetchOptions *types.FetchOptions) ([]types
 			return nil, errors.Wrap(err, "failed to read replicated app from local path")
 		}
 
-		return []types.Update{{Cursor: parsedLocalRelease.UpdateCursor.Cursor, VersionLabel: parsedLocalRelease.VersionLabel, IsRequired: parsedLocalRelease.IsRequired}}, nil
+		updates := []types.Update{{Cursor: parsedLocalRelease.UpdateCursor.Cursor, VersionLabel: parsedLocalRelease.VersionLabel, IsRequired: parsedLocalRelease.IsRequired}}
+		return &types.UpdateCheckResult{Updates: updates, UpdateCheckTime: time.Now()}, nil
 	}
 
 	// A license file is required to be set for this to succeed
@@ -125,7 +126,7 @@ func getUpdatesReplicated(u *url.URL, fetchOptions *types.FetchOptions) ([]types
 		return nil, errors.Wrap(err, "failed to get successful head response")
 	}
 
-	pendingReleases, err := listPendingChannelReleases(replicatedUpstream, fetchOptions.License, fetchOptions.LastUpdateCheckAt, currentCursor, fetchOptions.ChannelChanged, fetchOptions.ReportingInfo)
+	pendingReleases, updateCheckTime, err := listPendingChannelReleases(replicatedUpstream, fetchOptions.License, fetchOptions.LastUpdateCheckAt, currentCursor, fetchOptions.ChannelChanged, fetchOptions.ReportingInfo)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list replicated app releases")
 	}
@@ -147,7 +148,10 @@ func getUpdatesReplicated(u *url.URL, fetchOptions *types.FetchOptions) ([]types
 			ReleaseNotes: pendingRelease.ReleaseNotes,
 		})
 	}
-	return updates, nil
+	return &types.UpdateCheckResult{
+		Updates:         updates,
+		UpdateCheckTime: *updateCheckTime,
+	}, nil
 }
 
 func downloadReplicated(
@@ -554,10 +558,10 @@ func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kots
 	return &release, nil
 }
 
-func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license *kotsv1beta1.License, lastUpdateCheckAt *time.Time, currentCursor ReplicatedCursor, channelChanged bool, reportingInfo *reportingtypes.ReportingInfo) ([]ChannelRelease, error) {
+func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license *kotsv1beta1.License, lastUpdateCheckAt *time.Time, currentCursor ReplicatedCursor, channelChanged bool, reportingInfo *reportingtypes.ReportingInfo) ([]ChannelRelease, *time.Time, error) {
 	u, err := url.Parse(license.Spec.Endpoint)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse endpoint from license")
+		return nil, nil, errors.Wrap(err, "failed to parse endpoint from license")
 	}
 
 	hostname := u.Hostname()
@@ -583,7 +587,7 @@ func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license 
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to call newrequest")
+		return nil, nil, errors.Wrap(err, "failed to call newrequest")
 	}
 
 	reporting.InjectReportingInfoHeaders(req, reportingInfo)
@@ -593,30 +597,35 @@ func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license 
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to execute get request")
+		return nil, nil, errors.Wrap(err, "failed to execute get request")
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to read response body")
+		return nil, nil, errors.Wrap(err, "failed to read response body")
 	}
 
 	if resp.StatusCode >= 400 {
 		if len(body) > 0 {
-			return nil, util.ActionableError{Message: string(body)}
+			return nil, nil, util.ActionableError{Message: string(body)}
 		}
-		return nil, errors.Errorf("unexpected result from get request: %d", resp.StatusCode)
+		return nil, nil, errors.Errorf("unexpected result from get request: %d", resp.StatusCode)
+	}
+
+	updateCheckTime, err := time.Parse(time.RFC3339, resp.Header.Get("X-Replicated-UpdateCheckAt"))
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to parse server side time")
 	}
 
 	var channelReleases struct {
 		ChannelReleases []ChannelRelease `json:"channelReleases"`
 	}
 	if err := json.Unmarshal(body, &channelReleases); err != nil {
-		return nil, errors.Wrap(err, "failed to unmarshal response")
+		return nil, nil, errors.Wrap(err, "failed to unmarshal response")
 	}
 
-	return channelReleases.ChannelReleases, nil
+	return channelReleases.ChannelReleases, &updateCheckTime, nil
 }
 
 func MustMarshalLicense(license *kotsv1beta1.License) []byte {

@@ -9,9 +9,12 @@ import (
 	"github.com/pkg/errors"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/cursor"
 	preflighttypes "github.com/replicatedhq/kots/pkg/preflight/types"
 	mock_store "github.com/replicatedhq/kots/pkg/store/mock"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
+	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAutoDeployDoesNotExecuteIfDisabled(t *testing.T) {
@@ -772,5 +775,112 @@ func TestWaitForPreflightsToFinishPreflightsNotInitiallyFinished(t *testing.T) {
 	err := waitForPreflightsToFinish(appID, sequence)
 	if err != nil {
 		t.Errorf("waitForPreflightsToFinish() returned error = %v, wanted nil", err)
+	}
+}
+
+func Test_removeOldUpdates(t *testing.T) {
+	tests := []struct {
+		useSemver   bool
+		updates     []upstreamtypes.Update
+		appVersions *downstreamtypes.DownstreamVersions
+		want        []upstreamtypes.Update
+	}{
+		{
+			useSemver: false,
+			updates: []upstreamtypes.Update{
+				{
+					Cursor:       "8",
+					VersionLabel: "0.0.41",
+				},
+				{
+					Cursor:       "7",
+					VersionLabel: "0.1.9",
+				},
+				{
+					Cursor:       "6",
+					VersionLabel: "0.0.32",
+				},
+			},
+			appVersions: &downstreamtypes.DownstreamVersions{
+				AllVersions: []*downstreamtypes.DownstreamVersion{
+					{
+						VersionLabel: "0.1.5",
+						UpdateCursor: "6",
+						Sequence:     1,
+					},
+					{
+						VersionLabel: "0.1.4",
+						UpdateCursor: "5",
+						Sequence:     0,
+					},
+				},
+			},
+			want: []upstreamtypes.Update{
+				{
+					Cursor:       "8",
+					VersionLabel: "0.0.41",
+				},
+				{
+					Cursor:       "7",
+					VersionLabel: "0.1.9",
+				},
+				{
+					Cursor:       "6",
+					VersionLabel: "0.0.32",
+				},
+			},
+		},
+		{
+			useSemver: true,
+			updates: []upstreamtypes.Update{
+				{
+					Cursor:       "8",
+					VersionLabel: "0.0.41",
+				},
+				{
+					Cursor:       "7",
+					VersionLabel: "0.1.9",
+				},
+				{
+					Cursor:       "6",
+					VersionLabel: "0.0.32",
+				},
+			},
+			appVersions: &downstreamtypes.DownstreamVersions{
+				AllVersions: []*downstreamtypes.DownstreamVersion{
+					{
+						VersionLabel: "0.1.5",
+						UpdateCursor: "6",
+						Sequence:     1,
+					},
+					{
+						VersionLabel: "0.1.4",
+						UpdateCursor: "5",
+						Sequence:     0,
+					},
+				},
+			},
+			want: []upstreamtypes.Update{
+				{
+					Cursor:       "7",
+					VersionLabel: "0.1.9",
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		req := require.New(t)
+
+		for _, v := range test.appVersions.AllVersions {
+			sv := semver.MustParse(v.VersionLabel)
+			v.Semver = &sv
+
+			vc := cursor.MustParse(v.UpdateCursor)
+			v.Cursor = &vc
+		}
+
+		got := removeOldUpdates(test.updates, test.appVersions, test.useSemver)
+		req.Equal(test.want, got)
 	}
 }

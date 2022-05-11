@@ -8,16 +8,16 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
-func GetUpdatesUpstream(upstreamURI string, fetchOptions *types.FetchOptions) ([]types.Update, error) {
-	versions, err := getUpdatesUpstream(upstreamURI, fetchOptions)
+func GetUpdatesUpstream(upstreamURI string, fetchOptions *types.FetchOptions) (*types.UpdateCheckResult, error) {
+	updates, err := getUpdatesUpstream(upstreamURI, fetchOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "download upstream failed")
 	}
 
-	return versions, nil
+	return updates, nil
 }
 
-func getUpdatesUpstream(upstreamURI string, fetchOptions *types.FetchOptions) ([]types.Update, error) {
+func getUpdatesUpstream(upstreamURI string, fetchOptions *types.FetchOptions) (*types.UpdateCheckResult, error) {
 	if !util.IsURL(upstreamURI) {
 		return nil, errors.New("not implemented")
 	}

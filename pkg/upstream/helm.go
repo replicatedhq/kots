@@ -12,6 +12,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/Masterminds/semver"
 	"github.com/pkg/errors"
@@ -24,7 +25,7 @@ import (
 	"helm.sh/helm/v3/pkg/repo"
 )
 
-func getUpdatesHelm(u *url.URL, repoURI string) ([]types.Update, error) {
+func getUpdatesHelm(u *url.URL, repoURI string) (*types.UpdateCheckResult, error) {
 	repoName, chartName, _, err := parseHelmURL(u)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse helm uri")
@@ -49,7 +50,10 @@ func getUpdatesHelm(u *url.URL, repoURI string) ([]types.Update, error) {
 
 		updates = append(updates, types.Update{Cursor: result.Chart.Version})
 	}
-	return updates, nil
+	return &types.UpdateCheckResult{
+		Updates:         updates,
+		UpdateCheckTime: time.Now(),
+	}, nil
 }
 
 func downloadHelm(u *url.URL, repoURI string) (*types.Upstream, error) {

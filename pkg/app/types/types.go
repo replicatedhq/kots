@@ -32,7 +32,7 @@ type App struct {
 	IconURI               string         `json:"iconUri"`
 	UpdatedAt             *time.Time     `json:"createdAt"`
 	CreatedAt             time.Time      `json:"updatedAt"`
-	LastUpdateCheckAt     string         `json:"lastUpdateCheckAt"`
+	LastUpdateCheckAt     *time.Time     `json:"lastUpdateCheckAt"`
 	HasPreflight          bool           `json:"hasPreflight"`
 	IsConfigurable        bool           `json:"isConfigurable"`
 	SnapshotTTL           string         `json:"snapshotTtl"`

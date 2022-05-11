@@ -150,7 +150,7 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 	var createdAt persistence.StringTime
 	var updatedAt persistence.NullStringTime
 	var currentSequence sql.NullInt64
-	var lastUpdateCheckAt sql.NullString
+	var lastUpdateCheckAt persistence.NullStringTime
 	var lastLicenseSync sql.NullString
 	var snapshotTTLNew sql.NullString
 	var snapshotSchedule sql.NullString
@@ -167,7 +167,6 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 	app.License = licenseStr.String
 	app.UpstreamURI = upstreamURI.String
 	app.IconURI = iconURI.String
-	app.LastUpdateCheckAt = lastUpdateCheckAt.String
 	app.LastLicenseSync = lastLicenseSync.String
 	app.SnapshotTTL = snapshotTTLNew.String
 	app.SnapshotSchedule = snapshotSchedule.String
@@ -175,6 +174,10 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 	app.RestoreUndeployStatus = apptypes.UndeployStatus(restoreUndeployStatus.String)
 	app.UpdateCheckerSpec = updateCheckerSpec.String
 	app.AutoDeploy = apptypes.AutoDeploy(autoDeploy.String)
+
+	if lastUpdateCheckAt.Valid {
+		app.LastUpdateCheckAt = &lastUpdateCheckAt.Time
+	}
 
 	if updatedAt.Valid {
 		app.UpdatedAt = &updatedAt.Time

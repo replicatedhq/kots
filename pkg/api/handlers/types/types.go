@@ -27,7 +27,7 @@ type ResponseApp struct {
 	IconURI           string              `json:"iconUri"`
 	CreatedAt         time.Time           `json:"createdAt"`
 	UpdatedAt         *time.Time          `json:"updatedAt"`
-	LastUpdateCheckAt string              `json:"lastUpdateCheckAt"`
+	LastUpdateCheckAt *time.Time          `json:"lastUpdateCheckAt"`
 	HasPreflight      bool                `json:"hasPreflight"`
 	IsConfigurable    bool                `json:"isConfigurable"`
 	UpdateCheckerSpec string              `json:"updateCheckerSpec"`

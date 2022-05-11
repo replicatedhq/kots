@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/blang/semver"
 	"github.com/replicatedhq/kots/pkg/preflight"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -19,6 +20,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/reporting"
+	kotssemver "github.com/replicatedhq/kots/pkg/semver"
 	storepkg "github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
@@ -217,14 +219,9 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 		return nil, errors.Wrap(err, "failed to get current update cursor")
 	}
 
-	lastUpdateCheckAt, err := time.Parse(time.RFC3339, a.LastUpdateCheckAt)
-	if err != nil {
-		lastUpdateCheckAt = a.CreatedAt // first time to check for updates, use installation time instead
-	}
-
 	getUpdatesOptions := kotspull.GetUpdatesOptions{
 		License:                  latestLicense,
-		LastUpdateCheckAt:        lastUpdateCheckAt,
+		LastUpdateCheckAt:        a.LastUpdateCheckAt,
 		CurrentCursor:            updateCursor,
 		CurrentChannelID:         latestLicense.Spec.ChannelID,
 		CurrentChannelName:       latestLicense.Spec.ChannelName,
@@ -234,8 +231,6 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 		Silent:                   false,
 		ReportingInfo:            reporting.GetReportingInfo(a.ID),
 	}
-
-	thisUpdateCheckAt := time.Now()
 
 	// get updates
 	updates, err := kotspull.GetUpdates(fmt.Sprintf("replicated://%s", latestLicense.Spec.AppSlug), getUpdatesOptions)
@@ -261,9 +256,11 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 		return nil, errors.Errorf("no app versions found for app %s in downstream %s", opts.AppID, d.ClusterID)
 	}
 
+	filteredUpdates := removeOldUpdates(updates.Updates, appVersions, latestLicense.Spec.IsSemverRequired)
+
 	var availableReleases []UpdateCheckRelease
 	availableSequence := appVersions.AllVersions[0].Sequence + 1
-	for _, u := range updates {
+	for _, u := range filteredUpdates {
 		availableReleases = append(availableReleases, UpdateCheckRelease{
 			Sequence: availableSequence,
 			Version:  u.VersionLabel,
@@ -272,7 +269,7 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 	}
 
 	ucr := UpdateCheckResponse{
-		AvailableUpdates:  int64(len(updates)),
+		AvailableUpdates:  int64(len(filteredUpdates)),
 		AvailableReleases: availableReleases,
 		DeployingRelease:  getVersionToDeploy(opts, d.ClusterID, availableReleases),
 	}
@@ -284,8 +281,8 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 		}
 	}
 
-	if len(updates) == 0 {
-		if err := app.SetLastUpdateAtTime(a.ID, thisUpdateCheckAt); err != nil {
+	if len(filteredUpdates) == 0 {
+		if err := app.SetLastUpdateAtTime(a.ID, updates.UpdateCheckTime); err != nil {
 			return nil, errors.Wrap(err, "failed to update last updated at time")
 		}
 		if err := ensureDesiredVersionIsDeployed(opts, d.ClusterID); err != nil {
@@ -301,12 +298,12 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 	}
 
 	if opts.Wait {
-		if err := processUpdates(opts, a.ID, d.ClusterID, updates, thisUpdateCheckAt); err != nil {
+		if err := processUpdates(opts, a.ID, d.ClusterID, filteredUpdates, updates.UpdateCheckTime); err != nil {
 			return nil, errors.Wrap(err, "failed to process updates")
 		}
 	} else {
 		go func() {
-			if err := processUpdates(opts, a.ID, d.ClusterID, updates, thisUpdateCheckAt); err != nil {
+			if err := processUpdates(opts, a.ID, d.ClusterID, filteredUpdates, updates.UpdateCheckTime); err != nil {
 				logger.Error(errors.Wrap(err, "failed to process updates"))
 			}
 		}()
@@ -634,4 +631,77 @@ func deployVersion(opts CheckForUpdatesOpts, clusterID string, appVersions *down
 	}
 
 	return nil
+}
+
+type sortableUpdate struct {
+	Sequence       int64
+	Semver         *semver.Version
+	UpstreamUpdate *upstreamtypes.Update
+}
+
+type bySemver []*sortableUpdate
+
+func (v bySemver) Len() int {
+	return len(v)
+}
+
+func (v bySemver) HasSemver(i int) bool {
+	return v[i].Semver != nil
+}
+
+func (v bySemver) GetSemver(i int) *semver.Version {
+	return v[i].Semver
+}
+
+func (v bySemver) GetSequence(i int) int64 {
+	return v[i].Sequence
+}
+
+func (v bySemver) Swap(i, j int) {
+	v[i], v[j] = v[j], v[i]
+}
+
+// Removes updates that are older than the first release installed in the cluster
+func removeOldUpdates(updates []upstreamtypes.Update, appVersions *downstreamtypes.DownstreamVersions, isSemverRequired bool) []upstreamtypes.Update {
+	if !isSemverRequired {
+		return updates
+	}
+
+	newMaxSequence := appVersions.AllVersions[0].Sequence + int64(len(updates))
+	sortedUpdates := []*sortableUpdate{}
+	for i := range updates {
+		u := updates[i]
+		su := &sortableUpdate{
+			Sequence:       newMaxSequence,
+			UpstreamUpdate: &u,
+		}
+		if v, err := semver.ParseTolerant(u.VersionLabel); err == nil {
+			su.Semver = &v
+		}
+		sortedUpdates = append(sortedUpdates, su)
+		newMaxSequence -= 1 // sorted order is descending
+	}
+	for i := range appVersions.AllVersions {
+		u := appVersions.AllVersions[i]
+		su := &sortableUpdate{
+			Sequence: u.Sequence,
+			Semver:   u.Semver,
+		}
+		sortedUpdates = append(sortedUpdates, su)
+	}
+
+	kotssemver.SortVersions(bySemver(sortedUpdates))
+
+	fileteredUpdates := []upstreamtypes.Update{}
+	for _, su := range sortedUpdates {
+		if su.Sequence == 0 {
+			break
+		}
+		if su.UpstreamUpdate == nil {
+			continue
+		}
+		fileteredUpdates = append(fileteredUpdates, *su.UpstreamUpdate)
+	}
+
+	return fileteredUpdates
 }

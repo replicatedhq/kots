@@ -8,6 +8,7 @@ import (
 	v1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/cursor"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotssemver "github.com/replicatedhq/kots/pkg/semver"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 )
 
@@ -73,6 +74,32 @@ type DownstreamVersionHistory struct {
 	NumOfRemainingVersions int                  `json:"numOfRemainingVersions"`
 }
 
+// SemverSortable interface implementations
+
+type bySemver []*DownstreamVersion
+
+func (v bySemver) Len() int {
+	return len(v)
+}
+
+func (v bySemver) HasSemver(i int) bool {
+	return v[i].Semver != nil
+}
+
+func (v bySemver) GetSemver(i int) *semver.Version {
+	return v[i].Semver
+}
+
+func (v bySemver) GetSequence(i int) int64 {
+	return v[i].Sequence
+}
+
+func (v bySemver) Swap(i, j int) {
+	v[i], v[j] = v[j], v[i]
+}
+
+// sort.Interface interface implementations
+
 type bySequence []*DownstreamVersion
 
 func (v bySequence) Len() int {
@@ -87,46 +114,16 @@ func (v bySequence) Less(i, j int) bool {
 
 // Modified bubble sort: instead of comparing adjacent elements, compare the elements at the semvers only.
 // Input is assumed to be sorted by sequence so non-semver elements are already in correct order.
-func SortDownstreamVersions(versions *DownstreamVersions, bySemver bool) {
-	if !bySemver {
+func SortDownstreamVersions(versions *DownstreamVersions, sortBySemver bool) {
+	if !sortBySemver {
 		sort.Sort(sort.Reverse(bySequence(versions.AllVersions)))
 		return
 	}
 
-	endIndex := len(versions.AllVersions)
-	keepSorting := true
-	for keepSorting {
-		keepSorting = false
-		for j := 0; j < endIndex-1; j++ {
-			vj := versions.AllVersions[j]
-			if vj.Semver == nil {
-				continue
-			}
-
-			isLessThan := false
-			for k := j + 1; k < endIndex; k++ {
-				vk := versions.AllVersions[k]
-				if vk.Semver == nil {
-					continue
-				}
-
-				isLessThan = vj.Semver.LT(*vk.Semver)
-				if vj.Semver.EQ(*vk.Semver) {
-					isLessThan = vj.Sequence < vk.Sequence
-				}
-
-				if isLessThan {
-					break
-				}
-			}
-
-			if isLessThan {
-				versions.AllVersions[j], versions.AllVersions[j+1] = versions.AllVersions[j+1], versions.AllVersions[j]
-				keepSorting = true
-			}
-		}
-	}
+	kotssemver.SortVersions(bySemver(versions.AllVersions))
 }
+
+// sort.Interface interface implementations
 
 type byCursor []*DownstreamVersion
 
