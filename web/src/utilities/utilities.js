@@ -747,7 +747,10 @@ export const Utilities = {
         const gzunipStream = zlib.createGunzip();
         fileReaderStream(bundle).pipe(gzunipStream).pipe(extract).on("entry", (header, stream, next) => {
           if (header.name !== filename) {
-            next();
+            stream.on("end", () => {
+              next();
+            });
+            stream.resume();
             return;
           }
           const buffers = [];
@@ -779,7 +782,10 @@ export const Utilities = {
           const gzunipStream = zlib.createGunzip();
           fileReaderStream(appArchive).pipe(gzunipStream).pipe(extract).on("entry", (header, stream, next) => {
             if (getFileFormat(header.name) !== "yaml") {
-              next();
+              stream.on("end", () => {
+                next();
+              });
+              stream.resume();
               return;
             }
             const buffers = [];
