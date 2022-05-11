@@ -79,33 +79,33 @@ const tests = [
     terraform_script: "existing-airgapped-upgrade-minimum.sh",
   }
 ];
-const workspaceOutput = await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_0__.getExecOutput)('terraform', ['workspace', 'list'], { cwd: 'automation/kots-regression-automation/jumpbox' })
+const workspaceOutput = await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_0__.getExecOutput)('terraform', ['workspace', 'list'], { cwd: 'automation/jumpbox' })
 const automationWorkspaces = workspaceOutput.match(/automation-.*/g);
 
 for(const automationWorkspace of automationWorkspaces) {
-  (0,_actions_exec__WEBPACK_IMPORTED_MODULE_0__.exec)('terraform', [ 'init' ], { cwd: 'automation/kots-regression-automation/jumpbox' });
+  (0,_actions_exec__WEBPACK_IMPORTED_MODULE_0__.exec)('terraform', [ 'init' ], { cwd: 'automation/jumpbox' });
   const { stdout: completionTimestamp } = await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_0__.getExecOutput)(
     'terraform', ['output', 'completion_timestamp'],
     {
       env: {
         TF_WORKSPACE: automationWorkspace
       },
-      cwd: 'automation/kots-regression-automation/jumpbox'
+      cwd: 'automation/jumpbox'
     });
   const completionTime = new Date(completionTimestamp);
   const currentTime = new Date();
   if(currentTime.getTime() - completionTime.getTime() > (1000 * 60 * 60 * 24)) {
     for(const test of tests) {
-      (0,_actions_exec__WEBPACK_IMPORTED_MODULE_0__.exec)('terraform', [ 'init', '-backend-config', test.backend_config, '-reconfigure' ], { cwd: 'automation/kots-regression-automation/cluster' });
+      (0,_actions_exec__WEBPACK_IMPORTED_MODULE_0__.exec)('terraform', [ 'init', '-backend-config', test.backend_config, '-reconfigure' ], { cwd: 'automation/cluster' });
       (0,_actions_exec__WEBPACK_IMPORTED_MODULE_0__.exec)(test.terraform_script, [ 'destroy' ], {
-        cwd: 'automation/kots-regression-automation/cluster',
+        cwd: 'automation/cluster',
         env: {
           TF_WORKSPACE: automationWorkspace
         },
       });
     }
     (0,_actions_exec__WEBPACK_IMPORTED_MODULE_0__.exec)('terraform', [ 'destroy', '-auto-approve' ], {
-      cwd: 'automation/kots-regression-automation/jumpbox',
+      cwd: 'automation/jumpbox',
       env: {
         TF_WORKSPACE: automationWorkspace
       },
