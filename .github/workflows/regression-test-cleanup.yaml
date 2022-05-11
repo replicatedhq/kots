@@ -33,3 +33,7 @@ jobs:
           ref: seanrester/sc-48196/update-serial-regression-tests-to-run-in
       - name: View context attributes
         uses: ./actions/clean-up
+        with:
+          AWS_DEFAULT_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
