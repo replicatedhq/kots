@@ -5,7 +5,47 @@ on:
     tags:
       - "v*.*.*"
 
+concurrency: release
+
 jobs:
+  image-deps-updater:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '^1.17.4'
+
+      - name: Run Update Script
+        env:
+          GITHUB_AUTH_TOKEN: ${{ secrets.NIGHTLY_GH_PAT }}
+        run: |
+          go run ./cmd/imagedeps
+
+      - name: Create Pull Request # creates a PR if there are differences
+        uses: peter-evans/create-pull-request@v3
+        id: cpr
+        with:
+          token: ${{ secrets.NIGHTLY_GH_PAT }}
+          commit-message: update kots image dependency tags
+          title: 'Automated Kots Image Dependency Tag Update'
+          branch: automation/image-dependencies
+          delete-branch: true
+          labels: |
+            automated-pr
+            images
+          draft: false
+          base: "main"
+          body: "Automated changes by the [release](https://github.com/replicatedhq/kots/blob/main/.github/workflows/release.yaml) GitHub action"
+
+      - name: Check outputs
+        run: |
+          echo "Pull Request Number - ${{ steps.cpr.outputs.pull-request-number }}"
+          echo "Pull Request URL - ${{ steps.cpr.outputs.pull-request-url }}"
+
   generate-schema:
     runs-on: ubuntu-20.04
     container:
@@ -87,7 +127,6 @@ jobs:
         GIT_COMMIT: ${{ github.sha }}
         GIT_TAG: ${{ github.ref_name }}
       run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C web deps build-kotsadm
-      shell: bash
 
     - name: Upload web artifact
       uses: actions/upload-artifact@v2
@@ -240,7 +279,6 @@ jobs:
     - run: sudo apt-get update -y
     - run: sudo apt-get -qq -y install gnupg2 libdevmapper-dev libgpgme-dev libc6-dev-i386 btrfs-progs libbtrfs-dev pkg-config
     - name: set previous release tag for goreleaser
-      shell: bash
       run: |
         export TAG=$(curl --silent "https://api.github.com/repos/replicatedhq/kots/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")')
         echo "GORELEASER_PREVIOUS_TAG=${TAG}" >> $GITHUB_ENV
@@ -438,7 +476,6 @@ jobs:
 
       - name: setup testIM
         run: npm i -g @testim/testim-cli
-        shell: bash
 
       - name: validate that kots install fails early
         run: |
@@ -503,7 +540,6 @@ jobs:
 
       - name: setup testIM
         run: npm i -g @testim/testim-cli
-        shell: bash
 
       - name: validate that kots install fails early
         run: |
@@ -568,7 +604,6 @@ jobs:
 
       - name: setup testIM
         run: npm i -g @testim/testim-cli
-        shell: bash
 
       - name: validate that kots install fails early
         run: |
