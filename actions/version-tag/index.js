@@ -1,18 +1,9 @@
-const core = require('@actions/core');
+import core from '@actions/core';
 
-try {
-    const githubRef = process.env.GITHUB_REF;
-    if (githubRef.startsWith("refs/tags/")) {
-        const tag = githubRef.slice(10);
-        core.setOutput("GIT_TAG", tag);
-    } else if (process.env.GITHUB_EVENT_NAME === "schedule") {
-        var dateObj = new Date();
-        var month = dateObj.getUTCMonth() + 1; // months are 0-based
-        var day = dateObj.getUTCDate();
-        var hour = dateObj.getUTCHours();
-        var year = dateObj.getUTCFullYear();
-        core.setOutput("GIT_TAG", `v${year}.${month}.${day}-${hour}-nightly`);
-    }
-} catch (error) {
-    core.setFailed(error.message);
-}
+const dateObj = new Date();
+const month = dateObj.getUTCMonth() + 1; // months are 0-based
+const day = dateObj.getUTCDate();
+const year = dateObj.getUTCFullYear();
+const sha = process.env.GITHUB_SHA.substring(0, 6);
+
+core.setOutput("GIT_TAG", `v${year}.${month}.${day}-${sha}-nightly`);
