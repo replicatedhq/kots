@@ -7,18 +7,6 @@ https://github.com/replicatedhq/kots/blob/main/CONTRIBUTING.md#testing
 3. If the PR is unfinished, please mark it as a draft.
 -->
 
-#### What type of PR is this?
-
-<!--
-Please choose from one of the following:
-type::bug
-type::docs
-type::feature
-type::security
-type::chore
-type::tests
--->
-
 #### What this PR does / why we need it:
 
 #### Which issue(s) this PR fixes:
