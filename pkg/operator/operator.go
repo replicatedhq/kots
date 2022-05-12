@@ -510,8 +510,7 @@ func checkRestoreComplete(a *apptypes.App, restore *velerov1.Restore) error {
 
 		logger.Info(fmt.Sprintf("restore complete, marking version %d as deployed", sequence))
 
-		// mark the sequence as deployed both in the db
-		// so that the admin console does not try to re-deploy it
+		// mark the sequence as deployed so that the admin console does not try to re-deploy it
 		if err := store.GetStore().MarkAsCurrentDownstreamVersion(a.ID, sequence); err != nil {
 			return errors.Wrap(err, "failed to mark as current downstream version")
 		}
