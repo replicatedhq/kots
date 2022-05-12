@@ -1,7 +1,6 @@
 name: regression-test-cleanup
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - seanrester/sc-48196/update-serial-regression-tests-to-run-in
