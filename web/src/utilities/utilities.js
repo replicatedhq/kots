@@ -97,7 +97,6 @@ export function getBuildVersion() {
 
 export function parseIconUri(uri) {
   const splitUri = uri.split("?");
-  console.log("hello",splitUri)
   if (splitUri.length < 2) {
     return {
       uri: deploymentStatusIcon,
