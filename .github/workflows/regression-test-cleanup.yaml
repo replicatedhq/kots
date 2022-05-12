@@ -7,14 +7,6 @@ on:
   schedule:
     - cron: '0 * * * *'
 
-env:
-  AWS_DEFAULT_REGION: us-east-1
-  AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
-  AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
-  E2E_TESTIM_AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
-  E2E_TESTIM_AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
-  KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL: ${{ secrets.KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL }}
-
 jobs:
   generate-tag:
     runs-on: ubuntu-20.04
