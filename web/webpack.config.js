@@ -5,7 +5,6 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const MonacoWebpackPlugin = require("monaco-editor-webpack-plugin");
 const NodePolyfillPlugin = require("node-polyfill-webpack-plugin");
-const CopyPlugin = require('copy-webpack-plugin')
 
 // const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer");
 
@@ -155,14 +154,6 @@ module.exports = function (env) {
       //   analyzerPort: 30088
       // })
       , 
-      new CopyPlugin({
-        patterns: [
-          {
-            from: path.resolve(__dirname, 'public'),
-            to: path.resolve(__dirname, 'dist')
-        }
-        ],
-      }),
     ],
   };
 
