@@ -71,7 +71,7 @@ const tests = [
 
 await exec('terraform', ['init'], {cwd: 'automation/jumpbox'});
 
-const workspaceOutput = await getExecOutput('terraform', ['workspace', 'list'], { cwd: 'automation/jumpbox' })
+const { stdout: workspaceOutput } = await getExecOutput('terraform', ['workspace', 'list'], { cwd: 'automation/jumpbox' })
 const automationWorkspaces = workspaceOutput.match(/automation-.*/g);
 // const awsConfig = {
 //   AWS_DEFAULT_REGION: getInput('AWS_DEFAULT_REGION'),
