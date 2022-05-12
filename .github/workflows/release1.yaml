@@ -157,6 +157,8 @@ jobs:
   build-kurl-proxy:
     runs-on: ubuntu-20.04
     needs: [build-schema-migrations, generate-tag]
+    env:
+      GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
     steps:
     - uses: actions/setup-go@v2
       with:
@@ -178,7 +180,6 @@ jobs:
     - name: Build kurl_proxy
       env:
         GIT_COMMIT: ${{ github.sha }}
-        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
         SCOPE_DSN_PUBLIC: ""
       run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C kurl_proxy test build
 
