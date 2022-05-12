@@ -8,6 +8,26 @@ on:
       - seanrester/sc-48196/update-serial-regression-tests-to-run-in
 
 jobs:
+  generate-tag:
+    runs-on: ubuntu-20.04
+    outputs:
+      tag: ${{ env.GITHUB_REF_TYPE == 'branch' && steps.get_tag.outputs.GIT_TAG || github.ref_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Get tags
+        id: get_tag
+        uses: ./actions/version-tag
+
+      - name: Push tag
+        if: env.GITHUB_REF_TYPE == 'branch'
+        env:
+          GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+        run: |
+          git tag $GIT_TAG
+          git push origin $GIT_TAG
+
   image-deps-updater:
     runs-on: ubuntu-20.04
     steps:
@@ -89,7 +109,7 @@ jobs:
 
   build-schema-migrations:
     runs-on: ubuntu-20.04
-    needs: [generate-fixtures]
+    needs: [generate-fixtures, generate-tag]
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -101,7 +121,7 @@ jobs:
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
     - name: "Release schema migrations on tag"
       env:
-        GIT_TAG: ${{ github.ref_name }}
+        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
         DOCKER_CONFIG: ./.docker
       run: |
         export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C migrations schema-release
@@ -114,7 +134,7 @@ jobs:
 
   build-web:
     runs-on: ubuntu-20.04
-    needs: [build-schema-migrations]
+    needs: [build-schema-migrations, generate-tag]
     container:
       image: replicated/gitops-builder:buildkite-go17-node17
       options: --user root
@@ -125,7 +145,7 @@ jobs:
     - name: Build web
       env:
         GIT_COMMIT: ${{ github.sha }}
-        GIT_TAG: ${{ github.ref_name }}
+        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
       run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C web deps build-kotsadm
 
     - name: Upload web artifact
@@ -136,7 +156,7 @@ jobs:
 
   build-kurl-proxy:
     runs-on: ubuntu-20.04
-    needs: [build-schema-migrations]
+    needs: [build-schema-migrations, generate-tag]
     steps:
     - uses: actions/setup-go@v2
       with:
@@ -158,7 +178,7 @@ jobs:
     - name: Build kurl_proxy
       env:
         GIT_COMMIT: ${{ github.sha }}
-        GIT_TAG: ${{ github.ref_name }}
+        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
         SCOPE_DSN_PUBLIC: ""
       run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C kurl_proxy test build
 
@@ -182,7 +202,7 @@ jobs:
 
   build-go-api:
     runs-on: ubuntu-20.04
-    needs: [build-web]
+    needs: [build-web, generate-tag]
     steps:
     - uses: actions/setup-go@v2
       with:
@@ -210,7 +230,7 @@ jobs:
     - name: Build Go API
       env:
         GIT_COMMIT: ${{ github.sha }}
-        GIT_TAG: ${{ github.ref_name }}
+        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
         SCOPE_DSN_PUBLIC: ""
       run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make ci-test kots build
 
@@ -222,7 +242,7 @@ jobs:
 
   release-go-api-tagged:
     runs-on: ubuntu-20.04
-    needs: [build-web, build-go-api]
+    needs: [build-web, build-go-api, generate-tag]
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -243,7 +263,7 @@ jobs:
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
     - name: Build tagged release
       env:
-        GIT_TAG: ${{ github.ref_name }}
+        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
         DOCKER_CONFIG: ./.docker
       run: |
         export $(cat .image.env | sed 's/#.*//g' | xargs) && make build-release
@@ -310,14 +330,15 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   generate-kurl-addon-pr:
+    if: !endsWith(github.ref, '-nightly')
     runs-on: ubuntu-20.04
-    needs: [release-go-api-tagged, build-kurl-proxy]
+    needs: [build-kurl-proxy, build-airgap, generate-tag]
     steps:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Generate Kurl Addon PR
       env:
-        GIT_TAG: ${{ github.ref_name }}
+        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
         GH_PAT: ${{ secrets.GH_PAT }}
       run: |
         # Strips off the 'v' in version
@@ -374,9 +395,9 @@ jobs:
 
   regression-test-setup:
     name: Run regression testing
-    if: startsWith(github.ref, 'refs/tags/v') && endsWith(github.ref, '-nightly')
+    if: env.GITHUB_REF_TYPE == 'branch'
     runs-on: ubuntu-latest
-    needs: [build-airgap]
+    needs: [build-airgap, generate-tag]
     outputs:
       last_release_tag: ${{ steps.get_latest_release_tag.outputs.release }}
       automation_id: ${{ steps.get_id.outputs.id }}
@@ -388,7 +409,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.NIGHTLY_GH_PAT }}
       with:
-        srcReleaseTag: ${{ github.ref_name }}
+        srcReleaseTag: ${{ needs.generate-tag.outputs.tag }}
         dstReleaseTag: "v0.0.0-nightly"
     - name: Get latest release tag
       id: get_latest_release_tag
@@ -402,12 +423,12 @@ jobs:
         echo "::set-output name=id::${id:0:7}"
 
   regression-test:
-    if: startsWith(github.ref, 'refs/tags/v') && endsWith(github.ref, '-nightly')
-    needs: regression-test-setup
+    if: env.GITHUB_REF_TYPE == 'branch'
+    needs: [regression-test-setup, generate-tag]
     uses: replicatedhq/kots/.github/workflows/regression.yaml@seanrester/sc-48196/update-serial-regression-tests-to-run-in
     with:
       version_tag_old: ${{ needs.regression-test-setup.outputs.last_release_tag }}
-      version_tag_new: ${{ github.ref_name }}
+      version_tag_new: ${{ needs.generate-tag.outputs.tag }}
       id: ${{ needs.regression-test-setup.outputs.automation_id }}
     secrets:
       E2E_TESTIM_AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
@@ -418,10 +439,10 @@ jobs:
 
   start-kgrid-test:
     runs-on: ubuntu-20.04
-    needs: [goreleaser, release-go-api-tagged]
-    if: startsWith(github.ref, 'refs/tags/v') && endsWith(github.ref, '-nightly')
+    needs: [goreleaser, release-go-api-tagged, generate-tag]
+    if: env.GITHUB_REF_TYPE == 'branch'
     env:
-      GIT_TAG: ${{ github.ref_name }}
+      GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -460,9 +481,9 @@ jobs:
   # the tests don't really depend on a k8s version, so run them on a single version for now #
 
   validate-min-kots-version:
-    if: startsWith(github.ref, 'refs/tags/v') && endsWith(github.ref, '-nightly')
+    if: env.GITHUB_REF_TYPE == 'branch'
     runs-on: ubuntu-20.04
-    needs: [goreleaser, release-go-api-tagged]
+    needs: [goreleaser, release-go-api-tagged, generate-tag]
     strategy:
       fail-fast: false
       matrix:
@@ -474,7 +495,7 @@ jobs:
           version: ${{ matrix.k8s_version }}
 
       - name: install kots
-        run: curl https://kots.io/install/${{ github.ref_name }} | bash
+        run: curl https://kots.io/install/${{ needs.generate-tag.outputs.tag }} | bash
 
       - uses: actions/setup-node@v2
         with:
@@ -524,9 +545,9 @@ jobs:
           exit $EXIT_CODE
 
   validate-target-kots-version:
-    if: startsWith(github.ref, 'refs/tags/v') && endsWith(github.ref, '-nightly')
+    if: env.GITHUB_REF_TYPE == 'branch'
     runs-on: ubuntu-20.04
-    needs: [goreleaser, release-go-api-tagged]
+    needs: [goreleaser, release-go-api-tagged, generate-tag]
     strategy:
       fail-fast: false
       matrix:
@@ -538,7 +559,7 @@ jobs:
           version: ${{ matrix.k8s_version }}
 
       - name: install kots
-        run: curl https://kots.io/install/${{ github.ref_name }} | bash
+        run: curl https://kots.io/install/${{ needs.generate-tag.outputs.tag }} | bash
 
       - uses: actions/setup-node@v2
         with:
@@ -588,9 +609,9 @@ jobs:
           exit $EXIT_CODE
 
   validate-range-kots-version:
-    if: startsWith(github.ref, 'refs/tags/v') && endsWith(github.ref, '-nightly')
+    if: env.GITHUB_REF_TYPE == 'branch'
     runs-on: ubuntu-20.04
-    needs: [goreleaser, release-go-api-tagged]
+    needs: [goreleaser, release-go-api-tagged, generate-tag]
     strategy:
       fail-fast: false
       matrix:
@@ -602,7 +623,7 @@ jobs:
           version: ${{ matrix.k8s_version }}
 
       - name: install kots
-        run: curl https://kots.io/install/${{ github.ref_name }} | bash
+        run: curl https://kots.io/install/${{ needs.generate-tag.outputs.tag }} | bash
 
       - uses: actions/setup-node@v2
         with:
