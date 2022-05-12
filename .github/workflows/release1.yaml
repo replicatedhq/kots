@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - "v*.*.*"
+    branches:
+      - seanrester/sc-48196/update-serial-regression-tests-to-run-in
 
 jobs:
   image-deps-updater:
