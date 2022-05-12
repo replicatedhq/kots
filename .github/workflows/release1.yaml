@@ -330,7 +330,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   generate-kurl-addon-pr:
-    if: !endsWith(github.ref, '-nightly')
+    if: env.GITHUB_REF_TYPE != 'branch'
     runs-on: ubuntu-20.04
     needs: [build-kurl-proxy, build-airgap, generate-tag]
     steps:
