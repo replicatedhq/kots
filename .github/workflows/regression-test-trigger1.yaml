@@ -1,4 +1,4 @@
-name: regression-test-trigger
+name: regression-test-trigger1
 
 on:
   push:
