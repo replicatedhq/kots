@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - seanrester/sc-48196/update-serial-regression-tests-to-run-in
 
 jobs:
   generate-tag:
