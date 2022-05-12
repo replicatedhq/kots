@@ -44,7 +44,7 @@ spec:
         fsGroup: 70
       containers:
       - name: postgres
-        image: postgres:10.19-alpine
+        image: postgres:10.20-alpine
         imagePullPolicy: IfNotPresent
         env:
         - name: PGDATA
