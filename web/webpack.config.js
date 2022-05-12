@@ -5,6 +5,7 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const MonacoWebpackPlugin = require("monaco-editor-webpack-plugin");
 const NodePolyfillPlugin = require("node-polyfill-webpack-plugin");
+const CopyPlugin = require('copy-webpack-plugin')
 
 // const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer");
 
@@ -21,7 +22,6 @@ module.exports = function (env) {
   const distPath = path.join(__dirname, "dist");
   const srcPath = path.join(__dirname, "src");
   const appEnv = require(`./env/${mapEnvironment(env)}.js`);
-
   const replace = {}
   Object.entries(appEnv).forEach(([key, value]) => replace[`process.env.${key}`] = JSON.stringify(value))
   if(env.enterprise) {
@@ -154,6 +154,15 @@ module.exports = function (env) {
       //   analyzerHost: "0.0.0.0",
       //   analyzerPort: 30088
       // })
+      , 
+      new CopyPlugin({
+        patterns: [
+          {
+            from: path.resolve(__dirname, 'public'),
+            to: path.resolve(__dirname, 'dist')
+        }
+        ],
+      }),
     ],
   };
 
