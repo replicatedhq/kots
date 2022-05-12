@@ -21,7 +21,6 @@ module.exports = function (env) {
   const distPath = path.join(__dirname, "dist");
   const srcPath = path.join(__dirname, "src");
   const appEnv = require(`./env/${mapEnvironment(env)}.js`);
-
   const replace = {}
   Object.entries(appEnv).forEach(([key, value]) => replace[`process.env.${key}`] = JSON.stringify(value))
   if(env.enterprise) {
@@ -50,7 +49,7 @@ module.exports = function (env) {
         "@src": path.resolve(__dirname, "src"),
         "handlebars" : "handlebars/dist/handlebars.js"
       },
-      mainFields: ["browser", "main"],
+      mainFields: ["browser", "main"], 
     },
     module: {
       rules: [
@@ -67,6 +66,11 @@ module.exports = function (env) {
             "css-loader",
             "postcss-loader"
           ],
+          sideEffects: true,
+        },
+        {
+          test: /\.ttf$/,
+          use: [{loader: 'file-loader'}],
           sideEffects: true,
         },
         {
@@ -149,6 +153,7 @@ module.exports = function (env) {
       //   analyzerHost: "0.0.0.0",
       //   analyzerPort: 30088
       // })
+      , 
     ],
   };
 

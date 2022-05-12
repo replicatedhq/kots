@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import localizedFormat from "dayjs/plugin/localizedFormat"
 import Handlebars from "handlebars";
 import Modal from "react-modal";
-import { getValueFormat } from "@grafana/ui"
+import { getValueFormat } from "@grafana/data"
 import { XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, LineSeries, DiscreteColorLegend, Crosshair } from "react-vis";
 import { Utilities } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
@@ -128,7 +128,7 @@ export default class DashboardGraphsCard extends React.Component {
     let yAxisTickFormat = null;
     if (chart.tickFormat) {
       const valueFormatter = getValueFormat(chart.tickFormat);
-      yAxisTickFormat = (v) => `${valueFormatter(v)}`;
+      yAxisTickFormat = (v) => `${Math.round(valueFormatter(v).text)} ${valueFormatter(v).suffix}`;
       return yAxisTickFormat(value);
     } else if (chart.tickTemplate) {
       try {
@@ -169,7 +169,7 @@ export default class DashboardGraphsCard extends React.Component {
     let yAxisTickFormat = null;
     if (chart.tickFormat) {
       const valueFormatter = getValueFormat(chart.tickFormat);
-      yAxisTickFormat = (v) => `${valueFormatter(v)}`;
+      yAxisTickFormat = (v) => `${Math.round(valueFormatter(v).text)} ${valueFormatter(v).suffix}`;
     } else if (chart.tickTemplate) {
       try {
         const template = Handlebars.compile(chart.tickTemplate);

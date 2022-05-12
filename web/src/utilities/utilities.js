@@ -16,6 +16,7 @@ import zlib from "zlib";
 import yaml from "js-yaml";
 import tar from "tar-stream";
 import fileReaderStream from "filereader-stream";
+import deploymentStatusIcon from "../assets/deployment-status.svg"
 
 dayjs.extend(timezone);
 dayjs.extend(utc);
@@ -98,7 +99,7 @@ export function parseIconUri(uri) {
   const splitUri = uri.split("?");
   if (splitUri.length < 2) {
     return {
-      uri: "https://troubleshoot.sh/images/analyzer-icons/gray-checkmark.svg",
+      uri: deploymentStatusIcon,
       dimensions: {
         w: 17,
         h: 17
@@ -106,7 +107,7 @@ export function parseIconUri(uri) {
     };
   }
   return {
-    uri: splitUri[0],
+    uri: deploymentStatusIcon,
     dimensions: queryString.parse(splitUri[1])
   };
 }
