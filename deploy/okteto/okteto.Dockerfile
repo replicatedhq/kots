@@ -131,9 +131,9 @@ RUN curl -fsSL -o kustomize.tar.gz "${KUSTOMIZE3_URL}" \
 ENV KOTS_HELM_BIN_DIR=/usr/local/bin
 
 # Install helm v3
-ENV HELM3_VERSION=3.7.1
+ENV HELM3_VERSION=3.8.2
 ENV HELM3_URL=https://get.helm.sh/helm-v${HELM3_VERSION}-linux-amd64.tar.gz
-ENV HELM3_SHA256SUM=6cd6cad4b97e10c33c978ff3ac97bb42b68f79766f1d2284cfd62ec04cd177f4
+ENV HELM3_SHA256SUM=6cb9a48f72ab9ddfecab88d264c2f6508ab3cd42d9c09666be16a7bf006bed7b
 RUN cd /tmp && curl -fsSL -o helm.tar.gz "${HELM3_URL}" \
   && echo "${HELM3_SHA256SUM} helm.tar.gz" | sha256sum -c - \
   && tar -xzvf helm.tar.gz \
