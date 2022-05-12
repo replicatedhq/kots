@@ -79,6 +79,10 @@ const automationWorkspaces = workspaceOutput.match(/automation-.*/g);
 //   AWS_SECRET_ACCESS_KEY: getInput('AWS_SECRET_ACCESS_KEY')
 // }
 
+if(!automationWorkspaces) {
+  process.exit(0);
+}
+
 for(const automationWorkspace of automationWorkspaces) {
   const { stdout: completionTimestamp } = await getExecOutput(
     'terraform', ['output', 'completion_timestamp'],
