@@ -134,7 +134,7 @@ jobs:
 
   build-web:
     runs-on: ubuntu-20.04
-    needs: [build-schema-migrations, generate-tag]
+    needs: [generate-tag]
     container:
       image: replicated/gitops-builder:buildkite-go17-node17
       options: --user root
@@ -156,7 +156,7 @@ jobs:
 
   build-kurl-proxy:
     runs-on: ubuntu-20.04
-    needs: [build-schema-migrations, generate-tag]
+    needs: [generate-tag]
     env:
       GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
     steps:
@@ -173,9 +173,9 @@ jobs:
         path: |
           ~/.cache/go-build
           ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        key: ${{ runner.os }}-go-kurlproxy-${{ hashFiles('**/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-
+          ${{ runner.os }}-go-kurlproxy-
 
     - name: Build kurl_proxy
       env:
@@ -218,9 +218,9 @@ jobs:
         path: |
           ~/.cache/go-build
           ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        key: ${{ runner.os }}-go-kots-${{ hashFiles('**/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-
+          ${{ runner.os }}-go-kots-
 
     - name: Download web artifact
       uses: actions/download-artifact@v2
@@ -291,9 +291,9 @@ jobs:
         path: |
           ~/.cache/go-build
           ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        key: ${{ runner.os }}-go-goreleaser-${{ hashFiles('**/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-
+          ${{ runner.os }}-go-goreleaser-
 
     - name: Unshallow
       run: git fetch --prune --unshallow
@@ -331,7 +331,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   generate-kurl-addon-pr:
-    if: github.ref_type != 'branch'
+#    if: github.ref_type != 'branch'
     runs-on: ubuntu-20.04
     needs: [build-kurl-proxy, build-airgap, generate-tag]
     steps:
