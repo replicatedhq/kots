@@ -173,9 +173,9 @@ jobs:
         path: |
           ~/.cache/go-build
           ~/go/pkg/mod
-        key: ${{ runner.os }}-go-kurlproxy-${{ hashFiles('**/go.sum') }}
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-kurlproxy-
+          ${{ runner.os }}-go-
 
     - name: Build kurl_proxy
       env:
@@ -218,9 +218,9 @@ jobs:
         path: |
           ~/.cache/go-build
           ~/go/pkg/mod
-        key: ${{ runner.os }}-go-kots-${{ hashFiles('**/go.sum') }}
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-kots-
+          ${{ runner.os }}-go-
 
     - name: Download web artifact
       uses: actions/download-artifact@v2
@@ -291,9 +291,9 @@ jobs:
         path: |
           ~/.cache/go-build
           ~/go/pkg/mod
-        key: ${{ runner.os }}-go-goreleaser-${{ hashFiles('**/go.sum') }}
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-goreleaser-
+          ${{ runner.os }}-go-
 
     - name: Unshallow
       run: git fetch --prune --unshallow
@@ -350,7 +350,7 @@ jobs:
 
   build-airgap:
     runs-on: ubuntu-20.04
-    needs: [release-go-api-tagged, goreleaser, build-schema-migrations]
+    needs: [release-go-api-tagged, goreleaser, build-schema-migrations, generate-tag]
     steps:
     - name: Download migrations
       uses: actions/download-artifact@v2
@@ -362,37 +362,24 @@ jobs:
       with:
         name: kotsadm-image
         path: ./docker-archive
-    - name: Get Release
-      id: get_release
-      uses: bruceadams/get-release@v1.2.3   # no v1 tag
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Make kotsadm airgap archive with minio image
       run: |
         tar czf ./kotsadm.tar.gz -C ./ ./docker-archive
     - name: Upload airgap bundle with minio image
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: softprops/action-gh-release@v1
       with:
-        upload_url: https://uploads.github.com/repos/replicatedhq/kots/releases/${{ steps.get_release.outputs.id }}/assets?name=kotsadm.tar.gz
-        asset_path: ./kotsadm.tar.gz
-        asset_name: kotsadm.tar.gz
-        asset_content_type: application/gzip
+        tag_name: ${{ needs.generate-tag.outputs.tag }}
+        files: ./kotsadm.tar.gz
     - name: Make kotsadm airgap archive without minio image
       run: |
         rm -rf ./docker-archive/minio
         rm -f ./kotsadm.tar.gz
         tar czf ./kotsadm-nominio.tar.gz -C ./ ./docker-archive
     - name: Upload airgap bundle without minio image
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: softprops/action-gh-release@v1
       with:
-        upload_url: https://uploads.github.com/repos/replicatedhq/kots/releases/${{ steps.get_release.outputs.id }}/assets?name=kotsadm-nominio.tar.gz
-        asset_path: ./kotsadm-nominio.tar.gz
-        asset_name: kotsadm-nominio.tar.gz
-        asset_content_type: application/gzip
+        tag_name: ${{ needs.generate-tag.outputs.tag }}
+        files: ./kotsadm-nominio.tar.gz
 
   regression-test-setup:
     name: Run regression testing
