@@ -86,11 +86,11 @@ await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_0__.exec)('terraform', ['init'],
 
 const { stdout: workspaceOutput } = await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_0__.getExecOutput)('terraform', ['workspace', 'list'], { cwd: 'automation/jumpbox' })
 const automationWorkspaces = workspaceOutput.match(/automation-.*/g);
-// const awsConfig = {
-//   AWS_DEFAULT_REGION: getInput('AWS_DEFAULT_REGION'),
-//   AWS_ACCESS_KEY_ID: getInput('AWS_ACCESS_KEY_ID'),
-//   AWS_SECRET_ACCESS_KEY: getInput('AWS_SECRET_ACCESS_KEY')
-// }
+const awsConfig = {
+  AWS_DEFAULT_REGION: (0,_actions_core__WEBPACK_IMPORTED_MODULE_1__.getInput)('AWS_DEFAULT_REGION'),
+  AWS_ACCESS_KEY_ID: (0,_actions_core__WEBPACK_IMPORTED_MODULE_1__.getInput)('AWS_ACCESS_KEY_ID'),
+  AWS_SECRET_ACCESS_KEY: (0,_actions_core__WEBPACK_IMPORTED_MODULE_1__.getInput)('AWS_SECRET_ACCESS_KEY')
+}
 
 if(!automationWorkspaces) {
   process.exit(0);
@@ -100,6 +100,7 @@ for(const automationWorkspace of automationWorkspaces) {
   const { stdout: completionTimestamp } = await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_0__.getExecOutput)(
     'terraform', ['output', 'completion_timestamp'],
     {
+      ... awsConfig,
       env: {
         TF_WORKSPACE: automationWorkspace
       },
@@ -113,6 +114,7 @@ for(const automationWorkspace of automationWorkspaces) {
         cwd: 'automation/cluster'
       });
       await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_0__.exec)(test.terraform_script, [ 'destroy' ], {
+        ... awsConfig,
         cwd: 'automation/cluster',
         env: {
           TF_WORKSPACE: automationWorkspace,
@@ -120,6 +122,7 @@ for(const automationWorkspace of automationWorkspaces) {
       });
     }
     await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_0__.exec)('terraform', [ 'destroy', '-auto-approve' ], {
+      ... awsConfig,
       cwd: 'automation/jumpbox',
       env: {
         TF_WORKSPACE: automationWorkspace,
