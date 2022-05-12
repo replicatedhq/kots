@@ -5,7 +5,7 @@ import { Link } from "react-router-dom"
 import MonacoEditor from "@monaco-editor/react";
 import { loader } from "@monaco-editor/react"
 
-loader.config({ paths: { vs: "/vs" } })
+loader.config({ paths: { vs: "./public/vs" } })
 
 export default function ShowLogsModal(props) {
   const { showLogsModal, hideLogsModal, viewLogsErrMsg, logs, selectedTab, logsLoading, renderLogsTabs, versionFailing, troubleshootUrl } = props;
