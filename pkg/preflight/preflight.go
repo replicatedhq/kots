@@ -104,16 +104,24 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 			logger.Debug("preflight checks beginning")
 			uploadPreflightResults, err := execute(appID, sequence, p, ignoreRBAC)
 			if err != nil {
-				err = errors.Wrap(err, "failed to run preflight checks")
-				logger.Error(err)
+				logger.Error(errors.Wrap(err, "failed to run preflight checks"))
 				return
 			}
 			logger.Debug("preflight checks completed")
 
+			// status could've changed while preflights were running
+			status, err := store.GetStore().GetDownstreamVersionStatus(appID, sequence)
+			if err != nil {
+				logger.Error(errors.Wrapf(err, "failed to check downstream version %d status", sequence))
+				return
+			}
+			if status == storetypes.VersionDeployed || status == storetypes.VersionFailed {
+				return
+			}
+
 			isDeployed, err := maybeDeployFirstVersion(appID, sequence, uploadPreflightResults)
 			if err != nil {
-				err = errors.Wrap(err, "failed to deploy first version")
-				logger.Error(err)
+				logger.Error(errors.Wrap(err, "failed to deploy first version"))
 				return
 			}
 
@@ -125,18 +133,15 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 				}
 			}
 		}()
-	} else if sequence == 0 {
-		_, err := maybeDeployFirstVersion(appID, sequence, &troubleshootpreflight.UploadPreflightResults{})
-		if err != nil {
-			return errors.Wrap(err, "failed to deploy first version")
-		}
-	} else {
-		status, err := store.GetStore().GetDownstreamVersionStatus(appID, sequence)
-		if err != nil {
-			return errors.Wrap(err, "failed to get version status")
-		}
-		if status != storetypes.VersionDeployed {
-			if err := store.GetStore().SetDownstreamVersionStatus(appID, sequence, storetypes.VersionPending, ""); err != nil {
+	} else if status != storetypes.VersionDeployed && status != storetypes.VersionFailed {
+		if sequence == 0 {
+			_, err := maybeDeployFirstVersion(appID, sequence, &troubleshootpreflight.UploadPreflightResults{})
+			if err != nil {
+				return errors.Wrap(err, "failed to deploy first version")
+			}
+		} else {
+			err := store.GetStore().SetDownstreamVersionStatus(appID, sequence, storetypes.VersionPending, "")
+			if err != nil {
 				return errors.Wrap(err, "failed to set downstream version status to pending")
 			}
 		}
@@ -145,9 +150,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 	return nil
 }
 
-// maybeDeployFirstVersion will deploy the first version if
-// 1. preflight checks pass
-// 2. we have not already deployed it
+// maybeDeployFirstVersion will deploy the first version if preflight checks pass
 func maybeDeployFirstVersion(appID string, sequence int64, preflightResults *troubleshootpreflight.UploadPreflightResults) (bool, error) {
 	if sequence != 0 {
 		return false, nil
@@ -169,9 +172,6 @@ func maybeDeployFirstVersion(appID string, sequence int64, preflightResults *tro
 	}
 
 	logger.Debug("automatically deploying first app version")
-
-	// note: this may attempt to re-deploy the first version but the operator will take care of
-	// comparing the version to current
 
 	err = version.DeployVersion(appID, sequence)
 	if err != nil {

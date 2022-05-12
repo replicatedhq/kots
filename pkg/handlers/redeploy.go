@@ -7,8 +7,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
-	"github.com/replicatedhq/kots/pkg/operator"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/version"
 )
 
 func (h *Handler) RedeployAppVersion(w http.ResponseWriter, r *http.Request) {
@@ -46,7 +46,7 @@ func (h *Handler) RedeployAppVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := operator.RedeployAppVersion(a.ID, int64(sequence)); err != nil {
+	if err := version.DeployVersion(a.ID, int64(sequence)); err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
