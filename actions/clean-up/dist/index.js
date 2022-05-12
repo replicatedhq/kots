@@ -81,14 +81,16 @@ const tests = [
     terraform_script: "existing-airgapped-upgrade-minimum.sh",
   }
 ];
-await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_0__.exec)('terraform', [ 'init' ], { cwd: 'automation/jumpbox' });
+
+await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_0__.exec)('terraform', ['init'], {cwd: 'automation/jumpbox'});
+
 const workspaceOutput = await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_0__.getExecOutput)('terraform', ['workspace', 'list'], { cwd: 'automation/jumpbox' })
 const automationWorkspaces = workspaceOutput.match(/automation-.*/g);
-const awsConfig = {
-  AWS_DEFAULT_REGION: (0,_actions_core__WEBPACK_IMPORTED_MODULE_1__.getInput)('AWS_DEFAULT_REGION'),
-  AWS_ACCESS_KEY_ID: (0,_actions_core__WEBPACK_IMPORTED_MODULE_1__.getInput)('AWS_ACCESS_KEY_ID'),
-  AWS_SECRET_ACCESS_KEY: (0,_actions_core__WEBPACK_IMPORTED_MODULE_1__.getInput)('AWS_SECRET_ACCESS_KEY')
-}
+// const awsConfig = {
+//   AWS_DEFAULT_REGION: getInput('AWS_DEFAULT_REGION'),
+//   AWS_ACCESS_KEY_ID: getInput('AWS_ACCESS_KEY_ID'),
+//   AWS_SECRET_ACCESS_KEY: getInput('AWS_SECRET_ACCESS_KEY')
+// }
 
 for(const automationWorkspace of automationWorkspaces) {
   const { stdout: completionTimestamp } = await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_0__.getExecOutput)(
@@ -104,14 +106,12 @@ for(const automationWorkspace of automationWorkspaces) {
   if(currentTime.getTime() - completionTime.getTime() > (1000 * 60 * 60 * 24)) {
     for(const test of tests) {
       await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_0__.exec)('terraform', [ 'init', '-backend-config', test.backend_config, '-reconfigure' ], {
-        env: awsConfig,
         cwd: 'automation/cluster'
       });
       await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_0__.exec)(test.terraform_script, [ 'destroy' ], {
         cwd: 'automation/cluster',
         env: {
           TF_WORKSPACE: automationWorkspace,
-          ... awsConfig
         },
       });
     }
@@ -119,7 +119,6 @@ for(const automationWorkspace of automationWorkspaces) {
       cwd: 'automation/jumpbox',
       env: {
         TF_WORKSPACE: automationWorkspace,
-        ... awsConfig
       },
     });
   }
