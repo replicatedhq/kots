@@ -37,7 +37,6 @@ import (
 	supportbundletypes "github.com/replicatedhq/kots/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/util"
-	"github.com/replicatedhq/kots/pkg/version"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -47,7 +46,6 @@ import (
 
 var operatorClient *client.Client
 var clusterID string
-var lastDeployedSequences map[string]int64
 var socketMtx sync.Mutex
 
 func Start(clusterToken string) error {
@@ -67,8 +65,6 @@ func Start(clusterToken string) error {
 		return errors.Wrap(err, "failed to get cluster id from deploy token")
 	}
 	clusterID = id
-
-	lastDeployedSequences = make(map[string]int64, 0)
 
 	startLoop(deployLoop, 2)
 	startLoop(restoreLoop, 2)
@@ -121,19 +117,9 @@ func processDeployForApp(a *apptypes.App) (bool, error) {
 		return false, nil
 	}
 
-	if value, ok := lastDeployedSequences[a.ID]; ok && value == deployedVersion.ParentSequence {
-		// this version is already the currently deployed version
-		return false, nil
-	}
-
-	socketMtx.Lock()
-	lastDeployedSequences[a.ID] = deployedVersion.ParentSequence
-	socketMtx.Unlock()
-
 	switch deployedVersion.Status {
 	case storetypes.VersionDeployed, storetypes.VersionFailed:
-		// deploying this version was already attempted but it does not exist in the cache,
-		// which could be because the api was restarted since that invalidates the cache.
+		// deploying this version was already attempted
 		return false, nil
 	}
 
@@ -524,14 +510,10 @@ func checkRestoreComplete(a *apptypes.App, restore *velerov1.Restore) error {
 
 		logger.Info(fmt.Sprintf("restore complete, marking version %d as deployed", sequence))
 
-		// mark the sequence as deployed both in the db and sequences history
-		// so that the admin console does not try to re-deploy it
+		// mark the sequence as deployed so that the admin console does not try to re-deploy it
 		if err := store.GetStore().MarkAsCurrentDownstreamVersion(a.ID, sequence); err != nil {
 			return errors.Wrap(err, "failed to mark as current downstream version")
 		}
-		socketMtx.Lock()
-		lastDeployedSequences[a.ID] = sequence
-		socketMtx.Unlock()
 
 		troubleshootOpts := supportbundletypes.TroubleshootOptions{
 			InCluster: true,
@@ -634,19 +616,6 @@ func undeployApp(a *apptypes.App, d *downstreamtypes.Downstream, isRestore bool)
 	if err := app.SetRestoreUndeployStatus(a.ID, apptypes.UndeployInProcess); err != nil {
 		return errors.Wrap(err, "failed to set restore undeploy status")
 	}
-
-	return nil
-}
-
-// RedeployAppVersion will force trigger a redeploy of the app version, even if it's currently deployed
-func RedeployAppVersion(appID string, sequence int64) error {
-	if err := version.DeployVersion(appID, sequence); err != nil {
-		return errors.Wrap(err, "failed to deploy version")
-	}
-
-	socketMtx.Lock()
-	delete(lastDeployedSequences, appID)
-	socketMtx.Unlock()
 
 	return nil
 }
