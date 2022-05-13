@@ -76,7 +76,7 @@ if(!automationWorkspaces) {
 }
 
 for(const automationWorkspace of automationWorkspaces) {
-  const { stdout: completionTimestamp } = await getExecOutput(
+  const { stdout: completionTimeRaw } = await getExecOutput(
     'terraform', ['output', 'completion_timestamp'],
     {
       env: {
@@ -87,8 +87,9 @@ for(const automationWorkspace of automationWorkspaces) {
       cwd: 'automation/jumpbox'
     });
 
-  if(completionTimestamp) {
+  if(completionTimeRaw) {
     const currentTime = new Date();
+    const completionTime = new Date(completionTimeRaw);
     // if(currentTime.getTime() - completionTime.getTime() > (1000 * 60 * 60 * 24)) {
     if(currentTime.getTime() - completionTime.getTime() > (1)) {
       for (const test of tests) {
