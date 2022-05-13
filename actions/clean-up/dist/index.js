@@ -100,8 +100,6 @@ for(const automationWorkspace of automationWorkspaces) {
       cwd: 'automation/jumpbox'
     });
 
-  console.log(`comp ${completionTimeRaw}`);
-  process.exit(1);
   if(completionTimeRaw) {
     const currentTime = new Date();
     const completionTime = new Date(completionTimeRaw);
