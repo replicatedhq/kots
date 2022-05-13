@@ -97,7 +97,7 @@ for(const automationWorkspace of automationWorkspaces) {
           cwd: 'automation/cluster',
           env: awsConfig
         });
-        await exec('sh', ['-c', `${test.terraform_script} destroy`], {
+        await exec('sh', ['-c', `./${test.terraform_script} destroy`], {
           cwd: 'automation/cluster',
           env: {
             ...awsConfig,
