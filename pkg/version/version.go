@@ -76,11 +76,8 @@ func DeployVersion(appID string, sequence int64) error {
 
 	logger.Info("deploying app version", zap.String("appId", appID), zap.Int64("sequence", sequence))
 
-	db := persistence.MustGetDBSession()
-	query := `update app_downstream set current_sequence = $1 where app_id = $2`
-	_, err = db.Exec(query, sequence, appID)
-	if err != nil {
-		return errors.Wrap(err, "failed to update app downstream current sequence")
+	if err := store.GetStore().MarkAsCurrentDownstreamVersion(appID, sequence); err != nil {
+		return errors.Wrap(err, "failed to mark as current downstream version")
 	}
 
 	go operator.DeployApp(appID, sequence)

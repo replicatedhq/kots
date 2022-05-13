@@ -525,6 +525,9 @@ func checkRestoreComplete(a *apptypes.App, restore *velerov1.Restore) error {
 		if err := store.GetStore().MarkAsCurrentDownstreamVersion(a.ID, sequence); err != nil {
 			return errors.Wrap(err, "failed to mark as current downstream version")
 		}
+		if err := store.GetStore().SetDownstreamVersionStatus(a.ID, sequence, storetypes.VersionDeployed, ""); err != nil {
+			logger.Error(errors.Wrap(err, "failed to update downstream status"))
+		}
 
 		troubleshootOpts := supportbundletypes.TroubleshootOptions{
 			InCluster: true,
