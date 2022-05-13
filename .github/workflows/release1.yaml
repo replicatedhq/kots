@@ -512,7 +512,7 @@ jobs:
           set +e
           kubectl kots admin-console -n min-kots-version &
           ADMIN_CONSOLE_PID=$!
-          testim \ 
+          testim \
             --token ${{ secrets.TESTIM_ACCESS_TOKEN }} \
             --project wpYAooUimFDgQxY73r17 \
             --grid "Testim-grid" \
@@ -647,10 +647,10 @@ jobs:
           kubectl kots admin-console -n range-kots-version &
           ADMIN_CONSOLE_PID=$!
           testim \
-            --token ${{ secrets.TESTIM_ACCESS_TOKEN }} 
-            --project wpYAooUimFDgQxY73r17  \
+            --token ${{ secrets.TESTIM_ACCESS_TOKEN }} \
+            --project wpYAooUimFDgQxY73r17 \
             --grid "Testim-grid" \
-            --branch master \ 
+            --branch master \
             --report-file testim-report.xml \
             --suite range-kots-version \
             --tunnel \
