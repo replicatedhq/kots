@@ -110,7 +110,7 @@ for(const automationWorkspace of automationWorkspaces) {
           cwd: 'automation/cluster',
           env: awsConfig
         });
-        await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_0__.exec)(test.terraform_script, ['destroy'], {
+        await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_0__.exec)('bash', ['-c', `${test.terraform_script} destroy`], {
           cwd: 'automation/cluster',
           env: {
             ...awsConfig,
