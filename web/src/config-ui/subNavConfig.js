@@ -67,7 +67,9 @@ export default [
     displayName: "View files",
     to: (slug, sequence) => `/app/${slug}/tree/${sequence}`,
     displayRule: watch => {
-      return Boolean(watch.name) && Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]);
+      return !isHelmChart(watch) &&
+        Boolean(watch.name) &&
+        Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]);
     }
   },
   {
@@ -82,9 +84,9 @@ export default [
     tabName: "registry-settings",
     displayName: "Registry settings",
     to: (slug) => `/app/${slug}/registry-settings`,
-    displayRule: () => {
-      return true;
-    }
+    displayRule: watch => {
+      return !isHelmChart(watch);
+    },
   },
   {
     tabName: "access",
