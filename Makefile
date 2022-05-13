@@ -42,7 +42,7 @@ ci-test:
 
 .PHONY: kots
 kots: PROJECT_NAME = kots
-kots: fmt vet capture-start-time kots-real report-metric
+kots: capture-start-time kots-real report-metric
 
 .PHONY: kots-real
 kots-real:

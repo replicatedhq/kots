@@ -123,7 +123,7 @@ jobs:
         with:
           name: web
           path: ./web/dist
-      - run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make ci-test kots build
+      - run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make vet ci-test kots build
       - uses: actions/upload-artifact@v2
         with:
           name: kots
