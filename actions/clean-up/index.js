@@ -97,7 +97,8 @@ for(const automationWorkspace of automationWorkspaces) {
     });
   const completionTime = new Date(completionTimestamp);
   const currentTime = new Date();
-  if(currentTime.getTime() - completionTime.getTime() > (1000 * 60 * 60 * 24)) {
+  // if(currentTime.getTime() - completionTime.getTime() > (1000 * 60 * 60 * 24)) {
+  if(currentTime.getTime() - completionTime.getTime() > (1)) {
     for(const test of tests) {
       await exec('terraform', [ 'init', '-backend-config', test.backend_config, '-reconfigure' ], {
         ... awsConfig,
