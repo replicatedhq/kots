@@ -505,8 +505,6 @@ jobs:
             exit 1
           fi
 
-      ## testim tests
-
       - name: prepare min-kots-version test
         run: |
           kubectl kots \
@@ -584,7 +582,15 @@ jobs:
           set +e
           kubectl kots admin-console -n target-kots-version &
           ADMIN_CONSOLE_PID=$!
-          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project ${{ secrets.TESTIM_PROJECT_ID }} --grid "Testim-grid" --branch master --report-file testim-report.xml --suite target-kots-version --tunnel --tunnel-port 8800
+          testim \
+            --token ${{ secrets.TESTIM_ACCESS_TOKEN }} \
+            --project ${{ secrets.TESTIM_PROJECT_ID }} \
+            --grid "Testim-grid" \ 
+            --branch master \
+            --report-file testim-report.xml \ 
+            --suite target-kots-version \ 
+            --tunnel \ 
+            --tunnel-port 8800
           EXIT_CODE=$?
           echo "------pods:"
           kubectl -n target-kots-version get pods
