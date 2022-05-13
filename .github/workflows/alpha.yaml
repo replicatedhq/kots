@@ -230,7 +230,7 @@ jobs:
         # GITHUB_REPOSITORY:
         # GITHUB_WORKSPACE:
         SCOPE_DSN_PUBLIC: ""
-      run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make ci-test kots build
+      run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make vet ci-test kots build
       shell: bash
 
     - name: Upload Go API artifact
