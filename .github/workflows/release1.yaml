@@ -664,3 +664,17 @@ jobs:
           kubectl -n range-kots-version logs -p deployment/kotsadm
           kill $ADMIN_CONSOLE_PID
           exit $EXIT_CODE
+
+  regresssion-cleanup:
+    if: github.ref_type == 'branch'
+    needs: [regression-test, generate-tag]
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Clean up release
+
+        uses: dev-drprasad/delete-tag-and-release@v0.2.0
+        with:
+          delete_release: true
+          tag_name: ${{ needs.generate-tag.outputs.tag }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
