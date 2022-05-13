@@ -331,7 +331,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   generate-kurl-addon-pr:
-#    if: github.ref_type != 'branch'
     runs-on: ubuntu-20.04
     needs: [build-kurl-proxy, build-airgap, generate-tag]
     steps:
@@ -481,17 +480,13 @@ jobs:
         id: k3s
         with:
           version: ${{ matrix.k8s_version }}
-
       - name: install kots
         run: curl https://kots.io/install/${{ needs.generate-tag.outputs.tag }} | bash
-
       - uses: actions/setup-node@v2
         with:
           node-version: '17.x'
-
       - name: setup testIM
         run: npm i -g @testim/testim-cli
-
       - name: validate that kots install fails early
         run: |
           set +e
@@ -504,7 +499,6 @@ jobs:
           else
             exit 1
           fi
-
       - name: prepare min-kots-version test
         run: |
           kubectl kots \
@@ -513,7 +507,6 @@ jobs:
           --namespace min-kots-version \
           --shared-password password \
           --skip-compatibility-check
-
       - name: execute suite min-kots-version
         run: |
           set +e
@@ -551,17 +544,13 @@ jobs:
         id: k3s
         with:
           version: ${{ matrix.k8s_version }}
-
       - name: install kots
         run: curl https://kots.io/install/${{ needs.generate-tag.outputs.tag }} | bash
-
       - uses: actions/setup-node@v2
         with:
           node-version: '17.x'
-
       - name: setup testIM
         run: npm i -g @testim/testim-cli
-
       - name: validate that kots install fails early
         run: |
           set +e
@@ -574,8 +563,6 @@ jobs:
           else
             exit 1
           fi
-
-
       - name: prepare target-kots-version test
         run: |
           kubectl kots \
@@ -584,7 +571,6 @@ jobs:
           --namespace target-kots-version \
           --shared-password password \
           --skip-compatibility-check
-
       - name: execute suite target-kots-version
         run: |
           set +e

@@ -1,9 +1,7 @@
 name: regression-test-cleanup
 
 on:
-  push:
-    branches:
-      - seanrester/sc-48196/update-serial-regression-tests-to-run-in
+  workflow_dispatch:
   schedule:
     - cron: '0 * * * *'
 
