@@ -75,11 +75,11 @@ const awsConfig = {
   AWS_SECRET_ACCESS_KEY: getInput('AWS_SECRET_ACCESS_KEY')
 }
 await exec('terraform', ['init'], {
-  ... awsConfig,
+  env: awsConfig,
   cwd: 'automation/jumpbox'
 });
 const { stdout: workspaceOutput } = await getExecOutput('terraform', ['workspace', 'list'], {
-  ... awsConfig,
+  env: awsConfig,
   cwd: 'automation/jumpbox'
 })
 const automationWorkspaces = workspaceOutput.match(/automation-.*/g);
@@ -92,8 +92,8 @@ for(const automationWorkspace of automationWorkspaces) {
   const { stdout: completionTimestamp } = await getExecOutput(
     'terraform', ['output', 'completion_timestamp'],
     {
-      ... awsConfig,
       env: {
+        ... awsConfig,
         TF_WORKSPACE: automationWorkspace
       },
       cwd: 'automation/jumpbox'
@@ -104,21 +104,21 @@ for(const automationWorkspace of automationWorkspaces) {
   if(currentTime.getTime() - completionTime.getTime() > (1)) {
     for(const test of tests) {
       await exec('terraform', [ 'init', '-backend-config', test.backend_config, '-reconfigure' ], {
-        ... awsConfig,
+        env: awsConfig,
         cwd: 'automation/cluster'
       });
       await exec(test.terraform_script, [ 'destroy' ], {
-        ... awsConfig,
         cwd: 'automation/cluster',
         env: {
+          ... awsConfig,
           TF_WORKSPACE: automationWorkspace,
         },
       });
     }
     await exec('terraform', [ 'destroy', '-auto-approve' ], {
-      ... awsConfig,
       cwd: 'automation/jumpbox',
       env: {
+        ... awsConfig,
         TF_WORKSPACE: automationWorkspace,
       },
     });
