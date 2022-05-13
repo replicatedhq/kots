@@ -569,7 +569,6 @@ jobs:
             exit 1
           fi
 
-      ## testim tests
 
       - name: prepare target-kots-version test
         run: |
@@ -632,8 +631,6 @@ jobs:
           else
             exit 1
           fi
-
-      ## testim tests
 
       - name: prepare range-kots-version test
         run: |
