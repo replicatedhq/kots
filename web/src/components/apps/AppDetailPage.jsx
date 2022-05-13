@@ -403,6 +403,7 @@ class AppDetailPage extends Component {
                         updateCallback={this.refetchData}
                         toggleIsBundleUploading={this.toggleIsBundleUploading}
                         isBundleUploading={isBundleUploading}
+                        isHelmManaged={this.state.isHelmManaged}
                         refreshAppData={this.getApp}
                         displayErrorModal={this.state.displayErrorModal}
                         toggleErrorModal={this.toggleErrorModal}
