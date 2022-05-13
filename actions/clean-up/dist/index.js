@@ -115,6 +115,7 @@ for(const automationWorkspace of automationWorkspaces) {
           env: {
             ...awsConfig,
             TF_WORKSPACE: automationWorkspace,
+            TF_VAR_testim_token: 'NOT_A_TOKEN'
           },
         });
         await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_0__.exec)('terraform', ['workspace', 'delete', automationWorkspace], {
