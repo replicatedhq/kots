@@ -66,6 +66,7 @@ func Start(clusterToken string) error {
 	}
 	clusterID = id
 
+	go resumeDeployments()
 	startLoop(restoreLoop, 2)
 
 	return nil
@@ -85,6 +86,45 @@ func startLoop(fn func(), intervalInSeconds time.Duration) {
 			time.Sleep(time.Second * intervalInSeconds)
 		}
 	}()
+}
+
+func resumeDeployments() {
+	apps, err := store.GetStore().ListAppsForDownstream(clusterID)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to list installed apps for downstream"))
+		return
+	}
+
+	for _, a := range apps {
+		if _, err := resumeDeployment(a); err != nil {
+			logger.Error(errors.Wrapf(err, "failed to resume deployment for app %s in cluster %s", a.ID, clusterID))
+		}
+	}
+}
+
+func resumeDeployment(a *apptypes.App) (bool, error) {
+	if a.RestoreInProgressName != "" {
+		return false, nil
+	}
+
+	deployedVersion, err := store.GetStore().GetCurrentDownstreamVersion(a.ID, clusterID)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get current downstream version")
+	} else if deployedVersion == nil {
+		return false, nil
+	}
+
+	switch deployedVersion.Status {
+	case storetypes.VersionDeployed, storetypes.VersionFailed:
+		// deploying this version was already attempted
+		return false, nil
+	}
+
+	if _, err := DeployApp(a.ID, deployedVersion.ParentSequence); err != nil {
+		return false, errors.Wrap(err, "failed to deploy version")
+	}
+
+	return true, nil
 }
 
 func DeployApp(appID string, sequence int64) (deployed bool, deployError error) {
