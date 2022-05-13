@@ -35,10 +35,6 @@ import (
 	"go.uber.org/zap"
 )
 
-var (
-	deployMtxs = map[string]*sync.Mutex{} // key is app id
-)
-
 type DeployResults struct {
 	IsError      bool   `json:"isError"`
 	DryrunStdout []byte `json:"dryrunStdout"`
@@ -130,14 +126,6 @@ func (c *Client) runAppStateMonitor() error {
 }
 
 func (c *Client) DeployApp(deployArgs operatortypes.DeployAppArgs) (deployed bool, finalError error) {
-	// this mutex is mainly to prevent the app from being deployed and undeployed at the same time
-	// or to prevent two app versions from being deployed at the same time
-	if _, ok := deployMtxs[deployArgs.AppID]; !ok {
-		deployMtxs[deployArgs.AppID] = &sync.Mutex{}
-	}
-	deployMtxs[deployArgs.AppID].Lock()
-	defer deployMtxs[deployArgs.AppID].Unlock()
-
 	log.Println("received a deploy request for", deployArgs.AppSlug)
 
 	var deployRes *deployResult

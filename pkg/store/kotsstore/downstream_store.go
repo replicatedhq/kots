@@ -116,8 +116,8 @@ func (s *KOTSStore) MarkAsCurrentDownstreamVersion(appID string, sequence int64)
 		return errors.Wrap(err, "failed to update app downstream current sequence")
 	}
 
-	query = `update app_downstream_version set status = $3, applied_at = $4 where sequence = $1 and app_id = $2`
-	_, err = tx.Exec(query, sequence, appID, types.VersionDeployed, time.Now())
+	query = `update app_downstream_version set applied_at = $3 where sequence = $1 and app_id = $2`
+	_, err = tx.Exec(query, sequence, appID, time.Now())
 	if err != nil {
 		return errors.Wrap(err, "failed to update app downstream version status")
 	}

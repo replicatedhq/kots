@@ -12,6 +12,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/gitops"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/operator"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
@@ -73,31 +74,13 @@ func DeployVersion(appID string, sequence int64) error {
 		}
 	}
 
-	db := persistence.MustGetDBSession()
-
 	logger.Info("deploying app version", zap.String("appId", appID), zap.Int64("sequence", sequence))
 
-	tx, err := db.Begin()
-	if err != nil {
-		return errors.Wrap(err, "failed to begin")
-	}
-	defer tx.Rollback()
-
-	query := `update app_downstream set current_sequence = $1 where app_id = $2`
-	_, err = tx.Exec(query, sequence, appID)
-	if err != nil {
-		return errors.Wrap(err, "failed to update app downstream current sequence")
+	if err := store.GetStore().MarkAsCurrentDownstreamVersion(appID, sequence); err != nil {
+		return errors.Wrap(err, "failed to mark as current downstream version")
 	}
 
-	query = `update app_downstream_version set status = $3, applied_at = $4 where sequence = $1 and app_id = $2`
-	_, err = tx.Exec(query, sequence, appID, storetypes.VersionDeploying, time.Now())
-	if err != nil {
-		return errors.Wrap(err, "failed to update app downstream version status")
-	}
-
-	if err := tx.Commit(); err != nil {
-		return errors.Wrap(err, "failed to commit")
-	}
+	go operator.DeployApp(appID, sequence)
 
 	return nil
 }
