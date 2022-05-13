@@ -69,12 +69,15 @@ const tests = [
   }
 ];
 
-await exec('terraform', ['init'], {cwd: 'automation/jumpbox'});
 const awsConfig = {
   AWS_DEFAULT_REGION: getInput('AWS_DEFAULT_REGION'),
   AWS_ACCESS_KEY_ID: getInput('AWS_ACCESS_KEY_ID'),
   AWS_SECRET_ACCESS_KEY: getInput('AWS_SECRET_ACCESS_KEY')
 }
+await exec('terraform', ['init'], {
+  ... awsConfig,
+  cwd: 'automation/jumpbox'
+});
 const { stdout: workspaceOutput } = await getExecOutput('terraform', ['workspace', 'list'], {
   ... awsConfig,
   cwd: 'automation/jumpbox'
