@@ -77,7 +77,7 @@ if(!automationWorkspaces) {
 
 for(const automationWorkspace of automationWorkspaces) {
   const { stdout: completionTimeRaw } = await getExecOutput(
-    'terraform', ['output', 'completion_timestamp'],
+    'terraform', ['output', '-raw', 'completion_timestamp'],
     {
       env: {
         ... awsConfig,
@@ -87,6 +87,8 @@ for(const automationWorkspace of automationWorkspaces) {
       cwd: 'automation/jumpbox'
     });
 
+  console.log(`comp ${completionTimeRaw}`);
+  process.exit(1);
   if(completionTimeRaw) {
     const currentTime = new Date();
     const completionTime = new Date(completionTimeRaw);
