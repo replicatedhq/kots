@@ -1598,5 +1598,11 @@ func WaitForDefaultBslAvailableAndSynced(ctx context.Context, veleroNamespace st
 
 func isMinioMigration(clientset kubernetes.Interface, namespace string) bool {
 	_, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), SnapshotMigrationArtifactName, metav1.GetOptions{})
-	return err == nil
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			fmt.Println("Failed to check if Minio migration, defaulting to false:", err)
+		}
+		return false
+	}
+	return true
 }
