@@ -7,8 +7,15 @@ import { isHelmChart } from "@src/utilities/utilities";
 import subNavConfig from "@src/config-ui/subNavConfig";
 
 
-export default function SubNavBar(props) {
-  const { className, activeTab, app, isVeleroInstalled, isAccess, isSnapshots } = props;
+export default function SubNavBar({
+  className,
+  activeTab,
+  app,
+  isVeleroInstalled,
+  isAccess,
+  isSnapshots,
+  isHelmManaged
+}) {
   let { slug } = app;
 
   if (isHelmChart(app)) {
@@ -96,7 +103,7 @@ export default function SubNavBar(props) {
             subNavConfig.map((link, idx) => {
               let hasBadge = false;
               if (link.hasBadge) {
-                hasBadge = link.hasBadge(app || {});
+                hasBadge = link.hasBadge({ app: app || {} });
               }
               const generatedMenuItem = (
                 <li
@@ -110,7 +117,12 @@ export default function SubNavBar(props) {
                 </li>
               );
               if (link.displayRule) {
-                return link.displayRule(app || {}, isVeleroInstalled, app.isAppIdentityServiceSupported) && generatedMenuItem;
+                return link.displayRule({
+                  app: app || {},
+                  isHelmManaged,
+                  isIdentityServiceSupported: app.isAppIdentityServiceSupported,
+                  isVeleroInstalled,
+                }) && generatedMenuItem;
               }
               return generatedMenuItem;
             }).filter(Boolean)}

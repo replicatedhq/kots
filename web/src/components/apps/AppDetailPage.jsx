@@ -112,7 +112,7 @@ class AppDetailPage extends Component {
           "Content-Type": "application/json",
         },
         method: "POST",
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           isSkipPreflights: isSkipPreflights ,
           continueWithFailedPreflights: continueWithFailedPreflights,
           isCLI: false
@@ -371,6 +371,7 @@ class AppDetailPage extends Component {
                     activeTab={match.params.tab || "app"}
                     app={app}
                     isVeleroInstalled={isVeleroInstalled}
+                    isHelmManaged={this.state.isHelmManaged}
                   />
                   <Switch>
                     <Route exact path="/app/:slug" render={() =>
