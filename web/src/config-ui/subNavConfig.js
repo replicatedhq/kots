@@ -66,7 +66,7 @@ export default [
     tabName: "tree",
     displayName: "View files",
     to: (slug, sequence) => `/app/${slug}/tree/${sequence}`,
-    displayRule: ({ app, isHelmManaged }) => {
+    displayRule: ({ app }) => {
         return Boolean(app.name) &&
         Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]);
     }
