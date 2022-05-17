@@ -11,7 +11,8 @@ jobs:
   blah:
     runs-on: ubuntu-20.04
     steps:
-      - run: |
+      - name: Wait for instance to be ready
+        run: |
           sudo apt update && sudo apt install awscli
           until [ -n "$(aws ec2 describe-instance-status --instance-ids $(terraform output -raw control_plane_instance_id) --filter Name=instance-status.reachability,Values=passed | jq -r '.InstanceStatuses[].InstanceStatus.Details[].Status')" ]
           do
