@@ -51,7 +51,7 @@ require (
 	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2
 	github.com/pkg/errors v0.9.1
 	github.com/pmezard/go-difflib v1.0.0
-	github.com/rancher/wrangler v0.8.3
+	github.com/rancher/wrangler v1.0.0
 	github.com/replicatedhq/kurl v0.0.0-20210414162418-8d6211901244
 	github.com/replicatedhq/troubleshoot v0.34.0
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
@@ -77,11 +77,11 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	helm.sh/helm/v3 v3.7.1
-	k8s.io/api v0.23.1
-	k8s.io/apiextensions-apiserver v0.23.1
-	k8s.io/apimachinery v0.23.1
+	k8s.io/api v0.24.0
+	k8s.io/apiextensions-apiserver v0.24.0
+	k8s.io/apimachinery v0.24.0
 	k8s.io/cli-runtime v0.23.1
-	k8s.io/client-go v0.23.1
+	k8s.io/client-go v0.24.0
 	k8s.io/cluster-bootstrap v0.22.1
 	k8s.io/helm v2.14.3+incompatible
 	k8s.io/klog/v2 v2.30.0
@@ -90,7 +90,6 @@ require (
 	k8s.io/utils v0.0.0-20210930125809-cb0fa318a74b
 	sigs.k8s.io/application v0.8.3
 	sigs.k8s.io/controller-runtime v0.11.0
-	sigs.k8s.io/kind v0.7.1-0.20200303021537-981bd80d3802
 	sigs.k8s.io/kustomize/api v0.10.1
 	sigs.k8s.io/kustomize/kyaml v0.13.0
 	sigs.k8s.io/yaml v1.3.0
@@ -149,7 +148,6 @@ require (
 	github.com/Rican7/retry v0.1.0 // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
-	github.com/alessio/shellescape v0.0.0-20190409004728-b115ca0f9053 // indirect
 	github.com/antlr/antlr4/runtime/Go/antlr v0.0.0-20210826220005-b48c857c3a0e // indirect
 	github.com/asaskevich/govalidator v0.0.0-20200907205600-7a23bdc65eef // indirect
 	github.com/aws/aws-sdk-go-v2 v1.13.0 // indirect
@@ -379,7 +377,7 @@ require (
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20211116232009-f0f3c7e86c11 // indirect
-	golang.org/x/tools v0.1.8-0.20211028023602-8de2a7fd1736 // indirect
+	golang.org/x/tools v0.1.10-0.20220218145154-897bd77cd717 // indirect
 	golang.org/x/xerrors v0.0.0-20220411194840-2f41105eb62f // indirect
 	gonum.org/v1/gonum v0.6.2 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
@@ -398,7 +396,7 @@ require (
 	k8s.io/controller-manager v0.23.1 // indirect
 	k8s.io/cri-api v0.20.6 // indirect
 	k8s.io/csi-translation-lib v0.0.0 // indirect
-	k8s.io/kube-aggregator v0.18.0 // indirect
+	k8s.io/kube-aggregator v0.24.0 // indirect
 	k8s.io/kube-controller-manager v0.0.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20211115234752-e816edb12b65 // indirect
 	k8s.io/kube-proxy v0.0.0 // indirect
