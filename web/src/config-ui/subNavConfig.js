@@ -67,8 +67,7 @@ export default [
     displayName: "View files",
     to: (slug, sequence) => `/app/${slug}/tree/${sequence}`,
     displayRule: ({ app, isHelmManaged }) => {
-      return !isHelmManaged &&
-        Boolean(app.name) &&
+        return Boolean(app.name) &&
         Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]);
     }
   },
@@ -85,7 +84,6 @@ export default [
     displayName: "Registry settings",
     to: (slug) => `/app/${slug}/registry-settings`,
     displayRule: ({ isHelmManaged })=> {
-      console.log(isHelmManaged)
       return !isHelmManaged;
     },
   },
