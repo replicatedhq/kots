@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: test
-        run:
+        run: |
           sudo apt update && sudo apt install aws
           aws ec2 describe-instance-status --instance-ids i-0d8aa9ba4af8475b3 --filter Name=instance-status.reachability,Values=initializing
 
