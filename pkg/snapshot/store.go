@@ -332,8 +332,7 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 			return nil, errors.Wrap(err, "failed to get k8s clientset")
 		}
 
-		if _, err := clientset.CoreV1().ConfigMaps(options.KotsadmNamespace).Get(context.TODO(), SnapshotMigrationArtifactName, metav1.GetOptions{}); err == nil {
-			// Found migration artifact, append prefix
+		if isMinioMigration(clientset, options.KotsadmNamespace) {
 			store.Path = "/velero"
 		}
 
@@ -1595,4 +1594,15 @@ func WaitForDefaultBslAvailableAndSynced(ctx context.Context, veleroNamespace st
 			time.Sleep(10 * time.Second)
 		}
 	}
+}
+
+func isMinioMigration(clientset kubernetes.Interface, namespace string) bool {
+	_, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), SnapshotMigrationArtifactName, metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			fmt.Println("Failed to check if Minio migration, defaulting to false:", err)
+		}
+		return false
+	}
+	return true
 }

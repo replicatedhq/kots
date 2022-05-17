@@ -227,16 +227,9 @@ func MigrateExistingMinioFilesystemDeployments(log *logger.CLILogger, deployOpti
 			}
 			log.Info("Minio backup storage location restored")
 
-			configMap, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Get(context.TODO(), snapshot.SnapshotMigrationArtifactName, metav1.GetOptions{})
+			err = cleanUpMigrationArtifact(clientset, deployOptions.Namespace)
 			if err != nil {
-				if !kuberneteserrors.IsNotFound(err) {
-					log.Error(errors.Wrap(err, "failed to lookup config map"))
-				}
-			} else {
-				err = clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Delete(context.TODO(), configMap.Name, metav1.DeleteOptions{})
-				if err != nil {
-					log.Error(errors.Wrap(err, "failed to delete config map"))
-				}
+				log.Error(errors.Wrap(err, "Failed to clean up migration artifact"))
 			}
 		}
 	}()
@@ -274,21 +267,9 @@ func MigrateExistingMinioFilesystemDeployments(log *logger.CLILogger, deployOpti
 		}
 	}
 
-	// Leave migration artifact
-	configMap := &corev1.ConfigMap{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "v1",
-			Kind:       "ConfigMap",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   snapshot.SnapshotMigrationArtifactName,
-			Labels: kotsadmtypes.GetKotsadmLabels(),
-		},
-	}
-
-	_, err = clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Create(context.TODO(), configMap, metav1.CreateOptions{})
+	err = createMigrationArtifact(clientset, deployOptions.Namespace)
 	if err != nil {
-		return errors.Wrap(err, "failed to create config map")
+		return errors.Wrap(err, "failed to create migration artifact")
 	}
 
 	// Cleanup on success
@@ -310,4 +291,39 @@ func sliceHasBackup(backups []velerov1api.Backup, backupName string) bool {
 		}
 	}
 	return false
+}
+
+func createMigrationArtifact(clientset kubernetes.Interface, namespace string) error {
+	configMap := &corev1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ConfigMap",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   snapshot.SnapshotMigrationArtifactName,
+			Labels: kotsadmtypes.GetKotsadmLabels(),
+		},
+	}
+
+	_, err := clientset.CoreV1().ConfigMaps(namespace).Create(context.TODO(), configMap, metav1.CreateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to create config map")
+	}
+
+	return nil
+}
+
+func cleanUpMigrationArtifact(clientset kubernetes.Interface, namespace string) error {
+	configMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), snapshot.SnapshotMigrationArtifactName, metav1.GetOptions{})
+	if err != nil {
+		if !kuberneteserrors.IsNotFound(err) {
+			return errors.Wrap(err, "failed to lookup config map")
+		}
+	} else {
+		err = clientset.CoreV1().ConfigMaps(namespace).Delete(context.TODO(), configMap.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to delete config map")
+		}
+	}
+	return nil
 }
