@@ -8,649 +8,656 @@ on:
       - seanrester/sc-48196/update-serial-regression-tests-to-run-in
 
 jobs:
-  generate-tag:
-    runs-on: ubuntu-20.04
-    outputs:
-      tag: ${{ github.ref_type == 'branch' && steps.get_tag.outputs.GIT_TAG || github.ref_name }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Get tags
-        id: get_tag
-        uses: ./actions/version-tag
-
-      - name: Push tag
-        if: github.ref_type == 'branch'
-        env:
-          GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
-        run: |
-          git tag $GIT_TAG
-          git push origin $GIT_TAG
-
-  image-deps-updater:
+  test:
     runs-on: ubuntu-20.04
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+      - name: test
+        run:
+          apt update && apt install aws
 
-      - name: Setup Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: '^1.17.4'
-
-      - name: Run Update Script
-        env:
-          GITHUB_AUTH_TOKEN: ${{ secrets.NIGHTLY_GH_PAT }}
-        run: |
-          go run ./cmd/imagedeps
-
-      - name: Create Pull Request # creates a PR if there are differences
-        uses: peter-evans/create-pull-request@v3
-        id: cpr
-        with:
-          token: ${{ secrets.NIGHTLY_GH_PAT }}
-          commit-message: update kots image dependency tags
-          title: 'Automated Kots Image Dependency Tag Update'
-          branch: automation/image-dependencies
-          delete-branch: true
-          labels: |
-            automated-pr
-            images
-          draft: false
-          base: "main"
-          body: "Automated changes by the [release](https://github.com/replicatedhq/kots/blob/main/.github/workflows/release.yaml) GitHub action"
-
-      - name: Check outputs
-        run: |
-          echo "Pull Request Number - ${{ steps.cpr.outputs.pull-request-number }}"
-          echo "Pull Request URL - ${{ steps.cpr.outputs.pull-request-url }}"
-
-  generate-schema:
-    runs-on: ubuntu-20.04
-    container:
-      image: schemahero/schemahero:0.12.2
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Generate fixtures
-        run: |
-          /schemahero fixtures \
-            --input-dir ./migrations/tables \
-            --output-dir ./migrations/fixtures/schema \
-            --dbname ship-cloud --driver postgres
-      - name: Upload schema artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: schema
-          path: ./migrations/fixtures/schema/fixtures.sql
-
-  generate-fixtures:
-    runs-on: ubuntu-20.04
-    needs: [generate-schema]
-    container:
-      image: replicated/gitops-builder:buildkite
-      options: --user root
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Download schema artifact
-      uses: actions/download-artifact@v2
-      with:
-        name: schema
-        path: ./migrations/fixtures/schema
-    - name: Build fixtures
-      run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C migrations/fixtures deps build run
-    - name: Upload fixtures artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: fixtures
-        path: ./migrations/fixtures/fixtures.sql
-
-  build-schema-migrations:
-    runs-on: ubuntu-20.04
-    needs: [generate-fixtures, generate-tag]
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - uses: azure/docker-login@v1
-      env:
-        DOCKER_CONFIG: ./migrations/.docker
-      with:
-        username: ${{ secrets.DOCKERHUB_USER }}
-        password: ${{ secrets.DOCKERHUB_PASSWORD }}
-    - name: "Release schema migrations on tag"
-      env:
-        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
-        DOCKER_CONFIG: ./.docker
-      run: |
-        export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C migrations schema-release
-
-    - name: Upload airgap image
-      uses: actions/upload-artifact@v2
-      with:
-        name: migrations-image
-        path: ./migrations/bin/docker-archive
-
-  build-web:
-    runs-on: ubuntu-20.04
-    needs: [generate-tag]
-    container:
-      image: replicated/gitops-builder:buildkite-go17-node17
-      options: --user root
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-
-    - name: Build web
-      env:
-        GIT_COMMIT: ${{ github.sha }}
-        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
-      run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C web deps build-kotsadm
-
-    - name: Upload web artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: web
-        path: ./web/dist
-
-  build-kurl-proxy:
-    runs-on: ubuntu-20.04
-    needs: [generate-tag]
-    env:
-      GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
-    steps:
-    - uses: actions/setup-go@v2
-      with:
-        go-version: '^1.17.4'
-
-    - name: Checkout
-      uses: actions/checkout@v2
-
-    - name: Cache Go modules
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-kurlproxy-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-kurlproxy-
-
-    - name: Build kurl_proxy
-      env:
-        GIT_COMMIT: ${{ github.sha }}
-        SCOPE_DSN_PUBLIC: ""
-      run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C kurl_proxy test build
-
-    - name: Upload kurl_proxy artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: kurl_proxy
-        path: ./kurl_proxy/bin
-
-    - uses: azure/docker-login@v1
-      with:
-        username: ${{ secrets.DOCKERHUB_USER }}
-        password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-    - name: Build tagged release
-      working-directory: ./kurl_proxy
-      run: |
-        docker build --pull -f deploy/Dockerfile -t kotsadm/kurl-proxy:$GIT_TAG -t kotsadm/kurl-proxy:v0.0.0-nightly .
-        docker push kotsadm/kurl-proxy:$GIT_TAG
-        docker push kotsadm/kurl-proxy:v0.0.0-nightly
-
-  build-go-api:
-    runs-on: ubuntu-20.04
-    needs: [build-web, generate-tag]
-    steps:
-    - uses: actions/setup-go@v2
-      with:
-        go-version: '^1.17.4'
-
-    - name: Checkout
-      uses: actions/checkout@v2
-
-    - name: Cache Go modules
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-kots-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-kots-
-
-    - name: Download web artifact
-      uses: actions/download-artifact@v2
-      with:
-        name: web
-        path: ./web/dist
-
-    - name: Build Go API
-      env:
-        GIT_COMMIT: ${{ github.sha }}
-        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
-        SCOPE_DSN_PUBLIC: ""
-      run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make ci-test kots build
-
-    - name: Upload Go API artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: go_api
-        path: ./bin
-
-  release-go-api-tagged:
-    runs-on: ubuntu-20.04
-    needs: [build-go-api, generate-tag]
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Download go_api artifact
-      uses: actions/download-artifact@v2
-      with:
-        name: go_api
-        path: ./bin
-    - name: Add executable permissions
-      run: |
-        chmod a+x ./bin/kotsadm
-        chmod a+x ./bin/kots
-    - uses: azure/docker-login@v1
-      env:
-        DOCKER_CONFIG: ./.docker
-      with:
-        username: ${{ secrets.DOCKERHUB_USER }}
-        password: ${{ secrets.DOCKERHUB_PASSWORD }}
-    - name: Build tagged release
-      env:
-        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
-        DOCKER_CONFIG: ./.docker
-      run: |
-        export $(cat .image.env | sed 's/#.*//g' | xargs) && make build-release
-    - name: Upload airgap image
-      uses: actions/upload-artifact@v2
-      with:
-        name: kotsadm-image
-        path: ./bin/docker-archive
-
-  goreleaser:
-    runs-on: ubuntu-20.04
-    needs: [build-web]
-    steps:
-    - uses: actions/setup-go@v2
-      with:
-        go-version: '^1.17.4'
-
-    - name: Checkout
-      uses: actions/checkout@v2
-
-    - name: Cache Go modules
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-goreleaser-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-goreleaser-
-
-    - name: Unshallow
-      run: git fetch --prune --unshallow
-    - run: sudo apt-get update -y
-    - run: sudo apt-get -qq -y install gnupg2 libdevmapper-dev libgpgme-dev libc6-dev-i386 btrfs-progs libbtrfs-dev pkg-config
-    - name: set previous release tag for goreleaser
-      run: |
-        export TAG=$(curl --silent "https://api.github.com/repos/replicatedhq/kots/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")')
-        echo "GORELEASER_PREVIOUS_TAG=${TAG}" >> $GITHUB_ENV
-    - uses: sigstore/cosign-installer@main
-      with:
-        cosign-release: 'v1.2.1'
-    - name: Get Cosign Key
-      run: |
-        echo $COSIGN_KEY | base64 -d > ./cosign.key
-      env:
-        COSIGN_KEY: ${{secrets.COSIGN_KEY}}
-    - name: Download web artifact
-      uses: actions/download-artifact@v2
-      with:
-        name: web
-        path: ./web/dist
-    - name: Generate SBOM
-      run: |
-        set -x
-        make sbom
-      env:
-        COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
-    - name: Run GoReleaser
-      uses: goreleaser/goreleaser-action@v2
-      with:
-        version: "v1.2.5"
-        args: release --rm-dist --config deploy/.goreleaser.yaml
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  generate-kurl-addon-pr:
-    runs-on: ubuntu-20.04
-    needs: [build-kurl-proxy, build-airgap, generate-tag]
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Generate Kurl Addon PR
-      env:
-        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
-        GH_PAT: ${{ secrets.GH_PAT }}
-      run: |
-        # Strips off the 'v' in version
-        curl -H "Authorization: token $GH_PAT" \
-          -H 'Accept: application/json' \
-          -d "{\"event_type\": \"auto-kotsadm-update\", \"client_payload\": {\"version\": \"${GIT_TAG:1}\" }}" \
-          "https://api.github.com/repos/replicatedhq/kurl/dispatches"
-
-  build-airgap:
-    runs-on: ubuntu-20.04
-    needs: [release-go-api-tagged, goreleaser, build-schema-migrations, generate-tag]
-    steps:
-    - name: Download migrations
-      uses: actions/download-artifact@v2
-      with:
-        name: migrations-image
-        path: ./docker-archive
-    - name: Download kotsadm image
-      uses: actions/download-artifact@v2
-      with:
-        name: kotsadm-image
-        path: ./docker-archive
-    - name: Make kotsadm airgap archive with minio image
-      run: |
-        tar czf ./kotsadm.tar.gz -C ./ ./docker-archive
-    - name: Upload airgap bundle with minio image
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: ${{ needs.generate-tag.outputs.tag }}
-        files: ./kotsadm.tar.gz
-    - name: Make kotsadm airgap archive without minio image
-      run: |
-        rm -rf ./docker-archive/minio
-        rm -f ./kotsadm.tar.gz
-        tar czf ./kotsadm-nominio.tar.gz -C ./ ./docker-archive
-    - name: Upload airgap bundle without minio image
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: ${{ needs.generate-tag.outputs.tag }}
-        files: ./kotsadm-nominio.tar.gz
-
-  regression-test-setup:
-    name: Run regression testing
-    if: github.ref_type == 'branch'
-    runs-on: ubuntu-latest
-    needs: [build-airgap, generate-tag]
-    outputs:
-      last_release_tag: ${{ steps.get_latest_release_tag.outputs.release }}
-      automation_id: ${{ steps.get_id.outputs.id }}
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Copy assets
-      uses: ./actions/copy-assets
-      env:
-        GITHUB_TOKEN: ${{ secrets.NIGHTLY_GH_PAT }}
-      with:
-        srcReleaseTag: ${{ needs.generate-tag.outputs.tag }}
-        dstReleaseTag: "v0.0.0-nightly"
-    - name: Get latest release tag
-      id: get_latest_release_tag
-      uses: pozetroninc/github-action-get-latest-release@master
-      with:
-        repository: ${{ github.repository }}
-        excludes: prerelease, draft
-    - id: get_id
-      run: |
-        id=${{ github.sha }}
-        echo "::set-output name=id::${id:0:7}"
-
-  regression-test:
-    if: github.ref_type == 'branch'
-    needs: [regression-test-setup, generate-tag]
-    uses: replicatedhq/kots/.github/workflows/regression.yaml@seanrester/sc-48196/update-serial-regression-tests-to-run-in
-    with:
-      version_tag_old: ${{ needs.regression-test-setup.outputs.last_release_tag }}
-      version_tag_new: ${{ needs.generate-tag.outputs.tag }}
-      id: ${{ needs.regression-test-setup.outputs.automation_id }}
-    secrets:
-      E2E_TESTIM_AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
-      E2E_TESTIM_AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
-      TESTIM_ACCESS_TOKEN: ${{ secrets.TESTIM_ACCESS_TOKEN }}
-      E2E_GH_PAT: ${{ secrets.E2E_GH_PAT }}
-      KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL: ${{ secrets.KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL }}
-
-  start-kgrid-test:
-    runs-on: ubuntu-20.04
-    needs: [goreleaser, release-go-api-tagged, generate-tag]
-    if: github.ref_type == 'branch'
-    env:
-      GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - uses: kceb/pull-request-url-action@v2
-      id: pr_url
-    - name: Expose git commit data
-      uses: rlespinasse/git-commit-data-action@v1.x   # no v1 tag
-    - name: Create staging gitops commit
-      env:
-        REPLICATEDCOM_GITHUB_PRIVATE_KEY: ${{ secrets.REPLICATEDCOM_GITHUB_PRIVATE_KEY }}
-        PR_URL: ${{ steps.pr_url.outputs.url }}
-        GITOPS_OWNER: replicatedcom
-        GITOPS_REPO: gitops-deploy
-        GITOPS_BRANCH: main
-        RUN_ID: ${{ github.run_id }}
-      run: ./hack/deploy-kgrid.sh
-    - name: Create production gitops commit
-      id: deploy_kgrid
-      env:
-        REPLICATEDCOM_GITHUB_PRIVATE_KEY: ${{ secrets.REPLICATEDCOM_GITHUB_PRIVATE_KEY }}
-        PR_URL: ${{ steps.pr_url.outputs.url }}
-        OVERLAY: production
-        GITOPS_OWNER: replicatedcom
-        GITOPS_REPO: gitops-deploy
-        GITOPS_BRANCH: release
-      run: ./hack/deploy-kgrid.sh
-    - name: Wait for production kgrid tests
-      env:
-        KGRID_API_TOKEN: ${{ secrets.KGRID_API_TOKEN }}
-        KGRID_RUN_ID: ${{ steps.deploy_kgrid.outputs.kgrid-run-id }}
-      run: |
-        printf "\n\nSupport bundles are available in the Replicated production AWS account under the 'kgrid-support-bundles' S3 bucket. To download a support bundle, you can do so using the AWS Management Console, or by configuring the AWS cli tool with the appropriate credentials and running the following command: \n\naws s3 cp <test-supportbundle-s3-url> <local-filename>.tar.gz\n\n"
-        ./hack/wait-kgrid.sh
-
-  # the following KOTS version tests are triggered on the nightly tag because they require a semver #
-  # the tests don't really depend on a k8s version, so run them on a single version for now #
-
-  validate-min-kots-version:
-    if: github.ref_type == 'branch'
-    runs-on: ubuntu-20.04
-    needs: [goreleaser, release-go-api-tagged, generate-tag]
-    strategy:
-      fail-fast: false
-      matrix:
-        k8s_version: [v1.23.3-k3s1]
-    steps:
-      - uses: replicatedhq/action-k3s@main
-        id: k3s
-        with:
-          version: ${{ matrix.k8s_version }}
-      - name: install kots
-        run: curl https://kots.io/install/${{ needs.generate-tag.outputs.tag }} | bash
-      - uses: actions/setup-node@v2
-        with:
-          node-version: '17.x'
-      - name: setup testIM
-        run: npm i -g @testim/testim-cli
-      - name: validate that kots install fails early
-        run: |
-          set +e
-
-          result=$(kubectl kots install min-kots-version/automated --no-port-forward --namespace min-kots-version --shared-password password 2>&1 >/dev/null)
-          echo "$result"
-
-          if [[ "$result" =~ "requires" ]] && [[ "$result" =~ "10000.0.0" ]]; then
-            exit 0
-          else
-            exit 1
-          fi
-      - name: prepare min-kots-version test
-        run: |
-          kubectl kots \
-          install min-kots-version/automated \
-          --no-port-forward \
-          --namespace min-kots-version \
-          --shared-password password \
-          --skip-compatibility-check
-      - name: execute suite min-kots-version
-        run: |
-          set +e
-          kubectl kots admin-console -n min-kots-version &
-          ADMIN_CONSOLE_PID=$!
-          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --grid "Testim-grid" --branch master --report-file testim-report.xml --suite min-kots-version --tunnel --tunnel-port 8800
-          EXIT_CODE=$?
-          echo "------pods:"
-          kubectl -n min-kots-version get pods
-          echo "------kotsadm logs"
-          kubectl -n min-kots-version logs deployment/kotsadm
-          echo "------previous kotsadm logs"
-          kubectl -n min-kots-version logs -p deployment/kotsadm
-          kill $ADMIN_CONSOLE_PID
-          exit $EXIT_CODE
-
-  validate-target-kots-version:
-    if: github.ref_type == 'branch'
-    runs-on: ubuntu-20.04
-    needs: [goreleaser, release-go-api-tagged, generate-tag]
-    strategy:
-      fail-fast: false
-      matrix:
-        k8s_version: [v1.23.3-k3s1]
-    steps:
-      - uses: replicatedhq/action-k3s@main
-        id: k3s
-        with:
-          version: ${{ matrix.k8s_version }}
-      - name: install kots
-        run: curl https://kots.io/install/${{ needs.generate-tag.outputs.tag }} | bash
-      - uses: actions/setup-node@v2
-        with:
-          node-version: '17.x'
-      - name: setup testIM
-        run: npm i -g @testim/testim-cli
-      - name: validate that kots install fails early
-        run: |
-          set +e
-
-          result=$(kubectl kots install target-kots-version/automated --no-port-forward --namespace target-kots-version --shared-password password 2>&1 >/dev/null)
-          echo "$result"
-
-          if [[ "$result" =~ "requires" ]] && [[ "$result" =~ "1.0.0" ]]; then
-            exit 0
-          else
-            exit 1
-          fi
-      - name: prepare target-kots-version test
-        run: |
-          kubectl kots \
-          install target-kots-version/automated \
-          --no-port-forward \
-          --namespace target-kots-version \
-          --shared-password password \
-          --skip-compatibility-check
-      - name: execute suite target-kots-version
-        run: |
-          set +e
-          kubectl kots admin-console -n target-kots-version &
-          ADMIN_CONSOLE_PID=$!
-          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --grid "Testim-grid" --branch master --report-file testim-report.xml --suite target-kots-version --tunnel --tunnel-port 8800
-          EXIT_CODE=$?
-          echo "------pods:"
-          kubectl -n target-kots-version get pods
-          echo "------kotsadm logs"
-          kubectl -n target-kots-version logs deployment/kotsadm
-          echo "------previous kotsadm logs"
-          kubectl -n target-kots-version logs -p deployment/kotsadm
-          kill $ADMIN_CONSOLE_PID
-          exit $EXIT_CODE
-
-  validate-range-kots-version:
-    if: github.ref_type == 'branch'
-    runs-on: ubuntu-20.04
-    needs: [goreleaser, release-go-api-tagged, generate-tag]
-    strategy:
-      fail-fast: false
-      matrix:
-        k8s_version: [v1.23.3-k3s1]
-    steps:
-      - uses: replicatedhq/action-k3s@main
-        id: k3s
-        with:
-          version: ${{ matrix.k8s_version }}
-
-      - name: install kots
-        run: curl https://kots.io/install/${{ needs.generate-tag.outputs.tag }} | bash
-
-      - uses: actions/setup-node@v2
-        with:
-          node-version: '17.x'
-
-      - name: setup testIM
-        run: npm i -g @testim/testim-cli
-
-      - name: validate that kots install fails early
-        run: |
-          set +e
-
-          result=$(kubectl kots install range-kots-version/automated --no-port-forward --namespace range-kots-version --shared-password password 2>&1 >/dev/null)
-          echo "$result"
-
-          if [[ "$result" =~ "requires" ]] && [[ "$result" =~ "11000.0.0" ]]; then
-            exit 0
-          else
-            exit 1
-          fi
-
-      - name: prepare range-kots-version test
-        run: |
-          kubectl kots \
-          install range-kots-version/automated \
-          --no-port-forward \
-          --namespace range-kots-version \
-          --shared-password password \
-          --skip-compatibility-check
-
-      - name: execute suite range-kots-version
-        run: |
-          set +e
-          kubectl kots admin-console -n range-kots-version &
-          ADMIN_CONSOLE_PID=$!
-          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --grid "Testim-grid" --branch master --report-file testim-report.xml --suite range-kots-version --tunnel --tunnel-port 8800
-          EXIT_CODE=$?
-          echo "------pods:"
-          kubectl -n range-kots-version get pods
-          echo "------kotsadm logs"
-          kubectl -n range-kots-version logs deployment/kotsadm
-          echo "------previous kotsadm logs"
-          kubectl -n range-kots-version logs -p deployment/kotsadm
-          kill $ADMIN_CONSOLE_PID
-          exit $EXIT_CODE
-
-  regresssion-cleanup:
-    if: github.ref_type == 'branch'
-    needs: [regression-test, generate-tag]
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Clean up release
-
-        uses: dev-drprasad/delete-tag-and-release@v0.2.0
-        with:
-          delete_release: true
-          tag_name: ${{ needs.generate-tag.outputs.tag }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#  generate-tag:
+#    runs-on: ubuntu-20.04
+#    outputs:
+#      tag: ${{ github.ref_type == 'branch' && steps.get_tag.outputs.GIT_TAG || github.ref_name }}
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v2
+#
+#      - name: Get tags
+#        id: get_tag
+#        uses: ./actions/version-tag
+#
+#      - name: Push tag
+#        if: github.ref_type == 'branch'
+#        env:
+#          GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+#        run: |
+#          git tag $GIT_TAG
+#          git push origin $GIT_TAG
+#
+#  image-deps-updater:
+#    runs-on: ubuntu-20.04
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v2
+#
+#      - name: Setup Go
+#        uses: actions/setup-go@v2
+#        with:
+#          go-version: '^1.17.4'
+#
+#      - name: Run Update Script
+#        env:
+#          GITHUB_AUTH_TOKEN: ${{ secrets.NIGHTLY_GH_PAT }}
+#        run: |
+#          go run ./cmd/imagedeps
+#
+#      - name: Create Pull Request # creates a PR if there are differences
+#        uses: peter-evans/create-pull-request@v3
+#        id: cpr
+#        with:
+#          token: ${{ secrets.NIGHTLY_GH_PAT }}
+#          commit-message: update kots image dependency tags
+#          title: 'Automated Kots Image Dependency Tag Update'
+#          branch: automation/image-dependencies
+#          delete-branch: true
+#          labels: |
+#            automated-pr
+#            images
+#          draft: false
+#          base: "main"
+#          body: "Automated changes by the [release](https://github.com/replicatedhq/kots/blob/main/.github/workflows/release.yaml) GitHub action"
+#
+#      - name: Check outputs
+#        run: |
+#          echo "Pull Request Number - ${{ steps.cpr.outputs.pull-request-number }}"
+#          echo "Pull Request URL - ${{ steps.cpr.outputs.pull-request-url }}"
+#
+#  generate-schema:
+#    runs-on: ubuntu-20.04
+#    container:
+#      image: schemahero/schemahero:0.12.2
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v2
+#      - name: Generate fixtures
+#        run: |
+#          /schemahero fixtures \
+#            --input-dir ./migrations/tables \
+#            --output-dir ./migrations/fixtures/schema \
+#            --dbname ship-cloud --driver postgres
+#      - name: Upload schema artifact
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: schema
+#          path: ./migrations/fixtures/schema/fixtures.sql
+#
+#  generate-fixtures:
+#    runs-on: ubuntu-20.04
+#    needs: [generate-schema]
+#    container:
+#      image: replicated/gitops-builder:buildkite
+#      options: --user root
+#    steps:
+#    - name: Checkout
+#      uses: actions/checkout@v2
+#    - name: Download schema artifact
+#      uses: actions/download-artifact@v2
+#      with:
+#        name: schema
+#        path: ./migrations/fixtures/schema
+#    - name: Build fixtures
+#      run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C migrations/fixtures deps build run
+#    - name: Upload fixtures artifact
+#      uses: actions/upload-artifact@v2
+#      with:
+#        name: fixtures
+#        path: ./migrations/fixtures/fixtures.sql
+#
+#  build-schema-migrations:
+#    runs-on: ubuntu-20.04
+#    needs: [generate-fixtures, generate-tag]
+#    steps:
+#    - name: Checkout
+#      uses: actions/checkout@v2
+#    - uses: azure/docker-login@v1
+#      env:
+#        DOCKER_CONFIG: ./migrations/.docker
+#      with:
+#        username: ${{ secrets.DOCKERHUB_USER }}
+#        password: ${{ secrets.DOCKERHUB_PASSWORD }}
+#    - name: "Release schema migrations on tag"
+#      env:
+#        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
+#        DOCKER_CONFIG: ./.docker
+#      run: |
+#        export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C migrations schema-release
+#
+#    - name: Upload airgap image
+#      uses: actions/upload-artifact@v2
+#      with:
+#        name: migrations-image
+#        path: ./migrations/bin/docker-archive
+#
+#  build-web:
+#    runs-on: ubuntu-20.04
+#    needs: [generate-tag]
+#    container:
+#      image: replicated/gitops-builder:buildkite-go17-node17
+#      options: --user root
+#    steps:
+#    - name: Checkout
+#      uses: actions/checkout@v2
+#
+#    - name: Build web
+#      env:
+#        GIT_COMMIT: ${{ github.sha }}
+#        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
+#      run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C web deps build-kotsadm
+#
+#    - name: Upload web artifact
+#      uses: actions/upload-artifact@v2
+#      with:
+#        name: web
+#        path: ./web/dist
+#
+#  build-kurl-proxy:
+#    runs-on: ubuntu-20.04
+#    needs: [generate-tag]
+#    env:
+#      GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
+#    steps:
+#    - uses: actions/setup-go@v2
+#      with:
+#        go-version: '^1.17.4'
+#
+#    - name: Checkout
+#      uses: actions/checkout@v2
+#
+#    - name: Cache Go modules
+#      uses: actions/cache@v3
+#      with:
+#        path: |
+#          ~/.cache/go-build
+#          ~/go/pkg/mod
+#        key: ${{ runner.os }}-go-kurlproxy-${{ hashFiles('**/go.sum') }}
+#        restore-keys: |
+#          ${{ runner.os }}-go-kurlproxy-
+#
+#    - name: Build kurl_proxy
+#      env:
+#        GIT_COMMIT: ${{ github.sha }}
+#        SCOPE_DSN_PUBLIC: ""
+#      run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C kurl_proxy test build
+#
+#    - name: Upload kurl_proxy artifact
+#      uses: actions/upload-artifact@v2
+#      with:
+#        name: kurl_proxy
+#        path: ./kurl_proxy/bin
+#
+#    - uses: azure/docker-login@v1
+#      with:
+#        username: ${{ secrets.DOCKERHUB_USER }}
+#        password: ${{ secrets.DOCKERHUB_PASSWORD }}
+#
+#    - name: Build tagged release
+#      working-directory: ./kurl_proxy
+#      run: |
+#        docker build --pull -f deploy/Dockerfile -t kotsadm/kurl-proxy:$GIT_TAG -t kotsadm/kurl-proxy:v0.0.0-nightly .
+#        docker push kotsadm/kurl-proxy:$GIT_TAG
+#        docker push kotsadm/kurl-proxy:v0.0.0-nightly
+#
+#  build-go-api:
+#    runs-on: ubuntu-20.04
+#    needs: [build-web, generate-tag]
+#    steps:
+#    - uses: actions/setup-go@v2
+#      with:
+#        go-version: '^1.17.4'
+#
+#    - name: Checkout
+#      uses: actions/checkout@v2
+#
+#    - name: Cache Go modules
+#      uses: actions/cache@v3
+#      with:
+#        path: |
+#          ~/.cache/go-build
+#          ~/go/pkg/mod
+#        key: ${{ runner.os }}-go-kots-${{ hashFiles('**/go.sum') }}
+#        restore-keys: |
+#          ${{ runner.os }}-go-kots-
+#
+#    - name: Download web artifact
+#      uses: actions/download-artifact@v2
+#      with:
+#        name: web
+#        path: ./web/dist
+#
+#    - name: Build Go API
+#      env:
+#        GIT_COMMIT: ${{ github.sha }}
+#        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
+#        SCOPE_DSN_PUBLIC: ""
+#      run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make ci-test kots build
+#
+#    - name: Upload Go API artifact
+#      uses: actions/upload-artifact@v2
+#      with:
+#        name: go_api
+#        path: ./bin
+#
+#  release-go-api-tagged:
+#    runs-on: ubuntu-20.04
+#    needs: [build-go-api, generate-tag]
+#    steps:
+#    - name: Checkout
+#      uses: actions/checkout@v2
+#    - name: Download go_api artifact
+#      uses: actions/download-artifact@v2
+#      with:
+#        name: go_api
+#        path: ./bin
+#    - name: Add executable permissions
+#      run: |
+#        chmod a+x ./bin/kotsadm
+#        chmod a+x ./bin/kots
+#    - uses: azure/docker-login@v1
+#      env:
+#        DOCKER_CONFIG: ./.docker
+#      with:
+#        username: ${{ secrets.DOCKERHUB_USER }}
+#        password: ${{ secrets.DOCKERHUB_PASSWORD }}
+#    - name: Build tagged release
+#      env:
+#        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
+#        DOCKER_CONFIG: ./.docker
+#      run: |
+#        export $(cat .image.env | sed 's/#.*//g' | xargs) && make build-release
+#    - name: Upload airgap image
+#      uses: actions/upload-artifact@v2
+#      with:
+#        name: kotsadm-image
+#        path: ./bin/docker-archive
+#
+#  goreleaser:
+#    runs-on: ubuntu-20.04
+#    needs: [build-web]
+#    steps:
+#    - uses: actions/setup-go@v2
+#      with:
+#        go-version: '^1.17.4'
+#
+#    - name: Checkout
+#      uses: actions/checkout@v2
+#
+#    - name: Cache Go modules
+#      uses: actions/cache@v3
+#      with:
+#        path: |
+#          ~/.cache/go-build
+#          ~/go/pkg/mod
+#        key: ${{ runner.os }}-go-goreleaser-${{ hashFiles('**/go.sum') }}
+#        restore-keys: |
+#          ${{ runner.os }}-go-goreleaser-
+#
+#    - name: Unshallow
+#      run: git fetch --prune --unshallow
+#    - run: sudo apt-get update -y
+#    - run: sudo apt-get -qq -y install gnupg2 libdevmapper-dev libgpgme-dev libc6-dev-i386 btrfs-progs libbtrfs-dev pkg-config
+#    - name: set previous release tag for goreleaser
+#      run: |
+#        export TAG=$(curl --silent "https://api.github.com/repos/replicatedhq/kots/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")')
+#        echo "GORELEASER_PREVIOUS_TAG=${TAG}" >> $GITHUB_ENV
+#    - uses: sigstore/cosign-installer@main
+#      with:
+#        cosign-release: 'v1.2.1'
+#    - name: Get Cosign Key
+#      run: |
+#        echo $COSIGN_KEY | base64 -d > ./cosign.key
+#      env:
+#        COSIGN_KEY: ${{secrets.COSIGN_KEY}}
+#    - name: Download web artifact
+#      uses: actions/download-artifact@v2
+#      with:
+#        name: web
+#        path: ./web/dist
+#    - name: Generate SBOM
+#      run: |
+#        set -x
+#        make sbom
+#      env:
+#        COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+#    - name: Run GoReleaser
+#      uses: goreleaser/goreleaser-action@v2
+#      with:
+#        version: "v1.2.5"
+#        args: release --rm-dist --config deploy/.goreleaser.yaml
+#      env:
+#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#
+#  generate-kurl-addon-pr:
+#    runs-on: ubuntu-20.04
+#    needs: [build-kurl-proxy, build-airgap, generate-tag]
+#    steps:
+#    - name: Checkout
+#      uses: actions/checkout@v2
+#    - name: Generate Kurl Addon PR
+#      env:
+#        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
+#        GH_PAT: ${{ secrets.GH_PAT }}
+#      run: |
+#        # Strips off the 'v' in version
+#        curl -H "Authorization: token $GH_PAT" \
+#          -H 'Accept: application/json' \
+#          -d "{\"event_type\": \"auto-kotsadm-update\", \"client_payload\": {\"version\": \"${GIT_TAG:1}\" }}" \
+#          "https://api.github.com/repos/replicatedhq/kurl/dispatches"
+#
+#  build-airgap:
+#    runs-on: ubuntu-20.04
+#    needs: [release-go-api-tagged, goreleaser, build-schema-migrations, generate-tag]
+#    steps:
+#    - name: Download migrations
+#      uses: actions/download-artifact@v2
+#      with:
+#        name: migrations-image
+#        path: ./docker-archive
+#    - name: Download kotsadm image
+#      uses: actions/download-artifact@v2
+#      with:
+#        name: kotsadm-image
+#        path: ./docker-archive
+#    - name: Make kotsadm airgap archive with minio image
+#      run: |
+#        tar czf ./kotsadm.tar.gz -C ./ ./docker-archive
+#    - name: Upload airgap bundle with minio image
+#      uses: softprops/action-gh-release@v1
+#      with:
+#        tag_name: ${{ needs.generate-tag.outputs.tag }}
+#        files: ./kotsadm.tar.gz
+#    - name: Make kotsadm airgap archive without minio image
+#      run: |
+#        rm -rf ./docker-archive/minio
+#        rm -f ./kotsadm.tar.gz
+#        tar czf ./kotsadm-nominio.tar.gz -C ./ ./docker-archive
+#    - name: Upload airgap bundle without minio image
+#      uses: softprops/action-gh-release@v1
+#      with:
+#        tag_name: ${{ needs.generate-tag.outputs.tag }}
+#        files: ./kotsadm-nominio.tar.gz
+#
+#  regression-test-setup:
+#    name: Run regression testing
+#    if: github.ref_type == 'branch'
+#    runs-on: ubuntu-latest
+#    needs: [build-airgap, generate-tag]
+#    outputs:
+#      last_release_tag: ${{ steps.get_latest_release_tag.outputs.release }}
+#      automation_id: ${{ steps.get_id.outputs.id }}
+#    steps:
+#    - name: Checkout
+#      uses: actions/checkout@v2
+#    - name: Copy assets
+#      uses: ./actions/copy-assets
+#      env:
+#        GITHUB_TOKEN: ${{ secrets.NIGHTLY_GH_PAT }}
+#      with:
+#        srcReleaseTag: ${{ needs.generate-tag.outputs.tag }}
+#        dstReleaseTag: "v0.0.0-nightly"
+#    - name: Get latest release tag
+#      id: get_latest_release_tag
+#      uses: pozetroninc/github-action-get-latest-release@master
+#      with:
+#        repository: ${{ github.repository }}
+#        excludes: prerelease, draft
+#    - id: get_id
+#      run: |
+#        id=${{ github.sha }}
+#        echo "::set-output name=id::${id:0:7}"
+#
+#  regression-test:
+#    if: github.ref_type == 'branch'
+#    needs: [regression-test-setup, generate-tag]
+#    uses: replicatedhq/kots/.github/workflows/regression.yaml@seanrester/sc-48196/update-serial-regression-tests-to-run-in
+#    with:
+#      version_tag_old: ${{ needs.regression-test-setup.outputs.last_release_tag }}
+#      version_tag_new: ${{ needs.generate-tag.outputs.tag }}
+#      id: ${{ needs.regression-test-setup.outputs.automation_id }}
+#    secrets:
+#      E2E_TESTIM_AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
+#      E2E_TESTIM_AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
+#      TESTIM_ACCESS_TOKEN: ${{ secrets.TESTIM_ACCESS_TOKEN }}
+#      E2E_GH_PAT: ${{ secrets.E2E_GH_PAT }}
+#      KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL: ${{ secrets.KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL }}
+#
+#  start-kgrid-test:
+#    runs-on: ubuntu-20.04
+#    needs: [goreleaser, release-go-api-tagged, generate-tag]
+#    if: github.ref_type == 'branch'
+#    env:
+#      GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
+#    steps:
+#    - name: Checkout
+#      uses: actions/checkout@v2
+#    - uses: kceb/pull-request-url-action@v2
+#      id: pr_url
+#    - name: Expose git commit data
+#      uses: rlespinasse/git-commit-data-action@v1.x   # no v1 tag
+#    - name: Create staging gitops commit
+#      env:
+#        REPLICATEDCOM_GITHUB_PRIVATE_KEY: ${{ secrets.REPLICATEDCOM_GITHUB_PRIVATE_KEY }}
+#        PR_URL: ${{ steps.pr_url.outputs.url }}
+#        GITOPS_OWNER: replicatedcom
+#        GITOPS_REPO: gitops-deploy
+#        GITOPS_BRANCH: main
+#        RUN_ID: ${{ github.run_id }}
+#      run: ./hack/deploy-kgrid.sh
+#    - name: Create production gitops commit
+#      id: deploy_kgrid
+#      env:
+#        REPLICATEDCOM_GITHUB_PRIVATE_KEY: ${{ secrets.REPLICATEDCOM_GITHUB_PRIVATE_KEY }}
+#        PR_URL: ${{ steps.pr_url.outputs.url }}
+#        OVERLAY: production
+#        GITOPS_OWNER: replicatedcom
+#        GITOPS_REPO: gitops-deploy
+#        GITOPS_BRANCH: release
+#      run: ./hack/deploy-kgrid.sh
+#    - name: Wait for production kgrid tests
+#      env:
+#        KGRID_API_TOKEN: ${{ secrets.KGRID_API_TOKEN }}
+#        KGRID_RUN_ID: ${{ steps.deploy_kgrid.outputs.kgrid-run-id }}
+#      run: |
+#        printf "\n\nSupport bundles are available in the Replicated production AWS account under the 'kgrid-support-bundles' S3 bucket. To download a support bundle, you can do so using the AWS Management Console, or by configuring the AWS cli tool with the appropriate credentials and running the following command: \n\naws s3 cp <test-supportbundle-s3-url> <local-filename>.tar.gz\n\n"
+#        ./hack/wait-kgrid.sh
+#
+#  # the following KOTS version tests are triggered on the nightly tag because they require a semver #
+#  # the tests don't really depend on a k8s version, so run them on a single version for now #
+#
+#  validate-min-kots-version:
+#    if: github.ref_type == 'branch'
+#    runs-on: ubuntu-20.04
+#    needs: [goreleaser, release-go-api-tagged, generate-tag]
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        k8s_version: [v1.23.3-k3s1]
+#    steps:
+#      - uses: replicatedhq/action-k3s@main
+#        id: k3s
+#        with:
+#          version: ${{ matrix.k8s_version }}
+#      - name: install kots
+#        run: curl https://kots.io/install/${{ needs.generate-tag.outputs.tag }} | bash
+#      - uses: actions/setup-node@v2
+#        with:
+#          node-version: '17.x'
+#      - name: setup testIM
+#        run: npm i -g @testim/testim-cli
+#      - name: validate that kots install fails early
+#        run: |
+#          set +e
+#
+#          result=$(kubectl kots install min-kots-version/automated --no-port-forward --namespace min-kots-version --shared-password password 2>&1 >/dev/null)
+#          echo "$result"
+#
+#          if [[ "$result" =~ "requires" ]] && [[ "$result" =~ "10000.0.0" ]]; then
+#            exit 0
+#          else
+#            exit 1
+#          fi
+#      - name: prepare min-kots-version test
+#        run: |
+#          kubectl kots \
+#          install min-kots-version/automated \
+#          --no-port-forward \
+#          --namespace min-kots-version \
+#          --shared-password password \
+#          --skip-compatibility-check
+#      - name: execute suite min-kots-version
+#        run: |
+#          set +e
+#          kubectl kots admin-console -n min-kots-version &
+#          ADMIN_CONSOLE_PID=$!
+#          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --grid "Testim-grid" --branch master --report-file testim-report.xml --suite min-kots-version --tunnel --tunnel-port 8800
+#          EXIT_CODE=$?
+#          echo "------pods:"
+#          kubectl -n min-kots-version get pods
+#          echo "------kotsadm logs"
+#          kubectl -n min-kots-version logs deployment/kotsadm
+#          echo "------previous kotsadm logs"
+#          kubectl -n min-kots-version logs -p deployment/kotsadm
+#          kill $ADMIN_CONSOLE_PID
+#          exit $EXIT_CODE
+#
+#  validate-target-kots-version:
+#    if: github.ref_type == 'branch'
+#    runs-on: ubuntu-20.04
+#    needs: [goreleaser, release-go-api-tagged, generate-tag]
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        k8s_version: [v1.23.3-k3s1]
+#    steps:
+#      - uses: replicatedhq/action-k3s@main
+#        id: k3s
+#        with:
+#          version: ${{ matrix.k8s_version }}
+#      - name: install kots
+#        run: curl https://kots.io/install/${{ needs.generate-tag.outputs.tag }} | bash
+#      - uses: actions/setup-node@v2
+#        with:
+#          node-version: '17.x'
+#      - name: setup testIM
+#        run: npm i -g @testim/testim-cli
+#      - name: validate that kots install fails early
+#        run: |
+#          set +e
+#
+#          result=$(kubectl kots install target-kots-version/automated --no-port-forward --namespace target-kots-version --shared-password password 2>&1 >/dev/null)
+#          echo "$result"
+#
+#          if [[ "$result" =~ "requires" ]] && [[ "$result" =~ "1.0.0" ]]; then
+#            exit 0
+#          else
+#            exit 1
+#          fi
+#      - name: prepare target-kots-version test
+#        run: |
+#          kubectl kots \
+#          install target-kots-version/automated \
+#          --no-port-forward \
+#          --namespace target-kots-version \
+#          --shared-password password \
+#          --skip-compatibility-check
+#      - name: execute suite target-kots-version
+#        run: |
+#          set +e
+#          kubectl kots admin-console -n target-kots-version &
+#          ADMIN_CONSOLE_PID=$!
+#          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --grid "Testim-grid" --branch master --report-file testim-report.xml --suite target-kots-version --tunnel --tunnel-port 8800
+#          EXIT_CODE=$?
+#          echo "------pods:"
+#          kubectl -n target-kots-version get pods
+#          echo "------kotsadm logs"
+#          kubectl -n target-kots-version logs deployment/kotsadm
+#          echo "------previous kotsadm logs"
+#          kubectl -n target-kots-version logs -p deployment/kotsadm
+#          kill $ADMIN_CONSOLE_PID
+#          exit $EXIT_CODE
+#
+#  validate-range-kots-version:
+#    if: github.ref_type == 'branch'
+#    runs-on: ubuntu-20.04
+#    needs: [goreleaser, release-go-api-tagged, generate-tag]
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        k8s_version: [v1.23.3-k3s1]
+#    steps:
+#      - uses: replicatedhq/action-k3s@main
+#        id: k3s
+#        with:
+#          version: ${{ matrix.k8s_version }}
+#
+#      - name: install kots
+#        run: curl https://kots.io/install/${{ needs.generate-tag.outputs.tag }} | bash
+#
+#      - uses: actions/setup-node@v2
+#        with:
+#          node-version: '17.x'
+#
+#      - name: setup testIM
+#        run: npm i -g @testim/testim-cli
+#
+#      - name: validate that kots install fails early
+#        run: |
+#          set +e
+#
+#          result=$(kubectl kots install range-kots-version/automated --no-port-forward --namespace range-kots-version --shared-password password 2>&1 >/dev/null)
+#          echo "$result"
+#
+#          if [[ "$result" =~ "requires" ]] && [[ "$result" =~ "11000.0.0" ]]; then
+#            exit 0
+#          else
+#            exit 1
+#          fi
+#
+#      - name: prepare range-kots-version test
+#        run: |
+#          kubectl kots \
+#          install range-kots-version/automated \
+#          --no-port-forward \
+#          --namespace range-kots-version \
+#          --shared-password password \
+#          --skip-compatibility-check
+#
+#      - name: execute suite range-kots-version
+#        run: |
+#          set +e
+#          kubectl kots admin-console -n range-kots-version &
+#          ADMIN_CONSOLE_PID=$!
+#          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --grid "Testim-grid" --branch master --report-file testim-report.xml --suite range-kots-version --tunnel --tunnel-port 8800
+#          EXIT_CODE=$?
+#          echo "------pods:"
+#          kubectl -n range-kots-version get pods
+#          echo "------kotsadm logs"
+#          kubectl -n range-kots-version logs deployment/kotsadm
+#          echo "------previous kotsadm logs"
+#          kubectl -n range-kots-version logs -p deployment/kotsadm
+#          kill $ADMIN_CONSOLE_PID
+#          exit $EXIT_CODE
+#
+#  regresssion-cleanup:
+#    if: github.ref_type == 'branch'
+#    needs: [regression-test, generate-tag]
+#    runs-on: ubuntu-20.04
+#    steps:
+#      - name: Clean up release
+#
+#        uses: dev-drprasad/delete-tag-and-release@v0.2.0
+#        with:
+#          delete_release: true
+#          tag_name: ${{ needs.generate-tag.outputs.tag }}
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
