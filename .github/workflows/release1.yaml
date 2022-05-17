@@ -12,9 +12,13 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: test
+        env:
+          AWS_DEFAULT_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
         run: |
           sudo apt update && sudo apt install awscli
-#          aws ec2 describe-instance-status --instance-ids i-0d8aa9ba4af8475b3 --filter Name=instance-status.reachability,Values=initializing
+          aws ec2 describe-instance-status --instance-ids i-0d8aa9ba4af8475b3 --filter Name=instance-status.reachability,Values=initializing
 
 #  generate-tag:
 #    runs-on: ubuntu-20.04
