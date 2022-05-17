@@ -193,9 +193,10 @@ jobs:
           terraform workspace new $TF_WORKSPACE
           ./${{ matrix.test.terraform_script }} apply
       - name: Wait for instance to be ready
-
+        working-directory: automation/cluster
         run: |
           apk update && apk add aws-cli jq
+          terraform output -raw control_plane_instance_id
           until [ -n "$(aws ec2 describe-instance-status --instance-ids $(terraform output -raw control_plane_instance_id) --filter Name=instance-status.reachability,Values=passed | jq -r '.InstanceStatuses[].InstanceStatus.Details[].Status')" ]
           do
           echo "waiting for instance to become ready" && sleep 1
