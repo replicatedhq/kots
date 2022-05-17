@@ -174,7 +174,7 @@ jobs:
           repository: replicatedhq/kots-regression-automation
           token: ${{ secrets.E2E_GH_PAT }}
           path: automation
-          ref: main
+          ref: seanrester/sc-48196/update-serial-regression-tests-to-run-in
       - name: Create test environment
         if: always()
         working-directory: automation/cluster
