@@ -1337,7 +1337,7 @@ class AppVersionHistory extends Component {
                             </div>
                             }
                           </div>
-                          {versionHistory.length > 1 && !gitopsEnabled ? this.renderDiffBtn() : null}
+                          {versionHistory.length > 1 && !gitopsEnabled && !this.props.isHelmManaged ? this.renderDiffBtn() : null}
                         </div>
                       </div>
                       {this.renderAppVersionHistoryRow(versionHistory[0])}
