@@ -112,6 +112,7 @@ class AppVersionHistoryRow extends Component {
   renderVersionAction = (version) => {
     const app = this.props.app;
     const downstream = app?.downstream;
+    const { newPreflightResults } = this.props;
 
     let actionFn = this.props.deployVersion;
     if (version.needsKotsUpgrade) {
@@ -170,6 +171,8 @@ class AppVersionHistoryRow extends Component {
       checksStatusText = "Checks failed"
     } else if (preflightState.preflightState === "warn") {
       checksStatusText = "Checks passed with warnings"
+    } else {
+      checksStatusText = "Checks passed"
     }
 
     if (downstream.gitops?.enabled) {
@@ -191,10 +194,10 @@ class AppVersionHistoryRow extends Component {
                 <Link to={`/app/${app?.slug}/downstreams/${app?.downstream.cluster?.slug}/version-history/preflight/${version?.sequence}`}
                   className="icon preflightChecks--icon u-cursor--pointer u-position--relative"
                   data-tip="View preflight checks">
-                  {preflightState.preflightsFailed || preflightState.preflightState === "warn" ?
+                  {preflightState.preflightsFailed || preflightState.preflightState === "warn" || newPreflightResults ?
                     <div>
                       <span className={`icon version-row-preflight-status-icon ${preflightState.preflightsFailed ? "preflight-checks-failed-icon" : preflightState.preflightState === "warn" ? "preflight-checks-warn-icon" : ""}`} />
-                      <p className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${preflightState.preflightsFailed ? "err" : preflightState.preflightState === "warn" ? "warning" : ""}`}>{checksStatusText}</p>
+                      <p className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${preflightState.preflightsFailed ? "err" : preflightState.preflightState === "warn" ? "warning" : newPreflightResults ? "success" : ""}`}>{checksStatusText}</p>
                     </div>
                     : null}
                 </Link>
@@ -219,10 +222,10 @@ class AppVersionHistoryRow extends Component {
               <Link to={`/app/${app?.slug}/downstreams/${app?.downstream.cluster?.slug}/version-history/preflight/${version?.sequence}`}
                 className="icon preflightChecks--icon u-cursor--pointer u-position--relative"
                 data-tip="View preflight checks">
-                {preflightState.preflightsFailed || preflightState.preflightState === "warn" ?
+                {preflightState.preflightsFailed || preflightState.preflightState === "warn" || newPreflightResults ?
                   <div>
                     <span className={`icon version-row-preflight-status-icon ${preflightState.preflightsFailed ? "preflight-checks-failed-icon" : preflightState.preflightState === "warn" ? "preflight-checks-warn-icon" : ""}`} />
-                    <p className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${preflightState.preflightsFailed ? "err" : preflightState.preflightState === "warn" ? "warning" : ""}`}>{checksStatusText}</p>
+                    <p className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${preflightState.preflightsFailed ? "err" : preflightState.preflightState === "warn" ? "warning" : newPreflightResults ? "success" : ""}`}>{checksStatusText}</p>
                   </div>
                   : null}
               </Link>
@@ -255,10 +258,10 @@ class AppVersionHistoryRow extends Component {
             <Link to={`/app/${app?.slug}/downstreams/${app?.downstream.cluster?.slug}/version-history/preflight/${version?.sequence}`}
               className="icon preflightChecks--icon u-marginRight--10 u-cursor--pointer u-position--relative"
               data-tip="View preflight checks">
-              {preflightState.preflightsFailed || preflightState.preflightState === "warn" ?
+              {preflightState.preflightsFailed || preflightState.preflightState === "warn" || newPreflightResults ?
                 <div>
                   <span className={`icon version-row-preflight-status-icon ${preflightState.preflightsFailed ? "preflight-checks-failed-icon" : preflightState.preflightState === "warn" ? "preflight-checks-warn-icon" : ""}`} />
-                  <p className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${preflightState.preflightsFailed ? "err" : preflightState.preflightState === "warn" ? "warning" : ""}`}>{checksStatusText}</p>
+                  <p className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${preflightState.preflightsFailed ? "err" : preflightState.preflightState === "warn" ? "warning" : newPreflightResults ? "success" : ""}`}>{checksStatusText}</p>
                 </div>
                 : null}
             </Link>
@@ -387,12 +390,12 @@ class AppVersionHistoryRow extends Component {
   }
 
   render() {
-    const { version, selectedDiffReleases, nothingToCommit, isChecked, isNew, gitopsEnabled } = this.props;
+    const { version, selectedDiffReleases, nothingToCommit, isChecked, isNew, gitopsEnabled, newPreflightResults } = this.props;
   
     return (
       <div
         key={version.sequence}
-        className={classNames(`VersionHistoryRowWrapper ${version.status} flex-column justifyContent--center`, { "overlay": selectedDiffReleases, "disabled": nothingToCommit, "selected": (isChecked && !nothingToCommit), "is-new": isNew })}
+        className={classNames(`VersionHistoryRowWrapper ${version.status} flex-column justifyContent--center`, { "overlay": selectedDiffReleases, "disabled": nothingToCommit, "selected": (isChecked && !nothingToCommit), "is-new": isNew, "show-preflight-passed-text": newPreflightResults })}
         onClick={this.handleSelectReleasesToDiff}
       >
         <div className="VersionHistoryRow flex flex-auto">
