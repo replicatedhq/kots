@@ -64,7 +64,7 @@ func UpstreamUpgradeCmd() *cobra.Command {
 			stopCh := make(chan struct{})
 			defer close(stopCh)
 
-			log := logger.NewCLILogger()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 			localPort, errChan, err := upload.StartPortForward(v.GetString("namespace"), stopCh, log)
 			if err != nil {
 				return err

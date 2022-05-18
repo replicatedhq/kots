@@ -62,7 +62,7 @@ func AdminGenerateManifestsCmd() *cobra.Command {
 				}
 			}
 
-			log := logger.NewCLILogger()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 			log.Info("Admin Console manifests created in %s", filepath.Join(renderDir, "admin-console"))
 
 			return nil

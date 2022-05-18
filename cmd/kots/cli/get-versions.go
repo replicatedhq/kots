@@ -55,7 +55,7 @@ func getVersionsCmd(cmd *cobra.Command, args []string) error {
 		return errors.Errorf("output format %s not supported (allowed formats are: json)", output)
 	}
 
-	log := logger.NewCLILogger()
+	log := logger.NewCLILogger(cmd.OutOrStdout())
 
 	stopCh := make(chan struct{})
 	defer close(stopCh)

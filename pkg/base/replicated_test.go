@@ -2,6 +2,7 @@ package base
 
 import (
 	_ "embed"
+	"io/ioutil"
 	"reflect"
 	"testing"
 
@@ -474,7 +475,7 @@ data:
 				},
 			},
 			renderOptions: &RenderOptions{
-				Log: logger.NewCLILogger(),
+				Log: logger.NewCLILogger(ioutil.Discard),
 			},
 			expectedDeployment: BaseFile{
 				Path: "deployment.yaml",
@@ -760,7 +761,7 @@ spec:
 				},
 			},
 			renderOptions: &RenderOptions{
-				Log: logger.NewCLILogger(),
+				Log: logger.NewCLILogger(ioutil.Discard),
 			},
 			expectedBase: Base{Files: []BaseFile{
 				{
@@ -875,7 +876,7 @@ spec:
 				},
 			},
 			renderOptions: &RenderOptions{
-				Log: logger.NewCLILogger(),
+				Log: logger.NewCLILogger(ioutil.Discard),
 			},
 			expectedBase: Base{Files: []BaseFile{
 				{

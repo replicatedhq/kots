@@ -36,7 +36,7 @@ func UploadCmd() *cobra.Command {
 				os.Exit(1)
 			}
 
-			log := logger.NewCLILogger()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 
 			sourceDir := homeDir()
 			if len(args) > 0 {

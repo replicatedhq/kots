@@ -91,7 +91,7 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 
 			upgradeOptions.Timeout = timeout
 
-			log := logger.NewCLILogger()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 			if !v.GetBool("skip-rbac-check") && v.GetBool("ensure-rbac") {
 				err := CheckRBAC()
 				if err == RBACError {

@@ -2,6 +2,7 @@ package logger
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 )
 
 type CLILogger struct {
+	writer           io.Writer
 	spinnerStopCh    chan bool
 	spinnerMsg       string
 	spinnerArgs      []interface{}
@@ -19,8 +21,8 @@ type CLILogger struct {
 	isVerbose        bool
 }
 
-func NewCLILogger() *CLILogger {
-	return &CLILogger{}
+func NewCLILogger(w io.Writer) *CLILogger {
+	return &CLILogger{writer: w}
 }
 
 func (l *CLILogger) Silence() {
@@ -42,7 +44,7 @@ func (l *CLILogger) Initialize() {
 		return
 	}
 
-	fmt.Println("")
+	fmt.Fprintln(l.writer, "")
 }
 
 func (l *CLILogger) Finish() {
@@ -50,7 +52,7 @@ func (l *CLILogger) Finish() {
 		return
 	}
 
-	fmt.Println("")
+	fmt.Fprintln(l.writer, "")
 }
 
 func (l *CLILogger) Debug(msg string, args ...interface{}) {
@@ -58,9 +60,9 @@ func (l *CLILogger) Debug(msg string, args ...interface{}) {
 		return
 	}
 
-	fmt.Printf("    ")
-	fmt.Println(fmt.Sprintf(msg, args...))
-	fmt.Println("")
+	fmt.Fprintf(l.writer, "    ")
+	fmt.Fprintln(l.writer, fmt.Sprintf(msg, args...))
+	fmt.Fprintln(l.writer, "")
 }
 
 func (l *CLILogger) Info(msg string, args ...interface{}) {
@@ -68,9 +70,9 @@ func (l *CLILogger) Info(msg string, args ...interface{}) {
 		return
 	}
 
-	fmt.Printf("    ")
-	fmt.Println(fmt.Sprintf(msg, args...))
-	fmt.Println("")
+	fmt.Fprintf(l.writer, "    ")
+	fmt.Fprintln(l.writer, fmt.Sprintf(msg, args...))
+	fmt.Fprintln(l.writer, "")
 }
 
 func (l *CLILogger) ActionWithoutSpinner(msg string, args ...interface{}) {
@@ -79,12 +81,12 @@ func (l *CLILogger) ActionWithoutSpinner(msg string, args ...interface{}) {
 	}
 
 	if msg == "" {
-		fmt.Println("")
+		fmt.Fprintln(l.writer, "")
 		return
 	}
 
-	fmt.Printf("  • ")
-	fmt.Println(fmt.Sprintf(msg, args...))
+	fmt.Fprintf(l.writer, "  • ")
+	fmt.Fprintln(l.writer, fmt.Sprintf(msg, args...))
 }
 
 func (l *CLILogger) ActionWithoutSpinnerWarning(msg string, c *color.Color, args ...interface{}) {
@@ -93,7 +95,7 @@ func (l *CLILogger) ActionWithoutSpinnerWarning(msg string, c *color.Color, args
 	}
 
 	if msg == "" {
-		fmt.Println("")
+		fmt.Fprintln(l.writer, "")
 		return
 	}
 
@@ -101,10 +103,10 @@ func (l *CLILogger) ActionWithoutSpinnerWarning(msg string, c *color.Color, args
 		c = color.New(color.FgYellow)
 	}
 
-	fmt.Printf("  • ")
-	fmt.Printf(msg, args...)
-	c.Printf(" !")
-	fmt.Printf("  \n")
+	fmt.Fprintf(l.writer, "  • ")
+	fmt.Fprintf(l.writer, msg, args...)
+	c.Fprintf(l.writer, " !")
+	fmt.Fprintf(l.writer, "  \n")
 }
 
 func (l *CLILogger) ChildActionWithoutSpinner(msg string, args ...interface{}) {
@@ -112,8 +114,8 @@ func (l *CLILogger) ChildActionWithoutSpinner(msg string, args ...interface{}) {
 		return
 	}
 
-	fmt.Printf("    • ")
-	fmt.Println(fmt.Sprintf(msg, args...))
+	fmt.Fprintf(l.writer, "    • ")
+	fmt.Fprintln(l.writer, fmt.Sprintf(msg, args...))
 }
 
 func (l *CLILogger) ActionWithSpinner(msg string, args ...interface{}) {
@@ -121,17 +123,17 @@ func (l *CLILogger) ActionWithSpinner(msg string, args ...interface{}) {
 		return
 	}
 
-	fmt.Printf("  • ")
-	fmt.Printf(msg, args...)
+	fmt.Fprintf(l.writer, "  • ")
+	fmt.Fprintf(l.writer, msg, args...)
 
-	if !isatty.IsTerminal(os.Stdout.Fd()) {
-		fmt.Println()
+	if !l.IsTerminal() {
+		fmt.Fprintln(l.writer)
 		return
 	}
 
 	s := spin.New()
 
-	fmt.Printf(" %s", s.Next())
+	fmt.Fprintf(l.writer, " %s", s.Next())
 
 	l.spinnerStopCh = make(chan bool)
 	l.spinnerMsg = msg
@@ -144,10 +146,10 @@ func (l *CLILogger) ActionWithSpinner(msg string, args ...interface{}) {
 			case <-l.spinnerStopCh:
 				return
 			case <-time.After(time.Millisecond * 100):
-				fmt.Printf("\r")
-				fmt.Printf("  • ")
-				fmt.Printf(msg, args...)
-				fmt.Printf(" %s", s.Next())
+				fmt.Fprintf(l.writer, "\r")
+				fmt.Fprintf(l.writer, "  • ")
+				fmt.Fprintf(l.writer, msg, args...)
+				fmt.Fprintf(l.writer, " %s", s.Next())
 			}
 		}
 	}()
@@ -158,17 +160,17 @@ func (l *CLILogger) ChildActionWithSpinner(msg string, args ...interface{}) {
 		return
 	}
 
-	fmt.Printf("    • ")
-	fmt.Printf(msg, args...)
+	fmt.Fprintf(l.writer, "    • ")
+	fmt.Fprintf(l.writer, msg, args...)
 
-	if !isatty.IsTerminal(os.Stdout.Fd()) {
-		fmt.Println()
+	if !l.IsTerminal() {
+		fmt.Fprintln(l.writer)
 		return
 	}
 
 	s := spin.New()
 
-	fmt.Printf(" %s", s.Next())
+	fmt.Fprintf(l.writer, " %s", s.Next())
 
 	l.spinnerStopCh = make(chan bool)
 	l.spinnerMsg = msg
@@ -181,10 +183,10 @@ func (l *CLILogger) ChildActionWithSpinner(msg string, args ...interface{}) {
 			case <-l.spinnerStopCh:
 				return
 			case <-time.After(time.Millisecond * 100):
-				fmt.Printf("\r")
-				fmt.Printf("    • ")
-				fmt.Printf(msg, args...)
-				fmt.Printf(" %s", s.Next())
+				fmt.Fprintf(l.writer, "\r")
+				fmt.Fprintf(l.writer, "    • ")
+				fmt.Fprintf(l.writer, msg, args...)
+				fmt.Fprintf(l.writer, " %s", s.Next())
 			}
 		}
 	}()
@@ -195,18 +197,18 @@ func (l *CLILogger) FinishChildSpinner() {
 		return
 	}
 
-	if !isatty.IsTerminal(os.Stdout.Fd()) {
-		fmt.Println("    •  ✓")
+	if !l.IsTerminal() {
+		fmt.Fprintln(l.writer, "    •  ✓")
 		return
 	}
 
 	green := color.New(color.FgHiGreen)
 
-	fmt.Printf("\r")
-	fmt.Printf("    • ")
-	fmt.Printf(l.spinnerMsg, l.spinnerArgs...)
-	green.Printf(" ✓")
-	fmt.Printf("  \n")
+	fmt.Fprintf(l.writer, "\r")
+	fmt.Fprintf(l.writer, "    • ")
+	fmt.Fprintf(l.writer, l.spinnerMsg, l.spinnerArgs...)
+	green.Fprintf(l.writer, " ✓")
+	fmt.Fprintf(l.writer, "  \n")
 
 	l.spinnerStopCh <- true
 	l.isSpinnerRunning = false
@@ -218,18 +220,18 @@ func (l *CLILogger) FinishSpinner() {
 		return
 	}
 
-	if !isatty.IsTerminal(os.Stdout.Fd()) {
-		fmt.Println("  •  ✓")
+	if !l.IsTerminal() {
+		fmt.Fprintln(l.writer, "  •  ✓")
 		return
 	}
 
 	green := color.New(color.FgHiGreen)
 
-	fmt.Printf("\r")
-	fmt.Printf("  • ")
-	fmt.Printf(l.spinnerMsg, l.spinnerArgs...)
-	green.Printf(" ✓")
-	fmt.Printf("  \n")
+	fmt.Fprintf(l.writer, "\r")
+	fmt.Fprintf(l.writer, "  • ")
+	fmt.Fprintf(l.writer, l.spinnerMsg, l.spinnerArgs...)
+	green.Fprintf(l.writer, " ✓")
+	fmt.Fprintf(l.writer, "  \n")
 
 	l.spinnerStopCh <- true
 	l.isSpinnerRunning = false
@@ -241,18 +243,18 @@ func (l *CLILogger) FinishSpinnerWithError() {
 		return
 	}
 
-	if !isatty.IsTerminal(os.Stdout.Fd()) {
-		fmt.Println("  •  ✗")
+	if !l.IsTerminal() {
+		fmt.Fprintln(l.writer, "  •  ✗")
 		return
 	}
 
 	red := color.New(color.FgHiRed)
 
-	fmt.Printf("\r")
-	fmt.Printf("  • ")
-	fmt.Printf(l.spinnerMsg, l.spinnerArgs...)
-	red.Printf(" ✗")
-	fmt.Printf("  \n")
+	fmt.Fprintf(l.writer, "\r")
+	fmt.Fprintf(l.writer, "  • ")
+	fmt.Fprintf(l.writer, l.spinnerMsg, l.spinnerArgs...)
+	red.Fprintf(l.writer, " ✗")
+	fmt.Fprintf(l.writer, "  \n")
 
 	l.spinnerStopCh <- true
 	l.isSpinnerRunning = false
@@ -265,8 +267,8 @@ func (l *CLILogger) FinishSpinnerWithWarning(c *color.Color) {
 		return
 	}
 
-	if !isatty.IsTerminal(os.Stdout.Fd()) {
-		fmt.Println("  •  !")
+	if !l.IsTerminal() {
+		fmt.Fprintln(l.writer, "  •  !")
 		return
 	}
 
@@ -274,11 +276,11 @@ func (l *CLILogger) FinishSpinnerWithWarning(c *color.Color) {
 		c = color.New(color.FgYellow)
 	}
 
-	fmt.Printf("\r")
-	fmt.Printf("  • ")
-	fmt.Printf(l.spinnerMsg, l.spinnerArgs...)
-	c.Printf(" !")
-	fmt.Printf("  \n")
+	fmt.Fprintf(l.writer, "\r")
+	fmt.Fprintf(l.writer, "  • ")
+	fmt.Fprintf(l.writer, l.spinnerMsg, l.spinnerArgs...)
+	c.Fprintf(l.writer, " !")
+	fmt.Fprintf(l.writer, "  \n")
 
 	l.spinnerStopCh <- true
 	l.isSpinnerRunning = false
@@ -291,8 +293,8 @@ func (l *CLILogger) Error(err error) {
 	}
 
 	c := color.New(color.FgHiRed)
-	c.Printf("  • ")
-	c.Println(fmt.Sprintf("%#v", err))
+	c.Fprintf(l.writer, "  • ")
+	c.Fprintln(l.writer, fmt.Sprintf("%#v", err))
 }
 
 func (l *CLILogger) Errorf(msg string, args ...interface{}) {
@@ -301,6 +303,14 @@ func (l *CLILogger) Errorf(msg string, args ...interface{}) {
 	}
 
 	c := color.New(color.FgHiRed)
-	c.Printf("  • ")
-	c.Println(fmt.Sprintf(msg, args...))
+	c.Fprintf(l.writer, "  • ")
+	c.Fprintln(l.writer, fmt.Sprintf(msg, args...))
+}
+
+func (l *CLILogger) IsTerminal() bool {
+	file, ok := l.writer.(*os.File)
+	if ok {
+		return isatty.IsTerminal(file.Fd())
+	}
+	return false
 }

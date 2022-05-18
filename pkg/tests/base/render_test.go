@@ -205,7 +205,7 @@ func upstreamFromTestCaseSpec(spec TestCaseSpec) upstreamtypes.Upstream {
 
 func renderOptionsFromTestCaseSpec(spec TestCaseSpec) base.RenderOptions {
 	renderOptions := spec.RenderOptions
-	renderOptions.Log = logger.NewCLILogger()
+	renderOptions.Log = logger.NewCLILogger(os.Stdout)
 	renderOptions.Log.Silence()
 	renderOptions.ExcludeKotsKinds = true
 	renderOptions.SplitMultiDocYAML = true

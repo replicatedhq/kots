@@ -1,0 +1,110 @@
+name: 'KOTS E2E'
+description: 'Composite action for running KOTS e2e test'
+inputs:
+  test-focus:
+    description: 'Name of the test for FOCUS'
+    required: true
+  kots-namespace:
+    description: 'KOTS namespace'
+    required: true
+  k8s-version:
+    description: 'K8s version'
+    required: true
+  testim-access-token:
+    description: 'Testim access token'
+    required: true
+  kotsadm-image-registry:
+    description: 'Kotsadm image registry'
+    default: 'ttl.sh'
+  kotsadm-image-namespace:
+    description: 'Kotsadm image namespace'
+  kotsadm-image-tag:
+    description: 'Kotsadm image tag'
+    default: '2h'
+  testim-branch:
+    description: 'Testim branch'
+    default: 'master'
+  aws-access-key-id:
+    description: 'AWS access key id for uploading support bundle'
+  aws-secret-access-key:
+    description: 'AWS secret access key for uploading support bundle'
+  aws-region:
+    description: 'AWS region for uploading support bundle'
+    default: 'us-east-1'
+  go-version:
+    description: 'Go version'
+  node-version:
+    description: 'Go version'
+# outputs:
+#   random-number:
+#     description: "Random number"
+#     value: ${{ steps.random-number-generator.outputs.random-number }}
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-go@v2
+      with:
+        go-version: ${{ inputs.go-version }}
+
+    - uses: actions/setup-node@v2
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - uses: replicatedhq/action-k3s@main
+      id: k3s
+      with:
+        version: ${{ inputs.k8s-version }}
+
+    - name: install ginkgo
+      run: go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo
+      shell: bash
+
+    - name: install testim
+      run: npm i -g @testim/testim-cli
+      shell: bash
+
+    - name: execute suite change-license
+      env:
+        TESTIM_ACCESS_TOKEN: ${{ inputs.testim-access-token }}
+        KOTS_NAMESPACE: ${{ inputs.app-namespace }}
+      run: |
+        make -C e2e test \
+          FOCUS="${{ inputs.test-focus }}" \
+          EXISTING_KUBECONFIG=$KUBECONFIG \
+          TESTIM_BRANCH=${{ inputs.testim-branch }} \
+          KOTSADM_IMAGE_REGISTRY=${{ inputs.kotsadm-image-registry }} \
+          KOTSADM_IMAGE_NAMESPACE=${{ inputs.kotsadm-image-namespace || format('automated-{0}', github.run_id) }} \
+          KOTSADM_IMAGE_TAG=${{ inputs.kotsadm-image-tag }} \
+          SKIP_TEARDOWN=1
+        EXIT_CODE=$?
+        if [ $EXIT_CODE -ne 0 ]; then
+          echo "------pods:"
+          kubectl -n $KOTS_NAMESPACE get pods
+          echo "------kotsadm logs"
+          kubectl -n $KOTS_NAMESPACE logs deployment/kotsadm
+          echo "------previous kotsadm logs"
+          kubectl -n $KOTS_NAMESPACE logs -p deployment/kotsadm
+        fi
+        exit $EXIT_CODE
+      shell: bash
+
+    - name: Generate support bundle on failure
+      if: ${{ failure() && inputs.aws-access-key-id && inputs.aws-secret-access-key }}
+      env:
+        AWS_ACCESS_KEY_ID: ${{ inputs.aws-access-key-id }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.aws-secret-access-key }}
+        AWS_DEFAULT_REGION: ${{ inputs.aws-region }}
+        KOTS_NAMESPACE: ${{ inputs.app-namespace }}
+      run: |
+        RELEASE="$(
+          curl -sfL https://api.github.com/repos/replicatedhq/troubleshoot/releases/latest | \
+          grep '"tag_name":' | \
+          sed -E 's/.*"(v[^"]+)".*/\1/'
+        )"
+        curl -fsLO "https://github.com/replicatedhq/troubleshoot/releases/download/${RELEASE}/support-bundle_linux_amd64.tar.gz"
+        tar xzf support-bundle_linux_amd64.tar.gz
+        ./support-bundle -n "${KOTS_NAMESPACE}" https://kots.io
+        BUNDLE="$(ls -1 | grep 'support-bundle-.*.tar.gz')"
+        aws s3 cp "${BUNDLE}" "s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
+        echo "::notice ::support bundle uploaded to aws replicated-dev account s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
+      shell: bash

@@ -26,7 +26,7 @@ func AdminConsoleCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
 
-			log := logger.NewCLILogger()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 
 			clientset, err := k8sutil.GetClientset()
 			if err != nil {
@@ -47,7 +47,13 @@ func AdminConsoleCmd() *cobra.Command {
 			stopCh := make(chan struct{})
 			defer close(stopCh)
 
-			adminConsolePort, errChan, err := k8sutil.PortForward(8800, 3000, v.GetString("namespace"), getPodName, true, stopCh, log)
+			localPort := viper.GetInt("port")
+			pollForAdditionalPorts := true
+			if localPort != 8800 {
+				pollForAdditionalPorts = false
+			}
+
+			adminConsolePort, errChan, err := k8sutil.PortForward(localPort, 3000, v.GetString("namespace"), getPodName, pollForAdditionalPorts, stopCh, log)
 			if err != nil {
 				return errors.Wrap(err, "failed to port forward")
 			}
@@ -63,9 +69,9 @@ func AdminConsoleCmd() *cobra.Command {
 				}
 			}()
 
-			if adminConsolePort != 8800 {
+			if adminConsolePort != localPort {
 				log.ActionWithoutSpinner("")
-				log.ActionWithoutSpinner("Port 8800 is not available. The Admin Console is running on port %d", adminConsolePort)
+				log.ActionWithoutSpinner("Port %d is not available. The Admin Console is running on port %d", localPort, adminConsolePort)
 				log.ActionWithoutSpinner("")
 			}
 
@@ -82,6 +88,8 @@ func AdminConsoleCmd() *cobra.Command {
 			return nil
 		},
 	}
+
+	cmd.Flags().Int("port", 8800, "local port to listen on")
 
 	cmd.AddCommand(AdminConsoleUpgradeCmd())
 	cmd.AddCommand(AdminPushImagesCmd())

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/auth"
@@ -36,7 +37,7 @@ func UploadLicense(path string, uploadLicenseOptions UploadLicenseOptions) error
 	}
 
 	// Find the kotadm-api pod
-	log := logger.NewCLILogger()
+	log := logger.NewCLILogger(os.Stdout)
 	log.ActionWithSpinner("Uploading license to Admin Console")
 
 	clientset, err := k8sutil.GetClientset()

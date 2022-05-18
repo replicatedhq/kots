@@ -1,9 +1,10 @@
 package cli
 
 import (
-	"io/ioutil"
-	"os"
+	"bytes"
 	"testing"
+
+	"github.com/replicatedhq/kots/pkg/logger"
 )
 
 func TestCompareVersions(t *testing.T) {
@@ -50,15 +51,12 @@ func TestCompareVersions(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		oldStderr := os.Stderr
-		r, w, _ := os.Pipe()
-		os.Stderr = w
+		buf := bytes.NewBuffer(nil)
+		log := logger.NewCLILogger(buf)
 
-		_ = CompareVersions(test.cliVersion, test.apiVersion)
+		_ = CompareVersions(test.cliVersion, test.apiVersion, log)
 
-		w.Close()
-		output, _ := ioutil.ReadAll(r)
-		os.Stderr = oldStderr
+		output := buf.Bytes()
 
 		if string(output) != "" && !test.expectWarning {
 			t.Errorf("did not expect version mismatch warning for cli version %s and api version %s\n", test.cliVersion, test.apiVersion)

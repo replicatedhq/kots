@@ -2,6 +2,7 @@ package config
 
 import (
 	"bytes"
+	"io/ioutil"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -28,7 +29,7 @@ func oldMarshalConfig(config *kotsv1beta1.Config) (string, error) {
 }
 
 func TestTemplateConfig(t *testing.T) {
-	log := logger.NewCLILogger()
+	log := logger.NewCLILogger(ioutil.Discard)
 	log.Silence()
 
 	license := &kotsv1beta1.License{

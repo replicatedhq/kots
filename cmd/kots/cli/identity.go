@@ -46,7 +46,7 @@ func IdentityServiceInstallCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
 
-			log := logger.NewCLILogger()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 
 			clientset, err := k8sutil.GetClientset()
 			if err != nil {
@@ -113,7 +113,7 @@ func IdentityServiceConfigureCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
 
-			log := logger.NewCLILogger()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 
 			clientset, err := k8sutil.GetClientset()
 			if err != nil {
@@ -172,7 +172,7 @@ func IdentityServiceUninstallCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
 
-			log := logger.NewCLILogger()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 
 			clientset, err := k8sutil.GetClientset()
 			if err != nil {
@@ -228,7 +228,7 @@ func IdentityServiceEnableSharedPasswordCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
 
-			log := logger.NewCLILogger()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 
 			namespace := v.GetString("namespace")
 			if err := validateNamespace(namespace); err != nil {

@@ -97,7 +97,7 @@ func YAML(deployOptions types.DeployOptions) (map[string][]byte, error) {
 }
 
 func Upgrade(clientset *kubernetes.Clientset, upgradeOptions types.UpgradeOptions) error {
-	log := logger.NewCLILogger()
+	log := logger.NewCLILogger(os.Stdout)
 
 	if err := canUpgrade(upgradeOptions, clientset, log); err != nil {
 		log.Error(err)
@@ -141,8 +141,7 @@ func Upgrade(clientset *kubernetes.Clientset, upgradeOptions types.UpgradeOption
 	return nil
 }
 
-func Deploy(deployOptions types.DeployOptions) error {
-
+func Deploy(deployOptions types.DeployOptions, log *logger.CLILogger) error {
 	airgapPath := ""
 	var images []kustomizetypes.Image
 
@@ -179,7 +178,6 @@ func Deploy(deployOptions types.DeployOptions) error {
 		return errors.Wrap(err, "failed to get clientset")
 	}
 
-	log := logger.NewCLILogger()
 	if deployOptions.AirgapRootDir != "" && deployOptions.KotsadmOptions.OverrideRegistry == "" {
 		log.Info("not pushing airgapped app images as no registry was provided")
 	}

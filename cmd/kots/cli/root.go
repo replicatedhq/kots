@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -19,7 +20,8 @@ func RootCmd() *cobra.Command {
 		},
 		PersistentPostRun: func(cmd *cobra.Command, args []string) {
 			// NOTE: If a PersistentPostRun is specified for a subcommand, it will override the root PersistentPostRun
-			err := cliVersionCheck()
+			log := logger.NewCLILogger(cmd.ErrOrStderr())
+			err := cliVersionCheck(log)
 			if err != nil {
 				// likely unable to set up port-forwarding to perform check
 				// not logging since this would be expected for some commands

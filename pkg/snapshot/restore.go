@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -94,7 +95,7 @@ func RestoreInstanceBackup(ctx context.Context, options RestoreInstanceBackupOpt
 		return errors.Wrap(err, "backup is still in progress")
 	}
 
-	log := logger.NewCLILogger()
+	log := logger.NewCLILogger(os.Stdout)
 	if options.Silent {
 		log.Silence()
 	}

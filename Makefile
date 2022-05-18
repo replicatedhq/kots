@@ -1,12 +1,9 @@
-include Makefile.build
+include Makefile.build.mk
 CURRENT_USER := $(shell id -u -n)
 MINIO_TAG ?= RELEASE.2022-05-08T23-50-31Z
 POSTGRES_ALPINE_TAG ?= 10.20-alpine
 DEX_TAG ?= v2.31.1
 LVP_VERSION := v0.3.3
-
-BUILDFLAGS = -tags='netgo containers_image_ostree_stub exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp' -installsuffix netgo
-TEST_BUILDFLAGS = -tags='testing netgo containers_image_ostree_stub exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp' -installsuffix netgo
 
 define sendMetrics
 @if [ -z "${PROJECT_NAME}" ]; then \
@@ -31,6 +28,10 @@ report-metric:
 .PHONY: test
 test:
 	go test $(TEST_BUILDFLAGS) ./pkg/... ./cmd/... -coverprofile cover.out
+
+.PHONY: e2e
+e2e:
+	${MAKE} -C e2e
 
 .PHONY: integration-cli
 integration-cli:
@@ -91,15 +92,13 @@ debug: debug-build
 	LOG_LEVEL=$(LOG_LEVEL) dlv --listen=:2345 --headless=true --api-version=2 exec ./bin/kotsadm-debug api
 
 .PHONY: build-ttl.sh
-build-ttl.sh:
-	docker build --pull -f deploy/Dockerfile -t ttl.sh/${CURRENT_USER}/kotsadm:12h .
+build-ttl.sh: build
+	source .image.env && ${MAKE} -C web build-kotsadm
+	docker build -f deploy/Dockerfile -t ttl.sh/${CURRENT_USER}/kotsadm:12h .
 	docker push ttl.sh/${CURRENT_USER}/kotsadm:12h
 
 .PHONY: all-ttl.sh
-all-ttl.sh: build
-	make -C web build-kotsadm
-	source .image.env && make build-ttl.sh
-
+all-ttl.sh: build-ttl.sh
 	source .image.env && IMAGE=ttl.sh/${CURRENT_USER}/kotsadm-migrations:12h make -C migrations build_schema
 
 	docker pull minio/minio:${MINIO_TAG}

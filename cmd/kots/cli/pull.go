@@ -100,7 +100,7 @@ func PullCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to pull")
 			}
 
-			log := logger.NewCLILogger()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 			log.Initialize()
 			log.Info("Kubernetes application files created in %s", renderDir)
 			if len(v.GetStringSlice("downstream")) == 0 {
