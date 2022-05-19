@@ -22,6 +22,13 @@ $cell-width: 140px;
     animation:         newVersion 9s ease forwards; /* IE 10+, Fx 29+ */
     animation:         newVersion 9s ease forwards;
   }
+  &.show-preflight-passed-text .checks-running-text {
+    -webkit-animation: preflightPassedText 15s ease forwards; /* Safari 4+ */
+    -moz-animation:    preflightPassedText 15s ease forwards; /* Fx 5+ */
+    -o-animation:      preflightPassedText 15s ease forwards; /* Opera 12+ */
+    animation:         preflightPassedText 15s ease forwards; /* IE 10+, Fx 29+ */
+    animation:         preflightPassedText 15s ease forwards;
+  }
 }
 
 .VersionHistoryRow {
@@ -283,6 +290,9 @@ $cell-width: 140px;
   &.warning {
     color: $warning-color;
   }
+  &.success {
+    color: $success-color;
+  }
 }
 
 .DiffOverlay {
@@ -329,23 +339,6 @@ $cell-width: 140px;
   border: solid 1px #C4C7CA;
 }
 
-@-webkit-keyframes newVersion {
-  0%   { background-color: #fff7dc; }
-  100% { background-color: #FFFFFF; }
-}
-@-moz-keyframes newVersion {
-  0%   { background-color: #fff7dc; }
-  100% { background-color: #FFFFFF; }
-}
-@-o-keyframes newVersion {
-  0%   { background-color: #fff7dc; }
-  100% { background-color: #FFFFFF; }
-}
-@keyframes newVersion {
-  0%   { background-color: #fff7dc; }
-  100% { background-color: #FFFFFF; }
-}
-
 .ErrorWrapper {
   padding: 15px 20px;
   box-shadow: 0 0 4px rgba(0,0,0,0.16);
@@ -366,4 +359,42 @@ $cell-width: 140px;
     font-weight: 500;
     line-height: 1.7;
   }
+}
+
+@-webkit-keyframes newVersion {
+  0%   { background-color: #fff7dc; }
+  100% { background-color: #FFFFFF; }
+}
+@-moz-keyframes newVersion {
+  0%   { background-color: #fff7dc; }
+  100% { background-color: #FFFFFF; }
+}
+@-o-keyframes newVersion {
+  0%   { background-color: #fff7dc; }
+  100% { background-color: #FFFFFF; }
+}
+@keyframes newVersion {
+  0%   { background-color: #fff7dc; }
+  100% { background-color: #FFFFFF; }
+}
+
+@-webkit-keyframes preflightPassedText {
+  0%   { opacity: 1; }
+  95%  { opacity: 1; }
+  100% { opacity: 0;  }
+}
+@-moz-keyframes preflightPassedText {
+  0%   { opacity: 1; }
+  95%  { opacity: 1; }
+  100% { opacity: 0;  }
+}
+@-o-keyframes preflightPassedText {
+  0%   { opacity: 1; }
+  95%  { opacity: 1; }
+  100% { opacity: 0;  }
+}
+@keyframes preflightPassedText {
+  0%   { opacity: 1; }
+  95%  { opacity: 1; }
+  100% { opacity: 0;  }
 }

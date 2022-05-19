@@ -1119,6 +1119,10 @@ class AppVersionHistory extends Component {
     const nothingToCommit = gitopsEnabled && !version.commitUrl;
     const isChecked = !!this.state.checkedReleasesToDiff.find(diffRelease => diffRelease.parentSequence === version.parentSequence);
     const isNew = secondsAgo(version.createdOn) < 10;
+    let newPreflightResults = false;
+    if (version.preflightResultCreatedAt) {
+      newPreflightResults = secondsAgo(version.preflightResultCreatedAt) < 12;
+    }
 
     return (
       <AppVersionHistoryRow
@@ -1131,6 +1135,7 @@ class AppVersionHistory extends Component {
         nothingToCommit={nothingToCommit}
         isChecked={isChecked}
         isNew={isNew}
+        newPreflightResults={newPreflightResults}
         showReleaseNotes={this.showReleaseNotes}
         renderDiff={this.renderDiff}
         toggleShowDetailsModal={this.toggleShowDetailsModal}
