@@ -90,7 +90,6 @@ require (
 	k8s.io/utils v0.0.0-20210930125809-cb0fa318a74b
 	sigs.k8s.io/application v0.8.3
 	sigs.k8s.io/controller-runtime v0.11.0
-	sigs.k8s.io/kind v0.7.1-0.20200303021537-981bd80d3802
 	sigs.k8s.io/kustomize/api v0.10.1
 	sigs.k8s.io/kustomize/kyaml v0.13.0
 	sigs.k8s.io/yaml v1.3.0
@@ -149,7 +148,6 @@ require (
 	github.com/Rican7/retry v0.1.0 // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
-	github.com/alessio/shellescape v0.0.0-20190409004728-b115ca0f9053 // indirect
 	github.com/antlr/antlr4/runtime/Go/antlr v0.0.0-20210826220005-b48c857c3a0e // indirect
 	github.com/asaskevich/govalidator v0.0.0-20200907205600-7a23bdc65eef // indirect
 	github.com/aws/aws-sdk-go-v2 v1.13.0 // indirect
