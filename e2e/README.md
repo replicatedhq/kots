@@ -49,6 +49,3 @@ make e2e \
 ### Requirements
 
 1. [Docker](https://docs.docker.com/get-docker/)
-1. [Kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl)
-1. [Helm](https://helm.sh/docs/intro/install/)
-1. [Testim CLI](https://help.testim.io/docs/the-command-line-cli)
