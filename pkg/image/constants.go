@@ -6,8 +6,8 @@ package image
 
 const (
 	Minio          = "minio/minio:RELEASE.2022-05-08T23-50-31Z"
-	PostgresAlpine = "postgres:10.20-alpine"
-	PostgresDebian = "postgres:10.20"
+	PostgresAlpine = "postgres:10.21-alpine"
+	PostgresDebian = "postgres:10.21"
 	Dex            = "ghcr.io/dexidp/dex:v2.31.1"
 	Schemahero     = "schemahero/schemahero:0.13.1"
 )
