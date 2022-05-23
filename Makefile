@@ -6,6 +6,7 @@ DEX_TAG ?= v2.31.1
 LVP_VERSION := v0.3.3
 
 BUILDFLAGS = -tags='netgo containers_image_ostree_stub exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp' -installsuffix netgo
+TEST_BUILDFLAGS = -tags='testing netgo containers_image_ostree_stub exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp' -installsuffix netgo
 
 define sendMetrics
 @if [ -z "${PROJECT_NAME}" ]; then \
@@ -29,7 +30,7 @@ report-metric:
 
 .PHONY: test
 test:
-	go test $(BUILDFLAGS) -tags "testing" ./pkg/... ./cmd/... -coverprofile cover.out
+	go test $(TEST_BUILDFLAGS) ./pkg/... ./cmd/... -coverprofile cover.out
 
 .PHONY: integration-cli
 integration-cli:
@@ -37,7 +38,7 @@ integration-cli:
 
 .PHONY: ci-test
 ci-test:
-	go test $(BUILDFLAGS) -tags "testing" ./pkg/... ./cmd/... ./integration/... -coverprofile cover.out
+	go test $(TEST_BUILDFLAGS) ./pkg/... ./cmd/... ./integration/... -coverprofile cover.out
 
 .PHONY: kots
 kots: PROJECT_NAME = kots
