@@ -63,7 +63,7 @@ runs:
       run: npm i -g @testim/testim-cli
       shell: bash
 
-    - name: execute suite change-license
+    - name: execute suite "${{ inputs.test-focus }}"
       env:
         TESTIM_ACCESS_TOKEN: ${{ inputs.testim-access-token }}
         KOTS_NAMESPACE: ${{ inputs.app-namespace }}
