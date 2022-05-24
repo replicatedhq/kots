@@ -6,7 +6,7 @@ DEX_TAG ?= v2.31.1
 LVP_VERSION := v0.3.3
 
 BUILDFLAGS = -tags='netgo containers_image_ostree_stub exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp' -installsuffix netgo
-EXPERIMENTAL_BUILDFLAGS = -tags 'netgo -tags containers_image_ostree_stub -tags exclude_graphdriver_devicemapper -tags exclude_graphdriver_btrfs -tags containers_image_openpgp -tags kots_experimental' -installsuffix netgo
+TEST_BUILDFLAGS = -tags='testing netgo containers_image_ostree_stub exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp' -installsuffix netgo
 
 define sendMetrics
 @if [ -z "${PROJECT_NAME}" ]; then \
@@ -30,7 +30,7 @@ report-metric:
 
 .PHONY: test
 test:
-	go test $(BUILDFLAGS) ./pkg/... ./cmd/... -coverprofile cover.out
+	go test $(TEST_BUILDFLAGS) ./pkg/... ./cmd/... -coverprofile cover.out
 
 .PHONY: integration-cli
 integration-cli:
@@ -38,7 +38,7 @@ integration-cli:
 
 .PHONY: ci-test
 ci-test:
-	go test $(BUILDFLAGS) ./pkg/... ./cmd/... ./integration/... -coverprofile cover.out
+	go test $(TEST_BUILDFLAGS) ./pkg/... ./cmd/... ./integration/... -coverprofile cover.out
 
 .PHONY: kots
 kots: PROJECT_NAME = kots
@@ -47,10 +47,6 @@ kots: capture-start-time kots-real report-metric
 .PHONY: kots-real
 kots-real:
 	go build ${LDFLAGS} -o bin/kots $(BUILDFLAGS) github.com/replicatedhq/kots/cmd/kots
-
-.PHONY: kots-experimental
-kots-experimental: fmt vet
-	CGO_ENABLED=1 go build ${LDFLAGS} -o bin/kots $(EXPERIMENTAL_BUILDFLAGS) github.com/replicatedhq/kots/cmd/kots
 
 .PHONY: fmt
 fmt:
@@ -79,7 +75,7 @@ build: capture-start-time build-real report-metric
 build-real:
 	mkdir -p web/dist
 	touch web/dist/THIS_IS_OKTETO  # we need this for go:embed, but it's not actually used in dev
-	go build ${LDFLAGS} ${GCFLAGS} -o bin/kotsadm $(BUILDFLAGS) ./cmd/kotsadm
+	go build ${LDFLAGS} ${GCFLAGS} -v -o bin/kotsadm $(BUILDFLAGS) ./cmd/kotsadm
 
 .PHONY: run
 run: build

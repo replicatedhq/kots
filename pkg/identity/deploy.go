@@ -13,7 +13,6 @@ import (
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
-	"github.com/replicatedhq/kots/pkg/persistence"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -42,15 +41,13 @@ func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace strin
 		return errors.Wrap(err, "failed to migrate client secret")
 	}
 
-	if persistence.IsPostgres() {
-		postgresConfig := kotsv1beta1.IdentityPostgresConfig{
-			Host:     "kotsadm-postgres",
-			Database: "dex",
-			User:     "dex",
-		}
-		if err := identitydeploy.EnsurePostgresSecret(context.TODO(), clientset, namespace, KotsadmNamePrefix, postgresConfig, nil); err != nil {
-			return errors.Wrap(err, "failed to ensure postgres secret")
-		}
+	postgresConfig := kotsv1beta1.IdentityPostgresConfig{
+		Host:     "kotsadm-postgres",
+		Database: "dex",
+		User:     "dex",
+	}
+	if err := identitydeploy.EnsurePostgresSecret(context.TODO(), clientset, namespace, KotsadmNamePrefix, postgresConfig, nil); err != nil {
+		return errors.Wrap(err, "failed to ensure postgres secret")
 	}
 
 	if err := identitydeploy.EnsureClientSecret(ctx, clientset, namespace, KotsadmNamePrefix, nil); err != nil {

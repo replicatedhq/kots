@@ -5,31 +5,15 @@ import (
 )
 
 var (
-	PostgresURI string
-	SQLiteURI   string
-	mockDB      *sql.DB
+	db  *sql.DB
+	uri string
 )
 
-func MustGetDBSession() *sql.DB {
-	if mockDB != nil {
-		return mockDB
-	}
-
-	if SQLiteURI != "" {
-		return mustGetSQLiteSession()
-	}
-
-	return mustGetPGSession()
+func SetDB(database *sql.DB) {
+	db = database
 }
 
-func IsSQlite() bool {
-	return SQLiteURI != ""
-}
-
-func IsPostgres() bool {
-	return PostgresURI != ""
-}
-
-func InitMockDB(mock *sql.DB) {
-	mockDB = mock
+func InitDB(databaseUri string) {
+	uri = databaseUri
+	MustGetDBSession()
 }

@@ -157,7 +157,6 @@ func getNodeMetrics(nodeIP string) (*statsv1alpha1.Summary, error) {
 				InsecureSkipVerify: true,
 			},
 		}
-		port = 10250
 	}
 
 	r, err := client.Get(fmt.Sprintf("https://%s:%d/stats/summary", nodeIP, port))

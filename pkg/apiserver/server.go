@@ -34,7 +34,6 @@ import (
 type APIServerParams struct {
 	Version                string
 	PostgresURI            string
-	SQLiteURI              string
 	AutocreateClusterToken string
 	EnableIdentity         bool
 	SharedPassword         string
@@ -55,8 +54,7 @@ func Start(params *APIServerParams) {
 	}
 
 	// set some persistence variables
-	persistence.PostgresURI = params.PostgresURI
-	persistence.SQLiteURI = params.SQLiteURI
+	persistence.InitDB(params.PostgresURI)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	if err := store.GetStore().WaitForReady(ctx); err != nil {

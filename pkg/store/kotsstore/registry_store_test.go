@@ -16,8 +16,8 @@ func TestKOTSStore_GetRegistryDetailsForApp(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	req.NoError(err)
 	defer db.Close()
-	persistence.InitMockDB(db)
-	defer persistence.InitMockDB(nil)
+	persistence.SetDB(db)
+	defer persistence.SetDB(nil)
 
 	req.NoError(crypto.NewAESCipher())
 	registryPassword := "registry-password"
