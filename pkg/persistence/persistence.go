@@ -9,10 +9,6 @@ var (
 	uri string
 )
 
-func IsPostgres() bool {
-	return uri != ""
-}
-
 func SetDB(database *sql.DB) {
 	db = database
 }
