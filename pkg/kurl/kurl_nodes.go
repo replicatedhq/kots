@@ -19,43 +19,8 @@ import (
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	statsv1alpha1 "k8s.io/kubelet/pkg/apis/stats/v1alpha1"
 )
-
-type MemoryStats struct {
-	// Available memory for use.  This is defined as the memory limit - workingSetBytes.
-	// If memory limit is undefined, the available bytes is omitted.
-	// +optional
-	AvailableBytes *uint64 `json:"availableBytes,omitempty"`
-}
-type CPUStats struct {
-	// Total CPU usage (sum of all cores) averaged over the sample window.
-	// The "core" unit can be interpreted as CPU core-nanoseconds per second.
-	// +optional
-	UsageNanoCores *uint64 `json:"usageNanoCores,omitempty"`
-}
-type NodeStats struct {
-	// Stats pertaining to CPU resources.
-	// +optional
-	CPU *CPUStats `json:"cpu,omitempty"`
-	// Stats pertaining to memory (RAM) resources.
-	// +optional
-	Memory *MemoryStats `json:"memory,omitempty"`
-}
-
-type PodReference struct {
-	Name string `json:"name"`
-}
-type PodStats struct {
-	// Reference to the measured Pod.
-	PodRef PodReference `json:"podRef"`
-}
-
-type Summary struct {
-	// Overall node stats.
-	Node NodeStats `json:"node"`
-	// Per-pod stats.
-	Pods []PodStats `json:"pods"`
-}
 
 // GetNodes will get a list of nodes with stats
 func GetNodes(client kubernetes.Interface) (*types.KurlNodes, error) {
@@ -171,10 +136,11 @@ func findNodeConditions(conditions []v1.NodeCondition) types.NodeConditions {
 }
 
 // get kubelet PKI info from /etc/kubernetes/pki/kubelet, use it to hit metrics server at `http://${nodeIP}:10255/stats/summary`
-func getNodeMetrics(nodeIP string) (*Summary, error) {
+func getNodeMetrics(nodeIP string) (*statsv1alpha1.Summary, error) {
 	client := http.Client{
 		Timeout: time.Second,
 	}
+	port := 10255
 
 	// only use mutual TLS if client cert exists
 	_, err := ioutil.ReadFile("/etc/kubernetes/pki/kubelet/client.crt")
@@ -193,7 +159,7 @@ func getNodeMetrics(nodeIP string) (*Summary, error) {
 		}
 	}
 
-	r, err := client.Get(fmt.Sprintf("https://%s:10255/stats/summary", nodeIP))
+	r, err := client.Get(fmt.Sprintf("https://%s:%d/stats/summary", nodeIP, port))
 	if err != nil {
 		return nil, errors.Wrapf(err, "get node %s stats", nodeIP)
 	}
@@ -204,7 +170,7 @@ func getNodeMetrics(nodeIP string) (*Summary, error) {
 		return nil, errors.Wrapf(err, "read node %s stats response", nodeIP)
 	}
 
-	summary := Summary{}
+	summary := statsv1alpha1.Summary{}
 	err = json.Unmarshal(body, &summary)
 	if err != nil {
 		return nil, errors.Wrapf(err, "parse node %s stats response", nodeIP)

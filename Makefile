@@ -77,13 +77,6 @@ build-real:
 	touch web/dist/THIS_IS_OKTETO  # we need this for go:embed, but it's not actually used in dev
 	go build ${LDFLAGS} ${GCFLAGS} -v -o bin/kotsadm $(BUILDFLAGS) ./cmd/kotsadm
 
-.PHONY: b
-b:
-	mkdir -p web/dist
-	touch web/dist/THIS_IS_OKTETO  # we need this for go:embed, but it's not actually used in dev
-	/usr/bin/time go build ${LDFLAGS} ${GCFLAGS} -a -o bin/kotsadm $(BUILDFLAGS) -debug-actiongraph=compile.json ./cmd/kotsadm
-	#go build ${LDFLAGS} ${GCFLAGS} -a -v -x -o bin/kotsadm $(BUILDFLAGS) -debug-actiongraph=compile.json ./cmd/kotsadm
-
 .PHONY: run
 run: build
 	./bin/kotsadm api
