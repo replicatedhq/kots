@@ -1,4 +1,5 @@
 export GOPROXY=https://proxy.golang.org
+export CGO_ENABLED=0
 
 SHELL := /bin/bash -o pipefail
 VERSION_PACKAGE = github.com/replicatedhq/kots/pkg/buildversion
