@@ -333,6 +333,8 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Println("CREATED APP!!")
+	time.Sleep(3 * time.Second)
 	if !verifiedLicense.Spec.IsAirgapSupported {
 		// complete the install online
 		createAppOpts := online.CreateOnlineAppOpts{
@@ -352,6 +354,9 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 			JSON(w, http.StatusInternalServerError, uploadLicenseResponse)
 			return
 		}
+
+		fmt.Println("CREATED APP FROM ONLINE")
+		time.Sleep(3 * time.Second)
 
 		err = kotsutil.RemoveAppVersionLabelFromInstallationParams(kotsadmtypes.KotsadmConfigMap)
 		if err != nil {
