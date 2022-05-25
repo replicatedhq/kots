@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -17,11 +18,19 @@ type GetUpdateDownloadStatusResponse struct {
 }
 
 func (h *Handler) GetUpdateDownloadStatus(w http.ResponseWriter, r *http.Request) {
-	status, message, err := store.GetStore().GetTaskStatus("update-download")
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		logger.Error(err)
-		return
+	var status, message string
+	var err error
+	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
+	if isHelmManaged == "true" {
+		status = "deployed"
+		message = "helm chart was deployed"
+	} else {
+		status, message, err = store.GetStore().GetTaskStatus("update-download")
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			logger.Error(err)
+			return
+		}
 	}
 
 	JSON(w, http.StatusOK, GetUpdateDownloadStatusResponse{

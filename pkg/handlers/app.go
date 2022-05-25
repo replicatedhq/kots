@@ -1,15 +1,20 @@
 package handlers
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/blang/semver"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -27,7 +32,9 @@ import (
 	"github.com/replicatedhq/kots/pkg/session"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/store/kotsstore"
+	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/version"
+	helmrelease "helm.sh/helm/v3/pkg/release"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -105,12 +112,58 @@ func responseAppFromHelmSecret(s v1.Secret) (*types.ResponseApp, error) {
 	}
 	updatedTs := time.Unix(unixIntValue, 0)
 
+	// decode and read release data
+	b64compressedData := string(s.Data["release"])
+	decodedCompressedData, err := base64.StdEncoding.DecodeString(b64compressedData)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to base64 decode")
+	}
+	reader := bytes.NewReader([]byte(decodedCompressedData))
+	gzreader, err := gzip.NewReader(reader)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create gzip reader")
+	}
+
+	output, err := ioutil.ReadAll(gzreader)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read from gzip reader")
+	}
+
+	// json unmarshl output into helm release struct
+	release := &helmrelease.Release{}
+	err = json.Unmarshal(output, &release)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to unmarshal decompressed decoded release data")
+	}
+
+	sv, err := semver.New(release.Chart.Metadata.Version)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse release version into semver")
+	}
+
+	iconURI := "https://cncf-branding.netlify.app/img/projects/helm/horizontal/color/helm-horizontal-color.png"
+	// use chart icon if it exists, if not use default helm icon
+	if release.Chart.Metadata.Icon != "" {
+		iconURI = release.Chart.Metadata.Icon
+	}
+
+	downstreamVersion := &downstreamtypes.DownstreamVersion{
+		VersionLabel: release.Chart.Metadata.Version,
+		Semver:       sv,
+		Status:       storetypes.VersionDeployed,
+		CreatedOn:    &release.Info.FirstDeployed.Time,
+		DeployedAt:   &release.Info.LastDeployed.Time,
+	}
+
+	pendingVersions := make([]*downstreamtypes.DownstreamVersion, 0)
+	pendingVersions = append(pendingVersions, downstreamVersion)
 	return &types.ResponseApp{
-		Name:      s.Labels["name"],
-		Slug:      s.Labels["name"],
-		CreatedAt: s.CreationTimestamp.Time,
-		UpdatedAt: &updatedTs,
-		IconURI:   "https://cncf-branding.netlify.app/img/projects/helm/horizontal/color/helm-horizontal-color.png",
+		Name:       s.Labels["name"],
+		Slug:       s.Labels["name"],
+		CreatedAt:  s.CreationTimestamp.Time,
+		UpdatedAt:  &updatedTs,
+		IconURI:    iconURI,
+		Downstream: types.ResponseDownstream{CurrentVersion: downstreamVersion, PendingVersions: pendingVersions},
 	}, nil
 }
 
@@ -398,37 +451,44 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	appSlug := mux.Vars(r)["appSlug"]
-	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
-	if err != nil {
-		err = errors.Wrap(err, "failed to get app from slug")
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+	history := new(downstreamtypes.DownstreamVersionHistory)
+	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
+	if isHelmManaged == "true" {
+		cache := getHelmAppCache()
+		history.NumOfRemainingVersions = 0
+		history.VersionHistory = []*downstreamtypes.DownstreamVersion{cache[appSlug].Downstream.CurrentVersion}
+	} else {
+		foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
+		if err != nil {
+			err = errors.Wrap(err, "failed to get app from slug")
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		downstreams, err := store.GetStore().ListDownstreamsForApp(foundApp.ID)
+		if err != nil {
+			err = errors.Wrap(err, "failed to list downstreams for app")
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		} else if len(downstreams) == 0 {
+			err = errors.New("no downstreams for app")
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		clusterID := downstreams[0].ClusterID
+
+		history, err = store.GetStore().GetDownstreamVersionHistory(foundApp.ID, clusterID, currentPage, pageSize, pinLatest, pinLatestDeployable)
+		if err != nil {
+			err = errors.Wrap(err, "failed to get downstream versions")
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 	}
-
-	downstreams, err := store.GetStore().ListDownstreamsForApp(foundApp.ID)
-	if err != nil {
-		err = errors.Wrap(err, "failed to list downstreams for app")
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	} else if len(downstreams) == 0 {
-		err = errors.New("no downstreams for app")
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	clusterID := downstreams[0].ClusterID
-
-	history, err := store.GetStore().GetDownstreamVersionHistory(foundApp.ID, clusterID, currentPage, pageSize, pinLatest, pinLatestDeployable)
-	if err != nil {
-		err = errors.Wrap(err, "failed to get downstream versions")
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
 	response := GetAppVersionHistoryResponse{
 		DownstreamVersionHistory: *history,
 	}
