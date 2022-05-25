@@ -128,6 +128,11 @@ func getTagFinder(opts ...func(c *configuration)) tagFinderFn {
 			if err != nil {
 				return nil, fmt.Errorf("failed to get release tag for %s %w", imageName, err)
 			}
+		case lvpReference:
+			latestReleaseTag, err = getLatestTagFromRegistry("replicated/local-volume-provider", config.repositoryTagsFinder, matcherFn)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get release tag for %s %w", imageName, err)
+			}
 
 		default:
 			return nil, fmt.Errorf("don't know how to deal with %q image", imageName)

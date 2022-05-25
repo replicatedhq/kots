@@ -103,6 +103,18 @@ func TestFunctional(t *testing.T) {
 				),
 			),
 		},
+		{
+			name: "lvp",
+			fn: getTagFinder(
+				withRepoGetTags(
+					func(_ string) ([]string, error) {
+						return []string{
+							"v0.3.3",
+						}, nil
+					},
+				),
+			),
+		},
 	}
 
 	for _, tc := range tt {

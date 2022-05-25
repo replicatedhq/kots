@@ -3,3 +3,4 @@ postgres-alpine postgres ^10.\d+-alpine$
 postgres-debian postgres ^10.\d+$
 dex ghcr.io/dexidp/dex
 schemahero schemahero/schemahero ^([0-9]|[1-9][0-9]*)\.([0-9]|[1-9][0-9]*)\.([0-9]|[1-9][0-9]*)$
+lvp replicated/local-volume-provider ^v([0-9]|[1-9][0-9]*)\.([0-9]|[1-9][0-9]*)\.([0-9]|[1-9][0-9]*)$

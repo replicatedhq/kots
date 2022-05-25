@@ -18,6 +18,7 @@ const (
 	dexReference                      = "dex"
 	postgresAlpineReference           = "postgres-alpine"
 	postgresDebianReference           = "postgres-debian"
+	lvpReference                      = "lvp"
 	inputFilename                     = "cmd/imagedeps/image-spec"
 	outputConstantFilename            = "pkg/image/constants.go"
 	outputEnvFilename                 = ".image.env"

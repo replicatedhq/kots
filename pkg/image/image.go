@@ -22,7 +22,6 @@ func GetTag(imageRef string) (string, error) {
 		return tagged.Tag(), nil
 	}
 	return "", fmt.Errorf("image reference is not tagged")
-
 }
 
 func ImageInfoFromFile(registry registry.RegistryOptions, nameParts []string) (kustomizetypes.Image, error) {

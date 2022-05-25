@@ -3,7 +3,7 @@ CURRENT_USER := $(shell id -u -n)
 MINIO_TAG ?= RELEASE.2022-05-08T23-50-31Z
 POSTGRES_ALPINE_TAG ?= 10.20-alpine
 DEX_TAG ?= v2.31.1
-LVP_VERSION := v0.3.3
+LVP_TAG := v0.3.4
 
 define sendMetrics
 @if [ -z "${PROJECT_NAME}" ]; then \
@@ -133,7 +133,7 @@ build-release:
 	skopeo copy docker://minio/minio:${MINIO_TAG} docker-archive:bin/docker-archive/minio/${MINIO_TAG}
 
 	mkdir -p bin/docker-archive/local-volume-provider
-	skopeo copy docker://replicated/local-volume-provider:${LVP_VERSION} docker-archive:bin/docker-archive/local-volume-provider/${LVP_VERSION}
+	skopeo copy docker://replicated/local-volume-provider:${LVP_TAG} docker-archive:bin/docker-archive/local-volume-provider/${LVP_TAG}
 
 .PHONY: project-pact-tests
 project-pact-tests:

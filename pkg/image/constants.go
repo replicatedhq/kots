@@ -10,4 +10,5 @@ const (
 	PostgresDebian = "postgres:10.21"
 	Dex            = "ghcr.io/dexidp/dex:v2.31.1"
 	Schemahero     = "schemahero/schemahero:0.13.1"
+	Lvp            = "replicated/local-volume-provider:v0.3.4"
 )
