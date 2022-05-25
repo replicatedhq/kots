@@ -448,6 +448,33 @@ jobs:
           sarif_file: kurl-proxy-scan-output.sarif
 
 
+  scan_local_volume_provider:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Read image tags from env file
+        uses: falti/dotenv-action@v0.2
+        id: dotenv
+        with:
+          path: .image.env
+      - name: Scan replicated/local-volume-provider for vulnerabilities
+        id: scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "docker.io/replicated/local-volume-provider:${{ steps.dotenv.outputs.lvp_tag }}"
+          format: 'template'
+          template: '@/contrib/sarif.tpl'
+          output: 'scan-output.sarif'
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH,MEDIUM'
+      - name: Upload scan report
+        uses: github/codeql-action/upload-sarif@v1
+        with:
+          sarif_file: scan-output.sarif
+
+
   scan_kotsadm:
     runs-on: ubuntu-20.04
     needs: [release_go_api_alpha]
