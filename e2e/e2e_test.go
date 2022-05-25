@@ -53,11 +53,11 @@ var _ = BeforeSuite(func() {
 	testimAccessToken := os.Getenv("TESTIM_ACCESS_TOKEN")
 	Expect(testimAccessToken).ShouldNot(BeEmpty(), "TESTIM_ACCESS_TOKEN required")
 
-	Expect(util.CommandExists("kubectl")).To(BeTrue(), "kubectl required") // TODO
-	Expect(util.CommandExists("helm")).To(BeTrue(), "helm required")       // TODO
-	Expect(util.CommandExists("velero")).To(BeTrue(), "velero required")   // TODO
-	Expect(util.CommandExists("testim")).To(BeTrue(), "testim required")   // TODO
-	Expect(util.CommandExists("kots")).To(BeTrue(), "kots required")       // TODO
+	Expect(util.CommandExists("kubectl")).To(BeTrue(), "kubectl required")
+	Expect(util.CommandExists("helm")).To(BeTrue(), "helm required")
+	Expect(util.CommandExists("velero")).To(BeTrue(), "velero required")
+	Expect(util.CommandExists("testim")).To(BeTrue(), "testim required")
+	Expect(util.CommandExists("kots")).To(BeTrue(), "kots required")
 
 	w := workspace.New()
 	DeferCleanup(w.Teardown)
@@ -96,10 +96,6 @@ var _ = Describe("E2E", func() {
 			if existingKubeconfig != "" {
 				c = cluster.NewExisting(existingKubeconfig)
 			} else {
-				// kind := cluster.NewKind(w.GetDir())
-				// DeferCleanup(kind.PrintDebugInfo)
-				// c = kind
-
 				k3d := cluster.NewK3d(w.GetDir())
 				DeferCleanup(k3d.PrintDebugInfo)
 				c = k3d
@@ -113,7 +109,7 @@ var _ = Describe("E2E", func() {
 
 		AfterEach(func() {
 			// Debug
-			// TODO: run this on failure
+			// TODO: run this only on failure
 			if kubectlCLI != nil {
 				kubectlCLI.GetAllPods()
 			}

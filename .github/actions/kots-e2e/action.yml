@@ -35,10 +35,6 @@ inputs:
     description: 'Go version'
   node-version:
     description: 'Go version'
-# outputs:
-#   random-number:
-#     description: "Random number"
-#     value: ${{ steps.random-number-generator.outputs.random-number }}
 runs:
   using: "composite"
   steps:
@@ -50,6 +46,7 @@ runs:
       with:
         node-version: ${{ inputs.node-version }}
 
+    # TODO: use k3d eventually but this is difficult to support with ${{ inputs.k8s-version }}
     - uses: replicatedhq/action-k3s@main
       id: k3s
       with:
