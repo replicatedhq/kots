@@ -136,6 +136,36 @@ jobs:
           file: ./deploy/Dockerfile
           push: true
 
+
+  build-e2e:
+    runs-on: ubuntu-20.04
+    needs: [ can-run-ci ]
+    steps:
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '^1.17.4'
+
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-e2e-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-e2e-
+      - run: make -C e2e deps build
+      - uses: actions/upload-artifact@v2
+        with:
+          name: e2e
+          path: e2e/bin/
+
+
   build-kurl-proxy:
     runs-on: ubuntu-20.04
     needs: [ can-run-ci ]
@@ -253,133 +283,34 @@ jobs:
 
   validate-smoke-test:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
+    needs: [ can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
     strategy:
       fail-fast: false
       matrix:
         k8s_version: [ v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1 ]
     steps:
-      - uses: replicatedhq/action-k3s@main
-        id: k3s
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: download e2e deps
+        uses: actions/download-artifact@v2
         with:
-          version: ${{ matrix.k8s_version }}
-
+          name: e2e
+          path: e2e/bin/
+      - run: chmod +x e2e/bin/*
       - name: download kots binary
         uses: actions/download-artifact@v2
         with:
           name: kots
           path: bin/
-
-      - run: chmod +x bin/kots
-
-      - uses: actions/setup-node@v2
+      - run: chmod +x bin/*
+      - uses: ./.github/actions/kots-e2e
         with:
-          node-version: '17.x'
-
-      - name: setup testIM
-        run: npm i -g @testim/testim-cli
-        shell: bash
-
-      ## testim tests
-
-      - name: aws credentials setup
-        run: |
-          cat > aws-credentials << EOL
-          [default]
-          aws_access_key_id=${{ secrets.TESTIM_AWS_ACCESS_KEY_ID }}
-          aws_secret_access_key=${{ secrets.TESTIM_AWS_SECRET_ACCESS_KEY }}
-          EOL
-
-      - name: delete velero if exists
-        run: kubectl delete ns velero --ignore-not-found
-
-      - name: velero install
-        run: |
-          curl -LO https://github.com/vmware-tanzu/velero/releases/download/v1.7.1/velero-v1.7.1-linux-amd64.tar.gz && tar zxvf velero-v1.7.1-linux-amd64.tar.gz && \
-          ./velero-v1.7.1-linux-amd64/velero install \
-          --provider aws \
-          --plugins velero/velero-plugin-for-aws:v1.3.0 \
-          --bucket kots-testim-snapshots \
-          --backup-location-config region=us-east-1 \
-          --snapshot-location-config region=us-east-1 \
-          --secret-file ./aws-credentials \
-          --prefix /automated-smoke-test-${{ github.run_id }}-${{ matrix.k8s_version }}-$RANDOM \
-          --use-restic
-
-      - name: prepare smoke test
-        run: |
-          set +e
-          ./bin/kots \
-          install qakotstestim/github-actions-qa \
-          --no-port-forward \
-          --namespace smoke-test \
-          --shared-password password \
-          --kotsadm-registry ttl.sh \
-          --kotsadm-namespace automated-${{ github.run_id }} \
-          --kotsadm-tag 2h
-          EXIT_CODE=$?
-          if [ $EXIT_CODE -ne 0 ]; then
-            echo "------pods:"
-            kubectl -n smoke-test get pods
-            echo "------kotsadm logs"
-            kubectl -n smoke-test logs deployment/kotsadm
-            echo "------previous kotsadm logs"
-            kubectl -n smoke-test logs -p deployment/kotsadm
-          fi
-          exit $EXIT_CODE
-
-      - name: get testim branch
-        if: startsWith(github.ref, 'refs/heads/')
-        id: get_testim_branch
-        shell: bash
-        run: |
-          BRANCH=${GITHUB_REF/refs\/heads\//}
-          if [ "$BRANCH" == "main" ]; then
-            BRANCH="master"
-          fi
-          echo ::set-output name=TESTIM_BRANCH::${BRANCH:-master}
-
-      - name: execute smoke test
-        run: |
-          set +e
-          ./bin/kots admin-console -n smoke-test &
-          ADMIN_CONSOLE_PID=$!
-          sleep 10
-          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --grid "Testim-grid" --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite smoke-test --tunnel --tunnel-port 8800
-          EXIT_CODE=$?
-          if [ $EXIT_CODE -ne 0 ]; then
-            echo "------pods:"
-            kubectl -n smoke-test get pods
-            echo "------kotsadm logs"
-            kubectl -n smoke-test logs deployment/kotsadm
-            echo "------previous kotsadm logs"
-            kubectl -n smoke-test logs -p deployment/kotsadm
-            echo "------velero logs"
-            kubectl -n velero logs deployment/velero
-          fi
-          kill $ADMIN_CONSOLE_PID
-          exit $EXIT_CODE
-
-      - name: Generate support bundle on failure
-        if: failure()
-        env:
-          # aws replicated dev account e2e-kots-support-bundle user
-          AWS_ACCESS_KEY_ID: ${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: us-east-1
-          KOTS_NAMESPACE: smoke-test
-        run: |
-          RELEASE="$(
-            curl -sfL https://api.github.com/repos/replicatedhq/troubleshoot/releases/latest | \
-            grep '"tag_name":' | \
-            sed -E 's/.*"(v[^"]+)".*/\1/'
-          )"
-          curl -fsLO "https://github.com/replicatedhq/troubleshoot/releases/download/${RELEASE}/support-bundle_linux_amd64.tar.gz"
-          tar xzf support-bundle_linux_amd64.tar.gz
-          ./support-bundle -n "${KOTS_NAMESPACE}" https://kots.io
-          BUNDLE="$(ls -1 | grep 'support-bundle-.*.tar.gz')"
-          aws s3 cp "${BUNDLE}" "s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
-          echo "::notice ::support bundle uploaded to aws replicated-dev account s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
+          test-focus: 'Smoke Test'
+          kots-namespace: 'smoke-test'
+          k8s-version: '${{ matrix.k8s_version }}'
+          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
+          go-version:  '^1.17.4'
+          node-version:  '17.x'
 
 
   validate-minimal-rbac:
@@ -988,7 +919,6 @@ jobs:
         id: k3s
         with:
           version: ${{ matrix.k8s_version }}
-          ports: '30000:30000'
 
       - name: download kots binary
         uses: actions/download-artifact@v2
@@ -1143,7 +1073,6 @@ jobs:
         id: k3s
         with:
           version: ${{ matrix.k8s_version }}
-          ports: '30000:30000'
 
       - name: download kots binary
         uses: actions/download-artifact@v2
@@ -1244,7 +1173,6 @@ jobs:
         id: k3s
         with:
           version: ${{ matrix.k8s_version }}
-          ports: '30000:30000'
 
       - name: download kots binary
         uses: actions/download-artifact@v2
@@ -1330,103 +1258,34 @@ jobs:
 
   validate-change-license:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
+    needs: [ can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
     strategy:
       fail-fast: false
       matrix:
         k8s_version: [ v1.23.3-k3s1 ] # there's no need to run this test on multiple k3s versions
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: download e2e deps
+        uses: actions/download-artifact@v2
         with:
-          ref: ${{github.event.pull_request.head.ref}}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
-
-      - uses: replicatedhq/action-k3s@main
-        id: k3s
-        with:
-          version: ${{ matrix.k8s_version }}
-          ports: '30000:30000'
-
+          name: e2e
+          path: e2e/bin/
+      - run: chmod +x e2e/bin/*
       - name: download kots binary
         uses: actions/download-artifact@v2
         with:
           name: kots
           path: bin/
-
-      - run: chmod +x bin/kots
-
-      - uses: actions/setup-node@v2
+      - run: chmod +x bin/*
+      - uses: ./.github/actions/kots-e2e
         with:
-          node-version: '17.x'
-
-      - name: setup testim
-        run: npm i -g @testim/testim-cli
-
-      ## testim tests
-      - name: get testim branch
-        if: startsWith(github.ref, 'refs/heads/')
-        id: get_testim_branch
-        run: |
-          BRANCH=${GITHUB_REF/refs\/heads\//}
-          if [ "$BRANCH" == "main" ]; then
-            BRANCH="master"
-          fi
-          echo ::set-output name=TESTIM_BRANCH::${BRANCH:-master}
-
-      - name: prepare change-license online install
-        env:
-          APP_SLUG: change-license
-        run: |
-          ./bin/kots \
-            install $APP_SLUG/automated \
-            --no-port-forward \
-            --namespace $APP_SLUG \
-            --shared-password password \
-            --kotsadm-registry ttl.sh \
-            --kotsadm-namespace automated-${{ github.run_id }} \
-            --kotsadm-tag 2h
-
-      - name: execute suite change-license
-        env:
-          APP_SLUG: change-license
-        run: |
-          set +e
-          ./bin/kots admin-console -n $APP_SLUG &
-          ADMIN_CONSOLE_PID=$!
-          sleep 10
-          testim --token ${{ secrets.TESTIM_ACCESS_TOKEN }} --project wpYAooUimFDgQxY73r17 --grid "Testim-grid" --branch ${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }} --report-file testim-report.xml --suite $APP_SLUG --tunnel --tunnel-port 8800
-          EXIT_CODE=$?
-          if [ $EXIT_CODE -ne 0 ]; then
-            echo "------pods:"
-            kubectl -n $APP_SLUG get pods
-            echo "------kotsadm logs"
-            kubectl -n $APP_SLUG logs deployment/kotsadm
-            echo "------previous kotsadm logs"
-            kubectl -n $APP_SLUG logs -p deployment/kotsadm
-          fi
-          kill $ADMIN_CONSOLE_PID
-          exit $EXIT_CODE
-
-      - name: Generate support bundle on failure
-        if: failure()
-        env:
-          # aws replicated dev account e2e-kots-support-bundle user
-          AWS_ACCESS_KEY_ID: ${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: us-east-1
-          KOTS_NAMESPACE: change-license
-        run: |
-          RELEASE="$(
-            curl -sfL https://api.github.com/repos/replicatedhq/troubleshoot/releases/latest | \
-            grep '"tag_name":' | \
-            sed -E 's/.*"(v[^"]+)".*/\1/'
-          )"
-          curl -fsLO "https://github.com/replicatedhq/troubleshoot/releases/download/${RELEASE}/support-bundle_linux_amd64.tar.gz"
-          tar xzf support-bundle_linux_amd64.tar.gz
-          ./support-bundle -n "${KOTS_NAMESPACE}" https://kots.io
-          BUNDLE="$(ls -1 | grep 'support-bundle-.*.tar.gz')"
-          aws s3 cp "${BUNDLE}" "s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
-          echo "::notice ::support bundle uploaded to aws replicated-dev account s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
+          test-focus: 'Change License'
+          kots-namespace: 'change-license'
+          k8s-version: '${{ matrix.k8s_version }}'
+          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
+          go-version:  '^1.17.4'
+          node-version:  '17.x'
 
 
   validate-helm-install-order:

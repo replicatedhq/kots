@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
@@ -17,10 +16,8 @@ import (
 )
 
 // Checks the KOTS CLI version against the API version
-func cliVersionCheck() error {
+func cliVersionCheck(log *logger.CLILogger) error {
 	v := viper.GetViper()
-
-	log := logger.NewCLILogger()
 
 	stopCh := make(chan struct{})
 	defer close(stopCh)
@@ -60,10 +57,10 @@ func cliVersionCheck() error {
 		return errors.Wrap(err, "failed to get healthz")
 	}
 
-	return CompareVersions(buildversion.Version(), healthz.Version)
+	return CompareVersions(buildversion.Version(), healthz.Version, log)
 }
 
-func CompareVersions(cliVersion string, apiVersion string) error {
+func CompareVersions(cliVersion string, apiVersion string, log *logger.CLILogger) error {
 	cliSemver, err := semver.ParseTolerant(cliVersion)
 	if err != nil {
 		return errors.Wrap(err, "failed to parse cli semver")
@@ -74,7 +71,7 @@ func CompareVersions(cliVersion string, apiVersion string) error {
 	}
 	if cliSemver.String() != apiSemver.String() {
 		updateCmd := fmt.Sprintf("curl https://kots.io/install/%s | bash", apiSemver.String())
-		fmt.Fprintf(os.Stderr, "KOTS CLI version %s does not match API version %s. To update, run:\n  $ %s\n", cliSemver.String(), apiSemver.String(), updateCmd)
+		log.Errorf("KOTS CLI version %s does not match API version %s. To update, run:\n  $ %s\n", cliSemver.String(), apiSemver.String(), updateCmd)
 	}
 	return nil
 }

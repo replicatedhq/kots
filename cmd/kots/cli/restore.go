@@ -64,7 +64,7 @@ func RestoreCmd() *cobra.Command {
 				restoreOutput.Success = true
 			}
 
-			log := logger.NewCLILogger()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 			if output == "json" {
 				outputJSON, err := json.Marshal(restoreOutput)
 				if err != nil {

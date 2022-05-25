@@ -153,7 +153,7 @@ func VeleroConfigureInternalCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to configure store")
 			}
 
-			log := logger.NewCLILogger()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 			log.Info("\nStore Configured Successfully")
 
 			return nil
@@ -245,7 +245,7 @@ func VeleroConfigureAmazonS3AccessKeyCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to configure store")
 			}
 
-			log := logger.NewCLILogger()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 			log.Info("\nStore Configured Successfully")
 
 			return nil
@@ -309,7 +309,7 @@ func VeleroConfigureAmazonS3InstanceRoleCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to configure store")
 			}
 
-			log := logger.NewCLILogger()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 			log.Info("\nStore Configured Successfully")
 
 			return nil
@@ -381,7 +381,7 @@ func VeleroConfigureOtherS3Cmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get registry options from cluster")
 			}
 
-			log := logger.NewCLILogger()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 			if !v.GetBool("skip-validation") {
 				log.Info("\nRunning a pod to test the connection to your S3 API and if the bucket exists...")
 			}
@@ -516,7 +516,7 @@ func VeleroConfigureGCPServiceAccount() *cobra.Command {
 				return errors.Wrap(err, "failed to configure store")
 			}
 
-			log := logger.NewCLILogger()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 			log.Info("\nStore Configured Successfully")
 
 			return nil
@@ -575,7 +575,7 @@ func VeleroConfigureGCPWorkloadIdentity() *cobra.Command {
 				return errors.Wrap(err, "failed to configure store")
 			}
 
-			log := logger.NewCLILogger()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 			log.Info("\nStore Configured Successfully")
 
 			return nil
@@ -677,7 +677,7 @@ func VeleroConfigureAzureServicePrincipleCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to configure store")
 			}
 
-			log := logger.NewCLILogger()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 			log.Info("\nStore Configured Successfully")
 
 			return nil
@@ -747,7 +747,7 @@ func VeleroConfigureNFSCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get registry config")
 			}
 
-			log := logger.NewCLILogger()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 
 			opts := VeleroConfigureFileSystemOptions{
 				Namespace:        namespace,
@@ -808,7 +808,7 @@ func VeleroConfigureHostPathCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get registry config")
 			}
 
-			log := logger.NewCLILogger()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 
 			opts := VeleroConfigureFileSystemOptions{
 				Namespace:        namespace,
@@ -1052,14 +1052,14 @@ func VeleroPrintFileSystemInstructionsCmd() *cobra.Command {
 				if err != nil {
 					return errors.Wrap(err, "failed to get file system minio velero config")
 				}
-				log := logger.NewCLILogger()
+				log := logger.NewCLILogger(cmd.OutOrStdout())
 				print.LvpFileSystemVeleroInfo(c, v.GetString("output"), log)
 			} else {
 				c, err := buildPrintableMinioFileSystemVeleroConfig(cmd.Context(), clientset, namespace)
 				if err != nil {
 					return errors.Wrap(err, "failed to get file system minio velero config")
 				}
-				log := logger.NewCLILogger()
+				log := logger.NewCLILogger(cmd.OutOrStdout())
 				print.MinioFileSystemVeleroInfo(c, v.GetString("output"), log)
 			}
 
@@ -1219,7 +1219,7 @@ func VeleroMigrateMinioFileSystemCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
 
-			log := logger.NewCLILogger()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 
 			namespace := v.GetString("namespace")
 			if err := validateNamespace(namespace); err != nil {

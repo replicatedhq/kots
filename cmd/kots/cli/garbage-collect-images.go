@@ -29,7 +29,7 @@ func GarbageCollectImagesCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
 
-			log := logger.NewCLILogger()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 
 			// use namespace-as-arg if provided, else use namespace from -n/--namespace
 			namespace := v.GetString("namespace")

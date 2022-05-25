@@ -46,7 +46,7 @@ func BackupCmd() *cobra.Command {
 				}
 			}
 
-			log := logger.NewCLILogger()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 			if output == "json" {
 				outputJSON, err := json.Marshal(backupRes)
 				if err != nil {

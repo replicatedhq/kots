@@ -39,7 +39,7 @@ func AppStatusCmd() *cobra.Command {
 				}
 			}
 
-			log := logger.NewCLILogger()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 
 			stopCh := make(chan struct{})
 			defer close(stopCh)

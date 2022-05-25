@@ -2,6 +2,7 @@ package kotsadmconfig
 
 import (
 	"context"
+	"os"
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -44,7 +45,7 @@ func IsUnsetItem(item kotsv1beta1.ConfigItem) bool {
 }
 
 func NeedsConfiguration(appSlug string, sequence int64, isAirgap bool, kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings) (bool, error) {
-	log := logger.NewCLILogger()
+	log := logger.NewCLILogger(os.Stdout)
 
 	configSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Config")
 	if err != nil {
@@ -76,7 +77,7 @@ func NeedsConfiguration(appSlug string, sequence int64, isAirgap bool, kotsKinds
 	versionInfo := template.VersionInfoFromInstallation(sequence, isAirgap, kotsKinds.Installation.Spec)
 	appInfo := template.ApplicationInfo{Slug: appSlug}
 
-	// rendered, err := kotsconfig.TemplateConfig(logger.NewCLILogger(), configSpec, configValuesSpec, licenseSpec, appSpec, identityConfigSpec, localRegistry, util.PodNamespace)
+	// rendered, err := kotsconfig.TemplateConfig(logger.NewCLILogger(os.Stdout), configSpec, configValuesSpec, licenseSpec, appSpec, identityConfigSpec, localRegistry, util.PodNamespace)
 	config, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, kotsKinds.License, &kotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, true)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to template config")
@@ -123,7 +124,7 @@ func UpdateConfigValuesInDB(filesInDir string, appID string, sequence int64) err
 }
 
 func ReadConfigValuesFromInClusterSecret() (string, error) {
-	log := logger.NewCLILogger()
+	log := logger.NewCLILogger(os.Stdout)
 
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {

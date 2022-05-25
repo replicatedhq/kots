@@ -103,7 +103,7 @@ func Upload(path string, uploadOptions UploadOptions) (string, error) {
 	}
 
 	// Find the kotadm-api pod
-	log := logger.NewCLILogger()
+	log := logger.NewCLILogger(os.Stdout)
 	if uploadOptions.Silent {
 		log.Silence()
 	}

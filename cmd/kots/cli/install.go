@@ -66,7 +66,7 @@ func InstallCmd() *cobra.Command {
 			fmt.Print(cursor.Hide())
 			defer fmt.Print(cursor.Show())
 
-			log := logger.NewCLILogger()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 
 			signalChan := make(chan os.Signal, 1)
 
@@ -308,7 +308,7 @@ func InstallCmd() *cobra.Command {
 			}
 
 			log.ActionWithoutSpinner("Deploying Admin Console")
-			if err := kotsadm.Deploy(deployOptions); err != nil {
+			if err := kotsadm.Deploy(deployOptions, log); err != nil {
 				if _, ok := errors.Cause(err).(*types.ErrorTimeout); ok {
 					return errors.Errorf("Failed to deploy: %s. Use the --wait-duration flag to increase timeout.", err)
 				}
@@ -336,7 +336,13 @@ func InstallCmd() *cobra.Command {
 			stopCh := make(chan struct{})
 			defer close(stopCh)
 
-			adminConsolePort, errChan, err := k8sutil.PortForward(8800, 3000, namespace, getPodName, true, stopCh, log)
+			localPort := viper.GetInt("port")
+			pollForAdditionalPorts := true
+			if localPort != 8800 {
+				pollForAdditionalPorts = false
+			}
+
+			adminConsolePort, errChan, err := k8sutil.PortForward(localPort, 3000, namespace, getPodName, pollForAdditionalPorts, stopCh, log)
 			if err != nil {
 				return errors.Wrap(err, "failed to forward port")
 			}
@@ -423,8 +429,8 @@ func InstallCmd() *cobra.Command {
 			if isPortForwarding && !deployOptions.ExcludeAdminConsole {
 				log.ActionWithoutSpinner("")
 
-				if adminConsolePort != 8800 {
-					log.ActionWithoutSpinner("Port 8800 is not available. The Admin Console is running on port %d", adminConsolePort)
+				if adminConsolePort != localPort {
+					log.ActionWithoutSpinner("Port %d is not available. The Admin Console is running on port %d", localPort, adminConsolePort)
 					log.ActionWithoutSpinner("")
 				}
 
@@ -458,6 +464,7 @@ func InstallCmd() *cobra.Command {
 	cmd.Flags().Bool("port-forward", true, "set to false to disable automatic port forward")
 	cmd.Flags().MarkDeprecated("port-forward", "please use --no-port-forward instead")
 	cmd.Flags().Bool("no-port-forward", false, "set to true to disable automatic port forward")
+	cmd.Flags().Int("port", 8800, "local port to listen on when port forwarding is enabled")
 	cmd.Flags().String("wait-duration", "2m", "timeout to be used while waiting for individual components to be ready. must be in Go duration format (eg: 10s, 2m)")
 	cmd.Flags().String("preflights-wait-duration", "15m", "timeout to be used while waiting for preflights to complete. must be in Go duration format (eg: 10s, 2m)")
 	cmd.Flags().String("http-proxy", "", "sets HTTP_PROXY environment variable in all KOTS Admin Console components")

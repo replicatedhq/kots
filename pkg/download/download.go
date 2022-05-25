@@ -22,7 +22,7 @@ type DownloadOptions struct {
 }
 
 func Download(appSlug string, path string, downloadOptions DownloadOptions) error {
-	log := logger.NewCLILogger()
+	log := logger.NewCLILogger(os.Stdout)
 	if downloadOptions.Silent {
 		log.Silence()
 	}

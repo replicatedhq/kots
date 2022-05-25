@@ -1,6 +1,7 @@
 package pull
 
 import (
+	"os"
 	"time"
 
 	"github.com/pkg/errors"
@@ -30,7 +31,7 @@ type GetUpdatesOptions struct {
 // GetUpdates will retrieve all later versions of the application specified in upstreamURI
 // using the options specified in getUpdatesOptions. It returns a list of versions.
 func GetUpdates(upstreamURI string, getUpdatesOptions GetUpdatesOptions) (*upstreamtypes.UpdateCheckResult, error) {
-	log := logger.NewCLILogger()
+	log := logger.NewCLILogger(os.Stdout)
 
 	if getUpdatesOptions.Silent {
 		log.Silence()

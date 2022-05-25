@@ -55,7 +55,7 @@ type UpgradeOptions struct {
 }
 
 func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
-	log := logger.NewCLILogger()
+	log := logger.NewCLILogger(os.Stdout)
 	if options.Silent {
 		log.Silence()
 	}

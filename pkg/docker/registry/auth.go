@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/containers/image/v5/pkg/docker/config"
@@ -126,21 +127,21 @@ func CheckAccess(endpoint, username, password, org string, requestedAction Scope
 	bearerToken, err := newBearerTokenFromJSONBlob(authBody)
 	if err != nil {
 		// not a fatal error - some registries don't return JWTs
-		logger.NewCLILogger().Info("failed to parse registry auth bearer token, continuing anyways: %s", err.Error())
+		logger.NewCLILogger(os.Stdout).Info("failed to parse registry auth bearer token, continuing anyways: %s", err.Error())
 		return nil
 	}
 
 	jwtToken, err := bearerToken.getJwtToken()
 	if err != nil {
 		// not a fatal error - some registries don't return JWTs
-		logger.NewCLILogger().Info("failed to parse registry auth jwt, continuing anyways: %s", err.Error())
+		logger.NewCLILogger(os.Stdout).Info("failed to parse registry auth jwt, continuing anyways: %s", err.Error())
 		return nil
 	}
 
 	claims, err := getJwtTokenClaims(jwtToken)
 	if err != nil {
 		// not a fatal error - some registries don't return JWTs
-		logger.NewCLILogger().Info("failed to find registry auth claims in jwt, continuing anyways: %s", err.Error())
+		logger.NewCLILogger(os.Stdout).Info("failed to find registry auth claims in jwt, continuing anyways: %s", err.Error())
 		return nil
 	}
 

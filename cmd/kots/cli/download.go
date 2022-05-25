@@ -68,7 +68,7 @@ func DownloadCmd() *cobra.Command {
 				downloadOutput.UploadCommand = fmt.Sprintf("kubectl kots upload --namespace %s --slug %s %s", v.GetString("namespace"), appSlug, downloadPath)
 			}
 
-			log := logger.NewCLILogger()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 			if output == "json" {
 				outputJSON, err := json.Marshal(downloadOutput)
 				if err != nil {

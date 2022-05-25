@@ -47,7 +47,7 @@ func GetConfigCmd() *cobra.Command {
 func getConfigCmd(cmd *cobra.Command, args []string) error {
 	v := viper.GetViper()
 
-	log := logger.NewCLILogger()
+	log := logger.NewCLILogger(cmd.OutOrStdout())
 
 	stopCh := make(chan struct{})
 	defer close(stopCh)

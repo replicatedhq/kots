@@ -54,7 +54,7 @@ func DockerEnsureSecretCmd() *cobra.Command {
 				return errors.New("--dockerhub-password flag is required")
 			}
 
-			log := logger.NewCLILogger()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 
 			// validate credentials
 			sysCtx := &types.SystemContext{DockerDisableV1Ping: true}

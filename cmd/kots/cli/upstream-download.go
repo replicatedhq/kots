@@ -51,7 +51,7 @@ func UpstreamDownloadCmd() *cobra.Command {
 			stopCh := make(chan struct{})
 			defer close(stopCh)
 
-			log := logger.NewCLILogger()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 			if output != "" {
 				log.Silence()
 			}

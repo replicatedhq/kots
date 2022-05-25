@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/pkg/errors"
@@ -42,7 +43,7 @@ type BackupResponse struct {
 }
 
 func CreateInstanceBackup(ctx context.Context, options CreateInstanceBackupOptions) (*BackupResponse, error) {
-	log := logger.NewCLILogger()
+	log := logger.NewCLILogger(os.Stdout)
 	if options.Silent {
 		log.Silence()
 	}
