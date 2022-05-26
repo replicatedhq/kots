@@ -21,8 +21,8 @@ func GenerateBootstrapToken(client kubernetes.Interface, ttl time.Duration) (str
 		return "", errors.Wrap(err, "generate kubeadm token")
 	}
 	substrs := bootstraputil.BootstrapTokenRegexp.FindStringSubmatch(token)
-	tokenID := substrs[0]
-	tokenSecret := substrs[1]
+	tokenID := substrs[1]
+	tokenSecret := substrs[2]
 
 	data := map[string][]byte{
 		bootstrapapi.BootstrapTokenIDKey:     []byte(tokenID),
