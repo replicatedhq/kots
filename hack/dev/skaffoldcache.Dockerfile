@@ -6,7 +6,7 @@ ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots
 WORKDIR $PROJECTPATH
 RUN mkdir -p web/dist && touch web/dist/README.md
 COPY Makefile ./
-COPY Makefile.build ./
+COPY Makefile.build.mk ./
 COPY go.mod go.sum ./
 COPY cmd ./cmd
 COPY pkg ./pkg
