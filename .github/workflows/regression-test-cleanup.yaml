@@ -5,11 +5,10 @@ on:
   schedule:
     - cron: '0 * * * *'
 
-
 concurrency: regression-test-cleanup
 
 jobs:
-  generate-tag:
+  regression-test-cleanup:
     runs-on: ubuntu-20.04
     container:
       image: hashicorp/terraform:1.0.11
@@ -24,7 +23,7 @@ jobs:
           path: automation
           ref: main
       - name: View context attributes
-        uses: ./actions/clean-up
+        uses: ./actions/regression-test-cleanup
         with:
           AWS_DEFAULT_REGION: us-east-1
           AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}

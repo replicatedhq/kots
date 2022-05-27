@@ -132,15 +132,14 @@ for(const automationWorkspace of automationWorkspaces) {
           TF_WORKSPACE: automationWorkspace,
         },
       });
+      await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_0__.exec)('terraform', ['workspace', 'delete', automationWorkspace], {
+        env: {
+          ... awsConfig,
+          TF_WORKSPACE: 'default'
+        },
+        cwd: 'automation/jumpbox'
+      });
     }
-
-    await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_0__.exec)('terraform', ['workspace', 'delete', automationWorkspace], {
-      env: {
-        ... awsConfig,
-        TF_WORKSPACE: 'default'
-      },
-      cwd: 'automation/jumpbox'
-    })
   }
 }
 __webpack_handle_async_dependencies__();
