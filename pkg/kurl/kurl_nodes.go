@@ -194,6 +194,9 @@ func isPrimary(node corev1.Node) bool {
 		if label == "node-role.kubernetes.io/master" {
 			return true
 		}
+		if label == "node-role.kubernetes.io/control-plane" {
+			return true
+		}
 	}
 
 	return false

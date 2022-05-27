@@ -180,12 +180,34 @@ func getPodSpec(clientset kubernetes.Interface, namespace string) (*corev1.Pod, 
 		},
 		Spec: corev1.PodSpec{
 			SecurityContext: &securityContext,
-			NodeSelector: map[string]string{
-				"node-role.kubernetes.io/master": "",
+			Affinity: &corev1.Affinity{
+				NodeAffinity: &corev1.NodeAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+						NodeSelectorTerms: []corev1.NodeSelectorTerm{
+							{
+								MatchExpressions: []corev1.NodeSelectorRequirement{
+									{
+										Key:      "node-role.kubernetes.io/control-plane",
+										Operator: corev1.NodeSelectorOpExists,
+									},
+									{
+										Key:      "node-role.kubernetes.io/master",
+										Operator: corev1.NodeSelectorOpExists,
+									},
+								},
+							},
+						},
+					},
+				},
 			},
 			Tolerations: []corev1.Toleration{
 				{
 					Key:      "node-role.kubernetes.io/master",
+					Operator: corev1.TolerationOpExists,
+					Effect:   corev1.TaintEffectNoSchedule,
+				},
+				{
+					Key:      "node-role.kubernetes.io/control-plane",
 					Operator: corev1.TolerationOpExists,
 					Effect:   corev1.TaintEffectNoSchedule,
 				},
