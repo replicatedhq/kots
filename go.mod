@@ -13,7 +13,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/ahmetalpbalkan/go-cursor v0.0.0-20131010032410-8136607ea412
 	github.com/aws/aws-sdk-go v1.38.49
-	github.com/bitnami-labs/sealed-secrets v0.14.1
+	github.com/bitnami-labs/sealed-secrets v0.17.5
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/containers/image/v5 v5.19.3
 	github.com/coreos/go-oidc v2.2.1+incompatible
@@ -306,7 +306,7 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	k8s.io/apiserver v0.23.6 // indirect
 	k8s.io/component-base v0.23.6 // indirect
-	k8s.io/klog/v2 v2.30.0 // indirect
+	k8s.io/klog/v2 v2.40.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20211115234752-e816edb12b65 // indirect
 	k8s.io/kubectl v0.22.4 // indirect
 	oras.land/oras-go v0.4.0 // indirect
