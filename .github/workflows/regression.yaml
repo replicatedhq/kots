@@ -11,6 +11,10 @@ on:
         description: 'The new version to use as the upgrade in upgrade scenarios and the initial version for fresh installs.'
         required: true
         type: string
+      id:
+        description: 'An arbitrary value used to identify the testing infrastructure. Using the same value twice will destroy the old infrastructure before creating.'
+        required: false
+        type: string
     secrets:
       TESTIM_ACCESS_TOKEN:
         required: true
@@ -31,19 +35,24 @@ on:
       version_tag_new:
         description: 'The new version to use as the upgrade in upgrade scenarios and the initial version for fresh installs.'
         required: true
+      id:
+        description: 'An arbitrary value used to identify the testing infrastructure. Using the same value twice will destroy the old infrastructure before creating.'
+        required: false
+        type: string
 
 env:
   AWS_DEFAULT_REGION: us-east-1
   AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
   TF_VAR_testim_token: ${{ secrets.TESTIM_ACCESS_TOKEN }}
-  TF_WORKSPACE: automation
+
+concurrency: regression
 
 jobs:
   jumpbox:
     runs-on: ubuntu-20.04
     container:
-      image: hashicorp/terraform:1.0.7
+      image: hashicorp/terraform:1.0.11
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -57,6 +66,8 @@ jobs:
         working-directory: automation/jumpbox
         run: |
           terraform init
+          export TF_WORKSPACE=automation-${{ github.event.inputs.id || inputs.id }}
+          terraform workspace new $TF_WORKSPACE
           terraform apply --auto-approve
 
       - name: Notify Slack
@@ -79,7 +90,7 @@ jobs:
     needs: jumpbox
     runs-on: ubuntu-20.04
     container:
-      image: hashicorp/terraform:1.0.7
+      image: hashicorp/terraform:1.0.11
     strategy:
       fail-fast: false
       matrix:
@@ -180,17 +191,25 @@ jobs:
             export TF_VAR_kots_version_initial="${NEXT_TAG:1}"
           fi
           terraform init -backend-config ${{ matrix.test.backend_config }}
+          export TF_WORKSPACE=automation-${{ github.event.inputs.id || inputs.id }}
+          terraform workspace new $TF_WORKSPACE
           ./${{ matrix.test.terraform_script }} apply
-          terraform taint -allow-missing aws_instance.control_plane
-          terraform taint -allow-missing 'aws_instance.worker[0]'
-
+      - name: Wait for instance to be ready
+        working-directory: automation/cluster
+        run: |
+          apk update && apk add aws-cli jq
+          terraform output -raw control_plane_instance_id
+          until [ -n "$(aws ec2 describe-instance-status --instance-ids $(terraform output -raw control_plane_instance_id) --filter Name=instance-status.reachability,Values=passed | jq -r '.InstanceStatuses[].InstanceStatus.Details[].Status')" ]
+          do
+          echo "waiting for instance to become ready" && sleep 1
+          done
       - name: Run the test
         working-directory: automation/cluster
         run: |
+          export TF_WORKSPACE=automation-${{ github.event.inputs.id || inputs.id }}
           terraform output -raw jumpbox_private_key > ssh.pem
           chmod 600 ssh.pem
           ssh -i ssh.pem ubuntu@$(terraform output -raw jumpbox_public_ip) -oStrictHostKeyChecking=no -oServerAliveInterval=60 -oServerAliveCountMax=10 "ssh -tt ubuntu@$(terraform output -raw control_plane_private_ip) -oServerAliveInterval=60 -oServerAliveCountMax=10 -oConnectionAttempts=30 \"sudo /tmp/start.sh\""
-
       - name: Notify Slack
         if: always()
         uses: 8398a7/action-slack@v3

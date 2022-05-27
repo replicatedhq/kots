@@ -2,7 +2,7 @@ export GOPROXY=https://proxy.golang.org
 
 SHELL := /bin/bash -o pipefail
 VERSION_PACKAGE = github.com/replicatedhq/kots/pkg/buildversion
-VERSION ?=`git describe --tags --dirty || echo "alpha"`
+VERSION?=$(if $(GIT_TAG),$(GIT_TAG),alpha)
 DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"`
 
 GIT_TREE = $(shell git rev-parse --is-inside-work-tree 2>/dev/null)

@@ -1,0 +1,15 @@
+name: Regression test clean up
+description: 'Cleans up regression test infrastructure after 24 hours.'
+inputs:
+  AWS_DEFAULT_REGION:
+    required: true
+    description: AWS region
+  AWS_ACCESS_KEY_ID:
+    required: true
+    description: AWS access key id
+  AWS_SECRET_ACCESS_KEY:
+    required: true
+    description: AWS secret access key
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
