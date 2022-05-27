@@ -119,14 +119,13 @@ for(const automationWorkspace of automationWorkspaces) {
           TF_WORKSPACE: automationWorkspace,
         },
       });
+      await exec('terraform', ['workspace', 'delete', automationWorkspace], {
+        env: {
+          ... awsConfig,
+          TF_WORKSPACE: 'default'
+        },
+        cwd: 'automation/jumpbox'
+      });
     }
-
-    await exec('terraform', ['workspace', 'delete', automationWorkspace], {
-      env: {
-        ... awsConfig,
-        TF_WORKSPACE: 'default'
-      },
-      cwd: 'automation/jumpbox'
-    })
   }
 }
