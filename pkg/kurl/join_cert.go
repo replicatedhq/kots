@@ -10,9 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/blang/semver"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
 	corev1 "k8s.io/api/core/v1"
@@ -167,29 +165,6 @@ func getPodSpec(clientset kubernetes.Interface, namespace string) (*corev1.Pod, 
 		RunAsUser: util.IntPointer(0),
 	}
 
-	nodeSelector := map[string]string{}
-	tolerationKey := ""
-
-	currentK8sVersion, err := k8sutil.GetK8sVersion()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get k8s version")
-	}
-	toleratedVersion, err := semver.ParseTolerant(currentK8sVersion)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse k8s version")
-	}
-	compareK8sVersion, err := semver.Make("1.24.0")
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to make k8s version")
-	}
-	if toleratedVersion.GE(compareK8sVersion) {
-		nodeSelector["node-role.kubernetes.io/control-plane"] = ""
-		tolerationKey = "node-role.kubernetes.io/control-plane"
-	} else {
-		nodeSelector["node-role.kubernetes.io/master"] = ""
-		tolerationKey = "node-role.kubernetes.io/master"
-	}
-
 	configVolumeType := corev1.HostPathDirectory
 	binVolumeType := corev1.HostPathFile
 	name := fmt.Sprintf("kurl-join-cert-%d", time.Now().Unix())
@@ -205,10 +180,34 @@ func getPodSpec(clientset kubernetes.Interface, namespace string) (*corev1.Pod, 
 		},
 		Spec: corev1.PodSpec{
 			SecurityContext: &securityContext,
-			NodeSelector:    nodeSelector,
+			Affinity: &corev1.Affinity{
+				NodeAffinity: &corev1.NodeAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+						NodeSelectorTerms: []corev1.NodeSelectorTerm{
+							{
+								MatchExpressions: []corev1.NodeSelectorRequirement{
+									{
+										Key:      "node-role.kubernetes.io/control-plane",
+										Operator: corev1.NodeSelectorOpExists,
+									},
+									{
+										Key:      "node-role.kubernetes.io/master",
+										Operator: corev1.NodeSelectorOpExists,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
 			Tolerations: []corev1.Toleration{
 				{
-					Key:      tolerationKey,
+					Key:      "node-role.kubernetes.io/master",
+					Operator: corev1.TolerationOpExists,
+					Effect:   corev1.TaintEffectNoSchedule,
+				},
+				{
+					Key:      "node-role.kubernetes.io/control-plane",
 					Operator: corev1.TolerationOpExists,
 					Effect:   corev1.TaintEffectNoSchedule,
 				},
