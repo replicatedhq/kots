@@ -60,7 +60,7 @@ jobs:
           repository: replicatedhq/kots-regression-automation
           token: ${{ secrets.E2E_GH_PAT }}
           path: automation
-          ref: main
+          ref: self-hosted-grid
       - name: Create Jumpbox Environment
         if: always()
         working-directory: automation/jumpbox
@@ -71,7 +71,7 @@ jobs:
           terraform apply --auto-approve
 
       - name: Notify Slack
-        if: failure()
+        if: failure() && github.ref_name == 'main'
         uses: 8398a7/action-slack@v3
         with:
           status: custom
@@ -176,7 +176,7 @@ jobs:
           repository: replicatedhq/kots-regression-automation
           token: ${{ secrets.E2E_GH_PAT }}
           path: automation
-          ref: main
+          ref: self-hosted-grid
       - name: Create test environment
         if: always()
         working-directory: automation/cluster
@@ -211,7 +211,7 @@ jobs:
           chmod 600 ssh.pem
           ssh -i ssh.pem ubuntu@$(terraform output -raw jumpbox_public_ip) -oStrictHostKeyChecking=no -oServerAliveInterval=60 -oServerAliveCountMax=10 "ssh -tt ubuntu@$(terraform output -raw control_plane_private_ip) -oServerAliveInterval=60 -oServerAliveCountMax=10 -oConnectionAttempts=30 \"sudo /tmp/start.sh\""
       - name: Notify Slack
-        if: always()
+        if: always() && github.ref_name == 'main'
         uses: 8398a7/action-slack@v3
         with:
           status: custom

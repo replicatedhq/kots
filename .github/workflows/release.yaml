@@ -6,6 +6,7 @@ on:
       - "v*.*.*"
     branches:
       - main
+      - blah
 
 jobs:
   generate-tag:
@@ -412,7 +413,7 @@ jobs:
   regression-test:
     if: github.ref_type == 'branch'
     needs: [regression-test-setup, generate-tag]
-    uses: replicatedhq/kots/.github/workflows/regression.yaml@main
+    uses: replicatedhq/kots/.github/workflows/regression.yaml@blah
     with:
       version_tag_old: ${{ needs.regression-test-setup.outputs.last_release_tag }}
       version_tag_new: ${{ needs.generate-tag.outputs.tag }}
