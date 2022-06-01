@@ -125,13 +125,13 @@ func getUpstreamTemplateData(upstreamContent []byte) (kotsv1beta1.RepeatTemplate
 		// ensure the map entry exists
 		if metadataName, ok := metadata["name"]; ok {
 			// ensure it's a string
-			if reflect.TypeOf(metadataName).Name() == "string" {
-				templateHeaders.Name = metadataName.(string)
+			if name, ok := metadataName.(string); ok {
+				templateHeaders.Name = name
 			}
 		}
 		if metadataNamespace, ok := metadata["namespace"]; ok {
-			if reflect.TypeOf(metadataNamespace).Name() == "string" {
-				templateHeaders.Namespace = metadataNamespace.(string)
+			if ns, ok := metadataNamespace.(string); ok {
+				templateHeaders.Namespace = ns
 			}
 		}
 	default:
