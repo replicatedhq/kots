@@ -336,15 +336,17 @@ class DashboardVersionCard extends React.Component {
               <span className="icon deployLogs--icon u-cursor--pointer" onClick={() => this.handleViewLogs(currentVersion, currentVersion?.status === "failed")} data-tip="View deploy logs" />
               <ReactTooltip effect="solid" className="replicated-tooltip" />
             </div>
-            <div className="flex-column justifyContent--center u-marginLeft--10">
-              <button
-                className="secondary blue btn"
-                disabled={currentVersion.status === "deploying"}
-                onClick={() => this.deployVersion(currentVersion, false, false, true)}
-              >
-                {currentVersion.status === "deploying" ? "Redeploying" : "Redeploy"}
-              </button>
-            </div>
+            {currentVersion.status === "deploying" ? null : 
+              <div className="flex-column justifyContent--center u-marginLeft--10">
+                <button
+                  className="secondary blue btn"
+                  disabled={currentVersion.status === "deploying"}
+                  onClick={() => this.deployVersion(currentVersion, false, false, true)}
+                >
+                  Redeploy
+                </button>
+              </div>
+            }
           </div>
         </div>
       </div>
@@ -464,7 +466,7 @@ class DashboardVersionCard extends React.Component {
       this.setState({
         displayConfirmDeploymentModal: true,
         versionToDeploy: version,
-        isRedeploy: true
+        isRedeploy: redeploy
       });
       return;
     } else { // force deploy is set to true so finalize the deployment
@@ -1181,7 +1183,7 @@ class DashboardVersionCard extends React.Component {
                 <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">{this.state.isRedeploy ? "Redeploy" : "Deploy"} {this.state.versionToDeploy?.versionLabel} (Sequence {this.state.versionToDeploy?.sequence})?</p>
                 <div className="flex u-paddingTop--10">
                   <button className="btn secondary blue" onClick={() => this.setState({ displayConfirmDeploymentModal: false, versionToDeploy: null, isRedeploy: false })}>Cancel</button>
-                  <button className="u-marginLeft--10 btn primary" onClick={() => this.finalizeDeployment(false, this.state.isRedeploy)}>Yes, {this.state.isRedeploy ? "Redeploy" : "deploy"}</button>
+                  <button className="u-marginLeft--10 btn primary" onClick={() => this.finalizeDeployment(false, this.state.isRedeploy)}>Yes, {this.state.isRedeploy ? "Redeploy" : "Deploy"}</button>
                 </div>
               </div>
             </Modal>
