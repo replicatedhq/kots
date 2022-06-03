@@ -564,9 +564,9 @@ export const Utilities = {
 
   dateFormat(date, format, localize = true) {
     if (!localize) {
-      return dayjs.utc(date).tz(dayjs.tz.guess()).format(format);
+      return dayjs.utc(date).format(format);
     }
-    return dayjs.utc(date).local().tz(dayjs.tz.guess()).format(format);
+    return dayjs.utc(date).local().format(format);
   },
 
   dateFromNow(date) {
