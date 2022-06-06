@@ -6,7 +6,7 @@ on:
       - "v*.*.*"
     branches:
       - main
-      - blah
+      - enable-concurrent-regression-test
 
 jobs:
   generate-tag:
