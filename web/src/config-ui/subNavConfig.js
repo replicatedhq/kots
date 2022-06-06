@@ -11,31 +11,31 @@ export default [
     tabName: "app",
     displayName: "Dashboard",
     to: (slug) => `/app/${slug}`,
-    displayRule: watch => {
-      return isHelmChart(watch) || !watch.cluster;
+    displayRule: ({ app }) => {
+      return isHelmChart(app) || !app.cluster;
     }
   },
   {
     tabName: "version-history",
     displayName: "Version history",
     to: (slug) => `/app/${slug}/version-history`,
-    hasBadge: watch => {
+    hasBadge: ({ app }) => {
       let downstreamPendingLengths = [];
-      watch.watches?.map((w) => {
+      app.watches?.map((w) => {
         downstreamPendingLengths.push(w.pendingVersions.length);
       });
       return Math.max(...downstreamPendingLengths) > 0;
     },
-    displayRule: watch => {
-      return !isHelmChart(watch);
+    displayRule: ({ app }) => {
+      return !isHelmChart(app);
     },
   },
   {
     tabName: "config",
     displayName: "Config",
     to: (slug, sequence, configSequence) => `/app/${slug}/config/${configSequence}`,
-    displayRule: watch => {
-      return watch.isConfigurable || getApplicationType(watch) === "replicated.app";
+    displayRule: ({ app }) => {
+      return app.isConfigurable || getApplicationType(app) === "replicated.app";
     }
   },
   {
@@ -47,50 +47,51 @@ export default [
     tabName: "license",
     displayName: "License",
     to: (slug) => `/app/${slug}/license`,
-    displayRule: watch => {
-      return watch?.upstreamUri?.startsWith("replicated://") || getApplicationType(watch) === "replicated.app";
+    displayRule: ({ app }) => {
+      return app?.upstreamUri?.startsWith("replicated://") || getApplicationType(app) === "replicated.app";
     }
   },
   {
     tabName: "state",
     displayName: "State JSON",
     to: (slug) => `/app/${slug}/state`,
-    displayRule: watch => {
-      if (isHelmChart(watch) || watch.name) {
+    displayRule: ({ app }) => {
+      if (isHelmChart(app) || app.name) {
         return false;
       }
-      return Boolean(!watch.cluster);
+      return Boolean(!app.cluster);
     }
   },
   {
     tabName: "tree",
     displayName: "View files",
     to: (slug, sequence) => `/app/${slug}/tree/${sequence}`,
-    displayRule: watch => {
-      return Boolean(watch.name) && Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]);
+    displayRule: ({ app }) => {
+        return Boolean(app.name) &&
+        Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]);
     }
   },
   {
     tabName: "gitops",
     displayName: "GitOps",
     to: (slug) => `/app/${slug}/gitops`,
-    displayRule: (watch) => {
-      return watch.downstream?.gitops?.enabled;
+    displayRule: ({ app }) => {
+      return app.downstream?.gitops?.enabled;
     }
   },
   {
     tabName: "registry-settings",
     displayName: "Registry settings",
     to: (slug) => `/app/${slug}/registry-settings`,
-    displayRule: () => {
-      return true;
-    }
+    displayRule: ({ isHelmManaged })=> {
+      return !isHelmManaged;
+    },
   },
   {
     tabName: "access",
     displayName: "Access",
     to: (slug) => `/app/${slug}/access`,
-    displayRule: (watch, isVeleroInstalled, isIdentityServiceSupported) => {
+    displayRule: ({ isIdentityServiceSupported }) => {
       return isIdentityServiceSupported;
     }
   }

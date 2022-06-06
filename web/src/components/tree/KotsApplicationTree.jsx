@@ -81,13 +81,16 @@ class KotsApplicationTree extends React.Component {
     const contents = files[selectedFile] ? new Buffer(files[selectedFile], "base64").toString() : "";
 
     return (
-      <div className="flex-column flex1 ApplicationTree--wrapper container u-paddingTop--50 u-paddingBottom--30">
+      <div className="flex-column flex1 ApplicationTree--wrapper u-paddingBottom--30">
         <Helmet>
           <title>{`${this.props.app?.name} Files`}</title>
         </Helmet>
-
-        <div className="edit-files-banner u-fontSize--small u-fontWeight--medium">Need to edit these files? <span onClick={this.toggleInstructionsModal} className="replicated-link">Click here</span> to learn how</div>
-        <div className="flex flex1">
+        {!this.props.isHelmManaged &&
+          <div className="edit-files-banner u-fontSize--small u-fontWeight--medium">
+            Need to edit these files? <span onClick={this.toggleInstructionsModal} className="replicated-link">Click here</span> to learn how
+          </div>
+        }
+        <div className="flex flex1 u-marginLeft--30 u-marginRight--30 u-marginTop--10">
           <div className="flex1 dirtree-wrapper flex-column u-overflow-hidden">
             <div className="u-overflow--auto dirtree">
               <FileTree
@@ -108,7 +111,7 @@ class KotsApplicationTree extends React.Component {
               <div className="flex-column flex1 alignItems--center justifyContent--center">
                 <p className="u-textColor--bodyCopy u-fontSize--normal u-fontWeight--medium">Select a file from the file explorer to view it here.</p>
               </div>
-              : 
+              :
               <MonacoEditor
                 ref={(editor) => {
                   this.monacoEditor = editor;

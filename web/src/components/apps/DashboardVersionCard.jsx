@@ -395,11 +395,15 @@ class DashboardVersionCard extends React.Component {
     } else if (diffSummary) {
       return (
         <div className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginTop--5">
-          {diffSummary.filesChanged > 0 ?
+          {!this.props.isHelmManaged && diffSummary.filesChanged > 0 ?
             <div className="DiffSummary u-marginRight--10">
               <span className="files">{diffSummary.filesChanged} files changed </span>
-              {!downstream.gitops?.enabled &&
-                <Link className="u-fontSize--small replicated-link u-marginLeft--5" to={`${this.props.location.pathname}?diff/${this.props.currentVersion?.sequence}/${version.parentSequence}`}>View diff</Link>
+              {!this.props.isHelmManaged && !downstream.gitops?.enabled &&
+                <Link
+                  className="u-fontSize--small replicated-link u-marginLeft--5"
+                  to={`${this.props.location.pathname}?diff/${this.props.currentVersion?.sequence}/${version.parentSequence}`}>
+                    View diff
+                  </Link>
               }
             </div>
             :

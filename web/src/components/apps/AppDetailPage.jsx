@@ -112,7 +112,7 @@ class AppDetailPage extends Component {
           "Content-Type": "application/json",
         },
         method: "POST",
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           isSkipPreflights: isSkipPreflights ,
           continueWithFailedPreflights: continueWithFailedPreflights,
           isCLI: false
@@ -371,6 +371,7 @@ class AppDetailPage extends Component {
                     activeTab={match.params.tab || "app"}
                     app={app}
                     isVeleroInstalled={isVeleroInstalled}
+                    isHelmManaged={this.state.isHelmManaged}
                   />
                   <Switch>
                     <Route exact path="/app/:slug" render={() =>
@@ -392,7 +393,16 @@ class AppDetailPage extends Component {
                       />}
                     />
 
-                    <Route exact path="/app/:slug/tree/:sequence?" render={props => <DownstreamTree {...props} app={app} appNameSpace={this.props.appNameSpace} />} />
+                    <Route
+                      exact path="/app/:slug/tree/:sequence?"
+                      render={props =>
+                        <DownstreamTree
+                          {...props}
+                          app={app}
+                          appNameSpace={this.props.appNameSpace}
+                          isHelmManaged={this.state.isHelmManaged}
+                        />}
+                    />
 
                     <Route exact path={["/app/:slug/version-history", "/app/:slug/version-history/diff/:firstSequence/:secondSequence"]} render={() =>
                       <AppVersionHistory
@@ -403,6 +413,7 @@ class AppDetailPage extends Component {
                         updateCallback={this.refetchData}
                         toggleIsBundleUploading={this.toggleIsBundleUploading}
                         isBundleUploading={isBundleUploading}
+                        isHelmManaged={this.state.isHelmManaged}
                         refreshAppData={this.getApp}
                         displayErrorModal={this.state.displayErrorModal}
                         toggleErrorModal={this.toggleErrorModal}

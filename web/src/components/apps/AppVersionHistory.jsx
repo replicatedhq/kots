@@ -349,8 +349,13 @@ class AppVersionHistory extends Component {
           {diffSummary.filesChanged > 0 ?
             <div className="DiffSummary u-marginRight--10">
               <span className="files">{diffSummary.filesChanged} files changed </span>
-              {!downstream.gitops?.enabled &&
-                <span className="u-fontSize--small replicated-link u-marginLeft--5" onClick={() => this.setState({ showDiffOverlay: true, firstSequence: previousSequence, secondSequence: version.parentSequence})}>View diff</span>
+              {!this.props.isHelmManaged && !downstream.gitops?.enabled &&
+                <span
+                  className="u-fontSize--small replicated-link u-marginLeft--5"
+                  onClick={() =>
+                    this.setState({ showDiffOverlay: true, firstSequence: previousSequence, secondSequence: version.parentSequence})}>
+                    View diff
+                </span>
               }
             </div>
             :
@@ -1337,7 +1342,7 @@ class AppVersionHistory extends Component {
                             </div>
                             }
                           </div>
-                          {versionHistory.length > 1 && !gitopsEnabled ? this.renderDiffBtn() : null}
+                          {versionHistory.length > 1 && !gitopsEnabled && !this.props.isHelmManaged ? this.renderDiffBtn() : null}
                         </div>
                       </div>
                       {this.renderAppVersionHistoryRow(versionHistory[0])}
