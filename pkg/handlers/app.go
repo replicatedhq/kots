@@ -206,8 +206,15 @@ func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 					logger.Error(err)
 					continue
 				}
+
+				// only cache the most recent helm app install
+				if (cache[app.Name] != nil && cache[app.Name].CreatedAt.Before(app.CreatedAt)) || cache[app.Name] == nil {
+					cache[app.Name] = app
+				}
+			}
+
+			for _, app := range cache {
 				responseApps = append(responseApps, *app)
-				cache[app.Name] = app
 			}
 		}
 	} else {
