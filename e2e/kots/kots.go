@@ -30,8 +30,8 @@ func NewInstaller(imageRegistry, imageNamespace, imageTag string) *Installer {
 
 func (i *Installer) Install(kubeconfig string, test inventory.Test) string {
 	session, err := i.install(kubeconfig, test.UpstreamURI, test.Namespace)
-	Expect(err).WithOffset(1).Should(Succeed(), "kots install")
-	Eventually(session).WithOffset(1).WithTimeout(2*time.Minute).Should(gexec.Exit(0), "kots install")
+	Expect(err).WithOffset(1).Should(Succeed(), "Kots install failed")
+	Eventually(session).WithOffset(1).WithTimeout(3*time.Minute).Should(gexec.Exit(0), "Kots install failed with non-zero exit code")
 
 	port, err := i.adminConsolePortForward(kubeconfig, test.Namespace)
 	Expect(err).WithOffset(1).Should(Succeed(), "port forward")
@@ -55,6 +55,7 @@ func (i *Installer) install(kubeconfig, upstreamURI, namespace string) (*gexec.S
 		fmt.Sprintf("--kotsadm-registry=%s", i.imageRegistry),
 		fmt.Sprintf("--kotsadm-namespace=%s", i.imageNamespace),
 		fmt.Sprintf("--kotsadm-tag=%s", i.imageTag),
+		fmt.Sprintf("--wait-duration=%s", "3m"),
 	)
 }
 
