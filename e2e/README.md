@@ -15,12 +15,14 @@ npm install -g @testim/testim-cli
 The entire suite can be run with the command:
 
 ```bash
+export TESTIM_ACCESS_TOKEN=<this is secret>
 make e2e
 ```
 
 To run an individual test run:
 
 ```bash
+export TESTIM_ACCESS_TOKEN=<this is secret>
 make e2e \
     FOCUS="Change License"
 ```
@@ -29,6 +31,7 @@ To build and run with ttl.sh images run:
 
 ```bash
 make all-ttl.sh
+export TESTIM_ACCESS_TOKEN=<this is secret>
 make e2e \
     KOTSADM_IMAGE_REGISTRY=ttl.sh \
     KOTSADM_IMAGE_NAMESPACE=$USER \
@@ -41,6 +44,7 @@ To run against the okteto dev environment run:
 
 ```bash
 okteto context use https://replicated.okteto.dev
+export TESTIM_ACCESS_TOKEN=<this is secret>
 make e2e \
     FOCUS="Change License" \
     EXISTING_KUBECONFIG=${KUBECONFIG:-$HOME/.kube/config}
