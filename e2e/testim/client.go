@@ -55,6 +55,6 @@ func (t *Client) Run(test inventory.Test, adminConsolePort string) {
 		)
 	}
 	session, err := util.RunCommand("testim", args...)
-	Expect(err).WithOffset(1).Should(Succeed(), "run testim tests")
-	Eventually(session).WithOffset(1).WithTimeout(30 * time.Minute).Should(gexec.Exit(0))
+	Expect(err).WithOffset(1).Should(Succeed(), "Run testim tests failed")
+	Eventually(session).WithOffset(1).WithTimeout(30*time.Minute).Should(gexec.Exit(0), "Run testim tests failed with non-zero exit code")
 }
