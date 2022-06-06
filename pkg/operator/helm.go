@@ -87,7 +87,8 @@ func renderChartsArchive(deployedVersionArchive string, downstreamName string, k
 				}
 			}
 
-			if info.Name() == "kustomization.yaml" {
+			_, err = os.Stat(sourceChartsDir)
+			if info.Name() == "kustomization.yaml" && !os.IsNotExist(err) {
 				archiveChartOutput, err := exec.Command(kustomizeBinPath, "build", filepath.Dir(path)).Output()
 				if err != nil {
 					if ee, ok := err.(*exec.ExitError); ok {
