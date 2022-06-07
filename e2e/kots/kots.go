@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"os/exec"
 	"time"
 
 	//lint:ignore ST1001 since Ginkgo and Gomega are DSLs this makes the tests more natural to read
@@ -44,7 +45,7 @@ func (i *Installer) install(kubeconfig, upstreamURI, namespace string) (*gexec.S
 		return nil, errors.Wrap(err, "get free port")
 	}
 
-	return util.RunCommand(
+	return util.RunCommand(exec.Command(
 		"kots",
 		"install", upstreamURI,
 		fmt.Sprintf("--kubeconfig=%s", kubeconfig),
@@ -56,7 +57,7 @@ func (i *Installer) install(kubeconfig, upstreamURI, namespace string) (*gexec.S
 		fmt.Sprintf("--kotsadm-namespace=%s", i.imageNamespace),
 		fmt.Sprintf("--kotsadm-tag=%s", i.imageTag),
 		fmt.Sprintf("--wait-duration=%s", "3m"),
-	)
+	))
 }
 
 func (i *Installer) adminConsolePortForward(kubeconfig, namespace string) (string, error) {
@@ -68,13 +69,13 @@ func (i *Installer) adminConsolePortForward(kubeconfig, namespace string) (strin
 	url := fmt.Sprintf("http://localhost:%s", adminConsolePort)
 
 	go func() {
-		_, err := util.RunCommand(
+		_, err := util.RunCommand(exec.Command(
 			"kots",
 			"admin-console",
 			fmt.Sprintf("--kubeconfig=%s", kubeconfig),
 			fmt.Sprintf("--namespace=%s", namespace),
 			fmt.Sprintf("--port=%s", adminConsolePort),
-		)
+		))
 		Expect(err).WithOffset(1).Should(Succeed(), "async port forward")
 	}()
 

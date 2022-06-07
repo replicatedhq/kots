@@ -46,6 +46,24 @@ make e2e \
     EXISTING_KUBECONFIG=${KUBECONFIG:-$HOME/.kube/config}
 ```
 
+To skip cluster teardown in order to debug issues:
+
+*Note the namespace may be specific to the test*
+
+```bash
+$ make e2e \
+    FOCUS="Change License" \
+    SKIP_TEARDOWN=1
+...
+    To set kubecontext run:
+      export KUBECONFIG=/tmp/kots-e2e3629427925/.kubeconfig
+    To delete cluster run:
+      k3d cluster delete kots-e2e3629427925
+$ export KUBECONFIG=/tmp/kots-e2e3629427925/.kubeconfig
+$ kubectl -n smoke-test port-forward svc/kotsm 3000 --address=0.0.0.0
+Forwarding from 0.0.0.0:3000 -> 3000
+```
+
 ### Requirements
 
 1. [Docker](https://docs.docker.com/get-docker/)

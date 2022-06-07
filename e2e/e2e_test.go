@@ -134,7 +134,7 @@ var _ = Describe("E2E", func() {
 				adminConsolePort := kotsInstaller.Install(c.GetKubeconfig(), test)
 
 				GinkgoWriter.Println("Running E2E tests")
-				testimClient.Run(test, adminConsolePort)
+				testimClient.Run(c.GetKubeconfig(), test, adminConsolePort)
 
 			},
 			func(test inventory.Test) string {

@@ -3,6 +3,7 @@ package velero
 import (
 	"fmt"
 	"io/ioutil"
+	"os/exec"
 	"path/filepath"
 	"time"
 
@@ -43,7 +44,7 @@ func (v *CLI) install(workspace, kubeconfig, s3Url, bucket string) (*gexec.Sessi
 		"--use-restic",
 		"--wait",
 	}
-	return util.RunCommand("velero", args...)
+	return util.RunCommand(exec.Command("velero", args...))
 }
 
 func writeAWSCredentialsFile(workspace, accessKey, secretKey string) error {
