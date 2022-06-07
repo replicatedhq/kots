@@ -2,6 +2,7 @@ package kubectl
 
 import (
 	"fmt"
+	"os/exec"
 
 	"github.com/onsi/gomega/gexec"
 	"github.com/replicatedhq/kots/e2e/util"
@@ -27,7 +28,7 @@ func (c *CLI) RunCommand(args ...string) (*gexec.Session, error) {
 		},
 		args...,
 	)
-	return util.RunCommand("kubectl", args...)
+	return util.RunCommand(exec.Command("kubectl", args...))
 }
 
 func (c *CLI) GetPods(namespace string) {

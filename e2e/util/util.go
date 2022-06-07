@@ -22,10 +22,6 @@ func CommandExists(cmd string) bool {
 	return err == nil
 }
 
-func RunCommand(name string, args ...string) (*gexec.Session, error) {
-	cmd := exec.Command(
-		name,
-		args...,
-	)
+func RunCommand(cmd *exec.Cmd) (*gexec.Session, error) {
 	return gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 }

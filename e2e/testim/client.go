@@ -2,6 +2,8 @@ package testim
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
 	"time"
 
 	//lint:ignore ST1001 since Ginkgo and Gomega are DSLs this makes the tests more natural to read
@@ -27,7 +29,7 @@ func NewClient(accessToken, project, grid, branch string) *Client {
 	}
 }
 
-func (t *Client) Run(test inventory.Test, adminConsolePort string) {
+func (t *Client) Run(kubeconfig string, test inventory.Test, adminConsolePort string) {
 	args := []string{
 		fmt.Sprintf("--token=%s", t.AccessToken),
 		fmt.Sprintf("--project=%s", t.Project),
@@ -54,7 +56,10 @@ func (t *Client) Run(test inventory.Test, adminConsolePort string) {
 			fmt.Sprintf("--tunnel-port=%s", adminConsolePort),
 		)
 	}
-	session, err := util.RunCommand("testim", args...)
+	cmd := exec.Command("testim", args...)
+	cmd.Env = os.Environ()
+	cmd.Env = append(cmd.Env, fmt.Sprintf("KUBECONFIG=%s", kubeconfig))
+	session, err := util.RunCommand(cmd)
 	Expect(err).WithOffset(1).Should(Succeed(), "Run testim tests failed")
 	Eventually(session).WithOffset(1).WithTimeout(30*time.Minute).Should(gexec.Exit(0), "Run testim tests failed with non-zero exit code")
 }
