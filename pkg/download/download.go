@@ -10,6 +10,7 @@ import (
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/auth"
+	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 )
@@ -75,6 +76,7 @@ func Download(appSlug string, path string, downloadOptions DownloadOptions) erro
 		return errors.Wrap(err, "failed to create download request")
 	}
 	newRequest.Header.Add("Authorization", authSlug)
+	newRequest.Header.Add("User-Agent", buildversion.GetUserAgent())
 
 	resp, err := http.DefaultClient.Do(newRequest)
 	if err != nil {

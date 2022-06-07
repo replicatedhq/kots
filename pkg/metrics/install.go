@@ -83,6 +83,7 @@ func (m InstallMetrics) Post(url string) error {
 		return errors.Wrap(err, "failed to create new request")
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", buildversion.GetUserAgent())
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {

@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/redact"
 	redacttypes "github.com/replicatedhq/kots/pkg/redact/types"
@@ -79,7 +80,7 @@ func (h *Handler) UpdateRedact(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		req.Header.Set("User-Agent", "replicatedhq/kotsadm")
+		req.Header.Set("User-Agent", buildversion.GetUserAgent())
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			logger.Error(err)

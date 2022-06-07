@@ -63,7 +63,7 @@ func GetLatestLicense(license *kotsv1beta1.License) (*LicenseData, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to call newrequest")
 	}
-	req.Header.Add("User-Agent", fmt.Sprintf("KOTS/%s", buildversion.Version()))
+	req.Header.Add("User-Agent", buildversion.GetUserAgent())
 	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.Spec.LicenseID, license.Spec.LicenseID)))))
 
 	resp, err := http.DefaultClient.Do(req)

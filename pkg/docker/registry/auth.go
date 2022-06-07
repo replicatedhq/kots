@@ -106,7 +106,7 @@ func CheckAccess(endpoint, username, password, org string, requestedAction Scope
 		return errors.Wrap(err, "failed to create auth request")
 	}
 
-	req.Header.Add("User-Agent", fmt.Sprintf("KOTS/%s", buildversion.Version()))
+	req.Header.Add("User-Agent", buildversion.GetUserAgent())
 	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", basicAuthToken))
 
 	resp, err = insecureClient.Do(req)

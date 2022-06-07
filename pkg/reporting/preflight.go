@@ -41,6 +41,8 @@ func SendPreflightsReportToReplicatedApp(license *kotsv1beta1.License, appID str
 	}
 	postReq.Header.Add("Authorization", license.Spec.LicenseID)
 	postReq.Header.Set("Content-Type", "application/json")
+	postReq.Header.Set("User-Agent", buildversion.GetUserAgent())
+
 	resp, err := http.DefaultClient.Do(postReq)
 	if err != nil {
 		return errors.Wrap(err, "failed to send preflights reports")

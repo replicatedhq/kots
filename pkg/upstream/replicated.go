@@ -380,7 +380,7 @@ func (r *ReplicatedUpstream) getRequest(method string, license *kotsv1beta1.Lice
 		return nil, errors.Wrap(err, "failed to call newrequest")
 	}
 
-	req.Header.Add("User-Agent", fmt.Sprintf("KOTS/%s", buildversion.Version()))
+	req.Header.Add("User-Agent", buildversion.GetUserAgent())
 	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.Spec.LicenseID, license.Spec.LicenseID)))))
 
 	return req, nil
@@ -592,7 +592,7 @@ func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license 
 
 	reporting.InjectReportingInfoHeaders(req, reportingInfo)
 
-	req.Header.Add("User-Agent", fmt.Sprintf("KOTS/%s", buildversion.Version()))
+	req.Header.Add("User-Agent", buildversion.GetUserAgent())
 	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.Spec.LicenseID, license.Spec.LicenseID)))))
 
 	resp, err := http.DefaultClient.Do(req)
@@ -995,7 +995,7 @@ func getApplicationMetadataFromHost(host string, upstream *url.URL, versionLabel
 		return nil, errors.Wrap(err, "failed to call newrequest")
 	}
 
-	getReq.Header.Add("User-Agent", fmt.Sprintf("KOTS/%s", buildversion.Version()))
+	getReq.Header.Add("User-Agent", buildversion.GetUserAgent())
 
 	getResp, err := http.DefaultClient.Do(getReq)
 	if err != nil {

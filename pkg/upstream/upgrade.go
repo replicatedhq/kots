@@ -14,6 +14,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/auth"
+	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
@@ -193,6 +194,8 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 	}
 	newReq.Header.Add("Content-Type", contentType)
 	newReq.Header.Add("Authorization", authSlug)
+	newReq.Header.Set("User-Agent", buildversion.GetUserAgent())
+
 	resp, err := http.DefaultClient.Do(newReq)
 	if err != nil {
 		log.FinishSpinnerWithError()
