@@ -67,7 +67,7 @@ jobs:
         run: |
           terraform init
           export TF_WORKSPACE=automation-${{ github.event.inputs.id || inputs.id }}
-          terraform workspace new $TF_WORKSPACE
+          terraform workspace new $TF_WORKSPACE || true
           terraform apply --auto-approve
 
       - name: Notify Slack
@@ -192,7 +192,7 @@ jobs:
           fi
           terraform init -backend-config ${{ matrix.test.backend_config }}
           export TF_WORKSPACE=automation-${{ github.event.inputs.id || inputs.id }}
-          terraform workspace new $TF_WORKSPACE
+          terraform workspace new $TF_WORKSPACE || true
           ./${{ matrix.test.terraform_script }} apply
       - name: Wait for instance to be ready
         working-directory: automation/cluster
