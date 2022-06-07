@@ -12,7 +12,6 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -192,12 +191,11 @@ func prometheusQueryRange(address string, query string, start uint, end uint, st
 	v.Set("step", fmt.Sprintf("%d", step))
 
 	uri := host + "?" + v.Encode()
-	req, err := http.NewRequest("GET", uri, nil)
+	req, err := util.NewRequest("GET", uri, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create request")
 	}
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Set("User-Agent", buildversion.GetUserAgent())
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {

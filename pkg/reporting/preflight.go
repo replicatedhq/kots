@@ -15,6 +15,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 )
 
@@ -35,13 +36,12 @@ func SendPreflightsReportToReplicatedApp(license *kotsv1beta1.License, appID str
 
 	url := fmt.Sprintf("%s/kots_metrics/preflights/%s/%s?%s", endpoint, appID, clusterID, urlValues.Encode())
 	var buf bytes.Buffer
-	postReq, err := http.NewRequest("POST", url, &buf)
+	postReq, err := util.NewRequest("POST", url, &buf)
 	if err != nil {
 		return errors.Wrap(err, "failed to call newrequest")
 	}
 	postReq.Header.Add("Authorization", license.Spec.LicenseID)
 	postReq.Header.Set("Content-Type", "application/json")
-	postReq.Header.Set("User-Agent", buildversion.GetUserAgent())
 
 	resp, err := http.DefaultClient.Do(postReq)
 	if err != nil {

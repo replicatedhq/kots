@@ -8,7 +8,7 @@ import (
 	"net/http"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/buildversion"
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 type GetFromPlatformLicenseRequest struct {
@@ -26,12 +26,11 @@ func GetFromPlatformLicense(apiEndpoint, platformLicense string) (string, error)
 		return "", errors.Wrap(err, "failed to encode payload")
 	}
 
-	req, err := http.NewRequest("POST", url, &buf)
+	req, err := util.NewRequest("POST", url, &buf)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to call newrequest")
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", buildversion.GetUserAgent())
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {

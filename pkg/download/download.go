@@ -10,9 +10,9 @@ import (
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/auth"
-	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 type DownloadOptions struct {
@@ -70,13 +70,12 @@ func Download(appSlug string, path string, downloadOptions DownloadOptions) erro
 		url = fmt.Sprintf("%s&decryptPasswordValues=1", url)
 	}
 
-	newRequest, err := http.NewRequest("GET", url, nil)
+	newRequest, err := util.NewRequest("GET", url, nil)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to create download request")
 	}
 	newRequest.Header.Add("Authorization", authSlug)
-	newRequest.Header.Add("User-Agent", buildversion.GetUserAgent())
 
 	resp, err := http.DefaultClient.Do(newRequest)
 	if err != nil {

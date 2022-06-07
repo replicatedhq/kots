@@ -9,9 +9,9 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
-	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 type LicenseData struct {
@@ -59,11 +59,10 @@ func ResolveExistingLicense(newLicense *kotsv1beta1.License) (bool, error) {
 func GetLatestLicense(license *kotsv1beta1.License) (*LicenseData, error) {
 	url := fmt.Sprintf("%s/license/%s", license.Spec.Endpoint, license.Spec.AppSlug)
 
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := util.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to call newrequest")
 	}
-	req.Header.Add("User-Agent", buildversion.GetUserAgent())
 	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.Spec.LicenseID, license.Spec.LicenseID)))))
 
 	resp, err := http.DefaultClient.Do(req)

@@ -9,12 +9,12 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/api/reporting/types"
-	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/segmentio/ksuid"
 )
 
@@ -39,13 +39,12 @@ func SendAppInfo(appID string) error {
 
 	url := fmt.Sprintf("%s/kots_metrics/license_instance/info", endpoint)
 
-	postReq, err := http.NewRequest("POST", url, nil)
+	postReq, err := util.NewRequest("POST", url, nil)
 	if err != nil {
 		return errors.Wrap(err, "failed to create http request")
 	}
 	postReq.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.Spec.LicenseID, license.Spec.LicenseID)))))
 	postReq.Header.Set("Content-Type", "application/json")
-	postReq.Header.Set("User-Agent", buildversion.GetUserAgent())
 
 	reportingInfo := GetReportingInfo(a.ID)
 	InjectReportingInfoHeaders(postReq, reportingInfo)

@@ -21,7 +21,6 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	reportingtypes "github.com/replicatedhq/kots/pkg/api/reporting/types"
-	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	reporting "github.com/replicatedhq/kots/pkg/reporting"
@@ -375,12 +374,11 @@ func (r *ReplicatedUpstream) getRequest(method string, license *kotsv1beta1.Lice
 
 	url := fmt.Sprintf("%s://%s?%s", u.Scheme, urlPath, urlValues.Encode())
 
-	req, err := http.NewRequest(method, url, nil)
+	req, err := util.NewRequest(method, url, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to call newrequest")
 	}
 
-	req.Header.Add("User-Agent", buildversion.GetUserAgent())
 	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.Spec.LicenseID, license.Spec.LicenseID)))))
 
 	return req, nil
@@ -585,14 +583,13 @@ func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license 
 
 	url := fmt.Sprintf("%s://%s/release/%s/pending?%s", u.Scheme, hostname, license.Spec.AppSlug, urlValues.Encode())
 
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := util.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to call newrequest")
 	}
 
 	reporting.InjectReportingInfoHeaders(req, reportingInfo)
 
-	req.Header.Add("User-Agent", buildversion.GetUserAgent())
 	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.Spec.LicenseID, license.Spec.LicenseID)))))
 
 	resp, err := http.DefaultClient.Do(req)
@@ -990,12 +987,10 @@ func getApplicationMetadataFromHost(host string, upstream *url.URL, versionLabel
 	}
 	getUrl = fmt.Sprintf("%s?%s", getUrl, v.Encode())
 
-	getReq, err := http.NewRequest("GET", getUrl, nil)
+	getReq, err := util.NewRequest("GET", getUrl, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to call newrequest")
 	}
-
-	getReq.Header.Add("User-Agent", buildversion.GetUserAgent())
 
 	getResp, err := http.DefaultClient.Do(getReq)
 	if err != nil {

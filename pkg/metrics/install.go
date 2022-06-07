@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/buildversion"
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/segmentio/ksuid"
 )
 
@@ -78,12 +79,11 @@ func (m InstallMetrics) Post(url string) error {
 		return errors.Wrap(err, "failed to marshal json")
 	}
 
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(b))
+	req, err := util.NewRequest("POST", url, bytes.NewBuffer(b))
 	if err != nil {
 		return errors.Wrap(err, "failed to create new request")
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", buildversion.GetUserAgent())
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {

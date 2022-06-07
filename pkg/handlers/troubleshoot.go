@@ -11,7 +11,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
@@ -372,7 +371,7 @@ func (h *Handler) ShareSupportBundle(w http.ResponseWriter, r *http.Request) {
 
 	endpoint := fmt.Sprintf("%s/supportbundle/upload/%s", license.Spec.Endpoint, license.Spec.AppSlug)
 
-	req, err := http.NewRequest("POST", endpoint, f)
+	req, err := util.NewRequest("POST", endpoint, f)
 	if err != nil {
 		logger.Error(err)
 		JSON(w, http.StatusInternalServerError, nil)
@@ -384,7 +383,6 @@ func (h *Handler) ShareSupportBundle(w http.ResponseWriter, r *http.Request) {
 
 	req.Header.Set("Content-Type", "application/tar+gzip")
 	req.Header.Set("X-Replicated-SupportBundle-CollectedAt", bundle.CreatedAt.Format(time.RFC3339))
-	req.Header.Add("User-Agent", buildversion.GetUserAgent())
 
 	req.ContentLength = fileStat.Size()
 

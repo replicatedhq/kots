@@ -16,7 +16,6 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/airgap"
-	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/reporting"
@@ -296,7 +295,7 @@ func (h *Handler) UpdateAdminConsole(w http.ResponseWriter, r *http.Request) {
 func findLatestKotsVersion(appID string, license *kotsv1beta1.License) (string, error) {
 	url := fmt.Sprintf("%s/admin-console/version/latest", license.Spec.Endpoint)
 
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := util.NewRequest("GET", url, nil)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create new request")
 	}
@@ -304,7 +303,6 @@ func findLatestKotsVersion(appID string, license *kotsv1beta1.License) (string, 
 	reportingInfo := reporting.GetReportingInfo(appID)
 	reporting.InjectReportingInfoHeaders(req, reportingInfo)
 
-	req.Header.Add("User-Agent", buildversion.GetUserAgent())
 	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.Spec.LicenseID, license.Spec.LicenseID)))))
 
 	resp, err := http.DefaultClient.Do(req)

@@ -14,8 +14,8 @@ import (
 	"github.com/containers/image/v5/types"
 	"github.com/docker/distribution/registry/client/auth/challenge"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 type ScopeAction string
@@ -101,12 +101,11 @@ func CheckAccess(endpoint, username, password, org string, requestedAction Scope
 
 	authURL := host + "?" + v.Encode()
 
-	req, err := http.NewRequest("GET", authURL, nil)
+	req, err := util.NewRequest("GET", authURL, nil)
 	if err != nil {
 		return errors.Wrap(err, "failed to create auth request")
 	}
 
-	req.Header.Add("User-Agent", buildversion.GetUserAgent())
 	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", basicAuthToken))
 
 	resp, err = insecureClient.Do(req)
