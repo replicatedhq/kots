@@ -33,7 +33,7 @@ const NavBarDropdown = ({ handleLogOut }) => {
         className={`dropdown-nav-menu ${showDropdown ? "" : "hidden"}`}
       >
         <li>
-          <p onClick={() => setShowModal(true)}>Change Password</p>
+          <p onClick={() => setShowModal(true)}>Change password</p>
         </li>
         <li>
           <Link to="/upload-license">Add new application</Link>
