@@ -1,6 +1,7 @@
 package buildversion
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"runtime"
@@ -77,6 +78,10 @@ func getGoInfo() GoInfo {
 		OS:       runtime.GOOS,
 		Arch:     runtime.GOARCH,
 	}
+}
+
+func GetUserAgent() string {
+	return fmt.Sprintf("KOTS/%s", Version())
 }
 
 // IsLatestRelease queries github for the latest release in the project repo. If that release has a semver greater

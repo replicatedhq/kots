@@ -20,6 +20,7 @@ import (
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/util"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
@@ -186,13 +187,14 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 		os.Exit(2) // not returning error here as we don't want to show the entire stack trace to normal users
 	}
 
-	newReq, err := http.NewRequest("POST", options.UpdateCheckEndpoint, requestBody)
+	newReq, err := util.NewRequest("POST", options.UpdateCheckEndpoint, requestBody)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return nil, errors.Wrap(err, "failed to create update check request")
 	}
 	newReq.Header.Add("Content-Type", contentType)
 	newReq.Header.Add("Authorization", authSlug)
+
 	resp, err := http.DefaultClient.Do(newReq)
 	if err != nil {
 		log.FinishSpinnerWithError()

@@ -191,7 +191,7 @@ func prometheusQueryRange(address string, query string, start uint, end uint, st
 	v.Set("step", fmt.Sprintf("%d", step))
 
 	uri := host + "?" + v.Encode()
-	req, err := http.NewRequest("GET", uri, nil)
+	req, err := util.NewRequest("GET", uri, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create request")
 	}
