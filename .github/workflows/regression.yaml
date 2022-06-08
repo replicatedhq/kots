@@ -188,6 +188,7 @@ jobs:
           else
             export TF_VAR_kots_version_initial="${NEXT_TAG:1}"
           fi
+          export TF_VAR_testim_branch="enable-concurrent-regression-test"
           terraform init -backend-config ${{ matrix.test.backend_config }}
           export TF_WORKSPACE=automation-${{ github.event.inputs.id || inputs.id }}
           terraform workspace new $TF_WORKSPACE || true
