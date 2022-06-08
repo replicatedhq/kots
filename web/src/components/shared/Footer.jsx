@@ -1,9 +1,8 @@
 import * as React from "react";
 import { withRouter } from "react-router-dom";
 import semverjs from "semver";
-import { getBuildVersion, Utilities } from "@src/utilities/utilities";
+import { getBuildVersion } from "@src/utilities/utilities";
 import "@src/scss/components/shared/Footer.scss";
-import ChangePassword from "./ChangePassword";
 
 export class Footer extends React.Component {
   state = {
