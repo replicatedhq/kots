@@ -183,7 +183,7 @@ class Redactors extends Component {
     ]
 
     return (
-      <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 justifyContent--center alignItems--center">
+      <div className="centered-container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 justifyContent--center alignItems--center">
         <Helmet>
           <title>Redactors </title>
         </Helmet>
