@@ -76,7 +76,7 @@ build: capture-start-time build-real report-metric
 build-real:
 	mkdir -p web/dist
 	touch web/dist/THIS_IS_OKTETO  # we need this for go:embed, but it's not actually used in dev
-	go build ${LDFLAGS} ${GCFLAGS} -v -o bin/kotsadm $(BUILDFLAGS) ./cmd/kotsadm
+	go build ${LDFLAGS} ${GCFLAGS} -o bin/kotsadm $(BUILDFLAGS) ./cmd/kotsadm
 
 .PHONY: run
 run: build
@@ -177,7 +177,7 @@ sbom: sbom/kots-sbom.tgz
 
 # npm packages scans are ignored(only go modules are scanned)
 .PHONY: scan
-scan: 
+scan:
 	trivy fs \
 		--security-checks vuln \
 		--exit-code=1 \

@@ -5,33 +5,12 @@ ENV GOCACHE "/.cache/gocache/"
 ENV GOMODCACHE "/.cache/gomodcache/"
 ENV DEBUG_KOTSADM=1
 
-ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots
-WORKDIR $PROJECTPATH
-
-RUN --mount=target=$GOMODCACHE,type=cache \
-    --mount=target=$GOCACHE,type=cache \
-    go install github.com/go-delve/delve/cmd/dlv@v1.8.0
-
-COPY go.mod go.sum ./
-RUN --mount=target=$GOMODCACHE,type=cache go mod download
-
-COPY . .
-
-RUN --mount=target=$GOMODCACHE,type=cache \
-    --mount=target=$GOCACHE,type=cache \
-    make build kots
-
-FROM debian:bookworm
-
 EXPOSE 2345
-
-ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots
-WORKDIR $PROJECTPATH
 
 RUN apt update && apt install --no-install-recommends gnupg2 curl -y \
   && curl -k https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
   && echo "deb http://apt.postgresql.org/pub/repos/apt/ bookworm-pgdg main" > /etc/apt/sources.list.d/PostgreSQL.list \
-  && apt update && apt install -y --no-install-recommends postgresql-client-10 python3-pip ca-certificates \
+  && apt update && apt install -y python3-pip ca-certificates \
   && pip install s3cmd \
   && rm -rf /var/lib/apt/lists/*
 
@@ -42,42 +21,6 @@ ENV PATH="/usr/local/bin:$PATH"
 # discover all kubectl binaries in the KOTS_KUBECTL_BIN_DIR directory for use by KOTS.
 
 ENV KOTS_KUBECTL_BIN_DIR=/usr/local/bin
-
-# Install Kubectl 1.14
-ENV KUBECTL_1_14_VERSION=v1.14.10
-ENV KUBECTL_1_14_URL=https://dl.k8s.io/release/${KUBECTL_1_14_VERSION}/bin/linux/amd64/kubectl
-ENV KUBECTL_1_14_SHA256SUM=7729c6612bec76badc7926a79b26e0d9b06cc312af46dbb80ea7416d1fce0b36
-RUN curl -fsSLO "${KUBECTL_1_14_URL}" \
-	&& echo "${KUBECTL_1_14_SHA256SUM} kubectl" | sha256sum -c - \
-	&& chmod +x kubectl \
-	&& mv kubectl "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.14"
-
-# Install Kubectl 1.16
-ENV KUBECTL_1_16_VERSION=v1.16.15
-ENV KUBECTL_1_16_URL=https://dl.k8s.io/release/${KUBECTL_1_16_VERSION}/bin/linux/amd64/kubectl
-ENV KUBECTL_1_16_SHA256SUM=e8913069293156ddf55f243814a22d2384fc18b165efb6200606fdeaad146605
-RUN curl -fsSLO "${KUBECTL_1_16_URL}" \
-	&& echo "${KUBECTL_1_16_SHA256SUM} kubectl" | sha256sum -c - \
-	&& chmod +x kubectl \
-	&& mv kubectl "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.16"
-
-# Install Kubectl 1.17
-ENV KUBECTL_1_17_VERSION=v1.17.17
-ENV KUBECTL_1_17_URL=https://dl.k8s.io/release/${KUBECTL_1_17_VERSION}/bin/linux/amd64/kubectl
-ENV KUBECTL_1_17_SHA256SUM=8329fac94c66bf7a475b630972a8c0b036bab1f28a5584115e8dd26483de8349
-RUN curl -fsSLO "${KUBECTL_1_17_URL}" \
-	&& echo "${KUBECTL_1_17_SHA256SUM} kubectl" | sha256sum -c - \
-	&& chmod +x kubectl \
-	&& mv kubectl "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.17"
-
-# Install Kubectl 1.18
-ENV KUBECTL_1_18_VERSION=v1.18.20
-ENV KUBECTL_1_18_URL=https://dl.k8s.io/release/${KUBECTL_1_18_VERSION}/bin/linux/amd64/kubectl
-ENV KUBECTL_1_18_SHA256SUM=66a9bb8e9843050340844ca6e72e67632b75b9ebb651559c49db22f35450ed2f
-RUN curl -fsSLO "${KUBECTL_1_18_URL}" \
-	&& echo "${KUBECTL_1_18_SHA256SUM} kubectl" | sha256sum -c - \
-	&& chmod +x kubectl \
-	&& mv kubectl "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.18"
 
 # Install Kubectl 1.19
 ENV KUBECTL_1_19_VERSION=v1.19.16
@@ -165,6 +108,33 @@ RUN cd /tmp && curl -fsSL -o helm.tar.gz "${HELM3_URL}" \
   && ln -s "${KOTS_HELM_BIN_DIR}/helm3" "${KOTS_HELM_BIN_DIR}/helm" \
   && rm -rf helm.tar.gz linux-amd64
 
-COPY --from=builder $PROJECTPATH/bin/kotsadm $PROJECTPATH/bin/kots ./
 
-ENTRYPOINT [ "./kotsadm", "api"]
+## Below we add the project
+
+ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots
+WORKDIR $PROJECTPATH
+
+RUN --mount=target=$GOMODCACHE,type=cache,id=kots-gomodcache \
+    --mount=target=$GOCACHE,type=cache,id=id=kots-gocache \
+    go install github.com/go-delve/delve/cmd/dlv@v1.8.0
+
+COPY go.mod go.sum ./
+RUN --mount=target=$GOMODCACHE,type=cache go mod download
+
+COPY . .
+
+RUN --mount=target=$GOMODCACHE,type=cache,id=kots-gomodcache \
+    --mount=target=$GOCACHE,type=cache,id=kots-gocache \
+    make build kots
+
+
+## finally, copy the caches out of buildkit so that okteto up is quick
+RUN --mount=target=/tmp/.cache/gocache,id=kots-gocache,type=cache \
+    mkdir -p $GOCACHE \
+    && cp -r /tmp/.cache/gocache/* $GOCACHE
+
+RUN --mount=target=/tmp/.cache/gomodcache,id=kots-gomodcache,type=cache \
+    mkdir -p $GOMODCACHE \
+    && cp -r /tmp/.cache/gomodcache/* $GOMODCACHE
+
+ENTRYPOINT [ "/go/src/github.com/replicatedhq/kots/bin/kotsadm", "api"]
