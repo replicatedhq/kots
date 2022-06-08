@@ -9,24 +9,28 @@ const InputField = ({
   type,
   value,
   onChange,
+  autoFocus,
 }) => {
   const [show, setShow] = React.useState(false);
 
   const handleToggleShow = () => {
     setShow(!show);
-  }
+  };
 
   const calculateType = () => {
     if (type === "password") {
       return show ? "text" : "password";
     }
     return type;
-  }
+  };
 
   const component = (
     <>
-      <label className={`${id}-label`} htmlFor={id}>{label}</label>
+      <label className={`${id}-label`} htmlFor={id}>
+        {label}
+      </label>
       <input
+        autoFocus={!!autoFocus}
         className="Input"
         type={calculateType()}
         id={id}
@@ -34,23 +38,23 @@ const InputField = ({
         value={value}
         onChange={(e) => onChange(e)}
       />
-      {type === "password" &&
+      {type === "password" && (
         <span className="show-password-toggle" onClick={handleToggleShow}>
           {show ? "hide" : "show"}
         </span>
-      }
+      )}
     </>
-  )
+  );
 
   return (
     <>
       {type === "password" ? (
-        <div className="password-input-wrapper flex-column">
-          {component}
-        </div>
-      ) : component}
+        <div className="password-input-wrapper flex-column">{component}</div>
+      ) : (
+        component
+      )}
     </>
-   )
-}
+  );
+};
 
 export default InputField;
