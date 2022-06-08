@@ -529,7 +529,7 @@ class AppSnapshots extends Component {
             <p> To use snapshots reliably, install Velero version 1.5.1 or greater</p>
           </div>
           : null}
-        <div className="container flex-column flex1 u-paddingTop--30 u-paddingBottom--20 alignItems--center">
+        <div className="centered-container flex-column flex1 u-paddingTop--30 u-paddingBottom--20 alignItems--center">
           <div className="InfoSnapshots--wrapper flex flex-auto u-marginBottom--20">
             <span className="icon info-icon flex-auto u-marginRight--5" />
             <p className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--accent">
@@ -558,10 +558,10 @@ class AppSnapshots extends Component {
                 />
               </div>
               <div className="flex alignSelf--center">
-                <Link to={`/snapshots/settings?${selectedApp.slug}`} className="replicated-link u-fontSize--small u-fontWeight--bold u-marginRight--20 flex alignItems--center"><span className="icon snapshotSettingsIcon u-marginRight--5" />Settings</Link>
+                <Link to={`/snapshots/settings?${selectedApp.slug}`} className="replicated-link u-fontSize--small u-fontWeight--bold flex alignItems--center"><span className="icon snapshotSettingsIcon u-marginRight--5" />Settings</Link>
                 {snapshots?.length > 0 && snapshotSettings?.veleroVersion !== "" &&
                   <span data-for="startSnapshotBtn" data-tip="startSnapshotBtn" data-tip-disable={false}>
-                    <button className="btn primary blue" disabled={startingSnapshot || inProgressSnapshotExist} onClick={this.startManualSnapshot}>{startingSnapshot ? "Starting a snapshot..." : "Start a snapshot"}</button>
+                    <button className="btn primary blue u-marginLeft--20" disabled={startingSnapshot || inProgressSnapshotExist} onClick={this.startManualSnapshot}>{startingSnapshot ? "Starting a snapshot..." : "Start a snapshot"}</button>
                   </span>}
                 {inProgressSnapshotExist &&
                   <ReactTooltip id="startSnapshotBtn" effect="solid" className="replicated-tooltip">

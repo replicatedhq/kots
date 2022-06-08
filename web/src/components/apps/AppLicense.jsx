@@ -292,7 +292,7 @@ class AppLicense extends Component {
                 </div>}
             </div>
             <div className="LicenseDetails flex flex1 justifyContent--spaceBetween">
-              <div className="Details--wrapper flex-auto flex-column">
+              <div className="flex1 flex-column u-paddingRight--20">
                 <div className="flex flex-auto alignItems--center">
                   <span className="u-fontSize--larger u-fontWeight--bold u-lineHeight--normal u-textColor--secondary"> {appLicense.assignee} </span>
                   {appLicense?.channelName &&
@@ -334,12 +334,12 @@ class AppLicense extends Component {
                       }
                     })}
                   </div>}
-                <div className="flexWrap--wrap flex alignItems--center">
-                  {appLicense?.isAirgapSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-textColor--secondary u-marginRight--10 u-marginTop--10"><span className="icon licenseAirgapIcon" /> Airgap enabled </span> : null}
-                  {appLicense?.isSnapshotSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-textColor--secondary u-marginLeft--5 u-marginRight--10 u-marginTop--10"><span className="icon licenseVeleroIcon" /> Snapshots enabled </span> : null}
-                  {appLicense?.isGitOpsSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-textColor--secondary u-marginLeft--5 u-marginRight--10 u-marginTop--10"><span className="icon licenseGithubIcon" /> GitOps enabled </span> : null}
-                  {appLicense?.isIdentityServiceSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-textColor--secondary u-marginLeft--5 u-marginRight--10 u-marginTop--10"><span className="icon licenseIdentityIcon" /> Identity Service enabled </span> : null}
-                  {appLicense?.isGeoaxisSupported ? <span className="flex alignItems--center u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-textColor--secondary u-marginLeft--5 u-marginRight--10 u-marginTop--10"><span className="icon licenseGeoaxisIcon" /> GEOAxIS Provider enabled </span> : null}
+                <div className="flexWrap--wrap flex alignItems--center entitlementItems">
+                  {appLicense?.isAirgapSupported ? <span className="flex alignItems--center"><span className="icon licenseAirgapIcon" /> Airgap enabled </span> : null}
+                  {appLicense?.isSnapshotSupported ? <span className="flex alignItems--center"><span className="icon licenseVeleroIcon" /> Snapshots enabled </span> : null}
+                  {appLicense?.isGitOpsSupported ? <span className="flex alignItems--center"><span className="icon licenseGithubIcon" /> GitOps enabled </span> : null}
+                  {appLicense?.isIdentityServiceSupported ? <span className="flex alignItems--center"><span className="icon licenseIdentityIcon" /> Identity Service enabled </span> : null}
+                  {appLicense?.isGeoaxisSupported ? <span className="flex alignItems--center"><span className="icon licenseGeoaxisIcon" /> GEOAxIS Provider enabled </span> : null}
                 </div>
               </div>
               <div className="flex-column flex-auto alignItems--flexEnd justifyContent--center">

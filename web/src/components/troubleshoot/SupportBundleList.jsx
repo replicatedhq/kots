@@ -113,7 +113,7 @@ class SupportBundleList extends React.Component {
     }
 
     return (
-      <div className="container u-paddingBottom--30 u-paddingTop--30 flex1 flex">
+      <div className="centered-container u-paddingBottom--30 u-paddingTop--30 flex1 flex">
         <Helmet>
           <title>{`${appTitle} Troubleshoot`}</title>
         </Helmet>

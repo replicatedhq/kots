@@ -441,7 +441,7 @@ class Snapshots extends Component {
             <p> To use snapshots reliably, install Velero version 1.5.1 or greater </p>
           </div>
           : null}
-        <div className="container flex-column flex1 u-paddingTop--30 u-paddingBottom--20 alignItems--center">
+        <div className="centered-container flex-column flex1 u-paddingTop--30 u-paddingBottom--20 alignItems--center">
           <div className="AppSnapshots--wrapper flex1 flex-column u-width--full u-marginTop--20">
             <div className="flex flex-auto u-marginBottom--15 alignItems--center justifyContent--spaceBetween">
               <div className="flex1 flex-column" style={{ marginRight: "60px" }}>
