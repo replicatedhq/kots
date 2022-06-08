@@ -536,7 +536,7 @@ class AppSnapshots extends Component {
               It’s recommend that you use <Link to="/snapshots" className="replicated-link u-fontSize--small">
                 Full snapshots (Instance) </Link> in lieu of Partial snapshots (Application),
                 given Full snapshots offers the same restoration capabilities.
-                <span className="replicated-link" onClick={this.toggleSnaphotDifferencesModal}>Learn more</span>.
+                <span className="replicated-link" onClick={this.toggleSnaphotDifferencesModal}>Learn&nbsp;more</span>.
               </p>
           </div>
           <div className="AppSnapshots--wrapper flex1 flex-column u-width--full u-marginTop--20">
