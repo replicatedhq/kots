@@ -1,14 +1,30 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { useHistory } from "react-router-dom";
 import ChangePasswordModal from "../modals/ChangePasswordModal/ChangePasswordModal";
 
 const NavBarDropdown = ({ handleLogOut }) => {
   const [showDropdown, setShowDropdown] = React.useState(false);
   const [showModal, setShowModal] = React.useState(false);
   const testRef = React.useRef(null);
+  const history = useHistory();
 
   const closeModal = () => {
     setShowModal(false);
+  };
+
+  const handleBlur = (e) => {
+    // if the clicked item is inside the dropdown
+    if (e.currentTarget.contains(e.relatedTarget)) {
+      // do nothing
+      return;
+    }
+    setShowDropdown(false);
+  };
+
+  const handleNav = (e) => {
+    // manually triggers nav because blur event happens too fast otherwise
+    history.push("/upload-license");
+    setShowDropdown(false);
   };
 
   React.useEffect(() => {
@@ -29,14 +45,14 @@ const NavBarDropdown = ({ handleLogOut }) => {
       <ul
         ref={testRef}
         tabIndex={0}
-        onBlur={() => setShowDropdown(false)}
+        onBlur={handleBlur}
         className={`dropdown-nav-menu ${showDropdown ? "" : "hidden"}`}
       >
         <li>
           <p onClick={() => setShowModal(true)}>Change password</p>
         </li>
-        <li>
-          <Link to="/upload-license">Add new application</Link>
+        <li onMouseDown={handleNav}>
+          <p>Add new application</p>
         </li>
         <li>
           <p data-qa="Navbar--logOutButton" onClick={handleLogOut}>
