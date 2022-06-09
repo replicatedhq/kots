@@ -57,6 +57,10 @@ cosign verify-blob -key sbom/key.pub -signature sbom/kots-sbom.tgz.sig sbom/kots
 
 ## Okteto
 
+### Setup
+
+Please see the [wiki page](https://wiki.replicated.io/doc/okteto-development-22ikQ4z3br) for details.
+
 ### Known issues
 
 1. Kots cannot be installed through the CLI.
@@ -75,18 +79,18 @@ Your permissions will be the same between both namespaces, and you will be able 
 
 ##### Use the Kots CLI while Kots Admin is running
 
-1. `okteto up` - Put the the kots pod into dev mode
-2. `make run` - Runs Kots Admin
-3. In a new terminal, navigate to the kots project.
-4. `okteto exec bash` - Runs bash interactively in the kots pod.
-5. `./bin/kost {{COMMAND}}` - Run the kots commands you need.
+1. `make run` - Runs Kots Admin
+2. In a new terminal, navigate to the kots project.
+3. `okteto exec bash` - Runs bash interactively in the kots pod.
+4. `./bin/kost {{COMMAND}}` - Run the kots commands you need.
 
 #### Running KOTS in Helm managed mode
-Steps to run in Helm managed mode:
+
 1. `okteto pipeline deploy`
 2. Ensure your local context is set to your okteto environment
-2. Set the `IS_HELM_MANAGED` environment variable for the kots deployment `kubectl set env deployment/kotsadm IS_HELM_MANAGED=true`
-### Build V2 (EXPERIMENTAL)
+3. Set the `IS_HELM_MANAGED` environment variable for the kots deployment `kubectl set env deployment/kotsadm IS_HELM_MANAGED=true`
+
+### Build V2
 
 #### Description
 
@@ -97,12 +101,12 @@ This new iteration of our Okteto workspace has significant changes and requires 
 We've been trying to optimize our build times and make developing on Okteto as frictionless as possible.  However, we've realized that there are some fundemental issues with our current strategy, such as:
 
 1. Builds take place in two places (buildkit, in dev containers).  This causes issues with cache sharing, image size, etc.
-2. Spike in resources for development containers.  Some of our apps put a heavy strain on resources when built, this require us to either give them a lot of resources while in development mode (which can be long-lasting) or starve them of resources and bottleneck builds.
+2. Spike in resources for development containers.  Some of our apps put a heavy strain on resources when built, this required us to either give them a lot of resources while in development mode (which can be long-lasting) or starve them of resources and bottleneck builds.
 3. Unable to quickly/easily deploy kubernetes manifest changes.
 
 #### Solution
 
-This V2 work flow attempts to solve these issues by:
+This V2 workflow attempts to solve these issues by:
 
 1. Build application only on the buildkit servers so that the cache lives in one place and image sizes stay lean.  This excluded applications that have live reloading (web).
 2. Only use development containers where needed.  (web apps, schema hero, etc)
@@ -112,31 +116,40 @@ This V2 work flow attempts to solve these issues by:
 
 | Action               | Syntax | Description                                                                                                |
 |----------------------| ------ |------------------------------------------------------------------------------------------------------------|
-| Build and Deploy     | `okteto pipeline deploy -f okteto-v2.yml` | Runs both build and deploy sections of the Okteto manifest. Perfect for updating or creating a namespace.  |
-| Build single service | `okteto build -f okteto-v2.yml {{SERVICE_NAME}}` | Builds the named service (kotsadm, kotsadm-web, kotsadm-migrations) and pushes it to the Okteto registry. |
-| Deploy               | `okteto deploy -f okteto-v2.yml` | Deploys the kubernetes manifests. If there were builds before this command, the new images will be used in the deployment. | 
-| Development mode     | `okteto up -f okteto-v2.yml` | Prompts the use for what container to put into development mode.  Only web and migrations should appear at this time. |
-
-#### Warning
-
-Because this new workflow is experimental, we still have the old workflow in the project.  If you are using the new workflow, and fail to provide the `-f` flag with the v2 manifest, you will be invoking the old workflow.
+| Build and Deploy     | `okteto pipeline deploy` | Runs both build and deploy sections of the Okteto manifest. Perfect for updating or creating a namespace.  |
+| Build single service | `okteto build {{SERVICE_NAME}}` | Builds the named service (kotsadm, kotsadm-web, kotsadm-migrations) and pushes it to the Okteto registry. |
+| Deploy               | `okteto deploy` | Deploys the kubernetes manifests. If there were builds before this command, the new images will be used in the deployment. | 
+| Development mode     | `okteto up` | Prompts the use for what container to put into development mode.  Only web and migrations should appear at this time. |
 
 #### Example workflow: kotsadm change
 
-1. `okteto pipeline deploy -f okteto-v2.yml`
+1. `okteto pipeline deploy`
 2. Make code changes to kots.
-3. `okteto build -f okteto-v2.yml kotsadm`
-4. `okteto deploy -f okteto-v2.yml`
+3. `okteto build kotsadm`
+4. `okteto deploy`
 
 #### Example workflow: kubernetes manifest change
 
-1. `okteto pipeline deploy -f okteto-v2.yml`
+1. `okteto pipeline deploy`
 2. Make manifest changes.
-3. `okteto deploy -f okteto-v2.yml`
+3. `okteto deploy`
 
 #### Example workflow: kotsadm web changes
 
-1. `okteto pipeline deploy -f okteto-v2.yml`
-2. `okteto up -f okteto-v2.yml`
+1. `okteto pipeline deploy`
+2. `okteto up`
 3. Select kotsadm-web.
 4. Make code changes to kotsadm web.
+
+### Build V1
+
+#### Description
+
+The V1 workflow has been deprecated and will be removed if there are no issues with the new V2 pipeline.  You should only use the V1 workflow if you are blocked by some issue with the new V2 workflow.  In this case, the issue should be reported in #okteto.
+
+When working with the old V1 workflow you must add the file flag for all commands, see below.
+
+1. `okteto pipeline deploy -f okteto-pipeline-v1.yml`
+2. `okteto up -f okteto-v1.yml`
+
+Failing to add these flags will use the new workflow and if both workflows are mixed, it could lead to some very unstable results.
