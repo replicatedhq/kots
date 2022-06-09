@@ -6,6 +6,7 @@ type Test struct {
 	Label           string
 	Namespace       string
 	UpstreamURI     string
+	UseMinimalRBAC  bool
 	NeedsSnapshots  bool
 	NeedsMonitoring bool
 }

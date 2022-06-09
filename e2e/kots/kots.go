@@ -30,7 +30,7 @@ func NewInstaller(imageRegistry, imageNamespace, imageTag string) *Installer {
 }
 
 func (i *Installer) Install(kubeconfig string, test inventory.Test) string {
-	session, err := i.install(kubeconfig, test.UpstreamURI, test.Namespace)
+	session, err := i.install(kubeconfig, test.UpstreamURI, test.Namespace, test.UseMinimalRBAC)
 	Expect(err).WithOffset(1).Should(Succeed(), "Kots install failed")
 	Eventually(session).WithOffset(1).WithTimeout(3*time.Minute).Should(gexec.Exit(0), "Kots install failed with non-zero exit code")
 
@@ -39,15 +39,15 @@ func (i *Installer) Install(kubeconfig string, test inventory.Test) string {
 	return port
 }
 
-func (i *Installer) install(kubeconfig, upstreamURI, namespace string) (*gexec.Session, error) {
+func (i *Installer) install(kubeconfig, upstreamURI, namespace string, useMinimalRBAC bool) (*gexec.Session, error) {
 	installPort, err := getFreePort()
 	if err != nil {
 		return nil, errors.Wrap(err, "get free port")
 	}
 
-	return util.RunCommand(exec.Command(
-		"kots",
-		"install", upstreamURI,
+	args := []string{
+		"install",
+		upstreamURI,
 		fmt.Sprintf("--kubeconfig=%s", kubeconfig),
 		"--no-port-forward",
 		fmt.Sprintf("--port=%s", installPort),
@@ -57,7 +57,12 @@ func (i *Installer) install(kubeconfig, upstreamURI, namespace string) (*gexec.S
 		fmt.Sprintf("--kotsadm-namespace=%s", i.imageNamespace),
 		fmt.Sprintf("--kotsadm-tag=%s", i.imageTag),
 		fmt.Sprintf("--wait-duration=%s", "3m"),
-	))
+	}
+	if useMinimalRBAC {
+		args = append(args, "--use-minimal-rbac")
+	}
+
+	return util.RunCommand(exec.Command("kots", args...))
 }
 
 func (i *Installer) adminConsolePortForward(kubeconfig, namespace string) (string, error) {

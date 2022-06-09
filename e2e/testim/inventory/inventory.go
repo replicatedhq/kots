@@ -25,6 +25,7 @@ func NewNightlyTest() Test {
 		Label:           "type=existing cluster, env=online, phase=new install, rbac=minimal rbac",
 		Namespace:       "qakotsregression",
 		UpstreamURI:     "qakotsregression/type-existing-cluster-env-on-2",
+		UseMinimalRBAC:  true,
 		NeedsSnapshots:  true,
 		NeedsMonitoring: true,
 	}
