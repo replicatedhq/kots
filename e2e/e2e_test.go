@@ -14,6 +14,7 @@ import (
 	"github.com/replicatedhq/kots/e2e/kots"
 	"github.com/replicatedhq/kots/e2e/kubectl"
 	"github.com/replicatedhq/kots/e2e/minio"
+	"github.com/replicatedhq/kots/e2e/prometheus"
 	"github.com/replicatedhq/kots/e2e/testim"
 	"github.com/replicatedhq/kots/e2e/testim/inventory"
 	"github.com/replicatedhq/kots/e2e/util"
@@ -108,10 +109,10 @@ var _ = Describe("E2E", func() {
 		})
 
 		AfterEach(func() {
-			// Debug
-			// TODO: run this only on failure
+			// Debug info
 			if kubectlCLI != nil {
 				kubectlCLI.GetAllPods()
+				kubectlCLI.DescribeNodes()
 			}
 		})
 
@@ -130,8 +131,21 @@ var _ = Describe("E2E", func() {
 					veleroCLI.Install(w.GetDir(), c.GetKubeconfig(), minio)
 				}
 
+				if test.NeedsMonitoring {
+					GinkgoWriter.Println("Installing Prometheus")
+
+					prometheus := prometheus.New(prometheus.Options{})
+					prometheus.Install(helmCLI, c.GetKubeconfig())
+				}
+
 				GinkgoWriter.Println("Installing KOTS")
 				adminConsolePort := kotsInstaller.Install(c.GetKubeconfig(), test)
+
+				// HACK
+				if test.Name == "Nightly" {
+					GinkgoWriter.Println("HACK: create registry-creds secret")
+					nightlyCreateRegistryCredsSecret(kubectlCLI)
+				}
 
 				GinkgoWriter.Println("Running E2E tests")
 				testimClient.Run(c.GetKubeconfig(), test, adminConsolePort)
@@ -142,6 +156,7 @@ var _ = Describe("E2E", func() {
 			},
 			Entry(nil, inventory.NewSmokeTest()),
 			Entry(nil, inventory.NewChangeLicense()),
+			Entry(nil, inventory.NewNightlyTest()),
 		)
 
 	})

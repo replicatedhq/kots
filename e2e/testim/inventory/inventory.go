@@ -21,9 +21,11 @@ func NewSmokeTest() Test {
 
 func NewNightlyTest() Test {
 	return Test{
-		Name:        "Nightly",
-		Label:       "type=existing cluster, env=online, phase=new install, rbac=minimal rbac",
-		Namespace:   "qakotsregression",
-		UpstreamURI: "qakotsregression/type-existing-cluster-env-on-2",
+		Name:            "Nightly",
+		Label:           "type=existing cluster, env=online, phase=new install, rbac=minimal rbac",
+		Namespace:       "qakotsregression",
+		UpstreamURI:     "qakotsregression/type-existing-cluster-env-on-2",
+		NeedsSnapshots:  true,
+		NeedsMonitoring: true,
 	}
 }
