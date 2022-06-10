@@ -58,7 +58,7 @@ jobs:
           repository: replicatedhq/kots-regression-automation
           token: ${{ secrets.E2E_GH_PAT }}
           path: automation
-          ref: origin/seanrester/sc-49260/remove-the-need-for-a-github-release-for
+          ref: seanrester/sc-49260/remove-the-need-for-a-github-release-for
       - name: Download go_api artifact
         uses: actions/download-artifact@v2
         with:
@@ -187,7 +187,7 @@ jobs:
           repository: replicatedhq/kots-regression-automation
           token: ${{ secrets.E2E_GH_PAT }}
           path: automation
-          ref: origin/seanrester/sc-49260/remove-the-need-for-a-github-release-for
+          ref: seanrester/sc-49260/remove-the-need-for-a-github-release-for
       - name: Create test environment
         if: always()
         working-directory: automation/cluster
