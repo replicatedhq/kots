@@ -78,6 +78,7 @@ type KOTSHandler interface {
 	GetAppContents(w http.ResponseWriter, r *http.Request)
 	GetAppDashboard(w http.ResponseWriter, r *http.Request)
 	GetDownstreamOutput(w http.ResponseWriter, r *http.Request)
+	CheckInstaller(w http.ResponseWriter, r *http.Request)
 
 	GetKotsadmRegistry(w http.ResponseWriter, r *http.Request)
 	GetImageRewriteStatus(w http.ResponseWriter, r *http.Request)

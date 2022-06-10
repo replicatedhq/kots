@@ -1,18 +1,13 @@
 package handlers
 
 import (
-	"io/ioutil"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strconv"
-	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
-	"github.com/replicatedhq/kots/pkg/store"
-	storetypes "github.com/replicatedhq/kots/pkg/store/types"
+	"github.com/replicatedhq/kots/pkg/version"
 )
 
 type GetAppContentsResponse struct {
@@ -28,63 +23,9 @@ func (h *Handler) GetAppContents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	a, err := store.GetStore().GetAppFromSlug(appSlug)
+	archiveFiles, err := version.GetAppVersionArchiveFiles(appSlug, int64(sequence))
 	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to get app from slug"))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	status, err := store.GetStore().GetDownstreamVersionStatus(a.ID, int64(sequence))
-	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to get downstream version status"))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	if status == storetypes.VersionPendingDownload {
-		logger.Error(errors.Errorf("not returning contents for version %d because it's %s", sequence, status))
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	archivePath, err := ioutil.TempDir("", "kotsadm")
-	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to create temp dir"))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	defer os.RemoveAll(archivePath)
-
-	err = store.GetStore().GetAppVersionArchive(a.ID, int64(sequence), archivePath)
-	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to get app version archive"))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	// walk the parth, adding all to the files map
-	// base64 decode these
-	archiveFiles := map[string][]byte{}
-
-	err = filepath.Walk(archivePath, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if info.IsDir() {
-			return nil
-		}
-
-		contents, err := ioutil.ReadFile(path)
-		if err != nil {
-			return err
-		}
-
-		archiveFiles[strings.TrimPrefix(path, archivePath)] = contents
-		return nil
-	})
-	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to walk archive"))
+		logger.Error(errors.Wrapf(err, "failed to get archive files for app %s sequence %d", appSlug, sequence))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

@@ -162,6 +162,8 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 		HandlerFunc(middleware.EnforceAccess(policy.AppRead, handler.GetAppDashboard))
 	r.Name("GetDownstreamOutput").Path("/api/v1/app/{appSlug}/cluster/{clusterId}/sequence/{sequence}/downstreamoutput").Methods("GET").
 		HandlerFunc(middleware.EnforceAccess(policy.AppDownstreamLogsRead, handler.GetDownstreamOutput))
+	r.Name("CheckInstaller").Path("/api/v1/app/{appSlug}/sequence/{sequence}/checkinstaller").Methods("GET").
+		HandlerFunc(middleware.EnforceAccess(policy.AppRead, handler.CheckInstaller))
 
 	r.Name("GetKotsadmRegistry").Path("/api/v1/registry").Methods("GET").
 		HandlerFunc(middleware.EnforceAccess(policy.RegistryRead, handler.GetKotsadmRegistry))

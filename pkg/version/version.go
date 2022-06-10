@@ -4,6 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -247,4 +251,57 @@ func isBlockedDueToStrictPreFlights(appID string, sequence int64) (bool, error) 
 		}
 	}
 	return hasStrictPreflights && preflightResult.HasFailingStrictPreflights, nil
+}
+
+func GetAppVersionArchiveFiles(appSlug string, sequence int64) (map[string][]byte, error) {
+	a, err := store.GetStore().GetAppFromSlug(appSlug)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get app from slug")
+	}
+
+	status, err := store.GetStore().GetDownstreamVersionStatus(a.ID, int64(sequence))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get downstream version status")
+	}
+	if status == storetypes.VersionPendingDownload {
+		return nil, errors.Errorf("not returning contents for version %d because it's %s", sequence, status)
+	}
+
+	archivePath, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create temp dir")
+	}
+	defer os.RemoveAll(archivePath)
+
+	err = store.GetStore().GetAppVersionArchive(a.ID, int64(sequence), archivePath)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get app version archive")
+	}
+
+	// walk the path, adding all to the files map
+	// base64 decode these
+	archiveFiles := map[string][]byte{}
+
+	err = filepath.Walk(archivePath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		contents, err := ioutil.ReadFile(path)
+		if err != nil {
+			return err
+		}
+
+		archiveFiles[strings.TrimPrefix(path, archivePath)] = contents
+		return nil
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to walk archive")
+	}
+
+	return archiveFiles, nil
 }

@@ -646,6 +646,18 @@ func (mr *MockKOTSHandlerMockRecorder) GetDownstreamOutput(w, r interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDownstreamOutput", reflect.TypeOf((*MockKOTSHandler)(nil).GetDownstreamOutput), w, r)
 }
 
+// CheckInstaller mocks base method.
+func (m *MockKOTSHandler) CheckInstaller(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "CheckInstaller", w, r)
+}
+
+// CheckInstaller indicates an expected call of CheckInstaller.
+func (mr *MockKOTSHandlerMockRecorder) CheckInstaller(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckInstaller", reflect.TypeOf((*MockKOTSHandler)(nil).CheckInstaller), w, r)
+}
+
 // GetGitOpsRepo mocks base method.
 func (m *MockKOTSHandler) GetGitOpsRepo(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
