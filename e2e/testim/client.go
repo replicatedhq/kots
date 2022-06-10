@@ -61,5 +61,5 @@ func (t *Client) Run(kubeconfig string, test inventory.Test, adminConsolePort st
 	cmd.Env = append(cmd.Env, fmt.Sprintf("KUBECONFIG=%s", kubeconfig))
 	session, err := util.RunCommand(cmd)
 	Expect(err).WithOffset(1).Should(Succeed(), "Run testim tests failed")
-	Eventually(session).WithOffset(1).WithTimeout(30*time.Minute).Should(gexec.Exit(0), "Run testim tests failed with non-zero exit code")
+	Eventually(session).WithOffset(1).WithTimeout(60*time.Minute).Should(gexec.Exit(0), "Run testim tests failed with non-zero exit code")
 }
