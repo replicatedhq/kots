@@ -361,6 +361,17 @@ $cell-width: 140px;
   }
 }
 
+.InstallerWarning {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  line-height: 22px;
+  border-radius: 4px;
+  margin: 10px 0px;
+  padding: 13px 10px 10px;
+  background-color: $really-light-accent;
+}
+
 @-webkit-keyframes newVersion {
   0%   { background-color: #fff7dc; }
   100% { background-color: #FFFFFF; }

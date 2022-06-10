@@ -80,6 +80,9 @@ class AppVersionHistory extends Component {
     currentPage: 0,
     pageSize: 20,
     loadingPage: false,
+    checkingInstaller: false,
+    showInstallerWarning: false,
+    installerDiff: null
   }
 
   // moving this out of the state because new repeater instances were getting created
@@ -643,6 +646,13 @@ class AppVersionHistory extends Component {
         }
       }
       // prompt to make sure user wants to deploy
+      
+      // Check installer for this app release sequence against the deployed installer
+      this.setState({ checkingInstaller: true });
+      this.checkInstaller(app.slug, version.sequence).finally(() => {
+        this.setState({ checkingInstaller: false });
+      });
+
       this.setState({
         displayConfirmDeploymentModal: true,
         versionToDeploy: version,
@@ -654,10 +664,49 @@ class AppVersionHistory extends Component {
     }
   }
 
+  checkInstaller = async (appSlug, sequence) => {
+    try {
+      const res = await fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/sequence/${sequence}/checkinstaller`, {
+        headers: { "Authorization": Utilities.getToken() },
+        method: "GET",
+      });
+      if (!res.ok) {
+        if (res.status === 401) {
+          Utilities.logoutUser();
+          // TODO: Anything else that needs to be done here?
+          return;
+        }
+        return;
+      }
+      const response = await res.json();
+      console.log(response);
+
+      if (!response.success) {
+        // Failed installer check
+        // TODO: Determine how to properly handle this
+        console.error(response.error);
+        return
+      }
+      
+      if (response.hasInstaller && response.diff) {
+        // Has installer and there is a diff
+        this.setState({ showInstallerWarning: true, installerDiff: response.diff });
+        return
+      }
+
+      // Does not have an installer or there is no diff, proceed normally
+      this.setState({ showInstallerWarning: false, installerDiff: null });
+    } catch (err) {
+      // Failed installer check
+      // TODO: Determine how to properly handle this
+      console.error(err);
+    }
+  }
+
   finalizeDeployment = async (continueWithFailedPreflights) => {
     const { match, updateCallback } = this.props;
     const { versionToDeploy, isSkipPreflights } = this.state;
-    this.setState({ displayConfirmDeploymentModal: false, confirmType: "" });
+    this.setState({ displayConfirmDeploymentModal: false, confirmType: "", showInstallerWarning: false, installerDiff: null });
     await this.props.makeCurrentVersion(match.params.slug, versionToDeploy, isSkipPreflights, continueWithFailedPreflights);
     await this.fetchKotsDownstreamHistory();
     this.setState({ versionToDeploy: null });
@@ -693,7 +742,7 @@ class AppVersionHistory extends Component {
   finalizeRedeployment = async () => {
     const { match, updateCallback } = this.props;
     const { versionToDeploy } = this.state;
-    this.setState({ displayConfirmDeploymentModal: false, confirmType: "", });
+    this.setState({ displayConfirmDeploymentModal: false, confirmType: "", showInstallerWarning: false, installerDiff: null });
     await this.props.redeployVersion(match.params.slug, versionToDeploy);
     await this.fetchKotsDownstreamHistory();
     this.setState({ versionToDeploy: null });
@@ -1460,16 +1509,36 @@ class AppVersionHistory extends Component {
             className="Modal DefaultSize"
           >
             <div className="Modal-body">
-              <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">{this.state.confirmType === "rollback" ? "Rollback to" : this.state.confirmType === "redeploy" ? "Redeploy" : "Deploy"} {this.state.versionToDeploy?.versionLabel} (Sequence {this.state.versionToDeploy?.sequence})?</p>
-              {isPastVersion && this.props.app?.autoDeploy !== "disabled" ? 
-                <div className="info-box">
-                  <span className="u-fontSize--small u-textColor--header u-lineHeight--normal u-fontWeight--medium">You have automatic deploys enabled. {this.state.confirmType === "rollback" ? "Rolling back to" : this.state.confirmType === "redeploy" ? "Redeploying" : "Deploying"} this version will disable automatic deploys. You can turn it back on after this version finishes deployment.</span>
-                </div>
-              : null}
-              <div className="flex u-paddingTop--10">
-                <button className="btn secondary blue" onClick={() => this.setState({ displayConfirmDeploymentModal: false, confirmType: "", versionToDeploy: null })}>Cancel</button>
-                <button className="u-marginLeft--10 btn primary" onClick={this.state.confirmType === "redeploy" ? this.finalizeRedeployment : () => this.finalizeDeployment(false)}>Yes, {this.state.confirmType === "rollback" ? "rollback" : this.state.confirmType === "redeploy" ? "redeploy" : "deploy"}</button>
-              </div>
+              { this.state.checkingInstaller &&
+                <>
+                  {/* <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">Loading...</p> */}
+                  <div className="flex-column flex1 alignItems--center justifyContent--center">
+                    <Loader size="60" />
+                  </div>
+                </>
+              }
+              { !this.state.checkingInstaller &&
+                <>
+                  <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">{this.state.confirmType === "rollback" ? "Rollback to" : this.state.confirmType === "redeploy" ? "Redeploy" : "Deploy"} {this.state.versionToDeploy?.versionLabel} (Sequence {this.state.versionToDeploy?.sequence})?</p>
+                  {isPastVersion && this.props.app?.autoDeploy !== "disabled" ? 
+                    <div className="info-box">
+                      <span className="u-fontSize--small u-textColor--header u-lineHeight--normal u-fontWeight--medium">You have automatic deploys enabled. {this.state.confirmType === "rollback" ? "Rolling back to" : this.state.confirmType === "redeploy" ? "Redeploying" : "Deploying"} this version will disable automatic deploys. You can turn it back on after this version finishes deployment.</span>
+                    </div>
+                  : null}
+                  { this.state.showInstallerWarning &&
+                    <div className="InstallerWarning justifyContent--center">
+                      <p className="flex alignItems--center u-textColor--header">
+                        The Kubernetes installer for this version is different from what you have installed.
+                        It is recommended that you run the updated Kubernetes installer before deploying this version.
+                      </p>
+                    </div>
+                  }
+                  <div className="flex u-paddingTop--10">
+                    <button className="btn secondary blue" onClick={() => this.setState({ displayConfirmDeploymentModal: false, confirmType: "", versionToDeploy: null, showInstallerWarning: false, installerDiff: null })}>Cancel</button>
+                    <button className="u-marginLeft--10 btn primary" onClick={this.state.confirmType === "redeploy" ? this.finalizeRedeployment : () => this.finalizeDeployment(false)}>Yes, {this.state.confirmType === "rollback" ? "rollback" : this.state.confirmType === "redeploy" ? "redeploy" : "deploy"}</button>
+                  </div>
+                </>
+              }
             </div>
           </Modal>
         }
