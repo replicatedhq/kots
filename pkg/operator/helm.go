@@ -87,18 +87,20 @@ func renderChartsArchive(deployedVersionArchive string, downstreamName string, k
 				}
 			}
 
-			_, err = os.Stat(sourceChartsDir)
-			if info.Name() == "kustomization.yaml" && !os.IsNotExist(err) {
-				archiveChartOutput, err := exec.Command(kustomizeBinPath, "build", filepath.Dir(path)).Output()
-				if err != nil {
-					if ee, ok := err.(*exec.ExitError); ok {
-						err = fmt.Errorf("kustomize %s: %q", path, string(ee.Stderr))
+			if info.Name() == "kustomization.yaml" {
+				_, err = os.Stat(sourceChartsDir + "/" + relPath)
+				if os.IsExist(err) {
+					archiveChartOutput, err := exec.Command(kustomizeBinPath, "build", filepath.Dir(path)).Output()
+					if err != nil {
+						if ee, ok := err.(*exec.ExitError); ok {
+							err = fmt.Errorf("kustomize %s: %q", path, string(ee.Stderr))
+						}
+						return errors.Wrapf(err, "failed to kustomize %s", path)
 					}
-					return errors.Wrapf(err, "failed to kustomize %s", path)
-				}
-				err = saveHelmFile(desrChartsDir, relPath, "all.yaml", archiveChartOutput)
-				if err != nil {
-					return errors.Wrapf(err, "failed to export content for %s", path)
+					err = saveHelmFile(desrChartsDir, relPath, "all.yaml", archiveChartOutput)
+					if err != nil {
+						return errors.Wrapf(err, "failed to export content for %s", path)
+					}
 				}
 			}
 			return nil
