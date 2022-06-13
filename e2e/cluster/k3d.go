@@ -67,13 +67,13 @@ func (c *K3d) GetClusterName() string {
 }
 
 func k3dClusterCreate(clusterName string) (*gexec.Session, error) {
-	return util.RunCommand(
+	return util.RunCommand(exec.Command(
 		"k3d",
 		"cluster",
 		"create",
 		"--kubeconfig-update-default=false",
 		clusterName,
-	)
+	))
 }
 
 func k3dClusterDelete(clusterName, kubeconfig string) (*gexec.Session, error) {
@@ -85,16 +85,16 @@ func k3dClusterDelete(clusterName, kubeconfig string) (*gexec.Session, error) {
 	)
 	cmd.Env = os.Environ()
 	cmd.Env = append(cmd.Env, fmt.Sprintf("KUBECONFIG=%s", kubeconfig))
-	return gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+	return util.RunCommand(cmd)
 }
 
 func k3dWriteKubeconfig(clusterName, kubeconfig string) (*gexec.Session, error) {
-	return util.RunCommand(
+	return util.RunCommand(exec.Command(
 		"k3d",
 		"kubeconfig",
 		"write",
 		"--overwrite",
 		fmt.Sprintf("--output=%s", kubeconfig),
 		clusterName,
-	)
+	))
 }

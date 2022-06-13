@@ -54,11 +54,11 @@ var (
 			Title: "Disk Usage",
 			Queries: []kotsv1beta1.MetricQuery{
 				{
-					Query:  `sum((node_filesystem_size_bytes{job="node-exporter",fstype!="",instance!=""} - node_filesystem_avail_bytes{job="node-exporter", fstype!=""})) by (instance)`,
+					Query:  `sum(node_filesystem_size_bytes{job=~"node-exporter|kubernetes-service-endpoints",fstype!="",instance!=""} - node_filesystem_avail_bytes{job=~"node-exporter|kubernetes-service-endpoints",fstype!="",instance!=""}) by (instance)`,
 					Legend: "Used: {{ instance }}",
 				},
 				{
-					Query:  `sum((node_filesystem_avail_bytes{job="node-exporter",fstype!="",instance!=""})) by (instance)`,
+					Query:  `sum(node_filesystem_avail_bytes{job=~"node-exporter|kubernetes-service-endpoints",fstype!="",instance!=""}) by (instance)`,
 					Legend: "Available: {{ instance }}",
 				},
 			},
@@ -191,7 +191,7 @@ func prometheusQueryRange(address string, query string, start uint, end uint, st
 	v.Set("step", fmt.Sprintf("%d", step))
 
 	uri := host + "?" + v.Encode()
-	req, err := http.NewRequest("GET", uri, nil)
+	req, err := util.NewRequest("GET", uri, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create request")
 	}

@@ -45,6 +45,7 @@ env:
   AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
   TF_VAR_testim_token: ${{ secrets.TESTIM_ACCESS_TOKEN }}
+  WORKSPACE: automation-${{ github.event.inputs.id || inputs.id }}
 
 concurrency: regression
 
@@ -66,8 +67,8 @@ jobs:
         working-directory: automation/jumpbox
         run: |
           terraform init
-          export TF_WORKSPACE=automation-${{ github.event.inputs.id || inputs.id }}
-          terraform workspace new $TF_WORKSPACE
+          terraform workspace new $WORKSPACE || true
+          terraform workspace select $WORKSPACE
           terraform apply --auto-approve
 
       - name: Notify Slack
@@ -191,8 +192,8 @@ jobs:
             export TF_VAR_kots_version_initial="${NEXT_TAG:1}"
           fi
           terraform init -backend-config ${{ matrix.test.backend_config }}
-          export TF_WORKSPACE=automation-${{ github.event.inputs.id || inputs.id }}
-          terraform workspace new $TF_WORKSPACE
+          terraform workspace new $WORKSPACE || true
+          terraform workspace select $WORKSPACE
           ./${{ matrix.test.terraform_script }} apply
       - name: Wait for instance to be ready
         working-directory: automation/cluster
@@ -206,7 +207,6 @@ jobs:
       - name: Run the test
         working-directory: automation/cluster
         run: |
-          export TF_WORKSPACE=automation-${{ github.event.inputs.id || inputs.id }}
           terraform output -raw jumpbox_private_key > ssh.pem
           chmod 600 ssh.pem
           ssh -i ssh.pem ubuntu@$(terraform output -raw jumpbox_public_ip) -oStrictHostKeyChecking=no -oServerAliveInterval=60 -oServerAliveCountMax=10 "ssh -tt ubuntu@$(terraform output -raw control_plane_private_ip) -oServerAliveInterval=60 -oServerAliveCountMax=10 -oConnectionAttempts=30 \"sudo /tmp/start.sh\""

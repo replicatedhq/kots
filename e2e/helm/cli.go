@@ -2,6 +2,7 @@ package helm
 
 import (
 	"fmt"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/onsi/gomega/gexec"
@@ -19,7 +20,7 @@ func NewCLI(workspace string) *CLI {
 }
 
 func (c *CLI) RepoAdd(name, url string) (*gexec.Session, error) {
-	return util.RunCommand(
+	return util.RunCommand(exec.Command(
 		"helm",
 		c.AppendCommonFlags(
 			"repo",
@@ -27,7 +28,7 @@ func (c *CLI) RepoAdd(name, url string) (*gexec.Session, error) {
 			name,
 			url,
 		)...,
-	)
+	))
 }
 
 func (c *CLI) Install(kubeconfig string, args ...string) (*gexec.Session, error) {
@@ -38,10 +39,10 @@ func (c *CLI) Install(kubeconfig string, args ...string) (*gexec.Session, error)
 		},
 		args...,
 	)
-	return util.RunCommand(
+	return util.RunCommand(exec.Command(
 		"helm",
 		c.AppendCommonFlags(args...)...,
-	)
+	))
 }
 
 func (c *CLI) AppendCommonFlags(args ...string) []string {

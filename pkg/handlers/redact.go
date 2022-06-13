@@ -9,6 +9,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/redact"
 	redacttypes "github.com/replicatedhq/kots/pkg/redact/types"
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 type UpdateRedactRequest struct {
@@ -71,7 +72,7 @@ func (h *Handler) UpdateRedact(w http.ResponseWriter, r *http.Request) {
 	if updateRedactRequest.RedactSpec != "" {
 		setSpec = updateRedactRequest.RedactSpec
 	} else if updateRedactRequest.RedactSpecURL != "" {
-		req, err := http.NewRequest("GET", updateRedactRequest.RedactSpecURL, nil)
+		req, err := util.NewRequest("GET", updateRedactRequest.RedactSpecURL, nil)
 		if err != nil {
 			logger.Error(err)
 			updateRedactResponse.Error = "failed to create request to get spec from url"
@@ -79,7 +80,6 @@ func (h *Handler) UpdateRedact(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		req.Header.Set("User-Agent", "replicatedhq/kotsadm")
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			logger.Error(err)

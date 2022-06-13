@@ -371,7 +371,7 @@ func (h *Handler) ShareSupportBundle(w http.ResponseWriter, r *http.Request) {
 
 	endpoint := fmt.Sprintf("%s/supportbundle/upload/%s", license.Spec.Endpoint, license.Spec.AppSlug)
 
-	req, err := http.NewRequest("POST", endpoint, f)
+	req, err := util.NewRequest("POST", endpoint, f)
 	if err != nil {
 		logger.Error(err)
 		JSON(w, http.StatusInternalServerError, nil)

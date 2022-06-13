@@ -223,7 +223,7 @@ class Dashboard extends Component {
       })
       .catch((err) => {
         console.log(err);
-        this.setState({ checkingForUpdateError: true, checkingUpdateMessage: String(err) });
+        this.setState({ checkingForUpdateError: true, checkingForUpdates: false, checkingUpdateMessage: "Your license is expired." });
       });
   }
 
