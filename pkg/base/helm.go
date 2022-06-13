@@ -76,8 +76,6 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 	default:
 		return nil, errors.Errorf("unknown helmVersion %s", renderOptions.HelmVersion)
 	}
-
-	rendered = removeCommonPrefix(rendered) // TODO (ch35027): we should probably target the prefix here, maybe chartPath
 	base, err := writeHelmBase(u.Name, rendered, renderOptions)
 	if err != nil {
 		return nil, errors.Wrapf(err, "write helm chart %s base", u.Name)

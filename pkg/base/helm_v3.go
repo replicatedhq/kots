@@ -84,9 +84,6 @@ func renderHelmV3(chartName string, chartPath string, vals map[string]interface{
 			Content: []byte(manifest),
 		})
 	}
-
-	baseFiles = removeCommonPrefix(baseFiles)
-
 	// this secret should only be generated for installs that rely on us rendering yaml internally - not native helm installs
 	// those generate their own secret
 	if !renderOptions.UseHelmInstall {

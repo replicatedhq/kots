@@ -935,7 +935,7 @@ spec:
 					Path: "charts/postgresql",
 					Files: []BaseFile{
 						{
-							Path: "secrets.yaml",
+							Path: "templates/secrets.yaml",
 							Content: []byte(`# Source: postgresql/templates/secrets.yaml
 apiVersion: v1
 kind: Secret
@@ -952,7 +952,7 @@ data:
   postgresql-password: "YWJjMTIz"`),
 						},
 						{
-							Path: "statefulset.yaml",
+							Path: "templates/statefulset.yaml",
 							Content: []byte(`# Source: postgresql/templates/statefulset.yaml
 apiVersion: apps/v1
 kind: StatefulSet
@@ -1098,7 +1098,7 @@ spec:
             storage: "8Gi"`),
 						},
 						{
-							Path: "svc-headless.yaml",
+							Path: "templates/svc-headless.yaml",
 							Content: []byte(`# Source: postgresql/templates/svc-headless.yaml
 apiVersion: v1
 kind: Service
@@ -1131,7 +1131,7 @@ spec:
     app.kubernetes.io/instance: postgresql`),
 						},
 						{
-							Path: "svc.yaml",
+							Path: "templates/svc.yaml",
 							Content: []byte(`# Source: postgresql/templates/svc.yaml
 apiVersion: v1
 kind: Service
