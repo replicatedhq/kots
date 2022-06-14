@@ -27,6 +27,7 @@ test:
 		-e TESTIM_ACCESS_TOKEN \
 		-v $(BIN_DIR)/e2e.test:/usr/local/bin/e2e.test \
 		-v $(KOTS_BIN_DIR)/kots:/usr/local/bin/kots \
+		-v $(KOTS_BIN_DIR)/kots:/usr/local/bin/kubectl-kots \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		e2e-deps \
 		e2e.test \

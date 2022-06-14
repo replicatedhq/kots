@@ -4,10 +4,12 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        ca-certificates curl sudo \
+        ca-certificates curl git sudo \
     && rm -rf /var/lib/apt/lists/*
 
-env PATH=$PATH:/usr/local/bin/node_modules/.bin/
+env INSTALL_DIR=/usr/local/bin
+env KREW_ROOT=$INSTALL_DIR/krew
+env PATH=$INSTALL_DIR/node_modules/.bin:$KREW_ROOT/bin:$PATH
 
 ADD hack/deps.sh /usr/local/bin/deps.sh
 

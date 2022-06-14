@@ -56,10 +56,10 @@ $ make e2e \
     SKIP_TEARDOWN=1
 ...
     To set kubecontext run:
-      export KUBECONFIG=/tmp/kots-e2e3629427925/.kubeconfig
+      export KUBECONFIG="$(k3d kubeconfig merge kots-e2e3629427925)"
     To delete cluster run:
       k3d cluster delete kots-e2e3629427925
-$ export KUBECONFIG=/tmp/kots-e2e3629427925/.kubeconfig
+$ export KUBECONFIG="$(k3d kubeconfig merge kots-e2e3629427925)"
 $ kubectl -n smoke-test port-forward svc/kotsm 3000 --address=0.0.0.0
 Forwarding from 0.0.0.0:3000 -> 3000
 ```
