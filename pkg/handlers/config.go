@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -19,6 +20,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/config"
 	kotsconfig "github.com/replicatedhq/kots/pkg/config"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -140,50 +142,80 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
-	if err != nil {
-		logger.Error(err)
-		updateAppConfigResponse.Error = "failed to get app from app slug"
-		JSON(w, http.StatusInternalServerError, updateAppConfigResponse)
-		return
-	}
+	// TODO: if running in is helm managed mode, update the k8s secret
+	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
+	if isHelmManaged == "true" {
+		configCache := getHelmConfigSecretCache()
+		app := mux.Vars(r)["appSlug"]
+		appSecret := configCache[app]
+		for _, configGroup := range updateAppConfigRequest.ConfigGroups {
+			for _, item := range configGroup.Items {
+				// update individual items
+				appSecret.Data[item.Name] = []byte(item.Value.String())
+			}
+		}
+		// now update secret
+		clientSet, err := k8sutil.GetClientset()
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		ctx := new(context.Context)
+		updateOpts := new(metav1.UpdateOptions)
+		updateOpts.FieldManager = "kots"
+		if _, err := clientSet.CoreV1().Secrets(appSecret.Namespace).Update(*ctx, appSecret, *updateOpts); err != nil {
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	} else {
 
-	isEditbale, err := isVersionConfigEditable(foundApp, updateAppConfigRequest.Sequence)
-	if err != nil {
-		updateAppConfigResponse.Error = "failed to check if version is editable"
-		logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
-		JSON(w, http.StatusInternalServerError, updateAppConfigResponse)
-		return
-	}
+		foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
+		if err != nil {
+			logger.Error(err)
+			updateAppConfigResponse.Error = "failed to get app from app slug"
+			JSON(w, http.StatusInternalServerError, updateAppConfigResponse)
+			return
+		}
 
-	if !isEditbale {
-		updateAppConfigResponse.Error = "this version cannot be edited"
-		logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
-		JSON(w, http.StatusForbidden, updateAppConfigResponse)
-		return
-	}
+		isEditbale, err := isVersionConfigEditable(foundApp, updateAppConfigRequest.Sequence)
+		if err != nil {
+			updateAppConfigResponse.Error = "failed to check if version is editable"
+			logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
+			JSON(w, http.StatusInternalServerError, updateAppConfigResponse)
+			return
+		}
 
-	createNewVersion, err := shouldCreateNewAppVersion(foundApp.ID, updateAppConfigRequest.Sequence)
-	if err != nil {
-		updateAppConfigResponse.Error = "failed to check if version should be created"
-		logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
-		JSON(w, http.StatusInternalServerError, updateAppConfigResponse)
-		return
-	}
+		if !isEditbale {
+			updateAppConfigResponse.Error = "this version cannot be edited"
+			logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
+			JSON(w, http.StatusForbidden, updateAppConfigResponse)
+			return
+		}
 
-	isPrimaryVersion := true
-	skipPrefligths := false
-	deploy := false
-	resp, err := updateAppConfig(foundApp, updateAppConfigRequest.Sequence, updateAppConfigRequest.ConfigGroups, createNewVersion, isPrimaryVersion, skipPrefligths, deploy)
-	if err != nil {
-		logger.Error(err)
-		JSON(w, http.StatusInternalServerError, resp)
-		return
-	}
+		createNewVersion, err := shouldCreateNewAppVersion(foundApp.ID, updateAppConfigRequest.Sequence)
+		if err != nil {
+			updateAppConfigResponse.Error = "failed to check if version should be created"
+			logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
+			JSON(w, http.StatusInternalServerError, updateAppConfigResponse)
+			return
+		}
 
-	if len(resp.RequiredItems) > 0 {
-		JSON(w, http.StatusBadRequest, resp)
-		return
+		isPrimaryVersion := true
+		skipPrefligths := false
+		deploy := false
+		resp, err := updateAppConfig(foundApp, updateAppConfigRequest.Sequence, updateAppConfigRequest.ConfigGroups, createNewVersion, isPrimaryVersion, skipPrefligths, deploy)
+		if err != nil {
+			logger.Error(err)
+			JSON(w, http.StatusInternalServerError, resp)
+			return
+		}
+
+		if len(resp.RequiredItems) > 0 {
+			JSON(w, http.StatusBadRequest, resp)
+			return
+		}
 	}
 
 	JSON(w, http.StatusOK, UpdateAppConfigResponse{Success: true})
