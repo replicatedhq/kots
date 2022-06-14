@@ -142,18 +142,29 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: if running in is helm managed mode, update the k8s secret
 	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
 	if isHelmManaged == "true" {
 		configCache := getHelmConfigSecretCache()
 		app := mux.Vars(r)["appSlug"]
 		appSecret := configCache[app]
-		for _, configGroup := range updateAppConfigRequest.ConfigGroups {
-			for _, item := range configGroup.Items {
-				// update individual items
-				appSecret.Data[item.Name] = []byte(item.Value.String())
-			}
+		config := new(kotsv1beta1.Config)
+
+		err := json.Unmarshal(appSecret.Data["config"], &config)
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
 		}
+
+		config.Spec.Groups = updateAppConfigRequest.ConfigGroups
+		b, err := json.Marshal(config)
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		// set in memory store to reflect updated config groups
+		appSecret.Data["config"] = b
 		// now update secret
 		clientSet, err := k8sutil.GetClientset()
 		if err != nil {
@@ -161,61 +172,61 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		ctx := new(context.Context)
 		updateOpts := new(metav1.UpdateOptions)
-		updateOpts.FieldManager = "kots"
-		if _, err := clientSet.CoreV1().Secrets(appSecret.Namespace).Update(*ctx, appSecret, *updateOpts); err != nil {
+		secret, err := clientSet.CoreV1().Secrets(appSecret.Namespace).Update(context.Background(), &appSecret, *updateOpts)
+		if err != nil {
 			logger.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-	} else {
+		configCache[app] = *secret
+		JSON(w, http.StatusOK, UpdateAppConfigResponse{Success: true})
+		return
+	}
+	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
+	if err != nil {
+		logger.Error(err)
+		updateAppConfigResponse.Error = "failed to get app from app slug"
+		JSON(w, http.StatusInternalServerError, updateAppConfigResponse)
+		return
+	}
 
-		foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
-		if err != nil {
-			logger.Error(err)
-			updateAppConfigResponse.Error = "failed to get app from app slug"
-			JSON(w, http.StatusInternalServerError, updateAppConfigResponse)
-			return
-		}
+	isEditbale, err := isVersionConfigEditable(foundApp, updateAppConfigRequest.Sequence)
+	if err != nil {
+		updateAppConfigResponse.Error = "failed to check if version is editable"
+		logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
+		JSON(w, http.StatusInternalServerError, updateAppConfigResponse)
+		return
+	}
 
-		isEditbale, err := isVersionConfigEditable(foundApp, updateAppConfigRequest.Sequence)
-		if err != nil {
-			updateAppConfigResponse.Error = "failed to check if version is editable"
-			logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
-			JSON(w, http.StatusInternalServerError, updateAppConfigResponse)
-			return
-		}
+	if !isEditbale {
+		updateAppConfigResponse.Error = "this version cannot be edited"
+		logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
+		JSON(w, http.StatusForbidden, updateAppConfigResponse)
+		return
+	}
 
-		if !isEditbale {
-			updateAppConfigResponse.Error = "this version cannot be edited"
-			logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
-			JSON(w, http.StatusForbidden, updateAppConfigResponse)
-			return
-		}
+	createNewVersion, err := shouldCreateNewAppVersion(foundApp.ID, updateAppConfigRequest.Sequence)
+	if err != nil {
+		updateAppConfigResponse.Error = "failed to check if version should be created"
+		logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
+		JSON(w, http.StatusInternalServerError, updateAppConfigResponse)
+		return
+	}
 
-		createNewVersion, err := shouldCreateNewAppVersion(foundApp.ID, updateAppConfigRequest.Sequence)
-		if err != nil {
-			updateAppConfigResponse.Error = "failed to check if version should be created"
-			logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
-			JSON(w, http.StatusInternalServerError, updateAppConfigResponse)
-			return
-		}
+	isPrimaryVersion := true
+	skipPrefligths := false
+	deploy := false
+	resp, err := updateAppConfig(foundApp, updateAppConfigRequest.Sequence, updateAppConfigRequest.ConfigGroups, createNewVersion, isPrimaryVersion, skipPrefligths, deploy)
+	if err != nil {
+		logger.Error(err)
+		JSON(w, http.StatusInternalServerError, resp)
+		return
+	}
 
-		isPrimaryVersion := true
-		skipPrefligths := false
-		deploy := false
-		resp, err := updateAppConfig(foundApp, updateAppConfigRequest.Sequence, updateAppConfigRequest.ConfigGroups, createNewVersion, isPrimaryVersion, skipPrefligths, deploy)
-		if err != nil {
-			logger.Error(err)
-			JSON(w, http.StatusInternalServerError, resp)
-			return
-		}
-
-		if len(resp.RequiredItems) > 0 {
-			JSON(w, http.StatusBadRequest, resp)
-			return
-		}
+	if len(resp.RequiredItems) > 0 {
+		JSON(w, http.StatusBadRequest, resp)
+		return
 	}
 
 	JSON(w, http.StatusOK, UpdateAppConfigResponse{Success: true})
@@ -231,6 +242,14 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		logger.Error(err)
 		liveAppConfigResponse.Error = "failed to decode request body"
 		JSON(w, http.StatusBadRequest, liveAppConfigResponse)
+		return
+	}
+
+	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
+	configGroups := []kotsv1beta1.ConfigGroup{}
+	if isHelmManaged == "true" {
+		configGroups = liveAppConfigRequest.ConfigGroups
+		JSON(w, http.StatusOK, LiveAppConfigResponse{Success: true, ConfigGroups: configGroups})
 		return
 	}
 
@@ -345,7 +364,6 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	configGroups := []kotsv1beta1.ConfigGroup{}
 	if renderedConfig != nil {
 		configGroups = renderedConfig.Spec.Groups
 	}
@@ -358,6 +376,24 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		Success: false,
 	}
 
+	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
+	configCache := getHelmConfigSecretCache()
+	configGroups := []kotsv1beta1.ConfigGroup{}
+
+	if isHelmManaged == "true" {
+		configSecret := configCache[mux.Vars(r)["appSlug"]]
+		appConfig := new(kotsv1beta1.Config)
+		err := json.Unmarshal(configSecret.Data["config"], &appConfig)
+		if err != nil {
+			logger.Error(err)
+			currentAppConfigResponse.Error = "failed to unmarshal config secret"
+			JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
+			return
+		}
+		configGroups = appConfig.Spec.Groups
+		JSON(w, http.StatusOK, CurrentAppConfigResponse{Success: true, ConfigGroups: configGroups})
+		return
+	}
 	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
 	if err != nil {
 		logger.Error(err)
@@ -461,7 +497,6 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	configGroups := []kotsv1beta1.ConfigGroup{}
 	if renderedConfig != nil {
 		configGroups = renderedConfig.Spec.Groups
 	}
