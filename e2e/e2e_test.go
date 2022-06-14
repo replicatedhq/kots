@@ -42,7 +42,7 @@ func init() {
 	flag.BoolVar(&skipTeardown, "skip-teardown", false, "do not tear down clusters")
 	flag.StringVar(&kotsadmImageRegistry, "kotsadm-image-registry", "", "override the kotsadm images registry")
 	flag.StringVar(&kotsadmImageNamespace, "kotsadm-image-namespace", "", "override the kotsadm images registry namespace")
-	flag.StringVar(&kotsadmImageTag, "kotsadm-image-tag", "v0.0.0-nightly", "override the kotsadm images tag")
+	flag.StringVar(&kotsadmImageTag, "kotsadm-image-tag", "alpha", "override the kotsadm images tag")
 }
 
 func TestE2E(t *testing.T) {
