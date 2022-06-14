@@ -466,7 +466,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options Rewrit
 			// details to annotations and labels to it.
 			namePrefix := options.AppSlug
 			for _, v := range writeMidstreamOptions.NewHelmCharts {
-				if v.Spec.UseHelmInstall {
+				if v.Spec.UseHelmInstall && filepath.Base(b.Path) != "." {
 					namePrefix = fmt.Sprintf("%s-%s", options.AppSlug, filepath.Base(b.Path))
 					break
 				}
