@@ -408,7 +408,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options Rewrit
 		// For the newer style charts, create a new secret per chart as helm adds chart specific
 		// details to annotations and labels to it.
 		for _, v := range writeMidstreamOptions.NewHelmCharts {
-			if v.Spec.UseHelmInstall {
+			if v.Spec.UseHelmInstall && filepath.Base(b.Path) != "." {
 				namePrefix = fmt.Sprintf("%s-%s", options.AppSlug, filepath.Base(b.Path))
 				break
 			}
