@@ -121,6 +121,13 @@ class AppVersionHistory extends Component {
     if (lastProps.match.params.slug !== this.props.match.params.slug || lastProps.app.id !== this.props.app.id) {
       this.fetchKotsDownstreamHistory();
     }
+    if (this.props.app?.downstream && this.props.app?.downstream !== lastProps.app?.downstream ) {
+      if (this.props.app.downstream.pendingVersions.length > 0) {
+        this.setState({ updatesAvailable: true });
+      } else {
+        this.setState({ updatesAvailable: false });
+      }
+    }
   }
 
   componentWillUnmount() {
@@ -1070,7 +1077,10 @@ class AppVersionHistory extends Component {
   renderAllVersions = () => {
     // This is kinda hacky. This finds the equivalent downstream version because the midstream
     // version type does not contain metadata like version label or release notes.
-    const allVersions = this.state.versionHistory?.slice(1); // exclude pinned version
+    let allVersions = this.state.versionHistory;
+    if (this.state.updatesAvailable) {
+      allVersions = this.state.versionHistory?.slice(1); // exclude pinned version
+    }
     if (!allVersions?.length) {
       return null;
     }
@@ -1314,7 +1324,7 @@ class AppVersionHistory extends Component {
                   :  
                     <div className="TableDiff--Wrapper u-marginBottom--30">
                       <div className="flex justifyContent--spaceBetween">
-                        <p className="u-fontSize--normal u-fontWeight--medium u-textColor--header u-marginBottom--15">New version available</p>
+                        <p className="u-fontSize--normal u-fontWeight--medium u-textColor--header u-marginBottom--15">{this.state.updatesAvailable ? "New version available" : ""}</p>
                         <div className="flex alignItems--center">
                           <div className="flex alignItems--center">
                             {app?.isAirgap && airgapUploader ?
@@ -1345,7 +1355,13 @@ class AppVersionHistory extends Component {
                           {versionHistory.length > 1 && !gitopsEnabled && !this.props.isHelmManaged ? this.renderDiffBtn() : null}
                         </div>
                       </div>
-                      {this.renderAppVersionHistoryRow(versionHistory[0])}
+                      {this.state.updatesAvailable ?
+                        this.renderAppVersionHistoryRow(versionHistory[0])
+                      : 
+                        <div className="flex-column flex1 u-marginTop--20 u-marginBottom--10 alignItems--center justifyContent--center u-backgroundColor--white u-borderRadius--rounded">
+                          <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-padding--10">Application up to date.</p>
+                        </div>
+                      }
                       {(this.state.numOfSkippedVersions > 0 || this.state.numOfRemainingVersions > 0) && (
                         <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--header u-marginTop--10">
                           {this.state.numOfSkippedVersions > 0 ? `${this.state.numOfSkippedVersions} version${this.state.numOfSkippedVersions > 1 ? "s" : ""} will be skipped in upgrading to ${versionHistory[0].versionLabel}. ` : ""}
