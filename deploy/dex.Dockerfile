@@ -1,2 +1,2 @@
-ARG TAG=v2.30.0
+ARG TAG=v2.32.0
 FROM ghcr.io/dexidp/dex:$TAG
