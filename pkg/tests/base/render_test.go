@@ -89,8 +89,9 @@ func TestRenderUpstream(t *testing.T) {
 		}
 
 		helmpath := filepath.Join(path, "basehelm")
+		useHelmInstall := false
 		if _, err := os.Stat(helmpath); err == nil {
-			test.WantHelmBase = baseFromDir(t, filepath.Join(path, "basehelm"), true)
+			test.WantHelmBase = baseFromDir(t, filepath.Join(path, "basehelm"), useHelmInstall)
 		}
 		tests = append(tests, test)
 	}

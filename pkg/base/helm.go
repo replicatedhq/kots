@@ -76,6 +76,14 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 	default:
 		return nil, errors.Errorf("unknown helmVersion %s", renderOptions.HelmVersion)
 	}
+
+	// Don't change the classic style rendering ie, picking all the files within charts, subdirs
+	// and do a single apply. This will not work for Native helm expects uniquely named image pullsecrets.
+	// helm maintains strict ownership of secretnames for each subcharts to add Release metadata for each chart
+	if !renderOptions.UseHelmInstall {
+		rendered = removeCommonPrefix(rendered)
+	}
+
 	base, err := writeHelmBase(u.Name, rendered, renderOptions)
 	if err != nil {
 		return nil, errors.Wrapf(err, "write helm chart %s base", u.Name)
