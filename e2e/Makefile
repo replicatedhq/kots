@@ -23,7 +23,7 @@ test: TESTIM_BRANCH ?= master
 test: SKIP_TEARDOWN ?= 0
 test:
 	export TESTIM_ACCESS_TOKEN
-	docker run --rm -it --net host \
+	docker run --rm -i --net host \
 		-e TESTIM_ACCESS_TOKEN \
 		-v $(BIN_DIR)/e2e.test:/usr/local/bin/e2e.test \
 		-v $(KOTS_BIN_DIR)/kots:/usr/local/bin/kots \
