@@ -11,7 +11,7 @@ import (
 )
 
 var releaseTags = []string{
-	"RELEASE.2021-09-09T21-37-07Z.fips",
+	"RELEASE.2022-06-11T19-55-32Z.fips",
 	"RELEASE.2021-09-09T21-37-06Z.xxx",
 	"RELEASE.2021-09-09T21-37-05Z",
 	"RELEASE.2021-09-09T21-37-04Z",
