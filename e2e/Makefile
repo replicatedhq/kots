@@ -21,6 +21,9 @@ test: export GINKGO_EDITOR_INTEGRATION=1 # disable error on programatic focus
 test: KOTSADM_IMAGE_TAG ?= alpha
 test: TESTIM_BRANCH ?= master
 test: SKIP_TEARDOWN ?= 0
+ifneq ($(EXISTING_KUBECONFIG),)
+test: EXISTING_KUBECONFIG_VOLUME_MOUNT := "-v=$(EXISTING_KUBECONFIG):$(EXISTING_KUBECONFIG)"
+endif
 test:
 	export TESTIM_ACCESS_TOKEN
 	docker run --rm -i --net host \
@@ -28,6 +31,7 @@ test:
 		-v $(BIN_DIR)/e2e.test:/usr/local/bin/e2e.test \
 		-v $(KOTS_BIN_DIR)/kots:/usr/local/bin/kots \
 		-v $(KOTS_BIN_DIR)/kots:/usr/local/bin/kubectl-kots \
+		$(EXISTING_KUBECONFIG_VOLUME_MOUNT) \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		e2e-deps \
 		e2e.test \

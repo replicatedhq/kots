@@ -34,6 +34,8 @@ func (t *Client) NewRun(kubeconfig string, test inventory.Test, adminConsolePort
 		fmt.Sprintf("--grid=%s", t.Grid),
 		fmt.Sprintf("--branch=%s", t.Branch),
 		"--timeout=3600000",
+		// skips snapshots volume assertions, velero will not backup rancher/local-path-provisioner volumes
+		`--params={"testDisableSnapshotsVolumeAssertions":true}`,
 	}
 	if test.Suite != "" {
 		args = append(
