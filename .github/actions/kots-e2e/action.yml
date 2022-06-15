@@ -13,6 +13,9 @@ inputs:
   testim-access-token:
     description: 'Testim access token'
     required: true
+  testim-branch:
+    description: 'Testim branch'
+    default: 'master'
   kotsadm-image-registry:
     description: 'Kotsadm image registry'
     default: 'ttl.sh'
@@ -21,9 +24,6 @@ inputs:
   kotsadm-image-tag:
     description: 'Kotsadm image tag'
     default: '2h'
-  testim-branch:
-    description: 'Testim branch'
-    default: 'master'
   aws-access-key-id:
     description: 'AWS access key id for uploading support bundle'
   aws-secret-access-key:
