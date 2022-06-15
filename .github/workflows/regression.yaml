@@ -70,6 +70,11 @@ jobs:
         with:
           name: kotsadm-image
           path: ./automation/jumpbox/docker-archive
+      - name: Download migrations
+        uses: actions/download-artifact@v2
+        with:
+          name: migrations-image
+          path: ./docker-archive
       - name: Make kotsadm airgap archive with minio image
         working-directory: automation/jumpbox
         run: tar czf ./kotsadm.tar.gz -C ./ ./docker-archive
@@ -81,7 +86,6 @@ jobs:
           terraform workspace new $WORKSPACE || true
           terraform workspace select $WORKSPACE
           terraform apply --auto-approve
-
       - name: Notify Slack
         if: failure() && github.ref_name == 'main'
         uses: 8398a7/action-slack@v3

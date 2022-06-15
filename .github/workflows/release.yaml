@@ -16,11 +16,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-
       - name: Get tags
         id: get_tag
         uses: ./actions/version-tag
-
       - name: Push tag
         if: github.ref_type == 'branch'
         env:
@@ -34,18 +32,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
           go-version: '^1.17.4'
-
       - name: Run Update Script
         env:
           GITHUB_AUTH_TOKEN: ${{ secrets.NIGHTLY_GH_PAT }}
         run: |
           go run ./cmd/imagedeps
-
       - name: Create Pull Request # creates a PR if there are differences
         uses: peter-evans/create-pull-request@v3
         id: cpr
@@ -126,7 +121,6 @@ jobs:
         DOCKER_CONFIG: ./.docker
       run: |
         export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C migrations schema-release
-
     - name: Upload airgap image
       uses: actions/upload-artifact@v2
       with:
@@ -142,13 +136,11 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-
     - name: Build web
       env:
         GIT_COMMIT: ${{ github.sha }}
         GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
       run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C web deps build-kotsadm
-
     - name: Upload web artifact
       uses: actions/upload-artifact@v2
       with:
@@ -164,10 +156,8 @@ jobs:
     - uses: actions/setup-go@v2
       with:
         go-version: '^1.17.4'
-
     - name: Checkout
       uses: actions/checkout@v2
-
     - name: Cache Go modules
       uses: actions/cache@v3
       with:
@@ -177,24 +167,20 @@ jobs:
         key: ${{ runner.os }}-go-kurlproxy-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-kurlproxy-
-
     - name: Build kurl_proxy
       env:
         GIT_COMMIT: ${{ github.sha }}
         SCOPE_DSN_PUBLIC: ""
       run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C kurl_proxy test build
-
     - name: Upload kurl_proxy artifact
       uses: actions/upload-artifact@v2
       with:
         name: kurl_proxy
         path: ./kurl_proxy/bin
-
     - uses: azure/docker-login@v1
       with:
         username: ${{ secrets.DOCKERHUB_USER }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
     - name: Build tagged release
       working-directory: ./kurl_proxy
       run: |
@@ -209,10 +195,8 @@ jobs:
     - uses: actions/setup-go@v2
       with:
         go-version: '^1.17.4'
-
     - name: Checkout
       uses: actions/checkout@v2
-
     - name: Cache Go modules
       uses: actions/cache@v3
       with:
@@ -222,20 +206,17 @@ jobs:
         key: ${{ runner.os }}-go-kots-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-kots-
-
     - name: Download web artifact
       uses: actions/download-artifact@v2
       with:
         name: web
         path: ./web/dist
-
     - name: Build Go API
       env:
         GIT_COMMIT: ${{ github.sha }}
         GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
         SCOPE_DSN_PUBLIC: ""
       run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make ci-test kots build
-
     - name: Upload Go API artifact
       uses: actions/upload-artifact@v2
       with:
@@ -277,6 +258,7 @@ jobs:
 
   goreleaser:
     runs-on: ubuntu-20.04
+    if: github.ref_type != 'branch'
     needs: [build-web]
     steps:
     - uses: actions/setup-go@v2
@@ -295,7 +277,6 @@ jobs:
         key: ${{ runner.os }}-go-goreleaser-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-goreleaser-
-
     - name: Unshallow
       run: git fetch --prune --unshallow
     - run: sudo apt-get update -y
@@ -333,6 +314,7 @@ jobs:
 
   generate-kurl-addon-pr:
     runs-on: ubuntu-20.04
+    if: github.ref_type != 'branch'
     needs: [build-kurl-proxy, build-airgap, generate-tag]
     steps:
     - name: Checkout
@@ -350,6 +332,7 @@ jobs:
 
   build-airgap:
     runs-on: ubuntu-20.04
+    if: github.ref_type != 'branch'
     needs: [release-go-api-tagged, goreleaser, build-schema-migrations, generate-tag]
     steps:
     - name: Download migrations
@@ -616,7 +599,6 @@ jobs:
           else
             exit 1
           fi
-
       - name: prepare range-kots-version test
         run: |
           kubectl kots \
@@ -625,7 +607,6 @@ jobs:
           --namespace range-kots-version \
           --shared-password password \
           --skip-compatibility-check
-
       - name: execute suite range-kots-version
         run: |
           set +e
@@ -641,17 +622,3 @@ jobs:
           kubectl -n range-kots-version logs -p deployment/kotsadm
           kill $ADMIN_CONSOLE_PID
           exit $EXIT_CODE
-
-  regresssion-cleanup:
-    if: github.ref_type == 'branch'
-    needs: [regression-test, generate-tag]
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Clean up release
-
-        uses: dev-drprasad/delete-tag-and-release@v0.2.0
-        with:
-          delete_release: true
-          tag_name: ${{ needs.generate-tag.outputs.tag }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
