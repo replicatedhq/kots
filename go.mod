@@ -342,7 +342,7 @@ replace (
 	gopkg.in/square/go-jose.v2 => gopkg.in/square/go-jose.v2 v2.2.2
 	k8s.io/api => k8s.io/api v0.24.0
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.24.0
-	k8s.io/apimachinery => k8s.io/apimachinery v0.23.6
+	k8s.io/apimachinery => k8s.io/apimachinery v0.23.6 // Not updated because velero has not been updated to support the new version
 	k8s.io/apiserver => k8s.io/apiserver v0.24.0
 	k8s.io/cli-runtime => k8s.io/cli-runtime v0.24.0
 	k8s.io/client-go => k8s.io/client-go v0.24.0
