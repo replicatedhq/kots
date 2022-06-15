@@ -13,7 +13,7 @@ spec:
           - app=sentry
           - role=worker
         limits:
-          maxAge: 30d
+          maxAge: 720h # 30*24
           maxLines: 10000
     - run:
         collectorName: ping-google
