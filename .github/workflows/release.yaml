@@ -386,7 +386,7 @@ jobs:
 
   regression-test:
     if: github.ref_type == 'branch'
-    needs: [regression-test-setup, generate-tag]
+    needs: [regression-test-setup, generate-tag, build-go-api]
     uses: replicatedhq/kots/.github/workflows/regression.yaml@seanrester/sc-49260/remove-the-need-for-a-github-release-for
     with:
       version_tag_old: ${{ needs.regression-test-setup.outputs.last_release_tag }}
