@@ -29,28 +29,26 @@ func NewInstaller(imageRegistry, imageNamespace, imageTag string) *Installer {
 	}
 }
 
-func (i *Installer) Install(kubeconfig string, test inventory.Test) string {
+func (i *Installer) Install(kubeconfig string, test inventory.Test, adminConsolePort string) string {
 	session, err := i.install(kubeconfig, test.UpstreamURI, test.Namespace, test.UseMinimalRBAC)
 	Expect(err).WithOffset(1).Should(Succeed(), "Kots install failed")
 	Eventually(session).WithOffset(1).WithTimeout(3*time.Minute).Should(gexec.Exit(0), "Kots install failed with non-zero exit code")
 
-	port, err := i.adminConsolePortForward(kubeconfig, test.Namespace)
+	if adminConsolePort == "" {
+		adminConsolePort, err = getFreePort()
+		Expect(err).WithOffset(1).Should(Succeed(), "port forward")
+	}
+	port, err := i.adminConsolePortForward(kubeconfig, test.Namespace, adminConsolePort)
 	Expect(err).WithOffset(1).Should(Succeed(), "port forward")
 	return port
 }
 
 func (i *Installer) install(kubeconfig, upstreamURI, namespace string, useMinimalRBAC bool) (*gexec.Session, error) {
-	installPort, err := getFreePort()
-	if err != nil {
-		return nil, errors.Wrap(err, "get free port")
-	}
-
 	args := []string{
 		"install",
 		upstreamURI,
 		fmt.Sprintf("--kubeconfig=%s", kubeconfig),
 		"--no-port-forward",
-		fmt.Sprintf("--port=%s", installPort),
 		fmt.Sprintf("--namespace=%s", namespace),
 		"--shared-password=password",
 		fmt.Sprintf("--kotsadm-registry=%s", i.imageRegistry),
@@ -65,12 +63,7 @@ func (i *Installer) install(kubeconfig, upstreamURI, namespace string, useMinima
 	return util.RunCommand(exec.Command("kots", args...))
 }
 
-func (i *Installer) adminConsolePortForward(kubeconfig, namespace string) (string, error) {
-	adminConsolePort, err := getFreePort()
-	if err != nil {
-		return adminConsolePort, errors.Wrap(err, "get free port")
-	}
-
+func (i *Installer) adminConsolePortForward(kubeconfig, namespace, adminConsolePort string) (string, error) {
 	url := fmt.Sprintf("http://localhost:%s", adminConsolePort)
 
 	go func() {

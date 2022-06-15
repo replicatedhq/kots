@@ -1,6 +1,7 @@
 package util
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 
@@ -23,5 +24,9 @@ func CommandExists(cmd string) bool {
 }
 
 func RunCommand(cmd *exec.Cmd) (*gexec.Session, error) {
+	_, reporterConfig := GinkgoConfiguration()
+	if reporterConfig.Verbose {
+		fmt.Println(cmd)
+	}
 	return gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 }

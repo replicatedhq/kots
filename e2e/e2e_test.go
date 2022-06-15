@@ -2,9 +2,10 @@ package e2e
 
 import (
 	"flag"
+	"github.com/onsi/gomega/gexec"
+	"github.com/replicatedhq/kots/e2e/registry"
 	"os"
 	"testing"
-
 	//lint:ignore ST1001 since Ginkgo and Gomega are DSLs this makes the tests more natural to read
 	. "github.com/onsi/ginkgo/v2"
 	//lint:ignore ST1001 since Ginkgo and Gomega are DSLs this makes the tests more natural to read
@@ -29,20 +30,24 @@ var kotsInstaller *kots.Installer
 
 var (
 	testimBranch          string
+	testimBaseUrl         string
 	skipTeardown          bool
 	existingKubeconfig    string
 	kotsadmImageRegistry  string
 	kotsadmImageNamespace string
 	kotsadmImageTag       string
+	kotsadmForwardPort    string
 )
 
 func init() {
 	flag.StringVar(&testimBranch, "testim-branch", "master", "testim branch to use")
+	flag.StringVar(&testimBaseUrl, "testim-base-url", "", "override the base url that testim will use")
 	flag.StringVar(&existingKubeconfig, "existing-kubeconfig", "", "use kubeconfig from existing cluster, do not create clusters (only for use with targeted testing)")
 	flag.BoolVar(&skipTeardown, "skip-teardown", false, "do not tear down clusters")
 	flag.StringVar(&kotsadmImageRegistry, "kotsadm-image-registry", "", "override the kotsadm images registry")
 	flag.StringVar(&kotsadmImageNamespace, "kotsadm-image-namespace", "", "override the kotsadm images registry namespace")
 	flag.StringVar(&kotsadmImageTag, "kotsadm-image-tag", "alpha", "override the kotsadm images tag")
+	flag.StringVar(&kotsadmForwardPort, "kotsadm-forward-port", "", "sets the port that the admin console will be exposed on instead of generating a random one")
 }
 
 func TestE2E(t *testing.T) {
@@ -75,6 +80,10 @@ var _ = BeforeSuite(func() {
 	veleroCLI = velero.NewCLI(w.GetDir())
 
 	kotsInstaller = kots.NewInstaller(kotsadmImageRegistry, kotsadmImageNamespace, kotsadmImageTag)
+})
+
+var _ = AfterSuite(func() {
+	gexec.KillAndWait()
 })
 
 var _ = Describe("E2E", func() {
@@ -124,6 +133,10 @@ var _ = Describe("E2E", func() {
 		DescribeTable(
 			"install kots and run the test",
 			func(test inventory.Test) {
+				if test.NeedsRegistry {
+					registry := registry.New(helmCLI, c.GetKubeconfig())
+					registry.Install()
+				}
 
 				if test.NeedsSnapshots {
 					GinkgoWriter.Println("Installing Minio")
@@ -144,7 +157,7 @@ var _ = Describe("E2E", func() {
 				}
 
 				GinkgoWriter.Println("Installing KOTS")
-				adminConsolePort := kotsInstaller.Install(c.GetKubeconfig(), test)
+				adminConsolePort := kotsInstaller.Install(c.GetKubeconfig(), test, kotsadmForwardPort)
 
 				// HACK
 				if test.Name == "Nightly" {
@@ -153,9 +166,11 @@ var _ = Describe("E2E", func() {
 				}
 
 				GinkgoWriter.Println("Running E2E tests")
-				testimRun = testimClient.NewRun(c.GetKubeconfig(), test, adminConsolePort)
+				testimRun = testimClient.NewRun(c.GetKubeconfig(), test, testim.RunOptions{
+					TunnelPort: adminConsolePort,
+					BaseUrl:    testimBaseUrl,
+				})
 				testimRun.ShouldSucceed()
-
 			},
 			func(test inventory.Test) string {
 				return test.Name

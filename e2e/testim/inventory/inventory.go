@@ -28,5 +28,6 @@ func NewNightlyTest() Test {
 		UseMinimalRBAC:  true,
 		NeedsSnapshots:  true,
 		NeedsMonitoring: true,
+		NeedsRegistry:   true,
 	}
 }
