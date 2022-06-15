@@ -15,7 +15,7 @@ func nightlyCreateRegistryCredsSecret(kubectlCLI *kubectl.CLI) {
 		"secret",
 		"docker-registry",
 		"registry-creds",
-		"--docker-server=fake.com",
+		"--docker-server=registry.default.svc.cluster.local:5000",
 		"--docker-username=fake",
 		"--docker-password=fake",
 		"--docker-email=fake@fake.com",

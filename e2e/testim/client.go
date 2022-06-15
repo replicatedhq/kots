@@ -18,6 +18,11 @@ type Client struct {
 	Branch      string
 }
 
+type RunOptions struct {
+	TunnelPort string
+	BaseUrl    string
+}
+
 func NewClient(accessToken, project, grid, branch string) *Client {
 	return &Client{
 		AccessToken: accessToken,
@@ -27,7 +32,7 @@ func NewClient(accessToken, project, grid, branch string) *Client {
 	}
 }
 
-func (t *Client) NewRun(kubeconfig string, test inventory.Test, adminConsolePort string) *Run {
+func (t *Client) NewRun(kubeconfig string, test inventory.Test, runOptions RunOptions) *Run {
 	args := []string{
 		fmt.Sprintf("--token=%s", t.AccessToken),
 		fmt.Sprintf("--project=%s", t.Project),
@@ -49,11 +54,17 @@ func (t *Client) NewRun(kubeconfig string, test inventory.Test, adminConsolePort
 			fmt.Sprintf("--label=%s", test.Label),
 		)
 	}
-	if adminConsolePort != "" {
+	if runOptions.BaseUrl != "" {
+		args = append(
+			args,
+			fmt.Sprintf("--base-url=%s", runOptions.BaseUrl),
+		)
+	}
+	if runOptions.TunnelPort != "" {
 		args = append(
 			args,
 			"--tunnel",
-			fmt.Sprintf("--tunnel-port=%s", adminConsolePort),
+			fmt.Sprintf("--tunnel-port=%s", runOptions.TunnelPort),
 		)
 	}
 	cmd := exec.Command("testim", args...)

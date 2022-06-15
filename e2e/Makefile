@@ -10,7 +10,7 @@ all: build deps test
 
 .PHONY: deps
 deps:
-	docker build -t e2e-deps -f ./hack/Dockerfile .
+	docker build -t e2e-deps -f ./hack/Dockerfile ./hack
 
 .PHONY: build
 build:

@@ -7,11 +7,11 @@ RUN apt-get update \
         ca-certificates curl git sudo \
     && rm -rf /var/lib/apt/lists/*
 
-env INSTALL_DIR=/usr/local/bin
-env KREW_ROOT=$INSTALL_DIR/krew
-env PATH=$INSTALL_DIR/node_modules/.bin:$KREW_ROOT/bin:$PATH
+ENV INSTALL_DIR=/usr/local/bin
+ENV KREW_ROOT=$INSTALL_DIR/krew
+ENV PATH=$INSTALL_DIR/node_modules/.bin:$KREW_ROOT/bin:$PATH
 
-ADD hack/deps.sh /usr/local/bin/deps.sh
+COPY deps.sh /usr/local/bin/deps.sh
 
 RUN /usr/local/bin/deps.sh
 

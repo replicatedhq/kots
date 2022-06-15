@@ -9,4 +9,5 @@ type Test struct {
 	UseMinimalRBAC  bool
 	NeedsSnapshots  bool
 	NeedsMonitoring bool
+	NeedsRegistry   bool
 }
