@@ -3,7 +3,7 @@ CURRENT_USER := $(shell id -u -n)
 MINIO_TAG ?= RELEASE.2022-06-11T19-55-32Z
 POSTGRES_ALPINE_TAG ?= 10.20-alpine
 DEX_TAG ?= v2.32.0
-LVP_TAG := v0.3.4
+LVP_TAG := v0.3.5
 
 define sendMetrics
 @if [ -z "${PROJECT_NAME}" ]; then \
