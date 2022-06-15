@@ -22,6 +22,8 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
+	kurlscheme "github.com/replicatedhq/kurl/kurlkinds/client/kurlclientset/scheme"
+	kurlv1beta1 "github.com/replicatedhq/kurl/kurlkinds/pkg/apis/cluster/v1beta1"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	"github.com/replicatedhq/troubleshoot/pkg/docrewrite"
@@ -36,6 +38,7 @@ import (
 func init() {
 	kotsscheme.AddToScheme(scheme.Scheme)
 	troubleshootscheme.AddToScheme(scheme.Scheme)
+	kurlscheme.AddToScheme(scheme.Scheme)
 	velerov1.AddToScheme(scheme.Scheme)
 	applicationv1beta1.AddToScheme(scheme.Scheme)
 }
@@ -55,6 +58,8 @@ type KotsKinds struct {
 	SupportBundle *troubleshootv1beta2.SupportBundle
 	Redactor      *troubleshootv1beta2.Redactor
 	HostPreflight *troubleshootv1beta2.HostPreflight
+
+	Installer *kurlv1beta1.Installer
 
 	Config       *kotsv1beta1.Config
 	ConfigValues *kotsv1beta1.ConfigValues
@@ -314,6 +319,21 @@ func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {
 		}
 	}
 
+	if g == "cluster.kurl.sh" || g == "kurl.sh" {
+		if v == "v1beta1" {
+			if k == "Installer" {
+				if o.Installer == nil {
+					return "", nil
+				}
+				var b bytes.Buffer
+				if err := s.Encode(o.Installer, &b); err != nil {
+					return "", errors.Wrap(err, "failed to encode installer")
+				}
+				return string(b.Bytes()), nil
+			}
+		}
+	}
+
 	if g == "app.k8s.io" {
 		if v == "v1beta1" {
 			if k == "Application" {
@@ -440,6 +460,8 @@ func LoadKotsKindsFromPath(fromDir string) (*KotsKinds, error) {
 					kotsKinds.Preflight = decoded.(*troubleshootv1beta2.Preflight)
 				case "troubleshoot.sh/v1beta2, Kind=HostPreflight":
 					kotsKinds.HostPreflight = decoded.(*troubleshootv1beta2.HostPreflight)
+				case "cluster.kurl.sh/v1beta1, Kind=Installer", "kurl.sh/v1beta1, Kind=Installer":
+					kotsKinds.Installer = decoded.(*kurlv1beta1.Installer)
 				case "velero.io/v1, Kind=Backup":
 					kotsKinds.Backup = decoded.(*velerov1.Backup)
 				case "app.k8s.io/v1beta1, Kind=Application":

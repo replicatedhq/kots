@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	"github.com/replicatedhq/kots/pkg/installers"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotstypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -24,6 +25,7 @@ import (
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"go.uber.org/zap"
+	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -321,45 +323,92 @@ func CreateRenderedSpec(appID string, sequence int64, origin string, inCluster b
 }
 
 func injectDefaultPreflights(preflight *troubleshootv1beta2.Preflight, kotskinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings) {
-	if !registrySettings.IsValid() || !registrySettings.IsReadOnly {
-		return
-	}
+	if registrySettings.IsValid() && registrySettings.IsReadOnly {
+		// Get images from Installation.KnownImages, see UpdateCollectorSpecsWithRegistryData
+		images := []string{}
+		for _, image := range kotskinds.Installation.Spec.KnownImages {
+			images = append(images, image.Image)
+		}
 
-	// Get images from Installation.KnownImages, see UpdateCollectorSpecsWithRegistryData
-	images := []string{}
-	for _, image := range kotskinds.Installation.Spec.KnownImages {
-		images = append(images, image.Image)
-	}
-
-	preflight.Spec.Collectors = append(preflight.Spec.Collectors, &troubleshootv1beta2.Collect{
-		RegistryImages: &troubleshootv1beta2.RegistryImages{
-			Images: images,
-		},
-	})
-	preflight.Spec.Analyzers = append(preflight.Spec.Analyzers, &troubleshootv1beta2.Analyze{
-		RegistryImages: &troubleshootv1beta2.RegistryImagesAnalyze{
-			AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
-				CheckName: "Private Registry Images Available",
+		preflight.Spec.Collectors = append(preflight.Spec.Collectors, &troubleshootv1beta2.Collect{
+			RegistryImages: &troubleshootv1beta2.RegistryImages{
+				Images: images,
 			},
-			Outcomes: []*troubleshootv1beta2.Outcome{
-				{
-					Fail: &troubleshootv1beta2.SingleOutcome{
-						When:    "missing > 0",
-						Message: "Application uses images that cannot be found in the private registry",
-					},
+		})
+		preflight.Spec.Analyzers = append(preflight.Spec.Analyzers, &troubleshootv1beta2.Analyze{
+			RegistryImages: &troubleshootv1beta2.RegistryImagesAnalyze{
+				AnalyzeMeta: troubleshootv1beta2.AnalyzeMeta{
+					CheckName: "Private Registry Images Available",
 				},
-				{
-					Warn: &troubleshootv1beta2.SingleOutcome{
-						When:    "errors > 0",
-						Message: "Availability of application images in the private registry could not be verified.",
+				Outcomes: []*troubleshootv1beta2.Outcome{
+					{
+						Fail: &troubleshootv1beta2.SingleOutcome{
+							When:    "missing > 0",
+							Message: "Application uses images that cannot be found in the private registry",
+						},
 					},
-				},
-				{
-					Pass: &troubleshootv1beta2.SingleOutcome{
-						Message: "All images used by the application are present in the private registry",
+					{
+						Warn: &troubleshootv1beta2.SingleOutcome{
+							When:    "errors > 0",
+							Message: "Availability of application images in the private registry could not be verified.",
+						},
+					},
+					{
+						Pass: &troubleshootv1beta2.SingleOutcome{
+							Message: "All images used by the application are present in the private registry",
+						},
 					},
 				},
 			},
-		},
-	})
+		})
+	}
+
+	if kotskinds.Installer != nil {
+		for _, analyzer := range preflight.Spec.Analyzers {
+			if analyzer.YamlCompare != nil && analyzer.YamlCompare.Annotations["kots.io/installer"] != "" {
+
+				// TODO: Incorporate reporting here for usage of installer preflight
+
+				deployedInstaller, err := installers.GetDeployedInstaller()
+				if err != nil {
+					logger.Error(errors.Wrap(err, "failed to get deployed installer"))
+					break
+				}
+
+				if kotskinds.Installer.Spec.Kurl.AdditionalNoProxyAddresses == nil {
+					// if this is nil, it will be set to an empty string slice by kurl, so lets do so before comparing
+					kotskinds.Installer.Spec.Kurl.AdditionalNoProxyAddresses = []string{}
+				}
+				if kotskinds.Installer.Spec.Kotsadm.ApplicationSlug == "" {
+					// application slug may be injected into the installer, so remove it if not specified in release installer
+					kotskinds.Installer.Spec.Kotsadm.ApplicationSlug = ""
+				}
+
+				// Inject deployed installer spec as collected data
+				deployedInstallerSpecYaml, err := yaml.Marshal(deployedInstaller.Spec)
+				if err != nil {
+					logger.Error(errors.Wrap(err, "failed to marshal deployed installer"))
+					break
+				}
+
+				preflight.Spec.Collectors = append(preflight.Spec.Collectors, &troubleshootv1beta2.Collect{
+					Data: &troubleshootv1beta2.Data{
+						Name: "kurl/installer.yaml",
+						Data: string(deployedInstallerSpecYaml),
+					},
+				})
+
+				// Inject release installer spec as analyzer value
+				releaseInstallerSpecYaml, err := yaml.Marshal(kotskinds.Installer.Spec)
+				if err != nil {
+					logger.Error(errors.Wrap(err, "failed to marshal release installer"))
+					break
+				}
+
+				analyzer.YamlCompare.FileName = "kurl/installer.yaml"
+				analyzer.YamlCompare.Value = string(releaseInstallerSpecYaml)
+			}
+		}
+	}
+
 }

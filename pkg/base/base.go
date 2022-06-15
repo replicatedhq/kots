@@ -289,6 +289,12 @@ func iskotsAPIVersionKind(o OverlySimpleGVK) bool {
 	if o.APIVersion == "troubleshoot.replicated.com/v1beta1" {
 		return true
 	}
+	if o.APIVersion == "cluster.kurl.sh/v1beta1" {
+		return true
+	}
+	if o.APIVersion == "kurl.sh/v1beta1" {
+		return true
+	}
 	// In addition to kotskinds, we exclude the application crd for now
 	if o.APIVersion == "app.k8s.io/v1beta1" {
 		return true
