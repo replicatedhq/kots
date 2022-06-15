@@ -23,7 +23,7 @@ inputs:
     description: 'Kotsadm image namespace'
   kotsadm-image-tag:
     description: 'Kotsadm image tag'
-    default: '2h'
+    default: '12h'
   aws-access-key-id:
     description: 'AWS access key id for uploading support bundle'
   aws-secret-access-key:

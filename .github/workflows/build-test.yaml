@@ -131,7 +131,7 @@ jobs:
       - name: build and push kotsadm for e2e
         uses: docker/build-push-action@v2
         with:
-          tags: ttl.sh/automated-${{ github.run_id }}/kotsadm:2h
+          tags: ttl.sh/automated-${{ github.run_id }}/kotsadm:12h
           context: ./
           file: ./deploy/Dockerfile
           push: true
@@ -203,7 +203,7 @@ jobs:
       - name: build and push kurl_proxy for e2e
         uses: docker/build-push-action@v2
         with:
-          tags: ttl.sh/automated-${{ github.run_id }}/kurl-proxy:2h
+          tags: ttl.sh/automated-${{ github.run_id }}/kurl-proxy:12h
           context: ./kurl_proxy
           file: ./kurl_proxy/deploy/Dockerfile
           push: true
@@ -236,7 +236,7 @@ jobs:
       - name: build and push migrations for e2e
         uses: docker/build-push-action@v2
         with:
-          tags: ttl.sh/automated-${{ github.run_id }}/kotsadm-migrations:2h
+          tags: ttl.sh/automated-${{ github.run_id }}/kotsadm-migrations:12h
           context: ./migrations
           file: ./migrations/deploy/Dockerfile
           push: true
@@ -258,8 +258,8 @@ jobs:
       - name: push minio for e2e
         run: |
           docker pull minio/minio:${{ steps.dotenv.outputs.minio_tag }}
-          docker tag minio/minio:${{ steps.dotenv.outputs.minio_tag }} ttl.sh/automated-${{ github.run_id }}/minio:2h
-          docker push ttl.sh/automated-${{ github.run_id }}/minio:2h
+          docker tag minio/minio:${{ steps.dotenv.outputs.minio_tag }} ttl.sh/automated-${{ github.run_id }}/minio:12h
+          docker push ttl.sh/automated-${{ github.run_id }}/minio:12h
 
 
   push-postgres:
@@ -277,8 +277,8 @@ jobs:
       - name: push postgres for CI
         run: |
           docker pull postgres:${{ steps.dotenv.outputs.postgres_alpine_tag }}
-          docker tag postgres:${{ steps.dotenv.outputs.postgres_alpine_tag }} ttl.sh/automated-${{ github.run_id }}/postgres:2h
-          docker push ttl.sh/automated-${{ github.run_id }}/postgres:2h
+          docker tag postgres:${{ steps.dotenv.outputs.postgres_alpine_tag }} ttl.sh/automated-${{ github.run_id }}/postgres:12h
+          docker push ttl.sh/automated-${{ github.run_id }}/postgres:12h
 
 
   validate-smoke-test:
@@ -367,7 +367,7 @@ jobs:
           --shared-password password \
           --kotsadm-registry ttl.sh \
           --kotsadm-namespace automated-${{ github.run_id }} \
-          --kotsadm-tag 2h
+          --kotsadm-tag 12h
 
       - name: execute suite minimal-rbac
         run: |
@@ -445,7 +445,7 @@ jobs:
             --shared-password password \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
-            --kotsadm-tag 2h \
+            --kotsadm-tag 12h \
             --use-minimal-rbac
 
           if kubectl get roles -n $APP_SLUG | grep -q kotsadm; then
@@ -474,7 +474,7 @@ jobs:
             --shared-password password \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
-            --kotsadm-tag 2h
+            --kotsadm-tag 12h
 
           if kubectl get roles -n $APP_SLUG | grep -q kotsadm; then
             echo "Found kotsadm role in cluster scoped install"
@@ -585,7 +585,7 @@ jobs:
           --shared-password password \
           --kotsadm-registry ttl.sh \
           --kotsadm-namespace automated-${{ github.run_id }} \
-          --kotsadm-tag 2h
+          --kotsadm-tag 12h
 
       - name: execute suite backup-and-restore
         run: |
@@ -681,7 +681,7 @@ jobs:
           --shared-password password \
           --kotsadm-registry ttl.sh \
           --kotsadm-namespace automated-${{ github.run_id }} \
-          --kotsadm-tag 2h
+          --kotsadm-tag 12h
 
       - name: execute suite no-required-config
         env:
@@ -764,7 +764,7 @@ jobs:
             --shared-password password \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
-            --kotsadm-tag 2h
+            --kotsadm-tag 12h
 
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
@@ -947,7 +947,7 @@ jobs:
             --shared-password password \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
-            --kotsadm-tag 2h
+            --kotsadm-tag 12h
 
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
@@ -1010,7 +1010,7 @@ jobs:
             --shared-password password \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
-            --kotsadm-tag 2h
+            --kotsadm-tag 12h
 
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
@@ -1114,7 +1114,7 @@ jobs:
           --shared-password password \
           --kotsadm-registry ttl.sh \
           --kotsadm-namespace automated-${{ github.run_id }} \
-          --kotsadm-tag 2h
+          --kotsadm-tag 12h
 
       - name: execute suite strict-preflight-checks
         env:
@@ -1214,7 +1214,7 @@ jobs:
             --shared-password password \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
-            --kotsadm-tag 2h
+            --kotsadm-tag 12h
 
       - name: execute suite version-history-pagination
         env:
@@ -1330,7 +1330,7 @@ jobs:
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --skip-preflights \
-            --kotsadm-tag 2h
+            --kotsadm-tag 12h
 
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
@@ -1415,7 +1415,7 @@ jobs:
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --skip-preflights \
-            --kotsadm-tag 2h
+            --kotsadm-tag 12h
 
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
@@ -1500,7 +1500,7 @@ jobs:
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --skip-preflights \
-            --kotsadm-tag 2h
+            --kotsadm-tag 12h
 
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
