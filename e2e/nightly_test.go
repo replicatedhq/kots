@@ -9,7 +9,7 @@ import (
 	"github.com/replicatedhq/kots/e2e/kubectl"
 )
 
-func nightlyCreateRegistryCredsSecret(kubectlCLI *kubectl.CLI) {
+func regressionCreateRegistryCredsSecret(kubectlCLI *kubectl.CLI) {
 	session, err := kubectlCLI.RunCommand(
 		"create",
 		"secret",

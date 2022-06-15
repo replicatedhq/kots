@@ -281,6 +281,35 @@ jobs:
           docker tag postgres:${{ steps.dotenv.outputs.postgres_alpine_tag }} ttl.sh/automated-${{ github.run_id }}/postgres:12h
           docker push ttl.sh/automated-${{ github.run_id }}/postgres:12h
 
+  existing-online-install-minimal:
+    runs-on: ubuntu-20.04
+    needs: [ can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: download e2e deps
+        uses: actions/download-artifact@v2
+        with:
+          name: e2e
+          path: e2e/bin/
+      - name: download kots binary
+        uses: actions/download-artifact@v2
+        with:
+          name: kots
+          path: bin/
+      - run: |
+          docker load -i e2e/bin/e2e-deps.tar
+          chmod +x e2e/bin/*
+          chmod +x bin/*
+      - uses: ./.github/actions/kots-e2e
+        with:
+          test-focus: 'Regression'
+          k8s-version: 'v1.23.3-k3s1'
+          testim-branch: '${{ github.head_ref }}'
+          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
+          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
+          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+
 
   validate-smoke-test:
     runs-on: ubuntu-20.04
@@ -312,8 +341,6 @@ jobs:
           k8s-version: '${{ matrix.k8s_version }}'
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: '${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }}'
-          go-version:  '^1.17.4'
-          node-version:  '17.x'
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
@@ -327,7 +354,6 @@ jobs:
         k8s_version: [ v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1 ]
     steps:
       - uses: replicatedhq/action-k3s@main
-        id: k3s
         with:
           version: ${{ matrix.k8s_version }}
 
@@ -421,7 +447,6 @@ jobs:
         k8s_version: [ v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1 ]
     steps:
       - uses: replicatedhq/action-k3s@main
-        id: k3s
         with:
           version: ${{ matrix.k8s_version }}
 
@@ -521,7 +546,6 @@ jobs:
         k8s_version: [ v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1 ]
     steps:
       - uses: replicatedhq/action-k3s@main
-        id: k3s
         with:
           version: ${{ matrix.k8s_version }}
 
@@ -639,7 +663,6 @@ jobs:
         k8s_version: [ v1.23.3-k3s1 ] # there's no need to run this test on multiple k3s versions
     steps:
       - uses: replicatedhq/action-k3s@main
-        id: k3s
         with:
           version: ${{ matrix.k8s_version }}
 
@@ -740,7 +763,6 @@ jobs:
         k8s_version: [ v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1 ]
     steps:
       - uses: replicatedhq/action-k3s@main
-        id: k3s
         with:
           version: ${{ matrix.k8s_version }}
 
@@ -824,7 +846,6 @@ jobs:
         k8s_version: [ v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1 ]
     steps:
       - uses: replicatedhq/action-k3s@main
-        id: k3s
         with:
           version: ${{ matrix.k8s_version }}
 
@@ -921,7 +942,6 @@ jobs:
         k8s_version: [ v1.23.3-k3s1 ] # there's no need to run this test on multiple k3s versions
     steps:
       - uses: replicatedhq/action-k3s@main
-        id: k3s
         with:
           version: ${{ matrix.k8s_version }}
 
@@ -1075,7 +1095,6 @@ jobs:
           repository: ${{github.event.pull_request.head.repo.full_name}}
 
       - uses: replicatedhq/action-k3s@main
-        id: k3s
         with:
           version: ${{ matrix.k8s_version }}
 
@@ -1175,7 +1194,6 @@ jobs:
           repository: ${{github.event.pull_request.head.repo.full_name}}
 
       - uses: replicatedhq/action-k3s@main
-        id: k3s
         with:
           version: ${{ matrix.k8s_version }}
 
@@ -1291,8 +1309,6 @@ jobs:
           k8s-version: '${{ matrix.k8s_version }}'
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           testim-branch: '${{ steps.get_testim_branch.outputs.TESTIM_BRANCH }}'
-          go-version:  '^1.17.4'
-          node-version:  '17.x'
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
@@ -1306,7 +1322,6 @@ jobs:
         k8s_version: [ v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1 ]
     steps:
       - uses: replicatedhq/action-k3s@main
-        id: k3s
         with:
           version: ${{ matrix.k8s_version }}
 
@@ -1391,7 +1406,6 @@ jobs:
         k8s_version: [ v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1 ]
     steps:
       - uses: replicatedhq/action-k3s@main
-        id: k3s
         with:
           version: ${{ matrix.k8s_version }}
 
@@ -1476,7 +1490,6 @@ jobs:
         k8s_version: [ v1.23.3-k3s1 ]
     steps:
       - uses: replicatedhq/action-k3s@main
-        id: k3s
         with:
           version: ${{ matrix.k8s_version }}
 
@@ -1594,5 +1607,6 @@ jobs:
     - validate-helm-install-order
     - validate-yamlescape
     - validate-no-redeploy-on-restart
+    - existing-online-install-minimal
     steps:
       - run: echo "Validate success"

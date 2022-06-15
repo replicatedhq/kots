@@ -16,49 +16,36 @@ inputs:
   testim-branch:
     description: 'Testim branch'
     default: 'master'
+    required: false
   kotsadm-image-registry:
     description: 'Kotsadm image registry'
     default: 'ttl.sh'
+    required: false
   kotsadm-image-namespace:
     description: 'Kotsadm image namespace'
+    required: false
   kotsadm-image-tag:
     description: 'Kotsadm image tag'
     default: '12h'
+    required: false
   aws-access-key-id:
     description: 'AWS access key id for uploading support bundle'
+    required: false
   aws-secret-access-key:
     description: 'AWS secret access key for uploading support bundle'
+    required: false
   aws-region:
     description: 'AWS region for uploading support bundle'
     default: 'us-east-1'
-  go-version:
-    description: 'Go version'
-  node-version:
-    description: 'Go version'
+    required: false
 runs:
   using: "composite"
   steps:
-    - uses: actions/setup-go@v2
-      with:
-        go-version: ${{ inputs.go-version }}
-
-    - uses: actions/setup-node@v2
-      with:
-        node-version: ${{ inputs.node-version }}
-
     # TODO: use k3d eventually but this is difficult to support with ${{ inputs.k8s-version }}
     - uses: replicatedhq/action-k3s@main
       id: k3s
       with:
         version: ${{ inputs.k8s-version }}
-
-    - name: install ginkgo
-      run: go install -mod=mod github.com/onsi/ginkgo/v2/ginkgo
-      shell: bash
-
-    - name: install testim
-      run: npm i -g @testim/testim-cli
-      shell: bash
 
     - name: execute suite "${{ inputs.test-focus }}"
       env:
