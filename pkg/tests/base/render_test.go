@@ -89,8 +89,13 @@ func TestRenderUpstream(t *testing.T) {
 		}
 
 		helmpath := filepath.Join(path, "basehelm")
+		useHelmInstall := true
 		if _, err := os.Stat(helmpath); err == nil {
-			test.WantHelmBase = baseFromDir(t, filepath.Join(path, "basehelm"), true)
+			test.WantHelmBase = baseFromDir(t, filepath.Join(path, "basehelm"), useHelmInstall)
+		}
+		// Look for the native helm way of rendering
+		for index, path := range test.WantHelmBase.Files {
+			test.WantHelmBase.Files[index].Path = fmt.Sprintf("templates/%s", path.Path)
 		}
 		tests = append(tests, test)
 	}

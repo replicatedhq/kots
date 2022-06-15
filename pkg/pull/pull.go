@@ -667,7 +667,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOp
 			// For the newer style charts, create a new secret per chart as helm adds chart specific
 			// details to annotations and labels to it.
 			for _, v := range writeMidstreamOptions.NewHelmCharts {
-				if filepath.Base(b.Path) == v.Spec.Chart.Name && v.Spec.UseHelmInstall {
+				if v.Spec.UseHelmInstall && filepath.Base(b.Path) != "." {
 					namePrefix = fmt.Sprintf("%s-%s", options.AppSlug, filepath.Base(b.Path))
 					break
 				}
@@ -742,7 +742,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOp
 			// For the newer style charts, create a new secret per chart as helm adds chart specific
 			// details to annotations and labels to it.
 			for _, v := range writeMidstreamOptions.NewHelmCharts {
-				if filepath.Base(b.Path) == v.Spec.Chart.Name && v.Spec.UseHelmInstall == true {
+				if v.Spec.UseHelmInstall && filepath.Base(b.Path) != "." {
 					namePrefix = fmt.Sprintf("%s-%s", options.AppSlug, filepath.Base(b.Path))
 					break
 				}

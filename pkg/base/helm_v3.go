@@ -85,7 +85,12 @@ func renderHelmV3(chartName string, chartPath string, vals map[string]interface{
 		})
 	}
 
-	baseFiles = removeCommonPrefix(baseFiles)
+	// Don't change the classic style rendering ie, picking all the files within charts, subdirs
+	// and do a single apply. This will not work for Native helm expects uniquely named image pullsecrets.
+	// helm maintains strict ownership of secretnames for each subcharts to add Release metadata for each chart
+	if !renderOptions.UseHelmInstall {
+		baseFiles = removeCommonPrefix(baseFiles)
+	}
 
 	// this secret should only be generated for installs that rely on us rendering yaml internally - not native helm installs
 	// those generate their own secret
