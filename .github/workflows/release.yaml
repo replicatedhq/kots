@@ -373,15 +373,6 @@ jobs:
       last_release_tag: ${{ steps.get_latest_release_tag.outputs.release }}
       automation_id: ${{ steps.get_id.outputs.id }}
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Copy assets
-      uses: ./actions/copy-assets
-      env:
-        GITHUB_TOKEN: ${{ secrets.NIGHTLY_GH_PAT }}
-      with:
-        srcReleaseTag: ${{ needs.generate-tag.outputs.tag }}
-        dstReleaseTag: "v0.0.0-nightly"
     - name: Get latest release tag
       id: get_latest_release_tag
       uses: pozetroninc/github-action-get-latest-release@master
