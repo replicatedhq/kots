@@ -92,6 +92,7 @@ var _ = Describe("E2E", func() {
 
 		var c cluster.Interface
 		var kubectlCLI *kubectl.CLI
+		var testimRun *testim.Run
 
 		BeforeEach(func() {
 			if existingKubeconfig != "" {
@@ -110,9 +111,13 @@ var _ = Describe("E2E", func() {
 
 		AfterEach(func() {
 			// Debug info
+			GinkgoWriter.Println("\n")
 			if kubectlCLI != nil {
 				kubectlCLI.GetAllPods()
 				kubectlCLI.DescribeNodes()
+			}
+			if testimRun != nil {
+				testimRun.PrintDebugInfo()
 			}
 		})
 
@@ -148,7 +153,8 @@ var _ = Describe("E2E", func() {
 				}
 
 				GinkgoWriter.Println("Running E2E tests")
-				testimClient.Run(c.GetKubeconfig(), test, adminConsolePort)
+				testimRun = testimClient.NewRun(c.GetKubeconfig(), test, adminConsolePort)
+				testimRun.ShouldSucceed()
 
 			},
 			func(test inventory.Test) string {

@@ -4,11 +4,9 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"time"
 
 	//lint:ignore ST1001 since Ginkgo and Gomega are DSLs this makes the tests more natural to read
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gexec"
 	"github.com/replicatedhq/kots/e2e/testim/inventory"
 	"github.com/replicatedhq/kots/e2e/util"
 )
@@ -29,7 +27,7 @@ func NewClient(accessToken, project, grid, branch string) *Client {
 	}
 }
 
-func (t *Client) Run(kubeconfig string, test inventory.Test, adminConsolePort string) {
+func (t *Client) NewRun(kubeconfig string, test inventory.Test, adminConsolePort string) *Run {
 	args := []string{
 		fmt.Sprintf("--token=%s", t.AccessToken),
 		fmt.Sprintf("--project=%s", t.Project),
@@ -61,5 +59,5 @@ func (t *Client) Run(kubeconfig string, test inventory.Test, adminConsolePort st
 	cmd.Env = append(cmd.Env, fmt.Sprintf("KUBECONFIG=%s", kubeconfig))
 	session, err := util.RunCommand(cmd)
 	Expect(err).WithOffset(1).Should(Succeed(), "Run testim tests failed")
-	Eventually(session).WithOffset(1).WithTimeout(60*time.Minute).Should(gexec.Exit(0), "Run testim tests failed with non-zero exit code")
+	return &Run{session}
 }

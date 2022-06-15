@@ -159,7 +159,8 @@ jobs:
           key: ${{ runner.os }}-go-e2e-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-e2e-
-      - run: make -C e2e deps build
+      - run: make -C e2e build deps
+      - run: docker save e2e-deps -o e2e/bin/e2e-deps.tar
       - uses: actions/upload-artifact@v2
         with:
           name: e2e
@@ -296,6 +297,7 @@ jobs:
         with:
           name: e2e
           path: e2e/bin/
+      - run: docker load -i e2e/bin/e2e-deps.tar
       - run: chmod +x e2e/bin/*
       - name: download kots binary
         uses: actions/download-artifact@v2
@@ -1273,6 +1275,7 @@ jobs:
         with:
           name: e2e
           path: e2e/bin/
+      - run: docker load -i e2e/bin/e2e-deps.tar
       - run: chmod +x e2e/bin/*
       - name: download kots binary
         uses: actions/download-artifact@v2
