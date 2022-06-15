@@ -389,6 +389,175 @@ func Test_RenderHelm(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test subcharts with no templates dir and two charts",
+			args: args{
+				upstream: &upstreamtypes.Upstream{
+					Name: "test-chart",
+					Files: []upstreamtypes.UpstreamFile{
+						{
+							Path:    "Chart.yaml",
+							Content: []byte("name: test-chart\nversion: 0.1.0"),
+						},
+
+						{
+							Path:    "charts/test-subchart/Chart.yaml",
+							Content: []byte("name: test-subchart\nversion: 0.2.0"),
+						},
+						{
+							Path:    "charts/test-subchart/templates/deploy-2.yaml",
+							Content: []byte("apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-2"),
+						},
+						{
+							Path:    "charts/test-subchart-2/Chart.yaml",
+							Content: []byte("name: test-subchart-2\nversion: 0.2.0"),
+						},
+						{
+							Path:    "charts/test-subchart-2/templates/deploy-3.yaml",
+							Content: []byte("apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-3"),
+						},
+					},
+				},
+				renderOptions: &RenderOptions{
+					HelmVersion:    "v3",
+					Namespace:      "test-namespace",
+					UseHelmInstall: true,
+				},
+			},
+			want: &Base{
+				Namespace: "test-namespace",
+
+				AdditionalFiles: []BaseFile{
+					{
+						Path:    "Chart.yaml",
+						Content: []byte("name: test-chart\nversion: 0.1.0"),
+					},
+				},
+				Bases: []Base{
+					{
+						Namespace: "test-namespace",
+						Path:      "charts/test-subchart-2",
+						Files: []BaseFile{
+							{
+								Path:    "templates/deploy-3.yaml",
+								Content: []byte("apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-3\n  namespace: test-namespace"),
+							},
+						},
+						AdditionalFiles: []BaseFile{
+							{
+								Path:    "Chart.yaml",
+								Content: []byte("name: test-subchart-2\nversion: 0.2.0"),
+							},
+						},
+					},
+					{
+						Namespace: "test-namespace",
+						Path:      "charts/test-subchart",
+						Files: []BaseFile{
+							{
+								Path:    "templates/deploy-2.yaml",
+								Content: []byte("apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-2\n  namespace: test-namespace"),
+							},
+						},
+						AdditionalFiles: []BaseFile{
+							{
+								Path:    "Chart.yaml",
+								Content: []byte("name: test-subchart\nversion: 0.2.0"),
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "test subcharts with templates dir and two charts",
+			args: args{
+				upstream: &upstreamtypes.Upstream{
+					Name: "test-chart",
+					Files: []upstreamtypes.UpstreamFile{
+						{
+							Path:    "Chart.yaml",
+							Content: []byte("name: test-chart\nversion: 0.1.0"),
+						},
+						{
+							Path:    "templates/deploy-2.yaml",
+							Content: []byte("apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-2"),
+						},
+
+						{
+							Path:    "charts/test-subchart/Chart.yaml",
+							Content: []byte("name: test-subchart\nversion: 0.2.0"),
+						},
+						{
+							Path:    "charts/test-subchart/templates/deploy-2.yaml",
+							Content: []byte("apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-2"),
+						},
+						{
+							Path:    "charts/test-subchart-2/Chart.yaml",
+							Content: []byte("name: test-subchart-2\nversion: 0.2.0"),
+						},
+						{
+							Path:    "charts/test-subchart-2/templates/deploy-3.yaml",
+							Content: []byte("apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-3"),
+						},
+					},
+				},
+				renderOptions: &RenderOptions{
+					HelmVersion:    "v3",
+					Namespace:      "",
+					UseHelmInstall: true,
+				},
+			},
+			want: &Base{
+				Namespace: "",
+				Files: []BaseFile{
+					{
+						Path:    "templates/deploy-2.yaml",
+						Content: []byte("# Source: test-chart/templates/deploy-2.yaml\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-2"),
+					},
+				},
+				AdditionalFiles: []BaseFile{
+					{
+						Path:    "Chart.yaml",
+						Content: []byte("name: test-chart\nversion: 0.1.0"),
+					},
+				},
+				Bases: []Base{
+					{
+						Namespace: "",
+						Path:      "charts/test-subchart-2",
+						Files: []BaseFile{
+							{
+								Path:    "templates/deploy-3.yaml",
+								Content: []byte("# Source: test-chart/charts/test-subchart-2/templates/deploy-3.yaml\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-3"),
+							},
+						},
+						AdditionalFiles: []BaseFile{
+							{
+								Path:    "Chart.yaml",
+								Content: []byte("name: test-subchart-2\nversion: 0.2.0"),
+							},
+						},
+					},
+					{
+						Namespace: "",
+						Path:      "charts/test-subchart",
+						Files: []BaseFile{
+							{
+								Path:    "templates/deploy-2.yaml",
+								Content: []byte("# Source: test-chart/charts/test-subchart/templates/deploy-2.yaml\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-2"),
+							},
+						},
+						AdditionalFiles: []BaseFile{
+							{
+								Path:    "Chart.yaml",
+								Content: []byte("name: test-subchart\nversion: 0.2.0"),
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -720,201 +889,6 @@ func Test_removeCommonPrefix(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := removeCommonPrefix(tt.args.baseFiles); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("removeCommonPrefix() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_RenderHelmNative(t *testing.T) {
-	type args struct {
-		upstream      *upstreamtypes.Upstream
-		renderOptions *RenderOptions
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    *Base
-		wantErr bool
-	}{
-		{
-			name: "test subcharts with no templates dir and two charts",
-			args: args{
-				upstream: &upstreamtypes.Upstream{
-					Name: "test-chart",
-					Files: []upstreamtypes.UpstreamFile{
-						{
-							Path:    "Chart.yaml",
-							Content: []byte("name: test-chart\nversion: 0.1.0"),
-						},
-
-						{
-							Path:    "charts/test-subchart/Chart.yaml",
-							Content: []byte("name: test-subchart\nversion: 0.2.0"),
-						},
-						{
-							Path:    "charts/test-subchart/templates/deploy-2.yaml",
-							Content: []byte("apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-2"),
-						},
-						{
-							Path:    "charts/test-subchart-2/Chart.yaml",
-							Content: []byte("name: test-subchart-2\nversion: 0.2.0"),
-						},
-						{
-							Path:    "charts/test-subchart-2/templates/deploy-3.yaml",
-							Content: []byte("apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-3"),
-						},
-					},
-				},
-				renderOptions: &RenderOptions{
-					HelmVersion:    "v3",
-					Namespace:      "test-namespace",
-					UseHelmInstall: true,
-				},
-			},
-			want: &Base{
-				Namespace: "test-namespace",
-
-				AdditionalFiles: []BaseFile{
-					{
-						Path:    "Chart.yaml",
-						Content: []byte("name: test-chart\nversion: 0.1.0"),
-					},
-				},
-				Bases: []Base{
-					{
-						Namespace: "test-namespace",
-						Path:      "charts/test-subchart-2",
-						Files: []BaseFile{
-							{
-								Path:    "templates/deploy-3.yaml",
-								Content: []byte("apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-3\n  namespace: test-namespace"),
-							},
-						},
-						AdditionalFiles: []BaseFile{
-							{
-								Path:    "Chart.yaml",
-								Content: []byte("name: test-subchart-2\nversion: 0.2.0"),
-							},
-						},
-					},
-					{
-						Namespace: "test-namespace",
-						Path:      "charts/test-subchart",
-						Files: []BaseFile{
-							{
-								Path:    "templates/deploy-2.yaml",
-								Content: []byte("apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-2\n  namespace: test-namespace"),
-							},
-						},
-						AdditionalFiles: []BaseFile{
-							{
-								Path:    "Chart.yaml",
-								Content: []byte("name: test-subchart\nversion: 0.2.0"),
-							},
-						},
-					},
-				},
-			},
-		},
-		{
-			name: "test subcharts with templates dir and two charts",
-			args: args{
-				upstream: &upstreamtypes.Upstream{
-					Name: "test-chart",
-					Files: []upstreamtypes.UpstreamFile{
-						{
-							Path:    "Chart.yaml",
-							Content: []byte("name: test-chart\nversion: 0.1.0"),
-						},
-						{
-							Path:    "templates/deploy-2.yaml",
-							Content: []byte("apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-2"),
-						},
-
-						{
-							Path:    "charts/test-subchart/Chart.yaml",
-							Content: []byte("name: test-subchart\nversion: 0.2.0"),
-						},
-						{
-							Path:    "charts/test-subchart/templates/deploy-2.yaml",
-							Content: []byte("apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-2"),
-						},
-						{
-							Path:    "charts/test-subchart-2/Chart.yaml",
-							Content: []byte("name: test-subchart-2\nversion: 0.2.0"),
-						},
-						{
-							Path:    "charts/test-subchart-2/templates/deploy-3.yaml",
-							Content: []byte("apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-3"),
-						},
-					},
-				},
-				renderOptions: &RenderOptions{
-					HelmVersion:    "v3",
-					Namespace:      "",
-					UseHelmInstall: true,
-				},
-			},
-			want: &Base{
-				Namespace: "",
-				Files: []BaseFile{
-					{
-						Path:    "templates/deploy-2.yaml",
-						Content: []byte("# Source: test-chart/templates/deploy-2.yaml\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-2"),
-					},
-				},
-				AdditionalFiles: []BaseFile{
-					{
-						Path:    "Chart.yaml",
-						Content: []byte("name: test-chart\nversion: 0.1.0"),
-					},
-				},
-				Bases: []Base{
-					{
-						Namespace: "",
-						Path:      "charts/test-subchart-2",
-						Files: []BaseFile{
-							{
-								Path:    "templates/deploy-3.yaml",
-								Content: []byte("# Source: test-chart/charts/test-subchart-2/templates/deploy-3.yaml\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-3"),
-							},
-						},
-						AdditionalFiles: []BaseFile{
-							{
-								Path:    "Chart.yaml",
-								Content: []byte("name: test-subchart-2\nversion: 0.2.0"),
-							},
-						},
-					},
-					{
-						Namespace: "",
-						Path:      "charts/test-subchart",
-						Files: []BaseFile{
-							{
-								Path:    "templates/deploy-2.yaml",
-								Content: []byte("# Source: test-chart/charts/test-subchart/templates/deploy-2.yaml\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: deploy-2"),
-							},
-						},
-						AdditionalFiles: []BaseFile{
-							{
-								Path:    "Chart.yaml",
-								Content: []byte("name: test-subchart\nversion: 0.2.0"),
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := RenderHelm(tt.args.upstream, tt.args.renderOptions)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("RenderHelm() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("RenderHelm() \n\n%s", fmtJSONDiff(got, tt.want))
 			}
 		})
 	}
