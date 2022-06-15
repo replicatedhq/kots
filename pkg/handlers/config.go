@@ -163,9 +163,9 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		// set in memory store to reflect updated config groups
 		appSecret.Data["config"] = b
-		// now update secret
+
+		// now update secret in cluster
 		clientSet, err := k8sutil.GetClientset()
 		if err != nil {
 			logger.Error(err)
@@ -173,7 +173,7 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		updateOpts := new(metav1.UpdateOptions)
-		secret, err := clientSet.CoreV1().Secrets(appSecret.Namespace).Update(context.Background(), &appSecret, *updateOpts)
+		secret, err := clientSet.CoreV1().Secrets(appSecret.Namespace).Update(context.TODO(), &appSecret, *updateOpts)
 		if err != nil {
 			logger.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -377,10 +377,10 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
-	configCache := getHelmConfigSecretCache()
 	configGroups := []kotsv1beta1.ConfigGroup{}
 
 	if isHelmManaged == "true" {
+		configCache := getHelmConfigSecretCache()
 		configSecret := configCache[mux.Vars(r)["appSlug"]]
 		appConfig := new(kotsv1beta1.Config)
 		err := json.Unmarshal(configSecret.Data["config"], &appConfig)
