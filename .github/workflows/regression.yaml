@@ -74,7 +74,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: migrations-image
-          path: ./docker-archive
+          path: ./automation/jumpbox/docker-archive
       - name: Make kotsadm airgap archive with minio image
         working-directory: automation/jumpbox
         run: tar czf ./kotsadm.tar.gz -C ./ ./docker-archive
