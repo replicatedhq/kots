@@ -41,6 +41,7 @@ import (
 )
 
 var helmAppCache map[string]*types.ResponseApp
+var helmConfigSecretCache map[string]v1.Secret
 
 func getHelmAppCache() map[string]*types.ResponseApp {
 	if helmAppCache == nil {
@@ -49,6 +50,15 @@ func getHelmAppCache() map[string]*types.ResponseApp {
 	}
 
 	return helmAppCache
+}
+
+func getHelmConfigSecretCache() map[string]v1.Secret {
+	if helmConfigSecretCache == nil {
+		helmConfigSecretCache = make(map[string]v1.Secret)
+		return helmConfigSecretCache
+	}
+
+	return helmConfigSecretCache
 }
 
 func (h *Handler) GetPendingApp(w http.ResponseWriter, r *http.Request) {
@@ -179,6 +189,8 @@ func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
 	if isHelmManaged == "true" {
 		cache := getHelmAppCache()
+		configCache := getHelmConfigSecretCache()
+
 		clientSet, err := k8sutil.GetClientset()
 		if err != nil {
 			logger.Error(err)
@@ -200,11 +212,30 @@ func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
+			configSecrets, err := clientSet.CoreV1().Secrets(ns.Name).List(context.TODO(), metav1.ListOptions{LabelSelector: "app.kubernetes.io/managed-by=Helm"})
+			if err != nil {
+				logger.Warnf(fmt.Sprintf("failed to list secrets for namespace: %s\n", ns.Name))
+				continue
+			}
+
+			configMap := make(map[string]v1.Secret)
+			for _, s := range configSecrets.Items {
+				if strings.HasPrefix(s.Name, "kots-") && strings.HasSuffix(s.Name, "-config") {
+					configMap[s.Name] = s
+				}
+			}
+
 			for _, s := range secrets.Items {
 				app, err := responseAppFromHelmSecret(s)
 				if err != nil {
 					logger.Error(err)
 					continue
+				}
+
+				config, ok := configMap[fmt.Sprintf("kots-%s-config", app.Name)]
+				if ok {
+					configCache[app.Name] = config
+					app.IsConfigurable = true
 				}
 
 				// only cache the most recent helm app install

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -19,6 +20,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/config"
 	kotsconfig "github.com/replicatedhq/kots/pkg/config"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -140,6 +142,47 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
+	if isHelmManaged == "true" {
+		configCache := getHelmConfigSecretCache()
+		app := mux.Vars(r)["appSlug"]
+		appSecret := configCache[app]
+		config := new(kotsv1beta1.Config)
+
+		err := json.Unmarshal(appSecret.Data["config"], &config)
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		config.Spec.Groups = updateAppConfigRequest.ConfigGroups
+		b, err := json.Marshal(config)
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		appSecret.Data["config"] = b
+
+		// now update secret in cluster
+		clientSet, err := k8sutil.GetClientset()
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		updateOpts := new(metav1.UpdateOptions)
+		secret, err := clientSet.CoreV1().Secrets(appSecret.Namespace).Update(context.TODO(), &appSecret, *updateOpts)
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		configCache[app] = *secret
+		JSON(w, http.StatusOK, UpdateAppConfigResponse{Success: true})
+		return
+	}
 	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
 	if err != nil {
 		logger.Error(err)
@@ -199,6 +242,14 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		logger.Error(err)
 		liveAppConfigResponse.Error = "failed to decode request body"
 		JSON(w, http.StatusBadRequest, liveAppConfigResponse)
+		return
+	}
+
+	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
+	configGroups := []kotsv1beta1.ConfigGroup{}
+	if isHelmManaged == "true" {
+		configGroups = liveAppConfigRequest.ConfigGroups
+		JSON(w, http.StatusOK, LiveAppConfigResponse{Success: true, ConfigGroups: configGroups})
 		return
 	}
 
@@ -313,7 +364,6 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	configGroups := []kotsv1beta1.ConfigGroup{}
 	if renderedConfig != nil {
 		configGroups = renderedConfig.Spec.Groups
 	}
@@ -326,6 +376,24 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		Success: false,
 	}
 
+	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
+	configGroups := []kotsv1beta1.ConfigGroup{}
+
+	if isHelmManaged == "true" {
+		configCache := getHelmConfigSecretCache()
+		configSecret := configCache[mux.Vars(r)["appSlug"]]
+		appConfig := new(kotsv1beta1.Config)
+		err := json.Unmarshal(configSecret.Data["config"], &appConfig)
+		if err != nil {
+			logger.Error(err)
+			currentAppConfigResponse.Error = "failed to unmarshal config secret"
+			JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
+			return
+		}
+		configGroups = appConfig.Spec.Groups
+		JSON(w, http.StatusOK, CurrentAppConfigResponse{Success: true, ConfigGroups: configGroups})
+		return
+	}
 	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
 	if err != nil {
 		logger.Error(err)
@@ -429,7 +497,6 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	configGroups := []kotsv1beta1.ConfigGroup{}
 	if renderedConfig != nil {
 		configGroups = renderedConfig.Spec.Groups
 	}
