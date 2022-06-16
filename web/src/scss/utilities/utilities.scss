@@ -30,6 +30,7 @@
 .u-margin-none { margin: 0; }
 .u-padding-none { padding: 0; }
 .u-padding--5 { padding: 5px; }
+.u-padding--10 { padding: 10px; }
 .u-padding--20 { padding: 20px; }
 .u-padding--15 { padding: 15px; }
 
@@ -124,6 +125,10 @@
 .u-borderLeft--gray.darker {
   border-color: darken($border-color, 20%);
 }
+.u-borderRadius--rounded {
+  border-radius: $border-radius;
+}
+
 /* Filter classes */
 
 .u-filter--grayscale { filter: grayscale(100%); }
