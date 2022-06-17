@@ -2,6 +2,7 @@ package template
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"sort"
@@ -60,13 +61,15 @@ func getKurlValues(installerName, nameSpace string) *kurlv1beta1.Installer {
 
 func newKurlContext(installerName, nameSpace string) *kurlCtx {
 	ctx := &kurlCtx{
-		KurlValues: make(map[string]interface{}),
+		KurlValues:    make(map[string]interface{}),
+		KurlInstaller: make(map[string]interface{}),
 	}
 
 	retrieved := getKurlValues(installerName, nameSpace)
 
 	if retrieved != nil {
 		ctx.AddValuesToKurlContext(retrieved)
+		ctx.AddSpecToKurlContext(retrieved)
 	}
 
 	return ctx
@@ -92,8 +95,17 @@ func (ctx kurlCtx) AddValuesToKurlContext(retrieved *kurlv1beta1.Installer) {
 	}
 }
 
+func (ctx kurlCtx) AddSpecToKurlContext(retrieved *kurlv1beta1.Installer) {
+	spec, err := json.Marshal(retrieved.Spec)
+	if err != nil {
+		fmt.Println("failed to marshal retrieved kurl spec")
+	}
+	ctx.KurlInstaller["Spec"] = reflect.ValueOf(string(spec)).String()
+}
+
 type kurlCtx struct {
-	KurlValues map[string]interface{}
+	KurlValues    map[string]interface{}
+	KurlInstaller map[string]interface{}
 }
 
 func (ctx kurlCtx) FuncMap() template.FuncMap {
@@ -103,6 +115,7 @@ func (ctx kurlCtx) FuncMap() template.FuncMap {
 		"KurlBool":   ctx.kurlBool,
 		"KurlOption": ctx.kurlOption,
 		"KurlAll":    ctx.kurlAll,
+		"KurlSpec":   ctx.kurlSpec,
 	}
 }
 
@@ -212,4 +225,14 @@ func (ctx kurlCtx) kurlAll() string {
 	sort.Strings(keys)
 
 	return strings.Join(keys, " ")
+}
+
+func (ctx kurlCtx) kurlSpec() string {
+	s, ok := ctx.KurlInstaller["Spec"].(string)
+	if !ok {
+		fmt.Println("Failed to get kurl isntaller as string")
+		return ""
+	}
+
+	return s
 }
