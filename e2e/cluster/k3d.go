@@ -54,7 +54,7 @@ func (c *K3d) Teardown() {
 }
 
 func (c *K3d) PrintDebugInfo() {
-	GinkgoWriter.Printf("To set kubecontext run:\n  export KUBECONFIG=%s\n", c.GetKubeconfig())
+	GinkgoWriter.Printf("To set kubecontext run:\n  export KUBECONFIG=\"$(k3d kubeconfig merge %s)\"\n", c.GetClusterName())
 	GinkgoWriter.Printf("To delete cluster run:\n  k3d cluster delete %s\n", c.GetClusterName())
 }
 

@@ -4,11 +4,9 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"time"
 
 	//lint:ignore ST1001 since Ginkgo and Gomega are DSLs this makes the tests more natural to read
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gexec"
 	"github.com/replicatedhq/kots/e2e/testim/inventory"
 	"github.com/replicatedhq/kots/e2e/util"
 )
@@ -20,6 +18,11 @@ type Client struct {
 	Branch      string
 }
 
+type RunOptions struct {
+	TunnelPort string
+	BaseUrl    string
+}
+
 func NewClient(accessToken, project, grid, branch string) *Client {
 	return &Client{
 		AccessToken: accessToken,
@@ -29,13 +32,15 @@ func NewClient(accessToken, project, grid, branch string) *Client {
 	}
 }
 
-func (t *Client) Run(kubeconfig string, test inventory.Test, adminConsolePort string) {
+func (t *Client) NewRun(kubeconfig string, test inventory.Test, runOptions RunOptions) *Run {
 	args := []string{
 		fmt.Sprintf("--token=%s", t.AccessToken),
 		fmt.Sprintf("--project=%s", t.Project),
 		fmt.Sprintf("--grid=%s", t.Grid),
 		fmt.Sprintf("--branch=%s", t.Branch),
 		"--timeout=3600000",
+		// skips snapshots volume assertions, velero will not backup rancher/local-path-provisioner volumes
+		`--params={"testDisableSnapshotsVolumeAssertions":true}`,
 	}
 	if test.Suite != "" {
 		args = append(
@@ -49,11 +54,17 @@ func (t *Client) Run(kubeconfig string, test inventory.Test, adminConsolePort st
 			fmt.Sprintf("--label=%s", test.Label),
 		)
 	}
-	if adminConsolePort != "" {
+	if runOptions.BaseUrl != "" {
+		args = append(
+			args,
+			fmt.Sprintf("--base-url=%s", runOptions.BaseUrl),
+		)
+	}
+	if runOptions.TunnelPort != "" {
 		args = append(
 			args,
 			"--tunnel",
-			fmt.Sprintf("--tunnel-port=%s", adminConsolePort),
+			fmt.Sprintf("--tunnel-port=%s", runOptions.TunnelPort),
 		)
 	}
 	cmd := exec.Command("testim", args...)
@@ -61,5 +72,5 @@ func (t *Client) Run(kubeconfig string, test inventory.Test, adminConsolePort st
 	cmd.Env = append(cmd.Env, fmt.Sprintf("KUBECONFIG=%s", kubeconfig))
 	session, err := util.RunCommand(cmd)
 	Expect(err).WithOffset(1).Should(Succeed(), "Run testim tests failed")
-	Eventually(session).WithOffset(1).WithTimeout(30*time.Minute).Should(gexec.Exit(0), "Run testim tests failed with non-zero exit code")
+	return &Run{session}
 }

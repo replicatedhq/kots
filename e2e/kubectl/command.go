@@ -40,3 +40,8 @@ func (c *CLI) GetAllPods() {
 	session, _ := c.RunCommand("get", "pods", "--all-namespaces")
 	session.Wait()
 }
+
+func (c *CLI) DescribeNodes() {
+	session, _ := c.RunCommand("describe", "nodes")
+	session.Wait()
+}

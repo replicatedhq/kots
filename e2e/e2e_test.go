@@ -2,9 +2,10 @@ package e2e
 
 import (
 	"flag"
+	"github.com/onsi/gomega/gexec"
+	"github.com/replicatedhq/kots/e2e/registry"
 	"os"
 	"testing"
-
 	//lint:ignore ST1001 since Ginkgo and Gomega are DSLs this makes the tests more natural to read
 	. "github.com/onsi/ginkgo/v2"
 	//lint:ignore ST1001 since Ginkgo and Gomega are DSLs this makes the tests more natural to read
@@ -14,6 +15,7 @@ import (
 	"github.com/replicatedhq/kots/e2e/kots"
 	"github.com/replicatedhq/kots/e2e/kubectl"
 	"github.com/replicatedhq/kots/e2e/minio"
+	"github.com/replicatedhq/kots/e2e/prometheus"
 	"github.com/replicatedhq/kots/e2e/testim"
 	"github.com/replicatedhq/kots/e2e/testim/inventory"
 	"github.com/replicatedhq/kots/e2e/util"
@@ -28,20 +30,24 @@ var kotsInstaller *kots.Installer
 
 var (
 	testimBranch          string
+	testimBaseUrl         string
 	skipTeardown          bool
 	existingKubeconfig    string
 	kotsadmImageRegistry  string
 	kotsadmImageNamespace string
 	kotsadmImageTag       string
+	kotsadmForwardPort    string
 )
 
 func init() {
 	flag.StringVar(&testimBranch, "testim-branch", "master", "testim branch to use")
+	flag.StringVar(&testimBaseUrl, "testim-base-url", "", "override the base url that testim will use")
 	flag.StringVar(&existingKubeconfig, "existing-kubeconfig", "", "use kubeconfig from existing cluster, do not create clusters (only for use with targeted testing)")
 	flag.BoolVar(&skipTeardown, "skip-teardown", false, "do not tear down clusters")
 	flag.StringVar(&kotsadmImageRegistry, "kotsadm-image-registry", "", "override the kotsadm images registry")
 	flag.StringVar(&kotsadmImageNamespace, "kotsadm-image-namespace", "", "override the kotsadm images registry namespace")
-	flag.StringVar(&kotsadmImageTag, "kotsadm-image-tag", "v0.0.0-nightly", "override the kotsadm images tag")
+	flag.StringVar(&kotsadmImageTag, "kotsadm-image-tag", "alpha", "override the kotsadm images tag")
+	flag.StringVar(&kotsadmForwardPort, "kotsadm-forward-port", "", "sets the port that the admin console will be exposed on instead of generating a random one")
 }
 
 func TestE2E(t *testing.T) {
@@ -76,6 +82,10 @@ var _ = BeforeSuite(func() {
 	kotsInstaller = kots.NewInstaller(kotsadmImageRegistry, kotsadmImageNamespace, kotsadmImageTag)
 })
 
+var _ = AfterSuite(func() {
+	gexec.KillAndWait()
+})
+
 var _ = Describe("E2E", func() {
 
 	var w workspace.Workspace
@@ -91,6 +101,7 @@ var _ = Describe("E2E", func() {
 
 		var c cluster.Interface
 		var kubectlCLI *kubectl.CLI
+		var testimRun *testim.Run
 
 		BeforeEach(func() {
 			if existingKubeconfig != "" {
@@ -108,16 +119,24 @@ var _ = Describe("E2E", func() {
 		})
 
 		AfterEach(func() {
-			// Debug
-			// TODO: run this only on failure
+			// Debug info
+			GinkgoWriter.Println("\n")
 			if kubectlCLI != nil {
 				kubectlCLI.GetAllPods()
+				kubectlCLI.DescribeNodes()
+			}
+			if testimRun != nil {
+				testimRun.PrintDebugInfo()
 			}
 		})
 
 		DescribeTable(
 			"install kots and run the test",
 			func(test inventory.Test) {
+				if test.NeedsRegistry {
+					registry := registry.New(helmCLI, c.GetKubeconfig())
+					registry.Install()
+				}
 
 				if test.NeedsSnapshots {
 					GinkgoWriter.Println("Installing Minio")
@@ -130,18 +149,35 @@ var _ = Describe("E2E", func() {
 					veleroCLI.Install(w.GetDir(), c.GetKubeconfig(), minio)
 				}
 
+				if test.NeedsMonitoring {
+					GinkgoWriter.Println("Installing Prometheus")
+
+					prometheus := prometheus.New(prometheus.Options{})
+					prometheus.Install(helmCLI, c.GetKubeconfig())
+				}
+
 				GinkgoWriter.Println("Installing KOTS")
-				adminConsolePort := kotsInstaller.Install(c.GetKubeconfig(), test)
+				adminConsolePort := kotsInstaller.Install(c.GetKubeconfig(), test, kotsadmForwardPort)
+
+				// HACK
+				if test.Name == "Nightly" {
+					GinkgoWriter.Println("HACK: create registry-creds secret")
+					nightlyCreateRegistryCredsSecret(kubectlCLI)
+				}
 
 				GinkgoWriter.Println("Running E2E tests")
-				testimClient.Run(c.GetKubeconfig(), test, adminConsolePort)
-
+				testimRun = testimClient.NewRun(c.GetKubeconfig(), test, testim.RunOptions{
+					TunnelPort: adminConsolePort,
+					BaseUrl:    testimBaseUrl,
+				})
+				testimRun.ShouldSucceed()
 			},
 			func(test inventory.Test) string {
 				return test.Name
 			},
 			Entry(nil, inventory.NewSmokeTest()),
 			Entry(nil, inventory.NewChangeLicense()),
+			Entry(nil, inventory.NewNightlyTest()),
 		)
 
 	})

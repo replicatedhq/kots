@@ -68,10 +68,10 @@ main() {
         && tar xzf velero.tar.gz \
         && install -m 0755 velero-*/velero $INSTALL_DIR/velero
 
-    # curl -sL https://deb.nodesource.com/setup_18.x | runAsRoot bash -e \
-    #     && runAsRoot apt-get install -y --no-install-recommends nodejs \
-    #     && runAsRoot rm -rf /var/lib/apt/lists/* \
-    #     && npm install --prefix $INSTALL_DIR @testim/testim-cli
+    curl -sL https://deb.nodesource.com/setup_18.x | runAsRoot bash -e \
+        && runAsRoot apt-get install -y --no-install-recommends nodejs \
+        && runAsRoot rm -rf /var/lib/apt/lists/* \
+        && npm install --prefix $INSTALL_DIR @testim/testim-cli
 
     rm -rf $tmpdir
 }

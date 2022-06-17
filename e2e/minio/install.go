@@ -11,51 +11,49 @@ import (
 )
 
 const (
-	DefaultNamespace = "minio"
-	DefaultService   = "minio"
-	DefaultAccessKey = "accessKey"
-	DefaultSecretKey = "secretKey"
-	DefaultBucket    = "bucket1"
+	DefaultNamespace   = "minio"
+	DefaultReleaseName = "minio"
+	DefaultAccessKey   = "accessKey"
+	DefaultSecretKey   = "secretKey"
+	DefaultBucket      = "bucket1"
 )
 
 type Minio struct {
-	namespace string
-	service   string
-	accessKey string
-	secretKey string
-	bucket    string
+	options Options
 }
 
 type Options struct {
-	Namespace string
-	Service   string
-	AccessKey string
-	SecretKey string
-	Bucket    string
+	Namespace   string
+	ReleaseName string
+	AccessKey   string
+	SecretKey   string
+	Bucket      string
 }
 
 func New(opts Options) Minio {
 	m := Minio{
-		namespace: opts.Namespace,
-		service:   opts.Service,
-		accessKey: opts.AccessKey,
-		secretKey: opts.SecretKey,
-		bucket:    opts.Bucket,
+		Options{
+			Namespace:   opts.Namespace,
+			ReleaseName: opts.ReleaseName,
+			AccessKey:   opts.AccessKey,
+			SecretKey:   opts.SecretKey,
+			Bucket:      opts.Bucket,
+		},
 	}
-	if m.namespace == "" {
-		m.namespace = DefaultNamespace
+	if m.options.Namespace == "" {
+		m.options.Namespace = DefaultNamespace
 	}
-	if m.service == "" {
-		m.service = DefaultService
+	if m.options.ReleaseName == "" {
+		m.options.ReleaseName = DefaultReleaseName
 	}
-	if m.accessKey == "" {
-		m.accessKey = DefaultAccessKey
+	if m.options.AccessKey == "" {
+		m.options.AccessKey = DefaultAccessKey
 	}
-	if m.secretKey == "" {
-		m.secretKey = DefaultSecretKey
+	if m.options.SecretKey == "" {
+		m.options.SecretKey = DefaultSecretKey
 	}
-	if m.bucket == "" {
-		m.bucket = DefaultBucket
+	if m.options.Bucket == "" {
+		m.options.Bucket = DefaultBucket
 	}
 	return m
 }
@@ -68,16 +66,16 @@ func (m *Minio) Install(helmCLI *helm.CLI, kubeconfig string) {
 	session, err = helmCLI.Install(
 		kubeconfig,
 		"--create-namespace",
-		fmt.Sprintf("--namespace=%s", m.namespace),
+		fmt.Sprintf("--namespace=%s", m.options.Namespace),
 		"--wait",
 		"--set=mode=standalone",
 		"--set=replicas=1",
 		"--set=resources.requests.memory=128Mi",
 		"--set=persistence.enabled=false",
 		"--set=rootUser=rootuser,rootPassword=rootpass123",
-		fmt.Sprintf("--set=users[0].accessKey=%s,users[0].secretKey=%s,users[0].policy=readwrite", m.accessKey, m.secretKey),
-		fmt.Sprintf("--set=buckets[0].name=%s,buckets[0].policy=none,buckets[0].purge=false", m.bucket),
-		m.service,
+		fmt.Sprintf("--set=users[0].accessKey=%s,users[0].secretKey=%s,users[0].policy=readwrite", m.GetAccessKey(), m.GetSecretKey()),
+		fmt.Sprintf("--set=buckets[0].name=%s,buckets[0].policy=none,buckets[0].purge=false", m.GetBucket()),
+		m.options.ReleaseName,
 		"minio/minio",
 	)
 	Expect(err).WithOffset(1).Should(Succeed(), "helm install")
@@ -85,17 +83,17 @@ func (m *Minio) Install(helmCLI *helm.CLI, kubeconfig string) {
 }
 
 func (m *Minio) GetURL() string {
-	return fmt.Sprintf("http://%s.%s.svc.cluster.local:9000", m.service, m.namespace)
+	return fmt.Sprintf("http://%s.%s.svc.cluster.local:9000", m.options.ReleaseName, m.options.Namespace)
 }
 
 func (m *Minio) GetAccessKey() string {
-	return m.accessKey
+	return m.options.AccessKey
 }
 
 func (m *Minio) GetSecretKey() string {
-	return m.secretKey
+	return m.options.SecretKey
 }
 
 func (m *Minio) GetBucket() string {
-	return m.bucket
+	return m.options.Bucket
 }
