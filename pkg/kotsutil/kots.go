@@ -22,6 +22,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
+	kurlscheme "github.com/replicatedhq/kurl/kurlkinds/client/kurlclientset/scheme"
 	kurlv1beta1 "github.com/replicatedhq/kurl/kurlkinds/pkg/apis/cluster/v1beta1"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
@@ -38,6 +39,7 @@ func init() {
 	kotsscheme.AddToScheme(scheme.Scheme)
 	troubleshootscheme.AddToScheme(scheme.Scheme)
 	velerov1.AddToScheme(scheme.Scheme)
+	kurlscheme.AddToScheme(scheme.Scheme)
 	applicationv1beta1.AddToScheme(scheme.Scheme)
 }
 
