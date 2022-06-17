@@ -61,7 +61,7 @@ const awsConfig = {
   AWS_ACCESS_KEY_ID: getInput('AWS_ACCESS_KEY_ID'),
   AWS_SECRET_ACCESS_KEY: getInput('AWS_SECRET_ACCESS_KEY')
 }
-await exec('terraform', ['init'], {
+await exec('terraform', ['init', '-reconfigure'], {
   env: awsConfig,
   cwd: 'automation/jumpbox'
 });

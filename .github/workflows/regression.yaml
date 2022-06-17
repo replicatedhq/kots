@@ -47,8 +47,6 @@ env:
   TF_VAR_testim_token: ${{ secrets.TESTIM_ACCESS_TOKEN }}
   WORKSPACE: automation-${{ github.event.inputs.id || inputs.id }}
 
-concurrency: regression
-
 jobs:
   jumpbox:
     runs-on: ubuntu-20.04
@@ -62,6 +60,24 @@ jobs:
           token: ${{ secrets.E2E_GH_PAT }}
           path: automation
           ref: main
+      - name: Download go_api artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: go_api
+          path: ./automation/jumpbox/bin
+      - name: Download kotsadm image
+        uses: actions/download-artifact@v2
+        with:
+          name: kotsadm-image
+          path: ./automation/jumpbox/docker-archive
+      - name: Download migrations
+        uses: actions/download-artifact@v2
+        with:
+          name: migrations-image
+          path: ./automation/jumpbox/docker-archive
+      - name: Make kotsadm airgap archive with minio image
+        working-directory: automation/jumpbox
+        run: tar czf ./kotsadm.tar.gz -C ./ ./docker-archive
       - name: Create Jumpbox Environment
         if: always()
         working-directory: automation/jumpbox
@@ -70,9 +86,8 @@ jobs:
           terraform workspace new $WORKSPACE || true
           terraform workspace select $WORKSPACE
           terraform apply --auto-approve
-
       - name: Notify Slack
-        if: failure()
+        if: failure() && github.ref_name == 'main'
         uses: 8398a7/action-slack@v3
         with:
           status: custom
@@ -191,6 +206,7 @@ jobs:
           else
             export TF_VAR_kots_version_initial="${NEXT_TAG:1}"
           fi
+          export TF_VAR_testim_branch="master"
           terraform init -backend-config ${{ matrix.test.backend_config }}
           terraform workspace new $WORKSPACE || true
           terraform workspace select $WORKSPACE
@@ -211,7 +227,7 @@ jobs:
           chmod 600 ssh.pem
           ssh -i ssh.pem ubuntu@$(terraform output -raw jumpbox_public_ip) -oStrictHostKeyChecking=no -oServerAliveInterval=60 -oServerAliveCountMax=10 "ssh -tt ubuntu@$(terraform output -raw control_plane_private_ip) -oServerAliveInterval=60 -oServerAliveCountMax=10 -oConnectionAttempts=30 \"sudo /tmp/start.sh\""
       - name: Notify Slack
-        if: always()
+        if: always() && github.ref_name == 'main'
         uses: 8398a7/action-slack@v3
         with:
           status: custom
