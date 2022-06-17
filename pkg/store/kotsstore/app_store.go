@@ -210,7 +210,17 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to load preflights from spec")
 			}
-			if len(preflight.Spec.Analyzers) > 0 {
+
+			// this spec has templates applied to it already
+			numAnalyzers := 0
+			for _, analyzer := range preflight.Spec.Analyzers {
+				exclude := analyzer.GetExclude().BoolOrDefaultFalse()
+				if !exclude {
+					numAnalyzers += 1
+				}
+			}
+
+			if numAnalyzers > 0 {
 				app.HasPreflight = true
 			}
 		}
