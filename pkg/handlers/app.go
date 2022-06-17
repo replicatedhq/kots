@@ -243,10 +243,10 @@ func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 					cache[app.Name] = app
 				}
 			}
+		}
 
-			for _, app := range cache {
-				responseApps = append(responseApps, *app)
-			}
+		for _, app := range cache {
+			responseApps = append(responseApps, *app)
 		}
 	} else {
 
