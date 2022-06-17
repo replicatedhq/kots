@@ -54,19 +54,13 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 		return nil
 	}
 
+	var ignoreRBAC bool
+	var registrySettings registrytypes.RegistrySettings
+	var preflight *troubleshootv1beta2.Preflight
+
+	runPreflights := false
 	if renderedKotsKinds.Preflight != nil {
-		status, err := store.GetStore().GetDownstreamVersionStatus(appID, sequence)
-		if err != nil {
-			return errors.Wrap(err, "failed to get version status")
-		}
-
-		if status != "deployed" {
-			if err := store.GetStore().SetDownstreamVersionStatus(appID, sequence, storetypes.VersionPendingPreflight, ""); err != nil {
-				return errors.Wrapf(err, "failed to set downstream version %d pending preflight", sequence)
-			}
-		}
-
-		ignoreRBAC, err := store.GetStore().GetIgnoreRBACErrors(appID, sequence)
+		ignoreRBAC, err = store.GetStore().GetIgnoreRBACErrors(appID, sequence)
 		if err != nil {
 			return errors.Wrap(err, "failed to get ignore rbac flag")
 		}
@@ -78,7 +72,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 			return errors.Wrap(err, "failed to marshal rendered preflight")
 		}
 
-		registrySettings, err := store.GetStore().GetRegistryDetailsForApp(appID)
+		registrySettings, err = store.GetStore().GetRegistryDetailsForApp(appID)
 		if err != nil {
 			return errors.Wrap(err, "failed to get registry settings for app")
 		}
@@ -87,22 +81,44 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 		if err != nil {
 			return errors.Wrap(err, "failed to render preflights")
 		}
-		p, err := kotsutil.LoadPreflightFromContents(renderedPreflight)
+		preflight, err = kotsutil.LoadPreflightFromContents(renderedPreflight)
 		if err != nil {
 			return errors.Wrap(err, "failed to load rendered preflight")
 		}
 
-		injectDefaultPreflights(p, renderedKotsKinds, registrySettings)
+		injectDefaultPreflights(preflight, renderedKotsKinds, registrySettings)
 
-		collectors, err := registry.UpdateCollectorSpecsWithRegistryData(p.Spec.Collectors, registrySettings, renderedKotsKinds.Installation.Spec.KnownImages, renderedKotsKinds.License)
+		numAnalyzers := 0
+		for _, analyzer := range preflight.Spec.Analyzers {
+			exclude := analyzer.GetExclude().BoolOrDefaultFalse()
+			if !exclude {
+				numAnalyzers += 1
+			}
+		}
+		runPreflights = numAnalyzers > 0
+	}
+
+	if runPreflights {
+		status, err := store.GetStore().GetDownstreamVersionStatus(appID, sequence)
+		if err != nil {
+			return errors.Wrap(err, "failed to get version status")
+		}
+
+		if status != "deployed" {
+			if err := store.GetStore().SetDownstreamVersionStatus(appID, sequence, storetypes.VersionPendingPreflight, ""); err != nil {
+				return errors.Wrapf(err, "failed to set downstream version %d pending preflight", sequence)
+			}
+		}
+
+		collectors, err := registry.UpdateCollectorSpecsWithRegistryData(preflight.Spec.Collectors, registrySettings, renderedKotsKinds.Installation.Spec.KnownImages, renderedKotsKinds.License)
 		if err != nil {
 			return errors.Wrap(err, "failed to rewrite images in preflight")
 		}
-		p.Spec.Collectors = collectors
+		preflight.Spec.Collectors = collectors
 
 		go func() {
 			logger.Debug("preflight checks beginning")
-			uploadPreflightResults, err := execute(appID, sequence, p, ignoreRBAC)
+			uploadPreflightResults, err := execute(appID, sequence, preflight, ignoreRBAC)
 			if err != nil {
 				logger.Error(errors.Wrap(err, "failed to run preflight checks"))
 				return
