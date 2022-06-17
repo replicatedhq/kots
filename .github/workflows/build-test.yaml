@@ -309,8 +309,10 @@ jobs:
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
-      - run: journalctl -n all -u docker.service > logs
-      - uses: actions/upload-artifact@v2
+      - if: always()
+        run: journalctl -n all -u docker.service > logs
+      - if: always()
+        uses: actions/upload-artifact@v2
         with:
           name: logs
           path: ./logs
