@@ -43,7 +43,6 @@ runs:
   steps:
     # TODO: use k3d eventually but this is difficult to support with ${{ inputs.k8s-version }}
     - uses: replicatedhq/action-k3s@main
-      id: k3s
       with:
         version: ${{ inputs.k8s-version }}
 
