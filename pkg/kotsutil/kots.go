@@ -22,6 +22,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
+	kurlv1beta1 "github.com/replicatedhq/kurl/kurlkinds/pkg/apis/cluster/v1beta1"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	"github.com/replicatedhq/troubleshoot/pkg/docrewrite"
@@ -65,7 +66,8 @@ type KotsKinds struct {
 	Identity       *kotsv1beta1.Identity
 	IdentityConfig *kotsv1beta1.IdentityConfig
 
-	Backup *velerov1.Backup
+	Backup    *velerov1.Backup
+	Installer *kurlv1beta1.Installer
 }
 
 func (k *KotsKinds) EncryptConfigValues() error {
@@ -344,6 +346,21 @@ func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {
 		}
 	}
 
+	if g == "kurl.sh" || g == "cluster.kurl.sh" {
+		if v == "v1beta1" {
+			if k == "Installer" {
+				if o.Installer == nil {
+					return "", nil
+				}
+				var b bytes.Buffer
+				if err := s.Encode(o.Installer, &b); err != nil {
+					return "", errors.Wrap(err, "failed to encode installer")
+				}
+				return string(b.Bytes()), nil
+			}
+		}
+	}
+
 	return "", errors.Errorf("unknown gvk %s/%s, Kind=%s", g, v, k)
 }
 
@@ -442,6 +459,8 @@ func LoadKotsKindsFromPath(fromDir string) (*KotsKinds, error) {
 					kotsKinds.HostPreflight = decoded.(*troubleshootv1beta2.HostPreflight)
 				case "velero.io/v1, Kind=Backup":
 					kotsKinds.Backup = decoded.(*velerov1.Backup)
+				case "kurl.sh/v1beta1, Kind=Installer", "cluster.kurl.sh/v1beta1, Kind=Installer":
+					kotsKinds.Installer = decoded.(*kurlv1beta1.Installer)
 				case "app.k8s.io/v1beta1, Kind=Application":
 					kotsKinds.Application = decoded.(*applicationv1beta1.Application)
 				}
