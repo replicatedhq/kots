@@ -429,6 +429,7 @@ class AppDetailPage extends Component {
                         app={app}
                         refreshAppData={this.getApp}
                         fromLicenseFlow={false}
+                        isHelmManaged={this.state.isHelmManaged}
                       />
                     } />
                     <Route path="/app/:slug/troubleshoot" render={() =>

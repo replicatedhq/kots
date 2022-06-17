@@ -11,6 +11,7 @@ import findIndex from "lodash/findIndex";
 import map from "lodash/map";
 import Modal from "react-modal";
 import Loader from "../shared/Loader";
+import CodeSnippet from "../shared/CodeSnippet";
 import ErrorModal from "../modals/ErrorModal";
 
 import "../../scss/components/watches/WatchConfig.scss";
@@ -37,6 +38,7 @@ class AppConfig extends Component {
       configError: "",
       app: null,
       displayErrorModal: false,
+      configUpdateCmd: ""
     };
 
     this.handleConfigChange = debounce(this.handleConfigChange, 250);
@@ -278,7 +280,9 @@ class AppConfig extends Component {
             history.replace(`/app/${slug}`);
           }
         } else {
-          this.setState({ savingConfig: false, changed: false, showNextStepModal: true });
+          this.setState({ savingConfig: false, changed: false, showNextStepModal: true }, () => {
+            this.getConfigValuesCommands();
+          });
         }
       })
       .catch((err) => {
@@ -452,6 +456,27 @@ class AppConfig extends Component {
     this.props.history.push(`/app/${app?.slug}/config/${pendingVersions[0].parentSequence}`)
   }
 
+  getConfigValuesCommands = () => {
+    const { configGroups } = this.state;
+    let commandValues = [];
+
+    configGroups.map((group) => {
+      if (group.items?.length > 0) {
+        group.items.map((item) => {
+          let obj = new Object;
+          obj.name = item.name;
+          obj.value = item.value;
+          commandValues.push(obj);
+        });
+      }
+    });
+
+    const finalCommand = `helm upgrade ${commandValues.map((cmd) => { return `--set ${cmd.name}=${cmd.value}`})}`.replace(",", " ");
+    this.setState({
+      configUpdateCmd: finalCommand
+    });
+  }
+
 
   render() {
     const {
@@ -549,6 +574,22 @@ class AppConfig extends Component {
                 <button type="button" className="btn blue primary" onClick={this.hideNextStepModal}>Ok, got it!</button>
               </div>
             </div>
+            : this.props.isHelmManaged ?
+              <div className="Modal-body">
+                <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
+                  The config has been updated. Please run the following helm upgrade command to apply the changes
+                </p>
+                <CodeSnippet
+                    language="bash"
+                    canCopy={true}
+                    onCopyText={<span className="u-textColor--success">Command has been copied to your clipboard</span>}
+                  >
+                    {this.state.configUpdateCmd}
+                </CodeSnippet>
+                <div className="flex justifyContent--flexEnd">
+                  <button type="button" className="btn blue primary" onClick={this.hideNextStepModal}>Ok, got it!</button>
+                </div>
+              </div>
             :
             <div className="Modal-body">
               {isNewVersion ?
