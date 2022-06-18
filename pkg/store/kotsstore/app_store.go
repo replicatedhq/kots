@@ -14,6 +14,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
+	troubleshootanalyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	"github.com/segmentio/ksuid"
 	"go.uber.org/zap"
 )
@@ -214,7 +215,7 @@ func (s *KOTSStore) GetApp(id string) (*apptypes.App, error) {
 			// this spec has templates applied to it already
 			numAnalyzers := 0
 			for _, analyzer := range preflight.Spec.Analyzers {
-				exclude := analyzer.GetExclude().BoolOrDefaultFalse()
+				exclude := troubleshootanalyze.GetExcludeFlag(analyzer).BoolOrDefaultFalse()
 				if !exclude {
 					numAnalyzers += 1
 				}

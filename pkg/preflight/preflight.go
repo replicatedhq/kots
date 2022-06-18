@@ -21,6 +21,7 @@ import (
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
+	troubleshootanalyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"go.uber.org/zap"
@@ -90,7 +91,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 
 		numAnalyzers := 0
 		for _, analyzer := range preflight.Spec.Analyzers {
-			exclude := analyzer.GetExclude().BoolOrDefaultFalse()
+			exclude := troubleshootanalyze.GetExcludeFlag(analyzer).BoolOrDefaultFalse()
 			if !exclude {
 				numAnalyzers += 1
 			}
