@@ -281,7 +281,7 @@ jobs:
           docker tag postgres:${{ steps.dotenv.outputs.postgres_alpine_tag }} ttl.sh/automated-${{ github.run_id }}/postgres:12h
           docker push ttl.sh/automated-${{ github.run_id }}/postgres:12h
 
-  existing-online-install-minimal:
+  validate-existing-online-install-minimal:
     runs-on: ubuntu-20.04
     needs: [ can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
     steps:
