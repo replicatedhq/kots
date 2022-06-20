@@ -1613,6 +1613,6 @@ jobs:
     - validate-helm-install-order
     - validate-yamlescape
     - validate-no-redeploy-on-restart
-    - existing-online-install-minimal
+    - validate-existing-online-install-minimal
     steps:
       - run: echo "Validate success"
