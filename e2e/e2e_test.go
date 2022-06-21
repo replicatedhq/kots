@@ -160,9 +160,9 @@ var _ = Describe("E2E", func() {
 				adminConsolePort := kotsInstaller.Install(c.GetKubeconfig(), test, kotsadmForwardPort)
 
 				// HACK
-				if test.Name == "Nightly" {
+				if test.Name == "Regression" {
 					GinkgoWriter.Println("HACK: create registry-creds secret")
-					nightlyCreateRegistryCredsSecret(kubectlCLI)
+					regressionCreateRegistryCredsSecret(kubectlCLI)
 				}
 
 				GinkgoWriter.Println("Running E2E tests")
@@ -177,7 +177,7 @@ var _ = Describe("E2E", func() {
 			},
 			Entry(nil, inventory.NewSmokeTest()),
 			Entry(nil, inventory.NewChangeLicense()),
-			Entry(nil, inventory.NewNightlyTest()),
+			Entry(nil, inventory.NewRegressionTest()),
 		)
 
 	})
