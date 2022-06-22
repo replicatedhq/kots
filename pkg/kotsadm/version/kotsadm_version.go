@@ -17,9 +17,9 @@ type ImageRewriteFunc func(upstreamImage string, alwaysRewrite bool) (image stri
 
 // return "alpha" for all invalid versions of kots,
 // kotsadm tag that matches this version for others
-func KotsadmTag(options types.KotsadmOptions) string {
-	if options.OverrideVersion != "" {
-		return options.OverrideVersion
+func KotsadmTag(registryConfig types.RegistryConfig) string {
+	if registryConfig.OverrideVersion != "" {
+		return registryConfig.OverrideVersion
 	}
 
 	return KotsadmTagForVersionString(buildversion.Version())
@@ -42,20 +42,20 @@ func KotsadmTagForVersionString(kotsVersion string) string {
 	return kotsVersion
 }
 
-func KotsadmRegistry(options types.KotsadmOptions) string {
-	if options.OverrideRegistry == "" {
+func KotsadmRegistry(registryConfig types.RegistryConfig) string {
+	if registryConfig.OverrideRegistry == "" {
 		// Images hosted in docker hub
-		if options.OverrideNamespace == "" {
+		if registryConfig.OverrideNamespace == "" {
 			return "kotsadm"
 		} else {
-			return options.OverrideNamespace
+			return registryConfig.OverrideNamespace
 		}
 	}
 
-	registry := options.OverrideRegistry
-	namespace := options.OverrideNamespace
+	registry := registryConfig.OverrideRegistry
+	namespace := registryConfig.OverrideNamespace
 
-	hostParts := strings.Split(options.OverrideRegistry, "/")
+	hostParts := strings.Split(registryConfig.OverrideRegistry, "/")
 	if len(hostParts) == 2 {
 		registry = hostParts[0]
 		namespace = hostParts[1]
@@ -68,12 +68,12 @@ func KotsadmRegistry(options types.KotsadmOptions) string {
 	return fmt.Sprintf("%s/%s", registry, namespace)
 }
 
-func KotsadmPullSecret(namespace string, options types.KotsadmOptions) *corev1.Secret {
-	if options.OverrideRegistry == "" {
+func KotsadmPullSecret(namespace string, registryConfig types.RegistryConfig) *corev1.Secret {
+	if registryConfig.OverrideRegistry == "" {
 		return nil
 	}
 
-	secrets, _ := registry.PullSecretForRegistries([]string{options.OverrideRegistry}, options.Username, options.Password, namespace, "")
+	secrets, _ := registry.PullSecretForRegistries([]string{registryConfig.OverrideRegistry}, registryConfig.Username, registryConfig.Password, namespace, "")
 
 	secret := secrets.AdminConsoleSecret
 	secret.ObjectMeta.Name = types.PrivateKotsadmRegistrySecret
@@ -83,13 +83,13 @@ func KotsadmPullSecret(namespace string, options types.KotsadmOptions) *corev1.S
 }
 
 // This function will rewrite images and use the version from this binary as image tag when not overriden
-func KotsadmImageRewriteKotsadmRegistry(namespace string, registryOptions *types.KotsadmOptions) ImageRewriteFunc {
-	secret := KotsadmPullSecret(namespace, *registryOptions)
+func KotsadmImageRewriteKotsadmRegistry(namespace string, registryConfig *types.RegistryConfig) ImageRewriteFunc {
+	secret := KotsadmPullSecret(namespace, *registryConfig)
 
 	return func(upstreamImage string, alwaysRewrite bool) (image string, imagePullSecrets []corev1.LocalObjectReference, err error) {
 		image = upstreamImage
 
-		if registryOptions == nil {
+		if registryConfig == nil {
 			return image, imagePullSecrets, err
 		}
 
@@ -104,7 +104,7 @@ func KotsadmImageRewriteKotsadmRegistry(namespace string, registryOptions *types
 
 		parts := strings.Split(reference.Path(named), "/")
 		imageName := parts[len(parts)-1] // why not include the namespace here?
-		image = fmt.Sprintf("%s/%s:%s", KotsadmRegistry(*registryOptions), imageName, KotsadmTag(*registryOptions))
+		image = fmt.Sprintf("%s/%s:%s", KotsadmRegistry(*registryConfig), imageName, KotsadmTag(*registryConfig))
 
 		if secret != nil {
 			imagePullSecrets = []corev1.LocalObjectReference{
@@ -116,13 +116,13 @@ func KotsadmImageRewriteKotsadmRegistry(namespace string, registryOptions *types
 }
 
 // This function will rewrite images and use the image's original tag when not overriden
-func DependencyImageRewriteKotsadmRegistry(namespace string, registryOptions *types.KotsadmOptions) ImageRewriteFunc {
-	secret := KotsadmPullSecret(namespace, *registryOptions)
+func DependencyImageRewriteKotsadmRegistry(namespace string, registryConfig *types.RegistryConfig) ImageRewriteFunc {
+	secret := KotsadmPullSecret(namespace, *registryConfig)
 
 	return func(upstreamImage string, alwaysRewrite bool) (image string, imagePullSecrets []corev1.LocalObjectReference, err error) {
 		image = upstreamImage
 
-		if registryOptions == nil {
+		if registryConfig == nil {
 			return image, imagePullSecrets, err
 		}
 
@@ -136,9 +136,9 @@ func DependencyImageRewriteKotsadmRegistry(namespace string, registryOptions *ty
 		}
 
 		tag := ""
-		if registryOptions.OverrideVersion != "" {
+		if registryConfig.OverrideVersion != "" {
 			// kotadm-tag CLI flag was used, so all images will have the same tag
-			tag = registryOptions.OverrideVersion
+			tag = registryConfig.OverrideVersion
 		} else {
 			if tagged, ok := named.(reference.Tagged); ok {
 				tag = tagged.Tag()
@@ -152,7 +152,7 @@ func DependencyImageRewriteKotsadmRegistry(namespace string, registryOptions *ty
 
 		parts := strings.Split(reference.Path(named), "/")
 		imageName := parts[len(parts)-1] // why not include the namespace here?
-		image = fmt.Sprintf("%s/%s:%s", KotsadmRegistry(*registryOptions), imageName, tag)
+		image = fmt.Sprintf("%s/%s:%s", KotsadmRegistry(*registryConfig), imageName, tag)
 
 		if secret != nil {
 			imagePullSecrets = []corev1.LocalObjectReference{

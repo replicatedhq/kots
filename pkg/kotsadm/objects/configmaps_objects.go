@@ -24,8 +24,8 @@ func KotsadmConfigMap(deployOptions types.DeployOptions) *corev1.ConfigMap {
 		"with-minio":                fmt.Sprintf("%v", deployOptions.IncludeMinio),
 		"app-version-label":         deployOptions.AppVersionLabel,
 	}
-	if kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions) != nil {
-		data["kotsadm-registry"] = kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions)
+	if kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.RegistryConfig) != nil {
+		data["kotsadm-registry"] = kotsadmversion.KotsadmRegistry(deployOptions.RegistryConfig)
 	}
 
 	configMap := &corev1.ConfigMap{

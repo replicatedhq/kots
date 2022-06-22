@@ -74,15 +74,15 @@ func (e HostPathNotFoundError) Error() string {
 	return e.Message
 }
 
-func DeployFileSystemMinio(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryOptions kotsadmtypes.KotsadmOptions) error {
+func DeployFileSystemMinio(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryConfig kotsadmtypes.RegistryConfig) error {
 	// file system minio can be deployed before installing kotsadm or the application (e.g. disaster recovery)
-	err := kotsadmresources.EnsurePrivateKotsadmRegistrySecret(deployOptions.Namespace, registryOptions, clientset)
+	err := kotsadmresources.EnsurePrivateKotsadmRegistrySecret(deployOptions.Namespace, registryConfig, clientset)
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure private kotsadm registry secret")
 	}
 
 	// configure fs directory/mount
-	shouldReset, hasMinioConfig, _, err := shouldResetFileSystemMount(ctx, clientset, deployOptions, registryOptions)
+	shouldReset, hasMinioConfig, _, err := shouldResetFileSystemMount(ctx, clientset, deployOptions, registryConfig)
 	if err != nil {
 		return errors.Wrap(err, "failed to check if should reset file system mount")
 	}
@@ -90,7 +90,7 @@ func DeployFileSystemMinio(ctx context.Context, clientset kubernetes.Interface, 
 		if !deployOptions.ForceReset {
 			return &ResetFileSystemError{Message: getFileSystemResetWarningMsg(deployOptions.FileSystemConfig)}
 		}
-		err := resetFileSystemMount(ctx, clientset, deployOptions, registryOptions)
+		err := resetFileSystemMount(ctx, clientset, deployOptions, registryConfig)
 		if err != nil {
 			return errors.Wrap(err, "failed to reset file system mount")
 		}
@@ -112,7 +112,7 @@ func DeployFileSystemMinio(ctx context.Context, clientset kubernetes.Interface, 
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure file system minio secret")
 	}
-	err = writeMinioKeysSHAFile(ctx, clientset, secret, deployOptions, registryOptions)
+	err = writeMinioKeysSHAFile(ctx, clientset, secret, deployOptions, registryConfig)
 	if err != nil {
 		return errors.Wrap(err, "failed to write minio keys sha file")
 	}
@@ -120,7 +120,7 @@ func DeployFileSystemMinio(ctx context.Context, clientset kubernetes.Interface, 
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal file system minio secret")
 	}
-	if err := ensureFileSystemMinioDeployment(ctx, clientset, deployOptions, registryOptions, marshalledSecret); err != nil {
+	if err := ensureFileSystemMinioDeployment(ctx, clientset, deployOptions, registryConfig, marshalledSecret); err != nil {
 		return errors.Wrap(err, "failed to ensure file system minio deployment")
 	}
 	if err := ensureFileSystemMinioService(ctx, clientset, deployOptions.Namespace); err != nil {
@@ -130,7 +130,7 @@ func DeployFileSystemMinio(ctx context.Context, clientset kubernetes.Interface, 
 	return nil
 }
 
-func DeployFileSystemLvp(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryOptions kotsadmtypes.KotsadmOptions) error {
+func DeployFileSystemLvp(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryConfig kotsadmtypes.RegistryConfig) error {
 
 	veleroNamespace, err := DetectVeleroNamespace(ctx, clientset, deployOptions.Namespace)
 	if err != nil {
@@ -145,9 +145,9 @@ func DeployFileSystemLvp(ctx context.Context, clientset kubernetes.Interface, de
 	return nil
 }
 
-func ValidateFileSystemDeployment(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryOptions kotsadmtypes.KotsadmOptions) (bool, bool, error) {
+func ValidateFileSystemDeployment(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryConfig kotsadmtypes.RegistryConfig) (bool, bool, error) {
 	// configure fs directory/mount. This is a legacy check to see if this directory was migrated from Minio and has an intermediate directory
-	_, hasMinioConfig, writable, err := shouldResetFileSystemMount(ctx, clientset, deployOptions, registryOptions)
+	_, hasMinioConfig, writable, err := shouldResetFileSystemMount(ctx, clientset, deployOptions, registryConfig)
 	if err != nil {
 		return false, false, errors.Wrap(err, "failed to check if should reset file system mount")
 	}
@@ -250,10 +250,10 @@ func fileSystemMinioSecretResource() *corev1.Secret {
 	}
 }
 
-func ensureFileSystemMinioDeployment(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryOptions kotsadmtypes.KotsadmOptions, marshalledSecret []byte) error {
+func ensureFileSystemMinioDeployment(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryConfig kotsadmtypes.RegistryConfig, marshalledSecret []byte) error {
 	secretChecksum := fmt.Sprintf("%x", md5.Sum(marshalledSecret))
 
-	deployment, err := fileSystemMinioDeploymentResource(clientset, secretChecksum, deployOptions, registryOptions)
+	deployment, err := fileSystemMinioDeploymentResource(clientset, secretChecksum, deployOptions, registryConfig)
 	if err != nil {
 		return errors.Wrap(err, "failed to get deployment resource")
 	}
@@ -285,7 +285,7 @@ func ensureFileSystemMinioDeployment(ctx context.Context, clientset kubernetes.I
 	return nil
 }
 
-func fileSystemMinioDeploymentResource(clientset kubernetes.Interface, secretChecksum string, deployOptions FileSystemDeployOptions, registryOptions kotsadmtypes.KotsadmOptions) (*appsv1.Deployment, error) {
+func fileSystemMinioDeploymentResource(clientset kubernetes.Interface, secretChecksum string, deployOptions FileSystemDeployOptions, registryConfig kotsadmtypes.RegistryConfig) (*appsv1.Deployment, error) {
 	existingImage, err := image.GetMinioImage(clientset, deployOptions.Namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find minio image")
@@ -300,7 +300,7 @@ func fileSystemMinioDeploymentResource(clientset kubernetes.Interface, secretChe
 
 	if !kotsutil.IsKurl(clientset) || deployOptions.Namespace != metav1.NamespaceDefault {
 		var err error
-		imageRewriteFn := kotsadmversion.DependencyImageRewriteKotsadmRegistry(deployOptions.Namespace, &registryOptions)
+		imageRewriteFn := kotsadmversion.DependencyImageRewriteKotsadmRegistry(deployOptions.Namespace, &registryConfig)
 		minioImage, imagePullSecrets, err = imageRewriteFn(minioImage, false)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to rewrite image")
@@ -550,8 +550,8 @@ func updateFileSystemMinioService(existingService, desiredService *corev1.Servic
 	return existingService
 }
 
-func shouldResetFileSystemMount(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryOptions kotsadmtypes.KotsadmOptions) (shouldReset bool, hasMinioConfig bool, writable bool, finalErr error) {
-	checkPod, err := createFileSystemMinioCheckPod(ctx, clientset, deployOptions, registryOptions)
+func shouldResetFileSystemMount(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryConfig kotsadmtypes.RegistryConfig) (shouldReset bool, hasMinioConfig bool, writable bool, finalErr error) {
+	checkPod, err := createFileSystemMinioCheckPod(ctx, clientset, deployOptions, registryConfig)
 	if err != nil {
 		finalErr = errors.Wrap(err, "failed to create file system minio check pod")
 		return
@@ -669,8 +669,8 @@ func shouldResetFileSystemMount(ctx context.Context, clientset kubernetes.Interf
 	return
 }
 
-func resetFileSystemMount(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryOptions kotsadmtypes.KotsadmOptions) error {
-	resetPod, err := createFileSystemMinioResetPod(ctx, clientset, deployOptions, registryOptions)
+func resetFileSystemMount(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryConfig kotsadmtypes.RegistryConfig) error {
+	resetPod, err := createFileSystemMinioResetPod(ctx, clientset, deployOptions, registryConfig)
 	if err != nil {
 		return errors.Wrap(err, "failed to create file system minio reset pod")
 	}
@@ -714,10 +714,10 @@ func resetFileSystemMount(ctx context.Context, clientset kubernetes.Interface, d
 	return nil
 }
 
-func writeMinioKeysSHAFile(ctx context.Context, clientset kubernetes.Interface, minioSecret *corev1.Secret, deployOptions FileSystemDeployOptions, registryOptions kotsadmtypes.KotsadmOptions) error {
+func writeMinioKeysSHAFile(ctx context.Context, clientset kubernetes.Interface, minioSecret *corev1.Secret, deployOptions FileSystemDeployOptions, registryConfig kotsadmtypes.RegistryConfig) error {
 	minioKeysSHA := getMinioKeysSHA(string(minioSecret.Data["MINIO_ACCESS_KEY"]), string(minioSecret.Data["MINIO_SECRET_KEY"]))
 
-	keysSHAPod, err := createFileSystemMinioKeysSHAPod(ctx, clientset, deployOptions, registryOptions, minioKeysSHA)
+	keysSHAPod, err := createFileSystemMinioKeysSHAPod(ctx, clientset, deployOptions, registryConfig, minioKeysSHA)
 	if err != nil {
 		return errors.Wrap(err, "failed to create file system minio keysSHA pod")
 	}
@@ -765,8 +765,8 @@ func getMinioKeysSHA(accessKey, secretKey string) string {
 	return fmt.Sprintf("%x", sha256.Sum256([]byte(fmt.Sprintf("%s,%s", accessKey, secretKey))))
 }
 
-func createFileSystemMinioCheckPod(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryOptions kotsadmtypes.KotsadmOptions) (*corev1.Pod, error) {
-	pod, err := fileSystemMinioCheckPod(ctx, clientset, deployOptions, registryOptions)
+func createFileSystemMinioCheckPod(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryConfig kotsadmtypes.RegistryConfig) (*corev1.Pod, error) {
+	pod, err := fileSystemMinioCheckPod(ctx, clientset, deployOptions, registryConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get pod resource")
 	}
@@ -779,8 +779,8 @@ func createFileSystemMinioCheckPod(ctx context.Context, clientset kubernetes.Int
 	return p, nil
 }
 
-func createFileSystemMinioResetPod(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryOptions kotsadmtypes.KotsadmOptions) (*corev1.Pod, error) {
-	pod, err := fileSystemMinioResetPod(ctx, clientset, deployOptions, registryOptions)
+func createFileSystemMinioResetPod(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryConfig kotsadmtypes.RegistryConfig) (*corev1.Pod, error) {
+	pod, err := fileSystemMinioResetPod(ctx, clientset, deployOptions, registryConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get pod resource")
 	}
@@ -793,8 +793,8 @@ func createFileSystemMinioResetPod(ctx context.Context, clientset kubernetes.Int
 	return p, nil
 }
 
-func createFileSystemMinioKeysSHAPod(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryOptions kotsadmtypes.KotsadmOptions, minioKeysSHA string) (*corev1.Pod, error) {
-	pod, err := fileSystemMinioKeysSHAPod(ctx, clientset, deployOptions, registryOptions, minioKeysSHA)
+func createFileSystemMinioKeysSHAPod(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryConfig kotsadmtypes.RegistryConfig, minioKeysSHA string) (*corev1.Pod, error) {
+	pod, err := fileSystemMinioKeysSHAPod(ctx, clientset, deployOptions, registryConfig, minioKeysSHA)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get pod resource")
 	}
@@ -807,23 +807,23 @@ func createFileSystemMinioKeysSHAPod(ctx context.Context, clientset kubernetes.I
 	return p, nil
 }
 
-func fileSystemMinioCheckPod(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryOptions kotsadmtypes.KotsadmOptions) (*corev1.Pod, error) {
+func fileSystemMinioCheckPod(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryConfig kotsadmtypes.RegistryConfig) (*corev1.Pod, error) {
 	command := []string{"/fs-minio-check.sh"}
-	return fileSystemMinioConfigPod(clientset, deployOptions, registryOptions, fsMinioCheckTag, command, nil, true)
+	return fileSystemMinioConfigPod(clientset, deployOptions, registryConfig, fsMinioCheckTag, command, nil, true)
 }
 
-func fileSystemMinioResetPod(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryOptions kotsadmtypes.KotsadmOptions) (*corev1.Pod, error) {
+func fileSystemMinioResetPod(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryConfig kotsadmtypes.RegistryConfig) (*corev1.Pod, error) {
 	command := []string{"/fs-minio-reset.sh"}
-	return fileSystemMinioConfigPod(clientset, deployOptions, registryOptions, fsMinioResetTag, command, nil, false)
+	return fileSystemMinioConfigPod(clientset, deployOptions, registryConfig, fsMinioResetTag, command, nil, false)
 }
 
-func fileSystemMinioKeysSHAPod(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryOptions kotsadmtypes.KotsadmOptions, minioKeysSHA string) (*corev1.Pod, error) {
+func fileSystemMinioKeysSHAPod(ctx context.Context, clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryConfig kotsadmtypes.RegistryConfig, minioKeysSHA string) (*corev1.Pod, error) {
 	command := []string{"/fs-minio-keys-sha.sh"}
 	args := []string{minioKeysSHA}
-	return fileSystemMinioConfigPod(clientset, deployOptions, registryOptions, fsMinioKeysSHATag, command, args, false)
+	return fileSystemMinioConfigPod(clientset, deployOptions, registryConfig, fsMinioKeysSHATag, command, args, false)
 }
 
-func fileSystemMinioConfigPod(clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryOptions kotsadmtypes.KotsadmOptions, podCheckTag string, command []string, args []string, readOnly bool) (*corev1.Pod, error) {
+func fileSystemMinioConfigPod(clientset kubernetes.Interface, deployOptions FileSystemDeployOptions, registryConfig kotsadmtypes.RegistryConfig, podCheckTag string, command []string, args []string, readOnly bool) (*corev1.Pod, error) {
 	podName := fmt.Sprintf("%s-%d", podCheckTag, time.Now().Unix())
 
 	var securityContext corev1.PodSecurityContext
@@ -834,13 +834,13 @@ func fileSystemMinioConfigPod(clientset kubernetes.Interface, deployOptions File
 		}
 	}
 
-	kotsadmTag := kotsadmversion.KotsadmTag(kotsadmtypes.KotsadmOptions{}) // default tag
+	kotsadmTag := kotsadmversion.KotsadmTag(kotsadmtypes.RegistryConfig{}) // default tag
 	image := fmt.Sprintf("kotsadm/kotsadm:%s", kotsadmTag)
 	imagePullSecrets := []corev1.LocalObjectReference{}
 
 	if !kotsutil.IsKurl(clientset) || deployOptions.Namespace != metav1.NamespaceDefault {
 		var err error
-		imageRewriteFn := kotsadmversion.KotsadmImageRewriteKotsadmRegistry(deployOptions.Namespace, &registryOptions)
+		imageRewriteFn := kotsadmversion.KotsadmImageRewriteKotsadmRegistry(deployOptions.Namespace, &registryConfig)
 		image, imagePullSecrets, err = imageRewriteFn(image, false)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to rewrite image")
@@ -901,7 +901,7 @@ func fileSystemMinioConfigPod(clientset kubernetes.Interface, deployOptions File
 	return pod, nil
 }
 
-func CreateFileSystemMinioBucket(ctx context.Context, clientset kubernetes.Interface, namespace string, registryOptions kotsadmtypes.KotsadmOptions) error {
+func CreateFileSystemMinioBucket(ctx context.Context, clientset kubernetes.Interface, namespace string, registryConfig kotsadmtypes.RegistryConfig) error {
 	storeFileSystem, err := BuildMinioStoreFileSystem(ctx, clientset, namespace)
 	if err != nil {
 		return errors.Wrap(err, "failed to build file system store")
@@ -917,7 +917,7 @@ func CreateFileSystemMinioBucket(ctx context.Context, clientset kubernetes.Inter
 		SecretAccessKey: storeFileSystem.SecretAccessKey,
 		Namespace:       namespace,
 		IsOpenShift:     k8sutil.IsOpenShift(clientset),
-		RegistryOptions: &registryOptions,
+		RegistryConfig:  &registryConfig,
 	}
 	return kotss3.CreateS3BucketUsingAPod(ctx, clientset, options)
 }

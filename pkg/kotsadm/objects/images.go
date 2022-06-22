@@ -22,33 +22,33 @@ func GetAdminConsoleImages(deployOptions types.DeployOptions) map[string]string 
 	postgresImage := fmt.Sprintf("postgres:%s", postgresTag)
 	dexImage := fmt.Sprintf("kotsadm/dex:%s", dexTag)
 
-	if s := kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions); s != nil {
-		if deployOptions.KotsadmOptions.OverrideVersion != "" {
-			minioTag = deployOptions.KotsadmOptions.OverrideVersion
-			postgresTag = deployOptions.KotsadmOptions.OverrideVersion
-			dexTag = deployOptions.KotsadmOptions.OverrideVersion
+	if s := kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.RegistryConfig); s != nil {
+		if deployOptions.RegistryConfig.OverrideVersion != "" {
+			minioTag = deployOptions.RegistryConfig.OverrideVersion
+			postgresTag = deployOptions.RegistryConfig.OverrideVersion
+			dexTag = deployOptions.RegistryConfig.OverrideVersion
 		}
 
-		minioImage = fmt.Sprintf("%s/minio:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), minioTag)
-		postgresImage = fmt.Sprintf("%s/postgres:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), postgresTag)
-		dexImage = fmt.Sprintf("%s/dex:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), dexTag)
-	} else if deployOptions.KotsadmOptions.OverrideRegistry != "" {
+		minioImage = fmt.Sprintf("%s/minio:%s", kotsadmversion.KotsadmRegistry(deployOptions.RegistryConfig), minioTag)
+		postgresImage = fmt.Sprintf("%s/postgres:%s", kotsadmversion.KotsadmRegistry(deployOptions.RegistryConfig), postgresTag)
+		dexImage = fmt.Sprintf("%s/dex:%s", kotsadmversion.KotsadmRegistry(deployOptions.RegistryConfig), dexTag)
+	} else if deployOptions.RegistryConfig.OverrideRegistry != "" {
 		// if there is a registry specified, use images there and not the ones from docker hub - even though there's not a username/password specified
 
-		if deployOptions.KotsadmOptions.OverrideVersion != "" {
-			minioTag = deployOptions.KotsadmOptions.OverrideVersion
-			postgresTag = deployOptions.KotsadmOptions.OverrideVersion
-			dexTag = deployOptions.KotsadmOptions.OverrideVersion
+		if deployOptions.RegistryConfig.OverrideVersion != "" {
+			minioTag = deployOptions.RegistryConfig.OverrideVersion
+			postgresTag = deployOptions.RegistryConfig.OverrideVersion
+			dexTag = deployOptions.RegistryConfig.OverrideVersion
 		}
 
-		minioImage = fmt.Sprintf("%s/minio:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), minioTag)
-		postgresImage = fmt.Sprintf("%s/postgres:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), postgresTag)
-		dexImage = fmt.Sprintf("%s/dex:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), dexTag)
+		minioImage = fmt.Sprintf("%s/minio:%s", kotsadmversion.KotsadmRegistry(deployOptions.RegistryConfig), minioTag)
+		postgresImage = fmt.Sprintf("%s/postgres:%s", kotsadmversion.KotsadmRegistry(deployOptions.RegistryConfig), postgresTag)
+		dexImage = fmt.Sprintf("%s/dex:%s", kotsadmversion.KotsadmRegistry(deployOptions.RegistryConfig), dexTag)
 	}
 
 	return map[string]string{
-		"kotsadm-migrations": fmt.Sprintf("%s/kotsadm-migrations:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
-		"kotsadm":            fmt.Sprintf("%s/kotsadm:%s", kotsadmversion.KotsadmRegistry(deployOptions.KotsadmOptions), kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
+		"kotsadm-migrations": fmt.Sprintf("%s/kotsadm-migrations:%s", kotsadmversion.KotsadmRegistry(deployOptions.RegistryConfig), kotsadmversion.KotsadmTag(deployOptions.RegistryConfig)),
+		"kotsadm":            fmt.Sprintf("%s/kotsadm:%s", kotsadmversion.KotsadmRegistry(deployOptions.RegistryConfig), kotsadmversion.KotsadmTag(deployOptions.RegistryConfig)),
 		"minio":              minioImage,
 		"postgres":           postgresImage,
 		"dex":                dexImage,
@@ -58,8 +58,8 @@ func GetAdminConsoleImages(deployOptions types.DeployOptions) map[string]string 
 func GetOriginalAdminConsoleImages(deployOptions types.DeployOptions) map[string]string {
 	dexTag, _ := image.GetTag(image.Dex) // dex image is special; we host a copy
 	return map[string]string{
-		"kotsadm-migrations": fmt.Sprintf("kotsadm/kotsadm-migrations:%s", kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
-		"kotsadm":            fmt.Sprintf("kotsadm/kotsadm:%s", kotsadmversion.KotsadmTag(deployOptions.KotsadmOptions)),
+		"kotsadm-migrations": fmt.Sprintf("kotsadm/kotsadm-migrations:%s", kotsadmversion.KotsadmTag(deployOptions.RegistryConfig)),
+		"kotsadm":            fmt.Sprintf("kotsadm/kotsadm:%s", kotsadmversion.KotsadmTag(deployOptions.RegistryConfig)),
 		"minio":              image.Minio,
 		"postgres":           fmt.Sprintf("postgres:%s", getPostgresTag(deployOptions)),
 		"dex":                fmt.Sprintf("kotsadm/dex:%s", dexTag),

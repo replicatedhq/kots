@@ -195,7 +195,7 @@ func (h *Handler) ConfigureIdentityService(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	registryOptions, err := kotsadm.GetKotsadmOptionsFromCluster(namespace, clientset)
+	registryConfig, err := kotsadm.GetRegistryConfigFromCluster(namespace, clientset)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get kotsadm options from cluster")
 		logger.Error(err)
@@ -217,7 +217,7 @@ func (h *Handler) ConfigureIdentityService(w http.ResponseWriter, r *http.Reques
 		"HTTPS_PROXY": os.Getenv("HTTPS_PROXY"),
 		"NO_PROXY":    os.Getenv("NO_PROXY"),
 	}
-	if err := identity.Deploy(r.Context(), clientset, namespace, identityConfig, *ingressConfig, &registryOptions, proxyEnv, applyAppBranding); err != nil {
+	if err := identity.Deploy(r.Context(), clientset, namespace, identityConfig, *ingressConfig, &registryConfig, proxyEnv, applyAppBranding); err != nil {
 		err = errors.Wrap(err, "failed to deploy the identity service")
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
