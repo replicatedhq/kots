@@ -155,24 +155,24 @@ version: "v1"
 			},
 			want: []orderedDir{
 				{
-					Dir:          "chart4",
+					Name:         "chart4",
 					ChartName:    "chart4",
 					ChartVersion: "v1",
 				},
 				{
-					Dir:          "chart1",
+					Name:         "chart1",
 					Weight:       1,
 					ChartName:    "chart1",
 					ChartVersion: "ver1",
 				},
 				{
-					Dir:          "chart2",
+					Name:         "chart2",
 					Weight:       1,
 					ChartName:    "chart2",
 					ChartVersion: "v1",
 				},
 				{
-					Dir:          "chart3",
+					Name:         "chart3",
 					Weight:       5,
 					ChartName:    "chart3",
 					ChartVersion: "v1",
@@ -209,13 +209,13 @@ name: c2
 			},
 			want: []orderedDir{
 				{
-					Dir:          "chart1",
+					Name:         "chart1",
 					Weight:       -5,
 					ChartName:    "c1",
 					ChartVersion: "ver1",
 				},
 				{
-					Dir:       "chart2",
+					Name:      "chart2",
 					ChartName: "c2",
 				},
 			},
@@ -260,13 +260,13 @@ version: ver2
 			},
 			want: []orderedDir{
 				{
-					Dir:          "chart1",
+					Name:         "chart1",
 					ChartName:    "generic",
 					ChartVersion: "ver1",
 					Weight:       -1,
 				},
 				{
-					Dir:          "chart2",
+					Name:         "chart2",
 					Weight:       2,
 					ChartName:    "generic",
 					ChartVersion: "ver2",

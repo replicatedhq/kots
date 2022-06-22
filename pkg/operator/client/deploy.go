@@ -519,8 +519,8 @@ func (c *Client) installWithHelm(helmDir string, targetNamespace string, kotsCha
 	var hasErr bool
 	var multiStdout, multiStderr [][]byte
 	for _, dir := range orderedDirs {
-		installDir := filepath.Join(chartsDir, dir.Dir)
-		args := []string{"upgrade", "-i", dir.ChartName, installDir, "--timeout", "3600s"}
+		installDir := filepath.Join(chartsDir, dir.Name)
+		args := []string{"upgrade", "-i", dir.Name, installDir, "--timeout", "3600s"}
 
 		if targetNamespace != "" && targetNamespace != "." {
 			args = append(args, "-n", targetNamespace)
@@ -553,7 +553,7 @@ func (c *Client) installWithHelm(helmDir string, targetNamespace string, kotsCha
 }
 
 type orderedDir struct {
-	Dir          string
+	Name         string
 	Weight       int64
 	ChartName    string
 	ChartVersion string
@@ -585,17 +585,17 @@ func getSortedCharts(chartsDir string, kotsCharts []*v1beta1.HelmChart) ([]order
 		}
 
 		orderedDirs = append(orderedDirs, orderedDir{
-			Dir:          dir.Name(),
+			Name:         dir.Name(),
 			ChartName:    cname.ChartName,
 			ChartVersion: cname.ChartVersion,
 		})
 	}
 
-	// look through the list of kotsChart objects for each orderedDir, and if the name+version matches, use that weight
+	// look through the list of kotsChart objects for each orderedDir, and if the name+version+dirname matches, use that weight
 	// if there is no match, do not treat this as a fatal error
 	for idx, dir := range orderedDirs {
 		for _, kotsChart := range kotsCharts {
-			if kotsChart.Spec.Chart.ChartVersion == dir.ChartVersion && kotsChart.Spec.Chart.Name == dir.ChartName {
+			if kotsChart.Spec.Chart.ChartVersion == dir.ChartVersion && kotsChart.Spec.Chart.Name == dir.ChartName && kotsChart.Name == dir.Name {
 				orderedDirs[idx].Weight = kotsChart.Spec.Weight
 			}
 		}
