@@ -1,21 +1,25 @@
 package e2e
 
 import (
+	"context"
 	"flag"
-	"github.com/onsi/gomega/gexec"
-	"github.com/replicatedhq/kots/e2e/registry"
 	"os"
 	"testing"
+	"time"
+
 	//lint:ignore ST1001 since Ginkgo and Gomega are DSLs this makes the tests more natural to read
 	. "github.com/onsi/ginkgo/v2"
 	//lint:ignore ST1001 since Ginkgo and Gomega are DSLs this makes the tests more natural to read
 	. "github.com/onsi/gomega"
+
+	"github.com/onsi/gomega/gexec"
 	"github.com/replicatedhq/kots/e2e/cluster"
 	"github.com/replicatedhq/kots/e2e/helm"
 	"github.com/replicatedhq/kots/e2e/kots"
 	"github.com/replicatedhq/kots/e2e/kubectl"
 	"github.com/replicatedhq/kots/e2e/minio"
 	"github.com/replicatedhq/kots/e2e/prometheus"
+	"github.com/replicatedhq/kots/e2e/registry"
 	"github.com/replicatedhq/kots/e2e/testim"
 	"github.com/replicatedhq/kots/e2e/testim/inventory"
 	"github.com/replicatedhq/kots/e2e/util"
@@ -119,11 +123,14 @@ var _ = Describe("E2E", func() {
 		})
 
 		AfterEach(func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+
 			// Debug info
 			GinkgoWriter.Println("\n")
 			if kubectlCLI != nil {
-				kubectlCLI.GetAllPods()
-				kubectlCLI.DescribeNodes()
+				kubectlCLI.GetAllPods(ctx)
+				kubectlCLI.DescribeNodes(ctx)
 			}
 			if testimRun != nil {
 				testimRun.PrintDebugInfo()

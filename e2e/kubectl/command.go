@@ -1,11 +1,12 @@
 package kubectl
 
 import (
+	"context"
 	"fmt"
 	"os/exec"
 
-	"github.com/onsi/gomega/gexec"
-	"github.com/replicatedhq/kots/e2e/util"
+	//lint:ignore ST1001 since Ginkgo and Gomega are DSLs this makes the tests more natural to read
+	. "github.com/onsi/ginkgo/v2"
 )
 
 type CLI struct {
@@ -20,7 +21,7 @@ func NewCLI(workspace, kubeconfig string) *CLI {
 	}
 }
 
-func (c *CLI) RunCommand(args ...string) (*gexec.Session, error) {
+func (c *CLI) Command(ctx context.Context, args ...string) *exec.Cmd {
 	args = append(
 		[]string{
 			fmt.Sprintf("--cache-dir=%s/.kube/cache", c.workspace),
@@ -28,20 +29,24 @@ func (c *CLI) RunCommand(args ...string) (*gexec.Session, error) {
 		},
 		args...,
 	)
-	return util.RunCommand(exec.Command("kubectl", args...))
+	return exec.CommandContext(ctx, "kubectl", args...)
 }
 
-func (c *CLI) GetPods(namespace string) {
-	session, _ := c.RunCommand("get", "pods", fmt.Sprintf("--namespace=%s", namespace))
-	session.Wait()
+func (c *CLI) RunCommand(ctx context.Context, args ...string) ([]byte, error) {
+	return c.Command(ctx, args...).CombinedOutput()
 }
 
-func (c *CLI) GetAllPods() {
-	session, _ := c.RunCommand("get", "pods", "--all-namespaces")
-	session.Wait()
+func (c *CLI) GetPods(ctx context.Context, namespace string) {
+	out, _ := c.RunCommand(ctx, "get", "pods", fmt.Sprintf("--namespace=%s", namespace))
+	GinkgoWriter.Write(out)
 }
 
-func (c *CLI) DescribeNodes() {
-	session, _ := c.RunCommand("describe", "nodes")
-	session.Wait()
+func (c *CLI) GetAllPods(ctx context.Context) {
+	out, _ := c.RunCommand(ctx, "get", "pods", "--all-namespaces")
+	GinkgoWriter.Write(out)
+}
+
+func (c *CLI) DescribeNodes(ctx context.Context) {
+	out, _ := c.RunCommand(ctx, "describe", "nodes")
+	GinkgoWriter.Write(out)
 }
