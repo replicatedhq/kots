@@ -30,3 +30,12 @@ func NewRegressionTest() Test {
 		NeedsRegistry:   true,
 	}
 }
+
+func NewStrictPreflightChecks() Test {
+	return Test{
+		Name:        "Strict Preflight Checks",
+		Suite:       "strict-preflight-checks",
+		Namespace:   "strict-preflight-checks",
+		UpstreamURI: "strict-preflight-checks/automated",
+	}
+}
