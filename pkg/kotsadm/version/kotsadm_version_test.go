@@ -65,13 +65,13 @@ func Test_KotsadmRegistry(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			options := types.KotsadmOptions{
+			registryConfig := types.RegistryConfig{
 				OverrideVersion:   test.overrideVersion,
 				OverrideRegistry:  test.overrideRegistry,
 				OverrideNamespace: test.overrideNamespace,
 			}
 
-			actual := KotsadmRegistry(options)
+			actual := KotsadmRegistry(registryConfig)
 			assert.Equal(t, test.expected, actual)
 		})
 	}

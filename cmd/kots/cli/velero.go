@@ -135,7 +135,7 @@ func VeleroConfigureInternalCmd() *cobra.Command {
 					"consult https://kots.io/kotsadm/snapshots/overview/ for install instructions`)")
 			}
 
-			registryOptions, err := kotsadm.GetKotsadmOptionsFromCluster(namespace, clientset)
+			registryConfig, err := kotsadm.GetRegistryConfigFromCluster(namespace, clientset)
 			if err != nil {
 				return errors.Wrap(err, "failed to get registry options from cluster")
 			}
@@ -143,7 +143,7 @@ func VeleroConfigureInternalCmd() *cobra.Command {
 			configureStoreOptions := snapshot.ConfigureStoreOptions{
 				Internal:          true,
 				KotsadmNamespace:  namespace,
-				RegistryOptions:   &registryOptions,
+				RegistryConfig:    &registryConfig,
 				SkipValidation:    v.GetBool("skip-validation"),
 				ValidateUsingAPod: true,
 				IsMinioDisabled:   !v.GetBool("with-minio"),
@@ -221,7 +221,7 @@ func VeleroConfigureAmazonS3AccessKeyCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get clientset")
 			}
 
-			registryOptions, err := kotsadm.GetKotsadmOptionsFromCluster(namespace, clientset)
+			registryConfig, err := kotsadm.GetRegistryConfigFromCluster(namespace, clientset)
 			if err != nil {
 				return errors.Wrap(err, "failed to get registry options from cluster")
 			}
@@ -237,7 +237,7 @@ func VeleroConfigureAmazonS3AccessKeyCmd() *cobra.Command {
 					UseInstanceRole: false,
 				},
 				KotsadmNamespace: namespace,
-				RegistryOptions:  &registryOptions,
+				RegistryConfig:   &registryConfig,
 				SkipValidation:   v.GetBool("skip-validation"),
 			}
 			_, err = snapshot.ConfigureStore(cmd.Context(), configureStoreOptions)
@@ -287,7 +287,7 @@ func VeleroConfigureAmazonS3InstanceRoleCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get clientset")
 			}
 
-			registryOptions, err := kotsadm.GetKotsadmOptionsFromCluster(namespace, clientset)
+			registryConfig, err := kotsadm.GetRegistryConfigFromCluster(namespace, clientset)
 			if err != nil {
 				return errors.Wrap(err, "failed to get registry options from cluster")
 			}
@@ -301,7 +301,7 @@ func VeleroConfigureAmazonS3InstanceRoleCmd() *cobra.Command {
 					UseInstanceRole: true,
 				},
 				KotsadmNamespace: namespace,
-				RegistryOptions:  &registryOptions,
+				RegistryConfig:   &registryConfig,
 				SkipValidation:   v.GetBool("skip-validation"),
 			}
 			_, err = snapshot.ConfigureStore(cmd.Context(), configureStoreOptions)
@@ -376,7 +376,7 @@ func VeleroConfigureOtherS3Cmd() *cobra.Command {
 					"consult https://kots.io/kotsadm/snapshots/overview/ for install instructions`)")
 			}
 
-			registryOptions, err := kotsadm.GetKotsadmOptionsFromCluster(namespace, clientset)
+			registryConfig, err := kotsadm.GetRegistryConfigFromCluster(namespace, clientset)
 			if err != nil {
 				return errors.Wrap(err, "failed to get registry options from cluster")
 			}
@@ -397,7 +397,7 @@ func VeleroConfigureOtherS3Cmd() *cobra.Command {
 					Endpoint:        v.GetString("endpoint"),
 				},
 				KotsadmNamespace:  namespace,
-				RegistryOptions:   &registryOptions,
+				RegistryConfig:    &registryConfig,
 				SkipValidation:    v.GetBool("skip-validation"),
 				ValidateUsingAPod: true,
 				CACertData:        caCertData,
@@ -495,7 +495,7 @@ func VeleroConfigureGCPServiceAccount() *cobra.Command {
 				jsonFile = string(content)
 			}
 
-			registryOptions, err := kotsadm.GetKotsadmOptionsFromCluster(namespace, clientset)
+			registryConfig, err := kotsadm.GetRegistryConfigFromCluster(namespace, clientset)
 			if err != nil {
 				return errors.Wrap(err, "failed to get registry options from cluster")
 			}
@@ -508,7 +508,7 @@ func VeleroConfigureGCPServiceAccount() *cobra.Command {
 					JSONFile: jsonFile,
 				},
 				KotsadmNamespace: namespace,
-				RegistryOptions:  &registryOptions,
+				RegistryConfig:   &registryConfig,
 				SkipValidation:   v.GetBool("skip-validation"),
 			}
 			_, err = snapshot.ConfigureStore(cmd.Context(), configureStoreOptions)
@@ -554,7 +554,7 @@ func VeleroConfigureGCPWorkloadIdentity() *cobra.Command {
 				return errors.Wrap(err, "failed to get clientset")
 			}
 
-			registryOptions, err := kotsadm.GetKotsadmOptionsFromCluster(namespace, clientset)
+			registryConfig, err := kotsadm.GetRegistryConfigFromCluster(namespace, clientset)
 			if err != nil {
 				return errors.Wrap(err, "failed to get registry options from cluster")
 			}
@@ -567,7 +567,7 @@ func VeleroConfigureGCPWorkloadIdentity() *cobra.Command {
 					ServiceAccount: v.GetString("service-account"),
 				},
 				KotsadmNamespace: namespace,
-				RegistryOptions:  &registryOptions,
+				RegistryConfig:   &registryConfig,
 				SkipValidation:   v.GetBool("skip-validation"),
 			}
 			_, err = snapshot.ConfigureStore(cmd.Context(), configureStoreOptions)
@@ -649,7 +649,7 @@ func VeleroConfigureAzureServicePrincipleCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get clientset")
 			}
 
-			registryOptions, err := kotsadm.GetKotsadmOptionsFromCluster(namespace, clientset)
+			registryConfig, err := kotsadm.GetRegistryConfigFromCluster(namespace, clientset)
 			if err != nil {
 				return errors.Wrap(err, "failed to get registry options from cluster")
 			}
@@ -668,7 +668,7 @@ func VeleroConfigureAzureServicePrincipleCmd() *cobra.Command {
 					CloudName:      v.GetString("cloud-name"),
 				},
 				KotsadmNamespace: namespace,
-				RegistryOptions:  &registryOptions,
+				RegistryConfig:   &registryConfig,
 				SkipValidation:   v.GetBool("skip-validation"),
 			}
 
@@ -742,7 +742,7 @@ func VeleroConfigureNFSCmd() *cobra.Command {
 				},
 			}
 
-			registryOptions, err := getRegistryConfig(v)
+			registryConfig, err := getRegistryConfig(v)
 			if err != nil {
 				return errors.Wrap(err, "failed to get registry config")
 			}
@@ -751,7 +751,7 @@ func VeleroConfigureNFSCmd() *cobra.Command {
 
 			opts := VeleroConfigureFileSystemOptions{
 				Namespace:        namespace,
-				RegistryOptions:  registryOptions,
+				RegistryConfig:   registryConfig,
 				FileSystemConfig: fileSystemConfig,
 				Output:           v.GetString("output"),
 				ForceReset:       v.GetBool("force-reset"),
@@ -803,7 +803,7 @@ func VeleroConfigureHostPathCmd() *cobra.Command {
 				HostPath: &hostPath,
 			}
 
-			registryOptions, err := getRegistryConfig(v)
+			registryConfig, err := getRegistryConfig(v)
 			if err != nil {
 				return errors.Wrap(err, "failed to get registry config")
 			}
@@ -812,7 +812,7 @@ func VeleroConfigureHostPathCmd() *cobra.Command {
 
 			opts := VeleroConfigureFileSystemOptions{
 				Namespace:        namespace,
-				RegistryOptions:  registryOptions,
+				RegistryConfig:   registryConfig,
 				FileSystemConfig: fileSystemConfig,
 				Output:           v.GetString("output"),
 				ForceReset:       v.GetBool("force-reset"),
@@ -838,7 +838,7 @@ func VeleroConfigureHostPathCmd() *cobra.Command {
 
 type VeleroConfigureFileSystemOptions struct {
 	Namespace          string
-	RegistryOptions    *kotsadmtypes.KotsadmOptions
+	RegistryConfig     *kotsadmtypes.RegistryConfig
 	FileSystemConfig   snapshottypes.FileSystemConfig
 	Output             string
 	ForceReset         bool
@@ -884,13 +884,13 @@ func veleroConfigureFileSystem(ctx context.Context, log *logger.CLILogger, opts 
 	} else {
 		// LVP Case
 		// Peak to see if this is a legacy minio deployment that was migrated
-		isLegacyMinioDeployment, _, err := snapshot.ValidateFileSystemDeployment(ctx, clientset, deployOptions, *opts.RegistryOptions)
+		isLegacyMinioDeployment, _, err := snapshot.ValidateFileSystemDeployment(ctx, clientset, deployOptions, *opts.RegistryConfig)
 		if err != nil {
 			return errors.Wrap(err, "could not validate lvp file system")
 		}
 		opts.IsLegacyDeployment = isLegacyMinioDeployment
 
-		if err := snapshot.DeployFileSystemLvp(ctx, clientset, deployOptions, *opts.RegistryOptions); err != nil {
+		if err := snapshot.DeployFileSystemLvp(ctx, clientset, deployOptions, *opts.RegistryConfig); err != nil {
 			return errors.Wrap(err, "could not deploy lvp file system config")
 		}
 	}
@@ -928,7 +928,7 @@ func veleroConfigureFileSystem(ctx context.Context, log *logger.CLILogger, opts 
 	configureStoreOptions := snapshot.ConfigureStoreOptions{
 		FileSystem:        &opts.FileSystemConfig,
 		KotsadmNamespace:  opts.Namespace,
-		RegistryOptions:   opts.RegistryOptions,
+		RegistryConfig:    opts.RegistryConfig,
 		SkipValidation:    opts.SkipValidation,
 		ValidateUsingAPod: true,
 		IsMinioDisabled:   opts.IsMinioDisabled,
@@ -946,14 +946,14 @@ func veleroConfigureFileSystem(ctx context.Context, log *logger.CLILogger, opts 
 
 func deployVeleroMinioFileSystem(ctx context.Context, clientset kubernetes.Interface, log *logger.CLILogger, deployOptions snapshot.FileSystemDeployOptions, opts VeleroConfigureFileSystemOptions) error {
 	log.ChildActionWithSpinner("Deploying File System Minio")
-	if err := snapshot.DeployFileSystemMinio(ctx, clientset, deployOptions, *opts.RegistryOptions); err != nil {
+	if err := snapshot.DeployFileSystemMinio(ctx, clientset, deployOptions, *opts.RegistryConfig); err != nil {
 		if _, ok := errors.Cause(err).(*snapshot.ResetFileSystemError); ok {
 			forceReset := promptForFileSystemReset(log, err.Error())
 			if forceReset {
 				log.FinishChildSpinner()
 				log.ChildActionWithSpinner("Re-configuring File System Minio")
 				deployOptions.ForceReset = true
-				if err := snapshot.DeployFileSystemMinio(ctx, clientset, deployOptions, *opts.RegistryOptions); err != nil {
+				if err := snapshot.DeployFileSystemMinio(ctx, clientset, deployOptions, *opts.RegistryConfig); err != nil {
 					log.FinishChildSpinner()
 					return errors.Wrap(err, "failed to force deploy file system minio")
 				}
@@ -977,7 +977,7 @@ func deployVeleroMinioFileSystem(ctx context.Context, clientset kubernetes.Inter
 	log.FinishChildSpinner()
 	log.ChildActionWithSpinner("Creating Default Bucket")
 
-	err = snapshot.CreateFileSystemMinioBucket(ctx, clientset, opts.Namespace, *opts.RegistryOptions)
+	err = snapshot.CreateFileSystemMinioBucket(ctx, clientset, opts.Namespace, *opts.RegistryConfig)
 	if err != nil {
 		log.FinishChildSpinner()
 		return errors.Wrap(err, "failed to create default bucket")
@@ -1018,7 +1018,7 @@ func VeleroPrintFileSystemInstructionsCmd() *cobra.Command {
 			}
 
 			if !v.GetBool("with-minio") || isMinioDisabled {
-				registryOptions, err := getRegistryConfig(v)
+				registryConfig, err := getRegistryConfig(v)
 				if err != nil {
 					return errors.Wrap(err, "failed to get registry config")
 				}
@@ -1035,14 +1035,14 @@ func VeleroPrintFileSystemInstructionsCmd() *cobra.Command {
 				}
 
 				// Peak to see if this is a legacy minio deployment
-				isLegacyMinioDeployment, _, err := snapshot.ValidateFileSystemDeployment(cmd.Context(), clientset, deployOptions, *registryOptions)
+				isLegacyMinioDeployment, _, err := snapshot.ValidateFileSystemDeployment(cmd.Context(), clientset, deployOptions, *registryConfig)
 				if err != nil {
 					return errors.Wrap(err, "could not validate lvp file system")
 				}
 
 				opts := VeleroConfigureFileSystemOptions{
 					Namespace:          namespace,
-					RegistryOptions:    registryOptions,
+					RegistryConfig:     registryConfig,
 					FileSystemConfig:   *fsConfig,
 					IsLegacyDeployment: isLegacyMinioDeployment,
 					IsMinioDisabled:    true,

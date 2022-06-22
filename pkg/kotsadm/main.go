@@ -118,11 +118,12 @@ func Upgrade(clientset *kubernetes.Clientset, upgradeOptions types.UpgradeOption
 
 	// these options are not stored in cluster (yet)
 	deployOptions.Timeout = upgradeOptions.Timeout
-	deployOptions.KotsadmOptions = upgradeOptions.KotsadmOptions
+	deployOptions.RegistryConfig = upgradeOptions.RegistryConfig
 	deployOptions.EnsureRBAC = upgradeOptions.EnsureRBAC
 	deployOptions.SimultaneousUploads = upgradeOptions.SimultaneousUploads
 	deployOptions.IncludeMinio = upgradeOptions.IncludeMinio
 	deployOptions.StrictSecurityContext = upgradeOptions.StrictSecurityContext
+	deployOptions.ResourceRequirements = upgradeOptions.ResourceRequirements
 
 	// Attempt migrations to fail early.
 	if !deployOptions.IncludeMinioSnapshots {
@@ -146,14 +147,14 @@ func Deploy(deployOptions types.DeployOptions, log *logger.CLILogger) error {
 	airgapPath := ""
 	var images []kustomizetypes.Image
 
-	if deployOptions.AirgapRootDir != "" && deployOptions.KotsadmOptions.OverrideRegistry != "" {
+	if deployOptions.AirgapRootDir != "" && deployOptions.RegistryConfig.OverrideRegistry != "" {
 		var err error
 		pushOptions := types.PushImagesOptions{
 			Registry: registry.RegistryOptions{
-				Endpoint:  deployOptions.KotsadmOptions.OverrideRegistry,
-				Namespace: deployOptions.KotsadmOptions.OverrideNamespace,
-				Username:  deployOptions.KotsadmOptions.Username,
-				Password:  deployOptions.KotsadmOptions.Password,
+				Endpoint:  deployOptions.RegistryConfig.OverrideRegistry,
+				Namespace: deployOptions.RegistryConfig.OverrideNamespace,
+				Username:  deployOptions.RegistryConfig.Username,
+				Password:  deployOptions.RegistryConfig.Password,
 			},
 			ProgressWriter: deployOptions.ProgressWriter,
 		}
@@ -179,7 +180,7 @@ func Deploy(deployOptions types.DeployOptions, log *logger.CLILogger) error {
 		return errors.Wrap(err, "failed to get clientset")
 	}
 
-	if deployOptions.AirgapRootDir != "" && deployOptions.KotsadmOptions.OverrideRegistry == "" {
+	if deployOptions.AirgapRootDir != "" && deployOptions.RegistryConfig.OverrideRegistry == "" {
 		log.Info("not pushing airgapped app images as no registry was provided")
 	}
 
@@ -618,7 +619,7 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 
 		isSingleApp := true // TODO (ethan)
 
-		if err := identity.Deploy(ctx, clientset, deployOptions.Namespace, identityConfig, ingressConfig, &deployOptions.KotsadmOptions, proxyEnv, isSingleApp); err != nil {
+		if err := identity.Deploy(ctx, clientset, deployOptions.Namespace, identityConfig, ingressConfig, &deployOptions.RegistryConfig, deployOptions.ResourceRequirements.Dex, proxyEnv, isSingleApp); err != nil {
 			return errors.Wrap(err, "failed to deploy the identity service")
 		}
 
@@ -1109,52 +1110,52 @@ func ReadDeployOptionsFromCluster(namespace string, clientset *kubernetes.Client
 	return &deployOptions, nil
 }
 
-func GetKotsadmOptionsFromCluster(namespace string, clientset kubernetes.Interface) (types.KotsadmOptions, error) {
-	kotsadmOptions := types.KotsadmOptions{}
+func GetRegistryConfigFromCluster(namespace string, clientset kubernetes.Interface) (types.RegistryConfig, error) {
+	registryConfig := types.RegistryConfig{}
 
 	configMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(context.TODO(), types.KotsadmConfigMap, metav1.GetOptions{})
 	if err != nil {
 		if kuberneteserrors.IsNotFound(err) {
-			return kotsadmOptions, nil
+			return registryConfig, nil
 		}
-		return kotsadmOptions, errors.Wrap(err, "failed to get existing kotsadm config map")
+		return registryConfig, errors.Wrap(err, "failed to get existing kotsadm config map")
 	}
 
 	// this can be set even if there is no registry endpoint
 	if configMap.Data["registry-is-read-only"] == "true" {
-		kotsadmOptions.IsReadOnly = true
+		registryConfig.IsReadOnly = true
 	}
 
 	endpoint := configMap.Data["kotsadm-registry"]
 	if endpoint == "" {
-		return kotsadmOptions, nil
+		return registryConfig, nil
 	}
 
 	parts := strings.Split(endpoint, "/")
-	kotsadmOptions.OverrideRegistry = parts[0]
+	registryConfig.OverrideRegistry = parts[0]
 	if len(parts) > 1 {
-		kotsadmOptions.OverrideNamespace = path.Join(parts[1:]...)
+		registryConfig.OverrideNamespace = path.Join(parts[1:]...)
 	}
 
 	imagePullSecret, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), types.PrivateKotsadmRegistrySecret, metav1.GetOptions{})
 	if err != nil {
 		if kuberneteserrors.IsNotFound(err) {
-			return kotsadmOptions, nil
+			return registryConfig, nil
 		}
-		return kotsadmOptions, errors.Wrap(err, "failed to get existing private kotsadm registry secret")
+		return registryConfig, errors.Wrap(err, "failed to get existing private kotsadm registry secret")
 	}
 
 	dockerConfigJson := imagePullSecret.Data[".dockerconfigjson"]
 	if len(dockerConfigJson) == 0 {
-		return kotsadmOptions, nil
+		return registryConfig, nil
 	}
 
-	creds, err := registry.GetCredentialsForRegistryFromConfigJSON(dockerConfigJson, kotsadmOptions.OverrideRegistry)
+	creds, err := registry.GetCredentialsForRegistryFromConfigJSON(dockerConfigJson, registryConfig.OverrideRegistry)
 	if err != nil {
-		return kotsadmOptions, errors.Wrap(err, "failed to parse dockerconfigjson")
+		return registryConfig, errors.Wrap(err, "failed to parse dockerconfigjson")
 	}
 
-	kotsadmOptions.Username = creds.Username
-	kotsadmOptions.Password = creds.Password
-	return kotsadmOptions, nil
+	registryConfig.Username = creds.Username
+	registryConfig.Password = creds.Password
+	return registryConfig, nil
 }

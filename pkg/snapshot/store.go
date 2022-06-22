@@ -66,7 +66,7 @@ type ConfigureStoreOptions struct {
 	FileSystem *types.FileSystemConfig
 
 	KotsadmNamespace string
-	RegistryOptions  *kotsadmtypes.KotsadmOptions
+	RegistryConfig   *kotsadmtypes.RegistryConfig
 
 	// If set to true, will validate the endpoint and the bucket using a pod instead (when applicable).
 	// Will be ignored if SkipValidation is set to true.
@@ -77,7 +77,7 @@ type ConfigureStoreOptions struct {
 
 type ValidateStoreOptions struct {
 	KotsadmNamespace string
-	RegistryOptions  *kotsadmtypes.KotsadmOptions
+	RegistryConfig   *kotsadmtypes.RegistryConfig
 	CACertData       []byte
 	// If set to true, will validate the endpoint and the bucket using a pod instead (when applicable)
 	ValidateUsingAPod bool
@@ -346,7 +346,7 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 	if !options.SkipValidation {
 		validateStoreOptions := ValidateStoreOptions{
 			KotsadmNamespace:  options.KotsadmNamespace,
-			RegistryOptions:   options.RegistryOptions,
+			RegistryConfig:    options.RegistryConfig,
 			ValidateUsingAPod: options.ValidateUsingAPod,
 			CACertData:        options.CACertData,
 		}
@@ -1287,7 +1287,7 @@ func validateOther(ctx context.Context, storeOther *types.StoreOther, bucket str
 			SecretAccessKey: storeOther.SecretAccessKey,
 			Namespace:       options.KotsadmNamespace,
 			IsOpenShift:     k8sutil.IsOpenShift(clientset),
-			RegistryOptions: options.RegistryOptions,
+			RegistryConfig:  options.RegistryConfig,
 		}
 
 		return kotss3.HeadS3BucketUsingAPod(ctx, clientset, podOptions)
@@ -1338,7 +1338,7 @@ func validateInternalS3(ctx context.Context, storeInternal *types.StoreInternal,
 			SecretAccessKey: storeInternal.SecretAccessKey,
 			Namespace:       options.KotsadmNamespace,
 			IsOpenShift:     k8sutil.IsOpenShift(clientset),
-			RegistryOptions: options.RegistryOptions,
+			RegistryConfig:  options.RegistryConfig,
 		}
 
 		return kotss3.HeadS3BucketUsingAPod(ctx, clientset, podOptions)
@@ -1402,7 +1402,7 @@ func validateLvpFileSystem(ctx context.Context, store *types.Store, options Vali
 		ForceReset:       false,
 		FileSystemConfig: *store.FileSystem.Config,
 	}
-	_, writable, err := ValidateFileSystemDeployment(ctx, clientset, deployOptions, *options.RegistryOptions)
+	_, writable, err := ValidateFileSystemDeployment(ctx, clientset, deployOptions, *options.RegistryConfig)
 	if err != nil {
 		return errors.Wrap(err, "could not validate lvp file system")
 	}
@@ -1429,7 +1429,7 @@ func validateMinioFileSystem(ctx context.Context, storeFileSystem *types.StoreFi
 			SecretAccessKey: storeFileSystem.SecretAccessKey,
 			Namespace:       options.KotsadmNamespace,
 			IsOpenShift:     k8sutil.IsOpenShift(clientset),
-			RegistryOptions: options.RegistryOptions,
+			RegistryConfig:  options.RegistryConfig,
 		}
 
 		return kotss3.HeadS3BucketUsingAPod(ctx, clientset, podOptions)

@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
+	"github.com/replicatedhq/kots/pkg/kotsadm/podresources"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/spf13/cobra"
@@ -65,6 +66,10 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 				includeMinio = false
 			}
 
+			resourceRequirements, err := podresources.ParseAllPodRequirementsFlags(v)
+			if err != nil {
+				return errors.Wrap(err, "failed to parse pod resource requirements")
+			}
 			simultaneousUploads, _ := strconv.Atoi(v.GetString("airgap-upload-parallelism"))
 
 			upgradeOptions := kotsadmtypes.UpgradeOptions{
@@ -75,13 +80,15 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 				IncludeMinio:          includeMinio,
 				StrictSecurityContext: v.GetBool("strict-security-context"),
 
-				KotsadmOptions: kotsadmtypes.KotsadmOptions{
+				RegistryConfig: kotsadmtypes.RegistryConfig{
 					OverrideVersion:   v.GetString("kotsadm-tag"),
 					OverrideRegistry:  v.GetString("kotsadm-registry"),
 					OverrideNamespace: v.GetString("kotsadm-namespace"),
 					Username:          v.GetString("registry-username"),
 					Password:          v.GetString("registry-password"),
 				},
+
+				ResourceRequirements: *resourceRequirements,
 			}
 
 			timeout, err := time.ParseDuration(v.GetString("wait-duration"))
@@ -121,17 +128,11 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 	}
 
 	cmd.Flags().Bool("force-upgrade-kurl", false, "set to force upgrade even if this is a kurl cluster")
-	cmd.Flags().String("kotsadm-tag", "", "set to override the tag of kotsadm. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
-	cmd.Flags().String("kotsadm-registry", "", "set to override the registry of kotsadm images. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
-	cmd.Flags().String("registry-username", "", "user name to use to authenticate with the registry")
-	cmd.Flags().String("registry-password", "", "password to use to authenticate with the registry")
-	cmd.Flags().String("kotsadm-namespace", "", "set to override the namespace of kotsadm images. this may create an incompatible deployment because the version of kots and kotsadm are designed to work together")
 	cmd.Flags().String("wait-duration", "3m", "timeout out to be used while waiting for individual components to be ready.  must be in Go duration format (eg: 10s, 2m)")
 	cmd.Flags().Bool("ensure-rbac", true, "when set, kots will create the roles and rolebindings necessary to manage applications")
 	cmd.Flags().String("airgap-upload-parallelism", "", "the number of chunks to upload in parallel when installing or updating in airgap mode")
 	cmd.Flags().Bool("strict-security-context", false, "set to explicitly enable explicit security contexts for all kots pods and containers (may not work for some storage providers)")
 	cmd.Flags().MarkHidden("force-upgrade-kurl")
-	cmd.Flags().MarkHidden("kotsadm-tag")
 	cmd.Flags().MarkHidden("kotsadm-namespace")
 	cmd.Flags().MarkHidden("airgap-upload-parallelism")
 
@@ -142,5 +143,10 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 
 	// option to check if the user has cluster-wide previliges to install application
 	cmd.Flags().Bool("skip-rbac-check", false, "set to true to bypass rbac check")
+
+	registryFlags(cmd.Flags())
+
+	podresources.AllPodRequirementsFlags(cmd.Flags())
+
 	return cmd
 }

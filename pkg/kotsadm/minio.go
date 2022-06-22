@@ -97,6 +97,7 @@ func ensureMinioStatefulset(deployOptions types.DeployOptions, clientset *kubern
 	existingMinio.Spec.Template.Spec.Volumes = desiredMinio.Spec.Template.Spec.DeepCopy().Volumes
 	existingMinio.Spec.Template.Spec.Containers[0].Image = desiredMinio.Spec.Template.Spec.Containers[0].Image
 	existingMinio.Spec.Template.Spec.Containers[0].VolumeMounts = desiredMinio.Spec.Template.Spec.Containers[0].DeepCopy().VolumeMounts
+	existingMinio.Spec.Template.Spec.Containers[0].Resources = deployOptions.ResourceRequirements.Minio.UpdateCoreV1ResourceRequirements(existingMinio.Spec.Template.Spec.Containers[0].Resources)
 
 	_, err = clientset.AppsV1().StatefulSets(deployOptions.Namespace).Update(ctx, existingMinio, metav1.UpdateOptions{})
 	if err != nil {
@@ -211,7 +212,7 @@ func MigrateExistingMinioFilesystemDeployments(log *logger.CLILogger, deployOpti
 		return errors.Wrap(err, "failed to ensure velero local-volume-provider config map")
 	}
 
-	registryOptions, err := GetKotsadmOptionsFromCluster(deployOptions.Namespace, clientset)
+	registryConfig, err := GetRegistryConfigFromCluster(deployOptions.Namespace, clientset)
 	if err != nil {
 		return errors.Wrap(err, "failed to get registry options from cluster")
 	}
@@ -239,7 +240,7 @@ func MigrateExistingMinioFilesystemDeployments(log *logger.CLILogger, deployOpti
 		Path:             "/velero", // Data is not moved from the legacy bucket
 		FileSystem:       prevFsConfig,
 		KotsadmNamespace: deployOptions.Namespace,
-		RegistryOptions:  &registryOptions,
+		RegistryConfig:   &registryConfig,
 		IsMinioDisabled:  true,
 	}
 	if _, err = snapshot.ConfigureStore(context.TODO(), storeOptions); err != nil {

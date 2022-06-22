@@ -17,18 +17,17 @@ import (
 	"strings"
 	"time"
 
-	"github.com/replicatedhq/kots/pkg/handlers"
-	"github.com/replicatedhq/troubleshoot/pkg/preflight"
-
 	cursor "github.com/ahmetalpbalkan/go-cursor"
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/automation"
+	"github.com/replicatedhq/kots/pkg/handlers"
 	"github.com/replicatedhq/kots/pkg/identity"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
+	"github.com/replicatedhq/kots/pkg/kotsadm/podresources"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -37,6 +36,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/store/kotsstore"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
+	"github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -214,6 +214,11 @@ func InstallCmd() *cobra.Command {
 
 			simultaneousUploads, _ := strconv.Atoi(v.GetString("airgap-upload-parallelism"))
 
+			resourceRequirements, err := podresources.ParseAllPodRequirementsFlags(v)
+			if err != nil {
+				return errors.Wrap(err, "failed to parse pod resource requirements")
+			}
+
 			deployOptions := kotsadmtypes.DeployOptions{
 				Namespace:              namespace,
 				Context:                v.GetString("context"),
@@ -242,7 +247,8 @@ func InstallCmd() *cobra.Command {
 				IncludeMinioSnapshots:  v.GetBool("with-minio"),
 				StrictSecurityContext:  v.GetBool("strict-security-context"),
 
-				KotsadmOptions: *registryConfig,
+				RegistryConfig:       *registryConfig,
+				ResourceRequirements: *resourceRequirements,
 
 				IdentityConfig: *identityConfig,
 				IngressConfig:  *ingressConfig,
@@ -484,6 +490,8 @@ func InstallCmd() *cobra.Command {
 
 	registryFlags(cmd.Flags())
 
+	podresources.AllPodRequirementsFlags(cmd.Flags())
+
 	// the following group of flags are experiemental and can be used to pull and push images during install time
 	cmd.Flags().Bool("rewrite-images", false, "set to true to force all container images to be rewritten and pushed to a local registry")
 	cmd.Flags().String("image-namespace", "", "the namespace/org in the docker registry to push images to (required when --rewrite-images is set)")
@@ -675,7 +683,7 @@ func registryFlags(flagset *pflag.FlagSet) {
 	flagset.MarkHidden("kotsadm-tag")
 }
 
-func getRegistryConfig(v *viper.Viper) (*kotsadmtypes.KotsadmOptions, error) {
+func getRegistryConfig(v *viper.Viper) (*kotsadmtypes.RegistryConfig, error) {
 	registryEndpoint := v.GetString("kotsadm-registry")
 	registryNamespace := v.GetString("kotsadm-namespace")
 	registryUsername := v.GetString("registry-username")
@@ -712,7 +720,7 @@ func getRegistryConfig(v *viper.Viper) (*kotsadmtypes.KotsadmOptions, error) {
 			registryNamespace = license.Spec.AppSlug
 		}
 	}
-	return &kotsadmtypes.KotsadmOptions{
+	return &kotsadmtypes.RegistryConfig{
 		OverrideVersion:   v.GetString("kotsadm-tag"),
 		OverrideRegistry:  registryEndpoint,
 		OverrideNamespace: registryNamespace,

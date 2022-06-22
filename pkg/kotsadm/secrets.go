@@ -85,7 +85,7 @@ func getSecretsYAML(deployOptions *types.DeployOptions) (map[string][]byte, erro
 	docs["secret-api-cluster-token.yaml"] = tokenSecret.Bytes()
 
 	// this secret is optional
-	if secret := kotsadmobjects.PrivateKotsadmRegistrySecret(deployOptions.Namespace, deployOptions.KotsadmOptions); secret != nil {
+	if secret := kotsadmobjects.PrivateKotsadmRegistrySecret(deployOptions.Namespace, deployOptions.RegistryConfig); secret != nil {
 		var registrySecret bytes.Buffer
 		if err := s.Encode(secret, &registrySecret); err != nil {
 			return nil, errors.Wrap(err, "failed to marshal private kotsadm registry secret")

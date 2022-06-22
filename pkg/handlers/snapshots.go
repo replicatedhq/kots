@@ -167,7 +167,7 @@ func (h *Handler) UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Re
 	globalSnapshotSettingsResponse.IsMinimalRBACEnabled = !k8sutil.IsKotsadmClusterScoped(r.Context(), clientset, kotsadmNamespace)
 	globalSnapshotSettingsResponse.IsMinioDisabled = isMinioDisabled
 
-	registryOptions, err := kotsadm.GetKotsadmOptionsFromCluster(kotsadmNamespace, clientset)
+	registryConfig, err := kotsadm.GetRegistryConfigFromCluster(kotsadmNamespace, clientset)
 	if err != nil {
 		logger.Error(err)
 		globalSnapshotSettingsResponse.Error = "failed to get kotsadm options from cluster"
@@ -178,7 +178,7 @@ func (h *Handler) UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Re
 	if updateGlobalSnapshotSettingsRequest.FileSystem != nil {
 		if !globalSnapshotSettingsResponse.IsMinioDisabled {
 			// make sure the file system provider is configured and deployed first
-			if err := configureMinioFileSystemProvider(r.Context(), clientset, kotsadmNamespace, registryOptions, *updateGlobalSnapshotSettingsRequest.FileSystem); err != nil {
+			if err := configureMinioFileSystemProvider(r.Context(), clientset, kotsadmNamespace, registryConfig, *updateGlobalSnapshotSettingsRequest.FileSystem); err != nil {
 				if _, ok := errors.Cause(err).(*kotssnapshot.ResetFileSystemError); ok {
 					globalSnapshotSettingsResponse.Error = err.Error()
 					JSON(w, http.StatusConflict, globalSnapshotSettingsResponse)
@@ -201,7 +201,7 @@ func (h *Handler) UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Re
 				return
 			}
 		} else {
-			if err := configureLvpFileSystemProvider(r.Context(), clientset, kotsadmNamespace, registryOptions, *updateGlobalSnapshotSettingsRequest.FileSystem); err != nil {
+			if err := configureLvpFileSystemProvider(r.Context(), clientset, kotsadmNamespace, registryConfig, *updateGlobalSnapshotSettingsRequest.FileSystem); err != nil {
 				globalSnapshotSettingsResponse.Error = err.Error()
 				JSON(w, http.StatusInternalServerError, globalSnapshotSettingsResponse)
 				return
@@ -228,7 +228,7 @@ func (h *Handler) UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Re
 		FileSystem: filesystem,
 
 		KotsadmNamespace: kotsadmNamespace,
-		RegistryOptions:  &registryOptions,
+		RegistryConfig:   &registryConfig,
 		IsMinioDisabled:  globalSnapshotSettingsResponse.IsMinioDisabled,
 
 		CACertData: updateGlobalSnapshotSettingsRequest.CACertData,
@@ -391,7 +391,7 @@ func (h *Handler) ConfigureFileSystemSnapshotProvider(w http.ResponseWriter, r *
 
 	namespace := util.PodNamespace
 
-	registryOptions, err := kotsadm.GetKotsadmOptionsFromCluster(namespace, clientset)
+	registryConfig, err := kotsadm.GetRegistryConfigFromCluster(namespace, clientset)
 	if err != nil {
 		errMsg := "failed to get kotsadm options from cluster"
 		response.Error = errMsg
@@ -402,7 +402,7 @@ func (h *Handler) ConfigureFileSystemSnapshotProvider(w http.ResponseWriter, r *
 
 	// TODO: do this asynchronously and use task status to report back
 	if !isMinioDisabled {
-		if err := configureMinioFileSystemProvider(r.Context(), clientset, namespace, registryOptions, request.FileSystemOptions); err != nil {
+		if err := configureMinioFileSystemProvider(r.Context(), clientset, namespace, registryConfig, request.FileSystemOptions); err != nil {
 			if _, ok := errors.Cause(err).(*kotssnapshot.ResetFileSystemError); ok {
 				response.Error = err.Error()
 				JSON(w, http.StatusConflict, response)
@@ -426,7 +426,7 @@ func (h *Handler) ConfigureFileSystemSnapshotProvider(w http.ResponseWriter, r *
 			return
 		}
 	} else {
-		if err := configureLvpFileSystemProvider(r.Context(), clientset, namespace, registryOptions, request.FileSystemOptions); err != nil {
+		if err := configureLvpFileSystemProvider(r.Context(), clientset, namespace, registryConfig, request.FileSystemOptions); err != nil {
 			response.Error = err.Error()
 			JSON(w, http.StatusInternalServerError, response)
 			return
@@ -439,20 +439,20 @@ func (h *Handler) ConfigureFileSystemSnapshotProvider(w http.ResponseWriter, r *
 	JSON(w, http.StatusOK, response)
 }
 
-func configureLvpFileSystemProvider(ctx context.Context, clientset kubernetes.Interface, namespace string, registryOptions kotsadmtypes.KotsadmOptions, fileSystemOptions FileSystemOptions) error {
+func configureLvpFileSystemProvider(ctx context.Context, clientset kubernetes.Interface, namespace string, registryConfig kotsadmtypes.RegistryConfig, fileSystemOptions FileSystemOptions) error {
 	deployOptions := kotssnapshot.FileSystemDeployOptions{
 		Namespace:        namespace,
 		IsOpenShift:      k8sutil.IsOpenShift(clientset),
 		ForceReset:       fileSystemOptions.ForceReset,
 		FileSystemConfig: fileSystemOptions.FileSystemConfig,
 	}
-	if err := kotssnapshot.DeployFileSystemLvp(ctx, clientset, deployOptions, registryOptions); err != nil {
+	if err := kotssnapshot.DeployFileSystemLvp(ctx, clientset, deployOptions, registryConfig); err != nil {
 		return err
 	}
 	return nil
 }
 
-func configureMinioFileSystemProvider(ctx context.Context, clientset kubernetes.Interface, namespace string, registryOptions kotsadmtypes.KotsadmOptions, fileSystemOptions FileSystemOptions) error {
+func configureMinioFileSystemProvider(ctx context.Context, clientset kubernetes.Interface, namespace string, registryConfig kotsadmtypes.RegistryConfig, fileSystemOptions FileSystemOptions) error {
 	deployOptions := kotssnapshot.FileSystemDeployOptions{
 		Namespace:        namespace,
 		IsOpenShift:      k8sutil.IsOpenShift(clientset),
@@ -468,7 +468,7 @@ func configureMinioFileSystemProvider(ctx context.Context, clientset kubernetes.
 	// 	// return errors.Wrap(err, "failed to os stat")
 	// }
 
-	if err := kotssnapshot.DeployFileSystemMinio(ctx, clientset, deployOptions, registryOptions); err != nil {
+	if err := kotssnapshot.DeployFileSystemMinio(ctx, clientset, deployOptions, registryConfig); err != nil {
 		return errors.Wrap(err, "failed to deploy file system minio")
 	}
 
@@ -477,7 +477,7 @@ func configureMinioFileSystemProvider(ctx context.Context, clientset kubernetes.
 		return errors.Wrap(err, "failed to wait for file system minio")
 	}
 
-	err = kotssnapshot.CreateFileSystemMinioBucket(ctx, clientset, namespace, registryOptions)
+	err = kotssnapshot.CreateFileSystemMinioBucket(ctx, clientset, namespace, registryConfig)
 	if err != nil {
 		return errors.Wrap(err, "failed to create default bucket")
 	}

@@ -348,7 +348,7 @@ func ensureKotsadmDeployment(deployOptions types.DeployOptions, clientset *kuber
 		return nil
 	}
 
-	if err = kotsadmobjects.UpdateKotsadmDeployment(existingDeployment, desiredDeployment); err != nil {
+	if err = kotsadmobjects.UpdateKotsadmDeployment(existingDeployment, desiredDeployment, deployOptions.ResourceRequirements); err != nil {
 		return errors.Wrap(err, "failed to merge deployments")
 	}
 
@@ -380,7 +380,7 @@ func ensureKotsadmStatefulSet(deployOptions types.DeployOptions, clientset *kube
 		return nil
 	}
 
-	if err = kotsadmobjects.UpdateKotsadmStatefulSet(existingStatefulSet, desiredStatefulSet); err != nil {
+	if err = kotsadmobjects.UpdateKotsadmStatefulSet(existingStatefulSet, desiredStatefulSet, deployOptions.ResourceRequirements); err != nil {
 		return errors.Wrap(err, "failed to merge statefulsets")
 	}
 

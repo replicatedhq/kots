@@ -57,5 +57,6 @@ type DeployOptions struct {
 	IdentityConfig kotsv1beta1.IdentityConfig
 	IngressConfig  kotsv1beta1.IngressConfig
 
-	KotsadmOptions KotsadmOptions
+	RegistryConfig       RegistryConfig
+	ResourceRequirements AllResourceRequirements
 }

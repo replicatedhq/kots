@@ -11,14 +11,14 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func EnsurePrivateKotsadmRegistrySecret(namespace string, kotsadmOptions types.KotsadmOptions, clientset kubernetes.Interface) error {
+func EnsurePrivateKotsadmRegistrySecret(namespace string, registryConfig types.RegistryConfig, clientset kubernetes.Interface) error {
 	_, err := clientset.CoreV1().Secrets(namespace).Get(context.TODO(), types.PrivateKotsadmRegistrySecret, metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing private kotsadm registry secret")
 		}
 
-		secret := kotsadmobjects.PrivateKotsadmRegistrySecret(namespace, kotsadmOptions)
+		secret := kotsadmobjects.PrivateKotsadmRegistrySecret(namespace, registryConfig)
 		if secret == nil {
 			return nil
 		}

@@ -281,7 +281,7 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 			}
 		}
 
-		kotsadmOpts, err := kotsadm.GetKotsadmOptionsFromCluster(util.PodNamespace, clientset)
+		registryConfig, err := kotsadm.GetRegistryConfigFromCluster(util.PodNamespace, clientset)
 		if err != nil {
 			return errors.Wrap(err, "failed to load registry info")
 		}
@@ -294,10 +294,10 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 				LicenseData: string(license),
 			},
 			AirgapPath:             airgapFilesDir,
-			RegistryHost:           kotsadmOpts.OverrideRegistry,
-			RegistryNamespace:      kotsadmOpts.OverrideNamespace,
-			RegistryUsername:       kotsadmOpts.Username,
-			RegistryPassword:       kotsadmOpts.Password,
+			RegistryHost:           registryConfig.OverrideRegistry,
+			RegistryNamespace:      registryConfig.OverrideNamespace,
+			RegistryUsername:       registryConfig.Username,
+			RegistryPassword:       registryConfig.Password,
 			RegistryIsReadOnly:     instParams.RegistryIsReadOnly,
 			IsAutomated:            true,
 			SkipPreflights:         instParams.SkipPreflights,

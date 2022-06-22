@@ -7,6 +7,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/ingress"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/kotsadm/podresources"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
 	appsv1 "k8s.io/api/apps/v1"
@@ -134,7 +135,7 @@ func KotsadmServiceAccount(namespace string) *corev1.ServiceAccount {
 	return serviceAccount
 }
 
-func UpdateKotsadmDeployment(existingDeployment *appsv1.Deployment, desiredDeployment *appsv1.Deployment) error {
+func UpdateKotsadmDeployment(existingDeployment *appsv1.Deployment, desiredDeployment *appsv1.Deployment, resourceRequirements types.AllResourceRequirements) error {
 	containerIdx := -1
 	for idx, c := range existingDeployment.Spec.Template.Spec.Containers {
 		if c.Name == "kotsadm" {
@@ -148,6 +149,9 @@ func UpdateKotsadmDeployment(existingDeployment *appsv1.Deployment, desiredDeplo
 
 	// image
 	existingDeployment.Spec.Template.Spec.Containers[containerIdx].Image = desiredDeployment.Spec.Template.Spec.Containers[0].Image
+
+	existingDeployment.Spec.Template.Spec.Containers[containerIdx].Resources =
+		resourceRequirements.Kotsadm.UpdateCoreV1ResourceRequirements(existingDeployment.Spec.Template.Spec.Containers[containerIdx].Resources)
 
 	additionalInitContainers := []corev1.Container{}
 	for _, desiredContainer := range desiredDeployment.Spec.Template.Spec.InitContainers {
@@ -207,7 +211,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 	}
 
 	var pullSecrets []corev1.LocalObjectReference
-	if s := kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions); s != nil {
+	if s := kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.RegistryConfig); s != nil {
 		pullSecrets = []corev1.LocalObjectReference{
 			{
 				Name: s.ObjectMeta.Name,
@@ -338,7 +342,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 	}
 
 	env = append(env, GetProxyEnv(deployOptions)...)
-	if deployOptions.KotsadmOptions.OverrideRegistry != "" || deployOptions.Airgap {
+	if deployOptions.RegistryConfig.OverrideRegistry != "" || deployOptions.Airgap {
 		env = append(env, corev1.EnvVar{
 			Name:  "DISABLE_OUTBOUND_CONNECTIONS",
 			Value: "true",
@@ -451,16 +455,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 									},
 								},
 							},
-							Resources: corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									"cpu":    resource.MustParse("100m"),
-									"memory": resource.MustParse("100Mi"),
-								},
-								Requests: corev1.ResourceList{
-									"cpu":    resource.MustParse("50m"),
-									"memory": resource.MustParse("50Mi"),
-								},
-							},
+							Resources:       podresources.GetKotsadmInitRequirements("schemahero-plan"),
 							SecurityContext: secureContainerContext(deployOptions.StrictSecurityContext),
 						},
 						{
@@ -495,16 +490,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 									},
 								},
 							},
-							Resources: corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									"cpu":    resource.MustParse("100m"),
-									"memory": resource.MustParse("100Mi"),
-								},
-								Requests: corev1.ResourceList{
-									"cpu":    resource.MustParse("50m"),
-									"memory": resource.MustParse("50Mi"),
-								},
-							},
+							Resources:       podresources.GetKotsadmInitRequirements("schemahero-apply"),
 							SecurityContext: secureContainerContext(deployOptions.StrictSecurityContext),
 						},
 						{
@@ -537,16 +523,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 									},
 								},
 							},
-							Resources: corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									"cpu":    resource.MustParse("1"),
-									"memory": resource.MustParse("2Gi"),
-								},
-								Requests: corev1.ResourceList{
-									"cpu":    resource.MustParse("100m"),
-									"memory": resource.MustParse("100Mi"),
-								},
-							},
+							Resources:       podresources.GetKotsadmInitRequirements("restore-db"),
 							SecurityContext: secureContainerContext(deployOptions.StrictSecurityContext),
 						},
 						{
@@ -598,16 +575,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 									Value: "true",
 								},
 							},
-							Resources: corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									"cpu":    resource.MustParse("1"),
-									"memory": resource.MustParse("2Gi"),
-								},
-								Requests: corev1.ResourceList{
-									"cpu":    resource.MustParse("100m"),
-									"memory": resource.MustParse("100Mi"),
-								},
-							},
+							Resources:       podresources.GetKotsadmInitRequirements("restore-s3"),
 							SecurityContext: secureContainerContext(deployOptions.StrictSecurityContext),
 						},
 					},
@@ -644,17 +612,8 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 									MountPath: "/tmp",
 								},
 							},
-							Env: env,
-							Resources: corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									"cpu":    resource.MustParse("1"),
-									"memory": resource.MustParse("2Gi"),
-								},
-								Requests: corev1.ResourceList{
-									"cpu":    resource.MustParse("100m"),
-									"memory": resource.MustParse("100Mi"),
-								},
-							},
+							Env:             env,
+							Resources:       deployOptions.ResourceRequirements.Kotsadm.ToCoreV1ResourceRequirements(),
 							SecurityContext: secureContainerContext(deployOptions.StrictSecurityContext),
 						},
 					},
@@ -666,7 +625,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 	return deployment, nil
 }
 
-func UpdateKotsadmStatefulSet(existingStatefulset *appsv1.StatefulSet, desiredStatefulSet *appsv1.StatefulSet) error {
+func UpdateKotsadmStatefulSet(existingStatefulset *appsv1.StatefulSet, desiredStatefulSet *appsv1.StatefulSet, resourceRequirements types.AllResourceRequirements) error {
 	containerIdx := -1
 	for idx, c := range existingStatefulset.Spec.Template.Spec.Containers {
 		if c.Name == "kotsadm" {
@@ -680,6 +639,9 @@ func UpdateKotsadmStatefulSet(existingStatefulset *appsv1.StatefulSet, desiredSt
 
 	// image
 	existingStatefulset.Spec.Template.Spec.Containers[containerIdx].Image = desiredStatefulSet.Spec.Template.Spec.Containers[0].Image
+
+	existingStatefulset.Spec.Template.Spec.Containers[containerIdx].Resources =
+		resourceRequirements.Kotsadm.UpdateCoreV1ResourceRequirements(existingStatefulset.Spec.Template.Spec.Containers[containerIdx].Resources)
 
 	additionalInitContainers := []corev1.Container{}
 	for _, desiredContainer := range desiredStatefulSet.Spec.Template.Spec.InitContainers {
@@ -750,7 +712,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 	}
 
 	var pullSecrets []corev1.LocalObjectReference
-	if s := kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions); s != nil {
+	if s := kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.RegistryConfig); s != nil {
 		pullSecrets = []corev1.LocalObjectReference{
 			{
 				Name: s.ObjectMeta.Name,
@@ -845,7 +807,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 
 	env = append(env, GetProxyEnv(deployOptions)...)
 
-	if deployOptions.KotsadmOptions.OverrideRegistry != "" || deployOptions.Airgap {
+	if deployOptions.RegistryConfig.OverrideRegistry != "" || deployOptions.Airgap {
 		env = append(env, corev1.EnvVar{
 			Name:  "DISABLE_OUTBOUND_CONNECTIONS",
 			Value: "true",
@@ -971,16 +933,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 									},
 								},
 							},
-							Resources: corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									"cpu":    resource.MustParse("100m"),
-									"memory": resource.MustParse("100Mi"),
-								},
-								Requests: corev1.ResourceList{
-									"cpu":    resource.MustParse("50m"),
-									"memory": resource.MustParse("50Mi"),
-								},
-							},
+							Resources:       podresources.GetKotsadmInitRequirements("schemahero-plan"),
 							SecurityContext: secureContainerContext(deployOptions.StrictSecurityContext),
 						},
 						{
@@ -1015,16 +968,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 									},
 								},
 							},
-							Resources: corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									"cpu":    resource.MustParse("100m"),
-									"memory": resource.MustParse("100Mi"),
-								},
-								Requests: corev1.ResourceList{
-									"cpu":    resource.MustParse("50m"),
-									"memory": resource.MustParse("50Mi"),
-								},
-							},
+							Resources:       podresources.GetKotsadmInitRequirements("schemahero-apply"),
 							SecurityContext: secureContainerContext(deployOptions.StrictSecurityContext),
 						},
 						{
@@ -1061,16 +1005,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 									},
 								},
 							},
-							Resources: corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									"cpu":    resource.MustParse("1"),
-									"memory": resource.MustParse("2Gi"),
-								},
-								Requests: corev1.ResourceList{
-									"cpu":    resource.MustParse("100m"),
-									"memory": resource.MustParse("100Mi"),
-								},
-							},
+							Resources:       podresources.GetKotsadmInitRequirements("restore-data"),
 							SecurityContext: secureContainerContext(deployOptions.StrictSecurityContext),
 						},
 						{
@@ -1124,16 +1059,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 									Value: "true",
 								},
 							},
-							Resources: corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									"cpu":    resource.MustParse("1"),
-									"memory": resource.MustParse("2Gi"),
-								},
-								Requests: corev1.ResourceList{
-									"cpu":    resource.MustParse("100m"),
-									"memory": resource.MustParse("100Mi"),
-								},
-							},
+							Resources:       podresources.GetKotsadmInitRequirements("migrate-s3"),
 							SecurityContext: secureContainerContext(deployOptions.StrictSecurityContext),
 						},
 					},
@@ -1174,17 +1100,8 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 									MountPath: "/tmp",
 								},
 							},
-							Env: env,
-							Resources: corev1.ResourceRequirements{
-								Limits: corev1.ResourceList{
-									"cpu":    resource.MustParse("1"),
-									"memory": resource.MustParse("2Gi"),
-								},
-								Requests: corev1.ResourceList{
-									"cpu":    resource.MustParse("100m"),
-									"memory": resource.MustParse("100Mi"),
-								},
-							},
+							Env:             env,
+							Resources:       deployOptions.ResourceRequirements.Kotsadm.ToCoreV1ResourceRequirements(),
 							SecurityContext: secureContainerContext(deployOptions.StrictSecurityContext),
 						},
 					},

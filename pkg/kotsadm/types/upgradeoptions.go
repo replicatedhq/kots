@@ -13,5 +13,6 @@ type UpgradeOptions struct {
 	SimultaneousUploads   int
 	IncludeMinio          bool
 
-	KotsadmOptions KotsadmOptions
+	RegistryConfig       RegistryConfig
+	ResourceRequirements AllResourceRequirements
 }

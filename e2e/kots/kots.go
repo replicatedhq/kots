@@ -59,6 +59,14 @@ func (i *Installer) install(kubeconfig, upstreamURI, namespace string, useMinima
 		fmt.Sprintf("--kotsadm-namespace=%s", i.imageNamespace),
 		fmt.Sprintf("--kotsadm-tag=%s", i.imageTag),
 		fmt.Sprintf("--wait-duration=%s", InstallWaitDuration),
+		"--kotsadm-pod-cpu-request=10m",
+		"--kotsadm-pod-mem-request=32Mi",
+		"--minio-pod-cpu-request=10m",
+		"--minio-pod-mem-request=32Mi",
+		"--postgres-pod-cpu-request=10m",
+		"--postgres-pod-mem-request=32Mi",
+		"--dex-pod-cpu-request=10m",
+		"--dex-pod-mem-request=32Mi",
 	}
 	if useMinimalRBAC {
 		args = append(args, "--use-minimal-rbac")

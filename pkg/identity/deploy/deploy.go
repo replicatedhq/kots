@@ -32,14 +32,15 @@ var (
 )
 
 type Options struct {
-	NamePrefix         string
-	IdentitySpec       kotsv1beta1.IdentitySpec
-	IdentityConfigSpec kotsv1beta1.IdentityConfigSpec
-	IsOpenShift        bool
-	ImageRewriteFn     kotsadmversion.ImageRewriteFunc
-	ProxyEnv           map[string]string
-	AdditionalLabels   map[string]string
-	Builder            *template.Builder
+	NamePrefix           string
+	IdentitySpec         kotsv1beta1.IdentitySpec
+	IdentityConfigSpec   kotsv1beta1.IdentityConfigSpec
+	IsOpenShift          bool
+	ImageRewriteFn       kotsadmversion.ImageRewriteFunc
+	ProxyEnv             map[string]string
+	AdditionalLabels     map[string]string
+	Builder              *template.Builder
+	ResourceRequirements kotsadmtypes.ResourceRequirements
 }
 
 func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace string, options Options) error {
@@ -167,7 +168,7 @@ func ensureDeployment(ctx context.Context, clientset kubernetes.Interface, names
 		return nil
 	}
 
-	existingDeployment = updateDeployment(options.NamePrefix, existingDeployment, deployment)
+	existingDeployment = updateDeployment(options.NamePrefix, existingDeployment, deployment, options.ResourceRequirements)
 
 	_, err = clientset.AppsV1().Deployments(namespace).Update(ctx, existingDeployment, metav1.UpdateOptions{})
 	if err != nil {
@@ -302,16 +303,7 @@ func deploymentResource(issuerURL, configChecksum string, options Options) (*app
 								{Name: secretVolume.Name, MountPath: "/etc/dex/cfg"},
 								{Name: themeVolume.Name, MountPath: "/web/themes/kots"},
 							},
-							Resources: corev1.ResourceRequirements{
-								// Limits: corev1.ResourceList{
-								// 	"cpu":    dexCPUResource,
-								// 	"memory": dexMemoryResource,
-								// },
-								Requests: corev1.ResourceList{
-									"cpu":    dexCPUResource,
-									"memory": dexMemoryResource,
-								},
-							},
+							Resources: options.ResourceRequirements.ToCoreV1ResourceRequirements(),
 							LivenessProbe: &corev1.Probe{
 								ProbeHandler: corev1.ProbeHandler{
 									HTTPGet: &corev1.HTTPGetAction{
@@ -391,7 +383,7 @@ func postgresSecretEnvFromSource(namePrefix string) corev1.EnvFromSource {
 	}
 }
 
-func updateDeployment(namePrefix string, existingDeployment, desiredDeployment *appsv1.Deployment) *appsv1.Deployment {
+func updateDeployment(namePrefix string, existingDeployment, desiredDeployment *appsv1.Deployment, resourceRequirements kotsadmtypes.ResourceRequirements) *appsv1.Deployment {
 	if len(existingDeployment.Spec.Template.Spec.Containers) == 0 {
 		// wtf
 		return desiredDeployment
@@ -408,11 +400,15 @@ func updateDeployment(namePrefix string, existingDeployment, desiredDeployment *
 	existingDeployment.Spec.Template.Spec.Containers[0].ReadinessProbe = desiredDeployment.Spec.Template.Spec.Containers[0].ReadinessProbe
 	existingDeployment.Spec.Template.Spec.Containers[0].Env = desiredDeployment.Spec.Template.Spec.Containers[0].Env
 
+	existingDeployment.Spec.Template.Spec.Containers[0].Resources = desiredDeployment.Spec.Template.Spec.Containers[0].Resources
+
 	existingDeployment = updateDeploymentConfigSecretVolume(namePrefix, existingDeployment, desiredDeployment)
 
 	existingDeployment = updateDeploymentClientSecretEnvVar(namePrefix, existingDeployment, desiredDeployment)
 
 	existingDeployment = updateDeploymentPostgresSecretEnvFromSource(namePrefix, existingDeployment, desiredDeployment)
+
+	existingDeployment = updateDeploymentResourceRequirements(existingDeployment, resourceRequirements)
 
 	return existingDeployment
 }
@@ -485,6 +481,17 @@ func updateDeploymentPostgresSecretEnvFromSource(namePrefix string, existingDepl
 
 	existingDeployment.Spec.Template.Spec.Containers[0].EnvFrom =
 		append(existingDeployment.Spec.Template.Spec.Containers[0].EnvFrom, newPostgresSecretEnvFromSource)
+
+	return existingDeployment
+}
+
+func updateDeploymentResourceRequirements(existingDeployment *appsv1.Deployment, resourceRequirements kotsadmtypes.ResourceRequirements) *appsv1.Deployment {
+	if len(existingDeployment.Spec.Template.Spec.Containers) == 0 {
+		return existingDeployment
+	}
+
+	existingDeployment.Spec.Template.Spec.Containers[0].Resources =
+		resourceRequirements.UpdateCoreV1ResourceRequirements(existingDeployment.Spec.Template.Spec.Containers[0].Resources)
 
 	return existingDeployment
 }

@@ -132,6 +132,6 @@ func ApiClusterTokenSecret(deployOptions types.DeployOptions) *corev1.Secret {
 	}
 }
 
-func PrivateKotsadmRegistrySecret(namespace string, kotsadmOptions types.KotsadmOptions) *corev1.Secret {
-	return kotsadmversion.KotsadmPullSecret(namespace, kotsadmOptions)
+func PrivateKotsadmRegistrySecret(namespace string, registryConfig types.RegistryConfig) *corev1.Secret {
+	return kotsadmversion.KotsadmPullSecret(namespace, registryConfig)
 }

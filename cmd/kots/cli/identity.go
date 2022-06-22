@@ -10,6 +10,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/identity"
 	ingress "github.com/replicatedhq/kots/pkg/ingress"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/kotsadm/podresources"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -82,9 +83,14 @@ func IdentityServiceInstallCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get registry config")
 			}
 
+			resourceRequirements, err := podresources.ParseDexPodRequirementsFlags(v)
+			if err != nil {
+				return errors.Wrap(err, "failed to parse pod resource requirements")
+			}
+
 			proxyEnv := getHttpProxyEnv(v)
 
-			return identityServiceDeploy(cmd.Context(), log, clientset, namespace, identityConfig, *ingressConfig, registryConfig, proxyEnv, v.GetBool("apply-app-branding"))
+			return identityServiceDeploy(cmd.Context(), log, clientset, namespace, identityConfig, *ingressConfig, registryConfig, resourceRequirements, proxyEnv, v.GetBool("apply-app-branding"))
 		},
 	}
 
@@ -97,6 +103,8 @@ func IdentityServiceInstallCmd() *cobra.Command {
 	cmd.Flags().Bool("apply-app-branding", false, "apply app branding to the identity login screen")
 
 	registryFlags(cmd.Flags())
+
+	podresources.DexPodRequirementsFlags(cmd.Flags())
 
 	return cmd
 }
@@ -288,7 +296,7 @@ func IdentityServiceOIDCCallbackURLCmd() *cobra.Command {
 	return cmd
 }
 
-func identityServiceDeploy(ctx context.Context, log *logger.CLILogger, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, registryConfig *kotsadmtypes.KotsadmOptions, proxyEnv map[string]string, applyAppBranding bool) error {
+func identityServiceDeploy(ctx context.Context, log *logger.CLILogger, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, registryConfig *kotsadmtypes.RegistryConfig, resourceRequirements *kotsadmtypes.ResourceRequirements, proxyEnv map[string]string, applyAppBranding bool) error {
 	log.ChildActionWithSpinner("Deploying the Identity Service")
 
 	identityConfig.Spec.Enabled = true
@@ -308,7 +316,7 @@ func identityServiceDeploy(ctx context.Context, log *logger.CLILogger, clientset
 		return errors.Wrap(err, "failed to set identity config")
 	}
 
-	if err := identity.Deploy(ctx, clientset, namespace, identityConfig, ingressConfig, registryConfig, proxyEnv, applyAppBranding); err != nil {
+	if err := identity.Deploy(ctx, clientset, namespace, identityConfig, ingressConfig, registryConfig, resourceRequirements, proxyEnv, applyAppBranding); err != nil {
 		return errors.Wrap(err, "failed to deploy the identity service")
 	}
 

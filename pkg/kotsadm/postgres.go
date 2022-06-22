@@ -113,6 +113,7 @@ func ensurePostgresStatefulset(deployOptions types.DeployOptions, clientset *kub
 	existingPostgres.Spec.Template.Spec.Volumes = desiredPostgres.Spec.Template.Spec.DeepCopy().Volumes
 	existingPostgres.Spec.Template.Spec.Containers[0].Image = desiredPostgres.Spec.Template.Spec.Containers[0].Image
 	existingPostgres.Spec.Template.Spec.Containers[0].VolumeMounts = desiredPostgres.Spec.Template.Spec.Containers[0].DeepCopy().VolumeMounts
+	existingPostgres.Spec.Template.Spec.Containers[0].Resources = deployOptions.ResourceRequirements.Postgres.UpdateCoreV1ResourceRequirements(existingPostgres.Spec.Template.Spec.Containers[0].Resources)
 
 	_, err = clientset.AppsV1().StatefulSets(deployOptions.Namespace).Update(ctx, existingPostgres, metav1.UpdateOptions{})
 	if err != nil {

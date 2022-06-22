@@ -3,25 +3,23 @@ package s3
 import (
 	"bufio"
 	"bytes"
+	"context"
+	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
-
-	"context"
-	"encoding/json"
-	"time"
-
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/kotsadm/podresources"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -35,7 +33,7 @@ type S3OpsPodOptions struct {
 	SecretAccessKey string
 	Namespace       string
 	IsOpenShift     bool
-	RegistryOptions *kotsadmtypes.KotsadmOptions
+	RegistryConfig  *kotsadmtypes.RegistryConfig
 }
 
 func GetConfig() *aws.Config {
@@ -193,13 +191,13 @@ func s3BucketPod(clientset kubernetes.Interface, podOptions S3OpsPodOptions, com
 		}
 	}
 
-	kotsadmTag := kotsadmversion.KotsadmTag(kotsadmtypes.KotsadmOptions{}) // default tag
+	kotsadmTag := kotsadmversion.KotsadmTag(kotsadmtypes.RegistryConfig{}) // default tag
 	image := fmt.Sprintf("kotsadm/kotsadm:%s", kotsadmTag)
 	imagePullSecrets := []corev1.LocalObjectReference{}
 
 	if !kotsutil.IsKurl(clientset) || podOptions.Namespace != metav1.NamespaceDefault {
 		var err error
-		imageRewriteFn := kotsadmversion.KotsadmImageRewriteKotsadmRegistry(podOptions.Namespace, podOptions.RegistryOptions)
+		imageRewriteFn := kotsadmversion.KotsadmImageRewriteKotsadmRegistry(podOptions.Namespace, podOptions.RegistryConfig)
 		image, imagePullSecrets, err = imageRewriteFn(image, false)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to rewrite image")
@@ -255,16 +253,7 @@ func s3BucketPod(clientset kubernetes.Interface, podOptions S3OpsPodOptions, com
 					Name:            "s3-bucket",
 					Command:         command,
 					Env:             env,
-					Resources: corev1.ResourceRequirements{
-						Limits: corev1.ResourceList{
-							"cpu":    resource.MustParse("100m"),
-							"memory": resource.MustParse("100Mi"),
-						},
-						Requests: corev1.ResourceList{
-							"cpu":    resource.MustParse("50m"),
-							"memory": resource.MustParse("50Mi"),
-						},
-					},
+					Resources:       podresources.GetS3OpsRequirements(),
 				},
 			},
 		},
