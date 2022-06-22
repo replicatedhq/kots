@@ -75,7 +75,7 @@ func Test_getSortedCharts(t *testing.T) {
 			},
 			want: []orderedDir{
 				{
-					Dir:       "chart1",
+					Name:      "chart1",
 					ChartName: "chart1name",
 				},
 			},
@@ -118,6 +118,9 @@ version: "v1"
 			},
 			kotsCharts: []*v1beta1.HelmChart{
 				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart1",
+					},
 					Spec: v1beta1.HelmChartSpec{
 						Chart: v1beta1.ChartIdentifier{
 							Name:         "chart1",
@@ -127,6 +130,9 @@ version: "v1"
 					},
 				},
 				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart2",
+					},
 					Spec: v1beta1.HelmChartSpec{
 						Chart: v1beta1.ChartIdentifier{
 							Name:         "chart2",
@@ -136,6 +142,9 @@ version: "v1"
 					},
 				},
 				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart3",
+					},
 					Spec: v1beta1.HelmChartSpec{
 						Chart: v1beta1.ChartIdentifier{
 							Name:         "chart3",
@@ -145,6 +154,9 @@ version: "v1"
 					},
 				},
 				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart4",
+					},
 					Spec: v1beta1.HelmChartSpec{
 						Chart: v1beta1.ChartIdentifier{
 							Name:         "chart4",
@@ -198,6 +210,9 @@ name: c2
 			},
 			kotsCharts: []*v1beta1.HelmChart{
 				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart1",
+					},
 					Spec: v1beta1.HelmChartSpec{
 						Chart: v1beta1.ChartIdentifier{
 							Name:         "c1",
@@ -240,6 +255,9 @@ version: ver2
 			},
 			kotsCharts: []*v1beta1.HelmChart{
 				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart1",
+					},
 					Spec: v1beta1.HelmChartSpec{
 						Chart: v1beta1.ChartIdentifier{
 							Name:         "generic",
@@ -249,6 +267,9 @@ version: ver2
 					},
 				},
 				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart2",
+					},
 					Spec: v1beta1.HelmChartSpec{
 						Chart: v1beta1.ChartIdentifier{
 							Name:         "generic",
@@ -268,6 +289,63 @@ version: ver2
 				{
 					Name:         "chart2",
 					Weight:       2,
+					ChartName:    "generic",
+					ChartVersion: "ver2",
+				},
+			},
+		},
+		{
+			name: "metadata name does not match directory name",
+			files: []file{
+				{
+					path: "chart1/Chart.yaml",
+					contents: `
+name: generic
+version: ver1
+`,
+				},
+				{
+					path: "chart2/Chart.yaml",
+					contents: `
+name: generic
+version: ver2
+`,
+				},
+			},
+			kotsCharts: []*v1beta1.HelmChart{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart3",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "generic",
+							ChartVersion: "ver1",
+						},
+						Weight: -1,
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart4",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "generic",
+							ChartVersion: "ver2",
+						},
+						Weight: 2,
+					},
+				},
+			},
+			want: []orderedDir{
+				{
+					Name:         "chart1",
+					ChartName:    "generic",
+					ChartVersion: "ver1",
+				},
+				{
+					Name:         "chart2",
 					ChartName:    "generic",
 					ChartVersion: "ver2",
 				},

@@ -1,0 +1,16 @@
+apiVersion: kots.io/v1beta1
+kind: Installation
+metadata:
+  creationTimestamp: null
+  name: replicated-kots-app
+spec:
+  channelID: 1YHCrcZzBxY2nJF5kcTCN9PHpk0
+  channelName: Stable
+  knownImages:
+  - image: busybox
+  - image: alpine
+  - image: nginx:latest
+  - image: alpine:3.4
+  updateCursor: "528"
+  versionLabel: 1.1.7
+status: {}

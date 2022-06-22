@@ -1,0 +1,17 @@
+# The name of the chart under base/charts must match the metadata.name field
+# defined in the HelmChart manifest
+Name: test deploying variations of same helm chart
+PullOptions:
+  Namespace: app-namespace
+  ExcludeAdminConsole: true
+  IsAirgap: true
+  Silent: true
+  LocalPath: cases/samechartvariations/upstream
+  RootDir: cases/samechartvariations/results
+  SharedPassword: dummy-pass
+  RewriteImages: true
+  RewriteImageOptions:
+    Host: fake-docker-proxy
+    Username: test
+    Password: fake-pass
+    IsReadOnly: true
