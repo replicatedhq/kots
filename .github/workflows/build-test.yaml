@@ -310,11 +310,11 @@ jobs:
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
       - if: always()
-        run: journalctl -n all -u docker.service > ./debug/docker.log
+        run: mkdir -p ./debug && journalctl -n all -u docker.service > ./debug/docker.log
       - if: always()
-        run: kubectl -n velero get serverstatusrequest -ojson > ./debug/serverstatusrequest.json
+        run: mkdir -p ./debug && kubectl -n velero get serverstatusrequest -ojson > ./debug/serverstatusrequest.json
       - if: always()
-        run: kubectl -n velero logs deploy/velero > ./debug/velero.log
+        run: mkdir -p ./debug && kubectl -n velero logs deploy/velero > ./debug/velero.log
       - if: always()
         uses: actions/upload-artifact@v2
         with:
