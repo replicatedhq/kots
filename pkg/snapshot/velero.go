@@ -3,6 +3,7 @@ package snapshot
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"context"
 	"regexp"
@@ -364,7 +365,7 @@ ResticFound:
 	return &veleroStatus, nil
 }
 
-func getVersion(ctx context.Context, namespace string) (string, error) {
+func getVersion(namespace string) (string, error) {
 	clientConfig, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get cluster config")
@@ -378,6 +379,8 @@ func getVersion(ctx context.Context, namespace string) (string, error) {
 		return "", errors.Wrap(err, "failed to get velero client")
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 	serverStatusGetter := &serverstatus.DefaultServerStatusGetter{
 		Namespace: namespace,
 		Context:   ctx,

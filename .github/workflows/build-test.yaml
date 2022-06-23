@@ -312,6 +312,8 @@ jobs:
       - if: always()
         run: journalctl -n all -u docker.service > logs
       - if: always()
+        run: kubectl -n velero get serverstatusrequest -oyaml
+      - if: always()
         uses: actions/upload-artifact@v2
         with:
           name: logs
