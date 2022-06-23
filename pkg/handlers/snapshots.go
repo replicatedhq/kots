@@ -142,9 +142,11 @@ func (h *Handler) UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Re
 		return
 	}
 	if veleroStatus == nil {
+		fmt.Println("VELERO STATUS NIL")
 		JSON(w, http.StatusOK, globalSnapshotSettingsResponse)
 		return
 	}
+	fmt.Println("VELERO STATUS NOT NIL")
 
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
@@ -260,6 +262,9 @@ func (h *Handler) UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Re
 
 	globalSnapshotSettingsResponse.Store = updatedStore
 	globalSnapshotSettingsResponse.Success = true
+
+	b, _ := json.MarshalIndent(globalSnapshotSettingsResponse, "", "  ")
+	fmt.Println("SNAPSHTOS RESPONSE", string(b))
 
 	JSON(w, http.StatusOK, globalSnapshotSettingsResponse)
 }
