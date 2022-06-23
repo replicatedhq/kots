@@ -64,6 +64,7 @@ main() {
         ( [ $EUID -eq 0 -o "$USE_SUDO" != "true" ] || runAsRoot chown $EUID:$EGID $INSTALL_DIR/helm )
 
     VELERO_RELEASE=$(curl -s "https://api.github.com/repos/vmware-tanzu/velero/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+    VELERO_RELEASE=v1.8.1
     curl -sLo velero.tar.gz "https://github.com/vmware-tanzu/velero/releases/download/$VELERO_RELEASE/velero-$VELERO_RELEASE-$OS-$ARCH.tar.gz" \
         && tar xzf velero.tar.gz \
         && install -m 0755 velero-*/velero $INSTALL_DIR/velero
