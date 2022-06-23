@@ -71,6 +71,7 @@ class BackupRestore extends React.Component {
   }
 
   fetchSnapshotSettings = (isCheckForVelero) => {
+    console.log("fetchSnapshotSettings");
     this.setState({
       isLoadingSnapshotSettings: true,
       snapshotSettingsErr: false,
@@ -87,6 +88,7 @@ class BackupRestore extends React.Component {
     })
       .then(async res => {
         const result = await res.json();
+        console.log("fetchSnapshotSettings RES", result);
 
         this.setState({
           snapshotSettings: result,
@@ -103,6 +105,7 @@ class BackupRestore extends React.Component {
         }
       })
       .catch(err => {
+        console.log("fetchSnapshotSettings ERR", err);
         this.setState({
           isLoadingSnapshotSettings: false,
           snapshotSettingsErr: true,
