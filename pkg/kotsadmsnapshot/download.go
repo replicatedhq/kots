@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -20,15 +19,21 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 )
 
-func DownloadRestoreResults(veleroNamespace, restoreName string) ([]types.SnapshotError, []types.SnapshotError, error) {
-	r, err := DownloadRequest(veleroNamespace, veleroapiv1.DownloadTargetKindRestoreResults, restoreName)
+func DownloadRestoreResults(ctx context.Context, veleroNamespace, restoreName string) ([]types.SnapshotError, []types.SnapshotError, error) {
+	r, err := DownloadRequest(ctx, veleroNamespace, veleroapiv1.DownloadTargetKindRestoreResults, restoreName)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to make download request")
 	}
 	defer r.Close()
 
+	gr, err := gzip.NewReader(r)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to create new gzip reader")
+	}
+	defer gr.Close()
+
 	resultMap := map[string]pkgrestore.Result{}
-	if err := json.NewDecoder(r).Decode(&resultMap); err != nil {
+	if err := json.NewDecoder(gr).Decode(&resultMap); err != nil {
 		return nil, nil, errors.Wrap(err, "failed to decode restore results")
 	}
 
@@ -86,7 +91,7 @@ func DownloadRestoreResults(veleroNamespace, restoreName string) ([]types.Snapsh
 	return warnings, errors, nil
 }
 
-func DownloadRequest(veleroNamespace string, kind velerov1.DownloadTargetKind, name string) (io.ReadCloser, error) {
+func DownloadRequest(ctx context.Context, veleroNamespace string, kind velerov1.DownloadTargetKind, name string) (io.ReadCloser, error) {
 	cfg, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
@@ -110,43 +115,37 @@ func DownloadRequest(veleroNamespace string, kind velerov1.DownloadTargetKind, n
 		},
 	}
 
-	downloadRequest, err := veleroClient.DownloadRequests(veleroNamespace).Create(context.TODO(), dr, metav1.CreateOptions{})
+	downloadRequest, err := veleroClient.DownloadRequests(veleroNamespace).Create(ctx, dr, metav1.CreateOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create download request")
 	}
 	defer func() {
-		_ = veleroClient.DownloadRequests(veleroNamespace).Delete(context.TODO(), downloadRequest.Name, metav1.DeleteOptions{})
+		_ = veleroClient.DownloadRequests(veleroNamespace).Delete(context.Background(), downloadRequest.Name, metav1.DeleteOptions{})
 	}()
 
-	watcher, err := veleroClient.DownloadRequests(veleroNamespace).Watch(context.TODO(), metav1.ListOptions{})
+	watcher, err := veleroClient.DownloadRequests(veleroNamespace).Watch(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to watch download request")
 	}
 	defer watcher.Stop()
-
-	// generally takes less than a second
-	timeout := 15 * time.Second
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
 
 	signedURL, err := watchDownloadRequestForSignedURL(ctx, watcher, downloadRequest.Name)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get signed url")
 	}
 
-	resp, err := http.Get(signedURL)
+	req, err := http.NewRequestWithContext(ctx, "GET", signedURL, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create get request")
+	}
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to execute get request")
 	}
+
 	// NOTE: it is up to the caller to close this response body
-
-	gzipReader, err := gzip.NewReader(resp.Body)
-	if err != nil {
-		resp.Body.Close()
-		return nil, errors.Wrap(err, "failed to create gzip reader")
-	}
-
-	return gzipReader, nil
+	return resp.Body, nil
 }
 
 func watchDownloadRequestForSignedURL(ctx context.Context, watcher watch.Interface, name string) (string, error) {
