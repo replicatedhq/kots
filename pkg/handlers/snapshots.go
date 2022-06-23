@@ -358,6 +358,9 @@ func (h *Handler) GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Reque
 	globalSnapshotSettingsResponse.Store = store
 	globalSnapshotSettingsResponse.Success = true
 
+	b, _ := json.MarshalIndent(globalSnapshotSettingsResponse, "", "  ")
+	fmt.Println("GetGlobalSnapshotSettings RESPONSE", string(b))
+
 	JSON(w, http.StatusOK, globalSnapshotSettingsResponse)
 }
 
@@ -528,9 +531,6 @@ func (h *Handler) GetSnapshotConfig(w http.ResponseWriter, r *http.Request) {
 	getSnapshotConfigResponse.AutoEnabled = foundApp.SnapshotSchedule != ""
 	getSnapshotConfigResponse.AutoSchedule = snapshotSchedule
 	getSnapshotConfigResponse.TTl = ttl
-
-	b, _ := json.MarshalIndent(getSnapshotConfigResponse, "", "  ")
-	fmt.Println("GetSnapshotConfig RESPONSE", string(b))
 
 	JSON(w, http.StatusOK, getSnapshotConfigResponse)
 }
