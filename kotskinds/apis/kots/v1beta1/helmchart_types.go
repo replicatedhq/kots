@@ -157,6 +157,7 @@ func (m *MappedChartValue) UnmarshalJSON(value []byte) error {
 type ChartIdentifier struct {
 	Name         string `json:"name"`
 	ChartVersion string `json:"chartVersion"`
+	ReleaseName  string `json:"releaseName,omitempty"`
 }
 
 func (h *HelmChartSpec) GetHelmValues(values map[string]MappedChartValue) (map[string]interface{}, error) {
@@ -253,6 +254,20 @@ func (h *HelmChartSpec) renderValue(value *MappedChartValue) (interface{}, error
 		}
 		return built, nil
 	}
+}
+
+func (h *HelmChart) GetDirName() string {
+	if h.Spec.Chart.ReleaseName != "" {
+		return h.Spec.Chart.ReleaseName
+	}
+	return h.Name
+}
+
+func (h *HelmChart) GetReleaseName() string {
+	if h.Spec.Chart.ReleaseName != "" {
+		return h.Spec.Chart.ReleaseName
+	}
+	return h.Spec.Chart.Name
 }
 
 type OptionalValue struct {

@@ -520,7 +520,7 @@ func (c *Client) installWithHelm(helmDir string, targetNamespace string, kotsCha
 	var multiStdout, multiStderr [][]byte
 	for _, dir := range orderedDirs {
 		installDir := filepath.Join(chartsDir, dir.Name)
-		args := []string{"upgrade", "-i", dir.Name, installDir, "--timeout", "3600s"}
+		args := []string{"upgrade", "-i", dir.ReleaseName, installDir, "--timeout", "3600s"}
 
 		if targetNamespace != "" && targetNamespace != "." {
 			args = append(args, "-n", targetNamespace)
@@ -557,6 +557,7 @@ type orderedDir struct {
 	Weight       int64
 	ChartName    string
 	ChartVersion string
+	ReleaseName  string
 }
 
 func getSortedCharts(chartsDir string, kotsCharts []*v1beta1.HelmChart) ([]orderedDir, error) {
@@ -568,35 +569,25 @@ func getSortedCharts(chartsDir string, kotsCharts []*v1beta1.HelmChart) ([]order
 	// get a list of the charts to be applied
 	orderedDirs := []orderedDir{}
 	for _, dir := range dirs {
-		installDir := filepath.Join(chartsDir, dir.Name())
-		chartfilePath := filepath.Join(installDir, "Chart.yaml")
-		chartFile, err := ioutil.ReadFile(chartfilePath)
+		chartDir := filepath.Join(chartsDir, dir.Name())
+		chartName, chartVersion, err := findChartNameAndVersion(chartDir)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to parse %s", chartfilePath)
+			return nil, errors.Wrapf(err, "failed to find chart name and version in %s", chartDir)
 		}
-
-		cname := struct {
-			ChartName    string `yaml:"name"`
-			ChartVersion string `yaml:"version"`
-		}{}
-		err = yaml.Unmarshal(chartFile, &cname)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to unmarshal %s", chartfilePath)
-		}
-
 		orderedDirs = append(orderedDirs, orderedDir{
 			Name:         dir.Name(),
-			ChartName:    cname.ChartName,
-			ChartVersion: cname.ChartVersion,
+			ChartName:    chartName,
+			ChartVersion: chartVersion,
 		})
 	}
 
-	// look through the list of kotsChart objects for each orderedDir, and if the name+version+dirname matches, use that weight
+	// look through the list of kotsChart objects for each orderedDir, and if the name+version+dirname matches, use that weight+releasename
 	// if there is no match, do not treat this as a fatal error
 	for idx, dir := range orderedDirs {
 		for _, kotsChart := range kotsCharts {
-			if kotsChart.Spec.Chart.ChartVersion == dir.ChartVersion && kotsChart.Spec.Chart.Name == dir.ChartName && kotsChart.Name == dir.Name {
+			if kotsChart.Spec.Chart.ChartVersion == dir.ChartVersion && kotsChart.Spec.Chart.Name == dir.ChartName && kotsChart.GetDirName() == dir.Name {
 				orderedDirs[idx].Weight = kotsChart.Spec.Weight
+				orderedDirs[idx].ReleaseName = kotsChart.GetReleaseName()
 			}
 		}
 	}
@@ -608,6 +599,22 @@ func getSortedCharts(chartsDir string, kotsCharts []*v1beta1.HelmChart) ([]order
 		return orderedDirs[i].ChartName < orderedDirs[j].ChartName
 	})
 	return orderedDirs, nil
+}
+
+func findChartNameAndVersion(chartDir string) (string, string, error) {
+	chartfilePath := filepath.Join(chartDir, "Chart.yaml")
+	chartFile, err := ioutil.ReadFile(chartfilePath)
+	if err != nil {
+		return "", "", errors.Wrapf(err, "failed to parse %s", chartfilePath)
+	}
+	chartInfo := struct {
+		ChartName    string `yaml:"name"`
+		ChartVersion string `yaml:"version"`
+	}{}
+	if err := yaml.Unmarshal(chartFile, &chartInfo); err != nil {
+		return "", "", errors.Wrapf(err, "failed to unmarshal %s", chartfilePath)
+	}
+	return chartInfo.ChartName, chartInfo.ChartVersion, nil
 }
 
 func (c *Client) uninstallWithHelm(helmDir string, targetNamespace string, charts []string) error {
@@ -702,7 +709,7 @@ func deletePVCs(namespace string, appLabelSelector *metav1.LabelSelector, appslu
 	return nil
 }
 
-func getRemovedCharts(prevDir string, curDir string) ([]string, error) {
+func getRemovedCharts(prevDir string, curDir string, previousKotsCharts []*v1beta1.HelmChart) ([]string, error) {
 	if prevDir == "" {
 		return []string{}, nil
 	}
@@ -746,7 +753,17 @@ func getRemovedCharts(prevDir string, curDir string) ([]string, error) {
 		}
 
 		if !found {
-			removedCharts = append(removedCharts, prevChart)
+			// find the release name that was used to install the chart
+			prevChartDir := filepath.Join(prevDir, "charts", prevChart)
+			prevChartName, prevChartVersion, err := findChartNameAndVersion(prevChartDir)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to find chart name and version in %s", prevChartDir)
+			}
+			for _, prevKotsChart := range previousKotsCharts {
+				if prevKotsChart.Spec.Chart.ChartVersion == prevChartVersion && prevKotsChart.Spec.Chart.Name == prevChartName && prevKotsChart.GetDirName() == prevChart {
+					removedCharts = append(removedCharts, prevKotsChart.GetReleaseName())
+				}
+			}
 		}
 	}
 

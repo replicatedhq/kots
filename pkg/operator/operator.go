@@ -263,6 +263,7 @@ func DeployApp(appID string, sequence int64) (deployed bool, deployError error) 
 	imagePullSecrets = deduplicateSecrets(imagePullSecrets)
 
 	// get previous manifests (if any)
+	var previousKotsKinds *kotsutil.KotsKinds
 	base64EncodedPreviousManifests := ""
 	previouslyDeployedChartArchive := []byte{}
 	previouslyDeployedSequence, err := store.GetStore().GetPreviouslyDeployedSequence(a.ID, clusterID)
@@ -287,7 +288,7 @@ func DeployApp(appID string, sequence int64) (deployed bool, deployError error) 
 				return false, errors.Wrap(err, "failed to get previously deployed app version archive")
 			}
 
-			previousKotsKinds, err := kotsutil.LoadKotsKindsFromPath(previouslyDeployedVersionArchive)
+			previousKotsKinds, err = kotsutil.LoadKotsKindsFromPath(previouslyDeployedVersionArchive)
 			if err != nil {
 				return false, errors.Wrap(err, "failed to load kotskinds for previously deployed app version")
 			}
@@ -328,6 +329,7 @@ func DeployApp(appID string, sequence int64) (deployed bool, deployError error) 
 		Wait:                 false,
 		AnnotateSlug:         os.Getenv("ANNOTATE_SLUG") != "",
 		KotsKinds:            kotsKinds,
+		PreviousKotsKinds:    previousKotsKinds,
 	}
 	deployed, err = operatorClient.DeployApp(deployArgs)
 	if err != nil {

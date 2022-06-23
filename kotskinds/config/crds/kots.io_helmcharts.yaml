@@ -45,6 +45,8 @@ spec:
                     type: string
                   name:
                     type: string
+                  releaseName:
+                    type: string
                 required:
                 - chartVersion
                 - name

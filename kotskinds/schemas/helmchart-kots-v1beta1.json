@@ -36,6 +36,9 @@
             },
             "name": {
               "type": "string"
+            },
+            "releaseName": {
+              "type": "string"
             }
           }
         },
