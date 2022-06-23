@@ -3,7 +3,9 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
@@ -234,7 +236,7 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 	r.Name("SaveInstanceSnapshotConfig").Path("/api/v1/snapshot/config").Methods("PUT").
 		HandlerFunc(middleware.EnforceAccess(policy.SnapshotsettingsWrite, handler.SaveInstanceSnapshotConfig))
 	r.Name("GetGlobalSnapshotSettings").Path("/api/v1/snapshots/settings").Methods("GET").
-		HandlerFunc(middleware.EnforceAccess(policy.SnapshotsettingsRead, handler.GetGlobalSnapshotSettings))
+		Handler(handlers.LoggingHandler(os.Stdout, middleware.EnforceAccess(policy.SnapshotsettingsRead, handler.GetGlobalSnapshotSettings)))
 	r.Name("UpdateGlobalSnapshotSettings").Path("/api/v1/snapshots/settings").Methods("PUT").
 		HandlerFunc(middleware.EnforceAccess(policy.SnapshotsettingsWrite, handler.UpdateGlobalSnapshotSettings))
 	r.Name("ConfigureFileSystemSnapshotProvider").Path("/api/v1/snapshots/filesystem").Methods("PUT").
