@@ -379,7 +379,7 @@ func getVersion(nameSpace string) (string, error) {
 		return "", errors.Wrap(err, "failed to get velero client")
 	}
 
-	timeout := 5 * time.Second
+	timeout := 15 * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 

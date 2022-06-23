@@ -125,7 +125,8 @@ func DownloadRequest(veleroNamespace string, kind velerov1.DownloadTargetKind, n
 	defer watcher.Stop()
 
 	// generally takes less than a second
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	timeout := 15 * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
 	signedURL, err := watchDownloadRequestForSignedURL(ctx, watcher, downloadRequest.Name)
