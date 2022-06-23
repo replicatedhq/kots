@@ -365,7 +365,7 @@ ResticFound:
 	return &veleroStatus, nil
 }
 
-func getVersion(namespace string) (string, error) {
+func getVersion(ctx context.Context, namespace string) (string, error) {
 	clientConfig, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get cluster config")
@@ -379,7 +379,7 @@ func getVersion(namespace string) (string, error) {
 		return "", errors.Wrap(err, "failed to get velero client")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	serverStatusGetter := &serverstatus.DefaultServerStatusGetter{
 		Namespace: namespace,
