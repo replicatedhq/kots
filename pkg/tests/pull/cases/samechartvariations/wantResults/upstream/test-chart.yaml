@@ -1,13 +1,12 @@
 apiVersion: kots.io/v1beta1
 kind: HelmChart
 metadata:
-  name: test-chart-variation-1
+  name: test-chart-variation-0
 spec:
   # chart identifies a matching chart from a .tgz
   chart:
     name: test-chart
     chartVersion: 0.1.0
-    releaseName: test-chart-release-1
 
   # helmVersion identifies the Helm Version used to render the Chart. Default is v2.
   helmVersion: v3

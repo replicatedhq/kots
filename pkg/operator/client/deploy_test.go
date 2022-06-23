@@ -75,8 +75,9 @@ func Test_getSortedCharts(t *testing.T) {
 			},
 			want: []orderedDir{
 				{
-					Name:      "chart1",
-					ChartName: "chart1name",
+					Name:        "chart1",
+					ChartName:   "chart1name",
+					ReleaseName: "chart1name",
 				},
 			},
 		},
@@ -170,24 +171,28 @@ version: "v1"
 					Name:         "chart4",
 					ChartName:    "chart4",
 					ChartVersion: "v1",
+					ReleaseName:  "chart4",
 				},
 				{
 					Name:         "chart1",
 					Weight:       1,
 					ChartName:    "chart1",
 					ChartVersion: "ver1",
+					ReleaseName:  "chart1",
 				},
 				{
 					Name:         "chart2",
 					Weight:       1,
 					ChartName:    "chart2",
 					ChartVersion: "v1",
+					ReleaseName:  "chart2",
 				},
 				{
 					Name:         "chart3",
 					Weight:       5,
 					ChartName:    "chart3",
 					ChartVersion: "v1",
+					ReleaseName:  "chart3",
 				},
 			},
 		},
@@ -228,10 +233,12 @@ name: c2
 					Weight:       -5,
 					ChartName:    "c1",
 					ChartVersion: "ver1",
+					ReleaseName:  "c1",
 				},
 				{
-					Name:      "chart2",
-					ChartName: "c2",
+					Name:        "chart2",
+					ChartName:   "c2",
+					ReleaseName: "c2",
 				},
 			},
 		},
@@ -284,6 +291,7 @@ version: ver2
 					Name:         "chart1",
 					ChartName:    "generic",
 					ChartVersion: "ver1",
+					ReleaseName:  "generic",
 					Weight:       -1,
 				},
 				{
@@ -291,6 +299,7 @@ version: ver2
 					Weight:       2,
 					ChartName:    "generic",
 					ChartVersion: "ver2",
+					ReleaseName:  "generic",
 				},
 			},
 		},
@@ -343,11 +352,76 @@ version: ver2
 					Name:         "chart1",
 					ChartName:    "generic",
 					ChartVersion: "ver1",
+					ReleaseName:  "generic",
 				},
 				{
 					Name:         "chart2",
 					ChartName:    "generic",
 					ChartVersion: "ver2",
+					ReleaseName:  "generic",
+				},
+			},
+		},
+		{
+			name: "kots chart specifies a release name",
+			files: []file{
+				{
+					path: "rel1/Chart.yaml",
+					contents: `
+name: generic
+version: ver1
+`,
+				},
+				{
+					path: "rel2/Chart.yaml",
+					contents: `
+name: generic
+version: ver2
+`,
+				},
+			},
+			kotsCharts: []*v1beta1.HelmChart{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart1",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "generic",
+							ChartVersion: "ver1",
+							ReleaseName:  "rel1",
+						},
+						Weight: -1,
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart2",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "generic",
+							ChartVersion: "ver2",
+							ReleaseName:  "rel2",
+						},
+						Weight: 2,
+					},
+				},
+			},
+			want: []orderedDir{
+				{
+					Name:         "rel1",
+					ChartName:    "generic",
+					ChartVersion: "ver1",
+					ReleaseName:  "rel1",
+					Weight:       -1,
+				},
+				{
+					Name:         "rel2",
+					ChartName:    "generic",
+					ChartVersion: "ver2",
+					ReleaseName:  "rel2",
+					Weight:       2,
 				},
 			},
 		},

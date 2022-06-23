@@ -3,4 +3,4 @@ kind: ConfigMap
 metadata:
   name: test-config
 data:
-  configOptionHostname: 'test-hostname'
+  configOptionHostname: 'hostname'

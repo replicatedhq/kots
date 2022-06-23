@@ -590,6 +590,10 @@ func getSortedCharts(chartsDir string, kotsCharts []*v1beta1.HelmChart) ([]order
 				orderedDirs[idx].ReleaseName = kotsChart.GetReleaseName()
 			}
 		}
+		if orderedDirs[idx].ReleaseName == "" {
+			// no matching kots chart was found, use the chart name as the release name
+			orderedDirs[idx].ReleaseName = dir.ChartName
+		}
 	}
 
 	sort.Slice(orderedDirs, func(i, j int) bool {

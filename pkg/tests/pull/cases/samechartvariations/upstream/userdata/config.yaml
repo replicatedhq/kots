@@ -9,5 +9,5 @@ spec:
       default: "no"
       value: "yes"
     hostname:
-      value: test-hostname
+      value: hostname
 status: {}

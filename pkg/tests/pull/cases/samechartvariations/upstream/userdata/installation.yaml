@@ -6,6 +6,6 @@ metadata:
 spec:
   channelID: 1YHCrcZzBxY2nJF5kcTCN9PHpk0
   channelName: Stable
-  updateCursor: "528"
-  versionLabel: 1.1.7
+  updateCursor: "551"
+  versionLabel: 1.1.30
 status: {}

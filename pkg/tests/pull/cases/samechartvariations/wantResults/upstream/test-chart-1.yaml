@@ -7,6 +7,7 @@ spec:
   chart:
     name: test-chart
     chartVersion: 0.1.0
+    releaseName: test-chart-release-1
 
   # helmVersion identifies the Helm Version used to render the Chart. Default is v2.
   helmVersion: v3

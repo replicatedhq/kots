@@ -52,6 +52,24 @@ images:
   newName: fake-docker-proxy/alpine
 - name: library/alpine
   newName: fake-docker-proxy/alpine
+- name: busybox
+  newName: fake-docker-proxy/busybox
+- name: docker.io/library/busybox
+  newName: fake-docker-proxy/busybox
+- name: library/busybox
+  newName: fake-docker-proxy/busybox
+- name: alpine
+  newName: fake-docker-proxy/alpine
+- name: docker.io/library/alpine
+  newName: fake-docker-proxy/alpine
+- name: library/alpine
+  newName: fake-docker-proxy/alpine
+- name: alpine
+  newName: fake-docker-proxy/alpine
+- name: docker.io/library/alpine
+  newName: fake-docker-proxy/alpine
+- name: library/alpine
+  newName: fake-docker-proxy/alpine
 kind: Kustomization
 resources:
 - secret.yaml

@@ -6,7 +6,7 @@ metadata:
 spec:
   clientID: default-kots-app-4
   clientSecret:
-    valueEncrypted: Wn7zbcHxrKZpSAG+yzMMYsAJ3h2t98fLlvFl3ErKh6EgL4Xzb5r0fTFKqQ==
+    valueEncrypted: Wn7+eJ70qOJpWjCM3SwCR8cy3Suj4tiSsr02Rp4t0YyCmiBtypsbHw6u9g==
   dexConnectors:
     valueEncrypted: Bkroe1hywjjr541lSVkIhCWdRzI=
   enabled: false
@@ -17,6 +17,6 @@ spec:
       database: default-kots-app-4-dex
       host: kotsadm-postgres.default
       password:
-        valueEncrypted: Wn7zbcH+joJJCxaivRQKRvcb+x+B4MOTo6FyMDKbtFlNIWef6I+AyB06Ig==
+        valueEncrypted: Wn7+eJ71hYdvXha0ujo2Zccd7SeS98f4sI1nvKqK6LG6ADXB8kZNBn4A6g==
       user: default-kots-app-4-dex
 status: {}
