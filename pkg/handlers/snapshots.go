@@ -529,6 +529,9 @@ func (h *Handler) GetSnapshotConfig(w http.ResponseWriter, r *http.Request) {
 	getSnapshotConfigResponse.AutoSchedule = snapshotSchedule
 	getSnapshotConfigResponse.TTl = ttl
 
+	b, _ := json.MarshalIndent(getSnapshotConfigResponse, "", "  ")
+	fmt.Println("GetSnapshotConfig RESPONSE", string(b))
+
 	JSON(w, http.StatusOK, getSnapshotConfigResponse)
 }
 
