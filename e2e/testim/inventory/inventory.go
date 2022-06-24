@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/docker/docker/registry"
 	"github.com/onsi/gomega/gexec"
 	"github.com/replicatedhq/kots/e2e/kubectl"
+	"github.com/replicatedhq/kots/e2e/registry"
 
 	//lint:ignore ST1001 since Ginkgo and Gomega are DSLs this makes the tests more natural to read
 	. "github.com/onsi/ginkgo/v2"
