@@ -378,6 +378,18 @@ jobs:
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+      - name: Post test validation
+        run: |
+          if kubectl get roles -n $APP_SLUG | grep -q kotsadm; then
+            echo "Found kotsadm role in cluster scoped install"
+            exit -1
+          fi
+          if kubectl get clusterroles | grep -q kotsadm; then
+            echo "Found kotsadm cluster role in cluster scoped install"
+          else
+            echo "No kotsadm cluster role in cluster scoped install"
+            exit -1
+          fi
 
 
   validate-minimal-rbac-override:
@@ -412,6 +424,18 @@ jobs:
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+      - name: Post test validation
+        run: |
+          if kubectl get roles -n $APP_SLUG | grep -q kotsadm; then
+            echo "Found kotsadm role in cluster scoped install"
+            exit -1
+          fi
+          if kubectl get clusterroles | grep -q kotsadm; then
+            echo "Found kotsadm cluster role in cluster scoped install"
+          else
+            echo "No kotsadm cluster role in cluster scoped install"
+            exit -1
+          fi
 
 
   validate-backup-and-restore:
