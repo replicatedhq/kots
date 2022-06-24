@@ -255,48 +255,45 @@ class AppVersionHistoryRow extends Component {
                   Running checks
                 </p>
               </div>
-            ) : (
-              preflightState.preflightState !==
-              ""(
-                <div>
-                  <Link
-                    to={`/app/${app?.slug}/downstreams/${app?.downstream.cluster?.slug}/version-history/preflight/${version?.sequence}`}
-                    className="icon preflightChecks--icon u-cursor--pointer u-position--relative"
-                    data-tip="View preflight checks"
-                  >
-                    {preflightState.preflightsFailed ||
-                    preflightState.preflightState === "warn" ||
-                    newPreflightResults ? (
-                      <div>
-                        <span
-                          className={`icon version-row-preflight-status-icon ${
-                            preflightState.preflightsFailed
-                              ? "preflight-checks-failed-icon"
-                              : preflightState.preflightState === "warn"
-                              ? "preflight-checks-warn-icon"
-                              : ""
-                          }`}
-                        />
-                        <p
-                          className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${
-                            preflightState.preflightsFailed
-                              ? "err"
-                              : preflightState.preflightState === "warn"
-                              ? "warning"
-                              : newPreflightResults
-                              ? "success"
-                              : ""
-                          }`}
-                        >
-                          {checksStatusText}
-                        </p>
-                      </div>
-                    ) : null}
-                  </Link>
-                  <ReactTooltip effect="solid" className="replicated-tooltip" />
-                </div>
-              )
-            )}
+            ) : preflightState.preflightState !== "" ? (
+              <>
+                <Link
+                  to={`/app/${app?.slug}/downstreams/${app?.downstream.cluster?.slug}/version-history/preflight/${version?.sequence}`}
+                  className="icon preflightChecks--icon u-cursor--pointer u-position--relative"
+                  data-tip="View preflight checks"
+                >
+                  {preflightState.preflightsFailed ||
+                  preflightState.preflightState === "warn" ||
+                  newPreflightResults ? (
+                    <div>
+                      <span
+                        className={`icon version-row-preflight-status-icon ${
+                          preflightState.preflightsFailed
+                            ? "preflight-checks-failed-icon"
+                            : preflightState.preflightState === "warn"
+                            ? "preflight-checks-warn-icon"
+                            : ""
+                        }`}
+                      />
+                      <p
+                        className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${
+                          preflightState.preflightsFailed
+                            ? "err"
+                            : preflightState.preflightState === "warn"
+                            ? "warning"
+                            : newPreflightResults
+                            ? "success"
+                            : ""
+                        }`}
+                      >
+                        {checksStatusText}
+                      </p>
+                    </div>
+                  ) : null}
+                </Link>
+                <ReactTooltip effect="solid" className="replicated-tooltip" />
+              </>
+            ) : null}
           </div>
           <button
             className="btn primary blue u-marginLeft--10"
