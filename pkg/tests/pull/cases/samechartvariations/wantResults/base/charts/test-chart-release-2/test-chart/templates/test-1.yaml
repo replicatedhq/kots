@@ -1,0 +1,11 @@
+# Source: test-chart/templates/test.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  annotations:
+    owned-by: security-team
+  labels:
+    owner: a-generated-owner-name
+  name: security-scanner
+stringData:
+  key: a super duper secret key

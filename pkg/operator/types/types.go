@@ -27,6 +27,7 @@ type DeployAppArgs struct {
 	AnnotateSlug         bool                  `json:"annotate_slug"`
 	IsRestore            bool                  `json:"is_restore"`
 	RestoreLabelSelector *metav1.LabelSelector `json:"restore_label_selector"`
+	PreviousKotsKinds    *kotsutil.KotsKinds
 	KotsKinds            *kotsutil.KotsKinds
 }
 

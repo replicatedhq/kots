@@ -265,7 +265,11 @@ func (c *Client) deployHelmCharts(deployArgs operatortypes.DeployAppArgs) (*comm
 		}
 	}
 
-	removedCharts, err := getRemovedCharts(prevHelmDir, curHelmDir)
+	previousKotsCharts := []*v1beta1.HelmChart{}
+	if deployArgs.PreviousKotsKinds != nil {
+		previousKotsCharts = deployArgs.PreviousKotsKinds.HelmCharts
+	}
+	removedCharts, err := getRemovedCharts(prevHelmDir, curHelmDir, previousKotsCharts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find removed charts")
 	}
@@ -280,7 +284,6 @@ func (c *Client) deployHelmCharts(deployArgs operatortypes.DeployAppArgs) (*comm
 		if deployArgs.KotsKinds != nil {
 			kotsCharts = deployArgs.KotsKinds.HelmCharts
 		}
-
 		installResult, err = c.installWithHelm(curHelmDir, targetNamespace, kotsCharts)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to install helm charts")

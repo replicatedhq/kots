@@ -200,7 +200,7 @@ func renderReplicatedHelmChart(kotsHelmChart *kotsv1beta1.HelmChart, upstreamFil
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to fetch helm dependency")
 	}
-	helmUpstream.Name = kotsHelmChart.Name
+	helmUpstream.Name = kotsHelmChart.GetDirName()
 
 	mergedValues := kotsHelmChart.Spec.Values
 	for _, optionalValues := range kotsHelmChart.Spec.OptionalValues {

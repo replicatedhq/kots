@@ -1,0 +1,22 @@
+apiVersion: kots.io/v1beta1
+kind: IdentityConfig
+metadata:
+  creationTimestamp: null
+  name: identity
+spec:
+  clientID: default-kots-app-4
+  clientSecret:
+    valueEncrypted: Wn7+eJ70qOJpWjCM3SwCR8cy3Suj4tiSsr02Rp4t0YyCmiBtypsbHw6u9g==
+  dexConnectors:
+    valueEncrypted: Bkroe1hywjjr541lSVkIhCWdRzI=
+  enabled: false
+  ingressConfig:
+    enabled: false
+  storage:
+    postgresConfig:
+      database: default-kots-app-4-dex
+      host: kotsadm-postgres.default
+      password:
+        valueEncrypted: Wn7+eJ71hYdvXha0ujo2Zccd7SeS98f4sI1nvKqK6LG6ADXB8kZNBn4A6g==
+      user: default-kots-app-4-dex
+status: {}
