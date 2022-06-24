@@ -15,6 +15,10 @@ import (
 	"github.com/replicatedhq/kots/e2e/util"
 )
 
+var (
+	InstallWaitDuration = 5 * time.Minute
+)
+
 type Installer struct {
 	imageRegistry  string
 	imageNamespace string
@@ -32,7 +36,7 @@ func NewInstaller(imageRegistry, imageNamespace, imageTag string) *Installer {
 func (i *Installer) Install(kubeconfig string, test inventory.Test, adminConsolePort string) string {
 	session, err := i.install(kubeconfig, test.UpstreamURI, test.Namespace, test.UseMinimalRBAC)
 	Expect(err).WithOffset(1).Should(Succeed(), "Kots install failed")
-	Eventually(session).WithOffset(1).WithTimeout(3*time.Minute).Should(gexec.Exit(0), "Kots install failed with non-zero exit code")
+	Eventually(session).WithOffset(1).WithTimeout(InstallWaitDuration).Should(gexec.Exit(0), "Kots install failed with non-zero exit code")
 
 	if adminConsolePort == "" {
 		adminConsolePort, err = getFreePort()
@@ -54,7 +58,7 @@ func (i *Installer) install(kubeconfig, upstreamURI, namespace string, useMinima
 		fmt.Sprintf("--kotsadm-registry=%s", i.imageRegistry),
 		fmt.Sprintf("--kotsadm-namespace=%s", i.imageNamespace),
 		fmt.Sprintf("--kotsadm-tag=%s", i.imageTag),
-		fmt.Sprintf("--wait-duration=%s", "3m"),
+		fmt.Sprintf("--wait-duration=%s", InstallWaitDuration),
 	}
 	if useMinimalRBAC {
 		args = append(args, "--use-minimal-rbac")
