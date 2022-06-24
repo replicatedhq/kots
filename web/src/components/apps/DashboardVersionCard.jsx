@@ -265,25 +265,49 @@ class DashboardVersionCard extends React.Component {
 
     return (
       <div>
-        {version.status === "pending_preflight" ?
+        {version.status === "pending_preflight" ? (
           <div className="u-marginLeft--10 u-position--relative">
             <Loader size="30" />
-            <p className="checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium">Running checks</p>
+            <p className="checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium">
+              Running checks
+            </p>
           </div>
-        :
-        <div>
-          <Link to={`/app/${app?.slug}/downstreams/${app?.downstream.cluster?.slug}/version-history/preflight/${version?.sequence}`}
-            className="icon preflightChecks--icon u-marginLeft--10 u-cursor--pointer u-position--relative"
-            data-tip="View preflight checks">
-              {preflightState.preflightsFailed || preflightState.preflightState === "warn" ?
-              <div>
-                <span className={`icon version-row-preflight-status-icon ${preflightState.preflightsFailed ? "preflight-checks-failed-icon" : preflightState.preflightState === "warn" ? "preflight-checks-warn-icon" : ""}`} />
-                <p className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${preflightState.preflightsFailed ? "err" : preflightState.preflightState === "warn" ? "warning" : ""}`}>{checksStatusText}</p>
-              </div>
-              : null}
-          </Link>
-          <ReactTooltip effect="solid" className="replicated-tooltip" />
-        </div>}
+        ) : preflightState.preflightState !== "" ? (
+          <>
+            <Link
+              to={`/app/${app?.slug}/downstreams/${app?.downstream.cluster?.slug}/version-history/preflight/${version?.sequence}`}
+              className="icon preflightChecks--icon u-marginLeft--10 u-cursor--pointer u-position--relative"
+              data-tip="View preflight checks"
+            >
+              {preflightState.preflightsFailed ||
+              preflightState.preflightState === "warn" ? (
+                <div>
+                  <span
+                    className={`icon version-row-preflight-status-icon ${
+                      preflightState.preflightsFailed
+                        ? "preflight-checks-failed-icon"
+                        : preflightState.preflightState === "warn"
+                        ? "preflight-checks-warn-icon"
+                        : ""
+                    }`}
+                  />
+                  <p
+                    className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${
+                      preflightState.preflightsFailed
+                        ? "err"
+                        : preflightState.preflightState === "warn"
+                        ? "warning"
+                        : ""
+                    }`}
+                  >
+                    {checksStatusText}
+                  </p>
+                </div>
+              ) : null}
+            </Link>
+            <ReactTooltip effect="solid" className="replicated-tooltip" />
+          </>
+        ) : null}
       </div>
     );
   }
