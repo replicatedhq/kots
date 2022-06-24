@@ -273,7 +273,7 @@ class DashboardVersionCard extends React.Component {
             </p>
           </div>
         ) : preflightState.preflightState !== "" ? (
-          <div>
+          <>
             <Link
               to={`/app/${app?.slug}/downstreams/${app?.downstream.cluster?.slug}/version-history/preflight/${version?.sequence}`}
               className="icon preflightChecks--icon u-marginLeft--10 u-cursor--pointer u-position--relative"
@@ -306,7 +306,7 @@ class DashboardVersionCard extends React.Component {
               ) : null}
             </Link>
             <ReactTooltip effect="solid" className="replicated-tooltip" />
-          </div>
+          </>
         ) : null}
       </div>
     );

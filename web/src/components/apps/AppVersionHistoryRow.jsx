@@ -177,7 +177,17 @@ class AppVersionHistoryRow extends Component {
 
     if (downstream.gitops?.enabled) {
       if (version.gitDeployable === false) {
-        return (<div className={this.props.nothingToCommit && this.props.selectedDiffReleases && "u-opacity--half"}>Nothing to commit</div>);
+        return (
+          <div
+            className={
+              this.props.nothingToCommit &&
+              this.props.selectedDiffReleases &&
+              "u-opacity--half"
+            }
+          >
+            Nothing to commit
+          </div>
+        );
       }
       if (!version.commitUrl) {
         return (
@@ -192,7 +202,7 @@ class AppVersionHistoryRow extends Component {
                   </p>
                 </div>
               ) : preflightState.preflightState !== "" ? (
-                <div>
+                <>
                   <Link
                     to={`/app/${app?.slug}/downstreams/${app?.downstream.cluster?.slug}/version-history/preflight/${version?.sequence}`}
                     className="icon preflightChecks--icon u-cursor--pointer u-position--relative"
@@ -228,7 +238,7 @@ class AppVersionHistoryRow extends Component {
                     ) : null}
                   </Link>
                   <ReactTooltip effect="solid" className="replicated-tooltip" />
-                </div>
+                </>
               ) : null}
             </>
           </div>
@@ -297,7 +307,7 @@ class AppVersionHistoryRow extends Component {
         </div>
       );
     }
-  
+
     return (
       <div className="flex flex1 justifyContent--flexEnd alignItems--center">
         {this.renderReleaseNotes(version)}
@@ -311,7 +321,7 @@ class AppVersionHistoryRow extends Component {
               </p>
             </div>
           ) : preflightState.preflightState !== "" ? (
-            <div>
+            <>
               <Link
                 to={`/app/${app?.slug}/downstreams/${app?.downstream.cluster?.slug}/version-history/preflight/${version?.sequence}`}
                 className="icon preflightChecks--icon u-marginRight--10 u-cursor--pointer u-position--relative"
@@ -347,7 +357,7 @@ class AppVersionHistoryRow extends Component {
                 ) : null}
               </Link>
               <ReactTooltip effect="solid" className="replicated-tooltip" />
-            </div>
+            </>
           ) : null}
         </div>
         {app.isConfigurable && (
