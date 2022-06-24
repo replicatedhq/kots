@@ -39,3 +39,22 @@ func NewStrictPreflightChecks() Test {
 		UpstreamURI: "strict-preflight-checks/automated",
 	}
 }
+
+func NewMinimalRBACTest() Test {
+	return Test{
+		Name:        "Minimal RBAC App",
+		Suite:       "minimal-rbac",
+		Namespace:   "minimal-rbac",
+		UpstreamURI: "minimal-rbac/automated",
+	}
+}
+
+func NewMinimalRBACOverrideTest() Test {
+	return Test{
+		Name:           "Minimal RBAC Override",
+		Suite:          "minimal-rbac",
+		Namespace:      "minimal-rbac",
+		UpstreamURI:    "minimal-rbac/automated",
+		UseMinimalRBAC: true,
+	}
+}
