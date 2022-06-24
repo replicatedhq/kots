@@ -812,7 +812,7 @@ func GetBackupDetail(ctx context.Context, kotsadmNamespace string, backupName st
 	result.VolumeSizeHuman = units.HumanSize(float64(totalBytesDone)) // TODO: should this be TotalBytes rather than BytesDone?
 
 	if backup.Status.Phase == velerov1.BackupPhaseCompleted || backup.Status.Phase == velerov1.BackupPhasePartiallyFailed || backup.Status.Phase == velerov1.BackupPhaseFailed {
-		errs, warnings, execs, err := downloadBackupLogs(veleroNamespace, backupName)
+		errs, warnings, execs, err := downloadBackupLogs(ctx, veleroNamespace, backupName)
 		result.Errors = errs
 		result.Warnings = warnings
 		result.Hooks = execs
@@ -857,8 +857,8 @@ func listBackupVolumes(backupVolumes []velerov1.PodVolumeBackup) []types.Snapsho
 	return volumes
 }
 
-func downloadBackupLogs(veleroNamespace, backupName string) ([]types.SnapshotError, []types.SnapshotError, []*types.SnapshotHook, error) {
-	gzipReader, err := DownloadRequest(veleroNamespace, velerov1.DownloadTargetKindBackupLog, backupName)
+func downloadBackupLogs(ctx context.Context, veleroNamespace, backupName string) ([]types.SnapshotError, []types.SnapshotError, []*types.SnapshotHook, error) {
+	gzipReader, err := DownloadRequest(ctx, veleroNamespace, velerov1.DownloadTargetKindBackupLog, backupName)
 	if err != nil {
 		return nil, nil, nil, errors.Wrap(err, "failed to download backup log")
 	}

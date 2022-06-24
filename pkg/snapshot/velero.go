@@ -314,7 +314,7 @@ func DetectVelero(ctx context.Context, kotsadmNamespace string) (*VeleroStatus, 
 		return nil, errors.Wrap(err, "failed to list possible velero deployments")
 	}
 
-	version, err := getVersion(veleroNamespace)
+	version, err := getVersion(ctx, veleroNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get velero version")
 	}
@@ -365,7 +365,7 @@ ResticFound:
 	return &veleroStatus, nil
 }
 
-func getVersion(nameSpace string) (string, error) {
+func getVersion(ctx context.Context, namespace string) (string, error) {
 	clientConfig, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get cluster config")
@@ -379,12 +379,10 @@ func getVersion(nameSpace string) (string, error) {
 		return "", errors.Wrap(err, "failed to get velero client")
 	}
 
-	timeout := 5 * time.Second
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
-
 	serverStatusGetter := &serverstatus.DefaultServerStatusGetter{
-		Namespace: nameSpace,
+		Namespace: namespace,
 		Context:   ctx,
 	}
 	serverStatus, err := serverStatusGetter.GetServerStatus(kbClient)

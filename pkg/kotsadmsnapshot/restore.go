@@ -178,7 +178,7 @@ func GetRestoreDetails(ctx context.Context, kotsadmNamespace string, restoreName
 	}
 
 	if restore.Status.Phase == velerov1.RestorePhaseCompleted || restore.Status.Phase == velerov1.RestorePhasePartiallyFailed || restore.Status.Phase == velerov1.RestorePhaseFailed {
-		warnings, errs, err := DownloadRestoreResults(veleroNamespace, restore.Name)
+		warnings, errs, err := DownloadRestoreResults(ctx, veleroNamespace, restore.Name)
 		if err != nil {
 			// do not fail on error
 			logger.Error(errors.Wrap(err, "failed to download restore results"))

@@ -18,13 +18,14 @@ func (h *Handler) DownloadSnapshotLogs(w http.ResponseWriter, r *http.Request) {
 
 	bsl, err := kotssnapshot.FindBackupStoreLocation(r.Context(), util.PodNamespace)
 	if err != nil {
+		err = errors.Wrap(err, "failed to find backup store location")
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
 	}
 
 	veleroNamespace := bsl.Namespace
-	gzipReader, err := snapshot.DownloadRequest(veleroNamespace, velerov1.DownloadTargetKindBackupLog, backupName)
+	gzipReader, err := snapshot.DownloadRequest(r.Context(), veleroNamespace, velerov1.DownloadTargetKindBackupLog, backupName)
 	if err != nil {
 		err = errors.Wrap(err, "failed to download backup log")
 		logger.Error(err)
