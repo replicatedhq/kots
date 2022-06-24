@@ -1,0 +1,38 @@
+name: 'Generate Support Bundle'
+description: 'Composite action for generating a support bundle'
+inputs:
+  kots-namespace:
+    description: 'KOTS namespace'
+    required: true
+  aws-access-key-id:
+    description: 'AWS access key id for uploading support bundle'
+    required: true
+  aws-secret-access-key:
+    description: 'AWS secret access key for uploading support bundle'
+    required: true
+  aws-region:
+    description: 'AWS region for uploading support bundle'
+    default: 'us-east-1'
+    required: false
+runs:
+  using: "composite"
+  steps:
+    - name: Generate support bundle on failure
+      env:
+        AWS_ACCESS_KEY_ID: ${{ inputs.aws-access-key-id }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.aws-secret-access-key }}
+        AWS_DEFAULT_REGION: ${{ inputs.aws-region }}
+        KOTS_NAMESPACE: ${{ inputs.kots-namespace }}
+      run: |
+        RELEASE="$(
+          curl -sfL https://api.github.com/repos/replicatedhq/troubleshoot/releases/latest | \
+          grep '"tag_name":' | \
+          sed -E 's/.*"(v[^"]+)".*/\1/'
+        )"
+        curl -fsLO "https://github.com/replicatedhq/troubleshoot/releases/download/${RELEASE}/support-bundle_linux_amd64.tar.gz"
+        tar xzf support-bundle_linux_amd64.tar.gz
+        ./support-bundle -n "${KOTS_NAMESPACE}" https://kots.io
+        BUNDLE="$(ls -1 | grep 'support-bundle-.*.tar.gz')"
+        aws s3 cp "${BUNDLE}" "s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
+        echo "::notice ::support bundle uploaded to aws replicated-dev account s3://kots-e2e-build-test-support-bundles/${BUNDLE}"
+      shell: bash

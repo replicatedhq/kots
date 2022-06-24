@@ -19,25 +19,6 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func NewChangeLicense() Test {
-	return Test{
-		Name:        "Change License",
-		Suite:       "change-license",
-		Namespace:   "change-license",
-		UpstreamURI: "change-license/automated",
-	}
-}
-
-func NewSmokeTest() Test {
-	return Test{
-		Name:           "Smoke Test",
-		Suite:          "smoke-test",
-		Namespace:      "smoke-test",
-		UpstreamURI:    "qakotstestim/github-actions-qa",
-		NeedsSnapshots: true,
-	}
-}
-
 func NewRegressionTest() Test {
 	return Test{
 		Name:            "Regression",
@@ -48,6 +29,16 @@ func NewRegressionTest() Test {
 		NeedsMonitoring: true,
 		NeedsRegistry:   true,
 		Setup:           SetupRegressionTest,
+	}
+}
+
+func NewSmokeTest() Test {
+	return Test{
+		Name:           "Smoke Test",
+		Suite:          "smoke-test",
+		Namespace:      "smoke-test",
+		UpstreamURI:    "qakotstestim/github-actions-qa",
+		NeedsSnapshots: true,
 	}
 }
 
@@ -69,6 +60,16 @@ func NewMinimalRBACTest() Test {
 	}
 }
 
+func NewBackupAndRestore() Test {
+	return Test{
+		Name:           "Backup and Restore",
+		Suite:          "backup-and-restore",
+		Namespace:      "backup-and-restore",
+		UpstreamURI:    "backup-and-restore/automated",
+		NeedsSnapshots: true,
+	}
+}
+
 func NewNoRequiredConfig() Test {
 	return Test{
 		Name:        "No Required Config",
@@ -76,6 +77,24 @@ func NewNoRequiredConfig() Test {
 		Namespace:   "no-required-config",
 		UpstreamURI: "no-required-config/automated",
 		Setup:       SetupNoRequiredConfig,
+	}
+}
+
+func NewVersionHistoryPagination() Test {
+	return Test{
+		Name:        "Version History Pagination",
+		Suite:       "version-history-pagination",
+		Namespace:   "version-history-pagination",
+		UpstreamURI: "version-history-pagination/automated",
+	}
+}
+
+func NewChangeLicense() Test {
+	return Test{
+		Name:        "Change License",
+		Suite:       "change-license",
+		Namespace:   "change-license",
+		UpstreamURI: "change-license/automated",
 	}
 }
 
