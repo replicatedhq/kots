@@ -1,5 +1,7 @@
 package inventory
 
+import "github.com/replicatedhq/kots/e2e/kubectl"
+
 type Test struct {
 	Name            string
 	Suite           string
@@ -10,4 +12,5 @@ type Test struct {
 	NeedsSnapshots  bool
 	NeedsMonitoring bool
 	NeedsRegistry   bool
+	Setup           func(kubectlCLI *kubectl.CLI)
 }

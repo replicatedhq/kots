@@ -1,5 +1,24 @@
 package inventory
 
+import (
+	"bytes"
+	"context"
+	"encoding/base64"
+	"fmt"
+	"io/ioutil"
+	"strings"
+	"time"
+
+	"github.com/onsi/gomega/gexec"
+	"github.com/replicatedhq/kots/e2e/kubectl"
+	"github.com/replicatedhq/kots/e2e/registry"
+
+	//lint:ignore ST1001 since Ginkgo and Gomega are DSLs this makes the tests more natural to read
+	. "github.com/onsi/ginkgo/v2"
+	//lint:ignore ST1001 since Ginkgo and Gomega are DSLs this makes the tests more natural to read
+	. "github.com/onsi/gomega"
+)
+
 func NewChangeLicense() Test {
 	return Test{
 		Name:        "Change License",
@@ -28,5 +47,72 @@ func NewRegressionTest() Test {
 		UseMinimalRBAC:  true,
 		NeedsMonitoring: true,
 		NeedsRegistry:   true,
+		Setup:           SetupRegressionTest,
 	}
+}
+
+func NewStrictPreflightChecks() Test {
+	return Test{
+		Name:        "Strict Preflight Checks",
+		Suite:       "strict-preflight-checks",
+		Namespace:   "strict-preflight-checks",
+		UpstreamURI: "strict-preflight-checks/automated",
+	}
+}
+
+func NewMinimalRBACTest() Test {
+	return Test{
+		Name:        "Minimal RBAC",
+		Suite:       "minimal-rbac",
+		Namespace:   "minimal-rbac",
+		UpstreamURI: "minimal-rbac/automated",
+	}
+}
+
+func NewNoRequiredConfig() Test {
+	return Test{
+		Name:        "No Required Config",
+		Suite:       "no-required-config",
+		Namespace:   "no-required-config",
+		UpstreamURI: "no-required-config/automated",
+		Setup:       SetupNoRequiredConfig,
+	}
+}
+
+func SetupRegressionTest(kubectlCLI *kubectl.CLI) {
+	cmd := kubectlCLI.Command(
+		context.Background(),
+		"create",
+		"secret",
+		"docker-registry",
+		"registry-creds",
+		fmt.Sprintf("--docker-server=registry.%s.svc.cluster.local:5000", registry.DefaultNamespace),
+		"--docker-username=fake",
+		"--docker-password=fake",
+		"--docker-email=fake@fake.com",
+	)
+	session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+	Expect(err).WithOffset(1).Should(Succeed(), "Create registry-creds secret failed")
+	Eventually(session).WithOffset(1).WithTimeout(30*time.Minute).Should(gexec.Exit(0), "Create registry-creds secret failed with non-zero exit code")
+}
+
+func SetupNoRequiredConfig(kubectlCLI *kubectl.CLI) {
+	cmd := kubectlCLI.Command(
+		context.Background(),
+		"--namespace=no-required-config",
+		"get",
+		"secret",
+		"kotsadm-authstring",
+		`--template='{{ index .data "kotsadm-authstring" }}'`,
+	)
+	buf := bytes.NewBuffer(nil)
+	session, err := gexec.Start(cmd, buf, GinkgoWriter)
+	Expect(err).WithOffset(1).Should(Succeed(), "Get kotsadm-authstring secret failed")
+	Eventually(session).WithOffset(1).WithTimeout(30*time.Minute).Should(gexec.Exit(0), "Get kotsadm-authstring secret failed with non-zero exit code")
+
+	kotsadmAPIToken, err := base64.StdEncoding.DecodeString(strings.Trim(buf.String(), `"' `))
+	Expect(err).WithOffset(1).Should(Succeed(), "Decode kotsadm-authstring secret failed")
+
+	err = ioutil.WriteFile(".env", []byte(fmt.Sprintf("KOTSADM_API_TOKEN=%s", string(kotsadmAPIToken))), 0600)
+	Expect(err).WithOffset(1).Should(Succeed(), "Create .env file failed")
 }

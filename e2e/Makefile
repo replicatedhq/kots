@@ -25,7 +25,6 @@ ifneq ($(EXISTING_KUBECONFIG),)
 test: EXISTING_KUBECONFIG_VOLUME_MOUNT := "-v=$(EXISTING_KUBECONFIG):$(EXISTING_KUBECONFIG)"
 endif
 test:
-	export TESTIM_ACCESS_TOKEN
 	docker run --rm -i --net host \
 		-e TESTIM_ACCESS_TOKEN \
 		-v $(BIN_DIR)/e2e.test:/usr/local/bin/e2e.test \

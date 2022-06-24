@@ -141,8 +141,9 @@ var _ = Describe("E2E", func() {
 			"install kots and run the test",
 			func(test inventory.Test) {
 				if test.NeedsRegistry {
+					opts := registry.Options{}
 					registry := registry.New(helmCLI, c.GetKubeconfig())
-					registry.Install()
+					registry.Install(opts)
 				}
 
 				if test.NeedsSnapshots {
@@ -166,10 +167,8 @@ var _ = Describe("E2E", func() {
 				GinkgoWriter.Println("Installing KOTS")
 				adminConsolePort := kotsInstaller.Install(c.GetKubeconfig(), test, kotsadmForwardPort)
 
-				// HACK
-				if test.Name == "Regression" {
-					GinkgoWriter.Println("HACK: create registry-creds secret")
-					regressionCreateRegistryCredsSecret(kubectlCLI)
+				if test.Setup != nil {
+					test.Setup(kubectlCLI)
 				}
 
 				GinkgoWriter.Println("Running E2E tests")
@@ -182,9 +181,12 @@ var _ = Describe("E2E", func() {
 			func(test inventory.Test) string {
 				return test.Name
 			},
+			Entry(nil, inventory.NewRegressionTest()),
 			Entry(nil, inventory.NewSmokeTest()),
 			Entry(nil, inventory.NewChangeLicense()),
-			Entry(nil, inventory.NewRegressionTest()),
+			Entry(nil, inventory.NewStrictPreflightChecks()),
+			Entry(nil, inventory.NewMinimalRBACTest()),
+			Entry(nil, inventory.NewNoRequiredConfig()),
 		)
 
 	})
