@@ -62,20 +62,10 @@ func NewStrictPreflightChecks() Test {
 
 func NewMinimalRBACTest() Test {
 	return Test{
-		Name:        "Minimal RBAC App",
+		Name:        "Minimal RBAC",
 		Suite:       "minimal-rbac",
 		Namespace:   "minimal-rbac",
 		UpstreamURI: "minimal-rbac/automated",
-	}
-}
-
-func NewMinimalRBACOverrideTest() Test {
-	return Test{
-		Name:           "Minimal RBAC Override",
-		Suite:          "minimal-rbac",
-		Namespace:      "minimal-rbac",
-		UpstreamURI:    "minimal-rbac/automated",
-		UseMinimalRBAC: true,
 	}
 }
 

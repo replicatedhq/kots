@@ -186,7 +186,6 @@ var _ = Describe("E2E", func() {
 			Entry(nil, inventory.NewChangeLicense()),
 			Entry(nil, inventory.NewStrictPreflightChecks()),
 			Entry(nil, inventory.NewMinimalRBACTest()),
-			Entry(nil, inventory.NewMinimalRBACOverrideTest()),
 			Entry(nil, inventory.NewNoRequiredConfig()),
 		)
 
