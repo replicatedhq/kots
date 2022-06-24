@@ -1,7 +1,6 @@
 package snapshot
 
 import (
-	"compress/gzip"
 	"context"
 	"encoding/json"
 	"io"
@@ -24,14 +23,8 @@ func DownloadRestoreResults(ctx context.Context, veleroNamespace, restoreName st
 	}
 	defer r.Close()
 
-	gr, err := gzip.NewReader(r)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to create new gzip reader")
-	}
-	defer gr.Close()
-
 	resultMap := map[string]pkgrestore.Result{}
-	if err := json.NewDecoder(gr).Decode(&resultMap); err != nil {
+	if err := json.NewDecoder(r).Decode(&resultMap); err != nil {
 		return nil, nil, errors.Wrap(err, "failed to decode restore results")
 	}
 

@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"compress/gzip"
 	"io"
 	"net/http"
 
@@ -26,18 +25,9 @@ func (h *Handler) DownloadSnapshotLogs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	veleroNamespace := bsl.Namespace
-	reader, err := snapshot.DownloadRequest(r.Context(), veleroNamespace, velerov1.DownloadTargetKindBackupLog, backupName)
+	gzipReader, err := snapshot.DownloadRequest(r.Context(), veleroNamespace, velerov1.DownloadTargetKindBackupLog, backupName)
 	if err != nil {
 		err = errors.Wrap(err, "failed to download backup log")
-		logger.Error(err)
-		w.WriteHeader(500)
-		return
-	}
-	defer reader.Close()
-
-	gzipReader, err := gzip.NewReader(reader)
-	if err != nil {
-		err = errors.Wrap(err, "failed to create new gzip reader")
 		logger.Error(err)
 		w.WriteHeader(500)
 		return

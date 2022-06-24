@@ -1,7 +1,6 @@
 package snapshot
 
 import (
-	"compress/gzip"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -859,15 +858,9 @@ func listBackupVolumes(backupVolumes []velerov1.PodVolumeBackup) []types.Snapsho
 }
 
 func downloadBackupLogs(ctx context.Context, veleroNamespace, backupName string) ([]types.SnapshotError, []types.SnapshotError, []*types.SnapshotHook, error) {
-	reader, err := DownloadRequest(ctx, veleroNamespace, velerov1.DownloadTargetKindBackupLog, backupName)
+	gzipReader, err := DownloadRequest(ctx, veleroNamespace, velerov1.DownloadTargetKindBackupLog, backupName)
 	if err != nil {
 		return nil, nil, nil, errors.Wrap(err, "failed to download backup log")
-	}
-	defer reader.Close()
-
-	gzipReader, err := gzip.NewReader(reader)
-	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "failed to create new gzip reader")
 	}
 	defer gzipReader.Close()
 
