@@ -281,6 +281,7 @@ jobs:
           docker tag postgres:${{ steps.dotenv.outputs.postgres_alpine_tag }} ttl.sh/automated-${{ github.run_id }}/postgres:12h
           docker push ttl.sh/automated-${{ github.run_id }}/postgres:12h
 
+
   validate-existing-online-install-minimal:
     runs-on: ubuntu-20.04
     needs: [ can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
@@ -309,13 +310,7 @@ jobs:
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
-      - if: always()
-        run: journalctl -n all -u docker.service > logs
-      - if: always()
-        uses: actions/upload-artifact@v2
-        with:
-          name: logs
-          path: ./logs
+
 
   validate-smoke-test:
     runs-on: ubuntu-20.04

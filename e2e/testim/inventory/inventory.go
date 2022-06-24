@@ -26,7 +26,6 @@ func NewRegressionTest() Test {
 		Namespace:       "qakotsregression",
 		UpstreamURI:     "qakotsregression/type-existing-cluster-env-on-2",
 		UseMinimalRBAC:  true,
-		NeedsSnapshots:  true,
 		NeedsMonitoring: true,
 		NeedsRegistry:   true,
 	}

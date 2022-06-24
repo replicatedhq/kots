@@ -35,7 +35,7 @@ func (v *CLI) install(workspace, kubeconfig, s3Url, bucket string) (*gexec.Sessi
 		"install",
 		fmt.Sprintf("--kubeconfig=%s", kubeconfig),
 		"--provider=aws",
-		"--plugins=velero/velero-plugin-for-aws:v1.3.1",
+		"--plugins=velero/velero-plugin-for-aws:v1.4.1",
 		fmt.Sprintf("--bucket=%s", bucket),
 		fmt.Sprintf("--backup-location-config=region=minio,s3ForcePathStyle=true,s3Url=%s", s3Url),
 		"--snapshot-location-config=region=minio",
