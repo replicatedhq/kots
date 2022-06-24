@@ -1,8 +1,12 @@
 package inventory
 
 import (
+	"bytes"
 	"context"
+	"encoding/base64"
 	"fmt"
+	"io/ioutil"
+	"strings"
 	"time"
 
 	"github.com/docker/docker/registry"
@@ -75,6 +79,16 @@ func NewMinimalRBACOverrideTest() Test {
 	}
 }
 
+func NewNoRequiredConfig() Test {
+	return Test{
+		Name:        "No Required Config",
+		Suite:       "no-required-config",
+		Namespace:   "no-required-config",
+		UpstreamURI: "no-required-config/automated",
+		Setup:       SetupNoRequiredConfig,
+	}
+}
+
 func SetupRegressionTest(kubectlCLI *kubectl.CLI) {
 	cmd := kubectlCLI.Command(
 		context.Background(),
@@ -90,4 +104,25 @@ func SetupRegressionTest(kubectlCLI *kubectl.CLI) {
 	session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 	Expect(err).WithOffset(1).Should(Succeed(), "Create registry-creds secret failed")
 	Eventually(session).WithOffset(1).WithTimeout(30*time.Minute).Should(gexec.Exit(0), "Create registry-creds secret failed with non-zero exit code")
+}
+
+func SetupNoRequiredConfig(kubectlCLI *kubectl.CLI) {
+	cmd := kubectlCLI.Command(
+		context.Background(),
+		"--namespace=no-required-config",
+		"get",
+		"secret",
+		"kotsadm-authstring",
+		`--template='{{ index .data "kotsadm-authstring" }}'`,
+	)
+	buf := bytes.NewBuffer(nil)
+	session, err := gexec.Start(cmd, buf, GinkgoWriter)
+	Expect(err).WithOffset(1).Should(Succeed(), "Get kotsadm-authstring secret failed")
+	Eventually(session).WithOffset(1).WithTimeout(30*time.Minute).Should(gexec.Exit(0), "Get kotsadm-authstring secret failed with non-zero exit code")
+
+	kotsadmAPIToken, err := base64.StdEncoding.DecodeString(strings.Trim(buf.String(), `"' `))
+	Expect(err).WithOffset(1).Should(Succeed(), "Decode kotsadm-authstring secret failed")
+
+	err = ioutil.WriteFile(".env", []byte(fmt.Sprintf("KOTSADM_API_TOKEN=%s", string(kotsadmAPIToken))), 0600)
+	Expect(err).WithOffset(1).Should(Succeed(), "Create .env file failed")
 }
