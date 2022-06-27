@@ -138,13 +138,10 @@ func ensurePostgresService(namespace string, clientset *kubernetes.Clientset) er
 	return nil
 }
 
-func waitForHealthyStatefulSet(name string, deployOptions types.DeployOptions, clientset *kubernetes.Clientset, log *logger.CLILogger) error {
-	log.ChildActionWithSpinner("Waiting for datastore to be ready")
-	defer log.FinishChildSpinner()
-
+func waitForHealthyStatefulSet(ctx context.Context, name string, deployOptions types.DeployOptions, clientset *kubernetes.Clientset, log *logger.CLILogger) error {
 	start := time.Now()
 	for {
-		s, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Get(context.TODO(), name, metav1.GetOptions{})
+		s, err := clientset.AppsV1().StatefulSets(deployOptions.Namespace).Get(ctx, name, metav1.GetOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to list pods")
 		}
@@ -153,7 +150,11 @@ func waitForHealthyStatefulSet(name string, deployOptions types.DeployOptions, c
 			return nil
 		}
 
-		time.Sleep(time.Second)
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(time.Second):
+		}
 
 		if time.Now().Sub(start) > time.Duration(deployOptions.Timeout) {
 			return &types.ErrorTimeout{Message: fmt.Sprintf("timeout waiting for %s pod", name)}

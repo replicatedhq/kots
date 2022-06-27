@@ -21,6 +21,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"golang.org/x/sync/errgroup"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -520,22 +521,39 @@ func ensureKotsadm(deployOptions types.DeployOptions, clientset *kubernetes.Clie
 			return errors.Wrap(err, "failed to ensure kotsadm config")
 		}
 
-		if err := ensureStorage(deployOptions, clientset, log); err != nil {
-			return errors.Wrap(err, "failed to ensure postgres")
-		}
+		g, ctx := errgroup.WithContext(context.TODO())
 
-		if deployOptions.IncludeMinio {
-			if err := waitForHealthyStatefulSet("kotsadm-minio", deployOptions, clientset, nil); err != nil {
-				return errors.Wrap(err, "failed to wait for minio")
+		g.Go(func() error {
+			if err := ensureStorage(deployOptions, clientset, log); err != nil {
+				return errors.Wrap(err, "failed to ensure postgres")
 			}
-		}
 
-		if err := ensurePostgres(deployOptions, clientset); err != nil {
-			return errors.Wrap(err, "failed to ensure postgres")
-		}
+			if deployOptions.IncludeMinio {
+				if err := waitForHealthyStatefulSet(ctx, "kotsadm-minio", deployOptions, clientset, nil); err != nil {
+					return errors.Wrap(err, "failed to wait for minio")
+				}
+			}
 
-		if err := waitForHealthyStatefulSet("kotsadm-postgres", deployOptions, clientset, log); err != nil {
-			return errors.Wrap(err, "failed to wait for postgres")
+			return nil
+		})
+
+		g.Go(func() error {
+			if err := ensurePostgres(deployOptions, clientset); err != nil {
+				return errors.Wrap(err, "failed to ensure postgres")
+			}
+
+			if err := waitForHealthyStatefulSet(ctx, "kotsadm-postgres", deployOptions, clientset, log); err != nil {
+				return errors.Wrap(err, "failed to wait for postgres")
+			}
+
+			return nil
+		})
+
+		log.ChildActionWithSpinner("Waiting for datastore to be ready")
+		err := g.Wait()
+		log.FinishChildSpinner()
+		if err != nil {
+			return err
 		}
 
 		if err := ensureSecrets(&deployOptions, clientset); err != nil {

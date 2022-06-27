@@ -1,27 +1,23 @@
 package snapshot
 
 import (
-	"compress/gzip"
 	"context"
 	"encoding/json"
 	"io"
-	"net/http"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
-	v1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
-	veleroapiv1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
-	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
+	"github.com/vmware-tanzu/velero/pkg/cmd/util/downloadrequest"
 	pkgrestore "github.com/vmware-tanzu/velero/pkg/restore"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/apimachinery/pkg/runtime"
+	kbclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func DownloadRestoreResults(veleroNamespace, restoreName string) ([]types.SnapshotError, []types.SnapshotError, error) {
-	r, err := DownloadRequest(veleroNamespace, veleroapiv1.DownloadTargetKindRestoreResults, restoreName)
+func DownloadRestoreResults(ctx context.Context, veleroNamespace, restoreName string) ([]types.SnapshotError, []types.SnapshotError, error) {
+	r, err := DownloadRequest(ctx, veleroNamespace, velerov1.DownloadTargetKindRestoreResults, restoreName)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to make download request")
 	}
@@ -86,88 +82,25 @@ func DownloadRestoreResults(veleroNamespace, restoreName string) ([]types.Snapsh
 	return warnings, errors, nil
 }
 
-func DownloadRequest(veleroNamespace string, kind velerov1.DownloadTargetKind, name string) (io.ReadCloser, error) {
-	cfg, err := k8sutil.GetClusterConfig()
+func DownloadRequest(ctx context.Context, veleroNamespace string, kind velerov1.DownloadTargetKind, name string) (io.ReadCloser, error) {
+	clientConfig, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cluster config")
 	}
 
-	veleroClient, err := veleroclientv1.NewForConfig(cfg)
+	scheme := runtime.NewScheme()
+	velerov1.AddToScheme(scheme)
+	kbClient, err := kbclient.New(clientConfig, kbclient.Options{
+		Scheme: scheme,
+	})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create clientset")
+		return nil, errors.Wrap(err, "failed to get kubebuilder client")
 	}
 
-	dr := &v1.DownloadRequest{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:         "",
-			GenerateName: "dr-",
-		},
-		Spec: v1.DownloadRequestSpec{
-			Target: velerov1.DownloadTarget{
-				Kind: kind,
-				Name: name,
-			},
-		},
-	}
-
-	downloadRequest, err := veleroClient.DownloadRequests(veleroNamespace).Create(context.TODO(), dr, metav1.CreateOptions{})
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create download request")
-	}
-	defer func() {
-		_ = veleroClient.DownloadRequests(veleroNamespace).Delete(context.TODO(), downloadRequest.Name, metav1.DeleteOptions{})
+	pr, pw := io.Pipe()
+	go func() {
+		err := downloadrequest.Stream(ctx, kbClient, veleroNamespace, name, kind, pw, time.Minute, true, "")
+		pw.CloseWithError(err)
 	}()
-
-	watcher, err := veleroClient.DownloadRequests(veleroNamespace).Watch(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to watch download request")
-	}
-	defer watcher.Stop()
-
-	// generally takes less than a second
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-
-	signedURL, err := watchDownloadRequestForSignedURL(ctx, watcher, downloadRequest.Name)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get signed url")
-	}
-
-	resp, err := http.Get(signedURL)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to execute get request")
-	}
-	// NOTE: it is up to the caller to close this response body
-
-	gzipReader, err := gzip.NewReader(resp.Body)
-	if err != nil {
-		resp.Body.Close()
-		return nil, errors.Wrap(err, "failed to create gzip reader")
-	}
-
-	return gzipReader, nil
-}
-
-func watchDownloadRequestForSignedURL(ctx context.Context, watcher watch.Interface, name string) (string, error) {
-	for {
-		select {
-		case <-ctx.Done():
-			return "", ctx.Err()
-
-		case e := <-watcher.ResultChan():
-			if e.Type != watch.Modified {
-				continue
-			}
-			dr, ok := e.Object.(*v1.DownloadRequest)
-			if !ok {
-				continue
-			}
-			if dr.Name != name {
-				continue
-			}
-			if dr.Status.DownloadURL != "" {
-				return dr.Status.DownloadURL, nil
-			}
-		}
-	}
+	return pr, nil
 }
