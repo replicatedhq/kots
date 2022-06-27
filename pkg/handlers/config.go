@@ -52,6 +52,7 @@ type UpdateAppConfigResponse struct {
 	Success       bool     `json:"success"`
 	Error         string   `json:"error,omitempty"`
 	RequiredItems []string `json:"requiredItems,omitempty"`
+	ChartPath     string   `json:"chartPath,omitempty"`
 }
 
 type LiveAppConfigResponse struct {
@@ -180,7 +181,7 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		configCache[app] = *secret
-		JSON(w, http.StatusOK, UpdateAppConfigResponse{Success: true})
+		JSON(w, http.StatusOK, UpdateAppConfigResponse{Success: true, ChartPath: string(appSecret.Data["chartPath"])})
 		return
 	}
 	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
