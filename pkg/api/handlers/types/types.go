@@ -45,6 +45,7 @@ type ResponseApp struct {
 	LicenseType                    string `json:"licenseType"`
 
 	Downstream ResponseDownstream `json:"downstream"`
+	ChartPath  string             `json:"chartPath,omitempty"`
 }
 
 type ResponseDownstream struct {
