@@ -10,6 +10,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	kurlv1beta1 "github.com/replicatedhq/kurl/kurlkinds/pkg/apis/cluster/v1beta1"
 )
 
 var (
@@ -27,6 +28,7 @@ type BuilderOptions struct {
 	LocalRegistry   LocalRegistry
 	License         *kotsv1beta1.License
 	Application     *kotsv1beta1.Application
+	Installer       *kurlv1beta1.Installer
 	ApplicationInfo *ApplicationInfo
 	VersionInfo     *VersionInfo
 	IdentityConfig  *kotsv1beta1.IdentityConfig
@@ -65,6 +67,7 @@ func NewBuilder(opts BuilderOptions) (Builder, map[string]ItemValue, error) {
 	b.Ctx = []Ctx{
 		StaticCtx{},
 		licenseCtx{License: opts.License},
+		newInstallerCtx(opts.Installer),
 		newKurlContext("base", "default"), // can be hardcoded because kurl always deploys to the default namespace
 		newVersionCtx(opts.VersionInfo),
 		newIdentityCtx(opts.IdentityConfig, opts.ApplicationInfo),

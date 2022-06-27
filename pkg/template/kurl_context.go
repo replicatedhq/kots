@@ -96,6 +96,11 @@ func (ctx kurlCtx) AddValuesToKurlContext(retrieved *kurlv1beta1.Installer) {
 }
 
 func (ctx kurlCtx) AddSpecToKurlContext(retrieved *kurlv1beta1.Installer) {
+	if retrieved.Spec.Kotsadm.ApplicationSlug != "" {
+		// application slug may be injected into the installer, so we should remove it here for comparison purposes
+		retrieved.Spec.Kotsadm.ApplicationSlug = ""
+	}
+
 	spec, err := json.Marshal(retrieved.Spec)
 	if err != nil {
 		fmt.Println("failed to marshal retrieved kurl spec")
@@ -230,7 +235,7 @@ func (ctx kurlCtx) kurlAll() string {
 func (ctx kurlCtx) kurlSpec() string {
 	s, ok := ctx.KurlInstaller["Spec"].(string)
 	if !ok {
-		fmt.Println("Failed to get kurl isntaller as string")
+		fmt.Println("failed to get kurl installer as string")
 		return ""
 	}
 

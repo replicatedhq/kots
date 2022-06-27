@@ -21,6 +21,8 @@ import (
 	"github.com/replicatedhq/kots/pkg/template"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
+	kurlscheme "github.com/replicatedhq/kurl/kurlkinds/client/kurlclientset/scheme"
+	kurlv1beta1 "github.com/replicatedhq/kurl/kurlkinds/pkg/apis/cluster/v1beta1"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
@@ -33,6 +35,7 @@ import (
 
 func init() {
 	kotsscheme.AddToScheme(scheme.Scheme)
+	kurlscheme.AddToScheme(scheme.Scheme)
 	troubleshootscheme.AddToScheme(scheme.Scheme)
 	velerov1.AddToScheme(scheme.Scheme)
 	applicationv1beta1.AddToScheme(scheme.Scheme)
@@ -423,6 +426,8 @@ func getKotsKinds(u *upstreamtypes.Upstream, log *logger.CLILogger) (*kotsutil.K
 			kotsKinds.Backup = decoded.(*velerov1.Backup)
 		case "app.k8s.io/v1beta1, Kind=Application":
 			kotsKinds.Application = decoded.(*applicationv1beta1.Application)
+		case "cluster.kurl.sh/v1beta1, Kind=Installer", "kurl.sh/v1beta1, Kind=Installer":
+			kotsKinds.Installer = decoded.(*kurlv1beta1.Installer)
 		}
 	}
 
