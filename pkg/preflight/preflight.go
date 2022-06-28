@@ -22,6 +22,7 @@ import (
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
+	kurlv1beta1 "github.com/replicatedhq/kurl/kurlkinds/pkg/apis/cluster/v1beta1"
 	troubleshootanalyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
@@ -381,48 +382,57 @@ func injectDefaultPreflights(preflight *troubleshootv1beta2.Preflight, kotskinds
 	}
 
 	if kotskinds.Installer != nil {
-		for _, analyzer := range preflight.Spec.Analyzers {
-			if analyzer.YamlCompare != nil && analyzer.YamlCompare.Annotations["kots.io/installer"] != "" {
-				deployedInstaller, err := installers.GetDeployedInstaller()
-				if err != nil {
-					logger.Error(errors.Wrap(err, "failed to get deployed installer"))
-					break
-				}
-
-				if kotskinds.Installer.Spec.Kurl.AdditionalNoProxyAddresses == nil {
-					// if this is nil, it will be set to an empty string slice by kurl, so lets do so before comparing
-					kotskinds.Installer.Spec.Kurl.AdditionalNoProxyAddresses = []string{}
-				}
-				if kotskinds.Installer.Spec.Kotsadm.ApplicationSlug == "" {
-					// application slug may be injected into the deployed installer, so remove it if not specified in release installer
-					deployedInstaller.Spec.Kotsadm.ApplicationSlug = ""
-				}
-
-				// Inject deployed installer spec as collected data
-				deployedInstallerSpecYaml, err := yaml.Marshal(deployedInstaller.Spec)
-				if err != nil {
-					logger.Error(errors.Wrap(err, "failed to marshal deployed installer"))
-					break
-				}
-
-				preflight.Spec.Collectors = append(preflight.Spec.Collectors, &troubleshootv1beta2.Collect{
-					Data: &troubleshootv1beta2.Data{
-						Name: "kurl/installer.yaml",
-						Data: string(deployedInstallerSpecYaml),
-					},
-				})
-
-				// Inject release installer spec as analyzer value
-				releaseInstallerSpecYaml, err := yaml.Marshal(kotskinds.Installer.Spec)
-				if err != nil {
-					logger.Error(errors.Wrap(err, "failed to marshal release installer"))
-					break
-				}
-
-				analyzer.YamlCompare.FileName = "kurl/installer.yaml"
-				analyzer.YamlCompare.Value = string(releaseInstallerSpecYaml)
-			}
+		if deployedInstaller, err := installers.GetDeployedInstaller(); err == nil {
+			injectInstallerPreflightIfPresent(preflight, deployedInstaller, kotskinds.Installer)
+		} else {
+			logger.Error(errors.Wrap(err, "failed to get deployed installer"))
 		}
 	}
 
+}
+
+func injectInstallerPreflightIfPresent(preflight *troubleshootv1beta2.Preflight, deployedInstaller *kurlv1beta1.Installer, releaseInstaller *kurlv1beta1.Installer) {
+	for _, analyzer := range preflight.Spec.Analyzers {
+		if analyzer.YamlCompare != nil && analyzer.YamlCompare.Annotations["kots.io/installer"] != "" {
+			err := injectInstallerPreflight(preflight, analyzer, deployedInstaller, releaseInstaller)
+			if err != nil {
+				logger.Error(errors.Wrap(err, "failed to inject installer preflight"))
+			}
+		}
+	}
+}
+
+func injectInstallerPreflight(preflight *troubleshootv1beta2.Preflight, analyzer *troubleshootv1beta2.Analyze, deployedInstaller *kurlv1beta1.Installer, releaseInstaller *kurlv1beta1.Installer) error {
+	if releaseInstaller.Spec.Kurl.AdditionalNoProxyAddresses == nil {
+		// if this is nil, it will be set to an empty string slice by kurl, so lets do so before comparing
+		releaseInstaller.Spec.Kurl.AdditionalNoProxyAddresses = []string{}
+	}
+	if releaseInstaller.Spec.Kotsadm.ApplicationSlug == "" {
+		// application slug may be injected into the deployed installer, so remove it if not specified in release installer
+		deployedInstaller.Spec.Kotsadm.ApplicationSlug = ""
+	}
+
+	// Inject deployed installer spec as collected data
+	deployedInstallerSpecYaml, err := yaml.Marshal(deployedInstaller.Spec)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal deployed installer")
+	}
+
+	preflight.Spec.Collectors = append(preflight.Spec.Collectors, &troubleshootv1beta2.Collect{
+		Data: &troubleshootv1beta2.Data{
+			Name: "kurl/installer.yaml",
+			Data: string(deployedInstallerSpecYaml),
+		},
+	})
+
+	// Inject release installer spec as analyzer value
+	releaseInstallerSpecYaml, err := yaml.Marshal(releaseInstaller.Spec)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal release installer")
+	}
+
+	analyzer.YamlCompare.FileName = "kurl/installer.yaml"
+	analyzer.YamlCompare.Value = string(releaseInstallerSpecYaml)
+
+	return nil
 }
