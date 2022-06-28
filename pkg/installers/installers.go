@@ -16,7 +16,7 @@ func GetDeployedInstaller() (*kurlv1beta1.Installer, error) {
 		return nil, errors.Wrap(err, "failed to get clientset")
 	}
 
-	cm, err := clientset.CoreV1().ConfigMaps("kube-system").Get(context.TODO(), "kurl-config", v1.GetOptions{})
+	cm, err := clientset.CoreV1().ConfigMaps(v1.NamespaceSystem).Get(context.TODO(), "kurl-config", v1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get kurl-config")
 	}
@@ -33,7 +33,7 @@ func GetDeployedInstaller() (*kurlv1beta1.Installer, error) {
 		return nil, errors.Wrap(err, "failed to get kurl clientset")
 	}
 
-	deployedInstaller, err := kurlClientset.ClusterV1beta1().Installers("default").Get(context.TODO(), installerId, v1.GetOptions{})
+	deployedInstaller, err := kurlClientset.ClusterV1beta1().Installers(v1.NamespaceDefault).Get(context.TODO(), installerId, v1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get installer %s", installerId)
 	}
