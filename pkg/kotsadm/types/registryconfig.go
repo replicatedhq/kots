@@ -1,6 +1,6 @@
 package types
 
-type KotsadmOptions struct {
+type RegistryConfig struct {
 	OverrideVersion   string
 	OverrideRegistry  string
 	OverrideNamespace string

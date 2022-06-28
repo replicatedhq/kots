@@ -408,6 +408,8 @@ func updateDeployment(namePrefix string, existingDeployment, desiredDeployment *
 	existingDeployment.Spec.Template.Spec.Containers[0].ReadinessProbe = desiredDeployment.Spec.Template.Spec.Containers[0].ReadinessProbe
 	existingDeployment.Spec.Template.Spec.Containers[0].Env = desiredDeployment.Spec.Template.Spec.Containers[0].Env
 
+	existingDeployment.Spec.Template.Spec.Containers[0].Resources = desiredDeployment.Spec.Template.Spec.Containers[0].Resources
+
 	existingDeployment = updateDeploymentConfigSecretVolume(namePrefix, existingDeployment, desiredDeployment)
 
 	existingDeployment = updateDeploymentClientSecretEnvVar(namePrefix, existingDeployment, desiredDeployment)

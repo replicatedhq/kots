@@ -29,7 +29,7 @@ func CopyImages(sourceEndpoint string, options types.PushImagesOptions, kotsName
 	// Minimal info needed to get the right image names
 	deployOptions := kotsadmtypes.DeployOptions{
 		IsOpenShift: k8sutil.IsOpenShift(clientset),
-		KotsadmOptions: kotsadmtypes.KotsadmOptions{
+		RegistryConfig: kotsadmtypes.RegistryConfig{
 			OverrideRegistry:  options.Registry.Endpoint,
 			OverrideNamespace: options.Registry.Namespace,
 			Username:          options.Registry.Username,

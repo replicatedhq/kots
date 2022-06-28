@@ -99,7 +99,7 @@ func UpdateToVersion(newVersion string) error {
 		return errors.Wrap(err, "failed to create k8s client")
 	}
 
-	kotsOptions, err := GetKotsadmOptionsFromCluster(ns, clientset)
+	registryConfig, err := GetRegistryConfigFromCluster(ns, clientset)
 	if err != nil {
 		return errors.Wrap(err, "failed to get kots options from cluster")
 	}
@@ -118,12 +118,12 @@ func UpdateToVersion(newVersion string) error {
 		fmt.Sprintf("with-minio=%v", installationParams.WithMinio),
 	}
 
-	if kotsOptions.OverrideRegistry != "" && !kotsOptions.IsReadOnly {
+	if registryConfig.OverrideRegistry != "" && !registryConfig.IsReadOnly {
 		var registryValue string
-		if kotsOptions.OverrideNamespace == "" {
-			registryValue = kotsOptions.OverrideRegistry
+		if registryConfig.OverrideNamespace == "" {
+			registryValue = registryConfig.OverrideRegistry
 		} else {
-			registryValue = fmt.Sprintf("%s/%s", kotsOptions.OverrideRegistry, kotsOptions.OverrideNamespace)
+			registryValue = fmt.Sprintf("%s/%s", registryConfig.OverrideRegistry, registryConfig.OverrideNamespace)
 		}
 		args = append(args, fmt.Sprintf("registry=%s", registryValue))
 	}

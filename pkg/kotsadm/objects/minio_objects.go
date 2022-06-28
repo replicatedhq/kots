@@ -16,7 +16,7 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 	image := GetAdminConsoleImage(deployOptions, "minio")
 
 	var pullSecrets []corev1.LocalObjectReference
-	if s := kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions); s != nil {
+	if s := kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.RegistryConfig); s != nil {
 		pullSecrets = []corev1.LocalObjectReference{
 			{
 				Name: s.ObjectMeta.Name,

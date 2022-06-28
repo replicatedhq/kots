@@ -3,16 +3,14 @@ package s3
 import (
 	"bufio"
 	"bytes"
+	"context"
+	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
-
-	"context"
-	"encoding/json"
-	"time"
-
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -35,7 +33,7 @@ type S3OpsPodOptions struct {
 	SecretAccessKey string
 	Namespace       string
 	IsOpenShift     bool
-	RegistryOptions *kotsadmtypes.KotsadmOptions
+	RegistryConfig  *kotsadmtypes.RegistryConfig
 }
 
 func GetConfig() *aws.Config {
@@ -193,13 +191,13 @@ func s3BucketPod(clientset kubernetes.Interface, podOptions S3OpsPodOptions, com
 		}
 	}
 
-	kotsadmTag := kotsadmversion.KotsadmTag(kotsadmtypes.KotsadmOptions{}) // default tag
+	kotsadmTag := kotsadmversion.KotsadmTag(kotsadmtypes.RegistryConfig{}) // default tag
 	image := fmt.Sprintf("kotsadm/kotsadm:%s", kotsadmTag)
 	imagePullSecrets := []corev1.LocalObjectReference{}
 
 	if !kotsutil.IsKurl(clientset) || podOptions.Namespace != metav1.NamespaceDefault {
 		var err error
-		imageRewriteFn := kotsadmversion.KotsadmImageRewriteKotsadmRegistry(podOptions.Namespace, podOptions.RegistryOptions)
+		imageRewriteFn := kotsadmversion.KotsadmImageRewriteKotsadmRegistry(podOptions.Namespace, podOptions.RegistryConfig)
 		image, imagePullSecrets, err = imageRewriteFn(image, false)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to rewrite image")

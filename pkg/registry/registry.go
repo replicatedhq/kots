@@ -209,14 +209,14 @@ func GetKotsadmRegistry() (*types.RegistrySettings, error) {
 
 	namespace := util.PodNamespace
 
-	kotsadmOptions, err := kotsadm.GetKotsadmOptionsFromCluster(namespace, clientset)
+	registryConfig, err := kotsadm.GetRegistryConfigFromCluster(namespace, clientset)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get kotsadm options from cluster")
 	}
 
-	registry := kotsadmOptions.OverrideRegistry
-	registryNamespace := kotsadmOptions.OverrideNamespace
-	hostParts := strings.Split(kotsadmOptions.OverrideRegistry, "/")
+	registry := registryConfig.OverrideRegistry
+	registryNamespace := registryConfig.OverrideNamespace
+	hostParts := strings.Split(registryConfig.OverrideRegistry, "/")
 	if len(hostParts) == 2 {
 		registry = hostParts[0]
 		registryNamespace = hostParts[1]
@@ -225,9 +225,9 @@ func GetKotsadmRegistry() (*types.RegistrySettings, error) {
 	registrySettings := types.RegistrySettings{
 		Hostname:   registry,
 		Namespace:  registryNamespace,
-		Username:   kotsadmOptions.Username,
-		Password:   kotsadmOptions.Password,
-		IsReadOnly: kotsadmOptions.IsReadOnly,
+		Username:   registryConfig.Username,
+		Password:   registryConfig.Password,
+		IsReadOnly: registryConfig.IsReadOnly,
 	}
 
 	return &registrySettings, nil

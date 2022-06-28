@@ -12,10 +12,10 @@ import (
 
 func Test_imageRewriteKotsadmRegistry(t *testing.T) {
 	type args struct {
-		namespace       string
-		registryOptions kotsadmtypes.KotsadmOptions
-		upstreamImage   string
-		alwaysRewrite   bool
+		namespace      string
+		registryConfig kotsadmtypes.RegistryConfig
+		upstreamImage  string
+		alwaysRewrite  bool
 	}
 	tests := []struct {
 		name                 string
@@ -37,7 +37,7 @@ func Test_imageRewriteKotsadmRegistry(t *testing.T) {
 		{
 			name: "dex no rewrite",
 			args: args{
-				registryOptions: kotsadmtypes.KotsadmOptions{
+				registryConfig: kotsadmtypes.RegistryConfig{
 					OverrideNamespace: "testnamespace",
 				},
 				upstreamImage: "quay.io/dexidp/dex:v2.26.0",
@@ -49,7 +49,7 @@ func Test_imageRewriteKotsadmRegistry(t *testing.T) {
 		{
 			name: "dex no rewrite tag",
 			args: args{
-				registryOptions: kotsadmtypes.KotsadmOptions{
+				registryConfig: kotsadmtypes.RegistryConfig{
 					OverrideNamespace: "testnamespace",
 				},
 				upstreamImage: "quay.io/dexidp/dex:v2.26.0",
@@ -62,7 +62,7 @@ func Test_imageRewriteKotsadmRegistry(t *testing.T) {
 		{
 			name: "dex rewrite tag",
 			args: args{
-				registryOptions: kotsadmtypes.KotsadmOptions{
+				registryConfig: kotsadmtypes.RegistryConfig{
 					OverrideNamespace: "testnamespace",
 					OverrideVersion:   "v0.0.1",
 				},
@@ -85,7 +85,7 @@ func Test_imageRewriteKotsadmRegistry(t *testing.T) {
 		{
 			name: "kotsadm always rewrite",
 			args: args{
-				registryOptions: kotsadmtypes.KotsadmOptions{
+				registryConfig: kotsadmtypes.RegistryConfig{
 					OverrideNamespace: "testnamespace",
 				},
 				upstreamImage: "kotsadm/kotsadm:v1.25.0",
@@ -98,9 +98,9 @@ func Test_imageRewriteKotsadmRegistry(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fn := kotsadmversion.KotsadmImageRewriteKotsadmRegistry(tt.args.namespace, &tt.args.registryOptions)
+			fn := kotsadmversion.KotsadmImageRewriteKotsadmRegistry(tt.args.namespace, &tt.args.registryConfig)
 			if tt.isDependency {
-				fn = kotsadmversion.DependencyImageRewriteKotsadmRegistry(tt.args.namespace, &tt.args.registryOptions)
+				fn = kotsadmversion.DependencyImageRewriteKotsadmRegistry(tt.args.namespace, &tt.args.registryConfig)
 			}
 			gotImage, gotImagePullSecrets, err := fn(tt.args.upstreamImage, tt.args.alwaysRewrite)
 			if (err != nil) != tt.wantErr {

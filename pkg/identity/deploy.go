@@ -21,7 +21,16 @@ const (
 	KotsadmNamePrefix = "kotsadm"
 )
 
-func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, registryOptions *kotsadmtypes.KotsadmOptions, proxyEnv map[string]string, applyAppBranding bool) error {
+func Deploy(
+	ctx context.Context,
+	clientset kubernetes.Interface,
+	namespace string,
+	identityConfig kotsv1beta1.IdentityConfig,
+	ingressConfig kotsv1beta1.IngressConfig,
+	registryConfig *kotsadmtypes.RegistryConfig,
+	proxyEnv map[string]string,
+	applyAppBranding bool,
+) error {
 	identityConfig.Spec.ClientID = "kotsadm"
 
 	options := identitydeploy.Options{
@@ -34,7 +43,7 @@ func Deploy(ctx context.Context, clientset kubernetes.Interface, namespace strin
 	}
 
 	if !kotsutil.IsKurl(clientset) || namespace != metav1.NamespaceDefault {
-		options.ImageRewriteFn = kotsadmversion.DependencyImageRewriteKotsadmRegistry(namespace, registryOptions)
+		options.ImageRewriteFn = kotsadmversion.DependencyImageRewriteKotsadmRegistry(namespace, registryConfig)
 	}
 
 	if err := migrateClientSecret(ctx, clientset, namespace); err != nil {
