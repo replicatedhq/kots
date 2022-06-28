@@ -1194,16 +1194,16 @@ jobs:
       - name: run the test
         run: |
           set +e
-          
+
           echo ${{ secrets.KUBERNETES_INSTALLER_PREFLIGHT_LICENSE }} | base64 -d > license.yaml
 
           # Fake kurl installation using the crd and installer spec from the application manifests:
           # Pull application manifests
           ./bin/kots pull $APP_SLUG/automated --license-file license.yaml --shared-password password
           # Apply installer crd
-          kubectl apply -f $APP_SLUG/upstream/installer-crd.yaml
+          kubectl -n default apply -f $APP_SLUG/upstream/installer-crd.yaml
           # Apply installer
-          kubectl apply -f $APP_SLUG/upstream/installer.yaml -n default
+          kubectl -n default apply -f $APP_SLUG/upstream/installer.yaml
           # Create kurl-config configmap in kube-system
           kubectl create cm kurl-config -n kube-system --from-literal=installer_id=my-installer
 
