@@ -1207,6 +1207,9 @@ jobs:
           
           # Wait for crd to be created
           kubectl wait --for condition=established --timeout=60s crd/installers.cluster.kurl.sh
+
+          # Seems that the above does not always guarantee the crd exists? So just in case...
+          sleep 10
           
           # Apply installer
           kubectl apply -f $APP_SLUG/upstream/installer.yaml
