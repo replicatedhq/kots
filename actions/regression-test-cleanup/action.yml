@@ -10,6 +10,10 @@ inputs:
   AWS_SECRET_ACCESS_KEY:
     required: true
     description: AWS secret access key
+  CLEANUP_INTERVAL_HOURS:
+    required: true
+    description: Cleanup interval in hours
+    default: '24'
 runs:
   using: 'node16'
   main: 'dist/index.js'
