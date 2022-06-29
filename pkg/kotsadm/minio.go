@@ -211,7 +211,7 @@ func MigrateExistingMinioFilesystemDeployments(log *logger.CLILogger, deployOpti
 		return errors.Wrap(err, "failed to ensure velero local-volume-provider config map")
 	}
 
-	registryOptions, err := GetKotsadmOptionsFromCluster(deployOptions.Namespace, clientset)
+	registryConfig, err := GetRegistryConfigFromCluster(deployOptions.Namespace, clientset)
 	if err != nil {
 		return errors.Wrap(err, "failed to get registry options from cluster")
 	}
@@ -239,7 +239,7 @@ func MigrateExistingMinioFilesystemDeployments(log *logger.CLILogger, deployOpti
 		Path:             "/velero", // Data is not moved from the legacy bucket
 		FileSystem:       prevFsConfig,
 		KotsadmNamespace: deployOptions.Namespace,
-		RegistryOptions:  &registryOptions,
+		RegistryConfig:   &registryConfig,
 		IsMinioDisabled:  true,
 	}
 	if _, err = snapshot.ConfigureStore(context.TODO(), storeOptions); err != nil {

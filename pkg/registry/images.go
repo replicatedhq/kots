@@ -147,7 +147,7 @@ func DeleteUnusedImages(appID string, ignoreRollback bool) error {
 	if installParams.KotsadmRegistry != "" {
 		deployOptions := kotsadmtypes.DeployOptions{
 			// Minimal info needed to get the right image names
-			KotsadmOptions: kotsadmtypes.KotsadmOptions{
+			RegistryConfig: kotsadmtypes.RegistryConfig{
 				// TODO: OverrideVersion
 				OverrideRegistry:  registrySettings.Hostname,
 				OverrideNamespace: registrySettings.Namespace,

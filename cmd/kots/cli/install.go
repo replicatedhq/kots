@@ -17,15 +17,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/replicatedhq/kots/pkg/handlers"
-	"github.com/replicatedhq/troubleshoot/pkg/preflight"
-
 	cursor "github.com/ahmetalpbalkan/go-cursor"
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/automation"
+	"github.com/replicatedhq/kots/pkg/handlers"
 	"github.com/replicatedhq/kots/pkg/identity"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
@@ -37,6 +35,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/store/kotsstore"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
+	"github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -242,7 +241,7 @@ func InstallCmd() *cobra.Command {
 				IncludeMinioSnapshots:  v.GetBool("with-minio"),
 				StrictSecurityContext:  v.GetBool("strict-security-context"),
 
-				KotsadmOptions: *registryConfig,
+				RegistryConfig: *registryConfig,
 
 				IdentityConfig: *identityConfig,
 				IngressConfig:  *ingressConfig,
@@ -675,7 +674,7 @@ func registryFlags(flagset *pflag.FlagSet) {
 	flagset.MarkHidden("kotsadm-tag")
 }
 
-func getRegistryConfig(v *viper.Viper) (*kotsadmtypes.KotsadmOptions, error) {
+func getRegistryConfig(v *viper.Viper) (*kotsadmtypes.RegistryConfig, error) {
 	registryEndpoint := v.GetString("kotsadm-registry")
 	registryNamespace := v.GetString("kotsadm-namespace")
 	registryUsername := v.GetString("registry-username")
@@ -712,7 +711,7 @@ func getRegistryConfig(v *viper.Viper) (*kotsadmtypes.KotsadmOptions, error) {
 			registryNamespace = license.Spec.AppSlug
 		}
 	}
-	return &kotsadmtypes.KotsadmOptions{
+	return &kotsadmtypes.RegistryConfig{
 		OverrideVersion:   v.GetString("kotsadm-tag"),
 		OverrideRegistry:  registryEndpoint,
 		OverrideNamespace: registryNamespace,

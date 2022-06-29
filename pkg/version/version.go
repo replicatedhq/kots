@@ -80,7 +80,7 @@ func DeployVersion(appID string, sequence int64) error {
 		return errors.Wrap(err, "failed to mark as current downstream version")
 	}
 
-	go operator.DeployApp(appID, sequence)
+	go operator.DeployApp(appID, sequence, store.GetStore())
 
 	return nil
 }

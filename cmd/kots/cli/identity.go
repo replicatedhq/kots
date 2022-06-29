@@ -288,7 +288,7 @@ func IdentityServiceOIDCCallbackURLCmd() *cobra.Command {
 	return cmd
 }
 
-func identityServiceDeploy(ctx context.Context, log *logger.CLILogger, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, registryConfig *kotsadmtypes.KotsadmOptions, proxyEnv map[string]string, applyAppBranding bool) error {
+func identityServiceDeploy(ctx context.Context, log *logger.CLILogger, clientset kubernetes.Interface, namespace string, identityConfig kotsv1beta1.IdentityConfig, ingressConfig kotsv1beta1.IngressConfig, registryConfig *kotsadmtypes.RegistryConfig, proxyEnv map[string]string, applyAppBranding bool) error {
 	log.ChildActionWithSpinner("Deploying the Identity Service")
 
 	identityConfig.Spec.Enabled = true

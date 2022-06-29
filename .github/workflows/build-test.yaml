@@ -561,6 +561,9 @@ jobs:
       APP_SLUG: minimal-rbac
       APP_VERSION_LABEL: "0.0.1"
     steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
       - uses: replicatedhq/action-k3s@main
         with:
           version: ${{ matrix.k8s_version }}
@@ -620,7 +623,7 @@ jobs:
           fi
       - name: Generate support bundle on failure
         if: failure()
-        uses: ./.github/actions/kots-e2e
+        uses: ./.github/actions/generate-support-bundle
         with:
           kots-namespace: "$APP_SLUG"
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -637,6 +640,9 @@ jobs:
     env:
       APP_SLUG: multi-namespace-yeti
     steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
       - uses: replicatedhq/action-k3s@main
         with:
           version: ${{ matrix.k8s_version }}
@@ -690,7 +696,7 @@ jobs:
 
       - name: Generate support bundle on failure
         if: failure()
-        uses: ./.github/actions/kots-e2e
+        uses: ./.github/actions/generate-support-bundle
         with:
           kots-namespace: "$APP_SLUG"
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -708,6 +714,9 @@ jobs:
       APP_NAME: multi-namespace-yeti
       APP_SLUG: multi-namespace
     steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
       - uses: replicatedhq/action-k3s@main
         with:
           version: ${{ matrix.k8s_version }}
@@ -773,7 +782,7 @@ jobs:
 
       - name: Generate support bundle on failure
         if: failure()
-        uses: ./.github/actions/kots-e2e
+        uses: ./.github/actions/generate-support-bundle
         with:
           kots-namespace: "$APP_NAME"
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -792,6 +801,9 @@ jobs:
       APP_VERSION_LABEL: v1.0.0
       LATEST_APP_VERSION_LABEL: v1.0.1
     steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
       - uses: replicatedhq/action-k3s@main
         with:
           version: ${{ matrix.k8s_version }}
@@ -904,7 +916,7 @@ jobs:
 
       - name: Generate support bundle on failure
         if: failure()
-        uses: ./.github/actions/kots-e2e
+        uses: ./.github/actions/generate-support-bundle
         with:
           kots-namespace: "$APP_SLUG"
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -921,6 +933,9 @@ jobs:
     env:
       APP_SLUG: helm-install-order
     steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
       - uses: replicatedhq/action-k3s@main
         with:
           version: ${{ matrix.k8s_version }}
@@ -975,7 +990,7 @@ jobs:
 
       - name: Generate support bundle on failure
         if: failure()
-        uses: ./.github/actions/kots-e2e
+        uses: ./.github/actions/generate-support-bundle
         with:
           kots-namespace: "$APP_SLUG"
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -992,6 +1007,9 @@ jobs:
     env:
       APP_SLUG: yamlescape
     steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
       - uses: replicatedhq/action-k3s@main
         with:
           version: ${{ matrix.k8s_version }}
@@ -1046,7 +1064,7 @@ jobs:
 
       - name: Generate support bundle on failure
         if: failure()
-        uses: ./.github/actions/kots-e2e
+        uses: ./.github/actions/generate-support-bundle
         with:
           kots-namespace: "$APP_SLUG"
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -1063,6 +1081,9 @@ jobs:
     env:
       APP_SLUG: no-redeploy-on-restart
     steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
       - uses: replicatedhq/action-k3s@main
         with:
           version: ${{ matrix.k8s_version }}
@@ -1141,6 +1162,105 @@ jobs:
 
       - name: Generate support bundle on failure
         if: failure()
+        uses: ./.github/actions/generate-support-bundle
+        with:
+          kots-namespace: "$APP_SLUG"
+          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
+          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+
+
+  validate-kubernetes-installer-preflight:
+    runs-on: ubuntu-20.04
+    needs: [ can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_version: [ v1.23.3-k3s1 ]
+    env:
+      APP_SLUG: kubernetes-installer-preflight
+    steps:
+      - uses: replicatedhq/action-k3s@main
+        with:
+          version: ${{ matrix.k8s_version }}
+
+      - name: download kots binary
+        uses: actions/download-artifact@v2
+        with:
+          name: kots
+          path: bin/
+
+      - run: chmod +x bin/kots
+
+      - name: run the test
+        run: |
+          set +e
+
+          echo ${{ secrets.KUBERNETES_INSTALLER_PREFLIGHT_LICENSE }} | base64 -d > license.yaml
+
+          # Fake kurl installation using the crd and installer spec from the application manifests:
+          
+          # Pull application manifests
+          ./bin/kots pull $APP_SLUG/automated --license-file license.yaml --shared-password password
+          
+          # Apply installer crd
+          kubectl apply -f $APP_SLUG/upstream/installer-crd.yaml
+          
+          # Wait for crd to be created
+          kubectl wait --for condition=established --timeout=60s crd/installers.cluster.kurl.sh
+
+          # Seems that the above does not always guarantee the crd exists? So just in case...
+          sleep 10
+          
+          # Apply installer
+          kubectl apply -f $APP_SLUG/upstream/installer.yaml
+          
+          # Create kurl-config configmap in kube-system
+          kubectl create cm kurl-config -n kube-system --from-literal=installer_id=my-installer
+
+          ./bin/kots \
+            install $APP_SLUG/automated \
+            --license-file license.yaml \
+            --no-port-forward \
+            --namespace $APP_SLUG \
+            --shared-password password \
+            --kotsadm-registry ttl.sh \
+            --kotsadm-namespace automated-${{ github.run_id }} \
+            --kotsadm-tag 12h
+
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "------pods:"
+            kubectl -n $APP_SLUG get pods
+            echo "------kotsadm logs"
+            kubectl logs -l app=kotsadm --tail=100 --namespace $APP_SLUG
+            exit $EXIT_CODE
+          fi
+
+          # validate that preflight checks ran
+          JSON_PATH="jsonpath={.data['automated-install-slug-$APP_SLUG']}"
+          if [ "$(kubectl get cm kotsadm-tasks -n $APP_SLUG -o $JSON_PATH | grep -c pending_preflight)" != "1" ]; then
+              echo "Preflight checks did not run"
+              exit -1
+          fi
+
+          COUNTER=1
+          while [ "$(./bin/kots get apps --namespace $APP_SLUG | awk 'NR>1{print $2}')" != "ready" ]; do
+            COUNTER=$[$COUNTER +1]
+            if [ $COUNTER -gt 120 ]; then
+              echo "Timed out waiting for app to be ready"
+              ./bin/kots get apps --namespace $APP_SLUG
+              echo "kotsadm logs:"
+              kubectl logs -l app=kotsadm --tail=100 --namespace $APP_SLUG
+              exit -1
+            fi
+            sleep 1
+          done
+
+          printf "App is installed successfully and is ready\n\n"
+          ./bin/kots get apps --namespace $APP_SLUG
+
+      - name: Generate support bundle on failure
+        if: failure()
         uses: ./.github/actions/kots-e2e
         with:
           kots-namespace: "$APP_SLUG"
@@ -1169,5 +1289,6 @@ jobs:
       - validate-helm-install-order
       - validate-yamlescape
       - validate-no-redeploy-on-restart
+      - validate-kubernetes-installer-preflight
     steps:
       - run: echo "Validate success"

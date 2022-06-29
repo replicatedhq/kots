@@ -3,10 +3,9 @@ package kotsadm
 import (
 	"fmt"
 
-	"github.com/replicatedhq/kots/pkg/image"
-
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
@@ -21,7 +20,7 @@ func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quanti
 	image := GetAdminConsoleImage(deployOptions, "postgres")
 
 	var pullSecrets []corev1.LocalObjectReference
-	if s := kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions); s != nil {
+	if s := kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.RegistryConfig); s != nil {
 		pullSecrets = []corev1.LocalObjectReference{
 			{
 				Name: s.ObjectMeta.Name,

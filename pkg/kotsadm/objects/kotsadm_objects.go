@@ -207,7 +207,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 	}
 
 	var pullSecrets []corev1.LocalObjectReference
-	if s := kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions); s != nil {
+	if s := kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.RegistryConfig); s != nil {
 		pullSecrets = []corev1.LocalObjectReference{
 			{
 				Name: s.ObjectMeta.Name,
@@ -338,7 +338,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 	}
 
 	env = append(env, GetProxyEnv(deployOptions)...)
-	if deployOptions.KotsadmOptions.OverrideRegistry != "" || deployOptions.Airgap {
+	if deployOptions.RegistryConfig.OverrideRegistry != "" || deployOptions.Airgap {
 		env = append(env, corev1.EnvVar{
 			Name:  "DISABLE_OUTBOUND_CONNECTIONS",
 			Value: "true",
@@ -750,7 +750,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 	}
 
 	var pullSecrets []corev1.LocalObjectReference
-	if s := kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.KotsadmOptions); s != nil {
+	if s := kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.RegistryConfig); s != nil {
 		pullSecrets = []corev1.LocalObjectReference{
 			{
 				Name: s.ObjectMeta.Name,
@@ -845,7 +845,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 
 	env = append(env, GetProxyEnv(deployOptions)...)
 
-	if deployOptions.KotsadmOptions.OverrideRegistry != "" || deployOptions.Airgap {
+	if deployOptions.RegistryConfig.OverrideRegistry != "" || deployOptions.Airgap {
 		env = append(env, corev1.EnvVar{
 			Name:  "DISABLE_OUTBOUND_CONNECTIONS",
 			Value: "true",
