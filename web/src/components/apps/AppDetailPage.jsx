@@ -276,11 +276,9 @@ class AppDetailPage extends Component {
         },
         method: "GET",
       });
-      debugger;
       if (res.ok && res.status == 200) {
         const response = await res.json();
-        // this.setState({ isHelmManaged: response.isHelmManaged })
-        this.setState({ isHelmManaged: true })
+        this.setState({ isHelmManaged: response.isHelmManaged })
       } else {
         this.setState({ isHelmManaged: false });
       }

@@ -35,7 +35,8 @@ export default [
     displayName: "Config",
     to: (slug, sequence, configSequence) => `/app/${slug}/config/${configSequence}`,
     displayRule: ({ app }) => {
-      return app.isConfigurable || getApplicationType(app) === "replicated.app";
+      // return app.isConfigurable || getApplicationType(app) === "replicated.app";
+      return true;
     }
   },
   {

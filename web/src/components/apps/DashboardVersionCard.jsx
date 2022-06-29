@@ -455,56 +455,58 @@ class DashboardVersionCard extends React.Component {
   }
 
   deployVersion = (version, force = false, continueWithFailedPreflights = false, redeploy = false) => {
+    if (this.props.isHelmManaged) {
+      this.setState({
+        showHelmDeployModal: true,
+      })
+      return;
+    }
     const { app } = this.props;
     const clusterSlug = app.downstream.cluster?.slug;
     if (!clusterSlug) {
       return;
     }
 
-    this.setState({
-      showHelmDeployModal: true,
-    })
+    if (!force) {
+      if (version.yamlErrors) {
+        this.setState({
+          displayShowDetailsModal: !this.state.displayShowDetailsModal,
+          deployView: true,
+          versionToDeploy: version,
+          yamlErrorDetails: version.yamlErrors,
+        });
+        return;
+      }
+      if (version.status === "pending_preflight") {
+        this.setState({
+          showSkipModal: true,
+          versionToDeploy: version,
+          isSkipPreflights: true
+        });
+        return;
+      }
+      if (version?.preflightResult && version.status === "pending") {
+        const preflightResults = JSON.parse(version.preflightResult);
+        const preflightState = getPreflightResultState(preflightResults);
+        if (preflightState === "fail") {
+          this.setState({
+            showDeployWarningModal: true,
+            versionToDeploy: version
+          });
+          return;
+        }
+      }
 
-    // if (!force) {
-    //   if (version.yamlErrors) {
-    //     this.setState({
-    //       displayShowDetailsModal: !this.state.displayShowDetailsModal,
-    //       deployView: true,
-    //       versionToDeploy: version,
-    //       yamlErrorDetails: version.yamlErrors,
-    //     });
-    //     return;
-    //   }
-    //   if (version.status === "pending_preflight") {
-    //     this.setState({
-    //       showSkipModal: true,
-    //       versionToDeploy: version,
-    //       isSkipPreflights: true
-    //     });
-    //     return;
-    //   }
-    //   if (version?.preflightResult && version.status === "pending") {
-    //     const preflightResults = JSON.parse(version.preflightResult);
-    //     const preflightState = getPreflightResultState(preflightResults);
-    //     if (preflightState === "fail") {
-    //       this.setState({
-    //         showDeployWarningModal: true,
-    //         versionToDeploy: version
-    //       });
-    //       return;
-    //     }
-    //   }
-
-    //   // prompt to make sure user wants to deploy
-    //   this.setState({
-    //     displayConfirmDeploymentModal: true,
-    //     versionToDeploy: version,
-    //     isRedeploy: redeploy
-    //   });
-    //   return;
-    // } else { // force deploy is set to true so finalize the deployment
-    //   this.finalizeDeployment(continueWithFailedPreflights, redeploy);
-    // }
+      // prompt to make sure user wants to deploy
+      this.setState({
+        displayConfirmDeploymentModal: true,
+        versionToDeploy: version,
+        isRedeploy: redeploy
+      });
+      return;
+    } else { // force deploy is set to true so finalize the deployment
+      this.finalizeDeployment(continueWithFailedPreflights, redeploy);
+    }
   }
 
   finalizeDeployment = async (continueWithFailedPreflights, redeploy) => {
