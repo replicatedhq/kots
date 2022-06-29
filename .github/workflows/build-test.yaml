@@ -1198,14 +1198,27 @@ jobs:
           echo ${{ secrets.KUBERNETES_INSTALLER_PREFLIGHT_LICENSE }} | base64 -d > license.yaml
 
           # Fake kurl installation using the crd and installer spec from the application manifests:
+          
           # Pull application manifests
           ./bin/kots pull $APP_SLUG/automated --license-file license.yaml --shared-password password
+          
           # Apply installer crd
           kubectl apply -f $APP_SLUG/upstream/installer-crd.yaml
-          # TODO: Ensure CRD created
-          kubectl get crd installers.cluster.kurl.sh
+          
+          # Wait for crd to be created
+          COUNTER=1
+          while [ "$(kubectl get crd installers.cluster.kurl.sh --ignore-not-found | awk 'NR>1' | wc -l)" == "0" ]; do
+            COUNTER=$[$COUNTER +1]
+            if [ $COUNTER -gt 60 ]; then
+              echo "Timed out waiting for installer crd to be created"
+              exit -1
+            fi
+            sleep 1
+          done
+          
           # Apply installer
           kubectl apply -f $APP_SLUG/upstream/installer.yaml
+          
           # Create kurl-config configmap in kube-system
           kubectl create cm kurl-config -n kube-system --from-literal=installer_id=my-installer
 
@@ -1226,6 +1239,13 @@ jobs:
             echo "------kotsadm logs"
             kubectl logs -l app=kotsadm --tail=100 --namespace $APP_SLUG
             exit $EXIT_CODE
+          fi
+
+          # validate that preflight checks ran
+          JSON_PATH="jsonpath={.data['automated-install-slug-$APP_SLUG']}"
+          if [ "$(kubectl get cm kotsadm-tasks -n $APP_SLUG -o $JSON_PATH | grep -c pending_preflight)" != "1" ]; then
+              echo "Preflight checks did not run"
+              exit -1
           fi
 
           COUNTER=1
