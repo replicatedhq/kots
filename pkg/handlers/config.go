@@ -20,6 +20,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/config"
 	kotsconfig "github.com/replicatedhq/kots/pkg/config"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	kotshelm "github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -33,6 +34,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
+	yaml "github.com/replicatedhq/yaml/v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -144,6 +146,7 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
 	if isHelmManaged == "true" {
+		// TODO: will need to consider flow for when ConfigSpec changes
 		configCache := getHelmConfigSecretCache()
 		app := mux.Vars(r)["appSlug"]
 		appSecret := configCache[app]
@@ -156,8 +159,16 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		config.Spec.Groups = updateAppConfigRequest.ConfigGroups
-		b, err := json.Marshal(config)
+		// get values from request
+		newValues := configValuesFromConfigGroups(updateAppConfigRequest.ConfigGroups)
+		renderedValues, renderedConfig, err := kotshelm.RenderValuesFromConfig(app, newValues, config, appSecret.Data["chart"])
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		b, err := json.Marshal(renderedConfig)
 		if err != nil {
 			logger.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -172,14 +183,53 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		updateOpts := new(metav1.UpdateOptions)
-		secret, err := clientSet.CoreV1().Secrets(appSecret.Namespace).Update(context.TODO(), &appSecret, *updateOpts)
+		secret, err := clientSet.CoreV1().Secrets(appSecret.Namespace).Update(context.TODO(), &appSecret, metav1.UpdateOptions{})
 		if err != nil {
 			logger.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		configCache[app] = *secret
+		appCache := getHelmAppCache()
+		releasedValues := appCache[app].Values
+		mergedHelmValues, err := kotshelm.GetMergedValues(releasedValues, renderedValues)
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		appValDir := fmt.Sprintf("./helm/%s", app)
+		err = os.MkdirAll(appValDir, 0644)
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		b, err = yaml.Marshal(mergedHelmValues)
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		pathToValues := fmt.Sprintf("%s/values.yaml", appValDir)
+		f, err := os.Create(pathToValues)
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		defer f.Close()
+
+		_, err = f.Write(b)
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		appCache[app].PathToValuesFile = pathToValues
 		JSON(w, http.StatusOK, UpdateAppConfigResponse{Success: true})
 		return
 	}
@@ -295,9 +345,45 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// get values from request
+	configValues := configValuesFromConfigGroups(liveAppConfigRequest.ConfigGroups)
+
+	registryInfo, err := store.GetStore().GetRegistryDetailsForApp(foundApp.ID)
+	if err != nil {
+		logger.Error(err)
+		liveAppConfigResponse.Error = "failed to get app registry info"
+		JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
+		return
+	}
+
+	localRegistry := template.LocalRegistry{
+		Host:      registryInfo.Hostname,
+		Namespace: registryInfo.Namespace,
+		Username:  registryInfo.Username,
+		Password:  registryInfo.Password,
+		ReadOnly:  registryInfo.IsReadOnly,
+	}
+
+	versionInfo := template.VersionInfoFromInstallation(liveAppConfigRequest.Sequence+1, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
+	appInfo := template.ApplicationInfo{Slug: foundApp.Slug}
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, &kotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, false)
+	if err != nil {
+		logger.Error(err)
+		liveAppConfigResponse.Error = "failed to render templates"
+		JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
+		return
+	}
+
+	if renderedConfig != nil {
+		configGroups = renderedConfig.Spec.Groups
+	}
+
+	JSON(w, http.StatusOK, LiveAppConfigResponse{Success: true, ConfigGroups: configGroups})
+}
+
+func configValuesFromConfigGroups(configGroups []kotsv1beta1.ConfigGroup) map[string]template.ItemValue {
 	configValues := map[string]template.ItemValue{}
 
-	for _, group := range liveAppConfigRequest.ConfigGroups {
+	for _, group := range configGroups {
 		for _, item := range group.Items {
 			// collect all repeatable items
 			// Future Note:  This could be refactored to use CountByGroup as the control.  Front end provides the exact CountByGroup it wants, back end takes care of ValuesByGroup entries.
@@ -338,37 +424,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	registryInfo, err := store.GetStore().GetRegistryDetailsForApp(foundApp.ID)
-	if err != nil {
-		logger.Error(err)
-		liveAppConfigResponse.Error = "failed to get app registry info"
-		JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
-		return
-	}
-
-	localRegistry := template.LocalRegistry{
-		Host:      registryInfo.Hostname,
-		Namespace: registryInfo.Namespace,
-		Username:  registryInfo.Username,
-		Password:  registryInfo.Password,
-		ReadOnly:  registryInfo.IsReadOnly,
-	}
-
-	versionInfo := template.VersionInfoFromInstallation(liveAppConfigRequest.Sequence+1, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
-	appInfo := template.ApplicationInfo{Slug: foundApp.Slug}
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, &kotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, false)
-	if err != nil {
-		logger.Error(err)
-		liveAppConfigResponse.Error = "failed to render templates"
-		JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
-		return
-	}
-
-	if renderedConfig != nil {
-		configGroups = renderedConfig.Spec.Groups
-	}
-
-	JSON(w, http.StatusOK, LiveAppConfigResponse{Success: true, ConfigGroups: configGroups})
+	return configValues
 }
 
 func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {

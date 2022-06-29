@@ -320,7 +320,7 @@ func findAllKotsHelmCharts(upstreamFiles []upstreamtypes.UpstreamFile, builder t
 			continue
 		}
 
-		helmChart, err := parseHelmChart(baseFile.Content)
+		helmChart, err := ParseHelmChart(baseFile.Content)
 		if err != nil {
 			fmt.Printf("Failed HelmChart contents:\n%s\n", string(baseFile.Content))
 			return nil, errors.Wrapf(err, "failed to parse rendered HelmChart %s", baseFile.Path)
@@ -332,7 +332,7 @@ func findAllKotsHelmCharts(upstreamFiles []upstreamtypes.UpstreamFile, builder t
 	return kotsHelmCharts, nil
 }
 
-func parseHelmChart(content []byte) (*kotsv1beta1.HelmChart, error) {
+func ParseHelmChart(content []byte) (*kotsv1beta1.HelmChart, error) {
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode(content, nil, nil)
 	if err != nil {

@@ -23,6 +23,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/api/handlers/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/gitops"
+	kotshelm "github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -40,12 +41,12 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-var helmAppCache map[string]*types.ResponseApp
+var helmAppCache map[string]*kotshelm.HelmApp
 var helmConfigSecretCache map[string]v1.Secret
 
-func getHelmAppCache() map[string]*types.ResponseApp {
+func getHelmAppCache() map[string]*kotshelm.HelmApp {
 	if helmAppCache == nil {
-		helmAppCache = make(map[string]*types.ResponseApp)
+		helmAppCache = make(map[string]*kotshelm.HelmApp)
 		return helmAppCache
 	}
 
@@ -115,10 +116,10 @@ func (h *Handler) GetPendingApp(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, pendingAppResponse)
 }
 
-func responseAppFromHelmSecret(s v1.Secret) (*types.ResponseApp, error) {
+func responseAppFromHelmSecret(s v1.Secret) (*types.ResponseApp, map[string]interface{}, error) {
 	unixIntValue, err := strconv.ParseInt(s.Labels["modifiedAt"], 10, 64)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get unix timestamp from modifiedAt label")
+		return nil, nil, errors.Wrap(err, "failed to get unix timestamp from modifiedAt label")
 	}
 	updatedTs := time.Unix(unixIntValue, 0)
 
@@ -126,29 +127,29 @@ func responseAppFromHelmSecret(s v1.Secret) (*types.ResponseApp, error) {
 	b64compressedData := string(s.Data["release"])
 	decodedCompressedData, err := base64.StdEncoding.DecodeString(b64compressedData)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to base64 decode")
+		return nil, nil, errors.Wrap(err, "failed to base64 decode")
 	}
 	reader := bytes.NewReader([]byte(decodedCompressedData))
 	gzreader, err := gzip.NewReader(reader)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create gzip reader")
+		return nil, nil, errors.Wrap(err, "failed to create gzip reader")
 	}
 
 	output, err := ioutil.ReadAll(gzreader)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to read from gzip reader")
+		return nil, nil, errors.Wrap(err, "failed to read from gzip reader")
 	}
 
 	// json unmarshl output into helm release struct
 	release := &helmrelease.Release{}
 	err = json.Unmarshal(output, &release)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to unmarshal decompressed decoded release data")
+		return nil, nil, errors.Wrap(err, "failed to unmarshal decompressed decoded release data")
 	}
 
 	sv, err := semver.New(release.Chart.Metadata.Version)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse release version into semver")
+		return nil, nil, errors.Wrap(err, "failed to parse release version into semver")
 	}
 
 	iconURI := "https://cncf-branding.netlify.app/img/projects/helm/horizontal/color/helm-horizontal-color.png"
@@ -174,7 +175,7 @@ func responseAppFromHelmSecret(s v1.Secret) (*types.ResponseApp, error) {
 		UpdatedAt:  &updatedTs,
 		IconURI:    iconURI,
 		Downstream: types.ResponseDownstream{CurrentVersion: downstreamVersion, PendingVersions: pendingVersions},
-	}, nil
+	}, release.Chart.Values, nil
 }
 
 func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
@@ -226,7 +227,7 @@ func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 			}
 
 			for _, s := range secrets.Items {
-				app, err := responseAppFromHelmSecret(s)
+				app, values, err := responseAppFromHelmSecret(s)
 				if err != nil {
 					logger.Error(err)
 					continue
@@ -239,18 +240,20 @@ func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 					app.ChartPath = string(configCache[app.Name].Data["chartPath"])
 				}
 
+				if cache[app.Name] == nil {
+					cache[app.Name] = new(kotshelm.HelmApp)
+				}
 				// only cache the most recent helm app install
-				if (cache[app.Name] != nil && cache[app.Name].CreatedAt.Before(app.CreatedAt)) || cache[app.Name] == nil {
-					cache[app.Name] = app
+				if (cache[app.Name].Application != nil && cache[app.Name].Application.CreatedAt.Before(app.CreatedAt)) || cache[app.Name].Application == nil {
+					cache[app.Name] = &kotshelm.HelmApp{Application: app, Values: values}
 				}
 			}
 		}
 
 		for _, app := range cache {
-			responseApps = append(responseApps, *app)
+			responseApps = append(responseApps, *app.Application)
 		}
 	} else {
-
 		apps, err := store.GetStore().ListInstalledApps()
 		if err != nil {
 			logger.Error(err)
@@ -317,7 +320,7 @@ func (h *Handler) GetApp(w http.ResponseWriter, r *http.Request) {
 	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
 	if isHelmManaged == "true" {
 		cache := getHelmAppCache()
-		responseApp = cache[appSlug]
+		responseApp = cache[appSlug].Application
 	} else {
 		a, err := store.GetStore().GetAppFromSlug(appSlug)
 		if err != nil {
@@ -495,7 +498,7 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 	if isHelmManaged == "true" {
 		cache := getHelmAppCache()
 		history.NumOfRemainingVersions = 0
-		history.VersionHistory = []*downstreamtypes.DownstreamVersion{cache[appSlug].Downstream.CurrentVersion}
+		history.VersionHistory = []*downstreamtypes.DownstreamVersion{cache[appSlug].Application.Downstream.CurrentVersion}
 	} else {
 		foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
 		if err != nil {

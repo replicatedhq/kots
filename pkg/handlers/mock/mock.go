@@ -586,6 +586,18 @@ func (mr *MockKOTSHandlerMockRecorder) GetAppStatus(w, r interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppStatus", reflect.TypeOf((*MockKOTSHandler)(nil).GetAppStatus), w, r)
 }
 
+// GetAppValuesFile mocks base method.
+func (m *MockKOTSHandler) GetAppValuesFile(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetAppValuesFile", w, r)
+}
+
+// GetAppValuesFile indicates an expected call of GetAppValuesFile.
+func (mr *MockKOTSHandlerMockRecorder) GetAppValuesFile(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppValuesFile", reflect.TypeOf((*MockKOTSHandler)(nil).GetAppValuesFile), w, r)
+}
+
 // GetAppVersionDownloadStatus mocks base method.
 func (m *MockKOTSHandler) GetAppVersionDownloadStatus(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
