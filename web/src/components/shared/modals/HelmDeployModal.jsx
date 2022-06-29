@@ -26,9 +26,11 @@ export default function HelmDeployModal(props) {
       ariaHideApp={false}
       className="Modal PreflightModal"
     >
+      <div className="Modal-header">
+          <h3>Redeploy helm chart</h3>
+      </div>
       <div className="Modal-body">
         <div className="flex flex-column justifyContent--center alignItems--center">
-          <h2>Redeploy helm chart</h2>
           <CodeSnippet
             language="bash"
             canCopy={true}
