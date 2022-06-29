@@ -1206,15 +1206,7 @@ jobs:
           kubectl apply -f $APP_SLUG/upstream/installer-crd.yaml
           
           # Wait for crd to be created
-          COUNTER=1
-          while [ "$(kubectl get crd installers.cluster.kurl.sh --ignore-not-found | awk 'NR>1' | wc -l)" == "0" ]; do
-            COUNTER=$[$COUNTER +1]
-            if [ $COUNTER -gt 60 ]; then
-              echo "Timed out waiting for installer crd to be created"
-              exit -1
-            fi
-            sleep 1
-          done
+          kubectl wait --for condition=established --timeout=60s crd/installers.cluster.kurl.sh
           
           # Apply installer
           kubectl apply -f $APP_SLUG/upstream/installer.yaml
