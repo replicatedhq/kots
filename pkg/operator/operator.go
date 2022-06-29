@@ -44,19 +44,19 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-var operatorClient *client.Client
+var OperatorClient client.ClientInterface
 var clusterID string
 var deployMtxs = map[string]*sync.Mutex{} // key is app id
 
 func Start(clusterToken string) error {
 	logger.Debug("starting the operator")
 
-	operatorClient = &client.Client{
+	OperatorClient = &client.Client{
 		TargetNamespace:   util.AppNamespace(),
 		ExistingInformers: map[string]bool{},
 		HookStopChans:     []chan struct{}{},
 	}
-	if err := operatorClient.Init(); err != nil {
+	if err := OperatorClient.Init(); err != nil {
 		return errors.Wrap(err, "failed to initialize the operator client")
 	}
 
@@ -73,10 +73,10 @@ func Start(clusterToken string) error {
 }
 
 func Shutdown() {
-	if operatorClient == nil {
+	if OperatorClient == nil {
 		return
 	}
-	operatorClient.Shutdown()
+	OperatorClient.Shutdown()
 }
 
 func startLoop(fn func(), intervalInSeconds time.Duration) {
@@ -120,55 +120,55 @@ func resumeDeployment(a *apptypes.App) (bool, error) {
 		return false, nil
 	}
 
-	if _, err := DeployApp(a.ID, deployedVersion.ParentSequence); err != nil {
+	if _, err := DeployApp(a.ID, deployedVersion.ParentSequence, store.GetStore()); err != nil {
 		return false, errors.Wrap(err, "failed to deploy version")
 	}
 
 	return true, nil
 }
 
-func DeployApp(appID string, sequence int64) (deployed bool, deployError error) {
+func DeployApp(appID string, sequence int64, kotsStore store.Store) (deployed bool, deployError error) {
 	if _, ok := deployMtxs[appID]; !ok {
 		deployMtxs[appID] = &sync.Mutex{}
 	}
 	deployMtxs[appID].Lock()
 	defer deployMtxs[appID].Unlock()
 
-	if err := store.GetStore().SetDownstreamVersionStatus(appID, sequence, storetypes.VersionDeploying, ""); err != nil {
+	if err := kotsStore.SetDownstreamVersionStatus(appID, sequence, storetypes.VersionDeploying, ""); err != nil {
 		return false, errors.Wrap(err, "failed to update downstream status")
 	}
 
 	defer func() {
 		if deployError != nil {
-			err := store.GetStore().SetDownstreamVersionStatus(appID, sequence, storetypes.VersionFailed, deployError.Error())
+			err := kotsStore.SetDownstreamVersionStatus(appID, sequence, storetypes.VersionFailed, deployError.Error())
 			if err != nil {
 				logger.Error(errors.Wrap(err, "failed to update downstream status"))
 			}
 			return
 		}
 		if !deployed {
-			err := store.GetStore().SetDownstreamVersionStatus(appID, sequence, storetypes.VersionFailed, "")
+			err := kotsStore.SetDownstreamVersionStatus(appID, sequence, storetypes.VersionFailed, "")
 			if err != nil {
 				logger.Error(errors.Wrap(err, "failed to update downstream status"))
 			}
 			return
 		}
-		err := store.GetStore().SetDownstreamVersionStatus(appID, sequence, storetypes.VersionDeployed, "")
+		err := kotsStore.SetDownstreamVersionStatus(appID, sequence, storetypes.VersionDeployed, "")
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to update downstream status"))
 		}
 	}()
 
-	a, err := store.GetStore().GetApp(appID)
+	app, err := kotsStore.GetApp(appID)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get app")
 	}
 
-	if a.RestoreInProgressName != "" {
-		return false, errors.Errorf("failed to deploy version %d because a restore is already in progress", sequence)
+	if app.RestoreInProgressName != "" {
+		return false, errors.Errorf("failed to deploy version %downstreams because app restore is already in progress", sequence)
 	}
 
-	d, err := store.GetStore().GetDownstream(clusterID)
+	downstreams, err := kotsStore.GetDownstream(clusterID)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get downstream")
 	}
@@ -179,14 +179,14 @@ func DeployApp(appID string, sequence int64) (deployed bool, deployError error) 
 	}
 	defer os.RemoveAll(deployedVersionArchive)
 
-	err = store.GetStore().GetAppVersionArchive(a.ID, sequence, deployedVersionArchive)
+	err = kotsStore.GetAppVersionArchive(app.ID, sequence, deployedVersionArchive)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get app version archive")
 	}
 
 	// ensure disaster recovery label transformer in midstream
 	additionalLabels := map[string]string{
-		"kots.io/app-slug": a.Slug,
+		"kots.io/app-slug": app.Slug,
 	}
 	if err := midstream.EnsureDisasterRecoveryLabelTransformer(deployedVersionArchive, additionalLabels); err != nil {
 		return false, errors.Wrap(err, "failed to ensure disaster recovery label transformer")
@@ -197,12 +197,12 @@ func DeployApp(appID string, sequence int64) (deployed bool, deployError error) 
 		return false, errors.Wrap(err, "failed to load kotskinds")
 	}
 
-	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(a.ID)
+	registrySettings, err := kotsStore.GetRegistryDetailsForApp(app.ID)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get registry settings for app")
 	}
 
-	builder, err := render.NewBuilder(kotsKinds, registrySettings, a.Slug, sequence, a.IsAirgap, util.PodNamespace)
+	builder, err := render.NewBuilder(kotsKinds, registrySettings, app.Slug, sequence, app.IsAirgap, util.PodNamespace)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get template builder")
 	}
@@ -225,7 +225,7 @@ func DeployApp(appID string, sequence int64) (deployed bool, deployError error) 
 
 	kustomizeBinPath := kotsKinds.GetKustomizeBinaryPath()
 
-	cmd := exec.Command(kustomizeBinPath, "build", filepath.Join(deployedVersionArchive, "overlays", "downstreams", d.Name))
+	cmd := exec.Command(kustomizeBinPath, "build", filepath.Join(deployedVersionArchive, "overlays", "downstreams", downstreams.Name))
 	renderedManifests, err := cmd.Output()
 	if err != nil {
 		if ee, ok := err.(*exec.ExitError); ok {
@@ -235,7 +235,7 @@ func DeployApp(appID string, sequence int64) (deployed bool, deployError error) 
 	}
 	base64EncodedManifests := base64.StdEncoding.EncodeToString(renderedManifests)
 
-	chartArchive, err := renderChartsArchive(deployedVersionArchive, d.Name, kustomizeBinPath)
+	chartArchive, err := renderChartsArchive(deployedVersionArchive, downstreams.Name, kustomizeBinPath)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to run kustomize on currently deployed charts")
 	}
@@ -266,12 +266,12 @@ func DeployApp(appID string, sequence int64) (deployed bool, deployError error) 
 	var previousKotsKinds *kotsutil.KotsKinds
 	base64EncodedPreviousManifests := ""
 	previouslyDeployedChartArchive := []byte{}
-	previouslyDeployedSequence, err := store.GetStore().GetPreviouslyDeployedSequence(a.ID, clusterID)
+	previouslyDeployedSequence, err := kotsStore.GetPreviouslyDeployedSequence(app.ID, clusterID)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get previously deployed sequence")
 	}
 	if previouslyDeployedSequence != -1 {
-		previouslyDeployedParentSequence, err := store.GetStore().GetParentSequenceForSequence(a.ID, clusterID, previouslyDeployedSequence)
+		previouslyDeployedParentSequence, err := kotsStore.GetParentSequenceForSequence(app.ID, clusterID, previouslyDeployedSequence)
 		if err != nil {
 			return false, errors.Wrap(err, "failed to get previously deployed parent sequence")
 		}
@@ -283,7 +283,7 @@ func DeployApp(appID string, sequence int64) (deployed bool, deployError error) 
 			}
 			defer os.RemoveAll(previouslyDeployedVersionArchive)
 
-			err = store.GetStore().GetAppVersionArchive(a.ID, previouslyDeployedParentSequence, previouslyDeployedVersionArchive)
+			err = kotsStore.GetAppVersionArchive(app.ID, previouslyDeployedParentSequence, previouslyDeployedVersionArchive)
 			if err != nil {
 				return false, errors.Wrap(err, "failed to get previously deployed app version archive")
 			}
@@ -293,27 +293,27 @@ func DeployApp(appID string, sequence int64) (deployed bool, deployError error) 
 				return false, errors.Wrap(err, "failed to load kotskinds for previously deployed app version")
 			}
 
-			cmd := exec.Command(previousKotsKinds.GetKustomizeBinaryPath(), "build", filepath.Join(previouslyDeployedVersionArchive, "overlays", "downstreams", d.Name))
+			cmd := exec.Command(previousKotsKinds.GetKustomizeBinaryPath(), "build", filepath.Join(previouslyDeployedVersionArchive, "overlays", "downstreams", downstreams.Name))
 			previousRenderedManifests, err := cmd.Output()
 			if err != nil {
 				if ee, ok := err.(*exec.ExitError); ok {
 					err = fmt.Errorf("kustomize stderr: %q", string(ee.Stderr))
 				}
-				return false, errors.Wrap(err, "failed to run kustomize for previously deployed app version")
-			}
-
-			base64EncodedPreviousManifests = base64.StdEncoding.EncodeToString(previousRenderedManifests)
-			// Run kustomization on the charts as well
-			previouslyDeployedChartArchive, err = renderChartsArchive(previouslyDeployedVersionArchive, d.Name, kustomizeBinPath)
-			if err != nil {
-				return false, errors.Wrap(err, "failed to run kustomize on previously deployed charts")
+				logger.Error(errors.Wrap(err, "failed to run kustomize for previously deployed app version."))
+			} else {
+				base64EncodedPreviousManifests = base64.StdEncoding.EncodeToString(previousRenderedManifests)
+				// Run kustomization on the charts as well
+				previouslyDeployedChartArchive, err = renderChartsArchive(previouslyDeployedVersionArchive, downstreams.Name, kustomizeBinPath)
+				if err != nil {
+					return false, errors.Wrap(err, "failed to run kustomize on previously deployed charts")
+				}
 			}
 		}
 	}
 
 	deployArgs := operatortypes.DeployAppArgs{
-		AppID:                a.ID,
-		AppSlug:              a.Slug,
+		AppID:                app.ID,
+		AppSlug:              app.Slug,
 		ClusterID:            clusterID,
 		Sequence:             sequence,
 		KubectlVersion:       kotsKinds.KotsApplication.Spec.KubectlVersion,
@@ -331,19 +331,19 @@ func DeployApp(appID string, sequence int64) (deployed bool, deployError error) 
 		KotsKinds:            kotsKinds,
 		PreviousKotsKinds:    previousKotsKinds,
 	}
-	deployed, err = operatorClient.DeployApp(deployArgs)
+	deployed, err = OperatorClient.DeployApp(deployArgs)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to deploy app")
 	}
 
-	if err := applyStatusInformers(a, sequence, kotsKinds, builder); err != nil {
+	if err := applyStatusInformers(app, sequence, kotsKinds, builder, kotsStore); err != nil {
 		return false, errors.Wrap(err, "failed to apply status informers")
 	}
 
 	return deployed, nil
 }
 
-func applyStatusInformers(a *apptypes.App, sequence int64, kotsKinds *kotsutil.KotsKinds, builder *template.Builder) error {
+func applyStatusInformers(a *apptypes.App, sequence int64, kotsKinds *kotsutil.KotsKinds, builder *template.Builder, kotsStore store.Store) error {
 	renderedInformers := []appstatetypes.StatusInformerString{}
 
 	// deploy status informers
@@ -372,7 +372,7 @@ func applyStatusInformers(a *apptypes.App, sequence int64, kotsKinds *kotsutil.K
 			Informers: renderedInformers,
 			Sequence:  sequence,
 		}
-		operatorClient.ApplyAppInformers(informersArgs)
+		OperatorClient.ApplyAppInformers(informersArgs)
 	} else {
 		// no informers, set state to ready
 		defaultReadyState := appstatetypes.ResourceStates{
@@ -384,7 +384,7 @@ func applyStatusInformers(a *apptypes.App, sequence int64, kotsKinds *kotsutil.K
 			},
 		}
 
-		err := store.GetStore().SetAppStatus(a.ID, defaultReadyState, time.Now(), sequence)
+		err := kotsStore.SetAppStatus(a.ID, defaultReadyState, time.Now(), sequence)
 		if err != nil {
 			return errors.Wrap(err, "failed to set app status")
 		}
@@ -430,12 +430,12 @@ func processRestoreForApp(a *apptypes.App) error {
 		break
 
 	default:
-		d, err := store.GetStore().GetDownstream(clusterID)
+		downstreams, err := store.GetStore().GetDownstream(clusterID)
 		if err != nil {
 			return errors.Wrap(err, "failed to get downstream")
 		}
 
-		if err := undeployApp(a, d, true); err != nil {
+		if err := undeployApp(a, downstreams, true); err != nil {
 			return errors.Wrap(err, "failed to undeploy app")
 		}
 		break
@@ -633,7 +633,7 @@ func undeployApp(a *apptypes.App, d *downstreamtypes.Downstream, isRestore bool)
 		RestoreLabelSelector: restoreLabelSelector,
 		KotsKinds:            kotsKinds,
 	}
-	go operatorClient.DeployApp(undeployArgs) // this happens async and progress/status is polled later.
+	go OperatorClient.DeployApp(undeployArgs) // this happens async and progress/status is polled later.
 
 	if err := app.SetRestoreUndeployStatus(a.ID, apptypes.UndeployInProcess); err != nil {
 		return errors.Wrap(err, "failed to set restore undeploy status")
