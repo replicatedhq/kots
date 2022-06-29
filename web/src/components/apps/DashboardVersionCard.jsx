@@ -1277,8 +1277,10 @@ class DashboardVersionCard extends React.Component {
           {this.state.showHelmDeployModal &&
 
             <HelmDeployModal
+              appSlug={this.props?.app?.slug}
               showHelmDeployModal={true}
               hideDeployModal={() => this.setState({ showHelmDeployModal: false })}
+              chartPath={this.props?.app?.chartPath || ""}
             />
           }
           {this.state.showDiffModal &&

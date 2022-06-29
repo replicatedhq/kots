@@ -64,7 +64,7 @@
     &.ConfigureUpdatesModal {
       overflow: visible;
     }
-    
+
     .Modal-header {
       padding: 20px 25px 0;
       margin: 0;
@@ -100,11 +100,39 @@
 
 }
 
-  
+
 @media screen and (max-height: 43em) {
   .Modal {
     top: 60px;
     transform: translate(-50%, 0);
   }
 }
-  
+
+.Title .step-number {
+  border-radius: 100%;
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  margin-right: 6px;
+  top: -2px;
+  position: relative;
+  color: #ffffff;
+  background-color: #326DE6;
+}
+
+.Title {
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 16px;
+  color: #323232;
+}
+
+.Modal-header h3 {
+  font-size: 26px;
+  font-weight: 600;
+  color: #577981;
+}
