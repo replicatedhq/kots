@@ -236,6 +236,7 @@ func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 				if ok {
 					configCache[app.Name] = config
 					app.IsConfigurable = true
+					app.ChartPath = string(configCache[app.Name].Data["chartPath"])
 				}
 
 				// only cache the most recent helm app install
