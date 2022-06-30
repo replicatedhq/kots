@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	cloud.google.com/go/storage v1.14.0
-	github.com/Azure/azure-sdk-for-go v55.0.0+incompatible
+	github.com/Azure/azure-sdk-for-go v56.3.0+incompatible
 	github.com/Azure/go-autorest/autorest v0.11.21
 	github.com/Azure/go-autorest/autorest/adal v0.9.15
 	github.com/DATA-DOG/go-sqlmock v1.5.0
@@ -43,7 +43,7 @@ require (
 	github.com/mitchellh/hashstructure v1.1.0
 	github.com/onsi/ginkgo/v2 v2.1.3
 	github.com/onsi/gomega v1.19.0
-	github.com/open-policy-agent/opa v0.24.0
+	github.com/open-policy-agent/opa v0.41.0
 	github.com/openshift/client-go v0.0.0-20210503124028-ac0910aac9fa
 	github.com/otiai10/copy v1.0.2
 	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2
@@ -95,7 +95,8 @@ require (
 	cloud.google.com/go/iam v0.3.0 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20211112122917-428f8eabeeb3 // indirect
 	github.com/acomagu/bufpipe v1.0.3 // indirect
-	github.com/containerd/containerd v1.6.3 // indirect
+	github.com/agnivade/levenshtein v1.0.1 // indirect
+	github.com/containerd/containerd v1.6.4 // indirect
 	github.com/dexidp/dex/api/v2 v2.1.0 // indirect
 	github.com/emicklei/go-restful v2.9.6+incompatible // indirect
 	github.com/go-gorp/gorp/v3 v3.0.2 // indirect
@@ -109,6 +110,7 @@ require (
 	github.com/pelletier/go-toml/v2 v2.0.0-beta.8 // indirect
 	github.com/proglottis/gpgme v0.1.1 // indirect
 	github.com/sylabs/sif/v2 v2.3.1 // indirect
+	github.com/vektah/gqlparser/v2 v2.4.4 // indirect
 	google.golang.org/grpc v1.47.0 // indirect
 	k8s.io/klog/v2 v2.60.1 // indirect
 	k8s.io/kube-aggregator v0.19.12 // indirect
@@ -134,7 +136,7 @@ require (
 	github.com/Masterminds/squirrel v1.5.2 // indirect
 	github.com/Microsoft/go-winio v0.5.1 // indirect
 	github.com/Microsoft/hcsshim v0.9.2 // indirect
-	github.com/OneOfOne/xxhash v1.2.7 // indirect
+	github.com/OneOfOne/xxhash v1.2.8 // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect
@@ -169,13 +171,13 @@ require (
 	github.com/evanphx/json-patch v4.12.0+incompatible // indirect
 	github.com/exponent-io/jsonpath v0.0.0-20151013193312-d6023ce2651d // indirect
 	github.com/felixge/httpsnoop v1.0.3 // indirect
-	github.com/fsnotify/fsnotify v1.5.1 // indirect
+	github.com/fsnotify/fsnotify v1.5.4 // indirect
 	github.com/go-asn1-ber/asn1-ber v1.5.1 // indirect
 	github.com/go-errors/errors v1.0.1 // indirect
 	github.com/go-git/gcfg v1.5.0 // indirect
 	github.com/go-git/go-billy/v5 v5.3.1 // indirect
 	github.com/go-ldap/ldap/v3 v3.4.2 // indirect
-	github.com/go-logr/logr v1.2.2 // indirect
+	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.19.5 // indirect
@@ -253,7 +255,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/runc v1.1.1 // indirect
 	github.com/opencontainers/runtime-spec v1.0.3-0.20210326190908-1c3f411f0417 // indirect
-	github.com/opencontainers/selinux v1.10.0 // indirect
+	github.com/opencontainers/selinux v1.10.1 // indirect
 	github.com/openshift/api v0.0.0-20210513192832-efee9960e6fd // indirect
 	github.com/ostreedev/ostree-go v0.0.0-20190702140239-759a8c1ac913 // indirect
 	github.com/pelletier/go-toml v1.9.4 // indirect
@@ -265,7 +267,7 @@ require (
 	github.com/prometheus/common v0.32.1 // indirect
 	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/rainycape/unidecode v0.0.0-20150907023854-cb7f23ec59be // indirect
-	github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a // indirect
+	github.com/rcrowley/go-metrics v0.0.0-20200313005456-10cdbea86bc0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/rubenv/sql-migrate v1.1.1 // indirect
 	github.com/russellhaering/goxmldsig v1.2.0 // indirect
@@ -286,12 +288,12 @@ require (
 	github.com/vbatts/tar-split v0.11.2 // indirect
 	github.com/vbauerster/mpb/v7 v7.3.2 // indirect
 	github.com/xanzy/ssh-agent v0.3.1 // indirect
-	github.com/xeipuuv/gojsonpointer v0.0.0-20190809123943-df4f5c81cb3b // indirect
+	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xlab/treeprint v0.0.0-20181112141820-a009c3971eca // indirect
-	github.com/yashtewari/glob-intersection v0.0.0-20180916065949-5c77d914dd0b // indirect
+	github.com/yashtewari/glob-intersection v0.1.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	github.com/yvasiyarov/go-metrics v0.0.0-20150112132944-c25f46c4b940 // indirect
 	github.com/yvasiyarov/gorelic v0.0.7 // indirect
