@@ -34,7 +34,6 @@ class IdentityProviders extends Component {
       userNameKey: "",
       promptType: "",
       userIDKey: "",
-      hostedDomains: [],
       claimMapping: {
         preferredUsername: "",
         email: "",
@@ -295,7 +294,6 @@ class IdentityProviders extends Component {
         userNameKey: this.state.oidcConfig?.userNameKey,
         promptType: this.state.oidcConfig?.promptType,
         userIDKey: this.state.oidcConfig?.userIDKey,
-        hostedDomains: !Array.isArray(this.state.oidcConfig?.hostedDomains) ? this.state.oidcConfig?.hostedDomains?.split(",") : this.state.oidcConfig?.hostedDomains,
         claimMapping: {
           preferredUsername: this.state.oidcConfig?.claimMapping?.preferredUsername,
           email: this.state.oidcConfig?.claimMapping?.email,
@@ -804,19 +802,6 @@ class IdentityProviders extends Component {
                           value={this.state.oidcConfig?.promptType}
                           disabled={syncAppWithGlobal}
                           onChange={(e) => { this.handleFormChange("promptType", e) }} />
-                      </div>
-                      <div className="flex1 flex-column u-marginTop--30 u-marginRight--30">
-                        <div className="flex flex1 alignItems--center">
-                          <p className="u-fontSize--large u-lineHeight--default u-fontWeight--bold u-textColor--primary"> Hosted domains </p>
-                          <span className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
-                            data-tip="Google supports whitelisting allowed domains when using G Suite (Google Apps). The following field can be set to a comma-separated list of domains that can log in" />
-                          <ReactTooltip effect="solid" className="replicated-tooltip" />
-                        </div>
-                        <input type="text"
-                          className="Input u-marginTop--12"
-                          value={this.state.oidcConfig?.hostedDomains}
-                          disabled={syncAppWithGlobal}
-                          onChange={(e) => { this.handleFormChange("hostedDomains", e) }} />
                       </div>
                       <div className="flex1 flex-column u-marginTop--30">
                         <div className="flex flex1 alignItems--center">
