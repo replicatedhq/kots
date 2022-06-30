@@ -13,6 +13,7 @@ import ShowLogsModal from "@src/components/modals/ShowLogsModal";
 import DeployWarningModal from "../shared/modals/DeployWarningModal";
 import SkipPreflightsModal from "../shared/modals/SkipPreflightsModal";
 import HelmDeployModal from "../shared/modals/HelmDeployModal";
+import HelmValuesModal from "../shared/modals/HelmValuesModal"
 import classNames from "classnames";
 
 import { Utilities, getPreflightResultState, secondsAgo } from "@src/utilities/utilities";
@@ -1274,13 +1275,20 @@ class DashboardVersionCard extends React.Component {
               onForceDeployClick={this.onForceDeployClick}
             />
           }
+          {this.state.showHelmValuesModal &&
+            <HelmValuesModal
+              showHelmValuesModal={true}
+              hideHelmValuesModal={() => this.setState({ showHelmValuesModal: false, showHelmDeployModal: true })}
+            />}
           {this.state.showHelmDeployModal &&
-
             <HelmDeployModal
               appSlug={this.props?.app?.slug}
               showHelmDeployModal={true}
-              hideDeployModal={() => this.setState({ showHelmDeployModal: false })}
+              hideDeployModal={() => this.setState({ showHelmDeployModal: false, showHelmValuesModal: false })}
               chartPath={this.props?.app?.chartPath || ""}
+              viewValuesClicked={() => {
+                this.setState({ showHelmDeployModal: false, showHelmValuesModal: true });
+              }}
             />
           }
           {this.state.showDiffModal &&

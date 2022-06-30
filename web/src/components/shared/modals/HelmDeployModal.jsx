@@ -23,6 +23,7 @@ export default function HelmDeployModal({
   showHelmDeployModal,
   hideDeployModal,
   chartPath,
+  viewValuesClicked = () => {}
 }) {
 
   return (
@@ -53,7 +54,11 @@ export default function HelmDeployModal({
             </CodeSnippet>
           </div>
           <div className="u-marginBottom--40">
-            <span className="Title u-marginBottom--normal"><span className="step-number">2</span>Upgrade with Helm</span>
+            <div className="flex">
+            <span className="Title u-marginBottom--normal flex1"><span className="step-number">2</span>Upgrade with Helm</span>
+            <button className="secondary blue btn" onClick={viewValuesClicked}>View values.yaml</button>
+            </div>
+
             <CodeSnippet
               language="bash"
               canCopy={true}
