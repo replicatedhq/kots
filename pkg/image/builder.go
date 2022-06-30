@@ -91,7 +91,7 @@ func ProcessImages(srcRegistry, destRegistry registry.RegistryOptions, appSlug s
 	return newImages, nil
 }
 
-func GetPrivateImages(upstreamDir string, checkedImages map[string]ImageInfo, allPrivate bool, dockerHubRegistry registry.RegistryOptions, useHelmInstall map[string]bool) ([]string, []k8sdoc.K8sDoc, error) {
+func GetPrivateImages(upstreamDir string, checkedImages map[string]ImageInfo, allPrivate bool, dockerHubRegistry registry.RegistryOptions, parentHelmChartPath string, useHelmInstall map[string]bool) ([]string, []k8sdoc.K8sDoc, error) {
 	uniqueImages := make(map[string]bool)
 
 	objectsWithImages := make([]k8sdoc.K8sDoc, 0) // all objects where images are referenced from
@@ -102,16 +102,22 @@ func GetPrivateImages(upstreamDir string, checkedImages map[string]ImageInfo, al
 				return err
 			}
 
-			if info.IsDir() && (useHelmInstall[info.Name()] == true) {
-				return filepath.SkipDir
-			}
-
 			if info.IsDir() {
+				chartName, err := filepath.Rel(upstreamDir, path)
+				if err != nil {
+					logger.Debugf("Failed to remove prefix from %s: %v", path, err)
+					return nil
+				}
+				chartName = filepath.Join(parentHelmChartPath, chartName)
+				if useHelmInstall[chartName] {
+					return filepath.SkipDir
+				}
 				return nil
 			}
 
 			contents, err := ioutil.ReadFile(path)
 			if err != nil {
+				logger.Debugf("Failed to read file %s: %v", path, err)
 				return err
 			}
 

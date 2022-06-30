@@ -449,6 +449,13 @@ type HelmSubCharts struct {
 	SubCharts  []string
 }
 
+// Returns a list of HelmSubCharts, each of which contains the name of the parent chart and a list of subcharts
+// Each item in the subcharts list is a string of repeating terms the form "charts/<chart name>".
+// The first item is just the top level chart (TODO: this should be removed)
+// For example:
+//   - top-level-chart
+//   - charts/top-level-chart
+//   - charts/top-level-chart/charts/cool-sub-chart
 func FindHelmSubChartsFromBase(baseDir, parentChartName string) (*HelmSubCharts, error) {
 	type helmName struct {
 		Name string `yaml:"name"`
@@ -462,12 +469,12 @@ func FindHelmSubChartsFromBase(baseDir, parentChartName string) (*HelmSubCharts,
 	}
 
 	charts := make([]string, 0)
-	rootSearch := filepath.Join(baseDir, "charts", parentChartName)
+	searchDir := filepath.Join(baseDir, "charts", parentChartName)
 
 	// If dependencies in the chart are aliased, they will create new directories with the alias name
 	// in the charts folder and need to be excluded when generating the pullsecrets.yaml. It feels like this
 	// could replace the logic below that's doing the file tree walking but I'm unsure.
-	parentChartPath := filepath.Join(rootSearch, "Chart.yaml")
+	parentChartPath := filepath.Join(searchDir, "Chart.yaml")
 	parentChartRaw, err := ioutil.ReadFile(parentChartPath)
 	if err == nil {
 		parentChart := new(dependencies)
@@ -484,7 +491,7 @@ func FindHelmSubChartsFromBase(baseDir, parentChartName string) (*HelmSubCharts,
 		}
 	}
 
-	err = filepath.Walk(rootSearch,
+	err = filepath.Walk(searchDir,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
@@ -507,10 +514,18 @@ func FindHelmSubChartsFromBase(baseDir, parentChartName string) (*HelmSubCharts,
 				return nil
 			}
 
-			// add the chart name into our subchart results
-			if chartInfo.Name != "" {
-				charts = append(charts, chartInfo.Name)
+			if chartInfo.Name == "" {
+				// probably not a valid chart file
+				return nil
 			}
+
+			// use directory names because they are unique
+			chartName, err := filepath.Rel(baseDir, filepath.Dir(path))
+			if err != nil {
+				return errors.Wrap(err, "failed to get chart name from path")
+			}
+
+			charts = append(charts, chartName)
 
 			return nil
 		})
