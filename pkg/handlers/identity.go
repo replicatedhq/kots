@@ -64,7 +64,6 @@ type OIDCConfig struct {
 	InsecureSkipEmailVerified *bool            `json:"insecureSkipEmailVerified,omitempty"`
 	InsecureEnableGroups      *bool            `json:"insecureEnableGroups,omitempty"`
 	Scopes                    []string         `json:"scopes,omitempty"`
-	HostedDomains             []string         `json:"hostedDomains,omitempty"`
 	ClaimMapping              OIDCClaimMapping `json:"claimMapping,omitempty"`
 }
 
@@ -843,9 +842,6 @@ func identityOIDCToOIDCConfig(identityOIDC *OIDCConfig, idpConfigs []IDPConfig, 
 	}
 	if len(identityOIDC.Scopes) > 0 {
 		c.Scopes = identityOIDC.Scopes
-	}
-	if len(identityOIDC.HostedDomains) > 0 {
-		c.HostedDomains = identityOIDC.HostedDomains
 	}
 	if identityOIDC.ClaimMapping.PreferredUsernameKey != "" {
 		c.ClaimMapping.PreferredUsernameKey = identityOIDC.ClaimMapping.PreferredUsernameKey
