@@ -18,6 +18,7 @@ export default function HelmValuesModal({
     >
       <div className="Modal-header has-border flex">
         <h3 className="flex1">Helm Values</h3>
+        <button className="secondary blue btn u-marginRight--10" onClick={() => {}}>Download</button>
         <span className="icon u-grayX-icon u-cursor--pointer"></span>
       </div>
       <div className="Modal-body">
