@@ -203,6 +203,15 @@ func TestBuildStrings(t *testing.T) {
 			Template: `{{repl ParseBool "True"}}`,
 			Expected: true,
 		},
+		strcase{
+			Name:     "Test YamlEscape",
+			Template: `{{repl print "abc\n123 456\nabc\n" | YamlEscape }}`,
+			Expected: `                    |
+                        abc
+                        123 456
+                        abc
+                    `,
+		},
 	}
 
 	builder := Builder{}
