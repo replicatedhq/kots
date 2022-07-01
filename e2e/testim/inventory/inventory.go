@@ -19,13 +19,25 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func NewRegressionTest() Test {
+func NewRegressionECONIMRTest() Test {
 	return Test{
-		Name:            "Regression",
+		Name:            "Regression: Existing Cluster, Online, New Install, Minimal RBAC",
 		Label:           "type=existing cluster, env=online, phase=new install, rbac=minimal rbac",
 		Namespace:       "qakotsregression",
 		UpstreamURI:     "qakotsregression/type-existing-cluster-env-on-2",
 		UseMinimalRBAC:  true,
+		NeedsMonitoring: true,
+		NeedsRegistry:   true,
+		Setup:           SetupRegressionTest,
+	}
+}
+
+func NewRegressionECONICATest() Test {
+	return Test{
+		Name:            "Regression: Existing Cluster, Online, New Install, Cluster Admin",
+		Label:           "type=existing cluster, env=online, phase=new install, rbac=cluster admin",
+		Namespace:       "qakotsregression",
+		UpstreamURI:     "qakotsregression/type-existing-cluster-env-onli",
 		NeedsMonitoring: true,
 		NeedsRegistry:   true,
 		Setup:           SetupRegressionTest,
@@ -101,11 +113,23 @@ func NewChangeLicense() Test {
 func SetupRegressionTest(kubectlCLI *kubectl.CLI) {
 	cmd := kubectlCLI.Command(
 		context.Background(),
+		fmt.Sprintf("--namespace=%s", registry.DefaultNamespace),
+		"get",
+		"svc",
+		registry.DefaultReleaseName,
+		"--template={{ .spec.clusterIP }}",
+	)
+	out, err := cmd.Output()
+	Expect(err).WithOffset(1).Should(Succeed(), "Get registry cluster ip failed")
+	clusterIP := strings.TrimSpace(string(out))
+
+	cmd = kubectlCLI.Command(
+		context.Background(),
 		"create",
 		"secret",
 		"docker-registry",
 		"registry-creds",
-		fmt.Sprintf("--docker-server=registry.%s.svc.cluster.local:5000", registry.DefaultNamespace),
+		fmt.Sprintf("--docker-server=%s:5000", clusterIP),
 		"--docker-username=fake",
 		"--docker-password=fake",
 		"--docker-email=fake@fake.com",

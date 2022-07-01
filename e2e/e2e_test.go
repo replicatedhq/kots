@@ -181,7 +181,8 @@ var _ = Describe("E2E", func() {
 			func(test inventory.Test) string {
 				return test.Name
 			},
-			Entry(nil, inventory.NewRegressionTest()),
+			Entry(nil, inventory.NewRegressionECONIMRTest()),
+			Entry(nil, inventory.NewRegressionECONICATest()),
 			Entry(nil, inventory.NewSmokeTest()),
 			Entry(nil, inventory.NewStrictPreflightChecks()),
 			Entry(nil, inventory.NewMinimalRBACTest()),
