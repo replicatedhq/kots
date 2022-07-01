@@ -5,9 +5,13 @@ import CodeSnippet from "@src/components/shared/CodeSnippet";
 function makeRedeployCommand({
   appSlug,
   chartPath,
-  valuesPath = "http://downloads.replicated.com/helm/D3akdj3.yaml"
+  valuesFilePath,
 }) {
-  return `helm upgrade ${appSlug} ${chartPath} -f ${valuesPath}`;
+  if (valuesFilePath) {
+    return `helm upgrade ${appSlug} ${chartPath} -f ${valuesFilePath}`;
+  }
+
+  return `helm upgrade ${appSlug} ${chartPath} --reuse-values`;
 }
 
 function makeLoginCommand({
@@ -20,10 +24,13 @@ function makeLoginCommand({
 
 export default function HelmDeployModal({
   appSlug,
-  showHelmDeployModal,
-  hideDeployModal,
   chartPath,
-  viewValuesClicked = () => {}
+  hideDeployModal,
+  showHelmDeployModal,
+  showViewFilesButton = false,
+  title,
+  viewValuesClicked = () => { },
+  valuesFilePath = null,
 }) {
 
   return (
@@ -36,8 +43,11 @@ export default function HelmDeployModal({
       className="Modal PreflightModal"
     >
       <div className="Modal-header has-border flex">
-        <h3 className="flex1">Redeploy Helm chart</h3>
-        <span className="icon u-grayX-icon u-cursor--pointer"></span>
+        <h3 className="flex1">{title}</h3>
+        <span
+          className="icon u-grayX-icon u-cursor--pointer"
+          onClick={hideDeployModal}
+        />
       </div>
       <div className="Modal-body">
         <div className="flex flex-column">
@@ -55,10 +65,15 @@ export default function HelmDeployModal({
           </div>
           <div className="u-marginBottom--40">
             <div className="flex">
-            <span className="Title u-marginBottom--normal flex1"><span className="step-number">2</span>Upgrade with Helm</span>
-            <button className="secondary blue btn" onClick={viewValuesClicked}>View values.yaml</button>
+              <span className="Title u-marginBottom--normal flex1"><span className="step-number">2</span>Upgrade with Helm</span>
+              {showViewFilesButton &&
+                <button
+                  className="secondary blue btn"
+                  onClick={viewValuesClicked}>
+                    View values.yaml
+                </button>
+              }
             </div>
-
             <CodeSnippet
               language="bash"
               canCopy={true}
@@ -66,8 +81,9 @@ export default function HelmDeployModal({
             >
               {makeRedeployCommand({
                 appSlug,
-                chartPath
-                })}
+                chartPath,
+                valuesFilePath,
+              })}
             </CodeSnippet>
           </div>
         </div>
