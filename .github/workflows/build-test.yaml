@@ -1268,6 +1268,35 @@ jobs:
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
 
+  validate-kots-push-images-anonymous:
+    runs-on: ubuntu-20.04
+    needs: [ can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_version: [ v1.23.3-k3s1 ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - uses: replicatedhq/action-k3s@main
+        with:
+          version: ${{ matrix.k8s_version }}
+
+      - name: download kots binary
+        uses: actions/download-artifact@v2
+        with:
+          name: kots
+          path: bin/
+
+      - run: chmod +x bin/kots
+
+      - name: run kots admin-console push-images
+        run: |
+          set +e
+          ./bin/kots admin-console push-images ./hack/tests/small.airgap ttl.sh/automated-${{ github.run_id }} 
+
+
   # this job will validate that all validate-* jobs succeed and is used for the github branch protection rule
   validate-success:
     runs-on: ubuntu-20.04
@@ -1290,5 +1319,7 @@ jobs:
       - validate-yamlescape
       - validate-no-redeploy-on-restart
       - validate-kubernetes-installer-preflight
+      # cli-only tests
+      - validate-kots-push-images-anonymous
     steps:
       - run: echo "Validate success"
