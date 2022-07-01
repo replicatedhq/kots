@@ -14,6 +14,7 @@ import Loader from "../shared/Loader";
 import ErrorModal from "../modals/ErrorModal";
 import HelmDeployModal from "../shared/modals/HelmDeployModal";
 import HelmValuesModal from "../shared/modals/HelmValuesModal"
+import { IsHelmManaged } from "../hooks";
 
 import "../../scss/components/watches/WatchConfig.scss";
 import { Utilities } from "../../utilities/utilities";
@@ -473,8 +474,6 @@ class AppConfig extends Component {
       displayErrorModal,
       errorTitle } = this.state;
     const { fromLicenseFlow, match } = this.props;
-    const isHelmManaged = true;
-
     const app = this.props.app || this.state.app;
 
     if (configLoading || !app) {
@@ -537,11 +536,14 @@ class AppConfig extends Component {
                   <button className="btn primary blue" disabled={!changed && !fromLicenseFlow || this.isConfigReadOnly(app)} onClick={this.handleSave}>{fromLicenseFlow ? "Continue" : "Save config"}</button>
                 </div>
               }
-              {isHelmManaged && !savingConfig &&
-                <div className="ConfigError--wrapper flex-column u-paddingBottom--30 alignItems--flexStart">
-                  <button className="btn primary blue" disabled={savingConfig} onClick={this.handleGenerateConfig}>Generate Upgrade Command</button>
-                </div>
-              }
+              <IsHelmManaged>
+                {({ isHelmManaged }) => {
+                  return isHelmManaged && !savingConfig &&
+                    <div className="ConfigError--wrapper flex-column u-paddingBottom--30 alignItems--flexStart">
+                      <button className="btn primary blue" disabled={savingConfig} onClick={this.handleGenerateConfig}>Generate Upgrade Command</button>
+                    </div>;
+                }}
+              </IsHelmManaged>
             </div>
           </div>
         </div>
