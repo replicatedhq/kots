@@ -525,8 +525,8 @@ func (c *Client) installWithHelm(helmDir string, targetNamespace string, kotsCha
 		if targetNamespace != "" && targetNamespace != "." {
 			args = append(args, "-n", targetNamespace)
 		}
-		if len(dir.Flags) > 0 {
-			args = append(args, dir.Flags...)
+		if len(dir.UpgradeFlags) > 0 {
+			args = append(args, dir.UpgradeFlags...)
 		}
 
 		logger.Infof("running helm with arguments %v", args)
