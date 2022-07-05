@@ -279,15 +279,16 @@ type OptionalValue struct {
 
 // HelmChartSpec defines the desired state of HelmChartSpec
 type HelmChartSpec struct {
-	Chart          ChartIdentifier             `json:"chart"`
-	Exclude        multitype.BoolOrString      `json:"exclude,omitempty"`
-	HelmVersion    string                      `json:"helmVersion,omitempty"`
-	UseHelmInstall bool                        `json:"useHelmInstall,omitempty"`
-	Namespace      string                      `json:"namespace,omitempty"`
-	Values         map[string]MappedChartValue `json:"values,omitempty"`
-	OptionalValues []*OptionalValue            `json:"optionalValues,omitempty"`
-	Builder        map[string]MappedChartValue `json:"builder,omitempty"`
-	Weight         int64                       `json:"weight,omitempty"`
+	Chart            ChartIdentifier             `json:"chart"`
+	Exclude          multitype.BoolOrString      `json:"exclude,omitempty"`
+	HelmVersion      string                      `json:"helmVersion,omitempty"`
+	UseHelmInstall   bool                        `json:"useHelmInstall,omitempty"`
+	Namespace        string                      `json:"namespace,omitempty"`
+	Values           map[string]MappedChartValue `json:"values,omitempty"`
+	OptionalValues   []*OptionalValue            `json:"optionalValues,omitempty"`
+	Builder          map[string]MappedChartValue `json:"builder,omitempty"`
+	Weight           int64                       `json:"weight,omitempty"`
+	HelmUpgradeFlags []string                    `json:"helmUpgradeFlags,omitempty"`
 }
 
 // HelmChartStatus defines the observed state of HelmChart

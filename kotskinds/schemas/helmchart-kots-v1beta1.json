@@ -45,6 +45,12 @@
         "exclude": {
           "oneOf": [{"type": "string"},{"type": "boolean"}]
         },
+        "helmUpgradeFlags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "helmVersion": {
           "type": "string"
         },
