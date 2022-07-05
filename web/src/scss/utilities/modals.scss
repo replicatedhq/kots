@@ -110,18 +110,18 @@
 
 .Title .step-number {
   border-radius: 100%;
-  width: 16px;
-  height: 16px;
+  width: 30px;
+  height: 30px;
   display: inline-block;
   text-align: center;
-  font-size: 10px;
+  font-size: 16px;
   font-weight: 700;
-  line-height: 16px;
+  line-height: 30px;
   margin-right: 6px;
   top: -2px;
   position: relative;
   color: #ffffff;
-  background-color: #326DE6;
+  background-color: $muted-light-accent;
 }
 
 .Title {
