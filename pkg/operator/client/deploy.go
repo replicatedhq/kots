@@ -561,7 +561,7 @@ type orderedDir struct {
 	ChartName    string
 	ChartVersion string
 	ReleaseName  string
-	Flags        []string
+	UpgradeFlags []string
 }
 
 func getSortedCharts(chartsDir string, kotsCharts []*v1beta1.HelmChart) ([]orderedDir, error) {
@@ -592,7 +592,7 @@ func getSortedCharts(chartsDir string, kotsCharts []*v1beta1.HelmChart) ([]order
 			if kotsChart.Spec.Chart.ChartVersion == dir.ChartVersion && kotsChart.Spec.Chart.Name == dir.ChartName && kotsChart.GetDirName() == dir.Name {
 				orderedDirs[idx].Weight = kotsChart.Spec.Weight
 				orderedDirs[idx].ReleaseName = kotsChart.GetReleaseName()
-				orderedDirs[idx].Flags = kotsChart.Spec.HelmFlags
+				orderedDirs[idx].UpgradeFlags = kotsChart.Spec.HelmUpgradeFlags
 			}
 		}
 		if orderedDirs[idx].ReleaseName == "" {

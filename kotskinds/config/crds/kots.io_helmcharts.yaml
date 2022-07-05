@@ -53,7 +53,7 @@ spec:
                 type: object
               exclude:
                 type: BoolString
-              helmFlags:
+              helmUpgradeFlags:
                 items:
                   type: string
                 type: array

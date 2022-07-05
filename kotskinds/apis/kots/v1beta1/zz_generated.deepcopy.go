@@ -798,8 +798,8 @@ func (in *HelmChartSpec) DeepCopyInto(out *HelmChartSpec) {
 			(*out)[key] = *val.DeepCopy()
 		}
 	}
-	if in.HelmFlags != nil {
-		in, out := &in.HelmFlags, &out.HelmFlags
+	if in.HelmUpgradeFlags != nil {
+		in, out := &in.HelmUpgradeFlags, &out.HelmUpgradeFlags
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}

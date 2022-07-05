@@ -453,7 +453,7 @@ version: ver2
 							Name:         "generic1",
 							ChartVersion: "ver1",
 						},
-						HelmFlags: []string{
+						HelmUpgradeFlags: []string{
 							"--skip-crds",
 							"--no-hooks",
 							"--atomic",
@@ -479,7 +479,7 @@ version: ver2
 					ChartName:    "generic1",
 					ChartVersion: "ver1",
 					ReleaseName:  "generic1",
-					Flags: []string{
+					UpgradeFlags: []string{
 						"--skip-crds",
 						"--no-hooks",
 						"--atomic",
