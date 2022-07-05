@@ -288,6 +288,7 @@ type HelmChartSpec struct {
 	OptionalValues []*OptionalValue            `json:"optionalValues,omitempty"`
 	Builder        map[string]MappedChartValue `json:"builder,omitempty"`
 	Weight         int64                       `json:"weight,omitempty"`
+	HelmFlags      []string                    `json:"helmFlags,omitempty"`
 }
 
 // HelmChartStatus defines the observed state of HelmChart

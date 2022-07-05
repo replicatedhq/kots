@@ -53,6 +53,10 @@ spec:
                 type: object
               exclude:
                 type: BoolString
+              helmFlags:
+                items:
+                  type: string
+                type: array
               helmVersion:
                 type: string
               namespace:
