@@ -162,6 +162,8 @@ func TestYamlEscape(t *testing.T) {
 		allchars += string(byte(i))
 	}
 
+	allchars += "hello\nworld\nmultiple\nlines"
+
 	encoded := StaticCtx{}.yamlEscape(allchars)
 	req.Greater(len(encoded), len(allchars)) // the encoded version will be wrapped in quotes, and have escape characters
 

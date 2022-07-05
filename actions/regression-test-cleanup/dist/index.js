@@ -69,12 +69,14 @@ const tests = [
   }
 ];
 
+const cleanupIntervalHours = (0,_actions_core__WEBPACK_IMPORTED_MODULE_1__.getInput)("CLEANUP_INTERVAL_HOURS", { required: true });
+
 const awsConfig = {
-  AWS_DEFAULT_REGION: (0,_actions_core__WEBPACK_IMPORTED_MODULE_1__.getInput)('AWS_DEFAULT_REGION'),
-  AWS_ACCESS_KEY_ID: (0,_actions_core__WEBPACK_IMPORTED_MODULE_1__.getInput)('AWS_ACCESS_KEY_ID'),
-  AWS_SECRET_ACCESS_KEY: (0,_actions_core__WEBPACK_IMPORTED_MODULE_1__.getInput)('AWS_SECRET_ACCESS_KEY')
+  AWS_DEFAULT_REGION: (0,_actions_core__WEBPACK_IMPORTED_MODULE_1__.getInput)('AWS_DEFAULT_REGION', { required: true }),
+  AWS_ACCESS_KEY_ID: (0,_actions_core__WEBPACK_IMPORTED_MODULE_1__.getInput)('AWS_ACCESS_KEY_ID', { required: true }),
+  AWS_SECRET_ACCESS_KEY: (0,_actions_core__WEBPACK_IMPORTED_MODULE_1__.getInput)('AWS_SECRET_ACCESS_KEY', { required: true }),
 }
-await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_0__.exec)('terraform', ['init'], {
+await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_0__.exec)('terraform', ['init', '-reconfigure'], {
   env: awsConfig,
   cwd: 'automation/jumpbox'
 });
@@ -103,7 +105,7 @@ for(const automationWorkspace of automationWorkspaces) {
   if(completionTimeRaw) {
     const currentTime = new Date();
     const completionTime = new Date(completionTimeRaw);
-    if(currentTime.getTime() - completionTime.getTime() > (1000 * 60 * 60 * 24)) {
+    if(currentTime.getTime() - completionTime.getTime() > (1000 * 60 * 60 * Number(cleanupIntervalHours))) {
       for (const test of tests) {
         await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_0__.exec)('terraform', ['init', '-backend-config', test.backend_config, '-reconfigure'], {
           cwd: 'automation/cluster',

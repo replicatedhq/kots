@@ -51,7 +51,7 @@ func renderChartsArchive(deployedVersionArchive string, downstreamName string, k
 		if os.IsNotExist(err) {
 			return nil, nil
 		}
-		return nil, err
+		return nil, errors.Wrap(err, "failed to stat charts directory")
 	}
 
 	exportChartPath, err := ioutil.TempDir("", "kotsadm")

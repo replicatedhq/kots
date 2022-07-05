@@ -203,6 +203,9 @@ func renderReplicatedHelmChart(kotsHelmChart *kotsv1beta1.HelmChart, upstreamFil
 	helmUpstream.Name = kotsHelmChart.GetDirName()
 
 	mergedValues := kotsHelmChart.Spec.Values
+	if mergedValues == nil {
+		mergedValues = map[string]kotsv1beta1.MappedChartValue{}
+	}
 	for _, optionalValues := range kotsHelmChart.Spec.OptionalValues {
 		parsedBool, err := strconv.ParseBool(optionalValues.When)
 		if err != nil {

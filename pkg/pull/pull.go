@@ -9,7 +9,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -437,14 +436,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	// for writing Common Midstream, every chart and subchart is in this map as Helm Midstreams will be processed later in the code
 	commonWriteMidstreamOptions.UseHelmInstall = map[string]bool{}
 	for _, v := range newHelmCharts {
-		chartBaseName := v.Spec.Chart.Name
-		// the helmBase may have a chart name prefix removed - we must find the base name instead of the original chart name
-		for _, helmBase := range helmBases {
-			chartName := strings.Split(helmBase.Path, "/")[len(strings.Split(helmBase.Path, "/"))-1]
-			if strings.HasSuffix(v.Spec.Chart.Name, chartName) {
-				chartBaseName = chartName
-			}
-		}
+		chartBaseName := v.GetDirName()
 		commonWriteMidstreamOptions.UseHelmInstall[chartBaseName] = v.Spec.UseHelmInstall
 		if v.Spec.UseHelmInstall {
 			subcharts, err := base.FindHelmSubChartsFromBase(writeBaseOptions.BaseDir, chartBaseName)
@@ -471,10 +463,9 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		// we must look at the current chart for private images, but must ignore subcharts
 		// to do this, we remove only the current helmBase name from the UseHelmInstall map to unblock visibility into the chart directory
 		// this ensures only the current chart resources are added to kustomization.yaml and pullsecret.yaml
-		chartName := strings.Split(helmBase.Path, "/")[len(strings.Split(helmBase.Path, "/"))-1]
 		// copy the bool setting in the map to restore it after this process loop
-		previousUseHelmInstall := writeMidstreamOptions.UseHelmInstall[chartName]
-		writeMidstreamOptions.UseHelmInstall[chartName] = false
+		previousUseHelmInstall := writeMidstreamOptions.UseHelmInstall[helmBase.Path]
+		writeMidstreamOptions.UseHelmInstall[helmBase.Path] = false
 
 		writeMidstreamOptions.MidstreamDir = filepath.Join(helmBase.GetOverlaysDir(writeBaseOptions), "midstream", helmBase.Path)
 		writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), helmBase.Path)
@@ -491,7 +482,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		}
 
 		// add this chart back into UseHelmInstall to make sure it's not processed again
-		writeMidstreamOptions.UseHelmInstall[chartName] = previousUseHelmInstall
+		writeMidstreamOptions.UseHelmInstall[helmBase.Path] = previousUseHelmInstall
 
 		helmMidstreams = append(helmMidstreams, *helmMidstream)
 	}
@@ -720,6 +711,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOp
 			},
 			Installation:     &newKotsKinds.Installation,
 			AllImagesPrivate: allPrivate,
+			HelmChartPath:    b.Path,
 			UseHelmInstall:   writeMidstreamOptions.UseHelmInstall,
 		}
 		findResult, err := base.FindPrivateImages(findPrivateImagesOptions)

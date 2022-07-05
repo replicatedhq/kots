@@ -1,0 +1,8 @@
+apiVersion: v2
+dependencies:
+- name: fluent-bit
+  repository: https://fluent.github.io/helm-charts
+  version: 0.20.2
+description: Testing fluent-bit
+name: fluent-bit
+version: 0.20.2
