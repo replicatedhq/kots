@@ -1273,15 +1273,9 @@ jobs:
     needs: [ can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
     strategy:
       fail-fast: false
-      matrix:
-        k8s_version: [ v1.23.3-k3s1 ]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-
-      - uses: replicatedhq/action-k3s@main
-        with:
-          version: ${{ matrix.k8s_version }}
 
       - name: download kots binary
         uses: actions/download-artifact@v2

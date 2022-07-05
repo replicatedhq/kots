@@ -12,6 +12,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -36,6 +37,8 @@ func AdminPushImagesCmd() *cobra.Command {
 				os.Exit(1)
 			}
 
+			log := logger.NewCLILogger(cmd.OutOrStdout())
+
 			imageSource := args[0]
 			endpoint := args[1]
 
@@ -53,10 +56,13 @@ func AdminPushImagesCmd() *cobra.Command {
 				}
 
 				u, p, err := getRegistryCredentialsFromSecret(hostname, v.GetString("namespace"))
-				if err != nil && !kuberneteserrors.IsNotFound(err) {
-					return errors.Wrap(err, "failed get registry login from secret")
+				if err != nil {
+					if !kuberneteserrors.IsNotFound(err) {
+						log.Info("Failed to find registry credentials, will try to push anonymously: %v", err)
+					}
+				} else {
+					username, password = u, p
 				}
-				username, password = u, p
 			}
 
 			if registry.IsECREndpoint(endpoint) && username != "AWS" {
