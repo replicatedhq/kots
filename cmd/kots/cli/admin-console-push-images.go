@@ -14,6 +14,7 @@ import (
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -52,7 +53,7 @@ func AdminPushImagesCmd() *cobra.Command {
 				}
 
 				u, p, err := getRegistryCredentialsFromSecret(hostname, v.GetString("namespace"))
-				if err != nil {
+				if err != nil && !kuberneteserrors.IsNotFound(err) {
 					return errors.Wrap(err, "failed get registry login from secret")
 				}
 				username, password = u, p

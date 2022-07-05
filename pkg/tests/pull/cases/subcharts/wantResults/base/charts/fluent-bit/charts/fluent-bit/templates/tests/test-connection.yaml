@@ -1,0 +1,21 @@
+# Source: fluent-bit/charts/fluent-bit/templates/tests/test-connection.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "fluent-bit-test-connection"
+  labels:
+    helm.sh/chart: fluent-bit-0.20.2
+    app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/instance: fluent-bit
+    app.kubernetes.io/version: "1.9.4"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": test-success
+spec:
+  containers:
+    - name: wget
+      image: "busybox:latest"
+      imagePullPolicy: Always
+      command: ['wget']
+      args: ['fluent-bit:2020']
+  restartPolicy: Never

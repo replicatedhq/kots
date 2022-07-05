@@ -1,0 +1,94 @@
+# Source: fluent-bit/charts/fluent-bit/templates/daemonset.yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fluent-bit
+  labels:
+    helm.sh/chart: fluent-bit-0.20.2
+    app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/instance: fluent-bit
+    app.kubernetes.io/version: "1.9.4"
+    app.kubernetes.io/managed-by: Helm
+    app: test
+    component: test-log-collector
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: fluent-bit
+      app.kubernetes.io/instance: fluent-bit
+  template:
+    metadata:
+      annotations:
+        checksum/config: 556e5640705b5e4cafddd82cf87a7eefd33ae7d7d4b83159fc1d8f66f9053a15
+        checksum/luascripts: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+      labels:
+        app.kubernetes.io/name: fluent-bit
+        app.kubernetes.io/instance: fluent-bit
+        app: test
+        component: test-log-collector
+    spec:
+      serviceAccountName: fluent-bit
+      hostNetwork: false
+      dnsPolicy: ClusterFirst
+      containers:
+        - name: fluent-bit
+          image: "cr.fluentbit.io/fluent/fluent-bit:1.9.4"
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 2020
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: http
+          volumeMounts:
+            - mountPath: /fluent-bit/etc/fluent-bit.conf
+              name: config
+              subPath: fluent-bit.conf
+            - mountPath: /fluent-bit/etc/custom_parsers.conf
+              name: config
+              subPath: custom_parsers.conf
+            - mountPath: /var/log
+              name: varlog
+            - mountPath: /var/lib/docker/containers
+              name: varlibdockercontainers
+              readOnly: true
+            - mountPath: /etc/machine-id
+              name: etcmachineid
+              readOnly: true
+            - mountPath: /test
+              name: collector
+        - args:
+          - while true; do echo "waiting" && sleep 60; done
+          command:
+          - sh
+          - -c
+          image: busybox:1
+          name: kots
+          volumeMounts:
+          - mountPath: /test
+            name: collector
+            readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: fluent-bit
+        - hostPath:
+            path: /var/log
+          name: varlog
+        - hostPath:
+            path: /var/lib/docker/containers
+          name: varlibdockercontainers
+        - hostPath:
+            path: /etc/machine-id
+            type: File
+          name: etcmachineid
+        - hostPath:
+            path: /test
+            type: DirectoryOrCreate
+          name: collector
