@@ -554,7 +554,8 @@ class AppConfig extends Component {
             hideDeployModal={() => this.setState({ showHelmDeployModal: false, showHelmValuesModal: false })}
             showHelmDeployModal={true}
             showViewFilesButton={true}
-            title="Deploy values file"
+            subtitle="Follow the steps below to redeploy your application using the values from the last release."
+            title="Redeploy application"
             valuesFilePath="https://downloads.replicated.com/values/dakWe43.yaml"
             viewValuesClicked={() => {
               this.setState({ showHelmDeployModal: false, showHelmValuesModal: true });

@@ -28,6 +28,7 @@ export default function HelmDeployModal({
   hideDeployModal,
   showHelmDeployModal,
   showViewFilesButton = false,
+  subtitle,
   title,
   viewValuesClicked = () => { },
   valuesFilePath = null,
@@ -40,19 +41,18 @@ export default function HelmDeployModal({
       shouldReturnFocusAfterClose={false}
       contentLabel=""
       ariaHideApp={false}
-      className="Modal PreflightModal"
+      className="Modal MediumSizeExtra"
     >
-      <div className="Modal-header has-border flex">
+      <div className="Modal-header flex-row">
         <h3 className="flex1">{title}</h3>
-        <span
-          className="icon u-grayX-icon u-cursor--pointer"
-          onClick={hideDeployModal}
-        />
+        <p className="flex1 subtitle">{subtitle}</p>
       </div>
       <div className="Modal-body">
         <div className="flex flex-column">
-          <div className="u-marginBottom--40">
-            <span className="Title u-marginBottom--normal"><span className="step-number">1</span>Log in to the registry</span>
+          <div className="u-marginBottom--40 flex flex-row">
+           <span className="Title step-number u-marginRight--15">1</span>
+           <div className="flex1">
+            <span className="Title u-marginBottom--15 u-display--block">Log in to the registry</span>
             <CodeSnippet
               language="bash"
               canCopy={true}
@@ -62,6 +62,7 @@ export default function HelmDeployModal({
                 registryHostname: chartPath,
               })}
             </CodeSnippet>
+            </div>
           </div>
           <div className="u-marginBottom--40">
             <div className="flex">

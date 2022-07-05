@@ -35,6 +35,10 @@
       width: 100%;
       max-width: 700px;
     }
+    &.MediumSizeExtra {
+      width: 100%;
+      max-width: 840px;
+    }
     &.LargeSize {
       width: 100%;
       max-width: 960px;
@@ -86,6 +90,15 @@
       overflow: auto;
       -webkit-overflow-scrolling: touch;
     }
+    .Modal-header .subtitle {
+      color: #9B9B9B;
+      font-size: 14px;
+      font-weight: inherit;
+    }
+    .Modal-header h3 {
+      font-size: 22px;
+      color: #4A4A4A
+    }
   }
 
   .ReactModal__Content.AddNewClusterModal--wrapper,
@@ -108,7 +121,7 @@
   }
 }
 
-.Title .step-number {
+.Title .step-number, .Title.step-number  {
   border-radius: 100%;
   width: 30px;
   height: 30px;
@@ -117,17 +130,14 @@
   font-size: 16px;
   font-weight: 700;
   line-height: 30px;
-  margin-right: 6px;
-  top: -2px;
-  position: relative;
-  color: #ffffff;
+  color: $nav-color;
   background-color: $muted-light-accent;
 }
 
 .Title {
   font-weight: 700;
   font-size: 16px;
-  line-height: 16px;
+  line-height: 30px;
   color: #323232;
 }
 

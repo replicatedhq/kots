@@ -1280,7 +1280,8 @@ class DashboardVersionCard extends React.Component {
               chartPath={this.props?.app?.chartPath || ""}
               hideDeployModal={() => this.setState({ showHelmDeployModal: false, showHelmValuesModal: false })}
               showHelmDeployModal={true}
-              title="Redeploy Helm chart"
+              subtitle="Follow the steps below to redeploy your application using the values from the last release."
+              title="Redeploy application"
             />
           }
           {this.state.showDiffModal &&
