@@ -29,7 +29,7 @@ export default class AppStatus extends React.Component {
     links.map(link => {
       const linkObj = {
         displayText: link.title,
-        href: link.uri
+        href: this.createDashboardActionLink(link.uri)
       };
       dropdownLinks.push(linkObj);
     })
@@ -50,7 +50,7 @@ export default class AppStatus extends React.Component {
 
   render() {
     const { appStatus, url, links, app } = this.props;
-    const { selectedAction, dropdownOptions } = this.state;
+    const { dropdownOptions } = this.state;
     const defaultDisplayText = dropdownOptions.length > 0 ? dropdownOptions[0].displayText : "";
 
     return (
