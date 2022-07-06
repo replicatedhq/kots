@@ -525,6 +525,9 @@ func (c *Client) installWithHelm(helmDir string, targetNamespace string, kotsCha
 		if targetNamespace != "" && targetNamespace != "." {
 			args = append(args, "-n", targetNamespace)
 		}
+		if len(dir.UpgradeFlags) > 0 {
+			args = append(args, dir.UpgradeFlags...)
+		}
 
 		logger.Infof("running helm with arguments %v", args)
 		cmd := exec.Command(fmt.Sprintf("helm%s", version), args...)
@@ -558,6 +561,7 @@ type orderedDir struct {
 	ChartName    string
 	ChartVersion string
 	ReleaseName  string
+	UpgradeFlags []string
 }
 
 func getSortedCharts(chartsDir string, kotsCharts []*v1beta1.HelmChart) ([]orderedDir, error) {
@@ -588,6 +592,7 @@ func getSortedCharts(chartsDir string, kotsCharts []*v1beta1.HelmChart) ([]order
 			if kotsChart.Spec.Chart.ChartVersion == dir.ChartVersion && kotsChart.Spec.Chart.Name == dir.ChartName && kotsChart.GetDirName() == dir.Name {
 				orderedDirs[idx].Weight = kotsChart.Spec.Weight
 				orderedDirs[idx].ReleaseName = kotsChart.GetReleaseName()
+				orderedDirs[idx].UpgradeFlags = kotsChart.Spec.HelmUpgradeFlags
 			}
 		}
 		if orderedDirs[idx].ReleaseName == "" {

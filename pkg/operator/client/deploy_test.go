@@ -425,6 +425,75 @@ version: ver2
 				},
 			},
 		},
+		{
+			name: "kots chart specifies helm flags",
+			files: []file{
+				{
+					path: "chart1/Chart.yaml",
+					contents: `
+name: generic1
+version: ver1
+`,
+				},
+				{
+					path: "chart2/Chart.yaml",
+					contents: `
+name: generic2
+version: ver2
+`,
+				},
+			},
+			kotsCharts: []*v1beta1.HelmChart{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart1",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "generic1",
+							ChartVersion: "ver1",
+						},
+						HelmUpgradeFlags: []string{
+							"--skip-crds",
+							"--no-hooks",
+							"--atomic",
+							"--description=my description",
+						},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "chart2",
+					},
+					Spec: v1beta1.HelmChartSpec{
+						Chart: v1beta1.ChartIdentifier{
+							Name:         "generic2",
+							ChartVersion: "ver2",
+						},
+					},
+				},
+			},
+			want: []orderedDir{
+				{
+					Name:         "chart1",
+					ChartName:    "generic1",
+					ChartVersion: "ver1",
+					ReleaseName:  "generic1",
+					UpgradeFlags: []string{
+						"--skip-crds",
+						"--no-hooks",
+						"--atomic",
+						"--description=my description",
+					},
+				},
+				{
+					Name:         "chart2",
+					ChartName:    "generic2",
+					ChartVersion: "ver2",
+					ReleaseName:  "generic2",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
