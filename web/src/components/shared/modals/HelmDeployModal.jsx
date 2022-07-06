@@ -2,13 +2,13 @@ import React from "react";
 import Modal from "react-modal";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
 
-function makeRedeployCommand({
+function makeDeployCommand({
   appSlug,
   chartPath,
   valuesFilePath,
 }) {
   if (valuesFilePath) {
-    return `helm upgrade ${appSlug} ${chartPath} -f ${valuesFilePath}`;
+    return `helm upgrade ${appSlug} ${chartPath} -f <path-to-values-yaml>`;
   }
 
   return `helm upgrade ${appSlug} ${chartPath} --reuse-values`;
@@ -16,8 +16,8 @@ function makeRedeployCommand({
 
 function makeLoginCommand({
   registryHostname = "",
-  registryUsername = "myUsername",
-  registryPassword = "myPassword",
+  registryUsername,
+  registryPassword,
 } = {}) {
   return `helm registry login ${registryHostname.slice(6)} --username ${registryUsername} --password ${registryPassword}`
 }
@@ -25,18 +25,19 @@ function makeLoginCommand({
 export default function HelmDeployModal({
   appSlug,
   chartPath,
-  hideDeployModal,
+  hideHelmDeployModal = () => { },
   showHelmDeployModal,
   subtitle,
+  registryUsername = "myUsername",
+  registryPassword = "myPassword",
   title,
-  viewValuesClicked = () => { },
   valuesFilePath = null,
 }) {
 
   return (
     <Modal
       isOpen={showHelmDeployModal}
-      onRequestClose={hideDeployModal}
+      onRequestClose={hideHelmDeployModal}
       shouldReturnFocusAfterClose={false}
       contentLabel=""
       ariaHideApp={false}
@@ -48,7 +49,7 @@ export default function HelmDeployModal({
       </div>
       <div className="Modal-body">
         <div className="flex flex-column">
-          <div className="u-marginBottom--40 flex flex-row">
+          <div className="u-marginBottom--30 flex flex-row">
             <span className="Title step-number u-marginRight--15">1</span>
             <div className="flex1">
               <span className="Title u-marginBottom--10 u-display--block">
@@ -61,22 +62,47 @@ export default function HelmDeployModal({
               >
                 {makeLoginCommand({
                   registryHostname: chartPath,
+                  registryUsername,
+                  registryPassword,
                 })}
               </CodeSnippet>
             </div>
           </div>
-          <div className="u-marginBottom--40 flex flex-row">
+          {valuesFilePath && <div className="u-marginBottom--30 flex flex-row">
             <span className="Title step-number u-marginRight--15">2</span>
             <div className="flex1">
               <span className="Title u-marginBottom--10 u-display--block">
-                Upgrade with Helm
+                Download your new values.yaml file
               </span>
+              <button
+                className="btn secondary blue large flex alignItems--center"
+              >
+                <span
+                  className="icon blue-yaml-icon u-marginRight--10"
+                />
+                <span className="flex1">
+                  Download values.yaml
+                </span>
+              </button>
+            </div>
+          </div>
+          }
+          <div className="u-marginBottom--30 flex flex-row">
+            <span className="Title step-number u-marginRight--15">{valuesFilePath === null ? "2" : "3"}</span>
+            <div className="flex1">
+              <span className="Title u-marginBottom--5 u-display--block">
+                Upgrade application with Helm
+              </span>
+              {valuesFilePath && <p className="flex1 subtitle u-marginBottom--15">
+                {"Ensure you replace \"<path to values yaml\" with the path to your saved file"}
+              </p>
+              }
               <CodeSnippet
                 language="bash"
                 canCopy={true}
                 onCopyText={<span className="u-textColor--success">Command has been copied to your clipboard</span>}
               >
-                {makeRedeployCommand({
+                {makeDeployCommand({
                   appSlug,
                   chartPath,
                   valuesFilePath,
@@ -85,6 +111,11 @@ export default function HelmDeployModal({
             </div>
           </div>
         </div>
+        <button
+          onClick={hideHelmDeployModal}
+          className="btn blue primary large">
+          Ok, got it!
+        </button>
       </div>
     </Modal>
   );
