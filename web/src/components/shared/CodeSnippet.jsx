@@ -37,7 +37,7 @@ class CodeSnippet extends Component {
     const textToCopy = Array.isArray(children)
       ? children.join("\n")
       : children
-    
+
     if (navigator.clipboard) {
       navigator.clipboard.writeText(textToCopy).then(() => {
         this.setState({ didCopy: true });
@@ -76,8 +76,8 @@ class CodeSnippet extends Component {
     } = this.props;
 
     const { didCopy } = this.state;
-    const content = trimWhitespace 
-      ? Array.isArray(children) 
+    const content = trimWhitespace
+      ? Array.isArray(children)
         ? this.stripExtraneousSpaces(children)
         : children.trim()
       : children
@@ -96,7 +96,7 @@ class CodeSnippet extends Component {
           </Prism>
           {canCopy && (
             <span
-              className={classNames("CodeSnippet-copy u-fontWeight--bold", {
+              className={classNames("CodeSnippet-copy", {
                 "is-copied": didCopy
               })}
               onClick={this.copySnippet}

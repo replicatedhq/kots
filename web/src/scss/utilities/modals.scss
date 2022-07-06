@@ -93,7 +93,7 @@
     .Modal-header .subtitle {
       color: #9B9B9B;
       font-size: 14px;
-      font-weight: inherit;
+      font-weight: 500;
     }
     .Modal-header h3 {
       font-size: 22px;
@@ -138,11 +138,15 @@
   font-weight: 700;
   font-size: 16px;
   line-height: 30px;
-  color: #323232;
+  color: #000;
 }
 
 .Modal-header h3 {
   font-size: 26px;
-  font-weight: 600;
+  font-weight: 500;
   color: #577981;
+}
+
+.Modal.helm pre {
+  background-color:#4A4A4A;
 }

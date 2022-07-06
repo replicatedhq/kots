@@ -27,7 +27,6 @@ export default function HelmDeployModal({
   chartPath,
   hideDeployModal,
   showHelmDeployModal,
-  showViewFilesButton = false,
   subtitle,
   title,
   viewValuesClicked = () => { },
@@ -41,7 +40,7 @@ export default function HelmDeployModal({
       shouldReturnFocusAfterClose={false}
       contentLabel=""
       ariaHideApp={false}
-      className="Modal MediumSizeExtra"
+      className="Modal MediumSizeExtra helm"
     >
       <div className="Modal-header flex-row">
         <h3 className="flex1">{title}</h3>
@@ -50,42 +49,40 @@ export default function HelmDeployModal({
       <div className="Modal-body">
         <div className="flex flex-column">
           <div className="u-marginBottom--40 flex flex-row">
-           <span className="Title step-number u-marginRight--15">1</span>
-           <div className="flex1">
-            <span className="Title u-marginBottom--15 u-display--block">Log in to the registry</span>
-            <CodeSnippet
-              language="bash"
-              canCopy={true}
-              onCopyText={<span className="u-textColor--success">Command has been copied to your clipboard</span>}
-            >
-              {makeLoginCommand({
-                registryHostname: chartPath,
-              })}
-            </CodeSnippet>
+            <span className="Title step-number u-marginRight--15">1</span>
+            <div className="flex1">
+              <span className="Title u-marginBottom--10 u-display--block">
+                Log in to the registry
+              </span>
+              <CodeSnippet
+                language="bash"
+                canCopy={true}
+                onCopyText={<span className="u-textColor--success">Command has been copied to your clipboard</span>}
+              >
+                {makeLoginCommand({
+                  registryHostname: chartPath,
+                })}
+              </CodeSnippet>
             </div>
           </div>
-          <div className="u-marginBottom--40">
-            <div className="flex">
-              <span className="Title u-marginBottom--normal flex1"><span className="step-number">2</span>Upgrade with Helm</span>
-              {showViewFilesButton &&
-                <button
-                  className="secondary blue btn"
-                  onClick={viewValuesClicked}>
-                    View values.yaml
-                </button>
-              }
+          <div className="u-marginBottom--40 flex flex-row">
+            <span className="Title step-number u-marginRight--15">2</span>
+            <div className="flex1">
+              <span className="Title u-marginBottom--10 u-display--block">
+                Upgrade with Helm
+              </span>
+              <CodeSnippet
+                language="bash"
+                canCopy={true}
+                onCopyText={<span className="u-textColor--success">Command has been copied to your clipboard</span>}
+              >
+                {makeRedeployCommand({
+                  appSlug,
+                  chartPath,
+                  valuesFilePath,
+                })}
+              </CodeSnippet>
             </div>
-            <CodeSnippet
-              language="bash"
-              canCopy={true}
-              onCopyText={<span className="u-textColor--success">Command has been copied to your clipboard</span>}
-            >
-              {makeRedeployCommand({
-                appSlug,
-                chartPath,
-                valuesFilePath,
-              })}
-            </CodeSnippet>
           </div>
         </div>
       </div>
