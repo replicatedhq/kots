@@ -31,6 +31,7 @@ export default function HelmDeployModal({
   registryUsername = "myUsername",
   registryPassword = "myPassword",
   title,
+  upgradeTitle,
   valuesFilePath = null,
 }) {
 
@@ -91,10 +92,10 @@ export default function HelmDeployModal({
             <span className="Title step-number u-marginRight--15">{valuesFilePath === null ? "2" : "3"}</span>
             <div className="flex1">
               <span className="Title u-marginBottom--5 u-display--block">
-                Upgrade application with Helm
+                {upgradeTitle}
               </span>
               {valuesFilePath && <p className="flex1 subtitle u-marginBottom--15">
-                {"Ensure you replace \"<path to values yaml\" with the path to your saved file"}
+                Ensure you replace <code>{"<path-to-values-yaml>"}</code> with the path to your saved file
               </p>
               }
               <CodeSnippet

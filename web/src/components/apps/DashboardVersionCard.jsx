@@ -1282,6 +1282,7 @@ class DashboardVersionCard extends React.Component {
               showHelmDeployModal={true}
               subtitle="Follow the steps below to redeploy your application using the values from the last release."
               title="Redeploy application"
+              upgradeTitle="Redeploy application with Helm"
             />
           }
           {this.state.showDiffModal &&

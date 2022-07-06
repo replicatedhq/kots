@@ -322,6 +322,7 @@ class AppConfig extends Component {
     this.setState({
       showHelmDeployModal: true
     })
+    this.handleSave();
   }
 
   handleConfigChange = groups => {
@@ -532,11 +533,11 @@ class AppConfig extends Component {
                       <button className="btn primary blue" disabled={savingConfig} onClick={this.handleGenerateConfig}>Generate Upgrade Command</button>
                     </div>}
                     {!isHelmManaged && savingConfig &&
-                      <div className="ConfigError--wrapper flex-column u-paddingBottom--30 alignItems--flexStart">
-                        <button className="btn primary blue" disabled={savingConfig} onClick={this.handleGenerateConfig}>Generate Upgrade Command</button>
+                      <div className="u-paddingBottom--30">
+                        <Loader size="30" />
                       </div>}
                     {!isHelmManaged && !savingConfig &&
-                      <div className="ConfigError--wrapper flex-column u-paddingBottom--30 alignItems--flexStart flex-1-auto">
+                      <div className="ConfigError--wrapper flex-column u-paddingBottom--30 alignItems--flexStart">
                         {configError && <span className="u-textColor--error u-marginBottom--20 u-fontWeight--bold">{configError}</span>}
                         <button className="btn primary blue" disabled={!changed && !fromLicenseFlow || this.isConfigReadOnly(app)} onClick={this.handleSave}>{fromLicenseFlow ? "Continue" : "Save config"}</button>
                       </div>}
@@ -556,6 +557,7 @@ class AppConfig extends Component {
             showHelmDeployModal={true}
             subtitle="Follow the steps below to upgrade your application with your new values.yaml"
             title="Upgrade application"
+            upgradeTitle="Upgrade application with Helm"
             valuesFilePath="https://downloads.replicated.com/values/dakWe43.yaml"
           />
         }

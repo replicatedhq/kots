@@ -6,7 +6,7 @@
 */
 
 .ReactModal__Overlay {
-  background-color: rgba(50,50,50,.4) !important;
+  background-color: rgba(50, 50, 50, .4) !important;
   z-index: 500;
   overflow: auto;
 
@@ -27,35 +27,43 @@
       width: 100%;
       max-width: 400px;
     }
+
     &.SmallSize {
       width: 100%;
       max-width: 500px;
     }
+
     &.MediumSize {
       width: 100%;
       max-width: 700px;
     }
+
     &.MediumSizeExtra {
       width: 100%;
       max-width: 840px;
     }
+
     &.LargeSize {
       width: 100%;
       max-width: 960px;
     }
+
     &.FullSize {
       width: 100%;
       max-width: 100%;
       height: 100%;
     }
+
     &.ConfigureSnapshots {
       width: 100%;
       max-width: 570px;
     }
+
     &.PreflightModal {
       width: 100%;
       max-width: 533px;
     }
+
     &.DiffViewerModal {
       width: 90%;
       max-height: 90%;
@@ -65,6 +73,7 @@
         position: relative;
       }
     }
+
     &.ConfigureUpdatesModal {
       overflow: visible;
     }
@@ -81,24 +90,29 @@
       line-height: 34px;
       margin: 0;
     }
+
     .Modal-header.has-border {
       border-bottom: 1px solid $border-color;
       padding-bottom: 18px;
     }
+
     .Modal-body {
       padding: 20px 25px;
       overflow: auto;
       -webkit-overflow-scrolling: touch;
     }
+
     .Modal-header .subtitle {
       color: #9B9B9B;
       font-size: 14px;
       font-weight: 500;
     }
+
     .Modal-header h3 {
       font-size: 22px;
       color: #4A4A4A
     }
+
     .subtitle {
       color: #9B9B9B;
       font-size: 14px;
@@ -109,12 +123,15 @@
   .ReactModal__Content.AddNewClusterModal--wrapper,
   .ReactModal__Content.SetUpAutoPRsModal--wrapper {
     overflow: visible;
+
     .Modal-body {
       overflow: visible;
     }
   }
 
-  .u-modalPadding { padding: 25px; }
+  .u-modalPadding {
+    padding: 25px;
+  }
 
 }
 
@@ -126,7 +143,8 @@
   }
 }
 
-.Title .step-number, .Title.step-number  {
+.Title .step-number,
+.Title.step-number {
   border-radius: 100%;
   width: 30px;
   height: 30px;
@@ -146,6 +164,19 @@
   color: #000;
 }
 
+.subtitle code {
+  // padding: 2px 3px;
+  background-color: #4A4A4A;
+  overflow: auto;
+  // border-radius: 0.3em;
+  color: #f8f8f2;
+  // font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
+  text-align: left;
+  white-space: pre-wrap;
+  font-size: 12px;
+  vertical-align: bottom;
+}
+
 .Modal-header h3 {
   font-size: 26px;
   font-weight: 500;
@@ -153,5 +184,5 @@
 }
 
 .Modal.helm pre {
-  background-color:#4A4A4A;
+  background-color: #4A4A4A;
 }
