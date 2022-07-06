@@ -119,7 +119,7 @@ class Dashboard extends Component {
 
     this.state.updateChecker.start(this.updateStatus, 1000);
     this.state.getAppDashboardJob.start(this.getAppDashboard, 2000);
-    if (app && this.props.isHelmManaged !== true) {
+    if (app) {
       this.setWatchState(app);
       this.getAppLicense(app);
     }

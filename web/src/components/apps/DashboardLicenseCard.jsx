@@ -229,10 +229,7 @@ export default class DashboardLicenseCard extends React.Component {
               </div>
             </div>
             :
-            getingAppLicenseErrMsg ?
               <p className="u-textColor--error u-fontSize--small u-fontWeight--medium u-lineHeight--normal flex">{getingAppLicenseErrMsg}</p>
-              :
-              <p className="u-fontSize--normal u-textColor--bodyCopy u-marginTop--15 u-lineHeight--more"> License data is not available on this application because it was installed via Helm </p>
           }
         </div>
         <div className="u-marginTop--10">
