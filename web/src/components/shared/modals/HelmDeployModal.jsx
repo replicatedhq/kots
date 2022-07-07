@@ -25,6 +25,7 @@ function makeLoginCommand({
 export default function HelmDeployModal({
   appSlug,
   chartPath,
+  downloadClicked = () => {},
   hideHelmDeployModal = () => { },
   showHelmDeployModal,
   subtitle,
@@ -77,6 +78,7 @@ export default function HelmDeployModal({
               </span>
               <button
                 className="btn secondary blue large flex alignItems--center"
+                onClick={downloadClicked}
               >
                 <span
                   className="icon blue-yaml-icon u-marginRight--10"

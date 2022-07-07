@@ -1,8 +1,8 @@
-import _fetch from "isomorphic-fetch";
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { Utilities } from "../../utilities/utilities";
 
 const putConfig = async ({
+  _fetch = fetch,
   _token = Utilities.getToken(),
   apiEndpoint = process.env.API_ENDPOINT,
   appSlug,
@@ -10,7 +10,7 @@ const putConfig = async ({
 }) => {
 
   try {
-    const response = await fetch(`${apiEndpoint}/app/${appSlug}/config`, {
+    const response = await _fetch(`${apiEndpoint}/app/${appSlug}/config`, {
       method: "PUT",
       headers: {
         "Authorization": _token,

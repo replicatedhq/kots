@@ -15,7 +15,8 @@ import ErrorModal from "../modals/ErrorModal";
 import HelmDeployModal from "../shared/modals/HelmDeployModal";
 import {
   IsHelmManaged,
-  useSaveConfig
+  useDownloadValues,
+  useSaveConfig,
 } from "../hooks";
 
 import "../../scss/components/watches/WatchConfig.scss";
@@ -520,6 +521,17 @@ class AppConfig extends Component {
                 const { saveConfig, isSaving, error } = useSaveConfig({
                   appSlug: this.getSlug(),
                 });
+                const {
+                  download,
+                  error: downloadError,
+                  isDownloading,
+                  name,
+                  ref,
+                  url,
+                } = useDownloadValues({
+                  appSlug: this.getSlug(),
+                  fileName: "values.yaml",
+                });
 
                 const handleGenerateConfig = async () => {
                   this.setState({
@@ -556,17 +568,22 @@ class AppConfig extends Component {
                       </div>}
                   </div>
                   {this.state.showHelmDeployModal &&
+                  <>
                     <HelmDeployModal
                       appSlug={this.props?.app?.slug}
                       chartPath={this.props?.app?.chartPath || ""}
-                      error={error}
+                      downloadClicked={download}
+                      error={downloadError}
+                      isDownloading={isDownloading}
                       hideHelmDeployModal={() => this.setState({ showHelmDeployModal: false })}
                       showHelmDeployModal={true}
                       subtitle="Follow the steps below to upgrade your application with your new values.yaml."
                       title="Upgrade application"
                       upgradeTitle="Upgrade application with Helm"
                       valuesFilePath="https://downloads.replicated.com/values/dakWe43.yaml"
-                    />}
+                    />
+                    <a href={url} download={name} className="hidden" ref={ref} />
+                    </>}
                 </>;
               }}
             </IsHelmManaged>
