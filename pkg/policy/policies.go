@@ -153,8 +153,9 @@ var (
 	AppDownstreamConfigWrite = Must(NewPolicy(ActionWrite, "app.{{.appSlug}}.downstream.config."))
 )
 
-// Helm managed
+// Helm
 
 var (
-	IsHelmManaged = Must(NewPolicy(ActionRead, ""))
+	IsHelmManaged    = Must(NewPolicy(ActionRead, ""))
+	GetAppValuesFile = Must(NewPolicy(ActionRead, ""))
 )
