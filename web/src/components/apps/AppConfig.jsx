@@ -13,7 +13,10 @@ import Modal from "react-modal";
 import Loader from "../shared/Loader";
 import ErrorModal from "../modals/ErrorModal";
 import HelmDeployModal from "../shared/modals/HelmDeployModal";
-import { IsHelmManaged } from "../hooks";
+import {
+  IsHelmManaged,
+  useSaveConfig
+} from "../hooks";
 
 import "../../scss/components/watches/WatchConfig.scss";
 import { Utilities } from "../../utilities/utilities";
@@ -318,13 +321,6 @@ class AppConfig extends Component {
     return foundItem;
   }
 
-  handleGenerateConfig = () => {
-    this.setState({
-      showHelmDeployModal: true
-    })
-    this.handleSave();
-  }
-
   handleConfigChange = groups => {
     const sequence = this.getSequence();
     const slug = this.getSlug();
@@ -521,6 +517,23 @@ class AppConfig extends Component {
           <div className="ConfigArea--wrapper">
             <IsHelmManaged>
               {({ isHelmManaged }) => {
+                const { saveConfig, isSaving, error } = useSaveConfig({
+                  appSlug: this.getSlug(),
+                });
+
+                const handleGenerateConfig = async () => {
+                  this.setState({
+                    showHelmDeployModal: true
+                  });
+                  await saveConfig({
+                    body: JSON.stringify({
+                      configGroups: this.state.configGroups,
+                      sequence: this.getSequence(),
+                      createNewVersion: !this.props.fromLicenseFlow && this.props.match.params.sequence == undefined,
+                    }),
+                  });
+                };
+
                 return <>
                   {!isHelmManaged && this.renderConfigInfo(app)}
                   <div className={classNames("ConfigOuterWrapper u-paddingTop--30", { "u-marginTop--20": fromLicenseFlow })}>
@@ -530,7 +543,7 @@ class AppConfig extends Component {
                   </div>
                   <div className="flex alignItems--flexStart">
                     {isHelmManaged && <div className="ConfigError--wrapper flex-column u-paddingBottom--30 alignItems--flexStart">
-                      <button className="btn primary blue" disabled={savingConfig} onClick={this.handleGenerateConfig}>Generate Upgrade Command</button>
+                      <button className="btn primary blue" disabled={isSaving} onClick={handleGenerateConfig}>Generate Upgrade Command</button>
                     </div>}
                     {!isHelmManaged && savingConfig &&
                       <div className="u-paddingBottom--30">
@@ -542,25 +555,24 @@ class AppConfig extends Component {
                         <button className="btn primary blue" disabled={!changed && !fromLicenseFlow || this.isConfigReadOnly(app)} onClick={this.handleSave}>{fromLicenseFlow ? "Continue" : "Save config"}</button>
                       </div>}
                   </div>
+                  {this.state.showHelmDeployModal &&
+                    <HelmDeployModal
+                      appSlug={this.props?.app?.slug}
+                      chartPath={this.props?.app?.chartPath || ""}
+                      error={error}
+                      hideHelmDeployModal={() => this.setState({ showHelmDeployModal: false })}
+                      showHelmDeployModal={true}
+                      subtitle="Follow the steps below to upgrade your application with your new values.yaml."
+                      title="Upgrade application"
+                      upgradeTitle="Upgrade application with Helm"
+                      valuesFilePath="https://downloads.replicated.com/values/dakWe43.yaml"
+                    />}
                 </>;
-              }
-              }
+              }}
             </IsHelmManaged>
           </div>
         </div>
-        {
-          this.state.showHelmDeployModal &&
-          <HelmDeployModal
-            appSlug={this.props?.app?.slug}
-            chartPath={this.props?.app?.chartPath || ""}
-            hideHelmDeployModal={() => this.setState({ showHelmDeployModal: false, showHelmValuesModal: false })}
-            showHelmDeployModal={true}
-            subtitle="Follow the steps below to upgrade your application with your new values.yaml"
-            title="Upgrade application"
-            upgradeTitle="Upgrade application with Helm"
-            valuesFilePath="https://downloads.replicated.com/values/dakWe43.yaml"
-          />
-        }
+
         <Modal
           isOpen={showNextStepModal}
           onRequestClose={this.hideNextStepModal}

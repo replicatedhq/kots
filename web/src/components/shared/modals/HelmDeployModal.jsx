@@ -95,7 +95,7 @@ export default function HelmDeployModal({
                 {upgradeTitle}
               </span>
               {valuesFilePath && <p className="flex1 subtitle u-marginBottom--15">
-                Ensure you replace <code>{"<path-to-values-yaml>"}</code> with the path to your saved file
+                Ensure you replace <code>{"<path-to-values-yaml>"}</code> with the path to your saved file.
               </p>
               }
               <CodeSnippet

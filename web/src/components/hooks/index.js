@@ -1,3 +1,8 @@
 import { IsHelmManaged, useIsHelmManaged } from "./useIsHelmManaged";
+import { useSaveConfig } from "./useSaveConfig";
 
-export { IsHelmManaged, useIsHelmManaged };
+export {
+  IsHelmManaged,
+  useIsHelmManaged,
+  useSaveConfig,
+};
