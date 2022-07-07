@@ -11,7 +11,7 @@ const getValues = async ({
   try {
     const response = await _fetch(`${apiEndpoint}/app/${appSlug}/values`, {
       method: "GET",
-     headers: {
+      headers: {
         "Authorization": _token,
         "Content-Type": "application/json",
       }
@@ -37,8 +37,6 @@ const useDownloadValues = ({
   const [error, setError] = useState(null);
   const [url, setUrl] = useState(null);
   const [name, setName] = useState(null);
-  console.log(name);
-  console.log(url);
 
   const download = async () => {
     try {
