@@ -17,9 +17,9 @@ const getValues = async ({
       }
     });
 
-    const data = await response.json();
-    console.log(data);
+    const data = await response.blob();
     return { data };
+
   } catch (error) {
     return { error };
   }
