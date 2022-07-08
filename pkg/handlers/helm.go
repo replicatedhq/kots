@@ -87,10 +87,10 @@ func getLicenseForHelmApp(chartName string) (*kotsv1beta1.License, *apptypes.App
 	// get license
 	req, err := util.NewRequest(http.MethodGet, fmt.Sprintf("%s/license", apiEndpoint), nil)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.Wrap(err, "failed to create new HTTP request")
 	}
 	var licId string
-	if appCache[chartName].Values["replicated"] != nil && appCache[chartName].Values["replicated"].(map[string]interface{})["license_id"] != nil {
+	if appCache[chartName] != nil && appCache[chartName].Values["replicated"] != nil && appCache[chartName].Values["replicated"].(map[string]interface{})["license_id"] != nil {
 		licId = appCache[chartName].Values["replicated"].(map[string]interface{})["license_id"].(string)
 	}
 	if licId == "" {
@@ -100,7 +100,7 @@ func getLicenseForHelmApp(chartName string) (*kotsv1beta1.License, *apptypes.App
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.Wrap(err, "failed to perform HTTP request")
 	}
 
 	defer resp.Body.Close()
@@ -109,12 +109,12 @@ func getLicenseForHelmApp(chartName string) (*kotsv1beta1.License, *apptypes.App
 	}
 	responseBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.Wrap(err, "failed to read response body")
 	}
 
 	license, err := kotsutil.LoadLicenseFromBytes(responseBody)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.Wrap(err, "failed to load license from response body bytes")
 	}
 
 	return license, foundApp, nil
