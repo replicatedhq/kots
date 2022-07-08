@@ -5,24 +5,28 @@ import _, { get, isEmpty, some, has } from "lodash";
 export const ConfigService = {
   getItems(groups) {
     return _(groups)
-      .map((group) => {
-        return _(get(group, "items", []))
-          .map((item) => {
+      .map((group) =>
+        _(get(group, "items", []))
+          // TODO - fix this linting issue
+          .map((item) => { // eslint-disable-line
             if (!isEmpty(item)) {
               if (item.type === "select_many") {
-                return _(get(item, "items", []))
-                  .map((childItem) => {
-                    if (!isEmpty(childItem)) {
-                      return childItem;
-                    }
-                  })
-                  .value();
+                return (
+                  _(get(item, "items", []))
+                    // TODO - fix this linting issue
+                  .map((childItem) => { // eslint-disable-line
+                      if (!isEmpty(childItem)) {
+                        return childItem;
+                      }
+                    })
+                    .value()
+                );
               }
               return item;
             }
           })
-          .value();
-      })
+          .value()
+      )
       .flattenDeep()
       .without(null)
       .value();
@@ -30,7 +34,8 @@ export const ConfigService = {
 
   getItem(groups, itemName) {
     let item = null;
-    some(ConfigService.getItems(groups), (otherItem) => {
+    // TODO - fix this linting issue
+    some(ConfigService.getItems(groups), (otherItem) => { // eslint-disable-line
       if (otherItem.name === itemName) {
         item = otherItem;
         return true;
@@ -63,7 +68,8 @@ export const ConfigService = {
         if (!ConfigService.evaluateFilters(get(group, "filters"), filters)) {
           return null;
         }
-        group.items = _(get(group, "items", []))
+        // TODO - fix this linting issue
+        group.items = _(get(group, "items", [])) // eslint-disable-line no-param-reassign
           .map((item) => {
             if (!ConfigService.evaluateFilters(get(item, "filters"), filters)) {
               return null;
@@ -83,16 +89,17 @@ export const ConfigService = {
       const expanded = ConfigService.expandWhen(when);
       if (has(filters, expanded.key)) {
         const values = expanded.value.split(",");
-        return !(expanded.negate !== some(values, (value) => {
-          return filters[expanded.key] === value;
-        }));
+        return !(
+          expanded.negate !==
+          some(values, (value) => filters[expanded.key] === value)
+        );
       }
       return false;
     });
   },
 
   expandWhen(when) {
-    let expanded = {
+    const expanded = {
       key: "",
       value: "",
       negate: false,
@@ -114,7 +121,11 @@ export const ConfigService = {
   },
 
   isVisible(groups, obj) {
-    return !obj.hidden && obj.when !== "false" && ConfigService.isEnabled(groups, obj);
+    return (
+      !obj.hidden &&
+      obj.when !== "false" &&
+      ConfigService.isEnabled(groups, obj)
+    );
   },
 
   isEnabled(groups, obj) {

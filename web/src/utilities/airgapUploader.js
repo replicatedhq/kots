@@ -10,15 +10,15 @@ export class AirgapUploader {
     this.resumableUploader = new Resumable({
       target: `${process.env.API_ENDPOINT}/app/${this.appSlug}/airgap/chunk`,
       headers: {
-        "Authorization": Utilities.getToken(),
+        Authorization: Utilities.getToken(),
       },
       fileType: ["airgap"],
       maxFiles: 1,
-      simultaneousUploads: simultaneousUploads,
+      simultaneousUploads,
       maxChunkRetries: 0,
       xhrTimeout: 10000,
     });
-  
+
     this.resumableUploader.on("fileAdded", (resumableFile) => {
       this.attemptedFileUpload = false;
       this.resumableFile = resumableFile;
@@ -32,12 +32,16 @@ export class AirgapUploader {
 
   reconnect = async (reconnectAttempt = 0) => {
     try {
-      const res = await fetch(`${process.env.API_ENDPOINT}/ping`, {
-        headers: {
-          "Authorization": Utilities.getToken(),
-          "Content-Type": "application/json",
+      const res = await fetch(
+        `${process.env.API_ENDPOINT}/ping`,
+        {
+          headers: {
+            Authorization: Utilities.getToken(),
+            "Content-Type": "application/json",
+          },
         },
-      }, 10000);
+        10000
+      );
 
       if (res.status === 401) {
         Utilities.logoutUser();
@@ -45,19 +49,19 @@ export class AirgapUploader {
       }
 
       return true;
-    } catch(_) {
-      reconnectAttempt++;
+    } catch (_) {
+      reconnectAttempt += 1; // eslint-disable-line no-param-reassign
       if (reconnectAttempt > 10) {
         return false;
       }
-      const reconnectPromise = new Promise(resolve => {
+      const reconnectPromise = new Promise((resolve) => {
         setTimeout(() => {
           this.reconnect(reconnectAttempt).then(resolve);
         }, 1000);
-      })
-      return await reconnectPromise;
+      });
+      return reconnectPromise;
     }
-  }
+  };
 
   upload = async (processParams, onProgress, onError, onComplete) => {
     try {
@@ -66,10 +70,14 @@ export class AirgapUploader {
       // since this is just to fail early and the api will recheck for compatibility later on.
       let installableResponse;
       try {
-        const appSpec = await Utilities.getAppSpecFromAirgapBundle(this.resumableFile.file);
-        const airgapSpec = await Utilities.getAirgapMetaFromAirgapBundle(this.resumableFile.file);
+        const appSpec = await Utilities.getAppSpecFromAirgapBundle(
+          this.resumableFile.file
+        );
+        const airgapSpec = await Utilities.getAirgapMetaFromAirgapBundle(
+          this.resumableFile.file
+        );
         installableResponse = await this.canInstallRelease(appSpec, airgapSpec);
-      } catch(err) {
+      } catch (err) {
         console.log(err);
       }
 
@@ -116,7 +124,7 @@ export class AirgapUploader {
             const size = this.resumableUploader.getSize();
             if (progress < this.apiCurrentProgress) {
               // when an error occurs during uploading one of the chunks, the uploader or the user will retry uploading the file from the
-              // beginning to check if any previously uploaded chunks were lost. during that process, the progress will be less than the 
+              // beginning to check if any previously uploaded chunks were lost. during that process, the progress will be less than the
               // actual progress if no data loss occured, so we keep the UI progress as is until it catches up, and show a "resuming" message to the user.
               this.onProgress(this.apiCurrentProgress, size, true);
               return;
@@ -124,7 +132,7 @@ export class AirgapUploader {
             this.onProgress(progress, size);
           }
         });
-  
+
         this.resumableUploader.on("fileError", async (_, message) => {
           // an error occured while uploading one of the chunks due to internet connectivity issues or the api pod restarting.
           // try reconnecting to the api. if reconnected successfully, get the actual current progress from the api and retry uploading the file.
@@ -136,7 +144,8 @@ export class AirgapUploader {
             return;
           }
           if (this.onError) {
-            const errMsg = message ? message : "Error uploading bundle, please try again";
+            const errMsg =
+              message || "Error uploading bundle, please try again";
             this.onError(errMsg);
           }
         });
@@ -153,27 +162,32 @@ export class AirgapUploader {
 
       this.resumableUploader.upload();
       this.attemptedFileUpload = true;
-    } catch(err) {
+    } catch (err) {
       console.log(err);
       if (onError) {
-        const errMsg = err ? err.message : "Error uploading bundle, please try again";
+        const errMsg = err
+          ? err.message
+          : "Error uploading bundle, please try again";
         onError(errMsg);
       }
     }
-  }
+  };
 
   canInstallRelease = async (appSpec, airgapSpec) => {
-    const res = await fetch(`${process.env.API_ENDPOINT}/app/${this.appSlug}/can-install`, {
-      headers: {
-        "Authorization": Utilities.getToken(),
-      },
-      body: JSON.stringify({
-        appSpec: appSpec || "",
-        airgapSpec: airgapSpec || "",
-        isInstall: !this.isUpdate,
-      }),
-      method: "POST",
-    });
+    const res = await fetch(
+      `${process.env.API_ENDPOINT}/app/${this.appSlug}/can-install`,
+      {
+        headers: {
+          Authorization: Utilities.getToken(),
+        },
+        body: JSON.stringify({
+          appSpec: appSpec || "",
+          airgapSpec: airgapSpec || "",
+          isInstall: !this.isUpdate,
+        }),
+        method: "POST",
+      }
+    );
     if (!res.ok) {
       if (res.status === 401) {
         Utilities.logoutUser();
@@ -182,16 +196,20 @@ export class AirgapUploader {
       throw new Error(`Unexpected status code: ${res.status}`);
     }
     const response = await res.json();
-    return response;
-  }
+    // TODO: make returns consistent
+    return response; // eslint-disable-line consistent-return
+  };
 
   getApiCurrentProgress = async () => {
-    const res = await fetch(`${process.env.API_ENDPOINT}/app/${this.appSlug}/airgap/bundleprogress/${this.resumableIdentifier}/${this.resumableTotalChunks}`, {
-      headers: {
-        "Authorization": Utilities.getToken(),
-      },
-      method: "GET",
-    });
+    const res = await fetch(
+      `${process.env.API_ENDPOINT}/app/${this.appSlug}/airgap/bundleprogress/${this.resumableIdentifier}/${this.resumableTotalChunks}`,
+      {
+        headers: {
+          Authorization: Utilities.getToken(),
+        },
+        method: "GET",
+      }
+    );
     if (!res.ok) {
       if (res.status === 401) {
         Utilities.logoutUser();
@@ -200,16 +218,20 @@ export class AirgapUploader {
       throw new Error(`Unexpected status code: ${res.status}`);
     }
     const response = await res.json();
-    return response.progress;
-  }
+    // TODO: make returns consistent
+    return response.progress; // eslint-disable-line consistent-return
+  };
 
   airgapBundleExists = async () => {
-    const res = await fetch(`${process.env.API_ENDPOINT}/app/${this.appSlug}/airgap/bundleexists/${this.resumableIdentifier}/${this.resumableTotalChunks}`, {
-      headers: {
-        "Authorization": Utilities.getToken(),
-      },
-      method: "GET",
-    });
+    const res = await fetch(
+      `${process.env.API_ENDPOINT}/app/${this.appSlug}/airgap/bundleexists/${this.resumableIdentifier}/${this.resumableTotalChunks}`,
+      {
+        headers: {
+          Authorization: Utilities.getToken(),
+        },
+        method: "GET",
+      }
+    );
     if (!res.ok) {
       if (res.status === 401) {
         Utilities.logoutUser();
@@ -218,17 +240,21 @@ export class AirgapUploader {
       throw new Error(`Unexpected status code: ${res.status}`);
     }
     const response = await res.json();
-    return response.exists;
-  }
+    // TODO: make returns consistent
+    return response.exists; // eslint-disable-line consistent-return
+  };
 
   processAirgapBundle = async () => {
-    const res = await fetch(`${process.env.API_ENDPOINT}/app/${this.appSlug}/airgap/processbundle/${this.resumableIdentifier}/${this.resumableTotalChunks}`, {
-      headers: {
-        "Authorization": Utilities.getToken(),
-      },
-      body: JSON.stringify(this.processParams),
-      method: this.isUpdate ? "PUT" : "POST",
-    });
+    const res = await fetch(
+      `${process.env.API_ENDPOINT}/app/${this.appSlug}/airgap/processbundle/${this.resumableIdentifier}/${this.resumableTotalChunks}`,
+      {
+        headers: {
+          Authorization: Utilities.getToken(),
+        },
+        body: JSON.stringify(this.processParams),
+        method: this.isUpdate ? "PUT" : "POST",
+      }
+    );
     if (!res.ok) {
       if (res.status === 401) {
         Utilities.logoutUser();
@@ -236,10 +262,10 @@ export class AirgapUploader {
       }
       throw new Error(`Unexpected status code: ${res.status}`);
     }
-  }
+  };
 
-  assignElement = element => {
+  assignElement = (element) => {
     this.resumableUploader.assignBrowse(element);
     this.resumableUploader.assignDrop(element);
-  }
+  };
 }

@@ -16,7 +16,7 @@ import zlib from "zlib";
 import yaml from "js-yaml";
 import tar from "tar-stream";
 import fileReaderStream from "filereader-stream";
-import deploymentStatusIcon from "../assets/deployment-status.svg"
+import deploymentStatusIcon from "../assets/deployment-status.svg";
 
 dayjs.extend(timezone);
 dayjs.extend(utc);
@@ -33,11 +33,11 @@ export function getFileContent(file) {
   return new Promise((resolve, reject) => {
     let content = "";
     const reader = new FileReader();
-    reader.onloadend = function (e) {
+    reader.onloadend = function onloadend(e) {
       content = e.target.result;
       resolve(content);
     };
-    reader.onerror = function (e) {
+    reader.onerror = function onerror(e) {
       reject(e);
     };
     reader.readAsArrayBuffer(file);
@@ -53,10 +53,11 @@ export function getFileContent(file) {
 export function getApplicationType(watch) {
   try {
     const { metadata } = watch;
-    if (!metadata || metadata === "null") {return "";}
+    if (!metadata || metadata === "null") {
+      return "";
+    }
     const parsedMetadata = JSON.parse(metadata);
     return parsedMetadata.applicationType;
-
   } catch (error) {
     console.error(error);
     return "Error fetching applicationType";
@@ -67,16 +68,15 @@ export function getReadableCollectorName(name) {
   const namesObj = {
     "cluster-info": "Gathering basic information about the cluster",
     "cluster-resources": "Gathering available resources in cluster",
-    "mysql": "Gathering information about MySQL",
-    "postgres": "Gathering information about PostgreSQL",
-    "redis": "Gathering information about Redis"
-  }
+    mysql: "Gathering information about MySQL",
+    postgres: "Gathering information about PostgreSQL",
+    redis: "Gathering information about Redis",
+  };
   const statusToReturn = namesObj[name];
   if (statusToReturn) {
-    return statusToReturn
-  } else {
-    return "Gathering details about the cluster";
+    return statusToReturn;
   }
+  return "Gathering details about the cluster";
 }
 
 /**
@@ -90,8 +90,10 @@ export function getBuildVersion() {
  * @param {Array} - the features flag array
  * @param {String} - name of feature to check
  */
- export function isFeatureEnabled(featureArr, featureName) {
-   if (!featureArr || featureArr.length === 0) {return false;}
+export function isFeatureEnabled(featureArr, featureName) {
+  if (!featureArr || featureArr.length === 0) {
+    return false;
+  }
   return featureArr.includes(featureName);
 }
 
@@ -102,13 +104,13 @@ export function parseIconUri(uri) {
       uri: deploymentStatusIcon,
       dimensions: {
         w: 17,
-        h: 17
-      }
+        h: 17,
+      },
     };
   }
   return {
     uri: deploymentStatusIcon,
-    dimensions: queryString.parse(splitUri[1])
+    dimensions: queryString.parse(splitUri[1]),
   };
 }
 
@@ -144,12 +146,20 @@ export function secondsAgo(time) {
  * @param {Int} minFontSize The minimum font-size the string can be (ex 18)
  * @return {String} new font-size for text to fit one line (ex 28px)
  */
-export function dynamicallyResizeText(text, maxWidth, defaultFontSize, minFontSize) {
-  let size;
-  let resizerElm = document.createElement("p");
+export function dynamicallyResizeText(
+  text,
+  maxWidth,
+  defaultFontSize,
+  minFontSize
+) {
+  let _size;
+  const resizerElm = document.createElement("p");
   resizerElm.textContent = text;
   resizerElm.setAttribute("class", "u-fontWeight--bold");
-  resizerElm.setAttribute("style", `visibility: hidden; z-index: -1; position: absolute; font-size: ${defaultFontSize}`);
+  resizerElm.setAttribute(
+    "style",
+    `visibility: hidden; z-index: -1; position: absolute; font-size: ${defaultFontSize}`
+  );
   document.body.appendChild(resizerElm);
 
   if (resizerElm.getBoundingClientRect().width < maxWidth) {
@@ -157,18 +167,17 @@ export function dynamicallyResizeText(text, maxWidth, defaultFontSize, minFontSi
     return defaultFontSize;
   }
 
-  while(resizerElm.getBoundingClientRect().width > maxWidth) {
-    size = parseInt(resizerElm.style.fontSize, 10);
-    resizerElm.style.fontSize = `${size - 1}px`;
+  while (resizerElm.getBoundingClientRect().width > maxWidth) {
+    _size = parseInt(resizerElm.style.fontSize, 10);
+    resizerElm.style.fontSize = `${_size - 1}px`;
   }
 
   resizerElm.remove();
-  if (minFontSize && size < minFontSize) {
+  if (minFontSize && _size < minFontSize) {
     return `${minFontSize}px`;
-  } else {
-    // Font size needs to be 1px smaller than the last calculated size to fully fit in the container
-    return `${size - 1}px`;
   }
+  // Font size needs to be 1px smaller than the last calculated size to fully fit in the container
+  return `${_size - 1}px`;
 }
 
 export function sortAnalyzers(bundleInsight) {
@@ -185,26 +194,26 @@ export function sortAnalyzers(bundleInsight) {
       default:
         return 1;
     }
-  })
+  });
 }
 
 export function getCronInterval(frequency) {
   switch (frequency) {
-  case "0 * * * *":
-    return "hourly";
-  case "0 0 * * *":
-    return "daily";
-  case "0 0 * * MON":
-    return "weekly";
-  default:
-    return "custom";
+    case "0 * * * *":
+      return "hourly";
+    case "0 0 * * *":
+      return "daily";
+    case "0 0 * * MON":
+      return "weekly";
+    default:
+      return "custom";
   }
 }
 
 export function getCronFrequency(schedule) {
   switch (schedule) {
     case "hourly":
-      return "0 * * * *"
+      return "0 * * * *";
     case "daily":
       return "0 0 * * *";
     default:
@@ -212,20 +221,27 @@ export function getCronFrequency(schedule) {
   }
 }
 
-export function getReadableCronDescriptor(expression) {
-  if (expression == "@hourly") {
-    expression = "0 * * * *"
-  } else if (expression == "@daily") {
-    expression = "0 0 * * *"
-  } else if (expression == "@weekly") {
-    expression = "0 0 * * 0"
+export function getReadableCronDescriptor(_expression) {
+  let expression;
+  if (_expression === "@hourly") {
+    expression = "0 * * * *";
+  } else if (_expression === "@daily") {
+    expression = "0 0 * * *";
+  } else if (_expression === "@weekly") {
+    expression = "0 0 * * 0";
   }
   return cronstrue.toString(expression);
 }
 
-export function getGitOpsUri(provider, ownerRepo, hostname = "", httpPort = "") {
-  const owner = ownerRepo.split("/").length && ownerRepo.split("/")[0] || "";
-  const repo = ownerRepo.split("/").length > 1 && ownerRepo.split("/")[1] || "";
+export function getGitOpsUri(
+  provider,
+  ownerRepo,
+  hostname = "",
+  httpPort = ""
+) {
+  const owner = (ownerRepo.split("/").length && ownerRepo.split("/")[0]) || "";
+  const repo =
+    (ownerRepo.split("/").length > 1 && ownerRepo.split("/")[1]) || "";
 
   switch (provider) {
     case "github":
@@ -308,7 +324,12 @@ export function getAddKeyUri(gitops, ownerRepo) {
 }
 
 export function requiresHostname(provider) {
-  return provider === "gitlab_enterprise" || provider === "github_enterprise" || provider === "bitbucket_server" || provider === "other";
+  return (
+    provider === "gitlab_enterprise" ||
+    provider === "github_enterprise" ||
+    provider === "bitbucket_server" ||
+    provider === "other"
+  );
 }
 
 /**
@@ -321,45 +342,48 @@ export function getPercentageStatus(numerator, denominator) {
     return "unknown";
   }
   const percentage = numerator / denominator;
-  return percentage < 0.1 ? "danger" : percentage < 0.25 ? "warning" : "check";
-}
+  if (percentage < 0.1) {
+    return "danger";
+  }
 
-export function getLicenseExpiryDate(license) {
-  if (!license) {
-    return "";
+  if (percentage < 0.25) {
+    return "warning";
   }
-  if (!license.expiresAt || license.expiresAt === "" || license.expiresAt === "0001-01-01T00:00:00Z") {
-    return "Never";
-  }
-  return Utilities.dateFormat(license.expiresAt, "MMM D, YYYY", false);
+
+  return "check";
 }
 
 export function rootPath(path) {
   if (path[0] !== "/") {
-    return path = "/" + path;
-  } else {
-    return path;
+    // TODO: fix this linting error
+    return (path = `/${path}`); // eslint-disable-line
   }
+  return path;
 }
 
 export function getFileFormat(selectedFile) {
   if (selectedFile === "") {
     return "text";
   }
-  const isYaml = selectedFile.includes(".human") || selectedFile.includes(".yaml") || selectedFile.includes(".yml");
+  const isYaml =
+    selectedFile.includes(".human") ||
+    selectedFile.includes(".yaml") ||
+    selectedFile.includes(".yml");
   if (selectedFile.includes(".json")) {
     return "json";
-  } else if (isYaml) {
+  }
+  if (isYaml) {
     return "yaml";
   }
   return "text";
 }
 
 export function diffContent(oldContent, newContent) {
-  let addedLines = 0, removedLines = 0;
+  let addedLines = 0;
+  let removedLines = 0;
 
   const diffs = jsdiff.diffLines(oldContent, newContent);
-  diffs.forEach(part => {
+  diffs.forEach((part) => {
     if (part.added) {
       addedLines += part.count;
     }
@@ -371,8 +395,8 @@ export function diffContent(oldContent, newContent) {
   return {
     addedLines,
     removedLines,
-    changes: addedLines + removedLines
-  }
+    changes: addedLines + removedLines,
+  };
 }
 
 /**
@@ -387,7 +411,7 @@ export function parseUpstreamUri(uri) {
   let parsedSlug;
   if (uri.includes("replicated")) {
     const splitUri = uri.split("://");
-    parsedSlug = splitUri[1];
+    parsedSlug = splitUri[1]; // eslint-disable-line prefer-destructuring
   }
   return parsedSlug;
 }
@@ -398,12 +422,16 @@ export function parseUpstreamUri(uri) {
  * @return {Boolean}
  */
 export function isAwaitingResults(versionHistory) {
+  // TODO: refactor to use forEach
+  // eslint-disable-next-line no-restricted-syntax
   for (const version of versionHistory) {
+    // TODO: add default case
+    // eslint-disable-next-line default-case
     switch (version.status) {
       case "pending_preflight":
       case "unknown":
       case "deploying":
-        return true
+        return true;
     }
   }
   return false;
@@ -417,8 +445,10 @@ export function getPreflightResultState(preflightResults) {
     return "pass";
   }
 
-  const results = preflightResults.results;
+  const { results } = preflightResults;
   let resultState = "pass";
+  // TODO: refactor to use forEach
+  // eslint-disable-next-line no-restricted-syntax
   for (const check of results) {
     if (check.isWarn) {
       resultState = "warn";
@@ -431,17 +461,23 @@ export function getPreflightResultState(preflightResults) {
 
 export function formatByteSize(bytes) {
   if (bytes < 1024) {
-    return bytes + "b";
-  } else if (bytes < 1048576) {
-    return (bytes / 1024).toFixed(2) + "kb";
-  } else if (bytes < 1073741824) {
-    return (bytes / 1048576).toFixed(2) + "mb";
-  } else {
-    return (bytes / 1073741824).toFixed(2) + "gb";
+    return `${bytes}b`;
   }
+  if (bytes < 1048576) {
+    return `${(bytes / 1024).toFixed(2)}kb`;
+  }
+  if (bytes < 1073741824) {
+    return `${(bytes / 1048576).toFixed(2)}mb`;
+  }
+  return `${(bytes / 1073741824).toFixed(2)}gb`;
 }
 
-export function getGitProviderDiffUrl(repoUri, provider, oldCommitHash, newCommitHash) {
+export function getGitProviderDiffUrl(
+  repoUri,
+  provider,
+  oldCommitHash,
+  newCommitHash
+) {
   switch (provider) {
     case "github" || "gitlab":
       return `${repoUri}/compare/${oldCommitHash}...${newCommitHash}`;
@@ -468,23 +504,29 @@ export function getCommitHashFromUrl(commitUrl) {
  * @param {SnapshotSettings} snapshotSettings - snapshot configuration object
  * @return {Boolean}
  */
-export function isVeleroCorrectVersion (snapshotSettings) {
+export function isVeleroCorrectVersion(snapshotSettings) {
   if (snapshotSettings?.isVeleroRunning && snapshotSettings?.veleroVersion) {
-     let semVer = snapshotSettings.veleroVersion.split(".")
-     
-     let majorVer = parseInt(semVer[0].slice(1))
-     let minorVer = parseInt(semVer[1])
-     let patchVer = parseInt(semVer[2])
+    const semVer = snapshotSettings.veleroVersion.split(".");
 
-     if( majorVer !== 1) {return false;}
-     
-     if( minorVer < 5 ) {return false;}
+    const majorVer = parseInt(semVer[0].slice(1), 10);
+    const minorVer = parseInt(semVer[1], 10);
+    const patchVer = parseInt(semVer[2], 10);
 
-     if( minorVer === 5 && patchVer < 1) {return false;}
+    if (majorVer !== 1) {
+      return false;
+    }
 
-     return true
+    if (minorVer < 5) {
+      return false;
+    }
+
+    if (minorVer === 5 && patchVer < 1) {
+      return false;
+    }
+
+    return true;
   }
-  return false
+  return false;
 }
 
 /**
@@ -494,32 +536,30 @@ export function isVeleroCorrectVersion (snapshotSettings) {
  */
 export function getSnapshotDestinationLabel(provider) {
   const DESTINATIONS = {
-      aws: "Amazon S3",
-      azure: "Azure Blob Storage",
-      gcp: "Google Cloud Storage",
-      other: "Other S3-Compatible Storage",
-      internal: "Internal Storage (Default)",
-      nfs: "Network File System (NFS)",
-      hostpath: "Host Path"
-    };
-    return DESTINATIONS[provider] || "Unknown storage provider";
+    aws: "Amazon S3",
+    azure: "Azure Blob Storage",
+    gcp: "Google Cloud Storage",
+    other: "Other S3-Compatible Storage",
+    internal: "Internal Storage (Default)",
+    nfs: "Network File System (NFS)",
+    hostpath: "Host Path",
+  };
+  return DESTINATIONS[provider] || "Unknown storage provider";
 }
 
 export const Utilities = {
   getToken() {
     if (this.localStorageEnabled()) {
       return window.localStorage.getItem("token");
-    } else {
-      return "";
     }
+    return "";
   },
 
   getSessionRoles() {
     if (this.localStorageEnabled()) {
       return window.localStorage.getItem("session_roles");
-    } else {
-      return null;
     }
+    return null;
   },
 
   sessionRolesHasOneOf(rolesSet) {
@@ -528,6 +568,8 @@ export const Utilities = {
       // rbac is not enabled
       return true;
     }
+    // TODO: refactor to use forEach
+    // eslint-disable-next-line no-restricted-syntax
     for (const r of rolesSet) {
       if (sessionRoles.includes(r)) {
         return true;
@@ -537,7 +579,7 @@ export const Utilities = {
   },
 
   localStorageEnabled() {
-    var test = "test";
+    const test = "test";
     try {
       localStorage.setItem(test, test);
       localStorage.removeItem(test);
@@ -554,7 +596,7 @@ export const Utilities = {
 
   removeCookie(cname) {
     const cookies = new Cookies();
-    cookies.remove(cname)
+    cookies.remove(cname);
   },
 
   isLoggedIn() {
@@ -591,26 +633,57 @@ export const Utilities = {
   // Converts string to titlecase i.e. 'hello' -> 'Hello'
   // @returns {String}
   toTitleCase(word) {
-    let i, j, str, lowers, uppers;
+    let i;
+    let j;
+    let str;
     const _word = typeof word === "string" ? word : this;
-    str = _word.replace(/([^\W_]+[^\s-]*) */g, (txt) => {
-      return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
-    });
+    str = _word.replace(
+      /([^\W_]+[^\s-]*) */g,
+      (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
+    );
 
     // Certain minor words should be left lowercase unless
     // they are the first or last words in the string
-    lowers = ["A", "An", "The", "And", "But", "Or", "For", "Nor", "As", "At",
-      "By", "For", "From", "In", "Into", "Near", "Of", "On", "Onto", "To", "With"];
+    const lowers = [
+      "A",
+      "An",
+      "The",
+      "And",
+      "But",
+      "Or",
+      "For",
+      "Nor",
+      "As",
+      "At",
+      "By",
+      "For",
+      "From",
+      "In",
+      "Into",
+      "Near",
+      "Of",
+      "On",
+      "Onto",
+      "To",
+      "With",
+    ];
+    // TODO: refactor to use foreach
+    // eslint-disable-next-line no-plusplus
     for (i = 0, j = lowers.length; i < j; i++) {
-      str = str.replace(new RegExp("\\s" + lowers[i] + "\\s", "g"), (txt) => {
-        return txt.toLowerCase();
-      });
+      str = str.replace(new RegExp(`\\s${lowers[i]}\\s`, "g"), (txt) =>
+        txt.toLowerCase()
+      );
     }
 
     // Certain words such as initialisms or acronyms should be left uppercase
-    uppers = ["Id", "Tv"];
+    const uppers = ["Id", "Tv"];
+    // TODO: refactor to use foreach
+    // eslint-disable-next-line no-plusplus
     for (i = 0, j = uppers.length; i < j; i++) {
-      str = str.replace(new RegExp("\\b" + uppers[i] + "\\b", "g"), uppers[i].toUpperCase());
+      str = str.replace(
+        new RegExp(`\\b${uppers[i]}\\b`, "g"),
+        uppers[i].toUpperCase()
+      );
     }
 
     return str;
@@ -620,7 +693,9 @@ export const Utilities = {
     const token = this.getToken();
     // TODO: for now we just remove the token,
     if (token) {
-      if (client) { client.resetStore(); }
+      if (client) {
+        client.resetStore();
+      }
       window.localStorage.removeItem("token");
     }
 
@@ -636,12 +711,15 @@ export const Utilities = {
 
   isEmailValid(email) {
     const newEmail = email.trim();
-    const exp = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    const exp =
+      /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
     return exp.test(newEmail);
   },
 
   snapshotStatusToDisplayName(status) {
     // The front end replacessome status values with user friendly messages
+    // TODO: add default
+    // eslint-disable-next-line default-case
     switch (status) {
       case "PartiallyFailed":
         return "Incomplete (Failed)";
@@ -664,7 +742,7 @@ export const Utilities = {
       let currentLevel = tree; // initialize currentLevel to root
       let currentPath = "";
       each(pathParts, (part) => {
-        currentPath = currentPath + "/" + part;
+        currentPath = `${currentPath}/${part}`;
         // check to see if the path already exists.
         const existingPath = find(currentLevel, ["name", part]);
         if (existingPath) {
@@ -703,42 +781,44 @@ export const Utilities = {
 
   bytesToSize(bytes) {
     const sizes = ["B", "KB", "MB", "GB", "TB"];
-    if (bytes === 0) {return "0 B";}
-    let i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
-    if (i === 0) {return bytes + " " + sizes[i];}
-    return (bytes / Math.pow(1024, i)).toFixed(1) + " " + sizes[i];
+    if (bytes === 0) {
+      return "0 B";
+    }
+    const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)), 10);
+    if (i === 0) {
+      return `${bytes} ${sizes[i]}`;
+    }
+    return `${(bytes / 1024 ** i).toFixed(1)} ${sizes[i]}`;
   },
 
   getDeployErrorTab(tabs) {
-    if (trim(tabs["dryrunStderr"]) !== "") {
+    if (trim(tabs.dryrunStderr) !== "") {
       return "dryrunStderr";
-    } else if (trim(tabs["applyStderr"]) !== "") {
-       return "applyStderr";
-    } else {
-      return Object.keys(tabs)[0];
     }
+    if (trim(tabs.applyStderr) !== "") {
+      return "applyStderr";
+    }
+    return Object.keys(tabs)[0];
   },
 
   checkIsDateExpired(date) {
     const currentDate = dayjs();
     const diff = currentDate.diff(dayjs(date), "days");
-    
-    if(diff > 0) {
+
+    if (diff > 0) {
       return true;
-    } else {
-      return false;
     }
+    return false;
   },
 
   checkIsDeployedConfigLatest(app) {
-    let latestSequence = app?.currentSequence;
-    let deployedSequence = app?.downstream?.currentVersion?.parentSequence;
-  
+    const latestSequence = app?.currentSequence;
+    const deployedSequence = app?.downstream?.currentVersion?.parentSequence;
+
     if (deployedSequence === latestSequence) {
       return true;
-    } else {
-      return false;
     }
+    return false;
   },
 
   getFileFromAirgapBundle(bundle, filename) {
@@ -746,43 +826,11 @@ export const Utilities = {
       try {
         const extract = tar.extract();
         const gzunipStream = zlib.createGunzip();
-        fileReaderStream(bundle).pipe(gzunipStream).pipe(extract).on("entry", (header, stream, next) => {
-          if (header.name !== filename) {
-            stream.on("end", () => {
-              next();
-            });
-            stream.resume();
-            return;
-          }
-          const buffers = [];
-          stream.on("data", (buffer) => {
-            buffers.push(buffer);
-          });
-          stream.on("end", async () => {
-            resolve(new Blob(buffers));
-          })
-          stream.resume()
-        }).on("finish", () => {
-          resolve();
-        });
-      } catch (err) {
-        reject(err);
-      }
-    });
-  },
-
-  getAppSpecFromAirgapBundle(bundleArchive) {
-    return new Promise((resolve, reject) => {
-      try {
-        this.getFileFromAirgapBundle(bundleArchive, "app.tar.gz").then(appArchive => {
-          if (!appArchive) {
-            resolve();
-            return;
-          }
-          const extract = tar.extract();
-          const gzunipStream = zlib.createGunzip();
-          fileReaderStream(appArchive).pipe(gzunipStream).pipe(extract).on("entry", (header, stream, next) => {
-            if (getFileFormat(header.name) !== "yaml") {
+        fileReaderStream(bundle)
+          .pipe(gzunipStream)
+          .pipe(extract)
+          .on("entry", (header, stream, next) => {
+            if (header.name !== filename) {
               stream.on("end", () => {
                 next();
               });
@@ -794,30 +842,79 @@ export const Utilities = {
               buffers.push(buffer);
             });
             stream.on("end", async () => {
-              try {
-                const content = Buffer.concat(buffers).toString("utf-8");
-                const docs = await yaml.safeLoadAll(content);
-                for (const doc of docs) {
-                  if (!doc) {
-                    continue;
-                  }
-                  if (doc?.kind === "Application" && doc?.apiVersion === "kots.io/v1beta1") {
-                    resolve(content);
-                    return;
-                  }
-                }
-              } catch(_) {
-                // invalid yaml file, don't stop
-              }
-              next();
-            })
-            stream.resume()
-          }).on("finish", () => {
+              resolve(new Blob(buffers));
+            });
+            stream.resume();
+          })
+          .on("finish", () => {
             resolve();
           });
-        }).catch(err => {
-          reject(err)
-        });
+      } catch (err) {
+        reject(err);
+      }
+    });
+  },
+
+  getAppSpecFromAirgapBundle(bundleArchive) {
+    return new Promise((resolve, reject) => {
+      try {
+        this.getFileFromAirgapBundle(bundleArchive, "app.tar.gz")
+          .then((appArchive) => {
+            if (!appArchive) {
+              resolve();
+              return;
+            }
+            const extract = tar.extract();
+            const gzunipStream = zlib.createGunzip();
+            fileReaderStream(appArchive)
+              .pipe(gzunipStream)
+              .pipe(extract)
+              .on("entry", (header, stream, next) => {
+                if (getFileFormat(header.name) !== "yaml") {
+                  stream.on("end", () => {
+                    next();
+                  });
+                  stream.resume();
+                  return;
+                }
+                const buffers = [];
+                stream.on("data", (buffer) => {
+                  buffers.push(buffer);
+                });
+                stream.on("end", async () => {
+                  try {
+                    const content = Buffer.concat(buffers).toString("utf-8");
+                    const docs = await yaml.safeLoadAll(content);
+                    // TODO: refactor to use foreach
+                    // eslint-disable-next-line no-restricted-syntax
+                    for (const doc of docs) {
+                      if (!doc) {
+                        // TODO: remove continue
+                        // eslint-disable-next-line no-continue
+                        continue;
+                      }
+                      if (
+                        doc?.kind === "Application" &&
+                        doc?.apiVersion === "kots.io/v1beta1"
+                      ) {
+                        resolve(content);
+                        return;
+                      }
+                    }
+                  } catch (_) {
+                    // invalid yaml file, don't stop
+                  }
+                  next();
+                });
+                stream.resume();
+              })
+              .on("finish", () => {
+                resolve();
+              });
+          })
+          .catch((err) => {
+            reject(err);
+          });
       } catch (err) {
         reject(err);
       }
@@ -827,10 +924,11 @@ export const Utilities = {
   getAirgapMetaFromAirgapBundle(bundleArchive) {
     return new Promise((resolve, reject) => {
       try {
-        this.getFileFromAirgapBundle(bundleArchive, "airgap.yaml").then(metaFile => {
-          resolve(metaFile.text());
-          return;
-        });
+        this.getFileFromAirgapBundle(bundleArchive, "airgap.yaml").then(
+          (metaFile) => {
+            resolve(metaFile.text());
+          }
+        );
       } catch (err) {
         reject(err);
       }
@@ -838,4 +936,16 @@ export const Utilities = {
   },
 };
 
-
+export function getLicenseExpiryDate(license) {
+  if (!license) {
+    return "";
+  }
+  if (
+    !license.expiresAt ||
+    license.expiresAt === "" ||
+    license.expiresAt === "0001-01-01T00:00:00Z"
+  ) {
+    return "Never";
+  }
+  return Utilities.dateFormat(license.expiresAt, "MMM D, YYYY", false);
+}
