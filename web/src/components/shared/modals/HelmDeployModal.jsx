@@ -2,11 +2,7 @@ import React from "react";
 import Modal from "react-modal";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
 
-function makeDeployCommand({
-  appSlug,
-  chartPath,
-  valuesFilePath,
-}) {
+function makeDeployCommand({ appSlug, chartPath, valuesFilePath }) {
   if (valuesFilePath) {
     return `helm upgrade ${appSlug} ${chartPath} -f <path-to-values-yaml>`;
   }
@@ -19,14 +15,16 @@ function makeLoginCommand({
   registryUsername,
   registryPassword,
 } = {}) {
-  return `helm registry login ${registryHostname.slice(6)} --username ${registryUsername} --password ${registryPassword}`
+  return `helm registry login ${registryHostname.slice(
+    6
+  )} --username ${registryUsername} --password ${registryPassword}`;
 }
 
 export default function HelmDeployModal({
   appSlug,
   chartPath,
   downloadClicked = () => {},
-  hideHelmDeployModal = () => { },
+  hideHelmDeployModal = () => {},
   showHelmDeployModal,
   subtitle,
   registryUsername = "myUsername",
@@ -35,7 +33,6 @@ export default function HelmDeployModal({
   upgradeTitle,
   valuesFilePath = null,
 }) {
-
   return (
     <Modal
       isOpen={showHelmDeployModal}
@@ -60,7 +57,11 @@ export default function HelmDeployModal({
               <CodeSnippet
                 language="bash"
                 canCopy={true}
-                onCopyText={<span className="u-textColor--success">Command has been copied to your clipboard</span>}
+                onCopyText={
+                  <span className="u-textColor--success">
+                    Command has been copied to your clipboard
+                  </span>
+                }
               >
                 {makeLoginCommand({
                   registryHostname: chartPath,
@@ -70,40 +71,45 @@ export default function HelmDeployModal({
               </CodeSnippet>
             </div>
           </div>
-          {valuesFilePath && <div className="u-marginBottom--30 flex flex-row">
-            <span className="Title step-number u-marginRight--15">2</span>
-            <div className="flex1">
-              <span className="Title u-marginBottom--10 u-display--block">
-                Download your new values.yaml file
-              </span>
-              <button
-                className="btn secondary blue large flex alignItems--center"
-                onClick={downloadClicked}
-              >
-                <span
-                  className="icon blue-yaml-icon u-marginRight--10"
-                />
-                <span className="flex1">
-                  Download values.yaml
+          {valuesFilePath && (
+            <div className="u-marginBottom--30 flex flex-row">
+              <span className="Title step-number u-marginRight--15">2</span>
+              <div className="flex1">
+                <span className="Title u-marginBottom--10 u-display--block">
+                  Download your new values.yaml file
                 </span>
-              </button>
+                <button
+                  className="btn secondary blue large flex alignItems--center"
+                  onClick={downloadClicked}
+                >
+                  <span className="icon blue-yaml-icon u-marginRight--10" />
+                  <span className="flex1">Download values.yaml</span>
+                </button>
+              </div>
             </div>
-          </div>
-          }
+          )}
           <div className="u-marginBottom--30 flex flex-row">
-            <span className="Title step-number u-marginRight--15">{valuesFilePath === null ? "2" : "3"}</span>
+            <span className="Title step-number u-marginRight--15">
+              {valuesFilePath === null ? "2" : "3"}
+            </span>
             <div className="flex1">
               <span className="Title u-marginBottom--5 u-display--block">
                 {upgradeTitle}
               </span>
-              {valuesFilePath && <p className="flex1 subtitle u-marginBottom--15">
-                Ensure you replace <code>{"<path-to-values-yaml>"}</code> with the path to your saved file.
-              </p>
-              }
+              {valuesFilePath && (
+                <p className="flex1 subtitle u-marginBottom--15">
+                  Ensure you replace <code>{"<path-to-values-yaml>"}</code> with
+                  the path to your saved file.
+                </p>
+              )}
               <CodeSnippet
                 language="bash"
                 canCopy={true}
-                onCopyText={<span className="u-textColor--success">Command has been copied to your clipboard</span>}
+                onCopyText={
+                  <span className="u-textColor--success">
+                    Command has been copied to your clipboard
+                  </span>
+                }
               >
                 {makeDeployCommand({
                   appSlug,
@@ -116,7 +122,8 @@ export default function HelmDeployModal({
         </div>
         <button
           onClick={hideHelmDeployModal}
-          className="btn blue primary large">
+          className="btn blue primary large"
+        >
           Ok, got it!
         </button>
       </div>
@@ -124,4 +131,4 @@ export default function HelmDeployModal({
   );
 }
 
-export { HelmDeployModal }
+export { HelmDeployModal };

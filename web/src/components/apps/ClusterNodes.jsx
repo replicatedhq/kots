@@ -29,8 +29,8 @@ export class ClusterNodes extends Component {
     showConfirmDrainModal: false,
     nodeNameToDrain: "",
     drainingNodeName: null,
-    drainNodeSuccessful: false
-  }
+    drainNodeSuccessful: false,
+  };
 
   componentDidMount() {
     this.getNodeStatus();
@@ -45,8 +45,8 @@ export class ClusterNodes extends Component {
     try {
       const res = await fetch(`${process.env.API_ENDPOINT}/kurl/nodes`, {
         headers: {
-          "Authorization": Utilities.getToken(),
-          "Accept": "application/json",
+          Authorization: Utilities.getToken(),
+          Accept: "application/json",
         },
         method: "GET",
       });
@@ -55,7 +55,10 @@ export class ClusterNodes extends Component {
           Utilities.logoutUser();
           return;
         }
-        console.log("failed to get node status list, unexpected status code", res.status);
+        console.log(
+          "failed to get node status list, unexpected status code",
+          res.status
+        );
         return;
       }
       const response = await res.json();
@@ -63,23 +66,23 @@ export class ClusterNodes extends Component {
         kurl: response,
       });
       return response;
-    } catch(err) {
+    } catch (err) {
       console.log(err);
       throw err;
     }
-  }
+  };
 
   deleteNode = (name) => {
     this.setState({
       confirmDeleteNode: name,
     });
-  }
+  };
 
   cancelDeleteNode = () => {
     this.setState({
       confirmDeleteNode: "",
     });
-  }
+  };
 
   reallyDeleteNode = () => {
     const name = this.state.confirmDeleteNode;
@@ -87,9 +90,9 @@ export class ClusterNodes extends Component {
 
     fetch(`${process.env.API_ENDPOINT}/kurl/nodes/${name}`, {
       headers: {
-        "Authorization": Utilities.getToken(),
+        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
-        "Accept": "application/json",
+        Accept: "application/json",
       },
       method: "DELETE",
     })
@@ -101,7 +104,8 @@ export class ClusterNodes extends Component {
           }
           if (res.status === 422) {
             this.setState({
-              deleteNodeError: "The ekco add-on is required to delete nodes but was not found in your cluster. https://kurl.sh/docs/add-ons/ekco",
+              deleteNodeError:
+                "The ekco add-on is required to delete nodes but was not found in your cluster. https://kurl.sh/docs/add-ons/ekco",
             });
             return;
           }
@@ -112,23 +116,35 @@ export class ClusterNodes extends Component {
       })
       .catch((err) => {
         console.log(err);
-      })
-  }
+      });
+  };
 
   generateWorkerAddNodeCommand = async () => {
-    this.setState({ generating: true, command: "", expiry: null, generateCommandErrMsg: "" });
+    this.setState({
+      generating: true,
+      command: "",
+      expiry: null,
+      generateCommandErrMsg: "",
+    });
 
-    fetch(`${process.env.API_ENDPOINT}/kurl/generate-node-join-command-secondary`, {
-      headers: {
-        "Authorization": Utilities.getToken(),
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-      },
-      method: "POST",
-    })
+    fetch(
+      `${process.env.API_ENDPOINT}/kurl/generate-node-join-command-secondary`,
+      {
+        headers: {
+          Authorization: Utilities.getToken(),
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        method: "POST",
+      }
+    )
       .then(async (res) => {
         const data = await res.json();
-        this.setState({ generating: false, command: data.command, expiry: data.expiry });
+        this.setState({
+          generating: false,
+          command: data.command,
+          expiry: data.expiry,
+        });
       })
       .catch((err) => {
         console.log(err);
@@ -137,22 +153,22 @@ export class ClusterNodes extends Component {
           generateCommandErrMsg: err ? err.message : "Something went wrong",
         });
       });
-  }
+  };
 
   onDrainNodeClick = (name) => {
     this.setState({
       showConfirmDrainModal: true,
-      nodeNameToDrain: name
+      nodeNameToDrain: name,
     });
-  }
+  };
 
   drainNode = async (name) => {
     this.setState({ showConfirmDrainModal: false, drainingNodeName: name });
     fetch(`${process.env.API_ENDPOINT}/kurl/nodes/${name}/drain`, {
       headers: {
-        "Authorization": Utilities.getToken(),
+        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
-        "Accept": "application/json",
+        Accept: "application/json",
       },
       method: "POST",
     })
@@ -161,7 +177,7 @@ export class ClusterNodes extends Component {
         setTimeout(() => {
           this.setState({
             drainingNodeName: null,
-            drainNodeSuccessful: false
+            drainNodeSuccessful: false,
           });
         }, 3000);
       })
@@ -169,25 +185,37 @@ export class ClusterNodes extends Component {
         console.log(err);
         this.setState({
           drainingNodeName: null,
-          drainNodeSuccessful: false
+          drainNodeSuccessful: false,
         });
-      })
-  }
+      });
+  };
 
   generatePrimaryAddNodeCommand = async () => {
-    this.setState({ generating: true, command: "", expiry: null, generateCommandErrMsg: "" });
+    this.setState({
+      generating: true,
+      command: "",
+      expiry: null,
+      generateCommandErrMsg: "",
+    });
 
-    fetch(`${process.env.API_ENDPOINT}/kurl/generate-node-join-command-primary`, {
-      headers: {
-        "Authorization": Utilities.getToken(),
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-      },
-      method: "POST",
-    })
+    fetch(
+      `${process.env.API_ENDPOINT}/kurl/generate-node-join-command-primary`,
+      {
+        headers: {
+          Authorization: Utilities.getToken(),
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        method: "POST",
+      }
+    )
       .then(async (res) => {
         const data = await res.json();
-        this.setState({ generating: false, command: data.command, expiry: data.expiry });
+        this.setState({
+          generating: false,
+          command: data.command,
+          expiry: data.expiry,
+        });
       })
       .catch((err) => {
         console.log(err);
@@ -196,32 +224,38 @@ export class ClusterNodes extends Component {
           generateCommandErrMsg: err ? err.message : "Something went wrong",
         });
       });
-  }
+  };
 
   onAddNodeClick = () => {
-    this.setState({
-      displayAddNode: true
-    }, async () => {
-      await this.generateWorkerAddNodeCommand();
-    });
-  }
-
-  onSelectNodeType = event => {
-    const value = event.currentTarget.value;
-    this.setState({
-      selectedNodeType: value
-    }, async () => {
-      if (this.state.selectedNodeType === "secondary") {
+    this.setState(
+      {
+        displayAddNode: true,
+      },
+      async () => {
         await this.generateWorkerAddNodeCommand();
-      } else {
-        await this.generatePrimaryAddNodeCommand();
       }
-    });
-  }
+    );
+  };
+
+  onSelectNodeType = (event) => {
+    const value = event.currentTarget.value;
+    this.setState(
+      {
+        selectedNodeType: value,
+      },
+      async () => {
+        if (this.state.selectedNodeType === "secondary") {
+          await this.generateWorkerAddNodeCommand();
+        } else {
+          await this.generatePrimaryAddNodeCommand();
+        }
+      }
+    );
+  };
 
   ackDeleteNodeError = () => {
     this.setState({ deleteNodeError: "" });
-  }
+  };
 
   render() {
     const { kurl } = this.state;
@@ -237,136 +271,177 @@ export class ClusterNodes extends Component {
     return (
       <div className="ClusterNodes--wrapper container flex-column flex1 u-overflow--auto u-paddingTop--50">
         <Helmet>
-          <title>{`${this.props.appName ? `${this.props.appName} Cluster Management` : "Cluster Management"}`}</title>
+          <title>{`${
+            this.props.appName
+              ? `${this.props.appName} Cluster Management`
+              : "Cluster Management"
+          }`}</title>
         </Helmet>
         <div className="flex-column flex1 alignItems--center">
           <div className="flex1 flex-column centered-container">
             <div className="u-paddingBottom--30">
-              <p className="flex-auto u-fontSize--larger u-fontWeight--bold u-textColor--primary u-paddingBottom--10">Your nodes</p>
+              <p className="flex-auto u-fontSize--larger u-fontWeight--bold u-textColor--primary u-paddingBottom--10">
+                Your nodes
+              </p>
               <div className="flex1 u-overflow--auto">
-                {kurl?.nodes && kurl?.nodes.map((node, i) => (
-                  <NodeRow
-                    key={i}
-                    node={node}
-                    drainingNodeName={this.state.drainingNodeName}
-                    drainNodeSuccessful={this.state.drainNodeSuccessful}
-                    drainNode={kurl?.isKurlEnabled ? this.onDrainNodeClick : null}
-                    deleteNode={kurl?.isKurlEnabled ? this.deleteNode : null} />
-                ))}
+                {kurl?.nodes &&
+                  kurl?.nodes.map((node, i) => (
+                    <NodeRow
+                      key={i}
+                      node={node}
+                      drainingNodeName={this.state.drainingNodeName}
+                      drainNodeSuccessful={this.state.drainNodeSuccessful}
+                      drainNode={
+                        kurl?.isKurlEnabled ? this.onDrainNodeClick : null
+                      }
+                      deleteNode={kurl?.isKurlEnabled ? this.deleteNode : null}
+                    />
+                  ))}
               </div>
             </div>
-            {kurl?.isKurlEnabled && Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]) ?
-              !displayAddNode
-                ? (
-                  <div className="flex justifyContent--center alignItems--center">
-                    <button className="btn primary" onClick={this.onAddNodeClick}>Add a node</button>
+            {kurl?.isKurlEnabled &&
+            Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]) ? (
+              !displayAddNode ? (
+                <div className="flex justifyContent--center alignItems--center">
+                  <button className="btn primary" onClick={this.onAddNodeClick}>
+                    Add a node
+                  </button>
+                </div>
+              ) : (
+                <div className="flex-column">
+                  <div>
+                    <p className="u-width--full u-fontSize--larger u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-borderBottom--gray u-paddingBottom--10">
+                      Add a Node
+                    </p>
                   </div>
-                )
-                : (
-                  <div className="flex-column">
-                    <div>
-                      <p className="u-width--full u-fontSize--larger u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-borderBottom--gray u-paddingBottom--10">
-                        Add a Node
-                      </p>
-                    </div>
-                    <div className="flex justifyContent--center alignItems--center u-marginTop--15">
-                      <div className={classNames("BoxedCheckbox flex-auto flex u-marginRight--20", {
-                        "is-active": this.state.selectedNodeType === "primary",
-                        "is-disabled": !kurl?.ha
-                      })}>
-                        <input
-                          id="primaryNode"
-                          className="u-cursor--pointer hidden-input"
-                          type="radio"
-                          name="nodeType"
-                          value="primary"
-                          disabled={!kurl?.ha}
-                          checked={this.state.selectedNodeType === "primary"}
-                          onChange={this.onSelectNodeType}
-                        />
-                        <label
-                          htmlFor="primaryNode"
-                          className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none">
-                          <div className="flex-auto">
-                            <span className="icon clickable commitOptionIcon u-marginRight--10" />
-                          </div>
-                          <div className="flex1">
-                            <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium">Primary Node</p>
-                            <p className="u-textColor--bodyCopy u-lineHeight--normal u-fontSize--small u-fontWeight--medium u-marginTop--5">Provides high availability</p>
-                          </div>
-                        </label>
-                      </div>
-                      <div className={classNames("BoxedCheckbox flex-auto flex u-marginRight--20", {
-                        "is-active": this.state.selectedNodeType === "secondary"
-                      })}>
-                        <input
-                          id="secondaryNode"
-                          className="u-cursor--pointer hidden-input"
-                          type="radio"
-                          name="nodeType"
-                          value="secondary"
-                          checked={this.state.selectedNodeType === "secondary"}
-                          onChange={this.onSelectNodeType}
-                        />
-                        <label htmlFor="secondaryNode" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none">
-                          <div className="flex-auto">
-                            <span className="icon clickable commitOptionIcon u-marginRight--10" />
-                          </div>
-                          <div className="flex1">
-                            <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium">Secondary Node</p>
-                            <p className="u-textColor--bodyCopy u-lineHeight--normal u-fontSize--small u-fontWeight--medium u-marginTop--5">Optimal for running application workloads</p>
-                          </div>
-                        </label>
-                      </div>
-                    </div>
-                    {this.state.generating && (
-                      <div className="flex u-width--full justifyContent--center">
-                        <Loader size={60} />
-                      </div>
-                    )}
-                    {!this.state.generating && this.state.command?.length > 0
-                      ? (
-                        <Fragment>
-                          <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginBottom--5 u-marginTop--15">
-                            Run this command on the node you wish to join the cluster
+                  <div className="flex justifyContent--center alignItems--center u-marginTop--15">
+                    <div
+                      className={classNames(
+                        "BoxedCheckbox flex-auto flex u-marginRight--20",
+                        {
+                          "is-active":
+                            this.state.selectedNodeType === "primary",
+                          "is-disabled": !kurl?.ha,
+                        }
+                      )}
+                    >
+                      <input
+                        id="primaryNode"
+                        className="u-cursor--pointer hidden-input"
+                        type="radio"
+                        name="nodeType"
+                        value="primary"
+                        disabled={!kurl?.ha}
+                        checked={this.state.selectedNodeType === "primary"}
+                        onChange={this.onSelectNodeType}
+                      />
+                      <label
+                        htmlFor="primaryNode"
+                        className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none"
+                      >
+                        <div className="flex-auto">
+                          <span className="icon clickable commitOptionIcon u-marginRight--10" />
+                        </div>
+                        <div className="flex1">
+                          <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium">
+                            Primary Node
                           </p>
-                          <CodeSnippet
-                            language="bash"
-                            canCopy={true}
-                            onCopyText={<span className="u-textColor--success">Command has been copied to your clipboard</span>}
-                          >
-                            {[this.state.command.join(" \\\n  ")]}
-                          </CodeSnippet>
-                          {this.state.expiry && (
-                            <span className="timestamp u-marginTop--15 u-width--full u-textAlign--right u-fontSize--small u-fontWeight--bold u-textColor--primary">
-                              {`Expires on ${dayjs(this.state.expiry).format("MMM Do YYYY, h:mm:ss a z")} UTC${ -1 * (new Date().getTimezoneOffset()) / 60}`}
-                            </span>
-                          )}
-                        </Fragment>
-                      )
-                      : (
-                        <Fragment>
-                          {generateCommandErrMsg &&
-                            <div className="alignSelf--center u-marginTop--15">
-                              <span className="u-textColor--error">{generateCommandErrMsg}</span>
-                            </div>
-                          }
-                        </Fragment>
-                      )
-                    }
+                          <p className="u-textColor--bodyCopy u-lineHeight--normal u-fontSize--small u-fontWeight--medium u-marginTop--5">
+                            Provides high availability
+                          </p>
+                        </div>
+                      </label>
+                    </div>
+                    <div
+                      className={classNames(
+                        "BoxedCheckbox flex-auto flex u-marginRight--20",
+                        {
+                          "is-active":
+                            this.state.selectedNodeType === "secondary",
+                        }
+                      )}
+                    >
+                      <input
+                        id="secondaryNode"
+                        className="u-cursor--pointer hidden-input"
+                        type="radio"
+                        name="nodeType"
+                        value="secondary"
+                        checked={this.state.selectedNodeType === "secondary"}
+                        onChange={this.onSelectNodeType}
+                      />
+                      <label
+                        htmlFor="secondaryNode"
+                        className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none"
+                      >
+                        <div className="flex-auto">
+                          <span className="icon clickable commitOptionIcon u-marginRight--10" />
+                        </div>
+                        <div className="flex1">
+                          <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium">
+                            Secondary Node
+                          </p>
+                          <p className="u-textColor--bodyCopy u-lineHeight--normal u-fontSize--small u-fontWeight--medium u-marginTop--5">
+                            Optimal for running application workloads
+                          </p>
+                        </div>
+                      </label>
+                    </div>
                   </div>
-                )
-            : null}
+                  {this.state.generating && (
+                    <div className="flex u-width--full justifyContent--center">
+                      <Loader size={60} />
+                    </div>
+                  )}
+                  {!this.state.generating && this.state.command?.length > 0 ? (
+                    <Fragment>
+                      <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginBottom--5 u-marginTop--15">
+                        Run this command on the node you wish to join the
+                        cluster
+                      </p>
+                      <CodeSnippet
+                        language="bash"
+                        canCopy={true}
+                        onCopyText={
+                          <span className="u-textColor--success">
+                            Command has been copied to your clipboard
+                          </span>
+                        }
+                      >
+                        {[this.state.command.join(" \\\n  ")]}
+                      </CodeSnippet>
+                      {this.state.expiry && (
+                        <span className="timestamp u-marginTop--15 u-width--full u-textAlign--right u-fontSize--small u-fontWeight--bold u-textColor--primary">
+                          {`Expires on ${dayjs(this.state.expiry).format(
+                            "MMM Do YYYY, h:mm:ss a z"
+                          )} UTC${(-1 * new Date().getTimezoneOffset()) / 60}`}
+                        </span>
+                      )}
+                    </Fragment>
+                  ) : (
+                    <Fragment>
+                      {generateCommandErrMsg && (
+                        <div className="alignSelf--center u-marginTop--15">
+                          <span className="u-textColor--error">
+                            {generateCommandErrMsg}
+                          </span>
+                        </div>
+                      )}
+                    </Fragment>
+                  )}
+                </div>
+              )
+            ) : null}
           </div>
         </div>
-        {this.state.deleteNodeError &&
+        {this.state.deleteNodeError && (
           <ErrorModal
             errorModal={true}
             toggleErrorModal={this.ackDeleteNodeError}
             err={"Failed to delete node"}
             errMsg={this.state.deleteNodeError}
           />
-        }
+        )}
         <Modal
           isOpen={!!this.state.confirmDeleteNode}
           onRequestClose={this.cancelDeleteNode}
@@ -377,7 +452,8 @@ export class ClusterNodes extends Component {
         >
           <div className="Modal-body">
             <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">
-              Deleting this node may cause data loss. Are you sure you want to proceed?
+              Deleting this node may cause data loss. Are you sure you want to
+              proceed?
             </p>
             <div className="u-marginTop--10 flex">
               <button
@@ -397,10 +473,15 @@ export class ClusterNodes extends Component {
             </div>
           </div>
         </Modal>
-        {this.state.showConfirmDrainModal &&
+        {this.state.showConfirmDrainModal && (
           <Modal
             isOpen={true}
-            onRequestClose={() => this.setState({ showConfirmDrainModal: false, nodeNameToDrain: "" })}
+            onRequestClose={() =>
+              this.setState({
+                showConfirmDrainModal: false,
+                nodeNameToDrain: "",
+              })
+            }
             shouldReturnFocusAfterClose={false}
             contentLabel="Confirm Drain Node"
             ariaHideApp={false}
@@ -411,7 +492,9 @@ export class ClusterNodes extends Component {
                 Are you sure you want to drain {this.state.nodeNameToDrain}?
               </p>
               <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">
-                Draining this node may cause data loss. If you want to delete {this.state.nodeNameToDrain} you must disconnect it after it has been drained.
+                Draining this node may cause data loss. If you want to delete{" "}
+                {this.state.nodeNameToDrain} you must disconnect it after it has
+                been drained.
               </p>
               <div className="u-marginTop--10 flex">
                 <button
@@ -422,7 +505,12 @@ export class ClusterNodes extends Component {
                   Drain {this.state.nodeNameToDrain}
                 </button>
                 <button
-                  onClick={() => this.setState({ showConfirmDrainModal: false, nodeNameToDrain: "" })}
+                  onClick={() =>
+                    this.setState({
+                      showConfirmDrainModal: false,
+                      nodeNameToDrain: "",
+                    })
+                  }
                   type="button"
                   className="btn secondary u-marginLeft--20"
                 >
@@ -431,7 +519,7 @@ export class ClusterNodes extends Component {
               </div>
             </div>
           </Modal>
-        }
+        )}
       </div>
     );
   }

@@ -1,8 +1,8 @@
 import React, { Component } from "react";
-import { Link, withRouter } from "react-router-dom"
+import { Link, withRouter } from "react-router-dom";
 import Helmet from "react-helmet";
 import Modal from "react-modal";
-import ReactTooltip from "react-tooltip"
+import ReactTooltip from "react-tooltip";
 import Select from "react-select";
 import isEmpty from "lodash/isEmpty";
 
@@ -20,7 +20,6 @@ import "../../scss/components/snapshots/AppSnapshots.scss";
 import { isVeleroCorrectVersion, Utilities } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
 import dayjs from "dayjs";
-
 
 class AppSnapshots extends Component {
   state = {
@@ -55,7 +54,7 @@ class AppSnapshots extends Component {
     displayErrorModal: false,
     selectedApp: {},
     switchingApps: false,
-    snapshotDifferencesModal: false
+    snapshotDifferencesModal: false,
   };
 
   componentDidMount = async () => {
@@ -67,7 +66,7 @@ class AppSnapshots extends Component {
 
     this.checkRestoreInProgress();
     this.state.listSnapshotsJob.start(this.listSnapshots, 2000);
-  }
+  };
 
   componentWillUnmount() {
     this.state.listSnapshotsJob.stop();
@@ -95,7 +94,7 @@ class AppSnapshots extends Component {
       this.setState({ switchingApps: true });
       setTimeout(() => {
         this.setState({
-          switchingApps: false
+          switchingApps: false,
         });
       }, 3000);
       this.checkRestoreInProgress();
@@ -105,32 +104,37 @@ class AppSnapshots extends Component {
 
   checkRestoreInProgress() {
     const { selectedApp } = this.state;
-    fetch(`${process.env.API_ENDPOINT}/app/${selectedApp.slug}/snapshot/restore/status`, {
-      method: "GET",
-      headers: {
-        "Authorization": Utilities.getToken(),
-        "Content-Type": "application/json",
+    fetch(
+      `${process.env.API_ENDPOINT}/app/${selectedApp.slug}/snapshot/restore/status`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
       }
-    })
+    )
       .then(async (result) => {
         const body = await result.json();
         if (body.error) {
           this.setState({
             restoreInProgressErr: true,
-            restoreInProgressMsg: body.error
+            restoreInProgressMsg: body.error,
           });
         } else if (body.status == "running") {
-          this.props.history.replace(`/snapshots/partial/${selectedApp.slug}/${body.restore_name}/restore`);
+          this.props.history.replace(
+            `/snapshots/partial/${selectedApp.slug}/${body.restore_name}/restore`
+          );
         } else {
           this.state.listSnapshotsJob.start(this.listSnapshots, 2000);
         }
       })
-      .catch(err => {
+      .catch((err) => {
         this.setState({
           restoreInProgressErr: true,
-          restoreInProgressMsg: err
+          restoreInProgressMsg: err,
         });
-      })
+      });
   }
 
   listSnapshots = async () => {
@@ -139,16 +143,19 @@ class AppSnapshots extends Component {
       snapshotsListErr: false,
       snapshotsListErrMsg: "",
       networkErr: false,
-      displayErrorModal: false
-    })
+      displayErrorModal: false,
+    });
     try {
-      const res = await fetch(`${process.env.API_ENDPOINT}/app/${selectedApp.slug}/snapshots`, {
-        method: "GET",
-        headers: {
-          "Authorization": Utilities.getToken(),
-          "Content-Type": "application/json",
+      const res = await fetch(
+        `${process.env.API_ENDPOINT}/app/${selectedApp.slug}/snapshots`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: Utilities.getToken(),
+            "Content-Type": "application/json",
+          },
         }
-      })
+      );
       if (!res.ok) {
         if (res.status === 401) {
           Utilities.logoutUser();
@@ -158,29 +165,35 @@ class AppSnapshots extends Component {
           snapshotsListErr: true,
           snapshotsListErrMsg: `Unexpected status code: ${res.status}`,
           networkErr: false,
-          displayErrorModal: true
+          displayErrorModal: true,
         });
         return;
       }
       const response = await res.json();
 
       this.setState({
-        snapshots: response.backups?.sort((a, b) => b.startedAt ? new Date(b.startedAt) - new Date(a.startedAt) : -99999999),
+        snapshots: response.backups?.sort((a, b) =>
+          b.startedAt
+            ? new Date(b.startedAt) - new Date(a.startedAt)
+            : -99999999
+        ),
         hasSnapshotsLoaded: true,
         snapshotsListErr: false,
         snapshotsListErrMsg: "",
         networkErr: false,
-        displayErrorModal: false
+        displayErrorModal: false,
       });
     } catch (err) {
       this.setState({
         snapshotsListErr: true,
-        snapshotsListErrMsg: err.message ? err.message : "There was an error while showing the snapshots. Please try again",
+        snapshotsListErrMsg: err.message
+          ? err.message
+          : "There was an error while showing the snapshots. Please try again",
         networkErr: true,
-        displayErrorModal: true
-      })
+        displayErrorModal: true,
+      });
     }
-  }
+  };
 
   fetchSnapshotSettings = async () => {
     this.setState({
@@ -192,16 +205,16 @@ class AppSnapshots extends Component {
     fetch(`${process.env.API_ENDPOINT}/snapshots/settings`, {
       method: "GET",
       headers: {
-        "Authorization": Utilities.getToken(),
+        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
-      }
+      },
     })
-      .then(async res => {
+      .then(async (res) => {
         if (!res.ok && res.status === 409) {
           const result = await res.json();
           if (result.kotsadmRequiresVeleroAccess) {
             this.setState({
-              isLoadingSnapshotSettings: false
+              isLoadingSnapshotSettings: false,
             });
             this.props.history.replace("/snapshots/settings");
             return;
@@ -212,7 +225,7 @@ class AppSnapshots extends Component {
         if (result?.isVeleroRunning && result?.isResticRunning) {
           this.state.listSnapshotsJob.start(this.listInstanceSnapshots, 2000);
         } else {
-          this.props.history.push("/snapshots/settings?configure=true")
+          this.props.history.push("/snapshots/settings?configure=true");
         }
         this.setState({
           snapshotSettings: result,
@@ -221,63 +234,101 @@ class AppSnapshots extends Component {
           snapshotSettingsErrMsg: "",
         });
       })
-      .catch(err => {
+      .catch((err) => {
         this.setState({
           isLoadingSnapshotSettings: false,
           snapshotSettingsErr: true,
           snapshotSettingsErrMsg: err,
-        })
+        });
       });
-  }
+  };
 
   toggleScheduleSnapshotModal = () => {
-    this.setState({ displayScheduleSnapshotModal: !this.state.displayScheduleSnapshotModal });
-  }
+    this.setState({
+      displayScheduleSnapshotModal: !this.state.displayScheduleSnapshotModal,
+    });
+  };
 
-  toggleConfirmDeleteModal = snapshot => {
+  toggleConfirmDeleteModal = (snapshot) => {
     if (this.state.deleteSnapshotModal) {
-      this.setState({ deleteSnapshotModal: false, snapshotToDelete: "", deleteErr: false, deleteErrorMsg: "" });
+      this.setState({
+        deleteSnapshotModal: false,
+        snapshotToDelete: "",
+        deleteErr: false,
+        deleteErrorMsg: "",
+      });
     } else {
-      this.setState({ deleteSnapshotModal: true, snapshotToDelete: snapshot, deleteErr: false, deleteErrorMsg: "" });
+      this.setState({
+        deleteSnapshotModal: true,
+        snapshotToDelete: snapshot,
+        deleteErr: false,
+        deleteErrorMsg: "",
+      });
     }
   };
 
-  toggleRestoreModal = snapshot => {
+  toggleRestoreModal = (snapshot) => {
     if (this.state.restoreSnapshotModal) {
-      this.setState({ restoreSnapshotModal: false, snapshotToRestore: "", restoreErr: false, restoreErrorMsg: "" });
+      this.setState({
+        restoreSnapshotModal: false,
+        snapshotToRestore: "",
+        restoreErr: false,
+        restoreErrorMsg: "",
+      });
     } else {
-      this.setState({ restoreSnapshotModal: true, snapshotToRestore: snapshot, restoreErr: false, restoreErrorMsg: "" });
+      this.setState({
+        restoreSnapshotModal: true,
+        snapshotToRestore: snapshot,
+        restoreErr: false,
+        restoreErrorMsg: "",
+      });
     }
   };
 
   toggleErrorModal = () => {
     this.setState({ displayErrorModal: !this.state.displayErrorModal });
-  }
+  };
 
-  handleDeleteSnapshot = snapshot => {
+  handleDeleteSnapshot = (snapshot) => {
     const fakeDeletionSnapshot = {
       name: "Preparing for snapshot deletion",
       status: "Deleting",
       trigger: "manual",
       appID: this.state.selectedApp.id,
       sequence: snapshot.sequence,
-      startedAt: Utilities.dateFormat(snapshot.startedAt, "MM/DD/YY @ hh:mm a z"),
-      finishedAt: Utilities.dateFormat(snapshot.finishedAt, "MM/DD/YY @ hh:mm a z"),
-      expiresAt: Utilities.dateFormat(snapshot.expiresAt, "MM/DD/YY @ hh:mm a z"),
+      startedAt: Utilities.dateFormat(
+        snapshot.startedAt,
+        "MM/DD/YY @ hh:mm a z"
+      ),
+      finishedAt: Utilities.dateFormat(
+        snapshot.finishedAt,
+        "MM/DD/YY @ hh:mm a z"
+      ),
+      expiresAt: Utilities.dateFormat(
+        snapshot.expiresAt,
+        "MM/DD/YY @ hh:mm a z"
+      ),
       volumeCount: snapshot.volumeCount,
       volumeSuccessCount: snapshot.volumeSuccessCount,
       volumeBytes: 0,
-      volumeSizeHuman: snapshot.volumeSizeHuman
-    }
+      volumeSizeHuman: snapshot.volumeSizeHuman,
+    };
 
-    this.setState({ deletingSnapshot: true, deleteErr: false, deleteErrorMsg: "", snapshots: this.state.snapshots.map(s => s === snapshot ? fakeDeletionSnapshot : s) });
+    this.setState({
+      deletingSnapshot: true,
+      deleteErr: false,
+      deleteErrorMsg: "",
+      snapshots: this.state.snapshots.map((s) =>
+        s === snapshot ? fakeDeletionSnapshot : s
+      ),
+    });
 
     fetch(`${process.env.API_ENDPOINT}/snapshot/${snapshot.name}/delete`, {
       method: "POST",
       headers: {
-        "Authorization": Utilities.getToken(),
+        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
-      }
+      },
     })
       .then(async (res) => {
         if (!res.ok && res.status === 401) {
@@ -298,19 +349,21 @@ class AppSnapshots extends Component {
         this.setState({
           deletingSnapshot: false,
           deleteSnapshotModal: false,
-          snapshotToDelete: ""
+          snapshotToDelete: "",
         });
       })
-      .catch(err => {
+      .catch((err) => {
         this.setState({
           deletingSnapshot: false,
           deleteErr: true,
-          deleteErrorMsg: err ? err.message : "Something went wrong, please try again.",
+          deleteErrorMsg: err
+            ? err.message
+            : "Something went wrong, please try again.",
         });
       });
   };
 
-  handleRestoreSnapshot = snapshot => {
+  handleRestoreSnapshot = (snapshot) => {
     const { selectedApp } = this.state;
 
     if (this.state.appSlugToRestore !== selectedApp?.slug) {
@@ -324,13 +377,16 @@ class AppSnapshots extends Component {
       restoreErrorMsg: "",
     });
 
-    fetch(`${process.env.API_ENDPOINT}/app/${selectedApp?.slug}/snapshot/restore/${snapshot.name}`, {
-      method: "POST",
-      headers: {
-        "Authorization": Utilities.getToken(),
-        "Content-Type": "application/json",
+    fetch(
+      `${process.env.API_ENDPOINT}/app/${selectedApp?.slug}/snapshot/restore/${snapshot.name}`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
       }
-    })
+    )
       .then(async (result) => {
         if (result.ok) {
           this.setState({
@@ -340,7 +396,9 @@ class AppSnapshots extends Component {
             restoreErrorMsg: "",
           });
 
-          this.props.history.replace(`/snapshots/partial/${selectedApp.slug}/${snapshot.name}/restore`);
+          this.props.history.replace(
+            `/snapshots/partial/${selectedApp.slug}/${snapshot.name}/restore`
+          );
         } else {
           const body = await result.json();
           this.setState({
@@ -350,14 +408,14 @@ class AppSnapshots extends Component {
           });
         }
       })
-      .catch(err => {
+      .catch((err) => {
         this.setState({
           restoringSnapshot: false,
           restoreErr: true,
           restoreErrorMsg: err,
-        })
-      })
-  }
+        });
+      });
+  };
 
   startManualSnapshot = () => {
     const { selectedApp } = this.state;
@@ -374,30 +432,35 @@ class AppSnapshots extends Component {
       volumeCount: 0,
       volumeSuccessCount: 0,
       volumeBytes: 0,
-      volumeSizeHuman: ""
-    }
+      volumeSizeHuman: "",
+    };
 
     this.setState({
       startingSnapshot: true,
       startSnapshotErr: false,
       startSnapshotErrorMsg: "",
       isStartButtonClicked: true,
-      snapshots: [...this.state.snapshots, fakeProgressSnapshot].sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt))
+      snapshots: [...this.state.snapshots, fakeProgressSnapshot].sort(
+        (a, b) => new Date(b.startedAt) - new Date(a.startedAt)
+      ),
     });
 
-    fetch(`${process.env.API_ENDPOINT}/app/${selectedApp.slug}/snapshot/backup`, {
-      method: "POST",
-      headers: {
-        "Authorization": Utilities.getToken(),
-        "Content-Type": "application/json",
+    fetch(
+      `${process.env.API_ENDPOINT}/app/${selectedApp.slug}/snapshot/backup`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
       }
-    })
+    )
       .then(async (result) => {
         if (!result.ok && result.status === 409) {
           const res = await result.json();
           if (res.kotsadmRequiresVeleroAccess) {
             this.setState({
-              startingSnapshot: false
+              startingSnapshot: false,
             });
             this.props.history.replace("/snapshots/settings");
             return;
@@ -406,7 +469,7 @@ class AppSnapshots extends Component {
 
         if (result.ok) {
           this.setState({
-            startingSnapshot: false
+            startingSnapshot: false,
           });
         } else {
           const body = await result.json();
@@ -417,39 +480,47 @@ class AppSnapshots extends Component {
           });
         }
       })
-      .catch(err => {
+      .catch((err) => {
         this.setState({
           startingSnapshot: false,
           startSnapshotErr: true,
           startSnapshotErrorMsg: err,
-        })
+        });
       });
-  }
+  };
 
   handleApplicationSlugChange = (e) => {
     if (this.state.appSlugMismatch) {
       this.setState({ appSlugMismatch: false });
     }
     this.setState({ appSlugToRestore: e.target.value });
-  }
+  };
 
   onAppChange = (selectedApp) => {
     this.setState({ selectedApp });
-  }
+  };
 
   getLabel = ({ iconUri, name }) => {
     return (
       <div style={{ alignItems: "center", display: "flex" }}>
-        <span className="app-icon" style={{ fontSize: 18, marginRight: "0.5em", backgroundImage: `url(${iconUri})` }}></span>
+        <span
+          className="app-icon"
+          style={{
+            fontSize: 18,
+            marginRight: "0.5em",
+            backgroundImage: `url(${iconUri})`,
+          }}
+        ></span>
         <span style={{ fontSize: 14 }}>{name}</span>
       </div>
     );
-  }
+  };
 
   toggleSnaphotDifferencesModal = () => {
-    this.setState({ snapshotDifferencesModal: !this.state.snapshotDifferencesModal });
-  }
-
+    this.setState({
+      snapshotDifferencesModal: !this.state.snapshotDifferencesModal,
+    });
+  };
 
   render() {
     const {
@@ -477,18 +548,26 @@ class AppSnapshots extends Component {
       restoreInProgressErr,
       restoreInProgressErrMsg,
       selectedApp,
-      switchingApps
+      switchingApps,
     } = this.state;
     const { app, appsList } = this.props;
     const appTitle = app?.name;
-    const inProgressSnapshotExist = snapshots?.find(snapshot => snapshot.status === "InProgress");
+    const inProgressSnapshotExist = snapshots?.find(
+      (snapshot) => snapshot.status === "InProgress"
+    );
 
-    if (isLoadingSnapshotSettings || !hasSnapshotsLoaded || (isStartButtonClicked && snapshots?.length === 0) || startingSnapshot || switchingApps) {
+    if (
+      isLoadingSnapshotSettings ||
+      !hasSnapshotsLoaded ||
+      (isStartButtonClicked && snapshots?.length === 0) ||
+      startingSnapshot ||
+      switchingApps
+    ) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
         </div>
-      )
+      );
     }
 
     if (!snapshotSettings?.store) {
@@ -499,9 +578,11 @@ class AppSnapshots extends Component {
       return (
         <div className="flex1 flex-column justifyContent--center alignItems--center">
           <span className="icon redWarningIcon" />
-          <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">{restoreInProgressErrMsg}</p>
+          <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">
+            {restoreInProgressErrMsg}
+          </p>
         </div>
-      )
+      );
     }
 
     if (snapshotsListErr || !snapshots) {
@@ -515,7 +596,7 @@ class AppSnapshots extends Component {
           loading={false}
           appSlug={app?.slug}
         />
-      )
+      );
     }
 
     return (
@@ -523,26 +604,49 @@ class AppSnapshots extends Component {
         <Helmet>
           <title>{`${appTitle} Snapshots`}</title>
         </Helmet>
-        {!isVeleroCorrectVersion(snapshotSettings) ?
+        {!isVeleroCorrectVersion(snapshotSettings) ? (
           <div className="VeleroWarningBlock">
             <span className="icon small-warning-icon" />
-            <p> To use snapshots reliably, install Velero version 1.5.1 or greater</p>
+            <p>
+              {" "}
+              To use snapshots reliably, install Velero version 1.5.1 or greater
+            </p>
           </div>
-          : null}
+        ) : null}
         <div className="centered-container flex-column flex1 u-paddingTop--30 u-paddingBottom--20 alignItems--center">
           <div className="InfoSnapshots--wrapper flex flex-auto u-marginBottom--20">
             <span className="icon info-icon flex-auto u-marginRight--5" />
             <p className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--accent">
-              It’s recommend that you use <Link to="/snapshots" className="replicated-link u-fontSize--small">
-                Full snapshots (Instance) </Link> in lieu of Partial snapshots (Application),
-                given Full snapshots offers the same restoration capabilities.
-                <span className="replicated-link" onClick={this.toggleSnaphotDifferencesModal}>Learn&nbsp;more</span>.
-              </p>
+              It’s recommend that you use{" "}
+              <Link
+                to="/snapshots"
+                className="replicated-link u-fontSize--small"
+              >
+                Full snapshots (Instance){" "}
+              </Link>{" "}
+              in lieu of Partial snapshots (Application), given Full snapshots
+              offers the same restoration capabilities.
+              <span
+                className="replicated-link"
+                onClick={this.toggleSnaphotDifferencesModal}
+              >
+                Learn&nbsp;more
+              </span>
+              .
+            </p>
           </div>
           <div className="AppSnapshots--wrapper flex1 flex-column u-width--full u-marginTop--20">
             <div className="flex flex-column u-marginBottom--15">
-              <p className="u-fontWeight--bold u-textColor--primary u-fontSize--larger u-lineHeight--normal"> Partial snapshots (Application) </p>
-              <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-textColor--bodyCopy"> Partial snapshots (Application) only back up application volumes and application manifests; they do not back up the Admin Console or the metadata about an application. </p>
+              <p className="u-fontWeight--bold u-textColor--primary u-fontSize--larger u-lineHeight--normal">
+                {" "}
+                Partial snapshots (Application){" "}
+              </p>
+              <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-textColor--bodyCopy">
+                {" "}
+                Partial snapshots (Application) only back up application volumes
+                and application manifests; they do not back up the Admin Console
+                or the metadata about an application.{" "}
+              </p>
             </div>
             <div className="flex flex-auto u-marginBottom--15 alignItems--flexStart justifyContent--spaceBetween">
               <div className="flex">
@@ -554,28 +658,59 @@ class AppSnapshots extends Component {
                   getOptionValue={(app) => app.name}
                   value={selectedApp}
                   onChange={this.onAppChange}
-                  isOptionSelected={(app) => { app.name === selectedApp.name }}
+                  isOptionSelected={(app) => {
+                    app.name === selectedApp.name;
+                  }}
                 />
               </div>
               <div className="flex alignSelf--center">
-                <Link to={`/snapshots/settings?${selectedApp.slug}`} className="replicated-link u-fontSize--small u-fontWeight--bold flex alignItems--center"><span className="icon snapshotSettingsIcon u-marginRight--5" />Settings</Link>
-                {snapshots?.length > 0 && snapshotSettings?.veleroVersion !== "" &&
-                  <span data-for="startSnapshotBtn" data-tip="startSnapshotBtn" data-tip-disable={false}>
-                    <button className="btn primary blue u-marginLeft--20" disabled={startingSnapshot || inProgressSnapshotExist} onClick={this.startManualSnapshot}>{startingSnapshot ? "Starting a snapshot..." : "Start a snapshot"}</button>
-                  </span>}
-                {inProgressSnapshotExist &&
-                  <ReactTooltip id="startSnapshotBtn" effect="solid" className="replicated-tooltip">
-                    <span>You can't start a snapshot while another one is In Progress</span>
-                  </ReactTooltip>}
+                <Link
+                  to={`/snapshots/settings?${selectedApp.slug}`}
+                  className="replicated-link u-fontSize--small u-fontWeight--bold flex alignItems--center"
+                >
+                  <span className="icon snapshotSettingsIcon u-marginRight--5" />
+                  Settings
+                </Link>
+                {snapshots?.length > 0 &&
+                  snapshotSettings?.veleroVersion !== "" && (
+                    <span
+                      data-for="startSnapshotBtn"
+                      data-tip="startSnapshotBtn"
+                      data-tip-disable={false}
+                    >
+                      <button
+                        className="btn primary blue u-marginLeft--20"
+                        disabled={startingSnapshot || inProgressSnapshotExist}
+                        onClick={this.startManualSnapshot}
+                      >
+                        {startingSnapshot
+                          ? "Starting a snapshot..."
+                          : "Start a snapshot"}
+                      </button>
+                    </span>
+                  )}
+                {inProgressSnapshotExist && (
+                  <ReactTooltip
+                    id="startSnapshotBtn"
+                    effect="solid"
+                    className="replicated-tooltip"
+                  >
+                    <span>
+                      You can't start a snapshot while another one is In
+                      Progress
+                    </span>
+                  </ReactTooltip>
+                )}
               </div>
-
             </div>
-            {startSnapshotErr ?
+            {startSnapshotErr ? (
               <div className="flex alignItems--center alignSelf--center u-marginBottom--10">
-                <p className="u-textColor--error u-fontSize--small u-fontWeight--medium u-lineHeight--normal">{startSnapshotErrorMsg}</p>
+                <p className="u-textColor--error u-fontSize--small u-fontWeight--medium u-lineHeight--normal">
+                  {startSnapshotErrorMsg}
+                </p>
               </div>
-              : null}
-            {snapshots?.length > 0 && snapshotSettings?.veleroVersion !== "" ?
+            ) : null}
+            {snapshots?.length > 0 && snapshotSettings?.veleroVersion !== "" ? (
               <div className="flex flex-column">
                 {snapshots?.map((snapshot) => (
                   <SnapshotRow
@@ -587,15 +722,23 @@ class AppSnapshots extends Component {
                     app={selectedApp}
                   />
                 ))}
-              </div> :
-              !isStartButtonClicked ?
-                <div className="flex flex-column u-position--relative">
-                  {[0, 1, 2, 3, 4, 5].map((el) => (<DummySnapshotRow key={el} />
-                  ))}
-                  <GettingStartedSnapshots isApp={true} app={selectedApp} isVeleroInstalled={snapshotSettings?.veleroVersion !== ""} history={this.props.history} startManualSnapshot={this.startManualSnapshot} />
-                </div> : null}
+              </div>
+            ) : !isStartButtonClicked ? (
+              <div className="flex flex-column u-position--relative">
+                {[0, 1, 2, 3, 4, 5].map((el) => (
+                  <DummySnapshotRow key={el} />
+                ))}
+                <GettingStartedSnapshots
+                  isApp={true}
+                  app={selectedApp}
+                  isVeleroInstalled={snapshotSettings?.veleroVersion !== ""}
+                  history={this.props.history}
+                  startManualSnapshot={this.startManualSnapshot}
+                />
+              </div>
+            ) : null}
           </div>
-          {displayScheduleSnapshotModal &&
+          {displayScheduleSnapshotModal && (
             <Modal
               isOpen={displayScheduleSnapshotModal}
               onRequestClose={this.toggleScheduleSnapshotModal}
@@ -605,17 +748,25 @@ class AppSnapshots extends Component {
               className="ScheduleSnapshotModal--wrapper MediumSize Modal"
             >
               <div className="Modal-body">
-                <ScheduleSnapshotForm
-                  onSubmit={this.handleScheduleSubmit}
-                />
+                <ScheduleSnapshotForm onSubmit={this.handleScheduleSubmit} />
                 <div className="u-marginTop--10 flex">
-                  <button onClick={this.toggleScheduleSnapshotModal} className="btn secondary blue u-marginRight--10">Cancel</button>
-                  <button onClick={this.scheduleSnapshot} className="btn primary blue">Save</button>
+                  <button
+                    onClick={this.toggleScheduleSnapshotModal}
+                    className="btn secondary blue u-marginRight--10"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={this.scheduleSnapshot}
+                    className="btn primary blue"
+                  >
+                    Save
+                  </button>
                 </div>
               </div>
             </Modal>
-          }
-          {deleteSnapshotModal &&
+          )}
+          {deleteSnapshotModal && (
             <DeleteSnapshotModal
               deleteSnapshotModal={deleteSnapshotModal}
               toggleConfirmDeleteModal={this.toggleConfirmDeleteModal}
@@ -625,8 +776,8 @@ class AppSnapshots extends Component {
               deleteErr={deleteErr}
               deleteErrorMsg={deleteErrorMsg}
             />
-          }
-          {restoreSnapshotModal &&
+          )}
+          {restoreSnapshotModal && (
             <RestoreSnapshotModal
               restoreSnapshotModal={restoreSnapshotModal}
               toggleRestoreModal={this.toggleRestoreModal}
@@ -641,12 +792,15 @@ class AppSnapshots extends Component {
               handleApplicationSlugChange={this.handleApplicationSlugChange}
               apps={this.props.appsList}
             />
-          }
-          {this.state.snapshotDifferencesModal &&
+          )}
+          {this.state.snapshotDifferencesModal && (
             <SnapshotDifferencesModal
               snapshotDifferencesModal={this.state.snapshotDifferencesModal}
-              toggleSnapshotDifferencesModal={this.toggleSnaphotDifferencesModal}
-            />}
+              toggleSnapshotDifferencesModal={
+                this.toggleSnaphotDifferencesModal
+              }
+            />
+          )}
         </div>
       </div>
     );

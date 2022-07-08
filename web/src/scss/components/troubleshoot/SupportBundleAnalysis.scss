@@ -48,7 +48,7 @@
 }
 
 .sentToVendorWrapper {
-  background-color: #E1F0F1;
+  background-color: #e1f0f1;
   border-radius: 4px;
   padding-top: 7px;
   padding-bottom: 9px;
@@ -68,21 +68,21 @@
 }
 .insight-tile {
   border-radius: 4px;
-  border: 1px solid #DFDFDF;
+  border: 1px solid #dfdfdf;
   background-color: #ffffff;
   padding: 12px;
 
   &.warn {
-    background-color: #FFFAF2;
-    border-color: #F1D6AB;
+    background-color: #fffaf2;
+    border-color: #f1d6ab;
   }
   &.error {
-    background-color: #FFF6F5;
-    border-color: #DAB0B4;
+    background-color: #fff6f5;
+    border-color: #dab0b4;
   }
   &.debug {
-    background-color: #F8F8F8;
-    border-color: #DFDFDF;
+    background-color: #f8f8f8;
+    border-color: #dfdfdf;
   }
 
   a:hover {
@@ -104,9 +104,9 @@
     display: block;
     width: 100%;
     height: 100%;
-    -webkit-box-shadow: inset 0px 0px 4px 1px rgba(0,0,0,0.16);
-    -moz-box-shadow: inset 0px 0px 4px 1px rgba(0,0,0,0.16);
-    box-shadow: inset 0px 0px 4px 1px rgba(0,0,0,0.16);
+    -webkit-box-shadow: inset 0px 0px 4px 1px rgba(0, 0, 0, 0.16);
+    -moz-box-shadow: inset 0px 0px 4px 1px rgba(0, 0, 0, 0.16);
+    box-shadow: inset 0px 0px 4px 1px rgba(0, 0, 0, 0.16);
   }
 }
 
@@ -151,7 +151,7 @@
     }
 
     &:after {
-      content: '';
+      content: "";
       width: 12px;
       height: 12px;
       top: 50%;
@@ -178,7 +178,7 @@
   }
 
   .SupportBundleTimeline--month {
-    border-right: dashed 1px #E9ECEF;
+    border-right: dashed 1px #e9ecef;
 
     &:last-of-type {
       border-right: 0;
@@ -190,17 +190,17 @@
       text-align: center;
       z-index: 1;
     }
-    
+
     .SupportBundleTimeline--days {
       display: flex;
       flex: 1;
       align-items: flex-end;
       padding: 0 10px;
-  
+
       .day {
         width: 6px;
         margin: 0 2px;
-        background: #EDEDED;
+        background: #ededed;
         min-height: 6px;
         cursor: pointer;
         position: relative;
@@ -208,14 +208,14 @@
         .bundle {
           width: 100%;
           height: 6px;
-          background: #C4C8CA;
+          background: #c4c8ca;
         }
-        
+
         &:hover .bundle {
           background: #717171;
         }
         &.selected .bundle {
-          background: #3B98FC;
+          background: #3b98fc;
         }
 
         & > div,
@@ -242,7 +242,7 @@
 .action-content {
   background-color: #ffffff;
   padding: 16px 14px;
-  border-top: 1px solid #DFDFDF;
+  border-top: 1px solid #dfdfdf;
   border-radius: 0 0 4px 4px;
 
   &.old {
@@ -253,12 +253,12 @@
 .action-tab-bar .tab-item {
   font-size: 12px;
   font-weight: 500;
-  color: #9B9B9B;
+  color: #9b9b9b;
   padding: 0 10px;
-  border-right: 1px solid #DFDFDF;
+  border-right: 1px solid #dfdfdf;
   line-height: 15px;
   cursor: pointer;
-  transition: color .2s;
+  transition: color 0.2s;
   position: relative;
 
   &:hover {
@@ -266,7 +266,7 @@
   }
 
   &.is-active {
-    color: #4A4A4A;
+    color: #4a4a4a;
     font-weight: 600;
 
     &::after {
@@ -278,8 +278,8 @@
       height: 8px;
       transform: rotate(45deg);
       background-color: #ffffff;
-      border-top: 1px solid #DFDFDF;
-      border-left: 1px solid #DFDFDF;
+      border-top: 1px solid #dfdfdf;
+      border-left: 1px solid #dfdfdf;
       left: 50%;
       margin-left: -4px;
     }
@@ -290,7 +290,7 @@
   }
 
   &:last-child {
-    border-right: none
+    border-right: none;
   }
 }
 
@@ -298,21 +298,21 @@
   .tab-items .tab-item {
     font-size: 12px;
     font-weight: 500;
-    color: #9B9B9B;
+    color: #9b9b9b;
     padding: 12px 30px 7px;
     line-height: 14px;
     cursor: pointer;
-    transition: color .2s;
+    transition: color 0.2s;
     position: relative;
-  
+
     &:hover {
       color: #717171;
     }
-  
+
     &.is-active {
-      color: #4A4A4A;
+      color: #4a4a4a;
       font-weight: 600;
-  
+
       &::after {
         content: "";
         width: 100%;
@@ -346,7 +346,7 @@
 .CreateAction .u-backArrowIcon {
   margin-right: 6px;
   top: 1px;
-  transition: transform .2s;
+  transition: transform 0.2s;
 }
 .CreateAction > span:hover .u-backArrowIcon {
   transform: translateX(-2px);
@@ -374,11 +374,11 @@
     width: 2px;
     top: 0;
     bottom: 35px;
-    background-color: #C4C4C4;
+    background-color: #c4c4c4;
   }
 
   .section {
-    position: relative
+    position: relative;
   }
 
   .section:before {
@@ -409,7 +409,6 @@
   top: 2px;
 }
 
-
 /* ≥ 960px */
 @media screen and (min-width: 60em) {
   .insight-tile-wrapper {
@@ -420,12 +419,13 @@
 /* ≥ 1280px */
 @media screen and (min-width: 80em) {
   .insight-tile-wrapper {
-    width: 30.70%;
+    width: 30.7%;
   }
 }
 
 @keyframes analyzeDoc {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0, 0);
   }
   25% {
@@ -439,7 +439,8 @@
   }
 }
 @-webkit-keyframes analyzeDoc {
-  0%, 100% {
+  0%,
+  100% {
     -webkit-transform: translate(0, 0);
     transform: translate(0, 0);
   }

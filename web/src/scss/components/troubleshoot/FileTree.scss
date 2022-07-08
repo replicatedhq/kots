@@ -29,7 +29,7 @@
   .fullscreen-icon-wrapper {
     padding: 3px 4px;
     background-color: transparent;
-    transition: background-color .2s;
+    transition: background-color 0.2s;
     border-radius: 3px;
     cursor: pointer;
     position: absolute;
@@ -47,7 +47,7 @@
     }
   }
 
-  .FileTree-wrapper input[type=checkbox] {
+  .FileTree-wrapper input[type="checkbox"] {
     position: absolute;
     z-index: 1;
     opacity: 0;
@@ -64,9 +64,9 @@
   }
   .FileTree-wrapper label,
   .FileTree-wrapper li {
-    color: rgba(255,255,255,0.8);
+    color: rgba(255, 255, 255, 0.8);
     font-weight: 500;
-    transition: color .2s;
+    transition: color 0.2s;
     font-size: 14px;
     position: relative;
     line-height: 18px;
@@ -85,7 +85,7 @@
     }
   }
 
-  .FileTree-wrapper input[type=checkbox]:checked + label,
+  .FileTree-wrapper input[type="checkbox"]:checked + label,
   .FileTree-wrapper li.is-selected {
     font-weight: 700;
     color: #ffffff;
@@ -99,11 +99,14 @@
       height: 100%;
       top: 1px;
       z-index: -1;
-      background-color: #032C50;
+      background-color: #032c50;
     }
   }
 
-  .dirtree-wrapper.fs-mode .FileTree-wrapper input[type=checkbox]:checked + label,
+  .dirtree-wrapper.fs-mode
+    .FileTree-wrapper
+    input[type="checkbox"]:checked
+    + label,
   .dirtree-wrapper.fs-mode .FileTree-wrapper li.is-selected {
     &.is-file:after {
       width: 300px;
@@ -125,10 +128,10 @@
       background-position: -124px 0;
       width: 4px;
       height: 7px;
-      transition: transform .2s ease;
+      transition: transform 0.2s ease;
     }
   }
-  .FileTree-wrapper input[type=checkbox]:checked + label::before {
+  .FileTree-wrapper input[type="checkbox"]:checked + label::before {
     transform: rotate(90deg);
   }
 
@@ -136,8 +139,8 @@
     display: none;
   }
 
-  .FileTree-wrapper input[type=checkbox]:checked + label + ul,
-  .FileTree-wrapper input[type=checkbox]:checked + label:nth-of-type(n) + ul {
+  .FileTree-wrapper input[type="checkbox"]:checked + label + ul,
+  .FileTree-wrapper input[type="checkbox"]:checked + label:nth-of-type(n) + ul {
     /* use label:nth-of-type(n) to fix a bug on safari (<= 8.0.8) with multiple adjacent-sibling selectors*/
     display: block;
   }
@@ -152,7 +155,7 @@
   position: absolute;
   z-index: 10;
   border-radius: 40px;
-  box-shadow: 0 0 4px rgba(0,0,0,0.2);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
@@ -166,7 +169,7 @@
 
     &.arrow-wrapper {
       position: relative;
-      transition: background-color .2s;
+      transition: background-color 0.2s;
 
       &::before {
         content: "";
@@ -179,7 +182,7 @@
       }
 
       &.can-scroll:hover {
-        background-color: #F8F8F8;
+        background-color: #f8f8f8;
         cursor: pointer;
         &::before {
           height: 100%;

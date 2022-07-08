@@ -26,7 +26,7 @@ const DESTINATIONS = [
   {
     value: "hostpath",
     label: "Host Path",
-  }
+  },
 ];
 
 const AZURE_CLOUD_NAMES = [
@@ -45,10 +45,15 @@ const AZURE_CLOUD_NAMES = [
   {
     value: "AzureGermanCloud",
     label: "German",
-  }
+  },
 ];
 
 const FILE_SYSTEM_NFS_TYPE = "nfs";
 const FILE_SYSTEM_HOSTPATH_TYPE = "hostpath";
 
-export { DESTINATIONS, AZURE_CLOUD_NAMES, FILE_SYSTEM_NFS_TYPE, FILE_SYSTEM_HOSTPATH_TYPE };
+export {
+  DESTINATIONS,
+  AZURE_CLOUD_NAMES,
+  FILE_SYSTEM_NFS_TYPE,
+  FILE_SYSTEM_HOSTPATH_TYPE,
+};

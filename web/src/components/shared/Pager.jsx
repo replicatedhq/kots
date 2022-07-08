@@ -19,50 +19,72 @@ class Pager extends React.Component {
   }
 
   render() {
-    if (this.props.currentPage === 0 && this.props.totalCount <= this.props.pageSize) {
+    if (
+      this.props.currentPage === 0 &&
+      this.props.totalCount <= this.props.pageSize
+    ) {
       return null;
     }
 
     return (
-      <div className="flex flex-auto Pager alignItems--center justifyContent--center" style={{ backgroundColor: "white" }}>
+      <div
+        className="flex flex-auto Pager alignItems--center justifyContent--center"
+        style={{ backgroundColor: "white" }}
+      >
         <div className="flex-column justifyContent--center u-marginRight--50">
-          {this.props.currentPage > 0 ?
+          {this.props.currentPage > 0 ? (
             <div className="flex arrow-wrapper">
               <p
                 className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-cursor--pointer u-display--inlineBlock"
-                onClick={!this.props.loading ? (e) => this.handleGoToPage(this.props.currentPage - 1, e) : null}
+                onClick={
+                  !this.props.loading
+                    ? (e) => this.handleGoToPage(this.props.currentPage - 1, e)
+                    : null
+                }
               >
-                <span className="icon clickable u-dropdownArrowIcon previous"></span> Prev
+                <span className="icon clickable u-dropdownArrowIcon previous"></span>{" "}
+                Prev
               </p>
             </div>
-            : null}
+          ) : null}
         </div>
         <div className="flex-auto">
-          {this.props.loading
-            ? <Loader size="24" />
-            : this.props.currentPageLength
-                ? <p className="u-fontSize--normal u-lineHeight--normal u-textAlign--center">
-                  <span className="u-color--dustyGray">Showing {this.props.pagerType} </span>
-                  <span className="u-textColor--primary u-fontWeight--medium">{`${this.offset() + 1} - ${this.offset() + this.props.currentPageLength}`}</span>
-                  <span className="u-color--dustyGray"> of </span>
-                  <span className="u-textColor--primary u-fontWeight--medium">{formatNumber(this.props.totalCount)}</span>
-                </p>
-                : null}
+          {this.props.loading ? (
+            <Loader size="24" />
+          ) : this.props.currentPageLength ? (
+            <p className="u-fontSize--normal u-lineHeight--normal u-textAlign--center">
+              <span className="u-color--dustyGray">
+                Showing {this.props.pagerType}{" "}
+              </span>
+              <span className="u-textColor--primary u-fontWeight--medium">{`${
+                this.offset() + 1
+              } - ${this.offset() + this.props.currentPageLength}`}</span>
+              <span className="u-color--dustyGray"> of </span>
+              <span className="u-textColor--primary u-fontWeight--medium">
+                {formatNumber(this.props.totalCount)}
+              </span>
+            </p>
+          ) : null}
         </div>
         <div className="flex-column justifyContent--center u-marginLeft--50">
-          {this.props.currentPage < (this.pageCount() - 1) ?
+          {this.props.currentPage < this.pageCount() - 1 ? (
             <div className="flex arrow-wrapper">
               <p
                 className="u-fontSize--normal u-color--dustyGray u-lineHeight--normal u-cursor--pointer u-display--inlineBlock"
-                onClick={!this.props.loading ? (e) => this.handleGoToPage(this.props.currentPage + 1, e) : null}
+                onClick={
+                  !this.props.loading
+                    ? (e) => this.handleGoToPage(this.props.currentPage + 1, e)
+                    : null
+                }
               >
-                Next <span className="icon clickable u-dropdownArrowIcon next"></span>
+                Next{" "}
+                <span className="icon clickable u-dropdownArrowIcon next"></span>
               </p>
             </div>
-            : null}
+          ) : null}
         </div>
       </div>
-    )
+    );
   }
 }
 
@@ -72,7 +94,7 @@ Pager.propTypes = {
   pageSize: PropTypes.number.isRequired,
   totalCount: PropTypes.number.isRequired,
   loading: PropTypes.bool.isRequired,
-  currentPageLength: PropTypes.number.isRequired
-}
+  currentPageLength: PropTypes.number.isRequired,
+};
 
 export default Pager;

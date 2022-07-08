@@ -11,7 +11,7 @@
     background-position: center;
     background-repeat: no-repeat;
     border-radius: 100%;
-    box-shadow: inset 0 0 3px rgba(0,0,0,0.16);
+    box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.16);
 
     .PaperIcon {
       top: 5px;
@@ -31,28 +31,28 @@
   display: inline-block;
 
   &.missing {
-    color: #F65C5C;
-    background-color: #FFD1C7;
+    color: #f65c5c;
+    background-color: #ffd1c7;
   }
-  
+
   &.unavailable {
-    color: #EC8F39;
-    background-color: #FBE9D7;
+    color: #ec8f39;
+    background-color: #fbe9d7;
   }
-  
+
   &.degraded {
-    color: #EBB55C;
-    background-color: #FFFDF6;
+    color: #ebb55c;
+    background-color: #fffdf6;
   }
 
   &.updating {
-    color: #EBB55C;
-    background-color: #FFFDF6;
+    color: #ebb55c;
+    background-color: #fffdf6;
   }
-  
+
   &.ready {
-    color: #44BB66;
-    background-color: #ECF8F0;
+    color: #44bb66;
+    background-color: #ecf8f0;
   }
 }
 
@@ -72,7 +72,8 @@
 
 .ConfigureGraphs--wrapper {
   max-width: 520px;
-  p, h3 {
+  p,
+  h3 {
     color: $text-color-body-copy;
   }
 }

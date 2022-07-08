@@ -20,7 +20,7 @@
     .card-action-wrapper {
       position: relative;
       padding: 4px;
-  
+
       &:after {
         position: absolute;
         content: "";
@@ -37,13 +37,13 @@
     .card-action {
       padding: 8px 6px;
       border-radius: 4px;
-      transition: background-color .3s;
-  
+      transition: background-color 0.3s;
+
       &:hover {
         background-color: lighten($primary-color, 43.5%);
       }
       &.deployment:hover {
-        background-color: #ECF8EF;
+        background-color: #ecf8ef;
       }
     }
   }

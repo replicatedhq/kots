@@ -7,7 +7,6 @@ import DiffEditor from "../shared/DiffEditor";
 
 import "../../scss/components/watches/DownstreamWatchVersionDiff.scss";
 
-
 class DownstreamWatchVersionDiff extends React.Component {
   constructor() {
     super();
@@ -29,34 +28,37 @@ class DownstreamWatchVersionDiff extends React.Component {
     const url = `${process.env.API_ENDPOINT}/app/${this.props.slug}/sequence/${sequence}/renderedcontents`;
     fetch(url, {
       headers: {
-        "Authorization": Utilities.getToken()
+        Authorization: Utilities.getToken(),
       },
       method: "GET",
     })
-    .then(res => res.json())
-    .then(async (files) => {
-      if (files.error) {
-        return this.setState({
-          hasErrSettingDiff: true,
-          errSettingDiff: files.error,
-          loadingFileTrees: false,
-          failedSequence: sequence
-        })
-      }
-      if (isFirst) {
-        this.setState({ firstApplicationTree: files });
-      } else {
-        this.setState({ secondApplicationTree: files });
-      }
-      if (this.state.firstApplicationTree.files && this.state.secondApplicationTree.files) {
-        this.setState({ loadingFileTrees: false });  
-      }
-    })
-    .catch((err) => {
-      this.setState({ loadingFileTrees: false });
-      throw err;
-    });
-  }
+      .then((res) => res.json())
+      .then(async (files) => {
+        if (files.error) {
+          return this.setState({
+            hasErrSettingDiff: true,
+            errSettingDiff: files.error,
+            loadingFileTrees: false,
+            failedSequence: sequence,
+          });
+        }
+        if (isFirst) {
+          this.setState({ firstApplicationTree: files });
+        } else {
+          this.setState({ secondApplicationTree: files });
+        }
+        if (
+          this.state.firstApplicationTree.files &&
+          this.state.secondApplicationTree.files
+        ) {
+          this.setState({ loadingFileTrees: false });
+        }
+      })
+      .catch((err) => {
+        this.setState({ loadingFileTrees: false });
+        throw err;
+      });
+  };
 
   componentDidUpdate(lastProps, lastState) {
     const { slug, firstSequence, secondSequence } = this.props;
@@ -74,7 +76,11 @@ class DownstreamWatchVersionDiff extends React.Component {
 
     const url = window.location.pathname;
     if (!url.includes("/diff") && !location.search.includes("?diff/")) {
-      window.history.replaceState("", "", `${url}/diff/${firstSequence}/${secondSequence}`);
+      window.history.replaceState(
+        "",
+        "",
+        `${url}/diff/${firstSequence}/${secondSequence}`
+      );
     }
   }
 
@@ -83,7 +89,11 @@ class DownstreamWatchVersionDiff extends React.Component {
     if (url.includes("/diff")) {
       const { firstSequence, secondSequence } = this.props;
       const diffPath = `/diff/${firstSequence}/${secondSequence}`;
-      window.history.replaceState("", "", url.substring(0, url.indexOf(diffPath)));
+      window.history.replaceState(
+        "",
+        "",
+        url.substring(0, url.indexOf(diffPath))
+      );
     }
   }
 
@@ -91,10 +101,17 @@ class DownstreamWatchVersionDiff extends React.Component {
     if (this.props.onBackClick) {
       this.props.onBackClick(true);
     }
-  }
+  };
 
   render() {
-    const { firstApplicationTree, secondApplicationTree, loadingFileTrees, hasErrSettingDiff, errSettingDiff, failedSequence } = this.state;
+    const {
+      firstApplicationTree,
+      secondApplicationTree,
+      loadingFileTrees,
+      hasErrSettingDiff,
+      errSettingDiff,
+      failedSequence,
+    } = this.state;
     const { firstSequence, secondSequence } = this.props;
 
     if (loadingFileTrees) {
@@ -108,21 +125,33 @@ class DownstreamWatchVersionDiff extends React.Component {
     if (hasErrSettingDiff) {
       return (
         <div className="u-height--full u-width--full flex-column alignItems--center justifyContent--center u-marginTop--15">
-          <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">Unable to generate a file diff for the selected releases</p>
-          <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">The release with the sequence <span className="u-fontWeight--bold">{failedSequence}</span> contains invalid YAML or config values and is unable to generate a diff. The full error is below.</p>
+          <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">
+            Unable to generate a file diff for the selected releases
+          </p>
+          <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">
+            The release with the sequence{" "}
+            <span className="u-fontWeight--bold">{failedSequence}</span>{" "}
+            contains invalid YAML or config values and is unable to generate a
+            diff. The full error is below.
+          </p>
           <div className="error-block-wrapper u-marginBottom--30 flex flex1">
             <span className="u-textColor--error">{errSettingDiff}</span>
           </div>
           <div className="flex u-marginBottom--10">
-            <button className="btn primary" onClick={() => this.goBack()}>Back to all versions</button>
+            <button className="btn primary" onClick={() => this.goBack()}>
+              Back to all versions
+            </button>
           </div>
         </div>
-      )
+      );
     }
 
     const filesToInclude = [];
     for (const filename in firstApplicationTree.files) {
-      if (firstApplicationTree.files[filename] === secondApplicationTree.files[filename]) {
+      if (
+        firstApplicationTree.files[filename] ===
+        secondApplicationTree.files[filename]
+      ) {
         continue;
       }
 
@@ -130,7 +159,10 @@ class DownstreamWatchVersionDiff extends React.Component {
     }
 
     for (const filename in secondApplicationTree.files) {
-      if (firstApplicationTree.files[filename] === secondApplicationTree.files[filename]) {
+      if (
+        firstApplicationTree.files[filename] ===
+        secondApplicationTree.files[filename]
+      ) {
         continue;
       }
 
@@ -141,42 +173,68 @@ class DownstreamWatchVersionDiff extends React.Component {
 
     const diffEditors = [];
     for (const filename of filesToInclude) {
-      const firstNumOfLines = firstApplicationTree.files[filename] ? firstApplicationTree.files[filename].split("\n").length : 0;
-      const secondNumOfLines = secondApplicationTree.files[filename] ? secondApplicationTree.files[filename].split("\n").length : 0;
+      const firstNumOfLines = firstApplicationTree.files[filename]
+        ? firstApplicationTree.files[filename].split("\n").length
+        : 0;
+      const secondNumOfLines = secondApplicationTree.files[filename]
+        ? secondApplicationTree.files[filename].split("\n").length
+        : 0;
       const maxNumOfLines = Math.max(firstNumOfLines, secondNumOfLines) + 1;
 
-      diffEditors.push(<div className="DiffEditor flex-column" key={filename} style={{ height: maxNumOfLines * 23 }}>
-        <DiffEditor
-          original={firstApplicationTree.files[filename]}
-          value={secondApplicationTree.files[filename]}
+      diffEditors.push(
+        <div
+          className="DiffEditor flex-column"
           key={filename}
-          specKey={filename}
-          options={{
-            contextMenu: false,
-            readOnly: true,
-          }}
-        />
-      </div>);
+          style={{ height: maxNumOfLines * 23 }}
+        >
+          <DiffEditor
+            original={firstApplicationTree.files[filename]}
+            value={secondApplicationTree.files[filename]}
+            key={filename}
+            specKey={filename}
+            options={{
+              contextMenu: false,
+              readOnly: true,
+            }}
+          />
+        </div>
+      );
     }
 
-    const content = diffEditors.length > 0 ? diffEditors :
-      (<div className="flex flex-auto alignItems--center justifyContent--center">
-        <div className="EmptyWrapper u-width--half u-textAlign--center">
-          <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">There isn’t anything to compare.</p>
-          <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--10">There are no changes in any of the files between these 2 versions.</p>
+    const content =
+      diffEditors.length > 0 ? (
+        diffEditors
+      ) : (
+        <div className="flex flex-auto alignItems--center justifyContent--center">
+          <div className="EmptyWrapper u-width--half u-textAlign--center">
+            <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
+              There isn’t anything to compare.
+            </p>
+            <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--10">
+              There are no changes in any of the files between these 2 versions.
+            </p>
+          </div>
         </div>
-      </div>);
+      );
 
     return (
       <div className="u-position--relative u-height--full u-width--full">
         <div className="flex u-marginBottom--15">
-          {!this.props.hideBackButton &&
-            <div className="u-fontWeight--bold u-marginRight--20 u-linkColor u-cursor--pointer" onClick={this.goBack}>
-              <span className="icon clickable backArrow-icon u-marginRight--10" style={{ verticalAlign: "0" }} />
+          {!this.props.hideBackButton && (
+            <div
+              className="u-fontWeight--bold u-marginRight--20 u-linkColor u-cursor--pointer"
+              onClick={this.goBack}
+            >
+              <span
+                className="icon clickable backArrow-icon u-marginRight--10"
+                style={{ verticalAlign: "0" }}
+              />
               Back
             </div>
-          }
-          <span className="u-fontWeight--bold u-textColor--primary">Diffing releases {firstSequence} and {secondSequence}</span>
+          )}
+          <span className="u-fontWeight--bold u-textColor--primary">
+            Diffing releases {firstSequence} and {secondSequence}
+          </span>
         </div>
         {content}
       </div>

@@ -23,11 +23,11 @@
     margin-right: 20px;
     margin-top: 10px;
     width: 344px;
-    
+
     &:nth-child(3n) {
       margin-right: 0;
     }
-    &:nth-child(n+4) {
+    &:nth-child(n + 4) {
       margin-top: 20px;
     }
   }
@@ -39,18 +39,18 @@
 
 .legends {
   &.legends::-webkit-scrollbar {
-      -webkit-appearance: none;
+    -webkit-appearance: none;
   }
   &.legends::-webkit-scrollbar:vertical {
-      width: 11px;
+    width: 11px;
   }
   &.legends::-webkit-scrollbar:horizontal {
-      height: 11px;
+    height: 11px;
   }
   &.legends::-webkit-scrollbar-thumb {
     border-radius: 8px;
     border: 2px solid white;
-    background-color: rgba(0, 0, 0, .5);
+    background-color: rgba(0, 0, 0, 0.5);
   }
 }
 
@@ -71,11 +71,11 @@
   width: 260px;
   height: 200px;
   box-shadow: 0 0 4px rgba(0, 0, 0, 0.16);
-  transition: box-shadow .2s;
+  transition: box-shadow 0.2s;
   border: 1px solid rgba(0, 0, 0, 0);
   border-radius: 4px;
   padding: 12px 12px 0px 12px;
-  background-color: #F8F8F8;
+  background-color: #f8f8f8;
 }
 
 .LicenseCard-content--wrapper {
@@ -103,15 +103,15 @@
 
   &.is-new {
     -webkit-animation: newVersion 9s ease forwards; /* Safari 4+ */
-    -moz-animation:    newVersion 9s ease forwards; /* Fx 5+ */
-    -o-animation:      newVersion 9s ease forwards; /* Opera 12+ */
-    animation:         newVersion 9s ease forwards; /* IE 10+, Fx 29+ */
-    animation:         newVersion 9s ease forwards;
+    -moz-animation: newVersion 9s ease forwards; /* Fx 5+ */
+    -o-animation: newVersion 9s ease forwards; /* Opera 12+ */
+    animation: newVersion 9s ease forwards; /* IE 10+, Fx 29+ */
+    animation: newVersion 9s ease forwards;
   }
 }
 
 .gitops-enabled-block {
-  background-color: #E1F0F1;
+  background-color: #e1f0f1;
   border-radius: 4px;
   padding: 8px;
 }
@@ -123,30 +123,43 @@
 }
 
 @media screen and (min-width: 642px) {
-  
 }
 
 @media screen and (min-width: 960px) {
-  
-} 
+}
 
 @media screen and (min-width: 1040px) {
-  
 }
 
 @-webkit-keyframes newVersion {
-  0%   { background-color: #fff7dc; }
-  100% { background-color: #FFFFFF; }
+  0% {
+    background-color: #fff7dc;
+  }
+  100% {
+    background-color: #ffffff;
+  }
 }
 @-moz-keyframes newVersion {
-  0%   { background-color: #fff7dc; }
-  100% { background-color: #FFFFFF; }
+  0% {
+    background-color: #fff7dc;
+  }
+  100% {
+    background-color: #ffffff;
+  }
 }
 @-o-keyframes newVersion {
-  0%   { background-color: #fff7dc; }
-  100% { background-color: #FFFFFF; }
+  0% {
+    background-color: #fff7dc;
+  }
+  100% {
+    background-color: #ffffff;
+  }
 }
 @keyframes newVersion {
-  0%   { background-color: #fff7dc; }
-  100% { background-color: #FFFFFF; }
+  0% {
+    background-color: #fff7dc;
+  }
+  100% {
+    background-color: #ffffff;
+  }
 }

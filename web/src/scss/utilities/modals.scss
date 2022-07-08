@@ -6,7 +6,7 @@
 */
 
 .ReactModal__Overlay {
-  background-color: rgba(50, 50, 50, .4) !important;
+  background-color: rgba(50, 50, 50, 0.4) !important;
   z-index: 500;
   overflow: auto;
 
@@ -103,18 +103,18 @@
     }
 
     .Modal-header .subtitle {
-      color: #9B9B9B;
+      color: #9b9b9b;
       font-size: 14px;
       font-weight: 500;
     }
 
     .Modal-header h3 {
       font-size: 22px;
-      color: #4A4A4A
+      color: #4a4a4a;
     }
 
     .subtitle {
-      color: #9B9B9B;
+      color: #9b9b9b;
       font-size: 14px;
       font-weight: 500;
     }
@@ -132,9 +132,7 @@
   .u-modalPadding {
     padding: 25px;
   }
-
 }
-
 
 @media screen and (max-height: 43em) {
   .Modal {
@@ -165,7 +163,7 @@
 }
 
 .subtitle code {
-  background-color: #4A4A4A;
+  background-color: #4a4a4a;
   overflow: auto;
   color: #f8f8f2;
   text-align: left;
@@ -181,5 +179,5 @@
 }
 
 .Modal.helm pre {
-  background-color: #4A4A4A;
+  background-color: #4a4a4a;
 }

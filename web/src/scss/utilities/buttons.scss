@@ -20,7 +20,7 @@
   display: inline-block;
   border: 0;
   border-radius: 3px;
-  transition: background-color color border .2s;
+  transition: background-color color border 0.2s;
   outline: none;
   position: relative;
 
@@ -61,9 +61,9 @@
     background-color: $primary-color;
     padding: 8px 14px 9px;
     color: #ffffff;
-    -webkit-box-shadow: inset 0px -2px 0px 0px rgba(0,0,0,0.25);
-    -moz-box-shadow: inset 0px -2px 0px 0px rgba(0,0,0,0.25);
-    box-shadow: inset 0px -2px 0px 0px rgba(0,0,0,0.25);
+    -webkit-box-shadow: inset 0px -2px 0px 0px rgba(0, 0, 0, 0.25);
+    -moz-box-shadow: inset 0px -2px 0px 0px rgba(0, 0, 0, 0.25);
+    box-shadow: inset 0px -2px 0px 0px rgba(0, 0, 0, 0.25);
 
     &:not(:disabled):hover {
       background-color: darken($primary-color, 8%);
@@ -86,9 +86,9 @@
     border-style: solid;
     border-color: transparent;
     color: #ffffff;
-    -webkit-box-shadow: inset 0px -2px 0px 0px rgba(0,0,0,0.25);
-    -moz-box-shadow: inset 0px -2px 0px 0px rgba(0,0,0,0.25);
-    box-shadow: inset 0px -2px 0px 0px rgba(0,0,0,0.25);
+    -webkit-box-shadow: inset 0px -2px 0px 0px rgba(0, 0, 0, 0.25);
+    -moz-box-shadow: inset 0px -2px 0px 0px rgba(0, 0, 0, 0.25);
+    box-shadow: inset 0px -2px 0px 0px rgba(0, 0, 0, 0.25);
 
     &:not(:disabled):hover {
       background: darken($error-color, 8%);
@@ -167,7 +167,6 @@
     padding: 3px 12px 3px;
   }
 
-
   &.secondary.is-disabled,
   &.secondary.is-disabled:hover,
   &.secondary:disabled,
@@ -178,39 +177,38 @@
   }
 
   &.github {
-    border-color: #24292E;
-    color: #24292E;
+    border-color: #24292e;
+    color: #24292e;
 
     &:not(:disabled):hover {
-      background-color: #F4F4F4;
+      background-color: #f4f4f4;
     }
   }
 
   &.gitlab {
-    border-color: #E24329;
-    color: #E24329;
+    border-color: #e24329;
+    color: #e24329;
 
     &:not(:disabled):hover {
-      background-color: #FDF5F4;
+      background-color: #fdf5f4;
     }
   }
 
   &.bitbucket {
-    border-color: #2684FF;
-    color: #2684FF;
+    border-color: #2684ff;
+    color: #2684ff;
 
     &:not(:disabled):hover {
-      background-color: #F5FAFF;
+      background-color: #f5faff;
     }
   }
 
   &.traditional {
-    border-color: #326DE6;
-    color: #326DE6;
+    border-color: #326de6;
+    color: #326de6;
 
     &:not(:disabled):hover {
       background-color: lighten($primary-color, 43.5%);
     }
   }
-
 }

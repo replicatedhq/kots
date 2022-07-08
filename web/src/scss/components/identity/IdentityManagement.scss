@@ -2,7 +2,7 @@
 
 .Identity--wrapper {
   padding: 20px;
-  background: #FFFFFF;
+  background: #ffffff;
   box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.2);
   border-radius: 6px;
 
@@ -20,16 +20,16 @@
       padding: 12px;
 
       &.has-error {
-       border: 1px solid $error-color;
-       background-color: lighten($error-color, 43.5%);
-       color: $error-color;
+        border: 1px solid $error-color;
+        background-color: lighten($error-color, 43.5%);
+        color: $error-color;
       }
     }
   }
-} 
+}
 
 .identityProviderBtn {
-  background: #FFFFFF;
+  background: #ffffff;
   border: 1px solid $border-color;
   box-sizing: border-box;
   border-radius: 4px;
@@ -58,14 +58,14 @@
 }
 
 .DummyRbacRow--wrapper {
-  background: #F8F8F8;
+  background: #f8f8f8;
   border-radius: 4px;
-  margin-bottom: 15px; 
+  margin-bottom: 15px;
   height: 30px;
   padding: 12px;
 
   .EmptyRow {
-    background: #EAEAEA;
+    background: #eaeaea;
     border-radius: 2px;
 
     &.name {
@@ -79,7 +79,7 @@
   }
 
   .EmptyCircle {
-    background: #EAEAEA;
+    background: #eaeaea;
     border-radius: 50%;
     width: 20px;
     height: 20px;
@@ -88,10 +88,10 @@
 
 .AddRoleGroup--wrapper {
   position: absolute;
-	top: 50%;
-	left: 50%;
-	transform: translate(-50%, -50%);
-  background: #FFFFFF;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #ffffff;
   box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.2);
   border-radius: 8px;
   width: 580px;
@@ -100,17 +100,17 @@
 }
 
 .Roles--wrapper {
-  background: #F8F8F8;
+  background: #f8f8f8;
   border-radius: 4px;
   padding: 10px;
 }
 
 .RoleNum--wrapper {
-  background: #EAF0FC;
+  background: #eaf0fc;
   border-radius: 3px;
   padding: 4px 8px;
   font-size: 12px;
   line-height: 12px;
   font-weight: 500;
-  color: #556F8F;
+  color: #556f8f;
 }

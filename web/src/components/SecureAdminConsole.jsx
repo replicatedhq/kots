@@ -15,12 +15,12 @@ class SecureAdminConsole extends React.Component {
       loginErrMessage: "",
       authLoading: false,
       loginInfo: null,
-    }
+    };
 
     this.loginText = React.createRef();
   }
 
-  completeLogin = async data => {
+  completeLogin = async (data) => {
     let loggedIn = false;
 
     try {
@@ -48,12 +48,12 @@ class SecureAdminConsole extends React.Component {
       } else {
         this.props.history.push("/unsupported");
       }
-    } catch(err) {
+    } catch (err) {
       console.log(err);
     }
 
     return loggedIn;
-  }
+  };
 
   validatePassword = () => {
     if (!this.state.password || this.state.password.length === "0") {
@@ -64,11 +64,15 @@ class SecureAdminConsole extends React.Component {
       return false;
     }
     return true;
-  }
+  };
 
   loginWithSharedPassword = async () => {
     if (this.validatePassword()) {
-      this.setState({ authLoading: true, loginErr: false, loginErrMessage: "" });
+      this.setState({
+        authLoading: true,
+        loginErr: false,
+        loginErrMessage: "",
+      });
       fetch(`${process.env.API_ENDPOINT}/login`, {
         headers: {
           "Content-Type": "application/json",
@@ -76,34 +80,37 @@ class SecureAdminConsole extends React.Component {
         method: "POST",
         body: JSON.stringify({
           password: this.state.password,
-        })
+        }),
       })
-      .then(async (res) => {
-        if (res.status >= 400) {
-          let body = await res.json();
-          let msg = body.error;
-          if (!msg) {
-            msg = res.status === 401 ? "Invalid password. Please try again" : "There was an error logging in. Please try again.";
+        .then(async (res) => {
+          if (res.status >= 400) {
+            let body = await res.json();
+            let msg = body.error;
+            if (!msg) {
+              msg =
+                res.status === 401
+                  ? "Invalid password. Please try again"
+                  : "There was an error logging in. Please try again.";
+            }
+            this.setState({
+              authLoading: false,
+              loginErr: true,
+              loginErrMessage: msg,
+            });
+            return;
           }
+          this.completeLogin(await res.json());
+        })
+        .catch((err) => {
+          console.log("Login failed:", err);
           this.setState({
             authLoading: false,
             loginErr: true,
-            loginErrMessage: msg,
+            loginErrMessage: "There was an error logging in. Please try again",
           });
-          return;
-        }
-        this.completeLogin(await res.json());
-      })
-      .catch((err) => {
-        console.log("Login failed:", err);
-        this.setState({
-          authLoading: false,
-          loginErr: true,
-          loginErrMessage: "There was an error logging in. Please try again",
         });
-      });
     }
-  }
+  };
 
   loginWithIdentityProvider = async () => {
     try {
@@ -130,15 +137,15 @@ class SecureAdminConsole extends React.Component {
       }
 
       const body = await res.json();
-      window.location = body.authCodeURL
-    } catch(err) {
+      window.location = body.authCodeURL;
+    } catch (err) {
       console.log("Login failed:", err);
       this.setState({
         loginErr: true,
         loginErrMessage: "There was an error logging in. Please try again",
       });
     }
-  }
+  };
 
   submitForm = (e) => {
     const enterKey = e.keyCode === 13;
@@ -147,15 +154,19 @@ class SecureAdminConsole extends React.Component {
       e.stopPropagation();
       this.loginWithSharedPassword();
     }
-  }
+  };
 
   resizeLoginFont = () => {
     if (!this.loginText?.current) {
       return;
     }
-    const newFontSize = dynamicallyResizeText(this.loginText.current.innerHTML, this.loginText.current.clientWidth, "32px");
+    const newFontSize = dynamicallyResizeText(
+      this.loginText.current.innerHTML,
+      this.loginText.current.clientWidth,
+      "32px"
+    );
     this.loginText.current.style.fontSize = newFontSize;
-  }
+  };
 
   getLoginInfo = async () => {
     try {
@@ -169,7 +180,9 @@ class SecureAdminConsole extends React.Component {
       if (!response.ok) {
         const res = await response.json();
         if (res.error) {
-          throw new Error(`Unexpected status code ${response.status}: ${res.error}`);
+          throw new Error(
+            `Unexpected status code ${response.status}: ${res.error}`
+          );
         }
         throw new Error(`Unexpected status code ${response.status}`);
       }
@@ -178,12 +191,12 @@ class SecureAdminConsole extends React.Component {
       this.setState({ loginInfo, loginErr: false, loginErrMessage: "" });
 
       return loginInfo;
-    } catch(err) {
+    } catch (err) {
       console.log(err);
     }
 
     return null;
-  }
+  };
 
   componentDidUpdate(lastProps) {
     const { appName } = this.props;
@@ -215,9 +228,9 @@ class SecureAdminConsole extends React.Component {
     const encodedMessage = urlParams.get("message");
     if (encodedMessage) {
       try {
-        const message = JSON.parse(atob(encodedMessage))
+        const message = JSON.parse(atob(encodedMessage));
         if (message.error) {
-          this.setState({loginErr: true, loginErrMessage: message.error});
+          this.setState({ loginErr: true, loginErrMessage: message.error });
           return;
         }
       } catch (err) {
@@ -233,7 +246,7 @@ class SecureAdminConsole extends React.Component {
     if (loginInfo?.method === "identity-service") {
       await this.loginWithIdentityProvider();
     }
-  }
+  };
 
   componentDidMount() {
     window.addEventListener("keydown", this.submitForm);
@@ -244,18 +257,9 @@ class SecureAdminConsole extends React.Component {
   }
 
   render() {
-    const {
-      appName,
-      logo,
-      fetchingMetadata,
-    } = this.props;
-    const {
-      password,
-      authLoading,
-      loginErr,
-      loginErrMessage,
-      loginInfo,
-    } = this.state;
+    const { appName, logo, fetchingMetadata } = this.props;
+    const { password, authLoading, loginErr, loginErrMessage, loginInfo } =
+      this.state;
 
     if (fetchingMetadata || !loginInfo) {
       // secure-console url can receive an error message as url parameter.
@@ -296,30 +300,63 @@ class SecureAdminConsole extends React.Component {
     return (
       <div className="container flex-column flex1 u-overflow--auto Login-wrapper justifyContent--center alignItems--center">
         <Helmet>
-          <title>{`${appName ? `${appName} Admin Console` : "Admin Console"}`}</title>
+          <title>{`${
+            appName ? `${appName} Admin Console` : "Admin Console"
+          }`}</title>
         </Helmet>
         <div className="LoginBox-wrapper u-flexTabletReflow flex-auto">
           <div className="flex-auto flex-column login-form-wrapper secure-console justifyContent--center">
             <div className="flex-column alignItems--center">
-              {logo
-              ? <span className="icon brand-login-icon" style={{ backgroundImage: `url(${logo})` }} />
-              : !fetchingMetadata ? <span className="icon kots-login-icon" />
-              : <span style={{ width: "60px", height: "60px" }} />
-              }
-              <p ref={this.loginText} style={{ fontSize: "32px" }} className="u-marginTop--10 u-paddingTop--5 u-lineHeight--more u-textColor--primary u-fontWeight--bold u-width--full u-textAlign--center">Log in{appName && appName !== "" ? ` to ${appName}` : ""}</p>
+              {logo ? (
+                <span
+                  className="icon brand-login-icon"
+                  style={{ backgroundImage: `url(${logo})` }}
+                />
+              ) : !fetchingMetadata ? (
+                <span className="icon kots-login-icon" />
+              ) : (
+                <span style={{ width: "60px", height: "60px" }} />
+              )}
+              <p
+                ref={this.loginText}
+                style={{ fontSize: "32px" }}
+                className="u-marginTop--10 u-paddingTop--5 u-lineHeight--more u-textColor--primary u-fontWeight--bold u-width--full u-textAlign--center"
+              >
+                Log in{appName && appName !== "" ? ` to ${appName}` : ""}
+              </p>
             </div>
             <div className="flex-auto flex-column justifyContent--center">
               <p className="u-marginTop--10 u-marginTop--5 u-fontSize--large u-textAlign--center u-fontWeight--medium u-lineHeight--normal u-textColor--bodyCopy">
                 Enter the password to access the {appName} admin console.
               </p>
               <div className="u-marginTop--20 flex-column">
-                {loginErr && <p className="u-fontSize--normal u-fontWeight--medium u-textColor--error u-lineHeight--normal u-marginBottom--20">{loginErrMessage}</p>}
+                {loginErr && (
+                  <p className="u-fontSize--normal u-fontWeight--medium u-textColor--error u-lineHeight--normal u-marginBottom--20">
+                    {loginErrMessage}
+                  </p>
+                )}
                 <div>
                   <div className="component-wrapper">
-                    <input type="password" className="Input" placeholder="password" autoComplete="current-password" value={password} onChange={(e) => { this.setState({ password: e.target.value }) }}/>
+                    <input
+                      type="password"
+                      className="Input"
+                      placeholder="password"
+                      autoComplete="current-password"
+                      value={password}
+                      onChange={(e) => {
+                        this.setState({ password: e.target.value });
+                      }}
+                    />
                   </div>
                   <div className="u-marginTop--20 flex">
-                    <button type="submit" className="btn primary" disabled={authLoading} onClick={this.loginWithSharedPassword}>{authLoading ? "Logging in" : "Log in"}</button>
+                    <button
+                      type="submit"
+                      className="btn primary"
+                      disabled={authLoading}
+                      onClick={this.loginWithSharedPassword}
+                    >
+                      {authLoading ? "Logging in" : "Log in"}
+                    </button>
                   </div>
                 </div>
               </div>

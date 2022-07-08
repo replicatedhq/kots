@@ -10,7 +10,7 @@
 
   .installed-watch .installed-watch-header {
     padding: 16px 23px;
-    background: #FAFAFA;
+    background: #fafafa;
     border-bottom: 1px solid $border-color;
     align-items: center;
     .installed-watch-name {
@@ -21,7 +21,7 @@
         border-radius: 50px;
         margin-right: 12px;
         background-color: #fff;
-        box-shadow: inset 0 0 4px 0 rgba(0,0,0,.16);
+        box-shadow: inset 0 0 4px 0 rgba(0, 0, 0, 0.16);
         background-repeat: no-repeat;
         background-position: center;
         background-size: cover;
@@ -44,11 +44,11 @@
     border-style: dashed;
 
     .installed-watch-header {
-      background-color: #FCFCFC;
+      background-color: #fcfcfc;
       border-bottom: 1px dashed $border-color;
 
       .installed-watch-name {
-        opacity: .5;
+        opacity: 0.5;
       }
     }
   }
@@ -102,13 +102,13 @@
     .card-action {
       padding: 8px 6px;
       border-radius: 4px;
-      transition: background-color .3s;
-  
+      transition: background-color 0.3s;
+
       &:hover {
         background-color: lighten($primary-color, 43.5%);
       }
       &.deployment:hover {
-        background-color: #ECF8EF;
+        background-color: #ecf8ef;
       }
     }
   }
@@ -126,8 +126,8 @@
     border-radius: 4px;
     padding: 12px 12px 0px 12px;
     margin-right: 20px;
-    .disabled { 
-      opacity: .5;
+    .disabled {
+      opacity: 0.5;
       pointer-events: none;
     }
     .path {
@@ -178,17 +178,16 @@
     .card-action {
       padding: 8px 6px;
       border-radius: 4px;
-      transition: background-color .3s;
-  
+      transition: background-color 0.3s;
+
       &:hover {
         background-color: lighten($primary-color, 43.5%);
       }
       &.deployment:hover {
-        background-color: #ECF8EF;
+        background-color: #ecf8ef;
       }
     }
   }
-
 }
 
 .add-new-integration {
@@ -203,7 +202,7 @@
   font-size: 12px;
   font-weight: 400;
   letter-spacing: 2;
-  color: #9B9B9B;
+  color: #9b9b9b;
   margin: 0 10px 0 8px;
 }
 
@@ -257,7 +256,7 @@
     }
 
     .completed-step:nth-child(2)::after {
-      border-top: 2px dashed $border-color
+      border-top: 2px dashed $border-color;
     }
 
     .completed-step p {
@@ -297,15 +296,12 @@
 
 /* ≥ 768px */
 @media screen and (min-width: 48em) {
- 
 }
 
 /* ≥ 960px */
 @media screen and (min-width: 60em) {
-
 }
 
 /* ≥ 1280px */
 @media screen and (min-width: 80em) {
-
 }

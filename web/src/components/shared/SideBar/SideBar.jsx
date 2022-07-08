@@ -11,13 +11,12 @@ class SideBar extends Component {
     className: PropTypes.string,
 
     /** @type {Array<JSX>} array of JSX elements to render */
-    items: PropTypes.array.isRequired
-
-  }
+    items: PropTypes.array.isRequired,
+  };
 
   static defaultProps = {
     items: [],
-  }
+  };
 
   render() {
     const { className, items, loading } = this.props;
@@ -31,14 +30,15 @@ class SideBar extends Component {
     }
 
     return (
-      <div className={classNames("sidebar flex-column flex-auto u-overflow--auto", className)}>
+      <div
+        className={classNames(
+          "sidebar flex-column flex-auto u-overflow--auto",
+          className
+        )}
+      >
         <div className="flex-column u-width--full">
           {items?.map((jsx, idx) => {
-            return (
-              <Fragment key={idx}>
-                {jsx}
-              </Fragment>
-            );
+            return <Fragment key={idx}>{jsx}</Fragment>;
           })}
         </div>
       </div>

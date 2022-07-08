@@ -2,7 +2,6 @@ import * as React from "react";
 import { Link } from "react-router-dom";
 
 export default class NotFound extends React.Component {
-
   render() {
     return (
       <div className="u-width--full flex-column flex1 justifyContent--center u-position--relative">
@@ -16,7 +15,9 @@ export default class NotFound extends React.Component {
                 Oops, we couldn't find the page you were looking for
               </p>
               <div className="u-marginTop--30">
-                <Link to="/" className="btn primary large">Take me home</Link>
+                <Link to="/" className="btn primary large">
+                  Take me home
+                </Link>
               </div>
             </div>
           </div>

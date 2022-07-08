@@ -13,7 +13,7 @@
   height: 32px;
 
   cursor: pointer;
-  
+
   &.has-error,
   &.has-error:focus,
   &.has-error:active {
@@ -28,8 +28,7 @@
     border-color: $error-color;
   }
   cursor: not-allowed;
-  background-color: #F8F8F8;
+  background-color: #f8f8f8;
   border-color: lighten($border-color, 30%);
   color: $text-color-accent;
-  
 }

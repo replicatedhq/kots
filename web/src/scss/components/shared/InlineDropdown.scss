@@ -16,7 +16,7 @@
   }
 
   .icon.down-arrow-icon-blue {
-    transition: transform .2s ease-in-out;
+    transition: transform 0.2s ease-in-out;
   }
 
   &.show-options .icon.down-arrow-icon-blue {
@@ -43,7 +43,7 @@
       padding: 8px;
       cursor: pointer;
       display: block;
-      transition: background-color .2s ease-in-out;
+      transition: background-color 0.2s ease-in-out;
 
       &:hover {
         background-color: $really-light-accent;
@@ -54,5 +54,4 @@
   &.show-options .Options--wrapper {
     display: block;
   }
-
 }

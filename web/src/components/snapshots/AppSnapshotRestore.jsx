@@ -18,7 +18,7 @@ class AppSnapshotRestore extends Component {
     cancelingRestore: false,
     cancelRestoreErr: "",
     cancelRestoreErrorMsg: "",
-  }
+  };
 
   componentDidMount() {
     this.state.fetchRestoreDetailJob.start(this.fetchRestoreDetail, 2000);
@@ -50,12 +50,15 @@ class AppSnapshotRestore extends Component {
     });
 
     try {
-      const res = await fetch(`${process.env.API_ENDPOINT}/app/${this.props.app?.slug}/snapshot/restore/${restoreName}`, {
-        method: "GET",
-        headers: {
-          "Authorization": Utilities.getToken(),
+      const res = await fetch(
+        `${process.env.API_ENDPOINT}/app/${this.props.app?.slug}/snapshot/restore/${restoreName}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: Utilities.getToken(),
+          },
         }
-      });
+      );
       if (!res.ok) {
         if (res.status === 401) {
           Utilities.logoutUser();
@@ -82,41 +85,52 @@ class AppSnapshotRestore extends Component {
       console.log(err);
       this.setState({
         loadingRestoreDetail: false,
-        errorMessage: err ? `${err.message}` : "Something went wrong, please try again.",
+        errorMessage: err
+          ? `${err.message}`
+          : "Something went wrong, please try again.",
         errorTitle: "Failed to fetch restore details",
       });
     }
-  }
+  };
 
   logOutUser = () => {
     const token = Utilities.getToken();
     if (token) {
       window.localStorage.removeItem("token");
     }
-  }
+  };
 
   onCancelRestore = async () => {
-    this.setState({ cancelingRestore: true, cancelRestoreErr: false, cancelRestoreErrorMsg: "" });
+    this.setState({
+      cancelingRestore: true,
+      cancelRestoreErr: false,
+      cancelRestoreErrorMsg: "",
+    });
     try {
       await this.fetchCancelRestore();
       this.props.history.push(`/snapshots/partial/${this.props.app?.slug}`);
     } catch (err) {
       this.setState({
         cancelRestoreErr: true,
-        cancelRestoreErrorMsg: err ? `${err.message}` : "Something went wrong, please try again.",
+        cancelRestoreErrorMsg: err
+          ? `${err.message}`
+          : "Something went wrong, please try again.",
       });
     }
     this.setState({ cancelingRestore: false });
-  }
+  };
 
   fetchCancelRestore = async () => {
     const { app } = this.props;
-    const res = await fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/snapshot/restore`, {
-      method: "DELETE",
-      headers: {
-        "Authorization": Utilities.getToken(),
+    const res = await fetch(
+      `${process.env.API_ENDPOINT}/app/${app.slug}/snapshot/restore`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: Utilities.getToken(),
+        },
       }
-    });
+    );
     if (!res.ok) {
       if (res.status === 401) {
         Utilities.logoutUser();
@@ -124,32 +138,45 @@ class AppSnapshotRestore extends Component {
       }
       throw new Error(`Unexpected status code: ${res.status}`);
     }
-  }
+  };
 
   renderErrors = (errors) => {
-    return (
-      errors?.map((error, i) => (
-        <div className="RestoreError--wrapper flex justifyContent--space-between alignItems--center" key={`${error.title}-${i}`}>
-          <div className="flex-auto icon error-small u-marginRight--10 u-marginLeft--10"> </div>
-          <p className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal">{error.message}</p>
+    return errors?.map((error, i) => (
+      <div
+        className="RestoreError--wrapper flex justifyContent--space-between alignItems--center"
+        key={`${error.title}-${i}`}
+      >
+        <div className="flex-auto icon error-small u-marginRight--10 u-marginLeft--10">
+          {" "}
         </div>
-      ))
-    );
-  }
+        <p className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal">
+          {error.message}
+        </p>
+      </div>
+    ));
+  };
 
   renderWarnings = (warnings) => {
-    return (
-      warnings?.map((warning, i) => (
-        <div className="RestoreWarning--wrapper flex justifyContent--space-between alignItems--center" key={`${warning.title}-${i}`}>
-          <div className="flex-auto icon exclamationMark--icon u-marginRight--10 u-marginLeft--10"> </div>
-          <p className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal">{warning.message}</p>
+    return warnings?.map((warning, i) => (
+      <div
+        className="RestoreWarning--wrapper flex justifyContent--space-between alignItems--center"
+        key={`${warning.title}-${i}`}
+      >
+        <div className="flex-auto icon exclamationMark--icon u-marginRight--10 u-marginLeft--10">
+          {" "}
         </div>
-      ))
-    );
-  }
+        <p className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal">
+          {warning.message}
+        </p>
+      </div>
+    ));
+  };
 
   renderFailedRestoreView = (detail) => {
-    if (detail?.warnings?.length > 0 && (!detail?.errors || detail?.errors?.length === 0)) {
+    if (
+      detail?.warnings?.length > 0 &&
+      (!detail?.errors || detail?.errors?.length === 0)
+    ) {
       return this.renderWarningsRestoreView(detail?.warnings);
     } else if (detail?.errors?.length > 0) {
       return (
@@ -157,49 +184,84 @@ class AppSnapshotRestore extends Component {
           <div className="flex flex-column alignItems--center">
             <span className="icon u-superWarning--large"></span>
             <p className="u-fontWeight--bold u-textColor--primary u-fontSize--larger u-lineHeight--normal u-marginTop--15 u-marginBottom--10">
-              Application failed to restore </p>
-            {detail?.warnings?.length > 0 ?
+              Application failed to restore{" "}
+            </p>
+            {detail?.warnings?.length > 0 ? (
               <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal">
                 Your application failed to restore to
-                <span className="u-fontWeight--bold u-textColor--bodyCopy"> {this.props.match.params.id} </span> because of errors. During the restore there were
-                <span className="u-fontWeight--bold  u-textColor--secondary"> {detail?.warnings?.length} {detail?.warnings?.length === 1 ? "warning" : "warnings"} </span> and
-                <span className="u-fontWeight--bold u-textColor--secondary"> {detail?.errors?.length} {detail?.errors?.length === 1 ? "error" : "errors"}. </span>
+                <span className="u-fontWeight--bold u-textColor--bodyCopy">
+                  {" "}
+                  {this.props.match.params.id}{" "}
+                </span>{" "}
+                because of errors. During the restore there were
+                <span className="u-fontWeight--bold  u-textColor--secondary">
+                  {" "}
+                  {detail?.warnings?.length}{" "}
+                  {detail?.warnings?.length === 1 ? "warning" : "warnings"}{" "}
+                </span>{" "}
+                and
+                <span className="u-fontWeight--bold u-textColor--secondary">
+                  {" "}
+                  {detail?.errors?.length}{" "}
+                  {detail?.errors?.length === 1 ? "error" : "errors"}.{" "}
+                </span>
               </p>
-              :
+            ) : (
               <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal">
                 Your application failed to restore to
-                <span className="u-fontWeight--bold u-textColor--bodyCopy"> {this.props.match.params.id} </span> because of errors. During the restore there {detail?.errors?.length === 1 ? "was" : "were"}
-                <span className="u-fontWeight--bold u-textColor--secondary"> {detail?.errors?.length} {detail?.errors?.length === 1 ? "error" : "errors"}. </span>
+                <span className="u-fontWeight--bold u-textColor--bodyCopy">
+                  {" "}
+                  {this.props.match.params.id}{" "}
+                </span>{" "}
+                because of errors. During the restore there{" "}
+                {detail?.errors?.length === 1 ? "was" : "were"}
+                <span className="u-fontWeight--bold u-textColor--secondary">
+                  {" "}
+                  {detail?.errors?.length}{" "}
+                  {detail?.errors?.length === 1 ? "error" : "errors"}.{" "}
+                </span>
               </p>
-            }
+            )}
           </div>
           <div className="u-marginTop--30">
             {this.renderErrors(detail?.errors)}
-            {detail?.warnings?.length > 0 && this.renderWarnings(detail?.warnings)}
+            {detail?.warnings?.length > 0 &&
+              this.renderWarnings(detail?.warnings)}
           </div>
           <div className="flex alignItems--center justifyContent--center">
-            <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal u-marginTop--30"> Contact your vendor for help troubleshooting this restore. </p>
+            <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal u-marginTop--30">
+              {" "}
+              Contact your vendor for help troubleshooting this restore.{" "}
+            </p>
           </div>
         </div>
-      )
+      );
     } else {
       return (
         <div className="FailedRestore--wrapper">
           <div className="flex flex-column alignItems--center">
             <span className="icon u-superWarning--large"></span>
             <p className="u-fontWeight--bold u-textColor--primary u-fontSize--larger u-lineHeight--normal u-marginTop--15 u-marginBottom--10">
-              Application failed to restore </p>
+              Application failed to restore{" "}
+            </p>
             <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal">
-              Your application failed to restore to  <span className="u-fontWeight--bold u-textColor--bodyCopy"> {this.props.match.params.id} </span>
+              Your application failed to restore to{" "}
+              <span className="u-fontWeight--bold u-textColor--bodyCopy">
+                {" "}
+                {this.props.match.params.id}{" "}
+              </span>
             </p>
           </div>
           <div className="flex alignItems--center justifyContent--center">
-            <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal u-marginTop--30"> Contact your vendor for help troubleshooting this restore. </p>
+            <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal u-marginTop--30">
+              {" "}
+              Contact your vendor for help troubleshooting this restore.{" "}
+            </p>
           </div>
         </div>
-      )
+      );
     }
-  }
+  };
 
   renderWarningsRestoreView = (warnings) => {
     return (
@@ -207,28 +269,46 @@ class AppSnapshotRestore extends Component {
         <div className="flex flex-column alignItems--center">
           <span className="icon yellowWarningIcon"></span>
           <p className="u-fontWeight--bold u-textColor--primary u-fontSize--larger u-lineHeight--normal u-marginTop--15 u-marginBottom--10">
-            Application restored with warnings </p>
+            Application restored with warnings{" "}
+          </p>
           <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal">
-            Your application restored  to <span className="u-fontWeight--bold u-textColor--bodyCopy"> {this.props.match.params.id} </span> but there were warnings that my affect the application. During the restore there were
-          <span className="u-fontWeight--bold  u-textColor--secondary"> {warnings?.length} warnings </span>.</p>
+            Your application restored to{" "}
+            <span className="u-fontWeight--bold u-textColor--bodyCopy">
+              {" "}
+              {this.props.match.params.id}{" "}
+            </span>{" "}
+            but there were warnings that my affect the application. During the
+            restore there were
+            <span className="u-fontWeight--bold  u-textColor--secondary">
+              {" "}
+              {warnings?.length} warnings{" "}
+            </span>
+            .
+          </p>
         </div>
-        <div className="u-marginTop--30">
-          {this.renderWarnings(warnings)}
-        </div>
+        <div className="u-marginTop--30">{this.renderWarnings(warnings)}</div>
         <div className="flex alignItems--center justifyContent--center">
-          <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal u-marginTop--30"> Contact your vendor for help troubleshooting this restore. </p>
+          <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal u-marginTop--30">
+            {" "}
+            Contact your vendor for help troubleshooting this restore.{" "}
+          </p>
         </div>
       </div>
-    )
-  }
+    );
+  };
 
   render() {
-    const { cancelingRestore, restoreDetail, loadingRestoreDetail } = this.state;
+    const { cancelingRestore, restoreDetail, loadingRestoreDetail } =
+      this.state;
 
-    const hasNoErrorsOrWarnings = (!restoreDetail?.warnings && !restoreDetail?.errors) || 
-    (restoreDetail?.warnings?.length === 0 && restoreDetail?.errors?.length === 0);
+    const hasNoErrorsOrWarnings =
+      (!restoreDetail?.warnings && !restoreDetail?.errors) ||
+      (restoreDetail?.warnings?.length === 0 &&
+        restoreDetail?.errors?.length === 0);
     const restoreCompleted = restoreDetail?.phase === "Completed";
-    const restoreFailing = restoreDetail?.phase === "PartiallyFailed" || restoreDetail?.phase === "Failed";
+    const restoreFailing =
+      restoreDetail?.phase === "PartiallyFailed" ||
+      restoreDetail?.phase === "Failed";
     const restoreLoading = !restoreDetail?.warnings && !restoreDetail?.errors;
 
     if (loadingRestoreDetail) {
@@ -236,12 +316,12 @@ class AppSnapshotRestore extends Component {
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
         </div>
-      )
+      );
     }
 
     if (restoreCompleted && hasNoErrorsOrWarnings) {
       this.logOutUser();
-      this.props.history.push("/restore-completed")
+      this.props.history.push("/restore-completed");
     }
 
     return (
@@ -249,55 +329,94 @@ class AppSnapshotRestore extends Component {
         <Helmet>
           <title>{`${this.props.app.name} Snapshots Restore`}</title>
         </Helmet>
-        {!restoreCompleted && !restoreFailing ?
+        {!restoreCompleted && !restoreFailing ? (
           <div className="flex1 flex-column alignItems--center">
-            <p className="u-fontWeight--bold u-textColor--primary u-fontSize--larger u-lineHeight--normal u-marginBottom--10"> Application restore in progress </p>
-            <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal"> After all volumes have been restored you will need to log back in to the admin console. </p>
+            <p className="u-fontWeight--bold u-textColor--primary u-fontSize--larger u-lineHeight--normal u-marginBottom--10">
+              {" "}
+              Application restore in progress{" "}
+            </p>
+            <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal">
+              {" "}
+              After all volumes have been restored you will need to log back in
+              to the admin console.{" "}
+            </p>
             <div className="flex flex-column  u-marginTop--40">
-              {restoreLoading &&
+              {restoreLoading && (
                 <div className="flex-column flex1 alignItems--center justifyContent--center">
                   <Loader size="60" />
                 </div>
-              }
+              )}
               {restoreDetail?.volumes?.map((volume, i) => {
-                const strokeColor = volume.completionPercent === 100 ? "#44BB66" : "#326DE6";
+                const strokeColor =
+                  volume.completionPercent === 100 ? "#44BB66" : "#326DE6";
                 const minutes = Math.floor(volume.timeRemainingSeconds / 60);
-                const remainingTime = volume.timeRemainingSeconds < 60 ? `${volume.timeRemainingSeconds} seconds remaining` : `${minutes} minutes remaining`;
-                const percentage = volume.completionPercent ? volume.completionPercent : 0;
+                const remainingTime =
+                  volume.timeRemainingSeconds < 60
+                    ? `${volume.timeRemainingSeconds} seconds remaining`
+                    : `${minutes} minutes remaining`;
+                const percentage = volume.completionPercent
+                  ? volume.completionPercent
+                  : 0;
 
                 return (
-                  <div className="flex flex1 u-marginTop--30 alignItems--center" key={`${volume.name}-${i}`}>
+                  <div
+                    className="flex flex1 u-marginTop--30 alignItems--center"
+                    key={`${volume.name}-${i}`}
+                  >
                     <div className="flex flex1">
-                      <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--bold u-marginRight--10">Restoring volume: {volume.name}</p>
+                      <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--bold u-marginRight--10">
+                        Restoring volume: {volume.name}
+                      </p>
                     </div>
                     <div className="flex flex1 flex-column justifyContent--center">
-                      <Line percent={percentage} strokeWidth="3" strokeColor={strokeColor} />
-                      {volume.completionPercent === 100 ?
-                        <div className="flex justifyContent--center u-fontSize--smaller u-fontWeight--medium u-textColor--info u-marginTop--5"> Complete </div>
-                        : volume.remainingSecondsExist ?
-                          <div className="flex justifyContent--center u-fontSize--smaller u-fontWeight--medium u-textColor--info u-marginTop--5"> {volume.timeRemainingSeconds ? remainingTime : null}</div>
-                          :
-                          <div className="flex justifyContent--center u-fontSize--smaller u-fontWeight--medium u-textColor--info u-marginTop--5"> In progress </div>
-                      }
+                      <Line
+                        percent={percentage}
+                        strokeWidth="3"
+                        strokeColor={strokeColor}
+                      />
+                      {volume.completionPercent === 100 ? (
+                        <div className="flex justifyContent--center u-fontSize--smaller u-fontWeight--medium u-textColor--info u-marginTop--5">
+                          {" "}
+                          Complete{" "}
+                        </div>
+                      ) : volume.remainingSecondsExist ? (
+                        <div className="flex justifyContent--center u-fontSize--smaller u-fontWeight--medium u-textColor--info u-marginTop--5">
+                          {" "}
+                          {volume.timeRemainingSeconds ? remainingTime : null}
+                        </div>
+                      ) : (
+                        <div className="flex justifyContent--center u-fontSize--smaller u-fontWeight--medium u-textColor--info u-marginTop--5">
+                          {" "}
+                          In progress{" "}
+                        </div>
+                      )}
                     </div>
-                    {volume.completionPercent === 100 ?
+                    {volume.completionPercent === 100 ? (
                       <span className="icon checkmark-icon u-marginLeft--10 u-marginBottom--15"></span>
-                      :
-                      <span className="u-fontSize-small u-fontWeight--medium u-textColor--info u-marginLeft--10 u-marginBottom--15">{volume.completionPercent ? `${volume.completionPercent}%` : null}</span>
-                    }
+                    ) : (
+                      <span className="u-fontSize-small u-fontWeight--medium u-textColor--info u-marginLeft--10 u-marginBottom--15">
+                        {volume.completionPercent
+                          ? `${volume.completionPercent}%`
+                          : null}
+                      </span>
+                    )}
                   </div>
                 );
               })}
             </div>
             <div className="flex alignItems--center justifyContent--center u-marginTop--40">
-              <button className="btn secondary red" onClick={this.onCancelRestore} disabled={cancelingRestore}>{cancelingRestore ? "Canceling..." : "Cancel snapshot restore"}</button>
+              <button
+                className="btn secondary red"
+                onClick={this.onCancelRestore}
+                disabled={cancelingRestore}
+              >
+                {cancelingRestore ? "Canceling..." : "Cancel snapshot restore"}
+              </button>
             </div>
           </div>
-          :
-          !hasNoErrorsOrWarnings || restoreFailing ?
-            this.renderFailedRestoreView(restoreDetail)
-            : null
-        }
+        ) : !hasNoErrorsOrWarnings || restoreFailing ? (
+          this.renderFailedRestoreView(restoreDetail)
+        ) : null}
       </div>
     );
   }
