@@ -187,7 +187,7 @@ func (h *Handler) GetLicense(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
+		foundApp, err = store.GetStore().GetAppFromSlug(appSlug)
 		if err != nil {
 			getLicenseResponse.Error = "failed to get app from slug"
 			logger.Error(errors.Wrap(err, getLicenseResponse.Error))
