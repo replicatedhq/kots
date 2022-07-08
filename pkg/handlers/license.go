@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
@@ -22,7 +21,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/online"
 	installationtypes "github.com/replicatedhq/kots/pkg/online/types"
-	"github.com/replicatedhq/kots/pkg/pull"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/registry"
 	"github.com/replicatedhq/kots/pkg/store"
@@ -178,54 +176,12 @@ func (h *Handler) GetLicense(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 	license := new(kotsv1beta1.License)
 	foundApp := new(apptypes.App)
-
+	var err error
 	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
 	if isHelmManaged == "true" {
-		appCache := getHelmAppCache()
-		app := appCache[appSlug].Application
-		foundApp = &apptypes.App{ID: app.ID, Slug: app.Slug, Name: app.Name}
-		apiEndpoint := os.Getenv("REPLICATED_API_ENDPOINT")
-
-		// get license
-		req, err := util.NewRequest(http.MethodGet, fmt.Sprintf("%s/license", apiEndpoint), nil)
+		license, foundApp, err = getLicenseForHelmApp(appSlug)
 		if err != nil {
-			getLicenseResponse.Error = "failed to create http request"
-			logger.Error(errors.Wrap(err, getLicenseResponse.Error))
-			JSON(w, http.StatusInternalServerError, getLicenseResponse)
-			return
-		}
-		var licId string
-		if appCache[appSlug].Values["replicated"] != nil && appCache[appSlug].Values["replicated"].(map[string]interface{})["license_id"] != nil {
-			licId = appCache[appSlug].Values["replicated"].(map[string]interface{})["license_id"].(string)
-		}
-		if licId == "" {
-			getLicenseResponse.Error = "replicated license id not present in values"
-			logger.Error(errors.Wrap(err, getLicenseResponse.Error))
-			JSON(w, http.StatusInternalServerError, getLicenseResponse)
-			return
-		}
-		req.SetBasicAuth(licId, licId)
-
-		resp, err := http.DefaultClient.Do(req)
-		if err != nil {
-			getLicenseResponse.Error = "failed to perform http request"
-			logger.Error(errors.Wrap(err, getLicenseResponse.Error))
-			JSON(w, http.StatusInternalServerError, getLicenseResponse)
-			return
-		}
-
-		defer resp.Body.Close()
-		responseBody, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			getLicenseResponse.Error = "failed to read response body"
-			logger.Error(errors.Wrap(err, getLicenseResponse.Error))
-			JSON(w, http.StatusInternalServerError, getLicenseResponse)
-			return
-		}
-
-		license, err = pull.ParseLicenseFromBytes(responseBody)
-		if err != nil {
-			getLicenseResponse.Error = "failed to parse license from response body"
+			getLicenseResponse.Error = "failed to get license for helm app"
 			logger.Error(errors.Wrap(err, getLicenseResponse.Error))
 			JSON(w, http.StatusInternalServerError, getLicenseResponse)
 			return
