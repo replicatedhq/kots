@@ -12,6 +12,7 @@ import ShowDetailsModal from "@src/components/modals/ShowDetailsModal";
 import ShowLogsModal from "@src/components/modals/ShowLogsModal";
 import DeployWarningModal from "../shared/modals/DeployWarningModal";
 import SkipPreflightsModal from "../shared/modals/SkipPreflightsModal";
+import HelmDeployModal from "../shared/modals/HelmDeployModal";
 import classNames from "classnames";
 
 import { Utilities, getPreflightResultState, secondsAgo } from "@src/utilities/utilities";
@@ -360,7 +361,7 @@ class DashboardVersionCard extends React.Component {
               <span className="icon deployLogs--icon u-cursor--pointer" onClick={() => this.handleViewLogs(currentVersion, currentVersion?.status === "failed")} data-tip="View deploy logs" />
               <ReactTooltip effect="solid" className="replicated-tooltip" />
             </div>
-            {currentVersion.status === "deploying" ? null : 
+            {currentVersion.status === "deploying" ? null :
               <div className="flex-column justifyContent--center u-marginLeft--10">
                 <button
                   className="secondary blue btn"
@@ -454,6 +455,12 @@ class DashboardVersionCard extends React.Component {
   }
 
   deployVersion = (version, force = false, continueWithFailedPreflights = false, redeploy = false) => {
+    if (this.props.isHelmManaged) {
+      this.setState({
+        showHelmDeployModal: true,
+      })
+      return;
+    }
     const { app } = this.props;
     const clusterSlug = app.downstream.cluster?.slug;
     if (!clusterSlug) {
@@ -489,7 +496,7 @@ class DashboardVersionCard extends React.Component {
           return;
         }
       }
-      
+
       // prompt to make sure user wants to deploy
       this.setState({
         displayConfirmDeploymentModal: true,
@@ -516,7 +523,7 @@ class DashboardVersionCard extends React.Component {
       this.props.refetchData();
     }
   }
-  
+
 
   onForceDeployClick = (continueWithFailedPreflights = false) => {
     this.setState({ showSkipModal: false, showDeployWarningModal: false, displayShowDetailsModal: false });
@@ -537,7 +544,7 @@ class DashboardVersionCard extends React.Component {
       releaseNotes: ""
     });
   }
-  
+
   actionButtonStatus = version => {
     const isDeploying = version.status === "deploying";
     const isDownloading = this.state.versionDownloadStatuses?.[version.sequence]?.downloadingVersion;
@@ -609,7 +616,7 @@ class DashboardVersionCard extends React.Component {
       </div>
     );
   }
-  
+
   renderVersionAction = version => {
     const { app } = this.props;
     const downstream = app?.downstream;
@@ -808,7 +815,7 @@ class DashboardVersionCard extends React.Component {
         }
       },
     });
-    
+
     fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/sequence/${version.parentSequence}/download`, {
       headers: {
         "Authorization": Utilities.getToken(),
@@ -1068,7 +1075,7 @@ class DashboardVersionCard extends React.Component {
 
     if (gitopsEnabled) {
       return (
-        <DashboardGitOpsCard 
+        <DashboardGitOpsCard
           gitops={this.props.downstream?.gitops}
           isAirgap={app?.isAirgap}
           appSlug={app?.slug}
@@ -1228,11 +1235,11 @@ class DashboardVersionCard extends React.Component {
                 <div className="flex-column justifyContent--center alignItems--center">
                   <p className="u-fontSize--large u-textColor--primary u-lineHeight--bold u-marginBottom--10">Upgrading...</p>
                   <Loader className="flex alignItems--center" size="32" />
-                  {renderKotsUpgradeStatus ?  
+                  {renderKotsUpgradeStatus ?
                     <p className="u-fontSize--normal u-textColor--primary u-lineHeight--normal u-marginBottom--10">{ this.state.kotsUpdateStatus }</p>
                     : null
                   }
-                  {this.state.kotsUpdateMessage ?  
+                  {this.state.kotsUpdateMessage ?
                     <p className="u-fontSize--normal u-textColor--primary u-lineHeight--normal u-marginBottom--10">{ shortKotsUpdateMessage }</p>
                     : null
                   }
@@ -1264,10 +1271,21 @@ class DashboardVersionCard extends React.Component {
             <SkipPreflightsModal
               showSkipModal={true}
               hideSkipModal={() => this.setState({ showSkipModal: false })}
-              onForceDeployClick={this.onForceDeployClick} 
+              onForceDeployClick={this.onForceDeployClick}
             />
           }
-          {this.state.showDiffModal && 
+          {this.state.showHelmDeployModal &&
+            <HelmDeployModal
+              appSlug={this.props?.app?.slug}
+              chartPath={this.props?.app?.chartPath || ""}
+              hideHelmDeployModal={() => this.setState({ showHelmDeployModal: false, showHelmValuesModal: false })}
+              showHelmDeployModal={true}
+              subtitle="Follow the steps below to redeploy your application using the values from the last release."
+              title="Redeploy application"
+              upgradeTitle="Redeploy application with Helm"
+            />
+          }
+          {this.state.showDiffModal &&
             <Modal
               isOpen={true}
               onRequestClose={this.closeViewDiffModal}

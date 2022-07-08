@@ -12,6 +12,12 @@ import map from "lodash/map";
 import Modal from "react-modal";
 import Loader from "../shared/Loader";
 import ErrorModal from "../modals/ErrorModal";
+import HelmDeployModal from "../shared/modals/HelmDeployModal";
+import {
+  IsHelmManaged,
+  useDownloadValues,
+  useSaveConfig,
+} from "../hooks";
 
 import "../../scss/components/watches/WatchConfig.scss";
 import { Utilities } from "../../utilities/utilities";
@@ -390,8 +396,8 @@ class AppConfig extends Component {
     }
 
     const currentSequence = app?.downstream?.currentVersion?.parentSequence;
-    const pendingSequenceInxex = findIndex(app?.downstream?.pendingVersions, function(v) { return v.parentSequence == sequence });
-    const pastSequenceIndex = findIndex(app?.downstream?.pastVersions, function(v) { return v.parentSequence == sequence });
+    const pendingSequenceInxex = findIndex(app?.downstream?.pendingVersions, function (v) { return v.parentSequence == sequence });
+    const pastSequenceIndex = findIndex(app?.downstream?.pastVersions, function (v) { return v.parentSequence == sequence });
     const pendingVersions = app?.downstream?.pendingVersions;
 
     if (size(pendingVersions) > 0 && (currentSequence === sequence)) {
@@ -400,7 +406,7 @@ class AppConfig extends Component {
           <p className="flex alignItems--center u-marginRight--5"> <span className="icon info-icon-green flex u-marginRight--5" /> This is the currently deployed config. There {size(pendingVersions) === 1 ? "is" : "are"} {size(pendingVersions)} newer version{size(pendingVersions) === 1 ? "" : "s"} since this one. </p>
           <Link to={`/app/${app?.slug}/config/${pendingVersions[0].parentSequence}`} className="replicated-link"> Edit the latest config </Link>
         </div>
-      ) 
+      )
     } else if (pastSequenceIndex > -1) {
       return (
         <div className="ConfigInfo older justifyContent--center">
@@ -422,7 +428,7 @@ class AppConfig extends Component {
 
   isConfigReadOnly = (app) => {
     const { match } = this.props;
-    if (!match.params.sequence) {return false;}
+    if (!match.params.sequence) { return false; }
     const sequence = parseInt(match.params.sequence);
     const isCurrentVersion = app.downstream?.currentVersion?.sequence === sequence;
     const isLatestVersion = app.currentSequence === sequence;
@@ -465,7 +471,6 @@ class AppConfig extends Component {
       displayErrorModal,
       errorTitle } = this.state;
     const { fromLicenseFlow, match } = this.props;
-
     const app = this.props.app || this.state.app;
 
     if (configLoading || !app) {
@@ -484,13 +489,11 @@ class AppConfig extends Component {
         <Helmet>
           <title>{`${app.name} Config`}</title>
         </Helmet>
-
-
-        {fromLicenseFlow && app && <span className="u-fontSize--larger u-textColor--primary u-fontWeight--bold u-marginTop--30" style={{ marginLeft: "38px"}}>Configure {app.name}</span>}
+        {fromLicenseFlow && app && <span className="u-fontSize--larger u-textColor--primary u-fontWeight--bold u-marginTop--30" style={{ marginLeft: "38px" }}>Configure {app.name}</span>}
         <div className="flex-column">
           <div id="configSidebarWrapper" className="AppConfigSidenav--wrapper" ref={(wrapper) => this.sidebarWrapper = wrapper}>
             {configGroups?.map((group, i) => {
-              if (group.title === "" || group.title.length === 0 || group.hidden || group.when === "false") {return;}
+              if (group.title === "" || group.title.length === 0 || group.hidden || group.when === "false") { return; }
               return (
                 <div key={`${i}-${group.name}-${group.title}`} className={`AppConfigSidenav--group ${this.state.activeGroups.includes(group.name) ? "group-open" : ""}`}>
                   <div className="flex alignItems--center AppConfigSidenav--groupWrapper" onClick={() => this.toggleActiveGroups(group.name)}>
@@ -501,7 +504,7 @@ class AppConfig extends Component {
                     <div className="AppConfigSidenav--items">
                       {group.items?.map((item, i) => {
                         const hash = this.props.location.hash.slice(1);
-                        if (item.hidden || item.when === "false") {return;}
+                        if (item.hidden || item.when === "false") { return; }
                         return (
                           <a className={`u-fontSize--normal u-lineHeight--normal ${hash === `${item.name}-group` ? "active-item" : ""}`} href={`#${item.name}-group`} key={`${i}-${item.name}-${item.title}`}>{item.title}</a>
                         )
@@ -513,22 +516,77 @@ class AppConfig extends Component {
             })}
           </div>
           <div className="ConfigArea--wrapper">
-            {this.renderConfigInfo(app)}
-            <div className={classNames("ConfigOuterWrapper u-paddingTop--30", { "u-marginTop--20": fromLicenseFlow })}>
-              <div className="ConfigInnerWrapper">
-                <AppConfigRenderer groups={configGroups} getData={this.handleConfigChange} readonly={this.isConfigReadOnly(app)} configSequence={match.params.sequence} appSlug={app.slug} />
-              </div>
-            </div>
-            {savingConfig ?
-              <div className="u-paddingBottom--30">
-                <Loader size="30" />
-              </div>
-              :
-              <div className="ConfigError--wrapper flex-column u-paddingBottom--30 alignItems--flexStart">
-                {configError && <span className="u-textColor--error u-marginBottom--20 u-fontWeight--bold">{configError}</span>}
-                <button className="btn primary blue" disabled={!changed && !fromLicenseFlow || this.isConfigReadOnly(app)} onClick={this.handleSave}>{fromLicenseFlow ? "Continue" : "Save config"}</button>
-              </div>
-            }
+            <IsHelmManaged>
+              {({ isHelmManaged }) => {
+                const { saveConfig, isSaving, error } = useSaveConfig({
+                  appSlug: this.getSlug(),
+                });
+                const {
+                  download,
+                  error: downloadError,
+                  isDownloading,
+                  name,
+                  ref,
+                  url,
+                } = useDownloadValues({
+                  appSlug: this.getSlug(),
+                  fileName: "values.yaml",
+                });
+
+                const handleGenerateConfig = async () => {
+                  this.setState({
+                    showHelmDeployModal: true
+                  });
+                  await saveConfig({
+                    body: JSON.stringify({
+                      configGroups: this.state.configGroups,
+                      sequence: this.getSequence(),
+                      createNewVersion: !this.props.fromLicenseFlow && this.props.match.params.sequence == undefined,
+                    }),
+                  });
+                };
+
+                return <>
+                  {!isHelmManaged && this.renderConfigInfo(app)}
+                  <div className={classNames("ConfigOuterWrapper u-paddingTop--30", { "u-marginTop--20": fromLicenseFlow })}>
+                    <div className="ConfigInnerWrapper">
+                      <AppConfigRenderer groups={configGroups} getData={this.handleConfigChange} readonly={this.isConfigReadOnly(app)} configSequence={match.params.sequence} appSlug={app.slug} />
+                    </div>
+                  </div>
+                  <div className="flex alignItems--flexStart">
+                    {isHelmManaged && <div className="ConfigError--wrapper flex-column u-paddingBottom--30 alignItems--flexStart">
+                      <button className="btn primary blue" disabled={isSaving} onClick={handleGenerateConfig}>Generate Upgrade Command</button>
+                    </div>}
+                    {!isHelmManaged && savingConfig &&
+                      <div className="u-paddingBottom--30">
+                        <Loader size="30" />
+                      </div>}
+                    {!isHelmManaged && !savingConfig &&
+                      <div className="ConfigError--wrapper flex-column u-paddingBottom--30 alignItems--flexStart">
+                        {configError && <span className="u-textColor--error u-marginBottom--20 u-fontWeight--bold">{configError}</span>}
+                        <button className="btn primary blue" disabled={!changed && !fromLicenseFlow || this.isConfigReadOnly(app)} onClick={this.handleSave}>{fromLicenseFlow ? "Continue" : "Save config"}</button>
+                      </div>}
+                  </div>
+                  {this.state.showHelmDeployModal &&
+                  <>
+                    <HelmDeployModal
+                      appSlug={this.props?.app?.slug}
+                      chartPath={this.props?.app?.chartPath || ""}
+                      downloadClicked={download}
+                      error={downloadError}
+                      isDownloading={isDownloading}
+                      hideHelmDeployModal={() => this.setState({ showHelmDeployModal: false })}
+                      showHelmDeployModal={true}
+                      subtitle="Follow the steps below to upgrade your application with your new values.yaml."
+                      title="Upgrade application"
+                      upgradeTitle="Upgrade application with Helm"
+                      valuesFilePath="https://downloads.replicated.com/values/dakWe43.yaml"
+                    />
+                    <a href={url} download={name} className="hidden" ref={ref} />
+                    </>}
+                </>;
+              }}
+            </IsHelmManaged>
           </div>
         </div>
 
@@ -569,15 +627,17 @@ class AppConfig extends Component {
             </div>
           }
         </Modal>
-        {gettingConfigErrMsg &&
+        {
+          gettingConfigErrMsg &&
           <ErrorModal
             errorModal={displayErrorModal}
             toggleErrorModal={this.toggleErrorModal}
             err={errorTitle}
             errMsg={gettingConfigErrMsg}
             tryAgain={this.getConfig}
-          />}
-      </div>
+          />
+        }
+      </div >
     )
   }
 }

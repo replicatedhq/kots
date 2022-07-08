@@ -3,7 +3,6 @@ import classNames from "classnames";
 import { withRouter, Switch, Route, Redirect } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import Modal from "react-modal";
-
 import withTheme from "@src/components/context/withTheme";
 import { KotsSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import { HelmChartSidebarItem } from "@src/components/watches/WatchSidebarItem";
