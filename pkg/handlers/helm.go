@@ -2,13 +2,18 @@ package handlers
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 // IsHelmManagedResponse - response body for the is helm managed endpoint
@@ -71,4 +76,46 @@ func (h *Handler) GetAppValuesFile(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(dat)
 	JSON(w, http.StatusOK, getAppValuesFileResponse)
+}
+
+func getLicenseForHelmApp(chartName string) (*kotsv1beta1.License, *apptypes.App, error) {
+	appCache := getHelmAppCache()
+	chartApp := appCache[chartName].Application
+	foundApp := &apptypes.App{ID: chartApp.ID, Slug: chartApp.Slug, Name: chartApp.Name}
+	apiEndpoint := os.Getenv("REPLICATED_API_ENDPOINT")
+
+	// get license
+	req, err := util.NewRequest(http.MethodGet, fmt.Sprintf("%s/license", apiEndpoint), nil)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to create new HTTP request")
+	}
+	var licId string
+	if appCache[chartName] != nil && appCache[chartName].Values["replicated"] != nil && appCache[chartName].Values["replicated"].(map[string]interface{})["license_id"] != nil {
+		licId = appCache[chartName].Values["replicated"].(map[string]interface{})["license_id"].(string)
+	}
+	if licId == "" {
+		return nil, nil, errors.New("replicated license id not present in values")
+	}
+	req.SetBasicAuth(licId, licId)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to perform HTTP request")
+	}
+
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return nil, nil, errors.New(fmt.Sprintf("failed to perform http request, got non 200 status code of: %v", resp.StatusCode))
+	}
+	responseBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to read response body")
+	}
+
+	license, err := kotsutil.LoadLicenseFromBytes(responseBody)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to load license from response body bytes")
+	}
+
+	return license, foundApp, nil
 }

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -173,20 +174,34 @@ func (h *Handler) GetLicense(w http.ResponseWriter, r *http.Request) {
 	}
 
 	appSlug := mux.Vars(r)["appSlug"]
-	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
-	if err != nil {
-		getLicenseResponse.Error = "failed to get app from slug"
-		logger.Error(errors.Wrap(err, getLicenseResponse.Error))
-		JSON(w, http.StatusInternalServerError, getLicenseResponse)
-		return
-	}
+	license := new(kotsv1beta1.License)
+	foundApp := new(apptypes.App)
+	var err error
+	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
+	if isHelmManaged == "true" {
+		license, foundApp, err = getLicenseForHelmApp(appSlug)
+		if err != nil {
+			getLicenseResponse.Error = "failed to get license for helm app"
+			logger.Error(errors.Wrap(err, getLicenseResponse.Error))
+			JSON(w, http.StatusInternalServerError, getLicenseResponse)
+			return
+		}
+	} else {
+		foundApp, err = store.GetStore().GetAppFromSlug(appSlug)
+		if err != nil {
+			getLicenseResponse.Error = "failed to get app from slug"
+			logger.Error(errors.Wrap(err, getLicenseResponse.Error))
+			JSON(w, http.StatusInternalServerError, getLicenseResponse)
+			return
+		}
 
-	license, err := store.GetStore().GetLatestLicenseForApp(foundApp.ID)
-	if err != nil {
-		getLicenseResponse.Error = "failed to get license for app"
-		logger.Error(errors.Wrap(err, getLicenseResponse.Error))
-		JSON(w, http.StatusInternalServerError, getLicenseResponse)
-		return
+		license, err = store.GetStore().GetLatestLicenseForApp(foundApp.ID)
+		if err != nil {
+			getLicenseResponse.Error = "failed to get license for app"
+			logger.Error(errors.Wrap(err, getLicenseResponse.Error))
+			JSON(w, http.StatusInternalServerError, getLicenseResponse)
+			return
+		}
 	}
 
 	licenseResponse, err := licenseResponseFromLicense(license, foundApp)
