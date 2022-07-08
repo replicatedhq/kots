@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: base-test-pod
+  namespace: base-test
+spec:
+  initContainers:
+  - image: quay.io/replicatedcom/qa-kots-3:alpine-3.6
+    name: private-app-image
+  containers:
+  - image: busybox
+    name: busybox-container

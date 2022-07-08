@@ -713,6 +713,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOp
 			AllImagesPrivate: allPrivate,
 			HelmChartPath:    b.Path,
 			UseHelmInstall:   writeMidstreamOptions.UseHelmInstall,
+			KotsKindsImages:  kotsutil.GetImagesFromKotsKinds(newKotsKinds),
 		}
 		findResult, err := base.FindPrivateImages(findPrivateImagesOptions)
 		if err != nil {

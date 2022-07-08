@@ -2,7 +2,6 @@ package k8sdoc
 
 import (
 	"github.com/pkg/errors"
-	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -14,7 +13,6 @@ type K8sDoc interface {
 
 var _ K8sDoc = (*Doc)(nil)
 var _ K8sDoc = (*PodDoc)(nil)
-var _ K8sDoc = (*SupportBundleDoc)(nil)
 
 type Doc struct {
 	APIVersion string   `yaml:"apiVersion"`
@@ -28,13 +26,6 @@ type PodDoc struct {
 	Kind       string   `yaml:"kind"`
 	Metadata   Metadata `yaml:"metadata"`
 	Spec       PodSpec  `yaml:"spec"`
-}
-
-type SupportBundleDoc struct {
-	APIVersion string                                `yaml:"apiVersion"`
-	Kind       string                                `yaml:"kind"`
-	Metadata   Metadata                              `yaml:"metadata"`
-	Spec       troubleshootv1beta2.SupportBundleSpec `yaml:"spec"`
 }
 
 type Metadata struct {
@@ -78,15 +69,15 @@ func ParseYAML(yamlDoc []byte) (K8sDoc, error) {
 		return nil, errors.Wrap(err, "failed to parse yaml")
 	}
 
-	if doc.Kind != "Pod" {
-		return doc, nil
+	if doc.Kind == "Pod" {
+		podDoc := &PodDoc{}
+		if err := yaml.Unmarshal(yamlDoc, podDoc); err != nil {
+			return nil, errors.Wrap(err, "failed to parse yaml as pod")
+		}
+		return podDoc, nil
 	}
 
-	podDoc := &PodDoc{}
-	if err := yaml.Unmarshal(yamlDoc, podDoc); err != nil {
-		return nil, errors.Wrap(err, "failed to parse yaml")
-	}
-	return podDoc, nil
+	return doc, nil
 }
 
 func (d *Doc) PatchWithPullSecret(secret *corev1.Secret) K8sDoc {
@@ -177,20 +168,4 @@ func (d *PodDoc) ListImages() []string {
 		images = append(images, container.Image)
 	}
 	return images
-}
-
-func (d *SupportBundleDoc) ListImages() []string {
-	images := make([]string, 0)
-	for _, collector := range d.Spec.Collectors {
-		if collector.Run != nil {
-			images = append(images, collector.Run.Image)
-		}
-	}
-
-	return images
-}
-
-func (d *SupportBundleDoc) PatchWithPullSecret(secret *corev1.Secret) K8sDoc {
-	// this is not a kustomize patch, so we return nil and it's ignored
-	return nil
 }
