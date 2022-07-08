@@ -11,7 +11,8 @@ export default class UnsupportedBrowser extends React.Component {
                 Unsupported browser
               </p>
               <p className="u-marginTop--30 u-textColor--bodyCopy u-fontSize--large u-lineHeight--normal">
-                Oops, this browser is either unsupported or you need to enable cookies and web storage.
+                Oops, this browser is either unsupported or you need to enable
+                cookies and web storage.
               </p>
             </div>
           </div>

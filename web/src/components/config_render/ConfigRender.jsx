@@ -9,12 +9,11 @@ import ConfigGroups from "./ConfigGroups";
 import { ConfigService } from "../../services/ConfigService";
 
 export default class ConfigRender extends React.Component {
-
   constructor(props) {
     super(props);
-    this.state= {
-      groups: this.props.fields
-    }
+    this.state = {
+      groups: this.props.fields,
+    };
     this.triggerChange = debounce(this.triggerChange, 300);
   }
 
@@ -22,7 +21,7 @@ export default class ConfigRender extends React.Component {
     if (this.props.handleChange) {
       this.props.handleChange(data);
     }
-  }
+  };
 
   handleGroupsChange = (groupName, itemName, value, data) => {
     const getValues = (val) => {
@@ -40,13 +39,16 @@ export default class ConfigRender extends React.Component {
     const groups = _.map(this.props.fields, (group) => {
       if (group.name === groupName) {
         group.items = _.map(group.items, (item) => {
-          if (!(item.type in ["select_many", "label", "heading"]) && item.name === itemName) {
+          if (
+            !(item.type in ["select_many", "label", "heading"]) &&
+            item.name === itemName
+          ) {
             if (item.valuesByGroup && item.type === "file") {
               const multi_values = getValues(value);
               item.valuesByGroup[groupName] = {};
               if (multi_values.length > 0) {
                 multi_values.map((file) => {
-                  item.valuesByGroup[groupName][file.value] = file.filename
+                  item.valuesByGroup[groupName][file.value] = file.filename;
                 });
               }
               item.countByGroup[groupName] = multi_values.length;
@@ -55,7 +57,8 @@ export default class ConfigRender extends React.Component {
               if (item.type === "file") {
                 item.filename = getValue(data);
               }
-              if (item.valuesByGroup) { // Variadic config value
+              if (item.valuesByGroup) {
+                // Variadic config value
                 item.valuesByGroup[groupName][data] = item.value;
               }
             }
@@ -87,42 +90,46 @@ export default class ConfigRender extends React.Component {
 
     this.setState({
       rawGroups: groups,
-      groups: keyBy(groups, "name")
+      groups: keyBy(groups, "name"),
     });
 
     // TODO: maybe this should only be on submit
     this.triggerChange(this.props.getData(groups));
-  }
+  };
 
   handleAddItem = (groupName, itemName) => {
     const groups = this.props.rawGroups;
     const groupToEdit = find(groups, ["name", groupName]);
     let itemToEdit = find(groupToEdit.items, ["name", itemName]);
     if (itemToEdit.countByGroup) {
-      itemToEdit.countByGroup[groupName] = itemToEdit.countByGroup[groupName] + 1;
+      itemToEdit.countByGroup[groupName] =
+        itemToEdit.countByGroup[groupName] + 1;
     } else {
       itemToEdit["valuesByGroup"] = {
-        [`${groupName}`]: {}
-      }
+        [`${groupName}`]: {},
+      };
     }
     this.setState({ rawGroups: groups });
     this.triggerChange(this.props.getData(groups));
-  }
+  };
 
   handleRemoveItem = (groupName, itemName, itemToRemove) => {
     const groups = this.props.rawGroups;
     const groupToEdit = find(groups, ["name", groupName]);
     let itemToEdit = find(groupToEdit.items, ["name", itemName]);
     itemToEdit.countByGroup[groupName] = itemToEdit.countByGroup[groupName] - 1;
-    delete itemToEdit.valuesByGroup[`${groupName}`][`${itemToRemove}`]
+    delete itemToEdit.valuesByGroup[`${groupName}`][`${itemToRemove}`];
     this.setState({ rawGroups: groups });
     this.triggerChange(this.props.getData(groups));
-  }
+  };
 
   componentDidUpdate(lastProps) {
     if (this.props.fields !== lastProps.fields) {
       this.setState({
-        groups: keyBy(ConfigService.filterGroups(this.props.fields, this.props.filters), "name"),
+        groups: keyBy(
+          ConfigService.filterGroups(this.props.fields, this.props.filters),
+          "name"
+        ),
       });
     }
   }

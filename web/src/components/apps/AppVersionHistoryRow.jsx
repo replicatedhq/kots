@@ -1,4 +1,3 @@
-
 import React, { Component } from "react";
 import { Link } from "react-router-dom";
 import find from "lodash/find";
@@ -11,16 +10,16 @@ import { Utilities, getPreflightResultState } from "../../utilities/utilities";
 
 class AppVersionHistoryRow extends Component {
   renderDiff = (version) => {
-    const hideSourceDiff = version.source?.includes("Airgap Install") || version.source?.includes("Online Install");
+    const hideSourceDiff =
+      version.source?.includes("Airgap Install") ||
+      version.source?.includes("Online Install");
     if (hideSourceDiff) {
       return null;
     }
     return (
-      <div className="u-marginTop--5">
-        {this.props.renderDiff(version)}
-      </div>
+      <div className="u-marginTop--5">{this.props.renderDiff(version)}</div>
     );
-  }
+  };
 
   handleSelectReleasesToDiff = () => {
     if (!this.props.selectedDiffReleases) {
@@ -29,8 +28,11 @@ class AppVersionHistoryRow extends Component {
     if (this.props.nothingToCommit) {
       return;
     }
-    this.props.handleSelectReleasesToDiff(this.props.version, !this.props.isChecked);
-  }
+    this.props.handleSelectReleasesToDiff(
+      this.props.version,
+      !this.props.isChecked
+    );
+  };
 
   renderYamlErrors = (version) => {
     if (!version.yamlErrors) {
@@ -39,24 +41,46 @@ class AppVersionHistoryRow extends Component {
     return (
       <div className="flex alignItems--center u-marginTop--5">
         <span className="icon error-small" />
-        <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5 u-textColor--error">{version.yamlErrors?.length} Invalid file{version.yamlErrors?.length !== 1 ? "s" : ""} </span>
-        <span className="replicated-link u-marginLeft--5 u-fontSize--small" onClick={() => this.props.toggleShowDetailsModal(version.yamlErrors, version.sequence)}> See details </span>
+        <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5 u-textColor--error">
+          {version.yamlErrors?.length} Invalid file
+          {version.yamlErrors?.length !== 1 ? "s" : ""}{" "}
+        </span>
+        <span
+          className="replicated-link u-marginLeft--5 u-fontSize--small"
+          onClick={() =>
+            this.props.toggleShowDetailsModal(
+              version.yamlErrors,
+              version.sequence
+            )
+          }
+        >
+          {" "}
+          See details{" "}
+        </span>
       </div>
-    )
-  }
-  
+    );
+  };
+
   deployButtonStatus = (version) => {
     const app = this.props.app;
     const downstream = app?.downstream;
 
-    const isCurrentVersion = version.sequence === downstream.currentVersion?.sequence;
+    const isCurrentVersion =
+      version.sequence === downstream.currentVersion?.sequence;
     const isDeploying = version.status === "deploying";
-    const isPastVersion = find(downstream.pastVersions, { sequence: version.sequence });
+    const isPastVersion = find(downstream.pastVersions, {
+      sequence: version.sequence,
+    });
     const needsConfiguration = version.status === "pending_config";
     const isRollback = isPastVersion && version.deployedAt && app.allowRollback;
-    const isRedeploy = isCurrentVersion && (version.status === "failed" || version.status === "deployed");
-    const canUpdateKots = version.needsKotsUpgrade && !this.props.adminConsoleMetadata?.isAirgap && !this.props.adminConsoleMetadata?.isKurl;
-  
+    const isRedeploy =
+      isCurrentVersion &&
+      (version.status === "failed" || version.status === "deployed");
+    const canUpdateKots =
+      version.needsKotsUpgrade &&
+      !this.props.adminConsoleMetadata?.isAirgap &&
+      !this.props.adminConsoleMetadata?.isKurl;
+
     if (needsConfiguration) {
       return "Configure";
     } else if (downstream?.currentVersion?.sequence == undefined) {
@@ -80,8 +104,8 @@ class AppVersionHistoryRow extends Component {
         return "Deploy";
       }
     }
-  }
-  
+  };
+
   getPreflightState = (version) => {
     let preflightsFailed = false;
     let preflightState = "";
@@ -93,22 +117,26 @@ class AppVersionHistoryRow extends Component {
     return {
       preflightsFailed,
       preflightState,
-      preflightSkipped: version?.preflightSkipped
+      preflightSkipped: version?.preflightSkipped,
     };
-  }
-  
+  };
+
   renderReleaseNotes = (version) => {
     if (!version?.releaseNotes) {
       return null;
     }
     return (
       <div>
-        <span className="icon releaseNotes--icon u-marginRight--10 u-cursor--pointer" onClick={() => this.props.showReleaseNotes(version?.releaseNotes)} data-tip="View release notes" />
+        <span
+          className="icon releaseNotes--icon u-marginRight--10 u-cursor--pointer"
+          onClick={() => this.props.showReleaseNotes(version?.releaseNotes)}
+          data-tip="View release notes"
+        />
         <ReactTooltip effect="solid" className="replicated-tooltip" />
       </div>
     );
-  }
-  
+  };
+
   renderVersionAction = (version) => {
     const app = this.props.app;
     const downstream = app?.downstream;
@@ -122,7 +150,7 @@ class AppVersionHistoryRow extends Component {
     } else if (version.status === "failed" || version.status === "deployed") {
       actionFn = this.props.redeployVersion;
     }
-  
+
     if (version.status === "pending_download") {
       let buttonText = "Download";
       if (this.props.isDownloading) {
@@ -143,36 +171,48 @@ class AppVersionHistoryRow extends Component {
         </div>
       );
     }
-  
-    const isCurrentVersion = version.sequence === downstream.currentVersion?.sequence;
+
+    const isCurrentVersion =
+      version.sequence === downstream.currentVersion?.sequence;
     const isLatestVersion = version.sequence === app.currentSequence;
-    const isPendingVersion = find(downstream.pendingVersions, { sequence: version.sequence });
-    const isPastVersion = find(downstream.pastVersions, { sequence: version.sequence });
-    const isPendingDeployedVersion = find(downstream.pendingVersions, { sequence: version.sequence, status: "deployed" });
+    const isPendingVersion = find(downstream.pendingVersions, {
+      sequence: version.sequence,
+    });
+    const isPastVersion = find(downstream.pastVersions, {
+      sequence: version.sequence,
+    });
+    const isPendingDeployedVersion = find(downstream.pendingVersions, {
+      sequence: version.sequence,
+      status: "deployed",
+    });
     const needsConfiguration = version.status === "pending_config";
     const showActions = !isPastVersion || app.allowRollback;
-    const isRedeploy = isCurrentVersion && (version.status === "failed" || version.status === "deployed");
+    const isRedeploy =
+      isCurrentVersion &&
+      (version.status === "failed" || version.status === "deployed");
     const isRollback = isPastVersion && version.deployedAt && app.allowRollback;
-  
-    const isSecondaryBtn = isPastVersion || needsConfiguration || isRedeploy && !isRollback;
+
+    const isSecondaryBtn =
+      isPastVersion || needsConfiguration || (isRedeploy && !isRollback);
     const isPrimaryButton = !isSecondaryBtn && !isRedeploy && !isRollback;
-    const editableConfig = isCurrentVersion || isLatestVersion || isPendingVersion?.semver;
-  
+    const editableConfig =
+      isCurrentVersion || isLatestVersion || isPendingVersion?.semver;
+
     let tooltipTip;
     if (editableConfig) {
       tooltipTip = "Edit config";
     } else {
-      tooltipTip = "View config"
+      tooltipTip = "View config";
     }
 
     const preflightState = this.getPreflightState(version);
     let checksStatusText;
     if (preflightState.preflightsFailed) {
-      checksStatusText = "Checks failed"
+      checksStatusText = "Checks failed";
     } else if (preflightState.preflightState === "warn") {
-      checksStatusText = "Checks passed with warnings"
+      checksStatusText = "Checks passed with warnings";
     } else {
-      checksStatusText = "Checks passed"
+      checksStatusText = "Checks passed";
     }
 
     if (downstream.gitops?.enabled) {
@@ -418,8 +458,8 @@ class AppVersionHistoryRow extends Component {
         )}
       </div>
     );
-  }
-  
+  };
+
   isActionButtonDisabled = (version) => {
     if (version.status === "deploying") {
       return true;
@@ -431,8 +471,8 @@ class AppVersionHistoryRow extends Component {
       return false;
     }
     return !version.isDeployable;
-  }
-  
+  };
+
   renderVersionStatus = (version) => {
     const app = this.props.app;
     const downstream = app?.downstream;
@@ -440,109 +480,254 @@ class AppVersionHistoryRow extends Component {
       return null;
     }
 
-    const isPastVersion = find(downstream.pastVersions, { sequence: version.sequence });
-    const isPendingDeployedVersion = find(downstream.pendingVersions, { sequence: version.sequence, status: "deployed" });
-    
+    const isPastVersion = find(downstream.pastVersions, {
+      sequence: version.sequence,
+    });
+    const isPendingDeployedVersion = find(downstream.pendingVersions, {
+      sequence: version.sequence,
+      status: "deployed",
+    });
+
     if (!isPastVersion && !isPendingDeployedVersion) {
       if (version.status === "deployed" || version.status === "merged") {
         return (
           <div>
-            <span className="status-tag success flex-auto u-cursor--default" data-tip={version.deployedAt ? `${version.status === "deploying" ? "Deploy started at" : "Deployed"} ${Utilities.dateFormat(version.deployedAt, "MMMM D, YYYY @ hh:mm a z")}` : "Unable to find deployed at date"}>Currently {version.status.replace("_", " ")} version</span>
+            <span
+              className="status-tag success flex-auto u-cursor--default"
+              data-tip={
+                version.deployedAt
+                  ? `${
+                      version.status === "deploying"
+                        ? "Deploy started at"
+                        : "Deployed"
+                    } ${Utilities.dateFormat(
+                      version.deployedAt,
+                      "MMMM D, YYYY @ hh:mm a z"
+                    )}`
+                  : "Unable to find deployed at date"
+              }
+            >
+              Currently {version.status.replace("_", " ")} version
+            </span>
             <ReactTooltip effect="solid" className="replicated-tooltip" />
-            {version.preflightSkipped && <p style={{ maxWidth: "200px" }} className="u-textColor--bodyCopy u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginTop--5">This version was deployed before preflight checks had completed</p>}
+            {version.preflightSkipped && (
+              <p
+                style={{ maxWidth: "200px" }}
+                className="u-textColor--bodyCopy u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginTop--5"
+              >
+                This version was deployed before preflight checks had completed
+              </p>
+            )}
           </div>
-        )
+        );
       } else if (version.status === "failed") {
         return (
           <div className="flex alignItems--center">
-            <span className="status-tag failed flex-auto u-marginRight--10">Deploy Failed</span>
-            <span className="replicated-link u-fontSize--small" onClick={() => this.props.handleViewLogs(version, true)}>View deploy logs</span>
-            {version.preflightSkipped && <p style={{ maxWidth: "200px" }} className="u-textColor--bodyCopy u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginTop--5">This version was deployed before preflight checks had completed</p>}
+            <span className="status-tag failed flex-auto u-marginRight--10">
+              Deploy Failed
+            </span>
+            <span
+              className="replicated-link u-fontSize--small"
+              onClick={() => this.props.handleViewLogs(version, true)}
+            >
+              View deploy logs
+            </span>
+            {version.preflightSkipped && (
+              <p
+                style={{ maxWidth: "200px" }}
+                className="u-textColor--bodyCopy u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginTop--5"
+              >
+                This version was deployed before preflight checks had completed
+              </p>
+            )}
           </div>
         );
       } else if (version.status === "deploying") {
         return (
           <span className="flex alignItems--center u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium">
-            <Loader className="flex alignItems--center u-marginRight--5" size="16" />
-              Deploying
-          </span>);
+            <Loader
+              className="flex alignItems--center u-marginRight--5"
+              size="16"
+            />
+            Deploying
+          </span>
+        );
       } else if (version.status !== "pending") {
-        return <span className="status-tag unknown flex-atuo"> {Utilities.toTitleCase(version.status).replace("_", " ")} </span>
+        return (
+          <span className="status-tag unknown flex-atuo">
+            {" "}
+            {Utilities.toTitleCase(version.status).replace("_", " ")}{" "}
+          </span>
+        );
       }
     } else {
       if (version.status === "deployed" || version.status === "merged") {
         return (
           <div>
-            <span className="status-tag unknown flex-auto u-cursor--default" data-tip={version.deployedAt ? `Deployed ${Utilities.dateFormat(version.deployedAt, "MMMM D, YYYY @ hh:mm a z")}` : "Unable to find deployed at date"}>Previously deployed</span>
+            <span
+              className="status-tag unknown flex-auto u-cursor--default"
+              data-tip={
+                version.deployedAt
+                  ? `Deployed ${Utilities.dateFormat(
+                      version.deployedAt,
+                      "MMMM D, YYYY @ hh:mm a z"
+                    )}`
+                  : "Unable to find deployed at date"
+              }
+            >
+              Previously deployed
+            </span>
             <ReactTooltip effect="solid" className="replicated-tooltip" />
           </div>
-        )
+        );
       } else if (version.status === "pending") {
-        return <span className="status-tag skipped flex-auto">Version skipped</span>
-      }
-      else if (version.status === "failed") {
+        return (
+          <span className="status-tag skipped flex-auto">Version skipped</span>
+        );
+      } else if (version.status === "failed") {
         return (
           <div className="flex alignItems--center">
-            <span className="status-tag failed flex-auto u-marginRight--10">Deploy Failed</span>
-            <span className="replicated-link u-fontSize--small" onClick={() => this.props.handleViewLogs(version, true)}>View deploy logs</span>
+            <span className="status-tag failed flex-auto u-marginRight--10">
+              Deploy Failed
+            </span>
+            <span
+              className="replicated-link u-fontSize--small"
+              onClick={() => this.props.handleViewLogs(version, true)}
+            >
+              View deploy logs
+            </span>
           </div>
         );
       } else if (version.status === "deploying") {
         return (
           <span className="flex alignItems--center u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium">
-            <Loader className="flex alignItems--center u-marginRight--5" size="16" />
-              Deploying
-          </span>);
+            <Loader
+              className="flex alignItems--center u-marginRight--5"
+              size="16"
+            />
+            Deploying
+          </span>
+        );
       } else if (version.status === "pending_download") {
         return (
           <div className="flex alignItems--center">
-            <span className="status-tag unknown flex-auto u-marginRight--10">Pending download</span>
+            <span className="status-tag unknown flex-auto u-marginRight--10">
+              Pending download
+            </span>
           </div>
         );
       } else {
-        return <span className="status-tag unknown flex-auto"> {Utilities.toTitleCase(version.status).replace("_", " ")} </span>
+        return (
+          <span className="status-tag unknown flex-auto">
+            {" "}
+            {Utilities.toTitleCase(version.status).replace("_", " ")}{" "}
+          </span>
+        );
       }
     }
-  }
+  };
 
   render() {
-    const { version, selectedDiffReleases, nothingToCommit, isChecked, isNew, gitopsEnabled, newPreflightResults } = this.props;
-  
+    const {
+      version,
+      selectedDiffReleases,
+      nothingToCommit,
+      isChecked,
+      isNew,
+      gitopsEnabled,
+      newPreflightResults,
+    } = this.props;
+
     return (
       <div
         key={version.sequence}
-        className={classNames(`VersionHistoryRowWrapper ${version.status} flex-column justifyContent--center`, { "overlay": selectedDiffReleases, "disabled": nothingToCommit, "selected": (isChecked && !nothingToCommit), "is-new": isNew, "show-preflight-passed-text": newPreflightResults })}
+        className={classNames(
+          `VersionHistoryRowWrapper ${version.status} flex-column justifyContent--center`,
+          {
+            overlay: selectedDiffReleases,
+            disabled: nothingToCommit,
+            selected: isChecked && !nothingToCommit,
+            "is-new": isNew,
+            "show-preflight-passed-text": newPreflightResults,
+          }
+        )}
         onClick={this.handleSelectReleasesToDiff}
       >
         <div className="VersionHistoryRow flex flex-auto">
-          {selectedDiffReleases && <div className={classNames("checkbox u-marginRight--20", { "checked": (isChecked && !nothingToCommit) }, { "disabled": nothingToCommit })} />}
-          <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex1 u-paddingRight--20`}>
+          {selectedDiffReleases && (
+            <div
+              className={classNames(
+                "checkbox u-marginRight--20",
+                { checked: isChecked && !nothingToCommit },
+                { disabled: nothingToCommit }
+              )}
+            />
+          )}
+          <div
+            className={`${
+              nothingToCommit && selectedDiffReleases && "u-opacity--half"
+            } flex-column flex1 u-paddingRight--20`}
+          >
             <div className="flex alignItems--center">
-              <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">{version.versionLabel || version.title}</p>
-              <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10" style={{ marginTop: "2px" }}>Sequence {version.sequence}</p>
-              {version.isRequired &&
-                <span className="status-tag required u-marginLeft--10"> Required </span>
-              }
+              <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">
+                {version.versionLabel || version.title}
+              </p>
+              <p
+                className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10"
+                style={{ marginTop: "2px" }}
+              >
+                Sequence {version.sequence}
+              </p>
+              {version.isRequired && (
+                <span className="status-tag required u-marginLeft--10">
+                  {" "}
+                  Required{" "}
+                </span>
+              )}
             </div>
-            <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5"> Released <span className="u-fontWeight--bold">{version.upstreamReleasedAt ? Utilities.dateFormat(version.upstreamReleasedAt, "MM/DD/YY @ hh:mm a z") : Utilities.dateFormat(version.createdOn, "MM/DD/YY @ hh:mm a z")}</span></p>
+            <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5">
+              {" "}
+              Released{" "}
+              <span className="u-fontWeight--bold">
+                {version.upstreamReleasedAt
+                  ? Utilities.dateFormat(
+                      version.upstreamReleasedAt,
+                      "MM/DD/YY @ hh:mm a z"
+                    )
+                  : Utilities.dateFormat(
+                      version.createdOn,
+                      "MM/DD/YY @ hh:mm a z"
+                    )}
+              </span>
+            </p>
             {this.renderDiff(version)}
             {this.renderYamlErrors(version)}
           </div>
-          <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex1 justifyContent--center`}>
-            <p className="u-fontSize--small u-fontWeight--bold u-textColor--lightAccent u-lineHeight--default">{version.source}</p>
-              {gitopsEnabled && version.status !== "pending_download" ? null : 
-                <div className="flex flex-auto u-marginTop--10">
-                  {this.renderVersionStatus(version)}
-                </div>
-              }
+          <div
+            className={`${
+              nothingToCommit && selectedDiffReleases && "u-opacity--half"
+            } flex-column flex1 justifyContent--center`}
+          >
+            <p className="u-fontSize--small u-fontWeight--bold u-textColor--lightAccent u-lineHeight--default">
+              {version.source}
+            </p>
+            {gitopsEnabled && version.status !== "pending_download" ? null : (
+              <div className="flex flex-auto u-marginTop--10">
+                {this.renderVersionStatus(version)}
+              </div>
+            )}
           </div>
-          <div className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"} flex-column flex-auto alignItems--flexEnd justifyContent--center`}>
+          <div
+            className={`${
+              nothingToCommit && selectedDiffReleases && "u-opacity--half"
+            } flex-column flex-auto alignItems--flexEnd justifyContent--center`}
+          >
             {this.renderVersionAction(version)}
           </div>
         </div>
         {this.props.renderVersionDownloadStatus(version)}
       </div>
-    )
+    );
   }
 }
 

@@ -3,8 +3,9 @@ import * as ReactDOM from "react-dom";
 import ReplicatedErrorBoundary from "./components/shared/ErrorBoundary";
 import Root from "./Root";
 
-ReactDOM.render((
+ReactDOM.render(
   <ReplicatedErrorBoundary>
     <Root />
-  </ReplicatedErrorBoundary>
-), document.getElementById("app"));
+  </ReplicatedErrorBoundary>,
+  document.getElementById("app")
+);

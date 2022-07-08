@@ -5,7 +5,7 @@
 }
 .LoginBox-wrapper {
   background-color: #ffffff;
-  box-shadow: 0 0 6px rgba(0,0,0,.16);
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.16);
   border-radius: 4px;
 
   p.login-text {
@@ -24,7 +24,7 @@
     background-position: center;
     background-size: contain;
     background-repeat: no-repeat;
-    box-shadow: inset 0 0 3px rgba(0,0,0,0.3);
+    box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.3);
   }
 
   .login-form-wrapper {
@@ -40,7 +40,7 @@
   .scm-form-wrapper {
     padding: 40px;
     background-color: $sub-nav-color;
-    box-shadow: inset 4px 0 4px -4px rgba(0,0,0,0.16);
+    box-shadow: inset 4px 0 4px -4px rgba(0, 0, 0, 0.16);
 
     .success-wrapper {
       min-height: 298px;
@@ -53,7 +53,7 @@
       margin-bottom: 0;
     }
 
-    input[type=radio] + label {
+    input[type="radio"] + label {
       top: -2px;
     }
   }
@@ -75,5 +75,4 @@
       margin-left: 20px;
     }
   }
-
 }

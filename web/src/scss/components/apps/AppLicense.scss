@@ -2,9 +2,9 @@
 
 .CommunityLicense--wrapper {
   box-shadow: 0 0 4px rgba(0, 0, 0, 0.16);
-  transition: box-shadow .2s;
-  border: 1px solid #FCD977;
-  background-color: #FFF9E8;
+  transition: box-shadow 0.2s;
+  border: 1px solid #fcd977;
+  background-color: #fff9e8;
   border-radius: 4px;
   padding: 20px 15px;
 }
@@ -30,35 +30,35 @@
     padding: 20px 0 18px;
 
     &.has-error {
-     border: 1px solid $error-color;
-     background-color: lighten($error-color, 43.5%);
-     color: $error-color;
+      border: 1px solid $error-color;
+      background-color: lighten($error-color, 43.5%);
+      color: $error-color;
     }
   }
 }
 
 .CommunityEditionTag {
-  background: #FCD977;
+  background: #fcd977;
   border-radius: 3px;
   padding: 3px 6px;
   font-size: 12px;
   line-height: 12px;
   font-weight: 500;
-  color: #FFFFFF;
+  color: #ffffff;
 }
 
 .LicenseDetails {
-  background: #FFFFFF;
+  background: #ffffff;
   border-radius: 4px;
   padding: 12px;
   margin-top: 12px;
 }
 
 .channelTag {
-  background-color: #F5F8FC;
+  background-color: #f5f8fc;
   font-size: 12px;
   line-height: 12px;
-  color: #73A3CD;
+  color: #73a3cd;
   justify-content: center;
   border-radius: 3px;
   padding: 2px 4px 2px 4px;
@@ -74,23 +74,23 @@
 }
 
 .dev {
-  background-color: #E4E4E4;
-  color: #4A4A4A;
+  background-color: #e4e4e4;
+  color: #4a4a4a;
 }
 
 .trial {
-  background-color: #DEF0FA;
-  color: #239DE0;
+  background-color: #def0fa;
+  color: #239de0;
 }
 
 .prod {
-  background-color: #E3F5E8;
-  color: #44BB66;
+  background-color: #e3f5e8;
+  color: #44bb66;
 }
 
 .community {
-  background-color: #FEF4D9;
-  color: #F7B500;
+  background-color: #fef4d9;
+  color: #f7b500;
 }
 
 .entitlementItems {

@@ -59,7 +59,7 @@ body a {
       top: 4px;
       right: -15px;
       transform: rotate(90deg);
-      transition: ease-in-out .2s;
+      transition: ease-in-out 0.2s;
     }
   }
 
@@ -76,7 +76,7 @@ body a {
   font-size: 12px;
 
   .files {
-    color: #9B9B9B;
+    color: #9b9b9b;
   }
 
   .lines-added {
@@ -84,13 +84,13 @@ body a {
   }
 
   .lines-removed {
-    color: #BC4752;
+    color: #bc4752;
   }
 }
 
 .Loader {
   path {
-    fill: $primary-color
+    fill: $primary-color;
   }
   &.warning path {
     fill: $warning-color;
@@ -103,7 +103,7 @@ body a {
 .snapshotOptions {
   display: flex;
   margin-top: 10px;
-  border: 1px solid #4A4A4A;
+  border: 1px solid #4a4a4a;
   border-radius: 3px;
   padding: 8px 10px;
   cursor: pointer;
@@ -163,7 +163,7 @@ body a {
   font-size: 12px;
   line-height: 12px;
   font-weight: 500;
-  color: #AFAFAF;
+  color: #afafaf;
   position: relative;
   padding-left: 12px;
 
@@ -183,34 +183,34 @@ body a {
     background-color: #44bb66;
   }
   &.failed::before {
-    background-color: #BC4752;
+    background-color: #bc4752;
   }
   &.inprogress::before {
-    background-color: #326DE6;
+    background-color: #326de6;
   }
   &.reclaimed::before {
-    background-color: #4999AD;
+    background-color: #4999ad;
   }
   &.partiallyfailed::before {
-    background-color: #F1843C;
+    background-color: #f1843c;
   }
   &.deleting::before {
-    background-color: #F7B500;
+    background-color: #f7b500;
   }
   &.enabled::before {
     background-color: #44bb66;
   }
   &.disabled::before {
-    background-color: #C4C7CA;
+    background-color: #c4c7ca;
   }
 }
 
 code {
   padding: 2px 4px;
   font-size: 90%;
-  color: #326DE6;
+  color: #326de6;
   font-family: "Monaco", "Helvetica Neue", "Helvetica", sans-serif;
-  background-color: #E3F5E8;
+  background-color: #e3f5e8;
   border-radius: 4px;
 }
 
@@ -218,7 +218,7 @@ code {
   font-size: 10px;
   font-family: "Monaco", "Helvetica Neue", "Helvetica", sans-serif;
   border-radius: 2px;
-  background-color: #E5EAEC;
+  background-color: #e5eaec;
   color: #073551;
   padding: 1px 3px;
 
@@ -255,12 +255,12 @@ code {
   width: 100%;
   .Input {
     height: 40px;
-    
+
     .is-disabled {
       user-select: none;
       cursor: not-allowed;
       background-color: #f8f8f8;
-      border-color: #DFDFDF;
+      border-color: #dfdfdf;
       color: #717171;
     }
   }
@@ -268,10 +268,10 @@ code {
 .unfork-callout {
   max-width: 218px;
   min-width: 218px;
-  -webkit-box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.16);
-  -moz-box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.16);
-  box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.16);
-  background-color: #FFFFFF;
+  -webkit-box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.16);
+  -moz-box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.16);
+  box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.16);
+  background-color: #ffffff;
   border-radius: 4px;
   padding: 14px;
   margin-right: 20px;
@@ -293,9 +293,9 @@ code {
     font-weight: 700;
   }
   p {
-    font-size: 12px; 
+    font-size: 12px;
     font-weight: 500;
-    color: #9B9B9B
+    color: #9b9b9b;
   }
   ul {
     display: block;
@@ -318,7 +318,7 @@ code {
 
 .errors {
   display: inline-block;
-  color: #FFFFFF;
+  color: #ffffff;
   text-align: center;
   font-weight: bold;
   font-size: 10px;
@@ -331,7 +331,7 @@ code {
 }
 .warnings {
   display: inline-block;
-  color: #FFFFFF;
+  color: #ffffff;
   text-align: center;
   font-weight: bold;
   font-size: 10px;
@@ -343,9 +343,9 @@ code {
   background: $warning-color;
 }
 
-.circleNumberGray { 
+.circleNumberGray {
   display: inline-block;
-  color: #FFFFFF;
+  color: #ffffff;
   text-align: center;
   font-weight: bold;
   font-size: 12px;
@@ -354,7 +354,7 @@ code {
   width: 7px;
   height: 11px;
   padding: 3px 6px 4px 6px;
-  background: #9B9B9B;
+  background: #9b9b9b;
 }
 
 .__react_component_tooltip {
@@ -387,7 +387,7 @@ and `background-position: [value]`
   border-radius: 2px;
   color: $warning-color;
   font-size: 10px;
-  line-height: 10px;  
+  line-height: 10px;
   font-weight: 500;
   padding: 2px 4px 3px 4px;
   margin-left: 8px;
@@ -405,8 +405,8 @@ and `background-position: [value]`
   text-align: center;
 
   &.gitops-enabled-banner {
-    background-color: #E9E5EF;
-    border-bottom-color: #CAC1D8;
+    background-color: #e9e5ef;
+    border-bottom-color: #cac1d8;
     padding: 10px 20px 9px;
   }
 }
@@ -415,7 +415,6 @@ and `background-position: [value]`
 
 /* ≥ 568px */
 @media screen and (min-width: 35.5em) {
-
 }
 
 /* ≥ 768px */
@@ -427,17 +426,14 @@ and `background-position: [value]`
 
 /* ≥ 960px */
 @media screen and (min-width: 60em) {
-
 }
 
 /* ≥ 1024px */
 @media screen and (min-width: 64em) {
-
 }
 
 /* ≥ 1280px */
 @media screen and (min-width: 80em) {
-
 }
 
 .hidden {

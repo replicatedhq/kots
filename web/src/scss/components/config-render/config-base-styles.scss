@@ -1,7 +1,6 @@
 @import "../../variables.scss";
 
 #config-render-component {
-
   .config-item {
     padding: 10px;
     background-color: $sub-nav-color;
@@ -19,7 +18,7 @@
   .hidden {
     display: none;
   }
-  
+
   .actions-wrapper {
     padding-top: 12px;
     padding-bottom: 12px;
@@ -27,19 +26,19 @@
     border-top: solid 1px $border-color;
     z-index: 10;
   }
-  
+
   a {
     text-decoration: none;
     outline: none;
     font-weight: 500;
     color: $link-color;
-  
+
     &:hover {
       cursor: pointer;
       text-decoration: underline;
     }
   }
-  
+
   .field-section-header {
     font-size: 16px;
     line-height: 20px;
@@ -75,7 +74,7 @@
   .sub-header-color {
     color: $text-color-primary;
   }
-  
+
   .container {
     padding-right: 20px;
     padding-left: 20px;
@@ -83,40 +82,40 @@
     width: 100%;
     box-sizing: border-box;
   }
-  
+
   /* don't let that chrome autofill yellow ruin the aesthetic of your site */
   input:-webkit-autofill {
     background-color: #ffffff;
   }
-  
+
   .layout-footer-actions {
-    box-shadow: 0 -1px 3px rgba(0,0,0,0.16);
+    box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.16);
     padding: 12px 30px 11px;
     background-color: #ffffff;
     z-index: 110;
-  
+
     &.less-padding {
       padding: 12px 20px 11px;
     }
   }
-  
+
   .spinningLoaderPath {
     fill: $text-color-primary;
   }
-  
+
   .AceEditor--wrapper {
     position: relative;
     box-sizing: border-box;
-    
+
     .error-highlight {
-      background:#FBEDEB;
+      background: #fbedeb;
       position: absolute;
     }
-  
+
     .disabled-ace-editor {
-      opacity: .5;
+      opacity: 0.5;
     }
-  
+
     .ace_search {
       left: 0;
       right: auto;
@@ -129,18 +128,18 @@
     color: $error-color;
     font-weight: 500;
     line-height: 20px;
-  
+
     &.visible {
       display: inline-block;
     }
   }
-  
+
   .field-label {
     font-size: 12px;
     line-height: 12px;
     padding: 2px 4px 3px;
     border-radius: 2px;
-  
+
     &.required {
       background-color: lighten($warning-color, 43.5%);
       color: $warning-color;
@@ -150,11 +149,11 @@
       color: $success-color;
     }
   }
-  
+
   input[type="file"] {
     display: none;
   }
-  
+
   .custom-file-upload > label {
     border: 1px dashed $border-color;
     display: inline-block;
@@ -163,7 +162,7 @@
     cursor: pointer;
     border-radius: 4px;
   }
-  
+
   .file-uploaded {
     border: 1px solid $border-color;
     display: inline-block;
@@ -171,5 +170,4 @@
     border-radius: 4px;
     color: $text-color-primary;
   }
-
 }

@@ -3,7 +3,12 @@ import { withRouter } from "react-router-dom";
 import Helmet from "react-helmet";
 import GitOpsRepoDetails from "../gitops/GitOpsRepoDetails";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
-import { getGitOpsUri, getAddKeyUri, requiresHostname, Utilities } from "../../utilities/utilities";
+import {
+  getGitOpsUri,
+  getAddKeyUri,
+  requiresHostname,
+  Utilities,
+} from "../../utilities/utilities";
 import Modal from "react-modal";
 
 import "../../scss/components/gitops/GitOpsSettings.scss";
@@ -37,7 +42,7 @@ const SERVICES = [
   //   value: "other",
   //   label: "Other",
   // }
-]
+];
 
 class AppGitops extends Component {
   constructor(props) {
@@ -66,17 +71,19 @@ class AppGitops extends Component {
     let ownerRepo = "";
     const parsed = new URL(gitops?.uri);
     if (gitops?.provider === "bitbucket_server") {
-      const project = parsed.pathname.split("/").length > 2 && parsed.pathname.split("/")[2];
-      const repo = parsed.pathname.split("/").length > 4 && parsed.pathname.split("/")[4];
+      const project =
+        parsed.pathname.split("/").length > 2 && parsed.pathname.split("/")[2];
+      const repo =
+        parsed.pathname.split("/").length > 4 && parsed.pathname.split("/")[4];
       if (project && repo) {
         ownerRepo = `${project}/${repo}`;
       }
     } else {
-      ownerRepo = parsed.pathname.slice(1);  // remove the "/"
+      ownerRepo = parsed.pathname.slice(1); // remove the "/"
     }
 
     return ownerRepo;
-  }
+  };
 
   renderIcons = (service) => {
     if (service) {
@@ -84,16 +91,18 @@ class AppGitops extends Component {
     } else {
       return;
     }
-  }
+  };
 
   getLabel = (service, label) => {
     return (
       <div style={{ alignItems: "center", display: "flex" }}>
-        <span style={{ fontSize: 18, marginRight: "10px" }}>{this.renderIcons(service)}</span>
+        <span style={{ fontSize: 18, marginRight: "10px" }}>
+          {this.renderIcons(service)}
+        </span>
         <span style={{ fontSize: 14 }}>{label}</span>
       </div>
     );
-  }
+  };
 
   handleTestConnection = async () => {
     this.setState({ testingConnection: true, errorMsg: "" });
@@ -105,13 +114,16 @@ class AppGitops extends Component {
     }
 
     try {
-      const res = await fetch(`${process.env.API_ENDPOINT}/gitops/app/${appId}/cluster/${clusterId}/initconnection`, {
-        method: "POST",
-        headers: {
-          "Authorization": Utilities.getToken(),
-          "Content-Type": "application/json",
+      const res = await fetch(
+        `${process.env.API_ENDPOINT}/gitops/app/${appId}/cluster/${clusterId}/initconnection`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: Utilities.getToken(),
+            "Content-Type": "application/json",
+          },
         }
-      });
+      );
       if (!res.ok) {
         if (res.status === 401) {
           Utilities.logoutUser();
@@ -132,31 +144,27 @@ class AppGitops extends Component {
     } catch (err) {
       console.log(err);
       this.setState({
-        errorMsg: `Failed to test connection: ${err ? err.message : "Something went wrong, please try again."}`,
+        errorMsg: `Failed to test connection: ${
+          err ? err.message : "Something went wrong, please try again."
+        }`,
       });
     } finally {
       this.setState({ testingConnection: false, connectionTested: true });
     }
-  }
+  };
 
   goToTroubleshootPage = () => {
     const { app, history } = this.props;
     history.push(`/app/${app.slug}/troubleshoot`);
-  }
+  };
 
   updateGitOpsSettings = () => {
     this.setState({ showGitOpsSettings: true });
-  }
+  };
 
-  finishGitOpsSetup = async repoDetails => {
-    const {
-      ownerRepo,
-      branch,
-      path,
-      otherService,
-      action,
-      format
-    } = repoDetails;
+  finishGitOpsSetup = async (repoDetails) => {
+    const { ownerRepo, branch, path, otherService, action, format } =
+      repoDetails;
 
     const { app } = this.props;
     const downstream = app?.downstream;
@@ -204,19 +212,19 @@ class AppGitops extends Component {
 
       this.setState({ showGitOpsSettings: false, ownerRepo });
       return true;
-    } catch(err) {
+    } catch (err) {
       console.log(err);
       this.setState({
         errorMsg: err ? err.message : "Something went wrong, please try again.",
       });
       return false;
     }
-  }
+  };
 
   createGitOpsRepo = async (gitOpsInput) => {
     const res = await fetch(`${process.env.API_ENDPOINT}/gitops/create`, {
       headers: {
-        "Authorization": Utilities.getToken(),
+        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -231,19 +239,22 @@ class AppGitops extends Component {
       }
       throw new Error(`Unexpected status code: ${res.status}`);
     }
-  }
+  };
 
   updateAppGitOps = async (appId, clusterId, gitOpsInput) => {
-    const res = await fetch(`${process.env.API_ENDPOINT}/gitops/app/${appId}/cluster/${clusterId}/update`, {
-      headers: {
-        "Authorization": Utilities.getToken(),
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        gitOpsInput: gitOpsInput,
-      }),
-      method: "PUT",
-    });
+    const res = await fetch(
+      `${process.env.API_ENDPOINT}/gitops/app/${appId}/cluster/${clusterId}/update`,
+      {
+        headers: {
+          Authorization: Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          gitOpsInput: gitOpsInput,
+        }),
+        method: "PUT",
+      }
+    );
     if (!res.ok) {
       if (res.status === 401) {
         Utilities.logoutUser();
@@ -251,11 +262,11 @@ class AppGitops extends Component {
       }
       throw new Error(`Unexpected status code: ${res.status}`);
     }
-  }
+  };
 
   promptToDisableGitOps = () => {
     this.setState({ showDisableGitopsModalPrompt: true });
-  }
+  };
 
   disableGitOps = async () => {
     this.setState({ disablingGitOps: true });
@@ -267,13 +278,16 @@ class AppGitops extends Component {
     }
 
     try {
-      const res = await fetch(`${process.env.API_ENDPOINT}/gitops/app/${appId}/cluster/${clusterId}/disable`, {
-        headers: {
-          "Authorization": Utilities.getToken(),
-          "Content-Type": "application/json",
-        },
-        method: "POST",
-      });
+      const res = await fetch(
+        `${process.env.API_ENDPOINT}/gitops/app/${appId}/cluster/${clusterId}/disable`,
+        {
+          headers: {
+            Authorization: Utilities.getToken(),
+            "Content-Type": "application/json",
+          },
+          method: "POST",
+        }
+      );
       if (!res.ok && res.status === 401) {
         Utilities.logoutUser();
         return;
@@ -287,13 +301,13 @@ class AppGitops extends Component {
     } finally {
       this.setState({ disablingGitOps: false });
     }
-  }
+  };
 
   hideGitOpsSettings = () => {
     this.setState({ showGitOpsSettings: false });
-  }
+  };
 
-  getProviderIconClassName = provider => {
+  getProviderIconClassName = (provider) => {
     switch (provider) {
       case "github":
       case "github_enterprise":
@@ -307,11 +321,11 @@ class AppGitops extends Component {
       default:
         return "github-icon";
     }
-  }
+  };
 
   toggleErrorModal = () => {
     this.setState({ displayErrorModal: !this.state.displayErrorModal });
-  }
+  };
 
   componentDidMount() {
     const gitops = this.props.app.downstream.gitops;
@@ -326,9 +340,7 @@ class AppGitops extends Component {
     const appTitle = app.name;
 
     if (!app.downstream) {
-      return (
-        <div />
-      );
+      return <div />;
     }
 
     const gitops = app.downstream.gitops;
@@ -356,7 +368,7 @@ class AppGitops extends Component {
           <title>{`${appTitle} GitOps`}</title>
         </Helmet>
 
-        {!ownerRepo || showGitOpsSettings ?
+        {!ownerRepo || showGitOpsSettings ? (
           <div className="u-marginTop--30">
             <GitOpsRepoDetails
               stepTitle={`GitOps settings for ${appTitle}`}
@@ -376,21 +388,34 @@ class AppGitops extends Component {
               ctaText="Update settings"
             />
           </div>
-          :
+        ) : (
           <div className="GitOpsSettings">
-            <div className={`flex u-marginTop--30 justifyContent--center alignItems--center ${gitopsIsConnected ? "u-marginBottom--30" : "u-marginBottom--20"}`}>
-              {app.iconUri
-                ? <div style={{ backgroundImage: `url(${app.iconUri})` }} className="appIcon u-position--relative" />
-                : <span className="icon onlyAirgapBundleIcon" />
-              }
-              {gitopsIsConnected
-                ? <span className="icon connectionEstablished u-marginLeft--10" />
-                : <span className="icon onlyNoConnectionIcon u-marginLeft--10" />
-              }
-              <span className={`icon ${this.getProviderIconClassName(gitops?.provider)} u-marginLeft--10`} />
+            <div
+              className={`flex u-marginTop--30 justifyContent--center alignItems--center ${
+                gitopsIsConnected ? "u-marginBottom--30" : "u-marginBottom--20"
+              }`}
+            >
+              {app.iconUri ? (
+                <div
+                  style={{ backgroundImage: `url(${app.iconUri})` }}
+                  className="appIcon u-position--relative"
+                />
+              ) : (
+                <span className="icon onlyAirgapBundleIcon" />
+              )}
+              {gitopsIsConnected ? (
+                <span className="icon connectionEstablished u-marginLeft--10" />
+              ) : (
+                <span className="icon onlyNoConnectionIcon u-marginLeft--10" />
+              )}
+              <span
+                className={`icon ${this.getProviderIconClassName(
+                  gitops?.provider
+                )} u-marginLeft--10`}
+              />
             </div>
 
-            {gitopsIsConnected ?
+            {gitopsIsConnected ? (
               <div className="u-marginLeft--auto u-marginRight--auto">
                 <GitOpsRepoDetails
                   stepTitle={`GitOps settings for ${appTitle}`}
@@ -408,20 +433,41 @@ class AppGitops extends Component {
                   ctaText="Update settings"
                 />
                 <div className="disable-gitops-wrapper">
-                  <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-marginBottom--10">Disable GitOps for {appTitle}</p>
-                  <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-marginBottom--20">Disabling GitOps will only affect this application. </p>
-                  <button className="btn secondary red u-marginRight--10" disabled={disablingGitOps} onClick={this.promptToDisableGitOps}>{disablingGitOps ? "Disabling GitOps" : "Disable GitOps"}</button>
+                  <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-marginBottom--10">
+                    Disable GitOps for {appTitle}
+                  </p>
+                  <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-marginBottom--20">
+                    Disabling GitOps will only affect this application.{" "}
+                  </p>
+                  <button
+                    className="btn secondary red u-marginRight--10"
+                    disabled={disablingGitOps}
+                    onClick={this.promptToDisableGitOps}
+                  >
+                    {disablingGitOps ? "Disabling GitOps" : "Disable GitOps"}
+                  </button>
                 </div>
               </div>
-              :
+            ) : (
               <div className="flex-column flex1">
                 <div className="GitopsSettings-noRepoAccess">
                   <div className="u-textAlign--center">
                     <span className="success-checkmark-icon icon u-marginBottom--10" />
                   </div>
-                  <p className="title">GitOps has been enabled. You're almost ready to deploy</p>
-                  <p className="sub">In order for application updates to be pushed to your GitOps deployment pipeline we need to be able to access to the repository. To&nbsp;do this, copy the key below and add it to your repository settings page.</p>
-                  <p className="sub u-marginTop--10">If you have already added this key to your repository and are seeing this message, check to make sure that the key has "Write access" for the repository and click "Try again".</p>
+                  <p className="title">
+                    GitOps has been enabled. You're almost ready to deploy
+                  </p>
+                  <p className="sub">
+                    In order for application updates to be pushed to your GitOps
+                    deployment pipeline we need to be able to access to the
+                    repository. To&nbsp;do this, copy the key below and add it
+                    to your repository settings page.
+                  </p>
+                  <p className="sub u-marginTop--10">
+                    If you have already added this key to your repository and
+                    are seeing this message, check to make sure that the key has
+                    "Write access" for the repository and click "Try again".
+                  </p>
                 </div>
 
                 <div className="u-marginBottom--30">
@@ -430,47 +476,104 @@ class AppGitops extends Component {
                   </p>
                   <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy u-marginBottom--15">
                     Copy this deploy key to the
-                    <a className="replicated-link" href={addKeyUri} target="_blank" rel="noopener noreferrer"> repo settings page.</a>
+                    <a
+                      className="replicated-link"
+                      href={addKeyUri}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {" "}
+                      repo settings page.
+                    </a>
                   </p>
                   <CodeSnippet
                     canCopy={true}
                     copyText="Copy key"
-                    onCopyText={<span className="u-textColor--success">Deploy key has been copied to your clipboard</span>}>
+                    onCopyText={
+                      <span className="u-textColor--success">
+                        Deploy key has been copied to your clipboard
+                      </span>
+                    }
+                  >
                     {deployKey}
                   </CodeSnippet>
                 </div>
 
                 <div className="flex justifyContent--spaceBetween alignItems--center">
                   <div className="flex">
-                    <button className="btn secondary blue u-marginRight--10" disabled={testingConnection} onClick={this.handleTestConnection}>{testingConnection ? "Testing connection" : "Try again"}</button>
-                    <button className="btn primary blue u-marginRight--10" onClick={this.goToTroubleshootPage}>Troubleshoot</button>
-                    <button className="btn secondary red" disabled={disablingGitOps} onClick={this.promptToDisableGitOps}>{disablingGitOps ? "Disabling GitOps" : "Disable GitOps"}</button>
+                    <button
+                      className="btn secondary blue u-marginRight--10"
+                      disabled={testingConnection}
+                      onClick={this.handleTestConnection}
+                    >
+                      {testingConnection ? "Testing connection" : "Try again"}
+                    </button>
+                    <button
+                      className="btn primary blue u-marginRight--10"
+                      onClick={this.goToTroubleshootPage}
+                    >
+                      Troubleshoot
+                    </button>
+                    <button
+                      className="btn secondary red"
+                      disabled={disablingGitOps}
+                      onClick={this.promptToDisableGitOps}
+                    >
+                      {disablingGitOps ? "Disabling GitOps" : "Disable GitOps"}
+                    </button>
                   </div>
-                  <button className="btn secondary dustyGray" onClick={this.updateGitOpsSettings}>Update GitOps Settings</button>
+                  <button
+                    className="btn secondary dustyGray"
+                    onClick={this.updateGitOpsSettings}
+                  >
+                    Update GitOps Settings
+                  </button>
                 </div>
-                { errorMsg ?
-                  <p className="u-textColor--error u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginTop--12">{errorMsg}</p>
-                  : null
-                }
+                {errorMsg ? (
+                  <p className="u-textColor--error u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginTop--12">
+                    {errorMsg}
+                  </p>
+                ) : null}
               </div>
-            }
+            )}
           </div>
-        }
+        )}
         <Modal
           isOpen={showDisableGitopsModalPrompt}
-          onRequestClose={() => { this.setState({ showDisableGitopsModalPrompt: false }) }}
+          onRequestClose={() => {
+            this.setState({ showDisableGitopsModalPrompt: false });
+          }}
           contentLabel="Disable GitOps"
           ariaHideApp={false}
           className="Modal"
         >
           <div className="Modal-body">
             <div className="u-marginTop--10 u-marginBottom--10">
-              <p className="u-fontSize--larger u-fontWeight--bold u-textColor--primary u-marginBottom--10">Are you sure you want to disable GitOps?</p>
-              <p className="u-fontSize--large u-textColor--bodyCopy">You can re-enable GitOps for this application by clicking "GitOps" in the Nav bar</p>
+              <p className="u-fontSize--larger u-fontWeight--bold u-textColor--primary u-marginBottom--10">
+                Are you sure you want to disable GitOps?
+              </p>
+              <p className="u-fontSize--large u-textColor--bodyCopy">
+                You can re-enable GitOps for this application by clicking
+                "GitOps" in the Nav bar
+              </p>
             </div>
             <div className="u-marginTop--30">
-              <button type="button" className="btn secondary u-marginRight--10" onClick={() => { this.setState({ showDisableGitopsModalPrompt: false }) }}>Cancel</button>
-              <button type="button" className="btn primary red" onClick={this.disableGitOps}>Disable GitOps</button>
+              <button
+                type="button"
+                className="btn secondary u-marginRight--10"
+                onClick={() => {
+                  this.setState({ showDisableGitopsModalPrompt: false });
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn primary red"
+                onClick={this.disableGitOps}
+              >
+                Disable GitOps
+              </button>
             </div>
           </div>
         </Modal>

@@ -8,13 +8,15 @@ export const ConfigService = {
       .map((group) =>
         _(get(group, "items", []))
           // TODO - fix this linting issue
-          .map((item) => { // eslint-disable-line
+          // eslint-disable-next-line
+          .map((item) => {
             if (!isEmpty(item)) {
               if (item.type === "select_many") {
                 return (
                   _(get(item, "items", []))
                     // TODO - fix this linting issue
-                  .map((childItem) => { // eslint-disable-line
+                    // eslint-disable-next-line
+                    .map((childItem) => {
                       if (!isEmpty(childItem)) {
                         return childItem;
                       }
@@ -35,7 +37,8 @@ export const ConfigService = {
   getItem(groups, itemName) {
     let item = null;
     // TODO - fix this linting issue
-    some(ConfigService.getItems(groups), (otherItem) => { // eslint-disable-line
+    // eslint-disable-next-line
+    some(ConfigService.getItems(groups), (otherItem) => {
       if (otherItem.name === itemName) {
         item = otherItem;
         return true;

@@ -5,8 +5,8 @@ export default function withTheme(Component) {
   return function withThemeComponent(props) {
     return (
       <ThemeContext.Consumer>
-        {values => <Component {...values} {...props} />}
+        {(values) => <Component {...values} {...props} />}
       </ThemeContext.Consumer>
     );
-  }
+  };
 }

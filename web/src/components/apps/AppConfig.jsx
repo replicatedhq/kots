@@ -18,8 +18,8 @@ import { Utilities } from "../../utilities/utilities";
 
 class AppConfig extends Component {
   static propTypes = {
-    app: PropTypes.object
-  }
+    app: PropTypes.object,
+  };
 
   constructor(props) {
     super(props);
@@ -73,7 +73,10 @@ class AppConfig extends Component {
     if (match.params.sequence !== lastProps.match.params.sequence) {
       this.getConfig();
     }
-    if (this.state.configGroups && this.state.configGroups !== lastState.configGroups) {
+    if (
+      this.state.configGroups &&
+      this.state.configGroups !== lastState.configGroups
+    ) {
       this.determineSidebarHeight();
     }
     if (location.hash !== lastProps.location.hash && location.hash) {
@@ -94,7 +97,7 @@ class AppConfig extends Component {
     if (sidebarEl) {
       sidebarEl.style.maxHeight = `${windowHeight - 225}px`;
     }
-  }
+  };
 
   navigateToCurrentHash = () => {
     const hash = this.props.location.hash.slice(1);
@@ -104,7 +107,7 @@ class AppConfig extends Component {
     this.state.configGroups.map((group) => {
       const activeItem = find(group.items, ["name", slicedHash]);
       if (activeItem) {
-        activeGroupName = group.name
+        activeGroupName = group.name;
       }
     });
 
@@ -112,7 +115,7 @@ class AppConfig extends Component {
       this.setState({ activeGroups: [activeGroupName], configLoading: false });
       document.getElementById(hash).scrollIntoView();
     }
-  }
+  };
 
   getApp = async () => {
     if (this.props.app) {
@@ -123,7 +126,7 @@ class AppConfig extends Component {
       const { slug } = this.props.match.params;
       const res = await fetch(`${process.env.API_ENDPOINT}/app/${slug}`, {
         headers: {
-          "Authorization": Utilities.getToken(),
+          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
         method: "GET",
@@ -135,45 +138,57 @@ class AppConfig extends Component {
     } catch (err) {
       console.log(err);
     }
-  }
+  };
 
   getConfig = async () => {
     const sequence = this.getSequence();
     const slug = this.getSlug();
 
-    this.setState({ configLoading: true, gettingConfigErrMsg: "", configError: false });
+    this.setState({
+      configLoading: true,
+      gettingConfigErrMsg: "",
+      configError: false,
+    });
 
     fetch(`${process.env.API_ENDPOINT}/app/${slug}/config/${sequence}`, {
       method: "GET",
       headers: {
-        "Authorization": Utilities.getToken(),
+        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
-      }
-    }).then(async (response) => {
-      if (!response.ok) {
-        const res = await response.json();
-        throw new Error(res.error);
-      }
-      const data = await response.json();
-      this.setState({
-        configGroups: data.configGroups,
-        changed: false,
-        configLoading: false
+      },
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          const res = await response.json();
+          throw new Error(res.error);
+        }
+        const data = await response.json();
+        this.setState({
+          configGroups: data.configGroups,
+          changed: false,
+          configLoading: false,
+        });
+        if (this.props.location.hash.length > 0) {
+          this.navigateToCurrentHash();
+        } else {
+          this.setState({
+            activeGroups: [data.configGroups[0].name],
+            configLoading: false,
+            gettingConfigErrMsg: "",
+          });
+        }
+      })
+      .catch((err) => {
+        this.setState({
+          configLoading: false,
+          errorTitle: `Failed to get config data`,
+          displayErrorModal: true,
+          gettingConfigErrMsg: err
+            ? err.message
+            : "Something went wrong, please try again.",
+        });
       });
-      if (this.props.location.hash.length > 0) {
-        this.navigateToCurrentHash();
-      } else {
-        this.setState({ activeGroups: [data.configGroups[0].name], configLoading: false, gettingConfigErrMsg: "" });
-      }
-    }).catch((err) => {
-      this.setState({
-        configLoading: false,
-        errorTitle: `Failed to get config data`,
-        displayErrorModal: true,
-        gettingConfigErrMsg: err ? err.message : "Something went wrong, please try again."
-      });
-    });
-  }
+  };
 
   getSequence = () => {
     const { match, app, fromLicenseFlow } = this.props;
@@ -185,13 +200,14 @@ class AppConfig extends Component {
     }
 
     // check is current deployed config latest
-    const currentDeployedSequence = app?.downstream?.currentVersion?.parentSequence;
+    const currentDeployedSequence =
+      app?.downstream?.currentVersion?.parentSequence;
     if (currentDeployedSequence != undefined) {
       return currentDeployedSequence;
     } else {
       return app?.currentSequence;
     }
-  }
+  };
 
   getSlug = () => {
     const { match, app, fromLicenseFlow } = this.props;
@@ -199,7 +215,7 @@ class AppConfig extends Component {
       return match.params.slug;
     }
     return app?.slug;
-  }
+  };
 
   updateUrlWithErrorId = (requiredItems) => {
     const { match, fromLicenseFlow } = this.props;
@@ -208,17 +224,21 @@ class AppConfig extends Component {
     if (fromLicenseFlow) {
       this.props.history.push(`/${slug}/config#${requiredItems[0]}-group`);
     } else if (match.params.sequence) {
-      this.props.history.push(`/app/${slug}/config/${match.params.sequence}#${requiredItems[0]}-group`);
+      this.props.history.push(
+        `/app/${slug}/config/${match.params.sequence}#${requiredItems[0]}-group`
+      );
     } else {
       this.props.history.push(`/app/${slug}/config#${requiredItems[0]}-group`);
     }
-  }
+  };
 
-  markRequiredItems = requiredItems => {
+  markRequiredItems = (requiredItems) => {
     const configGroups = this.state.configGroups;
-    requiredItems.forEach(requiredItem => {
-      configGroups.forEach(configGroup => {
-        const item = configGroup.items.find(item => item.name === requiredItem);
+    requiredItems.forEach((requiredItem) => {
+      configGroups.forEach((configGroup) => {
+        const item = configGroup.items.find(
+          (item) => item.name === requiredItem
+        );
         if (item) {
           item.error = "This item is required";
         }
@@ -227,7 +247,7 @@ class AppConfig extends Component {
     this.setState({ configGroups, configError: true }, () => {
       this.updateUrlWithErrorId(requiredItems);
     });
-  }
+  };
 
   handleSave = async () => {
     this.setState({ savingConfig: true, configError: "" });
@@ -235,21 +255,22 @@ class AppConfig extends Component {
     const { fromLicenseFlow, history, match } = this.props;
     const sequence = this.getSequence();
     const slug = this.getSlug();
-    const createNewVersion = !fromLicenseFlow && match.params.sequence == undefined;
+    const createNewVersion =
+      !fromLicenseFlow && match.params.sequence == undefined;
 
     fetch(`${process.env.API_ENDPOINT}/app/${slug}/config`, {
       method: "PUT",
       headers: {
-        "Authorization": Utilities.getToken(),
+        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         configGroups: this.state.configGroups,
         sequence,
         createNewVersion,
-      })
+      }),
     })
-      .then(res => res.json())
+      .then((res) => res.json())
       .then(async (result) => {
         this.setState({ savingConfig: false });
 
@@ -278,15 +299,24 @@ class AppConfig extends Component {
             history.replace(`/app/${slug}`);
           }
         } else {
-          this.setState({ savingConfig: false, changed: false, showNextStepModal: true });
+          this.setState({
+            savingConfig: false,
+            changed: false,
+            showNextStepModal: true,
+          });
         }
       })
       .catch((err) => {
-        this.setState({ savingConfig: false, configError: err ? err.message : "Something went wrong, please try again." });
+        this.setState({
+          savingConfig: false,
+          configError: err
+            ? err.message
+            : "Something went wrong, please try again.",
+        });
       });
-  }
+  };
 
-  isConfigChanged = newGroups => {
+  isConfigChanged = (newGroups) => {
     const { initialConfigGroups } = this.state;
     for (let g = 0; g < newGroups.length; g++) {
       const group = newGroups[g];
@@ -295,28 +325,31 @@ class AppConfig extends Component {
       }
       for (let i = 0; i < group.items.length; i++) {
         const newItem = group.items[i];
-        const oldItem = this.getItemInConfigGroups(initialConfigGroups, newItem.name);
+        const oldItem = this.getItemInConfigGroups(
+          initialConfigGroups,
+          newItem.name
+        );
         if (!oldItem || oldItem.value !== newItem.value) {
           return true;
         }
       }
     }
     return false;
-  }
+  };
 
   getItemInConfigGroups = (configGroups, itemName) => {
     let foundItem;
-    map(configGroups, group => {
-      map(group.items, item => {
+    map(configGroups, (group) => {
+      map(group.items, (item) => {
         if (item.name === itemName) {
           foundItem = item;
         }
       });
-    })
+    });
     return foundItem;
-  }
+  };
 
-  handleConfigChange = groups => {
+  handleConfigChange = (groups) => {
     const sequence = this.getSequence();
     const slug = this.getSlug();
 
@@ -331,56 +364,63 @@ class AppConfig extends Component {
     fetch(`${process.env.API_ENDPOINT}/app/${slug}/liveconfig`, {
       signal,
       headers: {
-        "Authorization": Utilities.getToken(),
+        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
-        "Accept": "application/json",
+        Accept: "application/json",
       },
       method: "POST",
-      body: JSON.stringify({ "configGroups": groups, "sequence": sequence }),
-    }).then(async (response) => {
-      if (!response.ok) {
-        if (response.status == 401) {
-          Utilities.logoutUser();
+      body: JSON.stringify({ configGroups: groups, sequence: sequence }),
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          if (response.status == 401) {
+            Utilities.logoutUser();
+            return;
+          }
+          const res = await response.json();
+          this.setState({ configError: res?.error });
           return;
         }
-        const res = await response.json();
-        this.setState({ configError: res?.error });
-        return;
-      }
 
-      const data = await response.json();
-      const oldGroups = this.state.configGroups;
-      const newGroups = data.configGroups;
-      map(newGroups, group => {
-        if (!group.items) {
-          return
-        }
-        group.items.forEach(newItem => {
-          if (newItem.type === "password") {
-            const oldItem = this.getItemInConfigGroups(oldGroups, newItem.name);
-            if (oldItem) {
-              newItem.value = oldItem.value;
-            }
+        const data = await response.json();
+        const oldGroups = this.state.configGroups;
+        const newGroups = data.configGroups;
+        map(newGroups, (group) => {
+          if (!group.items) {
+            return;
           }
+          group.items.forEach((newItem) => {
+            if (newItem.type === "password") {
+              const oldItem = this.getItemInConfigGroups(
+                oldGroups,
+                newItem.name
+              );
+              if (oldItem) {
+                newItem.value = oldItem.value;
+              }
+            }
+          });
         });
+        const changed = this.isConfigChanged(newGroups);
+        this.setState({ configGroups: newGroups, changed });
+      })
+      .catch((error) => {
+        if (error.name !== "AbortError") {
+          console.log(error);
+          this.setState({ configError: error?.message });
+        }
       });
-      const changed = this.isConfigChanged(newGroups);
-      this.setState({ configGroups: newGroups, changed });
-    }).catch((error) => {
-      if (error.name !== "AbortError") {
-        console.log(error);
-        this.setState({ configError: error?.message });
-      }
-    });
-  }
+  };
 
   hideNextStepModal = () => {
     this.setState({ showNextStepModal: false });
-  }
+  };
 
   renderConfigInfo = (app) => {
     const { match, fromLicenseFlow } = this.props;
-    if (fromLicenseFlow || app?.downstream?.gitops?.enabled) { return null; }
+    if (fromLicenseFlow || app?.downstream?.gitops?.enabled) {
+      return null;
+    }
 
     let sequence;
     if (!match.params.sequence) {
@@ -390,68 +430,123 @@ class AppConfig extends Component {
     }
 
     const currentSequence = app?.downstream?.currentVersion?.parentSequence;
-    const pendingSequenceInxex = findIndex(app?.downstream?.pendingVersions, function(v) { return v.parentSequence == sequence });
-    const pastSequenceIndex = findIndex(app?.downstream?.pastVersions, function(v) { return v.parentSequence == sequence });
+    const pendingSequenceInxex = findIndex(
+      app?.downstream?.pendingVersions,
+      function (v) {
+        return v.parentSequence == sequence;
+      }
+    );
+    const pastSequenceIndex = findIndex(
+      app?.downstream?.pastVersions,
+      function (v) {
+        return v.parentSequence == sequence;
+      }
+    );
     const pendingVersions = app?.downstream?.pendingVersions;
 
-    if (size(pendingVersions) > 0 && (currentSequence === sequence)) {
+    if (size(pendingVersions) > 0 && currentSequence === sequence) {
       return (
         <div className="ConfigInfo current justifyContent--center">
-          <p className="flex alignItems--center u-marginRight--5"> <span className="icon info-icon-green flex u-marginRight--5" /> This is the currently deployed config. There {size(pendingVersions) === 1 ? "is" : "are"} {size(pendingVersions)} newer version{size(pendingVersions) === 1 ? "" : "s"} since this one. </p>
-          <Link to={`/app/${app?.slug}/config/${pendingVersions[0].parentSequence}`} className="replicated-link"> Edit the latest config </Link>
+          <p className="flex alignItems--center u-marginRight--5">
+            {" "}
+            <span className="icon info-icon-green flex u-marginRight--5" /> This
+            is the currently deployed config. There{" "}
+            {size(pendingVersions) === 1 ? "is" : "are"} {size(pendingVersions)}{" "}
+            newer version{size(pendingVersions) === 1 ? "" : "s"} since this
+            one.{" "}
+          </p>
+          <Link
+            to={`/app/${app?.slug}/config/${pendingVersions[0].parentSequence}`}
+            className="replicated-link"
+          >
+            {" "}
+            Edit the latest config{" "}
+          </Link>
         </div>
-      ) 
+      );
     } else if (pastSequenceIndex > -1) {
       return (
         <div className="ConfigInfo older justifyContent--center">
-          <p className="flex alignItems--center u-marginRight--5"> <span className="icon info-warning-icon flex u-marginRight--5" /> This config is {pastSequenceIndex + 1} version{pastSequenceIndex === 0 ? "" : "s"} older than the currently deployed config. </p>
-          <Link to={`/app/${app?.slug}/config/${currentSequence}`} className="replicated-link"> Edit the currently deployed config </Link>
+          <p className="flex alignItems--center u-marginRight--5">
+            {" "}
+            <span className="icon info-warning-icon flex u-marginRight--5" />{" "}
+            This config is {pastSequenceIndex + 1} version
+            {pastSequenceIndex === 0 ? "" : "s"} older than the currently
+            deployed config.{" "}
+          </p>
+          <Link
+            to={`/app/${app?.slug}/config/${currentSequence}`}
+            className="replicated-link"
+          >
+            {" "}
+            Edit the currently deployed config{" "}
+          </Link>
         </div>
-      )
+      );
     } else if (pendingSequenceInxex > -1) {
-      const numVersionsNewer = app?.downstream?.pendingVersions?.length - pendingSequenceInxex;
+      const numVersionsNewer =
+        app?.downstream?.pendingVersions?.length - pendingSequenceInxex;
       return (
         <div className="ConfigInfo newer justifyContent--center">
-          <p className="flex alignItems--center u-marginRight--5"> <span className="icon info-icon flex u-marginRight--5" /> This config is {numVersionsNewer} version{numVersionsNewer === 1 ? "" : "s"} newer than the currently deployed config. </p>
-          <Link to={`/app/${app?.slug}/config/${currentSequence}`} className="replicated-link"> Edit the currently deployed config </Link>
-        </div>)
+          <p className="flex alignItems--center u-marginRight--5">
+            {" "}
+            <span className="icon info-icon flex u-marginRight--5" /> This
+            config is {numVersionsNewer} version
+            {numVersionsNewer === 1 ? "" : "s"} newer than the currently
+            deployed config.{" "}
+          </p>
+          <Link
+            to={`/app/${app?.slug}/config/${currentSequence}`}
+            className="replicated-link"
+          >
+            {" "}
+            Edit the currently deployed config{" "}
+          </Link>
+        </div>
+      );
     } else {
       return null;
     }
-  }
+  };
 
   isConfigReadOnly = (app) => {
     const { match } = this.props;
-    if (!match.params.sequence) {return false;}
+    if (!match.params.sequence) {
+      return false;
+    }
     const sequence = parseInt(match.params.sequence);
-    const isCurrentVersion = app.downstream?.currentVersion?.sequence === sequence;
+    const isCurrentVersion =
+      app.downstream?.currentVersion?.sequence === sequence;
     const isLatestVersion = app.currentSequence === sequence;
-    const pendingVersion = find(app.downstream?.pendingVersions, { sequence: sequence });
+    const pendingVersion = find(app.downstream?.pendingVersions, {
+      sequence: sequence,
+    });
     return !isLatestVersion && !isCurrentVersion && !pendingVersion?.semver;
-  }
+  };
 
   toggleActiveGroups = (name) => {
     let groupsArr = this.state.activeGroups;
     if (groupsArr.includes(name)) {
-      let updatedGroupsArr = groupsArr.filter(n => n !== name);
+      let updatedGroupsArr = groupsArr.filter((n) => n !== name);
       this.setState({ activeGroups: updatedGroupsArr });
     } else {
       groupsArr.push(name);
       this.setState({ activeGroups: groupsArr });
     }
-  }
+  };
 
   toggleErrorModal = () => {
     this.setState({ displayErrorModal: !this.state.displayErrorModal });
-  }
+  };
 
   navigateToUpdatedConfig = (app) => {
     this.setState({ showNextStepModal: false });
 
     const pendingVersions = app?.downstream?.pendingVersions;
-    this.props.history.push(`/app/${app?.slug}/config/${pendingVersions[0].parentSequence}`)
-  }
-
+    this.props.history.push(
+      `/app/${app?.slug}/config/${pendingVersions[0].parentSequence}`
+    );
+  };
 
   render() {
     const {
@@ -463,7 +558,8 @@ class AppConfig extends Component {
       configLoading,
       gettingConfigErrMsg,
       displayErrorModal,
-      errorTitle } = this.state;
+      errorTitle,
+    } = this.state;
     const { fromLicenseFlow, match } = this.props;
 
     const app = this.props.app || this.state.app;
@@ -480,55 +576,120 @@ class AppConfig extends Component {
     const isNewVersion = !fromLicenseFlow && match.params.sequence == undefined;
 
     return (
-      <div className={classNames("flex1 flex-column u-padding--20 alignItems--center")}>
+      <div
+        className={classNames(
+          "flex1 flex-column u-padding--20 alignItems--center"
+        )}
+      >
         <Helmet>
           <title>{`${app.name} Config`}</title>
         </Helmet>
 
-
-        {fromLicenseFlow && app && <span className="u-fontSize--larger u-textColor--primary u-fontWeight--bold u-marginTop--30" style={{ marginLeft: "38px"}}>Configure {app.name}</span>}
+        {fromLicenseFlow && app && (
+          <span
+            className="u-fontSize--larger u-textColor--primary u-fontWeight--bold u-marginTop--30"
+            style={{ marginLeft: "38px" }}
+          >
+            Configure {app.name}
+          </span>
+        )}
         <div className="flex-column">
-          <div id="configSidebarWrapper" className="AppConfigSidenav--wrapper" ref={(wrapper) => this.sidebarWrapper = wrapper}>
+          <div
+            id="configSidebarWrapper"
+            className="AppConfigSidenav--wrapper"
+            ref={(wrapper) => (this.sidebarWrapper = wrapper)}
+          >
             {configGroups?.map((group, i) => {
-              if (group.title === "" || group.title.length === 0 || group.hidden || group.when === "false") {return;}
+              if (
+                group.title === "" ||
+                group.title.length === 0 ||
+                group.hidden ||
+                group.when === "false"
+              ) {
+                return;
+              }
               return (
-                <div key={`${i}-${group.name}-${group.title}`} className={`AppConfigSidenav--group ${this.state.activeGroups.includes(group.name) ? "group-open" : ""}`}>
-                  <div className="flex alignItems--center AppConfigSidenav--groupWrapper" onClick={() => this.toggleActiveGroups(group.name)}>
-                    <a className="group-title u-fontSize--large u-lineHeight--normal">{group.title}</a>
+                <div
+                  key={`${i}-${group.name}-${group.title}`}
+                  className={`AppConfigSidenav--group ${
+                    this.state.activeGroups.includes(group.name)
+                      ? "group-open"
+                      : ""
+                  }`}
+                >
+                  <div
+                    className="flex alignItems--center AppConfigSidenav--groupWrapper"
+                    onClick={() => this.toggleActiveGroups(group.name)}
+                  >
+                    <a className="group-title u-fontSize--large u-lineHeight--normal">
+                      {group.title}
+                    </a>
                     <span className="icon u-darkDropdownArrow clickable flex-auto" />
                   </div>
-                  {group.items ?
+                  {group.items ? (
                     <div className="AppConfigSidenav--items">
                       {group.items?.map((item, i) => {
                         const hash = this.props.location.hash.slice(1);
-                        if (item.hidden || item.when === "false") {return;}
+                        if (item.hidden || item.when === "false") {
+                          return;
+                        }
                         return (
-                          <a className={`u-fontSize--normal u-lineHeight--normal ${hash === `${item.name}-group` ? "active-item" : ""}`} href={`#${item.name}-group`} key={`${i}-${item.name}-${item.title}`}>{item.title}</a>
-                        )
+                          <a
+                            className={`u-fontSize--normal u-lineHeight--normal ${
+                              hash === `${item.name}-group` ? "active-item" : ""
+                            }`}
+                            href={`#${item.name}-group`}
+                            key={`${i}-${item.name}-${item.title}`}
+                          >
+                            {item.title}
+                          </a>
+                        );
                       })}
                     </div>
-                    : null}
+                  ) : null}
                 </div>
-              )
+              );
             })}
           </div>
           <div className="ConfigArea--wrapper">
             {this.renderConfigInfo(app)}
-            <div className={classNames("ConfigOuterWrapper u-paddingTop--30", { "u-marginTop--20": fromLicenseFlow })}>
+            <div
+              className={classNames("ConfigOuterWrapper u-paddingTop--30", {
+                "u-marginTop--20": fromLicenseFlow,
+              })}
+            >
               <div className="ConfigInnerWrapper">
-                <AppConfigRenderer groups={configGroups} getData={this.handleConfigChange} readonly={this.isConfigReadOnly(app)} configSequence={match.params.sequence} appSlug={app.slug} />
+                <AppConfigRenderer
+                  groups={configGroups}
+                  getData={this.handleConfigChange}
+                  readonly={this.isConfigReadOnly(app)}
+                  configSequence={match.params.sequence}
+                  appSlug={app.slug}
+                />
               </div>
             </div>
-            {savingConfig ?
+            {savingConfig ? (
               <div className="u-paddingBottom--30">
                 <Loader size="30" />
               </div>
-              :
+            ) : (
               <div className="ConfigError--wrapper flex-column u-paddingBottom--30 alignItems--flexStart">
-                {configError && <span className="u-textColor--error u-marginBottom--20 u-fontWeight--bold">{configError}</span>}
-                <button className="btn primary blue" disabled={!changed && !fromLicenseFlow || this.isConfigReadOnly(app)} onClick={this.handleSave}>{fromLicenseFlow ? "Continue" : "Save config"}</button>
+                {configError && (
+                  <span className="u-textColor--error u-marginBottom--20 u-fontWeight--bold">
+                    {configError}
+                  </span>
+                )}
+                <button
+                  className="btn primary blue"
+                  disabled={
+                    (!changed && !fromLicenseFlow) || this.isConfigReadOnly(app)
+                  }
+                  onClick={this.handleSave}
+                >
+                  {fromLicenseFlow ? "Continue" : "Save config"}
+                </button>
               </div>
-            }
+            )}
           </div>
         </div>
 
@@ -540,45 +701,76 @@ class AppConfig extends Component {
           ariaHideApp={false}
           className="Modal MediumSize"
         >
-          {gitops?.enabled ?
+          {gitops?.enabled ? (
             <div className="Modal-body">
-              {<p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
-                The config for {app.name} has been updated. A new commit has been made to the gitops repository with these changes. Please head to the <a className="link" target="_blank" href={gitops?.uri} rel="noopener noreferrer">repo</a> to see the diff.
-              </p>}
-              <div className="flex justifyContent--flexEnd">
-                <button type="button" className="btn blue primary" onClick={this.hideNextStepModal}>Ok, got it!</button>
-              </div>
-            </div>
-            :
-            <div className="Modal-body">
-              {isNewVersion ?
+              {
                 <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
-                  The config for {app?.name} has been updated. A new version is available on the version history page with these changes.
-                </p>
-                :
-                <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
-                  The config for {app?.name} has been updated.
+                  The config for {app.name} has been updated. A new commit has
+                  been made to the gitops repository with these changes. Please
+                  head to the{" "}
+                  <a
+                    className="link"
+                    target="_blank"
+                    href={gitops?.uri}
+                    rel="noopener noreferrer"
+                  >
+                    repo
+                  </a>{" "}
+                  to see the diff.
                 </p>
               }
               <div className="flex justifyContent--flexEnd">
-                <button type="button" className="btn blue secondary u-marginRight--10" onClick={() => this.navigateToUpdatedConfig(app)}>Edit the latest config</button>
+                <button
+                  type="button"
+                  className="btn blue primary"
+                  onClick={this.hideNextStepModal}
+                >
+                  Ok, got it!
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="Modal-body">
+              {isNewVersion ? (
+                <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
+                  The config for {app?.name} has been updated. A new version is
+                  available on the version history page with these changes.
+                </p>
+              ) : (
+                <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
+                  The config for {app?.name} has been updated.
+                </p>
+              )}
+              <div className="flex justifyContent--flexEnd">
+                <button
+                  type="button"
+                  className="btn blue secondary u-marginRight--10"
+                  onClick={() => this.navigateToUpdatedConfig(app)}
+                >
+                  Edit the latest config
+                </button>
                 <Link to={`/app/${app?.slug}/version-history`}>
-                  <button type="button" className="btn blue primary">{isNewVersion ? "Go to new version" : "Go to updated version"}</button>
+                  <button type="button" className="btn blue primary">
+                    {isNewVersion
+                      ? "Go to new version"
+                      : "Go to updated version"}
+                  </button>
                 </Link>
               </div>
             </div>
-          }
+          )}
         </Modal>
-        {gettingConfigErrMsg &&
+        {gettingConfigErrMsg && (
           <ErrorModal
             errorModal={displayErrorModal}
             toggleErrorModal={this.toggleErrorModal}
             err={errorTitle}
             errMsg={gettingConfigErrMsg}
             tryAgain={this.getConfig}
-          />}
+          />
+        )}
       </div>
-    )
+    );
   }
 }
 

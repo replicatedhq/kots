@@ -10,7 +10,7 @@
   font-size: 14px;
   font-weight: 500;
   border-radius: 4px;
-  transition: transform .3s cubic-bezier(0.285, -0.575, 0.675, 1.440);
+  transition: transform 0.3s cubic-bezier(0.285, -0.575, 0.675, 1.44);
   transform: translate(-50%, -90px);
   background-color: lighten($error-color, 43.5%);
   color: $error-color;

@@ -10,8 +10,10 @@
   "scripts": {
     "lint": "eslint ./src",
     "lint:fix": "eslint ./src --fix",
-    "prettier": "prettier src test --check",
-    "prettier:fix": "prettier src test --write",
+    "prettier": "prettier src --check",
+    "prettier:fix": "prettier src --write",
+    "format": "yarn prettier && yarn lint",
+    "format:fix": "yarn prettier:fix && yarn lint:fix",
     "test": "yarn concurrently -g 'yarn:test:*'",
     "start": "VENDOR_WEB_ENV=dev webpack-dev-server --env dev"
   },

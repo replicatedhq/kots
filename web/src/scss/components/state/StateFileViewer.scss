@@ -1,42 +1,42 @@
 @import "../../variables.scss";
 
 .MonacoEditor--wrapper {
-    margin-bottom: 20px;
-    overflow: auto;
-    border: 1px solid $border-color;
-    border-radius: 4px;
-    
-    .error-highlight {
-      background: lighten($error-color, 43.5%);
-      position: absolute;
-    }
-  
-    .disabled-ace-editor {
-      opacity: .5;
-    }
-  
-    .ace_search {
-      left: 0;
-      right: auto;
-    }
+  margin-bottom: 20px;
+  overflow: auto;
+  border: 1px solid $border-color;
+  border-radius: 4px;
+
+  .error-highlight {
+    background: lighten($error-color, 43.5%);
+    position: absolute;
   }
 
-  .MonacoDiffEditor--wrapper {
-    overflow: auto;
-    border: 1px solid $border-color;
-    border-radius: 4px;
-    
-    .error-highlight {
-      background: lighten($error-color, 43.5%);
-      position: absolute;
-    }
-  
-    .disabled-ace-editor {
-      opacity: .5;
-    }
-  
-    .ace_search {
-      left: 0;
-      right: auto;
-    }
+  .disabled-ace-editor {
+    opacity: 0.5;
   }
+
+  .ace_search {
+    left: 0;
+    right: auto;
+  }
+}
+
+.MonacoDiffEditor--wrapper {
+  overflow: auto;
+  border: 1px solid $border-color;
+  border-radius: 4px;
+
+  .error-highlight {
+    background: lighten($error-color, 43.5%);
+    position: absolute;
+  }
+
+  .disabled-ace-editor {
+    opacity: 0.5;
+  }
+
+  .ace_search {
+    left: 0;
+    right: auto;
+  }
+}

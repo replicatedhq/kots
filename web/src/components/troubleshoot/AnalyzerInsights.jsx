@@ -17,7 +17,9 @@ export class AnalyzerInsights extends React.Component {
 
   componentDidUpdate(lastProps) {
     if (this.props.insights !== lastProps.insights && this.props.insights) {
-      const hasProblems = this.props.insights.some(i => i.severity === "warn" || i.severity === "error");
+      const hasProblems = this.props.insights.some(
+        (i) => i.severity === "warn" || i.severity === "error"
+      );
       this.handleFilterTiles(hasProblems);
     }
 
@@ -28,7 +30,9 @@ export class AnalyzerInsights extends React.Component {
 
   componentDidMount() {
     if (this.props.insights) {
-      const hasProblems = this.props.insights.some(i => i.severity === "warn" || i.severity === "error");
+      const hasProblems = this.props.insights.some(
+        (i) => i.severity === "warn" || i.severity === "error"
+      );
       this.handleFilterTiles(hasProblems);
     }
 
@@ -45,7 +49,7 @@ export class AnalyzerInsights extends React.Component {
         clearInterval(this.interval);
       }
     }
-  }
+  };
 
   componentWillUnmount() {
     clearInterval(this.interval);
@@ -54,13 +58,16 @@ export class AnalyzerInsights extends React.Component {
   handleFilterTiles = (checked) => {
     let insights = sortAnalyzers(this.props.insights);
     if (checked) {
-      insights = filter(insights, i => i.severity === "error" || i.severity === "warn");
+      insights = filter(
+        insights,
+        (i) => i.severity === "error" || i.severity === "warn"
+      );
     }
     this.setState({
       filterTiles: checked,
-      insights
+      insights,
     });
-  }
+  };
 
   render() {
     const { insights, status } = this.props;
@@ -73,25 +80,42 @@ export class AnalyzerInsights extends React.Component {
         noInsightsNode = (
           <div className="flex-column flex1 justifyContent--center alignItems--center u-textAlign--center u-lineHeight--normal u-textColor--bodyCopy">
             <Loader size="40" />
-            <p className="u-textColor--primary u-fontSize--normal u-fontWeight--bold">We are still analyzing this Support Bundle</p>
-            <p className="u-fontSize--small u-fontWeight--regular u-marginTop--10">This can tak up to a minute, you can refresh the page to see if your analysis is ready.</p>
+            <p className="u-textColor--primary u-fontSize--normal u-fontWeight--bold">
+              We are still analyzing this Support Bundle
+            </p>
+            <p className="u-fontSize--small u-fontWeight--regular u-marginTop--10">
+              This can tak up to a minute, you can refresh the page to see if
+              your analysis is ready.
+            </p>
           </div>
-        )
+        );
       } else {
         noInsightsNode = (
           <div className="flex-column flex1 justifyContent--center alignItems--center u-textAlign--center u-lineHeight--normal u-textColor--bodyCopy">
-            <p className="u-textColor--primary u-fontSize--normal u-fontWeight--bold">We were unable to surface any insights for this Support Bundle</p>
-            <p className="u-fontSize--small u-fontWeight--regular u-marginTop--10">It's possible that the file that was uploaded was not a Replicated Support Bundle,<br />or that collection of OS or Docker stats was not enabled in your spec.</p>
-            <p className="u-fontSize--small u-fontWeight--regular u-marginTop--10">We're adding new bundle analyzers all the time, so check back soon.</p>
+            <p className="u-textColor--primary u-fontSize--normal u-fontWeight--bold">
+              We were unable to surface any insights for this Support Bundle
+            </p>
+            <p className="u-fontSize--small u-fontWeight--regular u-marginTop--10">
+              It's possible that the file that was uploaded was not a Replicated
+              Support Bundle,
+              <br />
+              or that collection of OS or Docker stats was not enabled in your
+              spec.
+            </p>
+            <p className="u-fontSize--small u-fontWeight--regular u-marginTop--10">
+              We're adding new bundle analyzers all the time, so check back
+              soon.
+            </p>
           </div>
-        )
+        );
       }
     }
 
     return (
       <div className="flex flex1">
-        {isEmpty(insights)
-          ? noInsightsNode :
+        {isEmpty(insights) ? (
+          noInsightsNode
+        ) : (
           <div className="flex-column flex1">
             <div className="flex-auto">
               <div className="u-position--relative flex u-marginBottom--20 u-paddingLeft--10 u-paddingRight--10">
@@ -100,54 +124,111 @@ export class AnalyzerInsights extends React.Component {
                   className="filter-tiles-checkbox"
                   id="filterTiles"
                   checked={filterTiles}
-                  onChange={(e) => { this.handleFilterTiles(e.target.checked) }}
+                  onChange={(e) => {
+                    this.handleFilterTiles(e.target.checked);
+                  }}
                 />
-                <label htmlFor="filterTiles" className="flex1 u-width--full u-position--relative u-marginLeft--5 u-cursor--pointer">
+                <label
+                  htmlFor="filterTiles"
+                  className="flex1 u-width--full u-position--relative u-marginLeft--5 u-cursor--pointer"
+                >
                   <div className="flex-column">
-                    <span className="u-fontWeight--medium u-textColor--primary u-fontSize--normal u-marginBottom--5 u-lineHeight--normal u-userSelect--none">Only show errors and warnings</span>
+                    <span className="u-fontWeight--medium u-textColor--primary u-fontSize--normal u-marginBottom--5 u-lineHeight--normal u-userSelect--none">
+                      Only show errors and warnings
+                    </span>
                   </div>
                 </label>
               </div>
             </div>
-            {isEmpty(filteredInsights) ?
+            {isEmpty(filteredInsights) ? (
               <div className="flex-column flex1 justifyContent--center alignItems--center u-textAlign--center u-lineHeight--normal u-textColor--bodyCopy">
-                <p className="u-textColor--primary u-fontSize--normal u-fontWeight--bold">There were no errors or warnings found.</p>
-                <p className="u-fontSize--small u-fontWeight--regular u-marginTop--10">Turn off "Only show errors and warnings" to see informational analyzers that we were able to surface.</p>
+                <p className="u-textColor--primary u-fontSize--normal u-fontWeight--bold">
+                  There were no errors or warnings found.
+                </p>
+                <p className="u-fontSize--small u-fontWeight--regular u-marginTop--10">
+                  Turn off "Only show errors and warnings" to see informational
+                  analyzers that we were able to surface.
+                </p>
               </div>
-              :
+            ) : (
               <div className="flex-column flex1 u-overflow--auto">
-                  <div className="flex flex-auto flexWrap--wrap">
-                  {filteredInsights && filteredInsights.map((tile, i) => {
-                    let iconObj;
-                    if (tile.icon) {
-                      iconObj = parseIconUri(tile.icon);
-                    }
-                    return (
-                      <div key={i} className="insight-tile-wrapper flex-column">
-                        <div className={`insight-tile flex-auto u-textAlign--center flex-verticalCenter flex-column ${tile.severity}`}>
-                          <div className="flex justifyContent--center u-marginBottom--10">
-                            {tile.icon ?
-                              <span className="tile-icon" style={{ backgroundImage: `url(${iconObj.uri})`, width: `${iconObj.dimensions?.w}px`, height: `${iconObj.dimensions?.h}px` }}></span>
-                              : tile.icon_key ?
-                                <span className={`icon analysis-${tile.icon_key} tile-icon`}></span>
-                                :
-                                <span className={`icon analysis tile-icon`}></span>
-                            }
+                <div className="flex flex-auto flexWrap--wrap">
+                  {filteredInsights &&
+                    filteredInsights.map((tile, i) => {
+                      let iconObj;
+                      if (tile.icon) {
+                        iconObj = parseIconUri(tile.icon);
+                      }
+                      return (
+                        <div
+                          key={i}
+                          className="insight-tile-wrapper flex-column"
+                        >
+                          <div
+                            className={`insight-tile flex-auto u-textAlign--center flex-verticalCenter flex-column ${tile.severity}`}
+                          >
+                            <div className="flex justifyContent--center u-marginBottom--10">
+                              {tile.icon ? (
+                                <span
+                                  className="tile-icon"
+                                  style={{
+                                    backgroundImage: `url(${iconObj.uri})`,
+                                    width: `${iconObj.dimensions?.w}px`,
+                                    height: `${iconObj.dimensions?.h}px`,
+                                  }}
+                                ></span>
+                              ) : tile.icon_key ? (
+                                <span
+                                  className={`icon analysis-${tile.icon_key} tile-icon`}
+                                ></span>
+                              ) : (
+                                <span
+                                  className={`icon analysis tile-icon`}
+                                ></span>
+                              )}
+                            </div>
+                            <p
+                              className={
+                                tile.severity === "debug"
+                                  ? "u-textColor--bodyCopy u-fontSize--normal u-fontWeight--bold"
+                                  : "u-textColor--primary u-fontSize--normal u-fontWeight--bold"
+                              }
+                            >
+                              {tile.primary}
+                            </p>
+                            <MarkdownRenderer
+                              id={`markdown-wrapper-${i}`}
+                              className={
+                                tile.severity === "debug"
+                                  ? "u-textColor--bodyCopy u-fontSize--smaller u-fontWeight--medium u-marginTop--5"
+                                  : "u-textColor--accent u-fontSize--smaller u-fontWeight--medium u-marginTop--5"
+                              }
+                            >
+                              {tile.detail}
+                            </MarkdownRenderer>
+                            {tile?.involvedObject?.kind === "Pod" && (
+                              <div>
+                                <span
+                                  className="replicated-link u-fontSize--small u-marginTop--5"
+                                  onClick={() =>
+                                    this.props.openPodDetailsModal(
+                                      tile?.involvedObject
+                                    )
+                                  }
+                                >
+                                  See details
+                                </span>
+                              </div>
+                            )}
                           </div>
-                          <p className={tile.severity === "debug" ? "u-textColor--bodyCopy u-fontSize--normal u-fontWeight--bold" : "u-textColor--primary u-fontSize--normal u-fontWeight--bold"}>{tile.primary}</p>
-                          <MarkdownRenderer id={`markdown-wrapper-${i}`} className={tile.severity === "debug" ? "u-textColor--bodyCopy u-fontSize--smaller u-fontWeight--medium u-marginTop--5" : "u-textColor--accent u-fontSize--smaller u-fontWeight--medium u-marginTop--5"}>
-                            {tile.detail}
-                          </MarkdownRenderer>
-                          {tile?.involvedObject?.kind === "Pod" && <div><span className="replicated-link u-fontSize--small u-marginTop--5" onClick={() => this.props.openPodDetailsModal(tile?.involvedObject)}>See details</span></div>}
                         </div>
-                      </div>
-                    )
-                  })}
+                      );
+                    })}
                 </div>
               </div>
-            }
+            )}
           </div>
-        }
+        )}
       </div>
     );
   }

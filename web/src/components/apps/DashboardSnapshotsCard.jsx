@@ -34,19 +34,18 @@ const DESTINATIONS = [
   {
     value: "hostpath",
     label: "Host Path",
-  }
+  },
 ];
 
 class DashboardSnapshotsCard extends React.Component {
-
-  state ={
+  state = {
     snapshotSettings: null,
     isLoadingSnapshotSettings: false,
     snapshotSettingsErr: false,
     snapshotSettingsErrMsg: "",
     minimalRBACKotsadmNamespace: "",
-    locationStr: ""
-  }
+    locationStr: "",
+  };
 
   startASnapshot = (option) => {
     const { app } = this.props;
@@ -56,23 +55,24 @@ class DashboardSnapshotsCard extends React.Component {
       startSnapshotErrorMsg: "",
     });
 
-    let url = option === "full" ?
-      `${process.env.API_ENDPOINT}/snapshot/backup`
-      : `${process.env.API_ENDPOINT}/app/${app.slug}/snapshot/backup`;
+    let url =
+      option === "full"
+        ? `${process.env.API_ENDPOINT}/snapshot/backup`
+        : `${process.env.API_ENDPOINT}/app/${app.slug}/snapshot/backup`;
 
     fetch(url, {
       method: "POST",
       headers: {
-        "Authorization": Utilities.getToken(),
+        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
-      }
+      },
     })
       .then(async (result) => {
         if (!result.ok && result.status === 409) {
           const res = await result.json();
           if (res.kotsadmRequiresVeleroAccess) {
             this.setState({
-              startingSnapshot: false
+              startingSnapshot: false,
             });
             this.props.history.replace("/snapshots/settings");
             return;
@@ -81,12 +81,12 @@ class DashboardSnapshotsCard extends React.Component {
 
         if (result.ok) {
           this.setState({
-            startingSnapshot: false
+            startingSnapshot: false,
           });
           this.props.ping();
-          option === "full" ?
-            this.props.history.push("/snapshots")
-            : this.props.history.push(`/snapshots/partial/${app.slug}`)
+          option === "full"
+            ? this.props.history.push("/snapshots")
+            : this.props.history.push(`/snapshots/partial/${app.slug}`);
         } else {
           const body = await result.json();
           this.setState({
@@ -96,13 +96,15 @@ class DashboardSnapshotsCard extends React.Component {
           });
         }
       })
-      .catch(err => {
+      .catch((err) => {
         console.log(err);
         this.setState({
-          startSnapshotErrorMsg: err ? err.message : "Something went wrong, please try again."
+          startSnapshotErrorMsg: err
+            ? err.message
+            : "Something went wrong, please try again.",
         });
-      })
-  }
+      });
+  };
 
   fetchSnapshotSettings = async () => {
     this.setState({
@@ -115,11 +117,11 @@ class DashboardSnapshotsCard extends React.Component {
     fetch(`${process.env.API_ENDPOINT}/snapshots/settings`, {
       method: "GET",
       headers: {
-        "Authorization": Utilities.getToken(),
+        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
-      }
+      },
     })
-      .then(async res => {
+      .then(async (res) => {
         if (!res.ok && res.status === 409) {
           const result = await res.json();
           if (result.kotsadmRequiresVeleroAccess) {
@@ -139,64 +141,72 @@ class DashboardSnapshotsCard extends React.Component {
           snapshotSettingsErrMsg: "",
         });
       })
-      .catch(err => {
+      .catch((err) => {
         this.setState({
           isLoadingSnapshotSettings: false,
           snapshotSettingsErr: true,
           snapshotSettingsErrMsg: err,
-        })
-      })
-  }
-  
+        });
+      });
+  };
+
   toggleSnaphotDifferencesModal = () => {
-    this.setState({ snapshotDifferencesModal: !this.state.snapshotDifferencesModal });
-  }
+    this.setState({
+      snapshotDifferencesModal: !this.state.snapshotDifferencesModal,
+    });
+  };
 
   setCurrentProvider = () => {
     const { snapshotSettings } = this.state;
-    if (!snapshotSettings) {return;}
+    if (!snapshotSettings) {
+      return;
+    }
     const { store } = snapshotSettings;
 
     if (store?.aws) {
       return this.setState({
         readableName: find(DESTINATIONS, ["value", "aws"])?.label,
-        locationStr: `${store?.bucket}${store?.path ? `/${store?.path}` : ""}`
+        locationStr: `${store?.bucket}${store?.path ? `/${store?.path}` : ""}`,
       });
     }
 
     if (store?.azure) {
       return this.setState({
         selectedDestination: find(DESTINATIONS, ["value", "azure"]),
-        locationStr: `${store?.bucket}${store?.path ? `/${store?.path}` : ""}`
+        locationStr: `${store?.bucket}${store?.path ? `/${store?.path}` : ""}`,
       });
     }
 
     if (store?.gcp) {
       return this.setState({
         selectedDestination: find(DESTINATIONS, ["value", "gcp"]),
-        locationStr: `${store?.bucket}${store?.path ? `/${store?.path}` : ""}`
+        locationStr: `${store?.bucket}${store?.path ? `/${store?.path}` : ""}`,
       });
     }
 
     if (store?.other) {
       return this.setState({
         selectedDestination: find(DESTINATIONS, ["value", "other"]),
-        locationStr: `${store?.bucket}${store?.path ? `/${store?.path}` : ""}`
+        locationStr: `${store?.bucket}${store?.path ? `/${store?.path}` : ""}`,
       });
     }
 
     if (store?.internal) {
       return this.setState({
         determiningDestination: false,
-        selectedDestination: find(DESTINATIONS, ["value", "internal"])
+        selectedDestination: find(DESTINATIONS, ["value", "internal"]),
       });
     }
 
     if (store?.fileSystem) {
       const { fileSystemConfig } = snapshotSettings;
       return this.setState({
-        selectedDestination: fileSystemConfig?.hostPath ? find(DESTINATIONS, ["value", "hostpath"]) : find(DESTINATIONS, ["value", "nfs"]),
-        locationStr: fileSystemConfig?.hostPath ? fileSystemConfig?.hostPath : fileSystemConfig?.nfs?.path,
+        selectedDestination: fileSystemConfig?.hostPath
+          ? find(DESTINATIONS, ["value", "hostpath"])
+          : find(DESTINATIONS, ["value", "nfs"]),
+        locationStr: fileSystemConfig?.hostPath
+          ? fileSystemConfig?.hostPath
+          : fileSystemConfig?.nfs?.path,
       });
     }
 
@@ -205,7 +215,7 @@ class DashboardSnapshotsCard extends React.Component {
       determiningDestination: false,
       selectedDestination: find(DESTINATIONS, ["value", "aws"]),
     });
-  }
+  };
 
   componentDidMount() {
     this.fetchSnapshotSettings();
@@ -215,7 +225,10 @@ class DashboardSnapshotsCard extends React.Component {
   }
 
   componentDidUpdate(lastProps, lastState) {
-    if (this.state.snapshotSettings !== lastState.snapshotSettings && this.state.snapshotSettings) {
+    if (
+      this.state.snapshotSettings !== lastState.snapshotSettings &&
+      this.state.snapshotSettings
+    ) {
       this.setCurrentProvider();
     }
   }
@@ -223,37 +236,70 @@ class DashboardSnapshotsCard extends React.Component {
   render() {
     const { isSnapshotAllowed } = this.props;
     const { selectedDestination } = this.state;
-    
+
     return (
       <div className="flex-column flex1 dashboard-card">
         <div className="flex flex1 justifyContent--spaceBetween alignItems--center">
-          <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold">Snapshots</p>
+          <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold">
+            Snapshots
+          </p>
           <div className="u-fontSize--small u-fontWeight--medium flex flex-auto alignItems--center">
-            <Link className="replicated-link u-marginRight--20 flex alignItems--center" to="/snapshots/settings">
-              <span className="icon clickable dashboard-card-settings-icon u-marginRight--5" />Snapshot settings
+            <Link
+              className="replicated-link u-marginRight--20 flex alignItems--center"
+              to="/snapshots/settings"
+            >
+              <span className="icon clickable dashboard-card-settings-icon u-marginRight--5" />
+              Snapshot settings
             </Link>
             <span className="icon clickable dashboard-card-snapshot-icon u-marginRight--5" />
             <InlineDropdown
               defaultDisplayText="Start snapshot"
               dropdownOptions={[
-                { displayText: "Start a Partial snapshot", onClick: () => this.startASnapshot("partial") },
-                { displayText: "Start a Full snapshot", onClick: () => this.startASnapshot("full")},
-                { displayText: "Learn about the difference", onClick: () => this.toggleSnaphotDifferencesModal() }
+                {
+                  displayText: "Start a Partial snapshot",
+                  onClick: () => this.startASnapshot("partial"),
+                },
+                {
+                  displayText: "Start a Full snapshot",
+                  onClick: () => this.startASnapshot("full"),
+                },
+                {
+                  displayText: "Learn about the difference",
+                  onClick: () => this.toggleSnaphotDifferencesModal(),
+                },
               ]}
             />
           </div>
         </div>
         <div className="SnapshotsCard-content--wrapper u-marginTop--10 flex flex1">
           <div className="flex1">
-            <span className={`status-dot ${isSnapshotAllowed ? "u-color--success" : "u-color--warning"}`}/>
-            <span className={`u-fontSize--small u-fontWeight--medium ${isSnapshotAllowed ? "u-textColor--success" : "u-textColor--warning"}`}>
+            <span
+              className={`status-dot ${
+                isSnapshotAllowed ? "u-color--success" : "u-color--warning"
+              }`}
+            />
+            <span
+              className={`u-fontSize--small u-fontWeight--medium ${
+                isSnapshotAllowed
+                  ? "u-textColor--success"
+                  : "u-textColor--warning"
+              }`}
+            >
               {isSnapshotAllowed ? "Enabled" : "Disabled"}
             </span>
             <div className="flex alignItems--center u-marginTop--10">
-              <span className={`icon snapshotDestination--${selectedDestination?.value} u-marginRight--5`} />
-              <p className="u-fontSize--normal u-fontWeight--medium u-textColor--header">{selectedDestination?.label}</p>
+              <span
+                className={`icon snapshotDestination--${selectedDestination?.value} u-marginRight--5`}
+              />
+              <p className="u-fontSize--normal u-fontWeight--medium u-textColor--header">
+                {selectedDestination?.label}
+              </p>
             </div>
-            {selectedDestination?.value !== "internal" && <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--10">{this.state.locationStr}</p>}
+            {selectedDestination?.value !== "internal" && (
+              <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--10">
+                {this.state.locationStr}
+              </p>
+            )}
           </div>
           <div className="flex-auto">
             <div className="u-color--taupe u-padding--10">
@@ -262,17 +308,22 @@ class DashboardSnapshotsCard extends React.Component {
           </div>
         </div>
         <div className="u-marginTop--10">
-          <Link to={`/snapshots`} className="replicated-link has-arrow u-fontSize--small">See all snapshots</Link>
+          <Link
+            to={`/snapshots`}
+            className="replicated-link has-arrow u-fontSize--small"
+          >
+            See all snapshots
+          </Link>
         </div>
-        {this.state.snapshotDifferencesModal &&
+        {this.state.snapshotDifferencesModal && (
           <SnapshotDifferencesModal
             snapshotDifferencesModal={this.state.snapshotDifferencesModal}
             toggleSnapshotDifferencesModal={this.toggleSnaphotDifferencesModal}
           />
-        }
+        )}
       </div>
     );
   }
 }
 
-export default withRouter(DashboardSnapshotsCard)
+export default withRouter(DashboardSnapshotsCard);

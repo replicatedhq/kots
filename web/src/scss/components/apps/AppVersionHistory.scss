@@ -1,9 +1,9 @@
-@import '../../variables.scss';
+@import "../../variables.scss";
 $cell-width: 140px;
 
 .VersionHistoryRowWrapper {
   padding: 12px;
-  border-radius: 4px;  
+  border-radius: 4px;
   margin-bottom: 15px;
   background-color: #ffffff;
 
@@ -17,17 +17,17 @@ $cell-width: 140px;
 
   &.is-new {
     -webkit-animation: newVersion 9s ease forwards; /* Safari 4+ */
-    -moz-animation:    newVersion 9s ease forwards; /* Fx 5+ */
-    -o-animation:      newVersion 9s ease forwards; /* Opera 12+ */
-    animation:         newVersion 9s ease forwards; /* IE 10+, Fx 29+ */
-    animation:         newVersion 9s ease forwards;
+    -moz-animation: newVersion 9s ease forwards; /* Fx 5+ */
+    -o-animation: newVersion 9s ease forwards; /* Opera 12+ */
+    animation: newVersion 9s ease forwards; /* IE 10+, Fx 29+ */
+    animation: newVersion 9s ease forwards;
   }
   &.show-preflight-passed-text .checks-running-text {
     -webkit-animation: preflightPassedText 15s ease forwards; /* Safari 4+ */
-    -moz-animation:    preflightPassedText 15s ease forwards; /* Fx 5+ */
-    -o-animation:      preflightPassedText 15s ease forwards; /* Opera 12+ */
-    animation:         preflightPassedText 15s ease forwards; /* IE 10+, Fx 29+ */
-    animation:         preflightPassedText 15s ease forwards;
+    -moz-animation: preflightPassedText 15s ease forwards; /* Fx 5+ */
+    -o-animation: preflightPassedText 15s ease forwards; /* Opera 12+ */
+    animation: preflightPassedText 15s ease forwards; /* IE 10+, Fx 29+ */
+    animation: preflightPassedText 15s ease forwards;
   }
 }
 
@@ -60,7 +60,7 @@ $cell-width: 140px;
     background-position: center;
     background-repeat: no-repeat;
     border-radius: 40px;
-    box-shadow: inset 0 0 3px rgba(0,0,0,0.3);
+    box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.3);
   }
 
   .new-version-wrapper {
@@ -102,7 +102,7 @@ $cell-width: 140px;
 .ActiveDownstreamVersionRow--wrapper,
 .NodeRow--wrapper {
   padding: 12px;
-  border-top: 1px solid #DFDFDF;
+  border-top: 1px solid #dfdfdf;
 
   &.is-expired {
     background-color: $sub-nav-color;
@@ -116,7 +116,7 @@ $cell-width: 140px;
     background-color: lighten($primary-color, 43.5%);
     font-size: 12px;
     line-height: 12px;
-    color: #73A3CD;
+    color: #73a3cd;
     justify-content: center;
     border-radius: 3px;
     padding: 2px 4px 2px 4px;
@@ -141,7 +141,7 @@ $cell-width: 140px;
     background-color: #44bb66;
 
     &.disconnected {
-      background-color: #BC4752;
+      background-color: #bc4752;
     }
   }
 }
@@ -161,7 +161,7 @@ $cell-width: 140px;
 }
 
 .ReactModal__Overlay .SkipModal .btn.secondary {
-  background-color: #FFFFFF;
+  background-color: #ffffff;
   margin-left: 15px;
   border-width: 1px;
   border-style: solid;
@@ -198,7 +198,7 @@ $cell-width: 140px;
   border-right: 1px solid $border-color;
   line-height: 15px;
   cursor: pointer;
-  transition: color .2s;
+  transition: color 0.2s;
   position: relative;
 
   &:hover {
@@ -230,7 +230,7 @@ $cell-width: 140px;
   }
 
   &:last-child {
-    border-right: none
+    border-right: none;
   }
 }
 
@@ -270,10 +270,9 @@ $cell-width: 140px;
       background-position: center;
       background-repeat: no-repeat;
       border-radius: 40px;
-      box-shadow: inset 0 0 3px rgba(0,0,0,0.3);
+      box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.3);
     }
   }
-
 }
 
 .checks-running-text {
@@ -307,17 +306,19 @@ $cell-width: 140px;
 .overlay {
   user-select: none;
   cursor: pointer;
-  a, button, span {
+  a,
+  button,
+  span {
     pointer-events: none;
   }
 }
 
 .overlay.selected {
-  background: rgba(51, 122, 183, .1);
+  background: rgba(51, 122, 183, 0.1);
 }
 
 .overlay.disabled {
-  background: #FAFAFA;
+  background: #fafafa;
   cursor: not-allowed;
 }
 
@@ -325,23 +326,23 @@ $cell-width: 140px;
   align-self: center;
   width: 16px;
   height: 16px;
-  border: solid 1px #326DE6;
+  border: solid 1px #326de6;
   border-radius: 3px;
 }
 
 .checkbox.checked {
-  background-color: #326DE6;
+  background-color: #326de6;
   background-image: url("../../../images/main_spritesheet.svg");
   background-position: 1px -431px;
 }
 
 .checkbox.disabled {
-  border: solid 1px #C4C7CA;
+  border: solid 1px #c4c7ca;
 }
 
 .ErrorWrapper {
   padding: 15px 20px;
-  box-shadow: 0 0 4px rgba(0,0,0,0.16);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.16);
   line-height: normal;
   border-radius: 4px;
   background-color: lighten($error-color, 43.5%);
@@ -362,39 +363,79 @@ $cell-width: 140px;
 }
 
 @-webkit-keyframes newVersion {
-  0%   { background-color: #fff7dc; }
-  100% { background-color: #FFFFFF; }
+  0% {
+    background-color: #fff7dc;
+  }
+  100% {
+    background-color: #ffffff;
+  }
 }
 @-moz-keyframes newVersion {
-  0%   { background-color: #fff7dc; }
-  100% { background-color: #FFFFFF; }
+  0% {
+    background-color: #fff7dc;
+  }
+  100% {
+    background-color: #ffffff;
+  }
 }
 @-o-keyframes newVersion {
-  0%   { background-color: #fff7dc; }
-  100% { background-color: #FFFFFF; }
+  0% {
+    background-color: #fff7dc;
+  }
+  100% {
+    background-color: #ffffff;
+  }
 }
 @keyframes newVersion {
-  0%   { background-color: #fff7dc; }
-  100% { background-color: #FFFFFF; }
+  0% {
+    background-color: #fff7dc;
+  }
+  100% {
+    background-color: #ffffff;
+  }
 }
 
 @-webkit-keyframes preflightPassedText {
-  0%   { opacity: 1; }
-  95%  { opacity: 1; }
-  100% { opacity: 0;  }
+  0% {
+    opacity: 1;
+  }
+  95% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 @-moz-keyframes preflightPassedText {
-  0%   { opacity: 1; }
-  95%  { opacity: 1; }
-  100% { opacity: 0;  }
+  0% {
+    opacity: 1;
+  }
+  95% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 @-o-keyframes preflightPassedText {
-  0%   { opacity: 1; }
-  95%  { opacity: 1; }
-  100% { opacity: 0;  }
+  0% {
+    opacity: 1;
+  }
+  95% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 @keyframes preflightPassedText {
-  0%   { opacity: 1; }
-  95%  { opacity: 1; }
-  100% { opacity: 0;  }
+  0% {
+    opacity: 1;
+  }
+  95% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }

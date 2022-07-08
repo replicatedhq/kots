@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import Select from "react-select";
-import { withRouter } from "react-router-dom"
+import { withRouter } from "react-router-dom";
 import MonacoEditor from "@monaco-editor/react";
 import find from "lodash/find";
 import Modal from "react-modal";
@@ -18,9 +18,8 @@ import {
   DESTINATIONS,
   AZURE_CLOUD_NAMES,
   FILE_SYSTEM_NFS_TYPE,
-  FILE_SYSTEM_HOSTPATH_TYPE
+  FILE_SYSTEM_HOSTPATH_TYPE,
 } from "./SnapshotStorageDestination.data";
-
 
 class SnapshotStorageDestination extends Component {
   state = {
@@ -47,7 +46,7 @@ class SnapshotStorageDestination extends Component {
     },
     caCertificate: {
       name: "",
-      data: []
+      data: [],
     },
     showCACertificateField: false,
 
@@ -91,7 +90,11 @@ class SnapshotStorageDestination extends Component {
   }
 
   componentDidUpdate(lastProps) {
-    if (this.props.snapshotSettings !== lastProps.snapshotSettings && this.props.snapshotSettings && !this.props.checkForVeleroAndRestic) {
+    if (
+      this.props.snapshotSettings !== lastProps.snapshotSettings &&
+      this.props.snapshotSettings &&
+      !this.props.checkForVeleroAndRestic
+    ) {
       this.setFields();
     }
   }
@@ -115,45 +118,51 @@ class SnapshotStorageDestination extends Component {
       s3CompatibleRegion,
       s3CompatibleKeyId,
       s3CompatibleKeySecret,
-      s3CompatibleEndpoint
+      s3CompatibleEndpoint,
     } = this.state;
 
     const { snapshotSettings } = this.props;
 
     if (provider === "aws") {
       return (
-        snapshotSettings?.store?.aws?.region !== s3Region
-        || snapshotSettings?.store?.aws?.accessKeyID !== s3KeyId
-        || snapshotSettings?.store?.aws?.secretAccessKey !== s3KeySecret
-        || snapshotSettings?.store?.aws?.useInstanceRole !== useIamAws
-      )
+        snapshotSettings?.store?.aws?.region !== s3Region ||
+        snapshotSettings?.store?.aws?.accessKeyID !== s3KeyId ||
+        snapshotSettings?.store?.aws?.secretAccessKey !== s3KeySecret ||
+        snapshotSettings?.store?.aws?.useInstanceRole !== useIamAws
+      );
     }
     if (provider === "gcp") {
-      return (snapshotSettings?.store?.gcp?.useInstanceRole !== gcsUseIam
-        || snapshotSettings?.store?.gcp?.serviceAccount !== gcsServiceAccount
-        || snapshotSettings?.store?.gcp?.jsonFile !== gcsJsonFile
-      )
+      return (
+        snapshotSettings?.store?.gcp?.useInstanceRole !== gcsUseIam ||
+        snapshotSettings?.store?.gcp?.serviceAccount !== gcsServiceAccount ||
+        snapshotSettings?.store?.gcp?.jsonFile !== gcsJsonFile
+      );
     }
     if (provider === "azure") {
       return (
-        snapshotSettings?.store?.azure?.resourceGroup !== azureResourceGroupName
-        || snapshotSettings?.store?.azure?.storageAccount !== azureStorageAccountId
-        || snapshotSettings?.store?.azure?.subscriptionId !== azureSubscriptionId
-        || snapshotSettings?.store?.azure?.tenantId !== azureTenantId
-        || snapshotSettings?.store?.azure?.clientId !== azureClientId
-        || snapshotSettings?.store?.azure?.clientSecret !== azureClientSecret
-        || snapshotSettings?.store?.azure?.cloudName !== selectedAzureCloudName.value
-      )
+        snapshotSettings?.store?.azure?.resourceGroup !==
+          azureResourceGroupName ||
+        snapshotSettings?.store?.azure?.storageAccount !==
+          azureStorageAccountId ||
+        snapshotSettings?.store?.azure?.subscriptionId !==
+          azureSubscriptionId ||
+        snapshotSettings?.store?.azure?.tenantId !== azureTenantId ||
+        snapshotSettings?.store?.azure?.clientId !== azureClientId ||
+        snapshotSettings?.store?.azure?.clientSecret !== azureClientSecret ||
+        snapshotSettings?.store?.azure?.cloudName !==
+          selectedAzureCloudName.value
+      );
     }
     if (provider === "other") {
       return (
-        snapshotSettings?.store?.other?.region !== s3CompatibleRegion
-        || snapshotSettings?.store?.other?.accessKeyID !== s3CompatibleKeyId
-        || snapshotSettings?.store?.other?.secretAccessKey !== s3CompatibleKeySecret
-        || snapshotSettings?.store?.other?.endpoint !== s3CompatibleEndpoint
-      )
+        snapshotSettings?.store?.other?.region !== s3CompatibleRegion ||
+        snapshotSettings?.store?.other?.accessKeyID !== s3CompatibleKeyId ||
+        snapshotSettings?.store?.other?.secretAccessKey !==
+          s3CompatibleKeySecret ||
+        snapshotSettings?.store?.other?.endpoint !== s3CompatibleEndpoint
+      );
     }
-  }
+  };
 
   getCurrentProviderStores = (provider) => {
     const hasChanges = this.checkForStoreChanges(provider);
@@ -164,10 +173,12 @@ class SnapshotStorageDestination extends Component {
             aws: {
               region: this.state.s3Region,
               accessKeyID: !this.state.useIamAws ? this.state.s3KeyId : "",
-              secretAccessKey: !this.state.useIamAws ? this.state.s3KeySecret : "",
-              useInstanceRole: this.state.useIamAws
-            }
-          }
+              secretAccessKey: !this.state.useIamAws
+                ? this.state.s3KeySecret
+                : "",
+              useInstanceRole: this.state.useIamAws,
+            },
+          };
         case "azure":
           return {
             azure: {
@@ -177,33 +188,37 @@ class SnapshotStorageDestination extends Component {
               tenantId: this.state.azureTenantId,
               clientId: this.state.azureClientId,
               clientSecret: this.state.azureClientSecret,
-              cloudName: this.state.selectedAzureCloudName.value
-            }
-          }
+              cloudName: this.state.selectedAzureCloudName.value,
+            },
+          };
         case "gcp":
           return {
             gcp: {
-              serviceAccount: this.state.gcsUseIam ? this.state.gcsServiceAccount : "",
+              serviceAccount: this.state.gcsUseIam
+                ? this.state.gcsServiceAccount
+                : "",
               jsonFile: !this.state.gcsUseIam ? this.state.gcsJsonFile : "",
-              useInstanceRole: this.state.gcsUseIam
-            }
-          }
+              useInstanceRole: this.state.gcsUseIam,
+            },
+          };
         case "other":
           return {
             other: {
               region: this.state.s3CompatibleRegion,
               accessKeyID: this.state.s3CompatibleKeyId,
               secretAccessKey: this.state.s3CompatibleKeySecret,
-              endpoint: this.state.s3CompatibleEndpoint
-            }
-          }
+              endpoint: this.state.s3CompatibleEndpoint,
+            },
+          };
       }
     }
-  }
+  };
 
   setFields = () => {
     const { snapshotSettings } = this.props;
-    if (!snapshotSettings) {return;}
+    if (!snapshotSettings) {
+      return;
+    }
     const { store } = snapshotSettings;
 
     if (store?.aws) {
@@ -215,7 +230,7 @@ class SnapshotStorageDestination extends Component {
         s3Path: store.path,
         useIamAws: store?.aws?.useInstanceRole,
         s3KeyId: store?.aws?.accessKeyID || "",
-        s3KeySecret: store?.aws?.secretAccessKey || ""
+        s3KeySecret: store?.aws?.secretAccessKey || "",
       });
     }
 
@@ -231,7 +246,10 @@ class SnapshotStorageDestination extends Component {
         azureClientSecret: store?.azure?.clientSecret,
         azureResourceGroupName: store?.azure?.resourceGroup,
         azureStorageAccountId: store?.azure?.storageAccount,
-        selectedAzureCloudName: find(AZURE_CLOUD_NAMES, ["value", store?.azure?.cloudName])
+        selectedAzureCloudName: find(AZURE_CLOUD_NAMES, [
+          "value",
+          store?.azure?.cloudName,
+        ]),
       });
     }
 
@@ -243,7 +261,7 @@ class SnapshotStorageDestination extends Component {
         gcsPath: store.path,
         gcsServiceAccount: store?.gcp?.serviceAccount || "",
         gcsJsonFile: store?.gcp?.jsonFile || "",
-        gcsUseIam: store?.gcp?.useInstanceRole
+        gcsUseIam: store?.gcp?.useInstanceRole,
       });
     }
 
@@ -256,14 +274,14 @@ class SnapshotStorageDestination extends Component {
         s3CompatibleKeyId: store?.other?.accessKeyID,
         s3CompatibleKeySecret: store?.other?.accessKeySecret,
         s3CompatibleEndpoint: store?.other?.endpoint,
-        s3CompatibleRegion: store?.other?.region
+        s3CompatibleRegion: store?.other?.region,
       });
     }
 
     if (store?.internal) {
       return this.setState({
         determiningDestination: false,
-        selectedDestination: find(DESTINATIONS, ["value", "internal"])
+        selectedDestination: find(DESTINATIONS, ["value", "internal"]),
       });
     }
 
@@ -271,8 +289,12 @@ class SnapshotStorageDestination extends Component {
       const { fileSystemConfig } = snapshotSettings;
       return this.setState({
         determiningDestination: false,
-        selectedDestination: fileSystemConfig?.hostPath ? find(DESTINATIONS, ["value", "hostpath"]) : find(DESTINATIONS, ["value", "nfs"]),
-        fileSystemType: fileSystemConfig?.hostPath ? FILE_SYSTEM_HOSTPATH_TYPE : FILE_SYSTEM_NFS_TYPE,
+        selectedDestination: fileSystemConfig?.hostPath
+          ? find(DESTINATIONS, ["value", "hostpath"])
+          : find(DESTINATIONS, ["value", "nfs"]),
+        fileSystemType: fileSystemConfig?.hostPath
+          ? FILE_SYSTEM_HOSTPATH_TYPE
+          : FILE_SYSTEM_NFS_TYPE,
         fileSystemNFSPath: fileSystemConfig?.nfs?.path,
         fileSystemNFSServer: fileSystemConfig?.nfs?.server,
         fileSystemHostPath: fileSystemConfig?.hostPath,
@@ -284,7 +306,7 @@ class SnapshotStorageDestination extends Component {
       determiningDestination: false,
       selectedDestination: find(DESTINATIONS, ["value", "aws"]),
     });
-  }
+  };
 
   handleFormChange = (field, e) => {
     let nextState = {};
@@ -294,24 +316,32 @@ class SnapshotStorageDestination extends Component {
       nextState[field] = e.target.value;
     }
     this.setState(nextState);
-  }
+  };
 
   handleDestinationChange = (destination) => {
-    const fileSystemType = destination?.value === "hostpath" ? FILE_SYSTEM_HOSTPATH_TYPE : destination?.value === "nfs" ? FILE_SYSTEM_NFS_TYPE : "";
-    this.setState({ selectedDestination: destination, fileSystemType: fileSystemType });
-  }
+    const fileSystemType =
+      destination?.value === "hostpath"
+        ? FILE_SYSTEM_HOSTPATH_TYPE
+        : destination?.value === "nfs"
+        ? FILE_SYSTEM_NFS_TYPE
+        : "";
+    this.setState({
+      selectedDestination: destination,
+      fileSystemType: fileSystemType,
+    });
+  };
 
   handleAzureCloudNameChange = (azureCloudName) => {
     this.setState({ selectedAzureCloudName: azureCloudName });
-  }
+  };
 
   handleCACertificateFieldClick = () => {
     this.setState({ showCACertificateField: true });
-  }
+  };
 
   onGcsEditorChange = (value) => {
     this.setState({ gcsJsonFile: value });
-  }
+  };
 
   onSubmit = async (e) => {
     e.preventDefault();
@@ -342,55 +372,75 @@ class SnapshotStorageDestination extends Component {
         await this.snapshotProviderFileSystem(false);
         break;
     }
-  }
+  };
 
   validateSnapshotProviderS3Compatible = () => {
-    const urlRe = /\b(https?):\/\/[-A-Za-z0-9+&@#/%?=~_|!:,.;]*[-A-Za-z0-9+&@#/%=~_|]/
+    const urlRe =
+      /\b(https?):\/\/[-A-Za-z0-9+&@#/%?=~_|!:,.;]*[-A-Za-z0-9+&@#/%=~_|]/;
 
     if (!urlRe.test(this.state.s3CompatibleEndpoint)) {
-      return { "endpoint": "Please enter a valid endpoint with protocol" }
+      return { endpoint: "Please enter a valid endpoint with protocol" };
     }
-    return {}
-  }
+    return {};
+  };
 
   getProviderPayload = (provider, bucket, path) => {
     const caCertData = this.state.caCertificate.data;
-    return Object.assign({
-      provider,
-      bucket,
-      path,
-      caCertData
-    }, this.getCurrentProviderStores(provider));
-  }
+    return Object.assign(
+      {
+        provider,
+        bucket,
+        path,
+        caCertData,
+      },
+      this.getCurrentProviderStores(provider)
+    );
+  };
 
   handleSetCACert = (caCertificate) => {
     this.setState({ caCertificate });
-  }
+  };
 
   snapshotProviderAWS = async () => {
-    const payload = this.getProviderPayload("aws", this.state.s3bucket, this.state.s3Path);
+    const payload = this.getProviderPayload(
+      "aws",
+      this.state.s3bucket,
+      this.state.s3Path
+    );
     this.props.updateSettings(payload);
-  }
+  };
 
   snapshotProviderAzure = async () => {
-    const payload = this.getProviderPayload("azure", this.state.azureBucket, this.state.azurePath);
+    const payload = this.getProviderPayload(
+      "azure",
+      this.state.azureBucket,
+      this.state.azurePath
+    );
     this.props.updateSettings(payload);
-  }
+  };
 
   snapshotProviderGoogle = async () => {
-    const payload = this.getProviderPayload("gcp", this.state.gcsBucket, this.state.gcsPath);
+    const payload = this.getProviderPayload(
+      "gcp",
+      this.state.gcsBucket,
+      this.state.gcsPath
+    );
     this.props.updateSettings(payload);
-  }
+  };
 
   snapshotProviderS3Compatible = async () => {
-    const payload = this.getProviderPayload("other", this.state.s3CompatibleBucket, this.state.s3CompatiblePath);
+    const payload = this.getProviderPayload(
+      "other",
+      this.state.s3CompatibleBucket,
+      this.state.s3CompatiblePath
+    );
     this.props.updateSettings(payload);
-  }
+  };
 
   snapshotProviderInternal = async () => {
     const payload = { internal: true };
     this.props.updateSettings(payload);
-  }
+  };
 
   snapshotProviderFileSystem = async (forceReset = false) => {
     if (forceReset) {
@@ -403,28 +453,38 @@ class SnapshotStorageDestination extends Component {
     const hostPath = this.state.fileSystemHostPath;
 
     const payload = {
-      fileSystem: this.buildFileSystemOptions(type, path, server, hostPath, forceReset),
+      fileSystem: this.buildFileSystemOptions(
+        type,
+        path,
+        server,
+        hostPath,
+        forceReset
+      ),
     };
     this.props.updateSettings(payload);
-  }
+  };
 
   buildFileSystemOptions = (type, path, server, hostPath, forceReset) => {
     const options = {
       forceReset: forceReset,
-    }
+    };
     if (type === FILE_SYSTEM_HOSTPATH_TYPE) {
       options.hostPath = hostPath;
     } else if (type === FILE_SYSTEM_NFS_TYPE) {
       options.nfs = {
         path: path,
         server: server,
-      }
+      };
     }
     return options;
-  }
+  };
 
   openConfigureFileSystemProviderModal = (fileSystemType) => {
-    this.setState({ showConfigureFileSystemProviderModal: !this.state.showConfigureFileSystemProviderModal, tmpFileSystemType: fileSystemType });
+    this.setState({
+      showConfigureFileSystemProviderModal:
+        !this.state.showConfigureFileSystemProviderModal,
+      tmpFileSystemType: fileSystemType,
+    });
   };
 
   hideConfigureFileSystemProviderModal = () => {
@@ -451,19 +511,28 @@ class SnapshotStorageDestination extends Component {
     const path = this.state.tmpFileSystemNFSPath;
     const server = this.state.tmpFileSystemNFSServer;
     const hostPath = this.state.tmpFileSystemHostPath;
-    const fileSystemOptions = this.buildFileSystemOptions(type, path, server, hostPath, forceReset);
+    const fileSystemOptions = this.buildFileSystemOptions(
+      type,
+      path,
+      server,
+      hostPath,
+      forceReset
+    );
 
-    this.setState({ configuringFileSystemProvider: true, configureFileSystemProviderErrorMsg: "" });
+    this.setState({
+      configuringFileSystemProvider: true,
+      configureFileSystemProviderErrorMsg: "",
+    });
 
     fetch(`${process.env.API_ENDPOINT}/snapshots/filesystem`, {
       method: "PUT",
       headers: {
-        "Authorization": Utilities.getToken(),
+        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         fileSystemOptions: fileSystemOptions,
-      })
+      }),
     })
       .then(async (res) => {
         if (res.status === 409) {
@@ -472,7 +541,7 @@ class SnapshotStorageDestination extends Component {
             configuringFileSystemProvider: false,
             showResetFileSystemWarningModal: true,
             resetFileSystemWarningMessage: response.error,
-          })
+          });
           return;
         }
 
@@ -480,7 +549,7 @@ class SnapshotStorageDestination extends Component {
         if (!res.ok) {
           this.setState({
             configuringFileSystemProvider: false,
-            configureFileSystemProviderErrorMsg: response.error
+            configureFileSystemProviderErrorMsg: response.error,
           });
           return;
         }
@@ -498,37 +567,45 @@ class SnapshotStorageDestination extends Component {
 
         this.setState({
           configuringFileSystemProvider: false,
-          configureFileSystemProviderErrorMsg: response.error
+          configureFileSystemProviderErrorMsg: response.error,
         });
       })
       .catch((err) => {
         console.error(err);
         this.setState({
           configuringFileSystemProvider: false,
-          configureFileSystemProviderErrorMsg: "Something went wrong, please try again."
+          configureFileSystemProviderErrorMsg:
+            "Something went wrong, please try again.",
         });
       });
-  }
+  };
 
   renderIcons = (destination) => {
     if (destination) {
-      return <span className={`icon snapshotDestination--${destination.value}`} />;
+      return (
+        <span className={`icon snapshotDestination--${destination.value}`} />
+      );
     }
     return;
-  }
+  };
 
   getDestinationLabel = (destination, label) => {
     return (
       <div style={{ alignItems: "center", display: "flex" }}>
-        <span style={{ fontSize: 18, marginRight: "10px", minWidth: 16, textAlign: "center" }}>
+        <span
+          style={{
+            fontSize: 18,
+            marginRight: "10px",
+            minWidth: 16,
+            textAlign: "center",
+          }}
+        >
           {this.renderIcons(destination)}
         </span>
-        <span style={{ fontSize: 14, lineHeight: "16px" }}>
-          {label}
-        </span>
+        <span style={{ fontSize: 14, lineHeight: "16px" }}>{label}</span>
       </div>
     );
-  }
+  };
 
   renderDestinationFields = () => {
     const { selectedDestination, useIamAws, gcsUseIam } = this.state;
@@ -583,7 +660,11 @@ class SnapshotStorageDestination extends Component {
                   &nbsp;
                 </p>
                 <div className="BoxedCheckbox-wrapper flex1 u-textAlign--left">
-                  <div className={`BoxedCheckbox flex-auto flex alignItems--center ${this.state.useIamAws ? "is-active" : ""}`}>
+                  <div
+                    className={`BoxedCheckbox flex-auto flex alignItems--center ${
+                      this.state.useIamAws ? "is-active" : ""
+                    }`}
+                  >
                     <input
                       type="checkbox"
                       className="u-cursor--pointer u-marginLeft--10"
@@ -591,7 +672,10 @@ class SnapshotStorageDestination extends Component {
                       checked={this.state.useIamAws}
                       onChange={(e) => this.handleFormChange("useIamAws", e)}
                     />
-                    <label htmlFor="useIamAws" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none">
+                    <label
+                      htmlFor="useIamAws"
+                      className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none"
+                    >
                       <div className="flex1">
                         <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium">
                           Use IAM Instance Role
@@ -603,7 +687,7 @@ class SnapshotStorageDestination extends Component {
               </div>
             </div>
 
-            {!useIamAws &&
+            {!useIamAws && (
               <div className="flex u-marginBottom--30">
                 <div className="flex1 u-paddingRight--5">
                   <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
@@ -613,7 +697,8 @@ class SnapshotStorageDestination extends Component {
                     type="text"
                     className="Input"
                     placeholder="key ID"
-                    value={this.state.s3KeyId} onChange={(e) => this.handleFormChange("s3KeyId", e)}
+                    value={this.state.s3KeyId}
+                    onChange={(e) => this.handleFormChange("s3KeyId", e)}
                   />
                 </div>
                 <div className="flex1 u-paddingLeft--5">
@@ -629,9 +714,9 @@ class SnapshotStorageDestination extends Component {
                   />
                 </div>
               </div>
-            }
+            )}
           </>
-        )
+        );
 
       case "azure":
         return (
@@ -672,7 +757,9 @@ class SnapshotStorageDestination extends Component {
                   className="Input"
                   placeholder="Subscription ID"
                   value={this.state.azureSubscriptionId}
-                  onChange={(e) => this.handleFormChange("azureSubscriptionId", e)}
+                  onChange={(e) =>
+                    this.handleFormChange("azureSubscriptionId", e)
+                  }
                 />
               </div>
               <div className="flex1 u-paddingLeft--5">
@@ -710,7 +797,9 @@ class SnapshotStorageDestination extends Component {
                   className="Input"
                   placeholder="Client Secret"
                   value={this.state.azureClientSecret}
-                  onChange={(e) => this.handleFormChange("azureClientSecret", e)}
+                  onChange={(e) =>
+                    this.handleFormChange("azureClientSecret", e)
+                  }
                 />
               </div>
             </div>
@@ -729,7 +818,9 @@ class SnapshotStorageDestination extends Component {
                   getOptionValue={(cloudName) => cloudName.label}
                   value={selectedAzureCloudName}
                   onChange={this.handleAzureCloudNameChange}
-                  isOptionSelected={(option) => option.value === selectedAzureCloudName}
+                  isOptionSelected={(option) =>
+                    option.value === selectedAzureCloudName
+                  }
                 />
               </div>
             </div>
@@ -743,7 +834,9 @@ class SnapshotStorageDestination extends Component {
                   className="Input"
                   placeholder="Resource Group Name"
                   value={this.state.azureResourceGroupName}
-                  onChange={(e) => this.handleFormChange("azureResourceGroupName", e)}
+                  onChange={(e) =>
+                    this.handleFormChange("azureResourceGroupName", e)
+                  }
                 />
               </div>
               <div className="flex1 u-paddingLeft--5">
@@ -755,18 +848,22 @@ class SnapshotStorageDestination extends Component {
                   className="Input"
                   placeholder="Storage Account ID"
                   value={this.state.azureStorageAccountId}
-                  onChange={(e) => this.handleFormChange("azureStorageAccountId", e)}
+                  onChange={(e) =>
+                    this.handleFormChange("azureStorageAccountId", e)
+                  }
                 />
               </div>
             </div>
           </>
-        )
+        );
 
       case "gcp":
         return (
           <div>
             <div className="flex1 u-paddingRight--5">
-              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Bucket</p>
+              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                Bucket
+              </p>
               <input
                 type="text"
                 className="Input"
@@ -777,7 +874,9 @@ class SnapshotStorageDestination extends Component {
             </div>
             <div className="flex u-marginBottom--30">
               <div className="flex1 u-paddingRight--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Path</p>
+                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                  Path
+                </p>
                 <input
                   type="text"
                   className="Input"
@@ -788,7 +887,11 @@ class SnapshotStorageDestination extends Component {
               </div>
             </div>
             <div className="BoxedCheckbox-wrapper u-textAlign--left u-marginBottom--20">
-              <div className={`BoxedCheckbox flex-auto flex alignItems--center u-width--half ${this.state.gcsUseIam ? "is-active" : ""}`}>
+              <div
+                className={`BoxedCheckbox flex-auto flex alignItems--center u-width--half ${
+                  this.state.gcsUseIam ? "is-active" : ""
+                }`}
+              >
                 <input
                   type="checkbox"
                   className="u-cursor--pointer u-marginLeft--10"
@@ -796,7 +899,10 @@ class SnapshotStorageDestination extends Component {
                   checked={this.state.gcsUseIam}
                   onChange={(e) => this.handleFormChange("gcsUseIam", e)}
                 />
-                <label htmlFor="gcsUseIam" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none">
+                <label
+                  htmlFor="gcsUseIam"
+                  className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none"
+                >
                   <div className="flex1">
                     <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium">
                       Use IAM Instance Role
@@ -806,7 +912,7 @@ class SnapshotStorageDestination extends Component {
               </div>
             </div>
 
-            {gcsUseIam &&
+            {gcsUseIam && (
               <div className="flex u-marginBottom--30">
                 <div className="flex1 u-paddingRight--5">
                   <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
@@ -817,13 +923,15 @@ class SnapshotStorageDestination extends Component {
                     className="Input"
                     placeholder=""
                     value={this.state.gcsServiceAccount}
-                    onChange={(e) => this.handleFormChange("gcsServiceAccount", e)}
+                    onChange={(e) =>
+                      this.handleFormChange("gcsServiceAccount", e)
+                    }
                   />
                 </div>
               </div>
-            }
+            )}
 
-            {!gcsUseIam &&
+            {!gcsUseIam && (
               <div className="flex u-marginBottom--30">
                 <div className="flex1">
                   <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
@@ -831,7 +939,7 @@ class SnapshotStorageDestination extends Component {
                   </p>
                   <div className="gcs-editor">
                     <MonacoEditor
-                      ref={(editor) => this.monacoEditor = editor}
+                      ref={(editor) => (this.monacoEditor = editor)}
                       language="json"
                       value={this.state.gcsJsonFile}
                       height="420px"
@@ -839,7 +947,7 @@ class SnapshotStorageDestination extends Component {
                       options={{
                         contextmenu: false,
                         minimap: {
-                          enabled: false
+                          enabled: false,
                         },
                         scrollBeyondLastLine: false,
                       }}
@@ -847,9 +955,9 @@ class SnapshotStorageDestination extends Component {
                   </div>
                 </div>
               </div>
-            }
+            )}
           </div>
-        )
+        );
 
       case "other":
         return (
@@ -888,7 +996,12 @@ class SnapshotStorageDestination extends Component {
                 <input
                   type="text"
                   className="Input"
-                  placeholder="key ID" value={this.state.s3CompatibleKeyId} onChange={(e) => this.handleFormChange("s3CompatibleKeyId", e)} />
+                  placeholder="key ID"
+                  value={this.state.s3CompatibleKeyId}
+                  onChange={(e) =>
+                    this.handleFormChange("s3CompatibleKeyId", e)
+                  }
+                />
               </div>
               <div className="flex1 u-paddingLeft--5">
                 <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
@@ -899,7 +1012,9 @@ class SnapshotStorageDestination extends Component {
                   className="Input"
                   placeholder="access key"
                   value={this.state.s3CompatibleKeySecret}
-                  onChange={(e) => this.handleFormChange("s3CompatibleKeySecret", e)}
+                  onChange={(e) =>
+                    this.handleFormChange("s3CompatibleKeySecret", e)
+                  }
                 />
               </div>
             </div>
@@ -914,7 +1029,9 @@ class SnapshotStorageDestination extends Component {
                     className="Input"
                     placeholder="http[s]://hostname[:port]"
                     value={this.state.s3CompatibleEndpoint}
-                    onChange={(e) => this.handleFormChange("s3CompatibleEndpoint", e)}
+                    onChange={(e) =>
+                      this.handleFormChange("s3CompatibleEndpoint", e)
+                    }
                   />
                 </div>
                 <div className="flex1 u-paddingLeft--5">
@@ -926,21 +1043,23 @@ class SnapshotStorageDestination extends Component {
                     className="Input"
                     placeholder="us-east-1"
                     value={this.state.s3CompatibleRegion}
-                    onChange={(e) => this.handleFormChange("s3CompatibleRegion", e)}
+                    onChange={(e) =>
+                      this.handleFormChange("s3CompatibleRegion", e)
+                    }
                   />
                 </div>
               </div>
-              {this.state.s3CompatibleFieldErrors.endpoint &&
+              {this.state.s3CompatibleFieldErrors.endpoint && (
                 <div className="u-fontWeight--bold u-fontSize--small u-textColor--error u-marginBottom--10 u-marginTop--10">
                   {this.state.s3CompatibleFieldErrors.endpoint}
                 </div>
-              }
+              )}
             </div>
           </div>
-        )
+        );
 
       case "internal":
-        return null
+        return null;
 
       case "nfs":
         return (
@@ -955,7 +1074,9 @@ class SnapshotStorageDestination extends Component {
                 className="Input"
                 placeholder="NFS server hostname/IP"
                 value={this.state.fileSystemNFSServer}
-                onChange={(e) => this.handleFormChange("fileSystemNFSServer", e)}
+                onChange={(e) =>
+                  this.handleFormChange("fileSystemNFSServer", e)
+                }
               />
             </div>
             <div className="flex1 u-paddingLeft--5">
@@ -972,7 +1093,7 @@ class SnapshotStorageDestination extends Component {
               />
             </div>
           </div>
-        )
+        );
 
       case "hostpath":
         return (
@@ -991,14 +1112,12 @@ class SnapshotStorageDestination extends Component {
               />
             </div>
           </div>
-        )
+        );
 
       default:
-        return (
-          <div>No snapshot destination is selected</div>
-        )
+        return <div>No snapshot destination is selected</div>;
     }
-  }
+  };
 
   renderConfigureFileSystemProviderModalContent = () => {
     if (this.state.tmpFileSystemType === FILE_SYSTEM_HOSTPATH_TYPE) {
@@ -1008,7 +1127,8 @@ class SnapshotStorageDestination extends Component {
             Configure Host Path
           </p>
           <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--10">
-            Enter the host path for the directory in which you would like to store the snapshots.
+            Enter the host path for the directory in which you would like to
+            store the snapshots.
           </p>
           <div className="flex u-marginBottom--30">
             <div className="flex1 u-paddingRight--5">
@@ -1020,21 +1140,28 @@ class SnapshotStorageDestination extends Component {
                 className="Input"
                 placeholder="/path/to/host-directory"
                 value={this.state.tmpFileSystemHostPath}
-                onChange={(e) => this.setState({ tmpFileSystemHostPath: e.target.value })}
+                onChange={(e) =>
+                  this.setState({ tmpFileSystemHostPath: e.target.value })
+                }
               />
             </div>
           </div>
           <div className="flex justifyContent--flexStart alignItems-center">
-            {this.state.configuringFileSystemProvider &&
+            {this.state.configuringFileSystemProvider && (
               <Loader className="u-marginRight--5" size="32" />
-            }
+            )}
             <button
               type="button"
               className="btn blue primary u-marginRight--10"
               onClick={() => this.configureFileSystemProvider(false)}
-              disabled={!this.state.tmpFileSystemHostPath || this.state.configuringFileSystemProvider}
+              disabled={
+                !this.state.tmpFileSystemHostPath ||
+                this.state.configuringFileSystemProvider
+              }
             >
-              {this.state.configuringFileSystemProvider ? "Configuring" : "Configure"}
+              {this.state.configuringFileSystemProvider
+                ? "Configuring"
+                : "Configure"}
             </button>
             <button
               type="button"
@@ -1044,13 +1171,13 @@ class SnapshotStorageDestination extends Component {
               Cancel
             </button>
           </div>
-          {this.state.configureFileSystemProviderErrorMsg &&
+          {this.state.configureFileSystemProviderErrorMsg && (
             <div className="flex u-fontWeight--bold u-fontSize--small u-textColor--error u-marginBottom--10 u-marginTop--10">
               {this.state.configureFileSystemProviderErrorMsg}
             </div>
-          }
+          )}
         </div>
-      )
+      );
     }
 
     if (this.state.tmpFileSystemType === FILE_SYSTEM_NFS_TYPE) {
@@ -1060,7 +1187,8 @@ class SnapshotStorageDestination extends Component {
             Configure NFS
           </p>
           <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--10">
-            Enter the NFS server hostname or IP address, and the exported directory path in which you would like to store the snapshots.
+            Enter the NFS server hostname or IP address, and the exported
+            directory path in which you would like to store the snapshots.
           </p>
           <div className="flex u-marginBottom--30">
             <div className="flex1 u-paddingRight--5">
@@ -1072,7 +1200,9 @@ class SnapshotStorageDestination extends Component {
                 className="Input"
                 placeholder="NFS server hostname/IP"
                 value={this.state.tmpFileSystemNFSServer}
-                onChange={(e) => this.setState({ tmpFileSystemNFSServer: e.target.value })}
+                onChange={(e) =>
+                  this.setState({ tmpFileSystemNFSServer: e.target.value })
+                }
               />
             </div>
             <div className="flex1 u-paddingLeft--5">
@@ -1084,21 +1214,29 @@ class SnapshotStorageDestination extends Component {
                 className="Input"
                 placeholder="/path/to/nfs-directory"
                 value={this.state.tmpFileSystemNFSPath}
-                onChange={(e) => this.setState({ tmpFileSystemNFSPath: e.target.value })}
+                onChange={(e) =>
+                  this.setState({ tmpFileSystemNFSPath: e.target.value })
+                }
               />
             </div>
           </div>
           <div className="flex justifyContent--flexStart alignItems-center">
-            {this.state.configuringFileSystemProvider &&
+            {this.state.configuringFileSystemProvider && (
               <Loader className="u-marginRight--5" size="32" />
-            }
+            )}
             <button
               type="button"
               className="btn blue primary u-marginRight--10"
-              disabled={!this.state.tmpFileSystemNFSServer || !this.state.tmpFileSystemNFSPath || this.state.configuringFileSystemProvider}
+              disabled={
+                !this.state.tmpFileSystemNFSServer ||
+                !this.state.tmpFileSystemNFSPath ||
+                this.state.configuringFileSystemProvider
+              }
               onClick={() => this.configureFileSystemProvider(false)}
             >
-              {this.state.configuringFileSystemProvider ? "Configuring" : "Configure"}
+              {this.state.configuringFileSystemProvider
+                ? "Configuring"
+                : "Configure"}
             </button>
             <button
               type="button"
@@ -1108,17 +1246,17 @@ class SnapshotStorageDestination extends Component {
               Cancel
             </button>
           </div>
-          {this.state.configureFileSystemProviderErrorMsg &&
+          {this.state.configureFileSystemProviderErrorMsg && (
             <div className="flex u-fontWeight--bold u-fontSize--small u-textColor--error u-marginBottom--10 u-marginTop--10">
               {this.state.configureFileSystemProviderErrorMsg}
             </div>
-          }
+          )}
         </div>
       );
     }
 
     return null;
-  }
+  };
 
   render() {
     const {
@@ -1127,7 +1265,7 @@ class SnapshotStorageDestination extends Component {
       updateConfirm,
       updateErrorMsg,
       isKurlEnabled,
-      checkForVeleroAndRestic
+      checkForVeleroAndRestic,
     } = this.props;
 
     const availableDestinations = [];
@@ -1169,8 +1307,10 @@ class SnapshotStorageDestination extends Component {
             value: "azure",
             label: "Azure Blob Storage",
           });
-
-        } else if (veleroPlugin.includes("local-volume-provider") && snapshotSettings?.isMinioDisabled) {
+        } else if (
+          veleroPlugin.includes("local-volume-provider") &&
+          snapshotSettings?.isMinioDisabled
+        ) {
           availableDestinations.push({
             value: "nfs",
             label: "Network File System (NFS)",
@@ -1190,13 +1330,16 @@ class SnapshotStorageDestination extends Component {
       availableDestinations.sort((a, b) => a.label.localeCompare(b.label));
     }
 
-    const selectedDestination = availableDestinations.find((d) =>
-      d.value === this.state.selectedDestination.value
+    const selectedDestination = availableDestinations.find(
+      (d) => d.value === this.state.selectedDestination.value
     );
 
-    const showResetFileSystemWarningModal = this.state.showResetFileSystemWarningModal || this.props.showResetFileSystemWarningModal;
-    const resetFileSystemWarningMessage = this.state.resetFileSystemWarningMessage || this.props.resetFileSystemWarningMessage;
-
+    const showResetFileSystemWarningModal =
+      this.state.showResetFileSystemWarningModal ||
+      this.props.showResetFileSystemWarningModal;
+    const resetFileSystemWarningMessage =
+      this.state.resetFileSystemWarningMessage ||
+      this.props.resetFileSystemWarningMessage;
 
     return (
       <div className="flex1 flex-column u-marginTop--40">
@@ -1212,7 +1355,9 @@ class SnapshotStorageDestination extends Component {
                   Configuration is shared
                 </p>
                 <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy">
-                  Full (Instance) and Partial (Application) snapshots share Velero configuration. Your storage destination will be used for both.
+                  Full (Instance) and Partial (Application) snapshots share
+                  Velero configuration. Your storage destination will be used
+                  for both.
                 </span>
               </div>
             </div>
@@ -1221,11 +1366,11 @@ class SnapshotStorageDestination extends Component {
                 <p className="u-fontSize--normal u-marginBottom--20 u-fontWeight--bold u-textColor--secondary">
                   Storage
                 </p>
-                {updateErrorMsg &&
+                {updateErrorMsg && (
                   <div className="flex-auto u-fontWeight--bold u-fontSize--small u-textColor--error u-marginBottom--10">
                     {updateErrorMsg}
                   </div>
-                }
+                )}
                 <div className="flex flex-column u-marginBottom--20">
                   <div className="flex flex1 justifyContent--spaceBetween alignItems--center">
                     <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
@@ -1238,71 +1383,99 @@ class SnapshotStorageDestination extends Component {
                       + Add a new storage destination
                     </span>
                   </div>
-                  {!snapshotSettings?.isVeleroRunning && !checkForVeleroAndRestic && isKurlEnabled &&
-                    <div className="flex-auto u-fontWeight--bold u-fontSize--small u-textColor--error u-marginBottom--10">
-                      Please fix Velero so that the deployment is running. For help troubleshooting this issue visit <a href="https://velero.io/docs/main/troubleshooting/" target="_blank" rel="noopener noreferrer" className="replicated-link u-marginLeft--5">https://velero.io/docs/main/troubleshooting/</a>.
-                    </div>
-                  }
+                  {!snapshotSettings?.isVeleroRunning &&
+                    !checkForVeleroAndRestic &&
+                    isKurlEnabled && (
+                      <div className="flex-auto u-fontWeight--bold u-fontSize--small u-textColor--error u-marginBottom--10">
+                        Please fix Velero so that the deployment is running. For
+                        help troubleshooting this issue visit{" "}
+                        <a
+                          href="https://velero.io/docs/main/troubleshooting/"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="replicated-link u-marginLeft--5"
+                        >
+                          https://velero.io/docs/main/troubleshooting/
+                        </a>
+                        .
+                      </div>
+                    )}
                   <div className="flex1">
-                    {availableDestinations.length > 1
-                      ? <Select
+                    {availableDestinations.length > 1 ? (
+                      <Select
                         className="replicated-select-container"
                         classNamePrefix="replicated-select"
                         placeholder="Select unit"
                         options={availableDestinations}
                         isSearchable={false}
-                        getOptionLabel={(destination) => this.getDestinationLabel(destination, destination.label)}
+                        getOptionLabel={(destination) =>
+                          this.getDestinationLabel(
+                            destination,
+                            destination.label
+                          )
+                        }
                         getOptionValue={(destination) => destination.label}
                         value={selectedDestination}
                         onChange={this.handleDestinationChange}
-                        isOptionSelected={(option) => { option.value === selectedDestination }}
+                        isOptionSelected={(option) => {
+                          option.value === selectedDestination;
+                        }}
                       />
-                      : availableDestinations.length === 1
-                        ? <div className="u-textColor--primary u-fontWeight--medium flex alignItems--center">
-                          {this.getDestinationLabel(availableDestinations[0], availableDestinations[0].label)}
-                        </div>
-                        : null
-                    }
+                    ) : availableDestinations.length === 1 ? (
+                      <div className="u-textColor--primary u-fontWeight--medium flex alignItems--center">
+                        {this.getDestinationLabel(
+                          availableDestinations[0],
+                          availableDestinations[0].label
+                        )}
+                      </div>
+                    ) : null}
                   </div>
                 </div>
-                {!this.state.determiningDestination &&
+                {!this.state.determiningDestination && (
                   <>
                     {this.renderDestinationFields()}
-                    {this.state.showCACertificateField &&
-                      <UploadCACertificate certificate={this.state.caCertificate} handleSetCACert={this.handleSetCACert} />
-                    }
-                    {!this.state.showCACertificateField &&
+                    {this.state.showCACertificateField && (
+                      <UploadCACertificate
+                        certificate={this.state.caCertificate}
+                        handleSetCACert={this.handleSetCACert}
+                      />
+                    )}
+                    {!this.state.showCACertificateField && (
                       <button
                         className="AddCAButton replicated-link u-fontSize--normal"
                         onClick={this.handleCACertificateFieldClick}
                       >
                         + Add a CA Certificate
                       </button>
-                    }
+                    )}
                     <div className="flex">
                       <button
                         className="btn primary blue"
                         disabled={updatingSettings}
                         onClick={this.onSubmit}
                       >
-                        {updatingSettings ? "Updating" : "Update storage settings"}
+                        {updatingSettings
+                          ? "Updating"
+                          : "Update storage settings"}
                       </button>
-                      {updatingSettings &&
+                      {updatingSettings && (
                         <Loader className="u-marginLeft--10" size="32" />
-                      }
-                      {updateConfirm &&
+                      )}
+                      {updateConfirm && (
                         <div className="u-marginLeft--10 flex alignItems--center">
                           <span className="icon checkmark-icon" />
                           <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-textColor--success">
                             Settings updated
                           </span>
                         </div>
-                      }
+                      )}
                     </div>
                   </>
-                }
+                )}
                 <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--15">
-                  All data in your snapshots will be deduplicated. Snapshots makes use of Restic, a fast and secure backup technology with native deduplication.
+                  All data in your snapshots will be deduplicated. Snapshots
+                  makes use of Restic, a fast and secure backup technology with
+                  native deduplication.
                 </span>
               </form>
             </div>
@@ -1313,26 +1486,32 @@ class SnapshotStorageDestination extends Component {
             isVeleroRunning={snapshotSettings?.isVeleroRunning}
             isVeleroInstalled={!!snapshotSettings?.veleroVersion}
             updatingSettings={updatingSettings}
-            openConfigureSnapshotsMinimalRBACModal={this.props.openConfigureSnapshotsMinimalRBACModal}
+            openConfigureSnapshotsMinimalRBACModal={
+              this.props.openConfigureSnapshotsMinimalRBACModal
+            }
           />
         </div>
 
-        {this.props.showConfigureSnapshotsModal &&
+        {this.props.showConfigureSnapshotsModal && (
           <ConfigureSnapshots
             snapshotSettings={this.props.snapshotSettings}
             fetchSnapshotSettings={this.props.fetchSnapshotSettings}
             renderNotVeleroMessage={this.props.renderNotVeleroMessage}
             hideCheckVeleroButton={this.props.hideCheckVeleroButton}
             showConfigureSnapshotsModal={this.props.showConfigureSnapshotsModal}
-            toggleConfigureSnapshotsModal={this.props.toggleConfigureSnapshotsModal}
+            toggleConfigureSnapshotsModal={
+              this.props.toggleConfigureSnapshotsModal
+            }
             kotsadmRequiresVeleroAccess={this.props.kotsadmRequiresVeleroAccess}
             minimalRBACKotsadmNamespace={this.props.minimalRBACKotsadmNamespace}
-            openConfigureFileSystemProviderModal={this.openConfigureFileSystemProviderModal}
+            openConfigureFileSystemProviderModal={
+              this.openConfigureFileSystemProviderModal
+            }
             isKurlEnabled={isKurlEnabled}
           />
-        }
+        )}
 
-        {this.state.showConfigureFileSystemProviderModal &&
+        {this.state.showConfigureFileSystemProviderModal && (
           <Modal
             isOpen={this.state.showConfigureFileSystemProviderModal}
             onRequestClose={this.hideConfigureFileSystemProviderModal}
@@ -1343,9 +1522,9 @@ class SnapshotStorageDestination extends Component {
           >
             {this.renderConfigureFileSystemProviderModalContent()}
           </Modal>
-        }
+        )}
 
-        {this.state.showConfigureFileSystemProviderNextStepsModal &&
+        {this.state.showConfigureFileSystemProviderNextStepsModal && (
           <Modal
             isOpen={this.state.showConfigureFileSystemProviderNextStepsModal}
             onRequestClose={this.hideConfigureFileSystemProviderNextStepsModal}
@@ -1359,7 +1538,8 @@ class SnapshotStorageDestination extends Component {
                 Next steps
               </p>
               <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy u-lineHeight--normal">
-                Run the following command for instructions on how to set up Velero:
+                Run the following command for instructions on how to set up
+                Velero:
               </p>
               <CodeSnippet
                 language="bash"
@@ -1383,9 +1563,9 @@ class SnapshotStorageDestination extends Component {
               </div>
             </div>
           </Modal>
-        }
+        )}
 
-        {showResetFileSystemWarningModal &&
+        {showResetFileSystemWarningModal && (
           <Modal
             isOpen={showResetFileSystemWarningModal}
             onRequestClose={this.hideResetFileSystemWarningModal}
@@ -1402,9 +1582,10 @@ class SnapshotStorageDestination extends Component {
                 <button
                   type="button"
                   className="btn blue primary u-marginRight--10"
-                  onClick={this.state.showConfigureFileSystemProviderModal
-                    ? () => this.configureFileSystemProvider(true)
-                    : () => this.snapshotProviderFileSystem(true)
+                  onClick={
+                    this.state.showConfigureFileSystemProviderModal
+                      ? () => this.configureFileSystemProvider(true)
+                      : () => this.snapshotProviderFileSystem(true)
                   }
                 >
                   Yes
@@ -1419,7 +1600,7 @@ class SnapshotStorageDestination extends Component {
               </div>
             </div>
           </Modal>
-        }
+        )}
       </div>
     );
   }

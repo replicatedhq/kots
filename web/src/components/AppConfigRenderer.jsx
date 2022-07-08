@@ -10,11 +10,11 @@ export class AppConfigRenderer extends React.Component {
     groups: PropTypes.array.isRequired, // Config groups items to render
     handleChange: PropTypes.func,
     getData: PropTypes.func,
-  }
+  };
 
   static defaultProps = {
-    groups: []
-  }
+    groups: [],
+  };
 
   constructor(props) {
     super(props);
@@ -32,13 +32,23 @@ export class AppConfigRenderer extends React.Component {
           fieldsList={groupsList}
           fields={_groups}
           rawGroups={orderedFields}
-          handleChange={this.props.handleChange || (() => { return; })}
-          getData={this.props.getData || (() => { return; })}
+          handleChange={
+            this.props.handleChange ||
+            (() => {
+              return;
+            })
+          }
+          getData={
+            this.props.getData ||
+            (() => {
+              return;
+            })
+          }
           readonly={readonly}
           configSequence={this.props.configSequence}
           appSlug={this.props.appSlug}
         />
       </div>
-    )
+    );
   }
 }

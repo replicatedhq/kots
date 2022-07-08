@@ -20,6 +20,5 @@ export default function DummyRbacRow() {
         <div className="EmptyCircle"></div>
       </div>
     </div>
-  )
+  );
 }
-

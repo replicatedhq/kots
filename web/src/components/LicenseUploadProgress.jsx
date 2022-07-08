@@ -1,4 +1,4 @@
-import React from "react"
+import React from "react";
 import { withRouter } from "react-router-dom";
 import { Utilities } from "@src/utilities/utilities";
 import { Repeater } from "@src/utilities/repeater";
@@ -16,7 +16,10 @@ class LicenseUploadProgress extends React.Component {
   }
 
   componentDidMount() {
-    this.state.getOnlineInstallStatusJob.start(this.getOnlineInstallStatus, 2000);
+    this.state.getOnlineInstallStatusJob.start(
+      this.getOnlineInstallStatus,
+      2000
+    );
   }
 
   componentWillUnmount() {
@@ -26,7 +29,10 @@ class LicenseUploadProgress extends React.Component {
   componentDidUpdate(lastProps, lastState) {
     const { installStatus } = this.state;
     const { onError } = this.props;
-    if (installStatus !== lastState.installStatus && installStatus === "upload_error") {
+    if (
+      installStatus !== lastState.installStatus &&
+      installStatus === "upload_error"
+    ) {
       if (onError && typeof onError === "function") {
         onError(this.state.currentMessage);
       }
@@ -37,17 +43,17 @@ class LicenseUploadProgress extends React.Component {
     try {
       const res = await fetch(`${process.env.API_ENDPOINT}/app/online/status`, {
         headers: {
-          "Authorization": Utilities.getToken(),
+          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
         method: "GET",
       });
 
       if (!res.ok) {
-        this.setState({ 
+        this.setState({
           installStatus: "upload_error",
-          currentMessage: `Encountered an error while uploading license: Status ${res.status}`
-        })
+          currentMessage: `Encountered an error while uploading license: Status ${res.status}`,
+        });
       } else {
         const response = await res.json();
         this.setState({
@@ -55,30 +61,44 @@ class LicenseUploadProgress extends React.Component {
           currentMessage: response.currentMessage,
         });
       }
-    } catch(err) {
+    } catch (err) {
       console.log(err);
-      this.setState({ 
+      this.setState({
         installStatus: "upload_error",
-        currentMessage: err ? `Encountered an error while uploading license: ${err.message}` : "Something went wrong, please try again."
-      })
+        currentMessage: err
+          ? `Encountered an error while uploading license: ${err.message}`
+          : "Something went wrong, please try again.",
+      });
     }
-  }
+  };
 
   render() {
     let statusDiv = (
-      <div className={`u-marginTop--10 u-lineHeight--medium u-textAlign--center`}>
-        <p className="u-textColor--secondary u-fontSize--normal u-fontWeight--bold u-marginBottom--10 u-paddingBottom--5">{this.state.currentMessage}</p>
-        <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium">This may take a while depending on your network connection.</p>
+      <div
+        className={`u-marginTop--10 u-lineHeight--medium u-textAlign--center`}
+      >
+        <p className="u-textColor--secondary u-fontSize--normal u-fontWeight--bold u-marginBottom--10 u-paddingBottom--5">
+          {this.state.currentMessage}
+        </p>
+        <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium">
+          This may take a while depending on your network connection.
+        </p>
       </div>
     );
 
     return (
       <div className="AirgapUploadProgress--wrapper flex1 flex-column alignItems--center justifyContent--center">
         <div className="flex1 flex-column alignItems--center justifyContent--center u-textColor--primary">
-          <p className="u-marginTop--10 u-paddingTop--5 u-marginBottom--5 u-fontSize--header u-textColor--primary u-fontWeight--bold">Installing your license</p>
+          <p className="u-marginTop--10 u-paddingTop--5 u-marginBottom--5 u-fontSize--header u-textColor--primary u-fontWeight--bold">
+            Installing your license
+          </p>
           <div className="u-marginTop--20">
             <div className="progressbar medium">
-              <div id="myBar" className="progressbar-meter" style={{width: "0%"}}></div>
+              <div
+                id="myBar"
+                className="progressbar-meter"
+                style={{ width: "0%" }}
+              ></div>
             </div>
           </div>
           {statusDiv}

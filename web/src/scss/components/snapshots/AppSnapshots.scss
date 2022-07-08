@@ -9,7 +9,7 @@
 .dashboard-card-wrapper {
   padding: 20px;
   background-color: #ffffff;
-  box-shadow: 0 0 4px rgba(0,0,0,0.16);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.16);
   border-radius: 4px;
 }
 
@@ -42,11 +42,11 @@
 .FailedRestore--wrapper {
   max-width: 900px;
   width: 100%;
-  margin:0 auto;
+  margin: 0 auto;
 }
 
 .RestoreError--wrapper {
-  background-color:lighten($error-color, 43.5%);
+  background-color: lighten($error-color, 43.5%);
   color: $error-color;
   padding-bottom: 10px;
   padding-top: 10px;
@@ -63,7 +63,7 @@
   position: absolute;
   left: 26px;
   bottom: 83px;
-  background-color:lighten($primary-color, 43.5%);
+  background-color: lighten($primary-color, 43.5%);
   color: #073551;
   width: 150px;
   height: 36px;
@@ -85,7 +85,7 @@
     top: 5px;
     left: 155px;
     width: 25px;
-    background:lighten($primary-color, 43.5%);
+    background: lighten($primary-color, 43.5%);
     height: 25px;
     z-index: 1;
     transform: rotate(45deg);
@@ -105,7 +105,7 @@
 
 .snapshotDetails--wrapper {
   padding: 10px;
-  background: #FFFFFF;
+  background: #ffffff;
   border: 1px solid $border-color;
   box-sizing: border-box;
   border-radius: 6px;
@@ -114,12 +114,12 @@
 .DummySnapshotRow--wrapper {
   background: #f8f8f8;
   border-radius: 4px;
-  margin-bottom: 15px; 
+  margin-bottom: 15px;
   height: 64px;
   padding: 12px;
 
   .EmptyRow {
-    background: #EAEAEA;
+    background: #eaeaea;
     border-radius: 2px;
 
     &.name {
@@ -145,7 +145,7 @@
   }
 
   .EmptyCircle {
-    background: #EAEAEA;
+    background: #eaeaea;
     border-radius: 50%;
     width: 20px;
     height: 20px;
@@ -157,7 +157,7 @@
   top: 130px;
   left: 50%;
   margin-left: -229.5px;
-  background: #FFFFFF;
+  background: #ffffff;
   box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.2);
   border-radius: 8px;
   width: 459px;
@@ -169,7 +169,7 @@
   position: absolute;
   top: 250px;
   left: calc(50% + 125px);
-  background: #FFFFFF;
+  background: #ffffff;
   box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.2);
   border-radius: 8px;
   width: 250px;
@@ -181,7 +181,7 @@
   position: absolute;
   top: 220px;
   left: 40%;
-  background: #FFFFFF;
+  background: #ffffff;
   box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.2);
   border-radius: 8px;
   width: 250px;
@@ -206,7 +206,7 @@
 }
 
 .InfoSnapshots--wrapper {
-  background: #FFFFFF;
+  background: #ffffff;
   box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.2);
   border-radius: 4px;
   padding: 14px 25px;
@@ -218,11 +218,11 @@
   font-size: 8px;
   line-height: 8px;
   letter-spacing: 2px;
-  color: #FFFFFF;
+  color: #ffffff;
   padding: 3px 6px;
   border-radius: 13px;
   text-transform: uppercase;
-  background: #F9485C;
+  background: #f9485c;
 }
 
 .SnapshotScheduleTabs--wrapper {
@@ -237,17 +237,17 @@
     padding: 6px 15px 7px;
     line-height: 14px;
     cursor: pointer;
-    transition: color .2s;
+    transition: color 0.2s;
     position: relative;
-  
+
     &:hover {
       color: $text-color-accent;
     }
-  
+
     &.is-active {
       color: $text-color-secondary;
       font-weight: 600;
-  
+
       &::after {
         content: "";
         width: 100%;
@@ -272,17 +272,17 @@
     padding: 6px 15px 7px;
     line-height: 14px;
     cursor: pointer;
-    transition: color .2s;
+    transition: color 0.2s;
     position: relative;
-  
+
     &:hover {
       color: $text-color-accent;
     }
-  
+
     &.is-active {
       color: $text-color-secondary;
       font-weight: 600;
-  
+
       &::after {
         content: "";
         width: 100%;
@@ -309,11 +309,11 @@
   background-position: center;
   background-repeat: no-repeat;
   border-radius: 40px;
-  box-shadow: inset 0 0 3px rgba(0,0,0,0.3);
+  box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.3);
 }
 
 .SelectRestore--wrapper {
-  background: #FFFFFF;
+  background: #ffffff;
   border: 1px solid $border-color;
   box-sizing: border-box;
   border-radius: 4px;

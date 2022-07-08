@@ -6,8 +6,8 @@ import filter from "lodash/filter";
 import isEmpty from "lodash/isEmpty";
 import ReactApexChart from "react-apexcharts";
 import dayjs from "dayjs";
-import minMax from "dayjs/plugin/minMax"
-import duration from "dayjs/plugin/duration"
+import minMax from "dayjs/plugin/minMax";
+import duration from "dayjs/plugin/duration";
 import Loader from "../shared/Loader";
 import ShowAllModal from "../modals/ShowAllModal";
 import ViewSnapshotLogsModal from "../modals/ViewSnapshotLogsModal";
@@ -17,7 +17,7 @@ dayjs.extend(minMax);
 dayjs.extend(duration);
 
 let colorIndex = 0;
-let mapColors = {}
+let mapColors = {};
 
 class SnapshotDetails extends Component {
   state = {
@@ -48,62 +48,71 @@ class SnapshotDetails extends Component {
         height: 140,
         type: "rangeBar",
         toolbar: {
-          show: false
-        }
+          show: false,
+        },
       },
       plotOptions: {
         bar: {
           horizontal: true,
           distributed: true,
           dataLabels: {
-            hideOverflowingLabels: false
-          }
-        }
+            hideOverflowingLabels: false,
+          },
+        },
       },
       xaxis: {
         type: "datetime",
         labels: {
           formatter: (value) => {
             return dayjs(value).format("h:mm:ss");
-          }
-        }
+          },
+        },
       },
       yaxis: {
-        show: false
+        show: false,
       },
       grid: {
         xaxis: {
           lines: {
-            show: true
+            show: true,
           },
         },
         yaxis: {
           lines: {
-            show: false
-          }
+            show: false,
+          },
         },
       },
       tooltip: {
         custom: function ({ series, seriesIndex, dataPointIndex, w }) {
           return (
-            "<div class=\"arrow_box\">" +
-            "<p class=\"u-textColor--primary u-fontSize--normal u-fontWeight--medium\">" +
+            '<div class="arrow_box">' +
+            '<p class="u-textColor--primary u-fontSize--normal u-fontWeight--medium">' +
             w.globals.labels[dataPointIndex] +
             "</p>" +
-            "<span class=\"u-fontSize--small u-fontWeight--normal u-textColor--bodyCopy u-marginTop--10\">" +
-            w.globals.seriesZ[seriesIndex][dataPointIndex] + "</span>" +
+            '<span class="u-fontSize--small u-fontWeight--normal u-textColor--bodyCopy u-marginTop--10">' +
+            w.globals.seriesZ[seriesIndex][dataPointIndex] +
+            "</span>" +
             "<br />" +
             "<br />" +
-            "<span class=\"u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy u-marginTop--10\">" +
-            "Started at " + dayjs(w.globals.seriesRangeStart[seriesIndex][dataPointIndex]).format("h:mm:ss") + "</span>" +
+            '<span class="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy u-marginTop--10">' +
+            "Started at " +
+            dayjs(
+              w.globals.seriesRangeStart[seriesIndex][dataPointIndex]
+            ).format("h:mm:ss") +
+            "</span>" +
             "<br />" +
-            "<span class=\"u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy\">" +
-            "Finished at " + dayjs(w.globals.seriesRangeEnd[seriesIndex][dataPointIndex]).format("h:mm:ss") + "</span>" +
+            '<span class="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy">' +
+            "Finished at " +
+            dayjs(w.globals.seriesRangeEnd[seriesIndex][dataPointIndex]).format(
+              "h:mm:ss"
+            ) +
+            "</span>" +
             "</div>"
           );
-        }
-      }
-    }
+        },
+      },
+    },
   };
 
   componentDidMount() {
@@ -127,12 +136,15 @@ class SnapshotDetails extends Component {
     });
 
     try {
-      const res = await fetch(`${process.env.API_ENDPOINT}/snapshot/${snapshotName}`, {
-        method: "GET",
-        headers: {
-          "Authorization": Utilities.getToken(),
+      const res = await fetch(
+        `${process.env.API_ENDPOINT}/snapshot/${snapshotName}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: Utilities.getToken(),
+          },
         }
-      });
+      );
       if (!res.ok) {
         if (res.status === 401) {
           Utilities.logoutUser();
@@ -152,12 +164,24 @@ class SnapshotDetails extends Component {
       let series = [];
       if (!isEmpty(snapshotDetails?.volumes)) {
         if (snapshotDetails?.hooks && !isEmpty(snapshotDetails?.hooks)) {
-          series = this.getSeriesData([...snapshotDetails?.volumes, ...snapshotDetails?.hooks].sort((a, b) => new Date(a.started) - new Date(b.started)));
+          series = this.getSeriesData(
+            [...snapshotDetails?.volumes, ...snapshotDetails?.hooks].sort(
+              (a, b) => new Date(a.started) - new Date(b.started)
+            )
+          );
         } else {
-          series = this.getSeriesData((snapshotDetails?.volumes).sort((a, b) => new Date(a.started) - new Date(b.started)));
+          series = this.getSeriesData(
+            (snapshotDetails?.volumes).sort(
+              (a, b) => new Date(a.started) - new Date(b.started)
+            )
+          );
         }
-      } else if ((snapshotDetails?.hooks && !isEmpty(snapshotDetails?.hooks))) {
-        series = this.getSeriesData((snapshotDetails?.hooks).sort((a, b) => new Date(a.started) - new Date(b.started)));
+      } else if (snapshotDetails?.hooks && !isEmpty(snapshotDetails?.hooks)) {
+        series = this.getSeriesData(
+          (snapshotDetails?.hooks).sort(
+            (a, b) => new Date(a.started) - new Date(b.started)
+          )
+        );
       }
 
       this.setState({
@@ -171,208 +195,308 @@ class SnapshotDetails extends Component {
       console.log(err);
       this.setState({
         loading: false,
-        errorMessage: err ? `${err.message}` : "Something went wrong, please try again.",
+        errorMessage: err
+          ? `${err.message}`
+          : "Something went wrong, please try again.",
         errorTitle: "Failed to fetch snapshot details",
       });
     }
-  }
+  };
 
   preSnapshotScripts = () => {
     return filter(this.state.snapshotDetails?.hooks, (hook) => {
       return hook.phase === "pre";
     });
-  }
+  };
 
   postSnapshotScripts = () => {
     return filter(this.state.snapshotDetails?.hooks, (hook) => {
       return hook.phase === "post";
     });
-  }
+  };
 
   toggleShowAllPreScripts = () => {
-    this.setState({ showAllPreSnapshotScripts: !this.state.showAllPreSnapshotScripts });
-  }
+    this.setState({
+      showAllPreSnapshotScripts: !this.state.showAllPreSnapshotScripts,
+    });
+  };
 
   toggleShowAllPostScripts = () => {
-    this.setState({ showAllPostSnapshotScripts: !this.state.showAllPostSnapshotScripts });
-  }
+    this.setState({
+      showAllPostSnapshotScripts: !this.state.showAllPostSnapshotScripts,
+    });
+  };
 
   toggleShowAllVolumes = () => {
     this.setState({ showAllVolumes: !this.state.showAllVolumes });
-  }
+  };
 
-  toggleScriptsOutput = output => {
+  toggleScriptsOutput = (output) => {
     if (this.state.toggleScriptsOutput) {
       this.setState({ showScriptsOutput: false, scriptOutput: "" });
     } else {
       this.setState({ showScriptsOutput: true, scriptOutput: output });
     }
-  }
+  };
 
   toggleShowAllWarnings = () => {
     this.setState({ showAllWarnings: !this.state.showAllWarnings });
-  }
+  };
 
   toggleShowAllErrors = () => {
     this.setState({ showAllErrors: !this.state.showAllErrors });
-  }
+  };
 
   viewLogs = () => {
-    this.setState({
-      toggleViewLogsModal: !this.state.toggleViewLogsModal
-    }, () => {
-      this.setState({ loadingSnapshotLogs: true })
-      const name = this.state.snapshotDetails?.name;
-      const url = `${process.env.API_ENDPOINT}/snapshot/${name}/logs`;
-      fetch(url, {
-        headers: {
-          "Authorization": Utilities.getToken()
-        },
-        method: "GET",
-      })
-        .then(async (result) => {
-          const logs = await result.text();
-          if (!result.ok) {
+    this.setState(
+      {
+        toggleViewLogsModal: !this.state.toggleViewLogsModal,
+      },
+      () => {
+        this.setState({ loadingSnapshotLogs: true });
+        const name = this.state.snapshotDetails?.name;
+        const url = `${process.env.API_ENDPOINT}/snapshot/${name}/logs`;
+        fetch(url, {
+          headers: {
+            Authorization: Utilities.getToken(),
+          },
+          method: "GET",
+        })
+          .then(async (result) => {
+            const logs = await result.text();
+            if (!result.ok) {
+              this.setState({
+                loadingSnapshotLogs: false,
+                snapshotLogsErr: true,
+                snapshotLogsErrMsg:
+                  "An error occurred while viewing snapshot logs. Please try again",
+              });
+            } else {
+              this.setState({
+                snapshotLogs: logs,
+                snapshotLogsErr: false,
+                snapshotLogsErrMsg: "",
+                loadingSnapshotLogs: false,
+              });
+            }
+          })
+          .catch((err) => {
             this.setState({
               loadingSnapshotLogs: false,
               snapshotLogsErr: true,
-              snapshotLogsErrMsg: "An error occurred while viewing snapshot logs. Please try again"
-            })
-          } else {
-            this.setState({
-              snapshotLogs: logs,
-              snapshotLogsErr: false,
-              snapshotLogsErrMsg: "",
-              loadingSnapshotLogs: false
+              snapshotLogsErrMsg: err,
             });
-          }
-        })
-        .catch((err) => {
-          this.setState({
-            loadingSnapshotLogs: false,
-            snapshotLogsErr: true,
-            snapshotLogsErrMsg: err
           });
-        });
-    });
-  }
+      }
+    );
+  };
 
   renderOutputTabs = () => {
     const { selectedTab } = this.state;
     const tabs = ["stdout", "stderr"];
     return (
       <div className="flex action-tab-bar u-marginTop--10">
-        {tabs.map(tab => (
-          <div className={`tab-item ${tab === selectedTab && "is-active"}`} key={tab} onClick={() => this.setState({ selectedTab: tab })}>
+        {tabs.map((tab) => (
+          <div
+            className={`tab-item ${tab === selectedTab && "is-active"}`}
+            key={tab}
+            onClick={() => this.setState({ selectedTab: tab })}
+          >
             {tab}
           </div>
         ))}
       </div>
     );
-  }
+  };
 
   renderShowAllVolumes = (volumes) => {
-    return (
-      volumes.map((volume) => {
-        const diffMinutes = dayjs(volume?.finished).diff(dayjs(volume?.started), "minutes");
-        return (
-          <div className="flex flex1 u-borderBottom--gray alignItems--center" key={volume.name}>
-            <div className="flex1 u-paddingBottom--15 u-paddingTop--15 u-paddingLeft--10">
-              <p className="flex1 u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--bold u-marginBottom--8">{volume.name}</p>
-              <p className="u-fontSize--normal u-textColor--accent u-fontWeight--bold u-lineHeight--normal u-marginRight--20">Size:
-            <span className="u-fontWeight--normal u-textColor--bodyCopy"> {volume.doneBytesHuman}/{volume.sizeBytesHuman} </span>
-              </p>
-            </div>
-            <div className="flex flex-column justifyContent--flexEnd">
-              <p className="u-fontSize--small u-fontWeight--normal alignSelf--flexEnd u-marginBottom--8"><span className={`status-indicator ${volume?.phase?.toLowerCase()} u-marginLeft--5`}>{volume.phase}</span></p>
-              <p className="u-fontSize--small u-fontWeight--normal"> Finished in {diffMinutes === 0 ? "less than a minute" : `${diffMinutes} minutes`} </p>
-            </div>
+    return volumes.map((volume) => {
+      const diffMinutes = dayjs(volume?.finished).diff(
+        dayjs(volume?.started),
+        "minutes"
+      );
+      return (
+        <div
+          className="flex flex1 u-borderBottom--gray alignItems--center"
+          key={volume.name}
+        >
+          <div className="flex1 u-paddingBottom--15 u-paddingTop--15 u-paddingLeft--10">
+            <p className="flex1 u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--bold u-marginBottom--8">
+              {volume.name}
+            </p>
+            <p className="u-fontSize--normal u-textColor--accent u-fontWeight--bold u-lineHeight--normal u-marginRight--20">
+              Size:
+              <span className="u-fontWeight--normal u-textColor--bodyCopy">
+                {" "}
+                {volume.doneBytesHuman}/{volume.sizeBytesHuman}{" "}
+              </span>
+            </p>
           </div>
-        )
-      })
-    );
-  }
+          <div className="flex flex-column justifyContent--flexEnd">
+            <p className="u-fontSize--small u-fontWeight--normal alignSelf--flexEnd u-marginBottom--8">
+              <span
+                className={`status-indicator ${volume?.phase?.toLowerCase()} u-marginLeft--5`}
+              >
+                {volume.phase}
+              </span>
+            </p>
+            <p className="u-fontSize--small u-fontWeight--normal">
+              {" "}
+              Finished in{" "}
+              {diffMinutes === 0
+                ? "less than a minute"
+                : `${diffMinutes} minutes`}{" "}
+            </p>
+          </div>
+        </div>
+      );
+    });
+  };
 
   renderScriptsTabs = () => {
     const { selectedScriptTab } = this.state;
     const tabs = ["Pre-snapshot scripts", "Post-snapshot scripts"];
     return (
       <div className="flex action-tab-bar u-marginTop--10">
-        {tabs.map(tab => (
-          <div className={`tab-item ${tab === selectedScriptTab && "is-active"}`} key={tab} onClick={() => this.setState({ selectedScriptTab: tab })}>
+        {tabs.map((tab) => (
+          <div
+            className={`tab-item ${tab === selectedScriptTab && "is-active"}`}
+            key={tab}
+            onClick={() => this.setState({ selectedScriptTab: tab })}
+          >
             {tab}
           </div>
         ))}
       </div>
     );
-  }
+  };
 
   renderErrorsWarningsTabs = () => {
     const { snapshotDetails, selectedErrorsWarningTab } = this.state;
     const tabs = ["Errors", "Warnings"];
     return (
       <div className="flex action-tab-bar u-marginTop--10">
-        {tabs.map(tab => (
-          <div className={`tab-item ${tab === selectedErrorsWarningTab && "is-active"}`} key={tab} onClick={() => this.setState({ selectedErrorsWarningTab: tab })}>
+        {tabs.map((tab) => (
+          <div
+            className={`tab-item ${
+              tab === selectedErrorsWarningTab && "is-active"
+            }`}
+            key={tab}
+            onClick={() => this.setState({ selectedErrorsWarningTab: tab })}
+          >
             {tab}
-            {tab === "Errors" ?
-              <span className="errors u-marginLeft--5"> {snapshotDetails?.errors?.length} </span> : <span className="warnings u-marginLeft--5"> {!snapshotDetails?.warnings ? "0" : snapshotDetails?.warnings?.length} </span>}
+            {tab === "Errors" ? (
+              <span className="errors u-marginLeft--5">
+                {" "}
+                {snapshotDetails?.errors?.length}{" "}
+              </span>
+            ) : (
+              <span className="warnings u-marginLeft--5">
+                {" "}
+                {!snapshotDetails?.warnings
+                  ? "0"
+                  : snapshotDetails?.warnings?.length}{" "}
+              </span>
+            )}
           </div>
         ))}
       </div>
     );
-  }
+  };
 
   renderShowAllScripts = (hooks) => {
-    return (
-      hooks.map((hook, i) => {
-        const diffMinutes = dayjs(hook?.finishedAt).diff(dayjs(hook?.startedAt), "minutes");
-        return (
-          <div className="flex flex1 u-borderBottom--gray alignItems--center" key={`${hook.name}-${hook.phase}-${i}`}>
-            <div className="flex flex1 u-paddingBottom--15 u-paddingTop--15 u-paddingLeft--10">
-              <div className="flex flex-column">
-                <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--bold u-marginBottom--8">{hook.name} <span className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginLeft--5">Pod: {hook.podName} </span> </p>
-                <span className="u-fontSize--small u-fontWeight--normal u-textColor--bodyCopy u-marginRight--10"> {hook.command} </span>
-              </div>
-            </div>
-            <div className="flex flex-column justifyContent--flexEnd">
-              <p className="u-fontSize--small u-fontWeight--normal alignSelf--flexEnd u-marginBottom--8"><span className={`status-indicator ${hook.errors ? "failed" : "completed"} u-marginLeft--5`}>{hook.errors ? "Failed" : "Completed"}</span></p>
-              {!hook.errors &&
-                <p className="u-fontSize--small u-fontWeight--normal u-marginBottom--8"> Finished in {diffMinutes === 0 ? "less than a minute" : `${diffMinutes} minutes`} </p>}
-              {hook.stderr !== "" || hook.stdout !== "" &&
-                <span className="replicated-link u-fontSize--small alignSelf--flexEnd" onClick={() => this.toggleScriptsOutput(hook)}> View output </span>}
+    return hooks.map((hook, i) => {
+      const diffMinutes = dayjs(hook?.finishedAt).diff(
+        dayjs(hook?.startedAt),
+        "minutes"
+      );
+      return (
+        <div
+          className="flex flex1 u-borderBottom--gray alignItems--center"
+          key={`${hook.name}-${hook.phase}-${i}`}
+        >
+          <div className="flex flex1 u-paddingBottom--15 u-paddingTop--15 u-paddingLeft--10">
+            <div className="flex flex-column">
+              <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--bold u-marginBottom--8">
+                {hook.name}{" "}
+                <span className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginLeft--5">
+                  Pod: {hook.podName}{" "}
+                </span>{" "}
+              </p>
+              <span className="u-fontSize--small u-fontWeight--normal u-textColor--bodyCopy u-marginRight--10">
+                {" "}
+                {hook.command}{" "}
+              </span>
             </div>
           </div>
-        )
-      })
-    );
-  }
+          <div className="flex flex-column justifyContent--flexEnd">
+            <p className="u-fontSize--small u-fontWeight--normal alignSelf--flexEnd u-marginBottom--8">
+              <span
+                className={`status-indicator ${
+                  hook.errors ? "failed" : "completed"
+                } u-marginLeft--5`}
+              >
+                {hook.errors ? "Failed" : "Completed"}
+              </span>
+            </p>
+            {!hook.errors && (
+              <p className="u-fontSize--small u-fontWeight--normal u-marginBottom--8">
+                {" "}
+                Finished in{" "}
+                {diffMinutes === 0
+                  ? "less than a minute"
+                  : `${diffMinutes} minutes`}{" "}
+              </p>
+            )}
+            {hook.stderr !== "" ||
+              (hook.stdout !== "" && (
+                <span
+                  className="replicated-link u-fontSize--small alignSelf--flexEnd"
+                  onClick={() => this.toggleScriptsOutput(hook)}
+                >
+                  {" "}
+                  View output{" "}
+                </span>
+              ))}
+          </div>
+        </div>
+      );
+    });
+  };
 
   renderShowAllWarnings = (warnings) => {
-    return (
-      warnings.map((warning, i) => (
-        <div className="flex flex1 u-borderBottom--gray" key={`${warning.title}-${i}`}>
-          <div className="flex1">
-            <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--bold u-paddingBottom--10 u-paddingTop--10 u-paddingLeft--10">{warning.title}</p>
-          </div>
+    return warnings.map((warning, i) => (
+      <div
+        className="flex flex1 u-borderBottom--gray"
+        key={`${warning.title}-${i}`}
+      >
+        <div className="flex1">
+          <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--bold u-paddingBottom--10 u-paddingTop--10 u-paddingLeft--10">
+            {warning.title}
+          </p>
         </div>
-      ))
-    );
-  }
+      </div>
+    ));
+  };
 
   renderShowAllErrors = (errors) => {
-    return (
-      errors.map((error, i) => (
-        <div className="flex flex1 u-borderBottom--gray" key={`${error.title}-${i}`}>
-          <div className="flex1 u-paddingBottom--10 u-paddingTop--10 u-paddingLeft--10">
-            <p className="u-fontSize--large u-textColor--error u-fontWeight--bold u-lineHeight--bold u-marginBottom--8">{error.title}</p>
-            <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy"> {error.message} </p>
-          </div>
+    return errors.map((error, i) => (
+      <div
+        className="flex flex1 u-borderBottom--gray"
+        key={`${error.title}-${i}`}
+      >
+        <div className="flex1 u-paddingBottom--10 u-paddingTop--10 u-paddingLeft--10">
+          <p className="u-fontSize--large u-textColor--error u-fontWeight--bold u-lineHeight--bold u-marginBottom--8">
+            {error.title}
+          </p>
+          <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy">
+            {" "}
+            {error.message}{" "}
+          </p>
         </div>
-      ))
-    );
-  }
-
+      </div>
+    ));
+  };
 
   calculateTimeInterval = (data) => {
     const startedTimes = data.map((d) => dayjs(d.startedAt));
@@ -386,18 +510,29 @@ class SnapshotDetails extends Component {
     const diffDays = parseInt(duration.asDays());
 
     const timeObj = {
-      "minStarted": minStarted.format("MM/DD/YY @ hh:mm a z"),
-      "maxFinished": maxFinished.format("MM/DD/YY @ hh:mm a z"),
-      "maxHourDifference": diffHours,
-      "maxMinDifference": diffMinutes,
-      "maxDaysDifference": diffDays
+      minStarted: minStarted.format("MM/DD/YY @ hh:mm a z"),
+      maxFinished: maxFinished.format("MM/DD/YY @ hh:mm a z"),
+      maxHourDifference: diffHours,
+      maxMinDifference: diffMinutes,
+      maxDaysDifference: diffDays,
     };
 
-    return timeObj
-  }
+    return timeObj;
+  };
 
   assignColorToPath = (podName) => {
-    const colors = ["#32C5FF", "#44BB66", "#6236FF", "#F7B500", "#4999AD", "#ED2D2D", "#6236FF", "#48C9B0", "#A569BD", "#D35400"];
+    const colors = [
+      "#32C5FF",
+      "#44BB66",
+      "#6236FF",
+      "#F7B500",
+      "#4999AD",
+      "#ED2D2D",
+      "#6236FF",
+      "#48C9B0",
+      "#A569BD",
+      "#D35400",
+    ];
 
     if (mapColors[podName]) {
       return mapColors[podName];
@@ -406,39 +541,45 @@ class SnapshotDetails extends Component {
       colorIndex = (colorIndex + 1) % colors.length;
       return mapColors[podName];
     }
-  }
+  };
 
   getSeriesData = (seriesData) => {
-    const series = [{ data: null }]
+    const series = [{ data: null }];
     if (!seriesData) {
       return series;
     }
 
-
     const data = seriesData.map((d, i) => {
       let finishedTime;
       if (d.startedAt === d.finishedAt) {
-        finishedTime = new Date(dayjs(d.finishedAt).add(1, "seconds")).getTime();
+        finishedTime = new Date(
+          dayjs(d.finishedAt).add(1, "seconds")
+        ).getTime();
       } else {
-        finishedTime = new Date(d.finishedAt).getTime()
+        finishedTime = new Date(d.finishedAt).getTime();
       }
 
       return {
         x: d.containerName ? `${d.name} (${d.podName})-${i}` : `${d.name}`,
         y: [new Date(d.startedAt).getTime(), finishedTime],
         z: d.containerName ? `${d.phase}-snapshot-script` : "Volume",
-        fillColor: d.containerName ? this.assignColorToPath(d.name) : this.assignColorToPath(d.name)
-      }
+        fillColor: d.containerName
+          ? this.assignColorToPath(d.name)
+          : this.assignColorToPath(d.name),
+      };
     });
     series[0].data = data;
     return series;
-  }
+  };
 
   renderTimeInterval = () => {
     let data;
     if (!isEmpty(this.state.snapshotDetails?.volumes)) {
       if (!isEmpty(this.state.snapshotDetails?.hooks)) {
-        data = [...this.state.snapshotDetails?.volumes, ...this.state.snapshotDetails?.hooks];
+        data = [
+          ...this.state.snapshotDetails?.volumes,
+          ...this.state.snapshotDetails?.hooks,
+        ];
       } else {
         data = this.state.snapshotDetails?.volumes;
       }
@@ -449,37 +590,59 @@ class SnapshotDetails extends Component {
       <div className="flex flex1">
         <div className="flex flex1">
           <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy">
-            Started: <span className="u-fontWeight--bold u-textColor--accent"> {this.calculateTimeInterval(data).minStarted}</span>
+            Started:{" "}
+            <span className="u-fontWeight--bold u-textColor--accent">
+              {" "}
+              {this.calculateTimeInterval(data).minStarted}
+            </span>
           </p>
         </div>
         <div className="flex flex1 justifyContent--center">
-          {this.calculateTimeInterval(data).maxHourDifference === 0 && this.calculateTimeInterval(data).maxMinDifference === 0 ?
+          {this.calculateTimeInterval(data).maxHourDifference === 0 &&
+          this.calculateTimeInterval(data).maxMinDifference === 0 ? (
             <p className="u-fontSize--small u-fontWeight--normal u-textColor--bodyCopy">
-              Total capture time: <span className="u-fontWeight--bold u-textColor--accent">less than a minute</span>
+              Total capture time:{" "}
+              <span className="u-fontWeight--bold u-textColor--accent">
+                less than a minute
+              </span>
             </p>
-            :
-            this.calculateTimeInterval(data).maxDaysDifference > 0 ?
-              <p className="u-fontSize--small u-fontWeight--normal u-textColor--bodyCopy">
-                Total capture time: <span className="u-fontWeight--bold u-textColor--accent">{`${this.calculateTimeInterval(data).maxDaysDifference} days `}</span>
-                <span className="u-fontWeight--bold u-textColor--accent">{`${this.calculateTimeInterval(data).maxHourDifference} hr `}</span>
-                <span className="u-fontWeight--bold u-textColor--accent">{`${this.calculateTimeInterval(data).maxMinDifference} min `}</span>
-              </p>
-              :
-              <p className="u-fontSize--small u-fontWeight--normal u-textColor--bodyCopy">
-                Total capture time: <span className="u-fontWeight--bold u-textColor--accent">{`${this.calculateTimeInterval(data).maxHourDifference} hr `}</span>
-                <span className="u-fontWeight--bold u-textColor--accent">{`${this.calculateTimeInterval(data).maxMinDifference} min `}</span>
-              </p>
-          }
+          ) : this.calculateTimeInterval(data).maxDaysDifference > 0 ? (
+            <p className="u-fontSize--small u-fontWeight--normal u-textColor--bodyCopy">
+              Total capture time:{" "}
+              <span className="u-fontWeight--bold u-textColor--accent">{`${
+                this.calculateTimeInterval(data).maxDaysDifference
+              } days `}</span>
+              <span className="u-fontWeight--bold u-textColor--accent">{`${
+                this.calculateTimeInterval(data).maxHourDifference
+              } hr `}</span>
+              <span className="u-fontWeight--bold u-textColor--accent">{`${
+                this.calculateTimeInterval(data).maxMinDifference
+              } min `}</span>
+            </p>
+          ) : (
+            <p className="u-fontSize--small u-fontWeight--normal u-textColor--bodyCopy">
+              Total capture time:{" "}
+              <span className="u-fontWeight--bold u-textColor--accent">{`${
+                this.calculateTimeInterval(data).maxHourDifference
+              } hr `}</span>
+              <span className="u-fontWeight--bold u-textColor--accent">{`${
+                this.calculateTimeInterval(data).maxMinDifference
+              } min `}</span>
+            </p>
+          )}
         </div>
         <div className="flex flex1 justifyContent--flexEnd">
           <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy">
-            Finished: <span className="u-fontWeight--bold u-textColor--accent"> {this.calculateTimeInterval(data).maxFinished} </span>
+            Finished:{" "}
+            <span className="u-fontWeight--bold u-textColor--accent">
+              {" "}
+              {this.calculateTimeInterval(data).maxFinished}{" "}
+            </span>
           </p>
         </div>
       </div>
-    )
-  }
-
+    );
+  };
 
   render() {
     const {
@@ -504,63 +667,115 @@ class SnapshotDetails extends Component {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
-        </div>)
+        </div>
+      );
     }
 
     return (
       <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20">
         <p className="u-marginBottom--30 u-fontSize--small u-textColor--accent u-fontWeight--medium">
-          <span className="replicated-link" onClick={() => this.props.history.goBack()}>Snapshots</span>
+          <span
+            className="replicated-link"
+            onClick={() => this.props.history.goBack()}
+          >
+            Snapshots
+          </span>
           <span className="u-textColor--bodyCopy"> &gt; </span>
           {snapshotDetails?.name}
         </p>
         <div className="flex justifyContent--spaceBetween alignItems--center u-paddingBottom--30 u-borderBottom--gray">
           <div className="flex-column u-lineHeight--normal">
-            <p className="u-fontSize--larger u-fontWeight--bold u-textColor--primary u-marginBottom--5">{snapshotDetails?.name}</p>
-            <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy">Total size: <span className="u-fontWeight--bold u-textColor--accent">{snapshotDetails?.volumeSizeHuman}</span></p>
+            <p className="u-fontSize--larger u-fontWeight--bold u-textColor--primary u-marginBottom--5">
+              {snapshotDetails?.name}
+            </p>
+            <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy">
+              Total size:{" "}
+              <span className="u-fontWeight--bold u-textColor--accent">
+                {snapshotDetails?.volumeSizeHuman}
+              </span>
+            </p>
           </div>
           <div className="flex-column u-lineHeight--normal u-textAlign--right">
-            <p className="u-fontSize--normal u-fontWeight--normal u-marginBottom--5">Status: <span className={`status-indicator ${snapshotDetails?.status?.toLowerCase()} u-marginLeft--5`}>{Utilities.snapshotStatusToDisplayName(snapshotDetails?.status)}</span></p>
+            <p className="u-fontSize--normal u-fontWeight--normal u-marginBottom--5">
+              Status:{" "}
+              <span
+                className={`status-indicator ${snapshotDetails?.status?.toLowerCase()} u-marginLeft--5`}
+              >
+                {Utilities.snapshotStatusToDisplayName(snapshotDetails?.status)}
+              </span>
+            </p>
             <div className="u-fontSize--small">
-              {snapshotDetails?.status !== "InProgress" &&
-                <span className="replicated-link" onClick={() => this.viewLogs()}>View logs</span>}
+              {snapshotDetails?.status !== "InProgress" && (
+                <span
+                  className="replicated-link"
+                  onClick={() => this.viewLogs()}
+                >
+                  View logs
+                </span>
+              )}
             </div>
           </div>
         </div>
 
-        {snapshotDetails?.status === "InProgress" ?
+        {snapshotDetails?.status === "InProgress" ? (
           <div className="flex flex-column alignItems--center u-marginTop--60">
             <span className="icon blueWarningIcon" />
-            <p className="u-fontSize--larger u-fontWeight--bold u-textColor--primary u-marginTop--20"> This snapshot has not completed yet, check back soon </p>
+            <p className="u-fontSize--larger u-fontWeight--bold u-textColor--primary u-marginTop--20">
+              {" "}
+              This snapshot has not completed yet, check back soon{" "}
+            </p>
           </div>
-          :
+        ) : (
           <div>
-            {!isEmpty(snapshotDetails?.volumes) || !isEmpty(this.preSnapshotScripts()) || !isEmpty(this.postSnapshotScripts()) ?
+            {!isEmpty(snapshotDetails?.volumes) ||
+            !isEmpty(this.preSnapshotScripts()) ||
+            !isEmpty(this.postSnapshotScripts()) ? (
               <div className="flex-column flex-auto u-marginTop--30 u-marginBottom--40">
-                <p className="u-fontSize--larger u-fontWeight--bold u-textColor--primary u-marginBottom--10">Snapshot timeline</p>
+                <p className="u-fontSize--larger u-fontWeight--bold u-textColor--primary u-marginBottom--10">
+                  Snapshot timeline
+                </p>
                 <div className="flex1" id="chart">
-                  <ReactApexChart options={this.state.options} series={series} type="rangeBar" height={140} />
+                  <ReactApexChart
+                    options={this.state.options}
+                    series={series}
+                    type="rangeBar"
+                    height={140}
+                  />
                   {this.renderTimeInterval()}
                 </div>
-              </div> : null}
+              </div>
+            ) : null}
 
             <div className="flex flex-auto u-marginBottom--30">
               <div className="flex-column flex1 u-marginRight--20">
                 <div className="dashboard-card-wrapper flex1">
                   <div className="flex flex1 alignItems--center u-paddingBottom--10 u-borderBottom--gray">
-                    <p className="u-fontSize--larger u-textColor--primary u-fontWeight--bold u-lineHeight--bold">Volumes</p>
-                    {snapshotDetails?.volumes?.length > 3 ?
+                    <p className="u-fontSize--larger u-textColor--primary u-fontWeight--bold u-lineHeight--bold">
+                      Volumes
+                    </p>
+                    {snapshotDetails?.volumes?.length > 3 ? (
                       <div className="flex flex1 justifyContent--flexEnd">
-                        <span className="replicated-link u-fontSize--small" onClick={() => this.toggleShowAllVolumes()}>Show all {snapshotDetails?.volumes?.length} volumes</span>
-                      </div> : null
-                    }
+                        <span
+                          className="replicated-link u-fontSize--small"
+                          onClick={() => this.toggleShowAllVolumes()}
+                        >
+                          Show all {snapshotDetails?.volumes?.length} volumes
+                        </span>
+                      </div>
+                    ) : null}
                   </div>
-                  {!isEmpty(snapshotDetails?.volumes) ?
-                    this.renderShowAllVolumes(snapshotDetails?.volumes?.slice(0, 3))
-                    :
+                  {!isEmpty(snapshotDetails?.volumes) ? (
+                    this.renderShowAllVolumes(
+                      snapshotDetails?.volumes?.slice(0, 3)
+                    )
+                  ) : (
                     <div className="flex flex1 u-paddingTop--20 alignItems--center justifyContent--center">
-                      <p className="u-fontSize--large u-fontWeight--normal u-textColor--bodyCopy"> No volumes to display </p>
-                    </div>}
+                      <p className="u-fontSize--large u-fontWeight--normal u-textColor--bodyCopy">
+                        {" "}
+                        No volumes to display{" "}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -570,82 +785,144 @@ class SnapshotDetails extends Component {
                 <div className="dashboard-card-wrapper flex1">
                   <div className="flex flex-column u-paddingBottom--10 u-borderBottom--gray">
                     <div className="flex flex1">
-                      <p className="u-fontSize--larger u-textColor--primary u-fontWeight--bold u-lineHeight--bold u-paddingBottom--10 flex flex1">Scripts</p>
-                      {this.preSnapshotScripts()?.length > 3 && selectedScriptTab === "Pre-snapshot scripts" ?
+                      <p className="u-fontSize--larger u-textColor--primary u-fontWeight--bold u-lineHeight--bold u-paddingBottom--10 flex flex1">
+                        Scripts
+                      </p>
+                      {this.preSnapshotScripts()?.length > 3 &&
+                      selectedScriptTab === "Pre-snapshot scripts" ? (
                         <div className="flex flex1 justifyContent--flexEnd">
-                          <span className="replicated-link u-fontSize--small" onClick={() => this.toggleShowAllPreScripts()}>Show all {this.preSnapshotScripts()?.length} pre-scripts</span>
-                        </div> : null}
-                      {this.postSnapshotScripts()?.length > 3 && selectedScriptTab === "Post-snapshot scripts" ?
+                          <span
+                            className="replicated-link u-fontSize--small"
+                            onClick={() => this.toggleShowAllPreScripts()}
+                          >
+                            Show all {this.preSnapshotScripts()?.length}{" "}
+                            pre-scripts
+                          </span>
+                        </div>
+                      ) : null}
+                      {this.postSnapshotScripts()?.length > 3 &&
+                      selectedScriptTab === "Post-snapshot scripts" ? (
                         <div className="flex flex1 justifyContent--flexEnd">
-                          <span className="replicated-link u-fontSize--small" onClick={() => this.toggleShowAllPostScripts()}>Show all {this.postSnapshotScripts()?.length} post-scripts</span>
-                        </div> : null}
+                          <span
+                            className="replicated-link u-fontSize--small"
+                            onClick={() => this.toggleShowAllPostScripts()}
+                          >
+                            Show all {this.postSnapshotScripts()?.length}{" "}
+                            post-scripts
+                          </span>
+                        </div>
+                      ) : null}
                     </div>
                     <div className="flex-column flex1">
                       {this.renderScriptsTabs()}
                     </div>
                   </div>
                   <div>
-                    {selectedScriptTab === "Pre-snapshot scripts" ?
-                      !isEmpty(this.preSnapshotScripts()) ?
-                        this.renderShowAllScripts(this.preSnapshotScripts().slice(0, 3))
-                        :
+                    {selectedScriptTab === "Pre-snapshot scripts" ? (
+                      !isEmpty(this.preSnapshotScripts()) ? (
+                        this.renderShowAllScripts(
+                          this.preSnapshotScripts().slice(0, 3)
+                        )
+                      ) : (
                         <div className="flex flex1 u-paddingTop--20 alignItems--center justifyContent--center">
-                          <p className="u-fontSize--large u-fontWeight--normal u-textColor--bodyCopy"> No pre-snapshot scripts to display </p>
+                          <p className="u-fontSize--large u-fontWeight--normal u-textColor--bodyCopy">
+                            {" "}
+                            No pre-snapshot scripts to display{" "}
+                          </p>
                         </div>
-                      : selectedScriptTab === "Post-snapshot scripts" &&
-                        !isEmpty(this.postSnapshotScripts()) ?
-                        this.renderShowAllScripts(this.postSnapshotScripts().slice(0, 3))
-                        :
-                        <div className="flex flex1 u-paddingTop--20 alignItems--center justifyContent--center">
-                          <p className="u-fontSize--large u-fontWeight--normal u-textColor--bodyCopy"> No post-snapshot scripts to display </p>
-                        </div>}
+                      )
+                    ) : selectedScriptTab === "Post-snapshot scripts" &&
+                      !isEmpty(this.postSnapshotScripts()) ? (
+                      this.renderShowAllScripts(
+                        this.postSnapshotScripts().slice(0, 3)
+                      )
+                    ) : (
+                      <div className="flex flex1 u-paddingTop--20 alignItems--center justifyContent--center">
+                        <p className="u-fontSize--large u-fontWeight--normal u-textColor--bodyCopy">
+                          {" "}
+                          No post-snapshot scripts to display{" "}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
 
-            {(!isEmpty(snapshotDetails?.errors) || !isEmpty(snapshotDetails?.warnings)) &&
+            {(!isEmpty(snapshotDetails?.errors) ||
+              !isEmpty(snapshotDetails?.warnings)) && (
               <div className="flex flex-auto u-marginBottom--30">
                 <div className="flex-column flex1 u-marginRight--20">
                   <div className="dashboard-card-wrapper flex1">
                     <div className="flex flex-column u-paddingBottom--10 u-borderBottom--gray">
                       <div className="flex flex1">
-                        <p className="u-fontSize--larger u-textColor--primary u-fontWeight--bold u-lineHeight--bold u-paddingBottom--10 flex flex1">Errors and warnings</p>
-                        {snapshotDetails?.errors?.length > 3 && selectedErrorsWarningTab === "Errors" ?
+                        <p className="u-fontSize--larger u-textColor--primary u-fontWeight--bold u-lineHeight--bold u-paddingBottom--10 flex flex1">
+                          Errors and warnings
+                        </p>
+                        {snapshotDetails?.errors?.length > 3 &&
+                        selectedErrorsWarningTab === "Errors" ? (
                           <div className="flex flex1 justifyContent--flexEnd">
-                            <span className="replicated-link u-fontSize--small" onClick={() => this.toggleShowAllErrors()}>Show all {snapshotDetails?.errors?.length} errors </span>
-                          </div> : null}
-                        {snapshotDetails?.warnings?.length > 3 && selectedErrorsWarningTab === "Warnings" ?
+                            <span
+                              className="replicated-link u-fontSize--small"
+                              onClick={() => this.toggleShowAllErrors()}
+                            >
+                              Show all {snapshotDetails?.errors?.length} errors{" "}
+                            </span>
+                          </div>
+                        ) : null}
+                        {snapshotDetails?.warnings?.length > 3 &&
+                        selectedErrorsWarningTab === "Warnings" ? (
                           <div className="flex flex1 justifyContent--flexEnd">
-                            <span className="replicated-link u-fontSize--small" onClick={() => this.toggleShowAllWarnings()}>Show all {snapshotDetails?.warnings?.length} warnings </span>
-                          </div> : null}
+                            <span
+                              className="replicated-link u-fontSize--small"
+                              onClick={() => this.toggleShowAllWarnings()}
+                            >
+                              Show all {snapshotDetails?.warnings?.length}{" "}
+                              warnings{" "}
+                            </span>
+                          </div>
+                        ) : null}
                       </div>
                       <div className="flex-column flex1">
                         {this.renderErrorsWarningsTabs()}
                       </div>
                     </div>
                     <div>
-                      {selectedErrorsWarningTab === "Errors" ?
-                        !isEmpty(snapshotDetails?.errors) ?
-                          this.renderShowAllErrors(snapshotDetails?.errors.slice(0, 3))
-                          :
+                      {selectedErrorsWarningTab === "Errors" ? (
+                        !isEmpty(snapshotDetails?.errors) ? (
+                          this.renderShowAllErrors(
+                            snapshotDetails?.errors.slice(0, 3)
+                          )
+                        ) : (
                           <div className="flex flex1 u-paddingTop--20 alignItems--center justifyContent--center">
-                            <p className="u-fontSize--large u-fontWeight--normal u-textColor--bodyCopy"> No errors to display </p>
+                            <p className="u-fontSize--large u-fontWeight--normal u-textColor--bodyCopy">
+                              {" "}
+                              No errors to display{" "}
+                            </p>
                           </div>
-                        : selectedErrorsWarningTab === "Warnings" &&
-                          !isEmpty(snapshotDetails?.warnings) ?
-                          this.renderShowAllWarnings(snapshotDetails?.warnings?.slice(0, 3))
-                          :
-                          <div className="flex flex1 u-paddingTop--20 alignItems--center justifyContent--center">
-                            <p className="u-fontSize--large u-fontWeight--normal u-textColor--bodyCopy"> No warnings to display </p>
-                          </div>}
+                        )
+                      ) : selectedErrorsWarningTab === "Warnings" &&
+                        !isEmpty(snapshotDetails?.warnings) ? (
+                        this.renderShowAllWarnings(
+                          snapshotDetails?.warnings?.slice(0, 3)
+                        )
+                      ) : (
+                        <div className="flex flex1 u-paddingTop--20 alignItems--center justifyContent--center">
+                          <p className="u-fontSize--large u-fontWeight--normal u-textColor--bodyCopy">
+                            {" "}
+                            No warnings to display{" "}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
-              </div>}
-          </div>}
+              </div>
+            )}
+          </div>
+        )}
 
-        {showScriptsOutput && scriptOutput &&
+        {showScriptsOutput && scriptOutput && (
           <Modal
             isOpen={showScriptsOutput}
             onRequestClose={() => this.toggleScriptsOutput()}
@@ -655,11 +932,11 @@ class SnapshotDetails extends Component {
             className="Modal logs-modal"
           >
             <div className="Modal-body flex flex1 flex-column">
-              {!selectedTab ?
+              {!selectedTab ? (
                 <div className="flex-column flex1 alignItems--center justifyContent--center">
                   <Loader size="60" />
                 </div>
-                :
+              ) : (
                 <div className="flex-column flex1">
                   {this.renderOutputTabs()}
                   <div className="flex-column flex1 u-border--gray monaco-editor-wrapper">
@@ -670,61 +947,69 @@ class SnapshotDetails extends Component {
                         readOnly: true,
                         contextmenu: false,
                         minimap: {
-                          enabled: false
+                          enabled: false,
                         },
                         scrollBeyondLastLine: false,
                       }}
                     />
                   </div>
                 </div>
-              }
+              )}
               <div className="u-marginTop--20 flex">
-                <button type="button" className="btn primary blue" onClick={() => this.toggleScriptsOutput()}>Ok, got it!</button>
+                <button
+                  type="button"
+                  className="btn primary blue"
+                  onClick={() => this.toggleScriptsOutput()}
+                >
+                  Ok, got it!
+                </button>
               </div>
             </div>
           </Modal>
-        }
-        {showAllVolumes &&
+        )}
+        {showAllVolumes && (
           <ShowAllModal
             displayShowAllModal={showAllVolumes}
             toggleShowAllModal={this.toggleShowAllVolumes}
             dataToShow={this.renderShowAllVolumes(snapshotDetails?.volumes)}
             name="Volumes"
           />
-        }
-        {showAllPreSnapshotScripts &&
+        )}
+        {showAllPreSnapshotScripts && (
           <ShowAllModal
             displayShowAllModal={showAllPreSnapshotScripts}
             toggleShowAllModal={this.toggleShowAllPreScripts}
             dataToShow={this.renderShowAllScripts(this.preSnapshotScripts())}
             name="Pre-snapshot scripts"
           />
-        }
-        {showAllPostSnapshotScripts &&
+        )}
+        {showAllPostSnapshotScripts && (
           <ShowAllModal
             displayShowAllModal={showAllPostSnapshotScripts}
             toggleShowAllModal={this.toggleShowAllPostScripts}
-            dataToShow={this.renderShowAllPostscripts(this.postSnapshotScripts())}
+            dataToShow={this.renderShowAllPostscripts(
+              this.postSnapshotScripts()
+            )}
             name="Post-snapshot scripts"
           />
-        }
-        {showAllWarnings &&
+        )}
+        {showAllWarnings && (
           <ShowAllModal
             displayShowAllModal={showAllWarnings}
             toggleShowAllModal={this.toggleShowAllWarnings}
             dataToShow={this.renderShowAllWarnings(snapshotDetails?.warnings)}
             name="Warnings"
           />
-        }
-        {showAllErrors &&
+        )}
+        {showAllErrors && (
           <ShowAllModal
             displayShowAllModal={showAllErrors}
             toggleShowAllModal={this.toggleShowAllErrors}
             dataToShow={this.renderShowAllErrors(snapshotDetails?.errors)}
             name="Errors"
           />
-        }
-        {this.state.toggleViewLogsModal &&
+        )}
+        {this.state.toggleViewLogsModal && (
           <ViewSnapshotLogsModal
             displayShowSnapshotLogsModal={this.state.toggleViewLogsModal}
             toggleViewLogsModal={this.viewLogs}
@@ -733,9 +1018,10 @@ class SnapshotDetails extends Component {
             loadingSnapshotLogs={this.state.loadingSnapshotLogs}
             snapshotLogsErr={this.state.snapshotLogsErr}
             snapshotLogsErrMsg={this.state.snapshotLogsErrMsg}
-          />}
+          />
+        )}
 
-        {errorMessage &&
+        {errorMessage && (
           <ErrorModal
             errorModal={this.state.displayErrorModal}
             toggleErrorModal={this.toggleErrorModal}
@@ -743,7 +1029,8 @@ class SnapshotDetails extends Component {
             tryAgain={() => this.fetchSnapshotDetails()}
             err={errorTitle}
             loading={this.state.loadingApp}
-          />}
+          />
+        )}
       </div>
     );
   }

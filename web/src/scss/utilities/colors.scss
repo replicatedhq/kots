@@ -25,7 +25,6 @@
   background-color: $light-taupe;
 }
 
-
 .u-textColor--primary {
   color: $text-color-primary;
 }
@@ -33,7 +32,7 @@
   color: $text-color-secondary;
 }
 .u-textColor--header {
-  color: $text-color-header
+  color: $text-color-header;
 }
 .u-textColor--bodyCopy {
   color: $text-color-body-copy;
@@ -42,7 +41,7 @@
   color: $text-color-info;
 }
 .u-textColor--accent {
-  color: $text-color-accent
+  color: $text-color-accent;
 }
 .u-textColor--mutedAccent {
   color: $muted-light-accent;
@@ -64,7 +63,15 @@ a.u-textColor--error {
   }
 }
 
-.u-color--white { color: #FFFFFF; }
-.u-backgroundColor--white { background-color: #FFFFFF; }
-.u-color--mutedteal { color: #577981; }
-.u-color--lightteal { color: #E1F0F1; }
+.u-color--white {
+  color: #ffffff;
+}
+.u-backgroundColor--white {
+  background-color: #ffffff;
+}
+.u-color--mutedteal {
+  color: #577981;
+}
+.u-color--lightteal {
+  color: #e1f0f1;
+}

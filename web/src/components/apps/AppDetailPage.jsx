@@ -48,12 +48,13 @@ class AppDetailPage extends Component {
       displayErrorModal: false,
       isVeleroInstalled: false,
       redeployVersionErrMsg: "",
-      isHelmManaged: false
-    }
+      isHelmManaged: false,
+    };
   }
 
   componentDidUpdate(_, lastState) {
-    const { getThemeState, setThemeState, match, appsList, history } = this.props;
+    const { getThemeState, setThemeState, match, appsList, history } =
+      this.props;
     const { app, loadingApp } = this.state;
 
     // Used for a fresh reload
@@ -72,13 +73,13 @@ class AppDetailPage extends Component {
     }
 
     // Handle updating the theme state when switching apps.
-    const currentApp = appsList?.find(w => w.slug === match.params.slug);
+    const currentApp = appsList?.find((w) => w.slug === match.params.slug);
     if (currentApp?.iconUri) {
       const { navbarLogo, ...rest } = getThemeState();
       if (navbarLogo === null || navbarLogo !== currentApp.iconUri) {
         setThemeState({
           ...rest,
-          navbarLogo: currentApp.iconUri
+          navbarLogo: currentApp.iconUri,
         });
       }
     }
@@ -87,7 +88,9 @@ class AppDetailPage extends Component {
     if (app !== lastState.app && app) {
       const downstream = app?.downstream;
       if (downstream?.pendingVersions?.length) {
-        const firstVersion = downstream.pendingVersions.find(version => version?.sequence === 0);
+        const firstVersion = downstream.pendingVersions.find(
+          (version) => version?.sequence === 0
+        );
         if (firstVersion?.status === "pending_config") {
           this.props.history.push(`/${app.slug}/config`);
           return;
@@ -102,22 +105,30 @@ class AppDetailPage extends Component {
     this.state.getAppJob.stop();
   }
 
-  makeCurrentRelease = async (upstreamSlug, version, isSkipPreflights, continueWithFailedPreflights = false) => {
+  makeCurrentRelease = async (
+    upstreamSlug,
+    version,
+    isSkipPreflights,
+    continueWithFailedPreflights = false
+  ) => {
     try {
       this.setState({ makingCurrentReleaseErrMsg: "" });
 
-      const res = await fetch(`${process.env.API_ENDPOINT}/app/${upstreamSlug}/sequence/${version.sequence}/deploy`, {
-        headers: {
-          "Authorization": Utilities.getToken(),
-          "Content-Type": "application/json",
-        },
-        method: "POST",
-        body: JSON.stringify({
-          isSkipPreflights: isSkipPreflights ,
-          continueWithFailedPreflights: continueWithFailedPreflights,
-          isCLI: false
-        }),
-      });
+      const res = await fetch(
+        `${process.env.API_ENDPOINT}/app/${upstreamSlug}/sequence/${version.sequence}/deploy`,
+        {
+          headers: {
+            Authorization: Utilities.getToken(),
+            "Content-Type": "application/json",
+          },
+          method: "POST",
+          body: JSON.stringify({
+            isSkipPreflights: isSkipPreflights,
+            continueWithFailedPreflights: continueWithFailedPreflights,
+            isCLI: false,
+          }),
+        }
+      );
       if (res.ok && res.status < 300) {
         this.setState({ makingCurrentReleaseErrMsg: "" });
         this.refetchData();
@@ -128,54 +139,62 @@ class AppDetailPage extends Component {
         });
       }
     } catch (err) {
-      console.log(err)
+      console.log(err);
       this.setState({
-        makingCurrentReleaseErrMsg: err ? `Unable to deploy release ${version.versionLabel}, sequence ${version.sequence}: ${err.message}` : "Something went wrong, please try again.",
+        makingCurrentReleaseErrMsg: err
+          ? `Unable to deploy release ${version.versionLabel}, sequence ${version.sequence}: ${err.message}`
+          : "Something went wrong, please try again.",
       });
     }
-  }
+  };
 
   redeployVersion = async (upstreamSlug, version) => {
     try {
       this.setState({ redeployVersionErrMsg: "" });
 
-      const res = await fetch(`${process.env.API_ENDPOINT}/app/${upstreamSlug}/sequence/${version.sequence}/redeploy`, {
-        headers: {
-          "Authorization": Utilities.getToken(),
-          "Content-Type": "application/json",
-        },
-        method: "POST",
-      });
+      const res = await fetch(
+        `${process.env.API_ENDPOINT}/app/${upstreamSlug}/sequence/${version.sequence}/redeploy`,
+        {
+          headers: {
+            Authorization: Utilities.getToken(),
+            "Content-Type": "application/json",
+          },
+          method: "POST",
+        }
+      );
       if (res.ok && res.status === 204) {
         this.setState({ redeployVersionErrMsg: "" });
         this.refetchData();
       } else {
         this.setState({
-          redeployVersionErrMsg: `Unable to redeploy release ${version.versionLabel}, sequence ${version.sequence}: Unexpected status code: ${res.status}`
+          redeployVersionErrMsg: `Unable to redeploy release ${version.versionLabel}, sequence ${version.sequence}: Unexpected status code: ${res.status}`,
         });
       }
     } catch (err) {
-      console.log(err)
+      console.log(err);
       this.setState({
-        redeployVersionErrMsg: err ? `Unable to deploy release ${version.versionLabel}, sequence ${version.sequence}: ${err.message}` : "Something went wrong, please try again."
+        redeployVersionErrMsg: err
+          ? `Unable to deploy release ${version.versionLabel}, sequence ${version.sequence}: ${err.message}`
+          : "Something went wrong, please try again.",
       });
     }
-  }
+  };
 
   toggleDisplayRequiredKotsUpdateModal = (message) => {
     this.setState({
-      displayRequiredKotsUpdateModal: !this.state.displayRequiredKotsUpdateModal,
+      displayRequiredKotsUpdateModal:
+        !this.state.displayRequiredKotsUpdateModal,
       requiredKotsUpdateMessage: message,
     });
-  }
+  };
 
   toggleIsBundleUploading = (isUploading) => {
     this.setState({ isBundleUploading: isUploading });
-  }
+  };
 
   toggleErrorModal = () => {
     this.setState({ displayErrorModal: !this.state.displayErrorModal });
-  }
+  };
 
   /**
    * Refetch all the data for this component and all its children
@@ -186,7 +205,7 @@ class AppDetailPage extends Component {
     this.getApp();
     this.props.refetchAppsList();
     this.checkIsVeleroInstalled();
-  }
+  };
 
   /**
    *  Runs on mount and on update. Also handles redirect logic
@@ -197,7 +216,7 @@ class AppDetailPage extends Component {
     if (!rootDidInitialAppFetch) {
       return;
     }
-    const firstApp = appsList?.find(app => app.name);
+    const firstApp = appsList?.find((app) => app.name);
 
     if (firstApp) {
       history.replace(`/app/${firstApp.slug}`);
@@ -205,7 +224,7 @@ class AppDetailPage extends Component {
     } else {
       history.replace("/upload-license");
     }
-  }
+  };
 
   componentDidMount() {
     const { history } = this.props;
@@ -229,72 +248,82 @@ class AppDetailPage extends Component {
 
       const res = await fetch(`${process.env.API_ENDPOINT}/app/${slug}`, {
         headers: {
-          "Authorization": Utilities.getToken(),
+          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
         method: "GET",
       });
       if (res.ok && res.status == 200) {
         const app = await res.json();
-        this.setState({ app, loadingApp: false, gettingAppErrMsg: "", displayErrorModal: false });
+        this.setState({
+          app,
+          loadingApp: false,
+          gettingAppErrMsg: "",
+          displayErrorModal: false,
+        });
       } else {
-        this.setState({ loadingApp: false, gettingAppErrMsg: `Unexpected status code: ${res.status}`, displayErrorModal: true });
+        this.setState({
+          loadingApp: false,
+          gettingAppErrMsg: `Unexpected status code: ${res.status}`,
+          displayErrorModal: true,
+        });
       }
     } catch (err) {
-      console.log(err)
-      this.setState({ loadingApp: false, gettingAppErrMsg: err ? err.message : "Something went wrong, please try again.", displayErrorModal: true });
+      console.log(err);
+      this.setState({
+        loadingApp: false,
+        gettingAppErrMsg: err
+          ? err.message
+          : "Something went wrong, please try again.",
+        displayErrorModal: true,
+      });
     }
-  }
+  };
 
   checkIsVeleroInstalled = async () => {
     try {
       const res = await fetch(`${process.env.API_ENDPOINT}/velero`, {
         headers: {
-          "Authorization": Utilities.getToken(),
+          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
         method: "GET",
       });
       if (res.ok && res.status == 200) {
         const response = await res.json();
-        this.setState({ isVeleroInstalled: response.isVeleroInstalled })
+        this.setState({ isVeleroInstalled: response.isVeleroInstalled });
       } else {
         this.setState({ isVeleroInstalled: false });
       }
     } catch (err) {
-      console.log(err)
+      console.log(err);
       this.setState({ isVeleroInstalled: false });
     }
-  }
+  };
 
   checkIsHelmManaged = async () => {
     try {
       const res = await fetch(`${process.env.API_ENDPOINT}/isHelmManaged`, {
         headers: {
-          "Authorization": Utilities.getToken(),
+          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
         method: "GET",
       });
       if (res.ok && res.status == 200) {
         const response = await res.json();
-        this.setState({ isHelmManaged: response.isHelmManaged })
+        this.setState({ isHelmManaged: response.isHelmManaged });
       } else {
         this.setState({ isHelmManaged: false });
       }
     } catch (err) {
-      console.log(err)
+      console.log(err);
       this.setState({ isHelmManaged: false });
     }
-  }
+  };
 
   render() {
-    const {
-      match,
-      appsList,
-      rootDidInitialAppFetch,
-      appName,
-    } = this.props;
+    const { match, appsList, rootDidInitialAppFetch, appName } = this.props;
 
     const {
       app,
@@ -303,7 +332,7 @@ class AppDetailPage extends Component {
       requiredKotsUpdateMessage,
       gettingAppErrMsg,
       isVeleroInstalled,
-      isHelmManaged
+      isHelmManaged,
     } = this.state;
 
     const centeredLoader = (
@@ -318,7 +347,10 @@ class AppDetailPage extends Component {
 
     // poll version status if it's awaiting results
     const downstream = app?.downstream;
-    if (downstream?.currentVersion && isAwaitingResults([downstream.currentVersion])) {
+    if (
+      downstream?.currentVersion &&
+      isAwaitingResults([downstream.currentVersion])
+    ) {
       this.state.getAppJob.start(this.getApp, 2000);
     } else {
       this.state.getAppJob.stop();
@@ -327,12 +359,14 @@ class AppDetailPage extends Component {
     return (
       <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
         <Helmet>
-          <title>{`${appName ? `${appName} Admin Console` : "Admin Console"}`}</title>
+          <title>{`${
+            appName ? `${appName} Admin Console` : "Admin Console"
+          }`}</title>
         </Helmet>
         <SidebarLayout
           className="flex flex1 u-minHeight--full u-overflow--hidden"
           condition={appsList?.length > 1}
-          sidebar={(
+          sidebar={
             <SideBar
               items={appsList?.map((item, idx) => {
                 let sidebarItemNode;
@@ -342,39 +376,46 @@ class AppDetailPage extends Component {
                     <KotsSidebarItem
                       key={idx}
                       className={classNames({
-                        selected: (
+                        selected:
                           item.slug === slugFromRoute &&
-                          match.params.owner !== "helm"
-                        )
+                          match.params.owner !== "helm",
                       })}
-                      app={item} />
+                      app={item}
+                    />
                   );
                 } else if (item.helmName) {
                   sidebarItemNode = (
                     <HelmChartSidebarItem
                       key={idx}
-                      className={classNames({ selected: item.id === match.params.slug })}
-                      helmChart={item} />
+                      className={classNames({
+                        selected: item.id === match.params.slug,
+                      })}
+                      helmChart={item}
+                    />
                   );
                 }
                 return sidebarItemNode;
               })}
             />
-          )}>
+          }
+        >
           <div className="flex-column flex1 u-width--full u-height--full u-overflow--auto">
-            {!app
-              ? centeredLoader
-              : (
-                <Fragment>
-                  <SubNavBar
-                    className="flex"
-                    activeTab={match.params.tab || "app"}
-                    app={app}
-                    isVeleroInstalled={isVeleroInstalled}
-                    isHelmManaged={this.state.isHelmManaged}
-                  />
-                  <Switch>
-                    <Route exact path="/app/:slug" render={() =>
+            {!app ? (
+              centeredLoader
+            ) : (
+              <Fragment>
+                <SubNavBar
+                  className="flex"
+                  activeTab={match.params.tab || "app"}
+                  app={app}
+                  isVeleroInstalled={isVeleroInstalled}
+                  isHelmManaged={this.state.isHelmManaged}
+                />
+                <Switch>
+                  <Route
+                    exact
+                    path="/app/:slug"
+                    render={() => (
                       <Dashboard
                         app={app}
                         cluster={app.downstream?.cluster}
@@ -387,29 +428,42 @@ class AppDetailPage extends Component {
                         isBundleUploading={isBundleUploading}
                         isVeleroInstalled={isVeleroInstalled}
                         refreshAppData={this.getApp}
-                        snapshotInProgressApps={this.props.snapshotInProgressApps}
+                        snapshotInProgressApps={
+                          this.props.snapshotInProgressApps
+                        }
                         ping={this.props.ping}
                         isHelmManaged={isHelmManaged}
-                      />}
-                    />
+                      />
+                    )}
+                  />
 
-                    <Route
-                      exact path="/app/:slug/tree/:sequence?"
-                      render={props =>
-                        <DownstreamTree
-                          {...props}
-                          app={app}
-                          appNameSpace={this.props.appNameSpace}
-                          isHelmManaged={this.state.isHelmManaged}
-                        />}
-                    />
+                  <Route
+                    exact
+                    path="/app/:slug/tree/:sequence?"
+                    render={(props) => (
+                      <DownstreamTree
+                        {...props}
+                        app={app}
+                        appNameSpace={this.props.appNameSpace}
+                        isHelmManaged={this.state.isHelmManaged}
+                      />
+                    )}
+                  />
 
-                    <Route exact path={["/app/:slug/version-history", "/app/:slug/version-history/diff/:firstSequence/:secondSequence"]} render={() =>
+                  <Route
+                    exact
+                    path={[
+                      "/app/:slug/version-history",
+                      "/app/:slug/version-history/diff/:firstSequence/:secondSequence",
+                    ]}
+                    render={() => (
                       <AppVersionHistory
                         app={app}
                         match={this.props.match}
                         makeCurrentVersion={this.makeCurrentRelease}
-                        makingCurrentVersionErrMsg={this.state.makingCurrentReleaseErrMsg}
+                        makingCurrentVersionErrMsg={
+                          this.state.makingCurrentReleaseErrMsg
+                        }
                         updateCallback={this.refetchData}
                         toggleIsBundleUploading={this.toggleIsBundleUploading}
                         isBundleUploading={isBundleUploading}
@@ -421,64 +475,110 @@ class AppDetailPage extends Component {
                         redeployVersion={this.redeployVersion}
                         redeployVersionErrMsg={this.state.redeployVersionErrMsg}
                         adminConsoleMetadata={this.props.adminConsoleMetadata}
-                      />}
-                    />
-                    <Route exact path="/app/:slug/downstreams/:downstreamSlug/version-history/preflight/:sequence" render={props => <PreflightResultPage logo={app.iconUri} app={app} {...props} />} />
-                    <Route exact path="/app/:slug/config/:sequence?" render={() =>
+                      />
+                    )}
+                  />
+                  <Route
+                    exact
+                    path="/app/:slug/downstreams/:downstreamSlug/version-history/preflight/:sequence"
+                    render={(props) => (
+                      <PreflightResultPage
+                        logo={app.iconUri}
+                        app={app}
+                        {...props}
+                      />
+                    )}
+                  />
+                  <Route
+                    exact
+                    path="/app/:slug/config/:sequence?"
+                    render={() => (
                       <AppConfig
                         app={app}
                         refreshAppData={this.getApp}
                         fromLicenseFlow={false}
                       />
-                    } />
-                    <Route path="/app/:slug/troubleshoot" render={() =>
-                      <TroubleshootContainer
-                        app={app}
-                        appName={appName}
-                      />
-                    } />
-                    <Route exact path="/app/:slug/license" render={() =>
+                    )}
+                  />
+                  <Route
+                    path="/app/:slug/troubleshoot"
+                    render={() => (
+                      <TroubleshootContainer app={app} appName={appName} />
+                    )}
+                  />
+                  <Route
+                    exact
+                    path="/app/:slug/license"
+                    render={() => (
                       <AppLicense
                         app={app}
                         syncCallback={this.refetchData}
                         changeCallback={this.refetchData}
                       />
-                    } />
-                    <Route exact path="/app/:slug/registry-settings" render={() =>
+                    )}
+                  />
+                  <Route
+                    exact
+                    path="/app/:slug/registry-settings"
+                    render={() => (
                       <AppRegistrySettings
                         app={app}
                         updateCallback={this.refetchData}
                       />
-                    } />
-                    <Route exact path="/app/:slug/gitops" render={() =>
+                    )}
+                  />
+                  <Route
+                    exact
+                    path="/app/:slug/gitops"
+                    render={() => (
                       <AppGitops
                         app={app}
                         history={this.props.history}
                         refetch={this.getApp}
                       />
-                    } />
-                    {app.isAppIdentityServiceSupported &&
-                      <Route exact path="/app/:slug/access" render={() =>
+                    )}
+                  />
+                  {app.isAppIdentityServiceSupported && (
+                    <Route
+                      exact
+                      path="/app/:slug/access"
+                      render={() => (
                         <AppIdentityServiceSettings
                           app={app}
                           refetch={this.getApp}
                         />
-                      } />
-                    }
-                    {/* snapshots redirects */}
-                    <Redirect exact from="/app/:slug/snapshots" to="/snapshots/partial/:slug" />
-                    <Redirect exact from="/app/:slug/snapshots/schedule" to="/snapshots/settings?:slug" />
-                    <Redirect exact from="/app/:slug/snapshots/:id" to="/snapshots/partial/:slug/:id" />
-                    <Redirect exact from="/app/:slug/snapshots/:id/restore" to="/snapshots/partial/:slug/:id/restore" />
+                      )}
+                    />
+                  )}
+                  {/* snapshots redirects */}
+                  <Redirect
+                    exact
+                    from="/app/:slug/snapshots"
+                    to="/snapshots/partial/:slug"
+                  />
+                  <Redirect
+                    exact
+                    from="/app/:slug/snapshots/schedule"
+                    to="/snapshots/settings?:slug"
+                  />
+                  <Redirect
+                    exact
+                    from="/app/:slug/snapshots/:id"
+                    to="/snapshots/partial/:slug/:id"
+                  />
+                  <Redirect
+                    exact
+                    from="/app/:slug/snapshots/:id/restore"
+                    to="/snapshots/partial/:slug/:id/restore"
+                  />
 
-                    <Route component={NotFound} />
-                  </Switch>
-                </Fragment>
-              )
-            }
+                  <Route component={NotFound} />
+                </Switch>
+              </Fragment>
+            )}
           </div>
         </SidebarLayout>
-        {displayRequiredKotsUpdateModal &&
+        {displayRequiredKotsUpdateModal && (
           <Modal
             isOpen={displayRequiredKotsUpdateModal}
             onRequestClose={() => this.toggleDisplayRequiredKotsUpdateModal("")}
@@ -488,16 +588,28 @@ class AppDetailPage extends Component {
             className="DisplayRequiredKotsUpdateModal--wrapper Modal"
           >
             <div className="Modal-body">
-              <h2 className="u-fontSize--largest u-textColor--primary u-fontWeight--bold u-lineHeight--normal">You must update KOTS to deploy this version</h2>
-              <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">This version of {app?.name} requires a version of KOTS that is different from what you currently have installed.</p>
-                <p className="u-fontSize--normal u-textColor--error u-fontWeight--medium u-lineHeight--normal u-marginBottom--20">{requiredKotsUpdateMessage}</p>
+              <h2 className="u-fontSize--largest u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
+                You must update KOTS to deploy this version
+              </h2>
+              <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">
+                This version of {app?.name} requires a version of KOTS that is
+                different from what you currently have installed.
+              </p>
+              <p className="u-fontSize--normal u-textColor--error u-fontWeight--medium u-lineHeight--normal u-marginBottom--20">
+                {requiredKotsUpdateMessage}
+              </p>
               <div className="u-marginTop--10 flex">
-                <button onClick={() => this.toggleDisplayRequiredKotsUpdateModal("")} className="btn blue primary">Ok, got it!</button>
+                <button
+                  onClick={() => this.toggleDisplayRequiredKotsUpdateModal("")}
+                  className="btn blue primary"
+                >
+                  Ok, got it!
+                </button>
               </div>
             </div>
           </Modal>
-        }
-        {gettingAppErrMsg &&
+        )}
+        {gettingAppErrMsg && (
           <ErrorModal
             errorModal={this.state.displayErrorModal}
             toggleErrorModal={this.toggleErrorModal}
@@ -505,7 +617,8 @@ class AppDetailPage extends Component {
             tryAgain={() => this.getApp(this.props.match.params.slug)}
             err="Failed to get application"
             loading={this.state.loadingApp}
-          />}
+          />
+        )}
       </div>
     );
   }

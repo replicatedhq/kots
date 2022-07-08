@@ -7,15 +7,15 @@ export default class ErrorBoundaryComponent extends React.Component {
       error: null,
       hasError: false,
       message: "",
-      sendingBugsnagMessage: false
-    }
+      sendingBugsnagMessage: false,
+    };
   }
 
   componentDidCatch(error, errorInfo) {
     this.setState({
       error,
       errorInfo,
-      hasError: true
+      hasError: true,
     });
   }
 
@@ -23,12 +23,11 @@ export default class ErrorBoundaryComponent extends React.Component {
     let nextState = {};
     nextState[field] = e.target.value;
     this.setState(nextState);
-  }
-
+  };
 
   backToAdminConsole = () => {
     window.location.replace("/");
-  }
+  };
 
   render() {
     const { info } = this.props;
@@ -38,24 +37,29 @@ export default class ErrorBoundaryComponent extends React.Component {
         <div className="flex1 flex-column u-overflow--auto">
           <div className="flex1 flex-column justifyContent--center alignItems--center">
             <div className="flex-column u-width--half">
-              <span
-                className="icon errorWarningIcon u-marginBottom--20 u-textAlign--center alignSelf--center"
-              ></span>
-              <p className="u-textAlign--center alignItems--center u-fontSize--header2 u-fontWeight--bold u-textColor--secondary">Oops, something went wrong.</p>
-              <p className=" u-textAlign--center u-marginTop--20 u-fontWeight--medium u-textColor--bodyCopy u-fontSize--normal u-lineHeight--normal"> Click the button below to try again. </p>
+              <span className="icon errorWarningIcon u-marginBottom--20 u-textAlign--center alignSelf--center"></span>
+              <p className="u-textAlign--center alignItems--center u-fontSize--header2 u-fontWeight--bold u-textColor--secondary">
+                Oops, something went wrong.
+              </p>
+              <p className=" u-textAlign--center u-marginTop--20 u-fontWeight--medium u-textColor--bodyCopy u-fontSize--normal u-lineHeight--normal">
+                {" "}
+                Click the button below to try again.{" "}
+              </p>
               <div className="flex alignItems--center alignSelf--center u-marginTop--20">
-                <button className="btn secondary" onClick={() => this.backToAdminConsole()}> Back to Admin Console </button>
+                <button
+                  className="btn secondary"
+                  onClick={() => this.backToAdminConsole()}
+                >
+                  {" "}
+                  Back to Admin Console{" "}
+                </button>
               </div>
             </div>
           </div>
         </div>
       );
     } else {
-      return (
-        <div className="flex-column flex1">
-          {this.props.children}
-        </div>
-      );
+      return <div className="flex-column flex1">{this.props.children}</div>;
     }
   }
 }

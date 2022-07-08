@@ -30,8 +30,8 @@ export default class ConfigureRedactorsModal extends Component {
     errorSavingSpec: false,
     savingSpecUriError: "",
     savingSpecError: "",
-    savingRedactor: false
-  }
+    savingRedactor: false,
+  };
 
   toggleRedactorAction = (active) => {
     this.setState({
@@ -39,33 +39,43 @@ export default class ConfigureRedactorsModal extends Component {
       specSaved: false,
       errorSavingSpec: false,
       savingSpecError: "",
-      savingSpecUriError: ""
+      savingSpecUriError: "",
     });
-  }
+  };
 
   onRedactorChange = (value) => {
     this.setState({
       customRedactorSpec: value,
     });
-  }
+  };
 
   getRedactor = () => {
     this.setState({ loadingRedactor: true });
     fetch(`${process.env.API_ENDPOINT}/redact/get`, {
       headers: {
-        "Authorization": `${Utilities.getToken()}`,
+        Authorization: `${Utilities.getToken()}`,
         "Content-Type": "application/json",
       },
       method: "GET",
     })
-      .then(async res => {
+      .then(async (res) => {
         const response = await res.json();
         try {
           const r = yaml.safeLoad(response.updatedSpec);
           if (typeof r === "object") {
-            this.setState({ customRedactorSpec: response.updatedSpec, showRedactors: response.updatedSpec !== "", activeRedactorTab: "writeSpec", loadingRedactor: false });
+            this.setState({
+              customRedactorSpec: response.updatedSpec,
+              showRedactors: response.updatedSpec !== "",
+              activeRedactorTab: "writeSpec",
+              loadingRedactor: false,
+            });
           } else {
-            this.setState({ redactorUri: response.updatedSpec, showRedactors: response.updatedSpec !== "", activeRedactorTab: "linkSpec", loadingRedactor: false });
+            this.setState({
+              redactorUri: response.updatedSpec,
+              showRedactors: response.updatedSpec !== "",
+              activeRedactorTab: "linkSpec",
+              loadingRedactor: false,
+            });
           }
         } catch (e) {
           console.log(e);
@@ -75,88 +85,148 @@ export default class ConfigureRedactorsModal extends Component {
       .catch(() => {
         this.setState({ loadingRedactor: false, errFetchingRedactors: true });
       });
-  }
+  };
 
   saveRedactor = () => {
     const { activeRedactorTab, redactorUri, customRedactorSpec } = this.state;
     const isRedactorLink = activeRedactorTab === "linkSpec";
-    this.setState({ errorSavingSpec: false, savingSpecError: "", savingSpecUriError: "" });
+    this.setState({
+      errorSavingSpec: false,
+      savingSpecError: "",
+      savingSpecUriError: "",
+    });
 
     let payload;
     if (isRedactorLink) {
       if (!redactorUri.length || redactorUri === "") {
-        return this.setState({ errorSavingSpecUri: true, savingSpecUriError: "No uri was provided" })
+        return this.setState({
+          errorSavingSpecUri: true,
+          savingSpecUriError: "No uri was provided",
+        });
       }
       payload = {
-        redactSpecUrl: redactorUri
+        redactSpecUrl: redactorUri,
       };
     } else {
       payload = {
-        redactSpec: customRedactorSpec
+        redactSpec: customRedactorSpec,
       };
     }
 
     this.setState({ savingRedactor: true });
     fetch(`${process.env.API_ENDPOINT}/redact/set`, {
       headers: {
-        "Authorization": `${Utilities.getToken()}`,
+        Authorization: `${Utilities.getToken()}`,
         "Content-Type": "application/json",
-        "Accept": "application/json",
+        Accept: "application/json",
       },
       method: "PUT",
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     })
-      .then(async res => {
+      .then(async (res) => {
         const body = await res.json();
         if (!res.ok) {
           if (isRedactorLink) {
-            this.setState({ savingRedactor: false, errorSavingSpecUri: true, savingSpecUriError: body.error });
+            this.setState({
+              savingRedactor: false,
+              errorSavingSpecUri: true,
+              savingSpecUriError: body.error,
+            });
           } else {
-            this.setState({ savingRedactor: false, errorSavingSpec: true, savingSpecError: body.error });
+            this.setState({
+              savingRedactor: false,
+              errorSavingSpec: true,
+              savingSpecError: body.error,
+            });
           }
         } else {
           if (isRedactorLink) {
             this.setState({ savingRedactor: false, specSaved: true });
           } else {
-            this.setState({ customRedactorSpec: body.updatedSpec, savingRedactor: false, specSaved: true });
+            this.setState({
+              customRedactorSpec: body.updatedSpec,
+              savingRedactor: false,
+              specSaved: true,
+            });
           }
           setTimeout(() => {
             this.setState({ specSaved: false });
           }, 3000);
         }
       })
-      .catch(err => {
+      .catch((err) => {
         if (isRedactorLink) {
-          this.setState({ savingRedactor: false, errorSavingSpecUri: true, savingSpecUriError: err });
+          this.setState({
+            savingRedactor: false,
+            errorSavingSpecUri: true,
+            savingSpecUriError: err,
+          });
         } else {
-          this.setState({ savingRedactor: false, errorSavingSpec: true, savingSpecError: err });
+          this.setState({
+            savingRedactor: false,
+            errorSavingSpec: true,
+            savingSpecError: err,
+          });
         }
       });
-  }
+  };
 
   renderRedactorTab = () => {
-    const { activeRedactorTab, redactorUri, customRedactorSpec, savingRedactor } = this.state;
+    const {
+      activeRedactorTab,
+      redactorUri,
+      customRedactorSpec,
+      savingRedactor,
+    } = this.state;
     switch (activeRedactorTab) {
       case "linkSpec":
         return (
           <div className="flex1">
-            <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">Where is your spec located</p>
-            <p className="u-lineHeight--normal u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginBottom--10">Provide the URI where your redactor spec is located.</p>
-            <input type="text" className="Input" placeholder="github.com/org/myrepo/redactor.yaml" value={redactorUri} autoComplete="" onChange={(e) => { this.setState({ redactorUri: e.target.value }) }} />
+            <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">
+              Where is your spec located
+            </p>
+            <p className="u-lineHeight--normal u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginBottom--10">
+              Provide the URI where your redactor spec is located.
+            </p>
+            <input
+              type="text"
+              className="Input"
+              placeholder="github.com/org/myrepo/redactor.yaml"
+              value={redactorUri}
+              autoComplete=""
+              onChange={(e) => {
+                this.setState({ redactorUri: e.target.value });
+              }}
+            />
             <div className="u-marginTop--10 flex alignItems--center">
-              <button className="btn secondary blue u-marginRight--10" onClick={this.props.onClose}>Close</button>
-              <button className="btn primary" onClick={this.saveRedactor} disabled={savingRedactor}>{savingRedactor ? "Saving" : "Save"}</button>
-              {this.state.specSaved &&
+              <button
+                className="btn secondary blue u-marginRight--10"
+                onClick={this.props.onClose}
+              >
+                Close
+              </button>
+              <button
+                className="btn primary"
+                onClick={this.saveRedactor}
+                disabled={savingRedactor}
+              >
+                {savingRedactor ? "Saving" : "Save"}
+              </button>
+              {this.state.specSaved && (
                 <span className="u-marginLeft--10 flex alignItems--center">
                   <span className="icon checkmark-icon u-marginRight--5" />
-                  <span className="u-textColor--success u-fontSize--small u-fontWeight--medium u-lineHeight--normal">Saved</span>
+                  <span className="u-textColor--success u-fontSize--small u-fontWeight--medium u-lineHeight--normal">
+                    Saved
+                  </span>
                 </span>
-              }
-              {this.state.errorSavingSpecUri &&
+              )}
+              {this.state.errorSavingSpecUri && (
                 <span className="u-marginLeft--10 flex alignItems--center">
-                  <span className="u-textColor--error u-fontSize--small u-fontWeight--medium u-lineHeight--normal">{this.state.savingSpecUriError}</span>
+                  <span className="u-textColor--error u-fontSize--small u-fontWeight--medium u-lineHeight--normal">
+                    {this.state.savingSpecUriError}
+                  </span>
                 </span>
-              }
+              )}
             </div>
           </div>
         );
@@ -165,7 +235,7 @@ export default class ConfigureRedactorsModal extends Component {
           <div>
             <div className="flex1 u-border--gray">
               <AceEditor
-                ref={(input) => this.refAceEditor = input}
+                ref={(input) => (this.refAceEditor = input)}
                 mode="yaml"
                 theme="chrome"
                 className="flex1 flex"
@@ -186,30 +256,45 @@ export default class ConfigureRedactorsModal extends Component {
               />
             </div>
             <div className="u-marginTop--10 flex alignItems--center">
-              <button className="btn secondary blue u-marginRight--10" onClick={this.props.onClose}>Close</button>
-              <button className="btn primary" onClick={this.saveRedactor} disabled={savingRedactor}>{savingRedactor ? "Saving spec" : "Save spec"}</button>
-              {this.state.specSaved &&
+              <button
+                className="btn secondary blue u-marginRight--10"
+                onClick={this.props.onClose}
+              >
+                Close
+              </button>
+              <button
+                className="btn primary"
+                onClick={this.saveRedactor}
+                disabled={savingRedactor}
+              >
+                {savingRedactor ? "Saving spec" : "Save spec"}
+              </button>
+              {this.state.specSaved && (
                 <span className="u-marginLeft--10 flex alignItems--center">
                   <span className="icon checkmark-icon u-marginRight--5" />
-                  <span className="u-textColor--success u-fontSize--small u-fontWeight--medium u-lineHeight--normal">Spec saved</span>
+                  <span className="u-textColor--success u-fontSize--small u-fontWeight--medium u-lineHeight--normal">
+                    Spec saved
+                  </span>
                 </span>
-              }
-              {this.state.errorSavingSpec &&
+              )}
+              {this.state.errorSavingSpec && (
                 <span className="u-marginLeft--10 flex alignItems--center">
-                  <span className="u-textColor--error u-fontSize--small u-fontWeight--medium u-lineHeight--normal">{this.state.savingSpecError}</span>
+                  <span className="u-textColor--error u-fontSize--small u-fontWeight--medium u-lineHeight--normal">
+                    {this.state.savingSpecError}
+                  </span>
                 </span>
-              }
+              )}
             </div>
           </div>
         );
       default:
         return null;
     }
-  }
+  };
 
   componentDidMount = () => {
     this.getRedactor();
-  }
+  };
 
   render() {
     const { onClose } = this.props;
@@ -221,33 +306,59 @@ export default class ConfigureRedactorsModal extends Component {
         shouldReturnFocusAfterClose={false}
         contentLabel="Configure redactors modal"
         ariaHideApp={false}
-        className={`Modal ${this.state.activeRedactorTab === "linkSpec" ? "SmallSize" : "MediumSize"}`}
+        className={`Modal ${
+          this.state.activeRedactorTab === "linkSpec"
+            ? "SmallSize"
+            : "MediumSize"
+        }`}
       >
         <div className="Modal-body">
-          <p className="u-fontSize--largest u-fontWeight--bold u-lineHeight--default u-textColor--primary u-marginBottom--small">Configure redaction</p>
-          {this.state.errFetchingRedactors ? 
+          <p className="u-fontSize--largest u-fontWeight--bold u-lineHeight--default u-textColor--primary u-marginBottom--small">
+            Configure redaction
+          </p>
+          {this.state.errFetchingRedactors ? (
             <div className="u-marginTop--40 flex justifyContent--center">
-              <span className="u-fontSize--large u-fontWeight--medium u-textColor--error u-lineHeight--normal">Failed to fetch custom redactors</span>
+              <span className="u-fontSize--large u-fontWeight--medium u-textColor--error u-lineHeight--normal">
+                Failed to fetch custom redactors
+              </span>
             </div>
-          :
+          ) : (
             <div className="u-marginTop--40">
               <div className="flex action-tab-bar">
-                <span className={`${this.state.activeRedactorTab === "linkSpec" ? "is-active" : ""} tab-item`} onClick={() => this.toggleRedactorAction("linkSpec")}>Link to a spec</span>
-                <span className={`${this.state.activeRedactorTab === "writeSpec" ? "is-active" : ""} tab-item`} onClick={() => this.toggleRedactorAction("writeSpec")}>Write your own spec</span>
+                <span
+                  className={`${
+                    this.state.activeRedactorTab === "linkSpec"
+                      ? "is-active"
+                      : ""
+                  } tab-item`}
+                  onClick={() => this.toggleRedactorAction("linkSpec")}
+                >
+                  Link to a spec
+                </span>
+                <span
+                  className={`${
+                    this.state.activeRedactorTab === "writeSpec"
+                      ? "is-active"
+                      : ""
+                  } tab-item`}
+                  onClick={() => this.toggleRedactorAction("writeSpec")}
+                >
+                  Write your own spec
+                </span>
               </div>
               <div className="flex-column flex1 action-content old">
-                {this.state.loadingRedactor ?
+                {this.state.loadingRedactor ? (
                   <div className="flex1 flex-column justifyContent--center alignItems--center">
                     <Loader size="60" />
-                  </div> 
-                : 
-                this.renderRedactorTab()
-                }
+                  </div>
+                ) : (
+                  this.renderRedactorTab()
+                )}
               </div>
             </div>
-          }
+          )}
         </div>
       </Modal>
-    )
-  } 
+    );
+  }
 }

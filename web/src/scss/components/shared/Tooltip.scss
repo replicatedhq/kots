@@ -9,7 +9,7 @@
 }
 
 .Tooltip-wrapper .Tooltip-content {
-  background-color: rgba(74,74,74,.9); 
+  background-color: rgba(74, 74, 74, 0.9);
   padding: 4px 6px;
   color: #ffffff;
   font-size: 12px;
@@ -38,7 +38,7 @@
 .Tooltip-wrapper.tooltip-top-center::after {
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid rgba(74,74,74,.9);
+  border-top: 5px solid rgba(74, 74, 74, 0.9);
   left: 50%;
   transform: translateX(-50%);
 }
@@ -53,7 +53,7 @@
 .Tooltip-wrapper.tooltip-top-left::after {
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 5px solid rgba(74,74,74,.9);
+  border-top: 5px solid rgba(74, 74, 74, 0.9);
   right: 12px;
 }
 
@@ -68,7 +68,7 @@
 .Tooltip-wrapper.tooltip-bottom-center::after {
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-bottom: 5px solid rgba(74,74,74,.9);
+  border-bottom: 5px solid rgba(74, 74, 74, 0.9);
   left: 50%;
   top: 3px;
   transform: translateX(-50%);
@@ -84,7 +84,7 @@
 .Tooltip-wrapper.tooltip-bottom-left::after {
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-bottom: 5px solid rgba(74,74,74,.9);
+  border-bottom: 5px solid rgba(74, 74, 74, 0.9);
   right: 12px;
   top: 3px;
 }

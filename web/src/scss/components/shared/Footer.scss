@@ -25,7 +25,7 @@ a.FooterItem {
   padding-right: 0;
 }
 .FooterItem-wrapper:not(:last-child) .FooterItem::after {
-  content: '';
+  content: "";
   display: block;
   position: absolute;
   width: 1px;
@@ -43,6 +43,6 @@ a.FooterItem {
   padding: 4px 6px;
   margin-top: 1px;
   margin-bottom: 1px;
-  background: #E1F0F1;
+  background: #e1f0f1;
   color: #577981;
 }
