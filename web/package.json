@@ -8,7 +8,10 @@
   "license": "Apache-2.0",
   "private": true,
   "scripts": {
-    "test:lint": "eslint ./src",
+    "lint": "eslint ./src",
+    "lint:fix": "eslint ./src --fix",
+    "prettier": "prettier src test --check",
+    "prettier:fix": "prettier src test --write",
     "test": "yarn concurrently -g 'yarn:test:*'",
     "start": "VENDOR_WEB_ENV=dev webpack-dev-server --env dev"
   },
