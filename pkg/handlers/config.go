@@ -143,6 +143,7 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 		JSON(w, http.StatusBadRequest, updateAppConfigResponse)
 		return
 	}
+	fmt.Println("change")
 
 	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
 	if isHelmManaged == "true" {
