@@ -1,4 +1,3 @@
-import _fetch from "isomorphic-fetch";
 import { useState, useEffect } from "react";
 import { Utilities } from "../../utilities/utilities";
 
@@ -38,8 +37,8 @@ function useIsHelmManaged({
       setIsHelmManaged(false);
       setIsHelmManagedLoading(true);
       _fetchIsHelmManaged()
-        .then(({ isHelmManaged }) => {
-          setIsHelmManaged(isHelmManaged);
+        .then(({ isHelmManaged: _isHelmManaged }) => {
+          setIsHelmManaged(_isHelmManaged);
           setIsHelmManagedLoading(false);
         })
     }
