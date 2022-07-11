@@ -55,7 +55,7 @@
     .icon.u-darkDropdownArrow {
       margin-left: 6px;
       top: 6px;
-      transition: transform .1s ease-in-out;
+      transition: transform 0.1s ease-in-out;
     }
     .AppConfigSidenav--items {
       display: none;
@@ -72,7 +72,6 @@
       }
     }
   }
-
 }
 
 .AppConfigSidenav--items {
@@ -85,7 +84,8 @@
   flex: none;
 }
 
-.link, a:visited {
+.link,
+a:visited {
   color: $link-color;
   cursor: pointer;
   font-weight: 500;

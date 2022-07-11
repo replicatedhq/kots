@@ -15,13 +15,9 @@ import AppSnapshotRestore from "@src/components/snapshots/AppSnapshotRestore";
 
 class SnapshotsWrapper extends Component {
   render() {
-    const {
-      match,
-      appsList
-    } = this.props;
+    const { match, appsList } = this.props;
 
-    const snapshotsApps = appsList.filter(app => app.allowSnapshots);
-
+    const snapshotsApps = appsList.filter((app) => app.allowSnapshots);
 
     return (
       <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
@@ -29,65 +25,100 @@ class SnapshotsWrapper extends Component {
           <title> Snapshots </title>
         </Helmet>
         <div className="flex-column flex1 u-width--full u-height--full u-overflow--auto">
-          {!snapshotsApps[0]
-            ? <div className="flex-column flex1 alignItems--center justifyContent--center">
+          {!snapshotsApps[0] ? (
+            <div className="flex-column flex1 alignItems--center justifyContent--center">
               <Loader size="60" />
-            </div> :
-            (
-              <Fragment>
-                <SubNavBar
-                  className="flex"
-                  isSnapshots={true}
-                  activeTab={match.params.tab ? match.params.tab === "details" ? "snapshots" : match.params.tab : "snapshots"}
-                  app={snapshotsApps[0]}
-                />
-                <Switch>
-                  <Route exact path="/snapshots" render={() =>
+            </div>
+          ) : (
+            <Fragment>
+              <SubNavBar
+                className="flex"
+                isSnapshots={true}
+                activeTab={
+                  match.params.tab
+                    ? match.params.tab === "details"
+                      ? "snapshots"
+                      : match.params.tab
+                    : "snapshots"
+                }
+                app={snapshotsApps[0]}
+              />
+              <Switch>
+                <Route
+                  exact
+                  path="/snapshots"
+                  render={() => (
                     <Snapshots
                       isKurlEnabled={this.props.isKurlEnabled}
                       appsList={snapshotsApps}
                     />
-                  } />
-                  <Route exact path="/snapshots/settings" render={(props) =>
+                  )}
+                />
+                <Route
+                  exact
+                  path="/snapshots/settings"
+                  render={(props) => (
                     <SnapshotSettings
                       {...props}
                       isKurlEnabled={this.props.isKurlEnabled}
                       apps={snapshotsApps}
-                    />}
-                  />
-                  <Route exact path="/snapshots/details/:id" render={(props) =>
+                    />
+                  )}
+                />
+                <Route
+                  exact
+                  path="/snapshots/details/:id"
+                  render={(props) => (
                     <SnapshotDetails
                       {...props}
                       isKurlEnabled={this.props.isKurlEnabled}
                       appsList={snapshotsApps}
-                    />}
-                  />
-                  <Route exact path="/snapshots/:slug/:id/restore" render={() =>
-                    <SnapshotRestore />
-                  } />
-                  <Route exact path="/snapshots/partial/:slug" render={(props) =>
+                    />
+                  )}
+                />
+                <Route
+                  exact
+                  path="/snapshots/:slug/:id/restore"
+                  render={() => <SnapshotRestore />}
+                />
+                <Route
+                  exact
+                  path="/snapshots/partial/:slug"
+                  render={(props) => (
                     <AppSnapshots
                       {...props}
                       appsList={snapshotsApps}
                       app={snapshotsApps[0]}
                       appName={snapshotsApps.name}
                     />
-                  } />
-                  <Route exact path="/snapshots/partial/:slug/:id" render={(props) =>
+                  )}
+                />
+                <Route
+                  exact
+                  path="/snapshots/partial/:slug/:id"
+                  render={(props) => (
                     <SnapshotDetails
                       {...props}
                       appsList={snapshotsApps}
                       app={snapshotsApps[0]}
-                      appName={snapshotsApps.name} />
-                  } />
-                  <Route exact path="/snapshots/partial/:slug/:id/restore" render={() =>
-                    <AppSnapshotRestore appsList={snapshotsApps} app={snapshotsApps[0]} />
-                  } />
-                  <Route component={NotFound} />
-                </Switch>
-              </Fragment>
-            )
-          }
+                      appName={snapshotsApps.name}
+                    />
+                  )}
+                />
+                <Route
+                  exact
+                  path="/snapshots/partial/:slug/:id/restore"
+                  render={() => (
+                    <AppSnapshotRestore
+                      appsList={snapshotsApps}
+                      app={snapshotsApps[0]}
+                    />
+                  )}
+                />
+                <Route component={NotFound} />
+              </Switch>
+            </Fragment>
+          )}
         </div>
       </div>
     );

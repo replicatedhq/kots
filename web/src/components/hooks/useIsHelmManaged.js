@@ -5,30 +5,26 @@ async function fetchIsHelmManaged({
   accessToken = Utilities.getToken(),
   apiEndpoint = process.env.API_ENDPOINT,
 } = {}) {
-
   try {
     const res = await fetch(`${apiEndpoint}/isHelmManaged`, {
       headers: {
-        "Authorization": accessToken,
+        Authorization: accessToken,
         "Content-Type": "application/json",
       },
       method: "GET",
     });
-    if (res.ok && res.status == 200) {
+    if (res.ok && res.status === 200) {
       const response = await res.json();
       return { isHelmManaged: response.isHelmManaged };
-    } else {
-      return { isHelmManaged: false };
     }
+    return { isHelmManaged: false };
   } catch (err) {
-    console.log(err)
+    console.log(err);
     return { isHelmManaged: false };
   }
 }
 
-function useIsHelmManaged({
-  _fetchIsHelmManaged = fetchIsHelmManaged,
-} = {}) {
+function useIsHelmManaged({ _fetchIsHelmManaged = fetchIsHelmManaged } = {}) {
   const [isHelmManaged, setIsHelmManaged] = useState(null);
   const [isHelmManagedLoading, setIsHelmManagedLoading] = useState(false);
 
@@ -36,36 +32,26 @@ function useIsHelmManaged({
     if (isHelmManaged === null) {
       setIsHelmManaged(false);
       setIsHelmManagedLoading(true);
-      _fetchIsHelmManaged()
-        .then(({ isHelmManaged: _isHelmManaged }) => {
-          setIsHelmManaged(_isHelmManaged);
-          setIsHelmManagedLoading(false);
-        })
+      _fetchIsHelmManaged().then(({ isHelmManaged: _isHelmManaged }) => {
+        setIsHelmManaged(_isHelmManaged);
+        setIsHelmManagedLoading(false);
+      });
     }
   }, []);
 
   return {
     isHelmManaged,
-    isHelmManagedLoading
-  }
+    isHelmManagedLoading,
+  };
 }
 
-function IsHelmManaged({
-  children,
-}) {
-  const {
-    isHelmManaged,
-    isHelmManagedLoading
-  } = useIsHelmManaged();
+function IsHelmManaged({ children }) {
+  const { isHelmManaged, isHelmManagedLoading } = useIsHelmManaged();
 
   return children({
     isHelmManaged,
-    isHelmManagedLoading
+    isHelmManagedLoading,
   });
 }
 
-export {
-  IsHelmManaged,
-  fetchIsHelmManaged,
-  useIsHelmManaged,
-};
+export { IsHelmManaged, fetchIsHelmManaged, useIsHelmManaged };

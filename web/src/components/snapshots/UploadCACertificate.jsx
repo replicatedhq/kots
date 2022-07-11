@@ -3,14 +3,10 @@ import Dropzone from "react-dropzone";
 import isEmpty from "lodash/isEmpty";
 import { getFileContent } from "../../utilities/utilities";
 
-
-const UploadCACertificate = ({
-  certificate,
-  handleSetCACert
-}) => {
+const UploadCACertificate = ({ certificate, handleSetCACert }) => {
   const handleDrop = async (files) => {
     let binary = "";
-    const bytes = new Uint8Array(await getFileContent(files[0]))
+    const bytes = new Uint8Array(await getFileContent(files[0]));
     const len = bytes.byteLength;
 
     for (let i = 0; i < len; i++) {
@@ -21,36 +17,39 @@ const UploadCACertificate = ({
 
     handleSetCACert({
       name: files[0].name,
-      data: content
+      data: content,
     });
-  }
+  };
 
   const clearFile = () => {
     handleSetCACert({
       name: "",
-      data: []
+      data: [],
     });
-  }
+  };
 
   return (
     <>
       <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
         Upload a CA Certificate
       </p>
-      {!isEmpty(certificate.name) &&
+      {!isEmpty(certificate.name) && (
         <div className="ca-cert-file-wrapper u-marginBottom--30">
           <div className="icon cert-file-icon" />
           <div>
             <p className="u-fontSize--normal u-textColor--primary u-fontWeight--medium">
               {certificate.name}
             </p>
-            <span className="replicated-link u-fontSize--small" onClick={clearFile}>
+            <span
+              className="replicated-link u-fontSize--small"
+              onClick={clearFile}
+            >
               Select a different file
             </span>
           </div>
         </div>
-      }
-      {isEmpty(certificate.name) &&
+      )}
+      {isEmpty(certificate.name) && (
         <Dropzone
           className="Dropzone-wrapper u-marginBottom--30"
           accept={[".pem", ".cer", ".crt", ".ca", ".key"]}
@@ -62,7 +61,10 @@ const UploadCACertificate = ({
             <div>
               <p className="u-fontSize--normal u-textColor--secondary u-lineHeight--normal">
                 Drag your cert here or
-                <span className="u-linkColor u-textDecoration--underlineOnHover" style={{ paddingLeft: "4px" }}>
+                <span
+                  className="u-linkColor u-textDecoration--underlineOnHover"
+                  style={{ paddingLeft: "4px" }}
+                >
                   choose a file
                 </span>
               </p>
@@ -72,9 +74,9 @@ const UploadCACertificate = ({
             </div>
           </div>
         </Dropzone>
-      }
+      )}
     </>
-  )
-}
+  );
+};
 
 export default UploadCACertificate;

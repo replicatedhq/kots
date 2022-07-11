@@ -18,22 +18,16 @@ export default class Tooltip extends React.Component {
   };
 
   render() {
-    const {
-      className,
-      visible,
-      text,
-      content,
-      position,
-      minWidth,
-    } = this.props;
+    const { className, visible, text, content, position, minWidth } =
+      this.props;
 
-    const wrapperClass = `Tooltip-wrapper tooltip-${position} ${className || ""} ${visible ? "is-active" : ""}`;
+    const wrapperClass = `Tooltip-wrapper tooltip-${position} ${
+      className || ""
+    } ${visible ? "is-active" : ""}`;
 
     return (
       <span className={wrapperClass} style={{ minWidth: `${minWidth}px` }}>
-        <span className="Tooltip-content">
-          {content || text}
-        </span>
+        <span className="Tooltip-content">{content || text}</span>
       </span>
     );
   }

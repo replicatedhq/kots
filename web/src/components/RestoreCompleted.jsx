@@ -13,9 +13,16 @@ export default class RestoreCompleted extends React.Component {
                 Application has been restored
               </p>
               <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal">
-                Your application has been restored with no warnings or errors. Log back in to view your application.
+                Your application has been restored with no warnings or errors.
+                Log back in to view your application.
               </p>
-              <Link to="/secure-console" className="btn primary blue u-marginTop--20" > Log in to dashboard </Link>
+              <Link
+                to="/secure-console"
+                className="btn primary blue u-marginTop--20"
+              >
+                {" "}
+                Log in to dashboard{" "}
+              </Link>
             </div>
           </div>
         </div>

@@ -13,13 +13,12 @@ import { Utilities } from "../../utilities/utilities";
 import "../../scss/components/troubleshoot/SupportBundleList.scss";
 
 class SupportBundleList extends React.Component {
-
   state = {
     supportBundles: [],
     loading: false,
     errorMsg: "",
     displayRedactorModal: false,
-    displayErrorModal: false
+    displayErrorModal: false,
   };
 
   componentDidMount() {
@@ -29,49 +28,54 @@ class SupportBundleList extends React.Component {
   listSupportBundles = () => {
     this.setState({ loading: true, errorMsg: "", displayErrorModal: false });
 
-    fetch(`${process.env.API_ENDPOINT}/troubleshoot/app/${this.props.watch?.slug}/supportbundles`, {
-      headers: {
-        "Authorization": Utilities.getToken(),
-        "Content-Type": "application/json",
-      },
-      method: "GET",
-    })
+    fetch(
+      `${process.env.API_ENDPOINT}/troubleshoot/app/${this.props.watch?.slug}/supportbundles`,
+      {
+        headers: {
+          Authorization: Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "GET",
+      }
+    )
       .then(async (res) => {
         if (!res.ok) {
           this.setState({
             loading: false,
             errorMsg: `Unexpected status code: ${res.status}`,
-            displayErrorModal: true
+            displayErrorModal: true,
           });
-          return
+          return;
         }
         const response = await res.json();
         this.setState({
           supportBundles: response.supportBundles,
           loading: false,
           errorMsg: "",
-          displayErrorModal: false
+          displayErrorModal: false,
         });
       })
       .catch((err) => {
         console.log(err);
         this.setState({
           loading: false,
-          errorMsg: err ? err.message : "Something went wrong, please try again.",
-          displayErrorModal: true
+          errorMsg: err
+            ? err.message
+            : "Something went wrong, please try again.",
+          displayErrorModal: true,
         });
       });
-  }
+  };
 
   toggleErrorModal = () => {
     this.setState({ displayErrorModal: !this.state.displayErrorModal });
-  }
+  };
 
   toggleRedactorModal = () => {
     this.setState({
-      displayRedactorModal: !this.state.displayRedactorModal
-    })
-  }
+      displayRedactorModal: !this.state.displayRedactorModal,
+    });
+  };
 
   render() {
     const { watch } = this.props;
@@ -91,24 +95,22 @@ class SupportBundleList extends React.Component {
     let bundlesNode;
     if (downstream) {
       if (supportBundles?.length) {
-        bundlesNode = (
-          supportBundles.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).map(bundle => (
+        bundlesNode = supportBundles
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+          .map((bundle) => (
             <SupportBundleRow
               key={bundle.id}
               bundle={bundle}
               watchSlug={watch.slug}
               isAirgap={watch.isAirgap}
-              isSupportBundleUploadSupported={watch.isSupportBundleUploadSupported}
+              isSupportBundleUploadSupported={
+                watch.isSupportBundleUploadSupported
+              }
               refetchBundleList={this.listSupportBundles}
             />
-          ))
-        );
+          ));
       } else {
-        return (
-          <GenerateSupportBundle
-            watch={watch}
-          />
-        );
+        return <GenerateSupportBundle watch={watch} />;
       }
     }
 
@@ -123,14 +125,20 @@ class SupportBundleList extends React.Component {
               items={[
                 {
                   title: "Support bundles",
-                  onClick: () => this.props.history.push(`/app/${this.props.watch.slug}/troubleshoot`),
-                  isActive: true
+                  onClick: () =>
+                    this.props.history.push(
+                      `/app/${this.props.watch.slug}/troubleshoot`
+                    ),
+                  isActive: true,
                 },
                 {
                   title: "Redactors",
-                  onClick: () => this.props.history.push(`/app/${this.props.watch.slug}/troubleshoot/redactors`),
-                  isActive: false
-                }
+                  onClick: () =>
+                    this.props.history.push(
+                      `/app/${this.props.watch.slug}/troubleshoot/redactors`
+                    ),
+                  isActive: false,
+                },
               ]}
             />
           </div>
@@ -141,26 +149,43 @@ class SupportBundleList extends React.Component {
                   <div className="flex1 u-flexTabletReflow">
                     <div className="flex flex1">
                       <div className="flex-auto alignSelf--center">
-                        <h2 className="u-fontSize--larger u-fontWeight--bold u-textColor--primary flex alignContent--center">Support bundles</h2>
+                        <h2 className="u-fontSize--larger u-fontWeight--bold u-textColor--primary flex alignContent--center">
+                          Support bundles
+                        </h2>
                       </div>
                     </div>
                     <div className="RightNode flex-auto flex alignItems--center u-position--relative">
-                      <Link to={`${this.props.match.url}/generate`} className="btn secondary">Generate a support bundle</Link>
-                      <span className="replicated-link flex alignItems--center u-fontSize--small u-marginLeft--20" onClick={this.toggleRedactorModal}><span className="icon clickable redactor-spec-icon u-marginRight--5" /> Configure redaction</span>
+                      <Link
+                        to={`${this.props.match.url}/generate`}
+                        className="btn secondary"
+                      >
+                        Generate a support bundle
+                      </Link>
+                      <span
+                        className="replicated-link flex alignItems--center u-fontSize--small u-marginLeft--20"
+                        onClick={this.toggleRedactorModal}
+                      >
+                        <span className="icon clickable redactor-spec-icon u-marginRight--5" />{" "}
+                        Configure redaction
+                      </span>
                     </div>
                   </div>
                 </div>
               </div>
-              <div className={`${watch.downstream ? "flex1 flex-column u-overflow--auto" : ""}`}>
+              <div
+                className={`${
+                  watch.downstream ? "flex1 flex-column u-overflow--auto" : ""
+                }`}
+              >
                 {bundlesNode}
               </div>
             </div>
           </div>
         </div>
-        {this.state.displayRedactorModal &&
+        {this.state.displayRedactorModal && (
           <ConfigureRedactorsModal onClose={this.toggleRedactorModal} />
-        }
-        {errorMsg &&
+        )}
+        {errorMsg && (
           <ErrorModal
             errorModal={this.state.displayErrorModal}
             toggleErrorModal={this.toggleErrorModal}
@@ -169,7 +194,8 @@ class SupportBundleList extends React.Component {
             err="Failed to get bundles"
             loading={this.state.loading}
             appSlug={this.props.match.params.slug}
-          />}
+          />
+        )}
       </div>
     );
   }

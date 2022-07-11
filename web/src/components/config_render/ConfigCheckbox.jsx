@@ -2,17 +2,15 @@ import React from "react";
 import Markdown from "react-remarkable";
 
 export default class ConfigCheckbox extends React.Component {
-
   handleOnChange = (e) => {
     const { handleOnChange, name } = this.props;
     var val = e.target.checked ? "1" : "0";
     if (this.props.handleOnChange && typeof handleOnChange === "function") {
       this.props.handleOnChange(name, val);
     }
-  }
+  };
 
   render() {
-
     let val = this.props.value;
     if (!val || val.length === 0) {
       val = this.props.default;
@@ -22,11 +20,19 @@ export default class ConfigCheckbox extends React.Component {
     var hidden = this.props.hidden || this.props.when === "false";
 
     return (
-      <div id={`${this.props.name}-group`} className={`field field-checkbox-wrapper u-marginTop--15 flex-column ${hidden ? "hidden" : ""}`}>
-        <span className="u-marginTop--10 config-errblock" id={`${this.props.name}-errblock`}></span>
+      <div
+        id={`${this.props.name}-group`}
+        className={`field field-checkbox-wrapper u-marginTop--15 flex-column ${
+          hidden ? "hidden" : ""
+        }`}
+      >
+        <span
+          className="u-marginTop--10 config-errblock"
+          id={`${this.props.name}-errblock`}
+        ></span>
         <div className="flex1 flex u-marginRight--20">
           <input
-            ref={(checkbox) => this.checkbox = checkbox}
+            ref={(checkbox) => (this.checkbox = checkbox)}
             type="checkbox"
             name={this.props.name}
             id={this.props.name}
@@ -35,27 +41,36 @@ export default class ConfigCheckbox extends React.Component {
             readOnly={this.props.readonly}
             disabled={this.props.readonly}
             onChange={(e) => this.handleOnChange(e)}
-            className={`${this.props.className || ""} flex-auto ${this.props.readonly ? "readonly" : ""}`} />
+            className={`${this.props.className || ""} flex-auto ${
+              this.props.readonly ? "readonly" : ""
+            }`}
+          />
           <div>
-            <label htmlFor={this.props.name} className={`u-marginLeft--5 header-color field-section-sub-header u-userSelect--none ${this.props.readonly ? "u-cursor--default" : "u-cursor--pointer"}`}>
-              {this.props.title} {
-                this.props.required ?
-                  <span className="field-label required">Required</span> :
-                  this.props.recommended ?
-                    <span className="field-label recommended">Recommended</span> :
-                    null}
+            <label
+              htmlFor={this.props.name}
+              className={`u-marginLeft--5 header-color field-section-sub-header u-userSelect--none ${
+                this.props.readonly ? "u-cursor--default" : "u-cursor--pointer"
+              }`}
+            >
+              {this.props.title}{" "}
+              {this.props.required ? (
+                <span className="field-label required">Required</span>
+              ) : this.props.recommended ? (
+                <span className="field-label recommended">Recommended</span>
+              ) : null}
             </label>
-            {this.props.help_text !== "" ? 
+            {this.props.help_text !== "" ? (
               <div className="field-section-help-text u-marginTop--5 u-marginLeft--5">
                 <Markdown
                   options={{
                     linkTarget: "_blank",
                     linkify: true,
-                  }}>
+                  }}
+                >
                   {this.props.help_text}
                 </Markdown>
               </div>
-            : null}
+            ) : null}
           </div>
         </div>
       </div>

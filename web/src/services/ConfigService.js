@@ -1,12 +1,14 @@
 // @TODO: Refactor this so its not using so much lodash
 // the "without" module throws if we import every lodash util piecemeal
+// TODO: fix linting issues
+/* eslint-disable */
 import _, { get, isEmpty, some, has } from "lodash";
 
 export const ConfigService = {
   getItems(groups) {
     return _(groups)
-      .map((group) => {
-        return _(get(group, "items", []))
+      .map((group) =>
+        _(get(group, "items", []))
           .map((item) => {
             if (!isEmpty(item)) {
               if (item.type === "select_many") {
@@ -21,8 +23,8 @@ export const ConfigService = {
               return item;
             }
           })
-          .value();
-      })
+          .value()
+      )
       .flattenDeep()
       .without(null)
       .value();
@@ -83,16 +85,17 @@ export const ConfigService = {
       const expanded = ConfigService.expandWhen(when);
       if (has(filters, expanded.key)) {
         const values = expanded.value.split(",");
-        return !(expanded.negate !== some(values, (value) => {
-          return filters[expanded.key] === value;
-        }));
+        return !(
+          expanded.negate !==
+          some(values, (value) => filters[expanded.key] === value)
+        );
       }
       return false;
     });
   },
 
   expandWhen(when) {
-    let expanded = {
+    const expanded = {
       key: "",
       value: "",
       negate: false,
@@ -114,7 +117,11 @@ export const ConfigService = {
   },
 
   isVisible(groups, obj) {
-    return !obj.hidden && obj.when !== "false" && ConfigService.isEnabled(groups, obj);
+    return (
+      !obj.hidden &&
+      obj.when !== "false" &&
+      ConfigService.isEnabled(groups, obj)
+    );
   },
 
   isEnabled(groups, obj) {

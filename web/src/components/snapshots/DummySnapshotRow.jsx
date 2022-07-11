@@ -26,6 +26,5 @@ export default function DummySnapshotRow() {
         <div className="EmptyCircle"></div>
       </div>
     </div>
-  )
+  );
 }
-

@@ -8,46 +8,44 @@ export default class TabView extends Component {
   constructor(props) {
     super(props);
     const { children, initialTab } = props;
-    const tabToDisplay = initialTab || children[0].props.name
+    const tabToDisplay = initialTab || children[0].props.name;
 
     this.state = {
-      currentTab: tabToDisplay
+      currentTab: tabToDisplay,
     };
   }
 
   static propTypes = {
     children: PropTypes.oneOfType([
       PropTypes.element,
-      PropTypes.arrayOf(PropTypes.element)
+      PropTypes.arrayOf(PropTypes.element),
     ]),
-    separator: PropTypes.oneOfType([
-      PropTypes.string,
-      PropTypes.element
-    ]),
-    onTabChange: PropTypes.func
-  }
+    separator: PropTypes.oneOfType([PropTypes.string, PropTypes.element]),
+    onTabChange: PropTypes.func,
+  };
 
   static defaultProps = {
     separator: "|",
-    onTabChange: () => { }
-  }
+    onTabChange: () => {},
+  };
 
-  setTab = name => {
+  setTab = (name) => {
     const { onTabChange } = this.props;
 
-    this.setState({
-      currentTab: name
-    }, () => onTabChange(name));
-  }
+    this.setState(
+      {
+        currentTab: name,
+      },
+      () => onTabChange(name)
+    );
+  };
 
   render() {
-    const {
-      className,
-      children,
-      separator
-    } = this.props;
+    const { className, children, separator } = this.props;
     const { currentTab } = this.state;
-    const childToRender = React.Children.toArray(children).find(child => child.props.name === currentTab);
+    const childToRender = React.Children.toArray(children).find(
+      (child) => child.props.name === currentTab
+    );
     return (
       <div className={classNames("tabview", className)}>
         <div className="tabview-tabwrapper">
@@ -55,9 +53,17 @@ export default class TabView extends Component {
             const { displayText, name } = child.props;
             return (
               <Fragment key={name}>
-                <span className={classNames("tabview-tabname u-cursor--pointer u-fontSize--small", {
-                  selected: name === currentTab
-                })} onClick={() => { this.setTab(name); }}>
+                <span
+                  className={classNames(
+                    "tabview-tabname u-cursor--pointer u-fontSize--small",
+                    {
+                      selected: name === currentTab,
+                    }
+                  )}
+                  onClick={() => {
+                    this.setTab(name);
+                  }}
+                >
                   {displayText}
                 </span>
                 {idx + 1 !== children.length && separator}

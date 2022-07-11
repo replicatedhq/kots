@@ -7,23 +7,21 @@ const getValues = async ({
   apiEndpoint = process.env.API_ENDPOINT,
   appSlug,
 }) => {
-
   try {
     const response = await _fetch(`${apiEndpoint}/app/${appSlug}/values`, {
       method: "GET",
       headers: {
-        "Authorization": _token,
+        Authorization: _token,
         "Content-Type": "application/json",
-      }
+      },
     });
 
     const data = await response.blob();
     return { data };
-
   } catch (error) {
     return { error };
   }
-}
+};
 
 const useDownloadValues = ({
   _createObjectURL = URL.createObjectURL,
@@ -45,17 +43,16 @@ const useDownloadValues = ({
       const { data } = await _getValues({
         appSlug,
       });
-      const url = _createObjectURL(new Blob([data]));
-      setUrl(url)
+      const newUrl = _createObjectURL(new Blob([data]));
+      setUrl(newUrl);
       setName(fileName);
       ref.current?.click();
 
       setIsDownloading(false);
-      _revokeObjectURL(url)
-
-    } catch (error) {
+      _revokeObjectURL(newUrl);
+    } catch (downloadError) {
       setIsDownloading(false);
-      setError(error);
+      setError(downloadError);
     }
   };
 
@@ -67,7 +64,6 @@ const useDownloadValues = ({
     ref,
     url,
   };
-}
+};
 
 export { useDownloadValues };
-

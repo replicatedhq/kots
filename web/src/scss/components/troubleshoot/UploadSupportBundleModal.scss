@@ -14,13 +14,11 @@
       padding: 12px;
 
       &.has-error {
-       border: 1px solid $error-color;
-       background-color: lighten($error-color, 43.5%);
-       color: $error-color;
+        border: 1px solid $error-color;
+        background-color: lighten($error-color, 43.5%);
+        color: $error-color;
       }
     }
-
-
   }
 
   .console-code {
@@ -52,7 +50,7 @@
   .UploadBundleSelect--wrapper {
     max-height: 2000px;
     .UploadBundleSelect-menu {
-    max-height: 1000px;
+      max-height: 1000px;
     }
   }
 
@@ -89,6 +87,6 @@
   max-width: 350px;
   padding: 8px;
   border: 1px solid $border-color;
-  background: #EFEFEF;
+  background: #efefef;
   border-radius: 4px;
 }

@@ -25,7 +25,6 @@ class Access extends Component {
     //   match,
     // } = this.props;
 
-
     return (
       <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
         <Helmet>
@@ -49,7 +48,10 @@ class Access extends Component {
               <Route component={NotFound} />
             </Switch>
           </Fragment> */}
-          <IdentityProviders isKurlEnabled={this.props.isKurlEnabled} isGeoaxisSupported={this.props.isGeoaxisSupported} />
+          <IdentityProviders
+            isKurlEnabled={this.props.isKurlEnabled}
+            isGeoaxisSupported={this.props.isGeoaxisSupported}
+          />
         </div>
       </div>
     );

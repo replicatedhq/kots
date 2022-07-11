@@ -17,13 +17,13 @@
   cursor: pointer;
 }
 .ReleaseRow-wrapper .overlay.disabled {
-  background: rgba(128,128,134,.05);
-  border: solid 1px rgba(128,128,134,.05);
+  background: rgba(128, 128, 134, 0.05);
+  border: solid 1px rgba(128, 128, 134, 0.05);
   pointer-events: none;
 }
 .ReleaseRow-wrapper .overlay.selected {
-  background: rgba(51, 122, 183, .1);
-  border: solid 1px #337AB7;
+  background: rgba(51, 122, 183, 0.1);
+  border: solid 1px #337ab7;
 }
 .ReleaseRow-wrapper .overlay.hidden {
   display: none;
@@ -41,18 +41,17 @@
   align-self: center;
   width: 16px;
   height: 16px;
-  border: solid 1px #337AB7;
+  border: solid 1px #337ab7;
   border-radius: 3px;
 }
 .ReleaseRow-wrapper .checkbox.checked {
-  background-color: #337AB7;
+  background-color: #337ab7;
   background-image: url("../../../images/main_spritesheet.svg");
   background-position: 1px -431px;
 }
 .ReleaseRow-wrapper .checkbox.disabled {
-  border: solid 1px #C4C7CA;
+  border: solid 1px #c4c7ca;
 }
-
 
 /* ≥ 768px */
 @media screen and (min-width: 48em) {

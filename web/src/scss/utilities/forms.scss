@@ -32,7 +32,7 @@
   label {
     padding: 12px 12px 12px 10px;
   }
-  
+
   &.is-active {
     border-color: $accent-color;
     background-color: lighten($accent-color, 43.5%);
@@ -42,7 +42,7 @@
   }
 
   &.is-disabled {
-    opacity: .5;
+    opacity: 0.5;
     cursor: not-allowed;
     &:hover {
       border-color: $border-color;
@@ -62,7 +62,6 @@
 }
 
 .replicated-select-container {
-
   .replicated-select__placeholder,
   .replicated-select__single-value {
     font-size: 12px;
@@ -75,7 +74,7 @@
   }
 
   .replicated-select__dropdown-indicator {
-    transition: all .2s;
+    transition: all 0.2s;
   }
 
   .replicated-select__control {
@@ -126,19 +125,19 @@
       position: relative;
       background-color: $primary-color;
       color: #ffffff;
-  
+
       &:not(:disabled):hover {
         background-color: darken($primary-color, 8%);
       }
     }
 
     .replicated-select__control {
-      border-color:$primary-color;
+      border-color: $primary-color;
       cursor: pointer;
       &.replicated-select__control--is-focused {
         border-color: darken($primary-color, 8%);
         box-shadow: none;
-  
+
         .replicated-select__dropdown-indicator {
           transform: rotate(180deg);
         }
@@ -151,13 +150,13 @@
       position: relative;
       background-color: $primary-color;
       color: #ffffff;
-  
+
       &:not(:disabled):hover {
         background-color: darken($primary-color, 8%);
       }
     }
     .css-dvua67-singleValue {
-      top: 40%
+      top: 40%;
     }
     .css-bgvzuu-indicatorSeparator {
       margin-bottom: 2px;
@@ -168,7 +167,7 @@
       background-color: $primary-color;
       color: #ffffff;
       border-radius: 4px;
-  
+
       &:not(:disabled):hover {
         background-color: darken($primary-color, 8%);
       }

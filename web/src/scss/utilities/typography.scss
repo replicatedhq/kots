@@ -7,31 +7,67 @@
 
 /* Font sizes */
 
-.u-fontSize--smaller   { font-size: 10px; }
-.u-fontSize--small   { font-size: 12px; }
-.u-fontSize--normal  { font-size: 14px; }
-.u-fontSize--large   { font-size: 16px; }
-.u-fontSize--larger  { font-size: 18px; }
-.u-fontSize--largest { font-size: 20px; }
-.u-fontSize--jumbo { font-size: 24px; }
-.u-fontSize--jumbo2 { font-size: 22px; }
-.u-fontSize--header  { font-size: 32px; }
-.u-fontSize--header2 { font-size: 26px; }
-.u-fontSize--30  { font-size: 30px; }
-.u-fontSize--34  { font-size: 34px; }
+.u-fontSize--smaller {
+  font-size: 10px;
+}
+.u-fontSize--small {
+  font-size: 12px;
+}
+.u-fontSize--normal {
+  font-size: 14px;
+}
+.u-fontSize--large {
+  font-size: 16px;
+}
+.u-fontSize--larger {
+  font-size: 18px;
+}
+.u-fontSize--largest {
+  font-size: 20px;
+}
+.u-fontSize--jumbo {
+  font-size: 24px;
+}
+.u-fontSize--jumbo2 {
+  font-size: 22px;
+}
+.u-fontSize--header {
+  font-size: 32px;
+}
+.u-fontSize--header2 {
+  font-size: 26px;
+}
+.u-fontSize--30 {
+  font-size: 30px;
+}
+.u-fontSize--34 {
+  font-size: 34px;
+}
 
 /* Line height */
 
-.u-lineHeight--default { line-height: 1; }
-.u-lineHeight--medium { line-height: 1.4; }
+.u-lineHeight--default {
+  line-height: 1;
+}
+.u-lineHeight--medium {
+  line-height: 1.4;
+}
 .u-lineHeight--normal,
-.u-lineHeight--more { line-height: 1.7; }
+.u-lineHeight--more {
+  line-height: 1.7;
+}
 
 /* Font decoration */
 
-.u-textTransform--uppercase { text-transform: uppercase; }
-.u-textTransform--capitalize { text-transform: capitalize; }
-.u-textDecoration--underline { text-decoration: underline; }
+.u-textTransform--uppercase {
+  text-transform: uppercase;
+}
+.u-textTransform--capitalize {
+  text-transform: capitalize;
+}
+.u-textDecoration--underline {
+  text-decoration: underline;
+}
 .u-textDecoration--underlineOnHover:hover,
 .u-textDecoration--underlineOnHover:focus {
   cursor: pointer;
@@ -40,17 +76,31 @@
 
 /* Alignment classes */
 
-.u-textAlign--center { text-align: center; }
-.u-textAlign--left { text-align: left; }
-.u-textAlign--right { text-align: right; }
+.u-textAlign--center {
+  text-align: center;
+}
+.u-textAlign--left {
+  text-align: left;
+}
+.u-textAlign--right {
+  text-align: right;
+}
 
 /* Font weight classes */
 
-.u-fontWeight--normal { font-weight: 400; }
-.u-fontWeight--medium { font-weight: 500; }
-.u-fontWeight--bold { font-weight: 700; }
+.u-fontWeight--normal {
+  font-weight: 400;
+}
+.u-fontWeight--medium {
+  font-weight: 500;
+}
+.u-fontWeight--bold {
+  font-weight: 700;
+}
 
-.u-fontFamily--monospace { font-family: monospace; }
+.u-fontFamily--monospace {
+  font-family: monospace;
+}
 
 .uppercase-title {
   font-size: 12px;
@@ -61,4 +111,6 @@
   margin-bottom: 12px;
 }
 
-.u-wordBreak--all { word-break: break-all };
+.u-wordBreak--all {
+  word-break: break-all;
+}

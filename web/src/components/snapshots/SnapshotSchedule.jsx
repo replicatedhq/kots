@@ -1,7 +1,12 @@
 import React, { Component } from "react";
 import Select from "react-select";
-import { withRouter } from "react-router-dom"
-import { Utilities, getCronFrequency, getCronInterval, getReadableCronDescriptor } from "../../utilities/utilities";
+import { withRouter } from "react-router-dom";
+import {
+  Utilities,
+  getCronFrequency,
+  getCronInterval,
+  getReadableCronDescriptor,
+} from "../../utilities/utilities";
 import ErrorModal from "../modals/ErrorModal";
 import Loader from "../shared/Loader";
 import find from "lodash/find";
@@ -26,7 +31,7 @@ const SCHEDULES = [
   {
     value: "custom",
     label: "Custom",
-  }
+  },
 ];
 
 const RETENTION_UNITS = [
@@ -45,12 +50,12 @@ const RETENTION_UNITS = [
   {
     value: "years",
     label: "Years",
-  }
+  },
 ];
 
 class SnapshotSchedule extends Component {
   constructor(props) {
-    super()
+    super();
     this.state = {
       retentionInput: "",
       autoEnabled: false,
@@ -64,29 +69,41 @@ class SnapshotSchedule extends Component {
       snapshotConfig: {},
       updateScheduleErrMsg: "",
       selectedApp: {},
-      activeTab: !isEmpty(props.location.search) ? "partial" : "full"
+      activeTab: !isEmpty(props.location.search) ? "partial" : "full",
     };
   }
 
   setFields = () => {
     const { snapshotConfig } = this.state;
     if (snapshotConfig) {
-      this.setState({
-        autoEnabled: snapshotConfig.autoEnabled,
-        retentionInput: snapshotConfig.ttl.inputValue,
-        selectedRetentionUnit: find(RETENTION_UNITS, ["value", snapshotConfig.ttl.inputTimeUnit]),
-        selectedSchedule: find(SCHEDULES, ["value", getCronInterval(snapshotConfig.autoSchedule.schedule)]),
-        frequency: snapshotConfig.autoSchedule.schedule,
-      }, () => this.getReadableCronExpression());
+      this.setState(
+        {
+          autoEnabled: snapshotConfig.autoEnabled,
+          retentionInput: snapshotConfig.ttl.inputValue,
+          selectedRetentionUnit: find(RETENTION_UNITS, [
+            "value",
+            snapshotConfig.ttl.inputTimeUnit,
+          ]),
+          selectedSchedule: find(SCHEDULES, [
+            "value",
+            getCronInterval(snapshotConfig.autoSchedule.schedule),
+          ]),
+          frequency: snapshotConfig.autoSchedule.schedule,
+        },
+        () => this.getReadableCronExpression()
+      );
     } else {
-      this.setState({
-        retentionInput: "4",
-        selectedRetentionUnit: find(RETENTION_UNITS, ["value", "weeks"]),
-        selectedSchedule: find(SCHEDULES, ["value", "weekly"]),
-        frequency: "0 0 * * MON",
-      }, () => this.getReadableCronExpression())
+      this.setState(
+        {
+          retentionInput: "4",
+          selectedRetentionUnit: find(RETENTION_UNITS, ["value", "weeks"]),
+          selectedSchedule: find(SCHEDULES, ["value", "weekly"]),
+          frequency: "0 0 * * MON",
+        },
+        () => this.getReadableCronExpression()
+      );
     }
-  }
+  };
 
   handleFormChange = (field, e) => {
     let nextState = {};
@@ -96,7 +113,7 @@ class SnapshotSchedule extends Component {
       nextState[field] = e.target.value;
     }
     this.setState(nextState);
-  }
+  };
 
   getReadableCronExpression = () => {
     const { frequency } = this.state;
@@ -110,55 +127,78 @@ class SnapshotSchedule extends Component {
     } catch {
       this.setState({ hasValidCron: false });
     }
-  }
+  };
 
   handleScheduleChange = (selectedSchedule) => {
-    this.setState({
-      selectedSchedule: selectedSchedule,
-      frequency: selectedSchedule.value === "custom" ? this.state.frequency : getCronFrequency(selectedSchedule.value),
-    }, () => {
-      this.getReadableCronExpression();
-    });
-  }
+    this.setState(
+      {
+        selectedSchedule: selectedSchedule,
+        frequency:
+          selectedSchedule.value === "custom"
+            ? this.state.frequency
+            : getCronFrequency(selectedSchedule.value),
+      },
+      () => {
+        this.getReadableCronExpression();
+      }
+    );
+  };
 
   handleCronChange = (e) => {
     const schedule = find(SCHEDULES, { value: e.target.value });
-    const selectedSchedule = schedule ? schedule : find(SCHEDULES, { value: "custom" });
+    const selectedSchedule = schedule
+      ? schedule
+      : find(SCHEDULES, { value: "custom" });
     this.setState({ frequency: e.target.value, selectedSchedule }, () => {
       this.getReadableCronExpression();
     });
-  }
+  };
 
   handleRetentionUnitChange = (retentionUnit) => {
     this.setState({ selectedRetentionUnit: retentionUnit });
-  }
+  };
 
   getSnapshotConfig = async (currentApp) => {
-    this.setState({ loadingConfig: true, gettingConfigErrMsg: "", displayErrorModal: false });
-    const url = currentApp ? `${process.env.API_ENDPOINT}/app/${currentApp.slug}/snapshot/config` : `${process.env.API_ENDPOINT}/snapshot/config`;
+    this.setState({
+      loadingConfig: true,
+      gettingConfigErrMsg: "",
+      displayErrorModal: false,
+    });
+    const url = currentApp
+      ? `${process.env.API_ENDPOINT}/app/${currentApp.slug}/snapshot/config`
+      : `${process.env.API_ENDPOINT}/snapshot/config`;
     try {
       const res = await fetch(url, {
         method: "GET",
         headers: {
-          "Authorization": Utilities.getToken(),
+          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
-        }
+        },
       });
       if (!res.ok) {
-        this.setState({ loadingConfig: false, gettingConfigErrMsg: `Unable to get snapshot config: Unexpected status code: ${res.status}`, displayErrorModal: true });
+        this.setState({
+          loadingConfig: false,
+          gettingConfigErrMsg: `Unable to get snapshot config: Unexpected status code: ${res.status}`,
+          displayErrorModal: true,
+        });
         return;
       }
       const body = await res.json();
       this.setState({
         snapshotConfig: body,
-        loadingConfig: false
+        loadingConfig: false,
       });
-
     } catch (err) {
       console.log(err);
-      this.setState({ loadingConfig: false, gettingConfigErrMsg: err ? err.message : "Something went wrong, please try again.", displayErrorModal: true });
+      this.setState({
+        loadingConfig: false,
+        gettingConfigErrMsg: err
+          ? err.message
+          : "Something went wrong, please try again.",
+        displayErrorModal: true,
+      });
     }
-  }
+  };
 
   checkIsAppConfig = () => {
     if (!isEmpty(this.props.location.search)) {
@@ -166,26 +206,31 @@ class SnapshotSchedule extends Component {
     } else {
       return false;
     }
-  }
+  };
 
   settingSnapshotConfig = (currentApp) => {
     this.getSnapshotConfig(currentApp);
     this.getReadableCronExpression();
-  }
+  };
 
   componentDidMount = () => {
     if (!isEmpty(this.props.apps) && this.props.location.search) {
-      const currentApp = this.props.apps.find(app => app.slug === this.props.location.search.slice(1));
+      const currentApp = this.props.apps.find(
+        (app) => app.slug === this.props.location.search.slice(1)
+      );
       this.setState({ selectedApp: currentApp }, () => {
         this.settingSnapshotConfig(currentApp);
-      })
+      });
     } else {
       this.settingSnapshotConfig();
     }
-  }
+  };
 
   componentDidUpdate = (lastProps, lastState) => {
-    if (this.state.snapshotConfig && this.state.snapshotConfig !== lastState.snapshotConfig) {
+    if (
+      this.state.snapshotConfig &&
+      this.state.snapshotConfig !== lastState.snapshotConfig
+    ) {
       this.setFields();
     }
 
@@ -195,7 +240,9 @@ class SnapshotSchedule extends Component {
         this.props.history.replace("/snapshots/settings");
       } else {
         if (!isEmpty(this.props.apps) && this.props.location.search) {
-          const currentApp = this.props.apps.find(app => app.slug === this.props.location.search.slice(1));
+          const currentApp = this.props.apps.find(
+            (app) => app.slug === this.props.location.search.slice(1)
+          );
           this.setState({ selectedApp: currentApp }, () => {
             this.settingSnapshotConfig(currentApp);
           });
@@ -204,16 +251,23 @@ class SnapshotSchedule extends Component {
           this.setState({ selectedApp: this.props.apps[0] }, () => {
             this.settingSnapshotConfig(this.props.apps[0]);
           });
-          this.props.history.replace(`/snapshots/settings?${this.props.apps[0].slug}`);
+          this.props.history.replace(
+            `/snapshots/settings?${this.props.apps[0].slug}`
+          );
         }
       }
     }
 
-    if (this.state.selectedApp !== lastState.selectedApp && this.state.selectedApp) {
+    if (
+      this.state.selectedApp !== lastState.selectedApp &&
+      this.state.selectedApp
+    ) {
       this.settingSnapshotConfig(this.state.selectedApp);
-      this.props.history.replace(`/snapshots/settings?${this.state.selectedApp.slug}`);
+      this.props.history.replace(
+        `/snapshots/settings?${this.state.selectedApp.slug}`
+      );
     }
-  }
+  };
 
   saveSnapshotConfig = () => {
     const isAppConfig = this.checkIsAppConfig();
@@ -229,7 +283,7 @@ class SnapshotSchedule extends Component {
         schedule: this.state.frequency,
         autoEnabled: this.state.autoEnabled,
       };
-      url = `${process.env.API_ENDPOINT}/app/${this.state.selectedApp.slug}/snapshot/config`
+      url = `${process.env.API_ENDPOINT}/app/${this.state.selectedApp.slug}/snapshot/config`;
     } else {
       body = {
         inputValue: this.state.retentionInput,
@@ -241,9 +295,9 @@ class SnapshotSchedule extends Component {
     }
     fetch(url, {
       headers: {
-        "Authorization": Utilities.getToken(),
+        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
-        "Accept": "application/json",
+        Accept: "application/json",
       },
       method: "PUT",
       body: JSON.stringify(body),
@@ -255,7 +309,10 @@ class SnapshotSchedule extends Component {
             this.setState({
               updatingSchedule: false,
             });
-            this.props.openConfigureSnapshotsMinimalRBACModal(result.kotsadmRequiresVeleroAccess, result.kotsadmNamespace);
+            this.props.openConfigureSnapshotsMinimalRBACModal(
+              result.kotsadmRequiresVeleroAccess,
+              result.kotsadmNamespace
+            );
             return;
           }
         }
@@ -267,19 +324,24 @@ class SnapshotSchedule extends Component {
             return;
           }
           this.setState({
-            updateScheduleErrMsg: data.error || "Failed to save snapshot config",
+            updateScheduleErrMsg:
+              data.error || "Failed to save snapshot config",
             messageType: "error",
             updatingSchedule: false,
-          })
-          return
+          });
+          return;
         }
-        this.setState({ updatingSchedule: false, updateConfirm: true, updateScheduleErrMsg: " " });
+        this.setState({
+          updatingSchedule: false,
+          updateConfirm: true,
+          updateScheduleErrMsg: " ",
+        });
 
         if (this.confirmTimeout) {
-          clearTimeout(this.confirmTimeout)
+          clearTimeout(this.confirmTimeout);
         }
         this.confirmTimeout = setTimeout(() => {
-          this.setState({ updateConfirm: false })
+          this.setState({ updateConfirm: false });
         }, 5000);
       })
       .catch((err) => {
@@ -289,35 +351,48 @@ class SnapshotSchedule extends Component {
           messageType: "error",
           updatingSchedule: false,
         });
-      })
-  }
+      });
+  };
 
   toggleErrorModal = () => {
     this.setState({ displayErrorModal: !this.state.displayErrorModal });
-  }
+  };
 
   toggleScheduleAction = (active) => {
     this.setState({
       activeTab: active,
     });
-  }
+  };
 
   onAppChange = (selectedApp) => {
     this.setState({ selectedApp });
-  }
+  };
 
   getLabel = ({ iconUri, name }) => {
     return (
       <div style={{ alignItems: "center", display: "flex" }}>
-        <span className="app-icon" style={{ fontSize: 18, marginRight: "0.5em", backgroundImage: `url(${iconUri})`}}></span>
+        <span
+          className="app-icon"
+          style={{
+            fontSize: 18,
+            marginRight: "0.5em",
+            backgroundImage: `url(${iconUri})`,
+          }}
+        ></span>
         <span style={{ fontSize: 14 }}>{name}</span>
       </div>
     );
-  }
+  };
 
   render() {
     const { isVeleroInstalled, updatingSettings } = this.props;
-    const { hasValidCron, updatingSchedule, updateConfirm, loadingConfig, updateScheduleErrMsg } = this.state;
+    const {
+      hasValidCron,
+      updatingSchedule,
+      updateConfirm,
+      loadingConfig,
+      updateScheduleErrMsg,
+    } = this.state;
     const selectedRetentionUnit = RETENTION_UNITS.find((ru) => {
       return ru.value === this.state.selectedRetentionUnit?.value;
     });
@@ -331,33 +406,65 @@ class SnapshotSchedule extends Component {
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
         </div>
-      )
+      );
     }
 
-    const isSettingsPage = window.location.pathname.includes("/snapshots/settings");
+    const isSettingsPage = window.location.pathname.includes(
+      "/snapshots/settings"
+    );
 
     return (
       <div className="flex-auto">
         <div className="flex flex-column">
-          {!isAppConfig && !this.props.isVeleroRunning && !updatingSettings &&
+          {!isAppConfig && !this.props.isVeleroRunning && !updatingSettings && (
             <div className="Info--wrapper flex flex1 u-marginBottom--15">
               <span className="icon info-icon flex-auto u-marginTop--5" />
               <div className="flex flex-column u-marginLeft--5">
-                <p className="u-fontSize--normal u-fontWeight--bold u-lineHeight--normal u-textColor--primary"> Scheduling not active </p>
-                <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy"> Schedules will not take affect until Velero is running and a storage destination has been configured.</span>
+                <p className="u-fontSize--normal u-fontWeight--bold u-lineHeight--normal u-textColor--primary">
+                  {" "}
+                  Scheduling not active{" "}
+                </p>
+                <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy">
+                  {" "}
+                  Schedules will not take affect until Velero is running and a
+                  storage destination has been configured.
+                </span>
               </div>
-            </div>}
+            </div>
+          )}
           <div className="SnapshotScheduleTabs--wrapper flex1 flex-column">
             <div className="tab-items flex justifyContent--spaceBetween">
-              <span className={`${this.state.activeTab === "full" ? "is-active" : ""} tab-item blue`} onClick={() => this.toggleScheduleAction("full")}>Full snapshots (Instance)</span>
-              <span className={`${this.state.activeTab === "partial" ? "is-active" : ""} tab-item blue`} onClick={() => this.toggleScheduleAction("partial")}>Partial snapshots (Application)</span>
+              <span
+                className={`${
+                  this.state.activeTab === "full" ? "is-active" : ""
+                } tab-item blue`}
+                onClick={() => this.toggleScheduleAction("full")}
+              >
+                Full snapshots (Instance)
+              </span>
+              <span
+                className={`${
+                  this.state.activeTab === "partial" ? "is-active" : ""
+                } tab-item blue`}
+                onClick={() => this.toggleScheduleAction("partial")}
+              >
+                Partial snapshots (Application)
+              </span>
             </div>
           </div>
-          {this.state.activeTab === "full" ?
-            <p className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--12 schedule"> Set up a custom schedule with a retention policy to take automatic snapshots of the admin console and all application data. </p>
-            :
+          {this.state.activeTab === "full" ? (
+            <p className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--12 schedule">
+              {" "}
+              Set up a custom schedule with a retention policy to take automatic
+              snapshots of the admin console and all application data.{" "}
+            </p>
+          ) : (
             <div className="flex flex-column schedule">
-              <p className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--12"> Set up a custom schedule with a retention policy to take automatic snapshots of your application and its data. </p>
+              <p className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--12">
+                {" "}
+                Set up a custom schedule with a retention policy to take
+                automatic snapshots of your application and its data.{" "}
+              </p>
               <div className="flex u-marginTop--12">
                 <Select
                   className="replicated-select-container u-width--full"
@@ -367,37 +474,58 @@ class SnapshotSchedule extends Component {
                   getOptionValue={(app) => app.name}
                   value={this.state.selectedApp}
                   onChange={this.onAppChange}
-                  isOptionSelected={(app) => { app.name === this.state.selectedApp?.name }}
+                  isOptionSelected={(app) => {
+                    app.name === this.state.selectedApp?.name;
+                  }}
                 />
               </div>
             </div>
-          }
+          )}
           <form className="flex flex-column snapshot-form-wrapper u-marginTop--20">
-            <div className={`flex-column ${!isAppConfig ? "u-marginTop--12" : "u-marginBottom--20"}`}>
+            <div
+              className={`flex-column ${
+                !isAppConfig ? "u-marginTop--12" : "u-marginBottom--20"
+              }`}
+            >
               <div className="flex1 u-marginBottom--20">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Automatic snapshots</p>
+                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                  Automatic snapshots
+                </p>
                 <div className="BoxedCheckbox-wrapper flex1 u-textAlign--left">
-                  <div className={`flex-auto flex alignItems--center ${this.state.autoEnabled ? "is-active" : ""}`}>
+                  <div
+                    className={`flex-auto flex alignItems--center ${
+                      this.state.autoEnabled ? "is-active" : ""
+                    }`}
+                  >
                     <input
                       type="checkbox"
                       className="u-cursor--pointer"
                       id="autoEnabled"
                       checked={this.state.autoEnabled}
-                      onChange={(e) => { this.handleFormChange("autoEnabled", e) }}
+                      onChange={(e) => {
+                        this.handleFormChange("autoEnabled", e);
+                      }}
                     />
-                    <label htmlFor="autoEnabled" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none">
+                    <label
+                      htmlFor="autoEnabled"
+                      className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none"
+                    >
                       <div className="flex1">
-                        <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium u-marginLeft--5">Enable automatic scheduled snapshots</p>
+                        <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium u-marginLeft--5">
+                          Enable automatic scheduled snapshots
+                        </p>
                       </div>
                     </label>
                   </div>
                 </div>
               </div>
-              {this.state.autoEnabled &&
+              {this.state.autoEnabled && (
                 <div className="flex-column flex1 u-position--relative u-marginBottom--50">
                   <div className="flex flex1">
                     <div className="flex1 u-paddingRight--5">
-                      <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Schedule</p>
+                      <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                        Schedule
+                      </p>
                       <Select
                         className="replicated-select-container"
                         classNamePrefix="replicated-select"
@@ -407,34 +535,65 @@ class SnapshotSchedule extends Component {
                         getOptionValue={(schedule) => schedule.label}
                         value={selectedSchedule}
                         onChange={this.handleScheduleChange}
-                        isOptionSelected={(option) => { option.value === selectedSchedule }}
+                        isOptionSelected={(option) => {
+                          option.value === selectedSchedule;
+                        }}
                       />
                     </div>
                     <div className="flex1 u-paddingLeft--5">
-                      <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Cron expression</p>
+                      <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                        Cron expression
+                      </p>
                       <input
                         type="text"
                         className="Input"
                         placeholder="0 0 * * MON"
                         value={this.state.frequency}
-                        onChange={(e) => this.handleCronChange(e)} 
+                        onChange={(e) => this.handleCronChange(e)}
                       />
                     </div>
                   </div>
-                  {hasValidCron ?
-                    <p className="cron-expression-text">{this.state.humanReadableCron}</p>
-                    :
-                    <p className="cron-expression-text">Enter a valid Cron Expression <a className="replicated-link" href="" target="_blank" rel="noopener noreferrer">Get help</a></p>
-                  }
+                  {hasValidCron ? (
+                    <p className="cron-expression-text">
+                      {this.state.humanReadableCron}
+                    </p>
+                  ) : (
+                    <p className="cron-expression-text">
+                      Enter a valid Cron Expression{" "}
+                      <a
+                        className="replicated-link"
+                        href=""
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Get help
+                      </a>
+                    </p>
+                  )}
                 </div>
-              }
+              )}
               <div>
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Retention policy</p>
-                <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--normal u-lineHeight--normal u-marginBottom--10">The Admin Console can reclaim space by automatically deleting older scheduled snapshots.</p>
-                <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--normal u-lineHeight--normal u-marginBottom--10">Snapshots older than this will be deleted.</p>
+                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                  Retention policy
+                </p>
+                <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--normal u-lineHeight--normal u-marginBottom--10">
+                  The Admin Console can reclaim space by automatically deleting
+                  older scheduled snapshots.
+                </p>
+                <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--normal u-lineHeight--normal u-marginBottom--10">
+                  Snapshots older than this will be deleted.
+                </p>
                 <div className="flex u-marginBottom--20">
                   <div className="flex-auto u-paddingRight--5">
-                    <input type="text" className="Input" placeholder="4" value={this.state.retentionInput} onChange={(e) => { this.handleFormChange("retentionInput", e) }} />
+                    <input
+                      type="text"
+                      className="Input"
+                      placeholder="4"
+                      value={this.state.retentionInput}
+                      onChange={(e) => {
+                        this.handleFormChange("retentionInput", e);
+                      }}
+                    />
                   </div>
                   <div className="flex1 u-paddingLeft--5">
                     <Select
@@ -446,23 +605,36 @@ class SnapshotSchedule extends Component {
                       getOptionValue={(retentionUnit) => retentionUnit.label}
                       value={selectedRetentionUnit}
                       onChange={this.handleRetentionUnitChange}
-                      isOptionSelected={(option) => { option.value === selectedRetentionUnit }}
+                      isOptionSelected={(option) => {
+                        option.value === selectedRetentionUnit;
+                      }}
                     />
                   </div>
                 </div>
               </div>
               <div className="flex">
-                <button className="btn primary blue" disabled={updatingSchedule} onClick={this.saveSnapshotConfig}>{updatingSchedule ? "Updating schedule" : "Update schedule"}</button>
-                {updateConfirm &&
+                <button
+                  className="btn primary blue"
+                  disabled={updatingSchedule}
+                  onClick={this.saveSnapshotConfig}
+                >
+                  {updatingSchedule ? "Updating schedule" : "Update schedule"}
+                </button>
+                {updateConfirm && (
                   <div className="u-marginLeft--10 flex alignItems--center">
                     <span className="icon checkmark-icon" />
-                    <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-textColor--success">Schedule updated</span>
+                    <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-textColor--success">
+                      Schedule updated
+                    </span>
                   </div>
-                }
-                {updateScheduleErrMsg &&
+                )}
+                {updateScheduleErrMsg && (
                   <div className="u-marginLeft--10 flex alignItems--center">
-                    <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-textColor--error">{updateScheduleErrMsg}</span>
-                  </div>}
+                    <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-textColor--error">
+                      {updateScheduleErrMsg}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </form>
@@ -475,9 +647,9 @@ class SnapshotSchedule extends Component {
           err="Failed to get snapshot schedule settings"
           loading={loadingConfig}
         />
-        {!isAppConfig && !isSettingsPage &&
+        {!isAppConfig && !isSettingsPage && (
           <GettingStartedSnapshots isVeleroInstalled={isVeleroInstalled} />
-        }
+        )}
       </div>
     );
   }

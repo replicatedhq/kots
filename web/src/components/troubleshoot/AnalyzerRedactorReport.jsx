@@ -7,13 +7,12 @@ import Loader from "../shared/Loader";
 import ErrorModal from "../modals/ErrorModal";
 import { Utilities } from "../../utilities/utilities";
 
-
 export class AnalyzerRedactorReport extends Component {
   constructor(props) {
     super(props);
     this.state = {
       redactions: {},
-      displayErrorModal: false
+      displayErrorModal: false,
     };
   }
 
@@ -21,45 +20,50 @@ export class AnalyzerRedactorReport extends Component {
     this.setState({
       isLoadingRedactions: true,
       redactionsErrMsg: "",
-      displayErrorModal: false
+      displayErrorModal: false,
     });
 
-    fetch(`${process.env.API_ENDPOINT}/troubleshoot/supportbundle/${this.props.bundle?.id}/redactions`, {
-      method: "GET",
-      headers: {
-        "Authorization": Utilities.getToken(),
-        "Content-Type": "application/json",
+    fetch(
+      `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/${this.props.bundle?.id}/redactions`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
       }
-    })
-      .then(res => res.json())
-      .then(result => {
+    )
+      .then((res) => res.json())
+      .then((result) => {
         if (result.success) {
           this.setState({
             redactions: result.redactions,
             isLoadingRedactions: false,
             redactionsErrMsg: "",
-            displayErrorModal: false
-          })
+            displayErrorModal: false,
+          });
         } else {
           this.setState({
             isLoadingRedactions: false,
             redactionsErrMsg: result.error,
-            displayErrorModal: true
-          })
+            displayErrorModal: true,
+          });
         }
       })
-      .catch(err => {
+      .catch((err) => {
         this.setState({
           isLoadingRedactions: false,
-          redactionsErrMsg: err.message ? err.message : "There was an error while showing the redactor report. Please try again",
-          displayErrorModal: true
-        })
-      })
-  }
+          redactionsErrMsg: err.message
+            ? err.message
+            : "There was an error while showing the redactor report. Please try again",
+          displayErrorModal: true,
+        });
+      });
+  };
 
   toggleErrorModal = () => {
     this.setState({ displayErrorModal: !this.state.displayErrorModal });
-  }
+  };
 
   componentDidMount() {
     if (this.props.bundle) {
@@ -75,25 +79,34 @@ export class AnalyzerRedactorReport extends Component {
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
         </div>
-      )
+      );
     }
 
     return (
       <div className="flex flex-column">
-        {!isEmpty(redactions)
-          ? <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginTop--10 u-marginBottom--20">Below is a list of default redactors that were applied when collecting this support bundle. You can see how many files each redactor affected and how many values were redacted.</p>
-          : <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginTop--10 u-marginBottom--20">This support bundle does not contain information about redactors that were applied during collection.</p>
-        }
-        {!isEmpty(redactions) && Object.keys(redactions?.byRedactor).map((redactor) => (
-          <AnalyzerRedactorReportRow
-            key={`redactor-${redactor}`}
-            redactor={redactor}
-            match={this.props.match}
-            history={this.props.history}
-            redactorFiles={redactions?.byRedactor[redactor]}
-          />
-        ))}
-        {redactionsErrMsg &&
+        {!isEmpty(redactions) ? (
+          <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginTop--10 u-marginBottom--20">
+            Below is a list of default redactors that were applied when
+            collecting this support bundle. You can see how many files each
+            redactor affected and how many values were redacted.
+          </p>
+        ) : (
+          <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginTop--10 u-marginBottom--20">
+            This support bundle does not contain information about redactors
+            that were applied during collection.
+          </p>
+        )}
+        {!isEmpty(redactions) &&
+          Object.keys(redactions?.byRedactor).map((redactor) => (
+            <AnalyzerRedactorReportRow
+              key={`redactor-${redactor}`}
+              redactor={redactor}
+              match={this.props.match}
+              history={this.props.history}
+              redactorFiles={redactions?.byRedactor[redactor]}
+            />
+          ))}
+        {redactionsErrMsg && (
           <ErrorModal
             errorModal={this.state.displayErrorModal}
             toggleErrorModal={this.toggleErrorModal}
@@ -102,7 +115,8 @@ export class AnalyzerRedactorReport extends Component {
             err="Failed to get redactors"
             loading={this.state.isLoadingRedactions}
             appSlug={this.props.match.params.slug}
-          />}
+          />
+        )}
       </div>
     );
   }

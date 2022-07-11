@@ -26,8 +26,8 @@
     .card-action {
       padding: 8px 6px;
       border-radius: 4px;
-      transition: background-color .3s;
-  
+      transition: background-color 0.3s;
+
       &:hover {
         background-color: lighten($primary-color, 43.5%);
       }
@@ -49,7 +49,7 @@
     &:nth-child(2n) {
       padding-right: 0;
     }
-  }  
+  }
 }
 
 /* ≥ 960px */
@@ -63,9 +63,8 @@
     &:nth-child(3n) {
       padding-right: 0;
     }
-  } 
+  }
 }
-
 
 /* ≥ 1280px */
 @media screen and (min-width: 80em) {

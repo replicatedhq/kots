@@ -7,17 +7,21 @@ import ConfigRadio from "./ConfigRadio";
 import Markdown from "react-remarkable";
 
 export default class ConfigSelectOne extends React.Component {
-
   handleOnChange = (itemName, val) => {
-    if (this.props.handleOnChange && typeof this.props.handleOnChange === "function") {
+    if (
+      this.props.handleOnChange &&
+      typeof this.props.handleOnChange === "function"
+    ) {
       this.props.handleOnChange(itemName, val);
     }
-  }
+  };
 
   render() {
     let options = [];
     map(this.props.items, (childItem, i) => {
-      if (isEmpty(childItem)) {return null;}
+      if (isEmpty(childItem)) {
+        return null;
+      }
       options.push(
         <ConfigRadio
           key={`${childItem.name}-${i}`}
@@ -30,14 +34,19 @@ export default class ConfigSelectOne extends React.Component {
           readOnly={this.props.readonly}
           handleChange={(itemName, val) => this.handleOnChange(itemName, val)}
         />
-      )
+      );
     });
 
     var hidden = this.props.hidden || this.props.when === "false";
 
     return (
-      <div id={`${this.props.name}-group`} className={`field field-type-select-one ${hidden ? "hidden" : "u-marginTop--15"}`}>
-        {this.props.title !== "" ?
+      <div
+        id={`${this.props.name}-group`}
+        className={`field field-type-select-one ${
+          hidden ? "hidden" : "u-marginTop--15"
+        }`}
+      >
+        {this.props.title !== "" ? (
           <ConfigItemTitle
             title={this.props.title}
             recommended={this.props.recommended}
@@ -45,26 +54,33 @@ export default class ConfigSelectOne extends React.Component {
             name={this.props.name}
             error={this.props.error}
           />
-          : null}
-        {this.props.help_text !== "" ? 
+        ) : null}
+        {this.props.help_text !== "" ? (
           <div className="field-section-help-text u-marginTop--5">
             <Markdown
               options={{
                 linkTarget: "_blank",
                 linkify: true,
-              }}>
+              }}
+            >
               {this.props.help_text}
             </Markdown>
           </div>
-        : null}
+        ) : null}
         <div className="field-input-wrapper u-marginTop--5 flex flexWrap--wrap">
           {options}
         </div>
-        {this.props.repeatable &&
-          <div className="u-marginTop--10" onClick={() => this.props.handleAddItem(this.props.name)}>
-            <span className="add-btn u-fontSize--small u-fontWeight--bold u-linkColor u-cursor--pointer"><span className="icon u-addIcon--blue clickable" />Add another {this.props.title}</span>
+        {this.props.repeatable && (
+          <div
+            className="u-marginTop--10"
+            onClick={() => this.props.handleAddItem(this.props.name)}
+          >
+            <span className="add-btn u-fontSize--small u-fontWeight--bold u-linkColor u-cursor--pointer">
+              <span className="icon u-addIcon--blue clickable" />
+              Add another {this.props.title}
+            </span>
           </div>
-        }
+        )}
       </div>
     );
   }

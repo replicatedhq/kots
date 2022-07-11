@@ -10,7 +10,6 @@ import { Utilities } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
 
 class AirgapRegistrySettings extends Component {
-
   constructor(props) {
     super(props);
 
@@ -18,7 +17,7 @@ class AirgapRegistrySettings extends Component {
       hostname = "",
       username = "",
       password = "",
-      namespace = props.app ? props.app.slug : ""
+      namespace = props.app ? props.app.slug : "",
     } = props?.registryDetails || {};
 
     this.state = {
@@ -39,7 +38,7 @@ class AirgapRegistrySettings extends Component {
       rewriteMessage: "",
       fetchRegistryErrMsg: "",
       displayErrorModal: false,
-    }
+    };
   }
 
   componentWillUnmount() {
@@ -49,22 +48,16 @@ class AirgapRegistrySettings extends Component {
   componentDidMount = () => {
     this.fetchRegistryInfo();
     this.triggerStatusUpdates();
-  }
+  };
 
   onSubmit = async () => {
-    const {
-      hostname,
-      username,
-      password,
-      namespace,
-      isReadOnly,
-    } = this.state;
+    const { hostname, username, password, namespace, isReadOnly } = this.state;
     const { slug } = this.props.match.params;
 
     fetch(`${process.env.API_ENDPOINT}/app/${slug}/registry`, {
       method: "PUT",
       headers: {
-        "Authorization": Utilities.getToken(),
+        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -73,7 +66,7 @@ class AirgapRegistrySettings extends Component {
         password,
         namespace,
         isReadOnly,
-      })
+      }),
     })
       .then(async (res) => {
         const registryDetails = await res.json();
@@ -92,7 +85,7 @@ class AirgapRegistrySettings extends Component {
           rewriteMessage: err,
         });
       });
-  }
+  };
 
   testRegistryConnection = async () => {
     this.setState({
@@ -104,20 +97,23 @@ class AirgapRegistrySettings extends Component {
 
     let res;
     try {
-      res = await fetch(`${process.env.API_ENDPOINT}/app/${slug}/registry/validate`, {
-        method: "POST",
-        headers: {
-          "Authorization": Utilities.getToken(),
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          hostname: this.state.hostname,
-          namespace: this.state.namespace,
-          username: this.state.username,
-          password: this.state.password,
-          isReadOnly: this.state.isReadOnly,
-        }),
-      });
+      res = await fetch(
+        `${process.env.API_ENDPOINT}/app/${slug}/registry/validate`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: Utilities.getToken(),
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            hostname: this.state.hostname,
+            namespace: this.state.namespace,
+            username: this.state.username,
+            password: this.state.password,
+            isReadOnly: this.state.isReadOnly,
+          }),
+        }
+      );
     } catch (err) {
       this.setState({
         testInProgress: false,
@@ -144,7 +140,7 @@ class AirgapRegistrySettings extends Component {
         lastSync: new Date(),
       });
     }
-  }
+  };
 
   handleFormChange = (field, val) => {
     let nextState = {};
@@ -158,11 +154,18 @@ class AirgapRegistrySettings extends Component {
 
     this.setState(nextState, () => {
       if (this.props.gatherDetails) {
-        const { hostname, username, password, namespace, isReadOnly } = this.state;
-        this.props.gatherDetails({ hostname, username, password, namespace, isReadOnly });
+        const { hostname, username, password, namespace, isReadOnly } =
+          this.state;
+        this.props.gatherDetails({
+          hostname,
+          username,
+          password,
+          namespace,
+          isReadOnly,
+        });
       }
     });
-  }
+  };
 
   componentDidUpdate(lastProps) {
     const { app } = this.props;
@@ -177,7 +180,11 @@ class AirgapRegistrySettings extends Component {
       return;
     }
 
-    this.setState({ loading: true, fetchRegistryErrMsg: "", displayErrorModal: false });
+    this.setState({
+      loading: true,
+      fetchRegistryErrMsg: "",
+      displayErrorModal: false,
+    });
 
     let url = `${process.env.API_ENDPOINT}/registry`;
     if (this.props.app) {
@@ -186,12 +193,12 @@ class AirgapRegistrySettings extends Component {
 
     fetch(url, {
       headers: {
-        "Authorization": Utilities.getToken()
+        Authorization: Utilities.getToken(),
       },
       method: "GET",
     })
-      .then(res => res.json())
-      .then(result => {
+      .then((res) => res.json())
+      .then((result) => {
         if (result.success) {
           this.setState({
             originalRegistry: result,
@@ -202,27 +209,44 @@ class AirgapRegistrySettings extends Component {
             isReadOnly: result.isReadOnly,
             loading: false,
             fetchRegistryErrMsg: "",
-            displayErrorModal: false
+            displayErrorModal: false,
           });
 
           if (this.props.gatherDetails) {
-            const { hostname, username, password, namespace, isReadOnly } = result;
-            this.props.gatherDetails({ hostname, username, password, namespace, isReadOnly });
+            const { hostname, username, password, namespace, isReadOnly } =
+              result;
+            this.props.gatherDetails({
+              hostname,
+              username,
+              password,
+              namespace,
+              isReadOnly,
+            });
           }
-
         } else {
-          this.setState({ loading: false, fetchRegistryErrMsg: "Unable to get registry info, please try again.", displayErrorModal: true });
+          this.setState({
+            loading: false,
+            fetchRegistryErrMsg:
+              "Unable to get registry info, please try again.",
+            displayErrorModal: true,
+          });
         }
       })
-      .catch(err => {
+      .catch((err) => {
         console.log(err);
-        this.setState({ loading: false, fetchRegistryErrMsg: err ? `Unable to get registry info: ${err.message}` : "Something went wrong, please try again.", displayErrorModal: true });
-      })
-  }
+        this.setState({
+          loading: false,
+          fetchRegistryErrMsg: err
+            ? `Unable to get registry info: ${err.message}`
+            : "Something went wrong, please try again.",
+          displayErrorModal: true,
+        });
+      });
+  };
 
   toggleErrorModal = () => {
     this.setState({ displayErrorModal: !this.state.displayErrorModal });
-  }
+  };
 
   triggerStatusUpdates = () => {
     let url = `${process.env.API_ENDPOINT}/imagerewritestatus`;
@@ -231,7 +255,7 @@ class AirgapRegistrySettings extends Component {
     }
     fetch(url, {
       headers: {
-        "Authorization": Utilities.getToken(),
+        Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
       method: "GET",
@@ -250,7 +274,7 @@ class AirgapRegistrySettings extends Component {
       .catch((err) => {
         console.log("failed to get rewrite status", err);
       });
-  }
+  };
 
   updateStatus = () => {
     let url = `${process.env.API_ENDPOINT}/imagerewritestatus`;
@@ -260,7 +284,7 @@ class AirgapRegistrySettings extends Component {
     return new Promise((resolve, reject) => {
       fetch(url, {
         headers: {
-          "Authorization": Utilities.getToken(),
+          Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
         method: "GET",
@@ -288,11 +312,27 @@ class AirgapRegistrySettings extends Component {
           reject();
         });
     });
-  }
+  };
 
   render() {
-    const { app, hideTestConnection, hideCta, namespaceDescription, showHostnameAsRequired } = this.props;
-    const { hostname, password, username, namespace, isReadOnly, lastSync, testInProgress, testFailed, testMessage } = this.state;
+    const {
+      app,
+      hideTestConnection,
+      hideCta,
+      namespaceDescription,
+      showHostnameAsRequired,
+    } = this.props;
+    const {
+      hostname,
+      password,
+      username,
+      namespace,
+      isReadOnly,
+      lastSync,
+      testInProgress,
+      testFailed,
+      testMessage,
+    } = this.state;
     const { rewriteMessage, rewriteStatus } = this.state;
 
     let statusText = rewriteMessage;
@@ -315,10 +355,12 @@ class AirgapRegistrySettings extends Component {
       );
     }
 
-    const namespaceSubtext = namespaceDescription || "Changing the namespace will rewrite all of your airgap images and push them to your registry."
+    const namespaceSubtext =
+      namespaceDescription ||
+      "Changing the namespace will rewrite all of your airgap images and push them to your registry.";
     const imagePushSubtext = `Selecting this option will disable writing images to the associated registry.
     Images will still be read from this registry when the application is deployed.
-    This option should only be selected in environments where an external process is fully responsible for pushing needed images into the associated repository.`
+    This option should only be selected in environments where an external process is fully responsible for pushing needed images into the associated repository.`;
 
     // Pushing images in airgap mode is not supported yet
     const disableRegistryFields = app?.isAirgap && !isReadOnly;
@@ -342,90 +384,176 @@ class AirgapRegistrySettings extends Component {
         <form>
           <div className="flex u-marginBottom--20">
             <div className="flex1">
-              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">Hostname {showHostnameAsRequired && <span className="u-textColor--error">(Required)</span>}</p>
-              <p className="u-lineHeight--normal u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginBottom--10">Ensure this domain supports the Docker V2 protocol.</p>
-              <input type="text" className={`Input ${disableRegistryFields && "is-disabled"}`} disabled={disableRegistryFields} placeholder="artifactory.some-big-bank.com" value={hostname || ""} autoComplete="" onChange={(e) => { this.handleFormChange("hostname", e.target.value) }} />
+              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">
+                Hostname{" "}
+                {showHostnameAsRequired && (
+                  <span className="u-textColor--error">(Required)</span>
+                )}
+              </p>
+              <p className="u-lineHeight--normal u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginBottom--10">
+                Ensure this domain supports the Docker V2 protocol.
+              </p>
+              <input
+                type="text"
+                className={`Input ${disableRegistryFields && "is-disabled"}`}
+                disabled={disableRegistryFields}
+                placeholder="artifactory.some-big-bank.com"
+                value={hostname || ""}
+                autoComplete=""
+                onChange={(e) => {
+                  this.handleFormChange("hostname", e.target.value);
+                }}
+              />
             </div>
           </div>
           <div className="flex u-marginBottom--20">
             <div className="flex1 u-paddingRight--5">
-              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Username</p>
-              <input type="text" className="Input" placeholder="username" value={username || ""} autoComplete="username" onChange={(e) => { this.handleFormChange("username", e.target.value) }} />
+              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                Username
+              </p>
+              <input
+                type="text"
+                className="Input"
+                placeholder="username"
+                value={username || ""}
+                autoComplete="username"
+                onChange={(e) => {
+                  this.handleFormChange("username", e.target.value);
+                }}
+              />
             </div>
             <div className="flex1 u-paddingLeft--5">
-              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">Password</p>
-              <input type="password" className="Input" placeholder="password" autoComplete="current-password" value={password || ""} onChange={(e) => { this.handleFormChange("password", e.target.value) }} />
+              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                Password
+              </p>
+              <input
+                type="password"
+                className="Input"
+                placeholder="password"
+                autoComplete="current-password"
+                value={password || ""}
+                onChange={(e) => {
+                  this.handleFormChange("password", e.target.value);
+                }}
+              />
             </div>
           </div>
-          {hideTestConnection ? null :
+          {hideTestConnection ? null : (
             <div className="test-connection-box u-marginBottom--20">
               <div className="flex">
                 <div>
-                  <button type="button" className="btn secondary" onClick={this.testRegistryConnection}>Test connection</button>
+                  <button
+                    type="button"
+                    className="btn secondary"
+                    onClick={this.testRegistryConnection}
+                  >
+                    Test connection
+                  </button>
                 </div>
-                {this.state.pingedEndpoint &&
+                {this.state.pingedEndpoint && (
                   <div className="flex-column justifyContent--center">
-                    <p className="u-marginLeft--10 u-fontSize--small u-fontWeight--medium u-textColor--secondary"><span className={`icon checkmark-icon u-marginRight--5 u-verticalAlign--neg3`} />Connected to {this.state.pingedEndpoint}</p>
+                    <p className="u-marginLeft--10 u-fontSize--small u-fontWeight--medium u-textColor--secondary">
+                      <span
+                        className={`icon checkmark-icon u-marginRight--5 u-verticalAlign--neg3`}
+                      />
+                      Connected to {this.state.pingedEndpoint}
+                    </p>
                   </div>
-                }
+                )}
               </div>
-              {testFailed && !testInProgress ?
-                <p className="u-fontSize--small u-fontWeight--medium u-textColor--error u-marginTop--10 u-lineHeight--normal">{testStatusText}</p>
-                :
-                <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--10 u-lineHeight--normal">{testStatusText}</p>
-              }
+              {testFailed && !testInProgress ? (
+                <p className="u-fontSize--small u-fontWeight--medium u-textColor--error u-marginTop--10 u-lineHeight--normal">
+                  {testStatusText}
+                </p>
+              ) : (
+                <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--10 u-lineHeight--normal">
+                  {testStatusText}
+                </p>
+              )}
             </div>
-          }
+          )}
           <div className="flex u-marginBottom--30">
             <div className="flex1">
               <div className="flex flex1 alignItems--center u-marginBottom--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">Registry Namespace</p>
+                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">
+                  Registry Namespace
+                </p>
               </div>
-              <p className="u-lineHeight--normal u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginBottom--10">{namespaceSubtext}</p>
-              <input type="text" className={`Input ${disableRegistryFields && "is-disabled"}`} placeholder="namespace" disabled={disableRegistryFields} value={namespace || ""} autoComplete="" onChange={(e) => { this.handleFormChange("namespace", e.target.value) }} />
+              <p className="u-lineHeight--normal u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginBottom--10">
+                {namespaceSubtext}
+              </p>
+              <input
+                type="text"
+                className={`Input ${disableRegistryFields && "is-disabled"}`}
+                placeholder="namespace"
+                disabled={disableRegistryFields}
+                value={namespace || ""}
+                autoComplete=""
+                onChange={(e) => {
+                  this.handleFormChange("namespace", e.target.value);
+                }}
+              />
             </div>
           </div>
           <div className="flex u-marginBottom--5">
             <div className="BoxedCheckbox-wrapper flex1 u-textAlign--left">
-              <div className={`flex-auto flex ${isReadOnly ? "is-active" : ""}`}>
+              <div
+                className={`flex-auto flex ${isReadOnly ? "is-active" : ""}`}
+              >
                 <input
                   type="checkbox"
                   className="u-cursor--pointer"
                   id="ingressEnabled"
                   checked={isReadOnly}
-                  onChange={(e) => { this.handleFormChange("isReadOnly", e.target.checked) }}
+                  onChange={(e) => {
+                    this.handleFormChange("isReadOnly", e.target.checked);
+                  }}
                 />
-                <label htmlFor="ingressEnabled" className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none" style={{ marginTop: "2px" }}>
+                <label
+                  htmlFor="ingressEnabled"
+                  className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none"
+                  style={{ marginTop: "2px" }}
+                >
                   <div className="flex flex-column u-marginLeft--5 justifyContent--center">
-                    <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-marginBottom--5">Disable Pushing Images to Registry</p>
-                    <p className="u-lineHeight--normal u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium">{imagePushSubtext}</p>
+                    <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-marginBottom--5">
+                      Disable Pushing Images to Registry
+                    </p>
+                    <p className="u-lineHeight--normal u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium">
+                      {imagePushSubtext}
+                    </p>
                   </div>
                 </label>
               </div>
             </div>
           </div>
         </form>
-        {hideCta ? null :
+        {hideCta ? null : (
           <div className="u-marginBottom--20 u-paddingTop--10">
-            {showProgress ?
+            {showProgress ? (
               <div className="u-marginTop--20">
                 <Loader size="30" />
-                <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--10">{statusText}</p>
+                <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--10">
+                  {statusText}
+                </p>
               </div>
-              :
-              null
-            }
-            {showStatusError ?
-              <p className="u-fontSize--small u-fontWeight--medium u-textColor--error u-marginTop--10">{statusText}</p>
-              :
-              null
-            }
+            ) : null}
+            {showStatusError ? (
+              <p className="u-fontSize--small u-fontWeight--medium u-textColor--error u-marginTop--10">
+                {statusText}
+              </p>
+            ) : null}
             <div className="u-marginTop--20">
-              <button className="btn primary blue" disabled={disableSubmitButton} onClick={this.onSubmit}>Save changes</button>
+              <button
+                className="btn primary blue"
+                disabled={disableSubmitButton}
+                onClick={this.onSubmit}
+              >
+                Save changes
+              </button>
             </div>
           </div>
-        }
-        {this.state.fetchRegistryErrMsg &&
+        )}
+        {this.state.fetchRegistryErrMsg && (
           <ErrorModal
             errorModal={this.state.displayErrorModal}
             toggleErrorModal={this.toggleErrorModal}
@@ -433,9 +561,10 @@ class AirgapRegistrySettings extends Component {
             tryAgain={this.fetchRegistryInfo}
             err="Failed to get registry info"
             loading={this.state.loading}
-          />}
+          />
+        )}
       </div>
-    )
+    );
   }
 }
 

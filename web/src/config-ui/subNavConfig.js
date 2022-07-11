@@ -11,32 +11,28 @@ export default [
     tabName: "app",
     displayName: "Dashboard",
     to: (slug) => `/app/${slug}`,
-    displayRule: ({ app }) => {
-      return isHelmChart(app) || !app.cluster;
-    }
+    displayRule: ({ app }) => isHelmChart(app) || !app.cluster,
   },
   {
     tabName: "version-history",
     displayName: "Version history",
     to: (slug) => `/app/${slug}/version-history`,
     hasBadge: ({ app }) => {
-      let downstreamPendingLengths = [];
-      app.watches?.map((w) => {
+      const downstreamPendingLengths = [];
+      app.watches?.forEach((w) => {
         downstreamPendingLengths.push(w.pendingVersions.length);
       });
       return Math.max(...downstreamPendingLengths) > 0;
     },
-    displayRule: ({ app }) => {
-      return !isHelmChart(app);
-    },
+    displayRule: ({ app }) => !isHelmChart(app),
   },
   {
     tabName: "config",
     displayName: "Config",
-    to: (slug, sequence, configSequence) => `/app/${slug}/config/${configSequence}`,
-    displayRule: ({ app }) => {
-      return app.isConfigurable || getApplicationType(app) === "replicated.app";
-    }
+    to: (slug, sequence, configSequence) =>
+      `/app/${slug}/config/${configSequence}`,
+    displayRule: ({ app }) =>
+      app.isConfigurable || getApplicationType(app) === "replicated.app",
   },
   {
     tabName: "troubleshoot",
@@ -47,9 +43,9 @@ export default [
     tabName: "license",
     displayName: "License",
     to: (slug) => `/app/${slug}/license`,
-    displayRule: ({ app }) => {
-      return app?.upstreamUri?.startsWith("replicated://") || getApplicationType(app) === "replicated.app";
-    }
+    displayRule: ({ app }) =>
+      app?.upstreamUri?.startsWith("replicated://") ||
+      getApplicationType(app) === "replicated.app",
   },
   {
     tabName: "state",
@@ -60,39 +56,32 @@ export default [
         return false;
       }
       return Boolean(!app.cluster);
-    }
+    },
   },
   {
     tabName: "tree",
     displayName: "View files",
     to: (slug, sequence) => `/app/${slug}/tree/${sequence}`,
-    displayRule: ({ app }) => {
-        return Boolean(app.name) &&
-        Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]);
-    }
+    displayRule: ({ app }) =>
+      Boolean(app.name) &&
+      Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]),
   },
   {
     tabName: "gitops",
     displayName: "GitOps",
     to: (slug) => `/app/${slug}/gitops`,
-    displayRule: ({ app }) => {
-      return app.downstream?.gitops?.enabled;
-    }
+    displayRule: ({ app }) => app.downstream?.gitops?.enabled,
   },
   {
     tabName: "registry-settings",
     displayName: "Registry settings",
     to: (slug) => `/app/${slug}/registry-settings`,
-    displayRule: ({ isHelmManaged })=> {
-      return !isHelmManaged;
-    },
+    displayRule: ({ isHelmManaged }) => !isHelmManaged,
   },
   {
     tabName: "access",
     displayName: "Access",
     to: (slug) => `/app/${slug}/access`,
-    displayRule: ({ isIdentityServiceSupported }) => {
-      return isIdentityServiceSupported;
-    }
-  }
+    displayRule: ({ isIdentityServiceSupported }) => isIdentityServiceSupported,
+  },
 ];
