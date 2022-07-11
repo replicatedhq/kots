@@ -2,7 +2,6 @@ package base
 
 import (
 	"io"
-	"strings"
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -10,7 +9,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
-	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	kustomizeimage "sigs.k8s.io/kustomize/api/types"
 )
 
@@ -38,32 +36,8 @@ func ProcessUpstreamImages(options WriteUpstreamImageOptions) (*WriteUpstreamIma
 	checkedImages := make(map[string]image.ImageInfo)
 
 	if options.KotsKinds != nil {
-		additionalImages = options.KotsKinds.KotsApplication.Spec.AdditionalImages
-
-		collectors := make([]*troubleshootv1beta2.Collect, 0)
-		if options.KotsKinds.SupportBundle != nil {
-			collectors = append(collectors, options.KotsKinds.SupportBundle.Spec.Collectors...)
-		}
-		if options.KotsKinds.Collector != nil {
-			collectors = append(collectors, options.KotsKinds.Collector.Spec.Collectors...)
-		}
-		if options.KotsKinds.Preflight != nil {
-			collectors = append(collectors, options.KotsKinds.Preflight.Spec.Collectors...)
-		}
-		for _, c := range collectors {
-			if c.Run == nil || c.Run.Image == "" {
-				continue
-			}
-			if strings.Contains(c.Run.Image, "repl{{") || strings.Contains(c.Run.Image, "{{repl") {
-				// Images that use templates like LocalImageName should be included in application's additionalImages list.
-				// We want the original image names here only, not the templated ones.
-				continue
-			}
-			additionalImages = append(additionalImages, c.Run.Image)
-		}
-
+		additionalImages = kotsutil.GetImagesFromKotsKinds(options.KotsKinds)
 		checkedImages = makeImageInfoMap(options.KotsKinds.Installation.Spec.KnownImages)
-
 		if options.KotsKinds.KotsApplication.Spec.ProxyPublicImages {
 			rewriteAll = true
 		}

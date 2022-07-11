@@ -24,6 +24,7 @@ type FindPrivateImagesOptions struct {
 	AllImagesPrivate   bool
 	HelmChartPath      string
 	UseHelmInstall     map[string]bool
+	KotsKindsImages    []string
 }
 
 type FindPrivateImagesResult struct {
@@ -34,7 +35,7 @@ type FindPrivateImagesResult struct {
 
 func FindPrivateImages(options FindPrivateImagesOptions) (*FindPrivateImagesResult, error) {
 	checkedImages := makeImageInfoMap(options.Installation.Spec.KnownImages)
-	upstreamImages, objects, err := image.GetPrivateImages(options.BaseDir, checkedImages, options.AllImagesPrivate, options.DockerHubRegistry, options.HelmChartPath, options.UseHelmInstall)
+	upstreamImages, objects, err := image.GetPrivateImages(options.BaseDir, options.KotsKindsImages, checkedImages, options.AllImagesPrivate, options.DockerHubRegistry, options.HelmChartPath, options.UseHelmInstall)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list upstream images")
 	}

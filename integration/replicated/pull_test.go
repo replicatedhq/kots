@@ -1,15 +1,16 @@
 package replicated
 
 import (
+	"io/ioutil"
+	"os"
+	"path"
+	"testing"
+
 	"github.com/mholt/archiver"
 	"github.com/replicatedhq/kots/integration/util"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"io/ioutil"
-	"os"
-	"path"
-	"testing"
 )
 
 func Test_PullReplicated(t *testing.T) {

@@ -26,6 +26,7 @@ import (
 	kurlv1beta1 "github.com/replicatedhq/kurl/kurlkinds/pkg/apis/cluster/v1beta1"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
+	"github.com/replicatedhq/troubleshoot/pkg/collect"
 	"github.com/replicatedhq/troubleshoot/pkg/docrewrite"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -364,6 +365,61 @@ func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {
 	}
 
 	return "", errors.Errorf("unknown gvk %s/%s, Kind=%s", g, v, k)
+}
+
+func GetImagesFromKotsKinds(kotsKinds *KotsKinds) []string {
+	if kotsKinds == nil {
+		return nil
+	}
+
+	allImages := []string{}
+
+	allImages = append(allImages, kotsKinds.KotsApplication.Spec.AdditionalImages...)
+
+	collectors := make([]*troubleshootv1beta2.Collect, 0)
+	if kotsKinds.SupportBundle != nil {
+		collectors = append(collectors, kotsKinds.SupportBundle.Spec.Collectors...)
+	}
+	if kotsKinds.Collector != nil {
+		collectors = append(collectors, kotsKinds.Collector.Spec.Collectors...)
+	}
+	if kotsKinds.Preflight != nil {
+		collectors = append(collectors, kotsKinds.Preflight.Spec.Collectors...)
+	}
+
+	for _, c := range collectors {
+		collector := troubleshootv1beta2.GetCollector(c)
+		if collector == nil {
+			continue
+		}
+
+		collectorImages := []string{}
+		if imageRunner, ok := collector.(collect.ImageRunner); ok {
+			collectorImages = append(collectorImages, imageRunner.GetImage())
+		} else if podSpecRunner, ok := collector.(collect.PodSpecRunner); ok {
+			podSpec := podSpecRunner.GetPodSpec()
+			for _, container := range podSpec.InitContainers {
+				collectorImages = append(collectorImages, container.Image)
+			}
+			for _, container := range podSpec.Containers {
+				collectorImages = append(collectorImages, container.Image)
+			}
+		}
+
+		for _, image := range collectorImages {
+			if image == "" {
+				continue
+			}
+			if strings.Contains(image, "repl{{") || strings.Contains(image, "{{repl") {
+				// Images that use templates like LocalImageName should be included in application's additionalImages list.
+				// We want the original image names here only, not the templated ones.
+				continue
+			}
+			allImages = append(allImages, image)
+		}
+	}
+
+	return allImages
 }
 
 // create a new kots kinds, ensuring that the require objets exist as empty defaults

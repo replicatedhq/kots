@@ -132,7 +132,7 @@ func Test_UpdateCollectorSpecsWithRegistryData(t *testing.T) {
 						ImagePullSecret: &troubleshootv1beta2.ImagePullSecrets{
 							SecretType: "kubernetes.io/dockerconfigjson",
 							Data: map[string]string{
-								".dockerconfigjson": "eyJhdXRocyI6eyJyZWdpc3RyeS5yZXBsaWNhdGVkLmNvbSI6eyJhdXRoIjoiYkdsalpXNXpaV2xrT214cFkyVnVjMlZwWkE9PSJ9fX0=",
+								".dockerconfigjson": "eyJhdXRocyI6eyJwcm94eS5yZXBsaWNhdGVkLmNvbSI6eyJhdXRoIjoiYkdsalpXNXpaV2xrT214cFkyVnVjMlZwWkE9PSJ9LCJyZWdpc3RyeS5yZXBsaWNhdGVkLmNvbSI6eyJhdXRoIjoiYkdsalpXNXpaV2xrT214cFkyVnVjMlZwWkE9PSJ9fX0=",
 							},
 						},
 					},
@@ -168,7 +168,7 @@ func Test_UpdateCollectorSpecsWithRegistryData(t *testing.T) {
 						ImagePullSecret: &troubleshootv1beta2.ImagePullSecrets{
 							SecretType: "kubernetes.io/dockerconfigjson",
 							Data: map[string]string{
-								".dockerconfigjson": "eyJhdXRocyI6eyJwcm94eS5yZXBsaWNhdGVkLmNvbSI6eyJhdXRoIjoiYkdsalpXNXpaV2xrT214cFkyVnVjMlZwWkE9PSJ9fX0=",
+								".dockerconfigjson": "eyJhdXRocyI6eyJwcm94eS5yZXBsaWNhdGVkLmNvbSI6eyJhdXRoIjoiYkdsalpXNXpaV2xrT214cFkyVnVjMlZwWkE9PSJ9LCJyZWdpc3RyeS5yZXBsaWNhdGVkLmNvbSI6eyJhdXRoIjoiYkdsalpXNXpaV2xrT214cFkyVnVjMlZwWkE9PSJ9fX0=",
 							},
 						},
 					},

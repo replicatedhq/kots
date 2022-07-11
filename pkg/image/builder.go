@@ -91,10 +91,26 @@ func ProcessImages(srcRegistry, destRegistry registry.RegistryOptions, appSlug s
 	return newImages, nil
 }
 
-func GetPrivateImages(upstreamDir string, checkedImages map[string]ImageInfo, allPrivate bool, dockerHubRegistry registry.RegistryOptions, parentHelmChartPath string, useHelmInstall map[string]bool) ([]string, []k8sdoc.K8sDoc, error) {
+func GetPrivateImages(upstreamDir string, kotsKindsImages []string, checkedImages map[string]ImageInfo, allPrivate bool, dockerHubRegistry registry.RegistryOptions, parentHelmChartPath string, useHelmInstall map[string]bool) ([]string, []k8sdoc.K8sDoc, error) {
 	uniqueImages := make(map[string]bool)
 
 	objectsWithImages := make([]k8sdoc.K8sDoc, 0) // all objects where images are referenced from
+
+	for _, image := range kotsKindsImages {
+		if allPrivate {
+			checkedImages[image] = ImageInfo{
+				IsPrivate: true,
+			}
+		} else {
+			isPrivate, err := IsPrivateImage(image, dockerHubRegistry)
+			if err != nil {
+				return nil, nil, errors.Wrapf(err, "failed to check if kotskinds image %s is private", image)
+			}
+			checkedImages[image] = ImageInfo{
+				IsPrivate: isPrivate,
+			}
+		}
+	}
 
 	err := filepath.Walk(upstreamDir,
 		func(path string, info os.FileInfo, err error) error {
