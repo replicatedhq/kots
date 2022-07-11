@@ -30,7 +30,7 @@ module.exports = {
         enforce: "pre",
         loader: "eslint-loader",
         options: {
-          fix: true
+          fix: true,
         }
       }
     ]

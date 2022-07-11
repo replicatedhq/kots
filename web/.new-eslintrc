@@ -1,0 +1,42 @@
+{
+  // default parser does not support stage 3 so use this
+  "parser": "@babel/eslint-parser",
+  "extends": [
+    "airbnb",
+    "prettier"
+  ],
+  "plugins": [
+    "prettier"
+  ],
+  "rules": {
+    "prettier/prettier": [
+      "error"
+    ],
+    // use object destructured imports / exports
+    "import/prefer-default-export": "off",
+    // allows window._paq to be used in the code
+    "no-underscore-dangle": "off",
+    "react/function-component-definition": [
+      2,
+      {
+        "namedComponents": "function-declaration",
+      },
+    ],
+  },
+  "env": {
+    "browser": true
+  },
+  "settings": {
+    // should match aliases in webpack.config.js
+    "import/resolver": {
+      "alias": {
+        "map": [
+          [
+            "@src",
+            "./src"
+          ]
+        ]
+      }
+    }
+  }
+}
