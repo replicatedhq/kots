@@ -31,6 +31,8 @@ import { Repeater } from "../../utilities/repeater";
 import { AirgapUploader } from "../../utilities/airgapUploader";
 import ReactTooltip from "react-tooltip";
 import Pager from "../shared/Pager";
+import { IsHelmManaged, useDownloadValues } from "../hooks";
+import { HelmDeployModal } from "../shared/modals/HelmDeployModal";
 
 import "@src/scss/components/apps/AppVersionHistory.scss";
 import DashboardGitOpsCard from "./DashboardGitOpsCard";
@@ -1332,34 +1334,97 @@ class AppVersionHistory extends Component {
     }
 
     return (
-      <AppVersionHistoryRow
-        key={version.sequence}
-        app={this.props.app}
-        match={this.props.match}
-        history={this.props.history}
-        version={version}
-        selectedDiffReleases={this.state.selectedDiffReleases}
-        nothingToCommit={nothingToCommit}
-        isChecked={isChecked}
-        isNew={isNew}
-        newPreflightResults={newPreflightResults}
-        showReleaseNotes={this.showReleaseNotes}
-        renderDiff={this.renderDiff}
-        toggleShowDetailsModal={this.toggleShowDetailsModal}
-        gitopsEnabled={gitopsEnabled}
-        deployVersion={this.deployVersion}
-        redeployVersion={this.redeployVersion}
-        downloadVersion={this.downloadVersion}
-        upgradeAdminConsole={this.upgradeAdminConsole}
-        handleViewLogs={this.handleViewLogs}
-        handleSelectReleasesToDiff={this.handleSelectReleasesToDiff}
-        renderVersionDownloadStatus={this.renderVersionDownloadStatus}
-        isDownloading={
-          this.state.versionDownloadStatuses?.[version.sequence]
-            ?.downloadingVersion
-        }
-        adminConsoleMetadata={this.props.adminConsoleMetadata}
-      />
+      <IsHelmManaged key={version.sequence}>
+        {({ isHelmManaged }) => {
+          const {
+            download,
+            error: downloadError,
+            isDownloading,
+            name,
+            ref,
+            url,
+          } = useDownloadValues({
+            appSlug: this.props.app?.slug,
+            fileName: "values.yaml",
+          });
+
+          const handleActionButtonClicked = () => {
+            if (isHelmManaged) {
+              this.setState({
+                showHelmDeployModal: true,
+              });
+            }
+          };
+
+          // const handleGenerateConfig = async () => {
+          //   this.setState({
+          //     showHelmDeployModal: true,
+          //   });
+          //   await saveConfig({
+          //     body: JSON.stringify({
+          //       configGroups: this.state.configGroups,
+          //       sequence: this.getSequence(),
+          //       createNewVersion:
+          //         !this.props.fromLicenseFlow &&
+          //         this.props.match.params.sequence == undefined,
+          //     }),
+          //   });
+          // };
+          return (
+            <>
+              <AppVersionHistoryRow
+                actionButtonClicked={() => handleActionButtonClicked()}
+                key={version.sequence}
+                app={this.props.app}
+                match={this.props.match}
+                history={this.props.history}
+                version={version}
+                selectedDiffReleases={this.state.selectedDiffReleases}
+                nothingToCommit={nothingToCommit}
+                isChecked={isChecked}
+                isNew={isNew}
+                newPreflightResults={newPreflightResults}
+                showReleaseNotes={this.showReleaseNotes}
+                renderDiff={this.renderDiff}
+                toggleShowDetailsModal={this.toggleShowDetailsModal}
+                gitopsEnabled={gitopsEnabled}
+                deployVersion={this.deployVersion}
+                redeployVersion={this.redeployVersion}
+                downloadVersion={this.downloadVersion}
+                upgradeAdminConsole={this.upgradeAdminConsole}
+                handleViewLogs={this.handleViewLogs}
+                handleSelectReleasesToDiff={this.handleSelectReleasesToDiff}
+                renderVersionDownloadStatus={this.renderVersionDownloadStatus}
+                isDownloading={
+                  this.state.versionDownloadStatuses?.[version.sequence]
+                    ?.downloadingVersion
+                }
+                adminConsoleMetadata={this.props.adminConsoleMetadata}
+              />
+              {this.state.showHelmDeployModal && (
+                <>
+                  <HelmDeployModal
+                    appSlug={this.props?.app?.slug}
+                    chartPath={this.props?.app?.chartPath || ""}
+                    downloadClicked={download}
+                    error={downloadError}
+                    isDownloading={isDownloading}
+                    hideHelmDeployModal={() =>
+                      this.setState({ showHelmDeployModal: false })
+                    }
+                    showHelmDeployModal={true}
+                    subtitle="Follow the steps below to upgrade your application with your new values.yaml."
+                    title="Upgrade application"
+                    upgradeTitle="Upgrade application with Helm"
+                    valuesFilePath="https://downloads.replicated.com/values/dakWe43.yaml"
+                  />
+                  <a href={url} download={name} className="hidden" ref={ref} />
+                </>
+              )}
+            </>
+          );
+        }}
+      </IsHelmManaged>
     );
   };
 

@@ -433,16 +433,23 @@ class AppVersionHistoryRow extends Component {
                 "secondary blue": isSecondaryBtn,
                 "primary blue": isPrimaryButton,
               })}
-              disabled={this.isActionButtonDisabled(version)}
-              onClick={() =>
-                needsConfiguration
-                  ? this.props.history.push(
-                      `/app/${app.slug}/config/${version.sequence}`
-                    )
-                  : isRollback
-                  ? actionFn(version, true)
-                  : actionFn(version)
-              }
+              // disabled={this.isActionButtonDisabled(version)}
+              onClick={() => {
+                this.props.actionButtonClicked();
+                if (needsConfiguration) {
+                  this.props.history.push(
+                    `/app/${app.slug}/config/${version.sequence}`
+                  );
+                  return null;
+                }
+                if (isRollback) {
+                  actionFn(version, true);
+                  return null;
+                }
+
+                actionFn(version);
+                return null;
+              }}
             >
               <span
                 key={version.nonDeployableCause}

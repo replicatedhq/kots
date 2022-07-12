@@ -11338,6 +11338,11 @@ react-side-effect@^1.1.0:
   dependencies:
     shallowequal "^1.0.1"
 
+react-singleton-hook@^3.4.0:
+  version "3.4.0"
+  resolved "https://registry.yarnpkg.com/react-singleton-hook/-/react-singleton-hook-3.4.0.tgz#23e1fb8ea55c6e4f7fffdc8674bb03e99a948490"
+  integrity sha512-eQEpyacGAaRejmWUizUdNNQFn5AO0iaKRSl1jxgC0FQadVY/I1WFuPrYiutglPzO9s8yEbIh95UXVJQel4d7HQ==
+
 react-table@7.7.0:
   version "7.7.0"
   resolved "https://registry.yarnpkg.com/react-table/-/react-table-7.7.0.tgz#e2ce14d7fe3a559f7444e9ecfe8231ea8373f912"

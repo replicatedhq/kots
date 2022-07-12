@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
+import { singletonHook } from "react-singleton-hook";
 import { Utilities } from "../../utilities/utilities";
 
 async function fetchIsHelmManaged({
   accessToken = Utilities.getToken(),
   apiEndpoint = process.env.API_ENDPOINT,
+  signal = null,
 } = {}) {
   try {
     const res = await fetch(`${apiEndpoint}/isHelmManaged`, {
@@ -12,6 +14,7 @@ async function fetchIsHelmManaged({
         "Content-Type": "application/json",
       },
       method: "GET",
+      signal,
     });
     if (res.ok && res.status === 200) {
       const response = await res.json();
@@ -24,19 +27,31 @@ async function fetchIsHelmManaged({
   }
 }
 
-function useIsHelmManaged({ _fetchIsHelmManaged = fetchIsHelmManaged } = {}) {
+function useIsHelmManagedImpl({
+  _fetchIsHelmManaged = fetchIsHelmManaged,
+} = {}) {
   const [isHelmManaged, setIsHelmManaged] = useState(null);
   const [isHelmManagedLoading, setIsHelmManagedLoading] = useState(false);
 
   useEffect(() => {
+    let controller;
     if (isHelmManaged === null) {
+      controller = new AbortController();
       setIsHelmManaged(false);
       setIsHelmManagedLoading(true);
-      _fetchIsHelmManaged().then(({ isHelmManaged: _isHelmManaged }) => {
-        setIsHelmManaged(_isHelmManaged);
-        setIsHelmManagedLoading(false);
-      });
+      _fetchIsHelmManaged({ signal: controller.signal }).then(
+        ({ isHelmManaged: _isHelmManaged }) => {
+          setIsHelmManaged(_isHelmManaged);
+          setIsHelmManagedLoading(false);
+        }
+      );
     }
+
+    return () => {
+      if (controller) {
+        controller.abort();
+      }
+    };
   }, []);
 
   return {
@@ -44,6 +59,11 @@ function useIsHelmManaged({ _fetchIsHelmManaged = fetchIsHelmManaged } = {}) {
     isHelmManagedLoading,
   };
 }
+
+const useIsHelmManaged = singletonHook(
+  { isHelmManaged: null, isHelmManagedLoading: false },
+  useIsHelmManagedImpl
+);
 
 function IsHelmManaged({ children }) {
   const { isHelmManaged, isHelmManagedLoading } = useIsHelmManaged();

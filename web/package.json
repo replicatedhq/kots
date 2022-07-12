@@ -59,13 +59,13 @@
     "eslint": "8.19.0",
     "eslint-config-airbnb": "^18.2.1",
     "eslint-config-prettier": "^8.5.0",
-    "eslint-import-resolver-alias": "^1.1.2",
-    "eslint-plugin-jsx-a11y": "^6.6.0",
-    "eslint-plugin-prettier": "^4.2.1",
     "eslint-config-standard": "14.1.1",
+    "eslint-import-resolver-alias": "^1.1.2",
     "eslint-loader": "4.0.2",
     "eslint-plugin-import": "2.22.0",
+    "eslint-plugin-jsx-a11y": "^6.6.0",
     "eslint-plugin-node": "11.1.0",
+    "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-promise": "4.2.1",
     "eslint-plugin-react": "7.20.3",
     "eslint-plugin-standard": "4.0.1",
@@ -149,6 +149,7 @@
     "react-router": "^5.0.0",
     "react-router-dom": "^5.0.0",
     "react-select": "^2.4.3",
+    "react-singleton-hook": "^3.4.0",
     "react-tooltip": "4.2.6",
     "react-vis": "^1.11.7",
     "resumablejs": "^1.1.0",
@@ -161,7 +162,7 @@
     "urlize": "^0.2.1",
     "webpack-bugsnag-plugins": "^1.4.3"
   },
-  "resolutions" : {
+  "resolutions": {
     "eslint-loader/eslint": "7.5.0"
   },
   "browserslist": [
