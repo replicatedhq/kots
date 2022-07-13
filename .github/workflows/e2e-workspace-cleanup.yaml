@@ -1,0 +1,102 @@
+name: e2e-workspace-cleanup
+
+on:
+  workflow_call:
+    inputs:
+      workspace:
+        type: string
+        description: Terraform workspace to turn down
+        required: true
+    secrets:
+      E2E_TESTIM_AWS_ACCESS_KEY_ID:
+        required: true
+      E2E_TESTIM_AWS_SECRET_ACCESS_KEY:
+        required: true
+      E2E_GH_PAT:
+        required: true
+  workflow_dispatch:
+    inputs:
+      workspace:
+        type: string
+        description: Terraform workspace to turn down
+        required: true
+
+concurrency: cleanup-${{ github.event.inputs.workspace }}
+
+env:
+  AWS_DEFAULT_REGION: us-east-1
+  AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
+  TF_WORKSPACE: ${{ github.event.inputs.workspace }}
+  TF_VAR_testim_token: NO_TOKEN
+
+jobs:
+  cleanup-workspace:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: automation/cluster
+    strategy:
+      fail-fast: false
+      matrix:
+        environment:
+          - embedded-airgapped-install
+          - embedded-airgapped-install-k3s
+          - embedded-airgapped-upgrade
+          - embedded-online-install
+          - embedded-online-upgrade
+          - existing-airgapped-install-admin
+          - existing-airgapped-install-minimum
+          - existing-airgapped-upgrade-admin
+          - existing-airgapped-upgrade-minimum
+          - existing-online-install-admin
+          - existing-online-install-minimum
+          - existing-online-upgrade-admin
+          - existing-online-upgrade-minimum
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          repository: replicatedhq/kots-regression-automation
+          token: ${{ secrets.E2E_GH_PAT }}
+          path: automation
+          ref: main
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+      - name: Initialize Terraform
+        env:
+          TF_WORKSPACE: default
+        run: terraform init -reconfigure -backend-config=${{ matrix.environment }}-backend-config.tfvars
+      - name: Destroy infrastructure
+        run: ./${{ matrix.environment }}.sh destroy
+      - name: Delete workspace
+        env:
+          TF_WORKSPACE: default
+        run: terraform workspace delete ${{ github.event.inputs.workspace }}
+
+  cleanup-jumpbox:
+    needs: cleanup-workspace
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: automation/jumpbox
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          repository: replicatedhq/kots-regression-automation
+          token: ${{ secrets.E2E_GH_PAT }}
+          path: automation
+          ref: main
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+      - name: Initialize Terraform
+        env:
+          TF_WORKSPACE: default
+        run: terraform init -reconfigure -backend-config="key=jumpbox.tfstate"
+      - name: Destroy infrastructure
+        run: terraform destroy -auto-approve
+      - name: Delete workspace
+        env:
+          TF_WORKSPACE: default
+        run: terraform workspace delete ${{ github.event.inputs.workspace }}
