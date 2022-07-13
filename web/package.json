@@ -31,6 +31,9 @@
     "@pact-foundation/pact": "^9.17.3",
     "@pact-foundation/pact-node": "^10.17.2",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.4",
+    "@testing-library/jest-dom": "^5.16.4",
+    "@testing-library/react": "^13.3.0",
+    "@testing-library/react-hooks": "^8.0.1",
     "autoprefixer": "9.8.5",
     "babel-jest": "^27.4.6",
     "babel-loader": "8.1.0",
@@ -41,9 +44,6 @@
     "babel-preset-stage-0": "^6.24.1",
     "babel-register": "^6.26.0",
     "browserify-zlib": "^0.2.0",
-    "chai": "^4.2.0",
-    "chai-as-promised": "^7.1.1",
-    "chai-string": "^1.5.0",
     "constants-browserify": "^1.0.0",
     "crypto-browserify": "^3.12.0",
     "css-loader": "3.6.0",
@@ -161,5 +161,12 @@
     "last 4 versions",
     "not IE 11",
     "not dead"
-  ]
+  ],
+  "jest": {
+    "moduleNameMapper": {
+      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/__mocks__/fileMock.js",
+      "\\.(scss|css|less)$": "<rootDir>/__mocks__/styleMock.js",
+      "@src/(.*)$": "<rootDir>/src/$1"
+    }
+  }
 }
