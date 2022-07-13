@@ -96,7 +96,7 @@ jobs:
       - name: Initialize Terraform
         env:
           TF_WORKSPACE: default
-        run: terraform init -reconfigure -backend-config="key=jumpbox.tfstate"
+        run: terraform init -reconfigure
       - name: Destroy infrastructure
         run: terraform destroy -auto-approve
       - name: Delete workspace
