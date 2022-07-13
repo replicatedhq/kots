@@ -14,6 +14,9 @@ on:
         required: true
       E2E_GH_PAT:
         required: true
+  repository_dispatch:
+    types:
+      - e2e-workspace-cleanup
   workflow_dispatch:
     inputs:
       workspace:
@@ -27,7 +30,7 @@ env:
   AWS_DEFAULT_REGION: us-east-1
   AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
-  TF_WORKSPACE: ${{ github.event.inputs.workspace }}
+  TF_WORKSPACE: ${{ github.event.inputs.workspace || github.event.client_payload.workspace }}
   TF_VAR_testim_token: NO_TOKEN
 
 jobs:
