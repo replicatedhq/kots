@@ -34,7 +34,7 @@ import (
 	"gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	discovery "k8s.io/client-go/discovery"
+	"k8s.io/client-go/kubernetes"
 	certUtil "k8s.io/client-go/util/cert"
 )
 
@@ -526,12 +526,7 @@ func (ctx StaticCtx) isKurl() bool {
 	return configMap != nil
 }
 
-func getNodes() ([]corev1.Node, error) {
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return nil, err
-	}
-
+func getNodes(clientset kubernetes.Interface) ([]corev1.Node, error) {
 	nodeList, err := clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, err
@@ -540,39 +535,32 @@ func getNodes() ([]corev1.Node, error) {
 }
 
 func (ctx StaticCtx) distribution() string {
-	nodes, err := getNodes()
+	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return ""
 	}
 
-	foundProviders, workingProvider := analyze.ParseNodesForProviders(nodes)
-
-	if workingProvider != "" {
-		return workingProvider
+	// detecting openshift before getting nodes for this to work in minimal rbac
+	if k8sutil.IsOpenShift(clientset) {
+		return "openShift"
 	}
 
-	cfg, err := k8sutil.GetClusterConfig()
+	nodes, err := getNodes(clientset)
 	if err != nil {
 		return ""
 	}
 
-	discoveryClient, err := discovery.NewDiscoveryClientForConfig(cfg)
-	if err != nil {
-		return ""
-	}
-
-	_, apiResourceList, err := discoveryClient.ServerGroupsAndResources()
-	if err != nil {
-		return ""
-	}
-
-	provider := analyze.CheckOpenShift(&foundProviders, apiResourceList, workingProvider)
+	_, provider := analyze.ParseNodesForProviders(nodes)
 
 	return provider
 }
 
 func (ctx StaticCtx) nodeCount() int {
-	nodes, err := getNodes()
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return 0
+	}
+	nodes, err := getNodes(clientset)
 	if err != nil {
 		return 0
 	}
