@@ -117,7 +117,7 @@ func (h *Handler) GetPendingApp(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, pendingAppResponse)
 }
 
-func responseAppFromHelmSecret(s v1.Secret) (*types.ResponseApp, map[string]interface{}, error) {
+func helmResponseAppFromSecret(s v1.Secret) (*types.HelmResponseApp, map[string]interface{}, error) {
 	unixIntValue, err := strconv.ParseInt(s.Labels["modifiedAt"], 10, 64)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to get unix timestamp from modifiedAt label")
@@ -167,15 +167,27 @@ func responseAppFromHelmSecret(s v1.Secret) (*types.ResponseApp, map[string]inte
 		DeployedAt:   &release.Info.LastDeployed.Time,
 	}
 
+	var username, password string
+	if replVals := release.Chart.Values["replicated"].(map[string]interface{}); replVals != nil {
+		username, _ = replVals["username"].(string)
+		password, _ = replVals["license_id"].(string)
+	}
+
 	pendingVersions := make([]*downstreamtypes.DownstreamVersion, 0)
 	pendingVersions = append(pendingVersions, downstreamVersion)
-	return &types.ResponseApp{
-		Name:       s.Labels["name"],
-		Slug:       s.Labels["name"],
-		CreatedAt:  s.CreationTimestamp.Time,
-		UpdatedAt:  &updatedTs,
-		IconURI:    iconURI,
-		Downstream: types.ResponseDownstream{CurrentVersion: downstreamVersion, PendingVersions: pendingVersions},
+	return &types.HelmResponseApp{
+		ResponseApp: types.ResponseApp{
+			Name:       s.Labels["name"],
+			Slug:       s.Labels["name"],
+			CreatedAt:  s.CreationTimestamp.Time,
+			UpdatedAt:  &updatedTs,
+			IconURI:    iconURI,
+			Downstream: types.ResponseDownstream{CurrentVersion: downstreamVersion, PendingVersions: pendingVersions},
+		},
+		Credentials: types.Credentials{
+			Username: username,
+			Password: password,
+		},
 	}, release.Chart.Values, nil
 }
 
@@ -190,6 +202,7 @@ func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 	responseApps := []types.ResponseApp{}
 	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
 	if isHelmManaged == "true" {
+		helmResponseApps := []types.HelmResponseApp{}
 		cache := getHelmAppCache()
 		configCache := getHelmConfigSecretCache()
 
@@ -228,7 +241,7 @@ func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 			}
 
 			for _, s := range secrets.Items {
-				app, values, err := responseAppFromHelmSecret(s)
+				app, values, err := helmResponseAppFromSecret(s)
 				if err != nil {
 					logger.Error(err)
 					continue
@@ -252,38 +265,44 @@ func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 		}
 
 		for _, app := range cache {
-			responseApps = append(responseApps, *app.Application)
+			helmResponseApps = append(helmResponseApps, *app.Application)
 		}
-	} else {
-		apps, err := store.GetStore().ListInstalledApps()
+
+		listAppsResponse := types.ListAppsHelmResponse{
+			Apps: helmResponseApps,
+		}
+
+		JSON(w, http.StatusOK, listAppsResponse)
+		return
+	}
+	apps, err := store.GetStore().ListInstalledApps()
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	defaultRoles := rbac.DefaultRoles() // TODO (ethan): this should be set in the handler
+
+	for _, a := range apps {
+		if sess.HasRBAC { // handle pre-rbac sessions
+			allow, err := rbac.CheckAccess(r.Context(), defaultRoles, "read", fmt.Sprintf("app.%s", a.Slug), sess.Roles)
+			if err != nil {
+				logger.Error(errors.Wrapf(err, "failed to check access for app %s", a.Slug))
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			} else if !allow {
+				continue
+			}
+		}
+
+		responseApp, err := responseAppFromApp(a)
 		if err != nil {
 			logger.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-
-		defaultRoles := rbac.DefaultRoles() // TODO (ethan): this should be set in the handler
-
-		for _, a := range apps {
-			if sess.HasRBAC { // handle pre-rbac sessions
-				allow, err := rbac.CheckAccess(r.Context(), defaultRoles, "read", fmt.Sprintf("app.%s", a.Slug), sess.Roles)
-				if err != nil {
-					logger.Error(errors.Wrapf(err, "failed to check access for app %s", a.Slug))
-					w.WriteHeader(http.StatusInternalServerError)
-					return
-				} else if !allow {
-					continue
-				}
-			}
-
-			responseApp, err := responseAppFromApp(a)
-			if err != nil {
-				logger.Error(err)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-			responseApps = append(responseApps, *responseApp)
-		}
+		responseApps = append(responseApps, *responseApp)
 	}
 
 	listAppsResponse := types.ListAppsResponse{
@@ -321,20 +340,21 @@ func (h *Handler) GetApp(w http.ResponseWriter, r *http.Request) {
 	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
 	if isHelmManaged == "true" {
 		cache := getHelmAppCache()
-		responseApp = cache[appSlug].Application
-	} else {
-		a, err := store.GetStore().GetAppFromSlug(appSlug)
-		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		responseApp, err = responseAppFromApp(a)
-		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
+		helmResponseApp := cache[appSlug].Application
+		JSON(w, http.StatusOK, helmResponseApp)
+		return
+	}
+	a, err := store.GetStore().GetAppFromSlug(appSlug)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	responseApp, err = responseAppFromApp(a)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	JSON(w, http.StatusOK, responseApp)

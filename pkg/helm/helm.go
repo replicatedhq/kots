@@ -17,7 +17,7 @@ import (
 )
 
 type HelmApp struct {
-	Application      *types.ResponseApp
+	Application      *types.HelmResponseApp
 	Values           map[string]interface{}
 	PathToValuesFile string
 }
