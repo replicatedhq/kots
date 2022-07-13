@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Utilities } from "../../utilities/utilities";
+import { useQuery } from "react-query";
 
 async function fetchIsHelmManaged({
   accessToken = Utilities.getToken(),
@@ -25,33 +26,15 @@ async function fetchIsHelmManaged({
 }
 
 function useIsHelmManaged({ _fetchIsHelmManaged = fetchIsHelmManaged } = {}) {
-  const [isHelmManaged, setIsHelmManaged] = useState(null);
-  const [isHelmManagedLoading, setIsHelmManagedLoading] = useState(false);
-
-  useEffect(() => {
-    if (isHelmManaged === null) {
-      setIsHelmManaged(false);
-      setIsHelmManagedLoading(true);
-      _fetchIsHelmManaged().then(({ isHelmManaged: _isHelmManaged }) => {
-        setIsHelmManaged(_isHelmManaged);
-        setIsHelmManagedLoading(false);
-      });
-    }
-  }, []);
-
-  return {
-    isHelmManaged,
-    isHelmManagedLoading,
-  };
-}
-
-function IsHelmManaged({ children }) {
-  const { isHelmManaged, isHelmManagedLoading } = useIsHelmManaged();
-
-  return children({
-    isHelmManaged,
-    isHelmManagedLoading,
+  return useQuery("isHelmManaged", () => _fetchIsHelmManaged(), {
+    staleTime: Infinity,
   });
 }
 
-export { IsHelmManaged, fetchIsHelmManaged, useIsHelmManaged };
+function UseIsHelmManaged({ children }) {
+  const query  = useIsHelmManaged();
+
+  return children(query);
+}
+
+export { UseIsHelmManaged, fetchIsHelmManaged, useIsHelmManaged };

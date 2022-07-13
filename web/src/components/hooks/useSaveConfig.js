@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMutation } from "react-query";
 import { Utilities } from "../../utilities/utilities";
 
 const putConfig = async ({
@@ -18,35 +18,19 @@ const putConfig = async ({
       body,
     });
 
+    if (!response.ok) {
+      throw new Error("Error saving config");
+    }
+
     const data = await response.json();
     return { data };
   } catch (error) {
-    return { error };
+    throw error;
   }
 };
 
 const useSaveConfig = ({ _putConfig = putConfig, appSlug } = {}) => {
-  const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState(null);
-
-  const saveConfig = async ({ body }) => {
-    try {
-      setIsSaving(true);
-      setError(null);
-      // TODO handle error
-      // eslint-disable-next-line no-unused-vars
-      const { data } = await _putConfig({
-        appSlug,
-        body,
-      });
-
-      setIsSaving(false);
-    } catch (saveError) {
-      setIsSaving(false);
-      setError(saveError);
-    }
-  };
-  return { saveConfig, isSaving, error };
+  return useMutation(({body}) => _putConfig({appSlug, body}));
 };
 
 export { useSaveConfig };

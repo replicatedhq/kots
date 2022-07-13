@@ -40,9 +40,15 @@ const useDownloadValues = ({
     try {
       setIsDownloading(true);
       setError(null);
-      const { data } = await _getValues({
+      const { data, error } = await _getValues({
         appSlug,
       });
+      if (error) {
+        setError(error);
+        setIsDownloading(false);
+        return;
+      }
+
       const newUrl = _createObjectURL(new Blob([data]));
       setUrl(newUrl);
       setName(fileName);
@@ -56,7 +62,12 @@ const useDownloadValues = ({
     }
   };
 
+  const clearError = () => {
+    setError(null)
+  }
+
   return {
+    clearError,
     download,
     error,
     isDownloading,

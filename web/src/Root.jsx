@@ -21,12 +21,16 @@ import UploadAirgapBundle from "./components/UploadAirgapBundle";
 import RestoreCompleted from "./components/RestoreCompleted";
 import Access from "./components/identity/Access";
 import SnapshotsWrapper from "./components/snapshots/SnapshotsWrapper";
+import { QueryClient, QueryClientProvider } from "react-query"
 
 import Footer from "./components/shared/Footer";
 import NavBar from "./components/shared/NavBar";
 
 import "./scss/index.scss";
 import connectHistory from "./services/matomo";
+
+// react-query client
+const queryClient = new QueryClient()
 
 const INIT_SESSION_ID_STORAGE_KEY = "initSessionId";
 
@@ -55,9 +59,9 @@ class ProtectedRoute extends Component {
 }
 
 const ThemeContext = React.createContext({
-  setThemeState: () => {},
+  setThemeState: () => { },
   getThemeState: () => ({}),
-  clearThemeState: () => {},
+  clearThemeState: () => { },
 });
 
 class Root extends PureComponent {
@@ -338,7 +342,7 @@ class Root extends PureComponent {
     } = this.state;
 
     return (
-      <>
+      <QueryClientProvider client={queryClient}>
         <Helmet>
           <meta
             httpEquiv="Cache-Control"
@@ -577,7 +581,7 @@ class Root extends PureComponent {
             }
           />
         </Modal>
-      </>
+      </QueryClientProvider>
     );
   }
 }

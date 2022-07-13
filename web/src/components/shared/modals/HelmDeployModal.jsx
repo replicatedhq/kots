@@ -20,11 +20,14 @@ function makeLoginCommand({
   )} --username ${registryUsername} --password ${registryPassword}`;
 }
 
-export default function HelmDeployModal({
+function HelmDeployModal({
   appSlug,
   chartPath,
-  downloadClicked = () => {},
-  hideHelmDeployModal = () => {},
+  downloadClicked = () => { },
+  downloadError = false,
+  hideHelmDeployModal = () => { },
+  isDownloading = false,
+  saveError = false,
   showHelmDeployModal,
   subtitle,
   registryUsername = "myUsername",
@@ -75,16 +78,21 @@ export default function HelmDeployModal({
             <div className="u-marginBottom--30 flex flex-row">
               <span className="Title step-number u-marginRight--15">2</span>
               <div className="flex1">
-                <span className="Title u-marginBottom--10 u-display--block">
+                <span className={`Title u-marginBottom--10 u-display--block `}>
                   Download your new values.yaml file
                 </span>
                 <button
-                  className="btn secondary blue large flex alignItems--center"
+                  className="btn secondary blue large flex alignItems--center u-marginBottom--5"
                   onClick={downloadClicked}
                 >
                   <span className="icon blue-yaml-icon u-marginRight--10" />
                   <span className="flex1">Download values.yaml</span>
                 </button>
+                {downloadError && (
+                  <span className="CodeSnippet-copy u-textColor--error is-copied">
+                    There was a problem downloading your values.yaml file. Try again.
+                  </span>
+                )}
               </div>
             </div>
           )}
@@ -126,6 +134,11 @@ export default function HelmDeployModal({
         >
           Ok, got it!
         </button>
+        {saveError &&
+        <span className="CodeSnippet-copy u-textColor--error u-display--block is-copied u-marginTop--5">
+          There was a problem saving your configuration. Close this modal and try again.
+        </span>
+      }
       </div>
     </Modal>
   );
