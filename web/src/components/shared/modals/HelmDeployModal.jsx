@@ -23,9 +23,9 @@ function makeLoginCommand({
 function HelmDeployModal({
   appSlug,
   chartPath,
-  downloadClicked = () => { },
+  downloadClicked = () => {},
   downloadError = false,
-  hideHelmDeployModal = () => { },
+  hideHelmDeployModal = () => {},
   isDownloading = false,
   saveError = false,
   showHelmDeployModal,
@@ -90,7 +90,8 @@ function HelmDeployModal({
                 </button>
                 {downloadError && (
                   <span className="CodeSnippet-copy u-textColor--error is-copied">
-                    There was a problem downloading your values.yaml file. Try again.
+                    There was a problem downloading your values.yaml file. Try
+                    again.
                   </span>
                 )}
               </div>
@@ -134,11 +135,12 @@ function HelmDeployModal({
         >
           Ok, got it!
         </button>
-        {saveError &&
-        <span className="CodeSnippet-copy u-textColor--error u-display--block is-copied u-marginTop--5">
-          There was a problem saving your configuration. Close this modal and try again.
-        </span>
-      }
+        {saveError && (
+          <span className="CodeSnippet-copy u-textColor--error u-display--block is-copied u-marginTop--5">
+            There was a problem saving your configuration. Close this modal and
+            try again.
+          </span>
+        )}
       </div>
     </Modal>
   );

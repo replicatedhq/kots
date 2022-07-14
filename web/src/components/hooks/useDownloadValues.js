@@ -12,14 +12,17 @@ const getValues = async ({
       method: "GET",
       headers: {
         Authorization: _token,
-        "Content-Type": "application/json",
+        "Content-Type": "application/blob",
       },
     });
+    if (!response.ok) {
+      throw new Error("Error fetching values");
+    }
 
     const data = await response.blob();
     return { data };
   } catch (error) {
-    return { error };
+    throw Error(error);
   }
 };
 
@@ -40,11 +43,11 @@ const useDownloadValues = ({
     try {
       setIsDownloading(true);
       setError(null);
-      const { data, error } = await _getValues({
+      const { data, error: _error } = await _getValues({
         appSlug,
       });
-      if (error) {
-        setError(error);
+      if (_error) {
+        setError(_error);
         setIsDownloading(false);
         return;
       }
@@ -63,8 +66,8 @@ const useDownloadValues = ({
   };
 
   const clearError = () => {
-    setError(null)
-  }
+    setError(null);
+  };
 
   return {
     clearError,
@@ -77,4 +80,4 @@ const useDownloadValues = ({
   };
 };
 
-export { useDownloadValues };
+export { useDownloadValues, getValues };

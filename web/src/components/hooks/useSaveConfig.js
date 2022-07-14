@@ -25,12 +25,11 @@ const putConfig = async ({
     const data = await response.json();
     return { data };
   } catch (error) {
-    throw error;
+    throw Error(error);
   }
 };
 
-const useSaveConfig = ({ _putConfig = putConfig, appSlug } = {}) => {
-  return useMutation(({body}) => _putConfig({appSlug, body}));
-};
+const useSaveConfig = ({ _putConfig = putConfig, appSlug } = {}) =>
+  useMutation(({ body }) => _putConfig({ appSlug, body }));
 
-export { useSaveConfig };
+export { useSaveConfig, putConfig };

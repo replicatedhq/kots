@@ -1,27 +1,26 @@
-import { useState, useEffect } from "react";
-import { Utilities } from "../../utilities/utilities";
 import { useQuery } from "react-query";
+import { Utilities } from "../../utilities/utilities";
 
 async function fetchIsHelmManaged({
   accessToken = Utilities.getToken(),
   apiEndpoint = process.env.API_ENDPOINT,
+  _fetch = fetch,
 } = {}) {
   try {
-    const res = await fetch(`${apiEndpoint}/isHelmManaged`, {
+    const res = await _fetch(`${apiEndpoint}/isHelmManaged`, {
       headers: {
         Authorization: accessToken,
         "Content-Type": "application/json",
       },
       method: "GET",
     });
-    if (res.ok && res.status === 200) {
+    if (res.ok) {
       const response = await res.json();
       return { isHelmManaged: response.isHelmManaged };
     }
-    return { isHelmManaged: false };
+    throw new Error("Error fetching isHelmManaged");
   } catch (err) {
-    console.log(err);
-    return { isHelmManaged: false };
+    throw Error(err);
   }
 }
 
@@ -32,7 +31,7 @@ function useIsHelmManaged({ _fetchIsHelmManaged = fetchIsHelmManaged } = {}) {
 }
 
 function UseIsHelmManaged({ children }) {
-  const query  = useIsHelmManaged();
+  const query = useIsHelmManaged();
 
   return children(query);
 }

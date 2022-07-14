@@ -611,10 +611,11 @@ class AppConfig extends Component {
               return (
                 <div
                   key={`${i}-${group.name}-${group.title}`}
-                  className={`AppConfigSidenav--group ${this.state.activeGroups.includes(group.name)
-                    ? "group-open"
-                    : ""
-                    }`}
+                  className={`AppConfigSidenav--group ${
+                    this.state.activeGroups.includes(group.name)
+                      ? "group-open"
+                      : ""
+                  }`}
                 >
                   <div
                     className="flex alignItems--center AppConfigSidenav--groupWrapper"
@@ -634,8 +635,9 @@ class AppConfig extends Component {
                         }
                         return (
                           <a
-                            className={`u-fontSize--normal u-lineHeight--normal ${hash === `${item.name}-group` ? "active-item" : ""
-                              }`}
+                            className={`u-fontSize--normal u-lineHeight--normal ${
+                              hash === `${item.name}-group` ? "active-item" : ""
+                            }`}
                             href={`#${item.name}-group`}
                             key={`${i}-${item.name}-${item.title}`}
                           >
@@ -654,7 +656,11 @@ class AppConfig extends Component {
               {({ data = {} }) => {
                 const { isHelmManaged } = data;
 
-                const { mutate: saveConfig, isLoading: isSaving, isError: saveError } = useSaveConfig({
+                const {
+                  mutate: saveConfig,
+                  isLoading: isSaving,
+                  isError: saveError,
+                } = useSaveConfig({
                   appSlug: this.getSlug(),
                 });
 
@@ -753,8 +759,7 @@ class AppConfig extends Component {
                           hideHelmDeployModal={() => {
                             this.setState({ showHelmDeployModal: false });
                             clearDownloadError();
-                          }
-                          }
+                          }}
                           saveError={saveError}
                           showHelmDeployModal={true}
                           subtitle="Follow the steps below to upgrade your application with your new values.yaml."
