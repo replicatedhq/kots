@@ -190,7 +190,7 @@ scan:
 		--ignorefile .trivyignore \
 		./
 
-.PHONY: kubectl-versions
-kubectl-versions: 
+.PHONY: generate-kubectl-versions
+generate-kubectl-versions: 
 	npm install -C actions/kubectl-versions
 	node actions/kubectl-versions

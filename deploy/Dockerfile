@@ -16,9 +16,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 ENV KOTS_KUBECTL_BIN_DIR=/usr/local/bin
 
-# The following kubectl versions are automatically generated. Do not modify.
+# The following kubectl versions are automatically generated. Run `make generate-kubectl-versions` to update.
 
-# BEGIN_KUBECTL_VERSIONS
+# __BEGIN_KUBECTL_VERSIONS__
 
 # Install Kubectl 1.19
 ENV KUBECTL_1_19_VERSION=v1.19.16
@@ -75,7 +75,7 @@ RUN curl -fsSLO "${KUBECTL_1_24_URL}" \
   && mv kubectl "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.24" \
   && ln -s "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.24" "${KOTS_KUBECTL_BIN_DIR}/kubectl"
 
-# END_KUBECTL_VERSIONS
+# __END_KUBECTL_VERSIONS__
 
 # KOTS can be configured to use a specific version of kustomize by setting kustomizeVersion in the
 # kots.io/v1beta1.Application spec. The github.com/replicatedhq/kots/pkg/binaries package will

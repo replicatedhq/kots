@@ -41,7 +41,7 @@ RUN curl -fsSLO "${"${KUBECTL_" + v.cycle.replace(".", "_") + "_URL}"}" \\
         if (err) {
             return console.error(err);
         }
-        var result = data.replace(/(# BEGIN_KUBECTL_VERSIONS\n\n)([\s\S]*?)(\n\n# END_KUBECTL_VERSIONS)/g, `$1${commandText}$3`);
+        var result = data.replace(/(# __BEGIN_KUBECTL_VERSIONS__\n\n)([\s\S]*?)(\n\n# __END_KUBECTL_VERSIONS__)/g, `$1${commandText}$3`);
 
         fs.writeFile("deploy/Dockerfile", result, 'utf8', function (err) {
             if (err) return console.error(err);
