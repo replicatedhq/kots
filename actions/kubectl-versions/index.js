@@ -29,7 +29,7 @@ RUN curl -fsSLO "${"${KUBECTL_" + v.cycle.replace(".", "_") + "_URL}"}" \\
   && mv kubectl "${"${KOTS_KUBECTL_BIN_DIR}"}/kubectl-v${v.cycle}"`;
         if (i === supported.length - 1) {
             v.install = v.install + ` \\
-  && ln -s "${"${KOTS_KUBECTL_BIN_DIR}"}/kubectl-v1.24" "${"${KOTS_KUBECTL_BIN_DIR}"}/kubectl"`
+  && ln -s "${"${KOTS_KUBECTL_BIN_DIR}"}/kubectl-v${v.cycle}" "${"${KOTS_KUBECTL_BIN_DIR}"}/kubectl"`
         }
         i++
     }
