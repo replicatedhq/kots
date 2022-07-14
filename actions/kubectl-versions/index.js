@@ -1,13 +1,18 @@
 const fetch = require('node-fetch');
-const fs = require('fs')
+const fs = require('fs');
+var semver = require('semver');
 
+
+const OLDEST_SUPPORTED_VERSION = "1.19.0"
 
 async function updateVersions() {
     // Fetch supported Kubernetes version info
     const response = await fetch("https://endoflife.date/api/kubernetes.json");
     const releases = await response.json();
 
-    const supported = releases.filter(release => new Date(release.eol) > new Date()).reverse();
+    const supported = releases.filter(release => semver.gte(release.latest, OLDEST_SUPPORTED_VERSION)).reverse();
+    // NOTE: The following could be used if we want to only include officially supported versions
+    // const supported = releases.filter(release => new Date(release.eol) > new Date()).reverse();
 
     // Create Dockerfile command text
     let i = 0
