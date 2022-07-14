@@ -498,8 +498,26 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
 	if isHelmManaged == "true" {
 		cache := getHelmAppCache()
+		app := cache[appSlug].Application
 		history.NumOfRemainingVersions = 0
-		history.VersionHistory = []*downstreamtypes.DownstreamVersion{cache[appSlug].Application.Downstream.CurrentVersion}
+		chartUpdates := helm.GetCachedUpdates(app.ChartPath)
+
+		now := time.Now()
+		versions := []*downstreamtypes.DownstreamVersion{}
+		for _, update := range chartUpdates {
+			versions = append(versions, &downstreamtypes.DownstreamVersion{
+				VersionLabel:       update.Tag,
+				Semver:             &update.Version,
+				UpdateCursor:       update.Tag,
+				CreatedOn:          &now,              // TODO: implement
+				UpstreamReleasedAt: &now,              // TODO: implement
+				IsDeployable:       false,             // TODO: implement
+				NonDeployableCause: "not implemented", // TODO: implement
+			})
+		}
+		versions = append(versions, app.Downstream.CurrentVersion)
+		// TODO: this cuts off at current version.  add all past versions?
+		history.VersionHistory = versions
 	} else {
 		foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
 		if err != nil {
