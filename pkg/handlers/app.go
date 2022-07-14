@@ -23,6 +23,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/api/handlers/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/gitops"
+	"github.com/replicatedhq/kots/pkg/helm"
 	kotshelm "github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -497,8 +498,26 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
 	if isHelmManaged == "true" {
 		cache := getHelmAppCache()
+		app := cache[appSlug].Application
 		history.NumOfRemainingVersions = 0
-		history.VersionHistory = []*downstreamtypes.DownstreamVersion{cache[appSlug].Application.Downstream.CurrentVersion}
+		chartUpdates := helm.GetCachedUpdates(app.ChartPath)
+
+		now := time.Now()
+		versions := []*downstreamtypes.DownstreamVersion{}
+		for _, update := range chartUpdates {
+			versions = append(versions, &downstreamtypes.DownstreamVersion{
+				VersionLabel:       update.Tag,
+				Semver:             &update.Version,
+				UpdateCursor:       update.Tag,
+				CreatedOn:          &now,              // TODO: implement
+				UpstreamReleasedAt: &now,              // TODO: implement
+				IsDeployable:       false,             // TODO: implement
+				NonDeployableCause: "not implemented", // TODO: implement
+			})
+		}
+		versions = append(versions, app.Downstream.CurrentVersion)
+		// TODO: this cuts off at current version.  add all past versions?
+		history.VersionHistory = versions
 	} else {
 		foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
 		if err != nil {
@@ -717,6 +736,35 @@ func (h *Handler) GetLatestDeployableVersion(w http.ResponseWriter, r *http.Requ
 	getLatestDeployableVersionResponse := GetLatestDeployableVersionResponse{}
 
 	appSlug := mux.Vars(r)["appSlug"]
+
+	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
+	if isHelmManaged == "true" {
+		cache := getHelmAppCache()
+		app := cache[appSlug].Application
+		availableUpdates := helm.GetCachedUpdates(app.ChartPath)
+		if len(availableUpdates) == 0 {
+			JSON(w, http.StatusOK, getLatestDeployableVersionResponse)
+			return
+		}
+
+		now := time.Now()
+		getLatestDeployableVersionResponse.Error = ""
+		getLatestDeployableVersionResponse.LatestDeployableVersion = &downstreamtypes.DownstreamVersion{
+			VersionLabel:       availableUpdates[0].Tag,
+			Semver:             &availableUpdates[0].Version,
+			UpdateCursor:       availableUpdates[0].Tag,
+			CreatedOn:          &now,              // TODO: implement
+			UpstreamReleasedAt: &now,              // TODO: implement
+			IsDeployable:       false,             // TODO: implement
+			NonDeployableCause: "not implemented", // TODO: implement
+		}
+		getLatestDeployableVersionResponse.NumOfSkippedVersions = 0   // TODO
+		getLatestDeployableVersionResponse.NumOfRemainingVersions = 0 // TODO
+
+		JSON(w, http.StatusOK, getLatestDeployableVersionResponse)
+		return
+	}
+
 	a, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
 		errMsg := "failed to get app from slug"
