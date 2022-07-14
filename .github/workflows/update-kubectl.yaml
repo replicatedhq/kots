@@ -1,0 +1,38 @@
+name: cron-kubectl-update
+on:
+  schedule:
+  - cron: '0 4 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  build-pr-kubectl:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Create Kubectl Update
+      id: update
+      uses: ./actions/kubectl-versions
+
+    - name: Create Pull Request # creates a PR if there are differences
+      uses: peter-evans/create-pull-request@v4.0.3
+      id: cpr
+      with:
+        token: ${{ secrets.GH_PAT }}
+        commit-message: Update kubectl versions in image
+        title: 'Automated Kubectl version update'
+        branch: automation/update-kubectl
+        delete-branch: true
+        labels: |
+          automated-pr
+          kubectl
+        draft: false
+        base: "main"
+        body: "Automated changes by the [cron-kubectl-update](https://github.com/replicatedhq/kots/blob/main/.github/workflows/update-kubectl.yaml) GitHub action"
+
+    - name: Check outputs
+      run: |
+        echo "Pull Request Number - ${{ steps.cpr.outputs.pull-request-number }}"
+        echo "Pull Request URL - ${{ steps.cpr.outputs.pull-request-url }}"
