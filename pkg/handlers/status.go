@@ -22,8 +22,8 @@ func (h *Handler) GetUpdateDownloadStatus(w http.ResponseWriter, r *http.Request
 	var err error
 	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
 	if isHelmManaged == "true" {
-		status = "deployed"
-		message = "helm chart was deployed"
+		status = ""
+		message = ""
 	} else {
 		status, message, err = store.GetStore().GetTaskStatus("update-download")
 		if err != nil {

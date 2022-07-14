@@ -85,10 +85,7 @@ class DashboardVersionCard extends React.Component {
         secondSequence: splitSearch[2],
       });
     }
-    if (
-      lastProps.downstream !== this.props.downstream &&
-      this.props.isHelmManaged !== true
-    ) {
+    if (lastProps.downstream !== this.props.downstream) {
       this.getLatestDeployableVersion();
     }
   }
