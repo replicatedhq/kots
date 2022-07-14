@@ -189,3 +189,8 @@ scan:
 		--skip-files web/yarn.lock \
 		--ignorefile .trivyignore \
 		./
+
+.PHONY: kubectl-versions
+kubectl-versions: 
+	npm install -C actions/kubectl-versions
+	node actions/kubectl-versions

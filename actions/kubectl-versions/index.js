@@ -36,12 +36,12 @@ RUN curl -fsSLO "${"${KUBECTL_" + v.cycle.replace(".", "_") + "_URL}"}" \\
 
     const commandText = supported.map(s => s.install).join("\n\n");
 
-    // Insert command text into template and overwrite Dockerfile
-    fs.readFile("actions/kubectl-versions/template/Dockerfile.template", 'utf8', function (err, data) {
+    // Insert command text into Dockerfile
+    fs.readFile("deploy/Dockerfile", 'utf8', function (err, data) {
         if (err) {
             return console.error(err);
         }
-        var result = data.replace(/__KUBECTL_VERSIONS__/g, commandText);
+        var result = data.replace(/(# BEGIN_KUBECTL_VERSIONS\n\n)([\s\S]*?)(\n\n# END_KUBECTL_VERSIONS)/g, `$1${commandText}$3`);
 
         fs.writeFile("deploy/Dockerfile", result, 'utf8', function (err) {
             if (err) return console.error(err);
