@@ -31,7 +31,7 @@ WORKDIR $PROJECTPATH
 RUN apt update && apt install --no-install-recommends gnupg2 curl -y \
   && curl -k https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
   && echo "deb http://apt.postgresql.org/pub/repos/apt/ bookworm-pgdg main" > /etc/apt/sources.list.d/PostgreSQL.list \
-  && apt update && apt install -y --no-install-recommends postgresql-client-10 python3-pip ca-certificates \
+  && apt update && apt install -y --no-install-recommends postgresql-client-14 python-pip ca-certificates \
   && pip install s3cmd \
   && rm -rf /var/lib/apt/lists/*
 

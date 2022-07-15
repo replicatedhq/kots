@@ -1,9 +1,9 @@
 include Makefile.build.mk
 CURRENT_USER := $(shell id -u -n)
-MINIO_TAG ?= RELEASE.2022-06-11T19-55-32Z
-POSTGRES_ALPINE_TAG ?= 10.20-alpine
+MINIO_TAG ?= RELEASE.2022-07-17T15-43-14Z
+POSTGRES_14_TAG ?= 14.4-alpine
 DEX_TAG ?= v2.32.0
-LVP_TAG := v0.3.5
+LVP_TAG ?= v0.3.6
 
 define sendMetrics
 @if [ -z "${PROJECT_NAME}" ]; then \
@@ -106,8 +106,8 @@ all-ttl.sh: build-ttl.sh
 	docker tag minio/minio:${MINIO_TAG} ttl.sh/${CURRENT_USER}/minio:12h
 	docker push ttl.sh/${CURRENT_USER}/minio:12h
 
-	docker pull postgres:${POSTGRES_ALPINE_TAG}
-	docker tag postgres:${POSTGRES_ALPINE_TAG} ttl.sh/${CURRENT_USER}/postgres:12h
+	docker pull postgres:${POSTGRES_14_TAG}
+	docker tag postgres:${POSTGRES_14_TAG} ttl.sh/${CURRENT_USER}/postgres:12h
 	docker push ttl.sh/${CURRENT_USER}/postgres:12h
 
 .PHONY: build-alpha

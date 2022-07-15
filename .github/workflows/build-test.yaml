@@ -259,8 +259,8 @@ jobs:
       - name: push minio for e2e
         run: |
           docker pull minio/minio:${{ steps.dotenv.outputs.minio_tag }}
-          docker tag minio/minio:${{ steps.dotenv.outputs.minio_tag }} ttl.sh/automated-${{ github.run_id }}/minio:12h
-          docker push ttl.sh/automated-${{ github.run_id }}/minio:12h
+          docker tag minio/minio:${{ steps.dotenv.outputs.minio_tag }} ttl.sh/automated-${{ github.run_id }}/minio:${{ steps.dotenv.outputs.minio_tag }}
+          docker push ttl.sh/automated-${{ github.run_id }}/minio:${{ steps.dotenv.outputs.minio_tag }}
 
 
   push-postgres:
@@ -275,11 +275,17 @@ jobs:
         with:
           path: .image.env
 
-      - name: push postgres for CI
+      - name: push postgres 10 for CI
         run: |
-          docker pull postgres:${{ steps.dotenv.outputs.postgres_alpine_tag }}
-          docker tag postgres:${{ steps.dotenv.outputs.postgres_alpine_tag }} ttl.sh/automated-${{ github.run_id }}/postgres:12h
-          docker push ttl.sh/automated-${{ github.run_id }}/postgres:12h
+          docker pull postgres:${{ steps.dotenv.outputs.POSTGRES_10_TAG }}
+          docker tag postgres:${{ steps.dotenv.outputs.POSTGRES_10_TAG }} ttl.sh/automated-${{ github.run_id }}/postgres:${{ steps.dotenv.outputs.POSTGRES_10_TAG }}
+          docker push ttl.sh/automated-${{ github.run_id }}/postgres:${{ steps.dotenv.outputs.POSTGRES_10_TAG }}
+
+      - name: push postgres 14 for CI
+        run: |
+          docker pull postgres:${{ steps.dotenv.outputs.POSTGRES_14_TAG }}
+          docker tag postgres:${{ steps.dotenv.outputs.POSTGRES_14_TAG }} ttl.sh/automated-${{ github.run_id }}/postgres:${{ steps.dotenv.outputs.POSTGRES_14_TAG }}
+          docker push ttl.sh/automated-${{ github.run_id }}/postgres:${{ steps.dotenv.outputs.POSTGRES_14_TAG }}
 
 
   validate-existing-online-install-minimal:
@@ -1268,6 +1274,109 @@ jobs:
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
 
+  validate-postgres-upgrade:
+    runs-on: ubuntu-20.04
+    needs: [ can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_version: [ v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1 ]
+    env:
+      APP_SLUG: upgrade-postgres
+      BASE_KOTS_VERSION: v1.77.0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - uses: replicatedhq/action-k3s@main
+        with:
+          version: ${{ matrix.k8s_version }}
+
+      - name: download base kots version
+        run: |
+          curl -LO https://github.com/replicatedhq/kots/releases/download/$BASE_KOTS_VERSION/kots_linux_amd64.tar.gz \
+            && tar zxvf kots_linux_amd64.tar.gz \
+            && mv kots kots-$BASE_KOTS_VERSION
+
+      - name: download kots binary
+        uses: actions/download-artifact@v2
+        with:
+          name: kots
+          path: bin/
+
+      - run: chmod +x bin/kots
+
+      - name: run the test
+        run: |
+          set +e
+          echo ${{ secrets.UPGRADE_POSTGRES_LICENSE }} | base64 -d > license.yaml
+
+          # install using the base KOTS version
+
+          ./kots-$BASE_KOTS_VERSION \
+            install $APP_SLUG/automated \
+            --license-file license.yaml \
+            --no-port-forward \
+            --namespace $APP_SLUG \
+            --shared-password password
+
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "------pods:"
+            kubectl -n $APP_SLUG get pods
+            echo "------kotsadm logs"
+            kubectl logs -l app=kotsadm --tail=100 --namespace $APP_SLUG
+            exit $EXIT_CODE
+          fi
+
+          COUNTER=1
+          while [ "$(./kots-$BASE_KOTS_VERSION get apps --namespace $APP_SLUG | awk 'NR>1{print $2}')" != "ready" ]; do
+            COUNTER=$[$COUNTER +1]
+            if [ $COUNTER -gt 120 ]; then
+              echo "Timed out waiting for app to be ready"
+              ./kots-$BASE_KOTS_VERSION get apps --namespace $APP_SLUG
+              echo "kotsadm logs:"
+              kubectl logs -l app=kotsadm --tail=100 --namespace $APP_SLUG
+              exit -1
+            fi
+            sleep 1
+          done
+
+          # upgrade using the new KOTS version
+
+          ./bin/kots admin-console upgrade \
+            --namespace $APP_SLUG \
+            --kotsadm-registry ttl.sh \
+            --kotsadm-namespace automated-${{ github.run_id }} \
+            --kotsadm-tag 12h
+
+          if ! kubectl logs kotsadm-postgres-0 -c upgrade-postgres --namespace $APP_SLUG | grep -q "Upgrade Complete"; then
+            echo "kotsadm-postgres logs:"
+            kubectl logs -l app=kotsadm-postgres --all-containers --namespace $APP_SLUG
+            exit 1
+          fi
+
+          # make sure app is still installed and ready
+
+          if [ "$(./bin/kots get apps --namespace $APP_SLUG | awk 'NR>1{print $2}')" != "ready" ]; then
+            echo "App is not ready after the upgrade"
+            echo "kotsadm logs:"
+            kubectl logs -l app=kotsadm --tail=100 --namespace $APP_SLUG
+            exit 1
+          fi
+
+          printf "App is still installed and is ready after the upgrade\n\n"
+          ./bin/kots get apps --namespace $APP_SLUG
+
+      - name: Generate support bundle on failure
+        if: failure()
+        uses: ./.github/actions/generate-support-bundle
+        with:
+          kots-namespace: "$APP_SLUG"
+          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
+          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+
+
   validate-kots-push-images-anonymous:
     runs-on: ubuntu-20.04
     needs: [ can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
@@ -1313,6 +1422,7 @@ jobs:
       - validate-yamlescape
       - validate-no-redeploy-on-restart
       - validate-kubernetes-installer-preflight
+      - validate-postgres-upgrade
       # cli-only tests
       - validate-kots-push-images-anonymous
     steps:

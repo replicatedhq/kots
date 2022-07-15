@@ -3,9 +3,7 @@ package kotsadm
 import (
 	"fmt"
 
-	"github.com/blang/semver"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
@@ -16,9 +14,18 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quantity) (*appsv1.StatefulSet, error) {
-	image := GetAdminConsoleImage(deployOptions, "postgres")
+const (
+	POSTGRES_USER             = "kotsadm"
+	POSTGRES_DB               = "kotsadm"
+	POSTGRES_HOST_AUTH_METHOD = "md5"
+	POSTGRES_UPGRADE_PORT     = "50432" // run on different port to avoid unintended client connections.
+	POSTGRES_UPGRADE_DIR      = "/var/lib/postgresql/upgrade"
+	POSTGRES_PVC_MOUNT_PATH   = "/var/lib/postgresql/data"
+	POSTGRES_10_DATA_DIR      = "/var/lib/postgresql/data/pgdata"
+	POSTGRES_14_DATA_DIR      = "/var/lib/postgresql/data/pg14data"
+)
 
+func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quantity) (*appsv1.StatefulSet, error) {
 	var pullSecrets []corev1.LocalObjectReference
 	if s := kotsadmversion.KotsadmPullSecret(deployOptions.Namespace, deployOptions.RegistryConfig); s != nil {
 		pullSecrets = []corev1.LocalObjectReference{
@@ -39,71 +46,11 @@ func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quanti
 		securityContext = psc
 	}
 
-	volumes := []corev1.Volume{
-		{
-			Name: "kotsadm-postgres",
-			VolumeSource: corev1.VolumeSource{
-				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-					ClaimName: "kotsadm-postgres",
-				},
-			},
-		},
-		{
-			Name: "tmp",
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
-		},
-		{
-			Name: "run",
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
-		},
-	}
-	if !deployOptions.IsOpenShift {
-		// this is only needed for the alpine based postgres image for user remapping
-		passwdFileMode := int32(0644)
-		volumes = append(volumes, corev1.Volume{
-			Name: "etc-passwd",
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: "kotsadm-postgres",
-					},
-					Items: []corev1.KeyToPath{
-						{
-							Key:  "passwd",
-							Path: "passwd",
-							Mode: &passwdFileMode,
-						},
-					},
-				},
-			},
-		})
-	}
+	volumes := getPostgresVolumes(deployOptions)
+	volumeMounts := getPostgresVolumeMounts(deployOptions)
 
-	volumeMounts := []corev1.VolumeMount{
-		{
-			Name:      "kotsadm-postgres",
-			MountPath: "/var/lib/postgresql/data",
-		},
-		{
-			Name:      "tmp",
-			MountPath: "/tmp",
-		},
-		{
-			Name:      "run",
-			MountPath: "/var/run/postgresql",
-		},
-	}
-	if !deployOptions.IsOpenShift {
-		volumeMounts = append(volumeMounts, corev1.VolumeMount{
-			Name:      "etc-passwd",
-			MountPath: "/etc/passwd",
-			SubPath:   "passwd",
-		})
-	}
+	initContainers := []corev1.Container{}
+	initContainers = append(initContainers, getPostgresUpgradeInitContainers(deployOptions, volumeMounts)...)
 
 	statefulset := &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
@@ -149,9 +96,10 @@ func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quanti
 					SecurityContext:  securityContext,
 					ImagePullSecrets: pullSecrets,
 					Volumes:          volumes,
+					InitContainers:   initContainers,
 					Containers: []corev1.Container{
 						{
-							Image:           image,
+							Image:           GetAdminConsoleImage(deployOptions, "postgres-14"),
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Name:            "kotsadm-postgres",
 							Ports: []corev1.ContainerPort{
@@ -164,11 +112,11 @@ func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quanti
 							Env: []corev1.EnvVar{
 								{
 									Name:  "PGDATA",
-									Value: "/var/lib/postgresql/data/pgdata",
+									Value: POSTGRES_14_DATA_DIR,
 								},
 								{
 									Name:  "POSTGRES_USER",
-									Value: "kotsadm",
+									Value: POSTGRES_USER,
 								},
 								{
 									Name: "POSTGRES_PASSWORD",
@@ -183,7 +131,11 @@ func PostgresStatefulset(deployOptions types.DeployOptions, size resource.Quanti
 								},
 								{
 									Name:  "POSTGRES_DB",
-									Value: "kotsadm",
+									Value: POSTGRES_DB,
+								},
+								{
+									Name:  "POSTGRES_HOST_AUTH_METHOD",
+									Value: POSTGRES_HOST_AUTH_METHOD,
 								},
 							},
 							LivenessProbe: &corev1.Probe{
@@ -266,36 +218,223 @@ func PostgresService(namespace string) *corev1.Service {
 	return service
 }
 
-func getPostgresTag(deployOptions types.DeployOptions) string {
-	// use the debian stretch based image for openshift because of this issue in alpine https://github.com/docker-library/postgres/issues/359
-	// TODO: This breaks when the hidden kotsadm-tag CLI flag is used to push images.  There will be only one postgres image.
-	// TODO: Add error handling getPostgres tag should return error
-	alpineTag, _ := image.GetTag(image.PostgresAlpine)
-	debianTag, _ := image.GetTag(image.PostgresDebian) // use this when version cannot be determined because this tag always works
+func getPostgresVolumes(deployOptions types.DeployOptions) []corev1.Volume {
+	scriptsFileMode := int32(0755)
+
+	volumes := []corev1.Volume{
+		{
+			Name: "kotsadm-postgres",
+			VolumeSource: corev1.VolumeSource{
+				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+					ClaimName: "kotsadm-postgres",
+				},
+			},
+		},
+		{
+			Name: "upgrade",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+		{
+			Name: "tmp",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+		{
+			Name: "run",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+		{
+			Name: "scripts",
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "kotsadm-postgres",
+					},
+					DefaultMode: &scriptsFileMode,
+					Items: []corev1.KeyToPath{
+						{
+							Key:  "copy-postgres-10.sh",
+							Path: "copy-postgres-10.sh",
+						},
+						{
+							Key:  "upgrade-postgres.sh",
+							Path: "upgrade-postgres.sh",
+						},
+					},
+				},
+			},
+		},
+	}
 
 	if !deployOptions.IsOpenShift {
-		return alpineTag
+		// this is needed for user remapping because older versions used to run with a different uid
+		passwdFileMode := int32(0644)
+		volumes = append(volumes, corev1.Volume{
+			Name: "etc-passwd",
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "kotsadm-postgres",
+					},
+					Items: []corev1.KeyToPath{
+						{
+							Key:  "passwd",
+							Path: "passwd",
+							Mode: &passwdFileMode,
+						},
+					},
+				},
+			},
+		})
 	}
 
-	ocVersion, err := k8sutil.OpenShiftVersion()
-	if err != nil {
-		fmt.Println("Failed to get OpenShift server version", err)
-		return debianTag
+	return volumes
+}
+
+func getPostgresVolumeMounts(deployOptions types.DeployOptions) []corev1.VolumeMount {
+	volumeMounts := []corev1.VolumeMount{
+		{
+			Name:      "kotsadm-postgres",
+			MountPath: POSTGRES_PVC_MOUNT_PATH,
+		},
+		{
+			Name:      "upgrade",
+			MountPath: POSTGRES_UPGRADE_DIR,
+		},
+		{
+			Name:      "tmp",
+			MountPath: "/tmp",
+		},
+		{
+			Name:      "run",
+			MountPath: "/var/run/postgresql",
+		},
+		{
+			Name:      "scripts",
+			MountPath: "/scripts",
+		},
 	}
 
-	if ocVersion == "" {
-		return debianTag
+	if !deployOptions.IsOpenShift {
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{
+			Name:      "etc-passwd",
+			MountPath: "/etc/passwd",
+			SubPath:   "passwd",
+		})
 	}
 
-	ocSemver, err := semver.ParseTolerant(ocVersion)
-	if err != nil {
-		return debianTag
-	}
+	return volumeMounts
+}
 
-	expectedRange, _ := semver.ParseRange(">=4.2.0")
-	if !expectedRange(ocSemver) {
-		return debianTag
+func getPostgresUpgradeInitContainers(deployOptions types.DeployOptions, volumeMounts []corev1.VolumeMount) []corev1.Container {
+	return []corev1.Container{
+		{
+			Image:           GetAdminConsoleImage(deployOptions, "postgres-10"),
+			ImagePullPolicy: corev1.PullIfNotPresent,
+			Name:            "copy-postgres-10",
+			Command: []string{
+				"/scripts/copy-postgres-10.sh",
+			},
+			VolumeMounts: volumeMounts,
+			Env: []corev1.EnvVar{
+				{
+					Name:  "PGDATA",
+					Value: POSTGRES_10_DATA_DIR,
+				},
+				{
+					Name:  "POSTGRES_UPGRADE_DIR",
+					Value: POSTGRES_UPGRADE_DIR,
+				},
+			},
+			Resources: corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{
+					"cpu":    resource.MustParse("200m"),
+					"memory": resource.MustParse("200Mi"),
+				},
+				Requests: corev1.ResourceList{
+					"cpu":    resource.MustParse("100m"),
+					"memory": resource.MustParse("100Mi"),
+				},
+			},
+			SecurityContext: secureContainerContext(deployOptions.StrictSecurityContext),
+		},
+		{
+			Image:           GetAdminConsoleImage(deployOptions, "postgres-14"),
+			ImagePullPolicy: corev1.PullIfNotPresent,
+			Name:            "upgrade-postgres",
+			Command: []string{
+				"/scripts/upgrade-postgres.sh",
+			},
+			VolumeMounts: volumeMounts,
+			Env: []corev1.EnvVar{
+				{
+					Name:  "PGPORT",
+					Value: POSTGRES_UPGRADE_PORT,
+				},
+				{
+					Name:  "PGDATA",
+					Value: POSTGRES_14_DATA_DIR,
+				},
+				{
+					Name:  "POSTGRES_USER",
+					Value: POSTGRES_USER,
+				},
+				{
+					Name: "POSTGRES_PASSWORD",
+					ValueFrom: &corev1.EnvVarSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "kotsadm-postgres",
+							},
+							Key: "password",
+						},
+					},
+				},
+				{
+					Name:  "POSTGRES_DB",
+					Value: POSTGRES_DB,
+				},
+				{
+					Name:  "POSTGRES_HOST_AUTH_METHOD",
+					Value: POSTGRES_HOST_AUTH_METHOD,
+				},
+				{
+					Name:  "POSTGRES_UPGRADE_DIR",
+					Value: POSTGRES_UPGRADE_DIR,
+				},
+				{
+					Name:  "PGDATAOLD",
+					Value: POSTGRES_10_DATA_DIR,
+				},
+				{
+					Name:  "PGDATANEW",
+					Value: POSTGRES_14_DATA_DIR,
+				},
+				{
+					Name:  "PGBINOLD",
+					Value: fmt.Sprintf("%s/pg10/bin", POSTGRES_UPGRADE_DIR),
+				},
+				{
+					Name:  "PGBINNEW",
+					Value: "/usr/local/bin",
+				},
+			},
+			Resources: corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{
+					"cpu":    resource.MustParse("200m"),
+					"memory": resource.MustParse("200Mi"),
+				},
+				Requests: corev1.ResourceList{
+					"cpu":    resource.MustParse("100m"),
+					"memory": resource.MustParse("100Mi"),
+				},
+			},
+			SecurityContext: secureContainerContext(deployOptions.StrictSecurityContext),
+		},
 	}
-
-	return alpineTag
 }

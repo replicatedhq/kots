@@ -8,16 +8,19 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"regexp"
 	"strings"
 	"text/template"
+
+	"github.com/pkg/errors"
 )
 
 const (
 	schemaheroReference               = "schemahero"
 	minioReference                    = "minio"
 	dexReference                      = "dex"
-	postgresAlpineReference           = "postgres-alpine"
-	postgresDebianReference           = "postgres-debian"
+	postgres10Reference               = "postgres-10"
+	postgres14Reference               = "postgres-14"
 	lvpReference                      = "lvp"
 	inputFilename                     = "cmd/imagedeps/image-spec"
 	outputConstantFilename            = "pkg/image/constants.go"
@@ -44,11 +47,27 @@ const (
 {{- end}}`
 )
 
+type replacer struct {
+	path    string
+	regexFn func(ir *ImageRef) string
+	valueFn func(ir *ImageRef) string
+}
+
+var (
+	replacers = []*replacer{
+		getMakefileReplacer("Makefile"),
+		getMakefileReplacer("migrations/Makefile"),
+		getMakefileReplacer("migrations/fixtures/Makefile"),
+		getDockerfileReplacer("migrations/fixtures/deploy/Dockerfile"),
+	}
+)
+
 type generationContext struct {
 	inputFilename          string
 	outputConstantFilename string
 	outputEnvFilename      string
 	tagFinderFn            tagFinderFn
+	replacers              []*replacer
 }
 
 func main() {
@@ -58,12 +77,16 @@ func main() {
 		outputConstantFilename: outputConstantFilename,
 		outputEnvFilename:      outputEnvFilename,
 		tagFinderFn:            getTagFinder(),
+		replacers:              replacers,
 	}
 	if err := generateTaggedImageFiles(ctx); err != nil {
 		log.Fatalf("generator failed: %s", err)
 	}
 	log.Printf("successfully generated constant file %q", outputConstantFilename)
 	log.Printf("successfully generated dot env file %q", outputEnvFilename)
+	for _, r := range ctx.replacers {
+		log.Printf("successfully updated %q", r.path)
+	}
 }
 
 func generateTaggedImageFiles(ctx generationContext) error {
@@ -94,6 +117,12 @@ func generateTaggedImageFiles(ctx generationContext) error {
 
 	if err := generateOutput(ctx.outputEnvFilename, environmentFileTemplate, references, noopPostProcessor); err != nil {
 		return fmt.Errorf("failed to generate file %q %w", ctx.outputEnvFilename, err)
+	}
+
+	for _, r := range ctx.replacers {
+		if err := r.replace(references); err != nil {
+			return fmt.Errorf("failed to replace in %q %w", r.path, err)
+		}
 	}
 
 	return nil
@@ -127,6 +156,28 @@ func generateOutput(filename, fileTemplate string, refs []*ImageRef, fn template
 	return nil
 }
 
+func (r *replacer) replace(refs []*ImageRef) error {
+	b, err := ioutil.ReadFile(r.path)
+	if err != nil {
+		return errors.Wrap(err, "failed to read file")
+	}
+	content := string(b)
+
+	for _, ref := range refs {
+		reg, err := regexp.Compile(r.regexFn(ref))
+		if err != nil {
+			return errors.Wrap(err, "failed to compile regex")
+		}
+		content = reg.ReplaceAllString(content, r.valueFn(ref))
+	}
+
+	if err := ioutil.WriteFile(r.path, []byte(content), 0644); err != nil {
+		return errors.Wrap(err, "failed to write file")
+	}
+
+	return nil
+}
+
 // converts a name from the input file into a package public constant name
 // for example: foo-bar-baz -> FooBarBaz
 func getConstantName(s string) string {
@@ -141,5 +192,41 @@ func getConstantName(s string) string {
 // converts a name from the input file into an environment variable name
 // for example: foo_bar_baz -> FOO_BAR_BAZ
 func getEnvironmentName(s string) string {
-	return strings.ToUpper(strings.ReplaceAll(s, "-", "_"))
+	return strings.ToUpper(strings.ReplaceAll(s, "-", "_")) + "_TAG"
+}
+
+// converts a name from the input string into an a makefile variable name
+// for example: foo_bar_baz -> FOO_BAR_BAZ
+func getMakefileVarName(s string) string {
+	return strings.ToUpper(strings.ReplaceAll(s, "-", "_")) + "_TAG"
+}
+
+// converts a name from the input string into an a makefile variable name
+// for example: foo_bar_baz -> FOO_BAR_BAZ
+func getDockerfileVarName(s string) string {
+	return strings.ToUpper(strings.ReplaceAll(s, "-", "_")) + "_TAG"
+}
+
+func getMakefileReplacer(path string) *replacer {
+	return &replacer{
+		path: path,
+		regexFn: func(ir *ImageRef) string {
+			return fmt.Sprintf("%s [\\?:]= .*", getMakefileVarName(ir.name))
+		},
+		valueFn: func(ir *ImageRef) string {
+			return ir.GetMakefileLine()
+		},
+	}
+}
+
+func getDockerfileReplacer(path string) *replacer {
+	return &replacer{
+		path: path,
+		regexFn: func(ir *ImageRef) string {
+			return fmt.Sprintf("ARG %s=.*", getDockerfileVarName(ir.name))
+		},
+		valueFn: func(ir *ImageRef) string {
+			return ir.GetDockerfileLine()
+		},
+	}
 }
