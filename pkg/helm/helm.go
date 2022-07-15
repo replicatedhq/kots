@@ -20,6 +20,7 @@ type HelmApp struct {
 	Application      *types.HelmResponseApp
 	Values           map[string]interface{}
 	PathToValuesFile string
+	Namespace        string
 }
 
 func RenderValuesFromConfig(app string, newConfigItems map[string]template.ItemValue, config *kotsv1beta1.Config, chart []byte) (map[string]interface{}, *kotsv1beta1.Config, error) {
