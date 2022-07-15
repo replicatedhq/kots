@@ -192,5 +192,4 @@ scan:
 
 .PHONY: generate-kubectl-versions
 generate-kubectl-versions: 
-	npm install -C actions/kubectl-versions
-	node actions/kubectl-versions
+	node actions/kubectl-versions/dist/index.js
