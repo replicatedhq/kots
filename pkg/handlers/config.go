@@ -189,6 +189,7 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+
 		configCache[app] = *secret
 		appCache := getHelmAppCache()
 		releasedValues := appCache[app].Values
