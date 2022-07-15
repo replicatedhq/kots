@@ -20,33 +20,6 @@ ENV KOTS_KUBECTL_BIN_DIR=/usr/local/bin
 
 # __BEGIN_KUBECTL_VERSIONS__
 
-# Install Kubectl 1.19
-ENV KUBECTL_1_19_VERSION=v1.19.16
-ENV KUBECTL_1_19_URL=https://dl.k8s.io/release/${KUBECTL_1_19_VERSION}/bin/linux/amd64/kubectl
-ENV KUBECTL_1_19_SHA256SUM=6b9d9315877c624097630ac3c9a13f1f7603be39764001da7a080162f85cbc7e
-RUN curl -fsSLO "${KUBECTL_1_19_URL}" \
-  && echo "${KUBECTL_1_19_SHA256SUM} kubectl" | sha256sum -c - \
-  && chmod +x kubectl \
-  && mv kubectl "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.19"
-
-# Install Kubectl 1.20
-ENV KUBECTL_1_20_VERSION=v1.20.15
-ENV KUBECTL_1_20_URL=https://dl.k8s.io/release/${KUBECTL_1_20_VERSION}/bin/linux/amd64/kubectl
-ENV KUBECTL_1_20_SHA256SUM=d283552d3ef3b0fd47c08953414e1e73897a1b3f88c8a520bb2e7de4e37e96f3
-RUN curl -fsSLO "${KUBECTL_1_20_URL}" \
-  && echo "${KUBECTL_1_20_SHA256SUM} kubectl" | sha256sum -c - \
-  && chmod +x kubectl \
-  && mv kubectl "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.20"
-
-# Install Kubectl 1.21
-ENV KUBECTL_1_21_VERSION=v1.21.14
-ENV KUBECTL_1_21_URL=https://dl.k8s.io/release/${KUBECTL_1_21_VERSION}/bin/linux/amd64/kubectl
-ENV KUBECTL_1_21_SHA256SUM=0c1682493c2abd7bc5fe4ddcdb0b6e5d417aa7e067994ffeca964163a988c6ee
-RUN curl -fsSLO "${KUBECTL_1_21_URL}" \
-  && echo "${KUBECTL_1_21_SHA256SUM} kubectl" | sha256sum -c - \
-  && chmod +x kubectl \
-  && mv kubectl "${KOTS_KUBECTL_BIN_DIR}/kubectl-v1.21"
-
 # Install Kubectl 1.22
 ENV KUBECTL_1_22_VERSION=v1.22.12
 ENV KUBECTL_1_22_URL=https://dl.k8s.io/release/${KUBECTL_1_22_VERSION}/bin/linux/amd64/kubectl
