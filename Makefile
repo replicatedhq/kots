@@ -189,3 +189,8 @@ scan:
 		--skip-files web/yarn.lock \
 		--ignorefile .trivyignore \
 		./
+
+.PHONY: generate-kubectl-versions
+generate-kubectl-versions: 
+	npm install -C actions/kubectl-versions
+	node actions/kubectl-versions
