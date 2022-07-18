@@ -1666,6 +1666,7 @@ class DashboardVersionCard extends React.Component {
                 showHelmValuesModal: false,
               })
             }
+            registryUsername={this.props?.app?.credentials?.registryUsername}
             showHelmDeployModal={true}
             subtitle="Follow the steps below to redeploy your application using the values from the last release."
             title="Redeploy application"
