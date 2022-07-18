@@ -156,8 +156,9 @@
     "urlize": "^0.2.1",
     "webpack-bugsnag-plugins": "^1.4.3"
   },
-  "resolutions": {
-    "eslint-loader/eslint": "7.5.0"
+  "resolutions" : {
+    "eslint-loader/eslint": "7.5.0",
+    "favicons/**/minimist": "1.2.6"
   },
   "browserslist": [
     "> 1%",
