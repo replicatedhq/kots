@@ -12,8 +12,8 @@ import map from "lodash/map";
 import Modal from "react-modal";
 import Loader from "../shared/Loader";
 import ErrorModal from "../modals/ErrorModal";
-import HelmDeployModal from "../shared/modals/HelmDeployModal";
-import { IsHelmManaged, useDownloadValues, useSaveConfig } from "../hooks";
+import { HelmDeployModal } from "../shared/modals/HelmDeployModal";
+import { UseIsHelmManaged, useDownloadValues, useSaveConfig } from "../hooks";
 
 import "../../scss/components/watches/WatchConfig.scss";
 import { Utilities } from "../../utilities/utilities";
@@ -652,13 +652,21 @@ class AppConfig extends Component {
             })}
           </div>
           <div className="ConfigArea--wrapper">
-            <IsHelmManaged>
-              {({ isHelmManaged }) => {
-                const { saveConfig, isSaving, error } = useSaveConfig({
+            <UseIsHelmManaged>
+              {({ data = {} }) => {
+                const { isHelmManaged } = data;
+
+                const {
+                  mutate: saveConfig,
+                  isLoading: isSaving,
+                  isError: saveError,
+                } = useSaveConfig({
                   appSlug: this.getSlug(),
                 });
+
                 const {
                   download,
+                  clearError: clearDownloadError,
                   error: downloadError,
                   isDownloading,
                   name,
@@ -669,11 +677,11 @@ class AppConfig extends Component {
                   fileName: "values.yaml",
                 });
 
-                const handleGenerateConfig = async () => {
+                const handleGenerateConfig = () => {
                   this.setState({
                     showHelmDeployModal: true,
                   });
-                  await saveConfig({
+                  saveConfig({
                     body: JSON.stringify({
                       configGroups: this.state.configGroups,
                       sequence: this.getSequence(),
@@ -746,11 +754,13 @@ class AppConfig extends Component {
                           appSlug={this.props?.app?.slug}
                           chartPath={this.props?.app?.chartPath || ""}
                           downloadClicked={download}
-                          error={downloadError}
+                          downloadError={downloadError}
                           isDownloading={isDownloading}
-                          hideHelmDeployModal={() =>
-                            this.setState({ showHelmDeployModal: false })
-                          }
+                          hideHelmDeployModal={() => {
+                            this.setState({ showHelmDeployModal: false });
+                            clearDownloadError();
+                          }}
+                          saveError={saveError}
                           showHelmDeployModal={true}
                           subtitle="Follow the steps below to upgrade your application with your new values.yaml."
                           title="Upgrade application"
@@ -768,7 +778,7 @@ class AppConfig extends Component {
                   </>
                 );
               }}
-            </IsHelmManaged>
+            </UseIsHelmManaged>
           </div>
         </div>
 

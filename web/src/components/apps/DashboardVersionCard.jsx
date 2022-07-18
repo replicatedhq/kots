@@ -12,7 +12,7 @@ import ShowDetailsModal from "@src/components/modals/ShowDetailsModal";
 import ShowLogsModal from "@src/components/modals/ShowLogsModal";
 import DeployWarningModal from "../shared/modals/DeployWarningModal";
 import SkipPreflightsModal from "../shared/modals/SkipPreflightsModal";
-import HelmDeployModal from "../shared/modals/HelmDeployModal";
+import { HelmDeployModal } from "../shared/modals/HelmDeployModal";
 import classNames from "classnames";
 
 import {
