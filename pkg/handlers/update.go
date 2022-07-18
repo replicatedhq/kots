@@ -12,10 +12,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/blang/semver"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/airgap"
+	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/reporting"
@@ -42,6 +44,79 @@ type AppUpdateRelease struct {
 
 func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
+
+	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
+	if isHelmManaged == "true" {
+		release := helm.GetHelmRelease(appSlug)
+		if release == nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		app, err := responseAppFromHelmApp(release)
+		if err != nil {
+			logger.Errorf("failed to convert release to helm app: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		license, _, err := getLicenseForHelmApp(appSlug)
+		if err != nil {
+			logger.Errorf("failed to get license for helm app: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		var currentVersion *semver.Version
+		if app.Downstream.CurrentVersion != nil {
+			v, err := semver.ParseTolerant(app.Downstream.CurrentVersion.VersionLabel)
+			if err != nil {
+				logger.Errorf("failed to get parse current version %q: %v", app.Downstream.CurrentVersion, err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			currentVersion = &v
+		}
+
+		availableUpdateTags, err := helm.CheckForUpdates(app.ChartPath, license.Spec.LicenseID, currentVersion)
+		if err != nil {
+			logger.Errorf("failed to get available updates: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		var appUpdateCheckResponse AppUpdateCheckResponse
+		var updates []AppUpdateRelease
+		for _, update := range availableUpdateTags {
+			updates = append(updates, AppUpdateRelease{
+				Sequence: 0, // TODO
+				Version:  update.Tag,
+			})
+		}
+
+		appUpdateCheckResponse = AppUpdateCheckResponse{
+			AvailableUpdates:   int64(len(updates)),
+			CurrentAppSequence: 0, // a.CurrentSequence, TODO
+			AvailableReleases:  updates,
+		}
+
+		// TODO:
+		// if ucr.CurrentRelease != nil {
+		// 	appUpdateCheckResponse.CurrentRelease = &AppUpdateRelease{
+		// 		Sequence: ucr.CurrentRelease.Sequence,
+		// 		Version:  ucr.CurrentRelease.Version,
+		// 	}
+		// }
+		// if ucr.DeployingRelease != nil {
+		// 	appUpdateCheckResponse.DeployingRelease = &AppUpdateRelease{
+		// 		Sequence: ucr.DeployingRelease.Sequence,
+		// 		Version:  ucr.DeployingRelease.Version,
+		// 	}
+		// }
+
+		JSON(w, http.StatusOK, appUpdateCheckResponse)
+		return
+	}
 
 	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {

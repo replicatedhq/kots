@@ -8,19 +8,12 @@ import (
 	"strconv"
 
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/pkg/api/handlers/types"
 	kotsbase "github.com/replicatedhq/kots/pkg/base"
 	kotsconfig "github.com/replicatedhq/kots/pkg/config"
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/util"
 	helmval "helm.sh/helm/v3/pkg/cli/values"
 )
-
-type HelmApp struct {
-	Application      *types.ResponseApp
-	Values           map[string]interface{}
-	PathToValuesFile string
-}
 
 func RenderValuesFromConfig(app string, newConfigItems map[string]template.ItemValue, config *kotsv1beta1.Config, chart []byte) (map[string]interface{}, *kotsv1beta1.Config, error) {
 	renderedConfig, err := kotsconfig.TemplateConfigObjects(config, newConfigItems, nil, nil, template.LocalRegistry{}, nil, &template.ApplicationInfo{Slug: app}, nil, util.PodNamespace, true)

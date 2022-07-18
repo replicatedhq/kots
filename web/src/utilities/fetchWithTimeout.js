@@ -1,4 +1,4 @@
-export default function (url, options, timeout = undefined) {
+export default function fetchWithTimeout(url, options, timeout = undefined) {
   const controller = new AbortController();
   const { signal } = controller;
 

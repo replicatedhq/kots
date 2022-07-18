@@ -20,6 +20,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/config"
 	kotsconfig "github.com/replicatedhq/kots/pkg/config"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/helm"
 	kotshelm "github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
@@ -147,12 +148,29 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
 	if isHelmManaged == "true" {
 		// TODO: will need to consider flow for when ConfigSpec changes
-		configCache := getHelmConfigSecretCache()
-		app := mux.Vars(r)["appSlug"]
-		appSecret := configCache[app]
-		config := new(kotsv1beta1.Config)
+		appSlug := mux.Vars(r)["appSlug"]
 
-		err := json.Unmarshal(appSecret.Data["config"], &config)
+		release := helm.GetHelmRelease(appSlug)
+		if release == nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		appSecret, err := helm.GetChartConfig(release.Release.Name, release.Namespace)
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		// if there is no config secret then app is not configurable
+		if appSecret == nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		config := new(kotsv1beta1.Config)
+		err = json.Unmarshal(appSecret.Data["config"], &config)
 		if err != nil {
 			logger.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -161,7 +179,7 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 
 		// get values from request
 		newValues := configValuesFromConfigGroups(updateAppConfigRequest.ConfigGroups)
-		renderedValues, renderedConfig, err := kotshelm.RenderValuesFromConfig(app, newValues, config, appSecret.Data["chart"])
+		renderedValues, renderedConfig, err := kotshelm.RenderValuesFromConfig(appSlug, newValues, config, appSecret.Data["chart"])
 		if err != nil {
 			logger.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -183,24 +201,14 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		secret, err := clientSet.CoreV1().Secrets(appSecret.Namespace).Update(context.TODO(), &appSecret, metav1.UpdateOptions{})
-		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		configCache[app] = *secret
-		appCache := getHelmAppCache()
-		releasedValues := appCache[app].Values
-		mergedHelmValues, err := kotshelm.GetMergedValues(releasedValues, renderedValues)
+		_, err = clientSet.CoreV1().Secrets(appSecret.Namespace).Update(context.TODO(), appSecret, metav1.UpdateOptions{})
 		if err != nil {
 			logger.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		appValDir := fmt.Sprintf("./helm/%s", app)
-		err = os.MkdirAll(appValDir, 0644)
+		mergedHelmValues, err := kotshelm.GetMergedValues(release.Release.Chart.Values, renderedValues)
 		if err != nil {
 			logger.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -213,23 +221,14 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		pathToValues := fmt.Sprintf("%s/values.yaml", appValDir)
-		f, err := os.Create(pathToValues)
-		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		defer f.Close()
 
-		_, err = f.Write(b)
+		err = helm.SaveConfigValuesToFile(release, b)
 		if err != nil {
 			logger.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		appCache[app].PathToValuesFile = pathToValues
 		JSON(w, http.StatusOK, UpdateAppConfigResponse{Success: true})
 		return
 	}
@@ -436,10 +435,28 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 	configGroups := []kotsv1beta1.ConfigGroup{}
 
 	if isHelmManaged == "true" {
-		configCache := getHelmConfigSecretCache()
-		configSecret := configCache[mux.Vars(r)["appSlug"]]
+		appSlug := mux.Vars(r)["appSlug"]
+		release := helm.GetHelmRelease(appSlug)
+		if release == nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		configSecret, err := helm.GetChartConfig(release.Release.Name, release.Namespace)
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		if configSecret == nil {
+			// app is not configurable
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
 		appConfig := new(kotsv1beta1.Config)
-		err := json.Unmarshal(configSecret.Data["config"], &appConfig)
+		err = json.Unmarshal(configSecret.Data["config"], &appConfig)
 		if err != nil {
 			logger.Error(err)
 			currentAppConfigResponse.Error = "failed to unmarshal config secret"

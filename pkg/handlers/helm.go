@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -56,11 +57,14 @@ func (h *Handler) GetAppValuesFile(w http.ResponseWriter, r *http.Request) {
 	getAppValuesFileResponse := GetAppValuesFileResponse{
 		Success: false,
 	}
-	app := mux.Vars(r)["appSlug"]
-	appCache := getHelmAppCache()
-	helmApp := appCache[app]
+	appSlug := mux.Vars(r)["appSlug"]
+	release := helm.GetHelmRelease(appSlug)
+	if release == nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
 
-	dat, err := os.ReadFile(helmApp.PathToValuesFile)
+	dat, err := os.ReadFile(release.PathToValuesFile)
 	if err != nil {
 		err = errors.Wrap(err, "failed to read values file")
 		logger.Error(err)
@@ -71,7 +75,7 @@ func (h *Handler) GetAppValuesFile(w http.ResponseWriter, r *http.Request) {
 
 	getAppValuesFileResponse.Success = true
 	w.Header().Set("Content-Type", "application/octet-stream")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s-values.yaml", app))
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s-values.yaml", appSlug))
 	w.Header().Set("Content-Length", strconv.Itoa(len(dat)))
 	w.WriteHeader(http.StatusOK)
 	w.Write(dat)
@@ -79,8 +83,16 @@ func (h *Handler) GetAppValuesFile(w http.ResponseWriter, r *http.Request) {
 }
 
 func getLicenseForHelmApp(chartName string) (*kotsv1beta1.License, *apptypes.App, error) {
-	appCache := getHelmAppCache()
-	chartApp := appCache[chartName].Application
+	release := helm.GetHelmRelease(chartName)
+	if release == nil {
+		return nil, nil, errors.Errorf("chart %q is not found in cache", chartName)
+	}
+
+	chartApp, err := responseAppFromHelmApp(release)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to convert release to app")
+	}
+
 	foundApp := &apptypes.App{ID: chartApp.ID, Slug: chartApp.Slug, Name: chartApp.Name}
 	apiEndpoint := os.Getenv("REPLICATED_API_ENDPOINT")
 
@@ -90,8 +102,8 @@ func getLicenseForHelmApp(chartName string) (*kotsv1beta1.License, *apptypes.App
 		return nil, nil, errors.Wrap(err, "failed to create new HTTP request")
 	}
 	var licId string
-	if appCache[chartName] != nil && appCache[chartName].Values["replicated"] != nil && appCache[chartName].Values["replicated"].(map[string]interface{})["license_id"] != nil {
-		licId = appCache[chartName].Values["replicated"].(map[string]interface{})["license_id"].(string)
+	if replicatedValues, _ := release.Release.Chart.Values["replicated"].(map[string]interface{}); replicatedValues != nil {
+		licId = replicatedValues["license_id"].(string)
 	}
 	if licId == "" {
 		return nil, nil, errors.New("replicated license id not present in values")

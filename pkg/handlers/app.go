@@ -1,13 +1,8 @@
 package handlers
 
 import (
-	"bytes"
-	"compress/gzip"
-	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
@@ -23,8 +18,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/api/handlers/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/gitops"
-	kotshelm "github.com/replicatedhq/kots/pkg/helm"
-	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/rbac"
@@ -35,32 +29,8 @@ import (
 	"github.com/replicatedhq/kots/pkg/store/kotsstore"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/version"
-	helmrelease "helm.sh/helm/v3/pkg/release"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 )
-
-var helmAppCache map[string]*kotshelm.HelmApp
-var helmConfigSecretCache map[string]v1.Secret
-
-func getHelmAppCache() map[string]*kotshelm.HelmApp {
-	if helmAppCache == nil {
-		helmAppCache = make(map[string]*kotshelm.HelmApp)
-		return helmAppCache
-	}
-
-	return helmAppCache
-}
-
-func getHelmConfigSecretCache() map[string]v1.Secret {
-	if helmConfigSecretCache == nil {
-		helmConfigSecretCache = make(map[string]v1.Secret)
-		return helmConfigSecretCache
-	}
-
-	return helmConfigSecretCache
-}
 
 func (h *Handler) GetPendingApp(w http.ResponseWriter, r *http.Request) {
 	sess := session.ContextGetSession(r)
@@ -116,66 +86,66 @@ func (h *Handler) GetPendingApp(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, pendingAppResponse)
 }
 
-func responseAppFromHelmSecret(s v1.Secret) (*types.ResponseApp, map[string]interface{}, error) {
-	unixIntValue, err := strconv.ParseInt(s.Labels["modifiedAt"], 10, 64)
+func responseAppFromHelmApp(helmApp *helm.HelmApp) (*types.HelmResponseApp, error) {
+	unixIntValue, err := strconv.ParseInt(helmApp.Labels["modifiedAt"], 10, 64)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to get unix timestamp from modifiedAt label")
+		return nil, errors.Wrap(err, "failed to get unix timestamp from modifiedAt label")
 	}
 	updatedTs := time.Unix(unixIntValue, 0)
 
-	// decode and read release data
-	b64compressedData := string(s.Data["release"])
-	decodedCompressedData, err := base64.StdEncoding.DecodeString(b64compressedData)
+	sv, err := semver.ParseTolerant(helmApp.Release.Chart.Metadata.Version)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to base64 decode")
-	}
-	reader := bytes.NewReader([]byte(decodedCompressedData))
-	gzreader, err := gzip.NewReader(reader)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to create gzip reader")
-	}
-
-	output, err := ioutil.ReadAll(gzreader)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to read from gzip reader")
-	}
-
-	// json unmarshl output into helm release struct
-	release := &helmrelease.Release{}
-	err = json.Unmarshal(output, &release)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to unmarshal decompressed decoded release data")
-	}
-
-	sv, err := semver.New(release.Chart.Metadata.Version)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to parse release version into semver")
+		return nil, errors.Wrap(err, "failed to parse release version into semver")
 	}
 
 	iconURI := "https://cncf-branding.netlify.app/img/projects/helm/horizontal/color/helm-horizontal-color.png"
 	// use chart icon if it exists, if not use default helm icon
-	if release.Chart.Metadata.Icon != "" {
-		iconURI = release.Chart.Metadata.Icon
+	if helmApp.Release.Chart.Metadata.Icon != "" {
+		iconURI = helmApp.Release.Chart.Metadata.Icon
+	}
+
+	revision, err := strconv.Atoi(helmApp.Labels["version"])
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse release revision number")
 	}
 
 	downstreamVersion := &downstreamtypes.DownstreamVersion{
-		VersionLabel: release.Chart.Metadata.Version,
-		Semver:       sv,
+		VersionLabel: helmApp.Release.Chart.Metadata.Version,
+		Semver:       &sv,
+		Sequence:     int64(revision),
 		Status:       storetypes.VersionDeployed,
-		CreatedOn:    &release.Info.FirstDeployed.Time,
-		DeployedAt:   &release.Info.LastDeployed.Time,
+		CreatedOn:    &helmApp.Release.Info.FirstDeployed.Time,
+		DeployedAt:   &helmApp.Release.Info.LastDeployed.Time,
+	}
+
+	var username, password string
+	if replVals := helmApp.Release.Chart.Values["replicated"].(map[string]interface{}); replVals != nil {
+		username, _ = replVals["username"].(string)
+		password, _ = replVals["license_id"].(string)
 	}
 
 	pendingVersions := make([]*downstreamtypes.DownstreamVersion, 0)
 	pendingVersions = append(pendingVersions, downstreamVersion)
-	return &types.ResponseApp{
-		Name:       s.Labels["name"],
-		Slug:       s.Labels["name"],
-		CreatedAt:  s.CreationTimestamp.Time,
-		UpdatedAt:  &updatedTs,
-		IconURI:    iconURI,
-		Downstream: types.ResponseDownstream{CurrentVersion: downstreamVersion, PendingVersions: pendingVersions},
-	}, release.Chart.Values, nil
+
+	return &types.HelmResponseApp{
+		ResponseApp: types.ResponseApp{
+			Name:           helmApp.Labels["name"],
+			Slug:           helmApp.Labels["name"],
+			CreatedAt:      helmApp.CreationTimestamp,
+			IsConfigurable: helmApp.IsConfigurable,
+			UpdatedAt:      &updatedTs,
+			IconURI:        iconURI,
+			Downstream: types.ResponseDownstream{
+				CurrentVersion:  downstreamVersion,
+				PendingVersions: make([]*downstreamtypes.DownstreamVersion, 0),
+			},
+		},
+		Credentials: types.Credentials{
+			Username: username,
+			Password: password,
+		},
+		ChartPath: helmApp.ChartPath,
+	}, nil
 }
 
 func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
@@ -189,100 +159,65 @@ func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 	responseApps := []types.ResponseApp{}
 	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
 	if isHelmManaged == "true" {
-		cache := getHelmAppCache()
-		configCache := getHelmConfigSecretCache()
+		helmResponseApps := []types.HelmResponseApp{}
 
-		clientSet, err := k8sutil.GetClientset()
-		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		namespaces, err := clientSet.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
-		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		for _, ns := range namespaces.Items {
-			secrets, err := clientSet.CoreV1().Secrets(ns.Name).List(context.TODO(), metav1.ListOptions{LabelSelector: "owner=helm"})
-			if err != nil {
-				logger.Warnf(fmt.Sprintf("failed to list secrets for namespace: %s\n", ns.Name))
+		for _, releaseName := range helm.GetCachedReleases() {
+			release := helm.GetHelmRelease(releaseName)
+			if release == nil {
 				continue
 			}
 
-			configSecrets, err := clientSet.CoreV1().Secrets(ns.Name).List(context.TODO(), metav1.ListOptions{LabelSelector: "app.kubernetes.io/managed-by=Helm"})
+			app, err := responseAppFromHelmApp(release)
 			if err != nil {
-				logger.Warnf(fmt.Sprintf("failed to list secrets for namespace: %s\n", ns.Name))
-				continue
-			}
-
-			configMap := make(map[string]v1.Secret)
-			for _, s := range configSecrets.Items {
-				if strings.HasPrefix(s.Name, "kots-") && strings.HasSuffix(s.Name, "-config") {
-					configMap[s.Name] = s
-				}
-			}
-
-			for _, s := range secrets.Items {
-				app, values, err := responseAppFromHelmSecret(s)
-				if err != nil {
-					logger.Error(err)
-					continue
-				}
-
-				config, ok := configMap[fmt.Sprintf("kots-%s-config", app.Name)]
-				if ok {
-					configCache[app.Name] = config
-					app.IsConfigurable = true
-					app.ChartPath = string(configCache[app.Name].Data["chartPath"])
-				}
-
-				if cache[app.Name] == nil {
-					cache[app.Name] = new(kotshelm.HelmApp)
-				}
-				// only cache the most recent helm app install
-				if (cache[app.Name].Application != nil && cache[app.Name].Application.CreatedAt.Before(app.CreatedAt)) || cache[app.Name].Application == nil {
-					cache[app.Name] = &kotshelm.HelmApp{Application: app, Values: values}
-				}
-			}
-		}
-
-		for _, app := range cache {
-			responseApps = append(responseApps, *app.Application)
-		}
-	} else {
-		apps, err := store.GetStore().ListInstalledApps()
-		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		defaultRoles := rbac.DefaultRoles() // TODO (ethan): this should be set in the handler
-
-		for _, a := range apps {
-			if sess.HasRBAC { // handle pre-rbac sessions
-				allow, err := rbac.CheckAccess(r.Context(), defaultRoles, "read", fmt.Sprintf("app.%s", a.Slug), sess.Roles)
-				if err != nil {
-					logger.Error(errors.Wrapf(err, "failed to check access for app %s", a.Slug))
-					w.WriteHeader(http.StatusInternalServerError)
-					return
-				} else if !allow {
-					continue
-				}
-			}
-
-			responseApp, err := responseAppFromApp(a)
-			if err != nil {
-				logger.Error(err)
+				logger.Error(errors.Wrap(err, "failed to convert release to app"))
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-			responseApps = append(responseApps, *responseApp)
+
+			chartUpdates := helm.GetCachedUpdates(release.ChartPath)
+			pendingVersions := make([]*downstreamtypes.DownstreamVersion, 0)
+			for _, update := range chartUpdates {
+				pendingVersions = append(pendingVersions, helmUpdateToDownsreamVersion(update))
+			}
+			app.Downstream.PendingVersions = pendingVersions
+			helmResponseApps = append(helmResponseApps, *app)
 		}
+
+		listAppsResponse := types.ListAppsHelmResponse{
+			Apps: helmResponseApps,
+		}
+
+		JSON(w, http.StatusOK, listAppsResponse)
+		return
+	}
+	apps, err := store.GetStore().ListInstalledApps()
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	defaultRoles := rbac.DefaultRoles() // TODO (ethan): this should be set in the handler
+
+	for _, a := range apps {
+		if sess.HasRBAC { // handle pre-rbac sessions
+			allow, err := rbac.CheckAccess(r.Context(), defaultRoles, "read", fmt.Sprintf("app.%s", a.Slug), sess.Roles)
+			if err != nil {
+				logger.Error(errors.Wrapf(err, "failed to check access for app %s", a.Slug))
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			} else if !allow {
+				continue
+			}
+		}
+
+		responseApp, err := responseAppFromApp(a)
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		responseApps = append(responseApps, *responseApp)
 	}
 
 	listAppsResponse := types.ListAppsResponse{
@@ -319,21 +254,33 @@ func (h *Handler) GetApp(w http.ResponseWriter, r *http.Request) {
 	responseApp := new(types.ResponseApp)
 	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
 	if isHelmManaged == "true" {
-		cache := getHelmAppCache()
-		responseApp = cache[appSlug].Application
-	} else {
-		a, err := store.GetStore().GetAppFromSlug(appSlug)
+		release := helm.GetHelmRelease(appSlug)
+		if release == nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		app, err := responseAppFromHelmApp(release)
 		if err != nil {
-			logger.Error(err)
+			logger.Error(errors.Wrap(err, "failed to convert release to app"))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		responseApp, err = responseAppFromApp(a)
-		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
+
+		JSON(w, http.StatusOK, app)
+		return
+	}
+	a, err := store.GetStore().GetAppFromSlug(appSlug)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	responseApp, err = responseAppFromApp(a)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
 	JSON(w, http.StatusOK, responseApp)
@@ -496,9 +443,55 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 	history := new(downstreamtypes.DownstreamVersionHistory)
 	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
 	if isHelmManaged == "true" {
-		cache := getHelmAppCache()
+		release := helm.GetHelmRelease(appSlug)
+		if release == nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
 		history.NumOfRemainingVersions = 0
-		history.VersionHistory = []*downstreamtypes.DownstreamVersion{cache[appSlug].Application.Downstream.CurrentVersion}
+		chartUpdates := helm.GetCachedUpdates(release.ChartPath)
+
+		now := time.Now()
+		versions := []*downstreamtypes.DownstreamVersion{}
+		for _, update := range chartUpdates {
+			versions = append(versions, helmUpdateToDownsreamVersion(update))
+		}
+
+		installedReleases, err := helm.ListChartVersions(appSlug, release.Namespace)
+		if err != nil {
+			err = errors.Wrapf(err, "failed to get installed releases of %s", appSlug)
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		for _, installedRelease := range installedReleases {
+			versions = append(versions, &downstreamtypes.DownstreamVersion{
+				VersionLabel:       installedRelease.Version,
+				Semver:             installedRelease.Semver,
+				UpdateCursor:       installedRelease.Version,
+				CreatedOn:          &now,                // TODO: implement
+				UpstreamReleasedAt: &now,                // TODO: implement
+				IsDeployable:       false,               // TODO: implement
+				NonDeployableCause: "already installed", // TODO: implement
+				Sequence:           int64(installedRelease.Revision),
+				Status:             storetypes.DownstreamVersionStatus(installedRelease.Status.String()),
+			})
+		}
+
+		// HACK: Populate revision number in updates to trick UI into working.  It relies on sequence numbers.
+		lastSequenceSeen := int64(0)
+		for i := len(versions) - 1; i >= 0; i-- {
+			if versions[i].Sequence > 0 {
+				lastSequenceSeen = versions[i].Sequence
+			} else {
+				lastSequenceSeen = lastSequenceSeen + 1
+				versions[i].Sequence = lastSequenceSeen
+			}
+		}
+
+		history.VersionHistory = versions
 	} else {
 		foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
 		if err != nil {
@@ -717,6 +710,39 @@ func (h *Handler) GetLatestDeployableVersion(w http.ResponseWriter, r *http.Requ
 	getLatestDeployableVersionResponse := GetLatestDeployableVersionResponse{}
 
 	appSlug := mux.Vars(r)["appSlug"]
+
+	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
+	if isHelmManaged == "true" {
+		release := helm.GetHelmRelease(appSlug)
+		if release == nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		availableUpdates := helm.GetCachedUpdates(release.ChartPath)
+		if len(availableUpdates) == 0 {
+			JSON(w, http.StatusOK, getLatestDeployableVersionResponse)
+			return
+		}
+
+		now := time.Now()
+		getLatestDeployableVersionResponse.Error = ""
+		getLatestDeployableVersionResponse.LatestDeployableVersion = &downstreamtypes.DownstreamVersion{
+			VersionLabel:       availableUpdates[0].Tag,
+			Semver:             &availableUpdates[0].Version,
+			UpdateCursor:       availableUpdates[0].Tag,
+			CreatedOn:          &now,              // TODO: implement
+			UpstreamReleasedAt: &now,              // TODO: implement
+			IsDeployable:       false,             // TODO: implement
+			NonDeployableCause: "not implemented", // TODO: implement
+		}
+		getLatestDeployableVersionResponse.NumOfSkippedVersions = 0   // TODO
+		getLatestDeployableVersionResponse.NumOfRemainingVersions = 0 // TODO
+
+		JSON(w, http.StatusOK, getLatestDeployableVersionResponse)
+		return
+	}
+
 	a, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
 		errMsg := "failed to get app from slug"
@@ -771,4 +797,17 @@ func (h *Handler) GetAutomatedInstallStatus(w http.ResponseWriter, r *http.Reque
 	}
 
 	JSON(w, http.StatusOK, response)
+}
+
+func helmUpdateToDownsreamVersion(update helm.ChartUpdate) *downstreamtypes.DownstreamVersion {
+	now := time.Now()
+	return &downstreamtypes.DownstreamVersion{
+		VersionLabel:       update.Tag,
+		Semver:             &update.Version,
+		UpdateCursor:       update.Tag,
+		CreatedOn:          &now,              // TODO: implement
+		UpstreamReleasedAt: &now,              // TODO: implement
+		IsDeployable:       false,             // TODO: implement
+		NonDeployableCause: "not implemented", // TODO: implement
+	}
 }

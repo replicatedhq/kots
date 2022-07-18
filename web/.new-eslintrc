@@ -6,7 +6,8 @@
     "prettier"
   ],
   "plugins": [
-    "prettier"
+    "prettier",
+    "jest",
   ],
   "rules": {
     "prettier/prettier": [
@@ -22,6 +23,11 @@
         "namedComponents": "function-declaration",
       },
     ],
+    "jest/no-disabled-tests": "warn",
+    "jest/no-focused-tests": "error",
+    "jest/no-identical-title": "error",
+    "jest/prefer-to-have-length": "warn",
+    "jest/valid-expect": "error"
   },
   "env": {
     "browser": true
@@ -38,5 +44,19 @@
         ]
       }
     }
-  }
+  },
+  "overrides": [
+    {
+      "files": [
+        "**/*.test.js",
+        "**/*.test.jsx"
+      ],
+      "env": {
+        "jest": true
+      },
+      "rules": {
+        "react/prop-types": "off"
+      }
+    }
+  ]
 }

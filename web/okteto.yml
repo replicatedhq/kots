@@ -11,3 +11,4 @@ resources:
   limits:
     cpu: "2"
     memory: 4Gi
+    storage: 40Gi

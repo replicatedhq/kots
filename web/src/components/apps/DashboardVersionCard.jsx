@@ -12,7 +12,7 @@ import ShowDetailsModal from "@src/components/modals/ShowDetailsModal";
 import ShowLogsModal from "@src/components/modals/ShowLogsModal";
 import DeployWarningModal from "../shared/modals/DeployWarningModal";
 import SkipPreflightsModal from "../shared/modals/SkipPreflightsModal";
-import HelmDeployModal from "../shared/modals/HelmDeployModal";
+import { HelmDeployModal } from "../shared/modals/HelmDeployModal";
 import classNames from "classnames";
 
 import {
@@ -85,10 +85,7 @@ class DashboardVersionCard extends React.Component {
         secondSequence: splitSearch[2],
       });
     }
-    if (
-      lastProps.downstream !== this.props.downstream &&
-      this.props.isHelmManaged !== true
-    ) {
+    if (lastProps.downstream !== this.props.downstream) {
       this.getLatestDeployableVersion();
     }
   }
@@ -1669,6 +1666,8 @@ class DashboardVersionCard extends React.Component {
                 showHelmValuesModal: false,
               })
             }
+            registryUsername={this.props?.app?.credentials?.username}
+            registryPassword={this.props?.app?.credentials?.password}
             showHelmDeployModal={true}
             subtitle="Follow the steps below to redeploy your application using the values from the last release."
             title="Redeploy application"
