@@ -47,11 +47,11 @@ jobs:
         with:
           terraform_wrapper: false
       - name: Initialize terraform
-        run: terraform init -reconfigure
+        run: terraform init
       - name: Get automation workspaces
         id: get-workspaces
         run: |
-          WORKSPACES=($(terraform workspace list | grep "nickm"))
+          WORKSPACES=($(terraform workspace list | grep "automation-"))
           declare -a EXPIRED_WORKSPACES
           for TF_WORKSPACE in ${WORKSPACES[@]}; do
             COMPLETION=$(date -d "$(TF_WORKSPACE=${TF_WORKSPACE} terraform output -no-color -raw completion_timestamp)" +%s) || continue
