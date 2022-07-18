@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"sort"
 	"strconv"
@@ -15,6 +16,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	helmrelease "helm.sh/helm/v3/pkg/release"
+	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -129,4 +131,22 @@ func HelmReleaseFromSecretData(data []byte) (*helmrelease.Release, error) {
 	}
 
 	return release, nil
+}
+
+func GetChartConfig(releaseName string, namespace string) (*corev1.Secret, error) {
+	clientSet, err := k8sutil.GetClientset()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get clientset")
+	}
+
+	secretName := fmt.Sprintf("kots-%s-config", releaseName)
+	secret, err := clientSet.CoreV1().Secrets(namespace).Get(context.TODO(), secretName, metav1.GetOptions{})
+	if err != nil {
+		if kuberneteserrors.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, errors.Wrap(err, "failed to get secret")
+	}
+
+	return secret, nil
 }
