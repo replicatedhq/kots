@@ -85,6 +85,14 @@ Steps to run in Helm managed mode:
 1. `okteto pipeline deploy`
 2. Ensure your local context is set to your okteto environment
 2. Set the `IS_HELM_MANAGED` environment variable for the kots deployment `kubectl set env deployment/kotsadm IS_HELM_MANAGED=true`
+
+Note that in order to use non-production environment, `REPLICATED_API_ENDPOINT` must also be set in the deployment:
+
+```
+kubectl set env deployment/kotsadm REPLICATED_API_ENDPOINT=https://<replicated-app host name>
+```
+
+
 ### Build V2 (EXPERIMENTAL)
 
 #### Description

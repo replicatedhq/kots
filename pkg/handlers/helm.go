@@ -94,10 +94,10 @@ func getLicenseForHelmApp(chartName string) (*kotsv1beta1.License, *apptypes.App
 	}
 
 	foundApp := &apptypes.App{ID: chartApp.ID, Slug: chartApp.Slug, Name: chartApp.Name}
-	apiEndpoint := os.Getenv("REPLICATED_API_ENDPOINT")
 
 	// get license
-	req, err := util.NewRequest(http.MethodGet, fmt.Sprintf("%s/license", apiEndpoint), nil)
+	url := fmt.Sprintf("%s/license", getReplicatedAPIEndpoint())
+	req, err := util.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to create new HTTP request")
 	}

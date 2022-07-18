@@ -3,14 +3,9 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"os"
 
-	"github.com/replicatedhq/kots/pkg/kotsadmlicense"
+	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
 	"github.com/replicatedhq/kots/pkg/logger"
-)
-
-const (
-	DefaultAPIEndpoint = "https://replicated.app"
 )
 
 type ExchangePlatformLicenseRequest struct {
@@ -29,11 +24,7 @@ func (h *Handler) ExchangePlatformLicense(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	apiEndpoint := os.Getenv("REPLICATED_API_ENDPOINT")
-	if apiEndpoint == "" {
-		apiEndpoint = DefaultAPIEndpoint
-	}
-	kotsLicenseData, err := license.GetFromPlatformLicense(apiEndpoint, request.LicenseData)
+	kotsLicenseData, err := license.GetFromPlatformLicense(getReplicatedAPIEndpoint(), request.LicenseData)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
