@@ -88,10 +88,10 @@ func (h *Handler) GetPendingApp(w http.ResponseWriter, r *http.Request) {
 
 func responseAppFromHelmApp(helmApp *helm.HelmApp) (*types.HelmResponseApp, error) {
 	unixIntValue, err := strconv.ParseInt(helmApp.Labels["modifiedAt"], 10, 64)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get unix timestamp from modifiedAt label")
+	var updatedTs time.Time
+	if err == nil {
+		updatedTs = time.Unix(unixIntValue, 0)
 	}
-	updatedTs := time.Unix(unixIntValue, 0)
 
 	sv, err := semver.ParseTolerant(helmApp.Release.Chart.Metadata.Version)
 	if err != nil {
@@ -123,9 +123,6 @@ func responseAppFromHelmApp(helmApp *helm.HelmApp) (*types.HelmResponseApp, erro
 		username, _ = replVals["username"].(string)
 		password, _ = replVals["license_id"].(string)
 	}
-
-	pendingVersions := make([]*downstreamtypes.DownstreamVersion, 0)
-	pendingVersions = append(pendingVersions, downstreamVersion)
 
 	return &types.HelmResponseApp{
 		ResponseApp: types.ResponseApp{

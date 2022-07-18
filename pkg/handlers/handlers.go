@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
@@ -25,6 +26,14 @@ func init() {
 	kotsscheme.AddToScheme(scheme.Scheme)
 	troubleshootscheme.AddToScheme(scheme.Scheme)
 	veleroscheme.AddToScheme(scheme.Scheme)
+}
+
+func getReplicatedAPIEndpoint() string {
+	endpoint := os.Getenv("REPLICATED_API_ENDPOINT")
+	if endpoint != "" {
+		return endpoint
+	}
+	return "https://replicated.app"
 }
 
 func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOTSHandler, middleware *policy.Middleware) {

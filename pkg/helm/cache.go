@@ -64,6 +64,9 @@ func Init(ctx context.Context) error {
 				logger.Errorf("failed to get helm release from secret %s: %v", s.Name, err)
 				continue
 			}
+			if releaseInfo == nil {
+				continue
+			}
 
 			AddHelmRelease(releaseInfo.Release.Name, releaseInfo)
 		}
@@ -131,6 +134,10 @@ func realeaseInfoFromSecret(secret *corev1.Secret) (*HelmApp, error) {
 		return nil, errors.Wrap(err, "failed to get helm release from secret")
 	}
 
+	if !isKotsManagedChart(helmRelease) {
+		return nil, nil
+	}
+
 	helmApp := &HelmApp{
 		Release:           *helmRelease,
 		Labels:            secret.Labels,
@@ -150,6 +157,34 @@ func realeaseInfoFromSecret(secret *corev1.Secret) (*HelmApp, error) {
 	}
 
 	return helmApp, nil
+}
+
+func isKotsManagedChart(release *helmrelease.Release) bool {
+	if release == nil {
+		return false
+	}
+
+	replValuesInterface := release.Chart.Values["replicated"]
+	if replValuesInterface == nil {
+		return false
+	}
+
+	replValues, ok := replValuesInterface.(map[string]interface{})
+	if !ok {
+		return false
+	}
+
+	licenseIDInterface, ok := replValues["license_id"]
+	if !ok {
+		return false
+	}
+
+	licenseID, ok := licenseIDInterface.(string)
+	if !ok {
+		return false
+	}
+
+	return licenseID != ""
 }
 
 func watchSecrets(ctx context.Context, namespace string, labelSelector string) error {
@@ -182,6 +217,9 @@ func watchSecrets(ctx context.Context, namespace string, labelSelector string) e
 				releaseInfo, err := realeaseInfoFromSecret(secret)
 				if err != nil {
 					logger.Errorf("failed to create helm release info from secret %s in namespace %s: %s", secret.Name, namespace)
+					break
+				}
+				if releaseInfo == nil {
 					break
 				}
 
