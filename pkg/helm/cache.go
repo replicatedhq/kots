@@ -152,7 +152,7 @@ func realeaseInfoFromSecret(secret *corev1.Secret) (*HelmApp, error) {
 	}
 
 	if configSecret != nil {
-		helmApp.IsConfigurable = true
+		_, helmApp.IsConfigurable = configSecret.Data["config"] // TODO: also check if there are any config items
 		helmApp.ChartPath = string(configSecret.Data["chartPath"])
 	}
 
