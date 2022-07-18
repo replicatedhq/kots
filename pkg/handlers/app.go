@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -20,8 +19,6 @@ import (
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/gitops"
 	"github.com/replicatedhq/kots/pkg/helm"
-	kotshelm "github.com/replicatedhq/kots/pkg/helm"
-	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/rbac"
@@ -32,32 +29,8 @@ import (
 	"github.com/replicatedhq/kots/pkg/store/kotsstore"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/version"
-	v1 "k8s.io/api/core/v1"
-	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 )
-
-var helmAppCache map[string]*kotshelm.HelmApp
-var helmConfigSecretCache map[string]v1.Secret
-
-func getHelmAppCache() map[string]*kotshelm.HelmApp {
-	if helmAppCache == nil {
-		helmAppCache = make(map[string]*kotshelm.HelmApp)
-		return helmAppCache
-	}
-
-	return helmAppCache
-}
-
-func getHelmConfigSecretCache() map[string]v1.Secret {
-	if helmConfigSecretCache == nil {
-		helmConfigSecretCache = make(map[string]v1.Secret)
-		return helmConfigSecretCache
-	}
-
-	return helmConfigSecretCache
-}
 
 func (h *Handler) GetPendingApp(w http.ResponseWriter, r *http.Request) {
 	sess := session.ContextGetSession(r)
@@ -113,59 +86,55 @@ func (h *Handler) GetPendingApp(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, pendingAppResponse)
 }
 
-func helmResponseAppFromSecret(s v1.Secret) (*types.HelmResponseApp, map[string]interface{}, error) {
-	unixIntValue, err := strconv.ParseInt(s.Labels["modifiedAt"], 10, 64)
+func responseAppFromHelmApp(helmApp *helm.HelmApp) (*types.HelmResponseApp, error) {
+	unixIntValue, err := strconv.ParseInt(helmApp.Labels["modifiedAt"], 10, 64)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to get unix timestamp from modifiedAt label")
+		return nil, errors.Wrap(err, "failed to get unix timestamp from modifiedAt label")
 	}
 	updatedTs := time.Unix(unixIntValue, 0)
 
-	// decode and read release data
-	release, err := helm.HelmReleaseFromSecretData(s.Data["release"])
+	sv, err := semver.ParseTolerant(helmApp.Release.Chart.Metadata.Version)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to get release from secret data")
-	}
-
-	sv, err := semver.ParseTolerant(release.Chart.Metadata.Version)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to parse release version into semver")
+		return nil, errors.Wrap(err, "failed to parse release version into semver")
 	}
 
 	iconURI := "https://cncf-branding.netlify.app/img/projects/helm/horizontal/color/helm-horizontal-color.png"
 	// use chart icon if it exists, if not use default helm icon
-	if release.Chart.Metadata.Icon != "" {
-		iconURI = release.Chart.Metadata.Icon
+	if helmApp.Release.Chart.Metadata.Icon != "" {
+		iconURI = helmApp.Release.Chart.Metadata.Icon
 	}
 
-	revision, err := strconv.Atoi(s.Labels["version"])
+	revision, err := strconv.Atoi(helmApp.Labels["version"])
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to parse release revision number")
+		return nil, errors.Wrap(err, "failed to parse release revision number")
 	}
 
 	downstreamVersion := &downstreamtypes.DownstreamVersion{
-		VersionLabel: release.Chart.Metadata.Version,
+		VersionLabel: helmApp.Release.Chart.Metadata.Version,
 		Semver:       &sv,
 		Sequence:     int64(revision),
 		Status:       storetypes.VersionDeployed,
-		CreatedOn:    &release.Info.FirstDeployed.Time,
-		DeployedAt:   &release.Info.LastDeployed.Time,
+		CreatedOn:    &helmApp.Release.Info.FirstDeployed.Time,
+		DeployedAt:   &helmApp.Release.Info.LastDeployed.Time,
 	}
 
 	var username, password string
-	if replVals := release.Chart.Values["replicated"].(map[string]interface{}); replVals != nil {
+	if replVals := helmApp.Release.Chart.Values["replicated"].(map[string]interface{}); replVals != nil {
 		username, _ = replVals["username"].(string)
 		password, _ = replVals["license_id"].(string)
 	}
 
 	pendingVersions := make([]*downstreamtypes.DownstreamVersion, 0)
 	pendingVersions = append(pendingVersions, downstreamVersion)
+
 	return &types.HelmResponseApp{
 		ResponseApp: types.ResponseApp{
-			Name:      s.Labels["name"],
-			Slug:      s.Labels["name"],
-			CreatedAt: s.CreationTimestamp.Time,
-			UpdatedAt: &updatedTs,
-			IconURI:   iconURI,
+			Name:           helmApp.Labels["name"],
+			Slug:           helmApp.Labels["name"],
+			CreatedAt:      helmApp.CreationTimestamp,
+			IsConfigurable: helmApp.IsConfigurable,
+			UpdatedAt:      &updatedTs,
+			IconURI:        iconURI,
 			Downstream: types.ResponseDownstream{
 				CurrentVersion:  downstreamVersion,
 				PendingVersions: make([]*downstreamtypes.DownstreamVersion, 0),
@@ -175,7 +144,8 @@ func helmResponseAppFromSecret(s v1.Secret) (*types.HelmResponseApp, map[string]
 			Username: username,
 			Password: password,
 		},
-	}, release.Chart.Values, nil
+		ChartPath: helmApp.ChartPath,
+	}, nil
 }
 
 func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
@@ -190,83 +160,27 @@ func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
 	if isHelmManaged == "true" {
 		helmResponseApps := []types.HelmResponseApp{}
-		cache := getHelmAppCache()
-		configCache := getHelmConfigSecretCache()
 
-		clientSet, err := k8sutil.GetClientset()
-		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		namespaces, err := clientSet.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
-		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		for _, ns := range namespaces.Items {
-			secrets, err := clientSet.CoreV1().Secrets(ns.Name).List(context.TODO(), metav1.ListOptions{LabelSelector: "owner=helm"})
-			if err != nil {
-				if !kuberneteserrors.IsForbidden(err) && !kuberneteserrors.IsNotFound(err) {
-					logger.Warnf(fmt.Sprintf("failed to list secrets for namespace: %s\n", ns.Name))
-				}
+		for _, releaseName := range helm.GetCachedReleases() {
+			release := helm.GetHelmRelease(releaseName)
+			if release == nil {
 				continue
 			}
 
-			configSecrets, err := clientSet.CoreV1().Secrets(ns.Name).List(context.TODO(), metav1.ListOptions{LabelSelector: "app.kubernetes.io/managed-by=Helm"})
+			app, err := responseAppFromHelmApp(release)
 			if err != nil {
-				if !kuberneteserrors.IsForbidden(err) && !kuberneteserrors.IsNotFound(err) {
-					logger.Warnf(fmt.Sprintf("failed to list secrets for namespace: %s\n", ns.Name))
-				}
-				continue
+				logger.Error(errors.Wrap(err, "failed to convert release to app"))
+				w.WriteHeader(http.StatusInternalServerError)
+				return
 			}
 
-			configMap := make(map[string]v1.Secret)
-			for _, s := range configSecrets.Items {
-				if strings.HasPrefix(s.Name, "kots-") && strings.HasSuffix(s.Name, "-config") {
-					configMap[s.Name] = s
-				}
-			}
-
-			for _, s := range secrets.Items {
-				app, values, err := helmResponseAppFromSecret(s)
-				if err != nil {
-					logger.Error(err)
-					continue
-				}
-
-				config, ok := configMap[fmt.Sprintf("kots-%s-config", app.Name)]
-				if ok {
-					configCache[app.Name] = config
-					app.IsConfigurable = true
-					app.ChartPath = string(configCache[app.Name].Data["chartPath"])
-				}
-
-				if cache[app.Name] == nil {
-					cache[app.Name] = new(kotshelm.HelmApp)
-				}
-				// only cache the most recent helm app install
-				if (cache[app.Name].Application != nil && cache[app.Name].Application.CreatedAt.Before(app.CreatedAt)) || cache[app.Name].Application == nil {
-					cache[app.Name] = &kotshelm.HelmApp{
-						Application: app,
-						Values:      values,
-						Namespace:   ns.Name,
-					}
-				}
-			}
-		}
-
-		for _, app := range cache {
-			chartUpdates := helm.GetCachedUpdates(app.Application.ChartPath)
+			chartUpdates := helm.GetCachedUpdates(release.ChartPath)
 			pendingVersions := make([]*downstreamtypes.DownstreamVersion, 0)
 			for _, update := range chartUpdates {
 				pendingVersions = append(pendingVersions, helmUpdateToDownsreamVersion(update))
 			}
-			app.Application.Downstream.PendingVersions = pendingVersions
-			helmResponseApps = append(helmResponseApps, *app.Application)
+			app.Downstream.PendingVersions = pendingVersions
+			helmResponseApps = append(helmResponseApps, *app)
 		}
 
 		listAppsResponse := types.ListAppsHelmResponse{
@@ -340,9 +254,20 @@ func (h *Handler) GetApp(w http.ResponseWriter, r *http.Request) {
 	responseApp := new(types.ResponseApp)
 	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
 	if isHelmManaged == "true" {
-		cache := getHelmAppCache()
-		helmResponseApp := cache[appSlug].Application
-		JSON(w, http.StatusOK, helmResponseApp)
+		release := helm.GetHelmRelease(appSlug)
+		if release == nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		app, err := responseAppFromHelmApp(release)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to convert release to app"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		JSON(w, http.StatusOK, app)
 		return
 	}
 	a, err := store.GetStore().GetAppFromSlug(appSlug)
@@ -518,10 +443,14 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 	history := new(downstreamtypes.DownstreamVersionHistory)
 	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
 	if isHelmManaged == "true" {
-		cache := getHelmAppCache()
-		helmApp := cache[appSlug]
+		release := helm.GetHelmRelease(appSlug)
+		if release == nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
 		history.NumOfRemainingVersions = 0
-		chartUpdates := helm.GetCachedUpdates(helmApp.Application.ChartPath)
+		chartUpdates := helm.GetCachedUpdates(release.ChartPath)
 
 		now := time.Now()
 		versions := []*downstreamtypes.DownstreamVersion{}
@@ -529,7 +458,7 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 			versions = append(versions, helmUpdateToDownsreamVersion(update))
 		}
 
-		installedReleases, err := helm.ListChartVersions(appSlug, helmApp.Namespace)
+		installedReleases, err := helm.ListChartVersions(appSlug, release.Namespace)
 		if err != nil {
 			err = errors.Wrapf(err, "failed to get installed releases of %s", appSlug)
 			logger.Error(err)
@@ -784,9 +713,13 @@ func (h *Handler) GetLatestDeployableVersion(w http.ResponseWriter, r *http.Requ
 
 	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
 	if isHelmManaged == "true" {
-		cache := getHelmAppCache()
-		app := cache[appSlug].Application
-		availableUpdates := helm.GetCachedUpdates(app.ChartPath)
+		release := helm.GetHelmRelease(appSlug)
+		if release == nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		availableUpdates := helm.GetCachedUpdates(release.ChartPath)
 		if len(availableUpdates) == 0 {
 			JSON(w, http.StatusOK, getLatestDeployableVersionResponse)
 			return

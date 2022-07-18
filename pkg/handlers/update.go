@@ -47,8 +47,18 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 
 	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
 	if isHelmManaged == "true" {
-		cache := getHelmAppCache()
-		app := cache[appSlug].Application
+		release := helm.GetHelmRelease(appSlug)
+		if release == nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		app, err := responseAppFromHelmApp(release)
+		if err != nil {
+			logger.Errorf("failed to convert release to helm app: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 
 		license, _, err := getLicenseForHelmApp(appSlug)
 		if err != nil {
@@ -69,6 +79,12 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 		}
 
 		availableUpdateTags, err := helm.CheckForUpdates(app.ChartPath, license.Spec.LicenseID, currentVersion)
+		if err != nil {
+			logger.Errorf("failed to get available updates: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
 		var appUpdateCheckResponse AppUpdateCheckResponse
 		var updates []AppUpdateRelease
 		for _, update := range availableUpdateTags {

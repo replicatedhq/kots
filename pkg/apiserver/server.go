@@ -15,6 +15,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/automation"
 	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/handlers"
+	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/informers"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -139,6 +140,12 @@ func Start(params *APIServerParams) {
 		opts := automation.AutomateInstallOptions{}
 		if err := automation.AutomateInstall(opts); err != nil {
 			log.Println("Failed to run automated installs", err)
+		}
+	}
+
+	if os.Getenv("IS_HELM_MANAGED") == "true" {
+		if err := helm.Init(context.TODO()); err != nil {
+			log.Println("Failed to initialize helm data", err)
 		}
 	}
 
