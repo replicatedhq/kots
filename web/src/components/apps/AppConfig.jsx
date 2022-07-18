@@ -760,8 +760,12 @@ class AppConfig extends Component {
                             this.setState({ showHelmDeployModal: false });
                             clearDownloadError();
                           }}
-                          registryUsername={this.props?.app?.credentials?.username}
-                          registryPassword={this.props?.app?.credentials?.password}
+                          registryUsername={
+                            this.props?.app?.credentials?.username
+                          }
+                          registryPassword={
+                            this.props?.app?.credentials?.password
+                          }
                           saveError={saveError}
                           showHelmDeployModal={true}
                           subtitle="Follow the steps below to upgrade your application with your new values.yaml."

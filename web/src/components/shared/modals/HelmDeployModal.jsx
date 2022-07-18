@@ -15,9 +15,9 @@ function makeLoginCommand({
   registryUsername,
   registryPassword,
 } = {}) {
-  return `helm registry login ${registryHostname.slice(
-    6
-  ).split("/")[0]} --username ${registryUsername} --password ${registryPassword}`;
+  return `helm registry login ${
+    registryHostname.slice(6).split("/")[0]
+  } --username ${registryUsername} --password ${registryPassword}`;
 }
 
 function HelmDeployModal({
