@@ -283,7 +283,7 @@ spec:
         checkName: Node status check
         outcomes:
           - fail:
-              when: "nodeCondition(Ready) == False"
+              when: "nodeCondition(Ready) == Unknown"
               message: "Not all nodes are online."
           - pass:
               message: "All nodes are online."
