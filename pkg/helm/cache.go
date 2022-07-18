@@ -31,11 +31,18 @@ type HelmApp struct {
 
 // TODO: Support same releases names in different namespaces
 var (
-	helmAppCache = map[string]*HelmApp{}
-	appCacheLock sync.Mutex
+	helmAppCache  = map[string]*HelmApp{}
+	tmpValuesRoot string
+	appCacheLock  sync.Mutex
 )
 
 func Init(ctx context.Context) error {
+	tmpDir, err := ioutil.TempDir("", "helm-values-")
+	if err != nil {
+		return errors.Wrap(err, "failed to create temp dir")
+	}
+	tmpValuesRoot = tmpDir
+
 	clientSet, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get clientset")
@@ -143,7 +150,7 @@ func realeaseInfoFromSecret(secret *corev1.Secret) (*HelmApp, error) {
 		Labels:            secret.Labels,
 		CreationTimestamp: secret.CreationTimestamp.Time,
 		Namespace:         secret.Namespace,
-		PathToValuesFile:  filepath.Join(".", "helm", helmRelease.Name, "values.yaml"),
+		PathToValuesFile:  filepath.Join(tmpValuesRoot, "helm", helmRelease.Name, "values.yaml"),
 	}
 
 	configSecret, err := GetChartConfig(helmRelease.Name, secret.Namespace)
