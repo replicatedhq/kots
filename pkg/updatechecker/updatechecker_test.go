@@ -170,17 +170,18 @@ func TestAutoDeploySequenceDeploysSequenceUpgradeIfCurrentVersionLessThanMostRec
 	var autoDeployType = apptypes.AutoDeploySequence
 	var appID = "some-app"
 	var clusterID = "some-cluster-id"
-	var currentSequence = int64(0)
-	var upgradeSequence = int64(1)
 	var opts = CheckForUpdatesOpts{AppID: appID}
+	var currentCursor = cursor.MustParse("1")
+	var upgradeCursor = cursor.MustParse("2")
 	var downstreamVersions = &downstreamtypes.DownstreamVersions{
 		CurrentVersion: &downstreamtypes.DownstreamVersion{
-			Semver:   &semver.Version{},
-			Sequence: currentSequence,
+			Cursor:   &currentCursor,
+			Sequence: 1,
 		},
 		AllVersions: []*downstreamtypes.DownstreamVersion{
 			{
-				Sequence: upgradeSequence,
+				Cursor:   &upgradeCursor,
+				Sequence: 2,
 			},
 		},
 	}
@@ -196,6 +197,39 @@ func TestAutoDeploySequenceDeploysSequenceUpgradeIfCurrentVersionLessThanMostRec
 	err := autoDeploy(opts, clusterID, autoDeployType)
 	if err != nil && !strings.Contains(err.Error(), "quitting early so as not to test the waitForPreflightsToFinish method") {
 		t.Errorf("autoDeploy() returned error = %v, wanted %s", err, "quitting early so as not to test the waitForPreflightsToFinish method")
+	}
+}
+
+func TestAutoDeploySequenceDoesNotDeployIfCurrentVersionIsSameUpstream(t *testing.T) {
+	var autoDeployType = apptypes.AutoDeploySequence
+	var appID = "some-app"
+	var clusterID = "some-cluster-id"
+	var opts = CheckForUpdatesOpts{AppID: appID}
+	var currentCursor = cursor.MustParse("2")
+	var upgradeCursor = cursor.MustParse("2")
+	var downstreamVersions = &downstreamtypes.DownstreamVersions{
+		CurrentVersion: &downstreamtypes.DownstreamVersion{
+			Cursor:   &currentCursor,
+			Sequence: 1,
+		},
+		AllVersions: []*downstreamtypes.DownstreamVersion{
+			{
+				Cursor:   &upgradeCursor,
+				Sequence: 2,
+			},
+		},
+	}
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockStore := mock_store.NewMockStore(ctrl)
+	mockStore.EXPECT().GetDownstreamVersions(opts.AppID, clusterID, true).Return(downstreamVersions, nil)
+
+	store = mockStore
+
+	err := autoDeploy(opts, clusterID, autoDeployType)
+	if err != nil {
+		t.Errorf("autoDeploy() returned error = %v, wanted nil", err)
 	}
 }
 
