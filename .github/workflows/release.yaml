@@ -28,6 +28,7 @@ jobs:
 
   tag-helm-chart:
     runs-on: ubuntu-20.04
+    # needs: [generate-tag]
     steps:
       - name: Checkout Chart
         if: github.ref_type == 'tag'
@@ -37,9 +38,8 @@ jobs:
           token: ${{ secrets.GH_PAT }}
           ref: main
       - name: Tag Chart
-        needs: [generate-tag]
-        env:
-          GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
+        # env:
+          # GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
         run: |
           git tag 0.0.0-alpha
           git push origin 0.0.0-alpha
