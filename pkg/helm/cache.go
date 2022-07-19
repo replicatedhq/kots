@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/util"
 	helmrelease "helm.sh/helm/v3/pkg/release"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -48,19 +49,27 @@ func Init(ctx context.Context) error {
 		return errors.Wrap(err, "failed to get clientset")
 	}
 
-	namespaces, err := clientSet.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
-	if err != nil {
-		return errors.Wrap(err, "failed to get namespaces")
+	namespacesToWatch := []string{util.PodNamespace}
+	if k8sutil.IsKotsadmClusterScoped(ctx, clientSet, util.PodNamespace) {
+		namespaces, err := clientSet.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to get namespaces")
+		}
+		for _, ns := range namespaces.Items {
+			namespacesToWatch = append(namespacesToWatch, ns.Name)
+		}
+	} else {
+		namespacesToWatch = []string{util.PodNamespace}
 	}
 
-	for _, ns := range namespaces.Items {
+	for _, namespace := range namespacesToWatch {
 		secretsSelector := labels.SelectorFromSet(map[string]string{"owner": "helm"}).String()
-		secrets, err := clientSet.CoreV1().Secrets(ns.Name).List(context.TODO(), metav1.ListOptions{
+		secrets, err := clientSet.CoreV1().Secrets(namespace).List(context.TODO(), metav1.ListOptions{
 			LabelSelector: secretsSelector,
 		})
 		if err != nil {
 			if !kuberneteserrors.IsForbidden(err) && !kuberneteserrors.IsNotFound(err) {
-				logger.Warnf("failed to list secrets for namespace: %s", ns.Name)
+				logger.Warnf("failed to list secrets for namespace: %s", namespace)
 			}
 			continue
 		}
@@ -83,7 +92,7 @@ func Init(ctx context.Context) error {
 			if err != nil {
 				logger.Errorf("Faied to watch secrets in ns %s and application cache will not be updated: %v", err)
 			}
-		}(ns.Name)
+		}(namespace)
 	}
 
 	return nil
