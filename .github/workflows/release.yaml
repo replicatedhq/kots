@@ -25,15 +25,20 @@ jobs:
         run: |
           git tag $GIT_TAG
           git push origin $GIT_TAG
-      - name: Tag Helm chart
+
+  tag-helm-chart:
+    runs-on: ubuntu-20.04
+      - name: Checkout Chart
         if: github.ref_type == 'tag'
         uses: actions/checkout@v3
-        env:
-          GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
         with:
           repository: replicatedhq/kots-helm
           token: ${{ secrets.GH_PAT }}
           ref: main
+      - name: Tag Chart
+        needs: [generate-tag]
+        env:
+          GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
         run: |
           git tag ${GIT_TAG:1}-alpha
           git push origin ${GIT_TAG:1}-alpha
