@@ -2,7 +2,6 @@ package replicated
 
 import (
 	"io/ioutil"
-	"os"
 	"path"
 	"testing"
 
@@ -42,9 +41,7 @@ func Test_PullReplicated(t *testing.T) {
 			req.NoError(err)
 			defer server.Close()
 
-			actualDir, err := ioutil.TempDir("", "integration")
-			req.NoError(err)
-			defer os.RemoveAll(actualDir)
+			actualDir := t.TempDir()
 
 			pullOptions := pull.PullOptions{
 				RootDir:             actualDir,
@@ -58,9 +55,7 @@ func Test_PullReplicated(t *testing.T) {
 			req.NoError(err)
 
 			// create an archive of the actual results
-			actualFilesystemDir, err := ioutil.TempDir("", "kots")
-			req.NoError(err)
-			defer os.RemoveAll(actualFilesystemDir)
+			actualFilesystemDir := t.TempDir()
 
 			paths := []string{
 				path.Join(actualDir, "upstream"),
@@ -80,9 +75,7 @@ func Test_PullReplicated(t *testing.T) {
 			req.NoError(err)
 
 			// create an archive of the expected
-			expectedFilesystemDir, err := ioutil.TempDir("", "kots")
-			req.NoError(err)
-			defer os.RemoveAll(expectedFilesystemDir)
+			expectedFilesystemDir := t.TempDir()
 
 			paths = []string{
 				path.Join(testResourcePath, "expected", "upstream"),

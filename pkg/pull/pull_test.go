@@ -39,9 +39,7 @@ spec:
 
 	defer os.RemoveAll(licenseFile.Name())
 
-	rootDir, err := ioutil.TempDir("", "kots")
-	require.NoError(t, err)
-	defer os.RemoveAll(rootDir)
+	rootDir := t.TempDir()
 
 	pullOptions := PullOptions{
 		RootDir:   rootDir,
