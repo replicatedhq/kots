@@ -5,7 +5,7 @@ on:
     tags:
       - "v*.*.*"
     branches:
-      - main
+      - stefan/sc-53400/auto-tag-kots-helm-chart-on-release
 
 jobs:
   generate-tag:
@@ -25,6 +25,18 @@ jobs:
         run: |
           git tag $GIT_TAG
           git push origin $GIT_TAG
+      - name: Tag Helm chart
+        if: github.ref_type == 'tag'
+        uses: actions/checkout@v3
+        env:
+          GIT_TAG: ${{ steps.get_tag.outputs.GIT_TAG }}
+        with:
+          repository: replicatedhq/kots-helm
+          token: ${{ secrets.GH_PAT }}
+          ref: main
+        run: |
+          git tag ${GIT_TAG:1}-alpha
+          git push origin ${GIT_TAG:1}-alpha
 
   image-deps-updater:
     runs-on: ubuntu-20.04
