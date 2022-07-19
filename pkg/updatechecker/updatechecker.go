@@ -472,21 +472,23 @@ func autoDeploy(opts CheckForUpdatesOpts, clusterID string, autoDeploy apptypes.
 	}
 
 	currentVersion := appVersions.CurrentVersion
-	if currentVersion == nil || currentVersion.Semver == nil {
+	if currentVersion == nil {
 		return nil
 	}
 
 	var versionToDeploy *downstreamtypes.DownstreamVersion
 
-	// In the case semver is not required, we only need to check if the newest app version
-	// is greater than the current version.
 	if autoDeploy == apptypes.AutoDeploySequence {
-		if currentVersion.Sequence < appVersions.AllVersions[0].Sequence {
+		// semver is not required/enabled, we only need to check if the newest app version is newer than the current version.
+		// use cursor instead of sequence in order to only deploy newer upstream versions, and not versions created by config changes, license changes, etc...
+		currentCursor := currentVersion.Cursor
+		latestCursor := appVersions.AllVersions[0].Cursor
+		if currentCursor != nil && latestCursor != nil && (*currentCursor).Before(*latestCursor) {
 			versionToDeploy = appVersions.AllVersions[0]
 		} else {
 			return nil
 		}
-	} else { // semver is required
+	} else if currentVersion.Semver != nil { // semver is required
 	Loop:
 		for _, v := range appVersions.AllVersions {
 			if v == nil || v.Semver == nil {
