@@ -1,0 +1,78 @@
+name: e2e-infra-cleanup
+
+on:
+  workflow_dispatch:
+    inputs:
+      cleanup_interval_hours:
+        description: Cleanup interval in hours
+        required: true
+        default: "24"
+    secrets:
+      E2E_TESTIM_AWS_ACCESS_KEY_ID:
+        required: true
+      E2E_TESTIM_AWS_SECRET_ACCESS_KEY:
+        required: true
+      E2E_GH_PAT:
+        required: true
+  schedule:
+    - cron: "0 * * * *"
+
+concurrency: e2e-infra-cleanup
+
+env:
+  AWS_DEFAULT_REGION: us-east-1
+  AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_TESTIM_AWS_SECRET_ACCESS_KEY }}
+  CLEANUP_INTERVAL_HOURS: ${{ github.event.inputs.cleanup_interval_hours || '24' }}
+
+jobs:
+  find-expired-workspaces:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: automation/jumpbox
+    outputs:
+      workspaces: ${{ steps.get-workspaces.outputs.workspaces }}
+      count: ${{ steps.get-workspaces.outputs.count }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          repository: replicatedhq/kots-regression-automation
+          token: ${{ secrets.E2E_GH_PAT }}
+          path: automation
+          ref: main
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: false
+      - name: Initialize terraform
+        run: terraform init
+      - name: Get automation workspaces
+        id: get-workspaces
+        run: |
+          WORKSPACES=($(terraform workspace list | grep "automation-"))
+          declare -a EXPIRED_WORKSPACES
+          for TF_WORKSPACE in ${WORKSPACES[@]}; do
+            COMPLETION=$(date -d "$(TF_WORKSPACE=${TF_WORKSPACE} terraform output -no-color -raw completion_timestamp)" +%s) || continue
+            [ $(( $(date +%s) - ${COMPLETION} )) -gt $(( 60 * 60 * ${CLEANUP_INTERVAL_HOURS} )) ] && EXPIRED_WORKSPACES+=(${TF_WORKSPACE})
+          done
+          echo "::set-output name=workspaces::$(printf '%s\n' "${EXPIRED_WORKSPACES[@]}" | head -c -1 | jq -R . | jq -sc .)"
+          echo "::set-output name=count::$(printf '%s\n' "${EXPIRED_WORKSPACES[@]}" | head -c -1 | jq -R . | jq -sc '. | length')"
+
+  cleanup-expired-workspaces:
+    needs: find-expired-workspaces
+    if: ${{ needs.find-expired-workspaces.outputs.count > 0 }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        workspace: ${{ fromJSON(needs.find-expired-workspaces.outputs.workspaces) }}
+    steps:
+      - name: Trigger workspace cleanup
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ secrets.E2E_GH_PAT }}
+          repository: replicatedhq/kots
+          event-type: e2e-workspace-cleanup
+          client-payload: '{"workspace": "${{ matrix.workspace }}"}'

@@ -24,7 +24,7 @@ on:
         description: Terraform workspace to turn down
         required: true
 
-concurrency: cleanup-${{ github.event.inputs.workspace }}
+concurrency: cleanup-${{ github.event.inputs.workspace || github.event.client_payload.workspace }}
 
 env:
   AWS_DEFAULT_REGION: us-east-1
@@ -75,7 +75,7 @@ jobs:
       - name: Delete workspace
         env:
           TF_WORKSPACE: default
-        run: terraform workspace delete ${{ github.event.inputs.workspace }}
+        run: terraform workspace delete ${{ github.event.inputs.workspace || github.event.client_payload.workspace }}
 
   cleanup-jumpbox:
     needs: cleanup-workspace
@@ -102,4 +102,4 @@ jobs:
       - name: Delete workspace
         env:
           TF_WORKSPACE: default
-        run: terraform workspace delete ${{ github.event.inputs.workspace }}
+        run: terraform workspace delete ${{ github.event.inputs.workspace || github.event.client_payload.workspace }}
