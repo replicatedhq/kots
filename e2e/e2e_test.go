@@ -141,7 +141,9 @@ var _ = Describe("E2E", func() {
 			"install kots and run the test",
 			func(test inventory.Test) {
 				if test.NeedsRegistry {
-					opts := registry.Options{}
+					opts := registry.Options{
+						ClusterIP: cluster.RegistryClusterIP,
+					}
 					registry := registry.New(helmCLI, c.GetKubeconfig())
 					registry.Install(opts)
 				}

@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -29,7 +30,10 @@ func NewK3d(workspace string) *K3d {
 	c.kubeconfig = filepath.Join(c.workspace, ".kubeconfig")
 	c.clusterName = filepath.Base(c.workspace)
 
-	session, err := k3dClusterCreate(c.clusterName)
+	registriesConfig, err := k3dWriteRegistriesConfig(c.workspace, RegistryClusterIP)
+	Expect(err).WithOffset(1).Should(Succeed(), "write registries config")
+
+	session, err := k3dClusterCreate(c.clusterName, registriesConfig)
 	if err != nil {
 		c.Teardown()
 	}
@@ -66,12 +70,13 @@ func (c *K3d) GetClusterName() string {
 	return c.clusterName
 }
 
-func k3dClusterCreate(clusterName string) (*gexec.Session, error) {
+func k3dClusterCreate(clusterName, registriesConfig string) (*gexec.Session, error) {
 	return util.RunCommand(exec.Command(
 		"k3d",
 		"cluster",
 		"create",
 		"--kubeconfig-update-default=false",
+		fmt.Sprintf("--registry-config=%s", registriesConfig),
 		clusterName,
 	))
 }
@@ -97,4 +102,17 @@ func k3dWriteKubeconfig(clusterName, kubeconfig string) (*gexec.Session, error) 
 		fmt.Sprintf("--output=%s", kubeconfig),
 		clusterName,
 	))
+}
+
+func k3dWriteRegistriesConfig(workspace, clusterIP string) (string, error) {
+	fileName := filepath.Join(workspace, "registries.yaml")
+	fileContents := fmt.Sprintf(`mirrors:
+  "%s:5000":
+    endpoint:
+    - "http://%s:5000"
+`,
+		clusterIP, clusterIP,
+	)
+	err := ioutil.WriteFile(fileName, []byte(fileContents), 0644)
+	return fileName, err
 }

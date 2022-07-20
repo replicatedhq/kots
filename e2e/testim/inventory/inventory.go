@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/onsi/gomega/gexec"
+	"github.com/replicatedhq/kots/e2e/cluster"
 	"github.com/replicatedhq/kots/e2e/kubectl"
-	"github.com/replicatedhq/kots/e2e/registry"
 
 	//lint:ignore ST1001 since Ginkgo and Gomega are DSLs this makes the tests more natural to read
 	. "github.com/onsi/ginkgo/v2"
@@ -113,30 +113,18 @@ func NewChangeLicense() Test {
 func SetupRegressionTest(kubectlCLI *kubectl.CLI) {
 	cmd := kubectlCLI.Command(
 		context.Background(),
-		fmt.Sprintf("--namespace=%s", registry.DefaultNamespace),
-		"get",
-		"svc",
-		registry.DefaultReleaseName,
-		"--template={{ .spec.clusterIP }}",
-	)
-	out, err := cmd.Output()
-	Expect(err).WithOffset(1).Should(Succeed(), "Get registry cluster ip failed")
-	clusterIP := strings.TrimSpace(string(out))
-
-	cmd = kubectlCLI.Command(
-		context.Background(),
 		"create",
 		"secret",
 		"docker-registry",
 		"registry-creds",
-		fmt.Sprintf("--docker-server=%s:5000", clusterIP),
+		fmt.Sprintf("--docker-server=%s:5000", cluster.RegistryClusterIP),
 		"--docker-username=fake",
 		"--docker-password=fake",
 		"--docker-email=fake@fake.com",
 	)
 	session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 	Expect(err).WithOffset(1).Should(Succeed(), "Create registry-creds secret failed")
-	Eventually(session).WithOffset(1).WithTimeout(30*time.Minute).Should(gexec.Exit(0), "Create registry-creds secret failed with non-zero exit code")
+	Eventually(session).WithOffset(1).WithTimeout(time.Minute).Should(gexec.Exit(0), "Create registry-creds secret failed with non-zero exit code")
 }
 
 func SetupNoRequiredConfig(kubectlCLI *kubectl.CLI) {
@@ -151,7 +139,7 @@ func SetupNoRequiredConfig(kubectlCLI *kubectl.CLI) {
 	buf := bytes.NewBuffer(nil)
 	session, err := gexec.Start(cmd, buf, GinkgoWriter)
 	Expect(err).WithOffset(1).Should(Succeed(), "Get kotsadm-authstring secret failed")
-	Eventually(session).WithOffset(1).WithTimeout(30*time.Minute).Should(gexec.Exit(0), "Get kotsadm-authstring secret failed with non-zero exit code")
+	Eventually(session).WithOffset(1).WithTimeout(time.Minute).Should(gexec.Exit(0), "Get kotsadm-authstring secret failed with non-zero exit code")
 
 	kotsadmAPIToken, err := base64.StdEncoding.DecodeString(strings.Trim(buf.String(), `"' `))
 	Expect(err).WithOffset(1).Should(Succeed(), "Decode kotsadm-authstring secret failed")
