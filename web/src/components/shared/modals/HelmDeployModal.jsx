@@ -35,6 +35,7 @@ function HelmDeployModal({
   title,
   upgradeTitle,
   valuesFilePath = null,
+  version = null,
 }) {
   return (
     <Modal
