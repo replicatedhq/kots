@@ -85,6 +85,8 @@ func CheckForUpdates(chartPath string, licenseID string, currentVersion *semver.
 		return nil, errors.Wrapf(err, "failed to get repo tags")
 	}
 
+	tags = removeDuplicates(tags) // registry should not be returning duplicate tags
+
 	for _, tag := range tags {
 		v, err := semver.ParseTolerant(tag)
 		if err != nil {
@@ -107,4 +109,18 @@ func CheckForUpdates(chartPath string, licenseID string, currentVersion *semver.
 	setCachedUpdates(chartPath, availableUpdates)
 
 	return availableUpdates, nil
+}
+
+func removeDuplicates(tags []string) []string {
+	m := map[string]struct{}{}
+	for _, tag := range tags {
+		m[tag] = struct{}{}
+	}
+
+	u := []string{}
+	for k := range m {
+		u = append(u, k)
+	}
+
+	return u
 }

@@ -75,7 +75,7 @@ Your permissions will be the same between both namespaces, and you will be able 
 ##### Use the Kots CLI while Kots Admin is running
 
 1. `okteto up` - Put the the kots pod into dev mode
-2. `make run` - Runs Kots Admin
+2. `make build run` - Runs Kots Admin
 3. In a new terminal, navigate to the kots project.
 4. `okteto exec bash` - Runs bash interactively in the kots pod.
 5. `./bin/kots {{COMMAND}}` - Run the kots commands you need.

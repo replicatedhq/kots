@@ -102,7 +102,7 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 
 		appUpdateCheckResponse = AppUpdateCheckResponse{
 			AvailableUpdates:   int64(len(updates)),
-			CurrentAppSequence: 0, // a.CurrentSequence, TODO
+			CurrentAppSequence: int64(helmApp.Release.Version),
 			AvailableReleases:  updates,
 		}
 
