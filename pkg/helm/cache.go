@@ -10,6 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
 	helmrelease "helm.sh/helm/v3/pkg/release"
@@ -49,7 +50,7 @@ func Init(ctx context.Context) error {
 		return errors.Wrap(err, "failed to get clientset")
 	}
 
-	namespacesToWatch := []string{util.PodNamespace}
+	namespacesToWatch := []string{}
 	if k8sutil.IsKotsadmClusterScoped(ctx, clientSet, util.PodNamespace) {
 		namespaces, err := clientSet.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
 		if err != nil {
@@ -75,7 +76,7 @@ func Init(ctx context.Context) error {
 		}
 
 		for _, s := range secrets.Items {
-			releaseInfo, err := realeaseInfoFromSecret(&s)
+			releaseInfo, err := helmAppFromSecret(&s)
 			if err != nil {
 				logger.Errorf("failed to get helm release from secret %s: %v", s.Name, err)
 				continue
@@ -84,7 +85,7 @@ func Init(ctx context.Context) error {
 				continue
 			}
 
-			AddHelmRelease(releaseInfo.Release.Name, releaseInfo)
+			AddHelmApp(releaseInfo.Release.Name, releaseInfo)
 		}
 
 		go func(namespace string) {
@@ -98,14 +99,14 @@ func Init(ctx context.Context) error {
 	return nil
 }
 
-func GetHelmRelease(releaseName string) *HelmApp {
+func GetHelmApp(releaseName string) *HelmApp {
 	appCacheLock.Lock()
 	defer appCacheLock.Unlock()
 
 	return helmAppCache[releaseName]
 }
 
-func GetCachedReleases() []string {
+func GetCachedHelmApps() []string {
 	appCacheLock.Lock()
 	defer appCacheLock.Unlock()
 
@@ -116,14 +117,14 @@ func GetCachedReleases() []string {
 	return releases
 }
 
-func AddHelmRelease(releaseName string, helmApp *HelmApp) {
+func AddHelmApp(releaseName string, helmApp *HelmApp) {
 	appCacheLock.Lock()
 	defer appCacheLock.Unlock()
 
 	helmAppCache[releaseName] = helmApp
 }
 
-func RemoveHelmRelease(releaseName string) {
+func RemoveHelmApp(releaseName string) {
 	appCacheLock.Lock()
 	defer appCacheLock.Unlock()
 
@@ -144,13 +145,14 @@ func SaveConfigValuesToFile(helmApp *HelmApp, data []byte) error {
 	return nil
 }
 
-func realeaseInfoFromSecret(secret *corev1.Secret) (*HelmApp, error) {
+func helmAppFromSecret(secret *corev1.Secret) (*HelmApp, error) {
 	helmRelease, err := HelmReleaseFromSecretData(secret.Data["release"])
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get helm release from secret")
 	}
 
-	if !isKotsManagedChart(helmRelease) {
+	licenseID := GetKotsLicenseID(helmRelease)
+	if licenseID == "" { // not a kots managed chart
 		return nil, nil
 	}
 
@@ -162,45 +164,64 @@ func realeaseInfoFromSecret(secret *corev1.Secret) (*HelmApp, error) {
 		PathToValuesFile:  filepath.Join(tmpValuesRoot, "helm", helmRelease.Name, "values.yaml"),
 	}
 
-	configSecret, err := GetChartConfig(helmRelease.Name, secret.Namespace)
+	configSecret, err := GetChartConfigSecret(helmApp)
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return nil, errors.Wrap(err, "failed to get helm config secret")
 	}
 
-	if configSecret != nil {
-		_, helmApp.IsConfigurable = configSecret.Data["config"] // TODO: also check if there are any config items
-		helmApp.ChartPath = string(configSecret.Data["chartPath"])
+	if configSecret == nil {
+		return helmApp, nil
+	}
+
+	_, helmApp.IsConfigurable = configSecret.Data["config"] // TODO: also check if there are any config items
+	helmApp.ChartPath = string(configSecret.Data["chartPath"])
+
+	if configSecret.Data["license"] == nil {
+		// This block does not return an error.
+		// This allows the app cache to be populated and app be accessible via Admin Console.
+		// If there is no license, the license card will be empty.
+		// License data can be healed by syncing the license from Admin Console.
+		licenseData, err := kotslicense.GetLatestLicenseForHelm(licenseID)
+		if err != nil {
+			logger.Warnf("failed to get license for helm chart %s: %v", helmRelease.Name, err)
+		} else {
+			configSecret.Data["license"] = licenseData.LicenseBytes
+			err := UpdateChartConfig(configSecret)
+			if err != nil {
+				logger.Warnf("failed to save license for helm chart %s: %v", helmRelease.Name, err)
+			}
+		}
 	}
 
 	return helmApp, nil
 }
 
-func isKotsManagedChart(release *helmrelease.Release) bool {
+func GetKotsLicenseID(release *helmrelease.Release) string {
 	if release == nil {
-		return false
+		return ""
 	}
 
 	replValuesInterface := release.Chart.Values["replicated"]
 	if replValuesInterface == nil {
-		return false
+		return ""
 	}
 
 	replValues, ok := replValuesInterface.(map[string]interface{})
 	if !ok {
-		return false
+		return ""
 	}
 
 	licenseIDInterface, ok := replValues["license_id"]
 	if !ok {
-		return false
+		return ""
 	}
 
 	licenseID, ok := licenseIDInterface.(string)
 	if !ok {
-		return false
+		return ""
 	}
 
-	return licenseID != ""
+	return licenseID
 }
 
 func watchSecrets(ctx context.Context, namespace string, labelSelector string) error {
@@ -230,7 +251,7 @@ func watchSecrets(ctx context.Context, namespace string, labelSelector string) e
 				if !ok {
 					break
 				}
-				releaseInfo, err := realeaseInfoFromSecret(secret)
+				releaseInfo, err := helmAppFromSecret(secret)
 				if err != nil {
 					logger.Errorf("failed to create helm release info from secret %s in namespace %s: %s", secret.Name, namespace)
 					break
@@ -240,14 +261,14 @@ func watchSecrets(ctx context.Context, namespace string, labelSelector string) e
 				}
 
 				logger.Debugf("adding secret %s to cache", secret.Name)
-				AddHelmRelease(releaseInfo.Release.Name, releaseInfo)
+				AddHelmApp(releaseInfo.Release.Name, releaseInfo)
 
 			case watch.Deleted:
 				secret, ok := e.Object.(*corev1.Secret)
 				if !ok {
 					break
 				}
-				RemoveHelmRelease(secret.Labels["name"])
+				RemoveHelmApp(secret.Labels["name"])
 
 			default:
 				secret, ok := e.Object.(*corev1.Secret)

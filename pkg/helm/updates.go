@@ -20,8 +20,8 @@ type ChartUpdate struct {
 type ChartUpdates []ChartUpdate
 
 var (
-	cacheMutex  sync.Mutex
-	updateCache map[string]ChartUpdates // available updates sorted in descending order for each chart
+	updateCacheMutex sync.Mutex
+	updateCache      map[string]ChartUpdates // available updates sorted in descending order for each chart
 )
 
 func init() {
@@ -49,15 +49,15 @@ func (u ChartUpdates) ToTagList() []string {
 }
 
 func GetCachedUpdates(chartPath string) ChartUpdates {
-	cacheMutex.Lock()
-	defer cacheMutex.Unlock()
+	updateCacheMutex.Lock()
+	defer updateCacheMutex.Unlock()
 
 	return updateCache[chartPath]
 }
 
 func setCachedUpdates(chartPath string, updates ChartUpdates) {
-	cacheMutex.Lock()
-	defer cacheMutex.Unlock()
+	updateCacheMutex.Lock()
+	defer updateCacheMutex.Unlock()
 
 	updateCache[chartPath] = updates
 }

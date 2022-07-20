@@ -2,19 +2,15 @@ package handlers
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/helm"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
-	"github.com/replicatedhq/kots/pkg/util"
 )
 
 // IsHelmManagedResponse - response body for the is helm managed endpoint
@@ -58,7 +54,7 @@ func (h *Handler) GetAppValuesFile(w http.ResponseWriter, r *http.Request) {
 		Success: false,
 	}
 	appSlug := mux.Vars(r)["appSlug"]
-	release := helm.GetHelmRelease(appSlug)
+	release := helm.GetHelmApp(appSlug)
 	if release == nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -82,52 +78,12 @@ func (h *Handler) GetAppValuesFile(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, getAppValuesFileResponse)
 }
 
-func getLicenseForHelmApp(chartName string) (*kotsv1beta1.License, *apptypes.App, error) {
-	release := helm.GetHelmRelease(chartName)
-	if release == nil {
-		return nil, nil, errors.Errorf("chart %q is not found in cache", chartName)
-	}
-
-	chartApp, err := responseAppFromHelmApp(release)
+func getCompatibleAppFromHelmApp(helmApp *helm.HelmApp) (*apptypes.App, error) {
+	chartApp, err := responseAppFromHelmApp(helmApp)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to convert release to app")
+		return nil, errors.Wrap(err, "failed to convert release to app")
 	}
 
 	foundApp := &apptypes.App{ID: chartApp.ID, Slug: chartApp.Slug, Name: chartApp.Name}
-
-	// get license
-	url := fmt.Sprintf("%s/license", getReplicatedAPIEndpoint())
-	req, err := util.NewRequest(http.MethodGet, url, nil)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to create new HTTP request")
-	}
-	var licId string
-	if replicatedValues, _ := release.Release.Chart.Values["replicated"].(map[string]interface{}); replicatedValues != nil {
-		licId = replicatedValues["license_id"].(string)
-	}
-	if licId == "" {
-		return nil, nil, errors.New("replicated license id not present in values")
-	}
-	req.SetBasicAuth(licId, licId)
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to perform HTTP request")
-	}
-
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		return nil, nil, errors.New(fmt.Sprintf("failed to perform http request, got non 200 status code of: %v", resp.StatusCode))
-	}
-	responseBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to read response body")
-	}
-
-	license, err := kotsutil.LoadLicenseFromBytes(responseBody)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to load license from response body bytes")
-	}
-
-	return license, foundApp, nil
+	return foundApp, nil
 }
