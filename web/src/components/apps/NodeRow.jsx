@@ -1,62 +1,57 @@
 import React from "react";
 import classNames from "classnames";
 import Loader from "../shared/Loader";
-import ReactTooltip from "react-tooltip";
 import { rbacRoles } from "../../constants/rbac";
 import { getPercentageStatus, Utilities } from "../../utilities/utilities";
 
 export default function NodeRow(props) {
   const { node } = props;
 
-  let drainDeleteNode;
-  if (
-    props.drainNode &&
-    Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN])
-  ) {
-    if (
-      !props.drainNodeSuccessful &&
-      props.drainingNodeName &&
-      props.drainingNodeName === node?.name
-    ) {
-      drainDeleteNode = (
-        <div className="flex flex-auto alignItems--center">
-          <span className="u-marginRight--5">
-            <Loader size="25" />
-          </span>
-          <span className="u-fontSize--normal u-textColor--secondary u-fontWeight--medium">
-            Draining Node
-          </span>
-        </div>
-      );
-    } else if (
-      props.drainNodeSuccessful &&
-      props.drainingNodeName === node?.name
-    ) {
-      drainDeleteNode = (
-        <div className="flex flex-auto alignItems--center">
-          <span className="u-marginRight--5 icon checkmark-icon" />
-          <span className="u-fontSize--normal u-textColor--secondary u-fontWeight--medium">
-            Node successfully drained
-          </span>
-        </div>
-      );
-    } else {
-      drainDeleteNode = (
-        <div className="flex-auto flex-column justifyContent--center">
-          <button
-            onClick={() =>
-              node?.canDelete
-                ? props.deleteNode(node?.name)
-                : props.drainNode(node?.name)
-            }
-            className="btn secondary red"
-          >
-            {node?.canDelete ? "Delete node" : "Drain node"}
-          </button>
-        </div>
-      );
+  const DrainDeleteNode = () => {
+    const { drainNode, drainNodeSuccessful, drainingNodeName } = props;
+    if (drainNode && Utilities.sessionRolesHasOneOf(rbacRoles.DRAIN_NODE)) {
+      if (
+        !drainNodeSuccessful &&
+        drainingNodeName &&
+        drainingNodeName === node?.name
+      ) {
+        return (
+          <div className="flex flex-auto alignItems--center">
+            <span className="u-marginRight--5">
+              <Loader size="25" />
+            </span>
+            <span className="u-fontSize--normal u-textColor--secondary u-fontWeight--medium">
+              Draining Node
+            </span>
+          </div>
+        );
+      } else if (drainNodeSuccessful && drainingNodeName === node?.name) {
+        return (
+          <div className="flex flex-auto alignItems--center">
+            <span className="u-marginRight--5 icon checkmark-icon" />
+            <span className="u-fontSize--normal u-textColor--secondary u-fontWeight--medium">
+              Node successfully drained
+            </span>
+          </div>
+        );
+      } else {
+        return (
+          <div className="flex-auto flex-column justifyContent--center">
+            <button
+              onClick={() =>
+                node?.canDelete
+                  ? props.deleteNode(node?.name)
+                  : props.drainNode(node?.name)
+              }
+              className="btn secondary red"
+            >
+              {node?.canDelete ? "Delete node" : "Drain node"}
+            </button>
+          </div>
+        );
+      }
     }
-  }
+  };
 
   return (
     <div className="flex flex-auto NodeRow--wrapper">
@@ -245,6 +240,7 @@ export default function NodeRow(props) {
             </p>
           </div>
         </div>
+        {/* LABELS */}
         <div className="u-marginTop--10">
           {node?.labels.length > 0
             ? node.labels.sort().map((label, i) => {
@@ -271,7 +267,7 @@ export default function NodeRow(props) {
           </p>
         </div>
       </div>
-      {drainDeleteNode}
+      <DrainDeleteNode />
     </div>
   );
 }
