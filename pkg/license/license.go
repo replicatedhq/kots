@@ -1,7 +1,6 @@
 package license
 
 import (
-	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -59,11 +58,31 @@ func ResolveExistingLicense(newLicense *kotsv1beta1.License) (bool, error) {
 func GetLatestLicense(license *kotsv1beta1.License) (*LicenseData, error) {
 	url := fmt.Sprintf("%s/license/%s", license.Spec.Endpoint, license.Spec.AppSlug)
 
+	licenseData, err := getLicenseFromAPI(url, license.Spec.LicenseID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get license from api")
+	}
+
+	return licenseData, nil
+}
+
+func GetLatestLicenseForHelm(licenseID string) (*LicenseData, error) {
+	url := fmt.Sprintf("%s/license", util.GetReplicatedAPIEndpoint())
+	licenseData, err := getLicenseFromAPI(url, licenseID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get license from api")
+	}
+
+	return licenseData, nil
+}
+
+func getLicenseFromAPI(url string, licenseID string) (*LicenseData, error) {
 	req, err := util.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to call newrequest")
 	}
-	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.Spec.LicenseID, license.Spec.LicenseID)))))
+
+	req.SetBasicAuth(licenseID, licenseID)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {

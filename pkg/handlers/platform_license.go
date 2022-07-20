@@ -6,6 +6,7 @@ import (
 
 	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 type ExchangePlatformLicenseRequest struct {
@@ -24,7 +25,7 @@ func (h *Handler) ExchangePlatformLicense(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	kotsLicenseData, err := license.GetFromPlatformLicense(getReplicatedAPIEndpoint(), request.LicenseData)
+	kotsLicenseData, err := license.GetFromPlatformLicense(util.GetReplicatedAPIEndpoint(), request.LicenseData)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
