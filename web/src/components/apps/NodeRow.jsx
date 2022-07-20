@@ -248,7 +248,7 @@ export default function NodeRow(props) {
         <div className="u-marginTop--10">
           {node?.labels.length > 0
             ? node.labels.sort().map((label, i) => {
-               let labelToShow = label.replace(":", "=")
+                let labelToShow = label.replace(":", "=");
                 return (
                   <div
                     key={i}
@@ -257,7 +257,6 @@ export default function NodeRow(props) {
                     data-for={`${labelToShow}-${i}`}
                   >
                     <span>{labelToShow}</span>
-                    
                   </div>
                 );
               })
