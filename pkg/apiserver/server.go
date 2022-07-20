@@ -145,7 +145,7 @@ func Start(params *APIServerParams) {
 
 	if os.Getenv("IS_HELM_MANAGED") == "true" {
 		if err := helm.Init(context.TODO()); err != nil {
-			log.Println("Failed to initialize helm data", err)
+			log.Println("Failed to initialize helm data: ", err)
 		}
 	}
 

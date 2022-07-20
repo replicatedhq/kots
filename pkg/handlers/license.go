@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
@@ -116,41 +117,111 @@ func (h *Handler) SyncLicense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
-	if err != nil {
-		syncLicenseResponse.Error = "failed to get app from slug"
-		logger.Error(errors.Wrap(err, syncLicenseResponse.Error))
-		JSON(w, http.StatusInternalServerError, syncLicenseResponse)
-		return
-	}
+	appSlug := mux.Vars(r)["appSlug"]
+	var latestLicense *kotsv1beta1.License
+	var foundApp *apptypes.App
+	var err error
+	var isSynced bool
 
-	currentLicense, err := store.GetStore().GetLatestLicenseForApp(foundApp.ID)
-	if err != nil {
-		syncLicenseResponse.Error = "failed to get current license"
-		logger.Error(errors.Wrap(err, syncLicenseResponse.Error))
-		JSON(w, http.StatusInternalServerError, syncLicenseResponse)
-		return
-	}
+	if os.Getenv("IS_HELM_MANAGED") == "true" {
+		helmApp := helm.GetHelmApp(appSlug)
+		if helmApp == nil {
+			syncLicenseResponse.Error = "failed to get helm release for slug"
+			logger.Errorf(syncLicenseResponse.Error)
+			JSON(w, http.StatusNotFound, syncLicenseResponse)
+			return
+		}
 
-	latestLicense, synced, err := license.Sync(foundApp, syncLicenseRequest.LicenseData, true)
-	if err != nil {
-		syncLicenseResponse.Error = "failed to sync license"
-		logger.Error(errors.Wrap(err, syncLicenseResponse.Error))
-		JSON(w, http.StatusInternalServerError, syncLicenseResponse)
-		return
-	}
+		currentLicense, err := helm.GetChartLicenseFromSecret(helmApp)
+		if err != nil {
+			syncLicenseResponse.Error = "failed to get license from secret"
+			logger.Error(errors.Wrap(err, syncLicenseResponse.Error))
+			JSON(w, http.StatusInternalServerError, syncLicenseResponse)
+			return
+		}
 
-	if !foundApp.IsAirgap && currentLicense.Spec.ChannelID != latestLicense.Spec.ChannelID {
-		// channel changed and this is an online installation, fetch the latest release for the new channel
-		go func(appID string) {
-			opts := updatechecker.CheckForUpdatesOpts{
-				AppID: appID,
-			}
-			_, err := updatechecker.CheckForUpdates(opts)
-			if err != nil {
-				logger.Error(errors.Wrap(err, "failed to fetch the latest release for the new channel"))
-			}
-		}(foundApp.ID)
+		licenseID := helm.GetKotsLicenseID(&helmApp.Release)
+
+		if currentLicense == nil && licenseID == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		if licenseID == "" {
+			licenseID = currentLicense.Spec.LicenseID
+		} else if currentLicense != nil && licenseID != currentLicense.Spec.LicenseID {
+			syncLicenseResponse.Error = "license ID in the chart does not match license ID in secret"
+			logger.Errorf(syncLicenseResponse.Error)
+			JSON(w, http.StatusBadRequest, syncLicenseResponse)
+		}
+
+		licenseData, err := kotslicense.GetLatestLicenseForHelm(licenseID)
+		if err != nil {
+			syncLicenseResponse.Error = "failed to get latest license for helm app"
+			logger.Error(errors.Wrap(err, syncLicenseResponse.Error))
+			JSON(w, http.StatusInternalServerError, syncLicenseResponse)
+			return
+		}
+		latestLicense = licenseData.License
+
+		if currentLicense == nil {
+			isSynced = true
+		} else if currentLicense.Spec.LicenseSequence != latestLicense.Spec.LicenseSequence {
+			isSynced = true
+		}
+
+		foundApp, err = getCompatibleAppFromHelmApp(helmApp)
+		if err != nil {
+			syncLicenseResponse.Error = "failed to get app for helm app"
+			logger.Error(errors.Wrap(err, syncLicenseResponse.Error))
+			JSON(w, http.StatusInternalServerError, syncLicenseResponse)
+			return
+		}
+
+		err = helm.SaveChartLicenseInSecret(helmApp, latestLicense)
+		if err != nil {
+			syncLicenseResponse.Error = "failed to update helm license"
+			logger.Error(errors.Wrap(err, syncLicenseResponse.Error))
+			JSON(w, http.StatusInternalServerError, syncLicenseResponse)
+			return
+		}
+
+	} else {
+		foundApp, err = store.GetStore().GetAppFromSlug(appSlug)
+		if err != nil {
+			syncLicenseResponse.Error = "failed to get app from slug"
+			logger.Error(errors.Wrap(err, syncLicenseResponse.Error))
+			JSON(w, http.StatusInternalServerError, syncLicenseResponse)
+			return
+		}
+
+		currentLicense, err := store.GetStore().GetLatestLicenseForApp(foundApp.ID)
+		if err != nil {
+			syncLicenseResponse.Error = "failed to get current license"
+			logger.Error(errors.Wrap(err, syncLicenseResponse.Error))
+			JSON(w, http.StatusInternalServerError, syncLicenseResponse)
+			return
+		}
+
+		latestLicense, isSynced, err = license.Sync(foundApp, syncLicenseRequest.LicenseData, true)
+		if err != nil {
+			syncLicenseResponse.Error = "failed to sync license"
+			logger.Error(errors.Wrap(err, syncLicenseResponse.Error))
+			JSON(w, http.StatusInternalServerError, syncLicenseResponse)
+			return
+		}
+
+		if !foundApp.IsAirgap && currentLicense.Spec.ChannelID != latestLicense.Spec.ChannelID {
+			// channel changed and this is an online installation, fetch the latest release for the new channel
+			go func(appID string) {
+				opts := updatechecker.CheckForUpdatesOpts{
+					AppID: appID,
+				}
+				_, err := updatechecker.CheckForUpdates(opts)
+				if err != nil {
+					logger.Error(errors.Wrap(err, "failed to fetch the latest release for the new channel"))
+				}
+			}(foundApp.ID)
+		}
 	}
 
 	licenseResponse, err := licenseResponseFromLicense(latestLicense, foundApp)
@@ -162,7 +233,7 @@ func (h *Handler) SyncLicense(w http.ResponseWriter, r *http.Request) {
 	}
 
 	syncLicenseResponse.Success = true
-	syncLicenseResponse.Synced = synced
+	syncLicenseResponse.Synced = isSynced
 	syncLicenseResponse.License = *licenseResponse
 
 	JSON(w, http.StatusOK, syncLicenseResponse)
@@ -179,9 +250,32 @@ func (h *Handler) GetLicense(w http.ResponseWriter, r *http.Request) {
 	var err error
 	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
 	if isHelmManaged == "true" {
-		license, foundApp, err = getLicenseForHelmApp(appSlug)
+		helmApp := helm.GetHelmApp(appSlug)
+		if helmApp == nil {
+			getLicenseResponse.Error = "failed to get helm release for slug"
+			logger.Errorf(getLicenseResponse.Error)
+			JSON(w, http.StatusNotFound, getLicenseResponse)
+			return
+		}
+
+		currentLicense, err := helm.GetChartLicenseFromSecret(helmApp)
 		if err != nil {
-			getLicenseResponse.Error = "failed to get license for helm app"
+			getLicenseResponse.Error = "failed to get license from secret"
+			logger.Error(errors.Wrap(err, getLicenseResponse.Error))
+			JSON(w, http.StatusInternalServerError, getLicenseResponse)
+			return
+		}
+
+		if currentLicense == nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		license = currentLicense
+
+		foundApp, err = getCompatibleAppFromHelmApp(helmApp)
+		if err != nil {
+			getLicenseResponse.Error = "failed to get app for helm app"
 			logger.Error(errors.Wrap(err, getLicenseResponse.Error))
 			JSON(w, http.StatusInternalServerError, getLicenseResponse)
 			return

@@ -10,9 +10,12 @@ import (
 	"io/ioutil"
 	"sort"
 	"strconv"
+	"sync"
 
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	helmrelease "helm.sh/helm/v3/pkg/release"
@@ -20,6 +23,11 @@ import (
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
+)
+
+var (
+	configSecretMutex sync.Mutex
 )
 
 // Secret labels from Helm v3 code:
@@ -133,14 +141,15 @@ func HelmReleaseFromSecretData(data []byte) (*helmrelease.Release, error) {
 	return release, nil
 }
 
-func GetChartConfig(releaseName string, namespace string) (*corev1.Secret, error) {
+func GetChartConfigSecret(helmApp *HelmApp) (*corev1.Secret, error) {
 	clientSet, err := k8sutil.GetClientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get clientset")
 	}
 
-	secretName := fmt.Sprintf("kots-%s-config", releaseName)
-	secret, err := clientSet.CoreV1().Secrets(namespace).Get(context.TODO(), secretName, metav1.GetOptions{})
+	// Note that this must be chart name, not release name
+	secretName := fmt.Sprintf("kots-%s-config", helmApp.Release.Chart.Name())
+	secret, err := clientSet.CoreV1().Secrets(helmApp.Namespace).Get(context.TODO(), secretName, metav1.GetOptions{})
 	if err != nil {
 		if kuberneteserrors.IsNotFound(err) {
 			return nil, nil
@@ -149,4 +158,75 @@ func GetChartConfig(releaseName string, namespace string) (*corev1.Secret, error
 	}
 
 	return secret, nil
+}
+
+func UpdateChartConfig(secret *corev1.Secret) error {
+	clientSet, err := k8sutil.GetClientset()
+	if err != nil {
+		return errors.Wrap(err, "failed to get clientset")
+	}
+
+	_, err = clientSet.CoreV1().Secrets(secret.Namespace).Update(context.TODO(), secret, metav1.UpdateOptions{})
+	if err != nil {
+		// TODO: retry on IsConflict
+		return errors.Wrap(err, "failed to update secret")
+	}
+
+	return nil
+}
+
+func GetChartLicenseFromSecret(helmApp *HelmApp) (*kotsv1beta1.License, error) {
+	secret, err := GetChartConfigSecret(helmApp)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get helm config secret")
+	}
+
+	if secret == nil {
+		return nil, nil
+	}
+
+	licenseData := secret.Data["license"]
+	if len(licenseData) == 0 {
+		return nil, nil
+	}
+
+	decode := kotsscheme.Codecs.UniversalDeserializer().Decode
+	obj, gvk, err := decode(licenseData, nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode license data")
+	}
+
+	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "License" {
+		return nil, errors.Errorf("unexpected GVK: %s", gvk.String())
+	}
+
+	return obj.(*kotsv1beta1.License), nil
+}
+
+func SaveChartLicenseInSecret(helmApp *HelmApp, license *kotsv1beta1.License) error {
+	configSecretMutex.Lock()
+	defer configSecretMutex.Unlock()
+
+	secret, err := GetChartConfigSecret(helmApp)
+	if err != nil {
+		return errors.Wrap(err, "failed to get config secret for license update")
+	}
+
+	if secret == nil {
+		return errors.Errorf("secret not found")
+	}
+
+	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, kotsscheme.Scheme, kotsscheme.Scheme)
+	var b bytes.Buffer
+	if err := s.Encode(license, &b); err != nil {
+		return errors.Wrap(err, "failed to encode kots license")
+	}
+
+	secret.Data["license"] = b.Bytes()
+
+	if err := UpdateChartConfig(secret); err != nil {
+		return errors.Wrap(err, "failed to update config secret with new license")
+	}
+
+	return nil
 }

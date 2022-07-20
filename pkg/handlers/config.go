@@ -150,13 +150,13 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 		// TODO: will need to consider flow for when ConfigSpec changes
 		appSlug := mux.Vars(r)["appSlug"]
 
-		release := helm.GetHelmRelease(appSlug)
-		if release == nil {
+		helmApp := helm.GetHelmApp(appSlug)
+		if helmApp == nil {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 
-		appSecret, err := helm.GetChartConfig(release.Release.Name, release.Namespace)
+		appSecret, err := helm.GetChartConfigSecret(helmApp)
 		if err != nil {
 			logger.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -208,7 +208,7 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		mergedHelmValues, err := kotshelm.GetMergedValues(release.Release.Chart.Values, renderedValues)
+		mergedHelmValues, err := kotshelm.GetMergedValues(helmApp.Release.Chart.Values, renderedValues)
 		if err != nil {
 			logger.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -222,7 +222,7 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = helm.SaveConfigValuesToFile(release, b)
+		err = helm.SaveConfigValuesToFile(helmApp, b)
 		if err != nil {
 			logger.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -436,13 +436,13 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	if isHelmManaged == "true" {
 		appSlug := mux.Vars(r)["appSlug"]
-		release := helm.GetHelmRelease(appSlug)
-		if release == nil {
+		helmApp := helm.GetHelmApp(appSlug)
+		if helmApp == nil {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 
-		configSecret, err := helm.GetChartConfig(release.Release.Name, release.Namespace)
+		configSecret, err := helm.GetChartConfigSecret(helmApp)
 		if err != nil {
 			logger.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)

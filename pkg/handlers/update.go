@@ -47,22 +47,28 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 
 	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
 	if isHelmManaged == "true" {
-		release := helm.GetHelmRelease(appSlug)
-		if release == nil {
+		helmApp := helm.GetHelmApp(appSlug)
+		if helmApp == nil {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 
-		app, err := responseAppFromHelmApp(release)
+		app, err := responseAppFromHelmApp(helmApp)
 		if err != nil {
 			logger.Errorf("failed to convert release to helm app: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		license, _, err := getLicenseForHelmApp(appSlug)
+		license, err := helm.GetChartLicenseFromSecret(helmApp)
 		if err != nil {
 			logger.Errorf("failed to get license for helm app: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		if license == nil {
+			logger.Errorf("license not found for helm app")
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

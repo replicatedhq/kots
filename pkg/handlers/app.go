@@ -158,8 +158,8 @@ func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 	if isHelmManaged == "true" {
 		helmResponseApps := []types.HelmResponseApp{}
 
-		for _, releaseName := range helm.GetCachedReleases() {
-			release := helm.GetHelmRelease(releaseName)
+		for _, releaseName := range helm.GetCachedHelmApps() {
+			release := helm.GetHelmApp(releaseName)
 			if release == nil {
 				continue
 			}
@@ -251,7 +251,7 @@ func (h *Handler) GetApp(w http.ResponseWriter, r *http.Request) {
 	responseApp := new(types.ResponseApp)
 	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
 	if isHelmManaged == "true" {
-		release := helm.GetHelmRelease(appSlug)
+		release := helm.GetHelmApp(appSlug)
 		if release == nil {
 			w.WriteHeader(http.StatusNotFound)
 			return
@@ -440,7 +440,7 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 	history := new(downstreamtypes.DownstreamVersionHistory)
 	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
 	if isHelmManaged == "true" {
-		release := helm.GetHelmRelease(appSlug)
+		release := helm.GetHelmApp(appSlug)
 		if release == nil {
 			w.WriteHeader(http.StatusNotFound)
 			return
@@ -710,7 +710,7 @@ func (h *Handler) GetLatestDeployableVersion(w http.ResponseWriter, r *http.Requ
 
 	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
 	if isHelmManaged == "true" {
-		release := helm.GetHelmRelease(appSlug)
+		release := helm.GetHelmApp(appSlug)
 		if release == nil {
 			w.WriteHeader(http.StatusNotFound)
 			return
