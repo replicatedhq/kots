@@ -788,8 +788,11 @@ func GetInstallationParams(configMapName string) (InstallationParams, error) {
 		return autoConfig, errors.Wrap(err, "failed to get k8s clientset")
 	}
 
-	// expected to fail for minimal rbac
-	isKurl, _ := kurl.IsKurl()
+	isKurl, err := kurl.IsKurl()
+	if err != nil {
+		return autoConfig, errors.Wrap(err, "failed to check if cluster is kurl")
+	}
+
 	autoConfig.EnableImageDeletion = isKurl
 
 	kotsadmConfigMap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), configMapName, metav1.GetOptions{})

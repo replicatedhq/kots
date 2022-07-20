@@ -36,13 +36,18 @@ func IsKurl() (bool, error) {
 			return false, errors.Wrap(err, "failed to get kubernetes clientset")
 		}
 
-		// TODO: how can we check and optimize for rbac errors here?
+		configMapExists := false
 		_, err = ReadConfigMap(clientset)
-		if err != nil && !kuberneteserrors.IsNotFound(err) {
+		if err == nil {
+			configMapExists = true
+		} else if kuberneteserrors.IsNotFound(err) {
+			configMapExists = false
+		} else if kuberneteserrors.IsForbidden(err) {
+			configMapExists = false
+		} else if err != nil {
 			return false, errors.Wrap(err, "failed to get kurl configmap")
 		}
 
-		configMapExists := !kuberneteserrors.IsNotFound(err)
 		isKurl = &configMapExists
 	}
 

@@ -154,8 +154,13 @@ func (h *Handler) UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	// expected to fail for minimal rbac
-	isKurl, _ := kurl.IsKurl()
+	isKurl, err := kurl.IsKurl()
+	if err != nil {
+		logger.Error(err)
+		globalSnapshotSettingsResponse.Error = "failed to check if cluster is kurl"
+		JSON(w, http.StatusInternalServerError, globalSnapshotSettingsResponse)
+		return
+	}
 
 	globalSnapshotSettingsResponse.VeleroVersion = veleroStatus.Version
 	globalSnapshotSettingsResponse.VeleroPlugins = veleroStatus.Plugins
@@ -307,8 +312,13 @@ func (h *Handler) GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// expected to fail for minimal rbac
-	isKurl, _ := kurl.IsKurl()
+	isKurl, err := kurl.IsKurl()
+	if err != nil {
+		logger.Error(err)
+		globalSnapshotSettingsResponse.Error = "failed to check if cluster is kurl"
+		JSON(w, http.StatusInternalServerError, globalSnapshotSettingsResponse)
+		return
+	}
 
 	globalSnapshotSettingsResponse.VeleroVersion = veleroStatus.Version
 	globalSnapshotSettingsResponse.VeleroPlugins = veleroStatus.Plugins

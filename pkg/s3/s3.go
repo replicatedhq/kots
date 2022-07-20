@@ -195,8 +195,10 @@ func s3BucketPod(clientset kubernetes.Interface, podOptions S3OpsPodOptions, com
 	image := fmt.Sprintf("kotsadm/kotsadm:%s", kotsadmTag)
 	imagePullSecrets := []corev1.LocalObjectReference{}
 
-	// expected to fail for minimal rbac
-	isKurl, _ := kurl.IsKurl()
+	isKurl, err := kurl.IsKurl()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to check if cluster is kurl")
+	}
 
 	if !isKurl || podOptions.Namespace != metav1.NamespaceDefault {
 		var err error

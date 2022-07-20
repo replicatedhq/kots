@@ -42,8 +42,10 @@ func Deploy(
 		Builder:            nil,
 	}
 
-	// expected to fail for minimal rbac
-	isKurl, _ := kurl.IsKurl()
+	isKurl, err := kurl.IsKurl()
+	if err != nil {
+		return errors.Wrap(err, "failed to check if cluster is kurl")
+	}
 
 	if !isKurl || namespace != metav1.NamespaceDefault {
 		options.ImageRewriteFn = kotsadmversion.DependencyImageRewriteKotsadmRegistry(namespace, registryConfig)

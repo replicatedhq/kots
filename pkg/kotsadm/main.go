@@ -266,8 +266,12 @@ func canUpgrade(upgradeOptions types.UpgradeOptions, clientset *kubernetes.Clien
 		return nil
 	}
 
-	// expected to fail for minimal rbac
-	if isKurl, _ := kurl.IsKurl(); isKurl {
+	isKurl, err := kurl.IsKurl()
+	if err != nil {
+		return errors.Wrap(err, "failed to check if cluster is kurl")
+	}
+
+	if isKurl {
 		return errors.New("upgrading kURL clusters is not supported")
 	}
 

@@ -103,8 +103,10 @@ func RestoreInstanceBackup(ctx context.Context, options RestoreInstanceBackupOpt
 	if !options.ExcludeAdminConsole {
 		log.ActionWithSpinner("Deleting Admin Console")
 
-		// expected to fail for minimal rbac
-		isKurl, _ := kurl.IsKurl()
+		isKurl, err := kurl.IsKurl()
+		if err != nil {
+			return errors.Wrap(err, "failed to check if cluster is kurl")
+		}
 
 		// delete all kotsadm objects before creating the restore
 		err = k8sutil.DeleteKotsadm(ctx, clientset, kotsadmNamespace, isKurl)

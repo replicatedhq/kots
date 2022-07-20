@@ -114,8 +114,10 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 		r.AppStatus = string(appStatus.State)
 	}
 
-	// expected to fail for minimal rbac
-	r.IsKurl, _ = kurl.IsKurl()
+	r.IsKurl, err = kurl.IsKurl()
+	if err != nil {
+		logger.Debugf(errors.Wrap(err, "failed to check if cluster is kurl").Error())
+	}
 
 	if r.IsKurl && clientset != nil {
 		kurlNodes, err := cachedKurlGetNodes(ctx, clientset)

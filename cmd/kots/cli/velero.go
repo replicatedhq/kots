@@ -116,8 +116,12 @@ func VeleroConfigureInternalCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get clientset")
 			}
 
-			// expected to fail for minimal rbac
-			if isKurl, _ := kurl.IsKurl(); isKurl {
+			isKurl, err := kurl.IsKurl()
+			if err != nil {
+				return errors.Wrap(err, "failed to check if cluster is kurl")
+			}
+
+			if !isKurl {
 				return errors.New("configuring snapshots to use the internal store is only supported for embedded clusters")
 			}
 

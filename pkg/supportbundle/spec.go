@@ -70,8 +70,12 @@ func CreateRenderedSpec(appID string, sequence int64, kotsKinds *kotsutil.KotsKi
 	namespacesToCollect := []string{}
 	namespacesToAnalyze := []string{}
 
-	// expected to fail for minimal rbac
-	if isKurl, _ := kurl.IsKurl(); !isKurl {
+	isKurl, err := kurl.IsKurl()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to check if cluster is kurl")
+	}
+
+	if !isKurl {
 		// with cluster access, collect everything, but only analyze application namespaces
 		// with minimal RBAC collect only application namespaces
 		if k8sutil.IsKotsadmClusterScoped(context.TODO(), clientset, util.PodNamespace) {
@@ -517,8 +521,12 @@ func getDefaultDynamicCollectors(app *apptypes.App, imageName string, pullSecret
 		logger.Errorf("Failed to get kubernetes clientset: %v", err)
 	}
 
-	// expected to fail for minimal rbac
-	if isKurl, _ := kurl.IsKurl(); isKurl {
+	isKurl, err := kurl.IsKurl()
+	if err != nil {
+		logger.Errorf("Failed to check if cluster is kurl: %v", err)
+	}
+
+	if isKurl {
 		collectors = append(collectors, &troubleshootv1beta2.Collect{
 			Sysctl: &troubleshootv1beta2.Sysctl{
 				Image:           imageName,
@@ -578,8 +586,12 @@ func getDefaultDynamicAnalyzers(app *apptypes.App) []*troubleshootv1beta2.Analyz
 		},
 	})
 
-	// expected to fail for minimal rbac
-	if isKurl, _ := kurl.IsKurl(); isKurl {
+	isKurl, err := kurl.IsKurl()
+	if err != nil {
+		logger.Errorf("Failed to check if cluster is kurl: %v", err)
+	}
+
+	if isKurl {
 		analyzers = append(analyzers,
 			&troubleshootv1beta2.Analyze{
 				Sysctl: &troubleshootv1beta2.SysctlAnalyze{
