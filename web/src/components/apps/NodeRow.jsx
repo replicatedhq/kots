@@ -248,32 +248,16 @@ export default function NodeRow(props) {
         <div className="u-marginTop--10">
           {node?.labels.length > 0
             ? node.labels.sort().map((label, i) => {
-                let labelToShow;
-                const labelParts = label.split("/");
-                if (labelParts.length > 1) {
-                  labelToShow = labelParts[1];
-                } else {
-                  labelToShow = labelParts[0];
-                }
+               let labelToShow = label.replace(":", "=")
                 return (
                   <div
                     key={i}
                     className="node-label u-cursor--default"
                     data-tip
-                    data-for={`${labelParts[1]}-${i}`}
+                    data-for={`${labelToShow}-${i}`}
                   >
-                    <span>{labelToShow.replace(":", "=")}</span>
-                    <ReactTooltip
-                      id={`${labelParts[1]}-${i}`}
-                      type="light"
-                      effect="solid"
-                      borderColor="#C4C4C4"
-                      textColor="#4A4A4A"
-                      border={true}
-                      className="u-textColor--secondary"
-                    >
-                      {labelParts[0]}
-                    </ReactTooltip>
+                    <span>{labelToShow}</span>
+                    
                   </div>
                 );
               })
