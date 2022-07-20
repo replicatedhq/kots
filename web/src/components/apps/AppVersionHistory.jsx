@@ -1318,6 +1318,51 @@ class AppVersionHistory extends Component {
     }
   };
 
+  deployButtonStatus = (version) => {
+    const app = this.props.app;
+    const downstream = app?.downstream;
+
+    const isCurrentVersion =
+      version.sequence === downstream.currentVersion?.sequence;
+    const isDeploying = version.status === "deploying";
+    const isPastVersion = find(downstream.pastVersions, {
+      sequence: version.sequence,
+    });
+    const needsConfiguration = version.status === "pending_config";
+    const isRollback = isPastVersion && version.deployedAt && app.allowRollback;
+    const isRedeploy =
+      isCurrentVersion &&
+      (version.status === "failed" || version.status === "deployed");
+    const canUpdateKots =
+      version.needsKotsUpgrade &&
+      !this.props.adminConsoleMetadata?.isAirgap &&
+      !this.props.adminConsoleMetadata?.isKurl;
+
+    if (needsConfiguration) {
+      return "Configure";
+    } else if (downstream?.currentVersion?.sequence == undefined) {
+      if (canUpdateKots) {
+        return "Upgrade";
+      } else {
+        return "Deploy";
+      }
+    } else if (isRedeploy) {
+      return "Redeploy";
+    } else if (isRollback) {
+      return "Rollback";
+    } else if (isDeploying) {
+      return "Deploying";
+    } else if (isCurrentVersion) {
+      return "Deployed";
+    } else {
+      if (canUpdateKots) {
+        return "Upgrade";
+      } else {
+        return "Deploy";
+      }
+    }
+  };
+
   renderAppVersionHistoryRow = (version) => {
     if (
       !version ||
@@ -1339,13 +1384,6 @@ class AppVersionHistory extends Component {
     if (version.preflightResultCreatedAt) {
       newPreflightResults = secondsAgo(version.preflightResultCreatedAt) < 12;
     }
-
-    const helmModalTitleAction =
-      this.state.confirmType === "rollback"
-        ? "Rollback to"
-        : this.state.confirmType === "redeploy"
-        ? "Redeploy"
-        : "Deploy";
 
     return (
       <>
@@ -1400,7 +1438,7 @@ class AppVersionHistory extends Component {
               registryPassword={this.props?.app?.credentials?.password}
               showHelmDeployModal={true}
               subtitle="Follow the steps below to upgrade your application with your new values.yaml."
-              title={` ${helmModalTitleAction} ${this.props?.app.slug} ${version.versionLabel}`}
+              title={` ${this.deployButtonStatus(version)} ${this.props?.app.slug} ${version.versionLabel}`}
               upgradeTitle="Upgrade application with Helm"
               valuesFilePath="https://downloads.replicated.com/values/dakWe43.yaml"
               version={version.versionLabel}
