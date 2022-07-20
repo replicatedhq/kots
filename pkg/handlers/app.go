@@ -110,18 +110,27 @@ func responseAppFromHelmApp(helmApp *helm.HelmApp) (*types.HelmResponseApp, erro
 	}
 
 	downstreamVersion := &downstreamtypes.DownstreamVersion{
-		VersionLabel: helmApp.Release.Chart.Metadata.Version,
-		Semver:       &sv,
-		Sequence:     int64(revision),
-		Status:       storetypes.VersionDeployed,
-		CreatedOn:    &helmApp.Release.Info.FirstDeployed.Time,
-		DeployedAt:   &helmApp.Release.Info.LastDeployed.Time,
+		VersionLabel:   helmApp.Release.Chart.Metadata.Version,
+		Semver:         &sv,
+		Sequence:       int64(revision),
+		ParentSequence: int64(revision),
+		Status:         storetypes.VersionDeployed,
+		CreatedOn:      &helmApp.Release.Info.FirstDeployed.Time,
+		DeployedAt:     &helmApp.Release.Info.LastDeployed.Time,
 	}
 
 	var username, password string
 	if replVals := helmApp.Release.Chart.Values["replicated"].(map[string]interface{}); replVals != nil {
 		username, _ = replVals["username"].(string)
 		password, _ = replVals["license_id"].(string)
+	}
+
+	chartUpdates := helm.GetCachedUpdates(helmApp.ChartPath)
+	pendingVersions := make([]*downstreamtypes.DownstreamVersion, len(chartUpdates), len(chartUpdates))
+	nextSequence := revision + 1
+	for i := len(chartUpdates) - 1; i >= 0; i-- {
+		pendingVersions[i] = helmUpdateToDownsreamVersion(chartUpdates[i], int64(nextSequence))
+		nextSequence = nextSequence + 1
 	}
 
 	return &types.HelmResponseApp{
@@ -134,7 +143,7 @@ func responseAppFromHelmApp(helmApp *helm.HelmApp) (*types.HelmResponseApp, erro
 			IconURI:        iconURI,
 			Downstream: types.ResponseDownstream{
 				CurrentVersion:  downstreamVersion,
-				PendingVersions: make([]*downstreamtypes.DownstreamVersion, 0),
+				PendingVersions: pendingVersions,
 			},
 		},
 		Credentials: types.Credentials{
@@ -171,12 +180,6 @@ func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			chartUpdates := helm.GetCachedUpdates(release.ChartPath)
-			pendingVersions := make([]*downstreamtypes.DownstreamVersion, 0)
-			for _, update := range chartUpdates {
-				pendingVersions = append(pendingVersions, helmUpdateToDownsreamVersion(update))
-			}
-			app.Downstream.PendingVersions = pendingVersions
 			helmResponseApps = append(helmResponseApps, *app)
 		}
 
@@ -450,11 +453,6 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 		chartUpdates := helm.GetCachedUpdates(release.ChartPath)
 
 		now := time.Now()
-		versions := []*downstreamtypes.DownstreamVersion{}
-		for _, update := range chartUpdates {
-			versions = append(versions, helmUpdateToDownsreamVersion(update))
-		}
-
 		installedReleases, err := helm.ListChartVersions(appSlug, release.Namespace)
 		if err != nil {
 			err = errors.Wrapf(err, "failed to get installed releases of %s", appSlug)
@@ -463,8 +461,14 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		lastInstalledSequence := 0
+		if len(installedReleases) > 0 {
+			lastInstalledSequence = installedReleases[0].Revision
+		}
+
+		installedVersions := []*downstreamtypes.DownstreamVersion{}
 		for _, installedRelease := range installedReleases {
-			versions = append(versions, &downstreamtypes.DownstreamVersion{
+			installedVersions = append(installedVersions, &downstreamtypes.DownstreamVersion{
 				VersionLabel:       installedRelease.Version,
 				Semver:             installedRelease.Semver,
 				UpdateCursor:       installedRelease.Version,
@@ -472,23 +476,29 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 				UpstreamReleasedAt: &now,                // TODO: implement
 				IsDeployable:       false,               // TODO: implement
 				NonDeployableCause: "already installed", // TODO: implement
+				ParentSequence:     int64(installedRelease.Revision),
 				Sequence:           int64(installedRelease.Revision),
 				Status:             storetypes.DownstreamVersionStatus(installedRelease.Status.String()),
 			})
 		}
 
-		// HACK: Populate revision number in updates to trick UI into working.  It relies on sequence numbers.
-		lastSequenceSeen := int64(0)
-		for i := len(versions) - 1; i >= 0; i-- {
-			if versions[i].Sequence > 0 {
-				lastSequenceSeen = versions[i].Sequence
-			} else {
-				lastSequenceSeen = lastSequenceSeen + 1
-				versions[i].Sequence = lastSequenceSeen
-			}
+		newVersions := make([]*downstreamtypes.DownstreamVersion, len(chartUpdates), len(chartUpdates))
+		nextUpdateSequence := lastInstalledSequence + 1
+		for i := len(chartUpdates) - 1; i >= 0; i-- {
+			newVersions[i] = helmUpdateToDownsreamVersion(chartUpdates[i], int64(nextUpdateSequence))
+			nextUpdateSequence = nextUpdateSequence + 1
 		}
 
+		numSkippedVersions := len(newVersions) - 1 // looks like this is what getLatestDeployableDownstreamVersion does
+		if pinLatestDeployable && len(newVersions) > 0 {
+			// TODO: this should be UI logic. the response here should have no duplicates on the list
+			newVersions = append([]*downstreamtypes.DownstreamVersion{newVersions[0]}, newVersions...)
+		}
+		versions := append(newVersions, installedVersions...)
+
 		history.VersionHistory = versions
+		history.TotalCount = len(versions)
+		history.NumOfSkippedVersions = numSkippedVersions
 	} else {
 		foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
 		if err != nil {
@@ -796,15 +806,19 @@ func (h *Handler) GetAutomatedInstallStatus(w http.ResponseWriter, r *http.Reque
 	JSON(w, http.StatusOK, response)
 }
 
-func helmUpdateToDownsreamVersion(update helm.ChartUpdate) *downstreamtypes.DownstreamVersion {
+func helmUpdateToDownsreamVersion(update helm.ChartUpdate, sequence int64) *downstreamtypes.DownstreamVersion {
 	now := time.Now()
 	return &downstreamtypes.DownstreamVersion{
 		VersionLabel:       update.Tag,
 		Semver:             &update.Version,
 		UpdateCursor:       update.Tag,
+		Sequence:           sequence,
+		ParentSequence:     sequence,
 		CreatedOn:          &now,              // TODO: implement
 		UpstreamReleasedAt: &now,              // TODO: implement
 		IsDeployable:       false,             // TODO: implement
 		NonDeployableCause: "not implemented", // TODO: implement
+		Source:             "Upstream Update",
+		Status:             storetypes.VersionPending,
 	}
 }

@@ -76,6 +76,10 @@ func Init(ctx context.Context) error {
 		}
 
 		for _, s := range secrets.Items {
+			if s.Labels == nil || s.Labels["status"] != helmrelease.StatusDeployed.String() {
+				continue
+			}
+
 			releaseInfo, err := helmAppFromSecret(&s)
 			if err != nil {
 				logger.Errorf("failed to get helm release from secret %s: %v", s.Name, err)
@@ -250,6 +254,9 @@ func watchSecrets(ctx context.Context, namespace string, labelSelector string) e
 				secret, ok := e.Object.(*corev1.Secret)
 				if !ok {
 					break
+				}
+				if secret.Labels == nil || secret.Labels["status"] != helmrelease.StatusDeployed.String() {
+					continue
 				}
 				releaseInfo, err := helmAppFromSecret(secret)
 				if err != nil {
