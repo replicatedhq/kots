@@ -15,7 +15,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
 	corev1 "k8s.io/api/core/v1"
@@ -195,7 +195,10 @@ func s3BucketPod(clientset kubernetes.Interface, podOptions S3OpsPodOptions, com
 	image := fmt.Sprintf("kotsadm/kotsadm:%s", kotsadmTag)
 	imagePullSecrets := []corev1.LocalObjectReference{}
 
-	if !kotsutil.IsKurl(clientset) || podOptions.Namespace != metav1.NamespaceDefault {
+	// expected to fail for minimal rbac
+	isKurl, _ := kurl.IsKurl()
+
+	if !isKurl || podOptions.Namespace != metav1.NamespaceDefault {
 		var err error
 		imageRewriteFn := kotsadmversion.KotsadmImageRewriteKotsadmRegistry(podOptions.Namespace, podOptions.RegistryConfig)
 		image, imagePullSecrets, err = imageRewriteFn(image, false)

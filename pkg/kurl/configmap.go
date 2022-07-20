@@ -2,13 +2,14 @@ package kurl
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
-	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
 	corev1 "k8s.io/api/core/v1"
+	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -22,19 +23,30 @@ const bootstrapTokenExpirationKey = "bootstrap_token_expiration"
 const certKey = "cert_key"
 const certsExpirationKey = "upload_certs_expiration"
 
-func IsKurl() bool {
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		logger.Error(err)
-		return false
+var isKurl *bool
+var isKurlMu sync.Mutex
+
+func IsKurl() (bool, error) {
+	isKurlMu.Lock()
+	defer isKurlMu.Unlock()
+
+	if isKurl == nil {
+		clientset, err := k8sutil.GetClientset()
+		if err != nil {
+			return false, errors.Wrap(err, "failed to get kubernetes clientset")
+		}
+
+		// TODO: how can we check and optimize for rbac errors here?
+		_, err = ReadConfigMap(clientset)
+		if err != nil && !kuberneteserrors.IsNotFound(err) {
+			return false, errors.Wrap(err, "failed to get kurl configmap")
+		}
+
+		configMapExists := !kuberneteserrors.IsNotFound(err)
+		isKurl = &configMapExists
 	}
 
-	_, err = ReadConfigMap(clientset)
-	if err != nil {
-		return false
-	}
-
-	return true
+	return *isKurl, nil
 }
 
 // ReadConfigMap will read the Kurl config from a configmap

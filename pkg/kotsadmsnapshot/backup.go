@@ -277,7 +277,8 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		backupHooks.Resources = append(backupHooks.Resources, veleroBackup.Spec.Hooks.Resources...)
 	}
 
-	isKurl := kurl.IsKurl()
+	// expected to fail for minimal rbac
+	isKurl, _ := kurl.IsKurl()
 	if isKurl {
 		includedNamespaces = append(includedNamespaces, "kurl")
 	}

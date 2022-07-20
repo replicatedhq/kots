@@ -20,6 +20,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
 	kurlscheme "github.com/replicatedhq/kurl/kurlkinds/client/kurlclientset/scheme"
@@ -787,7 +788,9 @@ func GetInstallationParams(configMapName string) (InstallationParams, error) {
 		return autoConfig, errors.Wrap(err, "failed to get k8s clientset")
 	}
 
-	autoConfig.EnableImageDeletion = IsKurl(clientset)
+	// expected to fail for minimal rbac
+	isKurl, _ := kurl.IsKurl()
+	autoConfig.EnableImageDeletion = isKurl
 
 	kotsadmConfigMap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), configMapName, metav1.GetOptions{})
 	if err != nil {

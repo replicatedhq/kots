@@ -19,6 +19,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/airgap"
 	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
+	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
@@ -297,7 +298,7 @@ func (h *Handler) UpdateAdminConsole(w http.ResponseWriter, r *http.Request) {
 		Success: false,
 	}
 
-	isKurl, err := kotsadm.IsKurl()
+	isKurl, err := kurl.IsKurl()
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to check kURL"))
 		JSON(w, http.StatusInternalServerError, updateAdminConsoleResponse)

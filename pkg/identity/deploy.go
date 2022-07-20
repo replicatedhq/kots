@@ -12,7 +12,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/kurl"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -42,7 +42,10 @@ func Deploy(
 		Builder:            nil,
 	}
 
-	if !kotsutil.IsKurl(clientset) || namespace != metav1.NamespaceDefault {
+	// expected to fail for minimal rbac
+	isKurl, _ := kurl.IsKurl()
+
+	if !isKurl || namespace != metav1.NamespaceDefault {
 		options.ImageRewriteFn = kotsadmversion.DependencyImageRewriteKotsadmRegistry(namespace, registryConfig)
 	}
 

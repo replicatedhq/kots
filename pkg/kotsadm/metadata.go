@@ -6,9 +6,11 @@ import (
 )
 
 func GetMetadata() types.Metadata {
+	// expected to fail for minimal rbac
+	isKurl, _ := kurl.IsKurl()
 	metadata := types.Metadata{
 		IsAirgap: IsAirgap(),
-		IsKurl:   kurl.IsKurl(),
+		IsKurl:   isKurl,
 	}
 
 	return metadata

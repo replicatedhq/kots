@@ -19,7 +19,7 @@ import (
 	kotsadmresources "github.com/replicatedhq/kots/pkg/kotsadm/resources"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmversion "github.com/replicatedhq/kots/pkg/kotsadm/version"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
 	kotss3 "github.com/replicatedhq/kots/pkg/s3"
 	types "github.com/replicatedhq/kots/pkg/snapshot/types"
@@ -298,7 +298,10 @@ func fileSystemMinioDeploymentResource(clientset kubernetes.Interface, secretChe
 	minioImage := fmt.Sprintf("minio/minio:%s", minioTag)
 	imagePullSecrets := []corev1.LocalObjectReference{}
 
-	if !kotsutil.IsKurl(clientset) || deployOptions.Namespace != metav1.NamespaceDefault {
+	// expected to fail for minimal rbac
+	isKurl, _ := kurl.IsKurl()
+
+	if !isKurl || deployOptions.Namespace != metav1.NamespaceDefault {
 		var err error
 		imageRewriteFn := kotsadmversion.DependencyImageRewriteKotsadmRegistry(deployOptions.Namespace, &registryConfig)
 		minioImage, imagePullSecrets, err = imageRewriteFn(minioImage, false)
@@ -838,7 +841,10 @@ func fileSystemMinioConfigPod(clientset kubernetes.Interface, deployOptions File
 	image := fmt.Sprintf("kotsadm/kotsadm:%s", kotsadmTag)
 	imagePullSecrets := []corev1.LocalObjectReference{}
 
-	if !kotsutil.IsKurl(clientset) || deployOptions.Namespace != metav1.NamespaceDefault {
+	// expected to fail for minimal rbac
+	isKurl, _ := kurl.IsKurl()
+
+	if !isKurl || deployOptions.Namespace != metav1.NamespaceDefault {
 		var err error
 		imageRewriteFn := kotsadmversion.KotsadmImageRewriteKotsadmRegistry(deployOptions.Namespace, &registryConfig)
 		image, imagePullSecrets, err = imageRewriteFn(image, false)

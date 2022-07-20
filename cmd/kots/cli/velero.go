@@ -17,7 +17,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/print"
 	"github.com/replicatedhq/kots/pkg/snapshot"
@@ -116,7 +116,8 @@ func VeleroConfigureInternalCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get clientset")
 			}
 
-			if !kotsutil.IsKurl(clientset) {
+			// expected to fail for minimal rbac
+			if isKurl, _ := kurl.IsKurl(); isKurl {
 				return errors.New("configuring snapshots to use the internal store is only supported for embedded clusters")
 			}
 

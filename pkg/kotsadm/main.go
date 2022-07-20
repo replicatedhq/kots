@@ -19,7 +19,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/ingress"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"golang.org/x/sync/errgroup"
 	corev1 "k8s.io/api/core/v1"
@@ -246,15 +246,6 @@ func Deploy(deployOptions types.DeployOptions, log *logger.CLILogger) error {
 	return nil
 }
 
-func IsKurl() (bool, error) {
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return false, errors.Wrap(err, "failed to get clientset")
-	}
-
-	return kotsutil.IsKurl(clientset), nil
-}
-
 func IsAirgap() bool {
 	return os.Getenv("DISABLE_OUTBOUND_CONNECTIONS") == "true"
 }
@@ -275,7 +266,8 @@ func canUpgrade(upgradeOptions types.UpgradeOptions, clientset *kubernetes.Clien
 		return nil
 	}
 
-	if kotsutil.IsKurl(clientset) {
+	// expected to fail for minimal rbac
+	if isKurl, _ := kurl.IsKurl(); isKurl {
 		return errors.New("upgrading kURL clusters is not supported")
 	}
 

@@ -102,8 +102,8 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 		r.AppStatus = string(appStatus.State)
 	}
 
-	// check if embedded cluster
-	r.IsKurl = kurl.IsKurl()
+	// expected to fail for minimal rbac
+	r.IsKurl, _ = kurl.IsKurl()
 
 	return &r
 }

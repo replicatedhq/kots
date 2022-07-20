@@ -154,6 +154,9 @@ func (h *Handler) UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	// expected to fail for minimal rbac
+	isKurl, _ := kurl.IsKurl()
+
 	globalSnapshotSettingsResponse.VeleroVersion = veleroStatus.Version
 	globalSnapshotSettingsResponse.VeleroPlugins = veleroStatus.Plugins
 	globalSnapshotSettingsResponse.VeleroNamespace = veleroStatus.Namespace
@@ -163,7 +166,7 @@ func (h *Handler) UpdateGlobalSnapshotSettings(w http.ResponseWriter, r *http.Re
 	globalSnapshotSettingsResponse.IsResticRunning = veleroStatus.ResticStatus == "Ready"
 	globalSnapshotSettingsResponse.ResticPods = veleroStatus.ResticPods
 	globalSnapshotSettingsResponse.KotsadmNamespace = kotsadmNamespace
-	globalSnapshotSettingsResponse.IsKurl = kurl.IsKurl()
+	globalSnapshotSettingsResponse.IsKurl = isKurl
 	globalSnapshotSettingsResponse.IsMinimalRBACEnabled = !k8sutil.IsKotsadmClusterScoped(r.Context(), clientset, kotsadmNamespace)
 	globalSnapshotSettingsResponse.IsMinioDisabled = isMinioDisabled
 
@@ -304,6 +307,9 @@ func (h *Handler) GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	// expected to fail for minimal rbac
+	isKurl, _ := kurl.IsKurl()
+
 	globalSnapshotSettingsResponse.VeleroVersion = veleroStatus.Version
 	globalSnapshotSettingsResponse.VeleroPlugins = veleroStatus.Plugins
 	globalSnapshotSettingsResponse.VeleroNamespace = veleroStatus.Namespace
@@ -313,7 +319,7 @@ func (h *Handler) GetGlobalSnapshotSettings(w http.ResponseWriter, r *http.Reque
 	globalSnapshotSettingsResponse.IsResticRunning = veleroStatus.ResticStatus == "Ready"
 	globalSnapshotSettingsResponse.ResticPods = veleroStatus.ResticPods
 	globalSnapshotSettingsResponse.KotsadmNamespace = kotsadmNamespace
-	globalSnapshotSettingsResponse.IsKurl = kurl.IsKurl()
+	globalSnapshotSettingsResponse.IsKurl = isKurl
 	globalSnapshotSettingsResponse.IsMinimalRBACEnabled = !k8sutil.IsKotsadmClusterScoped(r.Context(), clientset, kotsadmNamespace)
 	globalSnapshotSettingsResponse.IsMinioDisabled = isMinioDisabled
 
