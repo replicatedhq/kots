@@ -1,12 +1,14 @@
 package types
 
 type ReportingInfo struct {
-	InstanceID string
-	ClusterID  string
-	Downstream DownstreamInfo
-	AppStatus  string
-	IsKurl     bool
-	K8sVersion string
+	InstanceID         string
+	ClusterID          string
+	Downstream         DownstreamInfo
+	AppStatus          string
+	IsKurl             bool
+	KurlNodeCountTotal int
+	KurlNodeCountReady int
+	K8sVersion         string
 }
 
 type DownstreamInfo struct {
