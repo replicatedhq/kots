@@ -1309,7 +1309,7 @@ class AppVersionHistory extends Component {
     });
   };
 
-  handleActionButtonClicked = ({ sequence, versionLabel }) => {
+  handleActionButtonClicked = ({ versionLabel, sequence }) => {
     if (this.props.isHelmManaged) {
       this.setState({
         showHelmDeployModalForVersionLabel: versionLabel,
@@ -1384,9 +1384,8 @@ class AppVersionHistory extends Component {
     if (version.preflightResultCreatedAt) {
       newPreflightResults = secondsAgo(version.preflightResultCreatedAt) < 12;
     }
-
     return (
-      <>
+      <React.Fragment key={version.sequence}>
         <AppVersionHistoryRow
           handleActionButtonClicked={() =>
             this.handleActionButtonClicked({
@@ -1423,10 +1422,10 @@ class AppVersionHistory extends Component {
           adminConsoleMetadata={this.props.adminConsoleMetadata}
         />
         {this.state.showHelmDeployModalForVersionLabel ===
-          version.versionLabel && this.state.showHelmDeployModalForSequence === version.sequence && (
+          version.versionLabel && (
             <UseDownloadValues
-              appSlug={this.props?.app?.slug}
-              fileName="values.yaml"
+            appSlug={this.props?.app?.slug}
+            fileName="values.yaml"
             >
               {({
                 download,
@@ -1440,7 +1439,6 @@ class AppVersionHistory extends Component {
                 return (
                   <>
                     <HelmDeployModal
-                      key={version.sequence}
                       appSlug={this.props?.app?.slug}
                       chartPath={this.props?.app?.chartPath || ""}
                       downloadClicked={download}
@@ -1460,12 +1458,12 @@ class AppVersionHistory extends Component {
                       upgradeTitle="Upgrade application with Helm"
                       version={version.versionLabel}
                     />
-                    <a href={url} download={name} className="hidden" ref={ref} /> */
+                    <a href={url} download={name} className="hidden" ref={ref} />
                   </>)
               }}
             </UseDownloadValues>
           )}
-      </>
+      </ React.Fragment>
     );
   };
 
