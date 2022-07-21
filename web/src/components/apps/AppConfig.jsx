@@ -768,10 +768,10 @@ class AppConfig extends Component {
                           }
                           saveError={saveError}
                           showHelmDeployModal={true}
+                          showDownloadValues={true}
                           subtitle="Follow the steps below to upgrade your application with your new values.yaml."
                           title="Upgrade application"
                           upgradeTitle="Upgrade application with Helm"
-                          valuesFilePath="https://downloads.replicated.com/values/dakWe43.yaml"
                         />
                         <a
                           href={url}

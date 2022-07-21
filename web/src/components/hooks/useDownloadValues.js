@@ -80,4 +80,10 @@ const useDownloadValues = ({
   };
 };
 
-export { useDownloadValues, getValues };
+function UseDownloadValues({ appSlug, fileName, children }) {
+  const query = useDownloadValues({ appSlug, fileName });
+
+  return children(query);
+}
+
+export { useDownloadValues, UseDownloadValues, getValues };
