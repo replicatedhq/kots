@@ -603,6 +603,8 @@ class DashboardVersionCard extends React.Component {
     continueWithFailedPreflights = false,
     redeploy = false
   ) => {
+    // need to use the button name in helm modal title 
+    // 
     if (this.props.isHelmManaged) {
       this.setState({
         showHelmDeployModal: true,
@@ -849,6 +851,9 @@ class DashboardVersionCard extends React.Component {
   };
 
   isActionButtonDisabled = (version) => {
+    if (this.props.isHelmManaged) {
+      return false;
+    }
     if (
       this.state.versionDownloadStatuses?.[version.sequence]?.downloadingVersion
     ) {
