@@ -781,9 +781,9 @@ class Dashboard extends Component {
             className="Modal DefaultSize"
           >
             <div className="Modal-body">
-              <p className="u-fontSize--large u-fontWeight--bold u-textColor--primary">
+              <ParagraphLarge fontWeight={'bold'}>
                 Resource status
-              </p>
+              </ParagraphLarge>
               <div
                 className="u-marginTop--10 u-marginBottom--10 u-overflow--auto"
                 style={{ maxHeight: "50vh" }}

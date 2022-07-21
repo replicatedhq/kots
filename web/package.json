@@ -149,6 +149,7 @@
     "resumablejs": "^1.1.0",
     "sass": "^1.51.0",
     "semver": "^7.3.5",
+    "styled-components": "^5.3.5",
     "tar-stream": "2.1.0",
     "trim": "^0.0.3",
     "truncate-middle": "^1.0.6",
@@ -156,7 +157,7 @@
     "urlize": "^0.2.1",
     "webpack-bugsnag-plugins": "^1.4.3"
   },
-  "resolutions" : {
+  "resolutions": {
     "eslint-loader/eslint": "7.5.0",
     "favicons/**/minimist": "1.2.6"
   },
