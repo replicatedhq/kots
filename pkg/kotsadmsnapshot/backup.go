@@ -277,7 +277,11 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		backupHooks.Resources = append(backupHooks.Resources, veleroBackup.Spec.Hooks.Resources...)
 	}
 
-	isKurl := kurl.IsKurl()
+	isKurl, err := kurl.IsKurl()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to check if cluster is kurl")
+	}
+
 	if isKurl {
 		includedNamespaces = append(includedNamespaces, "kurl")
 	}

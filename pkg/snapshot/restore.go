@@ -16,7 +16,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	snapshottypes "github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
@@ -103,8 +103,13 @@ func RestoreInstanceBackup(ctx context.Context, options RestoreInstanceBackupOpt
 	if !options.ExcludeAdminConsole {
 		log.ActionWithSpinner("Deleting Admin Console")
 
+		isKurl, err := kurl.IsKurl()
+		if err != nil {
+			return errors.Wrap(err, "failed to check if cluster is kurl")
+		}
+
 		// delete all kotsadm objects before creating the restore
-		err = k8sutil.DeleteKotsadm(ctx, clientset, kotsadmNamespace, kotsutil.IsKurl(clientset))
+		err = k8sutil.DeleteKotsadm(ctx, clientset, kotsadmNamespace, isKurl)
 		if err != nil {
 			log.FinishSpinnerWithError()
 			return errors.Wrap(err, "failed to delete kotsadm objects")

@@ -83,6 +83,7 @@ func GetNodes(client kubernetes.Interface) (*types.KurlNodes, error) {
 		toReturn.Nodes = append(toReturn.Nodes, types.Node{
 			Name:           node.Name,
 			IsConnected:    isConnected(node),
+			IsReady:        isReady(node),
 			IsPrimaryNode:  isPrimary(node),
 			CanDelete:      node.Spec.Unschedulable && !isConnected(node),
 			KubeletVersion: node.Status.NodeInfo.KubeletVersion,
@@ -187,6 +188,16 @@ func isConnected(node corev1.Node) bool {
 	}
 
 	return true
+}
+
+func isReady(node corev1.Node) bool {
+	for _, condition := range node.Status.Conditions {
+		if condition.Type == "Ready" {
+			return condition.Status == v1.ConditionTrue
+		}
+	}
+
+	return false
 }
 
 func isPrimary(node corev1.Node) bool {

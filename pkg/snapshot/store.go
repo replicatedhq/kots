@@ -30,6 +30,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/kurl"
 	kotss3 "github.com/replicatedhq/kots/pkg/s3"
 	"github.com/replicatedhq/kots/pkg/snapshot/providers"
 	"github.com/replicatedhq/kots/pkg/snapshot/types"
@@ -235,12 +236,12 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 			return nil, &InvalidStoreDataError{Message: "access key, secret key, endpoint and region are required"}
 		}
 	} else if options.Internal && !options.IsMinioDisabled {
-		clientset, err := k8sutil.GetClientset()
+		isKurl, err := kurl.IsKurl()
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to get k8s clientset")
+			return nil, errors.Wrap(err, "failed to check if cluster is kurl")
 		}
 
-		if !kotsutil.IsKurl(clientset) {
+		if !isKurl {
 			return nil, &InvalidStoreDataError{Message: "cannot use internal storage on a non-kurl cluster"}
 		}
 
@@ -271,12 +272,12 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 		store.Internal.ObjectStoreClusterIP = string(secret.Data["object-store-cluster-ip"])
 		store.Internal.Region = "us-east-1"
 	} else if options.Internal && options.IsMinioDisabled {
-		clientset, err := k8sutil.GetClientset()
+		isKurl, err := kurl.IsKurl()
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to get k8s clientset")
+			return nil, errors.Wrap(err, "failed to check if cluster is kurl")
 		}
 
-		if !kotsutil.IsKurl(clientset) {
+		if !isKurl {
 			return nil, &InvalidStoreDataError{Message: "cannot use internal storage on a non-kurl cluster"}
 		}
 

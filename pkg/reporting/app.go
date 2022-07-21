@@ -1,21 +1,26 @@
 package reporting
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"sync"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/api/reporting/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
+	kurltypes "github.com/replicatedhq/kots/pkg/kurl/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/segmentio/ksuid"
+	"k8s.io/client-go/kubernetes"
 )
 
 func SendAppInfo(appID string) error {
@@ -63,8 +68,15 @@ func SendAppInfo(appID string) error {
 }
 
 func GetReportingInfo(appID string) *types.ReportingInfo {
+	ctx := context.TODO()
+
 	r := types.ReportingInfo{
 		InstanceID: appID,
+	}
+
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		logger.Debugf(errors.Wrap(err, "failed to get kubernetes clientset").Error())
 	}
 
 	configMap, err := k8sutil.GetKotsadmIDConfigMap()
@@ -102,10 +114,54 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 		r.AppStatus = string(appStatus.State)
 	}
 
-	// check if embedded cluster
-	r.IsKurl = kurl.IsKurl()
+	r.IsKurl, err = kurl.IsKurl()
+	if err != nil {
+		logger.Debugf(errors.Wrap(err, "failed to check if cluster is kurl").Error())
+	}
+
+	if r.IsKurl && clientset != nil {
+		kurlNodes, err := cachedKurlGetNodes(ctx, clientset)
+		if err != nil {
+			logger.Debugf(errors.Wrap(err, "failed to get kurl nodes").Error())
+		}
+
+		for _, kurlNode := range kurlNodes.Nodes {
+			r.KurlNodeCountTotal++
+			if kurlNode.IsConnected && kurlNode.IsReady {
+				r.KurlNodeCountReady++
+			}
+		}
+	}
 
 	return &r
+}
+
+var (
+	cachedKurlNodes               *kurltypes.KurlNodes
+	cachedKurlNodesLastUpdateTime time.Time
+	cachedKurlNodesMu             sync.Mutex
+)
+
+const (
+	cachedKurlNodesUpdateInterval = 5 * time.Minute
+)
+
+func cachedKurlGetNodes(ctx context.Context, clientset kubernetes.Interface) (*kurltypes.KurlNodes, error) {
+	cachedKurlNodesMu.Lock()
+	defer cachedKurlNodesMu.Unlock()
+
+	if cachedKurlNodes != nil && time.Now().Sub(cachedKurlNodesLastUpdateTime) < cachedKurlNodesUpdateInterval {
+		return cachedKurlNodes, nil
+	}
+
+	kurlNodes, err := kurl.GetNodes(clientset)
+	if err != nil {
+		return nil, err
+	}
+
+	cachedKurlNodes = kurlNodes
+	cachedKurlNodesLastUpdateTime = time.Now()
+	return cachedKurlNodes, nil
 }
 
 func getDownstreamInfo(appID string) (*types.DownstreamInfo, error) {

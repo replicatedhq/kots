@@ -29,6 +29,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/util"
 	analyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	"gopkg.in/yaml.v3"
@@ -508,22 +509,10 @@ func arrayToTemplateList(items []interface{}) string {
 	return s
 }
 
-const kurlConfigMapName = "kurl-config"
-const kurlConfigMapNamespace = "kube-system"
-
 // checks if this is running in a kurl cluster, by checking for the existence of a configmap 'kurl-config'
 func (ctx StaticCtx) isKurl() bool {
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return false
-	}
-
-	configMap, err := clientset.CoreV1().ConfigMaps(kurlConfigMapNamespace).Get(context.TODO(), kurlConfigMapName, metav1.GetOptions{})
-	if err != nil {
-		return false
-	}
-
-	return configMap != nil
+	isKurl, _ := kurl.IsKurl()
+	return isKurl
 }
 
 func getNodes(clientset kubernetes.Interface) ([]corev1.Node, error) {
