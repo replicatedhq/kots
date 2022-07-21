@@ -82,6 +82,7 @@ class Root extends PureComponent {
     connectionTerminated: false,
     snapshotInProgressApps: [],
     errLoggingOut: "",
+    isHelmManaged: false,
   };
 
   /**
@@ -134,6 +135,27 @@ class Root extends PureComponent {
       localStorage.removeItem(INIT_SESSION_ID_STORAGE_KEY);
     }
     this.setState({ initSessionId: "" });
+  };
+
+  checkIsHelmManaged = async () => {
+    try {
+      const res = await fetch(`${process.env.API_ENDPOINT}/is-helm-managed`, {
+        headers: {
+          Authorization: Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "GET",
+      });
+      if (res.ok && res.status == 200) {
+        const response = await res.json();
+        this.setState({ isHelmManaged: response.isHelmManaged });
+      } else {
+        this.setState({ isHelmManaged: false });
+      }
+    } catch (err) {
+      console.log(err);
+      this.setState({ isHelmManaged: false });
+    }
   };
 
   getPendingApp = async () => {
@@ -340,6 +362,7 @@ class Root extends PureComponent {
       connectionTerminated,
       errLoggingOut,
     } = this.state;
+    this.checkIsHelmManaged();
 
     return (
       <QueryClientProvider client={queryClient}>
@@ -373,6 +396,7 @@ class Root extends PureComponent {
               onLogoutError={this.onLogoutError}
               isSnapshotsSupported={this.isSnapshotsSupported()}
               errLoggingOut={errLoggingOut}
+              isHelmManaged={this.state.isHelmManaged}
             />
             <div className="flex1 flex-column u-overflow--auto">
               <Switch>
@@ -543,6 +567,7 @@ class Root extends PureComponent {
                       snapshotInProgressApps={this.state.snapshotInProgressApps}
                       featureFlags={this.state.featureFlags}
                       ping={this.ping}
+                      isHelmManaged={this.state.isHelmManaged}
                     />
                   )}
                 />

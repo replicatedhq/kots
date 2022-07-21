@@ -252,7 +252,10 @@ export class NavBar extends PureComponent {
         </div>
         {Utilities.isLoggedIn() && (
           <>
-            <NavBarDropdown handleLogOut={this.handleLogOut} />
+            <NavBarDropdown 
+              handleLogOut={this.handleLogOut} 
+              isHelmManaged={this.props.isHelmManaged} 
+            />
           </>
         )}
         {this.props.errLoggingOut && this.props.errLoggingOut.length > 0 && (
