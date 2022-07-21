@@ -498,13 +498,11 @@ version: ver2
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := require.New(t)
-			tempdir, err := ioutil.TempDir("", "kots_getSortedCharts")
-			req.NoError(err)
-			defer os.RemoveAll(tempdir)
+			tempdir := t.TempDir()
 
 			// populate host directory
 			for _, file := range tt.files {
-				err = os.MkdirAll(filepath.Dir(filepath.Join(tempdir, file.path)), os.ModePerm)
+				err := os.MkdirAll(filepath.Dir(filepath.Join(tempdir, file.path)), os.ModePerm)
 				req.NoError(err)
 
 				err = ioutil.WriteFile(filepath.Join(tempdir, file.path), []byte(file.contents), os.ModePerm)
