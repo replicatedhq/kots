@@ -80,7 +80,7 @@ build-real:
 	go build ${LDFLAGS} ${GCFLAGS} -v -o bin/kotsadm $(BUILDFLAGS) ./cmd/kotsadm
 
 .PHONY: run
-run: build
+run:
 	./bin/kotsadm api
 
 # Debugging
