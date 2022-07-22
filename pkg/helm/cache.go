@@ -136,7 +136,7 @@ func RemoveHelmApp(releaseName string) {
 }
 
 func SaveConfigValuesToFile(helmApp *HelmApp, data []byte) error {
-	err := os.MkdirAll(filepath.Dir(helmApp.PathToValuesFile), 0644)
+	err := os.MkdirAll(filepath.Dir(helmApp.PathToValuesFile), 0744)
 	if err != nil {
 		return errors.Wrap(err, "failed to create directory")
 	}
