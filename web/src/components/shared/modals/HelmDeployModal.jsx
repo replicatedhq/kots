@@ -2,9 +2,16 @@ import React from "react";
 import Modal from "react-modal";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
 
-function makeDeployCommand({ appSlug, chartPath, showDownloadValues, version }) {
+function makeDeployCommand({
+  appSlug,
+  chartPath,
+  showDownloadValues,
+  version,
+}) {
   if (showDownloadValues) {
-    return `helm upgrade ${appSlug} ${chartPath}${version && " --version " + version} -f <path-to-values-yaml>`;
+    return `helm upgrade ${appSlug} ${chartPath}${
+      version && " --version " + version
+    } -f <path-to-values-yaml>`;
   }
 
   return `helm upgrade ${appSlug} ${chartPath} --reuse-values`;
@@ -125,7 +132,7 @@ function HelmDeployModal({
                   appSlug,
                   chartPath,
                   showDownloadValues,
-                  version
+                  version,
                 })}
               </CodeSnippet>
             </div>

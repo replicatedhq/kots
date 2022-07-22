@@ -12,3 +12,7 @@ resources:
     cpu: "2"
     memory: 4Gi
     storage: 40Gi
+persistentVolume:
+  enabled: true
+  storageClass: standard
+  size: 20Gi

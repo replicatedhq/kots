@@ -359,23 +359,25 @@ class DashboardVersionCard extends React.Component {
               data-tip="View preflight checks"
             >
               {preflightState.preflightsFailed ||
-                preflightState.preflightState === "warn" ? (
+              preflightState.preflightState === "warn" ? (
                 <div>
                   <span
-                    className={`icon version-row-preflight-status-icon ${preflightState.preflightsFailed
+                    className={`icon version-row-preflight-status-icon ${
+                      preflightState.preflightsFailed
                         ? "preflight-checks-failed-icon"
                         : preflightState.preflightState === "warn"
-                          ? "preflight-checks-warn-icon"
-                          : ""
-                      }`}
+                        ? "preflight-checks-warn-icon"
+                        : ""
+                    }`}
                   />
                   <p
-                    className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${preflightState.preflightsFailed
+                    className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${
+                      preflightState.preflightsFailed
                         ? "err"
                         : preflightState.preflightState === "warn"
-                          ? "warning"
-                          : ""
-                      }`}
+                        ? "warning"
+                        : ""
+                    }`}
                   >
                     {checksStatusText}
                   </p>
@@ -434,13 +436,14 @@ class DashboardVersionCard extends React.Component {
               <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy">
                 {currentVersion.status === "failed"
                   ? "---"
-                  : `${currentVersion.status === "deploying"
-                    ? "Deploy started at"
-                    : "Deployed"
-                  } ${Utilities.dateFormat(
-                    currentVersion?.deployedAt,
-                    "MM/DD/YY @ hh:mm a z"
-                  )}`}
+                  : `${
+                      currentVersion.status === "deploying"
+                        ? "Deploy started at"
+                        : "Deployed"
+                    } ${Utilities.dateFormat(
+                      currentVersion?.deployedAt,
+                      "MM/DD/YY @ hh:mm a z"
+                    )}`}
               </p>
             </div>
           </div>
@@ -877,10 +880,11 @@ class DashboardVersionCard extends React.Component {
         return (
           <div className="flex alignItems--center justifyContent--flexEnd">
             <span
-              className={`u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default ${version.downloadStatus.status === "failed"
+              className={`u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default ${
+                version.downloadStatus.status === "failed"
                   ? "u-textColor--error"
                   : ""
-                }`}
+              }`}
             >
               {version.downloadStatus.message}
             </span>
@@ -898,14 +902,15 @@ class DashboardVersionCard extends React.Component {
           <Loader className="u-marginRight--5" size="15" />
         )}
         <span
-          className={`u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default ${status.downloadingVersionError ? "u-textColor--error" : ""
-            }`}
+          className={`u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default ${
+            status.downloadingVersionError ? "u-textColor--error" : ""
+          }`}
         >
           {status.downloadingVersionMessage
             ? status.downloadingVersionMessage
             : status.downloadingVersion
-              ? "Downloading"
-              : ""}
+            ? "Downloading"
+            : ""}
         </span>
       </div>
     );
@@ -1309,17 +1314,19 @@ class DashboardVersionCard extends React.Component {
         </div>
         {(this.state.numOfSkippedVersions > 0 ||
           this.state.numOfRemainingVersions > 0) && (
-            <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--header u-marginTop--10">
-              {this.state.numOfSkippedVersions > 0
-                ? `${this.state.numOfSkippedVersions} version${this.state.numOfSkippedVersions > 1 ? "s" : ""
-                } will be skipped in upgrading to ${latestDeployableVersion.versionLabel
+          <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--header u-marginTop--10">
+            {this.state.numOfSkippedVersions > 0
+              ? `${this.state.numOfSkippedVersions} version${
+                  this.state.numOfSkippedVersions > 1 ? "s" : ""
+                } will be skipped in upgrading to ${
+                  latestDeployableVersion.versionLabel
                 }. `
-                : ""}
-              {this.state.numOfRemainingVersions > 0
-                ? "Additional versions are available after you deploy this required version."
-                : ""}
-            </p>
-          )}
+              : ""}
+            {this.state.numOfRemainingVersions > 0
+              ? "Additional versions are available after you deploy this required version."
+              : ""}
+          </p>
+        )}
       </div>
     );
   };
@@ -1668,7 +1675,9 @@ class DashboardVersionCard extends React.Component {
               ref,
               url,
             }) => {
-              const showDownloadValues = this.state.showHelmDeployModalWithVersionLabel === this.state.latestDeployableVersion.versionLabel
+              const showDownloadValues =
+                this.state.showHelmDeployModalWithVersionLabel ===
+                this.state.latestDeployableVersion.versionLabel;
               return (
                 <>
                   <HelmDeployModal
@@ -1680,18 +1689,21 @@ class DashboardVersionCard extends React.Component {
                     hideHelmDeployModal={() => {
                       this.setState({
                         showHelmDeployModal: false,
-                      })
+                      });
                     }}
                     registryUsername={this.props?.app?.credentials?.username}
                     registryPassword={this.props?.app?.credentials?.password}
                     showHelmDeployModal={true}
                     showDownloadValues={showDownloadValues}
                     subtitle="Follow the steps below to redeploy your application using the values from the last release."
-                    title={`${showDownloadValues ? "Upgrade" : "Redeploy"} application`}
+                    title={`${
+                      showDownloadValues ? "Upgrade" : "Redeploy"
+                    } application`}
                     version={this.state.showHelmDeployModalWithVersionLabel}
                   />
                   <a href={url} download={name} className="hidden" ref={ref} />
-                </>);
+                </>
+              );
             }}
           </UseDownloadValues>
         )}
