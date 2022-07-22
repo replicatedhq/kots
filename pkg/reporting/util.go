@@ -1,10 +1,10 @@
 package reporting
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 	"regexp"
+	"strconv"
 
 	"github.com/replicatedhq/kots/pkg/api/reporting/types"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
@@ -16,12 +16,12 @@ func InjectReportingInfoHeaders(req *http.Request, reportingInfo *types.Reportin
 	}
 
 	req.Header.Set("X-Replicated-K8sVersion", reportingInfo.K8sVersion)
-	req.Header.Set("X-Replicated-IsKurl", fmt.Sprintf("%t", reportingInfo.IsKurl))
+	req.Header.Set("X-Replicated-IsKurl", strconv.FormatBool(reportingInfo.IsKurl))
 	req.Header.Set("X-Replicated-AppStatus", reportingInfo.AppStatus)
 	req.Header.Set("X-Replicated-ClusterID", reportingInfo.ClusterID)
 	req.Header.Set("X-Replicated-InstanceID", reportingInfo.InstanceID)
-	req.Header.Set("X-Replicated-ReplHelmInstalls", fmt.Sprintf("%d", reportingInfo.Downstream.ReplHelmInstalls))
-	req.Header.Set("X-Replicated-NativeHelmInstalls", fmt.Sprintf("%d", reportingInfo.Downstream.NativeHelmInstalls))
+	req.Header.Set("X-Replicated-ReplHelmInstalls", strconv.Itoa(reportingInfo.Downstream.ReplHelmInstalls))
+	req.Header.Set("X-Replicated-NativeHelmInstalls", strconv.Itoa(reportingInfo.Downstream.NativeHelmInstalls))
 
 	if reportingInfo.Downstream.Cursor != "" {
 		req.Header.Set("X-Replicated-DownstreamChannelSequence", reportingInfo.Downstream.Cursor)
@@ -38,6 +38,9 @@ func InjectReportingInfoHeaders(req *http.Request, reportingInfo *types.Reportin
 	if kurlInstallID := os.Getenv("KURL_INSTALL_ID"); kurlInstallID != "" {
 		req.Header.Set("X-Replicated-KurlInstallID", kurlInstallID)
 	}
+
+	req.Header.Set("X-Replicated-KurlNodeCountTotal", strconv.Itoa(reportingInfo.KurlNodeCountTotal))
+	req.Header.Set("X-Replicated-KurlNodeCountReady", strconv.Itoa(reportingInfo.KurlNodeCountReady))
 }
 
 func canReport(endpoint string) bool {

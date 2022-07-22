@@ -20,10 +20,10 @@ import (
 	dockerregistry "github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
-	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/registry/types"
 	kotss3 "github.com/replicatedhq/kots/pkg/s3"
@@ -64,9 +64,9 @@ func DeleteUnusedImages(appID string, ignoreRollback bool) error {
 		return nil
 	}
 
-	isKurl, err := kotsadm.IsKurl()
+	isKurl, err := kurl.IsKurl()
 	if err != nil {
-		return errors.Wrap(err, "failed to check kURL")
+		return errors.Wrap(err, "failed to check if cluster is kurl")
 	}
 
 	if !isKurl {

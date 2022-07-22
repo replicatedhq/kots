@@ -30,6 +30,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/metrics"
 	"github.com/replicatedhq/kots/pkg/pull"
@@ -188,9 +189,9 @@ func InstallCmd() *cobra.Command {
 				}
 			}
 
-			isKurl, err := kotsadm.IsKurl()
+			isKurl, err := kurl.IsKurl()
 			if err != nil {
-				return errors.Wrap(err, "failed to check kURL")
+				return errors.Wrap(err, "failed to check if cluster is kurl")
 			}
 
 			sharedPassword := v.GetString("shared-password")
@@ -688,9 +689,9 @@ func getRegistryConfig(v *viper.Viper) (*kotsadmtypes.RegistryConfig, error) {
 		}
 	}
 
-	isKurl, err := kotsadm.IsKurl()
+	isKurl, err := kurl.IsKurl()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to check kURL")
+		return nil, errors.Wrap(err, "failed to check if cluster is kurl")
 	}
 
 	isAirgap := false

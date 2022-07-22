@@ -3,7 +3,6 @@ package upstream
 import (
 	"encoding/base64"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -17,13 +16,8 @@ import (
 func Test_downloadUpstream(t *testing.T) {
 	req := require.New(t)
 
-	srcDir, err := ioutil.TempDir("", "downloadUpstream")
-	req.NoError(err)
-	defer os.RemoveAll(srcDir)
-
-	workDir, err := ioutil.TempDir("", "workDir")
-	req.NoError(err)
-	defer os.RemoveAll(workDir)
+	srcDir := t.TempDir()
+	workDir := t.TempDir()
 
 	releaseFiles := map[string]string{
 		// empty tar.gz file, base64 encoded

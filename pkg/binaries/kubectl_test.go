@@ -40,9 +40,7 @@ func Test_discoverKubectlVersionsFromDir(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dirPath, err := ioutil.TempDir("", "")
-			require.NoError(t, err)
-			defer os.RemoveAll(dirPath)
+			dirPath := t.TempDir()
 
 			binPath := filepath.Join(dirPath, tt.binPath)
 			require.NoError(t, os.MkdirAll(binPath, 0755))

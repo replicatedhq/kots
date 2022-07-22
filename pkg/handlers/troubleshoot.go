@@ -7,10 +7,12 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
@@ -168,6 +170,11 @@ func (h *Handler) GetSupportBundleFiles(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *Handler) ListSupportBundles(w http.ResponseWriter, r *http.Request) {
+	if os.Getenv("IS_HELM_MANAGED") == "true" {
+		JSON(w, http.StatusOK, ListSupportBundlesResponse{})
+		return
+	}
+
 	appSlug := mux.Vars(r)["appSlug"]
 
 	a, err := store.GetStore().GetAppFromSlug(appSlug)
@@ -219,18 +226,34 @@ func (h *Handler) GetSupportBundleCommand(w http.ResponseWriter, r *http.Request
 	appSlug := mux.Vars(r)["appSlug"]
 
 	// in case of an error, return a generic command
-	response := GetSupportBundleCommandResponse{
-		Command: []string{
-			"curl https://krew.sh/support-bundle | bash",
-			fmt.Sprintf("kubectl support-bundle secret/%s/%s", util.PodNamespace, supportbundle.GetSpecSecretName(appSlug)),
-		},
-	}
+	response := GetSupportBundleCommandResponse{}
 
 	getSupportBundleCommandRequest := GetSupportBundleCommandRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&getSupportBundleCommandRequest); err != nil {
 		logger.Error(errors.Wrap(err, "failed to decode request"))
 		JSON(w, http.StatusOK, response)
 		return
+	}
+
+	if os.Getenv("IS_HELM_MANAGED") == "true" {
+		helmApp := helm.GetHelmApp(appSlug)
+		if helmApp == nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		sbUrl := strings.TrimSuffix(helmApp.ChartPath, fmt.Sprintf("/%s", helmApp.Release.Chart.Name()))
+		response.Command = []string{
+			"curl https://krew.sh/support-bundle | bash",
+			fmt.Sprintf("kubectl support-bundle %s", sbUrl),
+		}
+		JSON(w, http.StatusOK, response)
+		return
+	}
+
+	response.Command = []string{
+		"curl https://krew.sh/support-bundle | bash",
+		fmt.Sprintf("kubectl support-bundle secret/%s/%s", util.PodNamespace, supportbundle.GetSpecSecretName(appSlug)),
 	}
 
 	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
@@ -270,7 +293,7 @@ func (h *Handler) GetSupportBundleCommand(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	response.Command = supportbundle.GetBundleCommand(foundApp.Slug)
+	response.Command = supportbundle.GetBundleCommand(appSlug)
 
 	JSON(w, http.StatusOK, response)
 }

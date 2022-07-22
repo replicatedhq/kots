@@ -6,9 +6,10 @@ import (
 )
 
 func GetMetadata() types.Metadata {
+	isKurl, _ := kurl.IsKurl()
 	metadata := types.Metadata{
 		IsAirgap: IsAirgap(),
-		IsKurl:   kurl.IsKurl(),
+		IsKurl:   isKurl,
 	}
 
 	return metadata

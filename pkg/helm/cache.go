@@ -267,6 +267,8 @@ func watchSecrets(ctx context.Context, namespace string, labelSelector string) e
 					break
 				}
 
+				removeFromCachedUpdates(releaseInfo.ChartPath, releaseInfo.Release.Chart.Metadata.Version)
+
 				logger.Debugf("adding secret %s to cache", secret.Name)
 				AddHelmApp(releaseInfo.Release.Name, releaseInfo)
 
@@ -275,7 +277,19 @@ func watchSecrets(ctx context.Context, namespace string, labelSelector string) e
 				if !ok {
 					break
 				}
-				RemoveHelmApp(secret.Labels["name"])
+
+				releaseInfo, err := helmAppFromSecret(secret)
+				if err != nil {
+					logger.Errorf("failed to create helm release info from secret %s in namespace %s: %s", secret.Name, namespace)
+					break
+				}
+				if releaseInfo == nil {
+					break
+				}
+
+				deleteUpdateCacheForChart(releaseInfo.ChartPath)
+
+				RemoveHelmApp(releaseInfo.Release.Name)
 
 			default:
 				secret, ok := e.Object.(*corev1.Secret)

@@ -9,6 +9,7 @@ type KurlNodes struct {
 type Node struct {
 	Name           string            `json:"name"`
 	IsConnected    bool              `json:"isConnected"`
+	IsReady        bool              `json:"isReady"`
 	IsPrimaryNode  bool              `json:"isPrimaryNode"`
 	CanDelete      bool              `json:"canDelete"`
 	KubeletVersion string            `json:"kubeletVersion"`
