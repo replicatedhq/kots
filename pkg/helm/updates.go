@@ -62,6 +62,27 @@ func setCachedUpdates(chartPath string, updates ChartUpdates) {
 	updateCache[chartPath] = updates
 }
 
+func removeFromCachedUpdates(chartPath string, tag string) {
+	updateCacheMutex.Lock()
+	defer updateCacheMutex.Unlock()
+
+	existingList := updateCache[chartPath]
+	newList := ChartUpdates{}
+	for _, update := range existingList {
+		if update.Tag != tag {
+			newList = append(newList, update)
+		}
+	}
+	updateCache[chartPath] = newList
+}
+
+func deleteUpdateCacheForChart(chartPath string) {
+	updateCacheMutex.Lock()
+	defer updateCacheMutex.Unlock()
+
+	delete(updateCache, chartPath)
+}
+
 func CheckForUpdates(chartPath string, licenseID string, currentVersion *semver.Version) (ChartUpdates, error) {
 	availableUpdates := ChartUpdates{}
 
