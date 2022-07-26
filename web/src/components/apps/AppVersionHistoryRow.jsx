@@ -143,7 +143,9 @@ class AppVersionHistoryRow extends Component {
     const { newPreflightResults } = this.props;
 
     let actionFn = this.props.deployVersion;
-    if (version.needsKotsUpgrade) {
+    if (this.props.isHelmManaged) {
+      actionFn = () => {};
+    } else if (version.needsKotsUpgrade) {
       actionFn = this.props.upgradeAdminConsole;
     } else if (version.status === "pending_download") {
       actionFn = this.props.downloadVersion;
@@ -434,15 +436,22 @@ class AppVersionHistoryRow extends Component {
                 "primary blue": isPrimaryButton,
               })}
               disabled={this.isActionButtonDisabled(version)}
-              onClick={() =>
-                needsConfiguration
-                  ? this.props.history.push(
-                      `/app/${app.slug}/config/${version.sequence}`
-                    )
-                  : isRollback
-                  ? actionFn(version, true)
-                  : actionFn(version)
-              }
+              onClick={() => {
+                this.props.handleActionButtonClicked();
+                if (needsConfiguration) {
+                  this.props.history.push(
+                    `/app/${app.slug}/config/${version.sequence}`
+                  );
+                  return null;
+                }
+                if (isRollback) {
+                  actionFn(version, true);
+                  return null;
+                }
+
+                actionFn(version);
+                return null;
+              }}
             >
               <span
                 key={version.nonDeployableCause}
@@ -461,6 +470,9 @@ class AppVersionHistoryRow extends Component {
   };
 
   isActionButtonDisabled = (version) => {
+    if (this.props.isHelmManaged) {
+      return false;
+    }
     if (version.status === "deploying") {
       return true;
     }

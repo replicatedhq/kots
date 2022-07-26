@@ -40,15 +40,15 @@ export default class AppStatus extends React.Component {
   };
 
   createDashboardActionLink = (uri) => {
-    const parsedUrl = new URL(uri);
-    let port;
-    if (!parsedUrl.port) {
-      port = "";
-    } else {
-      port = ":" + parsedUrl.port;
+    try {
+      const parsedUrl = new URL(uri);
+      if (parsedUrl.hostname === "localhost") {
+        parsedUrl.hostname = window.location.hostname;
+      }
+      return parsedUrl.href;
+    } catch (error) {
+      return "";
     }
-
-    return `${parsedUrl.protocol}//${window.location.hostname}${port}${parsedUrl.pathname}`;
   };
 
   render() {
