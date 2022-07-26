@@ -37,9 +37,11 @@ export default class ConfigGroup extends React.Component {
   };
 
   renderConfigItems = (items, readonly) => {
+    
     if (!items) {
       return null;
     }
+  
     return items.map((item, i) => {
       const isReadOnly = readonly || item.readonly;
       switch (item.type) {
@@ -56,6 +58,8 @@ export default class ConfigGroup extends React.Component {
               when={item.when}
               {...item}
               readonly={isReadOnly}
+              index={i+1}
+              isHorizontal={true}
             />
           );
         case "textarea":
@@ -197,12 +201,24 @@ export default class ConfigGroup extends React.Component {
     });
   };
 
+   isAffixWrong = () => { 
+    for (let i = 0; i<this.props.item.items.length; i+2) {
+      if (this.props.item.items[i].affix === this.props.item.items[i+1].affix) {
+        return true;
+      }
+    }
+      
+  }
+
   render() {
     const { item, readonly } = this.props;
     const hidden = item && item.when === "false";
     if (hidden || !this.isAtLeastOneItemVisible()) {
       return null;
     }
+    const hasAffix = item.items.every(option => option.affix);
+  //const isAffixWrong = this.isAffixWrong();
+
     return (
       <div className="flex-column flex-auto">
         {item && (
@@ -226,7 +242,7 @@ export default class ConfigGroup extends React.Component {
                 </Markdown>
               </div>
             ) : null}
-            <div className="config-item u-marginTop--15">
+            <div className="config-item u-marginTop--15"  style={{display: hasAffix ? "grid" : "block", gridTemplateColumns: "1fr 1fr", border: "2px solid grey"}} >
               {this.renderConfigItems(item.items, readonly)}
             </div>
             {item.repeatable && (

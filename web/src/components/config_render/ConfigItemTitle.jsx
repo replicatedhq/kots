@@ -32,7 +32,6 @@ export default class ConfigItemTitle extends React.Component {
                 linkTarget: "_blank",
                 linkify: true,
               }}
-              style={{textAlign:"right"}}
             >
               {title}
             </Markdown>

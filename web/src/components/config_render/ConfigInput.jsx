@@ -47,12 +47,45 @@ export default class ConfigInput extends React.Component {
     return value.replace(/./g, "•");
   };
 
+
+  justifyContent = () => { 
+    const {index,affix} = this.props 
+    if (affix === "left") { 
+
+      return `justify-content: start`
+    }
+    if (affix === "right") {
+     
+        return `justify-content: end`
+      
+    }
+  }
+
+  setOrder = () => { 
+    const {index,affix} = this.props 
+    console.log("index",index,affix)
+    if (affix === "left") { 
+      if (index % 2 !== 0) { 
+        return index
+      } else { 
+        return index-2
+      }
+    } else 
+    if (affix === "right") { 
+      if (index % 2 === 0) { 
+        return index
+      } else { 
+
+        return index+1
+      }
+    }
+  }
+
   // p1-2019-06-27
   // Fields that are required sometimes don't have a title associated with them.
   // Use title -OR- required prop to render <ConfigItemTitle> to make sure error
   // elements are rendered.
   render() {
-    console.log(this.props)
     const hidden = this.props.hidden || this.props.when === "false";
     const placeholder =
       this.props.inputType === "password"
@@ -115,7 +148,6 @@ export default class ConfigInput extends React.Component {
                 className={`${this.props.className || ""} Input ${
                   this.props.readonly ? "readonly" : ""
                 }`}
-                style={{textAlign: `${this.props.affix}`}}
               />
               {variadicItemsLen > 1 ? (
                 <div
@@ -152,6 +184,7 @@ export default class ConfigInput extends React.Component {
         className={`field field-type-text ${
           hidden ? "hidden" : "u-marginTop--15"
         }`}
+       style={{ marginTop: this.props.isHorizontal && "0", justifySelf: this.justifyContent(), order: this.setOrder()}}
       >
         {this.props.title !== "" || this.props.required ? (
           <ConfigItemTitle
@@ -174,7 +207,7 @@ export default class ConfigInput extends React.Component {
             </Markdown>
           </div>
         ) : null}
-        <div className="field-input-wrapper u-marginTop--15">
+        <div className="field-input-wrapper u-marginTop--15" >
           <input
             ref={this.inputRef}
             type={this.props.inputType}
@@ -189,7 +222,6 @@ export default class ConfigInput extends React.Component {
             className={`${this.props.className || ""} Input ${
               this.props.readonly ? "readonly" : ""
             }`}
-            style={{textAlign: `${this.props.affix}`}}
           />
         </div>
         {this.props.inputType !== "password" && this.props.default ? (
