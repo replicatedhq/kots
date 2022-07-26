@@ -18,6 +18,8 @@ import { AirgapUploader } from "../../utilities/airgapUploader";
 
 import "../../scss/components/watches/Dashboard.scss";
 import "../../../node_modules/react-vis/dist/style";
+import { ParagraphLarge } from "./styles/paragraphs";
+import theme from "./styles/theme";
 
 const COMMON_ERRORS = {
   "HTTP 401": "Registry credentials are invalid",
@@ -576,6 +578,19 @@ class Dashboard extends Component {
     };
   };
 
+  checkStatusInformers = () => { 
+    const appResourcesByState = this.getAppResourcesByState();
+    const {  statesMap, sortedStates} = appResourcesByState;
+   return sortedStates?.every(state => { 
+      return statesMap[state]?.every(resource => {
+        const {kind, name, namespace } = resource;
+                if (kind === "EMPTY" && name === "EMPTY" && namespace === "EMPTY") {
+                  return false
+                } return true
+      })
+    })
+  }
+
   render() {
     const {
       appName,
@@ -613,6 +628,7 @@ class Dashboard extends Component {
     }
 
     const appResourcesByState = this.getAppResourcesByState();
+    const hasStatusInformers = this.checkStatusInformers()
 
     return (
       <div className="flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
@@ -638,6 +654,7 @@ class Dashboard extends Component {
                   onViewAppStatusDetails={this.toggleAppStatusModal}
                   links={links}
                   app={app}
+                  hasStatusInformers={hasStatusInformers}
                 />
               </div>
             </div>
@@ -781,9 +798,9 @@ class Dashboard extends Component {
             className="Modal DefaultSize"
           >
             <div className="Modal-body">
-              <p className="u-fontSize--large u-fontWeight--bold u-textColor--primary">
+              <ParagraphLarge weight={"bold"} theme={theme}>
                 Resource status
-              </p>
+              </ParagraphLarge>
               <div
                 className="u-marginTop--10 u-marginBottom--10 u-overflow--auto"
                 style={{ maxHeight: "50vh" }}
