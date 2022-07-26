@@ -1677,7 +1677,7 @@ class DashboardVersionCard extends React.Component {
             }) => {
               const showDownloadValues =
                 this.state.showHelmDeployModalWithVersionLabel ===
-                this.state.latestDeployableVersion.versionLabel;
+                this.state?.latestDeployableVersion?.versionLabel;
               return (
                 <>
                   <HelmDeployModal
