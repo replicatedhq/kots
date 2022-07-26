@@ -31,6 +31,8 @@ import { Repeater } from "../../utilities/repeater";
 import { AirgapUploader } from "../../utilities/airgapUploader";
 import ReactTooltip from "react-tooltip";
 import Pager from "../shared/Pager";
+import { HelmDeployModal } from "../shared/modals/HelmDeployModal";
+import { UseDownloadValues } from "../hooks";
 
 import "@src/scss/components/apps/AppVersionHistory.scss";
 import DashboardGitOpsCard from "./DashboardGitOpsCard";
@@ -1309,6 +1311,60 @@ class AppVersionHistory extends Component {
     });
   };
 
+  handleActionButtonClicked = ({ versionLabel, sequence }) => {
+    if (this.props.isHelmManaged) {
+      this.setState({
+        showHelmDeployModalForVersionLabel: versionLabel,
+        showHelmDeployModalForSequence: sequence,
+      });
+    }
+  };
+
+  deployButtonStatus = (version) => {
+    const app = this.props.app;
+    const downstream = app?.downstream;
+
+    const isCurrentVersion =
+      version.sequence === downstream.currentVersion?.sequence;
+    const isDeploying = version.status === "deploying";
+    const isPastVersion = find(downstream.pastVersions, {
+      sequence: version.sequence,
+    });
+    const needsConfiguration = version.status === "pending_config";
+    const isRollback = isPastVersion && version.deployedAt && app.allowRollback;
+    const isRedeploy =
+      isCurrentVersion &&
+      (version.status === "failed" || version.status === "deployed");
+    const canUpdateKots =
+      version.needsKotsUpgrade &&
+      !this.props.adminConsoleMetadata?.isAirgap &&
+      !this.props.adminConsoleMetadata?.isKurl;
+
+    if (needsConfiguration) {
+      return "Configure";
+    } else if (downstream?.currentVersion?.sequence == undefined) {
+      if (canUpdateKots) {
+        return "Upgrade";
+      } else {
+        return "Deploy";
+      }
+    } else if (isRedeploy) {
+      return "Redeploy";
+    } else if (isRollback) {
+      return "Rollback";
+    } else if (isDeploying) {
+      return "Deploying";
+    } else if (isCurrentVersion) {
+      return "Deployed";
+    } else {
+      if (canUpdateKots) {
+        return "Upgrade";
+      } else {
+        return "Deploy";
+      }
+    }
+  };
+
   renderAppVersionHistoryRow = (version) => {
     if (
       !version ||
@@ -1330,36 +1386,90 @@ class AppVersionHistory extends Component {
     if (version.preflightResultCreatedAt) {
       newPreflightResults = secondsAgo(version.preflightResultCreatedAt) < 12;
     }
-
     return (
-      <AppVersionHistoryRow
-        key={version.sequence}
-        app={this.props.app}
-        match={this.props.match}
-        history={this.props.history}
-        version={version}
-        selectedDiffReleases={this.state.selectedDiffReleases}
-        nothingToCommit={nothingToCommit}
-        isChecked={isChecked}
-        isNew={isNew}
-        newPreflightResults={newPreflightResults}
-        showReleaseNotes={this.showReleaseNotes}
-        renderDiff={this.renderDiff}
-        toggleShowDetailsModal={this.toggleShowDetailsModal}
-        gitopsEnabled={gitopsEnabled}
-        deployVersion={this.deployVersion}
-        redeployVersion={this.redeployVersion}
-        downloadVersion={this.downloadVersion}
-        upgradeAdminConsole={this.upgradeAdminConsole}
-        handleViewLogs={this.handleViewLogs}
-        handleSelectReleasesToDiff={this.handleSelectReleasesToDiff}
-        renderVersionDownloadStatus={this.renderVersionDownloadStatus}
-        isDownloading={
-          this.state.versionDownloadStatuses?.[version.sequence]
-            ?.downloadingVersion
-        }
-        adminConsoleMetadata={this.props.adminConsoleMetadata}
-      />
+      <React.Fragment key={version.sequence}>
+        <AppVersionHistoryRow
+          handleActionButtonClicked={() =>
+            this.handleActionButtonClicked({
+              sequence: version.sequence,
+              versionLabel: version.versionLabel,
+            })
+          }
+          isHelmManaged={this.props.isHelmManaged}
+          key={version.sequence}
+          app={this.props.app}
+          match={this.props.match}
+          history={this.props.history}
+          version={version}
+          selectedDiffReleases={this.state.selectedDiffReleases}
+          nothingToCommit={nothingToCommit}
+          isChecked={isChecked}
+          isNew={isNew}
+          newPreflightResults={newPreflightResults}
+          showReleaseNotes={this.showReleaseNotes}
+          renderDiff={this.renderDiff}
+          toggleShowDetailsModal={this.toggleShowDetailsModal}
+          gitopsEnabled={gitopsEnabled}
+          deployVersion={this.deployVersion}
+          redeployVersion={this.redeployVersion}
+          downloadVersion={this.downloadVersion}
+          upgradeAdminConsole={this.upgradeAdminConsole}
+          handleViewLogs={this.handleViewLogs}
+          handleSelectReleasesToDiff={this.handleSelectReleasesToDiff}
+          renderVersionDownloadStatus={this.renderVersionDownloadStatus}
+          isDownloading={
+            this.state.versionDownloadStatuses?.[version.sequence]
+              ?.downloadingVersion
+          }
+          adminConsoleMetadata={this.props.adminConsoleMetadata}
+        />
+        {this.state.showHelmDeployModalForVersionLabel ===
+          version.versionLabel && (
+          <UseDownloadValues
+            appSlug={this.props?.app?.slug}
+            fileName="values.yaml"
+          >
+            {({
+              download,
+              clearError: clearDownloadError,
+              error: downloadError,
+              isDownloading,
+              name,
+              ref,
+              url,
+            }) => {
+              return (
+                <>
+                  <HelmDeployModal
+                    appSlug={this.props?.app?.slug}
+                    chartPath={this.props?.app?.chartPath || ""}
+                    downloadClicked={download}
+                    error={downloadError}
+                    isDownloading={isDownloading}
+                    hideHelmDeployModal={() => {
+                      this.setState({ showHelmDeployModalForVersionLabel: "" });
+                      clearDownloadError();
+                    }}
+                    registryUsername={this.props?.app?.credentials?.username}
+                    registryPassword={this.props?.app?.credentials?.password}
+                    showHelmDeployModal={true}
+                    showDownloadValues={
+                      this.deployButtonStatus(version) !== "Redeploy"
+                    }
+                    subtitle="Follow the steps below to upgrade your application with your new values.yaml."
+                    title={` ${this.deployButtonStatus(version)} ${
+                      this.props?.app.slug
+                    } ${version.versionLabel}`}
+                    upgradeTitle="Upgrade application with Helm"
+                    version={version.versionLabel}
+                  />
+                  <a href={url} download={name} className="hidden" ref={ref} />
+                </>
+              );
+            }}
+          </UseDownloadValues>
+        )}
+      </React.Fragment>
     );
   };
 

@@ -2,9 +2,16 @@ import React from "react";
 import Modal from "react-modal";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
 
-function makeDeployCommand({ appSlug, chartPath, valuesFilePath }) {
-  if (valuesFilePath) {
-    return `helm upgrade ${appSlug} ${chartPath} -f <path-to-values-yaml>`;
+function makeDeployCommand({
+  appSlug,
+  chartPath,
+  showDownloadValues,
+  version,
+}) {
+  if (showDownloadValues) {
+    return `helm upgrade ${appSlug} ${chartPath}${
+      version && " --version " + version
+    } -f <path-to-values-yaml>`;
   }
 
   return `helm upgrade ${appSlug} ${chartPath} --reuse-values`;
@@ -34,7 +41,8 @@ function HelmDeployModal({
   registryPassword = "myPassword",
   title,
   upgradeTitle,
-  valuesFilePath = null,
+  showDownloadValues = false,
+  version = null,
 }) {
   return (
     <Modal
@@ -74,7 +82,7 @@ function HelmDeployModal({
               </CodeSnippet>
             </div>
           </div>
-          {valuesFilePath && (
+          {showDownloadValues && (
             <div className="u-marginBottom--30 flex flex-row">
               <span className="Title step-number u-marginRight--15">2</span>
               <div className="flex1">
@@ -99,13 +107,13 @@ function HelmDeployModal({
           )}
           <div className="u-marginBottom--30 flex flex-row">
             <span className="Title step-number u-marginRight--15">
-              {valuesFilePath === null ? "2" : "3"}
+              {showDownloadValues === null ? "2" : "3"}
             </span>
             <div className="flex1">
               <span className="Title u-marginBottom--5 u-display--block">
                 {upgradeTitle}
               </span>
-              {valuesFilePath && (
+              {showDownloadValues && (
                 <p className="flex1 subtitle u-marginBottom--15">
                   Ensure you replace <code>{"<path-to-values-yaml>"}</code> with
                   the path to your saved file.
@@ -123,7 +131,8 @@ function HelmDeployModal({
                 {makeDeployCommand({
                   appSlug,
                   chartPath,
-                  valuesFilePath,
+                  showDownloadValues,
+                  version,
                 })}
               </CodeSnippet>
             </div>

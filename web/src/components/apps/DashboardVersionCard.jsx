@@ -14,6 +14,7 @@ import DeployWarningModal from "../shared/modals/DeployWarningModal";
 import SkipPreflightsModal from "../shared/modals/SkipPreflightsModal";
 import { HelmDeployModal } from "../shared/modals/HelmDeployModal";
 import classNames from "classnames";
+import { UseDownloadValues } from "../hooks";
 
 import {
   Utilities,
@@ -606,6 +607,7 @@ class DashboardVersionCard extends React.Component {
     if (this.props.isHelmManaged) {
       this.setState({
         showHelmDeployModal: true,
+        showHelmDeployModalWithVersionLabel: version.versionLabel,
       });
       return;
     }
@@ -849,6 +851,9 @@ class DashboardVersionCard extends React.Component {
   };
 
   isActionButtonDisabled = (version) => {
+    if (this.props.isHelmManaged) {
+      return false;
+    }
     if (
       this.state.versionDownloadStatuses?.[version.sequence]?.downloadingVersion
     ) {
@@ -1657,22 +1662,50 @@ class DashboardVersionCard extends React.Component {
           />
         )}
         {this.state.showHelmDeployModal && (
-          <HelmDeployModal
+          <UseDownloadValues
             appSlug={this.props?.app?.slug}
-            chartPath={this.props?.app?.chartPath || ""}
-            hideHelmDeployModal={() =>
-              this.setState({
-                showHelmDeployModal: false,
-                showHelmValuesModal: false,
-              })
-            }
-            registryUsername={this.props?.app?.credentials?.username}
-            registryPassword={this.props?.app?.credentials?.password}
-            showHelmDeployModal={true}
-            subtitle="Follow the steps below to redeploy your application using the values from the last release."
-            title="Redeploy application"
-            upgradeTitle="Redeploy application with Helm"
-          />
+            fileName="values.yaml"
+          >
+            {({
+              download,
+              clearError: clearDownloadError,
+              error: downloadError,
+              isDownloading,
+              name,
+              ref,
+              url,
+            }) => {
+              const showDownloadValues =
+                this.state.showHelmDeployModalWithVersionLabel ===
+                this.state.latestDeployableVersion.versionLabel;
+              return (
+                <>
+                  <HelmDeployModal
+                    appSlug={this.props?.app?.slug}
+                    chartPath={this.props?.app?.chartPath || ""}
+                    downloadClicked={download}
+                    error={downloadError}
+                    isDownloading={isDownloading}
+                    hideHelmDeployModal={() => {
+                      this.setState({
+                        showHelmDeployModal: false,
+                      });
+                    }}
+                    registryUsername={this.props?.app?.credentials?.username}
+                    registryPassword={this.props?.app?.credentials?.password}
+                    showHelmDeployModal={true}
+                    showDownloadValues={showDownloadValues}
+                    subtitle="Follow the steps below to redeploy your application using the values from the last release."
+                    title={`${
+                      showDownloadValues ? "Upgrade" : "Redeploy"
+                    } application`}
+                    version={this.state.showHelmDeployModalWithVersionLabel}
+                  />
+                  <a href={url} download={name} className="hidden" ref={ref} />
+                </>
+              );
+            }}
+          </UseDownloadValues>
         )}
         {this.state.showDiffModal && (
           <Modal

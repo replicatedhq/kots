@@ -113,7 +113,7 @@ class GenerateSupportBundle extends React.Component {
           return;
         }
         const response = await res.json();
-        let bundleRunning = false
+        let bundleRunning = false;
         if (response.supportBundles) {
           bundleRunning = response.supportBundles.find(
             (bundle) => bundle.status === "running"
