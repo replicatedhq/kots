@@ -578,7 +578,7 @@ class Dashboard extends Component {
     };
   };
 
-  checkHasStatusInformers = () => { 
+  checkStatusInformers = () => { 
     const appResourcesByState = this.getAppResourcesByState();
     const {  statesMap, sortedStates} = appResourcesByState;
    return sortedStates?.every(state => { 
@@ -628,7 +628,7 @@ class Dashboard extends Component {
     }
 
     const appResourcesByState = this.getAppResourcesByState();
-    const hasStatusInformers = this.checkHasStatusInformers()
+    const hasStatusInformers = this.checkStatusInformers()
 
     return (
       <div className="flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
