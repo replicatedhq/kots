@@ -52,6 +52,7 @@ export default class ConfigInput extends React.Component {
   // Use title -OR- required prop to render <ConfigItemTitle> to make sure error
   // elements are rendered.
   render() {
+    console.log(this.props)
     const hidden = this.props.hidden || this.props.when === "false";
     const placeholder =
       this.props.inputType === "password"
@@ -114,6 +115,7 @@ export default class ConfigInput extends React.Component {
                 className={`${this.props.className || ""} Input ${
                   this.props.readonly ? "readonly" : ""
                 }`}
+                style={{textAlign: `${this.props.affix}`}}
               />
               {variadicItemsLen > 1 ? (
                 <div
@@ -187,6 +189,7 @@ export default class ConfigInput extends React.Component {
             className={`${this.props.className || ""} Input ${
               this.props.readonly ? "readonly" : ""
             }`}
+            style={{textAlign: `${this.props.affix}`}}
           />
         </div>
         {this.props.inputType !== "password" && this.props.default ? (
