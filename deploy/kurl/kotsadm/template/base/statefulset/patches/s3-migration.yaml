@@ -1,0 +1,41 @@
+---
+- op: add
+  path: "/spec/template/spec/initContainers/-"
+  value:
+    name: migrate-s3
+    command:
+    - "/migrate-s3.sh"
+    env:
+    - name: S3_ENDPOINT
+      valueFrom:
+        secretKeyRef:
+          key: endpoint
+          name: kotsadm-s3
+          optional: true
+    - name: S3_BUCKET_NAME
+      value: kotsadm
+    - name: S3_ACCESS_KEY_ID
+      valueFrom:
+        secretKeyRef:
+          key: access-key-id
+          name: kotsadm-s3
+          optional: true
+    - name: S3_SECRET_ACCESS_KEY
+      valueFrom:
+        secretKeyRef:
+          key: secret-access-key
+          name: kotsadm-s3
+          optional: true
+    - name: S3_BUCKET_ENDPOINT
+      value: "true"
+    image: kotsadm/kotsadm:__KOTSADM_TAG__
+    imagePullPolicy: IfNotPresent
+    volumeMounts:
+    - name: kotsadmdata
+      mountPath: /kotsadmdata
+    resources:
+      limits:
+        cpu: 1
+      requests:
+        cpu: 100m
+        memory: 100Mi

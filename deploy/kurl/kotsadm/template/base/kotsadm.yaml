@@ -1,0 +1,54 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kotsadm-role
+  labels:
+    kots.io/kotsadm: "true"
+    kots.io/backup: velero
+rules:
+- apiGroups:
+  - "*"
+  resources:
+  - "*"
+  verbs:
+  - "*"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kotsadm-rolebinding
+  labels:
+    kots.io/kotsadm: "true"
+    kots.io/backup: velero
+subjects:
+- kind: ServiceAccount
+  name: kotsadm
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kotsadm-role
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kotsadm
+  labels:
+    kots.io/kotsadm: "true"
+    kots.io/backup: velero
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kotsadm
+  labels:
+    kots.io/kotsadm: "true"
+    kots.io/backup: velero
+spec:
+  type: ClusterIP
+  selector:
+    app: kotsadm
+  ports:
+  - name: http
+    port: 3000
+    targetPort: "http"

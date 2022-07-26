@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kotsadm
+spec:
+  template:
+    spec:
+      containers:
+      - name: kotsadm
+        env:
+        - name: KURL_INSTALL_ID
+          value: ${INSTALLATION_ID}

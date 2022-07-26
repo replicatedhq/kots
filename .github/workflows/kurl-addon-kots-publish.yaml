@@ -1,0 +1,84 @@
+name: kurl-addon-kots-publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      addon_version:
+        type: string
+        description: "Addon version without 'v' prefix."
+        required: true
+
+jobs:
+  publish-kots-addon:
+    concurrency: kurl-addon-kots-publish
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - working-directory: ./deploy/kurl/kotsadm/template
+        env:
+          KOTSADM_VERSION: ${{ inputs.addon_version }}
+        run: ./generate.sh
+      - uses: replicatedhq/kurl/.github/actions/addon-manifest-downloader@main
+        with:
+          package-name: "kotsadm-${{ inputs.addon_version }}"
+          manifest-path: "deploy/kurl/kotsadm/${{ inputs.addon_version }}/Manifest"
+          output-path: "deploy/kurl/kotsadm/${{ inputs.addon_version }}"
+      - uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('node:fs/promises');
+            const https = require('https');
+            
+            const fetch = (url) => {
+              return new Promise(function(resolve, reject) {
+                var req = https.get(url, function(res) {
+                  if (res.statusCode < 200 || res.statusCode >= 300) {
+                    return reject(new Error('statusCode=' + res.statusCode));
+                  }
+                  let body = [];
+                  res.on('data', function(chunk) {
+                    body.push(chunk);
+                  });
+                  res.on('end', function() {
+                    try {
+                      body = JSON.parse(Buffer.concat(body).toString());
+                    } catch(e) {
+                      reject(e);
+                    }
+                    resolve(body);
+                  });
+                });
+                req.on('error', function(err) {
+                  reject(err);
+                });
+                req.end();
+              });
+            }
+
+            const latestKurlVersion = await github.rest.repos.getLatestRelease({
+              owner: 'replicatedhq',
+              repo: 'kurl'
+            });
+            const kotsAddonVersions = await fetch('https://kots-kurl-addons-production-1658439274.s3.amazonaws.com/versions.json');
+            const addonFileName = 'kotsadm-${{ inputs.addon_version }}.tar.gz';
+            kotsAddonVersions.unshift({
+              kurlVersionCompatibility: latestKurlVersion.data.tag_name,
+              addonUrl: `https://kots-kurl-addons-production-1658439274.s3.amazonaws.com/${addonFileName}`,
+              addonVersion: '${{ inputs.addon_version }}',
+              addonName: 'kotsadm'
+            });
+
+            fs.writeFile("./deploy/kurl/versions.json", JSON.stringify(kotsAddonVersions));
+      - env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_PROD_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_PROD_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "us-east-1"
+        working-directory: ./deploy/kurl
+        run: |
+          mkdir -p addons/kotsadm
+          cp -R kotsadm/${{ inputs.addon_version }} addons/kotsadm
+          tar -czvf kotsadm-${{ inputs.addon_version }}.tar.gz addons
+          aws s3 cp kotsadm-${{ inputs.addon_version }}.tar.gz s3://kots-kurl-addons-production-1658439274
+          aws s3 cp versions.json s3://kots-kurl-addons-production-1658439274
