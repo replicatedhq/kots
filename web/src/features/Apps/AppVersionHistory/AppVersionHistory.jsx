@@ -26,9 +26,9 @@ import {
   getPreflightResultState,
   getGitProviderDiffUrl,
   getCommitHashFromUrl,
-} from "../../utilities/utilities";
-import { Repeater } from "../../utilities/repeater";
-import { AirgapUploader } from "../../utilities/airgapUploader";
+} from "../../../utilities/utilities";
+import { Repeater } from "../../../utilities/repeater";
+import { AirgapUploader } from "../../../utilities/airgapUploader";
 import ReactTooltip from "react-tooltip";
 import Pager from "@src/components/shared/Pager";
 import { HelmDeployModal } from "@src/components/shared/modals/HelmDeployModal";

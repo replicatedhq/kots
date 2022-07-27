@@ -9,7 +9,7 @@ import { HelmChartSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import NotFound from "../static/NotFound";
 import Dashboard from "./Dashboard";
 import DownstreamTree from "../../components/tree/KotsApplicationTree";
-import { AppVersionHistory } from "@features/AppVersionHistory";
+import { AppVersionHistory } from "@features/Apps";
 import { isAwaitingResults, Utilities } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
 import PreflightResultPage from "../PreflightResultPage";
