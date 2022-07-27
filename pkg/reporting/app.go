@@ -12,6 +12,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/api/reporting/types"
+	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
@@ -20,8 +21,107 @@ import (
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/segmentio/ksuid"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 )
+
+var (
+	clusterID string // set when in Helm managed mode
+)
+
+func Init() error {
+	if util.IsHelmManaged() {
+		err := initFromHelm()
+		if err != nil {
+			return errors.Wrap(err, "failed to init from Helm")
+		}
+	} else {
+		err := initFromDownstream()
+		if err != nil {
+			return errors.Wrap(err, "failed to init from downstream")
+		}
+	}
+	return nil
+}
+
+func initFromHelm() error {
+	// ClusterID in reporting will be the UID of the v1 of Admin Console secret
+	clientSet, err := k8sutil.GetClientset()
+	if err != nil {
+		return errors.Wrap(err, "failed to get clientset")
+	}
+
+	selectorLabels := map[string]string{
+		"owner":   "helm",
+		"version": "1",
+	}
+	listOpts := metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(selectorLabels).String(),
+	}
+
+	secrets, err := clientSet.CoreV1().Secrets(util.PodNamespace).List(context.TODO(), listOpts)
+	if err != nil {
+		return errors.Wrap(err, "failed to list secrets")
+	}
+
+	for _, secret := range secrets.Items {
+		helmRelease, err := helm.HelmReleaseFromSecretData(secret.Data["release"])
+		if err != nil {
+			logger.Warnf("failed to parse helm chart in secret %s: %v", &secret.ObjectMeta.Name, err)
+			continue
+		}
+
+		if helmRelease.Chart == nil || helmRelease.Chart.Metadata == nil {
+			continue
+		}
+		if helmRelease.Chart.Metadata.Name != "admin-console" {
+			continue
+		}
+
+		clusterID = string(secret.ObjectMeta.UID)
+		return nil
+	}
+
+	return errors.New("admin-console secret v1 not found")
+}
+
+func initFromDownstream() error {
+	// Retrieve the ClusterID from store
+	clusters, err := store.GetStore().ListClusters()
+	if err != nil {
+		return errors.Wrap(err, "failed to list clusters")
+	}
+	if len(clusters) == 0 {
+		return nil
+	}
+	clusterID := clusters[0].ClusterID
+
+	isKotsadmIDGenerated, err := store.GetStore().IsKotsadmIDGenerated()
+	if err != nil {
+		return errors.Wrap(err, "failed to generate id")
+	}
+	cmpExists, err := k8sutil.IsKotsadmIDConfigMapPresent()
+	if err != nil {
+		return errors.Wrap(err, "failed to check configmap")
+	}
+
+	if isKotsadmIDGenerated && !cmpExists {
+		kotsadmID := ksuid.New().String()
+		err = k8sutil.CreateKotsadmIDConfigMap(kotsadmID)
+	} else if !isKotsadmIDGenerated && !cmpExists {
+		err = k8sutil.CreateKotsadmIDConfigMap(clusterID)
+	} else if !isKotsadmIDGenerated && cmpExists {
+		err = k8sutil.UpdateKotsadmIDConfigMap(clusterID)
+	} else {
+		// id exists and so as configmap, noop
+	}
+	if err == nil {
+		err = store.GetStore().SetIsKotsadmIDGenerated()
+	}
+
+	return err
+}
 
 func SendAppInfo(appID string) error {
 	a, err := store.GetStore().GetApp(appID)
@@ -79,23 +179,27 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 		logger.Debugf(errors.Wrap(err, "failed to get kubernetes clientset").Error())
 	}
 
-	configMap, err := k8sutil.GetKotsadmIDConfigMap()
-	if err != nil {
-		r.ClusterID = ksuid.New().String()
-	} else if configMap != nil {
-		r.ClusterID = configMap.Data["id"]
+	if util.IsHelmManaged() {
+		r.ClusterID = clusterID
 	} else {
-		// configmap is missing for some reason, recreate with new guid, this will appear as a new instance in the report
-		r.ClusterID = ksuid.New().String()
-		k8sutil.CreateKotsadmIDConfigMap(r.ClusterID)
-	}
+		configMap, err := k8sutil.GetKotsadmIDConfigMap()
+		if err != nil {
+			r.ClusterID = ksuid.New().String()
+		} else if configMap != nil {
+			r.ClusterID = configMap.Data["id"]
+		} else {
+			// configmap is missing for some reason, recreate with new guid, this will appear as a new instance in the report
+			r.ClusterID = ksuid.New().String()
+			k8sutil.CreateKotsadmIDConfigMap(r.ClusterID)
+		}
 
-	di, err := getDownstreamInfo(appID)
-	if err != nil {
-		logger.Debugf("failed to get downstream info: %v", err.Error())
-	}
-	if di != nil {
-		r.Downstream = *di
+		di, err := getDownstreamInfo(appID)
+		if err != nil {
+			logger.Debugf("failed to get downstream info: %v", err.Error())
+		}
+		if di != nil {
+			r.Downstream = *di
+		}
 	}
 
 	// get kubernetes cluster version
@@ -107,11 +211,15 @@ func GetReportingInfo(appID string) *types.ReportingInfo {
 	}
 
 	// get app status
-	appStatus, err := store.GetStore().GetAppStatus(appID)
-	if err != nil {
-		logger.Debugf("failed to get app status: %v", err.Error())
+	if util.IsHelmManaged() {
+		logger.Infof("TODO: get app status in Helm managed mode")
 	} else {
-		r.AppStatus = string(appStatus.State)
+		appStatus, err := store.GetStore().GetAppStatus(appID)
+		if err != nil {
+			logger.Debugf("failed to get app status: %v", err.Error())
+		} else {
+			r.AppStatus = string(appStatus.State)
+		}
 	}
 
 	r.IsKurl, err = kurl.IsKurl()
