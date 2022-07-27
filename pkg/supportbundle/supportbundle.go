@@ -56,7 +56,10 @@ func Collect(appID string, clusterID string) (string, error) {
 	supportBundle.ID = strings.ToLower(ksuid.New().String())
 	supportBundle.Slug = supportBundle.ID
 
-	store.GetStore().CreateInProgressSupportBundle(supportBundle)
+	err = store.GetStore().CreateInProgressSupportBundle(supportBundle)
+	if err != nil {
+		return "", errors.Wrap(err, "could not generate support bundle in progress")
+	}
 
 	progressChan := executeUpdateRoutine(supportBundle)
 	executeSupportBundleCollectRoutine(supportBundle, progressChan)

@@ -3,13 +3,13 @@ package handlers
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 type GetUpdateDownloadStatusResponse struct {
@@ -20,8 +20,7 @@ type GetUpdateDownloadStatusResponse struct {
 func (h *Handler) GetUpdateDownloadStatus(w http.ResponseWriter, r *http.Request) {
 	var status, message string
 	var err error
-	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
-	if isHelmManaged == "true" {
+	if util.IsHelmManaged() {
 		status = ""
 		message = ""
 	} else {

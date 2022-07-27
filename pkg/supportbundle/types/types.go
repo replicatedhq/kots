@@ -3,6 +3,7 @@ package types
 import (
 	"time"
 
+	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -28,6 +29,10 @@ type SupportBundle struct {
 	Progress   SupportBundleProgress `json:"progress"`
 	URI        string                `json:"uri"`
 	RedactURIs []string              `json:"redactURIs"`
+
+	BundleSpec          *troubleshootv1beta2.SupportBundle `json:"-"`
+	AdditionalRedactors *troubleshootv1beta2.Redactor      `json:"-"`
+	Analysis            *SupportBundleAnalysis             `json:"-"`
 }
 
 // TODO(dan): analyzer progress
