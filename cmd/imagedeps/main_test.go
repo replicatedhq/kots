@@ -2,11 +2,13 @@ package main
 
 import (
 	"io/ioutil"
+	"os"
 	"path"
 	"testing"
 	"time"
 
 	"github.com/google/go-github/v39/github"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
 
@@ -40,6 +42,7 @@ func TestFunctional(t *testing.T) {
 	tt := []struct {
 		name        string
 		fn          tagFinderFn
+		replacers   []*replacer
 		expectError bool
 	}{
 		{
@@ -60,6 +63,8 @@ func TestFunctional(t *testing.T) {
 						return []string{
 							"10.16", "10.17", "10.18",
 							"10.19-zippy", "10.18-alpine", "10.16-alpine",
+							"14.4", "14", "alpine3.16",
+							"14.4-alpine3.16", "14.4-alpine", "14-alpine",
 						}, nil
 					},
 				),
@@ -69,6 +74,10 @@ func TestFunctional(t *testing.T) {
 					},
 				),
 			),
+			replacers: []*replacer{
+				getMakefileReplacer("test.mk"),
+				getDockerfileReplacer("test.Dockerfile"),
+			},
 		},
 		{
 			name: "postgres",
@@ -78,6 +87,8 @@ func TestFunctional(t *testing.T) {
 						return []string{
 							"10.16", "10.17", "10.18",
 							"10.19-zippy", "10.18-alpine", "10.16-alpine",
+							"14.4", "14", "alpine3.16",
+							"14.4-alpine3.16", "14.4-alpine", "14-alpine",
 						}, nil
 					},
 				),
@@ -119,20 +130,39 @@ func TestFunctional(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-
 			rootDir := path.Join("testdata", tc.name)
+
 			expectedConstants, err := ioutil.ReadFile(path.Join(rootDir, "constants.go"))
 			require.Nil(t, err)
+
 			expectedEnvs, err := ioutil.ReadFile(path.Join(rootDir, ".image.env"))
 			require.Nil(t, err)
+
 			tempDir := t.TempDir()
 			constantFile := path.Join(tempDir, "constants.go")
 			envFile := path.Join(tempDir, ".image.env")
 			inputSpec := path.Join(rootDir, "input-spec")
+
+			// since replacers will update the actual files, not create new ones, copy the files over to the tmp directory
+			// and compare the results with the expected files
+			if len(tc.replacers) > 0 {
+				inputDir := path.Join(rootDir, "replacers", "input")
+				outputDir := path.Join(tempDir, "replacers", "actual")
+
+				err := copyDirFiles(inputDir, outputDir)
+				require.Nil(t, err)
+
+				// update replacers paths to point to the tmp dir
+				for _, r := range tc.replacers {
+					r.path = path.Join(outputDir, r.path)
+				}
+			}
+
 			ctx := generationContext{
 				inputFilename:          inputSpec,
 				outputConstantFilename: constantFile,
 				outputEnvFilename:      envFile,
+				replacers:              tc.replacers,
 				tagFinderFn:            tc.fn,
 			}
 
@@ -153,6 +183,49 @@ func TestFunctional(t *testing.T) {
 			require.Equal(t, string(expectedConstants), string(actualConstants))
 			require.Equal(t, string(expectedEnvs), string(actualEnv))
 
+			if len(tc.replacers) > 0 {
+				expectedDir := path.Join(rootDir, "replacers", "expected")
+				actualDir := path.Join(tempDir, "replacers", "actual")
+
+				files, err := ioutil.ReadDir(expectedDir)
+				require.Nil(t, err)
+
+				for _, f := range files {
+					expectedContent, err := ioutil.ReadFile(path.Join(expectedDir, f.Name()))
+					require.Nil(t, err)
+
+					actualContent, err := ioutil.ReadFile(path.Join(actualDir, f.Name()))
+					require.Nil(t, err)
+
+					require.Equal(t, string(expectedContent), string(actualContent))
+				}
+			}
 		})
 	}
+}
+
+func copyDirFiles(inputDir string, outputDir string) error {
+	files, err := ioutil.ReadDir(inputDir)
+	if err != nil {
+		return errors.Wrapf(err, "failed to read input dir %s", inputDir)
+	}
+
+	err = os.MkdirAll(outputDir, 0755)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create output dir %s", outputDir)
+	}
+
+	for _, f := range files {
+		content, err := ioutil.ReadFile(path.Join(inputDir, f.Name()))
+		if err != nil {
+			return errors.Wrapf(err, "failed to read file %s", path.Join(inputDir, f.Name()))
+		}
+
+		err = ioutil.WriteFile(path.Join(outputDir, f.Name()), []byte(content), 0644)
+		if err != nil {
+			return errors.Wrapf(err, "failed to write to file %s", path.Join(outputDir, f.Name()))
+		}
+	}
+
+	return nil
 }

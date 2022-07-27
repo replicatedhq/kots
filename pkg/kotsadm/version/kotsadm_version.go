@@ -115,7 +115,7 @@ func KotsadmImageRewriteKotsadmRegistry(namespace string, registryConfig *types.
 	}
 }
 
-// This function will rewrite images and use the image's original tag when not overriden
+// This function will rewrite images and use the image's original tag
 func DependencyImageRewriteKotsadmRegistry(namespace string, registryConfig *types.RegistryConfig) ImageRewriteFunc {
 	secret := KotsadmPullSecret(namespace, *registryConfig)
 
@@ -136,18 +136,13 @@ func DependencyImageRewriteKotsadmRegistry(namespace string, registryConfig *typ
 		}
 
 		tag := ""
-		if registryConfig.OverrideVersion != "" {
-			// kotadm-tag CLI flag was used, so all images will have the same tag
-			tag = registryConfig.OverrideVersion
+		if tagged, ok := named.(reference.Tagged); ok {
+			tag = tagged.Tag()
+			// TODO: support digests
+			// else if can, ok := named.(reference.Canonical); ok {
+			// 	tag = can.Digest().String()
 		} else {
-			if tagged, ok := named.(reference.Tagged); ok {
-				tag = tagged.Tag()
-				// TODO: support digests
-				// else if can, ok := named.(reference.Canonical); ok {
-				// 	tag = can.Digest().String()
-			} else {
-				return image, imagePullSecrets, errors.Errorf("only tagged references can be rewriten: %s", image)
-			}
+			return image, imagePullSecrets, errors.Errorf("only tagged references can be rewriten: %s", image)
 		}
 
 		parts := strings.Split(reference.Path(named), "/")

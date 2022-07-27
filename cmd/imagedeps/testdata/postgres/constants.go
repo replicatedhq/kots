@@ -5,6 +5,6 @@ package image
 // image name.
 
 const (
-	PostgresAlpine = "postgres:10.18-alpine"
-	PostgresDebian = "postgres:10.18"
+	Postgres10 = "postgres:10.18-alpine"
+	Postgres14 = "postgres:14.4-alpine"
 )

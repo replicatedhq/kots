@@ -1,7 +1,7 @@
 SHELL:=/bin/bash
 PROJECT_NAME ?= kotsadm-migrations
-POSTGRES_ALPINE_TAG ?= 10.20-alpine
-POSTGRES_DEBIAN_TAG ?= 10.20
+POSTGRES_10_TAG ?= 10.21-alpine
+POSTGRES_14_TAG ?= 14.4-alpine
 SCHEMAHERO_TAG ?= 0.13.1
 
 .PHONY: schema-alpha
@@ -17,8 +17,8 @@ schema-release: build_schema
 	mkdir -p bin/docker-archive/${PROJECT_NAME}
 	skopeo copy docker-daemon:kotsadm/${PROJECT_NAME}:${GIT_TAG} docker-archive:bin/docker-archive/${PROJECT_NAME}/${GIT_TAG}
 	mkdir -p bin/docker-archive/postgres
-	skopeo copy docker://postgres:${POSTGRES_ALPINE_TAG} docker-archive:bin/docker-archive/postgres/${POSTGRES_ALPINE_TAG}
-	skopeo copy docker://postgres:${POSTGRES_DEBIAN_TAG} docker-archive:bin/docker-archive/postgres/${POSTGRES_DEBIAN_TAG}
+	skopeo copy docker://postgres:${POSTGRES_10_TAG} docker-archive:bin/docker-archive/postgres/${POSTGRES_10_TAG}
+	skopeo copy docker://postgres:${POSTGRES_14_TAG} docker-archive:bin/docker-archive/postgres/${POSTGRES_14_TAG}
 
 build_schema:
 	docker build --pull --build-arg SCHEMAHERO_TAG=${SCHEMAHERO_TAG} -f deploy/Dockerfile -t ${IMAGE} .

@@ -8,9 +8,11 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
+	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -63,10 +65,8 @@ func ensurePostgres(deployOptions types.DeployOptions, clientset *kubernetes.Cli
 		return errors.Wrap(err, "failed to ensure postgres secret")
 	}
 
-	if !deployOptions.IsOpenShift {
-		if err := ensurePostgresConfigMap(deployOptions, clientset); err != nil {
-			return errors.Wrap(err, "failed to ensure postgres configmap")
-		}
+	if err := ensurePostgresConfigMap(deployOptions, clientset); err != nil {
+		return errors.Wrap(err, "failed to ensure postgres configmap")
 	}
 
 	size, err := getSize(deployOptions, "postgres", resource.MustParse("1Gi"))
@@ -107,12 +107,24 @@ func ensurePostgresStatefulset(deployOptions types.DeployOptions, clientset *kub
 	}
 
 	if len(existingPostgres.Spec.Template.Spec.Containers) != 1 || len(desiredPostgres.Spec.Template.Spec.Containers) != 1 {
-		return errors.New("postgres stateful set cannot be upgraded")
+		return errors.New("postgres statefulset cannot be upgraded")
 	}
 
-	existingPostgres.Spec.Template.Spec.Volumes = desiredPostgres.Spec.Template.Spec.DeepCopy().Volumes
+	desiredVolumes := []corev1.Volume{}
+	for _, v := range desiredPostgres.Spec.Template.Spec.Volumes {
+		desiredVolumes = append(desiredVolumes, *v.DeepCopy())
+	}
+
+	desiredVolumeMounts := []corev1.VolumeMount{}
+	for _, vm := range desiredPostgres.Spec.Template.Spec.Containers[0].VolumeMounts {
+		desiredVolumeMounts = append(desiredVolumeMounts, *vm.DeepCopy())
+	}
+
+	existingPostgres.Spec.Template.Spec.Volumes = desiredVolumes
+	existingPostgres.Spec.Template.Spec.InitContainers = k8sutil.MergeInitContainers(desiredPostgres.Spec.Template.Spec.InitContainers, existingPostgres.Spec.Template.Spec.InitContainers)
 	existingPostgres.Spec.Template.Spec.Containers[0].Image = desiredPostgres.Spec.Template.Spec.Containers[0].Image
-	existingPostgres.Spec.Template.Spec.Containers[0].VolumeMounts = desiredPostgres.Spec.Template.Spec.Containers[0].DeepCopy().VolumeMounts
+	existingPostgres.Spec.Template.Spec.Containers[0].VolumeMounts = desiredVolumeMounts
+	existingPostgres.Spec.Template.Spec.Containers[0].Env = k8sutil.MergeEnvVars(desiredPostgres.Spec.Template.Spec.Containers[0].Env, existingPostgres.Spec.Template.Spec.Containers[0].Env)
 
 	_, err = clientset.AppsV1().StatefulSets(deployOptions.Namespace).Update(ctx, existingPostgres, metav1.UpdateOptions{})
 	if err != nil {
