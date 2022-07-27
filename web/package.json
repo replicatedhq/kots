@@ -113,7 +113,6 @@
     "file-loader": "^6.2.0",
     "file-saver": "^2.0.2",
     "filereader-stream": "^2.0.0",
-    "graphql": "^0.13.2",
     "handlebars": "^4.7.7",
     "history": "^4.9.0",
     "http-proxy": "^1.18.1",
