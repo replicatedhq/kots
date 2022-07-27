@@ -45,7 +45,7 @@ class AppConfig extends Component {
     this.determineSidebarHeight = debounce(this.determineSidebarHeight, 250);
   }
 
-  componentWillMount() {
+  UNSAFE_componentWillMount() {
     const { app, history } = this.props;
     if (app && !app.isConfigurable) {
       // app not configurable - redirect

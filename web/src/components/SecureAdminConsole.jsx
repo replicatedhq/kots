@@ -207,7 +207,7 @@ class SecureAdminConsole extends React.Component {
     }
   }
 
-  async componentWillMount() {
+  async UNSAFE_componentWillMount() {
     const token = Utilities.getCookie("token");
     if (token) {
       // this is a redirect from identity service login
