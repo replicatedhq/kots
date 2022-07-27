@@ -47,9 +47,10 @@ module.exports = function (env) {
       },
       alias: {
         "@src": path.resolve(__dirname, "src"),
+        "@features": path.resolve(__dirname, "src/features"),
         "handlebars" : "handlebars/dist/handlebars.js"
       },
-      mainFields: ["browser", "main"], 
+      mainFields: ["browser", "main"],
     },
     module: {
       rules: [
@@ -153,7 +154,7 @@ module.exports = function (env) {
       //   analyzerHost: "0.0.0.0",
       //   analyzerPort: 30088
       // })
-      , 
+      ,
     ],
   };
 

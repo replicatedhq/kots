@@ -13,7 +13,11 @@ import Modal from "react-modal";
 import Loader from "../shared/Loader";
 import ErrorModal from "../modals/ErrorModal";
 import { HelmDeployModal } from "../shared/modals/HelmDeployModal";
-import { UseIsHelmManaged, useDownloadValues, useSaveConfig } from "../hooks";
+import {
+  UseIsHelmManaged,
+  useDownloadValues,
+  useSaveConfig,
+} from "../../features/Apps/api";
 
 import "../../scss/components/watches/WatchConfig.scss";
 import { Utilities } from "../../utilities/utilities";
