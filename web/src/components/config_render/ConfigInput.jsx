@@ -1,6 +1,7 @@
 import React from "react";
 import ConfigItemTitle from "./ConfigItemTitle";
 import Markdown from "react-remarkable";
+import { setOrder } from "./ConfigUtil";
 
 export default class ConfigInput extends React.Component {
   constructor(props) {
@@ -48,38 +49,7 @@ export default class ConfigInput extends React.Component {
   };
 
 
-  justifyContent = () => { 
-    const {index,affix} = this.props 
-    if (affix === "left") { 
-
-      return `justify-content: start`
-    }
-    if (affix === "right") {
-     
-        return `justify-content: end`
-      
-    }
-  }
-
-  setOrder = () => { 
-    const {index,affix} = this.props 
-    console.log("index",index,affix)
-    if (affix === "left") { 
-      if (index % 2 !== 0) { 
-        return index
-      } else { 
-        return index-2
-      }
-    } else 
-    if (affix === "right") { 
-      if (index % 2 === 0) { 
-        return index
-      } else { 
-
-        return index+1
-      }
-    }
-  }
+ 
 
   // p1-2019-06-27
   // Fields that are required sometimes don't have a title associated with them.
@@ -105,6 +75,7 @@ export default class ConfigInput extends React.Component {
             className={`field field-type-text ${
               hidden ? "hidden" : "u-marginTop--15"
             }`}
+            style={{ order: setOrder(this.props.index, this.props.affix)}}
           >
             {this.props.title !== "" || this.props.required ? (
               <ConfigItemTitle
@@ -184,7 +155,7 @@ export default class ConfigInput extends React.Component {
         className={`field field-type-text ${
           hidden ? "hidden" : "u-marginTop--15"
         }`}
-       style={{ marginTop: this.props.isHorizontal && "0", justifySelf: this.justifyContent(), order: this.setOrder()}}
+       style={{ order: setOrder(this.props.index, this.props.affix)}}
       >
         {this.props.title !== "" || this.props.required ? (
           <ConfigItemTitle

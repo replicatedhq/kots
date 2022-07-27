@@ -1,6 +1,7 @@
 import React from "react";
 import ConfigItemTitle from "./ConfigItemTitle";
 import Markdown from "react-remarkable";
+import { setOrder } from "./ConfigUtil";
 
 export default class ConfigTextarea extends React.Component {
   constructor(props) {
@@ -56,6 +57,7 @@ export default class ConfigTextarea extends React.Component {
             className={`field field-type-text u-marginTop--15 ${
               hidden ? "hidden" : ""
             }`}
+            style={{ order: setOrder(this.props.index, this.props.affix)}}
           >
             {this.props.title !== "" ? (
               <ConfigItemTitle
@@ -128,6 +130,7 @@ export default class ConfigTextarea extends React.Component {
         className={`field field-type-text u-marginTop--15 ${
           hidden ? "hidden" : ""
         }`}
+        style={{ order: setOrder(this.props.index, this.props.affix)}}
       >
         {this.props.title !== "" ? (
           <ConfigItemTitle

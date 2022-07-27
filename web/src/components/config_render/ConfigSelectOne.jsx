@@ -5,6 +5,7 @@ import isEmpty from "lodash/isEmpty";
 import ConfigItemTitle from "./ConfigItemTitle";
 import ConfigRadio from "./ConfigRadio";
 import Markdown from "react-remarkable";
+import { setOrder } from "./ConfigUtil";
 
 export default class ConfigSelectOne extends React.Component {
   handleOnChange = (itemName, val) => {
@@ -45,6 +46,7 @@ export default class ConfigSelectOne extends React.Component {
         className={`field field-type-select-one ${
           hidden ? "hidden" : "u-marginTop--15"
         }`}
+        style={{ order: setOrder(this.props.index, this.props.affix)}}
       >
         {this.props.title !== "" ? (
           <ConfigItemTitle

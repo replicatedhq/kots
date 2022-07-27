@@ -1,6 +1,7 @@
 import React from "react";
 import Markdown from "react-remarkable";
 import classNames from "classnames";
+import { setOrder } from "./ConfigUtil";
 
 export default class ConfigItemTitle extends React.Component {
   render() {
@@ -26,7 +27,8 @@ export default class ConfigItemTitle extends React.Component {
         style={title ? { marginBottom: -18 } : {}}
       >
         {title && (
-          <div className="u-display--inlineBlock u-verticalAlign--top u-marginRight--5">
+          <div className="u-display--inlineBlock u-verticalAlign--top u-marginRight--5"  
+          style={{ order: setOrder(this.props.index, this.props.affix)}}>
             <Markdown
               options={{
                 linkTarget: "_blank",

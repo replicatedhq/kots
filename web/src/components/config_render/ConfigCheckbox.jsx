@@ -1,5 +1,6 @@
 import React from "react";
 import Markdown from "react-remarkable";
+import { setOrder } from "./ConfigUtil";
 
 export default class ConfigCheckbox extends React.Component {
   handleOnChange = (e) => {
@@ -25,6 +26,7 @@ export default class ConfigCheckbox extends React.Component {
         className={`field field-checkbox-wrapper u-marginTop--15 flex-column ${
           hidden ? "hidden" : ""
         }`}
+        style={{ order: setOrder(this.props.index, this.props.affix)}}
       >
         <span
           className="u-marginTop--10 config-errblock"
