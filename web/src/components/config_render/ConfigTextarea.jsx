@@ -57,7 +57,7 @@ export default class ConfigTextarea extends React.Component {
             className={`field field-type-text u-marginTop--15 ${
               hidden ? "hidden" : ""
             }`}
-            style={{ order: setOrder(this.props.index, this.props.affix)}}
+            style={{ order: setOrder(this.props.index, this.props.affix) }}
           >
             {this.props.title !== "" ? (
               <ConfigItemTitle
@@ -130,7 +130,7 @@ export default class ConfigTextarea extends React.Component {
         className={`field field-type-text u-marginTop--15 ${
           hidden ? "hidden" : ""
         }`}
-        style={{ order: setOrder(this.props.index, this.props.affix)}}
+        style={{ order: setOrder(this.props.index, this.props.affix) }}
       >
         {this.props.title !== "" ? (
           <ConfigItemTitle

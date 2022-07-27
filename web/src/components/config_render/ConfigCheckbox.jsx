@@ -26,7 +26,7 @@ export default class ConfigCheckbox extends React.Component {
         className={`field field-checkbox-wrapper u-marginTop--15 flex-column ${
           hidden ? "hidden" : ""
         }`}
-        style={{ order: setOrder(this.props.index, this.props.affix)}}
+        style={{ order: setOrder(this.props.index, this.props.affix) }}
       >
         <span
           className="u-marginTop--10 config-errblock"

@@ -46,7 +46,7 @@ export default class ConfigSelectOne extends React.Component {
         className={`field field-type-select-one ${
           hidden ? "hidden" : "u-marginTop--15"
         }`}
-        style={{ order: setOrder(this.props.index, this.props.affix)}}
+        style={{ order: setOrder(this.props.index, this.props.affix) }}
       >
         {this.props.title !== "" ? (
           <ConfigItemTitle

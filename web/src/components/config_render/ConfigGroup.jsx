@@ -38,11 +38,10 @@ export default class ConfigGroup extends React.Component {
   };
 
   renderConfigItems = (items, readonly) => {
-    
     if (!items) {
       return null;
     }
-  
+
     return items.map((item, i) => {
       const isReadOnly = readonly || item.readonly;
       switch (item.type) {
@@ -59,7 +58,7 @@ export default class ConfigGroup extends React.Component {
               when={item.when}
               {...item}
               readonly={isReadOnly}
-              index={i+1}
+              index={i + 1}
             />
           );
         case "textarea":
@@ -74,7 +73,7 @@ export default class ConfigGroup extends React.Component {
               when={item.when}
               {...item}
               readonly={isReadOnly}
-              index={i+1}
+              index={i + 1}
             />
           );
         case "bool":
@@ -89,7 +88,7 @@ export default class ConfigGroup extends React.Component {
               when={item.when}
               {...item}
               readonly={isReadOnly}
-              index={i+1}
+              index={i + 1}
             />
           );
         case "label":
@@ -108,7 +107,7 @@ export default class ConfigGroup extends React.Component {
                 name={item.name}
                 error={item.error}
                 readonly={isReadOnly}
-                index={i+1}
+                index={i + 1}
               />
             </div>
           );
@@ -117,7 +116,7 @@ export default class ConfigGroup extends React.Component {
             <div
               key={`${i}-${item.name}`}
               className="field field-type-label u-marginTop--15"
-              style={{ order: setOrder(i+1, item.affix)}}
+              style={{ order: setOrder(i + 1, item.affix) }}
             >
               <ConfigFileInput
                 {...item}
@@ -132,7 +131,7 @@ export default class ConfigGroup extends React.Component {
                 configSequence={this.props.configSequence}
                 appSlug={this.props.appSlug}
                 readonly={isReadOnly}
-                index={i+1}
+                index={i + 1}
               />
             </div>
           );
@@ -146,17 +145,17 @@ export default class ConfigGroup extends React.Component {
               when={item.when}
               {...item}
               readonly={isReadOnly}
-              index={i+1}
+              index={i + 1}
             />
           );
         case "heading":
           return (
             <div
               key={`${i}-${item.name}`}
-              className={`u-marginTop--40 u-marginBottom--15 ${
+              className={`u-marginTop--15 u-marginBottom--15 ${
                 item.hidden || item.when === "false" ? "hidden" : ""
               }`}
-              style={{ order: setOrder(i+1, item.affix)}}
+              style={{ order: setOrder(i + 1, item.affix) }}
             >
               <h3 className="header-color field-section-header">
                 {item.title}
@@ -176,7 +175,7 @@ export default class ConfigGroup extends React.Component {
               inputType="password"
               {...item}
               readonly={isReadOnly}
-              index={i+1}
+              index={i + 1}
             />
           );
         default:
@@ -209,24 +208,13 @@ export default class ConfigGroup extends React.Component {
     });
   };
 
-   isAffixWrong = () => { 
-    for (let i = 0; i<this.props.item.items.length; i+2) {
-      if (this.props.item.items[i].affix === this.props.item.items[i+1].affix) {
-        return true;
-      }
-    }
-      
-  }
-
   render() {
     const { item, readonly } = this.props;
     const hidden = item && item.when === "false";
     if (hidden || !this.isAtLeastOneItemVisible()) {
       return null;
     }
-    const hasAffix = item.items.every(option => option.affix);
-  //const isAffixWrong = this.isAffixWrong();
-
+    const hasAffix = item.items.every((option) => option.affix);
     return (
       <div className="flex-column flex-auto">
         {item && (
@@ -250,8 +238,13 @@ export default class ConfigGroup extends React.Component {
                 </Markdown>
               </div>
             ) : null}
-            <div className="config-item u-marginTop--15"  
-            style={{display: hasAffix ? "grid" : "block", gridTemplateColumns: "1fr 1fr"}} >
+            <div
+              className="config-item u-marginTop--15"
+              style={{
+                display: hasAffix ? "grid" : "block",
+                gridTemplateColumns: "1fr 1fr",
+              }}
+            >
               {this.renderConfigItems(item.items, readonly)}
             </div>
             {item.repeatable && (

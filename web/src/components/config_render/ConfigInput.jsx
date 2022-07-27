@@ -48,9 +48,6 @@ export default class ConfigInput extends React.Component {
     return value.replace(/./g, "•");
   };
 
-
- 
-
   // p1-2019-06-27
   // Fields that are required sometimes don't have a title associated with them.
   // Use title -OR- required prop to render <ConfigItemTitle> to make sure error
@@ -75,7 +72,7 @@ export default class ConfigInput extends React.Component {
             className={`field field-type-text ${
               hidden ? "hidden" : "u-marginTop--15"
             }`}
-            style={{ order: setOrder(this.props.index, this.props.affix)}}
+            style={{ order: setOrder(this.props.index, this.props.affix) }}
           >
             {this.props.title !== "" || this.props.required ? (
               <ConfigItemTitle
@@ -155,7 +152,7 @@ export default class ConfigInput extends React.Component {
         className={`field field-type-text ${
           hidden ? "hidden" : "u-marginTop--15"
         }`}
-       style={{ order: setOrder(this.props.index, this.props.affix)}}
+        style={{ order: setOrder(this.props.index, this.props.affix) }}
       >
         {this.props.title !== "" || this.props.required ? (
           <ConfigItemTitle
@@ -178,7 +175,7 @@ export default class ConfigInput extends React.Component {
             </Markdown>
           </div>
         ) : null}
-        <div className="field-input-wrapper u-marginTop--15" >
+        <div className="field-input-wrapper u-marginTop--15">
           <input
             ref={this.inputRef}
             type={this.props.inputType}

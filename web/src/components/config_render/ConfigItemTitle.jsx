@@ -27,8 +27,10 @@ export default class ConfigItemTitle extends React.Component {
         style={title ? { marginBottom: -18 } : {}}
       >
         {title && (
-          <div className="u-display--inlineBlock u-verticalAlign--top u-marginRight--5"  
-          style={{ order: setOrder(this.props.index, this.props.affix)}}>
+          <div
+            className="u-display--inlineBlock u-verticalAlign--top u-marginRight--5"
+            style={{ order: setOrder(this.props.index, this.props.affix) }}
+          >
             <Markdown
               options={{
                 linkTarget: "_blank",
