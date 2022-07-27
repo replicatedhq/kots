@@ -1,5 +1,5 @@
 import { useQuery } from "react-query";
-import { Utilities } from "../../../utilities/Utilities";
+import { Utilities } from "../../../utilities/utilities";
 
 async function getApps({
   accessToken = Utilities.getToken(),

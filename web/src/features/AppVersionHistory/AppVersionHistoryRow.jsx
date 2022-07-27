@@ -4,9 +4,9 @@ import find from "lodash/find";
 import classNames from "classnames";
 import ReactTooltip from "react-tooltip";
 
-import Loader from "../shared/Loader";
+import Loader from "@src/components/shared/Loader";
 
-import { Utilities, getPreflightResultState } from "../../utilities/utilities";
+import { Utilities, getPreflightResultState } from "@src/utilities/utilities";
 
 const YamlErrors = ({ version, handleSeeDetailsClicked }) => {
   if (!version.yamlErrors) {

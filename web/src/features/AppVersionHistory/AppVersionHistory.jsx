@@ -7,18 +7,18 @@ import Modal from "react-modal";
 import find from "lodash/find";
 import isEmpty from "lodash/isEmpty";
 import get from "lodash/get";
-import MountAware from "../shared/MountAware";
-import Loader from "../shared/Loader";
+import MountAware from "@src/components/shared/MountAware";
+import Loader from "@src/components/shared/Loader";
 import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
 import ShowDetailsModal from "@src/components/modals/ShowDetailsModal";
 import ShowLogsModal from "@src/components/modals/ShowLogsModal";
-import AirgapUploadProgress from "../AirgapUploadProgress";
-import ErrorModal from "../modals/ErrorModal";
-import { AppVersionHistoryRow } from "@src/components/apps/AppVersionHistoryRow";
-import DeployWarningModal from "../shared/modals/DeployWarningModal";
+import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
+import ErrorModal from "@src/components/modals/ErrorModal";
+import { AppVersionHistoryRow } from "./AppVersionHistoryRow";
+import DeployWarningModal from "@src/components/shared/modals/DeployWarningModal";
 import AutomaticUpdatesModal from "@src/components/modals/AutomaticUpdatesModal";
-import SkipPreflightsModal from "../shared/modals/SkipPreflightsModal";
+import SkipPreflightsModal from "@src/components/shared/modals/SkipPreflightsModal";
 import {
   Utilities,
   isAwaitingResults,
@@ -30,12 +30,12 @@ import {
 import { Repeater } from "../../utilities/repeater";
 import { AirgapUploader } from "../../utilities/airgapUploader";
 import ReactTooltip from "react-tooltip";
-import Pager from "../shared/Pager";
-import { HelmDeployModal } from "../shared/modals/HelmDeployModal";
-import { UseDownloadValues } from "../hooks";
+import Pager from "@src/components/shared/Pager";
+import { HelmDeployModal } from "@src/components/shared/modals/HelmDeployModal";
+import { UseDownloadValues } from "@src/components/hooks";
 
 import "@src/scss/components/apps/AppVersionHistory.scss";
-import DashboardGitOpsCard from "./DashboardGitOpsCard";
+import DashboardGitOpsCard from "@src/components/apps/DashboardGitOpsCard";
 dayjs.extend(relativeTime);
 
 class AppVersionHistory extends Component {

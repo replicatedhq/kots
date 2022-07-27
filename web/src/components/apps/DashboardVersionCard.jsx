@@ -14,7 +14,7 @@ import DeployWarningModal from "../shared/modals/DeployWarningModal";
 import SkipPreflightsModal from "../shared/modals/SkipPreflightsModal";
 import { HelmDeployModal } from "../shared/modals/HelmDeployModal";
 import classNames from "classnames";
-import { UseDownloadValues } from "../../features/Apps/api";
+import { UseDownloadValues } from "@src/components/hooks";
 
 import {
   Utilities,

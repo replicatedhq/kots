@@ -17,7 +17,7 @@ import {
   UseIsHelmManaged,
   useDownloadValues,
   useSaveConfig,
-} from "../../features/Apps/api";
+} from "@src/components/hooks";
 
 import "../../scss/components/watches/WatchConfig.scss";
 import { Utilities } from "../../utilities/utilities";
