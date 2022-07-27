@@ -2,6 +2,7 @@ import React from "react";
 import ConfigItemTitle from "./ConfigItemTitle";
 import Markdown from "react-remarkable";
 import { setOrder } from "./ConfigUtil";
+import { ConfigWrapper } from "./ConfigComponents";
 
 export default class ConfigTextarea extends React.Component {
   constructor(props) {
@@ -50,15 +51,16 @@ export default class ConfigTextarea extends React.Component {
     const variadicItemsLen = variadicItems.length;
     return isVariadic ? (
       variadicItems.map((objKey, index) => {
+     
         return (
-          <div
-            key={objKey}
-            id={`${this.props.name}-group`}
-            className={`field field-type-text u-marginTop--15 ${
-              hidden ? "hidden" : ""
-            }`}
-            style={{ order: setOrder(this.props.index, this.props.affix) }}
-          >
+          <ConfigWrapper
+          key={objKey}
+          id={`${this.props.name}-group`}
+          className={`field-type-text`}
+          marginTop={hidden || this.props.affix ? "0" : "15px"}
+          hidden={hidden}
+          order={setOrder(this.props.index, this.props.affix)}
+        >
             {this.props.title !== "" ? (
               <ConfigItemTitle
                 title={this.props.title}
@@ -121,17 +123,17 @@ export default class ConfigTextarea extends React.Component {
                 </span>
               </div>
             )}
-          </div>
+          </ConfigWrapper>
         );
       })
     ) : (
-      <div
-        id={`${this.props.name}-group`}
-        className={`field field-type-text u-marginTop--15 ${
-          hidden ? "hidden" : ""
-        }`}
-        style={{ order: setOrder(this.props.index, this.props.affix) }}
-      >
+      <ConfigWrapper
+      id={`${this.props.name}-group`}
+      className={`field-type-text`}
+      marginTop={hidden || this.props.affix ? "0" : "15px"}
+      hidden={hidden}
+      order={setOrder(this.props.index, this.props.affix)}
+    >
         {this.props.title !== "" ? (
           <ConfigItemTitle
             title={this.props.title}
@@ -180,7 +182,7 @@ export default class ConfigTextarea extends React.Component {
             </span>
           </div>
         )}
-      </div>
+      </ConfigWrapper>
     );
   }
 }

@@ -2,7 +2,7 @@ import React from "react";
 import ConfigItemTitle from "./ConfigItemTitle";
 import Markdown from "react-remarkable";
 import { setOrder } from "./ConfigUtil";
-import { ConfigWrapper } from "./ConfigWrapper";
+import { ConfigWrapper } from "./ConfigComponents";
 
 export default class ConfigInput extends React.Component {
   constructor(props) {
