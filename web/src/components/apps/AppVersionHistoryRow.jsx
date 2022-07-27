@@ -8,61 +8,92 @@ import Loader from "../shared/Loader";
 
 import { Utilities, getPreflightResultState } from "../../utilities/utilities";
 
-class AppVersionHistoryRow extends Component {
-  renderDiff = (version) => {
+const YamlErrors = ({ version, handleSeeDetailsClicked }) => {
+  if (!version.yamlErrors) {
+    return null;
+  }
+  return (
+    <div className="flex alignItems--center u-marginTop--5">
+      <span className="icon error-small" />
+      <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5 u-textColor--error">
+        {version.yamlErrors?.length} Invalid file
+        {version.yamlErrors?.length !== 1 ? "s" : ""}{" "}
+      </span>
+      <span
+        className="replicated-link u-marginLeft--5 u-fontSize--small"
+        onClick={handleSeeDetailsClicked}
+      >
+        {" "}
+        See details{" "}
+      </span>
+    </div>
+  );
+};
+
+const AppVersionHistoryRow = ({
+  handleActionButtonClicked,
+  isHelmManaged,
+  app,
+  match,
+  history,
+  version,
+  selectedDiffReleases,
+  nothingToCommit,
+  isChecked,
+  isNew,
+  newPreflightResults,
+  showReleaseNotes,
+  renderDiff,
+  toggleShowDetailsModal,
+  gitopsEnabled,
+  deployVersion,
+  redeployVersion,
+  downloadVersion,
+  upgradeAdminConsole,
+  handleViewLogs,
+  handleSelectReleasesToDiff,
+  renderVersionDownloadStatus,
+  isDownloading,
+  adminConsoleMetadata,
+  makeCurrentVersion,
+  makingCurrentVersionErrMsg,
+  updateCallback,
+  toggleIsBundleUploading,
+  isBundleUploading,
+  refreshAppData,
+  displayErrorModal,
+  toggleErrorModal,
+  makingCurrentRelease,
+  redeployVersionErrMsg,
+}) => {
+
+  renderDiff = (_version) => {
     const hideSourceDiff =
-      version.source?.includes("Airgap Install") ||
-      version.source?.includes("Online Install");
+      _version.source?.includes("Airgap Install") ||
+      _version.source?.includes("Online Install");
     if (hideSourceDiff) {
       return null;
     }
     return (
-      <div className="u-marginTop--5">{this.props.renderDiff(version)}</div>
+      <div className="u-marginTop--5">{renderDiff(_version)}</div>
     );
   };
 
   handleSelectReleasesToDiff = () => {
-    if (!this.props.selectedDiffReleases) {
+    if (!selectedDiffReleases) {
       return;
     }
-    if (this.props.nothingToCommit) {
+    if (nothingToCommit) {
       return;
     }
-    this.props.handleSelectReleasesToDiff(
-      this.props.version,
-      !this.props.isChecked
+    handleSelectReleasesToDiff(
+      version,
+      !isChecked
     );
   };
 
-  renderYamlErrors = (version) => {
-    if (!version.yamlErrors) {
-      return null;
-    }
-    return (
-      <div className="flex alignItems--center u-marginTop--5">
-        <span className="icon error-small" />
-        <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5 u-textColor--error">
-          {version.yamlErrors?.length} Invalid file
-          {version.yamlErrors?.length !== 1 ? "s" : ""}{" "}
-        </span>
-        <span
-          className="replicated-link u-marginLeft--5 u-fontSize--small"
-          onClick={() =>
-            this.props.toggleShowDetailsModal(
-              version.yamlErrors,
-              version.sequence
-            )
-          }
-        >
-          {" "}
-          See details{" "}
-        </span>
-      </div>
-    );
-  };
-
-  deployButtonStatus = (version) => {
-    const app = this.props.app;
+  function deployButtonStatus(version) {
+    const app = app;
     const downstream = app?.downstream;
 
     const isCurrentVersion =
@@ -78,8 +109,8 @@ class AppVersionHistoryRow extends Component {
       (version.status === "failed" || version.status === "deployed");
     const canUpdateKots =
       version.needsKotsUpgrade &&
-      !this.props.adminConsoleMetadata?.isAirgap &&
-      !this.props.adminConsoleMetadata?.isKurl;
+      !adminConsoleMetadata?.isAirgap &&
+      !adminConsoleMetadata?.isKurl;
 
     if (needsConfiguration) {
       return "Configure";
@@ -104,9 +135,9 @@ class AppVersionHistoryRow extends Component {
         return "Deploy";
       }
     }
-  };
+  }
 
-  getPreflightState = (version) => {
+  const getPreflightState = (version) => {
     let preflightsFailed = false;
     let preflightState = "";
     if (version?.preflightResult) {
@@ -121,7 +152,7 @@ class AppVersionHistoryRow extends Component {
     };
   };
 
-  renderReleaseNotes = (version) => {
+  const renderReleaseNotes = (version) => {
     if (!version?.releaseNotes) {
       return null;
     }
@@ -129,7 +160,7 @@ class AppVersionHistoryRow extends Component {
       <div>
         <span
           className="icon releaseNotes--icon u-marginRight--10 u-cursor--pointer"
-          onClick={() => this.props.showReleaseNotes(version?.releaseNotes)}
+          onClick={() => showReleaseNotes(version?.releaseNotes)}
           data-tip="View release notes"
         />
         <ReactTooltip effect="solid" className="replicated-tooltip" />
@@ -137,35 +168,34 @@ class AppVersionHistoryRow extends Component {
     );
   };
 
-  renderVersionAction = (version) => {
-    const app = this.props.app;
+  const renderVersionAction = (version) => {
+    const app = app;
     const downstream = app?.downstream;
-    const { newPreflightResults } = this.props;
 
-    let actionFn = this.props.deployVersion;
-    if (this.props.isHelmManaged) {
-      actionFn = () => {};
+    let actionFn = deployVersion;
+    if (isHelmManaged) {
+      actionFn = () => { };
     } else if (version.needsKotsUpgrade) {
-      actionFn = this.props.upgradeAdminConsole;
+      actionFn = upgradeAdminConsole;
     } else if (version.status === "pending_download") {
-      actionFn = this.props.downloadVersion;
+      actionFn = downloadVersion;
     } else if (version.status === "failed" || version.status === "deployed") {
-      actionFn = this.props.redeployVersion;
+      actionFn = redeployVersion;
     }
 
     if (version.status === "pending_download") {
       let buttonText = "Download";
-      if (this.props.isDownloading) {
+      if (isDownloading) {
         buttonText = "Downloading";
       } else if (version.needsKotsUpgrade) {
         buttonText = "Upgrade";
       }
       return (
         <div className="flex flex1 justifyContent--flexEnd alignItems--center">
-          {this.renderReleaseNotes(version)}
+          {renderReleaseNotes(version)}
           <button
             className={"btn secondary blue"}
-            disabled={this.props.isDownloading}
+            disabled={isDownloading}
             onClick={() => actionFn(version)}
           >
             {buttonText}
@@ -207,7 +237,7 @@ class AppVersionHistoryRow extends Component {
       tooltipTip = "View config";
     }
 
-    const preflightState = this.getPreflightState(version);
+    const preflightState = getPreflightState(version);
     let checksStatusText;
     if (preflightState.preflightsFailed) {
       checksStatusText = "Checks failed";
@@ -222,8 +252,8 @@ class AppVersionHistoryRow extends Component {
         return (
           <div
             className={
-              this.props.nothingToCommit &&
-              this.props.selectedDiffReleases &&
+              nothingToCommit &&
+              selectedDiffReleases &&
               "u-opacity--half"
             }
           >
@@ -234,7 +264,7 @@ class AppVersionHistoryRow extends Component {
       if (!version.commitUrl) {
         return (
           <div className="flex flex1 justifyContent--flexEnd alignItems--center">
-            {this.renderReleaseNotes(version)}
+            {renderReleaseNotes(version)}
             <>
               {version.status === "pending_preflight" ? (
                 <div className="u-position--relative">
@@ -251,28 +281,26 @@ class AppVersionHistoryRow extends Component {
                     data-tip="View preflight checks"
                   >
                     {preflightState.preflightsFailed ||
-                    preflightState.preflightState === "warn" ||
-                    newPreflightResults ? (
+                      preflightState.preflightState === "warn" ||
+                      newPreflightResults ? (
                       <div>
                         <span
-                          className={`icon version-row-preflight-status-icon ${
-                            preflightState.preflightsFailed
-                              ? "preflight-checks-failed-icon"
-                              : preflightState.preflightState === "warn"
+                          className={`icon version-row-preflight-status-icon ${preflightState.preflightsFailed
+                            ? "preflight-checks-failed-icon"
+                            : preflightState.preflightState === "warn"
                               ? "preflight-checks-warn-icon"
                               : ""
-                          }`}
+                            }`}
                         />
                         <p
-                          className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${
-                            preflightState.preflightsFailed
-                              ? "err"
-                              : preflightState.preflightState === "warn"
+                          className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${preflightState.preflightsFailed
+                            ? "err"
+                            : preflightState.preflightState === "warn"
                               ? "warning"
                               : newPreflightResults
-                              ? "success"
-                              : ""
-                          }`}
+                                ? "success"
+                                : ""
+                            }`}
                         >
                           {checksStatusText}
                         </p>
@@ -288,7 +316,7 @@ class AppVersionHistoryRow extends Component {
       }
       return (
         <div className="flex flex1 justifyContent--flexEnd alignItems--center">
-          {this.renderReleaseNotes(version)}
+          {renderReleaseNotes(version)}
           <div>
             {version.status === "pending_preflight" ? (
               <div className="u-position--relative">
@@ -305,28 +333,26 @@ class AppVersionHistoryRow extends Component {
                   data-tip="View preflight checks"
                 >
                   {preflightState.preflightsFailed ||
-                  preflightState.preflightState === "warn" ||
-                  newPreflightResults ? (
+                    preflightState.preflightState === "warn" ||
+                    newPreflightResults ? (
                     <div>
                       <span
-                        className={`icon version-row-preflight-status-icon ${
-                          preflightState.preflightsFailed
-                            ? "preflight-checks-failed-icon"
-                            : preflightState.preflightState === "warn"
+                        className={`icon version-row-preflight-status-icon ${preflightState.preflightsFailed
+                          ? "preflight-checks-failed-icon"
+                          : preflightState.preflightState === "warn"
                             ? "preflight-checks-warn-icon"
                             : ""
-                        }`}
+                          }`}
                       />
                       <p
-                        className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${
-                          preflightState.preflightsFailed
-                            ? "err"
-                            : preflightState.preflightState === "warn"
+                        className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${preflightState.preflightsFailed
+                          ? "err"
+                          : preflightState.preflightState === "warn"
                             ? "warning"
                             : newPreflightResults
-                            ? "success"
-                            : ""
-                        }`}
+                              ? "success"
+                              : ""
+                          }`}
                       >
                         {checksStatusText}
                       </p>
@@ -349,7 +375,7 @@ class AppVersionHistoryRow extends Component {
 
     return (
       <div className="flex flex1 justifyContent--flexEnd alignItems--center">
-        {this.renderReleaseNotes(version)}
+        {renderReleaseNotes(version)}
 
         <div>
           {version.status === "pending_preflight" ? (
@@ -367,28 +393,26 @@ class AppVersionHistoryRow extends Component {
                 data-tip="View preflight checks"
               >
                 {preflightState.preflightsFailed ||
-                preflightState.preflightState === "warn" ||
-                newPreflightResults ? (
+                  preflightState.preflightState === "warn" ||
+                  newPreflightResults ? (
                   <div>
                     <span
-                      className={`icon version-row-preflight-status-icon ${
-                        preflightState.preflightsFailed
-                          ? "preflight-checks-failed-icon"
-                          : preflightState.preflightState === "warn"
+                      className={`icon version-row-preflight-status-icon ${preflightState.preflightsFailed
+                        ? "preflight-checks-failed-icon"
+                        : preflightState.preflightState === "warn"
                           ? "preflight-checks-warn-icon"
                           : ""
-                      }`}
+                        }`}
                     />
                     <p
-                      className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${
-                        preflightState.preflightsFailed
-                          ? "err"
-                          : preflightState.preflightState === "warn"
+                      className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${preflightState.preflightsFailed
+                        ? "err"
+                        : preflightState.preflightState === "warn"
                           ? "warning"
                           : newPreflightResults
-                          ? "success"
-                          : ""
-                      }`}
+                            ? "success"
+                            : ""
+                        }`}
                     >
                       {checksStatusText}
                     </p>
@@ -403,21 +427,20 @@ class AppVersionHistoryRow extends Component {
           <div className="flex alignItems--center">
             <Link
               to={`/app/${app.slug}/config/${version.sequence}`}
-              className={`icon ${
-                editableConfig ? "configEdit--icon" : "configView--icon"
-              } u-cursor--pointer`}
+              className={`icon ${editableConfig ? "configEdit--icon" : "configView--icon"
+                } u-cursor--pointer`}
               data-tip={tooltipTip}
             />
             <ReactTooltip effect="solid" className="replicated-tooltip" />
           </div>
         )}
         {(isPastVersion || isCurrentVersion || isPendingDeployedVersion) &&
-        version?.status !== "pending" ? (
+          version?.status !== "pending" ? (
           <div className="u-marginLeft--10">
             <span
               className="icon deployLogs--icon u-cursor--pointer"
               onClick={() =>
-                this.props.handleViewLogs(version, version?.status === "failed")
+                handleViewLogs(version, version?.status === "failed")
               }
               data-tip="View deploy logs"
             />
@@ -435,11 +458,11 @@ class AppVersionHistoryRow extends Component {
                 "secondary blue": isSecondaryBtn,
                 "primary blue": isPrimaryButton,
               })}
-              disabled={this.isActionButtonDisabled(version)}
+              disabled={isActionButtonDisabled(version)}
               onClick={() => {
-                this.props.handleActionButtonClicked();
+                handleActionButtonClicked();
                 if (needsConfiguration) {
-                  this.props.history.push(
+                  history.push(
                     `/app/${app.slug}/config/${version.sequence}`
                   );
                   return null;
@@ -455,11 +478,11 @@ class AppVersionHistoryRow extends Component {
             >
               <span
                 key={version.nonDeployableCause}
-                data-tip-disable={!this.isActionButtonDisabled(version)}
+                data-tip-disable={!isActionButtonDisabled(version)}
                 data-tip={version.nonDeployableCause}
                 data-for="disable-deployment-tooltip"
               >
-                {this.deployButtonStatus(version)}
+                {deployButtonStatus(version)}
               </span>
             </button>
             <ReactTooltip effect="solid" id="disable-deployment-tooltip" />
@@ -469,8 +492,8 @@ class AppVersionHistoryRow extends Component {
     );
   };
 
-  isActionButtonDisabled = (version) => {
-    if (this.props.isHelmManaged) {
+  const isActionButtonDisabled = (version) => {
+    if (isHelmManaged) {
       return false;
     }
     if (version.status === "deploying") {
@@ -485,8 +508,8 @@ class AppVersionHistoryRow extends Component {
     return !version.isDeployable;
   };
 
-  renderVersionStatus = (version) => {
-    const app = this.props.app;
+  const renderVersionStatus = (version) => {
+    const app = app;
     const downstream = app?.downstream;
     if (!downstream) {
       return null;
@@ -508,14 +531,13 @@ class AppVersionHistoryRow extends Component {
               className="status-tag success flex-auto u-cursor--default"
               data-tip={
                 version.deployedAt
-                  ? `${
-                      version.status === "deploying"
-                        ? "Deploy started at"
-                        : "Deployed"
-                    } ${Utilities.dateFormat(
-                      version.deployedAt,
-                      "MMMM D, YYYY @ hh:mm a z"
-                    )}`
+                  ? `${version.status === "deploying"
+                    ? "Deploy started at"
+                    : "Deployed"
+                  } ${Utilities.dateFormat(
+                    version.deployedAt,
+                    "MMMM D, YYYY @ hh:mm a z"
+                  )}`
                   : "Unable to find deployed at date"
               }
             >
@@ -540,7 +562,7 @@ class AppVersionHistoryRow extends Component {
             </span>
             <span
               className="replicated-link u-fontSize--small"
-              onClick={() => this.props.handleViewLogs(version, true)}
+              onClick={() => handleViewLogs(version, true)}
             >
               View deploy logs
             </span>
@@ -581,9 +603,9 @@ class AppVersionHistoryRow extends Component {
               data-tip={
                 version.deployedAt
                   ? `Deployed ${Utilities.dateFormat(
-                      version.deployedAt,
-                      "MMMM D, YYYY @ hh:mm a z"
-                    )}`
+                    version.deployedAt,
+                    "MMMM D, YYYY @ hh:mm a z"
+                  )}`
                   : "Unable to find deployed at date"
               }
             >
@@ -604,7 +626,7 @@ class AppVersionHistoryRow extends Component {
             </span>
             <span
               className="replicated-link u-fontSize--small"
-              onClick={() => this.props.handleViewLogs(version, true)}
+              onClick={() => handleViewLogs(version, true)}
             >
               View deploy logs
             </span>
@@ -639,108 +661,96 @@ class AppVersionHistoryRow extends Component {
     }
   };
 
-  render() {
-    const {
-      version,
-      selectedDiffReleases,
-      nothingToCommit,
-      isChecked,
-      isNew,
-      gitopsEnabled,
-      newPreflightResults,
-    } = this.props;
-
-    return (
-      <div
-        key={version.sequence}
-        className={classNames(
-          `VersionHistoryRowWrapper ${version.status} flex-column justifyContent--center`,
-          {
-            overlay: selectedDiffReleases,
-            disabled: nothingToCommit,
-            selected: isChecked && !nothingToCommit,
-            "is-new": isNew,
-            "show-preflight-passed-text": newPreflightResults,
-          }
+  return (
+    <div
+      key={version.sequence}
+      className={classNames(
+        `VersionHistoryRowWrapper ${version.status} flex-column justifyContent--center`,
+        {
+          overlay: selectedDiffReleases,
+          disabled: nothingToCommit,
+          selected: isChecked && !nothingToCommit,
+          "is-new": isNew,
+          "show-preflight-passed-text": newPreflightResults,
+        }
+      )}
+      onClick={handleSelectReleasesToDiff}
+    >
+      <div className="VersionHistoryRow flex flex-auto">
+        {selectedDiffReleases && (
+          <div
+            className={classNames(
+              "checkbox u-marginRight--20",
+              { checked: isChecked && !nothingToCommit },
+              { disabled: nothingToCommit }
+            )}
+          />
         )}
-        onClick={this.handleSelectReleasesToDiff}
-      >
-        <div className="VersionHistoryRow flex flex-auto">
-          {selectedDiffReleases && (
-            <div
-              className={classNames(
-                "checkbox u-marginRight--20",
-                { checked: isChecked && !nothingToCommit },
-                { disabled: nothingToCommit }
-              )}
-            />
-          )}
-          <div
-            className={`${
-              nothingToCommit && selectedDiffReleases && "u-opacity--half"
+        <div
+          className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"
             } flex-column flex1 u-paddingRight--20`}
-          >
-            <div className="flex alignItems--center">
-              <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">
-                {version.versionLabel || version.title}
-              </p>
-              <p
-                className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10"
-                style={{ marginTop: "2px" }}
-              >
-                Sequence {version.sequence}
-              </p>
-              {version.isRequired && (
-                <span className="status-tag required u-marginLeft--10">
-                  {" "}
-                  Required{" "}
-                </span>
-              )}
-            </div>
-            <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5">
-              {" "}
-              Released{" "}
-              <span className="u-fontWeight--bold">
-                {version.upstreamReleasedAt
-                  ? Utilities.dateFormat(
-                      version.upstreamReleasedAt,
-                      "MM/DD/YY @ hh:mm a z"
-                    )
-                  : Utilities.dateFormat(
-                      version.createdOn,
-                      "MM/DD/YY @ hh:mm a z"
-                    )}
+        >
+          <div className="flex alignItems--center">
+            <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">
+              {version.versionLabel || version.title}
+            </p>
+            <p
+              className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10"
+              style={{ marginTop: "2px" }}
+            >
+              Sequence {version.sequence}
+            </p>
+            {version.isRequired && (
+              <span className="status-tag required u-marginLeft--10">
+                {" "}
+                Required{" "}
               </span>
-            </p>
-            {this.renderDiff(version)}
-            {this.renderYamlErrors(version)}
-          </div>
-          <div
-            className={`${
-              nothingToCommit && selectedDiffReleases && "u-opacity--half"
-            } flex-column flex1 justifyContent--center`}
-          >
-            <p className="u-fontSize--small u-fontWeight--bold u-textColor--lightAccent u-lineHeight--default">
-              {version.source}
-            </p>
-            {gitopsEnabled && version.status !== "pending_download" ? null : (
-              <div className="flex flex-auto u-marginTop--10">
-                {this.renderVersionStatus(version)}
-              </div>
             )}
           </div>
-          <div
-            className={`${
-              nothingToCommit && selectedDiffReleases && "u-opacity--half"
-            } flex-column flex-auto alignItems--flexEnd justifyContent--center`}
-          >
-            {this.renderVersionAction(version)}
-          </div>
+          <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5">
+            {" "}
+            Released{" "}
+            <span className="u-fontWeight--bold">
+              {version.upstreamReleasedAt
+                ? Utilities.dateFormat(
+                  version.upstreamReleasedAt,
+                  "MM/DD/YY @ hh:mm a z"
+                )
+                : Utilities.dateFormat(
+                  version.createdOn,
+                  "MM/DD/YY @ hh:mm a z"
+                )}
+            </span>
+          </p>
+          {renderDiff(version)}
+          <YamlErrors
+          version={version}
+          handleSeeDetailsClicked={() => toggleShowDetailsModal(version.yamlErrors, version.sequence)}
+          />
         </div>
-        {this.props.renderVersionDownloadStatus(version)}
+        <div
+          className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"
+            } flex-column flex1 justifyContent--center`}
+        >
+          <p className="u-fontSize--small u-fontWeight--bold u-textColor--lightAccent u-lineHeight--default">
+            {version.source}
+          </p>
+          {gitopsEnabled && version.status !== "pending_download" ? null : (
+            <div className="flex flex-auto u-marginTop--10">
+              {renderVersionStatus(version)}
+            </div>
+          )}
+        </div>
+        <div
+          className={`${nothingToCommit && selectedDiffReleases && "u-opacity--half"
+            } flex-column flex-auto alignItems--flexEnd justifyContent--center`}
+        >
+          {renderVersionAction(version)}
+        </div>
       </div>
-    );
-  }
+      {renderVersionDownloadStatus(version)}
+    </div>
+  );
 }
 
-export default AppVersionHistoryRow;
+export { AppVersionHistoryRow };

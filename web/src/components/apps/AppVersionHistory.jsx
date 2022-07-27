@@ -15,7 +15,7 @@ import ShowDetailsModal from "@src/components/modals/ShowDetailsModal";
 import ShowLogsModal from "@src/components/modals/ShowLogsModal";
 import AirgapUploadProgress from "../AirgapUploadProgress";
 import ErrorModal from "../modals/ErrorModal";
-import AppVersionHistoryRow from "@src/components/apps/AppVersionHistoryRow";
+import { AppVersionHistoryRow } from "@src/components/apps/AppVersionHistoryRow";
 import DeployWarningModal from "../shared/modals/DeployWarningModal";
 import AutomaticUpdatesModal from "@src/components/modals/AutomaticUpdatesModal";
 import SkipPreflightsModal from "../shared/modals/SkipPreflightsModal";
