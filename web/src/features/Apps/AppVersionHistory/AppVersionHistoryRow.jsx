@@ -66,16 +66,6 @@ const AppVersionHistoryRow = ({
   makingCurrentRelease,
   redeployVersionErrMsg,
 }) => {
-  renderDiff = (_version) => {
-    const hideSourceDiff =
-      _version.source?.includes("Airgap Install") ||
-      _version.source?.includes("Online Install");
-    if (hideSourceDiff) {
-      return null;
-    }
-    return <div className="u-marginTop--5">{renderDiff(_version)}</div>;
-  };
-
   handleSelectReleasesToDiff = () => {
     if (!selectedDiffReleases) {
       return;
@@ -87,7 +77,6 @@ const AppVersionHistoryRow = ({
   };
 
   function deployButtonStatus(version) {
-    const app = app;
     const downstream = app?.downstream;
 
     const isCurrentVersion =
@@ -163,7 +152,6 @@ const AppVersionHistoryRow = ({
   };
 
   const renderVersionAction = (version) => {
-    const app = app;
     const downstream = app?.downstream;
 
     let actionFn = deployVersion;
@@ -506,7 +494,6 @@ const AppVersionHistoryRow = ({
   };
 
   const renderVersionStatus = (version) => {
-    const app = app;
     const downstream = app?.downstream;
     if (!downstream) {
       return null;
@@ -721,7 +708,10 @@ const AppVersionHistoryRow = ({
                   )}
             </span>
           </p>
-          {renderDiff(version)}
+          {(version.source?.includes("Airgap Install") ||
+            version.source?.includes("Online Install")) && (
+            <div className="u-marginTop--5">{renderDiff(version)}</div>
+          )}
           <YamlErrors
             version={version}
             handleSeeDetailsClicked={() =>
