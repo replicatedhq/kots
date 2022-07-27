@@ -28,6 +28,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
 	"github.com/replicatedhq/kots/pkg/updatechecker"
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/segmentio/ksuid"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -143,7 +144,7 @@ func Start(params *APIServerParams) {
 		}
 	}
 
-	if os.Getenv("IS_HELM_MANAGED") == "true" {
+	if util.IsHelmManaged() {
 		if err := helm.Init(context.TODO()); err != nil {
 			log.Println("Failed to initialize helm data: ", err)
 		}

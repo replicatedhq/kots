@@ -170,21 +170,20 @@ func (h *Handler) GetSupportBundleFiles(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *Handler) ListSupportBundles(w http.ResponseWriter, r *http.Request) {
-	if os.Getenv("IS_HELM_MANAGED") == "true" {
-		JSON(w, http.StatusOK, ListSupportBundlesResponse{})
-		return
-	}
-
 	appSlug := mux.Vars(r)["appSlug"]
 
-	a, err := store.GetStore().GetAppFromSlug(appSlug)
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+	appIDOrSlug := appSlug
+	if !util.IsHelmManaged() {
+		a, err := store.GetStore().GetAppFromSlug(appSlug)
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		appIDOrSlug = a.ID
 	}
 
-	supportBundles, err := store.GetStore().ListSupportBundles(a.ID)
+	supportBundles, err := store.GetStore().ListSupportBundles(appIDOrSlug)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -235,7 +234,7 @@ func (h *Handler) GetSupportBundleCommand(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	if os.Getenv("IS_HELM_MANAGED") == "true" {
+	if util.IsHelmManaged() {
 		helmApp := helm.GetHelmApp(appSlug)
 		if helmApp == nil {
 			w.WriteHeader(http.StatusNotFound)
@@ -442,6 +441,11 @@ func (h *Handler) ShareSupportBundle(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) CollectSupportBundle(w http.ResponseWriter, r *http.Request) {
+	if util.IsHelmManaged() {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	a, err := store.GetStore().GetApp(mux.Vars(r)["appId"])
 	if err != nil {
 		logger.Error(err)
@@ -460,6 +464,49 @@ func (h *Handler) CollectSupportBundle(w http.ResponseWriter, r *http.Request) {
 		ID:    bundleID,
 		Slug:  bundleID,
 		AppID: a.ID,
+	}
+
+	JSON(w, http.StatusAccepted, collectSupportBundlesResponse)
+}
+
+func (h *Handler) CollectHelmSupportBundle(w http.ResponseWriter, r *http.Request) {
+	appSlug := mux.Vars(r)["appSlug"]
+
+	if !util.IsHelmManaged() {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	helmApp := helm.GetHelmApp(appSlug)
+	if helmApp == nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	license, err := helm.GetChartLicenseFromSecret(helmApp)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get license from secret"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if license == nil {
+		logger.Errorf("license for app %s not found", appSlug)
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	sbUrl := strings.TrimSuffix(helmApp.ChartPath, fmt.Sprintf("/%s", helmApp.Release.Chart.Name()))
+	bundleID, err := supportbundle.CollectHelmSupportBundle(appSlug, license.Spec.LicenseID, sbUrl)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to collect helm support bundle"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	collectSupportBundlesResponse := CollectSupportBundlesResponse{
+		ID:   bundleID,
+		Slug: bundleID,
 	}
 
 	JSON(w, http.StatusAccepted, collectSupportBundlesResponse)

@@ -1,11 +1,11 @@
 package cli
 
 import (
-	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 func ExpandDir(input string) string {
@@ -14,7 +14,7 @@ func ExpandDir(input string) string {
 	}
 
 	if strings.HasPrefix(input, "~") {
-		input = filepath.Join(homeDir(), strings.TrimPrefix(input, "~"))
+		input = filepath.Join(util.HomeDir(), strings.TrimPrefix(input, "~"))
 	}
 
 	uploadPath, err := filepath.Abs(input)
@@ -23,11 +23,4 @@ func ExpandDir(input string) string {
 	}
 
 	return uploadPath
-}
-
-func homeDir() string {
-	if h := os.Getenv("HOME"); h != "" {
-		return h
-	}
-	return os.Getenv("USERPROFILE")
 }
