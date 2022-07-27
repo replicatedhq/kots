@@ -57,7 +57,7 @@ describe("useIsHelmManaged", () => {
         apiEndpoint: testAPIEndpoint,
       };
 
-      const expectedAPIEndpoint = `${testAPIEndpoint}/isHelmManaged`;
+      const expectedAPIEndpoint = `${testAPIEndpoint}/is-helm-managed`;
       const expectedResponse = {
         isHelmManaged: true,
       };

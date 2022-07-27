@@ -3,6 +3,7 @@ package kotsstore
 import (
 	"database/sql"
 	"encoding/base64"
+
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/logger"

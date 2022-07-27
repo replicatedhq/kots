@@ -167,7 +167,7 @@ func (s *KOTSStore) migrateSupportBundlesFromPostgres() error {
 		}
 
 		if err := s.saveSupportBundleMetafile(supportBundle.ID, "treeindex", []byte(supportBundle.TreeIndex)); err != nil {
-			return errors.Wrap(err, "faile to save treeindex")
+			return errors.Wrap(err, "failed to save treeindex")
 		}
 		supportBundle.TreeIndex = ""
 
@@ -355,7 +355,7 @@ func (s *KOTSStore) CreateSupportBundle(id string, appID string, archivePath str
 	}
 
 	if err := s.saveSupportBundleMetafile(id, "treeindex", marshalledTree); err != nil {
-		return nil, errors.Wrap(err, "faile to save treeindex")
+		return nil, errors.Wrap(err, "failed to save treeindex")
 	}
 
 	f, err := os.Open(archivePath)
@@ -465,7 +465,7 @@ func (s *KOTSStore) UpdateSupportBundle(bundle *types.SupportBundle) error {
 func (s *KOTSStore) UploadSupportBundle(id string, archivePath string, marshalledTree []byte) error {
 
 	if err := s.saveSupportBundleMetafile(id, "treeindex", marshalledTree); err != nil {
-		return errors.Wrap(err, "faile to save treeindex")
+		return errors.Wrap(err, "failed to save treeindex")
 	}
 
 	f, err := os.Open(archivePath)
