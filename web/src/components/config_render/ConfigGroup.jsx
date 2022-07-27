@@ -45,7 +45,7 @@ export default class ConfigGroup extends React.Component {
 
     return items.map((item, i) => {
       const isReadOnly = readonly || item.readonly;
-      switch ("select_one") {
+      switch (item.type) {
         case "text":
           return (
             <ConfigInput
