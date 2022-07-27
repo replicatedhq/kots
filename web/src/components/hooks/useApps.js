@@ -17,18 +17,17 @@ async function fetchApps({
     if (!res.ok) {
       if (res.status === 401) {
         Utilities.logoutUser();
-        return;
+        return null;
       }
       throw Error(`Failed to fetch apps with status ${res.status}`);
     }
-    const response = await res.json();
-    return response;
+    return await res.json();
   } catch (err) {
     throw Error(err);
   }
 }
 
-function useApps({ _fetchApps = fetchApps} = {}) {
+function useApps({ _fetchApps = fetchApps } = {}) {
   return useQuery("apps", () => _fetchApps(), {
     staleTime: 5000,
   });

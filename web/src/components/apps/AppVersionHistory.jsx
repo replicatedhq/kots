@@ -90,6 +90,7 @@ class AppVersionHistory extends Component {
     pageSize: 20,
     loadingPage: false,
     hasPreflightChecks: true,
+    showHelmDeployModalForVersion: null,
   };
 
   // moving this out of the state because new repeater instances were getting created
@@ -1311,18 +1312,20 @@ class AppVersionHistory extends Component {
     });
   };
 
-  handleActionButtonClicked = ({ versionLabel, sequence }) => {
+  handleActionButtonClicked = ({ version, sequence }) => {
     if (this.props.isHelmManaged) {
       this.setState({
-        showHelmDeployModalForVersionLabel: versionLabel,
+        showHelmDeployModalForVersion: version,
         showHelmDeployModalForSequence: sequence,
       });
     }
   };
 
   deployButtonStatus = (version) => {
+    console.log(version);
     const app = this.props.app;
     const downstream = app?.downstream;
+    debugger;
 
     const isCurrentVersion =
       version.sequence === downstream.currentVersion?.sequence;
@@ -1392,7 +1395,7 @@ class AppVersionHistory extends Component {
           handleActionButtonClicked={() =>
             this.handleActionButtonClicked({
               sequence: version.sequence,
-              versionLabel: version.versionLabel,
+              version: version,
             })
           }
           isHelmManaged={this.props.isHelmManaged}
@@ -1423,7 +1426,7 @@ class AppVersionHistory extends Component {
           }
           adminConsoleMetadata={this.props.adminConsoleMetadata}
         />
-        {this.state.showHelmDeployModalForVersionLabel ===
+        {this.state?.showHelmDeployModalForVersion?.versionLabel ===
           version.versionLabel && (
           <UseDownloadValues
             appSlug={this.props?.app?.slug}
@@ -1438,6 +1441,10 @@ class AppVersionHistory extends Component {
               ref,
               url,
             }) => {
+              console.log(
+                "deploy button status",
+                this.deployButtonStatus(version)
+              );
               return (
                 <>
                   <HelmDeployModal
@@ -1447,19 +1454,21 @@ class AppVersionHistory extends Component {
                     error={downloadError}
                     isDownloading={isDownloading}
                     hideHelmDeployModal={() => {
-                      this.setState({ showHelmDeployModalForVersionLabel: "" });
+                      this.setState({ showHelmDeployModalForVersion: null });
                       clearDownloadError();
                     }}
                     registryUsername={this.props?.app?.credentials?.username}
                     registryPassword={this.props?.app?.credentials?.password}
                     showHelmDeployModal={true}
                     showDownloadValues={
-                      this.deployButtonStatus(version) !== "Redeploy"
+                      this.deployButtonStatus(
+                        this.state.showHelmDeployModalForVersion
+                      ) !== "Redeploy"
                     }
                     subtitle="Follow the steps below to upgrade your application with your new values.yaml."
-                    title={` ${this.deployButtonStatus(version)} ${
-                      this.props?.app.slug
-                    } ${version.versionLabel}`}
+                    title={` ${this.deployButtonStatus(
+                      this.state.showHelmDeployModalForVersion
+                    )} ${this.props?.app.slug} ${version.versionLabel}`}
                     upgradeTitle="Upgrade application with Helm"
                     version={version.versionLabel}
                   />
