@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -123,7 +122,7 @@ func (h *Handler) SyncLicense(w http.ResponseWriter, r *http.Request) {
 	var err error
 	var isSynced bool
 
-	if os.Getenv("IS_HELM_MANAGED") == "true" {
+	if util.IsHelmManaged() {
 		helmApp := helm.GetHelmApp(appSlug)
 		if helmApp == nil {
 			syncLicenseResponse.Error = "failed to get helm release for slug"
@@ -248,8 +247,7 @@ func (h *Handler) GetLicense(w http.ResponseWriter, r *http.Request) {
 	license := new(kotsv1beta1.License)
 	foundApp := new(apptypes.App)
 	var err error
-	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
-	if isHelmManaged == "true" {
+	if util.IsHelmManaged() {
 		helmApp := helm.GetHelmApp(appSlug)
 		if helmApp == nil {
 			getLicenseResponse.Error = "failed to get helm release for slug"

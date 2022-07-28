@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/stretchr/testify/require"
 )
 
@@ -24,7 +25,7 @@ func TestExpandDir(t *testing.T) {
 		{
 			name:  "home",
 			input: "~",
-			want:  homeDir(),
+			want:  util.HomeDir(),
 		},
 		{
 			name:  "./cmd",

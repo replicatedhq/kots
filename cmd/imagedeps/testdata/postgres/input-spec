@@ -1,2 +1,2 @@
-postgres-alpine postgres ^10.\d+-alpine$
-postgres-debian postgres ^10.\d+$
+postgres-10 postgres ^10.\d+-alpine$
+postgres-14 postgres ^14.\d+-alpine$

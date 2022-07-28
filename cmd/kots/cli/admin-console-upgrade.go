@@ -121,7 +121,7 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 	}
 
 	cmd.Flags().Bool("force-upgrade-kurl", false, "set to force upgrade even if this is a kurl cluster")
-	cmd.Flags().String("wait-duration", "3m", "timeout out to be used while waiting for individual components to be ready.  must be in Go duration format (eg: 10s, 2m)")
+	cmd.Flags().String("wait-duration", "5m", "timeout out to be used while waiting for individual components to be ready. must be in Go duration format (eg: 10s, 2m)")
 	cmd.Flags().Bool("ensure-rbac", true, "when set, kots will create the roles and rolebindings necessary to manage applications")
 	cmd.Flags().String("airgap-upload-parallelism", "", "the number of chunks to upload in parallel when installing or updating in airgap mode")
 	cmd.Flags().Bool("strict-security-context", false, "set to explicitly enable explicit security contexts for all kots pods and containers (may not work for some storage providers)")

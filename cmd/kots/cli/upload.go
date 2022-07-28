@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/upload"
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -38,7 +39,7 @@ func UploadCmd() *cobra.Command {
 
 			log := logger.NewCLILogger(cmd.OutOrStdout())
 
-			sourceDir := homeDir()
+			sourceDir := util.HomeDir()
 			if len(args) > 0 {
 				sourceDir = ExpandDir(args[0])
 			}

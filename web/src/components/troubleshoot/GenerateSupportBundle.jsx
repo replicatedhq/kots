@@ -312,8 +312,13 @@ class GenerateSupportBundle extends React.Component {
       generateBundleErrMsg: "",
     });
 
+    let url = `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/app/${watch?.id}/cluster/${clusterId}/collect`;
+    if (!watch.id) { // TODO: check if helm managed, not if id is missing
+      url = `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/app/${watch?.slug}/collect`;
+    }
+
     fetch(
-      `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/app/${watch?.id}/cluster/${clusterId}/collect`,
+      url,
       {
         headers: {
           Authorization: Utilities.getToken(),

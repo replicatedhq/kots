@@ -29,7 +29,17 @@ func (ir ImageRef) GetDeclarationLine() string {
 
 // GetEnvironmentLine generates a line of text intended for use in an .env file.
 func (ir ImageRef) GetEnvironmentLine() string {
-	return fmt.Sprintf("%s_TAG='%s'", getEnvironmentName(ir.name), ir.tag)
+	return fmt.Sprintf("%s='%s'", getEnvironmentName(ir.name), ir.tag)
+}
+
+// GetMakefileLine generates a line of text intended for use in a Makefile file.
+func (ir ImageRef) GetMakefileLine() string {
+	return fmt.Sprintf("%s ?= %s", getMakefileVarName(ir.name), ir.tag)
+}
+
+// GetDockerfileLine generates a line of text intended for use in a Dockerfile file.
+func (ir ImageRef) GetDockerfileLine() string {
+	return fmt.Sprintf("ARG %s=%s", getDockerfileVarName(ir.name), ir.tag)
 }
 
 type getTagsFn func(string) ([]string, error)
@@ -118,7 +128,7 @@ func getTagFinder(opts ...func(c *configuration)) tagFinderFn {
 			if err != nil {
 				return nil, fmt.Errorf("failed to get release tag for dexidp/dex %w", err)
 			}
-		case postgresAlpineReference, postgresDebianReference:
+		case postgres10Reference, postgres14Reference:
 			latestReleaseTag, err = getLatestTagFromRegistry("library/postgres", config.repositoryTagsFinder, matcherFn)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get release tag for %s %w", imageName, err)

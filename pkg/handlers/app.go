@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -28,6 +27,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/store/kotsstore"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -163,8 +163,7 @@ func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 	}
 
 	responseApps := []types.ResponseApp{}
-	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
-	if isHelmManaged == "true" {
+	if util.IsHelmManaged() {
 		helmResponseApps := []types.HelmResponseApp{}
 
 		for _, releaseName := range helm.GetCachedHelmApps() {
@@ -252,8 +251,7 @@ func (h *Handler) GetAppStatus(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetApp(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 	responseApp := new(types.ResponseApp)
-	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
-	if isHelmManaged == "true" {
+	if util.IsHelmManaged() {
 		release := helm.GetHelmApp(appSlug)
 		if release == nil {
 			w.WriteHeader(http.StatusNotFound)
@@ -441,8 +439,7 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 
 	appSlug := mux.Vars(r)["appSlug"]
 	history := new(downstreamtypes.DownstreamVersionHistory)
-	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
-	if isHelmManaged == "true" {
+	if util.IsHelmManaged() {
 		release := helm.GetHelmApp(appSlug)
 		if release == nil {
 			w.WriteHeader(http.StatusNotFound)
@@ -718,8 +715,7 @@ func (h *Handler) GetLatestDeployableVersion(w http.ResponseWriter, r *http.Requ
 
 	appSlug := mux.Vars(r)["appSlug"]
 
-	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
-	if isHelmManaged == "true" {
+	if util.IsHelmManaged() {
 		release := helm.GetHelmApp(appSlug)
 		if release == nil {
 			w.WriteHeader(http.StatusNotFound)

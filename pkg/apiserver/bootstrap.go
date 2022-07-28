@@ -10,6 +10,7 @@ import (
 	identity "github.com/replicatedhq/kots/pkg/kotsadmidentity"
 	identitystore "github.com/replicatedhq/kots/pkg/kotsadmidentity/store"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/util"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -22,8 +23,10 @@ func bootstrap(params BootstrapParams) error {
 		return errors.Wrap(err, "failed to init store")
 	}
 
-	if err := bootstrapClusterToken(params.AutoCreateClusterToken); err != nil {
-		return errors.Wrap(err, "failed to bootstrap cluster token")
+	if !util.IsHelmManaged() {
+		if err := bootstrapClusterToken(params.AutoCreateClusterToken); err != nil {
+			return errors.Wrap(err, "failed to bootstrap cluster token")
+		}
 	}
 
 	return nil

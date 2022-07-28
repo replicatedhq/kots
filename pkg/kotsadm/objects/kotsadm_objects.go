@@ -146,52 +146,21 @@ func UpdateKotsadmDeployment(existingDeployment *appsv1.Deployment, desiredDeplo
 		return errors.New("failed to find kotsadm container in deployment")
 	}
 
-	// image
-	existingDeployment.Spec.Template.Spec.Containers[containerIdx].Image = desiredDeployment.Spec.Template.Spec.Containers[0].Image
-
-	additionalInitContainers := []corev1.Container{}
-	for _, desiredContainer := range desiredDeployment.Spec.Template.Spec.InitContainers {
-		found := false
-		for i, existingContainer := range existingDeployment.Spec.Template.Spec.InitContainers {
-			if existingContainer.Name != desiredContainer.Name {
-				continue
-			}
-
-			existingDeployment.Spec.Template.Spec.InitContainers[i] = *desiredContainer.DeepCopy()
-			found = true
-			break
-		}
-		if !found {
-			additionalInitContainers = append(additionalInitContainers, *desiredContainer.DeepCopy())
-		}
-	}
-	existingDeployment.Spec.Template.Spec.InitContainers = append(existingDeployment.Spec.Template.Spec.InitContainers, additionalInitContainers...)
-
-	newVolumes := []corev1.Volume{}
+	desiredVolumes := []corev1.Volume{}
 	for _, v := range desiredDeployment.Spec.Template.Spec.Volumes {
-		newVolumes = append(newVolumes, *v.DeepCopy())
+		desiredVolumes = append(desiredVolumes, *v.DeepCopy())
 	}
-	existingDeployment.Spec.Template.Spec.Volumes = newVolumes
 
-	// copy the env vars from the desired to existing. this could undo a change that the user had.
-	// we don't know which env vars we set and which are user edited. this method avoids deleting
-	// env vars that the user added, but doesn't handle edited vars
-	mergedEnvs := []corev1.EnvVar{}
-	for _, env := range desiredDeployment.Spec.Template.Spec.Containers[0].Env {
-		mergedEnvs = append(mergedEnvs, env)
+	desiredVolumeMounts := []corev1.VolumeMount{}
+	for _, vm := range desiredDeployment.Spec.Template.Spec.Containers[0].VolumeMounts {
+		desiredVolumeMounts = append(desiredVolumeMounts, *vm.DeepCopy())
 	}
-	for _, existingEnv := range existingDeployment.Spec.Template.Spec.Containers[containerIdx].Env {
-		isUnxpected := true
-		for _, env := range desiredDeployment.Spec.Template.Spec.Containers[0].Env {
-			if env.Name == existingEnv.Name {
-				isUnxpected = false
-			}
-		}
-		if isUnxpected {
-			mergedEnvs = append(mergedEnvs, existingEnv)
-		}
-	}
-	existingDeployment.Spec.Template.Spec.Containers[containerIdx].Env = mergedEnvs
+
+	existingDeployment.Spec.Template.Spec.Volumes = desiredVolumes
+	existingDeployment.Spec.Template.Spec.InitContainers = k8sutil.MergeInitContainers(desiredDeployment.Spec.Template.Spec.InitContainers, existingDeployment.Spec.Template.Spec.InitContainers)
+	existingDeployment.Spec.Template.Spec.Containers[containerIdx].Image = desiredDeployment.Spec.Template.Spec.Containers[0].Image
+	existingDeployment.Spec.Template.Spec.Containers[containerIdx].VolumeMounts = desiredVolumeMounts
+	existingDeployment.Spec.Template.Spec.Containers[containerIdx].Env = k8sutil.MergeEnvVars(desiredDeployment.Spec.Template.Spec.Containers[0].Env, existingDeployment.Spec.Template.Spec.Containers[containerIdx].Env)
 
 	return nil
 }
@@ -678,54 +647,21 @@ func UpdateKotsadmStatefulSet(existingStatefulset *appsv1.StatefulSet, desiredSt
 		return errors.New("failed to find kotsadm container in statefulset")
 	}
 
-	// image
-	existingStatefulset.Spec.Template.Spec.Containers[containerIdx].Image = desiredStatefulSet.Spec.Template.Spec.Containers[0].Image
-
-	additionalInitContainers := []corev1.Container{}
-	for _, desiredContainer := range desiredStatefulSet.Spec.Template.Spec.InitContainers {
-		found := false
-		for i, existingContainer := range existingStatefulset.Spec.Template.Spec.InitContainers {
-			if existingContainer.Name != desiredContainer.Name {
-				continue
-			}
-
-			existingStatefulset.Spec.Template.Spec.InitContainers[i] = *desiredContainer.DeepCopy()
-			found = true
-			break
-		}
-
-		if !found {
-			additionalInitContainers = append(additionalInitContainers, *desiredContainer.DeepCopy())
-		}
-	}
-	existingStatefulset.Spec.Template.Spec.InitContainers = append(existingStatefulset.Spec.Template.Spec.InitContainers, additionalInitContainers...)
-
-	newVolumes := []corev1.Volume{}
+	desiredVolumes := []corev1.Volume{}
 	for _, v := range desiredStatefulSet.Spec.Template.Spec.Volumes {
-		newVolumes = append(newVolumes, *v.DeepCopy())
+		desiredVolumes = append(desiredVolumes, *v.DeepCopy())
 	}
-	existingStatefulset.Spec.Template.Spec.Volumes = newVolumes
 
-	// copy the env vars from the desired to existing. this could undo a change that the user had.
-	// we don't know which env vars we set and which are user edited. this method avoids deleting
-	// env vars that the user added, but doesn't handle edited vars
-	mergedEnvs := []corev1.EnvVar{}
-	for _, env := range desiredStatefulSet.Spec.Template.Spec.Containers[0].Env {
-		mergedEnvs = append(mergedEnvs, env)
+	desiredVolumeMounts := []corev1.VolumeMount{}
+	for _, vm := range desiredStatefulSet.Spec.Template.Spec.Containers[0].VolumeMounts {
+		desiredVolumeMounts = append(desiredVolumeMounts, *vm.DeepCopy())
 	}
-	for _, existingEnv := range existingStatefulset.Spec.Template.Spec.Containers[containerIdx].Env {
-		isUnxpected := true
-		for _, env := range desiredStatefulSet.Spec.Template.Spec.Containers[0].Env {
-			if env.Name == existingEnv.Name {
-				isUnxpected = false
-			}
-		}
 
-		if isUnxpected {
-			mergedEnvs = append(mergedEnvs, existingEnv)
-		}
-	}
-	existingStatefulset.Spec.Template.Spec.Containers[containerIdx].Env = mergedEnvs
+	existingStatefulset.Spec.Template.Spec.Volumes = desiredVolumes
+	existingStatefulset.Spec.Template.Spec.InitContainers = k8sutil.MergeInitContainers(desiredStatefulSet.Spec.Template.Spec.InitContainers, existingStatefulset.Spec.Template.Spec.InitContainers)
+	existingStatefulset.Spec.Template.Spec.Containers[containerIdx].Image = desiredStatefulSet.Spec.Template.Spec.Containers[0].Image
+	existingStatefulset.Spec.Template.Spec.Containers[containerIdx].VolumeMounts = desiredVolumeMounts
+	existingStatefulset.Spec.Template.Spec.Containers[containerIdx].Env = k8sutil.MergeEnvVars(desiredStatefulSet.Spec.Template.Spec.Containers[0].Env, existingStatefulset.Spec.Template.Spec.Containers[containerIdx].Env)
 
 	return nil
 }

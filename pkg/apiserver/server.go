@@ -11,24 +11,23 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/automation"
 	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/handlers"
 	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/informers"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
-	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/operator"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/policy"
 	"github.com/replicatedhq/kots/pkg/rbac"
+	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/session"
 	"github.com/replicatedhq/kots/pkg/snapshotscheduler"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
 	"github.com/replicatedhq/kots/pkg/updatechecker"
-	"github.com/segmentio/ksuid"
+	"github.com/replicatedhq/kots/pkg/util"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -54,15 +53,17 @@ func Start(params *APIServerParams) {
 		os.Setenv("KOTS_DATA_DIR", params.KotsDataDir)
 	}
 
-	// set some persistence variables
-	persistence.InitDB(params.PostgresURI)
+	if !util.IsHelmManaged() {
+		// set some persistence variables
+		persistence.InitDB(params.PostgresURI)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-	if err := store.GetStore().WaitForReady(ctx); err != nil {
-		log.Println("error waiting for ready")
-		panic(err)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		if err := store.GetStore().WaitForReady(ctx); err != nil {
+			log.Println("error waiting for ready")
+			panic(err)
+		}
+		cancel()
 	}
-	cancel()
 
 	if err := bootstrap(BootstrapParams{
 		AutoCreateClusterToken: params.AutocreateClusterToken,
@@ -71,7 +72,9 @@ func Start(params *APIServerParams) {
 		panic(err)
 	}
 
-	store.GetStore().RunMigrations()
+	if !util.IsHelmManaged() {
+		store.GetStore().RunMigrations()
+	}
 
 	if err := binaries.InitKubectl(); err != nil {
 		log.Println("error initializing kubectl binaries package")
@@ -83,11 +86,13 @@ func Start(params *APIServerParams) {
 		panic(err)
 	}
 
-	if err := operator.Start(params.AutocreateClusterToken); err != nil {
-		log.Println("error starting the operator")
-		panic(err)
+	if !util.IsHelmManaged() {
+		if err := operator.Start(params.AutocreateClusterToken); err != nil {
+			log.Println("error starting the operator")
+			panic(err)
+		}
+		defer operator.Shutdown()
 	}
-	defer operator.Shutdown()
 
 	if params.SharedPassword != "" {
 		// TODO: this won't override the password in the database
@@ -100,10 +105,14 @@ func Start(params *APIServerParams) {
 	}
 
 	if params.EnableIdentity {
-		err := bootstrapIdentity()
-		if err != nil {
-			log.Println("error bootstrapping identity")
-			panic(err)
+		if util.IsHelmManaged() {
+			log.Println("Identity integration is enabled but isn't suported in Helm managed mode")
+		} else {
+			err := bootstrapIdentity()
+			if err != nil {
+				log.Println("error bootstrapping identity")
+				panic(err)
+			}
 		}
 	}
 
@@ -111,39 +120,41 @@ func Start(params *APIServerParams) {
 		panic(err)
 	}
 
-	if err := generateKotsadmID(); err != nil {
-		logger.Infof("failed to generate kotsadm id:", err)
+	if err := reporting.Init(); err != nil {
+		log.Println("failed to initialize reporting:", err)
 	}
 
 	supportbundle.StartServer()
 
 	if err := informers.Start(); err != nil {
-		log.Println("Failed to start informers", err)
+		log.Println("Failed to start informers:", err)
 	}
 
-	if err := updatechecker.Start(); err != nil {
-		log.Println("Failed to start update checker", err)
-	}
+	if !util.IsHelmManaged() {
+		if err := updatechecker.Start(); err != nil {
+			log.Println("Failed to start update checker:", err)
+		}
 
-	if err := snapshotscheduler.Start(); err != nil {
-		log.Println("Failed to start snapshot scheduler", err)
+		if err := snapshotscheduler.Start(); err != nil {
+			log.Println("Failed to start snapshot scheduler:", err)
+		}
 	}
 
 	if err := session.StartSessionPurgeCronJob(); err != nil {
-		log.Println("Failed to start session purge cron job", err)
+		log.Println("Failed to start session purge cron job:", err)
 	}
 
 	waitForAirgap, err := automation.NeedToWaitForAirgapApp()
 	if err != nil {
-		log.Println("Failed to check if airgap install is in progress", err)
+		log.Println("Failed to check if airgap install is in progress:", err)
 	} else if !waitForAirgap {
 		opts := automation.AutomateInstallOptions{}
 		if err := automation.AutomateInstall(opts); err != nil {
-			log.Println("Failed to run automated installs", err)
+			log.Println("Failed to run automated installs:", err)
 		}
 	}
 
-	if os.Getenv("IS_HELM_MANAGED") == "true" {
+	if util.IsHelmManaged() {
 		if err := helm.Init(context.TODO()); err != nil {
 			log.Println("Failed to initialize helm data: ", err)
 		}
@@ -222,41 +233,4 @@ func Start(params *APIServerParams) {
 	fmt.Printf("Starting Admin Console API on port %d...\n", 3000)
 
 	log.Fatal(srv.ListenAndServe())
-}
-
-func generateKotsadmID() error {
-	// Retrieve the ClusterID from store
-	clusters, err := store.GetStore().ListClusters()
-	if err != nil {
-		return errors.Wrap(err, "failed to list clusters")
-	}
-	if len(clusters) == 0 {
-		return nil
-	}
-	clusterID := clusters[0].ClusterID
-
-	isKotsadmIDGenerated, err := store.GetStore().IsKotsadmIDGenerated()
-	if err != nil {
-		return errors.Wrap(err, "failed to generate id")
-	}
-	cmpExists, err := k8sutil.IsKotsadmIDConfigMapPresent()
-	if err != nil {
-		return errors.Wrap(err, "failed to check configmap")
-	}
-
-	if isKotsadmIDGenerated && !cmpExists {
-		kotsadmID := ksuid.New().String()
-		err = k8sutil.CreateKotsadmIDConfigMap(kotsadmID)
-	} else if !isKotsadmIDGenerated && !cmpExists {
-		err = k8sutil.CreateKotsadmIDConfigMap(clusterID)
-	} else if !isKotsadmIDGenerated && cmpExists {
-		err = k8sutil.UpdateKotsadmIDConfigMap(clusterID)
-	} else {
-		// id exists and so as configmap, noop
-	}
-	if err == nil {
-		err = store.GetStore().SetIsKotsadmIDGenerated()
-	}
-
-	return err
 }

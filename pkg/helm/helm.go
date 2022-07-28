@@ -1,18 +1,27 @@
 package helm
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 
+	imagedocker "github.com/containers/image/v5/docker"
+	dockerref "github.com/containers/image/v5/docker/reference"
+	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsbase "github.com/replicatedhq/kots/pkg/base"
 	kotsconfig "github.com/replicatedhq/kots/pkg/config"
+	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/util"
 	helmval "helm.sh/helm/v3/pkg/cli/values"
+	"helm.sh/helm/v3/pkg/helmpath"
+	helmregistry "helm.sh/helm/v3/pkg/registry"
 )
 
 func RenderValuesFromConfig(app string, newConfigItems map[string]template.ItemValue, config *kotsv1beta1.Config, chart []byte) (map[string]interface{}, *kotsv1beta1.Config, error) {
@@ -75,7 +84,7 @@ func RenderValuesFromConfig(app string, newConfigItems map[string]template.ItemV
 }
 
 func GetMergedValues(releasedValues, renderedValues map[string]interface{}) (map[string]interface{}, error) {
-	dir, err := ioutil.TempDir("", "helm-values-")
+	dir, err := ioutil.TempDir("", "helm-merged-values-")
 	if err != nil {
 		return nil, err
 	}
@@ -107,4 +116,43 @@ func GetMergedValues(releasedValues, renderedValues map[string]interface{}) (map
 	}
 
 	return mergedHelmVals, nil
+}
+
+func CreateHelmRegistryCreds(username string, password string, url string) error {
+	url = strings.TrimLeft(url, "oci://")
+	ref, err := imagedocker.ParseReference(fmt.Sprintf("//%s", url))
+	if err != nil {
+		return errors.Wrapf(err, "failed to parse support bundle ref %q", url)
+	}
+	dockerRef := ref.DockerReference()
+
+	registryHost := dockerref.Domain(dockerRef)
+
+	dockercfgAuth := registry.DockercfgAuth{
+		Auth: base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", username, password))),
+	}
+
+	dockerCfgJSON := registry.DockerCfgJSON{
+		Auths: map[string]registry.DockercfgAuth{
+			registryHost: dockercfgAuth,
+		},
+	}
+	data, err := json.MarshalIndent(dockerCfgJSON, "", "   ")
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal helm registry credentials")
+	}
+
+	filename := helmpath.ConfigPath(helmregistry.CredentialsFileBasename)
+
+	err = os.MkdirAll(filepath.Dir(filename), 0700)
+	if err != nil {
+		return errors.Wrap(err, "failed to create directory for helm registry credentials")
+	}
+
+	err = ioutil.WriteFile(filename, data, 0600)
+	if err != nil {
+		return errors.Wrap(err, "failed to save helm registry credentials")
+	}
+
+	return nil
 }

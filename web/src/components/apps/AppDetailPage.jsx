@@ -302,7 +302,7 @@ class AppDetailPage extends Component {
 
   checkIsHelmManaged = async () => {
     try {
-      const res = await fetch(`${process.env.API_ENDPOINT}/isHelmManaged`, {
+      const res = await fetch(`${process.env.API_ENDPOINT}/is-helm-managed`, {
         headers: {
           Authorization: Utilities.getToken(),
           "Content-Type": "application/json",

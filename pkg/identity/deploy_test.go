@@ -70,7 +70,7 @@ func Test_imageRewriteKotsadmRegistry(t *testing.T) {
 				alwaysRewrite: true,
 			},
 			isDependency:         true,
-			wantImage:            "testnamespace/dex:v0.0.1",
+			wantImage:            "testnamespace/dex:v2.26.0",
 			wantImagePullSecrets: nil,
 		},
 		{

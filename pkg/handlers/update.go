@@ -46,8 +46,7 @@ type AppUpdateRelease struct {
 func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 
-	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
-	if isHelmManaged == "true" {
+	if util.IsHelmManaged() {
 		helmApp := helm.GetHelmApp(appSlug)
 		if helmApp == nil {
 			w.WriteHeader(http.StatusNotFound)

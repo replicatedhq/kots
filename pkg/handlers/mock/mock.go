@@ -130,6 +130,18 @@ func (mr *MockKOTSHandlerMockRecorder) CheckAirgapBundleChunk(w, r interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckAirgapBundleChunk", reflect.TypeOf((*MockKOTSHandler)(nil).CheckAirgapBundleChunk), w, r)
 }
 
+// CollectHelmSupportBundle mocks base method.
+func (m *MockKOTSHandler) CollectHelmSupportBundle(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "CollectHelmSupportBundle", w, r)
+}
+
+// CollectHelmSupportBundle indicates an expected call of CollectHelmSupportBundle.
+func (mr *MockKOTSHandlerMockRecorder) CollectHelmSupportBundle(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CollectHelmSupportBundle", reflect.TypeOf((*MockKOTSHandler)(nil).CollectHelmSupportBundle), w, r)
+}
+
 // CollectSupportBundle mocks base method.
 func (m *MockKOTSHandler) CollectSupportBundle(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()

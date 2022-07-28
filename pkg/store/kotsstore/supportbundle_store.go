@@ -31,7 +31,45 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 )
 
-var supportBundleSecretMtx sync.Mutex
+var (
+	// Used in Helm managed mode
+	supportBundleSecretMtx sync.Mutex
+	supportBundlesByID     = map[string]*types.SupportBundle{}
+	supportBundlesIDsByApp = map[string][]string{}
+)
+
+func addSupportBundleToCache(bundle *types.SupportBundle) {
+	supportBundleSecretMtx.Lock()
+	defer supportBundleSecretMtx.Unlock()
+
+	_, exist := supportBundlesByID[bundle.ID]
+	supportBundlesByID[bundle.ID] = bundle
+
+	if exist {
+		return
+	}
+
+	_, ok := supportBundlesIDsByApp[bundle.AppID]
+	if ok {
+		supportBundlesIDsByApp[bundle.AppID] = append(supportBundlesIDsByApp[bundle.AppID], bundle.ID)
+	} else {
+		supportBundlesIDsByApp[bundle.AppID] = []string{bundle.ID}
+	}
+}
+
+func getSupportBundleFromCache(id string) *types.SupportBundle {
+	supportBundleSecretMtx.Lock()
+	defer supportBundleSecretMtx.Unlock()
+
+	return supportBundlesByID[id]
+}
+
+func getSupportBundleIDsFromCache(appID string) []string {
+	supportBundleSecretMtx.Lock()
+	defer supportBundleSecretMtx.Unlock()
+
+	return supportBundlesIDsByApp[appID]
+}
 
 func (s *KOTSStore) migrateSupportBundlesFromPostgres() error {
 	logger.Debug("migrating support bundles from postgres")
@@ -129,7 +167,7 @@ func (s *KOTSStore) migrateSupportBundlesFromPostgres() error {
 		}
 
 		if err := s.saveSupportBundleMetafile(supportBundle.ID, "treeindex", []byte(supportBundle.TreeIndex)); err != nil {
-			return errors.Wrap(err, "faile to save treeindex")
+			return errors.Wrap(err, "failed to save treeindex")
 		}
 		supportBundle.TreeIndex = ""
 
@@ -180,34 +218,44 @@ func (s *KOTSStore) migrateSupportBundlesFromPostgres() error {
 }
 
 func (s *KOTSStore) ListSupportBundles(appID string) ([]*types.SupportBundle, error) {
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get clientset")
-	}
-
-	labelSelector := metav1.LabelSelector{
-		MatchLabels: map[string]string{
-			"kots.io/kind":  "supportbundle",
-			"kots.io/appid": appID,
-		},
-	}
-
 	supportBundles := []*types.SupportBundle{}
 
-	secrets, err := clientset.CoreV1().Secrets(util.PodNamespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: labels.Set(labelSelector.MatchLabels).String(),
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to list support bundles")
-	}
-
-	for _, secret := range secrets.Items {
-		supportBundle := types.SupportBundle{}
-		if err := json.Unmarshal(secret.Data["bundle"], &supportBundle); err != nil {
-			return nil, errors.Wrap(err, "failed to unmarshal support bundle")
+	if util.IsHelmManaged() {
+		ids := getSupportBundleIDsFromCache(appID)
+		for _, id := range ids {
+			bundle := getSupportBundleFromCache(id)
+			if bundle != nil {
+				supportBundles = append(supportBundles, bundle)
+			}
+		}
+	} else {
+		clientset, err := k8sutil.GetClientset()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get clientset")
 		}
 
-		supportBundles = append(supportBundles, &supportBundle)
+		labelSelector := metav1.LabelSelector{
+			MatchLabels: map[string]string{
+				"kots.io/kind":  "supportbundle",
+				"kots.io/appid": appID,
+			},
+		}
+
+		secrets, err := clientset.CoreV1().Secrets(util.PodNamespace).List(context.TODO(), metav1.ListOptions{
+			LabelSelector: labels.Set(labelSelector.MatchLabels).String(),
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to list support bundles")
+		}
+
+		for _, secret := range secrets.Items {
+			supportBundle := types.SupportBundle{}
+			if err := json.Unmarshal(secret.Data["bundle"], &supportBundle); err != nil {
+				return nil, errors.Wrap(err, "failed to unmarshal support bundle")
+			}
+
+			supportBundles = append(supportBundles, &supportBundle)
+		}
 	}
 
 	// sort the bundles here by date, since we don't have a sort order otherwise
@@ -217,31 +265,37 @@ func (s *KOTSStore) ListSupportBundles(appID string) ([]*types.SupportBundle, er
 }
 
 func (s *KOTSStore) GetSupportBundle(id string) (*types.SupportBundle, error) {
-	clientset, err := k8sutil.GetClientset()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get clientset")
-	}
-
-	secret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), fmt.Sprintf("supportbundle-%s", id), metav1.GetOptions{})
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get secret")
-	}
-
-	supportBundle := types.SupportBundle{}
-	if err := json.Unmarshal(secret.Data["bundle"], &supportBundle); err != nil {
-		return nil, errors.Wrap(err, "failed to unmarshal")
-	}
-
-	treeindex, err := s.getSupportBundleMetafile(id, "treeindex")
-	if err != nil {
-		if s.IsNotFound(err) {
-			return &supportBundle, nil
+	supportBundle := &types.SupportBundle{}
+	if util.IsHelmManaged() {
+		supportBundle = getSupportBundleFromCache(id)
+	} else {
+		clientset, err := k8sutil.GetClientset()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get clientset")
 		}
-		return nil, errors.Wrap(err, "failed to get treeindex")
-	}
-	supportBundle.TreeIndex = string(treeindex)
 
-	return &supportBundle, nil
+		secret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), fmt.Sprintf("supportbundle-%s", id), metav1.GetOptions{})
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get secret")
+		}
+
+		if err := json.Unmarshal(secret.Data["bundle"], supportBundle); err != nil {
+			return nil, errors.Wrap(err, "failed to unmarshal")
+		}
+	}
+
+	if supportBundle != nil {
+		treeindex, err := s.getSupportBundleMetafile(id, "treeindex")
+		if err != nil {
+			if s.IsNotFound(err) {
+				return supportBundle, nil
+			}
+			return nil, errors.Wrap(err, "failed to get treeindex")
+		}
+		supportBundle.TreeIndex = string(treeindex)
+	}
+
+	return supportBundle, nil
 }
 
 func (s *KOTSStore) CreateInProgressSupportBundle(supportBundle *types.SupportBundle) error {
@@ -250,6 +304,11 @@ func (s *KOTSStore) CreateInProgressSupportBundle(supportBundle *types.SupportBu
 
 	supportBundle.Status = types.BUNDLE_RUNNING
 	supportBundle.CreatedAt = time.Now()
+
+	if util.IsHelmManaged() {
+		addSupportBundleToCache(supportBundle)
+		return nil
+	}
 
 	bundleMarshaled, err := json.Marshal(supportBundle)
 	if err != nil {
@@ -296,7 +355,7 @@ func (s *KOTSStore) CreateSupportBundle(id string, appID string, archivePath str
 	}
 
 	if err := s.saveSupportBundleMetafile(id, "treeindex", marshalledTree); err != nil {
-		return nil, errors.Wrap(err, "faile to save treeindex")
+		return nil, errors.Wrap(err, "failed to save treeindex")
 	}
 
 	f, err := os.Open(archivePath)
@@ -319,6 +378,12 @@ func (s *KOTSStore) CreateSupportBundle(id string, appID string, archivePath str
 		Status:    types.BUNDLE_UPLOADED,
 		CreatedAt: time.Now(),
 	}
+
+	if util.IsHelmManaged() {
+		addSupportBundleToCache(&supportBundle)
+		return &supportBundle, nil
+	}
+
 	bundleMarshaled, err := json.Marshal(supportBundle)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to marshal support bundle")
@@ -359,11 +424,16 @@ func (s *KOTSStore) CreateSupportBundle(id string, appID string, archivePath str
 
 // UpdateSupportBundle updates the support bundle definition in the secret
 func (s *KOTSStore) UpdateSupportBundle(bundle *types.SupportBundle) error {
-	supportBundleSecretMtx.Lock()
-	defer supportBundleSecretMtx.Unlock()
-
 	now := time.Now()
 	bundle.UpdatedAt = &now
+
+	if util.IsHelmManaged() {
+		addSupportBundleToCache(bundle)
+		return nil
+	}
+
+	supportBundleSecretMtx.Lock()
+	defer supportBundleSecretMtx.Unlock()
 
 	marshaledBundle, err := json.Marshal(bundle)
 	if err != nil {
@@ -395,7 +465,7 @@ func (s *KOTSStore) UpdateSupportBundle(bundle *types.SupportBundle) error {
 func (s *KOTSStore) UploadSupportBundle(id string, archivePath string, marshalledTree []byte) error {
 
 	if err := s.saveSupportBundleMetafile(id, "treeindex", marshalledTree); err != nil {
-		return errors.Wrap(err, "faile to save treeindex")
+		return errors.Wrap(err, "failed to save treeindex")
 	}
 
 	f, err := os.Open(archivePath)
@@ -429,6 +499,14 @@ func (s *KOTSStore) GetSupportBundleArchive(bundleID string) (string, error) {
 }
 
 func (s *KOTSStore) GetSupportBundleAnalysis(id string) (*types.SupportBundleAnalysis, error) {
+	if util.IsHelmManaged() {
+		bundle := getSupportBundleFromCache(id)
+		if bundle == nil {
+			return nil, nil
+		}
+		return bundle.Analysis, nil
+	}
+
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get clientset")
@@ -456,9 +534,6 @@ func (s *KOTSStore) GetSupportBundleAnalysis(id string) (*types.SupportBundleAna
 }
 
 func (s *KOTSStore) SetSupportBundleAnalysis(id string, results []byte) error {
-	supportBundleSecretMtx.Lock()
-	defer supportBundleSecretMtx.Unlock()
-
 	insights, err := insightsFromResults(results)
 	if err != nil {
 		return errors.Wrap(err, "failed to convert results to insights")
@@ -468,6 +543,18 @@ func (s *KOTSStore) SetSupportBundleAnalysis(id string, results []byte) error {
 		CreatedAt: time.Now(),
 		Insights:  insights,
 	}
+
+	if util.IsHelmManaged() {
+		bundle := getSupportBundleFromCache(id)
+		if bundle == nil {
+			return ErrNotFound
+		}
+		bundle.Analysis = &a
+		return nil
+	}
+
+	supportBundleSecretMtx.Lock()
+	defer supportBundleSecretMtx.Unlock()
 
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {

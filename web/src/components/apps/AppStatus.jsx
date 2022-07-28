@@ -81,13 +81,15 @@ export default class AppStatus extends React.Component {
             >
               {Utilities.toTitleCase(appStatus)}
             </span>
-            <span
+            {this.props.hasStatusInformers && (
+              <span
               onClick={this.props.onViewAppStatusDetails}
               className="card-link u-marginLeft--10"
-            >
+              >
               {" "}
               Details{" "}
             </span>
+              )}
             <Link
               to={`${url}/config/${app?.downstream?.currentVersion?.sequence}`}
               className="card-link u-marginLeft--10 u-borderLeft--gray u-paddingLeft--10"
