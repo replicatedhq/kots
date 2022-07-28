@@ -1,6 +1,7 @@
 import React from "react";
 import Markdown from "react-remarkable";
 import classNames from "classnames";
+import { setOrder } from "./ConfigUtil";
 
 export default class ConfigItemTitle extends React.Component {
   render() {

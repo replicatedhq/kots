@@ -1,6 +1,8 @@
 import React from "react";
 import ConfigItemTitle from "./ConfigItemTitle";
 import Markdown from "react-remarkable";
+import { setOrder } from "./ConfigUtil";
+import { ConfigWrapper } from "./ConfigComponents";
 
 export default class ConfigTextarea extends React.Component {
   constructor(props) {
@@ -50,12 +52,13 @@ export default class ConfigTextarea extends React.Component {
     return isVariadic ? (
       variadicItems.map((objKey, index) => {
         return (
-          <div
+          <ConfigWrapper
             key={objKey}
             id={`${this.props.name}-group`}
-            className={`field field-type-text u-marginTop--15 ${
-              hidden ? "hidden" : ""
-            }`}
+            className={`field-type-text`}
+            marginTop={hidden || this.props.affix ? "0" : "15px"}
+            hidden={hidden}
+            order={setOrder(this.props.index, this.props.affix)}
           >
             {this.props.title !== "" ? (
               <ConfigItemTitle
@@ -119,15 +122,16 @@ export default class ConfigTextarea extends React.Component {
                 </span>
               </div>
             )}
-          </div>
+          </ConfigWrapper>
         );
       })
     ) : (
-      <div
+      <ConfigWrapper
         id={`${this.props.name}-group`}
-        className={`field field-type-text u-marginTop--15 ${
-          hidden ? "hidden" : ""
-        }`}
+        className={`field-type-text`}
+        marginTop={hidden || this.props.affix ? "0" : "15px"}
+        hidden={hidden}
+        order={setOrder(this.props.index, this.props.affix)}
       >
         {this.props.title !== "" ? (
           <ConfigItemTitle
@@ -177,7 +181,7 @@ export default class ConfigTextarea extends React.Component {
             </span>
           </div>
         )}
-      </div>
+      </ConfigWrapper>
     );
   }
 }
