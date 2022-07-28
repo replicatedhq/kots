@@ -81,6 +81,7 @@ class Dashboard extends Component {
     const { app } = this.props;
     if (app !== lastProps.app && app) {
       this.setWatchState(app);
+      this.getAppLicense(app)
     }
   }
 
@@ -578,18 +579,19 @@ class Dashboard extends Component {
     };
   };
 
-  checkStatusInformers = () => { 
+  checkStatusInformers = () => {
     const appResourcesByState = this.getAppResourcesByState();
-    const {  statesMap, sortedStates} = appResourcesByState;
-   return sortedStates?.every(state => { 
-      return statesMap[state]?.every(resource => {
-        const {kind, name, namespace } = resource;
-                if (kind === "EMPTY" && name === "EMPTY" && namespace === "EMPTY") {
-                  return false
-                } return true
-      })
-    })
-  }
+    const { statesMap, sortedStates } = appResourcesByState;
+    return sortedStates?.every((state) => {
+      return statesMap[state]?.every((resource) => {
+        const { kind, name, namespace } = resource;
+        if (kind === "EMPTY" && name === "EMPTY" && namespace === "EMPTY") {
+          return false;
+        }
+        return true;
+      });
+    });
+  };
 
   render() {
     const {
@@ -628,7 +630,7 @@ class Dashboard extends Component {
     }
 
     const appResourcesByState = this.getAppResourcesByState();
-    const hasStatusInformers = this.checkStatusInformers()
+    const hasStatusInformers = this.checkStatusInformers();
 
     return (
       <div className="flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
