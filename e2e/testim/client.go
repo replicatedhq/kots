@@ -1,6 +1,7 @@
 package testim
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -21,6 +22,7 @@ type Client struct {
 type RunOptions struct {
 	TunnelPort string
 	BaseUrl    string
+	Params     map[string]interface{}
 }
 
 func NewClient(accessToken, project, grid, branch string) *Client {
@@ -39,9 +41,19 @@ func (t *Client) NewRun(kubeconfig string, test inventory.Test, runOptions RunOp
 		fmt.Sprintf("--grid=%s", t.Grid),
 		fmt.Sprintf("--branch=%s", t.Branch),
 		"--timeout=3600000",
-		// skips snapshots volume assertions, velero will not backup rancher/local-path-provisioner volumes
-		`--params={"testDisableSnapshotsVolumeAssertions":true}`,
 	}
+
+	params := map[string]interface{}{
+		// skips snapshots volume assertions, velero will not backup rancher/local-path-provisioner volumes
+		"testDisableSnapshotsVolumeAssertions": true,
+	}
+	for k, v := range runOptions.Params {
+		params[k] = v
+	}
+	paramsJson, err := json.Marshal(params)
+	Expect(err).WithOffset(1).Should(Succeed(), "Create testim params")
+	args = append(args, fmt.Sprintf(`--params=%s`, paramsJson))
+
 	if test.Suite != "" {
 		args = append(
 			args,

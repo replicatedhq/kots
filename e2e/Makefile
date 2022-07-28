@@ -41,6 +41,8 @@ test:
 			--kotsadm-image-registry=$(KOTSADM_IMAGE_REGISTRY) \
 			--kotsadm-image-namespace=$(KOTSADM_IMAGE_NAMESPACE) \
 			--kotsadm-image-tag=$(KOTSADM_IMAGE_TAG) \
+			--kots-helm-chart-url=$(KOTS_HELM_CHART_URL) \
+			--kots-helm-chart-version=$(KOTS_HELM_CHART_VERSION) \
 			--skip-teardown=$(SKIP_TEARDOWN)
 
 .PHONY: path

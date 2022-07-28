@@ -28,6 +28,12 @@ inputs:
     description: 'Kotsadm image tag'
     default: '12h'
     required: false
+  kots-helm-chart-url:
+    description: 'KOTS Helm chart URL'
+    required: false
+  kots-helm-chart-version:
+    description: 'KOTS Helm chart version'
+    required: false
   aws-access-key-id:
     description: 'AWS access key id for uploading support bundle'
     required: false
@@ -58,6 +64,8 @@ runs:
           KOTSADM_IMAGE_REGISTRY=${{ inputs.kotsadm-image-registry }} \
           KOTSADM_IMAGE_NAMESPACE=${{ inputs.kotsadm-image-namespace || format('automated-{0}', github.run_id) }} \
           KOTSADM_IMAGE_TAG=${{ inputs.kotsadm-image-tag }} \
+          KOTS_HELM_CHART_URL=${{ inputs.kots-helm-chart-url }} \
+          KOTS_HELM_CHART_VERSION=${{ inputs.kots-helm-chart-version }} \
           SKIP_TEARDOWN=1
         EXIT_CODE=$?
         if [ $EXIT_CODE -ne 0 ]; then

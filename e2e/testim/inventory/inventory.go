@@ -98,7 +98,18 @@ func NewChangeLicense() Test {
 	}
 }
 
-func SetupRegressionTest(kubectlCLI *kubectl.CLI) {
+func NewHelmManagedMode() Test {
+	return Test{
+		Name:          "Helm Managed",
+		Suite:         "helm-managed",
+		Namespace:     "helm-managed",
+		UpstreamURI:   "helm-managed/automated",
+		IsHelmManaged: true,
+		Setup:         SetupHelmManagedMode,
+	}
+}
+
+func SetupRegressionTest(kubectlCLI *kubectl.CLI) TestimParams {
 	cmd := kubectlCLI.Command(
 		context.Background(),
 		"create",
@@ -113,9 +124,10 @@ func SetupRegressionTest(kubectlCLI *kubectl.CLI) {
 	session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 	Expect(err).WithOffset(1).Should(Succeed(), "Create registry-creds secret failed")
 	Eventually(session).WithOffset(1).WithTimeout(30*time.Minute).Should(gexec.Exit(0), "Create registry-creds secret failed with non-zero exit code")
+	return nil
 }
 
-func SetupNoRequiredConfig(kubectlCLI *kubectl.CLI) {
+func SetupNoRequiredConfig(kubectlCLI *kubectl.CLI) TestimParams {
 	cmd := kubectlCLI.Command(
 		context.Background(),
 		"--namespace=no-required-config",
@@ -134,4 +146,29 @@ func SetupNoRequiredConfig(kubectlCLI *kubectl.CLI) {
 
 	err = ioutil.WriteFile(".env", []byte(fmt.Sprintf("KOTSADM_API_TOKEN=%s", string(kotsadmAPIToken))), 0600)
 	Expect(err).WithOffset(1).Should(Succeed(), "Create .env file failed")
+	return nil
+}
+
+func SetupHelmManagedMode(kubectlCLI *kubectl.CLI) TestimParams {
+	namespace := "helm-managed"
+	cmd := kubectlCLI.Command(
+		context.Background(),
+		fmt.Sprintf("--namespace=%s", namespace),
+		"get",
+		"secret",
+		"kotsadm-password",
+		`--template='{{ index .data "passwordB64" }}'`,
+	)
+	buf := bytes.NewBuffer(nil)
+	session, err := gexec.Start(cmd, buf, GinkgoWriter)
+	Expect(err).WithOffset(1).Should(Succeed(), "Get kotsadm-password secret failed")
+	Eventually(session).WithOffset(1).WithTimeout(30*time.Minute).Should(gexec.Exit(0), "Get kotsadm-password secret failed with non-zero exit code")
+
+	kotsadmPassword, err := base64.StdEncoding.DecodeString(strings.Trim(buf.String(), `"' `))
+	Expect(err).WithOffset(1).Should(Succeed(), "Decode kotsadm-password secret failed")
+
+	return TestimParams{
+		"kotsadmPassword":  string(kotsadmPassword),
+		"kotsadmNamespace": namespace,
+	}
 }
