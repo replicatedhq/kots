@@ -81,6 +81,7 @@ class Dashboard extends Component {
     const { app } = this.props;
     if (app !== lastProps.app && app) {
       this.setWatchState(app);
+      this.getAppLicense(app)
     }
   }
 
