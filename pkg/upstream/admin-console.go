@@ -36,7 +36,6 @@ type UpstreamSettings struct {
 }
 
 func GenerateAdminConsoleFiles(renderDir string, options types.WriteOptions) ([]types.UpstreamFile, error) {
-
 	if options.Namespace == "" {
 		options.Namespace = "default"
 	}

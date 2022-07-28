@@ -83,8 +83,10 @@ Your permissions will be the same between both namespaces, and you will be able 
 #### Running KOTS in Helm managed mode
 Steps to run in Helm managed mode:
 1. `okteto pipeline deploy`
-2. Ensure your local context is set to your okteto environment
-2. Set the `IS_HELM_MANAGED` environment variable for the kots deployment `kubectl set env deployment/kotsadm IS_HELM_MANAGED=true`
+1. Ensure your local context is set to your okteto environment
+1. Set the `IS_HELM_MANAGED` environment variable for the kots deployment `kubectl set env deployment/kotsadm IS_HELM_MANAGED=true`
+1. Remove S3 endpoint: `kubectl set env deployment/kotsadm S3_ENDPOINT=""`
+
 
 Note that in order to use non-production environment, `REPLICATED_API_ENDPOINT` must also be set in the deployment:
 

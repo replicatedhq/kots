@@ -145,8 +145,7 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
-	if isHelmManaged == "true" {
+	if util.IsHelmManaged() {
 		// TODO: will need to consider flow for when ConfigSpec changes
 		appSlug := mux.Vars(r)["appSlug"]
 
@@ -294,9 +293,8 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
 	configGroups := []kotsv1beta1.ConfigGroup{}
-	if isHelmManaged == "true" {
+	if util.IsHelmManaged() {
 		configGroups = liveAppConfigRequest.ConfigGroups
 		JSON(w, http.StatusOK, LiveAppConfigResponse{Success: true, ConfigGroups: configGroups})
 		return
@@ -431,10 +429,9 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		Success: false,
 	}
 
-	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
 	configGroups := []kotsv1beta1.ConfigGroup{}
 
-	if isHelmManaged == "true" {
+	if util.IsHelmManaged() {
 		appSlug := mux.Vars(r)["appSlug"]
 		helmApp := helm.GetHelmApp(appSlug)
 		if helmApp == nil {

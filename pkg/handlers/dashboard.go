@@ -9,6 +9,7 @@ import (
 	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
 )
 
@@ -22,8 +23,7 @@ func (h *Handler) GetAppDashboard(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
 	clusterID := mux.Vars(r)["clusterId"]
 	appStatus := new(appstatetypes.AppStatus)
-	isHelmManaged := os.Getenv("IS_HELM_MANAGED")
-	if isHelmManaged == "true" {
+	if util.IsHelmManaged() {
 		appStatus.State = "ready"
 		getAppDashboardResponse := GetAppDashboardResponse{
 			AppStatus:         appStatus,

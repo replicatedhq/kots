@@ -150,3 +150,14 @@ func GetReplicatedAPIEndpoint() string {
 	}
 	return "https://replicated.app"
 }
+
+func HomeDir() string {
+	if h := os.Getenv("HOME"); h != "" {
+		return h
+	}
+	return os.Getenv("USERPROFILE")
+}
+
+func IsHelmManaged() bool {
+	return os.Getenv("IS_HELM_MANAGED") == "true"
+}

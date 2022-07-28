@@ -7,7 +7,7 @@ async function fetchIsHelmManaged({
   _fetch = fetch,
 } = {}) {
   try {
-    const res = await _fetch(`${apiEndpoint}/isHelmManaged`, {
+    const res = await _fetch(`${apiEndpoint}/is-helm-managed`, {
       headers: {
         Authorization: accessToken,
         "Content-Type": "application/json",
