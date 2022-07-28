@@ -96,7 +96,11 @@ export default class ConfigGroup extends React.Component {
           return (
             <div
               key={`${i}-${item.name}`}
-              className="field field-type-label u-marginTop--15"
+              className="field field-type-label"
+              style={{
+                margin: this.props.affix ? "0" : "15px",
+                order: setOrder(i + 1, item.affix),
+              }}
             >
               <ConfigItemTitle
                 title={item.title}
@@ -108,17 +112,16 @@ export default class ConfigGroup extends React.Component {
                 name={item.name}
                 error={item.error}
                 readonly={isReadOnly}
-                index={i + 1}
               />
             </div>
           );
         case "file":
           return (
             <ConfigWrapper
-            key={`${i}-${item.name}`}
-            className={"field-type-label"}
-            marginTop={item.affix ? "0" : "15px"}
-            order={setOrder(i + 1, item.affix)}
+              key={`${i}-${item.name}`}
+              className={"field-type-label"}
+              marginTop={item.affix ? "0" : "15px"}
+              order={setOrder(i + 1, item.affix)}
             >
               <ConfigFileInput
                 {...item}
@@ -240,9 +243,7 @@ export default class ConfigGroup extends React.Component {
                 </Markdown>
               </div>
             ) : null}
-            <ConfigItems
-                display={ hasAffix ? "grid" : "block"}
-            >
+            <ConfigItems display={hasAffix ? "grid" : "block"}>
               {this.renderConfigItems(item.items, readonly)}
             </ConfigItems>
             {item.repeatable && (
