@@ -7,8 +7,10 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/crypto"
 	identity "github.com/replicatedhq/kots/pkg/kotsadmidentity"
 	identitystore "github.com/replicatedhq/kots/pkg/kotsadmidentity/store"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -93,6 +95,17 @@ func bootstrapIdentity() error {
 		err = store.GetStore().GetAppVersionArchive(app.ID, latestSequence, currentArchivePath)
 		if err != nil {
 			return errors.Wrap(err, "failed to get current archive")
+		}
+
+		installation, err := kotsutil.LoadInstallationFromPath(filepath.Join(currentArchivePath, "upstream", "userdata", "installation.yaml"))
+		if err != nil {
+			return errors.Wrap(err, "failed to load installation from path")
+		}
+
+		// add installation encryption key to list of decryption ciphers
+		err = crypto.InitFromString(installation.Spec.EncryptionKey)
+		if err != nil {
+			return errors.Wrap(err, "failed to load encryption cipher")
 		}
 
 		decode := scheme.Codecs.UniversalDeserializer().Decode
