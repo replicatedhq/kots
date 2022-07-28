@@ -51,16 +51,15 @@ export default class ConfigTextarea extends React.Component {
     const variadicItemsLen = variadicItems.length;
     return isVariadic ? (
       variadicItems.map((objKey, index) => {
-     
         return (
           <ConfigWrapper
-          key={objKey}
-          id={`${this.props.name}-group`}
-          className={`field-type-text`}
-          marginTop={hidden || this.props.affix ? "0" : "15px"}
-          hidden={hidden}
-          order={setOrder(this.props.index, this.props.affix)}
-        >
+            key={objKey}
+            id={`${this.props.name}-group`}
+            className={`field-type-text`}
+            marginTop={hidden || this.props.affix ? "0" : "15px"}
+            hidden={hidden}
+            order={setOrder(this.props.index, this.props.affix)}
+          >
             {this.props.title !== "" ? (
               <ConfigItemTitle
                 title={this.props.title}
@@ -128,12 +127,12 @@ export default class ConfigTextarea extends React.Component {
       })
     ) : (
       <ConfigWrapper
-      id={`${this.props.name}-group`}
-      className={`field-type-text`}
-      marginTop={hidden || this.props.affix ? "0" : "15px"}
-      hidden={hidden}
-      order={setOrder(this.props.index, this.props.affix)}
-    >
+        id={`${this.props.name}-group`}
+        className={`field-type-text`}
+        marginTop={hidden || this.props.affix ? "0" : "15px"}
+        hidden={hidden}
+        order={setOrder(this.props.index, this.props.affix)}
+      >
         {this.props.title !== "" ? (
           <ConfigItemTitle
             title={this.props.title}

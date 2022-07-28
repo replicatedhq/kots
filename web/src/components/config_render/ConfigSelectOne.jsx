@@ -43,12 +43,12 @@ export default class ConfigSelectOne extends React.Component {
 
     return (
       <ConfigWrapper
-      id={`${this.props.name}-group`}
-      className={`field-type-select-one`}
-      marginTop={hidden || this.props.affix ? "0" : "15px"}
-      hidden={hidden}
-      order={setOrder(this.props.index, this.props.affix)}
-    >
+        id={`${this.props.name}-group`}
+        className={`field-type-select-one`}
+        marginTop={hidden || this.props.affix ? "0" : "15px"}
+        hidden={hidden}
+        order={setOrder(this.props.index, this.props.affix)}
+      >
         {this.props.title !== "" ? (
           <ConfigItemTitle
             title={this.props.title}

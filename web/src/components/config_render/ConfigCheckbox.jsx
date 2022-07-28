@@ -23,12 +23,12 @@ export default class ConfigCheckbox extends React.Component {
 
     return (
       <ConfigWrapper
-      id={`${this.props.name}-group`}
-      className={`field-checkbox-wrapper`}
-      marginTop={hidden || this.props.affix ? "0" : "15px"}
-      hidden={hidden}
-      order={setOrder(this.props.index, this.props.affix)}
-    >
+        id={`${this.props.name}-group`}
+        className={`field-checkbox-wrapper`}
+        marginTop={hidden || this.props.affix ? "0" : "15px"}
+        hidden={hidden}
+        order={setOrder(this.props.index, this.props.affix)}
+      >
         <span
           className="u-marginTop--10 config-errblock"
           id={`${this.props.name}-errblock`}

@@ -6,8 +6,8 @@ export const setOrder = (index, affix) => {
     return index - 1;
   }
   if (affix === "right") {
-    if (index === 2) { 
-      return index
+    if (index === 2) {
+      return index;
     }
     return index + 1;
   }
