@@ -1,0 +1,89 @@
+import { useQuery } from "react-query";
+import { Utilities } from "../../../utilities/utilities";
+
+async function getApps({
+  accessToken = Utilities.getToken(),
+  apiEndpoint = process.env.API_ENDPOINT,
+  _fetch = fetch,
+} = {}) {
+  try {
+    const res = await _fetch(`${apiEndpoint}/apps`, {
+      headers: {
+        Authorization: accessToken,
+        "Content-Type": "application/json",
+      },
+      method: "GET",
+    });
+    if (!res.ok) {
+      if (res.status === 401) {
+        Utilities.logoutUser();
+        return null;
+      }
+      throw Error(`Failed to fetch apps with status ${res.status}`);
+    }
+    return await res.json();
+  } catch (err) {
+    throw Error(err);
+  }
+}
+
+function useApps({ _getApps = getApps } = {}) {
+  return useQuery("apps", () => _getApps(), {
+    staleTime: 5000,
+  });
+}
+
+function UseApps({ children }) {
+  const query = useApps();
+
+  return children(query);
+}
+
+export { getApps, useApps, UseApps };
+
+// use the router hook to get slug and set current app
+// use react-query to get app and apps and merge the state
+
+/*
+  getApp = async (slug = this.props.match.params.slug) => {
+    if (!slug) {
+      return;
+    }
+
+    try {
+      this.setState({ loadingApp: true });
+
+      const res = await fetch(`${process.env.API_ENDPOINT}/app/${slug}`, {
+        headers: {
+          Authorization: Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "GET",
+      });
+      if (res.ok && res.status == 200) {
+        const app = await res.json();
+        this.setState({
+          app,
+          loadingApp: false,
+          gettingAppErrMsg: "",
+          displayErrorModal: false,
+        });
+      } else {
+        this.setState({
+          loadingApp: false,
+          gettingAppErrMsg: `Unexpected status code: ${res.status}`,
+          displayErrorModal: true,
+        });
+      }
+    } catch (err) {
+      console.log(err);
+      this.setState({
+        loadingApp: false,
+        gettingAppErrMsg: err
+          ? err.message
+          : "Something went wrong, please try again.",
+        displayErrorModal: true,
+      });
+    }
+  };
+  */

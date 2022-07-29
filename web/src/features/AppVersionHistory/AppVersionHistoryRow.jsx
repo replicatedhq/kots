@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import find from "lodash/find";
 import classNames from "classnames";
 import ReactTooltip from "react-tooltip";
+import { useCurrentApp } from "./hooks/useCurrentApp";
 
 import Loader from "@src/components/shared/Loader";
 
@@ -33,7 +34,6 @@ const YamlErrors = ({ version, handleSeeDetailsClicked }) => {
 const AppVersionHistoryRow = ({
   handleActionButtonClicked,
   isHelmManaged,
-  app,
   match,
   history,
   version,
@@ -66,6 +66,9 @@ const AppVersionHistoryRow = ({
   makingCurrentRelease,
   redeployVersionErrMsg,
 }) => {
+
+  const { currentApp } = useCurrentApp();
+
   handleSelectReleasesToDiff = () => {
     if (!selectedDiffReleases) {
       return;
@@ -77,16 +80,16 @@ const AppVersionHistoryRow = ({
   };
 
   function deployButtonStatus(version) {
-    const downstream = app?.downstream;
+    const downstream = currentApp?.downstream;
 
     const isCurrentVersion =
-      version.sequence === downstream.currentVersion?.sequence;
+      version.sequence === downstream?.currentVersion?.sequence;
     const isDeploying = version.status === "deploying";
-    const isPastVersion = find(downstream.pastVersions, {
+    const isPastVersion = find(downstream?.pastVersions, {
       sequence: version.sequence,
     });
     const needsConfiguration = version.status === "pending_config";
-    const isRollback = isPastVersion && version.deployedAt && app.allowRollback;
+    const isRollback = isPastVersion && version.deployedAt && currentApp?.allowRollback;
     const isRedeploy =
       isCurrentVersion &&
       (version.status === "failed" || version.status === "deployed");
@@ -152,7 +155,7 @@ const AppVersionHistoryRow = ({
   };
 
   const renderVersionAction = (version) => {
-    const downstream = app?.downstream;
+    const downstream = currentApp?.downstream;
 
     let actionFn = deployVersion;
     if (isHelmManaged) {
@@ -187,24 +190,24 @@ const AppVersionHistoryRow = ({
     }
 
     const isCurrentVersion =
-      version.sequence === downstream.currentVersion?.sequence;
-    const isLatestVersion = version.sequence === app.currentSequence;
-    const isPendingVersion = find(downstream.pendingVersions, {
+      version.sequence === downstream?.currentVersion?.sequence;
+    const isLatestVersion = version.sequence === currentApp?.currentSequence;
+    const isPendingVersion = find(downstream?.pendingVersions, {
       sequence: version.sequence,
     });
-    const isPastVersion = find(downstream.pastVersions, {
+    const isPastVersion = find(downstream?.pastVersions, {
       sequence: version.sequence,
     });
-    const isPendingDeployedVersion = find(downstream.pendingVersions, {
+    const isPendingDeployedVersion = find(downstream?.pendingVersions, {
       sequence: version.sequence,
       status: "deployed",
     });
     const needsConfiguration = version.status === "pending_config";
-    const showActions = !isPastVersion || app.allowRollback;
+    const showActions = !isPastVersion || currentApp?.allowRollback;
     const isRedeploy =
       isCurrentVersion &&
       (version.status === "failed" || version.status === "deployed");
-    const isRollback = isPastVersion && version.deployedAt && app.allowRollback;
+    const isRollback = isPastVersion && version.deployedAt && currentApp?.allowRollback;
 
     const isSecondaryBtn =
       isPastVersion || needsConfiguration || (isRedeploy && !isRollback);
@@ -229,7 +232,7 @@ const AppVersionHistoryRow = ({
       checksStatusText = "Checks passed";
     }
 
-    if (downstream.gitops?.enabled) {
+    if (downstream?.gitops?.enabled) {
       if (version.gitDeployable === false) {
         return (
           <div
@@ -256,7 +259,7 @@ const AppVersionHistoryRow = ({
               ) : preflightState.preflightState !== "" ? (
                 <>
                   <Link
-                    to={`/app/${app?.slug}/downstreams/${app?.downstream.cluster?.slug}/version-history/preflight/${version?.sequence}`}
+                    to={`/app/${currentApp?.slug}/downstreams/${currentApp?.downstream?.cluster?.slug}/version-history/preflight/${version?.sequence}`}
                     className="icon preflightChecks--icon u-cursor--pointer u-position--relative"
                     data-tip="View preflight checks"
                   >
@@ -310,7 +313,7 @@ const AppVersionHistoryRow = ({
             ) : preflightState.preflightState !== "" ? (
               <>
                 <Link
-                  to={`/app/${app?.slug}/downstreams/${app?.downstream.cluster?.slug}/version-history/preflight/${version?.sequence}`}
+                  to={`/app/${currentApp?.slug}/downstreams/${currentApp?.downstream?.cluster?.slug}/version-history/preflight/${version?.sequence}`}
                   className="icon preflightChecks--icon u-cursor--pointer u-position--relative"
                   data-tip="View preflight checks"
                 >
@@ -372,7 +375,7 @@ const AppVersionHistoryRow = ({
           ) : preflightState.preflightState !== "" ? (
             <>
               <Link
-                to={`/app/${app?.slug}/downstreams/${app?.downstream.cluster?.slug}/version-history/preflight/${version?.sequence}`}
+                to={`/app/${currentApp?.slug}/downstreams/${currentApp?.downstream?.cluster?.slug}/version-history/preflight/${version?.sequence}`}
                 className="icon preflightChecks--icon u-marginRight--10 u-cursor--pointer u-position--relative"
                 data-tip="View preflight checks"
               >
@@ -409,10 +412,10 @@ const AppVersionHistoryRow = ({
             </>
           ) : null}
         </div>
-        {app.isConfigurable && (
+        {currentApp?.isConfigurable && (
           <div className="flex alignItems--center">
             <Link
-              to={`/app/${app.slug}/config/${version.sequence}`}
+              to={`/app/${currentApp?.slug}/config/${version.sequence}`}
               className={`icon ${
                 editableConfig ? "configEdit--icon" : "configView--icon"
               } u-cursor--pointer`}
@@ -449,7 +452,7 @@ const AppVersionHistoryRow = ({
               onClick={() => {
                 handleActionButtonClicked();
                 if (needsConfiguration) {
-                  history.push(`/app/${app.slug}/config/${version.sequence}`);
+                  history.push(`/app/${currentApp?.slug}/config/${version.sequence}`);
                   return null;
                 }
                 if (isRollback) {
@@ -494,15 +497,15 @@ const AppVersionHistoryRow = ({
   };
 
   const renderVersionStatus = (version) => {
-    const downstream = app?.downstream;
+    const downstream = currentApp?.downstream;
     if (!downstream) {
       return null;
     }
 
-    const isPastVersion = find(downstream.pastVersions, {
+    const isPastVersion = find(downstream?.pastVersions, {
       sequence: version.sequence,
     });
-    const isPendingDeployedVersion = find(downstream.pendingVersions, {
+    const isPendingDeployedVersion = find(downstream?.pendingVersions, {
       sequence: version.sequence,
       status: "deployed",
     });

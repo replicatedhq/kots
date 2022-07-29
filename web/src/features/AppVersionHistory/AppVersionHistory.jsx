@@ -26,9 +26,9 @@ import {
   getPreflightResultState,
   getGitProviderDiffUrl,
   getCommitHashFromUrl,
-} from "../../../utilities/utilities";
-import { Repeater } from "../../../utilities/repeater";
-import { AirgapUploader } from "../../../utilities/airgapUploader";
+} from "@src/utilities/utilities";
+import { Repeater } from "@src/utilities/repeater";
+import { AirgapUploader } from "@src/utilities/airgapUploader";
 import ReactTooltip from "react-tooltip";
 import Pager from "@src/components/shared/Pager";
 import { HelmDeployModal } from "@src/components/shared/modals/HelmDeployModal";
@@ -1322,10 +1322,8 @@ class AppVersionHistory extends Component {
   };
 
   deployButtonStatus = (version) => {
-    console.log(version);
     const app = this.props.app;
     const downstream = app?.downstream;
-    debugger;
 
     const isCurrentVersion =
       version.sequence === downstream.currentVersion?.sequence;
@@ -1441,10 +1439,6 @@ class AppVersionHistory extends Component {
               ref,
               url,
             }) => {
-              console.log(
-                "deploy button status",
-                this.deployButtonStatus(version)
-              );
               return (
                 <>
                   <HelmDeployModal
