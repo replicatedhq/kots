@@ -98,11 +98,12 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
 	}
 
-	if veleroBackup.Spec.IncludedNamespaces == nil {
-		veleroBackup.Spec.IncludedNamespaces = []string{}
-	}
-	veleroBackup.Spec.IncludedNamespaces = append(veleroBackup.Spec.IncludedNamespaces, appNamespace)
-	veleroBackup.Spec.IncludedNamespaces = append(veleroBackup.Spec.IncludedNamespaces, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
+	includedNamespaces := []string{}
+	includedNamespaces = append(includedNamespaces, appNamespace)
+	includedNamespaces = append(includedNamespaces, veleroBackup.Spec.IncludedNamespaces...)
+	includedNamespaces = append(includedNamespaces, kotsKinds.KotsApplication.Spec.AdditionalNamespaces...)
+
+	veleroBackup.Spec.IncludedNamespaces = prepareIncludedNamespaces(includedNamespaces)
 
 	snapshotTrigger := "manual"
 	if isScheduled {
@@ -338,7 +339,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		},
 		Spec: velerov1.BackupSpec{
 			StorageLocation:         "default",
-			IncludedNamespaces:      includedNamespaces,
+			IncludedNamespaces:      prepareIncludedNamespaces(includedNamespaces),
 			ExcludedNamespaces:      excludedNamespaces,
 			IncludeClusterResources: &includeClusterResources,
 			LabelSelector: &metav1.LabelSelector{
@@ -883,4 +884,27 @@ func mergeLabelSelector(kots metav1.LabelSelector, app metav1.LabelSelector) met
 
 	kots.MatchExpressions = append(kots.MatchExpressions, app.MatchExpressions...)
 	return kots
+}
+
+// Prepares the list of unique namespaces that will be included in a backup. Empty namespaces are excluded.
+// If a wildcard is specified, any specific namespaces will not be included since the backup will include all namespaces.
+// Velero does not allow for both a wildcard and specific namespaces and will consider the backup invalid if both are present.
+func prepareIncludedNamespaces(namespaces []string) []string {
+	uniqueNamespaces := make(map[string]bool)
+	for _, n := range namespaces {
+		if n == "" {
+			continue
+		} else if n == "*" {
+			return []string{n}
+		}
+		uniqueNamespaces[n] = true
+	}
+
+	includedNamespaces := make([]string, len(uniqueNamespaces))
+	i := 0
+	for k := range uniqueNamespaces {
+		includedNamespaces[i] = k
+		i++
+	}
+	return includedNamespaces
 }
