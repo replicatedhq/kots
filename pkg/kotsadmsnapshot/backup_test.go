@@ -1,8 +1,9 @@
 package snapshot
 
 import (
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestPrepareIncludedNamespaces(t *testing.T) {
@@ -24,6 +25,16 @@ func TestPrepareIncludedNamespaces(t *testing.T) {
 		{
 			name:       "multiple",
 			namespaces: []string{"test", "test2"},
+			want:       []string{"test", "test2"},
+		},
+		{
+			name:       "multiple ignore order",
+			namespaces: []string{"test", "test2"},
+			want:       []string{"test2", "test"},
+		},
+		{
+			name:       "duplicates",
+			namespaces: []string{"test", "test2", "test"},
 			want:       []string{"test", "test2"},
 		},
 		{
@@ -56,7 +67,7 @@ func TestPrepareIncludedNamespaces(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := prepareIncludedNamespaces(tt.namespaces)
-			if !reflect.DeepEqual(got, tt.want) {
+			if !assert.ElementsMatch(t, tt.want, got) {
 				t.Errorf("prepareIncludedNamespaces() = %v, want %v", got, tt.want)
 			}
 		})
