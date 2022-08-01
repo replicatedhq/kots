@@ -146,7 +146,7 @@ class Root extends PureComponent {
         },
         method: "GET",
       });
-      if (res.ok && res.status == 200) {
+      if (res.ok && res.status === 200) {
         const response = await res.json();
         this.setState({ isHelmManaged: response.isHelmManaged });
       } else {
@@ -311,6 +311,7 @@ class Root extends PureComponent {
   componentDidMount = async () => {
     this.onRootMounted();
     this.interval = setInterval(async () => await this.ping(), 10000);
+    this.checkIsHelmManaged();
   };
 
   componentDidUpdate = async (lastProps, lastState) => {
@@ -362,7 +363,6 @@ class Root extends PureComponent {
       connectionTerminated,
       errLoggingOut,
     } = this.state;
-    this.checkIsHelmManaged();
 
     return (
       <QueryClientProvider client={queryClient}>
