@@ -23,11 +23,24 @@ func TestRenderChartsArchive(t *testing.T) {
 		wantErr             bool
 	}{
 		{
-			name: "basic",
+			name: "handles charts that do not exist in base",
 			files: map[string]string{
+				// this postgresql chart does not exist in base, function should not error
+				"overlays/downstreams/this-cluster/charts/postgresql/kustomization.yaml": `apiVersion: kustomize.config.k8s.io/v1beta1
+bases:
+- ../../../../midstream/charts/postgresql
+kind: Kustomization
+`,
 				"overlays/downstreams/this-cluster/charts/guestbook/kustomization.yaml": `apiVersion: kustomize.config.k8s.io/v1beta1
 bases:
 - ../../../../midstream/charts/guestbook
+kind: Kustomization
+`,
+				"overlays/midstream/charts/postgresql/kustomization.yaml": `apiVersion: kustomize.config.k8s.io/v1beta1
+bases:
+- ../../../../base/charts/postgresql
+commonAnnotations:
+  kots.io/app-slug: my-app
 kind: Kustomization
 `,
 				"overlays/midstream/charts/guestbook/kustomization.yaml": `apiVersion: kustomize.config.k8s.io/v1beta1
