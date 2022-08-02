@@ -176,14 +176,19 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// TODO: do not render config items w/o templates
 		// get values from request
 		newValues := configValuesFromConfigGroups(updateAppConfigRequest.ConfigGroups)
+		fmt.Printf("CONFIG GROUPS: %+v\n", updateAppConfigRequest.ConfigGroups)
+		fmt.Printf("NEW VALUES: %+v\n", newValues)
 		renderedValues, renderedConfig, err := kotshelm.RenderValuesFromConfig(appSlug, newValues, config, appSecret.Data["chart"])
 		if err != nil {
 			logger.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+
+		fmt.Printf("RENDERED VALUES: %+v\n", renderedValues)
 
 		b, err := json.Marshal(renderedConfig)
 		if err != nil {
