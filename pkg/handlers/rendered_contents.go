@@ -13,6 +13,7 @@ import (
 	"github.com/marccampbell/yaml-toolbox/pkg/splitter"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/kustomize"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
@@ -76,30 +77,21 @@ func (h *Handler) GetAppRenderedContents(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// pick the first downstream found
-	// which will likely be "this-cluster"
-	children, err := ioutil.ReadDir(filepath.Join(archivePath, "overlays", "downstreams"))
+	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
 	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to read dir"))
+		logger.Error(errors.Wrapf(err, "failed to list downstreams for app %q", a.Slug))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	downstreamName := ""
-	for _, child := range children {
-		if child.IsDir() && child.Name() != "." && child.Name() != ".." {
-			downstreamName = child.Name()
-		}
+	if len(downstreams) == 0 {
+		logger.Error(errors.Errorf("no downstreams found for app %q", a.Slug))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
-
-	kustomizeBuildTarget := ""
-
-	if downstreamName == "" {
-		kustomizeBuildTarget = filepath.Join(archivePath, "overlays", "midstream")
-	} else {
-		kustomizeBuildTarget = filepath.Join(archivePath, "overlays", "downstreams", downstreamName)
-	}
+	d := downstreams[0]
 
 	kustomizeBinPath := kotsKinds.GetKustomizeBinaryPath()
+	kustomizeBuildTarget := filepath.Join(archivePath, "overlays", "downstreams", d.Name)
 
 	archiveOutput, err := exec.Command(kustomizeBinPath, "build", kustomizeBuildTarget).Output()
 	if err != nil {
@@ -129,7 +121,7 @@ func (h *Handler) GetAppRenderedContents(w http.ResponseWriter, r *http.Request)
 		decodedArchiveFiles[filename] = string(b)
 	}
 
-	kustomizedFiles, err := getKustomizedFiles(kustomizeBuildTarget, kustomizeBinPath)
+	_, kustomizedFiles, err := kustomize.RenderChartsArchive(archivePath, d.Name, kustomizeBinPath)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get kustomized files"))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -137,52 +129,10 @@ func (h *Handler) GetAppRenderedContents(w http.ResponseWriter, r *http.Request)
 	}
 
 	for filename, b := range kustomizedFiles {
-		decodedArchiveFiles[filename] = b
+		decodedArchiveFiles[filename] = string(b)
 	}
 
 	JSON(w, http.StatusOK, GetAppRenderedContentsResponse{
 		Files: decodedArchiveFiles,
 	})
-}
-
-func getKustomizedFiles(kustomizeTarget string, kustomizeBinPath string) (map[string]string, error) {
-	kustomizedFilesList := map[string]string{}
-
-	archiveChartDir := filepath.Join(kustomizeTarget, "charts")
-	_, err := os.Stat(archiveChartDir)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return kustomizedFilesList, nil
-		}
-		return kustomizedFilesList, err
-	}
-
-	err = filepath.Walk(archiveChartDir,
-		func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-
-			if info.Name() == "kustomization.yaml" {
-				archiveOutput, err := exec.Command(kustomizeBinPath, "build", filepath.Dir(path)).Output()
-				if err != nil {
-					if ee, ok := err.(*exec.ExitError); ok {
-						err = fmt.Errorf("kustomize %s: %q", path, string(ee.Stderr))
-					}
-					return errors.Wrapf(err, "failed to kustomize %s", path)
-				}
-				archiveFiles, err := splitter.SplitYAML(archiveOutput)
-				if err != nil {
-					return errors.Wrapf(err, "failed to split yaml result for %s", path)
-				}
-				for filename, b := range archiveFiles {
-					kustomizedFilesList[filename] = string(b)
-				}
-			}
-			return nil
-		})
-	if err != nil {
-		return kustomizedFilesList, err
-	}
-	return kustomizedFilesList, nil
 }

@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -112,14 +111,12 @@ func DiffAppVersionsForDownstream(downstreamName string, archive string, diffBas
 		}
 	}
 
-	archiveDir := filepath.Join(archive, "overlays", "downstreams", downstreamName)
-	archiveChartFiles, err := getKustomizedFiles(archiveDir, kustomizeBinPath)
+	_, archiveChartFiles, err := RenderChartsArchive(archive, downstreamName, kustomizeBinPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to kustomize archive charts dir")
 	}
 
-	baseDir := filepath.Join(diffBasePath, "overlays", "downstreams", downstreamName)
-	baseChartFiles, err := getKustomizedFiles(baseDir, kustomizeBinPath)
+	_, baseChartFiles, err := RenderChartsArchive(diffBasePath, downstreamName, kustomizeBinPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to kustomize base charts dir")
 	}
@@ -161,46 +158,4 @@ func DiffAppVersionsForDownstream(downstreamName string, archive string, diffBas
 		}
 	}
 	return &diff, nil
-}
-
-func getKustomizedFiles(kustomizeTarget string, kustomizeBinPath string) (map[string][]byte, error) {
-	kustomizedFilesList := map[string][]byte{}
-
-	archiveChartDir := filepath.Join(kustomizeTarget, "charts")
-	_, err := os.Stat(archiveChartDir)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return kustomizedFilesList, nil
-		}
-		return kustomizedFilesList, err
-	}
-
-	err = filepath.Walk(archiveChartDir,
-		func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-
-			if info.Name() == "kustomization.yaml" {
-				archiveOutput, err := exec.Command(kustomizeBinPath, "build", filepath.Dir(path)).Output()
-				if err != nil {
-					if ee, ok := err.(*exec.ExitError); ok {
-						err = fmt.Errorf("kustomize %s: %q", path, string(ee.Stderr))
-					}
-					return errors.Wrapf(err, "failed to kustomize %s", path)
-				}
-				archiveFiles, err := splitter.SplitYAML(archiveOutput)
-				if err != nil {
-					return errors.Wrapf(err, "failed to split yaml result for %s", path)
-				}
-				for filename, d := range archiveFiles {
-					kustomizedFilesList[filename] = d
-				}
-			}
-			return nil
-		})
-	if err != nil {
-		return kustomizedFilesList, err
-	}
-	return kustomizedFilesList, nil
 }
