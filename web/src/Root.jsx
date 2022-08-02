@@ -148,6 +148,7 @@ class Root extends PureComponent {
       });
       if (res.ok && res.status === 200) {
         const response = await res.json();
+        console.log("res",response.isHelmManaged)
         this.setState({ isHelmManaged: response.isHelmManaged });
       } else {
         this.setState({ isHelmManaged: false });
@@ -297,6 +298,7 @@ class Root extends PureComponent {
   onRootMounted = () => {
     this.fetchKotsAppMetadata();
     this.ping();
+    this.checkIsHelmManaged();
 
     if (Utilities.isLoggedIn()) {
       this.getAppsList().then((appsList) => {
@@ -311,7 +313,6 @@ class Root extends PureComponent {
   componentDidMount = async () => {
     this.onRootMounted();
     this.interval = setInterval(async () => await this.ping(), 10000);
-    this.checkIsHelmManaged();
   };
 
   componentDidUpdate = async (lastProps, lastState) => {
@@ -454,6 +455,7 @@ class Root extends PureComponent {
                       pendingApp={this.getPendingApp}
                       onLoginSuccess={this.getAppsList}
                       fetchingMetadata={this.state.fetchingMetadata}
+                      checkIsHelmManaged={this.checkIsHelmManaged}
                     />
                   )}
                 />

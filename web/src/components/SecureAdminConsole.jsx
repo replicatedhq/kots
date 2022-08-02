@@ -48,6 +48,7 @@ class SecureAdminConsole extends React.Component {
       } else {
         this.props.history.push("/unsupported");
       }
+      this.props.checkIsHelmManaged();
     } catch (err) {
       console.log(err);
     }
