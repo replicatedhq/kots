@@ -297,6 +297,7 @@ class Root extends PureComponent {
   onRootMounted = () => {
     this.fetchKotsAppMetadata();
     this.ping();
+    this.checkIsHelmManaged();
 
     if (Utilities.isLoggedIn()) {
       this.getAppsList().then((appsList) => {
@@ -311,7 +312,6 @@ class Root extends PureComponent {
   componentDidMount = async () => {
     this.onRootMounted();
     this.interval = setInterval(async () => await this.ping(), 10000);
-    this.checkIsHelmManaged();
   };
 
   componentDidUpdate = async (lastProps, lastState) => {
@@ -362,6 +362,7 @@ class Root extends PureComponent {
       rootDidInitialWatchFetch,
       connectionTerminated,
       errLoggingOut,
+      isHelmManaged,
     } = this.state;
 
     return (
@@ -396,7 +397,7 @@ class Root extends PureComponent {
               onLogoutError={this.onLogoutError}
               isSnapshotsSupported={this.isSnapshotsSupported()}
               errLoggingOut={errLoggingOut}
-              isHelmManaged={this.state.isHelmManaged}
+              isHelmManaged={isHelmManaged}
             />
             <div className="flex1 flex-column u-overflow--auto">
               <Switch>
@@ -454,6 +455,7 @@ class Root extends PureComponent {
                       pendingApp={this.getPendingApp}
                       onLoginSuccess={this.getAppsList}
                       fetchingMetadata={this.state.fetchingMetadata}
+                      checkIsHelmManaged={this.checkIsHelmManaged}
                     />
                   )}
                 />
@@ -567,7 +569,7 @@ class Root extends PureComponent {
                       snapshotInProgressApps={this.state.snapshotInProgressApps}
                       featureFlags={this.state.featureFlags}
                       ping={this.ping}
-                      isHelmManaged={this.state.isHelmManaged}
+                      isHelmManaged={isHelmManaged}
                     />
                   )}
                 />
