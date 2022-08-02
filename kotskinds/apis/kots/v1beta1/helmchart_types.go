@@ -18,6 +18,7 @@ package v1beta1
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
@@ -173,6 +174,91 @@ func (h *HelmChartSpec) GetHelmValues(values map[string]MappedChartValue) (map[s
 	}
 
 	return result, nil
+}
+
+func (h *HelmChartSpec) GetReplTmplValues(values map[string]MappedChartValue) (map[string]interface{}, error) {
+	newValues := make(map[string]interface{})
+
+	for k, v := range values {
+		value, err := h.getReplTmplValue(&v)
+		if err != nil || value == nil {
+			continue
+		}
+		newValues[k] = value
+	}
+
+	return newValues, nil
+}
+
+func (h *HelmChartSpec) getReplTmplValue(value *MappedChartValue) (interface{}, error) {
+	if value.valueType == "children" {
+		result := map[string]interface{}{}
+		for k, v := range value.children {
+			built, err := h.getReplTmplValue(v)
+			if err != nil || built == nil {
+				continue
+			}
+			result[k] = built
+		}
+		if len(result) == 0 {
+			return nil, nil
+		}
+		return result, nil
+	} else if value.valueType == "array" {
+		result := []interface{}{}
+		for _, v := range value.array {
+			built, err := h.getReplTmplValue(v)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to render array value")
+			}
+			result = append(result, built)
+		}
+		return result, nil
+	} else {
+		built, err := value.getBuiltValue()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to build value")
+		}
+		str, ok := built.(string)
+		if ok && (strings.Contains(str, "repl{{") || strings.Contains(str, "{{repl")) {
+			return built, nil
+		}
+		return nil, errors.New("value is not string or not repl tmpl function")
+	}
+}
+
+func GetMapIntersect(m1, m2 map[string]interface{}) (map[string]interface{}, error) {
+	res := make(map[string]interface{})
+	for k, v := range m1 {
+		res[k] = intersect(v, k, m2)
+	}
+
+	return res, nil
+}
+
+func intersect(v interface{}, k string, m2 map[string]interface{}) interface{} {
+	switch v.(type) {
+	case string, int, bool:
+		if v2, ok := m2[k]; ok {
+			return v2
+		}
+	case map[string]interface{}:
+		for k2, v2 := range v.(map[string]interface{}) {
+			_, ok := m2[k].(map[string]interface{})
+			if ok {
+				val := intersect(v2, k2, m2[k].(map[string]interface{}))
+				// set map here so only tmpl keys are present in returned result
+				m2[k] = v.(map[string]interface{})
+				// set child map value from intersection
+				m2[k].(map[string]interface{})[k2] = val
+				return m2[k]
+			}
+		}
+	default:
+		return nil
+	}
+
+	return nil
 }
 
 func MergeHelmChartValues(baseValues map[string]MappedChartValue,

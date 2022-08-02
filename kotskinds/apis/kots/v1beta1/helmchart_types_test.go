@@ -574,3 +574,220 @@ func Test_MergeHelmChartValues(t *testing.T) {
 		})
 	}
 }
+
+func Test_Intersect(t *testing.T) {
+	tests := []struct {
+		name   string
+		v      interface{}
+		k      string
+		values map[string]interface{}
+		expect interface{}
+	}{
+		{
+			name: "string value",
+			v:    "repl{{ConfigOption stringValue}}",
+			k:    "stringKey",
+			values: map[string]interface{}{
+				"stringKey": "valueIWant",
+			},
+			expect: "valueIWant",
+		}, {
+			name: "int value",
+			v:    2,
+			k:    "intKey",
+			values: map[string]interface{}{
+				"intKey": 1,
+			},
+			expect: 1,
+		}, {
+			name: "nested value",
+			v:    2,
+			k:    "intKey",
+			values: map[string]interface{}{
+				"myKeys": map[string]interface{}{
+					"intKey": 1,
+				},
+			},
+			expect: 1,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			actual := intersect(test.v, test.k, test.values)
+			diff := deep.Equal(&actual, &test.expect)
+			if len(diff) != 0 {
+				fmt.Printf("Failed diff compare with %s", strings.Join(diff, "\n"))
+				assert.NotEqual(t, test.expect, actual)
+			}
+		})
+	}
+}
+
+func Test_GetMapIntersect(t *testing.T) {
+	tests := []struct {
+		name   string
+		m1     map[string]interface{}
+		m2     map[string]interface{}
+		expect map[string]interface{}
+	}{
+		{
+			name: "root level",
+			m1: map[string]interface{}{
+				"key":  "repl{{ConfigOption myconfigkey}}",
+				"key2": "should not be in result",
+			},
+			m2: map[string]interface{}{
+				"key":  "myrenderedvalue",
+				"key3": "should not be in result",
+			},
+			expect: map[string]interface{}{
+				"key": "myrenderedvalue",
+			},
+		}, {
+			name: "nested key",
+			m1: map[string]interface{}{
+				"key": map[string]interface{}{
+					"value": "repl{{ConfigOption myconfigkey}}",
+				},
+			},
+			m2: map[string]interface{}{
+				"key": map[string]interface{}{
+					"value":  "myvalue",
+					"value2": "should not be present",
+				},
+			},
+			expect: map[string]interface{}{
+				"key": map[string]interface{}{
+					"value": "myvalue",
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			req := require.New(t)
+			actual, err := GetMapIntersect(test.m1, test.m2)
+			req.NoError(err)
+			diff := deep.Equal(&actual, &test.expect)
+			if len(diff) != 0 {
+				fmt.Printf("Failed diff compare with %s", strings.Join(diff, "\n"))
+				assert.NotEqual(t, test.expect, actual)
+			}
+		})
+	}
+}
+
+func Test_GetReplTmplValues(t *testing.T) {
+	tests := []struct {
+		name   string
+		spec   *HelmChartSpec
+		values map[string]MappedChartValue
+		expect map[string]interface{}
+	}{
+		{
+			name: "root level",
+			values: map[string]MappedChartValue{
+				"key": MappedChartValue{
+					strValue: "{{repl ConfigOption 'test'}}",
+				},
+				"key2": MappedChartValue{
+					strValue: "repl{{ ConfigOption 'test'}}",
+				},
+				"key3": MappedChartValue{
+					strValue: "should not be returned",
+				},
+			},
+			expect: map[string]interface{}{
+				"key":  "{{repl ConfigOption 'test'}}",
+				"key2": "repl{{ ConfigOption 'test'}}",
+			},
+		}, {
+			name: "nested",
+			values: map[string]MappedChartValue{
+				"key": MappedChartValue{
+					children: map[string]*MappedChartValue{
+						"childKey": &MappedChartValue{
+							strValue: "repl{{ConfigOption 'test'}}",
+						},
+						"childKey2": &MappedChartValue{
+							strValue: "should not be returned",
+						},
+					},
+				},
+				"key2": MappedChartValue{
+					strValue: "repl{{ ConfigOption 'test'}}",
+				},
+				"key3": MappedChartValue{
+					strValue: "should not be returned",
+				},
+			},
+			expect: map[string]interface{}{
+				"key": MappedChartValue{
+					children: map[string]*MappedChartValue{
+						"childKey": &MappedChartValue{
+							strValue: "repl{{ConfigOption 'test'}}",
+						},
+					},
+				},
+				"key2": "repl{{ ConfigOption 'test'}}",
+			},
+		}, {
+			name: "complex nested",
+			values: map[string]MappedChartValue{
+				"rootKey": MappedChartValue{
+					children: map[string]*MappedChartValue{
+						"level2Key": &MappedChartValue{
+							children: map[string]*MappedChartValue{
+								"level3Key": &MappedChartValue{
+									strValue: "should not be returned",
+								},
+							},
+						},
+						"level2Key2": &MappedChartValue{
+							children: map[string]*MappedChartValue{
+								"level3Key2": &MappedChartValue{
+									strValue: "repl{{ConfigOption 'test'}}",
+								},
+							},
+						},
+					},
+				},
+				"key2": MappedChartValue{
+					strValue: "repl{{ ConfigOption 'test'}}",
+				},
+				"key3": MappedChartValue{
+					strValue: "should not be returned",
+				},
+			},
+			expect: map[string]interface{}{
+				"rootKey": MappedChartValue{
+					children: map[string]*MappedChartValue{
+						"level2Key2": &MappedChartValue{
+							children: map[string]*MappedChartValue{
+								"level3Key2": &MappedChartValue{
+									strValue: "repl{{ConfigOption 'test'}}",
+								},
+							},
+						},
+					},
+				},
+				"key2": "repl{{ ConfigOption 'test'}}",
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			req := require.New(t)
+			actual, err := test.spec.GetReplTmplValues(test.values)
+			req.NoError(err)
+			diff := deep.Equal(&actual, &test.expect)
+			if len(diff) != 0 {
+				fmt.Printf("Failed diff compare with %s", strings.Join(diff, "\n"))
+				assert.NotEqual(t, test.expect, actual)
+			}
+		})
+	}
+}
