@@ -41,6 +41,7 @@ runAsRoot() {
 main() {
     initArch
     initOS
+    echo "OS=$OS, ARCH=$ARCH"
 
     export PATH=$INSTALL_DIR:$PATH
 
@@ -64,6 +65,7 @@ main() {
         ( [ $EUID -eq 0 -o "$USE_SUDO" != "true" ] || runAsRoot chown $EUID:$EGID $INSTALL_DIR/helm )
 
     VELERO_RELEASE=$(curl -s "https://api.github.com/repos/vmware-tanzu/velero/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+    echo "VELERO_RELEASE=$VELERO_RELEASE"
     curl -fsLo velero.tar.gz "https://github.com/vmware-tanzu/velero/releases/download/$VELERO_RELEASE/velero-$VELERO_RELEASE-$OS-$ARCH.tar.gz" \
         && tar xzf velero.tar.gz \
         && install -m 0755 velero-*/velero $INSTALL_DIR/velero
