@@ -1,6 +1,7 @@
 package kots
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/http"
@@ -38,13 +39,18 @@ func (i *Installer) Install(kubeconfig string, test inventory.Test, adminConsole
 	Expect(err).WithOffset(1).Should(Succeed(), "Kots install failed")
 	Eventually(session).WithOffset(1).WithTimeout(InstallWaitDuration).Should(gexec.Exit(0), "Kots install failed with non-zero exit code")
 
+	return i.AdminConsolePortForward(kubeconfig, test, adminConsolePort)
+}
+
+func (i *Installer) AdminConsolePortForward(kubeconfig string, test inventory.Test, adminConsolePort string) string {
+	var err error
 	if adminConsolePort == "" {
 		adminConsolePort, err = getFreePort()
-		Expect(err).WithOffset(1).Should(Succeed(), "port forward")
+		Expect(err).WithOffset(1).Should(Succeed(), "get free port")
 	}
-	port, err := i.adminConsolePortForward(kubeconfig, test.Namespace, adminConsolePort)
+	err = i.portForward(kubeconfig, test.Namespace, adminConsolePort)
 	Expect(err).WithOffset(1).Should(Succeed(), "port forward")
-	return port
+	return adminConsolePort
 }
 
 func (i *Installer) install(kubeconfig, upstreamURI, namespace string, useMinimalRBAC bool) (*gexec.Session, error) {
@@ -67,32 +73,37 @@ func (i *Installer) install(kubeconfig, upstreamURI, namespace string, useMinima
 	return util.RunCommand(exec.Command("kots", args...))
 }
 
-func (i *Installer) adminConsolePortForward(kubeconfig, namespace, adminConsolePort string) (string, error) {
+func (i *Installer) portForward(kubeconfig, namespace, adminConsolePort string) error {
 	url := fmt.Sprintf("http://localhost:%s", adminConsolePort)
 
+	timeout := time.Minute
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+
 	go func() {
+		defer cancel()
 		_, err := util.RunCommand(exec.Command(
 			"kots",
 			"admin-console",
 			fmt.Sprintf("--kubeconfig=%s", kubeconfig),
 			fmt.Sprintf("--namespace=%s", namespace),
 			fmt.Sprintf("--port=%s", adminConsolePort),
+			fmt.Sprintf("--wait-duration=%s", timeout),
 		))
 		Expect(err).WithOffset(1).Should(Succeed(), "async port forward")
 	}()
 
-	for i := 1; ; i++ {
-		_, err := http.Get(fmt.Sprintf("%s/api/v1/ping", url))
-		if err == nil {
-			break
+	var err error
+	for {
+		select {
+		case <-time.After(2 * time.Second):
+			_, err = http.Get(fmt.Sprintf("%s/api/v1/ping", url))
+			if err == nil {
+				return nil
+			}
+		case <-ctx.Done():
+			return errors.Wrap(err, "api ping timeout")
 		}
-		if i == 10 {
-			return adminConsolePort, errors.Wrap(err, "api ping")
-		}
-		time.Sleep(2 * time.Second)
 	}
-
-	return adminConsolePort, nil
 }
 
 func getFreePort() (string, error) {

@@ -41,6 +41,8 @@ var (
 	kotsadmImageNamespace string
 	kotsadmImageTag       string
 	kotsadmForwardPort    string
+	kotsHelmChartURL      string
+	kotsHelmChartVersion  string
 )
 
 func init() {
@@ -52,6 +54,8 @@ func init() {
 	flag.StringVar(&kotsadmImageNamespace, "kotsadm-image-namespace", "", "override the kotsadm images registry namespace")
 	flag.StringVar(&kotsadmImageTag, "kotsadm-image-tag", "alpha", "override the kotsadm images tag")
 	flag.StringVar(&kotsadmForwardPort, "kotsadm-forward-port", "", "sets the port that the admin console will be exposed on instead of generating a random one")
+	flag.StringVar(&kotsHelmChartURL, "kots-helm-chart-url", "", "kots helm chart url")
+	flag.StringVar(&kotsHelmChartVersion, "kots-helm-chart-version", "", "kots helm chart version")
 }
 
 func TestE2E(t *testing.T) {
@@ -164,17 +168,29 @@ var _ = Describe("E2E", func() {
 					prometheus.Install(helmCLI, c.GetKubeconfig())
 				}
 
-				GinkgoWriter.Println("Installing KOTS")
-				adminConsolePort := kotsInstaller.Install(c.GetKubeconfig(), test, kotsadmForwardPort)
+				var adminConsolePort string
+				if test.IsHelmManaged {
+					GinkgoWriter.Println("Installing KOTS Helm chart")
+					session, err := helmCLI.Install(c.GetKubeconfig(), "-n", test.Namespace, "admin-console", kotsHelmChartURL, "--version", kotsHelmChartVersion, "--create-namespace", "--wait")
+					Expect(err).WithOffset(1).Should(Succeed(), "helm install")
+					Eventually(session).WithOffset(1).WithTimeout(time.Minute).Should(gexec.Exit(0), "helm install failed with non-zero exit code")
 
+					adminConsolePort = kotsInstaller.AdminConsolePortForward(c.GetKubeconfig(), test, kotsadmForwardPort)
+				} else {
+					GinkgoWriter.Println("Installing KOTS")
+					adminConsolePort = kotsInstaller.Install(c.GetKubeconfig(), test, kotsadmForwardPort)
+				}
+
+				var testimParams inventory.TestimParams
 				if test.Setup != nil {
-					test.Setup(kubectlCLI)
+					testimParams = test.Setup(kubectlCLI)
 				}
 
 				GinkgoWriter.Println("Running E2E tests")
 				testimRun = testimClient.NewRun(c.GetKubeconfig(), test, testim.RunOptions{
 					TunnelPort: adminConsolePort,
 					BaseUrl:    testimBaseUrl,
+					Params:     testimParams,
 				})
 				testimRun.ShouldSucceed()
 			},
@@ -189,6 +205,7 @@ var _ = Describe("E2E", func() {
 			Entry(nil, inventory.NewNoRequiredConfig()),
 			Entry(nil, inventory.NewVersionHistoryPagination()),
 			Entry(nil, inventory.NewChangeLicense()),
+			Entry(nil, inventory.NewHelmManagedMode()),
 		)
 
 	})

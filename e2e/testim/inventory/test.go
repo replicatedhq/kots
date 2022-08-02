@@ -2,6 +2,8 @@ package inventory
 
 import "github.com/replicatedhq/kots/e2e/kubectl"
 
+type TestimParams map[string]interface{}
+
 type Test struct {
 	Name            string
 	Suite           string
@@ -12,5 +14,6 @@ type Test struct {
 	NeedsSnapshots  bool
 	NeedsMonitoring bool
 	NeedsRegistry   bool
-	Setup           func(kubectlCLI *kubectl.CLI)
+	IsHelmManaged   bool
+	Setup           func(kubectlCLI *kubectl.CLI) TestimParams
 }
