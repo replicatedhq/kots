@@ -188,3 +188,27 @@ abc:
 	req.NoError(err)
 	req.Equal(allchars, abcTest.ABC.XYZ)
 }
+
+func TestProxyEnvVars(t *testing.T) {
+	req := require.New(t)
+
+	t.Setenv("HTTPS_PROXY", "1.1.1.1")
+	t.Setenv("HTTP_PROXY", "2.2.2.2")
+	t.Setenv("NO_PROXY", "3.3.3.3")
+
+	builder := Builder{}
+	builder.AddCtx(StaticCtx{})
+
+	httpsProxy, err := builder.String(`{{repl HTTPSProxy}}`)
+	req.NoError(err)
+
+	httpProxy, err := builder.String(`{{repl HTTPProxy}}`)
+	req.NoError(err)
+
+	noProxy, err := builder.String(`{{repl NoProxy}}`)
+	req.NoError(err)
+
+	req.Equal(httpsProxy, "1.1.1.1")
+	req.Equal(httpProxy, "2.2.2.2")
+	req.Equal(noProxy, "3.3.3.3")
+}
