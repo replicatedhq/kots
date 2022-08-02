@@ -94,6 +94,7 @@ func (ctx StaticCtx) FuncMap() template.FuncMap {
 	funcMap["Distribution"] = ctx.distribution
 	funcMap["NodeCount"] = ctx.nodeCount
 
+	funcMap["HTTPSProxy"] = ctx.httpsProxy
 	funcMap["HTTPProxy"] = ctx.httpProxy
 	funcMap["NoProxy"] = ctx.noProxy
 
@@ -554,6 +555,10 @@ func (ctx StaticCtx) nodeCount() int {
 		return 0
 	}
 	return len(nodes)
+}
+
+func (ctx StaticCtx) httpsProxy() string {
+	return os.Getenv("HTTPS_PROXY")
 }
 
 func (ctx StaticCtx) httpProxy() string {
