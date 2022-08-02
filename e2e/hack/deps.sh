@@ -41,6 +41,7 @@ runAsRoot() {
 main() {
     initArch
     initOS
+    echo "OS=$OS, ARCH=$ARCH"
 
     export PATH=$INSTALL_DIR:$PATH
 
@@ -52,7 +53,7 @@ main() {
     EUID=$(id -u)
     EGID=$(id -g)
 
-    curl -sLO "https://dl.k8s.io/release/$(curl -sL https://dl.k8s.io/release/stable.txt)/bin/$OS/$ARCH/kubectl" \
+    curl -fsLO "https://dl.k8s.io/release/$(curl -sL https://dl.k8s.io/release/stable.txt)/bin/$OS/$ARCH/kubectl" \
         && install -m 0755 kubectl $INSTALL_DIR/kubectl
 
     export K3D_INSTALL_DIR=$INSTALL_DIR
@@ -64,7 +65,8 @@ main() {
         ( [ $EUID -eq 0 -o "$USE_SUDO" != "true" ] || runAsRoot chown $EUID:$EGID $INSTALL_DIR/helm )
 
     VELERO_RELEASE=$(curl -s "https://api.github.com/repos/vmware-tanzu/velero/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-    curl -sLo velero.tar.gz "https://github.com/vmware-tanzu/velero/releases/download/$VELERO_RELEASE/velero-$VELERO_RELEASE-$OS-$ARCH.tar.gz" \
+    echo "VELERO_RELEASE=$VELERO_RELEASE"
+    curl -fsLo velero.tar.gz "https://github.com/vmware-tanzu/velero/releases/download/$VELERO_RELEASE/velero-$VELERO_RELEASE-$OS-$ARCH.tar.gz" \
         && tar xzf velero.tar.gz \
         && install -m 0755 velero-*/velero $INSTALL_DIR/velero
 
