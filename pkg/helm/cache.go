@@ -278,18 +278,21 @@ func watchSecrets(ctx context.Context, namespace string, labelSelector string) e
 					break
 				}
 
-				releaseInfo, err := helmAppFromSecret(secret)
+				helmRelease, err := HelmReleaseFromSecretData(secret.Data["release"])
 				if err != nil {
-					logger.Errorf("failed to create helm release info from secret %s in namespace %s: %s", secret.Name, namespace)
-					break
-				}
-				if releaseInfo == nil {
+					logger.Errorf("failed to get helm release from secret in delete event", err)
 					break
 				}
 
-				deleteUpdateCacheForChart(releaseInfo.ChartPath)
+				// Get app from cache because the config secret is likely gone now, and we can't construct this data from cluster
+				helmApp := GetHelmApp(helmRelease.Name)
+				if helmApp == nil {
+					break
+				}
 
-				RemoveHelmApp(releaseInfo.Release.Name)
+				deleteUpdateCacheForChart(helmApp.ChartPath)
+
+				RemoveHelmApp(helmApp.Release.Name)
 
 			default:
 				secret, ok := e.Object.(*corev1.Secret)

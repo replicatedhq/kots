@@ -418,7 +418,13 @@ class DashboardVersionCard extends React.Component {
   };
 
   renderCurrentVersion = () => {
-    const { currentVersion, app } = this.props;
+    const { currentVersion, app, isHelmManaged } = this.props;
+
+    let sequenceLabel = "Sequence";
+    if (isHelmManaged) {
+      sequenceLabel = "Revision";
+    }
+
     return (
       <div className="flex1 flex-column">
         <div className="flex">
@@ -428,7 +434,7 @@ class DashboardVersionCard extends React.Component {
                 {currentVersion.versionLabel || currentVersion.title}
               </p>
               <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">
-                Sequence {currentVersion.sequence}
+                {sequenceLabel} {currentVersion.sequence}
               </p>
             </div>
             <div>{this.getCurrentVersionStatus(currentVersion)}</div>
@@ -1282,9 +1288,11 @@ class DashboardVersionCard extends React.Component {
                   {latestDeployableVersion.versionLabel ||
                     latestDeployableVersion.title}
                 </p>
-                <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">
-                  Sequence {latestDeployableVersion.sequence}
-                </p>
+                {this.props.isHelmManaged ||
+                  <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">
+                    Sequence {latestDeployableVersion.sequence}
+                  </p>
+                }
                 {latestDeployableVersion.isRequired && (
                   <span className="status-tag required u-marginLeft--10">
                     {" "}

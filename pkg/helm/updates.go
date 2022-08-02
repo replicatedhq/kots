@@ -62,14 +62,23 @@ func setCachedUpdates(chartPath string, updates ChartUpdates) {
 	updateCache[chartPath] = updates
 }
 
+// Removes this tag from cache and also every tag that is less than this one according to semver ordering
 func removeFromCachedUpdates(chartPath string, tag string) {
 	updateCacheMutex.Lock()
 	defer updateCacheMutex.Unlock()
 
+	version, parseErr := semver.ParseTolerant(tag)
+
 	existingList := updateCache[chartPath]
 	newList := ChartUpdates{}
 	for _, update := range existingList {
-		if update.Tag != tag {
+		// If tag cannot be parsed, fall back on string comparison.
+		// This should never happen for versions that are on the list because we only include valid semvers and Helm chart versions are valid semvers.
+		if parseErr != nil {
+			if update.Tag != tag {
+				newList = append(newList, update)
+			}
+		} else if update.Version.GT(version) {
 			newList = append(newList, update)
 		}
 	}

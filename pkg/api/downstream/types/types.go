@@ -114,13 +114,13 @@ func (v bySequence) Less(i, j int) bool {
 
 // Modified bubble sort: instead of comparing adjacent elements, compare the elements at the semvers only.
 // Input is assumed to be sorted by sequence so non-semver elements are already in correct order.
-func SortDownstreamVersions(versions *DownstreamVersions, sortBySemver bool) {
+func SortDownstreamVersions(versions []*DownstreamVersion, sortBySemver bool) {
 	if !sortBySemver {
-		sort.Sort(sort.Reverse(bySequence(versions.AllVersions)))
+		sort.Sort(sort.Reverse(bySequence(versions)))
 		return
 	}
 
-	kotssemver.SortVersions(bySemver(versions.AllVersions))
+	kotssemver.SortVersions(bySemver(versions))
 }
 
 // sort.Interface interface implementations
