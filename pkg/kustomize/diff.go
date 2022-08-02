@@ -125,7 +125,7 @@ func DiffAppVersionsForDownstream(downstreamName string, archive string, diffBas
 		baseContents, ok := baseChartFiles[archiveFilename]
 		if !ok {
 			// this file was added
-			scanner := bufio.NewScanner(bytes.NewReader(archiveContents))
+			scanner := bufio.NewScanner(strings.NewReader(archiveContents))
 			for scanner.Scan() {
 				diff.LinesAdded++
 			}
@@ -150,7 +150,7 @@ func DiffAppVersionsForDownstream(downstreamName string, archive string, diffBas
 		_, ok := archiveChartFiles[baseFilename]
 		if !ok {
 			// this file was removed
-			scanner := bufio.NewScanner(bytes.NewReader(baseContents))
+			scanner := bufio.NewScanner(strings.NewReader(baseContents))
 			for scanner.Scan() {
 				diff.LinesRemoved++
 			}

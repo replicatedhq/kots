@@ -129,7 +129,7 @@ func (h *Handler) GetAppRenderedContents(w http.ResponseWriter, r *http.Request)
 	}
 
 	for filename, b := range kustomizedFiles {
-		decodedArchiveFiles[filename] = string(b)
+		decodedArchiveFiles[filename] = b
 	}
 
 	JSON(w, http.StatusOK, GetAppRenderedContentsResponse{

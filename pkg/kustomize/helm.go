@@ -22,7 +22,7 @@ func init() {
 	goTemplateRegex = regexp.MustCompile(`({{)|(}})`)
 }
 
-func RenderChartsArchive(versionArchive string, downstreamName string, kustomizeBinPath string) ([]byte, map[string][]byte, error) {
+func RenderChartsArchive(versionArchive string, downstreamName string, kustomizeBinPath string) ([]byte, map[string]string, error) {
 	archiveChartDir := filepath.Join(versionArchive, "overlays", "downstreams", downstreamName, "charts")
 	_, err := os.Stat(archiveChartDir)
 	if err != nil {
@@ -45,7 +45,7 @@ func RenderChartsArchive(versionArchive string, downstreamName string, kustomize
 		}
 	}
 
-	kustomizedFilesList := map[string][]byte{}
+	kustomizedFilesList := map[string]string{}
 	sourceChartsDir := filepath.Join(versionArchive, "base", "charts")
 	metadataFiles := []string{"Chart.yaml", "Chart.lock"}
 
@@ -92,7 +92,7 @@ func RenderChartsArchive(versionArchive string, downstreamName string, kustomize
 				return errors.Wrapf(err, "failed to split yaml result for %s", path)
 			}
 			for filename, d := range archiveFiles {
-				kustomizedFilesList[filename] = d
+				kustomizedFilesList[filename] = string(d)
 			}
 
 			err = saveHelmFile(destChartsDir, relPath, "all.yaml", archiveChartOutput)
