@@ -1425,8 +1425,8 @@ class AppVersionHistory extends Component {
                     }
                     showHelmDeployModal={true}
                     showDownloadValues={
-                      this.state.showHelmDeployModalForVersion.statusLabel !==
-                      "Redeploy"
+                      this.state.showHelmDeployModalForVersion.statusLabel ===
+                      "Deploy"
                     }
                     subtitle="Follow the steps below to upgrade your application with your new values.yaml."
                     title={`${this.state.showHelmDeployModalForVersion.statusLabel} ${this.props?.app.slug} ${version.versionLabel}`}

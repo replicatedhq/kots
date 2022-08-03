@@ -112,7 +112,7 @@ function HelmDeployModal({
           )}
           <div className="u-marginBottom--30 flex flex-row">
             <span className="Title step-number u-marginRight--15">
-              {showDownloadValues === null ? "2" : "3"}
+              {showDownloadValues ? "3" : "2"}
             </span>
             <div className="flex1">
               <span className="Title u-marginBottom--5 u-display--block">
