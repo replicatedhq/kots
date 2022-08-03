@@ -48,7 +48,7 @@ module.exports = function (env) {
       alias: {
         "@src": path.resolve(__dirname, "src"),
         "@features": path.resolve(__dirname, "src/features"),
-        "handlebars" : "handlebars/dist/handlebars.js"
+        "handlebars" : "handlebars/dist/handlebars.js",
       },
       mainFields: ["browser", "main"],
     },

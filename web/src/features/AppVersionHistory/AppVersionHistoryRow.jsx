@@ -69,8 +69,7 @@ const AppVersionHistoryRow = ({
 }) => {
 
   const { currentApp } = useCurrentApp();
-  const { data } = useVersions();
-  console.log("data", data);
+  const { data: versionData } = useVersions();
 
   handleSelectReleasesToDiff = () => {
     if (!selectedDiffReleases) {
@@ -83,6 +82,9 @@ const AppVersionHistoryRow = ({
   };
 
   function deployButtonStatus(version) {
+    if (version.statusLabel) {
+      return version.statusLabel;
+    }
     const downstream = currentApp?.downstream;
 
     const isCurrentVersion =

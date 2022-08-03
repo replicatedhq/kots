@@ -2,13 +2,10 @@ import { useQuery } from "react-query";
 import { Utilities } from "../../../utilities/utilities";
 import { useParams } from "react-router-dom";
 import { useCurrentApp } from "../hooks/useCurrentApp";
+import { useMetadata } from "@src/stores";
+import { useIsHelmManaged } from "@src/components/hooks";
 
-const statusToStatusLabel = {
-  deployed: "Deployed",
-  deploying: "Deploying",
-  pending_config: "Configure",
 
-}
 
 async function getVersions({
   accessToken = Utilities.getToken(),
@@ -23,11 +20,11 @@ async function getVersions({
       `${apiEndpoint}/app/${slug}/versions?currentPage=${currentPage}&pageSize=${pageSize}&pinLatestDeployable=true`,
       {
         headers: {
-        Authorization: accessToken,
-        "Content-Type": "application/json",
-      },
-      method: "GET",
-    });
+          Authorization: accessToken,
+          "Content-Type": "application/json",
+        },
+        method: "GET",
+      });
     if (!res.ok) {
       if (res.status === 401) {
         Utilities.logoutUser();
@@ -41,20 +38,12 @@ async function getVersions({
   }
 }
 
-function getVersionsSelector(versions) {
-  console.log("versions selector", versions);
+function getVersionsSelectorForKotsManaged({ versions, currentApp, metadata }) {
+  console.log("kots managed versions");
+
+  const downstream = currentApp?.downstream;
 
   const versionHistory = versions?.versionHistory.map(version => {
-    return {
-      ...version,
-      statusLabel:
-    })
-  return { test: "test" };
-
-
-  /*
-  function deployButtonStatus(version) {
-    const downstream = currentApp?.downstream;
 
     const isCurrentVersion =
       version.sequence === downstream?.currentVersion?.sequence;
@@ -69,113 +58,125 @@ function getVersionsSelector(versions) {
       (version.status === "failed" || version.status === "deployed");
     const canUpdateKots =
       version.needsKotsUpgrade &&
-      !adminConsoleMetadata?.isAirgap &&
-      !adminConsoleMetadata?.isKurl;
+      !metadata?.isAirgap &&
+      !metadata?.isKurl;
+
+    let statusLabel = "";
 
     if (needsConfiguration) {
-      return "Configure";
-      // not installed
-      // but also check if has access to internet
+      statusLabel = "Configure";
     } else if (downstream?.currentVersion?.sequence == undefined) {
       if (canUpdateKots) {
-        return "Upgrade";
+        statusLabel = "Upgrade";
       } else {
-        return "Deploy";
+        statusLabel = "Deploy";
       }
     } else if (isRedeploy) {
-      return "Redeploy";
+      statusLabel = "Redeploy";
     } else if (isRollback) {
-      return "Rollback";
+      statusLabel = "Rollback";
     } else if (isDeploying) {
-      return "Deploying";
+      statusLabel = "Deploying";
     } else if (isCurrentVersion) {
-      return "Deployed";
+      statusLabel = "Deployed";
     } else {
       if (canUpdateKots) {
-        return "Upgrade";
+        statusLabel = "Upgrade";
       } else {
-        return "Deploy";
+        statusLabel = "Deploy";
       }
     }
+    return {
+      version,
+      statusLabel,
+    }
+  });
+
+  return {
+    ...versions,
+    versionHistory,
+  };
+}
+
+// TODO: refactor this function so that the airgapped / nonairgapped are separate
+function getVersionsSelectorForAirgapped({ versions, currentApp, metadata }) {
+  return getVersionsSelectorForKotsManaged({ versions, currentApp, metadata });
+}
+
+function getVersionsSelectorForHelmManaged({ versions }) {
+  console.log("helm managed versions");
+  console.log(versions);
+  const deployedSequence = versions?.versionHistory?.find((v) => v.status === "deployed")?.sequence;
+
+  const versionHistory = versions?.versionHistory.map(version => {
+    let statusLabel = "Deployed";
+
+    if (version.sequence > deployedSequence) {
+      statusLabel = "Deploy";
+    }
+
+    if (version.sequence < deployedSequence) {
+      statusLabel = "Rollback";
+    }
+    return {
+      ...version,
+      statusLabel,
+    }
+  });
+
+  return {
+    ...versions,
+    versionHistory,
+  };
+}
+
+function chooseVersionsSelector({
+  isAirgap,
+  isKurl,
+  isHelmManaged,
+  _getVersionsSelectorForKotsManaged = getVersionsSelectorForKotsManaged,
+  _getVersionsSelectorForAirgapped = getVersionsSelectorForAirgapped,
+  _getVersionsSelectorForHelmManaged = getVersionsSelectorForHelmManaged
+}) {
+  // if airgapped
+  if (isAirgap && isKurl) {
+    return _getVersionsSelectorForAirgapped;
   }
-  */
+
+  // if helm managed
+  if (isHelmManaged) {
+    return _getVersionsSelectorForHelmManaged;
+  }
+
+  // if kots managed
+  return _getVersionsSelectorForKotsManaged
 
 }
 
 function useVersions({ _getVersions = getVersions } = {}) {
   let { slug } = useParams();
   let { currentApp } = useCurrentApp();
+  let { data: metadata } = useMetadata();
+  let { data: isHelmManaged } = useIsHelmManaged();
+
+  const versionSelector = chooseVersionsSelector({
+    // labels differ by installation manager and if airgapped
+    isAirgap: metadata?.isAirgap,
+    isHelmManaged,
+    isKurl: metadata?.isKurl,
+  });
   return useQuery("versions", () => _getVersions({ slug }), {
     // don't call versions until current app is ascertained
     enabled: !!currentApp,
+    select: versions => versionSelector({ versions, currentApp, metadata }),
     staleTime: 2000,
-    select: getVersionsSelector,
   });
 }
 
-export { useVersions };
-// looks like this gets refetched if it returns a certain status
-/*
-  fetchKotsDownstreamHistory = async () => {
-    const { match } = this.props;
-    const appSlug = match.params.slug;
+function UseVersions({ children }) {
+  const query = useVersions();
 
-    this.setState({
-      loadingVersionHistory: true,
-      errorTitle: "",
-      errorMsg: "",
-      displayErrorModal: false,
-    });
+  return children(query);
+}
 
-    try {
-      const { currentPage, pageSize } = this.state;
-      const res = await fetch(
-        `${process.env.API_ENDPOINT}/app/${appSlug}/versions?currentPage=${currentPage}&pageSize=${pageSize}&pinLatestDeployable=true`,
-        {
-          headers: {
-            Authorization: Utilities.getToken(),
-            "Content-Type": "application/json",
-          },
-          method: "GET",
-        }
-      );
-      if (!res.ok) {
-        if (res.status === 401) {
-          Utilities.logoutUser();
-          return;
-        }
-        this.setState({
-          loadingVersionHistory: false,
-          errorTitle: "Failed to get version history",
-          errorMsg: `Unexpected status code: ${res.status}`,
-          displayErrorModal: true,
-        });
-        return;
-      }
-      const response = await res.json();
-      const versionHistory = response.versionHistory;
-
-      if (isAwaitingResults(versionHistory) && this._mounted) {
-        this.state.versionHistoryJob.start(
-          this.fetchKotsDownstreamHistory,
-          2000
-        );
-      } else {
-        this.state.versionHistoryJob.stop();
-      }
-
-      this.setState({
-        loadingVersionHistory: false,
-        versionHistory: versionHistory,
-        numOfSkippedVersions: response.numOfSkippedVersions,
-        numOfRemainingVersions: response.numOfRemainingVersions,
-        totalCount: response.totalCount,
-      });
-    } catch (err) {
-      this.setState({
-        loadingVersionHistory: false,
-        errorTitle: "Failed to get version history",
-        errorMsg: err ? err.message : "Something went wrong, please try again.",
-        displayErrorModal: true,
-      });
-      */
+export { useVersions, UseVersions };
