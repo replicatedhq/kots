@@ -313,20 +313,18 @@ class GenerateSupportBundle extends React.Component {
     });
 
     let url = `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/app/${watch?.id}/cluster/${clusterId}/collect`;
-    if (!watch.id) { // TODO: check if helm managed, not if id is missing
+    if (!watch.id) {
+      // TODO: check if helm managed, not if id is missing
       url = `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/app/${watch?.slug}/collect`;
     }
 
-    fetch(
-      url,
-      {
-        headers: {
-          Authorization: Utilities.getToken(),
-          "Content-Type": "application/json",
-        },
-        method: "POST",
-      }
-    )
+    fetch(url, {
+      headers: {
+        Authorization: Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    })
       .then(async (res) => {
         if (!res.ok) {
           this.setState({
