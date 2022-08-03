@@ -38,6 +38,7 @@ async function getVersions({
   }
 }
 
+// TODO: refactor this function so that the airgapped / nonairgapped are separate
 function getVersionsSelectorForKotsManaged({ versions, currentApp, metadata }) {
   console.log("kots managed versions");
 
@@ -104,12 +105,10 @@ function getVersionsSelectorForAirgapped({ versions, currentApp, metadata }) {
 }
 
 function getVersionsSelectorForHelmManaged({ versions }) {
-  console.log("helm managed versions");
-  console.log(versions);
   const deployedSequence = versions?.versionHistory?.find((v) => v.status === "deployed")?.sequence;
 
   const versionHistory = versions?.versionHistory.map(version => {
-    let statusLabel = "Deployed";
+    let statusLabel = "Redeploy";
 
     if (version.sequence > deployedSequence) {
       statusLabel = "Deploy";

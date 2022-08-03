@@ -681,8 +681,8 @@ class AppVersionHistory extends Component {
           <div className="flex alignItems--center justifyContent--flexEnd">
             <span
               className={`u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default ${version.downloadStatus.status === "failed"
-                  ? "u-textColor--error"
-                  : ""
+                ? "u-textColor--error"
+                : ""
                 }`}
             >
               {version.downloadStatus.message}
@@ -1327,51 +1327,6 @@ class AppVersionHistory extends Component {
     }
   };
 
-  deployButtonStatus = (version) => {
-    const app = this.props.app;
-    const downstream = app?.downstream;
-
-    const isCurrentVersion =
-      version.sequence === downstream.currentVersion?.sequence;
-    const isDeploying = version.status === "deploying";
-    const isPastVersion = find(downstream.pastVersions, {
-      sequence: version.sequence,
-    });
-    const needsConfiguration = version.status === "pending_config";
-    const isRollback = isPastVersion && version.deployedAt && app.allowRollback;
-    const isRedeploy =
-      isCurrentVersion &&
-      (version.status === "failed" || version.status === "deployed");
-    const canUpdateKots =
-      version.needsKotsUpgrade &&
-      !this.props.adminConsoleMetadata?.isAirgap &&
-      !this.props.adminConsoleMetadata?.isKurl;
-
-    if (needsConfiguration) {
-      return "Configure";
-    } else if (downstream?.currentVersion?.sequence == undefined) {
-      if (canUpdateKots) {
-        return "Upgrade";
-      } else {
-        return "Deploy";
-      }
-    } else if (isRedeploy) {
-      return "Redeploy";
-    } else if (isRollback) {
-      return "Rollback";
-    } else if (isDeploying) {
-      return "Deploying";
-    } else if (isCurrentVersion) {
-      return "Deployed";
-    } else {
-      if (canUpdateKots) {
-        return "Upgrade";
-      } else {
-        return "Deploy";
-      }
-    }
-  };
-
   renderAppVersionHistoryRow = (version, index) => {
     if (
       !version ||
@@ -1430,6 +1385,7 @@ class AppVersionHistory extends Component {
           }
           adminConsoleMetadata={this.props.adminConsoleMetadata}
         />
+        {/* TODO: refactor this to use the version hook  */}
         {this.state?.showHelmDeployModalForVersion?.versionLabel ===
           version.versionLabel && (
             <UseDownloadValues
@@ -1460,15 +1416,9 @@ class AppVersionHistory extends Component {
                       registryUsername={this.props?.app?.credentials?.username}
                       registryPassword={this.props?.app?.credentials?.password}
                       showHelmDeployModal={true}
-                      showDownloadValues={
-                        this.deployButtonStatus(
-                          this.state.showHelmDeployModalForVersion
-                        ) !== "Redeploy"
-                      }
+                      showDownloadValues={this.state.showHelmDeployModalForVersion.statusLabel !== "Redeploy"}
                       subtitle="Follow the steps below to upgrade your application with your new values.yaml."
-                      title={` ${this.deployButtonStatus(
-                        this.state.showHelmDeployModalForVersion
-                      )} ${this.props?.app.slug} ${version.versionLabel}`}
+                      title={`${this.state.showHelmDeployModalForVersion.statusLabel} ${this.props?.app.slug} ${version.versionLabel}`}
                       upgradeTitle="Upgrade application with Helm"
                       version={version.versionLabel}
                     />
@@ -1807,7 +1757,14 @@ class AppVersionHistory extends Component {
                             </div>
                           </div>
                           {this.state.updatesAvailable ? (
-                            this.renderAppVersionHistoryRow(versionHistory[0])
+                            <UseVersions>
+                              {({ data: versions }) => {
+                                if (!versions) {
+                                  return null;
+                                }
+                                return this.renderAppVersionHistoryRow(versions?.versionHistory[0])
+                              }}
+                            </UseVersions>
                           ) : (
                             <div className="flex-column flex1 u-marginTop--20 u-marginBottom--10 alignItems--center justifyContent--center u-backgroundColor--white u-borderRadius--rounded">
                               <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-padding--10">

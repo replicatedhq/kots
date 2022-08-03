@@ -85,6 +85,9 @@ const AppVersionHistoryRow = ({
     if (version.statusLabel) {
       return version.statusLabel;
     }
+
+    // TODO: delete the rest of this function.
+    // need to consolidate all of the version calls before you can do that
     const downstream = currentApp?.downstream;
 
     const isCurrentVersion =
