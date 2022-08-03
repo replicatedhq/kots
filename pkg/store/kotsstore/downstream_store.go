@@ -347,7 +347,7 @@ func (s *KOTSStore) GetDownstreamVersions(appID string, clusterID string, downlo
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app license")
 	}
-	downstreamtypes.SortDownstreamVersions(result, license.Spec.IsSemverRequired)
+	downstreamtypes.SortDownstreamVersions(result.AllVersions, license.Spec.IsSemverRequired)
 
 	// retrieve additional details about the latest downloaded version,
 	// since it's used for detecting things like if a certain feature is enabled or not.
