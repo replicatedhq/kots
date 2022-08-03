@@ -1415,6 +1415,7 @@ class AppVersionHistory extends Component {
                       }}
                       registryUsername={this.props?.app?.credentials?.username}
                       registryPassword={this.props?.app?.credentials?.password}
+                      revision={this.state.showHelmDeployModalForVersion.statusLabel === "Rollback" ? this.state?.showHelmDeployModalForVersion?.sequence : null}
                       showHelmDeployModal={true}
                       showDownloadValues={this.state.showHelmDeployModalForVersion.statusLabel !== "Redeploy"}
                       subtitle="Follow the steps below to upgrade your application with your new values.yaml."

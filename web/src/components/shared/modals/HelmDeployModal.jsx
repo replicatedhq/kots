@@ -6,8 +6,12 @@ function makeDeployCommand({
   appSlug,
   chartPath,
   showDownloadValues,
+  revision = null,
   version,
 }) {
+  if (revision) {
+    return `helm rollback ${appSlug} ${revision}`;
+  }
   if (showDownloadValues) {
     return `helm upgrade ${appSlug} ${chartPath}${
       version && " --version " + version
@@ -39,6 +43,7 @@ function HelmDeployModal({
   subtitle,
   registryUsername = "myUsername",
   registryPassword = "myPassword",
+  revision = null,
   title,
   upgradeTitle,
   showDownloadValues = false,
@@ -131,6 +136,7 @@ function HelmDeployModal({
                 {makeDeployCommand({
                   appSlug,
                   chartPath,
+                  revision,
                   showDownloadValues,
                   version,
                 })}
