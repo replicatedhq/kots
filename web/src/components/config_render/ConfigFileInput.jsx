@@ -83,7 +83,6 @@ export default class ConfigFileInput extends React.Component {
     }
   };
 
-
   render() {
     var hidden = this.props.hidden || this.props.when === "false";
     return (
@@ -102,7 +101,7 @@ export default class ConfigFileInput extends React.Component {
         ) : null}
         <div className="input input-type-file clearfix">
           <div>
-          {this.props.help_text !== "" ? (
+            {this.props.help_text !== "" ? (
               <div className="field-section-help-text u-marginTop--5">
                 <Markdown
                   options={{

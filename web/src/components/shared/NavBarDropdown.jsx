@@ -52,9 +52,9 @@ const NavBarDropdown = ({ handleLogOut, isHelmManaged }) => {
           <p onClick={() => setShowModal(true)}>Change password</p>
         </li>
         {!isHelmManaged && (
-        <li onMouseDown={handleNav}>
-          <p>Add new application</p>
-        </li>
+          <li onMouseDown={handleNav}>
+            <p>Add new application</p>
+          </li>
         )}
         <li>
           <p data-qa="Navbar--logOutButton" onClick={handleLogOut}>

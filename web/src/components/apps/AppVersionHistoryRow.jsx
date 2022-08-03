@@ -652,7 +652,7 @@ class AppVersionHistoryRow extends Component {
     } = this.props;
 
     let showSequence = true;
-    if (isHelmManaged && version.status === "pending" ) {
+    if (isHelmManaged && version.status === "pending") {
       showSequence = false;
     }
 
@@ -695,14 +695,14 @@ class AppVersionHistoryRow extends Component {
               <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">
                 {version.versionLabel || version.title}
               </p>
-              {showSequence && 
+              {showSequence && (
                 <p
                   className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10"
                   style={{ marginTop: "2px" }}
                 >
                   {sequenceLabel} {version.sequence}
                 </p>
-              }
+              )}
               {version.isRequired && (
                 <span className="status-tag required u-marginLeft--10">
                   {" "}

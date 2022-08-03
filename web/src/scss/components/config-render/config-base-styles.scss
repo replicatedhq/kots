@@ -1,6 +1,5 @@
 @import "../../variables.scss";
 
-
 #config-render-component {
   .config-item {
     padding: 10px;
@@ -173,4 +172,6 @@
   }
 }
 
-strong { font-weight: bold; }
+strong {
+  font-weight: bold;
+}
