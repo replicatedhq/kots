@@ -3,6 +3,13 @@ import { Utilities } from "../../../utilities/utilities";
 import { useParams } from "react-router-dom";
 import { useCurrentApp } from "../hooks/useCurrentApp";
 
+const statusToStatusLabel = {
+  deployed: "Deployed",
+  deploying: "Deploying",
+  pending_config: "Configure",
+
+}
+
 async function getVersions({
   accessToken = Utilities.getToken(),
   apiEndpoint = process.env.API_ENDPOINT,
@@ -36,7 +43,63 @@ async function getVersions({
 
 function getVersionsSelector(versions) {
   console.log("versions selector", versions);
+
+  const versionHistory = versions?.versionHistory.map(version => {
+    return {
+      ...version,
+      statusLabel:
+    })
   return { test: "test" };
+
+
+  /*
+  function deployButtonStatus(version) {
+    const downstream = currentApp?.downstream;
+
+    const isCurrentVersion =
+      version.sequence === downstream?.currentVersion?.sequence;
+    const isDeploying = version.status === "deploying";
+    const isPastVersion = find(downstream?.pastVersions, {
+      sequence: version.sequence,
+    });
+    const needsConfiguration = version.status === "pending_config";
+    const isRollback = isPastVersion && version.deployedAt && currentApp?.allowRollback;
+    const isRedeploy =
+      isCurrentVersion &&
+      (version.status === "failed" || version.status === "deployed");
+    const canUpdateKots =
+      version.needsKotsUpgrade &&
+      !adminConsoleMetadata?.isAirgap &&
+      !adminConsoleMetadata?.isKurl;
+
+    if (needsConfiguration) {
+      return "Configure";
+      // not installed
+      // but also check if has access to internet
+    } else if (downstream?.currentVersion?.sequence == undefined) {
+      if (canUpdateKots) {
+        return "Upgrade";
+      } else {
+        return "Deploy";
+      }
+    } else if (isRedeploy) {
+      return "Redeploy";
+    } else if (isRollback) {
+      return "Rollback";
+    } else if (isDeploying) {
+      return "Deploying";
+    } else if (isCurrentVersion) {
+      return "Deployed";
+    } else {
+      if (canUpdateKots) {
+        return "Upgrade";
+      } else {
+        return "Deploy";
+      }
+    }
+  }
+  */
+
 }
 
 function useVersions({ _getVersions = getVersions } = {}) {
