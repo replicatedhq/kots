@@ -652,6 +652,7 @@ const AppVersionHistoryRow = ({
     }
   };
 
+<<<<<<< HEAD:web/src/features/AppVersionHistory/AppVersionHistoryRow.jsx
   return (
     <div
       key={version.sequence}
@@ -685,6 +686,93 @@ const AppVersionHistoryRow = ({
           <div className="flex alignItems--center">
             <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">
               {version.versionLabel || version.title}
+=======
+  render() {
+    const {
+      version,
+      selectedDiffReleases,
+      nothingToCommit,
+      isChecked,
+      isNew,
+      gitopsEnabled,
+      newPreflightResults,
+      isHelmManaged,
+    } = this.props;
+
+    let showSequence = true;
+    if (isHelmManaged && version.status === "pending" ) {
+      showSequence = false;
+    }
+
+    let sequenceLabel = "Sequence";
+    if (isHelmManaged) {
+      sequenceLabel = "Revision";
+    }
+
+    return (
+      <div
+        key={version.sequence}
+        className={classNames(
+          `VersionHistoryRowWrapper ${version.status} flex-column justifyContent--center`,
+          {
+            overlay: selectedDiffReleases,
+            disabled: nothingToCommit,
+            selected: isChecked && !nothingToCommit,
+            "is-new": isNew,
+            "show-preflight-passed-text": newPreflightResults,
+          }
+        )}
+        onClick={this.handleSelectReleasesToDiff}
+      >
+        <div className="VersionHistoryRow flex flex-auto">
+          {selectedDiffReleases && (
+            <div
+              className={classNames(
+                "checkbox u-marginRight--20",
+                { checked: isChecked && !nothingToCommit },
+                { disabled: nothingToCommit }
+              )}
+            />
+          )}
+          <div
+            className={`${
+              nothingToCommit && selectedDiffReleases && "u-opacity--half"
+            } flex-column flex1 u-paddingRight--20`}
+          >
+            <div className="flex alignItems--center">
+              <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">
+                {version.versionLabel || version.title}
+              </p>
+              {showSequence && 
+                <p
+                  className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10"
+                  style={{ marginTop: "2px" }}
+                >
+                  {sequenceLabel} {version.sequence}
+                </p>
+              }
+              {version.isRequired && (
+                <span className="status-tag required u-marginLeft--10">
+                  {" "}
+                  Required{" "}
+                </span>
+              )}
+            </div>
+            <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5">
+              {" "}
+              Released{" "}
+              <span className="u-fontWeight--bold">
+                {version.upstreamReleasedAt
+                  ? Utilities.dateFormat(
+                      version.upstreamReleasedAt,
+                      "MM/DD/YY @ hh:mm a z"
+                    )
+                  : Utilities.dateFormat(
+                      version.createdOn,
+                      "MM/DD/YY @ hh:mm a z"
+                    )}
+              </span>
+>>>>>>> 64ed0766feb68707ee9d372ef83a3fca388ddfc3:web/src/components/apps/AppVersionHistoryRow.jsx
             </p>
             <p
               className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10"

@@ -137,6 +137,35 @@ jobs:
           push: true
 
 
+  build-kots-helm:
+    runs-on: ubuntu-20.04
+    needs: [ can-run-ci ]
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: main
+          repository: replicatedhq/kots-helm
+
+      - name: Build KOTS Helm chart
+        env:
+          GIT_COMMIT: ${{ github.sha }}
+        run: |
+          curl -O -L https://raw.githubusercontent.com/replicatedhq/kots/${GIT_COMMIT}/.image.env
+          export $(cat .image.env | sed 's/#.*//g' | xargs)
+
+          export CHART_VERSION=0.0.${{ github.run_id }}-automated
+          export KOTS_VERSION=12h
+          export KOTS_TAG=12h
+          export KOTSADM_REGISTRY=ttl.sh/automated-${{ github.run_id }}
+
+          envsubst < Chart.yaml.tmpl > Chart.yaml
+          envsubst < values.yaml.tmpl > values.yaml
+
+          export CHART_NAME=`helm package . | rev | cut -d/ -f1 | rev`
+          helm push $CHART_NAME oci://ttl.sh/automated-${{ github.run_id }}
+
+
   build-e2e:
     runs-on: ubuntu-20.04
     needs: [ can-run-ci ]
@@ -554,6 +583,41 @@ jobs:
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+
+  validate-helm-managed:
+    runs-on: ubuntu-20.04
+    needs: [ can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_version: [ v1.23.3-k3s1 ] # there's no need to run this test on multiple k3s versions
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: download e2e deps
+        uses: actions/download-artifact@v2
+        with:
+          name: e2e
+          path: e2e/bin/
+      - run: docker load -i e2e/bin/e2e-deps.tar
+      - run: chmod +x e2e/bin/*
+      - name: download kots binary
+        uses: actions/download-artifact@v2
+        with:
+          name: kots
+          path: bin/
+      - run: chmod +x bin/*
+      - uses: ./.github/actions/kots-e2e
+        with:
+          test-focus: 'Helm Managed'
+          kots-namespace: 'helm-managed'
+          k8s-version: '${{ matrix.k8s_version }}'
+          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
+          testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
+          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
+          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+          kots-helm-chart-url: 'oci://ttl.sh/automated-${{ github.run_id }}/admin-console'
+          kots-helm-chart-version: '0.0.${{ github.run_id }}-automated'
 
 
   validate-minimal-rbac-override:
@@ -1412,6 +1476,7 @@ jobs:
       - validate-no-required-config
       - validate-version-history-pagination
       - validate-change-license
+      - validate-helm-managed
       # non-testim tests
       - validate-minimal-rbac-override
       - validate-multi-namespace

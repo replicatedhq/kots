@@ -5,6 +5,8 @@ import isEmpty from "lodash/isEmpty";
 import ConfigItemTitle from "./ConfigItemTitle";
 import ConfigRadio from "./ConfigRadio";
 import Markdown from "react-remarkable";
+import { setOrder } from "./ConfigUtil";
+import { ConfigWrapper } from "./ConfigComponents";
 
 export default class ConfigSelectOne extends React.Component {
   handleOnChange = (itemName, val) => {
@@ -40,11 +42,12 @@ export default class ConfigSelectOne extends React.Component {
     var hidden = this.props.hidden || this.props.when === "false";
 
     return (
-      <div
+      <ConfigWrapper
         id={`${this.props.name}-group`}
-        className={`field field-type-select-one ${
-          hidden ? "hidden" : "u-marginTop--15"
-        }`}
+        className={`field-type-select-one`}
+        marginTop={hidden || this.props.affix ? "0" : "15px"}
+        hidden={hidden}
+        order={setOrder(this.props.index, this.props.affix)}
       >
         {this.props.title !== "" ? (
           <ConfigItemTitle
@@ -81,7 +84,7 @@ export default class ConfigSelectOne extends React.Component {
             </span>
           </div>
         )}
-      </div>
+      </ConfigWrapper>
     );
   }
 }

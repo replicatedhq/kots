@@ -33,8 +33,13 @@ func AdminConsoleCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get clientset")
 			}
 
+			timeout, err := time.ParseDuration(v.GetString("wait-duration"))
+			if err != nil {
+				return errors.Wrap(err, "failed to parse timeout value")
+			}
+
 			getPodName := func() (string, error) {
-				podName, err := k8sutil.WaitForKotsadm(clientset, v.GetString("namespace"), time.Second*10)
+				podName, err := k8sutil.WaitForKotsadm(clientset, v.GetString("namespace"), timeout)
 				if err != nil {
 					if _, ok := errors.Cause(err).(*types.ErrorTimeout); ok {
 						return podName, errors.Errorf("kotsadm failed to start: %s. Use the --wait-duration flag to increase timeout.", err)
@@ -90,6 +95,7 @@ func AdminConsoleCmd() *cobra.Command {
 	}
 
 	cmd.Flags().Int("port", 8800, "local port to listen on")
+	cmd.Flags().String("wait-duration", "10s", "timeout to be used while waiting for kotsadm pod to become ready. must be in Go duration format (eg: 10s, 2m)")
 
 	cmd.AddCommand(AdminConsoleUpgradeCmd())
 	cmd.AddCommand(AdminPushImagesCmd())

@@ -2,7 +2,7 @@ import React from "react";
 import { useHistory } from "react-router-dom";
 import ChangePasswordModal from "../modals/ChangePasswordModal/ChangePasswordModal";
 
-const NavBarDropdown = ({ handleLogOut }) => {
+const NavBarDropdown = ({ handleLogOut, isHelmManaged }) => {
   const [showDropdown, setShowDropdown] = React.useState(false);
   const [showModal, setShowModal] = React.useState(false);
   const testRef = React.useRef(null);
@@ -51,9 +51,11 @@ const NavBarDropdown = ({ handleLogOut }) => {
         <li>
           <p onClick={() => setShowModal(true)}>Change password</p>
         </li>
+        {!isHelmManaged && (
         <li onMouseDown={handleNav}>
           <p>Add new application</p>
         </li>
+        )}
         <li>
           <p data-qa="Navbar--logOutButton" onClick={handleLogOut}>
             Log out

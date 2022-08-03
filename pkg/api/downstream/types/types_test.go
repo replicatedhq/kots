@@ -467,7 +467,7 @@ func Test_SortDownstreamVersions(t *testing.T) {
 			versions := &DownstreamVersions{
 				AllVersions: tt.versions,
 			}
-			SortDownstreamVersions(versions, tt.bySemver)
+			SortDownstreamVersions(versions.AllVersions, tt.bySemver)
 
 			req.Equal(tt.want, versions.AllVersions)
 		})

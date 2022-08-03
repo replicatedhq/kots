@@ -25,6 +25,7 @@ import (
 	identitytypes "github.com/replicatedhq/kots/pkg/identity/types"
 	snapshot "github.com/replicatedhq/kots/pkg/kotsadmsnapshot"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/kustomize"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
 	"github.com/replicatedhq/kots/pkg/operator/client"
@@ -235,7 +236,7 @@ func DeployApp(appID string, sequence int64, kotsStore store.Store) (deployed bo
 	}
 	base64EncodedManifests := base64.StdEncoding.EncodeToString(renderedManifests)
 
-	chartArchive, err := renderChartsArchive(deployedVersionArchive, downstreams.Name, kustomizeBinPath)
+	chartArchive, _, err := kustomize.RenderChartsArchive(deployedVersionArchive, downstreams.Name, kustomizeBinPath)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to run kustomize on currently deployed charts")
 	}
@@ -303,7 +304,7 @@ func DeployApp(appID string, sequence int64, kotsStore store.Store) (deployed bo
 			} else {
 				base64EncodedPreviousManifests = base64.StdEncoding.EncodeToString(previousRenderedManifests)
 				// Run kustomization on the charts as well
-				previouslyDeployedChartArchive, err = renderChartsArchive(previouslyDeployedVersionArchive, downstreams.Name, kustomizeBinPath)
+				previouslyDeployedChartArchive, _, err = kustomize.RenderChartsArchive(previouslyDeployedVersionArchive, downstreams.Name, kustomizeBinPath)
 				if err != nil {
 					return false, errors.Wrap(err, "failed to run kustomize on previously deployed charts")
 				}

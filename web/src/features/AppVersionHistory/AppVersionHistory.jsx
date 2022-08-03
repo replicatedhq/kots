@@ -1544,6 +1544,11 @@ class AppVersionHistory extends Component {
       shortKotsUpdateMessage = shortKotsUpdateMessage.substring(0, 60) + "...";
     }
 
+    let sequenceLabel = "Sequence";
+    if (this.props.isHelmManaged) {
+      sequenceLabel = "Revision";
+    }
+
     return (
       <div className="flex flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
         <Helmet>
@@ -1605,7 +1610,7 @@ class AppVersionHistory extends Component {
                             <p className="u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">
                               {" "}
                               {currentDownstreamVersion
-                                ? `Sequence ${currentDownstreamVersion?.sequence}`
+                                ? `${sequenceLabel} ${currentDownstreamVersion?.sequence}`
                                 : null}
                             </p>
                           </div>

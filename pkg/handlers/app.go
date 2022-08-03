@@ -458,11 +458,6 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		lastInstalledSequence := 0
-		if len(installedReleases) > 0 {
-			lastInstalledSequence = installedReleases[0].Revision
-		}
-
 		installedVersions := []*downstreamtypes.DownstreamVersion{}
 		for _, installedRelease := range installedReleases {
 			installedVersions = append(installedVersions, &downstreamtypes.DownstreamVersion{
@@ -477,6 +472,14 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 				Sequence:           int64(installedRelease.Revision),
 				Status:             storetypes.DownstreamVersionStatus(installedRelease.Status.String()),
 			})
+		}
+
+		// Parity with Helm history output, which lists revisions sorted by revision number in descending order.
+		downstreamtypes.SortDownstreamVersions(installedVersions, false)
+
+		lastInstalledSequence := 0
+		if len(installedVersions) > 0 {
+			lastInstalledSequence = int(installedVersions[0].ParentSequence)
 		}
 
 		newVersions := make([]*downstreamtypes.DownstreamVersion, len(chartUpdates), len(chartUpdates))
