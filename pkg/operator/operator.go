@@ -535,7 +535,7 @@ func checkRestoreComplete(a *apptypes.App, restore *velerov1.Restore) error {
 		troubleshootOpts := supportbundletypes.TroubleshootOptions{
 			InCluster: true,
 		}
-		if _, err := supportbundle.CreateSupportBundleDependencies(a.ID, sequence, troubleshootOpts); err != nil {
+		if _, err := supportbundle.CreateSupportBundleDependencies(a, sequence, troubleshootOpts); err != nil {
 			// support bundle is not essential. keep processing restore status
 			logger.Error(errors.Wrapf(err, "failed to create support bundle for sequence %d post restore", sequence))
 		}

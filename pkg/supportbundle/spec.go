@@ -13,14 +13,17 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotstypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/registry"
+	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/render/helper"
 	"github.com/replicatedhq/kots/pkg/snapshot"
 	kotssnapshot "github.com/replicatedhq/kots/pkg/snapshot"
@@ -41,7 +44,7 @@ import (
 )
 
 // CreateRenderedSpec creates the support bundle specification from defaults and the kots app
-func CreateRenderedSpec(appID string, sequence int64, kotsKinds *kotsutil.KotsKinds, opts types.TroubleshootOptions) (*troubleshootv1beta2.SupportBundle, error) {
+func CreateRenderedSpec(app apptypes.AppType, sequence int64, kotsKinds *kotsutil.KotsKinds, opts types.TroubleshootOptions) (*troubleshootv1beta2.SupportBundle, error) {
 	builtBundle := kotsKinds.SupportBundle.DeepCopy()
 	if builtBundle == nil {
 		builtBundle = &troubleshootv1beta2.SupportBundle{
@@ -93,11 +96,6 @@ func CreateRenderedSpec(appID string, sequence int64, kotsKinds *kotsutil.KotsKi
 		}
 	}
 
-	app, err := store.GetStore().GetApp(appID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get app")
-	}
-
 	builtBundle, err = injectDefaults(app, builtBundle, opts, namespacesToCollect, namespacesToAnalyze)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to inject defaults")
@@ -123,9 +121,13 @@ func CreateRenderedSpec(appID string, sequence int64, kotsKinds *kotsutil.KotsKi
 		return nil, errors.Wrap(err, "failed to unmarshal rendered support bundle spec")
 	}
 
-	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(appID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get registry settings for app")
+	var registrySettings registrytypes.RegistrySettings
+	if !util.IsHelmManaged() {
+		s, err := store.GetStore().GetRegistryDetailsForApp(app.GetID())
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get registry settings for app")
+		}
+		registrySettings = s
 	}
 
 	collectors, err := registry.UpdateCollectorSpecsWithRegistryData(supportBundle.Spec.Collectors, registrySettings, kotsKinds.Installation.Spec.KnownImages, kotsKinds.License)
@@ -139,7 +141,7 @@ func CreateRenderedSpec(appID string, sequence int64, kotsKinds *kotsutil.KotsKi
 	}
 	renderedSpec = b.Bytes()
 
-	secretName := GetSpecSecretName(app.Slug)
+	secretName := GetSpecSecretName(app.GetSlug())
 	existingSecret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), secretName, metav1.GetOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {
 		return nil, errors.Wrap(err, "failed to read support bundle secret")
@@ -182,7 +184,7 @@ func CreateRenderedSpec(appID string, sequence int64, kotsKinds *kotsutil.KotsKi
 }
 
 // injectDefaults injects the kotsadm default collectors/analyzers in the the support bundle specification.
-func injectDefaults(app *apptypes.App, b *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions, namespacesToCollect []string, namespacesToAnalyze []string) (*troubleshootv1beta2.SupportBundle, error) {
+func injectDefaults(app apptypes.AppType, b *troubleshootv1beta2.SupportBundle, opts types.TroubleshootOptions, namespacesToCollect []string, namespacesToAnalyze []string) (*troubleshootv1beta2.SupportBundle, error) {
 	supportBundle := b.DeepCopy()
 
 	clientset, err := k8sutil.GetClientset()
@@ -223,13 +225,13 @@ func injectDefaults(app *apptypes.App, b *troubleshootv1beta2.SupportBundle, opt
 		//Just use the library internally
 		return supportBundle, nil
 	} else if opts.Origin != "" {
-		uploadURL = fmt.Sprintf("%s/api/v1/troubleshoot/%s/%s", opts.Origin, app.ID, randomBundleID)
+		uploadURL = fmt.Sprintf("%s/api/v1/troubleshoot/%s/%s", opts.Origin, app.GetID(), randomBundleID)
 		redactURL = fmt.Sprintf("%s/api/v1/troubleshoot/supportbundle/%s/redactions", opts.Origin, randomBundleID)
 	} else if opts.InCluster {
-		uploadURL = fmt.Sprintf("%s/api/v1/troubleshoot/%s/%s", fmt.Sprintf("http://kotsadm.%s.svc.cluster.local:3000", util.PodNamespace), app.ID, randomBundleID)
+		uploadURL = fmt.Sprintf("%s/api/v1/troubleshoot/%s/%s", fmt.Sprintf("http://kotsadm.%s.svc.cluster.local:3000", util.PodNamespace), app.GetID(), randomBundleID)
 		redactURL = fmt.Sprintf("%s/api/v1/troubleshoot/supportbundle/%s/redactions", fmt.Sprintf("http://kotsadm.%s.svc.cluster.local:3000", util.PodNamespace), randomBundleID)
 	} else {
-		uploadURL = fmt.Sprintf("%s/api/v1/troubleshoot/%s/%s", os.Getenv("API_ADVERTISE_ENDPOINT"), app.ID, randomBundleID)
+		uploadURL = fmt.Sprintf("%s/api/v1/troubleshoot/%s/%s", os.Getenv("API_ADVERTISE_ENDPOINT"), app.GetID(), randomBundleID)
 		redactURL = fmt.Sprintf("%s/api/v1/troubleshoot/supportbundle/%s/redactions", os.Getenv("API_ADVERTISE_ENDPOINT"), randomBundleID)
 	}
 
@@ -440,19 +442,29 @@ func getDefaultAnalyzers() []*troubleshootv1beta2.Analyze {
 
 // addDefaultDynamicTroubleshoot adds dynamic spec to the support bundle.
 // prefer addDefaultTroubleshoot unless absolutely necessary to encourage consistency across built-in and kots.io specs.
-func addDefaultDynamicTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, app *apptypes.App, imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets) *troubleshootv1beta2.SupportBundle {
+func addDefaultDynamicTroubleshoot(supportBundle *troubleshootv1beta2.SupportBundle, app apptypes.AppType, imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets) *troubleshootv1beta2.SupportBundle {
 	next := supportBundle.DeepCopy()
 	next.Spec.Collectors = append(next.Spec.Collectors, getDefaultDynamicCollectors(app, imageName, pullSecret)...)
 	next.Spec.Analyzers = append(next.Spec.Analyzers, getDefaultDynamicAnalyzers(app)...)
 	return next
 }
 
-func getDefaultDynamicCollectors(app *apptypes.App, imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets) []*troubleshootv1beta2.Collect {
+func getDefaultDynamicCollectors(app apptypes.AppType, imageName string, pullSecret *troubleshootv1beta2.ImagePullSecrets) []*troubleshootv1beta2.Collect {
 	collectors := make([]*troubleshootv1beta2.Collect, 0)
 
-	license, err := store.GetStore().GetLatestLicenseForApp(app.ID)
-	if err != nil {
-		logger.Errorf("Failed to load license data: %v", err)
+	var err error
+	var license *v1beta1.License
+	switch a := app.(type) {
+	case *apptypes.App:
+		license, err = store.GetStore().GetLatestLicenseForApp(app.GetID())
+		if err != nil {
+			logger.Errorf("Failed to load license data from store: %v", err)
+		}
+	case *apptypes.HelmApp:
+		license, err = helm.GetChartLicenseFromSecret(a)
+		if err != nil {
+			logger.Errorf("Failed to load license data from helm: %v", err)
+		}
 	}
 
 	if license != nil {
@@ -486,9 +498,9 @@ func getDefaultDynamicCollectors(app *apptypes.App, imageName string, pullSecret
 	collectors = append(collectors, &troubleshootv1beta2.Collect{
 		Secret: &troubleshootv1beta2.Secret{
 			CollectorMeta: troubleshootv1beta2.CollectorMeta{
-				CollectorName: fmt.Sprintf("%s-registry", app.Slug),
+				CollectorName: fmt.Sprintf("%s-registry", app.GetSlug()),
 			},
-			Name:         fmt.Sprintf("%s-registry", app.Slug),
+			Name:         fmt.Sprintf("%s-registry", app.GetSlug()),
 			Namespace:    util.PodNamespace,
 			Key:          ".dockerconfigjson",
 			IncludeValue: false,
@@ -497,23 +509,25 @@ func getDefaultDynamicCollectors(app *apptypes.App, imageName string, pullSecret
 
 	collectors = append(collectors, makeVeleroCollectors()...)
 
-	apps := []*apptypes.App{}
-	if app != nil {
-		apps = append(apps, app)
-	} else {
-		var err error
-		apps, err = store.GetStore().ListInstalledApps()
-		if err != nil {
-			logger.Errorf("Failed to list installed apps: %v", err)
+	if app, ok := app.(*apptypes.App); ok {
+		apps := []*apptypes.App{}
+		if app != nil {
+			apps = append(apps, app)
+		} else {
+			var err error
+			apps, err = store.GetStore().ListInstalledApps()
+			if err != nil {
+				logger.Errorf("Failed to list installed apps: %v", err)
+			}
 		}
-	}
 
-	if len(apps) > 0 {
-		appVersionArchiveCollectors, err := makeAppVersionArchiveCollectors(apps)
-		if err != nil {
-			logger.Errorf("Failed to make app version archive collectors: %v", err)
+		if len(apps) > 0 {
+			appVersionArchiveCollectors, err := makeAppVersionArchiveCollectors(apps)
+			if err != nil {
+				logger.Errorf("Failed to make app version archive collectors: %v", err)
+			}
+			collectors = append(collectors, appVersionArchiveCollectors...)
 		}
-		collectors = append(collectors, appVersionArchiveCollectors...)
 	}
 
 	clientset, err := k8sutil.GetClientset()
@@ -556,7 +570,7 @@ func getDefaultDynamicCollectors(app *apptypes.App, imageName string, pullSecret
 	return collectors
 }
 
-func getDefaultDynamicAnalyzers(app *apptypes.App) []*troubleshootv1beta2.Analyze {
+func getDefaultDynamicAnalyzers(app apptypes.AppType) []*troubleshootv1beta2.Analyze {
 	analyzers := make([]*troubleshootv1beta2.Analyze, 0)
 	analyzers = append(analyzers, makeAPIReplicaAnalyzer())
 

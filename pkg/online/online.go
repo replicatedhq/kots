@@ -176,10 +176,15 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 		return nil, errors.Wrap(err, "failed to create new version")
 	}
 
+	app, err := store.GetStore().GetApp(opts.PendingApp.ID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get app %s", opts.PendingApp.ID)
+	}
+
 	troubleshootOpts := supportbundletypes.TroubleshootOptions{
 		InCluster: true,
 	}
-	_, err = supportbundle.CreateSupportBundleDependencies(opts.PendingApp.ID, newSequence, troubleshootOpts)
+	_, err = supportbundle.CreateSupportBundleDependencies(app, newSequence, troubleshootOpts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create rendered support bundle spec")
 	}

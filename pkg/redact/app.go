@@ -6,11 +6,11 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/render/helper"
-	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	corev1 "k8s.io/api/core/v1"
@@ -29,7 +29,7 @@ func GetAppRedactSpecURI(appSlug string) string {
 }
 
 // CreateRenderedAppRedactSpec creates a configmap that contains the redaction yaml spec included in the application release
-func CreateRenderedAppRedactSpec(appID string, sequence int64, kotsKinds *kotsutil.KotsKinds) error {
+func CreateRenderedAppRedactSpec(app apptypes.AppType, sequence int64, kotsKinds *kotsutil.KotsKinds) error {
 	builtRedactor := kotsKinds.Redactor.DeepCopy()
 	if builtRedactor == nil {
 		builtRedactor = &troubleshootv1beta2.Redactor{
@@ -41,11 +41,6 @@ func CreateRenderedAppRedactSpec(appID string, sequence int64, kotsKinds *kotsut
 				Name: "default-redactor",
 			},
 		}
-	}
-
-	app, err := store.GetStore().GetApp(appID)
-	if err != nil {
-		return errors.Wrap(err, "failed to get app")
 	}
 
 	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
@@ -66,7 +61,7 @@ func CreateRenderedAppRedactSpec(appID string, sequence int64, kotsKinds *kotsut
 		return errors.Wrap(err, "failed to create clientset")
 	}
 
-	configMapName := GetAppRedactSpecConfigMapName(app.Slug)
+	configMapName := GetAppRedactSpecConfigMapName(app.GetSlug())
 
 	existingConfigMap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), configMapName, metav1.GetOptions{})
 	if err != nil && !kuberneteserrors.IsNotFound(err) {

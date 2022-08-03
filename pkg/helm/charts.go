@@ -16,6 +16,7 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	helmrelease "helm.sh/helm/v3/pkg/release"
@@ -141,7 +142,7 @@ func HelmReleaseFromSecretData(data []byte) (*helmrelease.Release, error) {
 	return release, nil
 }
 
-func GetChartConfigSecret(helmApp *HelmApp) (*corev1.Secret, error) {
+func GetChartConfigSecret(helmApp *apptypes.HelmApp) (*corev1.Secret, error) {
 	clientSet, err := k8sutil.GetClientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get clientset")
@@ -175,7 +176,7 @@ func UpdateChartConfig(secret *corev1.Secret) error {
 	return nil
 }
 
-func GetChartLicenseFromSecret(helmApp *HelmApp) (*kotsv1beta1.License, error) {
+func GetChartLicenseFromSecret(helmApp *apptypes.HelmApp) (*kotsv1beta1.License, error) {
 	secret, err := GetChartConfigSecret(helmApp)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get helm config secret")
@@ -203,7 +204,7 @@ func GetChartLicenseFromSecret(helmApp *HelmApp) (*kotsv1beta1.License, error) {
 	return obj.(*kotsv1beta1.License), nil
 }
 
-func SaveChartLicenseInSecret(helmApp *HelmApp, license *kotsv1beta1.License) error {
+func SaveChartLicenseInSecret(helmApp *apptypes.HelmApp, license *kotsv1beta1.License) error {
 	configSecretMutex.Lock()
 	defer configSecretMutex.Unlock()
 
