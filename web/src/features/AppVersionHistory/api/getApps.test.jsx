@@ -40,7 +40,7 @@ describe("getApps", () => {
   describe("getAppsFetch", () => {
     it("calls fetch with the correct url and configuration", async () => {
       const expectedBody = {
-        apps: 'myapps'
+        apps: "myapps",
       };
       const jsonSpy = jest.fn(() => Promise.resolve(expectedBody));
       const getAppsSpy = jest.fn(() =>
@@ -65,9 +65,9 @@ describe("getApps", () => {
           "Content-Type": "application/json",
         },
       };
-      await expect(
-        getApps(testgetAppsFetchConfig)
-      ).resolves.toEqual(expectedBody);
+      await expect(getApps(testgetAppsFetchConfig)).resolves.toEqual(
+        expectedBody
+      );
       expect(getAppsSpy).toHaveBeenCalledTimes(1);
       expect(getAppsSpy).toHaveBeenCalledWith(
         expectedAPIEndpoint,
@@ -80,7 +80,7 @@ describe("getApps", () => {
       const getAppsSpy = jest.fn(() =>
         Promise.resolve({
           ok: false,
-          status: 400
+          status: 400,
         })
       );
       const testToken = "testToken";
@@ -91,9 +91,9 @@ describe("getApps", () => {
         apiEndpoint: testAPIEndpoint,
       };
 
-      await expect(
-        getApps(testgetAppsFetchConfig)
-      ).rejects.toThrowError("Failed to fetch apps with status 400");
+      await expect(getApps(testgetAppsFetchConfig)).rejects.toThrowError(
+        "Failed to fetch apps with status 400"
+      );
     });
 
     it("throws error when response is not json", async () => {
@@ -112,9 +112,9 @@ describe("getApps", () => {
         apiEndpoint: testAPIEndpoint,
       };
 
-      await expect(
-        getApps(testgetAppsFetchConfig)
-      ).rejects.toThrowError("Error parsing json");
+      await expect(getApps(testgetAppsFetchConfig)).rejects.toThrowError(
+        "Error parsing json"
+      );
     });
     it("throws error when network error", async () => {
       const getAppsSpy = jest.fn(() =>
@@ -129,9 +129,9 @@ describe("getApps", () => {
         apiEndpoint: testAPIEndpoint,
       };
 
-      await expect(
-        getApps(testgetAppsFetchConfig)
-      ).rejects.toThrowError("Error fetching");
+      await expect(getApps(testgetAppsFetchConfig)).rejects.toThrowError(
+        "Error fetching"
+      );
     });
   });
 });

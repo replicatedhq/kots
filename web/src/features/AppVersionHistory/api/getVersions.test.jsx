@@ -4,7 +4,11 @@
 import React from "react";
 import { QueryClient, QueryClientProvider } from "react-query";
 import { renderHook } from "@testing-library/react-hooks";
-import { getVersions, useVersions, getVersionsSelectorForHelmManaged } from "./getVersions";
+import {
+  getVersions,
+  useVersions,
+  getVersionsSelectorForHelmManaged,
+} from "./getVersions";
 
 describe("getVersions", () => {
   describe("useVersions", () => {
@@ -21,21 +25,26 @@ describe("getVersions", () => {
       };
     });
     it("calls _getVersions", async () => {
-      const getVersionsSpy = jest.fn(() => Promise.resolve({
-        versionHistory: [{
-          status: 'deployed',
-          sequence: '0'
-        }]
-      }));
+      const getVersionsSpy = jest.fn(() =>
+        Promise.resolve({
+          versionHistory: [
+            {
+              status: "deployed",
+              sequence: "0",
+            },
+          ],
+        })
+      );
 
       const { result, waitFor } = renderHook(
-        () => useVersions({
-          _getVersions: getVersionsSpy,
-          _useParams: () => ({ slug: "testSlug" }),
-          _useCurrentApp: () => ({ currentApp: "testCurrentApp" }),
-          _useMetadata: () => ({ data: { isAirGap: false, isKurl: false } }),
-          _useIsHelmManaged: () => ({ data: { isHelmManaged: true } }),
-        }),
+        () =>
+          useVersions({
+            _getVersions: getVersionsSpy,
+            _useParams: () => ({ slug: "testSlug" }),
+            _useCurrentApp: () => ({ currentApp: "testCurrentApp" }),
+            _useMetadata: () => ({ data: { isAirGap: false, isKurl: false } }),
+            _useIsHelmManaged: () => ({ data: { isHelmManaged: true } }),
+          }),
         {
           wrapper,
         }
@@ -51,7 +60,7 @@ describe("getVersions", () => {
   describe("getVersionsFetch", () => {
     it("calls fetch with the correct url and configuration", async () => {
       const expectedBody = {
-        apps: 'myapps'
+        apps: "myapps",
       };
       const jsonSpy = jest.fn(() => Promise.resolve(expectedBody));
       const getVersionsSpy = jest.fn(() =>
@@ -71,8 +80,7 @@ describe("getVersions", () => {
         pageSize: 20,
       };
 
-      const expectedAPIEndpoint =
-        `${testAPIEndpoint}/app/testSlug/versions?currentPage=0&pageSize=20&pinLatestDeployable=true`;
+      const expectedAPIEndpoint = `${testAPIEndpoint}/app/testSlug/versions?currentPage=0&pageSize=20&pinLatestDeployable=true`;
       const expectedFetchConfig = {
         method: "GET",
         headers: {
@@ -80,9 +88,9 @@ describe("getVersions", () => {
           "Content-Type": "application/json",
         },
       };
-      await expect(
-        getVersions(testgetVersionsFetchConfig)
-      ).resolves.toEqual(expectedBody);
+      await expect(getVersions(testgetVersionsFetchConfig)).resolves.toEqual(
+        expectedBody
+      );
       expect(getVersionsSpy).toHaveBeenCalledTimes(1);
       expect(getVersionsSpy).toHaveBeenCalledWith(
         expectedAPIEndpoint,
@@ -95,7 +103,7 @@ describe("getVersions", () => {
       const getVersionsSpy = jest.fn(() =>
         Promise.resolve({
           ok: false,
-          status: 400
+          status: 400,
         })
       );
       const testToken = "testToken";
@@ -149,69 +157,75 @@ describe("getVersions", () => {
       ).rejects.toThrowError("Error fetching");
     });
   });
-  describe('getVersionsSelectorForHelmManaged', () => {
-    it('returns Redeploy for currently deployed version', () => {
+  describe("getVersionsSelectorForHelmManaged", () => {
+    it("returns Redeploy for currently deployed version", () => {
       const data = {
-        versionHistory: [{
-          status: 'deployed',
-          sequence: '0'
-        }]
+        versionHistory: [
+          {
+            status: "deployed",
+            sequence: "0",
+          },
+        ],
       };
 
       const expectedData = {
-        versionHistory: [{
-          status: 'deployed',
-          sequence: '0',
-          statusLabel: "Redeploy"
-        }]
+        versionHistory: [
+          {
+            status: "deployed",
+            sequence: "0",
+            statusLabel: "Redeploy",
+          },
+        ],
       };
       const result = getVersionsSelectorForHelmManaged({ versions: data });
       expect(result).toEqual(expectedData);
     });
 
-    it('returns Deploy and rollback for new and old versions', () => {
+    it("returns Deploy and rollback for new and old versions", () => {
       const data = {
-        versionHistory: [{
-          status: 'deployed',
-          sequence: '1'
-        },
-        {
-          status: 'pending',
-          sequence: '2'
-        },
-        {
-          status: 'pending',
-          sequence: '3'
-        },
-        {
-          status: 'pending',
-          sequence: '0'
-        }
-        ]
+        versionHistory: [
+          {
+            status: "deployed",
+            sequence: "1",
+          },
+          {
+            status: "pending",
+            sequence: "2",
+          },
+          {
+            status: "pending",
+            sequence: "3",
+          },
+          {
+            status: "pending",
+            sequence: "0",
+          },
+        ],
       };
 
       const expectedData = {
-        versionHistory: [{
-          status: 'deployed',
-          sequence: '1',
-          statusLabel: "Redeploy"
-        },
-        {
-          status: 'pending',
-          sequence: '2',
-          statusLabel: "Deploy"
-        },
-        {
-          status: 'pending',
-          sequence: '3',
-          statusLabel: "Deploy"
-        },
-        {
-          status: 'pending',
-          sequence: '0',
-          statusLabel: "Rollback"
-        }
-        ]
+        versionHistory: [
+          {
+            status: "deployed",
+            sequence: "1",
+            statusLabel: "Redeploy",
+          },
+          {
+            status: "pending",
+            sequence: "2",
+            statusLabel: "Deploy",
+          },
+          {
+            status: "pending",
+            sequence: "3",
+            statusLabel: "Deploy",
+          },
+          {
+            status: "pending",
+            sequence: "0",
+            statusLabel: "Rollback",
+          },
+        ],
       };
       const result = getVersionsSelectorForHelmManaged({ versions: data });
       expect(result).toEqual(expectedData);

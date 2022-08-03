@@ -11,7 +11,7 @@ async function getVersions({
   _fetch = fetch,
   currentPage = 0,
   pageSize = 20,
-  slug
+  slug,
 } = {}) {
   try {
     const res = await _fetch(
@@ -22,7 +22,8 @@ async function getVersions({
           "Content-Type": "application/json",
         },
         method: "GET",
-      });
+      }
+    );
     if (!res.ok) {
       if (res.status === 401) {
         Utilities.logoutUser();
@@ -42,8 +43,7 @@ function getVersionsSelectorForKotsManaged({ versions, currentApp, metadata }) {
 
   const downstream = currentApp?.downstream;
 
-  const versionHistory = versions?.versionHistory.map(version => {
-
+  const versionHistory = versions?.versionHistory.map((version) => {
     const isCurrentVersion =
       version.sequence === downstream?.currentVersion?.sequence;
     const isDeploying = version.status === "deploying";
@@ -51,14 +51,13 @@ function getVersionsSelectorForKotsManaged({ versions, currentApp, metadata }) {
       sequence: version.sequence,
     });
     const needsConfiguration = version.status === "pending_config";
-    const isRollback = isPastVersion && version.deployedAt && currentApp?.allowRollback;
+    const isRollback =
+      isPastVersion && version.deployedAt && currentApp?.allowRollback;
     const isRedeploy =
       isCurrentVersion &&
       (version.status === "failed" || version.status === "deployed");
     const canUpdateKots =
-      version.needsKotsUpgrade &&
-      !metadata?.isAirgap &&
-      !metadata?.isKurl;
+      version.needsKotsUpgrade && !metadata?.isAirgap && !metadata?.isKurl;
 
     let statusLabel = "";
 
@@ -88,7 +87,7 @@ function getVersionsSelectorForKotsManaged({ versions, currentApp, metadata }) {
     return {
       version,
       statusLabel,
-    }
+    };
   });
 
   return {
@@ -103,9 +102,11 @@ function getVersionsSelectorForAirgapped({ versions, currentApp, metadata }) {
 }
 
 function getVersionsSelectorForHelmManaged({ versions }) {
-  const deployedSequence = versions?.versionHistory?.find((v) => v.status === "deployed")?.sequence;
+  const deployedSequence = versions?.versionHistory?.find(
+    (v) => v.status === "deployed"
+  )?.sequence;
 
-  const versionHistory = versions?.versionHistory.map(version => {
+  const versionHistory = versions?.versionHistory.map((version) => {
     let statusLabel = "Redeploy";
 
     if (version.sequence > deployedSequence) {
@@ -118,7 +119,7 @@ function getVersionsSelectorForHelmManaged({ versions }) {
     return {
       ...version,
       statusLabel,
-    }
+    };
   });
 
   return {
@@ -133,7 +134,7 @@ function chooseVersionsSelector({
   isHelmManaged,
   _getVersionsSelectorForKotsManaged = getVersionsSelectorForKotsManaged,
   _getVersionsSelectorForAirgapped = getVersionsSelectorForAirgapped,
-  _getVersionsSelectorForHelmManaged = getVersionsSelectorForHelmManaged
+  _getVersionsSelectorForHelmManaged = getVersionsSelectorForHelmManaged,
 }) {
   // if airgapped
   if (isAirgap && isKurl) {
@@ -146,8 +147,7 @@ function chooseVersionsSelector({
   }
 
   // if kots managed
-  return _getVersionsSelectorForKotsManaged
-
+  return _getVersionsSelectorForKotsManaged;
 }
 
 function useVersions({
@@ -171,7 +171,7 @@ function useVersions({
   return useQuery("versions", () => _getVersions({ slug }), {
     // don't call versions until current app is ascertained
     enabled: !!currentApp,
-    select: versions => versionSelector({ versions, currentApp, metadata }),
+    select: (versions) => versionSelector({ versions, currentApp, metadata }),
     staleTime: 2000,
   });
 }
@@ -182,4 +182,9 @@ function UseVersions({ children }) {
   return children(query);
 }
 
-export { useVersions, UseVersions, getVersions, getVersionsSelectorForHelmManaged };
+export {
+  useVersions,
+  UseVersions,
+  getVersions,
+  getVersionsSelectorForHelmManaged,
+};

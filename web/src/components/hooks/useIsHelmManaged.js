@@ -25,7 +25,6 @@ async function fetchIsHelmManaged({
 }
 
 function useIsHelmManaged({ _fetchIsHelmManaged = fetchIsHelmManaged } = {}) {
-
   // const { isHelmManaged } = data;
   return useQuery("isHelmManaged", () => _fetchIsHelmManaged(), {
     staleTime: Infinity,

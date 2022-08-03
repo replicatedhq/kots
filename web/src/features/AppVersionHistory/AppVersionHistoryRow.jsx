@@ -67,7 +67,6 @@ const AppVersionHistoryRow = ({
   makingCurrentRelease,
   redeployVersionErrMsg,
 }) => {
-
   const { currentApp } = useCurrentApp();
   const { data: versionData } = useVersions();
 
@@ -97,7 +96,8 @@ const AppVersionHistoryRow = ({
       sequence: version.sequence,
     });
     const needsConfiguration = version.status === "pending_config";
-    const isRollback = isPastVersion && version.deployedAt && currentApp?.allowRollback;
+    const isRollback =
+      isPastVersion && version.deployedAt && currentApp?.allowRollback;
     const isRedeploy =
       isCurrentVersion &&
       (version.status === "failed" || version.status === "deployed");
@@ -215,7 +215,8 @@ const AppVersionHistoryRow = ({
     const isRedeploy =
       isCurrentVersion &&
       (version.status === "failed" || version.status === "deployed");
-    const isRollback = isPastVersion && version.deployedAt && currentApp?.allowRollback;
+    const isRollback =
+      isPastVersion && version.deployedAt && currentApp?.allowRollback;
 
     const isSecondaryBtn =
       isPastVersion || needsConfiguration || (isRedeploy && !isRollback);
@@ -460,7 +461,9 @@ const AppVersionHistoryRow = ({
               onClick={() => {
                 handleActionButtonClicked();
                 if (needsConfiguration) {
-                  history.push(`/app/${currentApp?.slug}/config/${version.sequence}`);
+                  history.push(
+                    `/app/${currentApp?.slug}/config/${version.sequence}`
+                  );
                   return null;
                 }
                 if (isRollback) {
