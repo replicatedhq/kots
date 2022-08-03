@@ -660,10 +660,29 @@ const AppVersionHistoryRow = ({
     }
   };
 
+<<<<<<< HEAD:web/src/features/AppVersionHistory/AppVersionHistoryRow.jsx
   let showSequence = true;
   if (isHelmManaged && version.status === "pending") {
     showSequence = false;
   }
+=======
+  render() {
+    const {
+      version,
+      selectedDiffReleases,
+      nothingToCommit,
+      isChecked,
+      isNew,
+      gitopsEnabled,
+      newPreflightResults,
+      isHelmManaged,
+    } = this.props;
+
+    let showSequence = true;
+    if (isHelmManaged && version.status === "pending") {
+      showSequence = false;
+    }
+>>>>>>> 338d84d6a633465ae172c931e792f00247d8a3a7:web/src/components/apps/AppVersionHistoryRow.jsx
 
   let sequenceLabel = "Sequence";
   if (isHelmManaged) {
@@ -711,11 +730,42 @@ const AppVersionHistoryRow = ({
               >
                 {sequenceLabel} {version.sequence}
               </p>
+<<<<<<< HEAD:web/src/features/AppVersionHistory/AppVersionHistoryRow.jsx
             )}
             {version.isRequired && (
               <span className="status-tag required u-marginLeft--10">
                 {" "}
                 Required{" "}
+=======
+              {showSequence && (
+                <p
+                  className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10"
+                  style={{ marginTop: "2px" }}
+                >
+                  {sequenceLabel} {version.sequence}
+                </p>
+              )}
+              {version.isRequired && (
+                <span className="status-tag required u-marginLeft--10">
+                  {" "}
+                  Required{" "}
+                </span>
+              )}
+            </div>
+            <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5">
+              {" "}
+              Released{" "}
+              <span className="u-fontWeight--bold">
+                {version.upstreamReleasedAt
+                  ? Utilities.dateFormat(
+                      version.upstreamReleasedAt,
+                      "MM/DD/YY @ hh:mm a z"
+                    )
+                  : Utilities.dateFormat(
+                      version.createdOn,
+                      "MM/DD/YY @ hh:mm a z"
+                    )}
+>>>>>>> 338d84d6a633465ae172c931e792f00247d8a3a7:web/src/components/apps/AppVersionHistoryRow.jsx
               </span>
             )}
           </div>
