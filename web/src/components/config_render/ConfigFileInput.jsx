@@ -3,6 +3,8 @@ import FileInput from "./FileInput";
 import ConfigItemTitle from "./ConfigItemTitle";
 import map from "lodash/map";
 import { Utilities } from "../../utilities/utilities";
+import Markdown from "react-remarkable";
+
 export default class ConfigFileInput extends React.Component {
   handleOnChange = (files) => {
     if (this.props.handleChange) {
@@ -81,9 +83,9 @@ export default class ConfigFileInput extends React.Component {
     }
   };
 
+
   render() {
     var hidden = this.props.hidden || this.props.when === "false";
-
     return (
       <div
         id={`${this.props.name}-group`}
@@ -100,6 +102,18 @@ export default class ConfigFileInput extends React.Component {
         ) : null}
         <div className="input input-type-file clearfix">
           <div>
+          {this.props.help_text !== "" ? (
+              <div className="field-section-help-text u-marginTop--5">
+                <Markdown
+                  options={{
+                    linkTarget: "_blank",
+                    linkify: true,
+                  }}
+                >
+                  {this.props.help_text}
+                </Markdown>
+              </div>
+            ) : null}
             <span>
               <FileInput
                 ref={(file) => (this.file = file)}
