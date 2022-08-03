@@ -29,7 +29,7 @@ async function getApps({
 
 function useApps({ _getApps = getApps } = {}) {
   return useQuery("apps", () => _getApps(), {
-    staleTime: 5000,
+    staleTime: 2000,
   });
 }
 

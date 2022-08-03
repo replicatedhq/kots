@@ -4,6 +4,7 @@ import find from "lodash/find";
 import classNames from "classnames";
 import ReactTooltip from "react-tooltip";
 import { useCurrentApp } from "./hooks/useCurrentApp";
+import { useVersions } from "./api/getVersions";
 
 import Loader from "@src/components/shared/Loader";
 
@@ -68,6 +69,8 @@ const AppVersionHistoryRow = ({
 }) => {
 
   const { currentApp } = useCurrentApp();
+  const { data } = useVersions();
+  console.log("data", data);
 
   handleSelectReleasesToDiff = () => {
     if (!selectedDiffReleases) {

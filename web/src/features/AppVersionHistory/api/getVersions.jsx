@@ -1,14 +1,21 @@
 import { useQuery } from "react-query";
 import { Utilities } from "../../../utilities/utilities";
+import { useParams } from "react-router-dom";
+import { useCurrentApp } from "../hooks/useCurrentApp";
 
-async function getApps({
+async function getVersions({
   accessToken = Utilities.getToken(),
   apiEndpoint = process.env.API_ENDPOINT,
   _fetch = fetch,
+  currentPage = 0,
+  pageSize = 20,
+  slug
 } = {}) {
   try {
-    const res = await _fetch(`${apiEndpoint}/apps`, {
-      headers: {
+    const res = await _fetch(
+      `${apiEndpoint}/app/${slug}/versions?currentPage=${currentPage}&pageSize=${pageSize}&pinLatestDeployable=true`,
+      {
+        headers: {
         Authorization: accessToken,
         "Content-Type": "application/json",
       },
@@ -27,19 +34,23 @@ async function getApps({
   }
 }
 
-function useApps({ _getApps = getApps } = {}) {
-  return useQuery("apps", () => _getApps(), {
-    staleTime: 5000,
+function getVersionsSelector(versions) {
+  console.log("versions selector", versions);
+  return { test: "test" };
+}
+
+function useVersions({ _getVersions = getVersions } = {}) {
+  let { slug } = useParams();
+  let { currentApp } = useCurrentApp();
+  return useQuery("versions", () => _getVersions({ slug }), {
+    // don't call versions until current app is ascertained
+    enabled: !!currentApp,
+    staleTime: 2000,
+    select: getVersionsSelector,
   });
 }
 
-function UseApps({ children }) {
-  const query = useApps();
-
-  return children(query);
-}
-
-export { getApps, useApps, UseApps };
+export { useVersions };
 // looks like this gets refetched if it returns a certain status
 /*
   fetchKotsDownstreamHistory = async () => {

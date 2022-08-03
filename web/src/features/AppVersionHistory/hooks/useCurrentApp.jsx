@@ -20,8 +20,6 @@ function useCurrentApp() {
 
   useEffect(() => {
     if (apps && isFetched) {
-      console.log(apps[0]);
-      console.log(apps.find(app => app.slug === slug))
       setCurrentApp(apps.find(app => app.slug === slug));
     }
   }, [apps, slug]);
