@@ -27,6 +27,4 @@ function useCurrentApp() {
   return { currentApp } ;
 }
 
-
-
 export { useCurrentApp };

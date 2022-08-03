@@ -5,8 +5,6 @@ import { useCurrentApp } from "../hooks/useCurrentApp";
 import { useMetadata } from "@src/stores";
 import { useIsHelmManaged } from "@src/components/hooks";
 
-
-
 async function getVersions({
   accessToken = Utilities.getToken(),
   apiEndpoint = process.env.API_ENDPOINT,
@@ -152,11 +150,17 @@ function chooseVersionsSelector({
 
 }
 
-function useVersions({ _getVersions = getVersions } = {}) {
-  let { slug } = useParams();
-  let { currentApp } = useCurrentApp();
-  let { data: metadata } = useMetadata();
-  let { data: isHelmManaged } = useIsHelmManaged();
+function useVersions({
+  _getVersions = getVersions,
+  _useParams = useParams,
+  _useCurrentApp = useCurrentApp,
+  _useMetadata = useMetadata,
+  _useIsHelmManaged = useIsHelmManaged,
+} = {}) {
+  let { slug } = _useParams();
+  let { currentApp } = _useCurrentApp();
+  let { data: metadata } = _useMetadata();
+  let { data: isHelmManaged } = _useIsHelmManaged();
 
   const versionSelector = chooseVersionsSelector({
     // labels differ by installation manager and if airgapped
@@ -178,4 +182,4 @@ function UseVersions({ children }) {
   return children(query);
 }
 
-export { useVersions, UseVersions };
+export { useVersions, UseVersions, getVersions, getVersionsSelectorForHelmManaged };
