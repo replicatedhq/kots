@@ -191,7 +191,7 @@ spec:
 			require.Nil(t, err)
 
 			if !reflect.DeepEqual(string(gotAllYAML), tt.wantAllYAML) {
-				t.Errorf("RenderChartsArchive() gotAllYAML \n\n%s", fmtJSONDiff(string(gotAllYAML), tt.wantAllYAML))
+				t.Errorf("RenderChartsArchive() allYAML \n\n%s", fmtJSONDiff(string(gotAllYAML), tt.wantAllYAML))
 			}
 		})
 	}
