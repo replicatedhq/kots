@@ -2,60 +2,17 @@ package supportbundle
 
 import (
 	"strings"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/logger"
-	"github.com/replicatedhq/kots/pkg/store"
-	"github.com/replicatedhq/kots/pkg/supportbundle/types"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootclientsetscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	"github.com/replicatedhq/troubleshoot/pkg/docrewrite"
 	troubleshootsb "github.com/replicatedhq/troubleshoot/pkg/supportbundle"
-	"github.com/segmentio/ksuid"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-// TODO: support customer redactors
-func CollectHelmSupportBundle(appSlug string, licenseID string, url string) (string, error) {
-	supportBundleSpec, additionalRedactors, err := getSupportBundleSpecFromOCI(licenseID, url)
-	if err != nil {
-		return "", errors.Wrapf(err, "failed to download support bundle spec from %s", url)
-	}
-
-	randomID, err := ksuid.NewRandom()
-	if err != nil {
-		return "", errors.Wrap(err, "failed to generate random bundle id")
-	}
-
-	bundleID := strings.ToLower(randomID.String())
-	// setSupportBundleProgress(bundleID, supportBundleProgressUpdate{})
-
-	bundle := &types.SupportBundle{
-		ID:        bundleID,
-		Slug:      bundleID,
-		AppID:     appSlug,
-		Status:    types.BUNDLE_RUNNING,
-		CreatedAt: time.Now(),
-		Progress: types.SupportBundleProgress{
-			CollectorCount: len(supportBundleSpec.Spec.Collectors),
-		},
-
-		BundleSpec:          supportBundleSpec,
-		AdditionalRedactors: additionalRedactors,
-	}
-
-	err = store.GetStore().CreateInProgressSupportBundle(bundle)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to ceate support undle in progress")
-	}
-
-	progressChan := executeUpdateRoutine(bundle)
-	executeSupportBundleCollectRoutine(bundle, progressChan)
-
-	return bundleID, nil
-}
 
 func getSupportBundleSpecFromOCI(licenseID string, url string) (*troubleshootv1beta2.SupportBundle, *troubleshootv1beta2.Redactor, error) {
 	err := helm.CreateHelmRegistryCreds(licenseID, licenseID, url)
@@ -79,7 +36,15 @@ func getSupportBundleSpecFromOCI(licenseID string, url string) (*troubleshootv1b
 	troubleshootclientsetscheme.AddToScheme(scheme.Scheme)
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 
-	additionalRedactors := &troubleshootv1beta2.Redactor{} // TODO: custom redactors
+	redactors := &troubleshootv1beta2.Redactor{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Redactor",
+			APIVersion: "troubleshoot.sh/v1beta2",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "default-redactor",
+		},
+	}
 	for i, additionalDoc := range multidocs {
 		if i == 0 {
 			continue
@@ -98,8 +63,8 @@ func getSupportBundleSpecFromOCI(licenseID string, url string) (*troubleshootv1b
 		if !ok {
 			continue
 		}
-		additionalRedactors.Spec.Redactors = append(additionalRedactors.Spec.Redactors, multidocRedactors.Spec.Redactors...)
+		redactors.Spec.Redactors = append(redactors.Spec.Redactors, multidocRedactors.Spec.Redactors...)
 	}
 
-	return supportBundle, additionalRedactors, nil
+	return supportBundle, redactors, nil
 }

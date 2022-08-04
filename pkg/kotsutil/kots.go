@@ -533,7 +533,6 @@ func LoadKotsKindsFromPath(fromDir string) (*KotsKinds, error) {
 
 	return &kotsKinds, nil
 }
-
 func LoadHelmChartsFromPath(fromDir string) ([]*kotsv1beta1.HelmChart, error) {
 	charts := []*kotsv1beta1.HelmChart{}
 	decode := scheme.Codecs.UniversalDeserializer().Decode

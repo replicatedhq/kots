@@ -86,7 +86,7 @@ func (h *Handler) GetPendingApp(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, pendingAppResponse)
 }
 
-func responseAppFromHelmApp(helmApp *helm.HelmApp) (*types.HelmResponseApp, error) {
+func responseAppFromHelmApp(helmApp *apptypes.HelmApp) (*types.HelmResponseApp, error) {
 	unixIntValue, err := strconv.ParseInt(helmApp.Labels["modifiedAt"], 10, 64)
 	var updatedTs time.Time
 	if err == nil {

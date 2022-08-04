@@ -334,12 +334,17 @@ func (c *Client) setResults(deployArgs operatortypes.DeployAppArgs, dryRunResult
 }
 
 func (c *Client) setDeployResults(args operatortypes.DeployAppArgs, results DeployResults) error {
-	troubleshootOpts := supportbundletypes.TroubleshootOptions{
-		InCluster: true,
-	}
-	if _, err := supportbundle.CreateSupportBundleDependencies(args.AppID, args.Sequence, troubleshootOpts); err != nil {
-		// support bundle is not essential. keep processing deployment request
-		logger.Error(errors.Wrapf(err, "failed to create support bundle for sequence %d after deploying", args.Sequence))
+	app, err := store.GetStore().GetApp(args.AppID)
+	if err != nil {
+		logger.Error(errors.Wrapf(err, "failed to get app after deploying"))
+	} else {
+		troubleshootOpts := supportbundletypes.TroubleshootOptions{
+			InCluster: true,
+		}
+		if _, err := supportbundle.CreateSupportBundleDependencies(app, args.Sequence, troubleshootOpts); err != nil {
+			// support bundle is not essential. keep processing deployment request
+			logger.Error(errors.Wrapf(err, "failed to create support bundle for sequence %d after deploying", args.Sequence))
+		}
 	}
 
 	alreadySuccessful, err := store.GetStore().IsDownstreamDeploySuccessful(args.AppID, args.ClusterID, args.Sequence)
