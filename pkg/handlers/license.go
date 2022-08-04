@@ -366,6 +366,9 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	verifiedLicense, err := kotspull.VerifySignature(unverifiedLicense)
 	if err != nil {
 		uploadLicenseResponse.Error = "License signature is not valid"
+		if _, ok := err.(kotspull.LicenseDataError); ok {
+			uploadLicenseResponse.Error = fmt.Sprintf("%s: %s", uploadLicenseResponse.Error, err.Error())
+		}
 		JSON(w, http.StatusBadRequest, uploadLicenseResponse)
 		return
 	}

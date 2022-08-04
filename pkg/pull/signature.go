@@ -33,6 +33,14 @@ type KeySignature struct {
 	GlobalKeyId string `json:"globalKeyId"`
 }
 
+type LicenseDataError struct {
+	message string
+}
+
+func (e LicenseDataError) Error() string {
+	return e.message
+}
+
 func VerifySignature(license *kotsv1beta1.License) (*kotsv1beta1.License, error) {
 	outerSignature := &OuterSignature{}
 	if err := json.Unmarshal(license.Spec.Signature, outerSignature); err != nil {
@@ -75,10 +83,9 @@ func VerifySignature(license *kotsv1beta1.License) (*kotsv1beta1.License, error)
 	}
 
 	if err := verifyLicenseData(license, verifiedLicense); err != nil {
-		return nil, errors.Wrap(err, "failed to verify license data")
+		return nil, LicenseDataError{message: err.Error()}
 	}
 
-	verifiedLicense.Spec.Endpoint = license.Spec.Endpoint
 	verifiedLicense.Spec.Signature = license.Spec.Signature
 
 	return verifiedLicense, nil
@@ -111,6 +118,9 @@ func verify(message, signature, publicKeyPEM []byte) error {
 func verifyLicenseData(outerLicense *kotsv1beta1.License, innerLicense *kotsv1beta1.License) error {
 	if outerLicense.Spec.AppSlug != innerLicense.Spec.AppSlug {
 		return errors.New("\"appSlug\" field has changed")
+	}
+	if outerLicense.Spec.Endpoint != innerLicense.Spec.Endpoint {
+		return errors.New("\"endpoint\" field has changed")
 	}
 	if outerLicense.Spec.ChannelID != innerLicense.Spec.ChannelID {
 		return errors.New("\"channelID\" field has changed")
