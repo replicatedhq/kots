@@ -401,7 +401,7 @@ class AppVersionHistoryRow extends Component {
             <ReactTooltip effect="solid" className="replicated-tooltip" />
           </div>
         )}
-        {(isPastVersion || isCurrentVersion || isPendingDeployedVersion) &&
+        {(isPastVersion || isCurrentVersion || isPendingDeployedVersion || version?.status === "superseded") &&
         version?.status !== "pending" ? (
           <div className="u-marginLeft--10">
             <span

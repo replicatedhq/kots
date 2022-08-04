@@ -62,6 +62,40 @@ func (v InstalledReleases) Less(i, j int) bool {
 	return v[i].Version < v[j].Version
 }
 
+func GetChartSecret(releaseName, namespace, version string) (*helmrelease.Release, error) {
+	clientSet, err := k8sutil.GetClientset()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get clientset")
+	}
+
+	selectorLabels := map[string]string{
+		"owner":   "helm",
+		"name":    releaseName,
+		"version": version,
+	}
+	listOpts := metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(selectorLabels).String(),
+	}
+
+	secrets, err := clientSet.CoreV1().Secrets(namespace).List(context.TODO(), listOpts)
+	if err != nil {
+		if kuberneteserrors.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, errors.Wrap(err, "failed to list secrets")
+	}
+	if len(secrets.Items) > 1 {
+		return nil, errors.New("found multiple secrets for single release revision")
+	}
+
+	helmRelease, err := HelmReleaseFromSecretData(secrets.Items[0].Data["release"])
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse release info from secret")
+	}
+
+	return helmRelease, nil
+}
+
 func ListChartVersions(releaseName string, namespace string) ([]InstalledRelease, error) {
 	clientSet, err := k8sutil.GetClientset()
 	if err != nil {
