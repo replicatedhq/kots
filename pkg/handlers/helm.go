@@ -63,7 +63,7 @@ func (h *Handler) GetAppValuesFile(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, getAppValuesFileResponse)
 }
 
-func getCompatibleAppFromHelmApp(helmApp *helm.HelmApp) (*apptypes.App, error) {
+func getCompatibleAppFromHelmApp(helmApp *apptypes.HelmApp) (*apptypes.App, error) {
 	chartApp, err := responseAppFromHelmApp(helmApp)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to convert release to app")

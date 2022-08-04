@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/installers"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotstypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -239,7 +240,7 @@ func GetPreflightCommand(appSlug string) []string {
 	return comamnd
 }
 
-func CreateRenderedSpec(appID string, sequence int64, origin string, inCluster bool, kotsKinds *kotsutil.KotsKinds) error {
+func CreateRenderedSpec(app *apptypes.App, sequence int64, origin string, inCluster bool, kotsKinds *kotsutil.KotsKinds) error {
 	builtPreflight := kotsKinds.Preflight.DeepCopy()
 	if builtPreflight == nil {
 		builtPreflight = &troubleshootv1beta2.Preflight{
@@ -253,12 +254,7 @@ func CreateRenderedSpec(appID string, sequence int64, origin string, inCluster b
 		}
 	}
 
-	app, err := store.GetStore().GetApp(appID)
-	if err != nil {
-		return errors.Wrap(err, "failed to get app")
-	}
-
-	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(appID)
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(app.ID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get registry settings for app")
 	}

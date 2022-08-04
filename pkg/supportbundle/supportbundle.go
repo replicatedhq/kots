@@ -12,6 +12,8 @@ import (
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/redact"
@@ -34,10 +36,10 @@ const (
 // Collect will queue collection of a new support bundle.
 // It returns the ID of the support bundle so that the status can be queried by the
 // front end.
-func Collect(appID string, clusterID string) (string, error) {
+func Collect(app *apptypes.App, clusterID string) (string, error) {
 	sequence := int64(0)
 
-	currentVersion, err := store.GetStore().GetCurrentDownstreamVersion(appID, clusterID)
+	currentVersion, err := store.GetStore().GetCurrentDownstreamVersion(app.ID, clusterID)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get current downstream version")
 	}
@@ -48,7 +50,30 @@ func Collect(appID string, clusterID string) (string, error) {
 	opts := types.TroubleshootOptions{
 		DisableUpload: true,
 	}
-	supportBundle, err := CreateSupportBundleDependencies(appID, sequence, opts)
+	supportBundle, err := CreateSupportBundleDependencies(app, sequence, opts)
+	if err != nil {
+		return "", errors.Wrap(err, "could not generate support bundle dependencies")
+	}
+
+	supportBundle.ID = strings.ToLower(ksuid.New().String())
+	supportBundle.Slug = supportBundle.ID
+
+	err = store.GetStore().CreateInProgressSupportBundle(supportBundle)
+	if err != nil {
+		return "", errors.Wrap(err, "could not generate support bundle in progress")
+	}
+
+	progressChan := executeUpdateRoutine(supportBundle)
+	executeSupportBundleCollectRoutine(supportBundle, progressChan)
+
+	return supportBundle.ID, nil
+}
+
+func CollectHelm(app *apptypes.HelmApp) (string, error) {
+	opts := types.TroubleshootOptions{
+		DisableUpload: true,
+	}
+	supportBundle, err := CreateSupportBundleDependencies(app, app.Version, opts)
 	if err != nil {
 		return "", errors.Wrap(err, "could not generate support bundle dependencies")
 	}
@@ -110,29 +135,26 @@ func GetBundleCommand(appSlug string) []string {
 
 // CreateSupportBundleDependencies generates k8s secrets and configmaps for the support bundle spec and redactors.
 // These resources will be used when executing a support bundle collection
-func CreateSupportBundleDependencies(appID string, sequence int64, opts types.TroubleshootOptions) (*types.SupportBundle, error) {
-	a, err := store.GetStore().GetApp(appID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get app %s", appID)
+func CreateSupportBundleDependencies(app apptypes.AppType, sequence int64, opts types.TroubleshootOptions) (*types.SupportBundle, error) {
+	var kotsKinds *kotsutil.KotsKinds
+	switch a := app.(type) {
+	case *apptypes.App:
+		k, err := getKotsKindsForApp(a, sequence)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get kots kinds for app")
+		}
+		kotsKinds = k
+	case *apptypes.HelmApp:
+		k, err := getKotsKindsForHelmApp(a)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get kots kinds for helm")
+		}
+		kotsKinds = k
+	default:
+		return nil, errors.Errorf("cannot get kotskinds for app type %T", app)
 	}
 
-	archivePath, err := ioutil.TempDir("", "kotsadm")
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create temp dir")
-	}
-	defer os.RemoveAll(archivePath)
-
-	err = store.GetStore().GetAppVersionArchive(a.ID, sequence, archivePath)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get current archive")
-	}
-
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archivePath)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to load current kotskinds")
-	}
-
-	supportBundle, err := CreateRenderedSpec(a.ID, sequence, kotsKinds, opts)
+	supportBundle, err := CreateRenderedSpec(app, sequence, kotsKinds, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create rendered support bundle spec")
 	}
@@ -143,15 +165,15 @@ func CreateSupportBundleDependencies(appID string, sequence int64, opts types.Tr
 	}
 	redactURIs := []string{redact.GetKotsadmRedactSpecURI()}
 
-	err = redact.CreateRenderedAppRedactSpec(a.ID, sequence, kotsKinds)
+	err = redact.CreateRenderedAppRedactSpec(app, sequence, kotsKinds)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to write app redact spec configmap")
 	}
-	redactURIs = append(redactURIs, redact.GetAppRedactSpecURI(a.Slug))
+	redactURIs = append(redactURIs, redact.GetAppRedactSpecURI(app.GetSlug()))
 
 	supportBundleObj := types.SupportBundle{
-		AppID:      appID,
-		URI:        GetSpecURI(a.Slug),
+		AppID:      app.GetID(),
+		URI:        GetSpecURI(app.GetSlug()),
 		RedactURIs: redactURIs,
 		Progress: types.SupportBundleProgress{
 			CollectorCount: len(supportBundle.Spec.Collectors),
@@ -159,6 +181,45 @@ func CreateSupportBundleDependencies(appID string, sequence int64, opts types.Tr
 	}
 
 	return &supportBundleObj, nil
+}
+
+func getKotsKindsForApp(app *apptypes.App, sequence int64) (*kotsutil.KotsKinds, error) {
+	archivePath, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create temp dir")
+	}
+	defer os.RemoveAll(archivePath)
+
+	err = store.GetStore().GetAppVersionArchive(app.GetID(), sequence, archivePath)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get current archive")
+	}
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archivePath)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to load current kotskinds")
+	}
+
+	return kotsKinds, nil
+}
+
+func getKotsKindsForHelmApp(app *apptypes.HelmApp) (*kotsutil.KotsKinds, error) {
+	license, err := helm.GetChartLicenseFromSecret(app)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get license from secret")
+	}
+
+	specURL := strings.TrimSuffix(app.ChartPath, fmt.Sprintf("/%s", app.Release.Chart.Name()))
+	upstreamSupportBundle, upstreamRedactors, err := getSupportBundleSpecFromOCI(license.Spec.LicenseID, specURL)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to download support bundle spec from %s", specURL)
+	}
+
+	kotsKinds := kotsutil.EmptyKotsKinds()
+	kotsKinds.License = license
+	kotsKinds.SupportBundle = upstreamSupportBundle
+	kotsKinds.Redactor = upstreamRedactors
+	return &kotsKinds, nil
 }
 
 func getAnalysisFromBundle(archivePath string) ([]byte, error) {

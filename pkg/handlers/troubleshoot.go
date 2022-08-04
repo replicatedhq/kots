@@ -286,7 +286,7 @@ func (h *Handler) GetSupportBundleCommand(w http.ResponseWriter, r *http.Request
 		Origin:    getSupportBundleCommandRequest.Origin,
 		InCluster: false,
 	}
-	if _, err := supportbundle.CreateSupportBundleDependencies(foundApp.ID, sequence, opts); err != nil {
+	if _, err := supportbundle.CreateSupportBundleDependencies(foundApp, sequence, opts); err != nil {
 		logger.Error(errors.Wrap(err, "failed to create support bundle spec"))
 		JSON(w, http.StatusOK, response)
 		return
@@ -453,7 +453,7 @@ func (h *Handler) CollectSupportBundle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bundleID, err := supportbundle.Collect(a.ID, mux.Vars(r)["clusterId"])
+	bundleID, err := supportbundle.Collect(a, mux.Vars(r)["clusterId"])
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -483,21 +483,7 @@ func (h *Handler) CollectHelmSupportBundle(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	license, err := helm.GetChartLicenseFromSecret(helmApp)
-	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to get license from secret"))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	if license == nil {
-		logger.Errorf("license for app %s not found", appSlug)
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-
-	sbUrl := strings.TrimSuffix(helmApp.ChartPath, fmt.Sprintf("/%s", helmApp.Release.Chart.Name()))
-	bundleID, err := supportbundle.CollectHelmSupportBundle(appSlug, license.Spec.LicenseID, sbUrl)
+	bundleID, err := supportbundle.CollectHelm(helmApp)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to collect helm support bundle"))
 		w.WriteHeader(http.StatusInternalServerError)

@@ -5,10 +5,12 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 	"sync"
 	"time"
 
 	"github.com/pkg/errors"
+	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -21,19 +23,9 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 )
 
-type HelmApp struct {
-	Release           helmrelease.Release
-	Labels            map[string]string
-	Namespace         string
-	IsConfigurable    bool
-	ChartPath         string
-	CreationTimestamp time.Time
-	PathToValuesFile  string
-}
-
 // TODO: Support same releases names in different namespaces
 var (
-	helmAppCache  = map[string]*HelmApp{}
+	helmAppCache  = map[string]*apptypes.HelmApp{}
 	tmpValuesRoot string
 	appCacheLock  sync.Mutex
 )
@@ -103,7 +95,7 @@ func Init(ctx context.Context) error {
 	return nil
 }
 
-func GetHelmApp(releaseName string) *HelmApp {
+func GetHelmApp(releaseName string) *apptypes.HelmApp {
 	appCacheLock.Lock()
 	defer appCacheLock.Unlock()
 
@@ -121,7 +113,7 @@ func GetCachedHelmApps() []string {
 	return releases
 }
 
-func AddHelmApp(releaseName string, helmApp *HelmApp) {
+func AddHelmApp(releaseName string, helmApp *apptypes.HelmApp) {
 	appCacheLock.Lock()
 	defer appCacheLock.Unlock()
 
@@ -135,7 +127,7 @@ func RemoveHelmApp(releaseName string) {
 	delete(helmAppCache, releaseName)
 }
 
-func SaveConfigValuesToFile(helmApp *HelmApp, data []byte) error {
+func SaveConfigValuesToFile(helmApp *apptypes.HelmApp, data []byte) error {
 	err := os.MkdirAll(filepath.Dir(helmApp.PathToValuesFile), 0744)
 	if err != nil {
 		return errors.Wrap(err, "failed to create directory")
@@ -149,7 +141,7 @@ func SaveConfigValuesToFile(helmApp *HelmApp, data []byte) error {
 	return nil
 }
 
-func helmAppFromSecret(secret *corev1.Secret) (*HelmApp, error) {
+func helmAppFromSecret(secret *corev1.Secret) (*apptypes.HelmApp, error) {
 	helmRelease, err := HelmReleaseFromSecretData(secret.Data["release"])
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get helm release from secret")
@@ -160,9 +152,15 @@ func helmAppFromSecret(secret *corev1.Secret) (*HelmApp, error) {
 		return nil, nil
 	}
 
-	helmApp := &HelmApp{
+	version, err := strconv.ParseInt(secret.Labels["version"], 10, 64)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse release version")
+	}
+
+	helmApp := &apptypes.HelmApp{
 		Release:           *helmRelease,
 		Labels:            secret.Labels,
+		Version:           version,
 		CreationTimestamp: secret.CreationTimestamp.Time,
 		Namespace:         secret.Namespace,
 		PathToValuesFile:  filepath.Join(tmpValuesRoot, "helm", helmRelease.Name, "values.yaml"),
