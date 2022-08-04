@@ -25,52 +25,10 @@ jobs:
           package-name: "kotsadm-${{ inputs.addon_version }}"
           manifest-path: "deploy/kurl/kotsadm/${{ inputs.addon_version }}/Manifest"
           output-path: "deploy/kurl/kotsadm/${{ inputs.addon_version }}"
-      - uses: actions/github-script@v6
+      - uses: ./.github/actions/kurl-addon-kots-publisher
         with:
-          script: |
-            const fs = require('node:fs/promises');
-            const https = require('https');
-            
-            const fetch = (url) => {
-              return new Promise(function(resolve, reject) {
-                var req = https.get(url, function(res) {
-                  if (res.statusCode < 200 || res.statusCode >= 300) {
-                    return reject(new Error('statusCode=' + res.statusCode));
-                  }
-                  let body = [];
-                  res.on('data', function(chunk) {
-                    body.push(chunk);
-                  });
-                  res.on('end', function() {
-                    try {
-                      body = JSON.parse(Buffer.concat(body).toString());
-                    } catch(e) {
-                      reject(e);
-                    }
-                    resolve(body);
-                  });
-                });
-                req.on('error', function(err) {
-                  reject(err);
-                });
-                req.end();
-              });
-            }
-
-            const latestKurlVersion = await github.rest.repos.getLatestRelease({
-              owner: 'replicatedhq',
-              repo: 'kurl'
-            });
-            const kotsAddonVersions = await fetch('https://kots-kurl-addons-production-1658439274.s3.amazonaws.com/versions.json');
-            const addonFileName = 'kotsadm-${{ inputs.addon_version }}.tar.gz';
-            kotsAddonVersions.unshift({
-              kurlVersionCompatibility: latestKurlVersion.data.tag_name,
-              addonUrl: `https://kots-kurl-addons-production-1658439274.s3.amazonaws.com/${addonFileName}`,
-              addonVersion: '${{ inputs.addon_version }}',
-              addonName: 'kotsadm'
-            });
-
-            fs.writeFile("./deploy/kurl/versions.json", JSON.stringify(kotsAddonVersions));
+          ADDON_VERSION: ${{ inputs.addon_version }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_PROD_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_PROD_SECRET_ACCESS_KEY }}
