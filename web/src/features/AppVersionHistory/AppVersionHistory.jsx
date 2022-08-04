@@ -1288,7 +1288,10 @@ class AppVersionHistory extends Component {
             </select>
           </div>
         </div>
-        <UseVersions>
+        <UseVersions
+          currentPage={currentPage}
+          pageSize={pageSize}
+        >
           {({ data: versions }) => {
             if (!versions) {
               return null;
@@ -1770,7 +1773,10 @@ class AppVersionHistory extends Component {
                             </div>
                           </div>
                           {this.state.updatesAvailable ? (
-                            <UseVersions>
+                            <UseVersions
+                              currentPage={this.state.currentPage}
+                              pageSize={this.state.pageSize}
+                            >
                               {({ data: versions }) => {
                                 if (!versions) {
                                   return null;

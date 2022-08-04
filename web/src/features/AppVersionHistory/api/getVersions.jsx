@@ -151,6 +151,8 @@ function chooseVersionsSelector({
 }
 
 function useVersions({
+  currentPage,
+  pageSize,
   _getVersions = getVersions,
   _useParams = useParams,
   _useCurrentApp = useCurrentApp,
@@ -168,7 +170,7 @@ function useVersions({
     isHelmManaged,
     isKurl: metadata?.isKurl,
   });
-  return useQuery("versions", () => _getVersions({ slug }), {
+  return useQuery("versions", () => _getVersions({ slug, currentPage, pageSize }), {
     // don't call versions until current app is ascertained
     enabled: !!currentApp,
     select: (versions) => versionSelector({ versions, currentApp, metadata }),
@@ -176,8 +178,8 @@ function useVersions({
   });
 }
 
-function UseVersions({ children }) {
-  const query = useVersions();
+function UseVersions({ children, currentPage, pageSize }) {
+  const query = useVersions({ currentPage, pageSize });
 
   return children(query);
 }
