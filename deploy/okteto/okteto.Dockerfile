@@ -111,18 +111,18 @@ ENV KOTS_KUSTOMIZE_BIN_DIR=/usr/local/bin
 # discover all kustomize binaries in the KOTS_KUSTOMIZE_BIN_DIR directory for use by KOTS.
 # CURRENNTLY ONLY ONE VERSION IS SHIPPED BELOW
 
-# Install kustomize 3
-ENV KUSTOMIZE3_VERSION=3.5.4
+# Install kustomize 4
+ENV KUSTOMIZE3_VERSION=4.5.7
 ENV KUSTOMIZE3_URL=https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v${KUSTOMIZE3_VERSION}/kustomize_v${KUSTOMIZE3_VERSION}_linux_amd64.tar.gz
-ENV KUSTOMIZE3_SHA256SUM=5cdeb2af81090ad428e3a94b39779b3e477e2bc946be1fe28714d1ca28502f6a
+ENV KUSTOMIZE3_SHA256SUM=701e3c4bfa14e4c520d481fdf7131f902531bfc002cb5062dcf31263a09c70c9
 RUN curl -fsSL -o kustomize.tar.gz "${KUSTOMIZE3_URL}" \
   && echo "${KUSTOMIZE3_SHA256SUM} kustomize.tar.gz" | sha256sum -c - \
   && tar -xzvf kustomize.tar.gz \
   && rm kustomize.tar.gz \
   && chmod a+x kustomize \
   && mv kustomize "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize${KUSTOMIZE3_VERSION}" \
-  && ln -s "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize${KUSTOMIZE3_VERSION}" "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize3" \
-  && ln -s "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize3" "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize"
+  && ln -s "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize${KUSTOMIZE3_VERSION}" "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize4" \
+  && ln -s "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize4" "${KOTS_KUSTOMIZE_BIN_DIR}/kustomize"
 
 # KOTS can be configured to use a specific version of helm by setting helmVersion in the
 # kots.io/v1beta1.HelmChart spec. The github.com/replicatedhq/kots/pkg/binaries package will
