@@ -314,7 +314,7 @@ func helmChartBasePathToUpstreamPath(path string, upstreamFiles map[string][]byt
 					return "", errors.Wrapf(err, "failed to unmarshal chart yaml for %s", chartYaml)
 				}
 				foundUpstream = true
-			} else if upstreamPath != "" && strings.Contains(name, chartYaml) {
+			} else if upstreamPath != "" && strings.HasSuffix(name, chartYaml) {
 				// this case handles subsubcharts with base paths that are not the top level
 				if err := yaml.Unmarshal(content, deps); err != nil {
 					return "", errors.Wrapf(err, "failed to unmarshal chart yaml for %s", chartYaml)
@@ -369,12 +369,11 @@ func helmChartBaseAppendMissingDependencies(base Base, upstreamFiles map[string]
 			upstreamPath := strings.TrimSuffix(upstreamFilePath, "Chart.yaml")
 			upstreamPath = strings.TrimSuffix(upstreamPath, string(os.PathSeparator))
 			if _, ok := renderedUpstreamPaths[upstreamPath]; !ok {
-				// upstream destinationPath is not in the rendered upstream paths, it is a missing dependency
-				// if the containing upstream destinationPath has been rendered, add it as a child to each of the matching base paths
-				// otherwise we add it to the base files using the upstream file destinationPath as the base destinationPath
+				// upstream path has not been rendered, consider it a missing dependency
 				addedDependency := false
 				for renderedUpstreamPath, basePaths := range renderedUpstreamPaths {
 					if renderedUpstreamPath != "" && strings.HasPrefix(upstreamPath, renderedUpstreamPath) {
+						// if a parent upstream path has been rendered, add the missing dependency to each of the bases
 						for _, basePath := range basePaths {
 							destinationPath := strings.Replace(upstreamPath, renderedUpstreamPath, basePath, 1)
 							logger.Infof("adding missing dependency %s to base path %s\n", upstreamFilePath, destinationPath)
@@ -393,6 +392,7 @@ func helmChartBaseAppendMissingDependencies(base Base, upstreamFiles map[string]
 					}
 				}
 				if !addedDependency {
+					// otherwise we add it to the base files using the upstream path as the base path
 					logger.Infof("adding missing dependency %s to base path %s (using upstream path)\n", upstreamFilePath, upstreamPath)
 					b := Base{
 						Path: upstreamPath,
