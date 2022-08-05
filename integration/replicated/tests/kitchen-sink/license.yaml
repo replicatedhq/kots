@@ -9,7 +9,7 @@ spec:
   appSlug: kitchen-sink
   channelName: Unstable
   licenseSequence: 1
-  endpoint: 'http://localhost:3000'
+  endpoint: https://replicated.app
   entitlements:
     expires_at:
       title: Expiration

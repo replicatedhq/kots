@@ -9,7 +9,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -22,6 +21,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
 	"github.com/replicatedhq/kots/pkg/upstream"
@@ -33,41 +33,42 @@ import (
 )
 
 type PullOptions struct {
-	HelmRepoURI            string
-	RootDir                string
-	Namespace              string
-	Downstreams            []string
-	LocalPath              string
-	LicenseObj             *kotsv1beta1.License
-	LicenseFile            string
-	InstallationFile       string
-	AirgapRoot             string
-	AirgapBundle           string
-	ConfigFile             string
-	IdentityConfigFile     string
-	UpdateCursor           string
-	ExcludeKotsKinds       bool
-	ExcludeAdminConsole    bool
-	IncludeMinio           bool
-	SharedPassword         string
-	CreateAppDir           bool
-	Silent                 bool
-	RewriteImages          bool
-	RewriteImageOptions    RewriteImageOptions
-	HelmVersion            string
-	HelmOptions            []string
-	SkipHelmChartCheck     bool
-	ReportWriter           io.Writer
-	AppSlug                string
-	AppSequence            int64
-	AppVersionLabel        string
-	IsGitOps               bool
-	HTTPProxyEnvValue      string
-	HTTPSProxyEnvValue     string
-	NoProxyEnvValue        string
-	ReportingInfo          *reportingtypes.ReportingInfo
-	IdentityPostgresConfig *kotsv1beta1.IdentityPostgresConfig
-	SkipCompatibilityCheck bool
+	HelmRepoURI             string
+	RootDir                 string
+	Namespace               string
+	Downstreams             []string
+	LocalPath               string
+	LicenseObj              *kotsv1beta1.License
+	LicenseFile             string
+	LicenseEndpointOverride string // only used for testing
+	InstallationFile        string
+	AirgapRoot              string
+	AirgapBundle            string
+	ConfigFile              string
+	IdentityConfigFile      string
+	UpdateCursor            string
+	ExcludeKotsKinds        bool
+	ExcludeAdminConsole     bool
+	IncludeMinio            bool
+	SharedPassword          string
+	CreateAppDir            bool
+	Silent                  bool
+	RewriteImages           bool
+	RewriteImageOptions     RewriteImageOptions
+	HelmVersion             string
+	HelmOptions             []string
+	SkipHelmChartCheck      bool
+	ReportWriter            io.Writer
+	AppSlug                 string
+	AppSequence             int64
+	AppVersionLabel         string
+	IsGitOps                bool
+	HTTPProxyEnvValue       string
+	HTTPSProxyEnvValue      string
+	NoProxyEnvValue         string
+	ReportingInfo           *reportingtypes.ReportingInfo
+	IdentityPostgresConfig  *kotsv1beta1.IdentityPostgresConfig
+	SkipCompatibilityCheck  bool
 }
 
 type RewriteImageOptions struct {
@@ -150,20 +151,29 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	if pullOptions.LicenseObj != nil {
 		fetchOptions.License = pullOptions.LicenseObj
 	} else if pullOptions.LicenseFile != "" {
-		license, err := ParseLicenseFromFile(pullOptions.LicenseFile)
+		license, err := kotsutil.LoadLicenseFromPath(pullOptions.LicenseFile)
 		if err != nil {
-			if errors.Cause(err) == ErrSignatureInvalid {
-				return "", ErrSignatureInvalid
+			if errors.Cause(err) == kotslicense.ErrSignatureInvalid {
+				return "", kotslicense.ErrSignatureInvalid
 			}
-			if errors.Cause(err) == ErrSignatureMissing {
-				return "", ErrSignatureMissing
+			if errors.Cause(err) == kotslicense.ErrSignatureMissing {
+				return "", kotslicense.ErrSignatureMissing
 			}
 			return "", errors.Wrap(err, "failed to parse license from file")
 		}
-
 		fetchOptions.License = license
 	} else {
 		fetchOptions.License = localLicense
+	}
+
+	verifiedLicense, err := kotslicense.VerifySignature(fetchOptions.License)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to verify signature")
+	}
+	fetchOptions.License = verifiedLicense
+
+	if pullOptions.LicenseEndpointOverride != "" && fetchOptions.License != nil {
+		fetchOptions.License.Spec.Endpoint = pullOptions.LicenseEndpointOverride
 	}
 
 	encryptConfig := false
@@ -210,7 +220,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 
 	if pullOptions.AirgapRoot != "" {
-		if expired, err := LicenseIsExpired(fetchOptions.License); err != nil {
+		if expired, err := kotslicense.LicenseIsExpired(fetchOptions.License); err != nil {
 			return "", errors.Wrap(err, "failed to check license expiration")
 		} else if expired {
 			return "", util.ActionableError{Message: "License is expired"}
@@ -883,35 +893,6 @@ func writeCombinedDownstreamBase(downstreamName string, bases []string, renderDi
 	return nil
 }
 
-func ParseLicenseFromFile(filename string) (*kotsv1beta1.License, error) {
-	contents, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to read license file")
-	}
-
-	return ParseLicenseFromBytes(contents)
-}
-
-func ParseLicenseFromBytes(licenseData []byte) (*kotsv1beta1.License, error) {
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	decoded, gvk, err := decode(licenseData, nil, nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to decode license file")
-	}
-
-	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "License" {
-		return nil, errors.New("not an application license")
-	}
-
-	license := decoded.(*kotsv1beta1.License)
-	verifiedLicense, err := VerifySignature(license)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to verify signature")
-	}
-
-	return verifiedLicense, nil
-}
-
 func ParseConfigValuesFromFile(filename string) (*kotsv1beta1.ConfigValues, error) {
 	contents, err := ioutil.ReadFile(filename)
 	if err != nil {
@@ -1072,12 +1053,12 @@ func publicKeysMatch(log *logger.CLILogger, license *kotsv1beta1.License, airgap
 		return nil
 	}
 
-	publicKey, err := GetAppPublicKey(license)
+	publicKey, err := kotslicense.GetAppPublicKey(license)
 	if err != nil {
 		return errors.Wrap(err, "failed to get public key from license")
 	}
 
-	if err := verify([]byte(license.Spec.AppSlug), []byte(airgap.Spec.Signature), publicKey); err != nil {
+	if err := kotslicense.Verify([]byte(license.Spec.AppSlug), []byte(airgap.Spec.Signature), publicKey); err != nil {
 		log.Info("got error validating airgap bundle: %s", err.Error())
 		if airgap.Spec.AppSlug != "" {
 			return util.ActionableError{
@@ -1093,25 +1074,6 @@ func publicKeysMatch(log *logger.CLILogger, license *kotsv1beta1.License, airgap
 	}
 
 	return nil
-}
-
-func LicenseIsExpired(license *kotsv1beta1.License) (bool, error) {
-	val, found := license.Spec.Entitlements["expires_at"]
-	if !found {
-		return false, nil
-	}
-	if val.ValueType != "" && val.ValueType != "String" {
-		return false, errors.Errorf("expires_at must be type String: %s", val.ValueType)
-	}
-	if val.Value.StrVal == "" {
-		return false, nil
-	}
-
-	partsed, err := time.Parse(time.RFC3339, val.Value.StrVal)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to parse expiration time")
-	}
-	return partsed.Before(time.Now()), nil
 }
 
 func findConfig(localPath string) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *kotsv1beta1.License, *kotsv1beta1.Installation, *kotsv1beta1.IdentityConfig, error) {

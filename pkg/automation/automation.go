@@ -25,7 +25,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/online"
 	onlinetypes "github.com/replicatedhq/kots/pkg/online/types"
-	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -197,7 +196,7 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 		}
 	}()
 
-	verifiedLicense, err := kotspull.VerifySignature(unverifiedLicense)
+	verifiedLicense, err := kotslicense.VerifySignature(unverifiedLicense)
 	if err != nil {
 		return errors.Wrap(err, "failed to verify license signature")
 	}
@@ -212,7 +211,7 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 	}
 
 	// check license expiration
-	expired, err := kotspull.LicenseIsExpired(verifiedLicense)
+	expired, err := kotslicense.LicenseIsExpired(verifiedLicense)
 	if err != nil {
 		return errors.Wrapf(err, "failed to check if license is expired for app %s", appSlug)
 	}

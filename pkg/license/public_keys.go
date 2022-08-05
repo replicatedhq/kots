@@ -1,6 +1,6 @@
-package pull
+package license
 
-var publicKeys = map[string][]byte{
+var PublicKeys = map[string][]byte{
 	"1d3f7f6b50714fe7b895554dd65773b0": []byte(`-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAugyKfZV2gIDaY1Rzkjoo
 fbNywGa04sGQIAqYwifMay2e2xzqRwswTRHQnr9SIWypkN86Cfn6QzOB8kkjERC1
