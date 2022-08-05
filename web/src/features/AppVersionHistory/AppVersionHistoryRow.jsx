@@ -68,7 +68,6 @@ const AppVersionHistoryRow = ({
   redeployVersionErrMsg,
 }) => {
   const { currentApp } = useCurrentApp();
-  const { data: versionData } = useVersions();
 
   handleSelectReleasesToDiff = () => {
     if (!selectedDiffReleases) {

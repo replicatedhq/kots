@@ -1315,7 +1315,6 @@ class AppVersionHistory extends Component {
     this.setState({ currentPage: page, loadingPage: true }, async () => {
       this.props.history.push(`${this.props.location.pathname}?page=${page}`);
       // await this.fetchKotsDownstreamHistory();
-      this.state?.refetchVersions?.();
       this.setState({ loadingPage: false });
     });
   };

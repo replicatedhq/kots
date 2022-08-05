@@ -171,13 +171,12 @@ function useVersions({
   });
 
   return useQuery(
-    "versions",
+    ["versions", currentPage, pageSize],
     () => _getVersions({ slug, currentPage, pageSize }),
     {
       // don't call versions until current app is ascertained
       enabled: !!currentApp,
       select: (versions) => versionSelector({ versions, currentApp, metadata }),
-      staleTime: 2000,
       refetchInterval,
     }
   );
