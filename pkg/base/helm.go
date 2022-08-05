@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/ghodss/yaml"
@@ -99,7 +100,7 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 		upstreamFiles[upstreamFile.Path] = upstreamFile.Content
 	}
 
-	nextBase := helmChartBaseAppendAdditionalFiles(*base, upstreamFiles)
+	nextBase := helmChartBaseAppendAdditionalFiles(*base, base.Path, upstreamFiles)
 	nexterBase := helmChartBaseAppendMissingDependencies(nextBase, upstreamFiles)
 
 	return &nexterBase, nil
@@ -249,8 +250,8 @@ func removeCommonPrefix(baseFiles []BaseFile) []BaseFile {
 	return cleanedBaseFiles
 }
 
-func helmChartBaseAppendAdditionalFiles(base Base, upstreamFiles map[string][]byte) Base {
-	if upstreamPath, err := helmChartBasePathToUpstreamPath(base.Path, upstreamFiles); err == nil {
+func helmChartBaseAppendAdditionalFiles(base Base, fullBasePath string, upstreamFiles map[string][]byte) Base {
+	if upstreamPath, err := helmChartBasePathToUpstreamPath(fullBasePath, upstreamFiles); err == nil {
 		additionalFiles := []string{"Chart.yaml", "Chart.lock"}
 		for _, additionalFile := range additionalFiles {
 			additionalFilePath := path.Join(upstreamPath, additionalFile)
@@ -266,9 +267,9 @@ func helmChartBaseAppendAdditionalFiles(base Base, upstreamFiles map[string][]by
 	}
 
 	var nextBases []Base
-	for _, base := range base.Bases {
-		base = helmChartBaseAppendAdditionalFiles(base, upstreamFiles)
-		nextBases = append(nextBases, base)
+	for _, nextBase := range base.Bases {
+		nextBase = helmChartBaseAppendAdditionalFiles(nextBase, path.Join(base.Path, nextBase.Path), upstreamFiles)
+		nextBases = append(nextBases, nextBase)
 	}
 	base.Bases = nextBases
 
@@ -278,7 +279,6 @@ func helmChartBaseAppendAdditionalFiles(base Base, upstreamFiles map[string][]by
 // Translates the base path for a helm chart to the upstream path accounting for any aliased dependencies.
 func helmChartBasePathToUpstreamPath(path string, upstreamFiles map[string][]byte) (string, error) {
 	charts := pathToCharts(path)
-
 	deps := new(HelmChartDependencies)
 	upstreamPath := ""
 	basePath := ""
@@ -297,36 +297,14 @@ func helmChartBasePathToUpstreamPath(path string, upstreamFiles map[string][]byt
 			upstreamPath = filepath.Join(upstreamPath, "charts", chart)
 		}
 
-		// if any of the dependencies come from a file repository, use that as the upstream path
-		for _, dep := range deps.Dependencies {
-			if dep.Name == chart && strings.HasPrefix(dep.Repository, "file://") {
-				upstreamPath = strings.TrimPrefix(dep.Repository, "file://")
-				return upstreamPath, nil
-			}
-		}
-
 		// find the Chart.yaml file in the current upstream path and get its dependencies
 		chartYaml := filepath.Join(upstreamPath, "Chart.yaml")
-		foundUpstream := false
-		for name, content := range upstreamFiles {
-			if upstreamPath == "" && name == chartYaml {
-				if err := yaml.Unmarshal(content, deps); err != nil {
-					return "", errors.Wrapf(err, "failed to unmarshal chart yaml for %s", chartYaml)
-				}
-				foundUpstream = true
-			} else if upstreamPath != "" && strings.HasSuffix(name, chartYaml) {
-				// this case handles subsubcharts with base paths that are not the top level
-				if err := yaml.Unmarshal(content, deps); err != nil {
-					return "", errors.Wrapf(err, "failed to unmarshal chart yaml for %s", chartYaml)
-				}
-				upstreamPath = strings.TrimSuffix(name, "Chart.yaml")
-				upstreamPath = strings.TrimSuffix(upstreamPath, string(os.PathSeparator))
-				foundUpstream = true
+		if content, ok := upstreamFiles[chartYaml]; ok {
+			if err := yaml.Unmarshal(content, deps); err != nil {
+				return "", errors.Wrapf(err, "failed to unmarshal %s", chartYaml)
 			}
-		}
-
-		if !foundUpstream {
-			return "", errors.Errorf("unable to find upstream file: %s\n", chartYaml)
+		} else {
+			return "", errors.Errorf("failed to find upstream file %s", chartYaml)
 		}
 	}
 
@@ -339,14 +317,8 @@ func helmChartBasePathToUpstreamPath(path string, upstreamFiles map[string][]byt
 //  // "charts/mariadb" => ["", "mariadb"]
 //  // "charts/mariadb/charts/common" => ["", "mariadb", "common"]
 func pathToCharts(path string) []string {
-	parts := strings.Split(path, string(os.PathSeparator))
-	charts := []string{""}
-	for i, part := range parts {
-		if i%2 != 0 {
-			charts = append(charts, part)
-		}
-	}
-	return charts
+	re := regexp.MustCompile(`\/?charts\/`)
+	return re.Split(path, -1)
 }
 
 // look for any sub-chart dependencies that are missing from base and add their Chart.yaml to the base files
@@ -370,41 +342,17 @@ func helmChartBaseAppendMissingDependencies(base Base, upstreamFiles map[string]
 			upstreamPath = strings.TrimSuffix(upstreamPath, string(os.PathSeparator))
 			if _, ok := renderedUpstreamPaths[upstreamPath]; !ok {
 				// upstream path has not been rendered, consider it a missing dependency
-				addedDependency := false
-				for renderedUpstreamPath, basePaths := range renderedUpstreamPaths {
-					if renderedUpstreamPath != "" && strings.HasPrefix(upstreamPath, renderedUpstreamPath) {
-						// if a parent upstream path has been rendered, add the missing dependency to each of the bases
-						for _, basePath := range basePaths {
-							destinationPath := strings.Replace(upstreamPath, renderedUpstreamPath, basePath, 1)
-							logger.Infof("adding missing dependency %s to base path %s\n", upstreamFilePath, destinationPath)
-							b := Base{
-								Path: destinationPath,
-								AdditionalFiles: []BaseFile{
-									{
-										Path:    "Chart.yaml",
-										Content: upstreamFileContent,
-									},
-								},
-							}
-							base.Bases = append(base.Bases, b)
-							addedDependency = true
-						}
-					}
-				}
-				if !addedDependency {
-					// otherwise we add it to the base files using the upstream path as the base path
-					logger.Infof("adding missing dependency %s to base path %s (using upstream path)\n", upstreamFilePath, upstreamPath)
-					b := Base{
-						Path: upstreamPath,
-						AdditionalFiles: []BaseFile{
-							{
-								Path:    "Chart.yaml",
-								Content: upstreamFileContent,
-							},
+				logger.Infof("adding missing dependency %s to base path %s (using upstream path)\n", upstreamFilePath, upstreamPath)
+				b := Base{
+					Path: upstreamPath,
+					AdditionalFiles: []BaseFile{
+						{
+							Path:    "Chart.yaml",
+							Content: upstreamFileContent,
 						},
-					}
-					base.Bases = append(base.Bases, b)
+					},
 				}
+				base.Bases = append(base.Bases, b)
 			}
 		}
 	}
