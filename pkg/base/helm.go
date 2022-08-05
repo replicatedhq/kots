@@ -325,22 +325,22 @@ func pathToCharts(path string) []string {
 func helmChartBaseAppendMissingDependencies(base Base, upstreamFiles map[string][]byte) Base {
 	allBasePaths := getAllBasePaths("", base)
 
-	// create a map of the upstream paths that have been rendered and the resulting base paths
-	renderedUpstreamPaths := map[string][]string{}
+	// create a map of the upstream paths that have been rendered
+	renderedUpstreamPaths := map[string]bool{}
 	for _, basePath := range allBasePaths {
 		upstreamPath, err := helmChartBasePathToUpstreamPath(basePath, upstreamFiles)
 		if err != nil {
 			logger.Errorf("failed to find upstream path for base path %s: %s", basePath, err)
 			continue
 		}
-		renderedUpstreamPaths[upstreamPath] = append(renderedUpstreamPaths[upstreamPath], basePath)
+		renderedUpstreamPaths[upstreamPath] = true
 	}
 
 	for upstreamFilePath, upstreamFileContent := range upstreamFiles {
 		if strings.HasSuffix(upstreamFilePath, "Chart.yaml") {
 			upstreamPath := strings.TrimSuffix(upstreamFilePath, "Chart.yaml")
 			upstreamPath = strings.TrimSuffix(upstreamPath, string(os.PathSeparator))
-			if _, ok := renderedUpstreamPaths[upstreamPath]; !ok {
+			if !renderedUpstreamPaths[upstreamPath] {
 				// upstream path has not been rendered, consider it a missing dependency
 				logger.Infof("adding missing dependency %s to base path %s (using upstream path)\n", upstreamFilePath, upstreamPath)
 				b := Base{
