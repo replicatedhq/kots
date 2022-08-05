@@ -13,9 +13,11 @@ function makeDeployCommand({
     return `helm rollback ${appSlug} ${revision}`;
   }
   if (showDownloadValues) {
-    return `helm upgrade ${appSlug} ${chartPath}${
-      version && " --version " + version
-    } -f <path-to-values-yaml>`;
+    if (!version) {
+      return `helm upgrade ${appSlug} ${chartPath} -f <path-to-values-yaml>`;
+    } else {
+      return `helm upgrade ${appSlug} ${chartPath} --version ${version} -f <path-to-values-yaml>`;
+    }
   }
 
   return `helm upgrade ${appSlug} ${chartPath} --reuse-values`;

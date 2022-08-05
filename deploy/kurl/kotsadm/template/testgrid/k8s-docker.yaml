@@ -1,0 +1,119 @@
+- name: "minimal rook"
+  installerSpec:
+    kubernetes:
+      version: "latest"
+    weave:
+      version: "latest"
+    rook:
+      version: 1.5.x
+    containerd:
+      version: "latest"
+    kotsadm:
+      version: "__testver__"
+      s3Override: "__testdist__"
+- name: "minimal disableS3"
+  installerSpec:
+    kubernetes:
+      version: "latest"
+    weave:
+      version: "latest"
+    rook:
+      version: 1.5.x
+    containerd:
+      version: "latest"
+    registry:
+      version: "latest"
+    kotsadm:
+      version: "__testver__"
+      s3Override: "__testdist__"
+      disableS3: true
+- name: "all optional addons longhorn"
+  installerSpec:
+    kubernetes:
+      version: "latest"
+    weave:
+      version: "latest"
+    longhorn:
+      version: "latest"
+    minio: 
+      version: "latest"
+    containerd:
+      version: "latest"
+    velero: 
+      version: "latest"
+    registry:
+      version: "latest"
+    kotsadm:
+      version: "__testver__"
+      s3Override: "__testdist__"
+- name: "upgrade from 1.49"
+  installerSpec:
+    kubernetes:
+      version: "latest"
+    weave:
+      version: "latest"
+    longhorn:
+      version: "latest"
+    minio:
+      version: "latest"
+    containerd:
+      version: "latest"
+    velero: 
+      version: "latest"
+    registry:
+      version: "latest"
+    kotsadm:
+      version: 1.49.0
+  upgradeSpec:
+    kubernetes:
+      version: "latest"
+    weave:
+      version: "latest"
+    longhorn:
+      version: "latest"
+    minio:
+      version: "latest"
+    containerd:
+      version: "latest"
+    velero: 
+      version: "latest"
+    registry:
+      version: "latest"
+    kotsadm:
+      version: "__testver__"
+      s3Override: "__testdist__"
+- name: "upgrade from 1.49 into disableS3"
+  installerSpec:
+    kubernetes:
+      version: "latest"
+    weave:
+      version: "latest"
+    longhorn:
+      version: "latest"
+    minio:
+      version: "latest"
+    containerd:
+      version: "latest"
+    velero: 
+      version: "latest"
+    registry:
+      version: "latest"
+    kotsadm:
+      version: 1.49.0
+  upgradeSpec:
+    kubernetes:
+      version: "latest"
+    weave:
+      version: "latest"
+    longhorn:
+      version: "latest"
+    containerd:
+      version: "latest"
+    velero: 
+      version: "latest"
+    registry:
+      version: "latest"
+    kotsadm:
+      version: "__testver__"
+      s3Override: "__testdist__"
+      disableS3: true

@@ -1,0 +1,16 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kotsadm
+spec:
+  template:
+    spec:
+      containers:
+      - name: kotsadm
+        env:
+        - name: HTTP_PROXY
+          value: ${PROXY_ADDRESS}
+        - name: HTTPS_PROXY
+          value: ${PROXY_ADDRESS}
+        - name: NO_PROXY
+          value: ${NO_PROXY_ADDRESSES}

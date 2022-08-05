@@ -1,0 +1,46 @@
+# Only used to migrate from pre-1.12.2
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: kotsadm-postgres-kotsadm-postgres-0
+  labels:
+    kots.io/kotsadm: "true"
+    kots.io/backup: velero
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: kotsadm-postgres-rename-pvc
+  labels:
+    kots.io/kotsadm: "true"
+    kots.io/backup: velero
+spec:
+  restartPolicy: OnFailure
+  securityContext:
+    fsGroup: 999
+    runAsUser: 999
+  containers:
+  - name: kotsadm-postgres-rename-pvc
+    image: kotsadm/kotsadm-migrations:__KOTSADM_TAG__
+    command:
+    - /bin/sh
+    - "-c"
+    - "if [ -d /old/pgdata ] && [ ! -e /new/pgdata ]; then cp -r /old/pgdata /new; fi"
+    volumeMounts:
+    - name: old
+      mountPath: /old
+    - name: new
+      mountPath: /new
+  volumes:
+  - name: old
+    persistentVolumeClaim:
+      claimName: kotsadm-postgres
+  - name: new
+    persistentVolumeClaim:
+      claimName: kotsadm-postgres-kotsadm-postgres-0
