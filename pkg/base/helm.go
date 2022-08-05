@@ -250,12 +250,14 @@ func removeCommonPrefix(baseFiles []BaseFile) []BaseFile {
 	return cleanedBaseFiles
 }
 
+// adds the Chart.yaml and Chart.lock files to the base chart directory
 func helmChartBaseAppendAdditionalFiles(base Base, fullBasePath string, upstreamFiles map[string][]byte) Base {
 	if upstreamPath, err := helmChartBasePathToUpstreamPath(fullBasePath, upstreamFiles); err == nil {
 		additionalFiles := []string{"Chart.yaml", "Chart.lock"}
 		for _, additionalFile := range additionalFiles {
 			additionalFilePath := path.Join(upstreamPath, additionalFile)
 			if content, ok := upstreamFiles[additionalFilePath]; ok {
+				fmt.Printf("adding additional upstream file %s to base path %s\n", additionalFilePath, fullBasePath)
 				base.AdditionalFiles = append(base.AdditionalFiles, BaseFile{
 					Path:    additionalFile,
 					Content: content,
@@ -276,7 +278,7 @@ func helmChartBaseAppendAdditionalFiles(base Base, fullBasePath string, upstream
 	return base
 }
 
-// Translates the base path for a helm chart to the upstream path accounting for any aliased dependencies.
+// translates the base path for a helm chart to the upstream path accounting for any aliased dependencies
 func helmChartBasePathToUpstreamPath(path string, upstreamFiles map[string][]byte) (string, error) {
 	charts := pathToCharts(path)
 	deps := new(HelmChartDependencies)
@@ -326,33 +328,56 @@ func helmChartBaseAppendMissingDependencies(base Base, upstreamFiles map[string]
 	allBasePaths := getAllBasePaths("", base)
 
 	// create a map of the upstream paths that have been rendered
-	renderedUpstreamPaths := map[string]bool{}
+	renderedUpstreamPaths := map[string][]string{}
 	for _, basePath := range allBasePaths {
 		upstreamPath, err := helmChartBasePathToUpstreamPath(basePath, upstreamFiles)
 		if err != nil {
 			logger.Errorf("failed to find upstream path for base path %s: %s", basePath, err)
 			continue
 		}
-		renderedUpstreamPaths[upstreamPath] = true
+		renderedUpstreamPaths[upstreamPath] = append(renderedUpstreamPaths[upstreamPath], basePath)
 	}
 
 	for upstreamFilePath, upstreamFileContent := range upstreamFiles {
 		if strings.HasSuffix(upstreamFilePath, "Chart.yaml") {
 			upstreamPath := strings.TrimSuffix(upstreamFilePath, "Chart.yaml")
 			upstreamPath = strings.TrimSuffix(upstreamPath, string(os.PathSeparator))
-			if !renderedUpstreamPaths[upstreamPath] {
-				// upstream path has not been rendered, consider it a missing dependency
-				logger.Infof("adding missing dependency %s to base path %s (using upstream path)\n", upstreamFilePath, upstreamPath)
-				b := Base{
-					Path: upstreamPath,
-					AdditionalFiles: []BaseFile{
-						{
-							Path:    "Chart.yaml",
-							Content: upstreamFileContent,
-						},
-					},
+			if _, ok := renderedUpstreamPaths[upstreamPath]; !ok {
+				addedDependency := false
+				for renderedUpstreamPath, basePaths := range renderedUpstreamPaths {
+					if renderedUpstreamPath != "" && strings.HasPrefix(upstreamPath, renderedUpstreamPath) {
+						// an already rendered upstream path contains this missing dependency, so we will add it to each of the cooresponding base paths
+						for _, basePath := range basePaths {
+							destinationPath := strings.Replace(upstreamPath, renderedUpstreamPath, basePath, 1)
+							logger.Infof("adding missing dependency %s to base path %s\n", upstreamFilePath, destinationPath)
+							b := Base{
+								Path: destinationPath,
+								AdditionalFiles: []BaseFile{
+									{
+										Path:    "Chart.yaml",
+										Content: upstreamFileContent,
+									},
+								},
+							}
+							base.Bases = append(base.Bases, b)
+							addedDependency = true
+						}
+					}
 				}
-				base.Bases = append(base.Bases, b)
+				if !addedDependency {
+					// upstream path has not been rendered, consider it a missing dependency
+					logger.Infof("adding missing dependency %s to base path %s (using upstream path)\n", upstreamFilePath, upstreamPath)
+					b := Base{
+						Path: upstreamPath,
+						AdditionalFiles: []BaseFile{
+							{
+								Path:    "Chart.yaml",
+								Content: upstreamFileContent,
+							},
+						},
+					}
+					base.Bases = append(base.Bases, b)
+				}
 			}
 		}
 	}
