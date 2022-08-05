@@ -11,7 +11,6 @@ import (
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight"
-	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/version"
@@ -38,7 +37,7 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 		}
 
 		unverifiedLicense := obj.(*kotsv1beta1.License)
-		verifiedLicense, err := kotspull.VerifySignature(unverifiedLicense)
+		verifiedLicense, err := kotslicense.VerifySignature(unverifiedLicense)
 		if err != nil {
 			return nil, false, errors.Wrap(err, "failed to verify license")
 		}
@@ -113,7 +112,7 @@ func Change(a *apptypes.App, newLicenseString string) (*kotsv1beta1.License, err
 		return nil, errors.Wrap(err, "failed to load license from bytes")
 	}
 
-	newLicense, err := kotspull.VerifySignature(unverifiedLicense)
+	newLicense, err := kotslicense.VerifySignature(unverifiedLicense)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to verify license")
 	}
@@ -132,7 +131,7 @@ func Change(a *apptypes.App, newLicenseString string) (*kotsv1beta1.License, err
 		}
 	}
 
-	expired, err := kotspull.LicenseIsExpired(newLicense)
+	expired, err := kotslicense.LicenseIsExpired(newLicense)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to check if license is expired")
 	}

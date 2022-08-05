@@ -7,7 +7,6 @@ import (
 
 	"github.com/mholt/archiver"
 	"github.com/replicatedhq/kots/integration/util"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -38,9 +37,6 @@ func Test_PullReplicated(t *testing.T) {
 			licenseFile, err := ioutil.ReadFile(licenseFilepath)
 			req.NoError(err)
 
-			licenseObj, err := kotsutil.LoadLicenseFromPath(licenseFilepath)
-			req.NoError(err)
-
 			server, err := StartMockServer(archiveData, licenseFile)
 			req.NoError(err)
 			defer server.Close()
@@ -48,12 +44,13 @@ func Test_PullReplicated(t *testing.T) {
 			actualDir := t.TempDir()
 
 			pullOptions := pull.PullOptions{
-				RootDir:             actualDir,
-				LicenseObj:          licenseObj,
-				Namespace:           namespace,
-				ExcludeAdminConsole: true,
-				ExcludeKotsKinds:    true,
-				Silent:              true,
+				RootDir:                 actualDir,
+				LicenseFile:             licenseFilepath,
+				Namespace:               namespace,
+				LicenseEndpointOverride: "http://localhost:3000",
+				ExcludeAdminConsole:     true,
+				ExcludeKotsKinds:        true,
+				Silent:                  true,
 			}
 			_, err = pull.Pull("replicated://integration", pullOptions)
 			req.NoError(err)
