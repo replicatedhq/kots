@@ -15,7 +15,8 @@ async function getVersions({
 } = {}) {
   try {
     const res = await _fetch(
-      `${apiEndpoint}/app/${slug}/versions?currentPage=${currentPage}&pageSize=${pageSize}&pinLatestDeployable=true`,
+      // `${apiEndpoint}/app/${slug}/versions?currentPage=${currentPage}&pageSize=${pageSize}&pinLatestDeployable=true`,
+      `${apiEndpoint}/app/${slug}/versions?currentPage=${currentPage}&pageSize=${pageSize}`,
       {
         headers: {
           Authorization: accessToken,
