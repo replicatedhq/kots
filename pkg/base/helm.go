@@ -257,7 +257,6 @@ func helmChartBaseAppendAdditionalFiles(base Base, fullBasePath string, upstream
 		for _, additionalFile := range additionalFiles {
 			additionalFilePath := path.Join(upstreamPath, additionalFile)
 			if content, ok := upstreamFiles[additionalFilePath]; ok {
-				fmt.Printf("adding additional upstream file %s to base path %s\n", additionalFilePath, fullBasePath)
 				base.AdditionalFiles = append(base.AdditionalFiles, BaseFile{
 					Path:    additionalFile,
 					Content: content,
