@@ -726,7 +726,7 @@ func getLicense(v *viper.Viper) (*kotsv1beta1.License, error) {
 		return nil, nil
 	}
 
-	license, err := pull.ParseLicenseFromFile(ExpandDir(v.GetString("license-file")))
+	license, err := kotsutil.LoadLicenseFromPath(ExpandDir(v.GetString("license-file")))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse license file")
 	}

@@ -153,7 +153,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 	}()
 
 	// Using license from db instead of upstream bundle because the one in db has not been re-marshalled
-	license, err := pull.ParseLicenseFromBytes([]byte(a.License))
+	license, err := kotsutil.LoadLicenseFromBytes([]byte(a.License))
 	if err != nil {
 		return errors.Wrap(err, "failed parse license")
 	}

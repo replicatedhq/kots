@@ -21,7 +21,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/online"
 	installationtypes "github.com/replicatedhq/kots/pkg/online/types"
-	kotspull "github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/registry"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/updatechecker"
@@ -363,10 +362,10 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 		Success: false,
 	}
 
-	verifiedLicense, err := kotspull.VerifySignature(unverifiedLicense)
+	verifiedLicense, err := kotslicense.VerifySignature(unverifiedLicense)
 	if err != nil {
 		uploadLicenseResponse.Error = "License signature is not valid"
-		if _, ok := err.(kotspull.LicenseDataError); ok {
+		if _, ok := err.(kotslicense.LicenseDataError); ok {
 			uploadLicenseResponse.Error = fmt.Sprintf("%s: %s", uploadLicenseResponse.Error, err.Error())
 		}
 		JSON(w, http.StatusBadRequest, uploadLicenseResponse)
@@ -388,7 +387,7 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check license expiration
-	expired, err := kotspull.LicenseIsExpired(verifiedLicense)
+	expired, err := kotslicense.LicenseIsExpired(verifiedLicense)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to check if license is expired"))
 		uploadLicenseResponse.Error = err.Error()
