@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { Component, useEffect } from "react";
 import { withRouter, Link } from "react-router-dom";
 import Helmet from "react-helmet";
 import dayjs from "dayjs";
@@ -70,7 +70,7 @@ class AppVersionHistory extends Component {
     selectedSequence: -1,
     releaseWithErr: {},
     versionHistoryJob: new Repeater(),
-    loadingVersionHistory: true,
+    loadingVersionHistory: false,
     versionHistory: [],
     errorTitle: "",
     errorMsg: "",
@@ -108,7 +108,7 @@ class AppVersionHistory extends Component {
       this.props.history.push(`${this.props.location.pathname}?page=0`);
     }
 
-    this.fetchKotsDownstreamHistory();
+    // this.fetchKotsDownstreamHistory();
     this.props.refreshAppData();
     if (this.props.app?.isAirgap && !this.state.airgapUploader) {
       this.getAirgapConfig();
@@ -136,7 +136,8 @@ class AppVersionHistory extends Component {
       lastProps.match.params.slug !== this.props.match.params.slug ||
       lastProps.app.id !== this.props.app.id
     ) {
-      this.fetchKotsDownstreamHistory();
+      // this.fetchKotsDownstreamHistory();
+      this.state?.refetchVersions?.();
     }
     if (
       this.props.app?.downstream &&
@@ -228,7 +229,7 @@ class AppVersionHistory extends Component {
     this.setState(
       { pageSize: parseInt(e.target.value), currentPage: 0 },
       () => {
-        this.fetchKotsDownstreamHistory();
+        // this.fetchKotsDownstreamHistory();
         this.props.history.push(`${this.props.location.pathname}?page=0`);
       }
     );
@@ -650,7 +651,8 @@ class AppVersionHistory extends Component {
             if (this.props.updateCallback) {
               this.props.updateCallback();
             }
-            this.fetchKotsDownstreamHistory();
+            // this.fetchKotsDownstreamHistory();
+            this.state?.refetchVersions?.();
           } else {
             this.setState({
               versionDownloadStatuses: {
@@ -779,7 +781,8 @@ class AppVersionHistory extends Component {
       isSkipPreflights,
       continueWithFailedPreflights
     );
-    await this.fetchKotsDownstreamHistory();
+    // await this.fetchKotsDownstreamHistory();
+    await this.state?.refetchVersions?.();
     this.setState({ versionToDeploy: null });
 
     if (updateCallback && typeof updateCallback === "function") {
@@ -815,7 +818,8 @@ class AppVersionHistory extends Component {
     const { versionToDeploy } = this.state;
     this.setState({ displayConfirmDeploymentModal: false, confirmType: "" });
     await this.props.redeployVersion(match.params.slug, versionToDeploy);
-    await this.fetchKotsDownstreamHistory();
+    // await this.fetchKotsDownstreamHistory();
+    await this.state?.refetchVersions?.();
     this.setState({ versionToDeploy: null });
 
     if (updateCallback && typeof updateCallback === "function") {
@@ -912,7 +916,8 @@ class AppVersionHistory extends Component {
             })
           ) {
             // version history list is out of sync - most probably because of automatic updates happening in the background - refetch list
-            this.fetchKotsDownstreamHistory();
+            // this.fetchKotsDownstreamHistory();
+            this.state?.refetchVersions?.();
             this.setState({ checkingForUpdates: false });
           } else {
             this.setState({
@@ -967,7 +972,8 @@ class AppVersionHistory extends Component {
             if (this.props.updateCallback) {
               this.props.updateCallback();
             }
-            this.fetchKotsDownstreamHistory();
+            // this.fetchKotsDownstreamHistory();
+            this.state?.refetchVersions?.();
           } else {
             this.setState({
               checkingForUpdates: true,
@@ -1288,19 +1294,9 @@ class AppVersionHistory extends Component {
             </select>
           </div>
         </div>
-        <UseVersions
-          currentPage={currentPage}
-          pageSize={pageSize}
-        >
-          {({ data: versions }) => {
-            if (!versions) {
-              return null;
-            }
-            return versions?.versionHistory?.map((version, index) =>
-              this.renderAppVersionHistoryRow(version, index)
-            );
-          }}
-        </UseVersions>
+        {allVersions?.map((version, index) =>
+          this.renderAppVersionHistoryRow(version, index)
+        )}
         <Pager
           pagerType="releases"
           currentPage={currentPage}
@@ -1318,7 +1314,8 @@ class AppVersionHistory extends Component {
     ev.preventDefault();
     this.setState({ currentPage: page, loadingPage: true }, async () => {
       this.props.history.push(`${this.props.location.pathname}?page=${page}`);
-      await this.fetchKotsDownstreamHistory();
+      // await this.fetchKotsDownstreamHistory();
+      this.state?.refetchVersions?.();
       this.setState({ loadingPage: false });
     });
   };
@@ -1487,7 +1484,8 @@ class AppVersionHistory extends Component {
     }
 
     // only render loader if there is no app yet to avoid flickering
-    if (loadingVersionHistory && !versionHistory?.length) {
+    // if (loadingVersionHistory && !versionHistory?.length) {
+    if (loadingVersionHistory) {
       return (
         <div className="flex-column flex1 alignItems--center justifyContent--center">
           <Loader size="60" />
@@ -1521,6 +1519,66 @@ class AppVersionHistory extends Component {
 
     return (
       <div className="flex flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
+        <UseVersions
+          currentPage={this.state.currentPage}
+          pageSize={this.state.pageSize}
+          refetchInterval={(versions) => {
+            if (!versions) {
+              return null;
+            }
+            // refetch results every 2 seconds until version history has new changes
+            if (isAwaitingResults(versions?.versionHistory) && this._mounted) {
+              return 2000;
+            }
+
+            return null;
+          }}
+        >
+          {({
+            data: versions,
+            error,
+            isLoading,
+            isError,
+            isFetched,
+            refetch,
+          }) => {
+            useEffect(() => {
+              // TODO: this is bad refactor it
+              this.setState({
+                refetchVersions: refetch,
+              });
+              if (isError) {
+                this.setState({
+                  loadingVersionHistory: false,
+                  errorTitle: "Failed to get version history",
+                  errorMsg: `Unexpected status code: ${error.request.status}`,
+                  displayErrorModal: true,
+                });
+              }
+
+              if (isLoading) {
+                this.setState({
+                  loadingVersionHistory: true,
+                  errorTitle: "",
+                  errorMsg: "",
+                  displayErrorModal: false,
+                });
+              }
+
+              if (isFetched && !isLoading && !isError) {
+                this.setState({
+                  loadingVersionHistory: false,
+                  versionHistory: versions.versionHistory,
+                  numOfSkippedVersions: versions.numOfSkippedVersions,
+                  numOfRemainingVersions: versions.numOfRemainingVersions,
+                  totalCount: versions.totalCount,
+                });
+              }
+            }, [versions, isError, isLoading]);
+
+            return null;
+          }}
+        </UseVersions>
         <Helmet>
           <title>{`${app.name} Version History`}</title>
         </Helmet>
@@ -1773,19 +1831,9 @@ class AppVersionHistory extends Component {
                             </div>
                           </div>
                           {this.state.updatesAvailable ? (
-                            <UseVersions
-                              currentPage={this.state.currentPage}
-                              pageSize={this.state.pageSize}
-                            >
-                              {({ data: versions }) => {
-                                if (!versions) {
-                                  return null;
-                                }
-                                return this.renderAppVersionHistoryRow(
-                                  versions?.versionHistory[0]
-                                );
-                              }}
-                            </UseVersions>
+                            this.renderAppVersionHistoryRow(
+                              this.state?.versionHistory[0]
+                            )
                           ) : (
                             <div className="flex-column flex1 u-marginTop--20 u-marginBottom--10 alignItems--center justifyContent--center u-backgroundColor--white u-borderRadius--rounded">
                               <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-padding--10">

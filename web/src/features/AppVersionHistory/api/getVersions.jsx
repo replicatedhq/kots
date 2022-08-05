@@ -152,6 +152,7 @@ function chooseVersionsSelector({
 
 function useVersions({
   currentPage,
+  refetchInterval,
   pageSize,
   _getVersions = getVersions,
   _useParams = useParams,
@@ -170,16 +171,22 @@ function useVersions({
     isHelmManaged,
     isKurl: metadata?.isKurl,
   });
-  return useQuery("versions", () => _getVersions({ slug, currentPage, pageSize }), {
-    // don't call versions until current app is ascertained
-    enabled: !!currentApp,
-    select: (versions) => versionSelector({ versions, currentApp, metadata }),
-    staleTime: 2000,
-  });
+
+  return useQuery(
+    "versions",
+    () => _getVersions({ slug, currentPage, pageSize }),
+    {
+      // don't call versions until current app is ascertained
+      enabled: !!currentApp,
+      select: (versions) => versionSelector({ versions, currentApp, metadata }),
+      staleTime: 2000,
+      refetchInterval,
+    }
+  );
 }
 
-function UseVersions({ children, currentPage, pageSize }) {
-  const query = useVersions({ currentPage, pageSize });
+function UseVersions({ children, currentPage, refetchInterval, pageSize }) {
+  const query = useVersions({ currentPage, refetchInterval, pageSize });
 
   return children(query);
 }
