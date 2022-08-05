@@ -17,6 +17,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	kotsbase "github.com/replicatedhq/kots/pkg/base"
 	"github.com/replicatedhq/kots/pkg/config"
 	kotsconfig "github.com/replicatedhq/kots/pkg/config"
 	"github.com/replicatedhq/kots/pkg/crypto"
@@ -178,6 +179,20 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 
 		// get values from request
 		newValues := configValuesFromConfigGroups(updateAppConfigRequest.ConfigGroups)
+		newChart, err := kotsbase.ParseHelmChart(appSecret.Data["chart"])
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		tmplVals, err := newChart.Spec.GetReplTmplValues(newChart.Spec.Values)
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
 		renderedValues, renderedConfig, err := kotshelm.RenderValuesFromConfig(appSlug, newValues, config, appSecret.Data["chart"])
 		if err != nil {
 			logger.Error(err)
@@ -207,7 +222,15 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		mergedHelmValues, err := kotshelm.GetMergedValues(helmApp.Release.Chart.Values, renderedValues)
+		// get a intersected map containing tmplVals keys with renderedValues values
+		intersectVals, err := kotsv1beta1.GetMapIntersect(tmplVals, renderedValues)
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		mergedHelmValues, err := kotshelm.GetMergedValues(helmApp.Release.Chart.Values, intersectVals)
 		if err != nil {
 			logger.Error(err)
 			w.WriteHeader(http.StatusInternalServerError)
