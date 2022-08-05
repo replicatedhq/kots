@@ -1,0 +1,13 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kotsadm
+spec:
+  template:
+    spec:
+      containers:
+      - name: kotsadm
+        env:
+        - name: PROMETHEUS_ADDRESS
+          value: http://prometheus-k8s.monitoring.svc.cluster.local:9090

@@ -1,0 +1,6 @@
+{
+  "name": "kotsadm",
+  "fulfills": ["Application Management"],
+  "requires": ["CNI Plugin", "Container Runtime", "PVC Provisioner", "Object Store"],
+  "recommends": ["registry", "velero"]
+}

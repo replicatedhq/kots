@@ -1,0 +1,12 @@
+name: kurl-addon-kots-publisher
+description: 'Updates the version file for the kots kurl addon.'
+inputs:
+  ADDON_VERSION:
+    required: true
+    description: 'Addon version'
+  GITHUB_TOKEN:
+    required: true
+    description: 'GitHub token'
+runs:
+  using: 'node16'
+  main: 'dist/index.js'

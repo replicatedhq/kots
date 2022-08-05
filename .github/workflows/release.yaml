@@ -311,6 +311,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  # This needs to go away once kots starts generating the kurl addon and kurl is updated to use the kots genearted addon
   generate-kurl-addon-pr:
     runs-on: ubuntu-20.04
     if: github.ref_type != 'branch'

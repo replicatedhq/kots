@@ -1,0 +1,17 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kotsadm
+spec:
+  template:
+    spec:
+      volumes:
+        - name: host-cacerts
+          hostPath:
+            path: "${KOTSADM_TRUSTED_CERT_MOUNT}"
+            type: File
+      containers:
+      - name: kotsadm
+        volumeMounts:
+        - mountPath: /etc/ssl/certs/ca-certificates.crt
+          name: host-cacerts

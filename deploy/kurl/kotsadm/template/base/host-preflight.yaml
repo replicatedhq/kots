@@ -1,0 +1,26 @@
+apiVersion: troubleshoot.sh/v1beta2
+kind: HostPreflight
+metadata:
+  name: kurl-builtin
+spec:
+  collectors:
+    - http:
+        collectorName: Can Access Replicated API
+        get:
+          url: https://replicated.app
+        exclude: '{{kurl .Installer.Spec.Kurl.Airgap }}'
+
+  analyzers:
+    - http:
+        checkName: Can Access Replicated API
+        collectorName: Can Access Replicated API
+        exclude: '{{kurl .Installer.Spec.Kurl.Airgap }}'
+        outcomes:
+          - warn:
+              when: "error"
+              message: Error connecting to https://replicated.app
+          - pass:
+              when: "statusCode == 200"
+              message: Connected to https://replicated.app
+          - warn:
+              message: "Unexpected response"
