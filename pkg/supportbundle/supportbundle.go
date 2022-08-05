@@ -212,13 +212,20 @@ func getKotsKindsForHelmApp(app *apptypes.HelmApp) (*kotsutil.KotsKinds, error) 
 	specURL := strings.TrimSuffix(app.ChartPath, fmt.Sprintf("/%s", app.Release.Chart.Name()))
 	upstreamSupportBundle, upstreamRedactors, err := getSupportBundleSpecFromOCI(license.Spec.LicenseID, specURL)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to download support bundle spec from %s", specURL)
+		// don't return; use default collectors/analyzers when spec cannot be downloaded
+		logger.Infof("failed to download support bundle spec from %s: %v", specURL, err)
 	}
 
 	kotsKinds := kotsutil.EmptyKotsKinds()
 	kotsKinds.License = license
-	kotsKinds.SupportBundle = upstreamSupportBundle
-	kotsKinds.Redactor = upstreamRedactors
+
+	if upstreamSupportBundle != nil {
+		kotsKinds.SupportBundle = upstreamSupportBundle
+	}
+	if upstreamRedactors != nil {
+		kotsKinds.Redactor = upstreamRedactors
+	}
+
 	return &kotsKinds, nil
 }
 
