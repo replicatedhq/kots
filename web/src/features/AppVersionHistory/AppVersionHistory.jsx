@@ -70,7 +70,7 @@ class AppVersionHistory extends Component {
     selectedSequence: -1,
     releaseWithErr: {},
     versionHistoryJob: new Repeater(),
-    loadingVersionHistory: false,
+    loadingVersionHistory: true,
     versionHistory: [],
     errorTitle: "",
     errorMsg: "",
@@ -1483,16 +1483,6 @@ class AppVersionHistory extends Component {
       return null;
     }
 
-    // only render loader if there is no app yet to avoid flickering
-    // if (loadingVersionHistory && !versionHistory?.length) {
-    if (loadingVersionHistory) {
-      return (
-        <div className="flex-column flex1 alignItems--center justifyContent--center">
-          <Loader size="60" />
-        </div>
-      );
-    }
-
     const downstream = app?.downstream;
     const gitopsEnabled = downstream.gitops?.enabled;
     const currentDownstreamVersion = downstream?.currentVersion;
@@ -1516,9 +1506,13 @@ class AppVersionHistory extends Component {
     if (this.props.isHelmManaged) {
       sequenceLabel = "Revision";
     }
-
     return (
-      <div className="flex flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
+      <>
+        {loadingVersionHistory && (
+          <div className="flex-column flex1 alignItems--center justifyContent--center">
+            <Loader size="60" />
+          </div>
+        )}
         <UseVersions
           currentPage={this.state.currentPage}
           pageSize={this.state.pageSize}
@@ -1555,7 +1549,6 @@ class AppVersionHistory extends Component {
                   displayErrorModal: true,
                 });
               }
-
               if (isLoading) {
                 this.setState({
                   loadingVersionHistory: true,
@@ -1575,580 +1568,596 @@ class AppVersionHistory extends Component {
                 });
               }
             }, [versions, isError, isLoading]);
-
             return null;
           }}
         </UseVersions>
-        <Helmet>
-          <title>{`${app.name} Version History`}</title>
-        </Helmet>
-        <div className="flex-column flex1">
-          <div className="flex flex1 justifyContent--center">
-            <div className="flex1 flex AppVersionHistory">
-              {makingCurrentVersionErrMsg && (
-                <div className="ErrorWrapper flex justifyContent--center">
-                  <div className="icon redWarningIcon u-marginRight--10" />
-                  <div>
-                    <p className="title">Failed to deploy version</p>
-                    <p className="err">{makingCurrentVersionErrMsg}</p>
-                  </div>
-                </div>
-              )}
-              {redeployVersionErrMsg && (
-                <div className="ErrorWrapper flex justifyContent--center">
-                  <div className="icon redWarningIcon u-marginRight--10" />
-                  <div>
-                    <p className="title">Failed to redeploy version</p>
-                    <p className="err">{redeployVersionErrMsg}</p>
-                  </div>
-                </div>
-              )}
+        {!loadingVersionHistory && (
+          <div className="flex flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
+            <Helmet>
+              <title>{`${app.name} Version History`}</title>
+            </Helmet>
+            <div className="flex-column flex1">
+              <div className="flex flex1 justifyContent--center">
+                <div className="flex1 flex AppVersionHistory">
+                  {makingCurrentVersionErrMsg && (
+                    <div className="ErrorWrapper flex justifyContent--center">
+                      <div className="icon redWarningIcon u-marginRight--10" />
+                      <div>
+                        <p className="title">Failed to deploy version</p>
+                        <p className="err">{makingCurrentVersionErrMsg}</p>
+                      </div>
+                    </div>
+                  )}
+                  {redeployVersionErrMsg && (
+                    <div className="ErrorWrapper flex justifyContent--center">
+                      <div className="icon redWarningIcon u-marginRight--10" />
+                      <div>
+                        <p className="title">Failed to redeploy version</p>
+                        <p className="err">{redeployVersionErrMsg}</p>
+                      </div>
+                    </div>
+                  )}
 
-              {!gitopsEnabled && (
-                <div
-                  className="flex-column flex1"
-                  style={{ maxWidth: "370px", marginRight: "20px" }}
-                >
-                  <div className="TableDiff--Wrapper currentVersionCard--wrapper">
-                    <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold">
-                      {currentDownstreamVersion?.versionLabel
-                        ? "Currently deployed version"
-                        : "No current version deployed"}
-                    </p>
-                    <div className="currentVersion--wrapper u-marginTop--10">
-                      <div className="flex flex1">
-                        {app?.iconUri && (
-                          <div className="flex-auto u-marginRight--10">
-                            <div
-                              className="watch-icon"
-                              style={{
-                                backgroundImage: `url(${app?.iconUri})`,
-                              }}
-                            ></div>
-                          </div>
-                        )}
-                        <div className="flex1 flex-column">
-                          <div className="flex alignItems--center u-marginTop--5">
-                            <p className="u-fontSize--header2 u-fontWeight--bold u-textColor--primary">
-                              {" "}
-                              {currentDownstreamVersion
-                                ? currentDownstreamVersion.versionLabel
-                                : "---"}
-                            </p>
-                            <p className="u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">
-                              {" "}
-                              {currentDownstreamVersion
-                                ? `${sequenceLabel} ${currentDownstreamVersion?.sequence}`
-                                : null}
-                            </p>
-                          </div>
-                          {currentDownstreamVersion?.deployedAt ? (
-                            <p className="u-fontSize--small u-lineHeight--normal u-textColor--info u-fontWeight--medium u-marginTop--10">
-                              {currentDownstreamVersion?.status === "deploying"
-                                ? "Deploy started at"
-                                : "Deployed"}{" "}
-                              {Utilities.dateFormat(
-                                currentDownstreamVersion.deployedAt,
-                                "MM/DD/YY @ hh:mm a z"
-                              )}
-                            </p>
-                          ) : null}
-                          {currentDownstreamVersion ? (
-                            <div className="flex alignItems--center u-marginTop--10">
-                              {currentDownstreamVersion?.releaseNotes && (
-                                <div>
-                                  <span
-                                    className="icon releaseNotes--icon u-marginRight--10 u-cursor--pointer"
-                                    onClick={() =>
-                                      this.showReleaseNotes(
-                                        currentDownstreamVersion?.releaseNotes
-                                      )
-                                    }
-                                    data-tip="View release notes"
-                                  />
-                                  <ReactTooltip
-                                    effect="solid"
-                                    className="replicated-tooltip"
-                                  />
-                                </div>
-                              )}
-                              {this.state.hasPreflightChecks ? (
-                                <div>
-                                  <Link
-                                    to={`/app/${app?.slug}/downstreams/${app.downstream.cluster?.slug}/version-history/preflight/${currentDownstreamVersion?.sequence}`}
-                                    className="icon preflightChecks--icon u-marginRight--10 u-cursor--pointer"
-                                    data-tip="View preflight checks"
-                                  />
-                                  <ReactTooltip
-                                    effect="solid"
-                                    className="replicated-tooltip"
-                                  />
+                  {!gitopsEnabled && (
+                    <div
+                      className="flex-column flex1"
+                      style={{ maxWidth: "370px", marginRight: "20px" }}
+                    >
+                      <div className="TableDiff--Wrapper currentVersionCard--wrapper">
+                        <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold">
+                          {currentDownstreamVersion?.versionLabel
+                            ? "Currently deployed version"
+                            : "No current version deployed"}
+                        </p>
+                        <div className="currentVersion--wrapper u-marginTop--10">
+                          <div className="flex flex1">
+                            {app?.iconUri && (
+                              <div className="flex-auto u-marginRight--10">
+                                <div
+                                  className="watch-icon"
+                                  style={{
+                                    backgroundImage: `url(${app?.iconUri})`,
+                                  }}
+                                ></div>
+                              </div>
+                            )}
+                            <div className="flex1 flex-column">
+                              <div className="flex alignItems--center u-marginTop--5">
+                                <p className="u-fontSize--header2 u-fontWeight--bold u-textColor--primary">
+                                  {" "}
+                                  {currentDownstreamVersion
+                                    ? currentDownstreamVersion.versionLabel
+                                    : "---"}
+                                </p>
+                                <p className="u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">
+                                  {" "}
+                                  {currentDownstreamVersion
+                                    ? `${sequenceLabel} ${currentDownstreamVersion?.sequence}`
+                                    : null}
+                                </p>
+                              </div>
+                              {currentDownstreamVersion?.deployedAt ? (
+                                <p className="u-fontSize--small u-lineHeight--normal u-textColor--info u-fontWeight--medium u-marginTop--10">
+                                  {currentDownstreamVersion?.status ===
+                                  "deploying"
+                                    ? "Deploy started at"
+                                    : "Deployed"}{" "}
+                                  {Utilities.dateFormat(
+                                    currentDownstreamVersion.deployedAt,
+                                    "MM/DD/YY @ hh:mm a z"
+                                  )}
+                                </p>
+                              ) : null}
+                              {currentDownstreamVersion ? (
+                                <div className="flex alignItems--center u-marginTop--10">
+                                  {currentDownstreamVersion?.releaseNotes && (
+                                    <div>
+                                      <span
+                                        className="icon releaseNotes--icon u-marginRight--10 u-cursor--pointer"
+                                        onClick={() =>
+                                          this.showReleaseNotes(
+                                            currentDownstreamVersion?.releaseNotes
+                                          )
+                                        }
+                                        data-tip="View release notes"
+                                      />
+                                      <ReactTooltip
+                                        effect="solid"
+                                        className="replicated-tooltip"
+                                      />
+                                    </div>
+                                  )}
+                                  {this.state.hasPreflightChecks ? (
+                                    <div>
+                                      <Link
+                                        to={`/app/${app?.slug}/downstreams/${app.downstream.cluster?.slug}/version-history/preflight/${currentDownstreamVersion?.sequence}`}
+                                        className="icon preflightChecks--icon u-marginRight--10 u-cursor--pointer"
+                                        data-tip="View preflight checks"
+                                      />
+                                      <ReactTooltip
+                                        effect="solid"
+                                        className="replicated-tooltip"
+                                      />
+                                    </div>
+                                  ) : null}
+                                  <div>
+                                    <span
+                                      className="icon deployLogs--icon u-cursor--pointer"
+                                      onClick={() =>
+                                        this.handleViewLogs(
+                                          currentDownstreamVersion,
+                                          currentDownstreamVersion?.status ===
+                                            "failed"
+                                        )
+                                      }
+                                      data-tip="View deploy logs"
+                                    />
+                                    <ReactTooltip
+                                      effect="solid"
+                                      className="replicated-tooltip"
+                                    />
+                                    {currentDownstreamVersion?.status ===
+                                    "failed" ? (
+                                      <span className="icon version-row-preflight-status-icon preflight-checks-failed-icon logs" />
+                                    ) : null}
+                                  </div>
+                                  {app.isConfigurable && (
+                                    <div>
+                                      <Link
+                                        to={`/app/${app?.slug}/config/${app?.downstream?.currentVersion?.parentSequence}`}
+                                        className="icon configEdit--icon u-cursor--pointer"
+                                        data-tip="Edit config"
+                                      />
+                                      <ReactTooltip
+                                        effect="solid"
+                                        className="replicated-tooltip"
+                                      />
+                                    </div>
+                                  )}
                                 </div>
                               ) : null}
-                              <div>
-                                <span
-                                  className="icon deployLogs--icon u-cursor--pointer"
-                                  onClick={() =>
-                                    this.handleViewLogs(
-                                      currentDownstreamVersion,
-                                      currentDownstreamVersion?.status ===
-                                        "failed"
-                                    )
-                                  }
-                                  data-tip="View deploy logs"
-                                />
-                                <ReactTooltip
-                                  effect="solid"
-                                  className="replicated-tooltip"
-                                />
-                                {currentDownstreamVersion?.status ===
-                                "failed" ? (
-                                  <span className="icon version-row-preflight-status-icon preflight-checks-failed-icon logs" />
-                                ) : null}
-                              </div>
-                              {app.isConfigurable && (
-                                <div>
-                                  <Link
-                                    to={`/app/${app?.slug}/config/${app?.downstream?.currentVersion?.parentSequence}`}
-                                    className="icon configEdit--icon u-cursor--pointer"
-                                    data-tip="Edit config"
-                                  />
-                                  <ReactTooltip
-                                    effect="solid"
-                                    className="replicated-tooltip"
-                                  />
-                                </div>
-                              )}
                             </div>
-                          ) : null}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </div>
-              )}
+                  )}
 
-              <div
-                className={`flex-column flex1 alignSelf--start ${
-                  gitopsEnabled ? "gitops-enabled" : ""
-                }`}
-              >
-                <div
-                  className={`flex-column flex1 version ${
-                    showDiffOverlay ? "u-visibility--hidden" : ""
-                  }`}
-                >
-                  {(versionHistory.length === 0 && gitopsEnabled) ||
-                  versionHistory?.length > 0 ? (
-                    <>
-                      {gitopsEnabled ? (
-                        <div
-                          style={{ maxWidth: "1030px" }}
-                          className="u-width--full u-marginBottom--30"
-                        >
-                          <DashboardGitOpsCard
-                            gitops={downstream?.gitops}
-                            isAirgap={app?.isAirgap}
-                            appSlug={app?.slug}
-                            checkingForUpdates={checkingForUpdates}
-                            latestConfigSequence={
-                              versionHistory[0]?.parentSequence
-                            }
-                            isBundleUploading={this.props.isBundleUploading}
-                            checkingUpdateText={checkingUpdateMessage}
-                            checkingUpdateTextShort={checkingUpdateTextShort}
-                            noUpdatesAvalable={this.props.noUpdatesAvalable}
-                            onCheckForUpdates={this.onCheckForUpdates}
-                            showAutomaticUpdatesModal={
-                              this.toggleAutomaticUpdatesModal
-                            }
-                          />
-                        </div>
-                      ) : (
-                        <div className="TableDiff--Wrapper u-marginBottom--30">
-                          <div className="flex justifyContent--spaceBetween">
-                            <p className="u-fontSize--normal u-fontWeight--medium u-textColor--header u-marginBottom--15">
-                              {this.state.updatesAvailable
-                                ? "New version available"
-                                : ""}
-                            </p>
-                            <div className="flex alignItems--center">
-                              <div className="flex alignItems--center">
-                                {app?.isAirgap && airgapUploader ? (
-                                  <MountAware
-                                    onMount={(el) =>
-                                      airgapUploader?.assignElement(el)
-                                    }
-                                  >
-                                    <div className="flex alignItems--center">
-                                      <span className="icon clickable dashboard-card-upload-version-icon u-marginRight--5" />
-                                      <span className="replicated-link u-fontSize--small u-lineHeight--default">
-                                        Upload new version
-                                      </span>
-                                    </div>
-                                  </MountAware>
-                                ) : (
+                  <div
+                    className={`flex-column flex1 alignSelf--start ${
+                      gitopsEnabled ? "gitops-enabled" : ""
+                    }`}
+                  >
+                    <div
+                      className={`flex-column flex1 version ${
+                        showDiffOverlay ? "u-visibility--hidden" : ""
+                      }`}
+                    >
+                      {(versionHistory.length === 0 && gitopsEnabled) ||
+                      versionHistory?.length > 0 ? (
+                        <>
+                          {gitopsEnabled ? (
+                            <div
+                              style={{ maxWidth: "1030px" }}
+                              className="u-width--full u-marginBottom--30"
+                            >
+                              <DashboardGitOpsCard
+                                gitops={downstream?.gitops}
+                                isAirgap={app?.isAirgap}
+                                appSlug={app?.slug}
+                                checkingForUpdates={checkingForUpdates}
+                                latestConfigSequence={
+                                  versionHistory[0]?.parentSequence
+                                }
+                                isBundleUploading={this.props.isBundleUploading}
+                                checkingUpdateText={checkingUpdateMessage}
+                                checkingUpdateTextShort={
+                                  checkingUpdateTextShort
+                                }
+                                noUpdatesAvalable={this.props.noUpdatesAvalable}
+                                onCheckForUpdates={this.onCheckForUpdates}
+                                showAutomaticUpdatesModal={
+                                  this.toggleAutomaticUpdatesModal
+                                }
+                              />
+                            </div>
+                          ) : (
+                            <div className="TableDiff--Wrapper u-marginBottom--30">
+                              <div className="flex justifyContent--spaceBetween">
+                                <p className="u-fontSize--normal u-fontWeight--medium u-textColor--header u-marginBottom--15">
+                                  {this.state.updatesAvailable
+                                    ? "New version available"
+                                    : ""}
+                                </p>
+                                <div className="flex alignItems--center">
                                   <div className="flex alignItems--center">
-                                    {checkingForUpdates &&
-                                    !this.props.isBundleUploading ? (
-                                      <div className="flex alignItems--center u-marginRight--20">
-                                        <Loader
-                                          className="u-marginRight--5"
-                                          size="15"
-                                        />
-                                        <span className="u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default">
-                                          {checkingUpdateMessage === ""
-                                            ? "Checking for updates"
-                                            : checkingUpdateTextShort}
-                                        </span>
-                                      </div>
+                                    {app?.isAirgap && airgapUploader ? (
+                                      <MountAware
+                                        onMount={(el) =>
+                                          airgapUploader?.assignElement(el)
+                                        }
+                                      >
+                                        <div className="flex alignItems--center">
+                                          <span className="icon clickable dashboard-card-upload-version-icon u-marginRight--5" />
+                                          <span className="replicated-link u-fontSize--small u-lineHeight--default">
+                                            Upload new version
+                                          </span>
+                                        </div>
+                                      </MountAware>
                                     ) : (
-                                      <div className="flex alignItems--center u-marginRight--20">
-                                        <span className="icon clickable dashboard-card-check-update-icon u-marginRight--5" />
+                                      <div className="flex alignItems--center">
+                                        {checkingForUpdates &&
+                                        !this.props.isBundleUploading ? (
+                                          <div className="flex alignItems--center u-marginRight--20">
+                                            <Loader
+                                              className="u-marginRight--5"
+                                              size="15"
+                                            />
+                                            <span className="u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default">
+                                              {checkingUpdateMessage === ""
+                                                ? "Checking for updates"
+                                                : checkingUpdateTextShort}
+                                            </span>
+                                          </div>
+                                        ) : (
+                                          <div className="flex alignItems--center u-marginRight--20">
+                                            <span className="icon clickable dashboard-card-check-update-icon u-marginRight--5" />
+                                            <span
+                                              className="replicated-link u-fontSize--small"
+                                              onClick={this.onCheckForUpdates}
+                                            >
+                                              Check for update
+                                            </span>
+                                          </div>
+                                        )}
+                                        <span className="icon clickable dashboard-card-configure-update-icon u-marginRight--5" />
                                         <span
                                           className="replicated-link u-fontSize--small"
-                                          onClick={this.onCheckForUpdates}
+                                          onClick={
+                                            this.toggleAutomaticUpdatesModal
+                                          }
                                         >
-                                          Check for update
+                                          Configure automatic updates
                                         </span>
                                       </div>
                                     )}
-                                    <span className="icon clickable dashboard-card-configure-update-icon u-marginRight--5" />
-                                    <span
-                                      className="replicated-link u-fontSize--small"
-                                      onClick={this.toggleAutomaticUpdatesModal}
-                                    >
-                                      Configure automatic updates
-                                    </span>
                                   </div>
-                                )}
+                                  {versionHistory.length > 1 &&
+                                  !gitopsEnabled &&
+                                  !this.props.isHelmManaged
+                                    ? this.renderDiffBtn()
+                                    : null}
+                                </div>
                               </div>
-                              {versionHistory.length > 1 &&
-                              !gitopsEnabled &&
-                              !this.props.isHelmManaged
-                                ? this.renderDiffBtn()
-                                : null}
-                            </div>
-                          </div>
-                          {this.state.updatesAvailable ? (
-                            this.renderAppVersionHistoryRow(
-                              this.state?.versionHistory[0]
-                            )
-                          ) : (
-                            <div className="flex-column flex1 u-marginTop--20 u-marginBottom--10 alignItems--center justifyContent--center u-backgroundColor--white u-borderRadius--rounded">
-                              <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-padding--10">
-                                Application up to date.
-                              </p>
+                              {this.state.updatesAvailable ? (
+                                this.renderAppVersionHistoryRow(
+                                  this.state?.versionHistory[0]
+                                )
+                              ) : (
+                                <div className="flex-column flex1 u-marginTop--20 u-marginBottom--10 alignItems--center justifyContent--center u-backgroundColor--white u-borderRadius--rounded">
+                                  <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-padding--10">
+                                    Application up to date.
+                                  </p>
+                                </div>
+                              )}
+                              {(this.state.numOfSkippedVersions > 0 ||
+                                this.state.numOfRemainingVersions > 0) && (
+                                <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--header u-marginTop--10">
+                                  {this.state.numOfSkippedVersions > 0
+                                    ? `${
+                                        this.state.numOfSkippedVersions
+                                      } version${
+                                        this.state.numOfSkippedVersions > 1
+                                          ? "s"
+                                          : ""
+                                      } will be skipped in upgrading to ${
+                                        versionHistory[0].versionLabel
+                                      }. `
+                                    : ""}
+                                  {this.state.numOfRemainingVersions > 0
+                                    ? "Additional versions are available after you deploy this required version."
+                                    : ""}
+                                </p>
+                              )}
                             </div>
                           )}
-                          {(this.state.numOfSkippedVersions > 0 ||
-                            this.state.numOfRemainingVersions > 0) && (
-                            <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--header u-marginTop--10">
-                              {this.state.numOfSkippedVersions > 0
-                                ? `${this.state.numOfSkippedVersions} version${
-                                    this.state.numOfSkippedVersions > 1
-                                      ? "s"
-                                      : ""
-                                  } will be skipped in upgrading to ${
-                                    versionHistory[0].versionLabel
-                                  }. `
-                                : ""}
-                              {this.state.numOfRemainingVersions > 0
-                                ? "Additional versions are available after you deploy this required version."
-                                : ""}
-                            </p>
-                          )}
+                          {versionHistory?.length > 0 ? (
+                            <>
+                              {this.renderUpdateProgress()}
+                              {this.renderAllVersions()}
+                            </>
+                          ) : null}
+                        </>
+                      ) : (
+                        <div className="flex-column flex1 alignItems--center justifyContent--center">
+                          <p className="u-fontSize--large u-fontWeight--bold u-textColor--primary">
+                            No versions have been deployed.
+                          </p>
                         </div>
                       )}
-                      {versionHistory?.length > 0 ? (
-                        <>
-                          {this.renderUpdateProgress()}
-                          {this.renderAllVersions()}
-                        </>
-                      ) : null}
-                    </>
-                  ) : (
-                    <div className="flex-column flex1 alignItems--center justifyContent--center">
-                      <p className="u-fontSize--large u-fontWeight--bold u-textColor--primary">
-                        No versions have been deployed.
-                      </p>
                     </div>
-                  )}
-                </div>
 
-                {/* Diff overlay */}
-                {showDiffOverlay && (
-                  <div className="DiffOverlay">
-                    <DownstreamWatchVersionDiff
-                      slug={match.params.slug}
-                      firstSequence={firstSequence}
-                      secondSequence={secondSequence}
-                      onBackClick={this.hideDiffOverlay}
-                      app={this.props.app}
-                    />
+                    {/* Diff overlay */}
+                    {showDiffOverlay && (
+                      <div className="DiffOverlay">
+                        <DownstreamWatchVersionDiff
+                          slug={match.params.slug}
+                          firstSequence={firstSequence}
+                          secondSequence={secondSequence}
+                          onBackClick={this.hideDiffOverlay}
+                          app={this.props.app}
+                        />
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        {showLogsModal && (
-          <ShowLogsModal
-            showLogsModal={showLogsModal}
-            hideLogsModal={this.hideLogsModal}
-            viewLogsErrMsg={this.state.viewLogsErrMsg}
-            logs={logs}
-            selectedTab={selectedTab}
-            logsLoading={logsLoading}
-            renderLogsTabs={this.renderLogsTabs()}
-          />
-        )}
+            {showLogsModal && (
+              <ShowLogsModal
+                showLogsModal={showLogsModal}
+                hideLogsModal={this.hideLogsModal}
+                viewLogsErrMsg={this.state.viewLogsErrMsg}
+                logs={logs}
+                selectedTab={selectedTab}
+                logsLoading={logsLoading}
+                renderLogsTabs={this.renderLogsTabs()}
+              />
+            )}
 
-        {showDeployWarningModal && (
-          <DeployWarningModal
-            showDeployWarningModal={showDeployWarningModal}
-            hideDeployWarningModal={this.hideDeployWarningModal}
-            onForceDeployClick={this.onForceDeployClick}
-            showAutoDeployWarning={
-              isPastVersion && this.props.app?.autoDeploy !== "disabled"
-            }
-            confirmType={this.state.confirmType}
-          />
-        )}
+            {showDeployWarningModal && (
+              <DeployWarningModal
+                showDeployWarningModal={showDeployWarningModal}
+                hideDeployWarningModal={this.hideDeployWarningModal}
+                onForceDeployClick={this.onForceDeployClick}
+                showAutoDeployWarning={
+                  isPastVersion && this.props.app?.autoDeploy !== "disabled"
+                }
+                confirmType={this.state.confirmType}
+              />
+            )}
 
-        {showSkipModal && (
-          <SkipPreflightsModal
-            showSkipModal={showSkipModal}
-            hideSkipModal={this.hideSkipModal}
-            onForceDeployClick={this.onForceDeployClick}
-          />
-        )}
+            {showSkipModal && (
+              <SkipPreflightsModal
+                showSkipModal={showSkipModal}
+                hideSkipModal={this.hideSkipModal}
+                onForceDeployClick={this.onForceDeployClick}
+              />
+            )}
 
-        <Modal
-          isOpen={!!releaseNotes}
-          onRequestClose={this.hideReleaseNotes}
-          contentLabel="Release Notes"
-          ariaHideApp={false}
-          className="Modal MediumSize"
-        >
-          <div className="flex-column">
-            <MarkdownRenderer className="is-kotsadm" id="markdown-wrapper">
-              {releaseNotes || ""}
-            </MarkdownRenderer>
-          </div>
-          <div className="flex u-marginTop--10 u-marginLeft--10 u-marginBottom--10">
-            <button className="btn primary" onClick={this.hideReleaseNotes}>
-              Close
-            </button>
-          </div>
-        </Modal>
+            <Modal
+              isOpen={!!releaseNotes}
+              onRequestClose={this.hideReleaseNotes}
+              contentLabel="Release Notes"
+              ariaHideApp={false}
+              className="Modal MediumSize"
+            >
+              <div className="flex-column">
+                <MarkdownRenderer className="is-kotsadm" id="markdown-wrapper">
+                  {releaseNotes || ""}
+                </MarkdownRenderer>
+              </div>
+              <div className="flex u-marginTop--10 u-marginLeft--10 u-marginBottom--10">
+                <button className="btn primary" onClick={this.hideReleaseNotes}>
+                  Close
+                </button>
+              </div>
+            </Modal>
 
-        <Modal
-          isOpen={this.state.showDiffErrModal}
-          onRequestClose={this.toggleDiffErrModal}
-          contentLabel="Unable to Get Diff"
-          ariaHideApp={false}
-          className="Modal MediumSize"
-        >
-          <div className="Modal-body">
-            <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">
-              Unable to generate a file diff for release
-            </p>
-            <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">
-              The release with the{" "}
-              <span className="u-fontWeight--bold">
-                Upstream {this.state.releaseWithErr.title}, Sequence{" "}
-                {this.state.releaseWithErr.sequence}
-              </span>{" "}
-              was unable to generate a files diff because the following error:
-            </p>
-            <div className="error-block-wrapper u-marginBottom--30 flex flex1">
-              <span className="u-textColor--error">
-                {this.state.releaseWithErr.diffSummaryError}
-              </span>
-            </div>
-            <div className="flex u-marginBottom--10">
-              <button className="btn primary" onClick={this.toggleDiffErrModal}>
-                Ok, got it!
-              </button>
-            </div>
-          </div>
-        </Modal>
-
-        {this.state.displayConfirmDeploymentModal && (
-          <Modal
-            isOpen={true}
-            onRequestClose={() =>
-              this.setState({
-                displayConfirmDeploymentModal: false,
-                confirmType: "",
-                versionToDeploy: null,
-              })
-            }
-            contentLabel="Confirm deployment"
-            ariaHideApp={false}
-            className="Modal DefaultSize"
-          >
-            <div className="Modal-body">
-              <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">
-                {this.state.confirmType === "rollback"
-                  ? "Rollback to"
-                  : this.state.confirmType === "redeploy"
-                  ? "Redeploy"
-                  : "Deploy"}{" "}
-                {this.state.versionToDeploy?.versionLabel} (Sequence{" "}
-                {this.state.versionToDeploy?.sequence})?
-              </p>
-              {isPastVersion && this.props.app?.autoDeploy !== "disabled" ? (
-                <div className="info-box">
-                  <span className="u-fontSize--small u-textColor--header u-lineHeight--normal u-fontWeight--medium">
-                    You have automatic deploys enabled.{" "}
-                    {this.state.confirmType === "rollback"
-                      ? "Rolling back to"
-                      : this.state.confirmType === "redeploy"
-                      ? "Redeploying"
-                      : "Deploying"}{" "}
-                    this version will disable automatic deploys. You can turn it
-                    back on after this version finishes deployment.
+            <Modal
+              isOpen={this.state.showDiffErrModal}
+              onRequestClose={this.toggleDiffErrModal}
+              contentLabel="Unable to Get Diff"
+              ariaHideApp={false}
+              className="Modal MediumSize"
+            >
+              <div className="Modal-body">
+                <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">
+                  Unable to generate a file diff for release
+                </p>
+                <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">
+                  The release with the{" "}
+                  <span className="u-fontWeight--bold">
+                    Upstream {this.state.releaseWithErr.title}, Sequence{" "}
+                    {this.state.releaseWithErr.sequence}
+                  </span>{" "}
+                  was unable to generate a files diff because the following
+                  error:
+                </p>
+                <div className="error-block-wrapper u-marginBottom--30 flex flex1">
+                  <span className="u-textColor--error">
+                    {this.state.releaseWithErr.diffSummaryError}
                   </span>
                 </div>
-              ) : null}
-              <div className="flex u-paddingTop--10">
-                <button
-                  className="btn secondary blue"
-                  onClick={() =>
-                    this.setState({
-                      displayConfirmDeploymentModal: false,
-                      confirmType: "",
-                      versionToDeploy: null,
-                    })
-                  }
-                >
-                  Cancel
-                </button>
-                <button
-                  className="u-marginLeft--10 btn primary"
-                  onClick={
-                    this.state.confirmType === "redeploy"
-                      ? this.finalizeRedeployment
-                      : () => this.finalizeDeployment(false)
-                  }
-                >
-                  Yes,{" "}
-                  {this.state.confirmType === "rollback"
-                    ? "rollback"
-                    : this.state.confirmType === "redeploy"
-                    ? "redeploy"
-                    : "deploy"}
-                </button>
+                <div className="flex u-marginBottom--10">
+                  <button
+                    className="btn primary"
+                    onClick={this.toggleDiffErrModal}
+                  >
+                    Ok, got it!
+                  </button>
+                </div>
               </div>
-            </div>
-          </Modal>
-        )}
+            </Modal>
 
-        {this.state.displayKotsUpdateModal && (
-          <Modal
-            isOpen={true}
-            onRequestClose={() =>
-              this.setState({ displayKotsUpdateModal: false })
-            }
-            contentLabel="Upgrade is in progress"
-            ariaHideApp={false}
-            className="Modal DefaultSize"
-          >
-            <div className="Modal-body u-textAlign--center">
-              <div className="flex-column justifyContent--center alignItems--center">
-                <p className="u-fontSize--large u-textColor--primary u-lineHeight--bold u-marginBottom--10">
-                  Upgrading...
-                </p>
-                <Loader className="flex alignItems--center" size="32" />
-                {renderKotsUpgradeStatus ? (
-                  <p className="u-fontSize--normal u-textColor--primary u-lineHeight--normal u-marginBottom--10">
-                    {this.state.kotsUpdateStatus}
+            {this.state.displayConfirmDeploymentModal && (
+              <Modal
+                isOpen={true}
+                onRequestClose={() =>
+                  this.setState({
+                    displayConfirmDeploymentModal: false,
+                    confirmType: "",
+                    versionToDeploy: null,
+                  })
+                }
+                contentLabel="Confirm deployment"
+                ariaHideApp={false}
+                className="Modal DefaultSize"
+              >
+                <div className="Modal-body">
+                  <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">
+                    {this.state.confirmType === "rollback"
+                      ? "Rollback to"
+                      : this.state.confirmType === "redeploy"
+                      ? "Redeploy"
+                      : "Deploy"}{" "}
+                    {this.state.versionToDeploy?.versionLabel} (Sequence{" "}
+                    {this.state.versionToDeploy?.sequence})?
                   </p>
-                ) : null}
-                {this.state.kotsUpdateMessage ? (
-                  <p className="u-fontSize--normal u-textColor--primary u-lineHeight--normal u-marginBottom--10">
-                    {shortKotsUpdateMessage}
-                  </p>
-                ) : null}
-              </div>
-            </div>
-          </Modal>
-        )}
+                  {isPastVersion &&
+                  this.props.app?.autoDeploy !== "disabled" ? (
+                    <div className="info-box">
+                      <span className="u-fontSize--small u-textColor--header u-lineHeight--normal u-fontWeight--medium">
+                        You have automatic deploys enabled.{" "}
+                        {this.state.confirmType === "rollback"
+                          ? "Rolling back to"
+                          : this.state.confirmType === "redeploy"
+                          ? "Redeploying"
+                          : "Deploying"}{" "}
+                        this version will disable automatic deploys. You can
+                        turn it back on after this version finishes deployment.
+                      </span>
+                    </div>
+                  ) : null}
+                  <div className="flex u-paddingTop--10">
+                    <button
+                      className="btn secondary blue"
+                      onClick={() =>
+                        this.setState({
+                          displayConfirmDeploymentModal: false,
+                          confirmType: "",
+                          versionToDeploy: null,
+                        })
+                      }
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className="u-marginLeft--10 btn primary"
+                      onClick={
+                        this.state.confirmType === "redeploy"
+                          ? this.finalizeRedeployment
+                          : () => this.finalizeDeployment(false)
+                      }
+                    >
+                      Yes,{" "}
+                      {this.state.confirmType === "rollback"
+                        ? "rollback"
+                        : this.state.confirmType === "redeploy"
+                        ? "redeploy"
+                        : "deploy"}
+                    </button>
+                  </div>
+                </div>
+              </Modal>
+            )}
 
-        {this.state.displayShowDetailsModal && (
-          <ShowDetailsModal
-            displayShowDetailsModal={this.state.displayShowDetailsModal}
-            toggleShowDetailsModal={this.toggleShowDetailsModal}
-            yamlErrorDetails={this.state.yamlErrorDetails}
-            deployView={this.state.deployView}
-            forceDeploy={this.onForceDeployClick}
-            showDeployWarningModal={this.state.showDeployWarningModal}
-            showSkipModal={this.state.showSkipModal}
-            slug={this.props.match.params.slug}
-            sequence={this.state.selectedSequence}
-          />
+            {this.state.displayKotsUpdateModal && (
+              <Modal
+                isOpen={true}
+                onRequestClose={() =>
+                  this.setState({ displayKotsUpdateModal: false })
+                }
+                contentLabel="Upgrade is in progress"
+                ariaHideApp={false}
+                className="Modal DefaultSize"
+              >
+                <div className="Modal-body u-textAlign--center">
+                  <div className="flex-column justifyContent--center alignItems--center">
+                    <p className="u-fontSize--large u-textColor--primary u-lineHeight--bold u-marginBottom--10">
+                      Upgrading...
+                    </p>
+                    <Loader className="flex alignItems--center" size="32" />
+                    {renderKotsUpgradeStatus ? (
+                      <p className="u-fontSize--normal u-textColor--primary u-lineHeight--normal u-marginBottom--10">
+                        {this.state.kotsUpdateStatus}
+                      </p>
+                    ) : null}
+                    {this.state.kotsUpdateMessage ? (
+                      <p className="u-fontSize--normal u-textColor--primary u-lineHeight--normal u-marginBottom--10">
+                        {shortKotsUpdateMessage}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              </Modal>
+            )}
+
+            {this.state.displayShowDetailsModal && (
+              <ShowDetailsModal
+                displayShowDetailsModal={this.state.displayShowDetailsModal}
+                toggleShowDetailsModal={this.toggleShowDetailsModal}
+                yamlErrorDetails={this.state.yamlErrorDetails}
+                deployView={this.state.deployView}
+                forceDeploy={this.onForceDeployClick}
+                showDeployWarningModal={this.state.showDeployWarningModal}
+                showSkipModal={this.state.showSkipModal}
+                slug={this.props.match.params.slug}
+                sequence={this.state.selectedSequence}
+              />
+            )}
+            {errorMsg && (
+              <ErrorModal
+                errorModal={displayErrorModal}
+                toggleErrorModal={this.toggleErrorModal}
+                err={errorTitle}
+                errMsg={errorMsg}
+                appSlug={this.props.match.params.slug}
+              />
+            )}
+            {this.state.showNoChangesModal && (
+              <Modal
+                isOpen={true}
+                onRequestClose={this.toggleNoChangesModal}
+                contentLabel="No Changes"
+                ariaHideApp={false}
+                className="Modal DefaultSize"
+              >
+                <div className="Modal-body">
+                  <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">
+                    No changes to show
+                  </p>
+                  <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">
+                    The{" "}
+                    <span className="u-fontWeight--bold">
+                      Upstream {this.state.releaseWithNoChanges.versionLabel},
+                      Sequence {this.state.releaseWithNoChanges.sequence}
+                    </span>{" "}
+                    release was unable to generate a diff because the changes
+                    made do not affect any manifests that will be deployed. Only
+                    changes affecting the application manifest will be included
+                    in a diff.
+                  </p>
+                  <div className="flex u-paddingTop--10">
+                    <button
+                      className="btn primary"
+                      onClick={this.toggleNoChangesModal}
+                    >
+                      Ok, got it!
+                    </button>
+                  </div>
+                </div>
+              </Modal>
+            )}
+            {this.state.showAutomaticUpdatesModal && (
+              <AutomaticUpdatesModal
+                isOpen={this.state.showAutomaticUpdatesModal}
+                onRequestClose={this.toggleAutomaticUpdatesModal}
+                updateCheckerSpec={app?.updateCheckerSpec}
+                autoDeploy={app?.autoDeploy}
+                appSlug={app?.slug}
+                isSemverRequired={app?.isSemverRequired}
+                gitopsEnabled={downstream?.gitops?.enabled}
+                onAutomaticUpdatesConfigured={() => {
+                  this.toggleAutomaticUpdatesModal();
+                  this.props.updateCallback();
+                }}
+              />
+            )}
+          </div>
         )}
-        {errorMsg && (
-          <ErrorModal
-            errorModal={displayErrorModal}
-            toggleErrorModal={this.toggleErrorModal}
-            err={errorTitle}
-            errMsg={errorMsg}
-            appSlug={this.props.match.params.slug}
-          />
-        )}
-        {this.state.showNoChangesModal && (
-          <Modal
-            isOpen={true}
-            onRequestClose={this.toggleNoChangesModal}
-            contentLabel="No Changes"
-            ariaHideApp={false}
-            className="Modal DefaultSize"
-          >
-            <div className="Modal-body">
-              <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">
-                No changes to show
-              </p>
-              <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">
-                The{" "}
-                <span className="u-fontWeight--bold">
-                  Upstream {this.state.releaseWithNoChanges.versionLabel},
-                  Sequence {this.state.releaseWithNoChanges.sequence}
-                </span>{" "}
-                release was unable to generate a diff because the changes made
-                do not affect any manifests that will be deployed. Only changes
-                affecting the application manifest will be included in a diff.
-              </p>
-              <div className="flex u-paddingTop--10">
-                <button
-                  className="btn primary"
-                  onClick={this.toggleNoChangesModal}
-                >
-                  Ok, got it!
-                </button>
-              </div>
-            </div>
-          </Modal>
-        )}
-        {this.state.showAutomaticUpdatesModal && (
-          <AutomaticUpdatesModal
-            isOpen={this.state.showAutomaticUpdatesModal}
-            onRequestClose={this.toggleAutomaticUpdatesModal}
-            updateCheckerSpec={app?.updateCheckerSpec}
-            autoDeploy={app?.autoDeploy}
-            appSlug={app?.slug}
-            isSemverRequired={app?.isSemverRequired}
-            gitopsEnabled={downstream?.gitops?.enabled}
-            onAutomaticUpdatesConfigured={() => {
-              this.toggleAutomaticUpdatesModal();
-              this.props.updateCallback();
-            }}
-          />
-        )}
-      </div>
+      </>
     );
   }
 }

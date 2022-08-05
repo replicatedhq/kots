@@ -39,8 +39,6 @@ async function getVersions({
 
 // TODO: refactor this function so that the airgapped / nonairgapped are separate
 function getVersionsSelectorForKotsManaged({ versions, currentApp, metadata }) {
-  console.log("kots managed versions");
-
   const downstream = currentApp?.downstream;
 
   const versionHistory = versions?.versionHistory.map((version) => {
