@@ -114,6 +114,7 @@ const ChangePasswordForm = ({
       />
       <InputField
         label="New password"
+        helperText="Password must be at least 6 characters and must not be the same as your current password."
         id="new-password"
         placeholder="new password"
         type="password"
