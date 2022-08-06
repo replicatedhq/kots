@@ -52,7 +52,7 @@ const AppVersionHistoryRow = ({
   downloadVersion,
   upgradeAdminConsole,
   handleViewLogs,
-  handleSelectReleasesToDiff,
+  handleSelectReleasesToDiff: handleSelectReleasesToDiffProp,
   renderVersionDownloadStatus,
   isDownloading,
   adminConsoleMetadata,
@@ -76,7 +76,7 @@ const AppVersionHistoryRow = ({
     if (nothingToCommit) {
       return;
     }
-    handleSelectReleasesToDiff(version, !isChecked);
+    handleSelectReleasesToDiffProp(version, !isChecked);
   };
 
   function deployButtonStatus(version) {
