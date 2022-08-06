@@ -69,7 +69,7 @@ const AppVersionHistoryRow = ({
 }) => {
   const { currentApp } = useCurrentApp();
 
-  handleSelectReleasesToDiff = () => {
+  const handleSelectReleasesToDiff = () => {
     if (!selectedDiffReleases) {
       return;
     }
