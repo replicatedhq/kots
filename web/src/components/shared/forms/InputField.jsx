@@ -10,6 +10,7 @@ const InputField = ({
   value,
   onChange,
   autoFocus,
+  helperText,
 }) => {
   const [show, setShow] = React.useState(false);
 
@@ -29,20 +30,28 @@ const InputField = ({
       <label className={`${id}-label`} htmlFor={id}>
         {label}
       </label>
-      <input
-        autoFocus={!!autoFocus}
-        className="Input"
-        type={calculateType()}
-        id={id}
-        placeholder={placeholder}
-        value={value}
-        onChange={(e) => onChange(e)}
-      />
-      {type === "password" && (
-        <span className="show-password-toggle" onClick={handleToggleShow}>
-          {show ? "hide" : "show"}
-        </span>
-      )}
+      <p
+        className="u-fontWeight--medium u-lineHeight--medium"
+        style={{ width: "90%" }}
+      >
+        {helperText}
+      </p>
+      <div className="u-position--relative">
+        <input
+          autoFocus={!!autoFocus}
+          className="Input"
+          type={calculateType()}
+          id={id}
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => onChange(e)}
+        />
+        {type === "password" && (
+          <span className="show-password-toggle" onClick={handleToggleShow}>
+            {show ? "hide" : "show"}
+          </span>
+        )}
+      </div>
     </>
   );
 

@@ -44,12 +44,13 @@ func Test_PullReplicated(t *testing.T) {
 			actualDir := t.TempDir()
 
 			pullOptions := pull.PullOptions{
-				RootDir:             actualDir,
-				LicenseFile:         licenseFilepath,
-				Namespace:           namespace,
-				ExcludeAdminConsole: true,
-				ExcludeKotsKinds:    true,
-				Silent:              true,
+				RootDir:                 actualDir,
+				LicenseFile:             licenseFilepath,
+				Namespace:               namespace,
+				LicenseEndpointOverride: "http://localhost:3000",
+				ExcludeAdminConsole:     true,
+				ExcludeKotsKinds:        true,
+				Silent:                  true,
 			}
 			_, err = pull.Pull("replicated://integration", pullOptions)
 			req.NoError(err)
