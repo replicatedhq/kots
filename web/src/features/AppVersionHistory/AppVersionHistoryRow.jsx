@@ -744,10 +744,7 @@ const AppVersionHistoryRow = ({
                   )}
             </span>
           </p>
-          {(version.source?.includes("Airgap Install") ||
-            version.source?.includes("Online Install")) && (
-            <div className="u-marginTop--5">{renderDiff(version)}</div>
-          )}
+          {this.renderDiff(version)}
           <YamlErrors
             version={version}
             handleSeeDetailsClicked={() =>
