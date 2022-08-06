@@ -533,6 +533,7 @@ func LoadKotsKindsFromPath(fromDir string) (*KotsKinds, error) {
 
 	return &kotsKinds, nil
 }
+
 func LoadHelmChartsFromPath(fromDir string) ([]*kotsv1beta1.HelmChart, error) {
 	charts := []*kotsv1beta1.HelmChart{}
 	decode := scheme.Codecs.UniversalDeserializer().Decode
@@ -676,6 +677,20 @@ func LoadConfigFromBytes(data []byte) (*kotsv1beta1.Config, error) {
 	}
 
 	return obj.(*kotsv1beta1.Config), nil
+}
+
+func LoadConfigValuesFromBytes(data []byte) (*kotsv1beta1.ConfigValues, error) {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, gvk, err := decode(data, nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode config data")
+	}
+
+	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "ConfigValues" {
+		return nil, errors.Errorf("unexpected GVK: %s", gvk.String())
+	}
+
+	return obj.(*kotsv1beta1.ConfigValues), nil
 }
 
 func LoadPreflightFromContents(content []byte) (*troubleshootv1beta2.Preflight, error) {

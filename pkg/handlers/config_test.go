@@ -75,8 +75,7 @@ func Test_updateAppConfigValues(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			req := require.New(t)
-			updatedValues, err := updateAppConfigValues(test.values, test.configGroups, "")
-			req.NoError(err)
+			updatedValues := updateAppConfigValues(test.values, test.configGroups)
 
 			req.Equal(test.want, updatedValues)
 		})

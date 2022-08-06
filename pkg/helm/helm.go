@@ -14,54 +14,38 @@ import (
 	dockerref "github.com/containers/image/v5/docker/reference"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	kotsbase "github.com/replicatedhq/kots/pkg/base"
-	kotsconfig "github.com/replicatedhq/kots/pkg/config"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
-	"github.com/replicatedhq/kots/pkg/template"
-	"github.com/replicatedhq/kots/pkg/util"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
+	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
+	"github.com/replicatedhq/kots/pkg/render"
 	helmval "helm.sh/helm/v3/pkg/cli/values"
 	"helm.sh/helm/v3/pkg/helmpath"
 	helmregistry "helm.sh/helm/v3/pkg/registry"
 )
 
-func RenderValuesFromConfig(app string, newConfigItems map[string]template.ItemValue, config *kotsv1beta1.Config, chart []byte) (map[string]interface{}, *kotsv1beta1.Config, error) {
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(config, newConfigItems, nil, nil, template.LocalRegistry{}, nil, &template.ApplicationInfo{Slug: app}, nil, util.PodNamespace, true)
-	if err != nil || renderedConfig == nil || len(renderedConfig.Spec.Groups) == 0 {
-		return nil, nil, err
-	}
-
-	opts := template.BuilderOptions{
-		ConfigGroups:    renderedConfig.Spec.Groups,
-		ApplicationInfo: &template.ApplicationInfo{Slug: app},
-		ExistingValues:  newConfigItems,
-		LocalRegistry:   template.LocalRegistry{},
-		License:         nil,
-		Application:     &kotsv1beta1.Application{},
-		VersionInfo:     &template.VersionInfo{},
-		IdentityConfig:  &kotsv1beta1.IdentityConfig{},
-		Namespace:       util.PodNamespace,
-		DecryptValues:   true,
-	}
-	builder, _, err := template.NewBuilder(opts)
+func RenderValuesFromConfig(helmApp *apptypes.HelmApp, kotsKinds *kotsutil.KotsKinds, chart []byte) (map[string]interface{}, error) {
+	builder, err := render.NewBuilder(kotsKinds, registrytypes.RegistrySettings{}, helmApp.GetSlug(), helmApp.GetCurrentSequence(), helmApp.GetIsAirgap(), helmApp.Namespace)
 	if err != nil {
-		return nil, renderedConfig, err
+		return nil, errors.Wrap(err, "failed to make tempalate builder")
 	}
 
 	renderedHelmManifest, err := builder.RenderTemplate("helm", string(chart))
 	if err != nil {
-		return nil, renderedConfig, err
+		return nil, err
 	}
 
 	kotsHelmChart, err := kotsbase.ParseHelmChart([]byte(renderedHelmManifest))
 	if err != nil {
-		return nil, renderedConfig, err
+		return nil, err
 	}
 
 	mergedValues := kotsHelmChart.Spec.Values
 	for _, optionalValues := range kotsHelmChart.Spec.OptionalValues {
 		parsedBool, err := strconv.ParseBool(optionalValues.When)
 		if err != nil {
-			return nil, renderedConfig, err
+			return nil, err
 		}
 		if !parsedBool {
 			continue
@@ -77,10 +61,10 @@ func RenderValuesFromConfig(app string, newConfigItems map[string]template.ItemV
 
 	renderedValues, err := kotsHelmChart.Spec.GetHelmValues(mergedValues)
 	if err != nil {
-		return nil, renderedConfig, err
+		return nil, err
 	}
 
-	return renderedValues, renderedConfig, nil
+	return renderedValues, nil
 }
 
 func GetMergedValues(releasedValues, renderedValues map[string]interface{}) (map[string]interface{}, error) {

@@ -227,38 +227,25 @@ func (h *HelmChartSpec) getReplTmplValue(value *MappedChartValue) (interface{}, 
 	}
 }
 
-func GetMapIntersect(m1, m2 map[string]interface{}) (map[string]interface{}, error) {
+func GetMapIntersect(m1, m2 map[string]interface{}) map[string]interface{} {
 	res := make(map[string]interface{})
-	for k, v := range m1 {
-		res[k] = intersect(v, k, m2)
+	for k, v1 := range m1 {
+		v2, ok := m2[k]
+		if !ok {
+			continue
+		}
+
+		v1map, v1mapOK := v1.(map[string]interface{})
+		v2map, v2mapOK := v2.(map[string]interface{})
+		if v1mapOK && v2mapOK {
+			res[k] = GetMapIntersect(v1map, v2map)
+			continue
+		}
+
+		res[k] = v2
 	}
 
-	return res, nil
-}
-
-func intersect(v interface{}, k string, m2 map[string]interface{}) interface{} {
-	switch v.(type) {
-	case string, int, bool:
-		if v2, ok := m2[k]; ok {
-			return v2
-		}
-	case map[string]interface{}:
-		for k2, v2 := range v.(map[string]interface{}) {
-			_, ok := m2[k].(map[string]interface{})
-			if ok {
-				val := intersect(v2, k2, m2[k].(map[string]interface{}))
-				// set map here so only tmpl keys are present in returned result
-				m2[k] = v.(map[string]interface{})
-				// set child map value from intersection
-				m2[k].(map[string]interface{})[k2] = val
-				return m2[k]
-			}
-		}
-	default:
-		return nil
-	}
-
-	return nil
+	return res
 }
 
 func MergeHelmChartValues(baseValues map[string]MappedChartValue,
