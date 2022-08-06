@@ -4,7 +4,6 @@ import find from "lodash/find";
 import classNames from "classnames";
 import ReactTooltip from "react-tooltip";
 import { useCurrentApp } from "./hooks/useCurrentApp";
-import { useVersions } from "./api/getVersions";
 
 import Loader from "@src/components/shared/Loader";
 
@@ -44,7 +43,7 @@ const AppVersionHistoryRow = ({
   isNew,
   newPreflightResults,
   showReleaseNotes,
-  renderDiff,
+  renderDiffProp,
   toggleShowDetailsModal,
   gitopsEnabled,
   deployVersion,
@@ -68,6 +67,18 @@ const AppVersionHistoryRow = ({
   redeployVersionErrMsg,
 }) => {
   const { currentApp } = useCurrentApp();
+
+  const renderDiff = (version) => {
+    const hideSourceDiff =
+      version.source?.includes("Airgap Install") ||
+      version.source?.includes("Online Install");
+    if (hideSourceDiff) {
+      return null;
+    }
+    return (
+      <div className="u-marginTop--5">{this.props.renderDiffProp(version)}</div>
+    );
+  };
 
   const handleSelectReleasesToDiff = () => {
     if (!selectedDiffReleases) {

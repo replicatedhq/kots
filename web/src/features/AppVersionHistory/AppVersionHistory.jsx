@@ -383,7 +383,6 @@ class AppVersionHistory extends Component {
         break;
       }
     }
-
     if (hasDiffSummaryError) {
       return (
         <div className="flex flex1 alignItems--center">
