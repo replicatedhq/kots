@@ -1286,8 +1286,8 @@ class AppVersionHistory extends Component {
             </select>
           </div>
         </div>
-        {allVersions?.map((version) =>
-          this.renderAppVersionHistoryRow(version)
+        {allVersions?.map((version, index) =>
+          this.renderAppVersionHistoryRow(version, index)
         )}
         <Pager
           pagerType="releases"
@@ -1321,6 +1321,21 @@ class AppVersionHistory extends Component {
   };
 
   deployButtonStatus = (version) => {
+    if (this.props.isHelmManaged) {
+      const deployedSequence =
+        this.props.app?.downstream?.currentVersion?.sequence;
+
+      if (version.sequence > deployedSequence) {
+        return "Deploy";
+      }
+
+      if (version.sequence < deployedSequence) {
+        return "Rollback";
+      }
+
+      return "Redeploy";
+    }
+
     const app = this.props.app;
     const downstream = app?.downstream;
 
@@ -1365,7 +1380,7 @@ class AppVersionHistory extends Component {
     }
   };
 
-  renderAppVersionHistoryRow = (version) => {
+  renderAppVersionHistoryRow = (version, index) => {
     if (
       !version ||
       isEmpty(version) ||
@@ -1387,7 +1402,7 @@ class AppVersionHistory extends Component {
       newPreflightResults = secondsAgo(version.preflightResultCreatedAt) < 12;
     }
     return (
-      <React.Fragment key={version.sequence}>
+      <React.Fragment key={index}>
         <AppVersionHistoryRow
           handleActionButtonClicked={() =>
             this.handleActionButtonClicked({
@@ -1424,51 +1439,68 @@ class AppVersionHistory extends Component {
           adminConsoleMetadata={this.props.adminConsoleMetadata}
         />
         {this.state.showHelmDeployModalForVersionLabel ===
-          version.versionLabel && (
-          <UseDownloadValues
-            appSlug={this.props?.app?.slug}
-            fileName="values.yaml"
-          >
-            {({
-              download,
-              clearError: clearDownloadError,
-              error: downloadError,
-              isDownloading,
-              name,
-              ref,
-              url,
-            }) => {
-              return (
-                <>
-                  <HelmDeployModal
-                    appSlug={this.props?.app?.slug}
-                    chartPath={this.props?.app?.chartPath || ""}
-                    downloadClicked={download}
-                    error={downloadError}
-                    isDownloading={isDownloading}
-                    hideHelmDeployModal={() => {
-                      this.setState({ showHelmDeployModalForVersionLabel: "" });
-                      clearDownloadError();
-                    }}
-                    registryUsername={this.props?.app?.credentials?.username}
-                    registryPassword={this.props?.app?.credentials?.password}
-                    showHelmDeployModal={true}
-                    showDownloadValues={
-                      this.deployButtonStatus(version) !== "Redeploy"
-                    }
-                    subtitle="Follow the steps below to upgrade your application with your new values.yaml."
-                    title={` ${this.deployButtonStatus(version)} ${
-                      this.props?.app.slug
-                    } ${version.versionLabel}`}
-                    upgradeTitle="Upgrade application with Helm"
-                    version={version.versionLabel}
-                  />
-                  <a href={url} download={name} className="hidden" ref={ref} />
-                </>
-              );
-            }}
-          </UseDownloadValues>
-        )}
+          version.versionLabel &&
+          this.state.showHelmDeployModalForSequence === version.sequence && (
+            <UseDownloadValues
+              appSlug={this.props?.app?.slug}
+              fileName="values.yaml"
+            >
+              {({
+                download,
+                clearError: clearDownloadError,
+                error: downloadError,
+                isDownloading,
+                name,
+                ref,
+                url,
+              }) => {
+                return (
+                  <>
+                    <HelmDeployModal
+                      appSlug={this.props?.app?.slug}
+                      chartPath={this.props?.app?.chartPath || ""}
+                      downloadClicked={download}
+                      error={downloadError}
+                      isDownloading={isDownloading}
+                      hideHelmDeployModal={() => {
+                        this.setState({
+                          showHelmDeployModalForVersionLabel: "",
+                        });
+                        clearDownloadError();
+                      }}
+                      registryUsername={this.props?.app?.credentials?.username}
+                      registryPassword={this.props?.app?.credentials?.password}
+                      revision={
+                        this.deployButtonStatus(version) === "Rollback"
+                          ? version.sequence
+                          : null
+                      }
+                      showHelmDeployModal={true}
+                      showDownloadValues={
+                        this.deployButtonStatus(version) === "Deploy"
+                      }
+                      subtitle="Follow the steps below to upgrade your application with your new values.yaml."
+                      title={` ${this.deployButtonStatus(version)} ${
+                        this.props?.app.slug
+                      } ${version.versionLabel}`}
+                      upgradeTitle={`${
+                        this.deployButtonStatus(version) === "Rollback"
+                          ? "Rollback"
+                          : "Upgrade"
+                      } application with Helm`}
+                      version={version.versionLabel}
+                    />
+                    <a
+                      href={url}
+                      download={name}
+                      className="hidden"
+                      ref={ref}
+                    />
+                  </>
+                );
+              }}
+            </UseDownloadValues>
+          )}
       </React.Fragment>
     );
   };

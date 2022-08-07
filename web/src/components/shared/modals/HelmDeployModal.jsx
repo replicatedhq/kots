@@ -5,7 +5,7 @@ import CodeSnippet from "@src/components/shared/CodeSnippet";
 function makeDeployCommand({
   appSlug,
   chartPath,
-  revision = null.
+  revision = null,
   showDownloadValues,
   version,
 }) {
