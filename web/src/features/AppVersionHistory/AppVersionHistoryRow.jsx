@@ -43,7 +43,7 @@ const AppVersionHistoryRow = ({
   isNew,
   newPreflightResults,
   showReleaseNotes,
-  renderDiffProp,
+  renderDiff: renderDiffProp,
   toggleShowDetailsModal,
   gitopsEnabled,
   deployVersion,
