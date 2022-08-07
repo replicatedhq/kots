@@ -76,7 +76,7 @@ const AppVersionHistoryRow = ({
       return null;
     }
     return (
-      <div className="u-marginTop--5">{this.props.renderDiffProp(version)}</div>
+      <div className="u-marginTop--5">{renderDiffProp(version)}</div>
     );
   };
 
