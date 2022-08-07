@@ -75,9 +75,7 @@ const AppVersionHistoryRow = ({
     if (hideSourceDiff) {
       return null;
     }
-    return (
-      <div className="u-marginTop--5">{renderDiffProp(version)}</div>
-    );
+    return <div className="u-marginTop--5">{renderDiffProp(version)}</div>;
   };
 
   const handleSelectReleasesToDiff = () => {

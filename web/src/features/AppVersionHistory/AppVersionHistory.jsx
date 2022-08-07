@@ -1386,57 +1386,63 @@ class AppVersionHistory extends Component {
           adminConsoleMetadata={this.props.adminConsoleMetadata}
         />
         {/* TODO: refactor this to use the version hook  */}
-        {this.state?.showHelmDeployModalForVersion?.versionLabel ===
-          version.versionLabel && (
-          <UseDownloadValues
-            appSlug={this.props?.app?.slug}
-            fileName="values.yaml"
-          >
-            {({
-              download,
-              clearError: clearDownloadError,
-              error: downloadError,
-              isDownloading,
-              name,
-              ref,
-              url,
-            }) => {
-              return (
-                <>
-                  <HelmDeployModal
-                    appSlug={this.props?.app?.slug}
-                    chartPath={this.props?.app?.chartPath || ""}
-                    downloadClicked={download}
-                    error={downloadError}
-                    isDownloading={isDownloading}
-                    hideHelmDeployModal={() => {
-                      this.setState({ showHelmDeployModalForVersion: null });
-                      clearDownloadError();
-                    }}
-                    registryUsername={this.props?.app?.credentials?.username}
-                    registryPassword={this.props?.app?.credentials?.password}
-                    revision={
-                      this.state.showHelmDeployModalForVersion.statusLabel ===
-                      "Rollback"
-                        ? this.state?.showHelmDeployModalForVersion?.sequence
-                        : null
-                    }
-                    showHelmDeployModal={true}
-                    showDownloadValues={
-                      this.state.showHelmDeployModalForVersion.statusLabel ===
-                      "Deploy"
-                    }
-                    subtitle="Follow the steps below to upgrade your application with your new values.yaml."
-                    title={`${this.state.showHelmDeployModalForVersion.statusLabel} ${this.props?.app.slug} ${version.versionLabel}`}
-                    upgradeTitle="Upgrade application with Helm"
-                    version={version.versionLabel}
-                  />
-                  <a href={url} download={name} className="hidden" ref={ref} />
-                </>
-              );
-            }}
-          </UseDownloadValues>
-        )}
+        {this.state.showHelmDeployModalForVersion !== null &&
+          this.state?.showHelmDeployModalForVersion?.versionLabel ===
+            version.versionLabel && (
+            <UseDownloadValues
+              appSlug={this.props?.app?.slug}
+              fileName="values.yaml"
+            >
+              {({
+                download,
+                clearError: clearDownloadError,
+                error: downloadError,
+                isDownloading,
+                name,
+                ref,
+                url,
+              }) => {
+                return (
+                  <>
+                    <HelmDeployModal
+                      appSlug={this.props?.app?.slug}
+                      chartPath={this.props?.app?.chartPath || ""}
+                      downloadClicked={download}
+                      error={downloadError}
+                      isDownloading={isDownloading}
+                      hideHelmDeployModal={() => {
+                        this.setState({ showHelmDeployModalForVersion: null });
+                        clearDownloadError();
+                      }}
+                      registryUsername={this.props?.app?.credentials?.username}
+                      registryPassword={this.props?.app?.credentials?.password}
+                      revision={
+                        this.state.showHelmDeployModalForVersion.statusLabel ===
+                        "Rollback"
+                          ? this.state?.showHelmDeployModalForVersion?.sequence
+                          : null
+                      }
+                      showHelmDeployModal={true}
+                      showDownloadValues={
+                        this.state.showHelmDeployModalForVersion.statusLabel ===
+                        "Deploy"
+                      }
+                      subtitle="Follow the steps below to upgrade your application with your new values.yaml."
+                      title={`${this.state.showHelmDeployModalForVersion.statusLabel} ${this.props?.app.slug} ${version.versionLabel}`}
+                      upgradeTitle="Upgrade application with Helm"
+                      version={version.versionLabel}
+                    />
+                    <a
+                      href={url}
+                      download={name}
+                      className="hidden"
+                      ref={ref}
+                    />
+                  </>
+                );
+              }}
+            </UseDownloadValues>
+          )}
       </React.Fragment>
     );
   };

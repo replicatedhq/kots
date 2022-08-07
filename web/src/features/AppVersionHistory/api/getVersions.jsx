@@ -83,7 +83,7 @@ function getVersionsSelectorForKotsManaged({ versions, currentApp, metadata }) {
       }
     }
     return {
-      version,
+      ...version,
       statusLabel,
     };
   });
