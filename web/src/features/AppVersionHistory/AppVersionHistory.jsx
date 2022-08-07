@@ -1492,9 +1492,12 @@ class AppVersionHistory extends Component {
     const downstream = app?.downstream;
     const gitopsEnabled = downstream.gitops?.enabled;
     const currentDownstreamVersion = downstream?.currentVersion;
-    const isPastVersion = find(downstream?.pastVersions, {
-      sequence: this.state.versionToDeploy?.sequence,
-    });
+    const isPastVersion = !!downstream?.pastVersions?.find(
+      (downstreamVersion) => downstreamVersion.sequence === version.sequence
+    );
+    // const isPastVersion = find(downstream?.pastVersions, {
+    //   sequence: this.state.versionToDeploy?.sequence,
+    // });
 
     let checkingUpdateTextShort = checkingUpdateMessage;
     if (checkingUpdateTextShort && checkingUpdateTextShort.length > 30) {

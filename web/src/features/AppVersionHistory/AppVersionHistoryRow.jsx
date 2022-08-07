@@ -100,9 +100,12 @@ const AppVersionHistoryRow = ({
     const isCurrentVersion =
       version.sequence === downstream?.currentVersion?.sequence;
     const isDeploying = version.status === "deploying";
-    const isPastVersion = find(downstream?.pastVersions, {
-      sequence: version.sequence,
-    });
+    // const isPastVersion = find(downstream?.pastVersions, {
+    //   sequence: version.sequence,
+    // });
+    const isPastVersion = !!downstream?.pastVersions?.find(
+      (downstreamVersion) => downstreamVersion.sequence === version.sequence
+    );
     const needsConfiguration = version.status === "pending_config";
     const isRollback =
       isPastVersion && version.deployedAt && currentApp?.allowRollback;
