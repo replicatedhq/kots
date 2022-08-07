@@ -744,7 +744,7 @@ const AppVersionHistoryRow = ({
                   )}
             </span>
           </p>
-          {this.renderDiff(version)}
+          {renderDiff(version)}
           <YamlErrors
             version={version}
             handleSeeDetailsClicked={() =>
