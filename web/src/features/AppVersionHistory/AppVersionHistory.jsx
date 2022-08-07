@@ -781,7 +781,9 @@ class AppVersionHistory extends Component {
       continueWithFailedPreflights
     );
     // await this.fetchKotsDownstreamHistory();
-    await this.state?.refetchVersions?.();
+    setTimeout(() => {
+      this.state?.refetchVersions?.();
+    }, 1000);
     this.setState({ versionToDeploy: null });
 
     if (updateCallback && typeof updateCallback === "function") {
