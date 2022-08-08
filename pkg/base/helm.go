@@ -394,7 +394,6 @@ func helmChartBaseAppendMissingDependencies(base Base, upstreamFiles []upstreamt
 		}
 		basePaths := upstreamToBasePathsMap[upstreamPath]
 		for _, basePath := range basePaths {
-			logger.Infof("adding missing dependency %s to base path %s\n", upstreamFile.Path, basePath)
 			b := Base{
 				Path: basePath,
 				AdditionalFiles: []BaseFile{
