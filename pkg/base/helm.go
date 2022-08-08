@@ -312,28 +312,22 @@ func helmChartBaseAppendAdditionalFiles(base Base, fullBasePath string, upstream
 
 func helmChartUpstreamPathToBasePaths(upstreamPath string, upstreamFileMap map[string][]byte) ([]string, error) {
 	charts := pathToCharts(upstreamPath)
-	basePathParts := make([][]string, len(charts))
-	basePathParts[0] = []string{""}
-	// iterate over the subcharts and find any that are aliased
+	basePaths := []string{""}
+	parentChartPath := ""
+	// iterate over the subcharts and find any that are aliased by the parent chart
 	for i := 1; i < len(charts); i++ {
-		parts := []string{}
-		chart := charts[i]
-		parts = append(parts, chart)
-		parentChart := charts[i-1]
+		subchart := charts[i]
+		parts := []string{subchart}
 
-		// build the full parent chart path and check if the chart is aliased by its parent
-		parentChartYaml := filepath.Join(parentChart, "Chart.yaml")
-		for j := 0; j < i-1; j++ {
-			parentChartYaml = filepath.Join("charts", parentChartYaml)
-		}
+		// check if the chart is aliased by its parent
+		parentChartYaml := filepath.Join(parentChartPath, "Chart.yaml")
 		if content, ok := upstreamFileMap[parentChartYaml]; ok {
 			deps := new(HelmChartDependencies)
 			if err := yaml.Unmarshal(content, deps); err != nil {
 				return nil, errors.Wrapf(err, "failed to unmarshal %s", parentChartYaml)
 			}
 			for _, dep := range deps.Dependencies {
-				// replace any aliased subcharts with the actual chart name
-				if dep.Name == chart && dep.Alias != "" {
+				if dep.Name == subchart && dep.Alias != "" {
 					parts = append(parts, dep.Alias)
 				}
 			}
@@ -341,10 +335,19 @@ func helmChartUpstreamPathToBasePaths(upstreamPath string, upstreamFileMap map[s
 			return nil, errors.Errorf("failed to find upstream file %s", parentChartYaml)
 		}
 
-		basePathParts[i] = parts
+		newBasePaths := []string{}
+		for _, basePath := range basePaths {
+			for _, part := range parts {
+				newBasePath := path.Join(basePath, "charts", part)
+				newBasePaths = append(newBasePaths, newBasePath)
+			}
+		}
+		basePaths = newBasePaths
+
+		parentChartPath = path.Join(parentChartPath, "charts", subchart)
 	}
 
-	return flattenBasePathParts(basePathParts), nil
+	return basePaths, nil
 }
 
 // Takes an input chart path and returns a list that represents the dependency tree for the chart.
@@ -355,41 +358,6 @@ func helmChartUpstreamPathToBasePaths(upstreamPath string, upstreamFileMap map[s
 func pathToCharts(path string) []string {
 	re := regexp.MustCompile(`\/?charts\/`)
 	return re.Split(path, -1)
-}
-
-// takes a slice of string slices representing the aliased base paths for each level of a chart
-// and returns a slice of strings representing all of the possible base paths
-func flattenBasePathParts(basePathParts [][]string) []string {
-	numParts := len(basePathParts)
-	currentIndices := make([]int, numParts)
-	paths := []string{}
-	for true {
-		parts := []string{}
-		for i := 0; i < numParts; i++ {
-			part := basePathParts[i][currentIndices[i]]
-			parts = append(parts, part)
-		}
-
-		path := strings.Join(parts, string(os.PathSeparator)+"charts"+string(os.PathSeparator))
-		path = strings.TrimPrefix(path, string(os.PathSeparator))
-		paths = append(paths, path)
-
-		next := numParts - 1
-		for next >= 0 && currentIndices[next] == len(basePathParts[next])-1 {
-			next--
-		}
-
-		if next < 0 {
-			break
-		}
-
-		currentIndices[next]++
-
-		for i := next + 1; i < numParts; i++ {
-			currentIndices[i] = 0
-		}
-	}
-	return paths
 }
 
 // look for any sub-chart dependencies that were not rendered and add their Chart.yaml to the base files
