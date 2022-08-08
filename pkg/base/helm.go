@@ -258,15 +258,16 @@ func removeCommonPrefix(baseFiles []BaseFile) []BaseFile {
 func getUpstreamToBasePathsMap(upstreamFiles map[string][]byte) map[string][]string {
 	upstreamToBasePathsMap := make(map[string][]string)
 	for upstreamFilePath := range upstreamFiles {
-		if strings.HasSuffix(upstreamFilePath, "Chart.yaml") {
-			upstreamPath := strings.TrimSuffix(upstreamFilePath, "Chart.yaml")
-			upstreamPath = strings.TrimSuffix(upstreamPath, string(os.PathSeparator))
-			basePaths, err := helmChartUpstreamPathToBasePaths(upstreamPath, upstreamFiles)
-			if err != nil {
-				logger.Errorf("failed to get base paths for upstream path %s: %v", upstreamFilePath, err)
-			}
-			upstreamToBasePathsMap[upstreamPath] = basePaths
+		if !strings.HasSuffix(upstreamFilePath, "Chart.yaml") {
+			continue
 		}
+		upstreamPath := strings.TrimSuffix(upstreamFilePath, "Chart.yaml")
+		upstreamPath = strings.TrimSuffix(upstreamPath, string(os.PathSeparator))
+		basePaths, err := helmChartUpstreamPathToBasePaths(upstreamPath, upstreamFiles)
+		if err != nil {
+			logger.Errorf("failed to get base paths for upstream path %s: %v", upstreamFilePath, err)
+		}
+		upstreamToBasePathsMap[upstreamPath] = basePaths
 	}
 	return upstreamToBasePathsMap
 }
@@ -404,26 +405,27 @@ func helmChartBaseAppendMissingDependencies(base Base, upstreamFiles []upstreamt
 	}
 
 	for _, upstreamFile := range upstreamFiles {
-		if strings.HasSuffix(upstreamFile.Path, "Chart.yaml") {
-			upstreamPath := strings.TrimSuffix(upstreamFile.Path, "Chart.yaml")
-			upstreamPath = strings.TrimSuffix(upstreamPath, string(os.PathSeparator))
-			if _, ok := renderedUpstreamPaths[upstreamPath]; !ok {
-
-				basePaths := upstreamToBasePathsMap[upstreamPath]
-				for _, basePath := range basePaths {
-					logger.Infof("adding missing dependency %s to base path %s\n", upstreamFile.Path, basePath)
-					b := Base{
-						Path: basePath,
-						AdditionalFiles: []BaseFile{
-							{
-								Path:    "Chart.yaml",
-								Content: upstreamFile.Content,
-							},
-						},
-					}
-					base.Bases = append(base.Bases, b)
-				}
+		if !strings.HasSuffix(upstreamFile.Path, "Chart.yaml") {
+			continue // only care about Chart.yaml files
+		}
+		upstreamPath := strings.TrimSuffix(upstreamFile.Path, "Chart.yaml")
+		upstreamPath = strings.TrimSuffix(upstreamPath, string(os.PathSeparator))
+		if _, ok := renderedUpstreamPaths[upstreamPath]; ok {
+			continue // already rendered this upstream path
+		}
+		basePaths := upstreamToBasePathsMap[upstreamPath]
+		for _, basePath := range basePaths {
+			logger.Infof("adding missing dependency %s to base path %s\n", upstreamFile.Path, basePath)
+			b := Base{
+				Path: basePath,
+				AdditionalFiles: []BaseFile{
+					{
+						Path:    "Chart.yaml",
+						Content: upstreamFile.Content,
+					},
+				},
 			}
+			base.Bases = append(base.Bases, b)
 		}
 	}
 
