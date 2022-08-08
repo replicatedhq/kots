@@ -62,6 +62,21 @@ class AppVersionHistoryRow extends Component {
   };
 
   deployButtonStatus = (version) => {
+    if (this.props.isHelmManaged) {
+      const deployedSequence =
+        this.props.app?.downstream?.currentVersion?.sequence;
+
+      if (version.sequence > deployedSequence) {
+        return "Deploy";
+      }
+
+      if (version.sequence < deployedSequence) {
+        return "Rollback";
+      }
+
+      return "Redeploy";
+    }
+
     const app = this.props.app;
     const downstream = app?.downstream;
 

@@ -5,9 +5,13 @@ import CodeSnippet from "@src/components/shared/CodeSnippet";
 function makeDeployCommand({
   appSlug,
   chartPath,
+  revision = null,
   showDownloadValues,
   version,
 }) {
+  if (revision) {
+    return `helm rollback ${appSlug} ${revision}`;
+  }
   if (showDownloadValues) {
     if (!version) {
       return `helm upgrade ${appSlug} ${chartPath} -f <path-to-values-yaml>`;
@@ -41,6 +45,7 @@ function HelmDeployModal({
   subtitle,
   registryUsername = "myUsername",
   registryPassword = "myPassword",
+  revision = null,
   title,
   upgradeTitle,
   showDownloadValues = false,
@@ -109,7 +114,7 @@ function HelmDeployModal({
           )}
           <div className="u-marginBottom--30 flex flex-row">
             <span className="Title step-number u-marginRight--15">
-              {showDownloadValues === null ? "2" : "3"}
+              {showDownloadValues ? "3" : "2"}
             </span>
             <div className="flex1">
               <span className="Title u-marginBottom--5 u-display--block">
@@ -133,6 +138,7 @@ function HelmDeployModal({
                 {makeDeployCommand({
                   appSlug,
                   chartPath,
+                  revision,
                   showDownloadValues,
                   version,
                 })}
