@@ -95,17 +95,17 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 	// I do not want to change the functionality of kots installing a helm chart
 	base.Path = ""
 
-	upstreamFiles := make(map[string][]byte)
+	upstreamFileMap := make(map[string][]byte)
 	for _, upstreamFile := range u.Files {
-		upstreamFiles[upstreamFile.Path] = upstreamFile.Content
+		upstreamFileMap[upstreamFile.Path] = upstreamFile.Content
 	}
 
-	upstreamToBasePathsMap := getUpstreamToBasePathsMap(upstreamFiles)
-	baseToUpstreamPathMap := getBaseToUpstreamPathMap(upstreamToBasePathsMap)
+	upstreamToBasePathsMap := getUpstreamToBasePathsMap(upstreamFileMap)
+	baseToUpstreamPathMap := getBaseToUpstreamPathMap(upstreamFileMap, upstreamToBasePathsMap)
 
 	// since we already rendered the helm chart using dry-run mode, we need to add back the Chart.yaml files so that helm install can work
-	nextBase := helmChartBaseAppendAdditionalFiles(*base, base.Path, upstreamFiles, baseToUpstreamPathMap)
-	nexterBase := helmChartBaseAppendMissingDependencies(nextBase, upstreamFiles, upstreamToBasePathsMap, baseToUpstreamPathMap)
+	nextBase := helmChartBaseAppendAdditionalFiles(*base, base.Path, upstreamFileMap, baseToUpstreamPathMap)
+	nexterBase := helmChartBaseAppendMissingDependencies(nextBase, u.Files, upstreamToBasePathsMap, baseToUpstreamPathMap)
 
 	return &nexterBase, nil
 }
@@ -272,7 +272,7 @@ func getUpstreamToBasePathsMap(upstreamFiles map[string][]byte) map[string][]str
 }
 
 // creates a map of the base paths and their cooresponding upstream paths
-func getBaseToUpstreamPathMap(upstreamToBasePathsMap map[string][]string) map[string]string {
+func getBaseToUpstreamPathMap(upstreamFileMap map[string][]byte, upstreamToBasePathsMap map[string][]string) map[string]string {
 	baseToUpstreamPathMap := make(map[string]string)
 	for upstreamFilePath, basePaths := range upstreamToBasePathsMap {
 		for _, basePath := range basePaths {
@@ -309,7 +309,7 @@ func helmChartBaseAppendAdditionalFiles(base Base, fullBasePath string, upstream
 	return base
 }
 
-func helmChartUpstreamPathToBasePaths(upstreamPath string, upstreamFiles map[string][]byte) ([]string, error) {
+func helmChartUpstreamPathToBasePaths(upstreamPath string, upstreamFileMap map[string][]byte) ([]string, error) {
 	charts := pathToCharts(upstreamPath)
 	basePathParts := make([][]string, len(charts))
 	basePathParts[0] = []string{""}
@@ -325,7 +325,7 @@ func helmChartUpstreamPathToBasePaths(upstreamPath string, upstreamFiles map[str
 		for j := 0; j < i-1; j++ {
 			parentChartYaml = filepath.Join("charts", parentChartYaml)
 		}
-		if content, ok := upstreamFiles[parentChartYaml]; ok {
+		if content, ok := upstreamFileMap[parentChartYaml]; ok {
 			deps := new(HelmChartDependencies)
 			if err := yaml.Unmarshal(content, deps); err != nil {
 				return nil, errors.Wrapf(err, "failed to unmarshal %s", parentChartYaml)
@@ -392,7 +392,7 @@ func flattenBasePathParts(basePathParts [][]string) []string {
 }
 
 // look for any sub-chart dependencies that were not rendered and add their Chart.yaml to the base files
-func helmChartBaseAppendMissingDependencies(base Base, upstreamFiles map[string][]byte, upstreamToBasePathsMap map[string][]string, baseToUpstreamPathMap map[string]string) Base {
+func helmChartBaseAppendMissingDependencies(base Base, upstreamFiles []upstreamtypes.UpstreamFile, upstreamToBasePathsMap map[string][]string, baseToUpstreamPathMap map[string]string) Base {
 	allBasePaths := getAllBasePaths("", base)
 
 	// create a map of the upstream paths that have been rendered
@@ -403,21 +403,21 @@ func helmChartBaseAppendMissingDependencies(base Base, upstreamFiles map[string]
 		}
 	}
 
-	for upstreamFilePath, upstreamFileContent := range upstreamFiles {
-		if strings.HasSuffix(upstreamFilePath, "Chart.yaml") {
-			upstreamPath := strings.TrimSuffix(upstreamFilePath, "Chart.yaml")
+	for _, upstreamFile := range upstreamFiles {
+		if strings.HasSuffix(upstreamFile.Path, "Chart.yaml") {
+			upstreamPath := strings.TrimSuffix(upstreamFile.Path, "Chart.yaml")
 			upstreamPath = strings.TrimSuffix(upstreamPath, string(os.PathSeparator))
 			if _, ok := renderedUpstreamPaths[upstreamPath]; !ok {
 
 				basePaths := upstreamToBasePathsMap[upstreamPath]
 				for _, basePath := range basePaths {
-					logger.Infof("adding missing dependency %s to base path %s\n", upstreamFilePath, basePath)
+					logger.Infof("adding missing dependency %s to base path %s\n", upstreamFile.Path, basePath)
 					b := Base{
 						Path: basePath,
 						AdditionalFiles: []BaseFile{
 							{
 								Path:    "Chart.yaml",
-								Content: upstreamFileContent,
+								Content: upstreamFile.Content,
 							},
 						},
 					}
