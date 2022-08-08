@@ -593,7 +593,7 @@ class AppConfig extends Component {
             Configure {app.name}
           </span>
         )}
-        <div className="flex-column">
+        <div className="flex" style={{ gap: "20px" }}>
           <div
             id="configSidebarWrapper"
             className="AppConfigSidenav--wrapper"

@@ -1,16 +1,12 @@
 @import "../../variables.scss";
 
 .ConfigArea--wrapper {
-  transform: translateX(80px);
   width: 100%;
   max-width: 750px;
   min-width: 500px;
 }
 
 .AppConfigSidenav--wrapper {
-  position: fixed;
-  top: 140px;
-  transform: translateX(-170px);
   background: $sub-nav-color;
   max-width: 200px;
   width: 100%;
@@ -113,26 +109,5 @@ a:visited {
   &.current {
     background: lighten($success-color, 43.5%);
     color: $success-color;
-  }
-}
-
-/* ≥ 1024px */
-@media screen and (min-width: 64em) {
-  .AppConfigSidenav--wrapper {
-    transform: translateX(-200px);
-    max-width: 250px;
-  }
-  .ConfigArea--wrapper {
-    transform: translateX(100px);
-  }
-}
-
-/* ≥ 1280px */
-@media screen and (min-width: 80em) {
-  .AppConfigSidenav--wrapper {
-    transform: translateX(-150px);
-  }
-  .ConfigArea--wrapper {
-    transform: translateX(150px);
   }
 }
