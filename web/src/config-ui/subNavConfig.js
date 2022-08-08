@@ -43,9 +43,10 @@ export default [
     tabName: "license",
     displayName: "License",
     to: (slug) => `/app/${slug}/license`,
-    displayRule: ({ app }) =>
+    displayRule: ({ app, isHelmManaged }) =>
       app?.upstreamUri?.startsWith("replicated://") ||
-      getApplicationType(app) === "replicated.app",
+      getApplicationType(app) === "replicated.app" ||
+      isHelmManaged,
   },
   {
     tabName: "state",
