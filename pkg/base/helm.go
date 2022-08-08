@@ -65,12 +65,12 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 
 	var rendered []BaseFile
 	switch strings.ToLower(renderOptions.HelmVersion) {
-	case "v3":
+	case "v3", "":
 		rendered, err = renderHelmV3(u.Name, chartPath, vals, renderOptions)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render with helm v3")
 		}
-	case "v2", "":
+	case "v2":
 		rendered, err = renderHelmV2(u.Name, chartPath, vals, renderOptions)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render with helm v2")
