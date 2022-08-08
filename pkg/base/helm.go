@@ -339,7 +339,7 @@ func helmChartUpstreamPathToBasePaths(upstreamPath string, upstreamFileMap map[s
 				}
 			}
 			if !foundSubchartInDeps {
-				// if the subchart is not listed in the dependencies, then it is not aliased by the parent
+				// subchart is not managed via dependencies
 				aliases = append(aliases, subchart)
 			}
 		} else {
