@@ -907,3 +907,167 @@ func fmtJSONDiff(got, want interface{}) string {
 	diffStr, _ := difflib.GetUnifiedDiffString(diff)
 	return fmt.Sprintf("got:\n%s \n\nwant:\n%s \n\ndiff:\n%s", got, want, diffStr)
 }
+
+func Test_pathToCharts(t *testing.T) {
+	tests := []struct {
+		name string
+		path string
+		want []string
+	}{
+		{
+			name: "top-level path",
+			path: "",
+			want: []string{""},
+		},
+		{
+			name: "subchart path",
+			path: "charts/subchart",
+			want: []string{"", "subchart"},
+		},
+		{
+			name: "subsubchart path",
+			path: "charts/subchart/charts/subsubchart",
+			want: []string{"", "subchart", "subsubchart"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := pathToCharts(tt.path); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("pathToCharts() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_flattenBasePathParts(t *testing.T) {
+	tests := []struct {
+		name  string
+		parts [][]string
+		want  []string
+	}{
+		{
+			name: "top-level path",
+			parts: [][]string{
+				{""},
+			},
+			want: []string{""},
+		},
+		{
+			name: "subchart path",
+			parts: [][]string{
+				{""},
+				{"subchart"},
+			},
+			want: []string{
+				"charts/subchart",
+			},
+		},
+		{
+			name: "subsubchart path",
+			parts: [][]string{
+				{""},
+				{"subchart"},
+				{"subsubchart"},
+			},
+			want: []string{
+				"charts/subchart/charts/subsubchart",
+			},
+		},
+		{
+			name: "subchart path with alias",
+			parts: [][]string{
+				{""},
+				{"subchart", "subchart-alias"},
+			},
+			want: []string{
+				"charts/subchart", "charts/subchart-alias",
+			},
+		},
+		{
+			name: "subsubchart path with alias",
+			parts: [][]string{
+				{""},
+				{"subchart", "subchart-alias"},
+				{"subsubchart", "subsubchart-alias"},
+			},
+			want: []string{
+				"charts/subchart/charts/subsubchart",
+				"charts/subchart/charts/subsubchart-alias",
+				"charts/subchart-alias/charts/subsubchart",
+				"charts/subchart-alias/charts/subsubchart-alias",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := flattenBasePathParts(tt.parts); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("flattenBasePathParts() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getUpstreamToBasePathsMap(t *testing.T) {
+	tests := []struct {
+		name          string
+		upstreamFiles map[string][]byte
+		want          map[string][]string
+	}{
+		{
+			name: "subsubchart-aliases",
+			upstreamFiles: map[string][]byte{
+				"Chart.yaml": []byte(`dependencies:
+- name: subchart
+  repository: file://./charts/subchart
+  version: 0.0.0
+- name: subchart
+  alias: subchart-aliased
+  repository: file://./charts/subchart
+  version: 0.0.0`),
+				"charts/subchart/Chart.yaml": []byte(`dependencies:
+- name: subsubchart
+  repository: file://./charts/subsubchart
+  version: 0.0.0
+- name: subsubchart
+  alias: subsubchart-aliased
+  repository: file://./charts/subsubchart
+  version: 0.0.0`),
+				"charts/subchart-no-aliases/Chart.yaml": []byte(`dependencies:
+- name: subsubchart
+  repository: file://./charts/subsubchart
+  version: 0.0.0`),
+				"charts/subchart/charts/subsubchart/Chart.yaml":            []byte(``),
+				"charts/subchart-no-aliases/charts/subsubchart/Chart.yaml": []byte(``),
+			},
+			want: map[string][]string{
+				"": {""},
+				"charts/subchart": {
+					"charts/subchart",
+					"charts/subchart-aliased",
+				},
+				"charts/subchart-no-aliases": {
+					"charts/subchart-no-aliases",
+				},
+				"charts/subchart/charts/subsubchart": {
+					"charts/subchart/charts/subsubchart",
+					"charts/subchart/charts/subsubchart-aliased",
+					"charts/subchart-aliased/charts/subsubchart",
+					"charts/subchart-aliased/charts/subsubchart-aliased",
+				},
+				"charts/subchart-no-aliases/charts/subsubchart": {
+					"charts/subchart-no-aliases/charts/subsubchart",
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getUpstreamToBasePathsMap(tt.upstreamFiles); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("getUpstreamToBasePathsMap() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
