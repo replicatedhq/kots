@@ -317,7 +317,7 @@ func helmChartUpstreamPathToBasePaths(upstreamPath string, upstreamFileMap map[s
 	// iterate over the subcharts and find any that are aliased by the parent chart
 	for i := 1; i < len(charts); i++ {
 		subchart := charts[i]
-		parts := []string{subchart}
+		aliases := []string{}
 
 		// check if the chart is aliased by its parent
 		parentChartYaml := filepath.Join(parentChartPath, "Chart.yaml")
@@ -326,10 +326,21 @@ func helmChartUpstreamPathToBasePaths(upstreamPath string, upstreamFileMap map[s
 			if err := yaml.Unmarshal(content, deps); err != nil {
 				return nil, errors.Wrapf(err, "failed to unmarshal %s", parentChartYaml)
 			}
+			foundSubchartInDeps := false
 			for _, dep := range deps.Dependencies {
-				if dep.Name == subchart && dep.Alias != "" {
-					parts = append(parts, dep.Alias)
+				if dep.Name != subchart {
+					continue
 				}
+				foundSubchartInDeps = true
+				if dep.Alias != "" {
+					aliases = append(aliases, dep.Alias)
+				} else {
+					aliases = append(aliases, dep.Name)
+				}
+			}
+			if !foundSubchartInDeps {
+				// if the subchart is not listed in the dependencies, then it is not aliased by the parent
+				aliases = append(aliases, subchart)
 			}
 		} else {
 			return nil, errors.Errorf("failed to find upstream file %s", parentChartYaml)
@@ -337,8 +348,8 @@ func helmChartUpstreamPathToBasePaths(upstreamPath string, upstreamFileMap map[s
 
 		newBasePaths := []string{}
 		for _, basePath := range basePaths {
-			for _, part := range parts {
-				newBasePath := path.Join(basePath, "charts", part)
+			for _, alias := range aliases {
+				newBasePath := path.Join(basePath, "charts", alias)
 				newBasePaths = append(newBasePaths, newBasePath)
 			}
 		}
