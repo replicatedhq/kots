@@ -3,15 +3,19 @@ package handlers
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	kotsbase "github.com/replicatedhq/kots/pkg/base"
 	"github.com/replicatedhq/kots/pkg/helm"
+	kotshelm "github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
+	yaml "github.com/replicatedhq/yaml/v3"
+	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 // IsHelmManagedResponse - response body for the is helm managed endpoint
@@ -39,27 +43,79 @@ func (h *Handler) GetAppValuesFile(w http.ResponseWriter, r *http.Request) {
 		Success: false,
 	}
 	appSlug := mux.Vars(r)["appSlug"]
-	release := helm.GetHelmApp(appSlug)
-	if release == nil {
+	helmApp := helm.GetHelmApp(appSlug)
+	if helmApp == nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
-	dat, err := os.ReadFile(release.PathToValuesFile)
+	appSecret, err := helm.GetChartConfigSecret(helmApp)
 	if err != nil {
-		err = errors.Wrap(err, "failed to read values file")
+		logger.Error(errors.Wrap(err, "failed to get secret"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// if there is no config secret then app is not configurable
+	if appSecret == nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	configValues, err := helm.GetTempConfigValues(helmApp)
+	if err != nil && !kuberneteserrors.IsNotFound(errors.Cause(err)) {
+		logger.Error(errors.Wrap(err, "failed to get temp config values"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	helmChart, err := kotsbase.ParseHelmChart(appSecret.Data["chart"])
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to parse HelmChart file"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	tmplVals, err := helmChart.Spec.GetReplTmplValues(helmChart.Spec.Values)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get templated values"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	kotsKinds, err := helm.GetKotsKinds(helmApp)
+	kotsKinds.ConfigValues = configValues
+
+	renderedValues, err := kotshelm.RenderValuesFromConfig(helmApp, &kotsKinds, appSecret.Data["chart"])
+	if err != nil {
 		logger.Error(err)
-		getAppValuesFileResponse.Success = false
-		JSON(w, http.StatusInternalServerError, getAppValuesFileResponse)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// get a intersected map containing tmplVals keys with renderedValues values
+	intersectVals := kotsv1beta1.GetMapIntersect(tmplVals, renderedValues)
+
+	mergedHelmValues, err := kotshelm.GetMergedValues(helmApp.Release.Chart.Values, intersectVals)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	b, err := yaml.Marshal(mergedHelmValues)
+	if err != nil {
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	getAppValuesFileResponse.Success = true
 	w.Header().Set("Content-Type", "application/octet-stream")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s-values.yaml", appSlug))
-	w.Header().Set("Content-Length", strconv.Itoa(len(dat)))
+	w.Header().Set("Content-Length", strconv.Itoa(len(b)))
 	w.WriteHeader(http.StatusOK)
-	w.Write(dat)
+	w.Write(b)
 	JSON(w, http.StatusOK, getAppValuesFileResponse)
 }
 

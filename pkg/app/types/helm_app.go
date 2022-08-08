@@ -14,7 +14,6 @@ type HelmApp struct {
 	IsConfigurable    bool
 	ChartPath         string
 	CreationTimestamp time.Time
-	PathToValuesFile  string
 }
 
 func (a *HelmApp) GetID() string {

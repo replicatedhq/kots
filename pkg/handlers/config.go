@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -17,13 +16,10 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
-	kotsbase "github.com/replicatedhq/kots/pkg/base"
 	"github.com/replicatedhq/kots/pkg/config"
 	kotsconfig "github.com/replicatedhq/kots/pkg/config"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/helm"
-	kotshelm "github.com/replicatedhq/kots/pkg/helm"
-	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -36,7 +32,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
-	yaml "github.com/replicatedhq/yaml/v3"
+	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -156,97 +152,25 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		appSecret, err := helm.GetChartConfigSecret(helmApp)
-		if err != nil {
-			logger.Error(err)
+		requiredItems, requiredItemsTitles := getMissingRequiredConfig(updateAppConfigRequest.ConfigGroups)
+		if len(requiredItems) > 0 {
+			updateAppConfigResponse.RequiredItems = requiredItems
+			updateAppConfigResponse.Error = fmt.Sprintf("The following fields are required: %s", strings.Join(requiredItemsTitles, ", "))
+			JSON(w, http.StatusBadRequest, updateAppConfigResponse)
+			return
+		}
+
+		configValues, err := helm.GetTempConfigValues(helmApp)
+		if err != nil && !kuberneteserrors.IsNotFound(errors.Cause(err)) {
+			logger.Error(errors.Wrap(err, "failed to get temp config values"))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		// if there is no config secret then app is not configurable
-		if appSecret == nil {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		config := new(kotsv1beta1.Config)
-		err = json.Unmarshal(appSecret.Data["config"], &config)
+		configValues.Spec.Values = updateAppConfigValues(configValues.Spec.Values, updateAppConfigRequest.ConfigGroups)
+		err = helm.SetTempConfigValues(helmApp, updateAppConfigRequest.Sequence, configValues)
 		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		// get values from request
-		newValues := configValuesFromConfigGroups(updateAppConfigRequest.ConfigGroups)
-		newChart, err := kotsbase.ParseHelmChart(appSecret.Data["chart"])
-		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		tmplVals, err := newChart.Spec.GetReplTmplValues(newChart.Spec.Values)
-		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		renderedValues, renderedConfig, err := kotshelm.RenderValuesFromConfig(appSlug, newValues, config, appSecret.Data["chart"])
-		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		b, err := json.Marshal(renderedConfig)
-		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		appSecret.Data["config"] = b
-
-		// now update secret in cluster
-		clientSet, err := k8sutil.GetClientset()
-		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		_, err = clientSet.CoreV1().Secrets(appSecret.Namespace).Update(context.TODO(), appSecret, metav1.UpdateOptions{})
-		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		// get a intersected map containing tmplVals keys with renderedValues values
-		intersectVals, err := kotsv1beta1.GetMapIntersect(tmplVals, renderedValues)
-		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		mergedHelmValues, err := kotshelm.GetMergedValues(helmApp.Release.Chart.Values, intersectVals)
-		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		b, err = yaml.Marshal(mergedHelmValues)
-		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		err = helm.SaveConfigValuesToFile(helmApp, b)
-		if err != nil {
-			logger.Error(err)
+			logger.Error(errors.Wrap(err, "failed to update temp config values"))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -452,49 +376,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		Success: false,
 	}
 
-	configGroups := []kotsv1beta1.ConfigGroup{}
-
-	if util.IsHelmManaged() {
-		appSlug := mux.Vars(r)["appSlug"]
-		helmApp := helm.GetHelmApp(appSlug)
-		if helmApp == nil {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-
-		configSecret, err := helm.GetChartConfigSecret(helmApp)
-		if err != nil {
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		if configSecret == nil {
-			// app is not configurable
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		appConfig := new(kotsv1beta1.Config)
-		err = json.Unmarshal(configSecret.Data["config"], &appConfig)
-		if err != nil {
-			logger.Error(err)
-			currentAppConfigResponse.Error = "failed to unmarshal config secret"
-			JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
-			return
-		}
-		configGroups = appConfig.Spec.Groups
-		JSON(w, http.StatusOK, CurrentAppConfigResponse{Success: true, ConfigGroups: configGroups})
-		return
-	}
-	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
-	if err != nil {
-		logger.Error(err)
-		currentAppConfigResponse.Error = "failed to get app from app slug"
-		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
-		return
-	}
-
+	appSlug := mux.Vars(r)["appSlug"]
 	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
 	if err != nil {
 		logger.Error(err)
@@ -503,86 +385,122 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status, err := store.GetStore().GetDownstreamVersionStatus(foundApp.ID, int64(sequence))
-	if err != nil {
-		logger.Error(err)
-		currentAppConfigResponse.Error = "failed to get downstream version status"
-		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
-		return
-	}
-	if status == storetypes.VersionPendingDownload {
-		err := errors.Errorf("not returning config for version %d because it's %s", sequence, status)
-		logger.Error(err)
-		currentAppConfigResponse.Error = err.Error()
-		JSON(w, http.StatusBadRequest, currentAppConfigResponse)
-		return
-	}
+	var kotsKinds *kotsutil.KotsKinds
+	var license *kotsv1beta1.License
+	var localRegistry template.LocalRegistry
+	var app apptypes.AppType
 
-	appLicense, err := store.GetStore().GetLatestLicenseForApp(foundApp.ID)
-	if err != nil {
-		logger.Error(err)
-		currentAppConfigResponse.Error = "failed to get license for app"
-		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
-		return
-	}
+	configGroups := []kotsv1beta1.ConfigGroup{}
 
-	archiveDir, err := ioutil.TempDir("", "kotsadm")
-	if err != nil {
-		logger.Error(err)
-		currentAppConfigResponse.Error = "failed to create temp dir"
-		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
-		return
-	}
-	defer os.RemoveAll(archiveDir)
+	if util.IsHelmManaged() {
+		helmApp := helm.GetHelmApp(appSlug)
+		if helmApp == nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		app = helmApp
 
-	err = store.GetStore().GetAppVersionArchive(foundApp.ID, int64(sequence), archiveDir)
-	if err != nil {
-		logger.Error(err)
-		currentAppConfigResponse.Error = "failed to get app version archive"
-		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
-		return
-	}
+		k, err := helm.GetKotsKinds(helmApp)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "faile to get kots kinds for helm"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		kotsKinds = &k
+		license = kotsKinds.License
+	} else {
+		foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
+		if err != nil {
+			logger.Error(err)
+			currentAppConfigResponse.Error = "failed to get app from app slug"
+			JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
+			return
+		}
+		app = foundApp
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
-	if err != nil {
-		logger.Error(err)
-		currentAppConfigResponse.Error = "failed to load kots kinds from path"
-		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
-		return
+		status, err := store.GetStore().GetDownstreamVersionStatus(foundApp.ID, int64(sequence))
+		if err != nil {
+			logger.Error(err)
+			currentAppConfigResponse.Error = "failed to get downstream version status"
+			JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
+			return
+		}
+		if status == storetypes.VersionPendingDownload {
+			err := errors.Errorf("not returning config for version %d because it's %s", sequence, status)
+			logger.Error(err)
+			currentAppConfigResponse.Error = err.Error()
+			JSON(w, http.StatusBadRequest, currentAppConfigResponse)
+			return
+		}
+
+		license, err = store.GetStore().GetLatestLicenseForApp(foundApp.ID)
+		if err != nil {
+			logger.Error(err)
+			currentAppConfigResponse.Error = "failed to get license for app"
+			JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
+			return
+		}
+
+		archiveDir, err := ioutil.TempDir("", "kotsadm")
+		if err != nil {
+			logger.Error(err)
+			currentAppConfigResponse.Error = "failed to create temp dir"
+			JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
+			return
+		}
+		defer os.RemoveAll(archiveDir)
+
+		err = store.GetStore().GetAppVersionArchive(foundApp.ID, int64(sequence), archiveDir)
+		if err != nil {
+			logger.Error(err)
+			currentAppConfigResponse.Error = "failed to get app version archive"
+			JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
+			return
+		}
+
+		kotsKinds, err = kotsutil.LoadKotsKindsFromPath(archiveDir)
+		if err != nil {
+			logger.Error(err)
+			currentAppConfigResponse.Error = "failed to load kots kinds from path"
+			JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
+			return
+		}
+
+		registryInfo, err := store.GetStore().GetRegistryDetailsForApp(foundApp.ID)
+		if err != nil {
+			logger.Error(err)
+			currentAppConfigResponse.Error = "failed to get app registry info"
+			JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
+			return
+		}
+
+		localRegistry = template.LocalRegistry{
+			Host:      registryInfo.Hostname,
+			Namespace: registryInfo.Namespace,
+			Username:  registryInfo.Username,
+			Password:  registryInfo.Password,
+			ReadOnly:  registryInfo.IsReadOnly,
+		}
 	}
 
 	// get values from saved app version
 	configValues := map[string]template.ItemValue{}
 
-	for key, value := range kotsKinds.ConfigValues.Spec.Values {
-		generatedValue := template.ItemValue{
-			Default:        value.Default,
-			Value:          value.Value,
-			Filename:       value.Filename,
-			RepeatableItem: value.RepeatableItem,
+	if kotsKinds.ConfigValues != nil {
+		for key, value := range kotsKinds.ConfigValues.Spec.Values {
+			generatedValue := template.ItemValue{
+				Default:        value.Default,
+				Value:          value.Value,
+				Filename:       value.Filename,
+				RepeatableItem: value.RepeatableItem,
+			}
+			configValues[key] = generatedValue
 		}
-		configValues[key] = generatedValue
 	}
 
-	registryInfo, err := store.GetStore().GetRegistryDetailsForApp(foundApp.ID)
-	if err != nil {
-		logger.Error(err)
-		currentAppConfigResponse.Error = "failed to get app registry info"
-		JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
-		return
-	}
-
-	localRegistry := template.LocalRegistry{
-		Host:      registryInfo.Hostname,
-		Namespace: registryInfo.Namespace,
-		Username:  registryInfo.Username,
-		Password:  registryInfo.Password,
-		ReadOnly:  registryInfo.IsReadOnly,
-	}
-
-	versionInfo := template.VersionInfoFromInstallation(int64(sequence)+1, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
-	appInfo := template.ApplicationInfo{Slug: foundApp.Slug}
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, &kotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, false)
+	versionInfo := template.VersionInfoFromInstallation(int64(sequence)+1, app.GetIsAirgap(), kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
+	appInfo := template.ApplicationInfo{Slug: app.GetSlug()}
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, license, &kotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, false)
 	if err != nil {
 		logger.Error(err)
 		currentAppConfigResponse.Error = "failed to render templates"
@@ -702,24 +620,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 		return updateAppConfigResponse, err
 	}
 
-	// check for unset required items
-	requiredItems := make([]string, 0, 0)
-	requiredItemsTitles := make([]string, 0, 0)
-	for _, group := range configGroups {
-		if group.When == "false" {
-			continue
-		}
-		for _, item := range group.Items {
-			if kotsadmconfig.IsRequiredItem(item) && kotsadmconfig.IsUnsetItem(item) {
-				requiredItems = append(requiredItems, item.Name)
-				if item.Title != "" {
-					requiredItemsTitles = append(requiredItemsTitles, item.Title)
-				} else {
-					requiredItemsTitles = append(requiredItemsTitles, item.Name)
-				}
-			}
-		}
-	}
+	requiredItems, requiredItemsTitles := getMissingRequiredConfig(configGroups)
 
 	// not having all the required items is only a failure for the version that the user intended to edit
 	if len(requiredItems) > 0 && isPrimaryVersion {
@@ -732,12 +633,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 	// so we don't need the complex logic in kots, we can just write
 	if kotsKinds.ConfigValues != nil {
 		values := kotsKinds.ConfigValues.Spec.Values
-		updatedValues, err := updateAppConfigValues(values, configGroups, kotsKinds.Installation.Spec.EncryptionKey)
-		if err != nil {
-			updateAppConfigResponse.Error = "failed to update config values"
-			return updateAppConfigResponse, err
-		}
-		kotsKinds.ConfigValues.Spec.Values = updatedValues
+		kotsKinds.ConfigValues.Spec.Values = updateAppConfigValues(values, configGroups)
 
 		configValuesSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
 		if err != nil {
@@ -863,7 +759,29 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 	return updateAppConfigResponse, nil
 }
 
-func updateAppConfigValues(values map[string]kotsv1beta1.ConfigValue, configGroups []kotsv1beta1.ConfigGroup, encryptionKey string) (map[string]kotsv1beta1.ConfigValue, error) {
+func getMissingRequiredConfig(configGroups []kotsv1beta1.ConfigGroup) ([]string, []string) {
+	requiredItems := make([]string, 0, 0)
+	requiredItemsTitles := make([]string, 0, 0)
+	for _, group := range configGroups {
+		if group.When == "false" {
+			continue
+		}
+		for _, item := range group.Items {
+			if kotsadmconfig.IsRequiredItem(item) && kotsadmconfig.IsUnsetItem(item) {
+				requiredItems = append(requiredItems, item.Name)
+				if item.Title != "" {
+					requiredItemsTitles = append(requiredItemsTitles, item.Title)
+				} else {
+					requiredItemsTitles = append(requiredItemsTitles, item.Name)
+				}
+			}
+		}
+	}
+
+	return requiredItems, requiredItemsTitles
+}
+
+func updateAppConfigValues(values map[string]kotsv1beta1.ConfigValue, configGroups []kotsv1beta1.ConfigGroup) map[string]kotsv1beta1.ConfigValue {
 	for _, group := range configGroups {
 		for _, item := range group.Items {
 			if item.Type == "file" {
@@ -878,7 +796,7 @@ func updateAppConfigValues(values map[string]kotsv1beta1.ConfigValue, configGrou
 				values[item.Name] = v
 			} else if item.Value.Type == multitype.String {
 				updatedValue := item.Value.String()
-				if item.Type == "password" {
+				if item.Type == "password" && !util.IsHelmManaged() { // no encryption in helm mode
 					// encrypt using the key
 					// if the decryption succeeds, don't encrypt again
 					_, err := decrypt(updatedValue)
@@ -908,7 +826,7 @@ func updateAppConfigValues(values map[string]kotsv1beta1.ConfigValue, configGrou
 			}
 		}
 	}
-	return values, nil
+	return values
 }
 func decrypt(input string) (string, error) {
 	decoded, err := base64.StdEncoding.DecodeString(input)

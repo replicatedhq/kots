@@ -1,12 +1,14 @@
 package helm
 
 import (
+	"bufio"
 	"bytes"
 	"compress/gzip"
 	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"sort"
 	"strconv"
@@ -18,6 +20,7 @@ import (
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	helmrelease "helm.sh/helm/v3/pkg/release"
 	corev1 "k8s.io/api/core/v1"
@@ -142,6 +145,31 @@ func HelmReleaseFromSecretData(data []byte) (*helmrelease.Release, error) {
 	return release, nil
 }
 
+func HelmReleaseToSecretData(release *helmrelease.Release) ([]byte, error) {
+	jsonData, err := json.Marshal(release)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to marshal release data")
+	}
+
+	var data bytes.Buffer
+	dataWriter := bufio.NewWriter(&data)
+
+	gzwriter := gzip.NewWriter(dataWriter)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create gzip reader")
+	}
+	defer gzwriter.Close()
+
+	base64Writer := base64.NewEncoder(base64.StdEncoding, gzwriter)
+
+	_, err = io.Copy(base64Writer, bytes.NewReader(jsonData))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to copy data")
+	}
+
+	return data.Bytes(), nil
+}
+
 func GetChartConfigSecret(helmApp *apptypes.HelmApp) (*corev1.Secret, error) {
 	clientSet, err := k8sutil.GetClientset()
 	if err != nil {
@@ -227,6 +255,89 @@ func SaveChartLicenseInSecret(helmApp *apptypes.HelmApp, license *kotsv1beta1.Li
 
 	if err := UpdateChartConfig(secret); err != nil {
 		return errors.Wrap(err, "failed to update config secret with new license")
+	}
+
+	return nil
+}
+
+func GetKotsKinds(helmApp *apptypes.HelmApp) (kotsutil.KotsKinds, error) {
+	kotsKinds := kotsutil.EmptyKotsKinds()
+
+	secret, err := GetChartConfigSecret(helmApp)
+	if err != nil {
+		return kotsKinds, errors.Wrap(err, "failed to get helm config secret")
+	}
+
+	if secret == nil {
+		return kotsKinds, nil
+	}
+
+	licenseData := secret.Data["license"]
+	if len(licenseData) != 0 {
+		license, err := kotsutil.LoadLicenseFromBytes(licenseData)
+		if err != nil {
+			return kotsKinds, errors.Wrap(err, "failed to load license from data")
+		}
+		kotsKinds.License = license
+	}
+
+	configData := secret.Data["config"]
+	if len(configData) != 0 {
+		config, err := kotsutil.LoadConfigFromBytes(configData)
+		if err != nil {
+			return kotsKinds, errors.Wrap(err, "failed to load config from data")
+		}
+		kotsKinds.Config = config
+	}
+
+	configValuesData := secret.Data["configValues"]
+	if len(configValuesData) != 0 {
+		configValues, err := kotsutil.LoadConfigValuesFromBytes(configValuesData)
+		if err != nil {
+			return kotsKinds, errors.Wrap(err, "failed to load config values from data")
+		}
+		kotsKinds.ConfigValues = configValues
+	}
+
+	return kotsKinds, nil
+}
+
+// TODO: this function is not threadsafe
+func saveHelmApp(helmApp *apptypes.HelmApp) error {
+	clientSet, err := k8sutil.GetClientset()
+	if err != nil {
+		return errors.Wrap(err, "failed to get clientset")
+	}
+
+	selectorLabels := map[string]string{
+		"owner":   "helm",
+		"name":    helmApp.Release.Name,
+		"version": helmApp.Release.Chart.Metadata.Version,
+	}
+	listOpts := metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(selectorLabels).String(),
+	}
+
+	secrets, err := clientSet.CoreV1().Secrets(helmApp.Namespace).List(context.TODO(), listOpts)
+	if err != nil {
+		return errors.Wrapf(err, "failed to find release secret with options %v", selectorLabels)
+	}
+
+	if len(secrets.Items) != 1 {
+		return errors.Wrapf(err, "expected 1 secret but found %d with options %v", len(secrets.Items), selectorLabels)
+	}
+
+	data, err := HelmReleaseToSecretData(&helmApp.Release)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal release to helm data")
+	}
+
+	secret := secrets.Items[0]
+	secret.Data["release"] = data
+
+	_, err = clientSet.CoreV1().Secrets(helmApp.Namespace).Update(context.TODO(), &secret, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update release secret")
 	}
 
 	return nil

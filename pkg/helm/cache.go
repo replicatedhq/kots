@@ -1,10 +1,9 @@
 package helm
 
 import (
+	"bytes"
 	"context"
 	"io/ioutil"
-	"os"
-	"path/filepath"
 	"strconv"
 	"sync"
 	"time"
@@ -20,7 +19,9 @@ import (
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 // TODO: Support same releases names in different namespaces
@@ -127,20 +128,6 @@ func RemoveHelmApp(releaseName string) {
 	delete(helmAppCache, releaseName)
 }
 
-func SaveConfigValuesToFile(helmApp *apptypes.HelmApp, data []byte) error {
-	err := os.MkdirAll(filepath.Dir(helmApp.PathToValuesFile), 0744)
-	if err != nil {
-		return errors.Wrap(err, "failed to create directory")
-	}
-
-	err = ioutil.WriteFile(helmApp.PathToValuesFile, data, 0644)
-	if err != nil {
-		return errors.Wrap(err, "failed to save values to file")
-	}
-
-	return nil
-}
-
 func helmAppFromSecret(secret *corev1.Secret) (*apptypes.HelmApp, error) {
 	helmRelease, err := HelmReleaseFromSecretData(secret.Data["release"])
 	if err != nil {
@@ -163,7 +150,6 @@ func helmAppFromSecret(secret *corev1.Secret) (*apptypes.HelmApp, error) {
 		Version:           version,
 		CreationTimestamp: secret.CreationTimestamp.Time,
 		Namespace:         secret.Namespace,
-		PathToValuesFile:  filepath.Join(tmpValuesRoot, "helm", helmRelease.Name, "values.yaml"),
 	}
 
 	configSecret, err := GetChartConfigSecret(helmApp)
@@ -253,22 +239,27 @@ func watchSecrets(ctx context.Context, namespace string, labelSelector string) e
 				if !ok {
 					break
 				}
+				logger.Debugf("got event %s for secret %s in ns %s", e.Type, secret.Name, namespace)
 				if secret.Labels == nil || secret.Labels["status"] != helmrelease.StatusDeployed.String() {
 					continue
 				}
-				releaseInfo, err := helmAppFromSecret(secret)
+				helmApp, err := helmAppFromSecret(secret)
 				if err != nil {
 					logger.Errorf("failed to create helm release info from secret %s in namespace %s: %s", secret.Name, namespace)
 					break
 				}
-				if releaseInfo == nil {
+				if helmApp == nil {
 					break
 				}
 
-				removeFromCachedUpdates(releaseInfo.ChartPath, releaseInfo.Release.Chart.Metadata.Version)
+				removeFromCachedUpdates(helmApp.ChartPath, helmApp.Release.Chart.Metadata.Version)
+
+				if err := finalizeChartConfig(helmApp); err != nil {
+					logger.Errorf("failed to copy chart config from temp secret into helm release: %v", err)
+				}
 
 				logger.Debugf("adding secret %s to cache", secret.Name)
-				AddHelmApp(releaseInfo.Release.Name, releaseInfo)
+				AddHelmApp(helmApp.Release.Name, helmApp)
 
 			case watch.Deleted:
 				secret, ok := e.Object.(*corev1.Secret)
@@ -303,4 +294,78 @@ func watchSecrets(ctx context.Context, namespace string, labelSelector string) e
 		logger.Infof("watch of secrets in ns %s unexpectedly terminated. Reconnecting...\n", namespace)
 		time.Sleep(time.Second * 5)
 	}
+}
+
+// Find replicated secret in helm release's templates, decode it, add config values to it, save helm release
+func finalizeChartConfig(helmApp *apptypes.HelmApp) error {
+	configValues, err := GetTempConfigValues(helmApp)
+	if err != nil {
+		if kuberneteserrors.IsNotFound(errors.Cause(err)) {
+			return nil
+		}
+		return errors.Wrap(err, "failed to get temp config values")
+	}
+
+	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+	var configValuesBuffer bytes.Buffer
+	if err := s.Encode(configValues, &configValuesBuffer); err != nil {
+		return errors.Wrap(err, "failed to encode config values")
+	}
+	configValuesData := configValuesBuffer.Bytes()
+
+	for _, template := range helmApp.Release.Chart.Templates {
+		if template.Name != "templates/_replicated/secret.yaml" {
+			continue
+		}
+
+		decode := scheme.Codecs.UniversalDeserializer().Decode
+		decoded, gvk, err := decode(template.Data, nil, nil)
+		if err != nil {
+			return errors.Wrap(err, "failed to decode replicated secret template")
+		}
+
+		if gvk.Group != "" || gvk.Version != "v1" || gvk.Kind != "Secret" {
+			return errors.Errorf("%q is not a valid Secret GVK", gvk.String())
+		}
+
+		replicatedSecret := decoded.(*corev1.Secret)
+		if _, ok := replicatedSecret.Data["configValues"]; ok {
+			return errors.Errorf("replicated secret for chart %s in ns %s already has configValues", helmApp.Release.Name, helmApp.Namespace)
+		}
+
+		replicatedSecret.Data["configValues"] = configValuesData
+
+		var replicatedSecretData bytes.Buffer
+		if err := s.Encode(replicatedSecret, &replicatedSecretData); err != nil {
+			return errors.Wrap(err, "failed to encode config values")
+		}
+
+		template.Data = replicatedSecretData.Bytes()
+		break
+	}
+
+	// Deleting first because saving Helm secret will send another update event here
+	if err := deleteTempConfigValues(helmApp); err != nil {
+		return errors.Wrap(err, "failed to delete temp config values")
+	}
+
+	if err := saveHelmApp(helmApp); err != nil {
+		return errors.Wrap(err, "failed to save helm release")
+	}
+
+	configSecret, err := GetChartConfigSecret(helmApp)
+	if err != nil {
+		return errors.Wrap(err, "failed to get config secret for license update")
+	}
+
+	if configSecret == nil {
+		return errors.Errorf("secret not found")
+	}
+
+	configSecret.Data["configValues"] = configValuesData
+	if err := UpdateChartConfig(configSecret); err != nil {
+		return errors.Wrap(err, "failed to update config secret")
+	}
+
+	return nil
 }

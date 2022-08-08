@@ -1,8 +1,11 @@
 package reporting
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -12,7 +15,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/api/reporting/types"
-	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
@@ -21,6 +23,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/segmentio/ksuid"
+	helmrelease "helm.sh/helm/v3/pkg/release"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
@@ -66,7 +69,7 @@ func initFromHelm() error {
 	}
 
 	for _, secret := range secrets.Items {
-		helmRelease, err := helm.HelmReleaseFromSecretData(secret.Data["release"])
+		helmRelease, err := helmReleaseFromSecretData(secret.Data["release"])
 		if err != nil {
 			logger.Warnf("failed to parse helm chart in secret %s: %v", &secret.ObjectMeta.Name, err)
 			continue
@@ -84,6 +87,28 @@ func initFromHelm() error {
 	}
 
 	return errors.New("admin-console secret v1 not found")
+}
+
+func helmReleaseFromSecretData(data []byte) (*helmrelease.Release, error) {
+	base64Reader := base64.NewDecoder(base64.StdEncoding, bytes.NewReader(data))
+	gzreader, err := gzip.NewReader(base64Reader)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create gzip reader")
+	}
+	defer gzreader.Close()
+
+	releaseData, err := ioutil.ReadAll(gzreader)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read from gzip reader")
+	}
+
+	release := &helmrelease.Release{}
+	err = json.Unmarshal(releaseData, &release)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to unmarshal release data")
+	}
+
+	return release, nil
 }
 
 func initFromDownstream() error {

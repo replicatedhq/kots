@@ -575,55 +575,6 @@ func Test_MergeHelmChartValues(t *testing.T) {
 	}
 }
 
-func Test_Intersect(t *testing.T) {
-	tests := []struct {
-		name   string
-		v      interface{}
-		k      string
-		values map[string]interface{}
-		expect interface{}
-	}{
-		{
-			name: "string value",
-			v:    "repl{{ConfigOption stringValue}}",
-			k:    "stringKey",
-			values: map[string]interface{}{
-				"stringKey": "valueIWant",
-			},
-			expect: "valueIWant",
-		}, {
-			name: "int value",
-			v:    2,
-			k:    "intKey",
-			values: map[string]interface{}{
-				"intKey": 1,
-			},
-			expect: 1,
-		}, {
-			name: "nested value",
-			v:    2,
-			k:    "intKey",
-			values: map[string]interface{}{
-				"myKeys": map[string]interface{}{
-					"intKey": 1,
-				},
-			},
-			expect: 1,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			actual := intersect(test.v, test.k, test.values)
-			diff := deep.Equal(&actual, &test.expect)
-			if len(diff) != 0 {
-				fmt.Printf("Failed diff compare with %s", strings.Join(diff, "\n"))
-				assert.NotEqual(t, test.expect, actual)
-			}
-		})
-	}
-}
-
 func Test_GetMapIntersect(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -644,7 +595,8 @@ func Test_GetMapIntersect(t *testing.T) {
 			expect: map[string]interface{}{
 				"key": "myrenderedvalue",
 			},
-		}, {
+		},
+		{
 			name: "nested key",
 			m1: map[string]interface{}{
 				"key": map[string]interface{}{
@@ -663,17 +615,51 @@ func Test_GetMapIntersect(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "nested key 2",
+			m1: map[string]interface{}{
+				"image": map[string]interface{}{
+					"debug":      "repl{{ ConfigOption \"debug\" }}",
+					"pullPolicy": "repl{{ ConfigOption \"pullPolicy\" }}",
+					"registry":   "repl{{ ConfigOption \"registry\" }}",
+					"repository": "repl{{ ConfigOption \"repository\" }}",
+					"tag":        "repl{{ ConfigOption \"tag\" }}",
+				},
+				"postgresqlPostgresPassword": "repl{{ ConfigOption \"postgresqlPostgresPassword\" }}",
+				"postgresqlUsername":         "repl{{ ConfigOption \"postgresqlUsername\" }}",
+			},
+			m2: map[string]interface{}{
+				"image": map[string]interface{}{
+					"debug":      1,
+					"pullPolicy": "Always",
+					"registry":   "docker.io",
+					"repository": "bitnami/postgresql",
+					"tag":        "11.6.0-debian-9-r0",
+				},
+				"postgresqlPostgresPassword": "password",
+				"postgresqlUsername":         "postgres",
+			},
+			expect: map[string]interface{}{
+				"image": map[string]interface{}{
+					"debug":      1,
+					"pullPolicy": "Always",
+					"registry":   "docker.io",
+					"repository": "bitnami/postgresql",
+					"tag":        "11.6.0-debian-9-r0",
+				},
+				"postgresqlPostgresPassword": "password",
+				"postgresqlUsername":         "postgres",
+			},
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			req := require.New(t)
-			actual, err := GetMapIntersect(test.m1, test.m2)
-			req.NoError(err)
+			actual := GetMapIntersect(test.m1, test.m2)
 			diff := deep.Equal(&actual, &test.expect)
 			if len(diff) != 0 {
-				fmt.Printf("Failed diff compare with %s", strings.Join(diff, "\n"))
-				assert.NotEqual(t, test.expect, actual)
+				fmt.Printf("Failed diff compare with %s\n", strings.Join(diff, "\n"))
+				assert.Equal(t, test.expect, actual)
 			}
 		})
 	}
