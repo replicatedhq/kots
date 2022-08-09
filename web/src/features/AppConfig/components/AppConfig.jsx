@@ -21,7 +21,7 @@ import ConfigInfo from "./ConfigInfo";
 import "../../../scss/components/watches/WatchConfig.scss";
 import { Utilities } from "../../../utilities/utilities";
 import { Flex, Span } from "../../../styles/common";
-import { SideNavWrapper } from "../styles";
+import { SideNavWrapper, SideNavGroup } from "../styles";
 
 class AppConfig extends Component {
   static propTypes = {
@@ -513,9 +513,9 @@ class AppConfig extends Component {
                 return;
               }
               return (
-                <div
+                <SideNavGroup
                   key={`${i}-${group.name}-${group.title}`}
-                  className={`AppConfigSidenav--group ${
+                  className={`${
                     this.state.activeGroups.includes(group.name)
                       ? "group-open"
                       : ""
@@ -551,7 +551,7 @@ class AppConfig extends Component {
                       })}
                     </div>
                   ) : null}
-                </div>
+                </SideNavGroup>
               );
             })}
           </SideNavWrapper>

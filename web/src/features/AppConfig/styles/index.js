@@ -8,38 +8,60 @@ export const SideNavWrapper = styled.div`
   padding: 10px;
   border-radius: 4px;
   overflow: auto;
+`;
 
-  .AppConfigSidenav--group a,
-  .AppConfigSidenav--items a {
+// .AppConfigSidenav--group a,
+// .AppConfigSidenav--items a {
+//   display: block;
+//   margin-top: 10px;
+//   margin-bottom: 10px;
+//   color: ${colors.subNavText};
+//   cursor: pointer;
+//   font-weight: 400;
+
+//   &.active-item {
+//     font-weight: 500;
+//     color: ${colors.secondaryText};
+//   }
+
+//   &:hover {
+//     color: ${colors.secondaryText};
+//   }
+
+//   &:last-child {
+//     margin-bottom: 0;
+//   }
+// }
+export const SideNavGroup = styled.div`
+  a {
     display: block;
-    margin-top: 10px;
-    margin-bottom: 10px;
-    color: ${colors.subNavText};
-    cursor: pointer;
-    font-weight: 400;
-
-    &.active-item {
-      font-weight: 500;
-      color: ${colors.secondaryText};
-    }
-
-    &:hover {
-      color: ${colors.secondaryText};
-    }
-
-    &:last-child {
-      margin-bottom: 0;
-    }
+  margin-top: 10px;
+  margin-bottom: 10px;
+  color: ${colors.subNavText};
+  cursor: pointer;
+  font-weight: 400;
   }
-  .AppConfigSidenav--group {
-    a.group-title {
+
+  &.active-item {
+    font-weight: 500;
+    color: ${colors.secondaryText};
+  }
+
+  &:hover {
+    color: ${colors.secondaryText};
+  }
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+  a.group-title {
       margin-bottom: 0;
-      color: $text-color-secondary;
+      color: {color.secondaryText};
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
       &:hover {
-        color: $text-color-primary;
+        color: ${colors.primary};
       }
     }
     .icon.u-darkDropdownArrow {
