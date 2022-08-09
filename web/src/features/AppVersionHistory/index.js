@@ -1,3 +1,3 @@
-import AppVersionHistory from "./AppVersionHistory";
+import { AppVersionHistoryRow } from "./AppVersionHistoryRow";
 
-export { AppVersionHistory };
+export { AppVersionHistoryRow };

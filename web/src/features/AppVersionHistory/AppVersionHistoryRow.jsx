@@ -4,9 +4,11 @@ import find from "lodash/find";
 import classNames from "classnames";
 import ReactTooltip from "react-tooltip";
 
-import Loader from "../shared/Loader";
+import Loader from "../../components/shared/Loader";
 
-import { Utilities, getPreflightResultState } from "../../utilities/utilities";
+import { Utilities, getPreflightResultState } from "@src/utilities/utilities";
+
+import { YamlErrors } from "./YamlErrors";
 
 class AppVersionHistoryRow extends Component {
   renderDiff = (version) => {
@@ -31,33 +33,6 @@ class AppVersionHistoryRow extends Component {
     this.props.handleSelectReleasesToDiff(
       this.props.version,
       !this.props.isChecked
-    );
-  };
-
-  renderYamlErrors = (version) => {
-    if (!version.yamlErrors) {
-      return null;
-    }
-    return (
-      <div className="flex alignItems--center u-marginTop--5">
-        <span className="icon error-small" />
-        <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5 u-textColor--error">
-          {version.yamlErrors?.length} Invalid file
-          {version.yamlErrors?.length !== 1 ? "s" : ""}{" "}
-        </span>
-        <span
-          className="replicated-link u-marginLeft--5 u-fontSize--small"
-          onClick={() =>
-            this.props.toggleShowDetailsModal(
-              version.yamlErrors,
-              version.sequence
-            )
-          }
-        >
-          {" "}
-          See details{" "}
-        </span>
-      </div>
     );
   };
 
@@ -741,7 +716,17 @@ class AppVersionHistoryRow extends Component {
               </span>
             </p>
             {this.renderDiff(version)}
-            {this.renderYamlErrors(version)}
+            {version.yamlErrors && (
+              <YamlErrors
+                yamlErrors={version.yamlErrors}
+                handleShowDetailsClicked={() =>
+                  this.props.toggleShowDetailsModal(
+                    version.yamlErrors,
+                    version.sequence
+                  )
+                }
+              />
+            )}
           </div>
           <div
             className={`${
@@ -771,4 +756,4 @@ class AppVersionHistoryRow extends Component {
   }
 }
 
-export default AppVersionHistoryRow;
+export { AppVersionHistoryRow };
