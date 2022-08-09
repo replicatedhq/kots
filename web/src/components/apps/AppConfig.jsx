@@ -5,18 +5,18 @@ import PropTypes from "prop-types";
 import classNames from "classnames";
 import Helmet from "react-helmet";
 import debounce from "lodash/debounce";
-import size from "lodash/size";
 import find from "lodash/find";
-import findIndex from "lodash/findIndex";
 import map from "lodash/map";
 import Modal from "react-modal";
 import Loader from "../shared/Loader";
 import ErrorModal from "../modals/ErrorModal";
 import { HelmDeployModal } from "../shared/modals/HelmDeployModal";
 import { UseIsHelmManaged, useDownloadValues, useSaveConfig } from "../hooks";
+import ConfigInfo from "../../features/AppConfig/components/ConfigInfo";
 
 import "../../scss/components/watches/WatchConfig.scss";
 import { Utilities } from "../../utilities/utilities";
+import { Flex, Span } from "./styles/common";
 
 class AppConfig extends Component {
   static propTypes = {
@@ -418,99 +418,6 @@ class AppConfig extends Component {
     this.setState({ showNextStepModal: false });
   };
 
-  renderConfigInfo = (app) => {
-    const { match, fromLicenseFlow } = this.props;
-    if (fromLicenseFlow || app?.downstream?.gitops?.enabled) {
-      return null;
-    }
-
-    let sequence;
-    if (!match.params.sequence) {
-      sequence = app?.currentSequence;
-    } else {
-      sequence = parseInt(match.params.sequence);
-    }
-
-    const currentSequence = app?.downstream?.currentVersion?.parentSequence;
-    const pendingSequenceInxex = findIndex(
-      app?.downstream?.pendingVersions,
-      function (v) {
-        return v.parentSequence == sequence;
-      }
-    );
-    const pastSequenceIndex = findIndex(
-      app?.downstream?.pastVersions,
-      function (v) {
-        return v.parentSequence == sequence;
-      }
-    );
-    const pendingVersions = app?.downstream?.pendingVersions;
-
-    if (size(pendingVersions) > 0 && currentSequence === sequence) {
-      return (
-        <div className="ConfigInfo current justifyContent--center">
-          <p className="flex alignItems--center u-marginRight--5">
-            {" "}
-            <span className="icon info-icon-green flex u-marginRight--5" /> This
-            is the currently deployed config. There{" "}
-            {size(pendingVersions) === 1 ? "is" : "are"} {size(pendingVersions)}{" "}
-            newer version{size(pendingVersions) === 1 ? "" : "s"} since this
-            one.{" "}
-          </p>
-          <Link
-            to={`/app/${app?.slug}/config/${pendingVersions[0].parentSequence}`}
-            className="replicated-link"
-          >
-            {" "}
-            Edit the latest config{" "}
-          </Link>
-        </div>
-      );
-    } else if (pastSequenceIndex > -1) {
-      return (
-        <div className="ConfigInfo older justifyContent--center">
-          <p className="flex alignItems--center u-marginRight--5">
-            {" "}
-            <span className="icon info-warning-icon flex u-marginRight--5" />{" "}
-            This config is {pastSequenceIndex + 1} version
-            {pastSequenceIndex === 0 ? "" : "s"} older than the currently
-            deployed config.{" "}
-          </p>
-          <Link
-            to={`/app/${app?.slug}/config/${currentSequence}`}
-            className="replicated-link"
-          >
-            {" "}
-            Edit the currently deployed config{" "}
-          </Link>
-        </div>
-      );
-    } else if (pendingSequenceInxex > -1) {
-      const numVersionsNewer =
-        app?.downstream?.pendingVersions?.length - pendingSequenceInxex;
-      return (
-        <div className="ConfigInfo newer justifyContent--center">
-          <p className="flex alignItems--center u-marginRight--5">
-            {" "}
-            <span className="icon info-icon flex u-marginRight--5" /> This
-            config is {numVersionsNewer} version
-            {numVersionsNewer === 1 ? "" : "s"} newer than the currently
-            deployed config.{" "}
-          </p>
-          <Link
-            to={`/app/${app?.slug}/config/${currentSequence}`}
-            className="replicated-link"
-          >
-            {" "}
-            Edit the currently deployed config{" "}
-          </Link>
-        </div>
-      );
-    } else {
-      return null;
-    }
-  };
-
   isConfigReadOnly = (app) => {
     const { match } = this.props;
     if (!match.params.sequence) {
@@ -577,23 +484,16 @@ class AppConfig extends Component {
     const isNewVersion = !fromLicenseFlow && match.params.sequence == undefined;
 
     return (
-      <div
-        className={classNames(
-          "flex1 flex-column u-padding--20 alignItems--center"
-        )}
-      >
+      <Flex flex="1" direction="column" p="20" align="center">
         <Helmet>
           <title>{`${app.name} Config`}</title>
         </Helmet>
         {fromLicenseFlow && app && (
-          <span
-            className="u-fontSize--larger u-textColor--primary u-fontWeight--bold u-marginTop--30"
-            style={{ marginLeft: "38px" }}
-          >
+          <Span size="18" weight="bold" mt="30" ml="38">
             Configure {app.name}
-          </span>
+          </Span>
         )}
-        <div className="flex" style={{ gap: "20px" }}>
+        <Flex gap="20px">
           <div
             id="configSidebarWrapper"
             className="AppConfigSidenav--wrapper"
@@ -694,7 +594,13 @@ class AppConfig extends Component {
 
                 return (
                   <>
-                    {!isHelmManaged && this.renderConfigInfo(app)}
+                    {!isHelmManaged && (
+                      <ConfigInfo
+                        app={app}
+                        match={this.props.match}
+                        fromLicenseFlow={this.props.fromLicenseFlow}
+                      />
+                    )}
                     <div
                       className={classNames(
                         "ConfigOuterWrapper u-paddingTop--30",
@@ -786,7 +692,7 @@ class AppConfig extends Component {
               }}
             </UseIsHelmManaged>
           </div>
-        </div>
+        </Flex>
 
         <Modal
           isOpen={showNextStepModal}
@@ -864,7 +770,7 @@ class AppConfig extends Component {
             tryAgain={this.getConfig}
           />
         )}
-      </div>
+      </Flex>
     );
   }
 }
