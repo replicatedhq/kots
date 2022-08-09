@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { AppConfigRenderer } from "../AppConfigRenderer";
+import { AppConfigRenderer } from "../../../components/AppConfigRenderer";
 import { withRouter, Link } from "react-router-dom";
 import PropTypes from "prop-types";
 import classNames from "classnames";
@@ -8,15 +8,20 @@ import debounce from "lodash/debounce";
 import find from "lodash/find";
 import map from "lodash/map";
 import Modal from "react-modal";
-import Loader from "../shared/Loader";
-import ErrorModal from "../modals/ErrorModal";
-import { HelmDeployModal } from "../shared/modals/HelmDeployModal";
-import { UseIsHelmManaged, useDownloadValues, useSaveConfig } from "../hooks";
-import ConfigInfo from "../../features/AppConfig/components/ConfigInfo";
+import Loader from "../../../components/shared/Loader";
+import ErrorModal from "../../../components/modals/ErrorModal";
+import { HelmDeployModal } from "../../../components/shared/modals/HelmDeployModal";
+import {
+  UseIsHelmManaged,
+  useDownloadValues,
+  useSaveConfig,
+} from "../../../components/hooks";
+import ConfigInfo from "./ConfigInfo";
 
-import "../../scss/components/watches/WatchConfig.scss";
-import { Utilities } from "../../utilities/utilities";
-import { Flex, Span } from "./styles/common";
+import "../../../scss/components/watches/WatchConfig.scss";
+import { Utilities } from "../../../utilities/utilities";
+import { Flex, Span } from "../../../styles/common";
+import { SideNavWrapper } from "../styles";
 
 class AppConfig extends Component {
   static propTypes = {
@@ -494,9 +499,8 @@ class AppConfig extends Component {
           </Span>
         )}
         <Flex gap="20px">
-          <div
+          <SideNavWrapper
             id="configSidebarWrapper"
-            className="AppConfigSidenav--wrapper"
             ref={(wrapper) => (this.sidebarWrapper = wrapper)}
           >
             {configGroups?.map((group, i) => {
@@ -550,7 +554,7 @@ class AppConfig extends Component {
                 </div>
               );
             })}
-          </div>
+          </SideNavWrapper>
           <div className="ConfigArea--wrapper">
             <UseIsHelmManaged>
               {({ data = {} }) => {
