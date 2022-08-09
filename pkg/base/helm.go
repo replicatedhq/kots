@@ -465,7 +465,8 @@ func kustomizeHelmNamespace(baseFiles []BaseFile, renderOptions *RenderOptions) 
 			continue
 		}
 
-		if manifest.Metadata.Namespace == "" {
+		// Only add the namespace if the object itself isn't a namespace.
+		if manifest.Metadata.Namespace == "" && !(manifest.Kind == "Namespace" && manifest.APIVersion == "v1") {
 			name := filepath.Base(baseFile.Path)
 			tmpFile, err := ioutil.TempFile(chartsPath, name)
 			if err != nil {
