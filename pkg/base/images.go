@@ -1,9 +1,6 @@
 package base
 
 import (
-	"fmt"
-
-	imagedocker "github.com/containers/image/v5/docker"
 	dockerref "github.com/containers/image/v5/docker/reference"
 	"github.com/docker/distribution/reference"
 	"github.com/pkg/errors"
@@ -42,12 +39,10 @@ func FindPrivateImages(options FindPrivateImagesOptions) (*FindPrivateImagesResu
 
 	kustomizeImages := make([]kustomizeimage.Image, 0)
 	for _, upstreamImage := range upstreamImages {
-		// ParseReference requires the // prefix
-		ref, err := imagedocker.ParseReference(fmt.Sprintf("//%s", upstreamImage))
+		dockerRef, err := dockerref.ParseDockerRef(upstreamImage)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to parse image ref %q", upstreamImage)
+			return nil, errors.Wrapf(err, "failed to parse docker ref %q", upstreamImage)
 		}
-		dockerRef := ref.DockerReference()
 
 		registryHost := dockerref.Domain(dockerRef)
 		if registryHost == options.ReplicatedRegistry.Endpoint {
