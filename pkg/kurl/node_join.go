@@ -49,9 +49,9 @@ func GenerateAddNodeCommand(client kubernetes.Interface, master bool) ([]string,
 	if ok, _ := strconv.ParseBool(data["airgap"]); ok {
 		command = append(command, "cat join.sh | sudo bash -s airgap")
 	} else if proxyAddr != "" {
-		command = append(command, fmt.Sprintf("curl -sSL -x %s %s/%s/join.sh | sudo bash -s", proxyAddr, data["kurl_url"], data["installer_id"]))
+		command = append(command, fmt.Sprintf("curl -fsSL -x %s %s/%s/join.sh | sudo bash -s", proxyAddr, data["kurl_url"], data["installer_id"]))
 	} else {
-		command = append(command, fmt.Sprintf("curl -sSL %s/%s/join.sh | sudo bash -s", data["kurl_url"], data["installer_id"]))
+		command = append(command, fmt.Sprintf("curl -fsSL %s/%s/join.sh | sudo bash -s", data["kurl_url"], data["installer_id"]))
 	}
 
 	command = append(command,
