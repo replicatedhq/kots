@@ -184,7 +184,6 @@ jobs:
             is_upgrade: "1"
           }
         ]
-
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -242,3 +241,14 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL }}
           MATRIX_CONTEXT: ${{ toJson(matrix) }}
+  cleanup:
+    needs: tests
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Trigger workspace cleanup
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ secrets.E2E_GH_PAT }}
+          repository: replicatedhq/kots
+          event-type: e2e-workspace-cleanup
+          client-payload: '{"workspace": "automation-${{ github.event.inputs.id || inputs.id }}"}'
