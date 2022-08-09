@@ -495,15 +495,14 @@ func IsPrivateImage(image string, dockerHubRegistry registry.RegistryOptions) (b
 	var lastErr error
 	isRateLimited := false
 	for i := 0; i < 3; i++ {
-		// ParseReference requires the // prefix
-		ref, err := imagedocker.ParseReference(fmt.Sprintf("//%s", image))
+		dockerRef, err := dockerref.ParseDockerRef(image)
 		if err != nil {
-			return false, errors.Wrapf(err, "failed to parse image ref %q", image)
+			return false, errors.Wrapf(err, "failed to parse docker ref %q", image)
 		}
 
 		sysCtx := types.SystemContext{DockerDisableV1Ping: true}
 
-		registryHost := reference.Domain(ref.DockerReference())
+		registryHost := reference.Domain(dockerRef)
 		isDockerIO := registryHost == "docker.io" || strings.HasSuffix(registryHost, ".docker.io")
 		if isRateLimited && isDockerIO && dockerHubRegistry.Username != "" && dockerHubRegistry.Password != "" {
 			sysCtx.DockerAuthConfig = &types.DockerAuthConfig{
@@ -518,7 +517,13 @@ func IsPrivateImage(image string, dockerHubRegistry registry.RegistryOptions) (b
 			sysCtx.DockerInsecureSkipTLSVerify = types.OptionalBoolTrue
 		}
 
-		remoteImage, err := ref.NewImageSource(context.Background(), &sysCtx)
+		// ParseReference requires the // prefix
+		imageRef, err := imagedocker.ParseReference(fmt.Sprintf("//%s", dockerRef.String()))
+		if err != nil {
+			return false, errors.Wrapf(err, "failed to parse image ref %s", dockerRef.String())
+		}
+
+		remoteImage, err := imageRef.NewImageSource(context.Background(), &sysCtx)
 		if err == nil {
 			remoteImage.Close()
 			return false, nil
@@ -554,21 +559,21 @@ func IsPrivateImage(image string, dockerHubRegistry registry.RegistryOptions) (b
 }
 
 func RewritePrivateImage(srcRegistry registry.RegistryOptions, image string, appSlug string) (string, error) {
-	ref, err := imagedocker.ParseReference(fmt.Sprintf("//%s", image))
+	dockerRef, err := dockerref.ParseDockerRef(image)
 	if err != nil {
-		return "", errors.Wrapf(err, "failed to parse image ref %q", image)
+		return "", errors.Wrapf(err, "failed to parse docker ref %q", image)
 	}
 
-	registryHost := dockerref.Domain(ref.DockerReference())
+	registryHost := dockerref.Domain(dockerRef)
 	if registryHost == srcRegistry.Endpoint {
 		// replicated images are also private, but we don't rewrite those
 		return image, nil
 	}
 
 	newImage := registry.MakeProxiedImageURL(srcRegistry.ProxyEndpoint, appSlug, image)
-	if tagged, ok := ref.DockerReference().(dockerref.Tagged); ok {
+	if tagged, ok := dockerRef.(dockerref.Tagged); ok {
 		return newImage + ":" + tagged.Tag(), nil
-	} else if can, ok := ref.DockerReference().(reference.Canonical); ok {
+	} else if can, ok := dockerRef.(reference.Canonical); ok {
 		return newImage + "@" + can.Digest().String(), nil
 	}
 
