@@ -184,7 +184,6 @@ jobs:
             is_upgrade: "1"
           }
         ]
-
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -242,3 +241,9 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.KOTS_BUILD_STATUS_SLACK_WEBHOOK_URL }}
           MATRIX_CONTEXT: ${{ toJson(matrix) }}
+  cleanup:
+    needs: tests
+    uses: ./.github/workflows/e2e-workspace-cleanup.yaml
+    with:
+      workspace: automation-${{ github.event.inputs.id || inputs.id }}
+    secrets: inherit

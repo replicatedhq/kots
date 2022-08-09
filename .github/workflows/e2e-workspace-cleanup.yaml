@@ -23,6 +23,13 @@ on:
         type: string
         description: Terraform workspace to turn down
         required: true
+    secrets:
+      E2E_TESTIM_AWS_ACCESS_KEY_ID:
+        required: true
+      E2E_TESTIM_AWS_SECRET_ACCESS_KEY:
+        required: true
+      E2E_GH_PAT:
+        required: true
 
 concurrency: cleanup-${{ github.event.inputs.workspace || github.event.client_payload.workspace }}
 
