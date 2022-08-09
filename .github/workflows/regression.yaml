@@ -243,7 +243,12 @@ jobs:
           MATRIX_CONTEXT: ${{ toJson(matrix) }}
   cleanup:
     needs: tests
-    uses: ./.github/workflows/e2e-workspace-cleanup.yaml
-    with:
-      workspace: automation-${{ github.event.inputs.id || inputs.id }}
-    secrets: inherit
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Trigger workspace cleanup
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ secrets.E2E_GH_PAT }}
+          repository: replicatedhq/kots
+          event-type: e2e-workspace-cleanup
+          client-payload: '{"workspace": "automation-${{ github.event.inputs.id || inputs.id }}"}'
