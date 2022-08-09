@@ -80,6 +80,7 @@ jobs:
   cleanup-jumpbox:
     needs: cleanup-workspace
     runs-on: ubuntu-latest
+    if: always()
     defaults:
       run:
         working-directory: automation/jumpbox
