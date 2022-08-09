@@ -907,3 +907,239 @@ func fmtJSONDiff(got, want interface{}) string {
 	diffStr, _ := difflib.GetUnifiedDiffString(diff)
 	return fmt.Sprintf("got:\n%s \n\nwant:\n%s \n\ndiff:\n%s", got, want, diffStr)
 }
+
+func Test_pathToCharts(t *testing.T) {
+	tests := []struct {
+		name string
+		path string
+		want []string
+	}{
+		{
+			name: "top-level path",
+			path: "",
+			want: []string{""},
+		},
+		{
+			name: "subchart path",
+			path: "charts/subchart",
+			want: []string{"", "subchart"},
+		},
+		{
+			name: "subsubchart path",
+			path: "charts/subchart/charts/subsubchart",
+			want: []string{"", "subchart", "subsubchart"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := pathToCharts(tt.path); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("pathToCharts() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getUpstreamToBasePathsMap(t *testing.T) {
+	tests := []struct {
+		name          string
+		upstreamFiles map[string][]byte
+		want          map[string][]string
+	}{
+		{
+			name: "subsubchart with no aliased dependencies",
+			upstreamFiles: map[string][]byte{
+				"Chart.yaml": []byte(`dependencies:
+- name: subchart
+  repository: file://./charts/subchart
+  version: 0.0.0`),
+				"charts/subchart/Chart.yaml": []byte(`dependencies:
+- name: subsubchart
+  repository: file://./charts/subsubchart
+  version: 0.0.0`),
+				"charts/subchart/charts/subsubchart/Chart.yaml": []byte(``),
+			},
+			want: map[string][]string{
+				"": {""},
+				"charts/subchart": {
+					"charts/subchart",
+				},
+				"charts/subchart/charts/subsubchart": {
+					"charts/subchart/charts/subsubchart",
+				},
+			},
+		},
+		{
+			name: "subsubchart with and without aliased dependencies",
+			upstreamFiles: map[string][]byte{
+				"Chart.yaml": []byte(`dependencies:
+- name: subchart
+  repository: file://./charts/subchart
+  version: 0.0.0
+- name: subchart
+  alias: subchart-aliased
+  repository: file://./charts/subchart
+  version: 0.0.0`),
+				"charts/subchart/Chart.yaml": []byte(`dependencies:
+- name: subsubchart
+  repository: file://./charts/subsubchart
+  version: 0.0.0
+- name: subsubchart
+  alias: subsubchart-aliased
+  repository: file://./charts/subsubchart
+  version: 0.0.0`),
+				"charts/subchart/charts/subsubchart/Chart.yaml": []byte(``),
+			},
+			want: map[string][]string{
+				"": {""},
+				"charts/subchart": {
+					"charts/subchart",
+					"charts/subchart-aliased",
+				},
+				"charts/subchart/charts/subsubchart": {
+					"charts/subchart/charts/subsubchart",
+					"charts/subchart/charts/subsubchart-aliased",
+					"charts/subchart-aliased/charts/subsubchart",
+					"charts/subchart-aliased/charts/subsubchart-aliased",
+				},
+			},
+		},
+		{
+			name: "subsubchart with only aliased dependencies",
+			upstreamFiles: map[string][]byte{
+				"Chart.yaml": []byte(`dependencies:
+- name: subchart
+  alias: subchart-aliased-1
+  repository: file://./charts/subchart
+  version: 0.0.0
+- name: subchart
+  alias: subchart-aliased-2
+  repository: file://./charts/subchart
+  version: 0.0.0`),
+				"charts/subchart/Chart.yaml": []byte(`dependencies:
+- name: subsubchart
+  alias: subsubchart-aliased-1
+  repository: file://./charts/subsubchart
+  version: 0.0.0
+- name: subsubchart
+  alias: subsubchart-aliased-2
+  repository: file://./charts/subsubchart
+  version: 0.0.0`),
+				"charts/subchart/charts/subsubchart/Chart.yaml": []byte(``),
+			},
+			want: map[string][]string{
+				"": {""},
+				"charts/subchart": {
+					"charts/subchart-aliased-1",
+					"charts/subchart-aliased-2",
+				},
+				"charts/subchart/charts/subsubchart": {
+					"charts/subchart-aliased-1/charts/subsubchart-aliased-1",
+					"charts/subchart-aliased-1/charts/subsubchart-aliased-2",
+					"charts/subchart-aliased-2/charts/subsubchart-aliased-1",
+					"charts/subchart-aliased-2/charts/subsubchart-aliased-2",
+				},
+			},
+		},
+		{
+			name: "subsubchart with unlisted dependencies",
+			upstreamFiles: map[string][]byte{
+				"Chart.yaml": []byte(`dependencies:
+- name: subchart
+  repository: file://./charts/subchart
+  version: 0.0.0`),
+				"charts/subchart/Chart.yaml": []byte(`dependencies:
+- name: subsubchart
+  repository: file://./charts/subsubchart
+  version: 0.0.0`),
+				"charts/subchart-unlisted/Chart.yaml": []byte(`dependencies:
+- name: subsubchart
+  alias: subsubchart-aliased
+  repository: file://./charts/subsubchart
+  version: 0.0.0`),
+				"charts/subchart/charts/subsubchart/Chart.yaml":                   []byte(``),
+				"charts/subchart-unlisted/charts/subsubchart/Chart.yaml":          []byte(``),
+				"charts/subchart-unlisted/charts/subsubchart-unlisted/Chart.yaml": []byte(``),
+			},
+			want: map[string][]string{
+				"": {""},
+				"charts/subchart": {
+					"charts/subchart",
+				},
+				"charts/subchart-unlisted": {
+					"charts/subchart-unlisted",
+				},
+				"charts/subchart/charts/subsubchart": {
+					"charts/subchart/charts/subsubchart",
+				},
+				"charts/subchart-unlisted/charts/subsubchart": {
+					"charts/subchart-unlisted/charts/subsubchart-aliased",
+				},
+				"charts/subchart-unlisted/charts/subsubchart-unlisted": {
+					"charts/subchart-unlisted/charts/subsubchart-unlisted",
+				},
+			},
+		},
+		{
+			name: "subsubsubchart with and without aliased dependencies",
+			upstreamFiles: map[string][]byte{
+				"Chart.yaml": []byte(`dependencies:
+- name: subchart
+  repository: file://./charts/subchart
+  version: 0.0.0
+- name: subchart
+  alias: subchart-aliased
+  repository: file://./charts/subchart
+  version: 0.0.0`),
+				"charts/subchart/Chart.yaml": []byte(`dependencies:
+- name: subsubchart
+  repository: file://./charts/subsubchart
+  version: 0.0.0
+- name: subsubchart
+  alias: subsubchart-aliased
+  repository: file://./charts/subsubchart
+  version: 0.0.0`),
+				"charts/subchart/charts/subsubchart/Chart.yaml": []byte(`dependencies:
+- name: subsubsubchart
+  repository: file://./charts/subsubsubchart
+  version: 0.0.0
+- name: subsubsubchart
+  alias: subsubsubchart-aliased
+  repository: file://./charts/subsubsubchart
+  version: 0.0.0`),
+				"charts/subchart/charts/subsubchart/charts/subsubsubchart/Chart.yaml": []byte(``),
+			},
+			want: map[string][]string{
+				"": {""},
+				"charts/subchart": {
+					"charts/subchart",
+					"charts/subchart-aliased",
+				},
+				"charts/subchart/charts/subsubchart": {
+					"charts/subchart/charts/subsubchart",
+					"charts/subchart/charts/subsubchart-aliased",
+					"charts/subchart-aliased/charts/subsubchart",
+					"charts/subchart-aliased/charts/subsubchart-aliased",
+				},
+				"charts/subchart/charts/subsubchart/charts/subsubsubchart": {
+					"charts/subchart/charts/subsubchart/charts/subsubsubchart",
+					"charts/subchart/charts/subsubchart/charts/subsubsubchart-aliased",
+					"charts/subchart/charts/subsubchart-aliased/charts/subsubsubchart",
+					"charts/subchart/charts/subsubchart-aliased/charts/subsubsubchart-aliased",
+					"charts/subchart-aliased/charts/subsubchart/charts/subsubsubchart",
+					"charts/subchart-aliased/charts/subsubchart/charts/subsubsubchart-aliased",
+					"charts/subchart-aliased/charts/subsubchart-aliased/charts/subsubsubchart",
+					"charts/subchart-aliased/charts/subsubchart-aliased/charts/subsubsubchart-aliased",
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getUpstreamToBasePathsMap(tt.upstreamFiles); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("getUpstreamToBasePathsMap() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
