@@ -7,7 +7,7 @@ import find from "lodash/find";
 import ConnectionTerminated from "./ConnectionTerminated";
 import GitOps from "././components/clusters/GitOps";
 import PreflightResultPage from "./components/PreflightResultPage";
-import AppConfig from "./components/apps/AppConfig";
+import AppConfig from "./features/AppConfig/components/AppConfig";
 import AppDetailPage from "./components/apps/AppDetailPage";
 import ClusterNodes from "./components/apps/ClusterNodes";
 import UnsupportedBrowser from "./components/static/UnsupportedBrowser";

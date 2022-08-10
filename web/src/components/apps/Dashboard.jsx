@@ -18,8 +18,7 @@ import { AirgapUploader } from "../../utilities/airgapUploader";
 
 import "../../scss/components/watches/Dashboard.scss";
 import "../../../node_modules/react-vis/dist/style";
-import { ParagraphLarge } from "./styles/paragraphs";
-import theme from "./styles/theme";
+import { Paragraph } from "../../styles/common";
 
 const COMMON_ERRORS = {
   "HTTP 401": "Registry credentials are invalid",
@@ -800,9 +799,9 @@ class Dashboard extends Component {
             className="Modal DefaultSize"
           >
             <div className="Modal-body">
-              <ParagraphLarge weight={"bold"} theme={theme}>
+              <Paragraph size="16" weight="bold">
                 Resource status
-              </ParagraphLarge>
+              </Paragraph>
               <div
                 className="u-marginTop--10 u-marginBottom--10 u-overflow--auto"
                 style={{ maxHeight: "50vh" }}
