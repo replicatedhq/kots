@@ -7,7 +7,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
 	"github.com/replicatedhq/kots/pkg/crypto"
-	"github.com/replicatedhq/kots/pkg/docker/registry"
+	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -485,7 +485,7 @@ func TestBuilder_NewConfigContext(t *testing.T) {
 			builder.AddCtx(StaticCtx{})
 
 			localRegistry := LocalRegistry{}
-			got, err := builder.newConfigContext(tt.args.configGroups, tt.args.templateContext, localRegistry, tt.args.license, nil, nil, registry.RegistryOptions{}, "app-slug", tt.args.decryptValues)
+			got, err := builder.newConfigContext(tt.args.configGroups, tt.args.templateContext, localRegistry, tt.args.license, nil, nil, registrytypes.RegistryOptions{}, "app-slug", tt.args.decryptValues)
 			req.NoError(err)
 			req.Equal(tt.want, got)
 		})

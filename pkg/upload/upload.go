@@ -18,7 +18,7 @@ import (
 	"github.com/pkg/errors"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/auth"
-	"github.com/replicatedhq/kots/pkg/docker/registry"
+	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -30,7 +30,7 @@ type UploadOptions struct {
 	UpstreamURI     string
 	ExistingAppSlug string
 	NewAppName      string
-	RegistryOptions registry.RegistryOptions
+	RegistryOptions registrytypes.RegistryOptions
 	Endpoint        string
 	Silent          bool
 	Deploy          bool

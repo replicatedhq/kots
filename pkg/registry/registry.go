@@ -3,6 +3,7 @@ package registry
 import (
 	"bufio"
 	"context"
+	_ "embed"
 	"fmt"
 	"io"
 	"io/ioutil"

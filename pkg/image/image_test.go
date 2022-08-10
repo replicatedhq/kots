@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/replicatedhq/kots/pkg/docker/registry"
+	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
@@ -14,14 +14,14 @@ func Test_ImageNameFromNameParts(t *testing.T) {
 	tests := []struct {
 		name        string
 		parts       []string
-		registryOps registry.RegistryOptions
+		registryOps registrytypes.RegistryOptions
 		expected    kustomizetypes.Image
 		isError     bool
 	}{
 		{
 			name:  "bad name format",
 			parts: []string{"quay.io", "latest"},
-			registryOps: registry.RegistryOptions{
+			registryOps: registrytypes.RegistryOptions{
 				Endpoint:  "localhost:5000",
 				Namespace: "somebigbank",
 			},
@@ -31,7 +31,7 @@ func Test_ImageNameFromNameParts(t *testing.T) {
 		{
 			name:  "ECR style image",
 			parts: []string{"411111111111.dkr.ecr.us-west-1.amazonaws.com", "myrepo", "v0.0.1"},
-			registryOps: registry.RegistryOptions{
+			registryOps: registrytypes.RegistryOptions{
 				Endpoint:  "localhost:5000",
 				Namespace: "somebigbank",
 			},
@@ -46,7 +46,7 @@ func Test_ImageNameFromNameParts(t *testing.T) {
 		{
 			name:  "four parts with tag",
 			parts: []string{"quay.io", "someorg", "debian", "0.1"},
-			registryOps: registry.RegistryOptions{
+			registryOps: registrytypes.RegistryOptions{
 				Endpoint:  "localhost:5000",
 				Namespace: "somebigbank",
 			},
@@ -61,7 +61,7 @@ func Test_ImageNameFromNameParts(t *testing.T) {
 		{
 			name:  "five parts with sha",
 			parts: []string{"quay.io", "someorg", "debian", "sha256", "1234567890abcdef"},
-			registryOps: registry.RegistryOptions{
+			registryOps: registrytypes.RegistryOptions{
 				Endpoint:  "localhost:5000",
 				Namespace: "somebigbank",
 			},
@@ -76,7 +76,7 @@ func Test_ImageNameFromNameParts(t *testing.T) {
 		{
 			name:  "no namespace",
 			parts: []string{"quay.io", "someorg", "debian", "0.1"},
-			registryOps: registry.RegistryOptions{
+			registryOps: registrytypes.RegistryOptions{
 				Endpoint: "localhost:5000",
 			},
 			expected: kustomizetypes.Image{
@@ -91,7 +91,7 @@ func Test_ImageNameFromNameParts(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			image, err := ImageInfoFromFile(test.registryOps, test.parts)
+			image, err := RewriteDockerArchiveImage(test.registryOps, test.parts)
 			if test.isError {
 				assert.Error(t, err)
 			} else {
@@ -102,14 +102,14 @@ func Test_ImageNameFromNameParts(t *testing.T) {
 	}
 }
 
-func Test_DestRef(t *testing.T) {
-	registryOps := registry.RegistryOptions{
+func Test_DestImage(t *testing.T) {
+	registryOps := registrytypes.RegistryOptions{
 		Endpoint:  "localhost:5000",
 		Namespace: "somebigbank",
 	}
 
 	type args struct {
-		registry registry.RegistryOptions
+		registry registrytypes.RegistryOptions
 		srcImage string
 	}
 	tests := []struct {
@@ -142,9 +142,17 @@ func Test_DestRef(t *testing.T) {
 			want: fmt.Sprintf("%s/%s/debian@sha256:mytestdigest", registryOps.Endpoint, registryOps.Namespace),
 		},
 		{
+			name: "Image with tag and digest",
+			args: args{
+				registry: registryOps,
+				srcImage: "quay.io/someorg/debian:0.1@sha256:mytestdigest",
+			},
+			want: fmt.Sprintf("%s/%s/debian@sha256:mytestdigest", registryOps.Endpoint, registryOps.Namespace),
+		},
+		{
 			name: "No Namespace",
 			args: args{
-				registry: registry.RegistryOptions{
+				registry: registrytypes.RegistryOptions{
 					Endpoint: "localhost:5000",
 				},
 				srcImage: "quay.io/someorg/debian:0.1",
@@ -154,7 +162,12 @@ func Test_DestRef(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := DestRef(tt.args.registry, tt.args.srcImage); got != tt.want {
+			req := require.New(t)
+
+			got, err := DestImage(tt.args.registry, tt.args.srcImage)
+			req.NoError(err)
+
+			if got != tt.want {
 				t.Errorf("DestImageName() = %v, want %v", got, tt.want)
 			}
 		})
@@ -280,13 +293,13 @@ func Test_BuildImageAltNames(t *testing.T) {
 func Test_kustomizeImage(t *testing.T) {
 	tests := []struct {
 		name         string
-		destRegistry registry.RegistryOptions
+		destRegistry registrytypes.RegistryOptions
 		image        string
 		want         []kustomizetypes.Image
 	}{
 		{
 			name: "naked image",
-			destRegistry: registry.RegistryOptions{
+			destRegistry: registrytypes.RegistryOptions{
 				Endpoint:  "localhost:5000",
 				Namespace: "somebigbank",
 			},
@@ -320,7 +333,7 @@ func Test_kustomizeImage(t *testing.T) {
 		},
 		{
 			name: "naked tagged image",
-			destRegistry: registry.RegistryOptions{
+			destRegistry: registrytypes.RegistryOptions{
 				Endpoint:  "localhost:5000",
 				Namespace: "somebigbank",
 			},
@@ -354,7 +367,7 @@ func Test_kustomizeImage(t *testing.T) {
 		},
 		{
 			name: "naked contentAddressableSha image",
-			destRegistry: registry.RegistryOptions{
+			destRegistry: registrytypes.RegistryOptions{
 				Endpoint:  "localhost:5000",
 				Namespace: "somesmallcorp",
 			},
@@ -388,7 +401,7 @@ func Test_kustomizeImage(t *testing.T) {
 		},
 		{
 			name: "tagged image",
-			destRegistry: registry.RegistryOptions{
+			destRegistry: registrytypes.RegistryOptions{
 				Endpoint:  "localhost:5000",
 				Namespace: "somebigbank",
 			},
@@ -422,7 +435,7 @@ func Test_kustomizeImage(t *testing.T) {
 		},
 		{
 			name: "quay.io tagged image",
-			destRegistry: registry.RegistryOptions{
+			destRegistry: registrytypes.RegistryOptions{
 				Endpoint:  "localhost:5000",
 				Namespace: "somebigbank",
 			},
@@ -438,7 +451,7 @@ func Test_kustomizeImage(t *testing.T) {
 		},
 		{
 			name: "ported registry tagged image",
-			destRegistry: registry.RegistryOptions{
+			destRegistry: registrytypes.RegistryOptions{
 				Endpoint:  "localhost:5000",
 				Namespace: "somebigbank",
 			},
@@ -454,7 +467,7 @@ func Test_kustomizeImage(t *testing.T) {
 		},
 		{
 			name: "ported registry untagged image",
-			destRegistry: registry.RegistryOptions{
+			destRegistry: registrytypes.RegistryOptions{
 				Endpoint:  "localhost:5000",
 				Namespace: "somebigbank",
 			},
@@ -470,7 +483,7 @@ func Test_kustomizeImage(t *testing.T) {
 		},
 		{
 			name: "fluent/fluentd:v1.7",
-			destRegistry: registry.RegistryOptions{
+			destRegistry: registrytypes.RegistryOptions{
 				Endpoint:  "localhost:5000",
 				Namespace: "somebigbank",
 			},
@@ -508,7 +521,7 @@ func Test_kustomizeImage(t *testing.T) {
 		},
 		{
 			name: "no namespace",
-			destRegistry: registry.RegistryOptions{
+			destRegistry: registrytypes.RegistryOptions{
 				Endpoint: "localhost:5000",
 			},
 			image: "docker.io/redis:v1",

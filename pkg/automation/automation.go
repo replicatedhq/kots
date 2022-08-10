@@ -248,7 +248,7 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 	}
 	appSlug = a.Slug
 
-	// airgap data is the airgap manifest + app specs + image list laoded from configmaps
+	// airgap data is the airgap manifest + app specs + image list loaded from configmaps
 	airgapData, err := getAirgapData(clientset, verifiedLicense)
 	if err != nil {
 		return errors.Wrapf(err, "failed to load airgap data for %s", appSlug)

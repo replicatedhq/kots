@@ -10,7 +10,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/containers/image/v5/docker"
-	"github.com/docker/distribution/registry/api/errcode"
+	"github.com/distribution/distribution/v3/registry/api/errcode"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"

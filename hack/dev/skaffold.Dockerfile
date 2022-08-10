@@ -179,7 +179,7 @@ RUN cd /tmp && curl -fsSL -o s3cmd.tar.gz "${S3CMD_URL}" \
   && rm -rf s3cmd.tar.gz s3cmd.tar.gz.asc s3cmd-${S3CMD_VERSION}
 
 COPY --from=builder /go/bin/dlv .
-COPY --from=builder /go/src/github.com/replicatedhq/kots/bin/kotsadm .
+COPY --from=builder /go/src/github.com/replicatedhq/kots/bin/kotsadm /kotsadm
 
 EXPOSE 40000
 

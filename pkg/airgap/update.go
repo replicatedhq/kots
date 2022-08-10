@@ -93,9 +93,9 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		return errors.Wrap(err, "failed to get app registry settings")
 	}
 
-	airgap, err := pull.FindAirgapMetaInDir(airgapRoot)
+	airgap, err := kotsutil.FindAirgapMetaInDir(airgapRoot)
 	if err != nil {
-		return errors.Wrap(err, "failed to parse license from file")
+		return errors.Wrap(err, "failed to find airgap meta")
 	}
 
 	missingPrereqs, err := GetMissingRequiredVersions(a, airgap)
@@ -187,7 +187,6 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		Silent:              true,
 		RewriteImages:       true,
 		RewriteImageOptions: pull.RewriteImageOptions{
-			ImageFiles: filepath.Join(airgapRoot, "images"),
 			Host:       registrySettings.Hostname,
 			Namespace:  registrySettings.Namespace,
 			Username:   registrySettings.Username,

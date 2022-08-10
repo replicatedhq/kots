@@ -7,7 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/pkg/docker/registry"
+	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
@@ -17,11 +17,11 @@ import (
 	kustomizeimage "sigs.k8s.io/kustomize/api/types"
 )
 
-func Test_ProcessUpstreamImages(t *testing.T) {
+func Test_RewriteImages(t *testing.T) {
 	testBaseDir := "./testdata/base-specs"
 	appSlug := "test-app-slug"
 
-	replicatedRegistry := registry.RegistryOptions{
+	replicatedRegistry := registrytypes.RegistryOptions{
 		Endpoint:      "registry.replicated.com",
 		ProxyEndpoint: "proxy.replicated.com",
 		Username:      "test-license-id",
@@ -30,14 +30,14 @@ func Test_ProcessUpstreamImages(t *testing.T) {
 
 	tests := []struct {
 		name              string
-		processOptions    WriteUpstreamImageOptions
-		wantProcessResult WriteUpstreamImageResult
+		processOptions    RewriteImageOptions
+		wantProcessResult RewriteImagesResult
 		findOptions       FindPrivateImagesOptions
 		wantFindResult    FindPrivateImagesResult
 	}{
 		{
 			name: "all unique",
-			processOptions: WriteUpstreamImageOptions{
+			processOptions: RewriteImageOptions{
 				BaseDir:        testBaseDir,
 				SourceRegistry: replicatedRegistry,
 				KotsKinds: &kotsutil.KotsKinds{
@@ -84,14 +84,14 @@ func Test_ProcessUpstreamImages(t *testing.T) {
 				},
 				CopyImages: false,
 				AppSlug:    appSlug,
-				DestRegistry: registry.RegistryOptions{
+				DestRegistry: registrytypes.RegistryOptions{
 					Endpoint:  "ttl.sh",
 					Namespace: "testing-ns",
 					Username:  "testing-user-name",
 					Password:  "testing-password",
 				},
 			},
-			wantProcessResult: WriteUpstreamImageResult{
+			wantProcessResult: RewriteImagesResult{
 				Images: []kustomizeimage.Image{
 					{
 						Name:    "busybox",
@@ -231,7 +231,7 @@ func Test_ProcessUpstreamImages(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			req := require.New(t)
 
-			gotUpstreamResult, err := ProcessUpstreamImages(test.processOptions)
+			gotUpstreamResult, err := RewriteImages(test.processOptions)
 			req.NoError(err)
 
 			assert.ElementsMatch(t, test.wantProcessResult.Images, gotUpstreamResult.Images)
