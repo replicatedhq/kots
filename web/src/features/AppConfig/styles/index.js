@@ -48,8 +48,7 @@ export const SideNavItems = styled(SideNavGroup)`
 
 export const SideNavWrapper = styled.div`
   background: ${colors.subNav};
-  max-width: 250px;
-  width: 100%;
+  width: 250px;
   padding: 10px;
   border-radius: 4px;
   overflow: auto;
@@ -71,5 +70,9 @@ export const SideNavWrapper = styled.div`
         display: block;
       }
     }
+  }
+  @media screen and (max-width: 1200px) {
+    width: 100%;
+    max-width: 200px;
   }
 `;

@@ -615,6 +615,7 @@ class AppConfig extends Component {
                         "ConfigOuterWrapper u-paddingTop--30",
                         { "u-marginTop--20": fromLicenseFlow }
                       )}
+                      style={{ width: "100%" }}
                     >
                       <div className="ConfigInnerWrapper">
                         <AppConfigRenderer
