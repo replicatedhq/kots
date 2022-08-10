@@ -403,7 +403,7 @@ class AppVersionHistory extends Component {
               <span className="files">
                 {diffSummary.filesChanged} files changed{" "}
               </span>
-              {!this.props.isHelmManaged && !downstream.gitops?.enabled && (
+              {!this.props.isHelmManaged && !downstream.gitops?.isConnected && (
                 <span
                   className="u-fontSize--small replicated-link u-marginLeft--5"
                   onClick={() =>
@@ -1038,7 +1038,7 @@ class AppVersionHistory extends Component {
     const { showDiffOverlay, selectedDiffReleases, checkedReleasesToDiff } =
       this.state;
     const downstream = app?.downstream;
-    const gitopsEnabled = downstream.gitops?.enabled;
+    const gitopsIsConnected = downstream.gitops?.isConnected;
     const versionHistory = this.state.versionHistory?.length
       ? this.state.versionHistory
       : [];
@@ -1054,7 +1054,7 @@ class AppVersionHistory extends Component {
           className="btn primary small blue"
           disabled={checkedReleasesToDiff.length !== 2 || showDiffOverlay}
           onClick={() => {
-            if (gitopsEnabled) {
+            if (gitopsIsConnected) {
               const { firstHash, secondHash } = this.getDiffCommitHashes();
               if (firstHash && secondHash) {
                 const diffUrl = getGitProviderDiffUrl(
@@ -1391,8 +1391,8 @@ class AppVersionHistory extends Component {
     }
 
     const downstream = this.props.app.downstream;
-    const gitopsEnabled = downstream?.gitops?.enabled;
-    const nothingToCommit = gitopsEnabled && !version.commitUrl;
+    const gitopsIsConnected = downstream?.gitops?.isConnected;
+    const nothingToCommit = gitopsIsConnected && !version.commitUrl;
     const isChecked = !!this.state.checkedReleasesToDiff.find(
       (diffRelease) => diffRelease.parentSequence === version.parentSequence
     );
@@ -1424,7 +1424,7 @@ class AppVersionHistory extends Component {
           showReleaseNotes={this.showReleaseNotes}
           renderDiff={this.renderDiff}
           toggleShowDetailsModal={this.toggleShowDetailsModal}
-          gitopsEnabled={gitopsEnabled}
+          gitopsEnabled={gitopsIsConnected}
           deployVersion={this.deployVersion}
           redeployVersion={this.redeployVersion}
           downloadVersion={this.downloadVersion}
@@ -1555,7 +1555,7 @@ class AppVersionHistory extends Component {
     }
 
     const downstream = app?.downstream;
-    const gitopsEnabled = downstream.gitops?.enabled;
+    const gitopsIsConnected = downstream.gitops?.isConnected;
     const currentDownstreamVersion = downstream?.currentVersion;
     const isPastVersion = find(downstream?.pastVersions, {
       sequence: this.state.versionToDeploy?.sequence,
@@ -1605,7 +1605,7 @@ class AppVersionHistory extends Component {
                 </div>
               )}
 
-              {!gitopsEnabled && (
+              {!gitopsIsConnected && (
                 <div
                   className="flex-column flex1"
                   style={{ maxWidth: "370px", marginRight: "20px" }}
@@ -1731,7 +1731,7 @@ class AppVersionHistory extends Component {
 
               <div
                 className={`flex-column flex1 alignSelf--start ${
-                  gitopsEnabled ? "gitops-enabled" : ""
+                  gitopsIsConnected ? "gitops-enabled" : ""
                 }`}
               >
                 <div
@@ -1739,10 +1739,10 @@ class AppVersionHistory extends Component {
                     showDiffOverlay ? "u-visibility--hidden" : ""
                   }`}
                 >
-                  {(versionHistory.length === 0 && gitopsEnabled) ||
+                  {(versionHistory.length === 0 && gitopsIsConnected) ||
                   versionHistory?.length > 0 ? (
                     <>
-                      {gitopsEnabled ? (
+                      {gitopsIsConnected ? (
                         <div
                           style={{ maxWidth: "1030px" }}
                           className="u-width--full u-marginBottom--30"
@@ -1825,7 +1825,7 @@ class AppVersionHistory extends Component {
                                 )}
                               </div>
                               {versionHistory.length > 1 &&
-                              !gitopsEnabled &&
+                              !gitopsIsConnected &&
                               !this.props.isHelmManaged
                                 ? this.renderDiffBtn()
                                 : null}
@@ -2140,7 +2140,7 @@ class AppVersionHistory extends Component {
             autoDeploy={app?.autoDeploy}
             appSlug={app?.slug}
             isSemverRequired={app?.isSemverRequired}
-            gitopsEnabled={downstream?.gitops?.enabled}
+            gitopsIsConnected={downstream?.gitops?.isConnected}
             onAutomaticUpdatesConfigured={() => {
               this.toggleAutomaticUpdatesModal();
               this.props.updateCallback();

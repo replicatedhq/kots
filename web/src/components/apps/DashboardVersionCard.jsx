@@ -553,7 +553,7 @@ class DashboardVersionCard extends React.Component {
               <span className="files">
                 {diffSummary.filesChanged} files changed{" "}
               </span>
-              {!this.props.isHelmManaged && !downstream.gitops?.enabled && (
+              {!this.props.isHelmManaged && !downstream.gitops?.isConnected && (
                 <Link
                   className="u-fontSize--small replicated-link u-marginLeft--5"
                   to={`${this.props.location.pathname}?diff/${this.props.currentVersion?.sequence}/${version.parentSequence}`}
@@ -747,7 +747,7 @@ class DashboardVersionCard extends React.Component {
   renderGitopsVersionAction = (version) => {
     const { app } = this.props;
     const downstream = app?.downstream;
-    const nothingToCommit = downstream?.gitops?.enabled && !version?.commitUrl;
+    const nothingToCommit = downstream?.gitops?.isConnected && !version?.commitUrl;
 
     if (version.status === "pending_download") {
       const isDownloading =
@@ -803,7 +803,7 @@ class DashboardVersionCard extends React.Component {
     const { app } = this.props;
     const downstream = app?.downstream;
 
-    if (downstream.gitops?.enabled) {
+    if (downstream.gitops?.isConnected) {
       return this.renderGitopsVersionAction(version);
     }
 
@@ -1253,7 +1253,7 @@ class DashboardVersionCard extends React.Component {
     const app = this.props.app;
     const downstream = this.props.downstream;
     const downstreamSource = latestDeployableVersion?.source;
-    const gitopsEnabled = downstream?.gitops?.enabled;
+    const gitopsIsConnected = downstream?.gitops?.isConnected;
     const isNew = secondsAgo(latestDeployableVersion?.createdOn) < 10;
 
     return (
@@ -1261,7 +1261,7 @@ class DashboardVersionCard extends React.Component {
         <p className="u-fontSize--normal u-lineHeight--normal u-textColor--header u-fontWeight--medium">
           New version available
         </p>
-        {gitopsEnabled && (
+        {gitopsIsConnected && (
           <div className="gitops-enabled-block u-fontSize--small u-fontWeight--medium flex alignItems--center u-textColor--header u-marginTop--10">
             <span
               className={`icon gitopsService--${downstream?.gitops?.provider} u-marginRight--10`}
@@ -1349,7 +1349,7 @@ class DashboardVersionCard extends React.Component {
       airgapUploader,
     } = this.props;
 
-    const gitopsEnabled = this.props.downstream?.gitops?.enabled;
+    const gitopsIsConnected = this.props.downstream?.gitops?.isConnected;
 
     let checkingUpdateTextShort = checkingUpdateText;
     if (checkingUpdateTextShort && checkingUpdateTextShort.length > 30) {
@@ -1363,7 +1363,7 @@ class DashboardVersionCard extends React.Component {
       shortKotsUpdateMessage = shortKotsUpdateMessage.substring(0, 60) + "...";
     }
 
-    if (gitopsEnabled) {
+    if (gitopsIsConnected) {
       return (
         <DashboardGitOpsCard
           gitops={this.props.downstream?.gitops}
