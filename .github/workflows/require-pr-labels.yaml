@@ -1,0 +1,29 @@
+name: Require pull request labels
+
+permissions:
+  pull-requests: read
+
+on:
+  pull_request:
+    types:
+      - opened
+      - labeled
+      - unlabeled
+      - synchronize
+
+jobs:
+  require_pr_labels:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: mheap/github-action-required-labels@v2
+        with:
+          mode: exactly
+          count: 1
+          labels: "type::feature, type::bug, type::chore, type::tests, type::security, type::docs"
+
+      - uses: mheap/github-action-required-labels@v2
+        if: ${{ github.event.label.name == 'type::bug' }}
+        with:
+          mode: exactly
+          count: 1
+          labels: "bug::normal, bug::regression"
