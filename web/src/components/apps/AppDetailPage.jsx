@@ -13,7 +13,7 @@ import AppVersionHistory from "./AppVersionHistory";
 import { isAwaitingResults, Utilities } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
 import PreflightResultPage from "../PreflightResultPage";
-import AppConfig from "./AppConfig";
+import AppConfig from "../../features/AppConfig/components/AppConfig";
 import AppLicense from "./AppLicense";
 import SubNavBar from "@src/components/shared/SubNavBar";
 import SidebarLayout from "../layout/SidebarLayout/SidebarLayout";
