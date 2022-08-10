@@ -1,6 +1,5 @@
 import styled from "styled-components";
-
-const primaryColor = "#323232";
+import * as colors from "./colors";
 
 export const Flex = styled.div`
   display: flex;
@@ -35,8 +34,9 @@ export const Flex = styled.div`
 export const Paragraph = styled.p`
   font-size: ${(props) => `${props.size}px` || "14px"};
   font-weight: ${(props) => props.weight};
-  color: ${(props) => (props.color && props.color) || primaryColor};
+  color: ${(props) => (props.color && props.color) || colors.primary};
   padding: ${(props) => props.p && `${props.p}px`};
+
   padding-top: ${(props) =>
     (props.pt && `${props.pt}px`) || (props.px && `${props.py}px`)};
   padding-bottom: ${(props) =>
@@ -59,7 +59,7 @@ export const Paragraph = styled.p`
 export const Span = styled.span`
   font-size: ${(props) => `${props.size}px` || "14px"};
   font-weight: ${(props) => props.weight};
-  color: ${(props) => (props.color && props.color) || primaryColor};
+  color: ${(props) => (props.color && props.color) || colors.primary};
   padding: ${(props) => props.p && `${props.p}px`};
   padding-top: ${(props) =>
     (props.pt && `${props.pt}px`) || (props.px && `${props.py}px`)};
