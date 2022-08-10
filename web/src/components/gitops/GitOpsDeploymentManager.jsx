@@ -15,19 +15,16 @@ import {
 } from "../../utilities/utilities";
 
 import "../../scss/components/gitops/GitOpsDeploymentManager.scss";
+import SetupProvider from "./SetupProvider";
 
 const STEPS = [
   {
-    step: "setup",
-    title: "Set up GitOps",
-  },
-  {
     step: "provider",
-    title: "GitOps provider",
+    title: "GitOps Configuration",
   },
   {
-    step: "action",
-    title: "GitOps action ",
+    step: "connection",
+    title: "GitOps Configuration ",
   },
 ];
 
@@ -67,7 +64,7 @@ const BITBUCKET_SERVER_DEFAULT_SSH_PORT = "7999";
 
 class GitOpsDeploymentManager extends React.Component {
   state = {
-    step: "setup",
+    step: "provider",
     hostname: "",
     httpPort: "",
     sshPort: "",
@@ -370,7 +367,7 @@ class GitOpsDeploymentManager extends React.Component {
 
   updateSettings = () => {
     if (this.isSingleApp()) {
-      this.stepFrom("provider", "action");
+      this.stepFrom("provider", "connection");
     } else {
       this.finishSetup();
     }
@@ -533,52 +530,16 @@ class GitOpsDeploymentManager extends React.Component {
     );
   };
 
-  renderHttpPort = (provider, httpPort) => {
-    const isBitbucketServer = provider === "bitbucket_server";
-    if (!isBitbucketServer) {
-      return <div className="flex flex1" />;
-    }
-    return (
-      <div className="flex flex1 flex-column u-marginRight--10">
-        <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal">
-          HTTP Port
-        </p>
-        <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">
-          HTTP Port of your GitOps server.
-        </p>
-        <input
-          type="text"
-          className="Input"
-          placeholder={BITBUCKET_SERVER_DEFAULT_HTTP_PORT}
-          value={httpPort}
-          onChange={(e) => this.setState({ httpPort: e.target.value })}
-        />
-      </div>
-    );
+  updateHostname = (hostname) => {
+    this.setState({ hostname });
   };
 
-  renderSshPort = (provider, sshPort) => {
-    const isBitbucketServer = provider === "bitbucket_server";
-    if (!isBitbucketServer) {
-      return <div className="flex flex1" />;
-    }
-    return (
-      <div className="flex flex1 flex-column u-marginLeft--10">
-        <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal">
-          SSH Port
-        </p>
-        <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">
-          SSH Port of your GitOps server.
-        </p>
-        <input
-          type="text"
-          className="Input"
-          placeholder={BITBUCKET_SERVER_DEFAULT_SSH_PORT}
-          value={sshPort}
-          onChange={(e) => this.setState({ sshPort: e.target.value })}
-        />
-      </div>
-    );
+  updateHttpPort = (httpPort) => {
+    this.setState({ httpPort });
+  };
+
+  updateSSHPort = (sshPort) => {
+    this.setState({ sshPort });
   };
 
   renderActiveStep = (step) => {
@@ -593,75 +554,26 @@ class GitOpsDeploymentManager extends React.Component {
     } = this.state;
 
     const provider = selectedService?.value;
-    const isBitbucketServer = provider === "bitbucket_server";
+    // const isBitbucketServer = provider === "bitbucket_server";
 
     switch (step.step) {
-      case "setup":
-        return (
-          <div key={`${step.step}-active`} className="GitOpsDeploy--step">
-            <p className="step-title">Deploy using a GitOps workflow</p>
-            <p className="step-sub">
-              Connect a git version control system to this Admin Console. After
-              setting this up, it will be
-              <br />
-              possible to have all application updates (upstream updates,
-              license updates, config changes)
-              <br />
-              directly commited to any git repository and it will no longer be
-              possible to deploy directly from the Admin Console.
-            </p>
-            <GitOpsFlowIllustration />
-            <div>
-              <button
-                className="btn primary blue u-marginTop--10"
-                type="button"
-                onClick={() => this.stepFrom("setup", "provider")}
-              >
-                Get started
-              </button>
-            </div>
-          </div>
-        );
       case "provider":
         return (
-          <div
-            key={`${step.step}-active`}
-            className="GitOpsDeploy--step u-textAlign--left"
-          >
-            <p className="step-title">{step.title}</p>
-            <p className="step-sub">
-              Before the Admin Console can push changes to your Git repository,
-              some information about your Git configuration is required.
-            </p>
-            <div className="flex-column u-textAlign--left u-marginBottom--30">
-              <div className="flex flex1">
-                {this.renderGitOpsProviderSelector(services, selectedService)}
-                {this.renderHostName(provider, hostname, providerError)}
-              </div>
-              {isBitbucketServer && (
-                <div className="flex flex1 u-marginTop--30">
-                  {this.renderHttpPort(provider, httpPort)}
-                  {this.renderSshPort(provider, sshPort)}
-                </div>
-              )}
-            </div>
-            <div>
-              <button
-                className="btn primary blue"
-                type="button"
-                disabled={finishingSetup}
-                onClick={this.updateSettings}
-              >
-                {finishingSetup
-                  ? "Finishing setup"
-                  : this.isSingleApp()
-                  ? "Continue to deployment action"
-                  : "Finish GitOps setup"}
-              </button>
-            </div>
-          </div>
+          <SetupProvider
+            step={step}
+            state={this.state}
+            provider={provider}
+            handleServiceChange={this.handleServiceChange}
+            updateHostname={this.updateHostname}
+            updateSettings={this.updateSettings}
+            isSingleApp={this.isSingleApp}
+            updateHttpPort={this.updateHttpPort}
+            getLabel={this.getLabel}
+            renderGitOpsProviderSelector={this.renderGitOpsProviderSelector}
+            renderHostName={this.renderHostName}
+          />
         );
-      case "action":
+      case "connection":
         return (
           <GitOpsRepoDetails
             appName={this.props.appName}
@@ -858,10 +770,11 @@ class GitOpsDeploymentManager extends React.Component {
     const activeStep = find(STEPS, { step: this.state.step });
     return (
       <div className="GitOpsDeploymentManager--wrapper flex-column flex1">
-        {this.state.gitops?.enabled && this.state.step !== "action"
+        {/* once gitops is enabled (provider connected) that ui with all the apps  */}
+        {/* {this.state.gitops?.enabled && this.state.step !== "connection"
           ? this.renderConfiguredGitOps()
-          : activeStep && this.renderActiveStep(activeStep)}
-
+          : this.renderActiveStep(activeStep)} */}
+        {this.renderActiveStep(activeStep)}
         {errorMsg && (
           <ErrorModal
             errorModal={displayErrorModal}
