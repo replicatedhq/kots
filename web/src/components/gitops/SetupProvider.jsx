@@ -9,13 +9,10 @@ const SetupProvider = ({
   step,
   state,
   provider,
-  handleServiceChange,
-  updateHostname,
   updateHttpPort,
   updateSSHPort,
   updateSettings,
   isSingleApp,
-  getLabel,
   renderGitOpsProviderSelector,
   renderHostName,
 }) => {
@@ -85,8 +82,9 @@ const SetupProvider = ({
     >
       <p className="step-title">{step.title}</p>
       <p className="step-sub">
-        Before the Admin Console can push changes to your Git repository, some
-        information about your Git configuration is required.
+        Connect a git version control system so all application updates are
+        committed to a git repository. When GitOps is enabled, you cannot deploy
+        updates directly from the admin console.
       </p>
       <div className="flex-column u-textAlign--left u-marginBottom--30">
         <div className="flex flex1">

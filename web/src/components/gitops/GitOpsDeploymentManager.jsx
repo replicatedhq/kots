@@ -530,10 +530,6 @@ class GitOpsDeploymentManager extends React.Component {
     );
   };
 
-  updateHostname = (hostname) => {
-    this.setState({ hostname });
-  };
-
   updateHttpPort = (httpPort) => {
     this.setState({ httpPort });
   };
@@ -563,12 +559,9 @@ class GitOpsDeploymentManager extends React.Component {
             step={step}
             state={this.state}
             provider={provider}
-            handleServiceChange={this.handleServiceChange}
-            updateHostname={this.updateHostname}
             updateSettings={this.updateSettings}
             isSingleApp={this.isSingleApp}
             updateHttpPort={this.updateHttpPort}
-            getLabel={this.getLabel}
             renderGitOpsProviderSelector={this.renderGitOpsProviderSelector}
             renderHostName={this.renderHostName}
           />
