@@ -1,12 +1,12 @@
 import React from "react";
 import Select from "react-select";
-import { requiresHostname } from "../../utilities/utilities";
 
 const BITBUCKET_SERVER_DEFAULT_HTTP_PORT = "7990";
 const BITBUCKET_SERVER_DEFAULT_SSH_PORT = "7999";
 
 const SetupProvider = ({
   step,
+  appsList,
   state,
   provider,
   updateHttpPort,
@@ -15,6 +15,8 @@ const SetupProvider = ({
   isSingleApp,
   renderGitOpsProviderSelector,
   renderHostName,
+  handleAppChange,
+  selectedApp,
 }) => {
   const {
     hostname,
@@ -25,7 +27,8 @@ const SetupProvider = ({
     providerError,
     finishingSetup,
   } = state;
-  const isBitbucketServer = provider === "bitbucket_server";
+
+  const apps = appsList.map((app) => ({ value: app.name, label: app.name }));
 
   const renderHttpPort = (provider, httpPort) => {
     const isBitbucketServer = provider === "bitbucket_server";
@@ -87,16 +90,44 @@ const SetupProvider = ({
         updates directly from the admin console.
       </p>
       <div className="flex-column u-textAlign--left u-marginBottom--30">
-        <div className="flex flex1">
-          {renderGitOpsProviderSelector(services, selectedService)}
-          {renderHostName(provider, hostname, providerError)}
+        <div className="flex flex1 flex-column u-marginRight--10">
+          <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
+            Select an application to configure
+          </p>
+          <div className="u-position--relative u-marginTop--5 u-marginBottom--40">
+            <Select
+              className="replicated-select-container"
+              classNamePrefix="replicated-select"
+              placeholder="Select an application"
+              options={apps}
+              isSearchable={false}
+              // getOptionValue={(service) => service.label}
+              value={selectedApp}
+              onChange={handleAppChange}
+              isOptionSelected={(option) => {
+                option.value === selectedApp;
+              }}
+            />
+          </div>
         </div>
-        {isBitbucketServer && (
+        {/* <div className="flex flex1"> */}
+        {renderGitOpsProviderSelector({
+          provider,
+          hostname,
+          httpPort,
+          sshPort,
+          providerError,
+          services,
+          selectedService,
+        })}
+
+        {/* </div> */}
+        {/* {isBitbucketServer && (
           <div className="flex flex1 u-marginTop--30">
             {renderHttpPort(provider, httpPort)}
             {renderSshPort(provider, sshPort)}
           </div>
-        )}
+        )} */}
       </div>
       <div>
         <button

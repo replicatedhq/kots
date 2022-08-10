@@ -16,6 +16,7 @@ import {
 
 import "../../scss/components/gitops/GitOpsDeploymentManager.scss";
 import SetupProvider from "./SetupProvider";
+import { Flex, Paragraph } from "../../styles/common";
 
 const STEPS = [
   {
@@ -77,6 +78,9 @@ class GitOpsDeploymentManager extends React.Component {
     errorMsg: "",
     errorTitle: "",
     displayErrorModal: false,
+
+    // new
+    selectedApp: {},
   };
 
   componentDidMount() {
@@ -468,39 +472,146 @@ class GitOpsDeploymentManager extends React.Component {
   };
 
   handleServiceChange = (selectedService) => {
+    console.log(selectedService);
     this.setState({ selectedService });
   };
 
-  renderGitOpsProviderSelector = (services, selectedService) => {
+  renderGitOpsProviderSelector = ({
+    provider,
+    hostname,
+    httpPort,
+    sshPort,
+    services,
+    selectedService,
+    providerError,
+  }) => {
+    const isBitbucketServer = provider === "bitbucket_server";
     return (
-      <div className="flex flex1 flex-column u-marginRight--10">
-        <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
-          Which GitOps provider do you use?
-        </p>
-        <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">
-          Select the git provider you use for gitops.
-        </p>
-        <div className="u-position--relative">
-          <Select
-            className="replicated-select-container"
-            classNamePrefix="replicated-select"
-            placeholder="Select a GitOps service"
-            options={services}
-            isSearchable={false}
-            getOptionLabel={(service) => this.getLabel(service, service.label)}
-            getOptionValue={(service) => service.label}
-            value={selectedService}
-            onChange={this.handleServiceChange}
-            isOptionSelected={(option) => {
-              option.value === selectedService;
-            }}
-          />
-        </div>
-      </div>
+      <Flex>
+        {/* left column */}
+        <Flex direction="column" flex="1">
+          <div className="u-marginRight--10" style={{ width: "100%" }}>
+            <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
+              Git provider
+            </p>
+            <div className="u-position--relative  u-marginTop--5">
+              <Select
+                className="replicated-select-container"
+                classNamePrefix="replicated-select"
+                placeholder="Select a GitOps service"
+                options={services}
+                isSearchable={false}
+                getOptionLabel={(service) =>
+                  this.getLabel(service, service.label)
+                }
+                getOptionValue={(service) => service.label}
+                value={selectedService}
+                onChange={this.handleServiceChange}
+                isOptionSelected={(option) => {
+                  option.value === selectedService;
+                }}
+              />
+            </div>
+          </div>
+
+          {isBitbucketServer && (
+            <Flex flex="1" mt="30" width="100%">
+              {this.renderHttpPort(provider, httpPort)}
+            </Flex>
+          )}
+        </Flex>
+        <Flex direction="column" flex="1" width="100%">
+          {/* right column */}
+
+          {this.renderHostName(
+            provider,
+            hostname,
+            providerError,
+            httpPort,
+            sshPort
+          )}
+          <Flex flex="1" mt="30" width="100%">
+            {this.renderSshPort(provider, sshPort)}
+          </Flex>
+        </Flex>
+
+        {/* {this.renderForm(provider, hostname, httpPort, sshPort)} */}
+      </Flex>
+    );
+  };
+  renderHttpPort = (provider, httpPort) => {
+    const isBitbucketServer = provider === "bitbucket_server";
+    if (!isBitbucketServer) {
+      return <div className="flex flex1" />;
+    }
+    return (
+      <Flex flex="1" direction="column" mr="10" width="100%">
+        <Paragraph size="16" weight="bold" className="u-lineHeight--normal">
+          HTTP Port <span>(Required)</span>
+        </Paragraph>
+        <input
+          type="text"
+          className="Input"
+          placeholder={BITBUCKET_SERVER_DEFAULT_HTTP_PORT}
+          value={httpPort}
+          onChange={(e) => this.setState({ httpPort: e.target.value })}
+        />
+      </Flex>
     );
   };
 
+  renderSshPort = (provider, sshPort) => {
+    const isBitbucketServer = provider === "bitbucket_server";
+    if (!isBitbucketServer) {
+      return <div className="flex flex1" />;
+    }
+    return (
+      <div className="flex flex1 flex-column u-marginLeft--10">
+        <Paragraph size="16" weight="bold" className="u-lineHeight--normal">
+          SSH Port <span>(Required)</span>
+        </Paragraph>
+        <input
+          type="text"
+          className="Input"
+          placeholder={BITBUCKET_SERVER_DEFAULT_SSH_PORT}
+          value={sshPort}
+          onChange={(e) => this.setState({ sshPort: e.target.value })}
+        />
+      </div>
+    );
+  };
+  renderForm = () => {};
+
+  // TODO: CHANGE FUNCTION NAME
   renderHostName = (provider, hostname, providerError) => {
+    if (!requiresHostname(provider)) {
+      return <div className="flex flex1" />;
+    }
+    return (
+      <Flex direction="column" ml="10" className="flex1" width="100%">
+        <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
+          Hostname
+          <span> (Required)</span>
+        </p>
+        <input
+          type="text"
+          className={`Input ${
+            providerError?.field === "hostname" && "has-error"
+          } u-marginTop--5`}
+          placeholder="hostname"
+          value={hostname}
+          onChange={(e) => this.setState({ hostname: e.target.value })}
+        />
+        {providerError?.field === "hostname" && (
+          <p className="u-fontSize--small u-marginTop--5 u-textColor--error u-fontWeight--medium u-lineHeight--normal">
+            A hostname must be provided
+          </p>
+        )}
+      </Flex>
+    );
+  };
+
+  oldRenderHostName = (provider, hostname, providerError) => {
     if (!requiresHostname(provider)) {
       return <div className="flex flex1" />;
     }
@@ -538,6 +649,10 @@ class GitOpsDeploymentManager extends React.Component {
     this.setState({ sshPort });
   };
 
+  handleAppChange = (app) => {
+    this.setState({ selectedApp: app });
+  };
+
   renderActiveStep = (step) => {
     const {
       hostname,
@@ -557,13 +672,16 @@ class GitOpsDeploymentManager extends React.Component {
         return (
           <SetupProvider
             step={step}
+            appsList={this.state.appsList}
             state={this.state}
+            selectedApp={this.state.selectedApp}
             provider={provider}
             updateSettings={this.updateSettings}
             isSingleApp={this.isSingleApp}
             updateHttpPort={this.updateHttpPort}
             renderGitOpsProviderSelector={this.renderGitOpsProviderSelector}
             renderHostName={this.renderHostName}
+            handleAppChange={this.handleAppChange}
           />
         );
       case "connection":
@@ -720,7 +838,9 @@ class GitOpsDeploymentManager extends React.Component {
             {this.renderHostName(
               selectedService?.value,
               hostname,
-              providerError
+              providerError,
+              httpPort,
+              sshPort
             )}
           </div>
           {isBitbucketServer && (
