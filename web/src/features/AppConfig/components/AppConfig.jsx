@@ -21,7 +21,12 @@ import ConfigInfo from "./ConfigInfo";
 import "../../../scss/components/watches/WatchConfig.scss";
 import { Utilities } from "../../../utilities/utilities";
 import { Flex, Span } from "../../../styles/common";
-import { SideNavWrapper, SideNavGroup } from "../styles";
+import {
+  SideNavWrapper,
+  SideNavGroup,
+  GroupTitle,
+  SideNavItems,
+} from "../styles";
 
 class AppConfig extends Component {
   static propTypes = {
@@ -521,17 +526,17 @@ class AppConfig extends Component {
                       : ""
                   }`}
                 >
-                  <div
-                    className="flex alignItems--center AppConfigSidenav--groupWrapper"
+                  <Flex
+                    align="center"
                     onClick={() => this.toggleActiveGroups(group.name)}
                   >
-                    <a className="group-title u-fontSize--large u-lineHeight--normal">
+                    <GroupTitle fontSize="16" className="u-lineHeight--normal">
                       {group.title}
-                    </a>
+                    </GroupTitle>
                     <span className="icon u-darkDropdownArrow clickable flex-auto" />
-                  </div>
+                  </Flex>
                   {group.items ? (
-                    <div className="AppConfigSidenav--items">
+                    <SideNavItems>
                       {group.items?.map((item, i) => {
                         const hash = this.props.location.hash.slice(1);
                         if (item.hidden || item.when === "false") {
@@ -549,7 +554,7 @@ class AppConfig extends Component {
                           </a>
                         );
                       })}
-                    </div>
+                    </SideNavItems>
                   ) : null}
                 </SideNavGroup>
               );
