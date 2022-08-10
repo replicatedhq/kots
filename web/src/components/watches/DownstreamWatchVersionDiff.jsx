@@ -26,7 +26,7 @@ class DownstreamWatchVersionDiff extends React.Component {
   fetchRenderedApplicationTree = (sequence, isFirst) => {
     this.setState({ loadingFileTrees: true });
     const url = `${process.env.API_ENDPOINT}/app/${this.props.slug}/sequence/${sequence}/renderedcontents`;
-    fetch(url, {
+    return fetch(url, {
       headers: {
         Authorization: Utilities.getToken(),
       },
@@ -59,8 +59,8 @@ class DownstreamWatchVersionDiff extends React.Component {
 
     if (slug !== lastProps.slug) {
       Promise.all(
-        this.fetchRenderedApplicationTree(firstSequence, true),
-        this.fetchRenderedApplicationTree(secondSequence, false)
+        [this.fetchRenderedApplicationTree(firstSequence, true),
+        this.fetchRenderedApplicationTree(secondSequence, false)]
       ).then(() => this.setState({ loadingFileTrees: false }));
     }
   }
@@ -68,8 +68,8 @@ class DownstreamWatchVersionDiff extends React.Component {
   componentDidMount() {
     const { firstSequence, secondSequence, location } = this.props;
     Promise.all(
-      this.fetchRenderedApplicationTree(firstSequence, true),
-      this.fetchRenderedApplicationTree(secondSequence, false)
+      [this.fetchRenderedApplicationTree(firstSequence, true),
+      this.fetchRenderedApplicationTree(secondSequence, false)]
     ).then(() => this.setState({ loadingFileTrees: false }));
 
     const url = window.location.pathname;
