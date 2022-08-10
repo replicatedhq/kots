@@ -47,12 +47,6 @@ class DownstreamWatchVersionDiff extends React.Component {
         } else {
           this.setState({ secondApplicationTree: files });
         }
-        if (
-          this.state.firstApplicationTree.files &&
-          this.state.secondApplicationTree.files
-        ) {
-          this.setState({ loadingFileTrees: false });
-        }
       })
       .catch((err) => {
         this.setState({ loadingFileTrees: false });
@@ -64,15 +58,19 @@ class DownstreamWatchVersionDiff extends React.Component {
     const { slug, firstSequence, secondSequence } = this.props;
 
     if (slug !== lastProps.slug) {
-      this.fetchRenderedApplicationTree(firstSequence, true);
-      this.fetchRenderedApplicationTree(secondSequence, false);
+      Promise.all(
+        this.fetchRenderedApplicationTree(firstSequence, true),
+        this.fetchRenderedApplicationTree(secondSequence, false)
+      ).then(() => [this.setState({ loadingFileTrees: false })]);
     }
   }
 
   componentDidMount() {
     const { firstSequence, secondSequence, location } = this.props;
-    this.fetchRenderedApplicationTree(firstSequence, true);
-    this.fetchRenderedApplicationTree(secondSequence, false);
+    Promise.all(
+      this.fetchRenderedApplicationTree(firstSequence, true),
+      this.fetchRenderedApplicationTree(secondSequence, false)
+    ).then(() => [this.setState({ loadingFileTrees: false })]);
 
     const url = window.location.pathname;
     if (!url.includes("/diff") && !location.search.includes("?diff/")) {
