@@ -63,7 +63,11 @@ func FindPrivateImages(options FindPrivateImagesOptions) (*FindPrivateImagesResu
 			image.NewTag = "latest"
 		}
 
-		kustomizeImages = append(kustomizeImages, kotsimage.BuildImageAltNames(image)...)
+		altNames, err := kotsimage.BuildImageAltNames(image)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed build alt names")
+		}
+		kustomizeImages = append(kustomizeImages, altNames...)
 	}
 
 	return &FindPrivateImagesResult{

@@ -10,11 +10,15 @@ images:
   newName: proxy.replicated.com/nginx
 - name: library/nginx
   newName: proxy.replicated.com/nginx
+- name: docker.io/nginx
+  newName: proxy.replicated.com/nginx
 - name: alpine
   newName: proxy.replicated.com/alpine
 - name: docker.io/library/alpine
   newName: proxy.replicated.com/alpine
 - name: library/alpine
+  newName: proxy.replicated.com/alpine
+- name: docker.io/alpine
   newName: proxy.replicated.com/alpine
 - name: busybox
   newName: proxy.replicated.com/busybox
@@ -22,18 +26,8 @@ images:
   newName: proxy.replicated.com/busybox
 - name: library/busybox
   newName: proxy.replicated.com/busybox
-- name: alpine
-  newName: proxy.replicated.com/alpine
-- name: docker.io/library/alpine
-  newName: proxy.replicated.com/alpine
-- name: library/alpine
-  newName: proxy.replicated.com/alpine
-- name: alpine
-  newName: proxy.replicated.com/alpine
-- name: docker.io/library/alpine
-  newName: proxy.replicated.com/alpine
-- name: library/alpine
-  newName: proxy.replicated.com/alpine
+- name: docker.io/busybox
+  newName: proxy.replicated.com/busybox
 kind: Kustomization
 patchesStrategicMerge:
 - pullsecrets.yaml

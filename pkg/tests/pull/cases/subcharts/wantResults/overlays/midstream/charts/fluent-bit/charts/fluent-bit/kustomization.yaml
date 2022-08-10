@@ -12,11 +12,7 @@ images:
   newName: fake-docker-proxy/busybox
 - name: library/busybox
   newName: fake-docker-proxy/busybox
-- name: busybox
-  newName: fake-docker-proxy/busybox
-- name: docker.io/library/busybox
-  newName: fake-docker-proxy/busybox
-- name: library/busybox
+- name: docker.io/busybox
   newName: fake-docker-proxy/busybox
 kind: Kustomization
 patchesStrategicMerge:
