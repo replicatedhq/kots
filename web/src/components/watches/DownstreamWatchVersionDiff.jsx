@@ -58,19 +58,19 @@ class DownstreamWatchVersionDiff extends React.Component {
     const { slug, firstSequence, secondSequence } = this.props;
 
     if (slug !== lastProps.slug) {
-      Promise.all(
-        [this.fetchRenderedApplicationTree(firstSequence, true),
-        this.fetchRenderedApplicationTree(secondSequence, false)]
-      ).then(() => this.setState({ loadingFileTrees: false }));
+      Promise.all([
+        this.fetchRenderedApplicationTree(firstSequence, true),
+        this.fetchRenderedApplicationTree(secondSequence, false),
+      ]).then(() => this.setState({ loadingFileTrees: false }));
     }
   }
 
   componentDidMount() {
     const { firstSequence, secondSequence, location } = this.props;
-    Promise.all(
-      [this.fetchRenderedApplicationTree(firstSequence, true),
-      this.fetchRenderedApplicationTree(secondSequence, false)]
-    ).then(() => this.setState({ loadingFileTrees: false }));
+    Promise.all([
+      this.fetchRenderedApplicationTree(firstSequence, true),
+      this.fetchRenderedApplicationTree(secondSequence, false),
+    ]).then(() => this.setState({ loadingFileTrees: false }));
 
     const url = window.location.pathname;
     if (!url.includes("/diff") && !location.search.includes("?diff/")) {
