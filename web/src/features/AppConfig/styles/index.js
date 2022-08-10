@@ -6,9 +6,6 @@ export const GroupTitle = styled.a`
   overflow: hidden;
   text-overflow: ellipsis;
   font-size: ${(props) => (props.fontSize && `${props.fontSize}px`) || "14px"};
-  &:hover {
-    color: ${colors.primary};
-  }
 `;
 
 export const SideNavGroup = styled.div`
@@ -33,9 +30,14 @@ export const SideNavGroup = styled.div`
       margin-bottom: 0;
     }
   }
+  // SideNavGroup overrides styles of GroupTitle
+  // have to set it here to override it
   & ${GroupTitle} {
     margin-bottom: 0px;
     color: ${colors.secondaryText};
+    &:hover {
+      color: ${colors.primary};
+    }
   }
 `;
 
