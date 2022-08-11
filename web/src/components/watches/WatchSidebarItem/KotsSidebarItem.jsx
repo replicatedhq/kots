@@ -22,7 +22,7 @@ export default function KotsSidebarItem(props) {
     } behind`;
   }
 
-  const gitopsEnabled = app.downstream?.gitops?.enabled;
+  const gitopsIsConnected = app.downstream?.gitops?.isConnected;
 
   return (
     <div className={classNames("sidebar-link", className)}>
@@ -34,12 +34,12 @@ export default function KotsSidebarItem(props) {
         <div className="flex-column">
           <p
             className={classNames("u-textColor--primary u-fontWeight--bold", {
-              "u-marginBottom--10": !gitopsEnabled,
+              "u-marginBottom--10": !gitopsIsConnected,
             })}
           >
             {name}
           </p>
-          {!gitopsEnabled && (
+          {!gitopsIsConnected && (
             <div className="flex alignItems--center">
               <div
                 className={classNames("icon", {
