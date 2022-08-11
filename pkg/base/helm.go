@@ -30,7 +30,7 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 
 	for _, file := range u.Files {
 		p := path.Join(chartPath, file.Path)
-		d, fileName := path.Split(p)
+		d, _ := path.Split(p)
 		if _, err := os.Stat(d); err != nil {
 			if os.IsNotExist(err) {
 				if err := os.MkdirAll(d, 0755); err != nil {
@@ -38,16 +38,6 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 				}
 			} else {
 				return nil, errors.Wrap(err, "failed to check if dir exists")
-			}
-		}
-
-		// check chart.yaml for Helm version if a helm version has not been explicitly provided
-		if strings.EqualFold(fileName, "Chart.yaml") && renderOptions.HelmVersion == "" {
-			renderOptions.HelmVersion, err = checkChartForVersion(&file)
-			if err != nil {
-				renderOptions.Log.Info("could not determine helm version (will use helm v2 by default): %v", err)
-			} else {
-				renderOptions.Log.Info("rendering with Helm %v", renderOptions.HelmVersion)
 			}
 		}
 
