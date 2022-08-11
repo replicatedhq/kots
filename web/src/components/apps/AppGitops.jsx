@@ -428,7 +428,7 @@ class AppGitops extends Component {
 
         {!ownerRepo || showGitOpsSettings ? (
           <div className="u-marginTop--30">
-            <SetupProvider
+            {/* <SetupProvider
               app={this.props.app}
               //    step={step}
               appsList={this.props.appsList}
@@ -441,7 +441,7 @@ class AppGitops extends Component {
               renderGitOpsProviderSelector={this.renderGitOpsProviderSelector}
               renderHostName={this.renderHostName}
               handleAppChange={this.handleAppChange}
-            />
+            /> */}
           </div>
         ) : (
           <div className="GitOpsSettings">
