@@ -408,22 +408,6 @@ func getAllBasePaths(prefix string, base Base) []string {
 	return basePaths
 }
 
-func checkChartForVersion(file *upstreamtypes.UpstreamFile) (string, error) {
-	var chartValues map[string]interface{}
-
-	err := yaml.Unmarshal(file.Content, &chartValues)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to unmarshal chart.yaml")
-	}
-	// note: helm API v2 is equivilent to Helm V3
-	if version, ok := chartValues["apiVersion"]; ok && strings.EqualFold(version.(string), "v2") {
-		return "v3", nil
-	}
-
-	// if no determination is made, assume v2
-	return "v2", nil
-}
-
 // insert namespace if it's defined in the spec and not already present in the manifests
 func kustomizeHelmNamespace(baseFiles []BaseFile, renderOptions *RenderOptions) ([]BaseFile, error) {
 	if renderOptions.Namespace == "" {
