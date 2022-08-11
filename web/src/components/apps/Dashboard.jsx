@@ -853,7 +853,7 @@ class Dashboard extends Component {
             autoDeploy={app.autoDeploy}
             appSlug={app.slug}
             isSemverRequired={app?.isSemverRequired}
-            gitopsEnabled={downstream?.gitops?.enabled}
+            gitopsIsConnected={downstream?.gitops?.isConnected}
             onAutomaticUpdatesConfigured={() => {
               this.hideAutomaticUpdatesModal();
               this.props.refreshAppData();

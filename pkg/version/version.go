@@ -34,7 +34,7 @@ func (d *DownstreamGitOps) CreateGitOpsDownstreamCommit(appID string, clusterID 
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get downstream gitops")
 	}
-	if downstreamGitOps == nil {
+	if downstreamGitOps == nil || !downstreamGitOps.IsConnected {
 		return "", nil
 	}
 

@@ -189,7 +189,7 @@ export default class AutomaticUpdatesModal extends React.Component {
   };
 
   render() {
-    const { isOpen, onRequestClose, isSemverRequired, gitopsEnabled } =
+    const { isOpen, onRequestClose, isSemverRequired, gitopsIsConnected } =
       this.props;
     const {
       updateCheckerSpec,
@@ -213,7 +213,7 @@ export default class AutomaticUpdatesModal extends React.Component {
           <span className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-marginBottom--15">
             Configure automatic updates
           </span>
-          {gitopsEnabled ? (
+          {gitopsIsConnected ? (
             <p className="u-fontSize--normal u-lineHeight--normal u-textColor--bodyCopy u-marginBottom--20">
               Configure how often you would like to automatically check for
               updates.
@@ -276,7 +276,7 @@ export default class AutomaticUpdatesModal extends React.Component {
               </div>
             </div>
           </div>
-          {!gitopsEnabled && (
+          {!gitopsIsConnected && (
             <div className="flex-column flex1 u-marginTop--15">
               <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
                 Automatically deploy new versions

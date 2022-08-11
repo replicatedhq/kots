@@ -390,7 +390,7 @@ export default class DashboardLicenseCard extends React.Component {
           ariaHideApp={false}
           className="Modal SmallSize"
         >
-          {gitops?.enabled ? (
+          {gitops?.isConnected ? (
             <div className="Modal-body">
               <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">
                 License synced

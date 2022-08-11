@@ -207,7 +207,7 @@ class AppVersionHistoryRow extends Component {
       checksStatusText = "Checks passed";
     }
 
-    if (downstream.gitops?.enabled) {
+    if (downstream.gitops?.isConnected) {
       if (version.gitDeployable === false) {
         return (
           <div

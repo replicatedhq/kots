@@ -555,7 +555,7 @@ class AppLicense extends Component {
           ariaHideApp={false}
           className="Modal MediumSize"
         >
-          {gitops?.enabled ? (
+          {gitops?.isConnected ? (
             <div className="Modal-body">
               <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
                 The license for {appName} has been updated. A new commit has
