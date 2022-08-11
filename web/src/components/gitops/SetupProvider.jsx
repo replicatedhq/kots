@@ -1,8 +1,26 @@
 import React from "react";
 import Select from "react-select";
+import Modal from "react-modal";
+import { Utilities } from "../../utilities/utilities";
+import enabled from "../../images/enabled.svg";
+import not_enabled from "../../images/not_enabled.svg";
+import warning from "../../images/warning.svg";
+import styled from "styled-components";
 
 const BITBUCKET_SERVER_DEFAULT_HTTP_PORT = "7990";
 const BITBUCKET_SERVER_DEFAULT_SSH_PORT = "7999";
+
+const IconWrapper = styled.div`
+  height: 30px;
+  width: 30px;
+  border-radius: 50%;
+  background-position: center;
+  background-size: contain;
+  background-repeat: no-repeat;
+  box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.3);
+  background-color: #ffffff;
+  z-index: 1;
+`;
 
 const SetupProvider = ({
   step,
@@ -17,6 +35,7 @@ const SetupProvider = ({
   renderHostName,
   handleAppChange,
   selectedApp,
+  finishSetup,
 }) => {
   const {
     hostname,
@@ -27,53 +46,111 @@ const SetupProvider = ({
     providerError,
     finishingSetup,
   } = state;
+  const apps = appsList.map((app) => ({
+    value: app.name,
+    label: app.name,
+    id: app.id,
+    slug: app.slug,
+  }));
+  const [app, setApp] = React.useState({});
 
-  const apps = appsList.map((app) => ({ value: app.name, label: app.name }));
-
-  const renderHttpPort = (provider, httpPort) => {
-    const isBitbucketServer = provider === "bitbucket_server";
-    if (!isBitbucketServer) {
-      return <div className="flex flex1" />;
+  React.useEffect(() => {
+    if (appsList.length > 0) {
+      setApp(
+        appsList.find((app) => {
+          return app.id === selectedApp.id;
+        })
+      );
     }
-    return (
-      <div className="flex flex1 flex-column u-marginRight--10">
-        <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal">
-          HTTP Port
-        </p>
-        <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">
-          HTTP Port of your GitOps server.
-        </p>
-        <input
-          type="text"
-          className="Input"
-          placeholder={BITBUCKET_SERVER_DEFAULT_HTTP_PORT}
-          value={httpPort}
-          onChange={(e) => updateHttpPort(e.target.value)}
-        />
-      </div>
-    );
+  }, [selectedApp, appsList]);
+
+  const downstream = app?.downstream;
+  const gitops = downstream?.gitops;
+  const gitopsEnabled = gitops?.enabled;
+  const gitopsConnected = gitops?.isConnected;
+
+  const [showDisableGitopsModalPrompt, setShowDisableGitopsModalPrompt] =
+    React.useState(false);
+  const [disablingGitOps, setDisablingGitOps] = React.useState(false);
+
+  const promptToDisableGitOps = () => {
+    setShowDisableGitopsModalPrompt(true);
   };
 
-  const renderSshPort = (provider, sshPort) => {
-    const isBitbucketServer = provider === "bitbucket_server";
-    if (!isBitbucketServer) {
-      return <div className="flex flex1" />;
+  const disableGitOps = async () => {
+    setDisablingGitOps(true);
+
+    const appId = app?.id;
+    let clusterId;
+    if (app?.downstream) {
+      clusterId = app.downstream.cluster.id;
     }
+
+    try {
+      const res = await fetch(
+        `${process.env.API_ENDPOINT}/gitops/app/${appId}/cluster/${clusterId}/disable`,
+        {
+          headers: {
+            Authorization: Utilities.getToken(),
+            "Content-Type": "application/json",
+          },
+          method: "POST",
+        }
+      );
+      console.log("res", res);
+      if (!res.ok && res.status === 401) {
+        Utilities.logoutUser();
+        return;
+      }
+      if (res.ok && res.status === 204) {
+        //TODO: DEAL WITH THIS
+        //  this.props.history.push(`/app/${this.props.app?.slug}`);
+        //  this.props.refetch();
+      }
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setDisablingGitOps(false);
+    }
+  };
+  const renderIcons = () => {
+    if (app?.iconUri) {
+      return (
+        <IconWrapper
+          style={{ backgroundImage: `url(${app?.iconUri})` }}
+        ></IconWrapper>
+      );
+    }
+  };
+  const getLabel = (app) => {
     return (
-      <div className="flex flex1 flex-column u-marginLeft--10">
-        <p className="u-fontSize--large u-color--tuna u-fontWeight--bold u-lineHeight--normal">
-          SSH Port
-        </p>
-        <p className="u-fontSize--normal u-color--dustyGray u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">
-          SSH Port of your GitOps server.
-        </p>
-        <input
-          type="text"
-          className="Input"
-          placeholder={BITBUCKET_SERVER_DEFAULT_SSH_PORT}
-          value={sshPort}
-          onChange={(e) => updateSSHPort(e.target.value)}
-        />
+      <div style={{ alignItems: "center", display: "flex" }}>
+        <span style={{ fontSize: 18, marginRight: "10px" }}>
+          {renderIcons()}
+        </span>
+        <div className="flex flex-column">
+          <div>
+            <span style={{ fontSize: 14 }}>{app.label}</span>{" "}
+          </div>
+          <div>
+            {!gitopsEnabled && !gitopsConnected ? (
+              <div className="flex" style={{ gap: "5px", color: "light-gray" }}>
+                <img src={not_enabled} alt="not_enabled" />
+                <p>Not Enabled</p>
+              </div>
+            ) : gitopsEnabled && !gitopsConnected ? (
+              <div className="flex" style={{ gap: "5px", color: "orange" }}>
+                <img src={warning} alt="warning" />
+                <p>Enabled, repository access needed</p>
+              </div>
+            ) : (
+              <div className="flex" style={{ gap: "5px", color: "green" }}>
+                <img src={enabled} alt="enabled" />
+                <p>Enabled</p>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     );
   };
@@ -90,24 +167,39 @@ const SetupProvider = ({
         updates directly from the admin console.
       </p>
       <div className="flex-column u-textAlign--left u-marginBottom--30">
-        <div className="flex flex1 flex-column u-marginRight--10">
-          <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
-            Select an application to configure
-          </p>
-          <div className="u-position--relative u-marginTop--5 u-marginBottom--40">
-            <Select
-              className="replicated-select-container"
-              classNamePrefix="replicated-select"
-              placeholder="Select an application"
-              options={apps}
-              isSearchable={false}
-              // getOptionValue={(service) => service.label}
-              value={selectedApp}
-              onChange={handleAppChange}
-              isOptionSelected={(option) => {
-                option.value === selectedApp;
-              }}
-            />
+        <div className="flex alignItems--center">
+          <div className="flex flex1 flex-column u-marginRight--10">
+            <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
+              Select an application to configure
+            </p>
+
+            <div className="u-position--relative u-marginTop--5 u-marginBottom--40">
+              <Select
+                className="replicated-select-container select-large "
+                classNamePrefix="replicated-select"
+                placeholder="Select an application"
+                options={apps}
+                isSearchable={false}
+                getOptionLabel={(app) => getLabel(app)}
+                // getOptionValue={(app) => app.label}
+                value={selectedApp}
+                onChange={handleAppChange}
+                isOptionSelected={(option) => {
+                  option.value === selectedApp;
+                }}
+              />
+            </div>
+          </div>
+          <div className="flex flex1 flex-column ">
+            <a
+              style={{ color: "blue", cursor: "pointer" }}
+              disabled={disablingGitOps}
+              onClick={promptToDisableGitOps}
+            >
+              {disablingGitOps
+                ? "Disabling GitOps"
+                : "Disable GitOps for this app"}
+            </a>
           </div>
         </div>
         {/* <div className="flex flex1"> */}
@@ -130,18 +222,45 @@ const SetupProvider = ({
         )} */}
       </div>
       <div>
-        <button
-          className="btn primary blue"
-          type="button"
-          disabled={finishingSetup}
-          onClick={updateSettings}
+        <Modal
+          isOpen={showDisableGitopsModalPrompt}
+          onRequestClose={() => {
+            setShowDisableGitopsModalPrompt(false);
+          }}
+          contentLabel="Disable GitOps"
+          ariaHideApp={false}
+          className="Modal"
         >
-          {finishingSetup
-            ? "Finishing setup"
-            : isSingleApp()
-            ? "Continue to deployment action"
-            : "Finish GitOps setup"}
-        </button>
+          <div className="Modal-body">
+            <div className="u-marginTop--10 u-marginBottom--10">
+              <p className="u-fontSize--larger u-fontWeight--bold u-textColor--primary u-marginBottom--10">
+                Are you sure you want to disable GitOps?
+              </p>
+              <p className="u-fontSize--large u-textColor--bodyCopy">
+                You can re-enable GitOps for this application by clicking
+                "GitOps" in the Nav bar
+              </p>
+            </div>
+            <div className="u-marginTop--30">
+              <button
+                type="button"
+                className="btn secondary u-marginRight--10"
+                onClick={() => {
+                  setShowDisableGitopsModalPrompt(false);
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn primary red"
+                onClick={disableGitOps}
+              >
+                Disable GitOps
+              </button>
+            </div>
+          </div>
+        </Modal>
       </div>
     </div>
   );

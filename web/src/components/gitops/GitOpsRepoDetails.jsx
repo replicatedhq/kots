@@ -4,13 +4,15 @@ import { getGitOpsServiceSite } from "../../utilities/utilities";
 import Loader from "../shared/Loader";
 
 import "../../scss/components/gitops/GitOpsDeploymentManager.scss";
+import { Flex, Paragraph } from "../../styles/common";
 
 class GitOpsRepoDetails extends React.Component {
   static propTypes = {
     appName: PropTypes.string.isRequired,
     selectedService: PropTypes.object.isRequired,
     hostname: PropTypes.string,
-    ownerRepo: PropTypes.string,
+    owner: PropTypes.string,
+    repo: PropTypes.string,
     branch: PropTypes.string,
     path: PropTypes.string,
     action: PropTypes.string,
@@ -20,7 +22,8 @@ class GitOpsRepoDetails extends React.Component {
 
   static defaultProps = {
     hostname: "",
-    ownerRepo: "",
+    owner: "",
+    repo: "",
     branch: "",
     path: "",
     action: "commit",
@@ -34,7 +37,8 @@ class GitOpsRepoDetails extends React.Component {
       appName,
       selectedService,
       hostname = "",
-      ownerRepo = "",
+      owner = "",
+      repo = "",
       branch = "",
       path = "",
       action = "commit",
@@ -46,7 +50,8 @@ class GitOpsRepoDetails extends React.Component {
       selectedService,
       providerError: null,
       hostname,
-      ownerRepo,
+      owner,
+      repo,
       branch,
       path,
       action,
@@ -79,12 +84,12 @@ class GitOpsRepoDetails extends React.Component {
   };
 
   isValid = () => {
-    const { ownerRepo, selectedService } = this.state;
+    const { owner, selectedService } = this.state;
     const provider = selectedService?.value;
-    if (provider !== "other" && !ownerRepo.length) {
+    if (provider !== "other" && !owner.length) {
       this.setState({
         providerError: {
-          field: "ownerRepo",
+          field: "owner",
         },
       });
       return false;
@@ -99,8 +104,10 @@ class GitOpsRepoDetails extends React.Component {
 
     this.setState({ finishingSetup: true });
 
+    const ownerRepo = this.state.owner + "/" + this.state.repo;
+
     const repoDetails = {
-      ownerRepo: this.state.ownerRepo,
+      ownerRepo: ownerRepo,
       branch: this.state.branch,
       path: this.state.path,
       action: this.state.action,
@@ -110,7 +117,9 @@ class GitOpsRepoDetails extends React.Component {
     const success = await this.props.onFinishSetup(repoDetails);
     if (this._mounted) {
       if (success) {
+        console.log("success", success);
         this.setState({ finishingSetup: false, showFinishedConfirm: true });
+        this.props.updateSettings();
         setTimeout(() => {
           this.setState({ showFinishedConfirm: false });
         }, 3000);
@@ -121,14 +130,15 @@ class GitOpsRepoDetails extends React.Component {
   };
 
   allowUpdate = () => {
-    const { ownerRepo, branch, path, action, format, selectedService } =
+    const { owner, repo, branch, path, action, format, selectedService } =
       this.state;
     const provider = selectedService?.value;
     if (provider === "other") {
       return true;
     }
     const isAllowed =
-      ownerRepo !== this.props.ownerRepo ||
+      owner !== this.props.owner ||
+      repo !== this.props.repo ||
       branch !== this.props.branch ||
       path !== this.props.path ||
       action !== this.props.action ||
@@ -142,7 +152,8 @@ class GitOpsRepoDetails extends React.Component {
       selectedService,
       providerError,
       hostname,
-      ownerRepo,
+      owner,
+      repo,
       branch,
       path,
       action,
@@ -156,49 +167,68 @@ class GitOpsRepoDetails extends React.Component {
     const isBitbucketServer = provider === "bitbucket_server";
 
     return (
-      <div
-        key={`action-active`}
-        className="GitOpsDeploy--step u-textAlign--left"
-      >
-        <div>
-          <p className="step-title">
-            {this.props.stepTitle || `Enable GitOps for ${appName}`}
-          </p>
-
-          <div className="flex flex1 u-marginBottom--30 u-marginTop--20">
+      <>
+        <Flex
+          key={`action-active`}
+          className="GitOpsDeploy--step u-textAlign--left"
+          width="100%"
+          direction="column"
+        >
+          <Flex flex="1" mb="30" mt="20" width="100%">
             {provider !== "other" && (
               <div className="flex flex1 flex-column u-marginRight--20">
                 <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
-                  {isBitbucketServer
-                    ? "Project & Repository"
-                    : "Owner & Repository"}
-                </p>
-                <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">
-                  Where will the commit be made?
+                  {isBitbucketServer ? "Project" : "Owner"}
+                  <span> (Required)</span>
                 </p>
                 <input
                   type="text"
                   className={`Input ${
-                    providerError?.field === "ownerRepo" && "has-error"
+                    providerError?.field === "owner" && "has-error"
                   }`}
-                  placeholder={
-                    isBitbucketServer
-                      ? "project/repository"
-                      : "owner/repository"
-                  }
-                  value={ownerRepo}
-                  onChange={(e) => this.setState({ ownerRepo: e.target.value })}
+                  placeholder={isBitbucketServer ? "project" : "owner"}
+                  value={owner}
+                  onChange={(e) => this.setState({ owner: e.target.value })}
                   autoFocus
                 />
-                {providerError?.field === "ownerRepo" && (
+                {providerError?.field === "owner" && (
                   <p className="u-fontSize--small u-marginTop--5 u-color--chestnut u-fontWeight--medium u-lineHeight--normal">
                     {isBitbucketServer
-                      ? "A project and repository must be provided"
-                      : "An owner and repository must be provided"}
+                      ? "A project must be provided"
+                      : "An owner must be provided"}
                   </p>
                 )}
               </div>
             )}
+
+            {provider !== "other" && (
+              <Flex flex="1" direction="column">
+                <Paragraph
+                  size="16"
+                  weight="bold"
+                  className="u-lineHeight--normal"
+                >
+                  Repository <span>(Required)</span>
+                </Paragraph>
+                <input
+                  type="text"
+                  className={`Input ${
+                    providerError?.field === "repo" && "has-error"
+                  }`}
+                  placeholder={"Repository"}
+                  value={repo}
+                  onChange={(e) => this.setState({ repo: e.target.value })}
+                  autoFocus
+                />
+                {providerError?.field === "owner" && (
+                  <p className="u-fontSize--small u-marginTop--5 u-color--chestnut u-fontWeight--medium u-lineHeight--normal">
+                    A repository must be provided
+                  </p>
+                )}
+              </Flex>
+            )}
+          </Flex>
+          <Flex width="100%">
             {provider !== "other" && (
               <div className="flex flex1 flex-column u-marginRight--20">
                 <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
@@ -222,142 +252,31 @@ class GitOpsRepoDetails extends React.Component {
                   Path
                 </p>
                 <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">
-                  Where will the deployment file live?
+                  Path in repository to cmmmit deployment file
                 </p>
                 <input
                   type="text"
                   className={"Input"}
-                  placeholder="/my-path"
+                  placeholder="/path/to-deployment"
                   value={path}
                   onChange={(e) => this.setState({ path: e.target.value })}
                 />
               </div>
             )}
-          </div>
-
-          <p className="step-sub">
-            When an update is available{appName ? ` to ${appName}` : ""}, how
-            should the updates YAML be delivered to
-            {selectedService?.label === "Other"
-              ? " your GitOps provider"
-              : ` ${serviceSite}`}
-            ?
-          </p>
-          <div className="flex flex1 u-marginTop--normal gitops-checkboxes justifyContent--center u-marginBottom--30">
-            <div className="BoxedCheckbox-wrapper flex1 u-textAlign--left u-marginRight--10">
-              <div
-                className={`BoxedCheckbox flex-auto flex ${
-                  action === "commit" ? "is-active" : ""
-                }`}
-              >
-                <input
-                  type="radio"
-                  className="u-cursor--pointer hidden-input"
-                  id="commitOption"
-                  checked={action === "commit"}
-                  defaultValue="commit"
-                  onChange={this.onActionTypeChange}
-                />
-                <label
-                  htmlFor="commitOption"
-                  className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none"
-                >
-                  <div className="flex-auto">
-                    <span className="icon clickable commitOptionIcon u-marginRight--10" />
-                  </div>
-                  <div className="flex1">
-                    <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium">
-                      Create a commit
-                    </p>
-                    <p className="u-textColor--bodyCopy u-fontSize--small u-fontWeight--medium u-marginTop--5">
-                      Automatic commits to repo
-                    </p>
-                  </div>
-                </label>
-              </div>
-            </div>
-            <div className="BoxedCheckbox-wrapper flex1" />
-          </div>
-
-          <div className="u-marginBottom--10 u-textAlign--left">
-            <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
-              What content will it contain?
-            </p>
-            <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">
-              Your commit can include a single rendered yaml file or it’s full
-              output.
-            </p>
-          </div>
-
-          <div className="flex flex1 u-marginTop--normal gitops-checkboxes justifyContent--center u-marginBottom--30">
-            <div className="BoxedCheckbox-wrapper flex1 u-textAlign--left u-marginRight--10">
-              <div
-                className={`BoxedCheckbox flex1 flex ${
-                  format === "single" ? "is-active" : ""
-                }`}
-              >
-                <input
-                  type="radio"
-                  className="u-cursor--pointer hidden-input"
-                  id="singleOption"
-                  checked={format === "single"}
-                  defaultValue="single"
-                  onChange={this.onFileContainChange}
-                />
-                <label
-                  htmlFor="singleOption"
-                  className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none"
-                >
-                  <div className="flex-auto">
-                    <span className="icon clickable singleOptionIcon u-marginRight--10" />
-                  </div>
-                  <div className="flex1">
-                    <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium">
-                      Rendered YAML
-                    </p>
-                    <p className="u-textColor--bodyCopy u-fontSize--small u-fontWeight--medium u-marginTop--5">
-                      Apply using{" "}
-                      <span className="inline-code no-bg">
-                        kubectl apply -f
-                      </span>
-                    </p>
-                  </div>
-                </label>
-              </div>
-            </div>
-            <div className="BoxedCheckbox-wrapper flex1"></div>
-          </div>
-
-          <div className="flex">
-            {this.props.showCancelBtn && (
-              <button
-                className="btn secondary dustyGray u-marginRight--10"
-                type="button"
-                onClick={this.props.onCancel}
-              >
-                Cancel
-              </button>
-            )}
-            <button
-              className="btn primary blue"
-              type="button"
-              disabled={finishingSetup || !this.allowUpdate()}
-              onClick={this.onFinishSetup}
-            >
-              {finishingSetup ? this.props.ctaLoadingText : this.props.ctaText}
-            </button>
-            {finishingSetup && <Loader className="u-marginLeft--5" size="30" />}
-            {showFinishedConfirm && (
-              <div className="u-marginLeft--10 flex alignItems--center">
-                <span className="icon checkmark-icon" />
-                <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-textColor--success">
-                  Settings saved
-                </span>
-              </div>
-            )}
-          </div>
+          </Flex>
+        </Flex>
+        <div className="flex">
+          <button
+            className="btn primary blue"
+            type="button"
+            disabled={finishingSetup || !this.allowUpdate()}
+            onClick={this.onFinishSetup}
+          >
+            Generate SSH key
+          </button>
+          {finishingSetup && <Loader className="u-marginLeft--5" size="30" />}
         </div>
-      </div>
+      </>
     );
   }
 }

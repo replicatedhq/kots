@@ -10,8 +10,27 @@ import {
   Utilities,
 } from "../../utilities/utilities";
 import Modal from "react-modal";
+import Select from "react-select";
+import not_enabled from "../../images/not_enabled.svg";
+import warning from "../../images/warning.svg";
+import enabled from "../../images/enabled.svg";
 
 import "../../scss/components/gitops/GitOpsSettings.scss";
+import styled from "styled-components";
+
+import SetupProvider from "../gitops/SetupProvider";
+
+const IconWrapper = styled.div`
+  height: 30px;
+  width: 30px;
+  border-radius: 50%;
+  background-position: center;
+  background-size: contain;
+  background-repeat: no-repeat;
+  box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.3);
+  background-color: #ffffff;
+  z-index: 1;
+`;
 
 const SERVICES = [
   {
@@ -83,25 +102,6 @@ class AppGitops extends Component {
     }
 
     return ownerRepo;
-  };
-
-  renderIcons = (service) => {
-    if (service) {
-      return <span className={`icon gitopsService--${service.value}`} />;
-    } else {
-      return;
-    }
-  };
-
-  getLabel = (service, label) => {
-    return (
-      <div style={{ alignItems: "center", display: "flex" }}>
-        <span style={{ fontSize: 18, marginRight: "10px" }}>
-          {this.renderIcons(service)}
-        </span>
-        <span style={{ fontSize: 14 }}>{label}</span>
-      </div>
-    );
   };
 
   handleTestConnection = async () => {
@@ -356,11 +356,69 @@ class AppGitops extends Component {
 
     const deployKey = gitops?.deployKey;
     const addKeyUri = getAddKeyUri(gitops, ownerRepo);
+    const gitopsEnabled = gitops?.enabled;
+    const gitopsConnected = gitops?.isConnected;
     const gitopsIsConnected = gitops?.enabled && gitops?.isConnected;
 
     const selectedService = SERVICES.find((service) => {
       return service.value === gitops?.provider;
     });
+
+    const renderIcons = () => {
+      console.log(this.props.app);
+      if (this.props.app?.iconUri) {
+        console.log("yueah");
+        return (
+          <IconWrapper
+            style={{ backgroundImage: `url(${app?.iconUri})` }}
+          ></IconWrapper>
+        );
+      }
+    };
+    const getLabel = (app) => {
+      console.log("get label", app);
+      return (
+        <div style={{ alignItems: "center", display: "flex" }}>
+          <span style={{ fontSize: 18, marginRight: "10px" }}>
+            {renderIcons()}
+          </span>
+          <div className="flex flex-column">
+            <div>
+              <span style={{ fontSize: 14 }}>{app.label}</span>{" "}
+            </div>
+            <div>
+              {!gitopsEnabled && !gitopsConnected ? (
+                <div
+                  className="flex"
+                  style={{ gap: "5px", color: "light-gray" }}
+                >
+                  <img src={not_enabled} alt="not_enabled" />
+                  <p>Not Enabled</p>
+                </div>
+              ) : gitopsEnabled && !gitopsConnected ? (
+                <div className="flex" style={{ gap: "5px", color: "orange" }}>
+                  <img src={warning} alt="warning" />
+                  <p>Enabled, repository access needed</p>
+                </div>
+              ) : (
+                <div className="flex" style={{ gap: "5px", color: "green" }}>
+                  <img src={enabled} alt="enabled" />
+                  <p>Enabled</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const dumby = false;
+    const apps = this.props?.appsList?.map((app) => ({
+      value: app.name,
+      label: app.name,
+      id: app.id,
+      slug: app.slug,
+    }));
 
     return (
       <div className="GitOpsSettings--wrapper container flex-column u-overflow--auto u-paddingBottom--20 alignItems--center">
@@ -370,27 +428,26 @@ class AppGitops extends Component {
 
         {!ownerRepo || showGitOpsSettings ? (
           <div className="u-marginTop--30">
-            <GitOpsRepoDetails
-              stepTitle={`GitOps settings for ${appTitle}`}
-              appName={appTitle}
-              hostname={gitops?.hostname}
-              ownerRepo={ownerRepo}
-              branch={gitops?.branch}
-              path={gitops?.path}
-              format={gitops?.format}
-              action={gitops?.action}
-              selectedService={selectedService}
-              onFinishSetup={this.finishGitOpsSetup}
-              showCancelBtn={!!ownerRepo}
-              onCancel={this.hideGitOpsSettings}
-              otherService=""
-              ctaLoadingText="Updating settings"
-              ctaText="Update settings"
+            <SetupProvider
+              app={this.props.app}
+              //    step={step}
+              appsList={this.props.appsList}
+              state={this.state}
+              selectedApp={this.props.selectedApp}
+              provider={provider}
+              updateSettings={this.updateSettings}
+              isSingleApp={this.isSingleApp}
+              updateHttpPort={this.updateHttpPort}
+              renderGitOpsProviderSelector={this.renderGitOpsProviderSelector}
+              renderHostName={this.renderHostName}
+              handleAppChange={this.handleAppChange}
             />
           </div>
         ) : (
           <div className="GitOpsSettings">
-            <div
+            {/* work on this later basically rendergitopsproviderselecteer */}
+            {/*  */}
+            {/* <div
               className={`flex u-marginTop--30 justifyContent--center alignItems--center ${
                 gitopsIsConnected ? "u-marginBottom--30" : "u-marginBottom--20"
               }`}
@@ -413,10 +470,11 @@ class AppGitops extends Component {
                   gitops?.provider
                 )} u-marginLeft--10`}
               />
-            </div>
+            </div> */}
 
-            {gitopsIsConnected ? (
+            {dumby ? (
               <div className="u-marginLeft--auto u-marginRight--auto">
+                {/* work on this later basically rendergitopsproviderselecteer */}
                 <GitOpsRepoDetails
                   stepTitle={`GitOps settings for ${appTitle}`}
                   appName={appTitle}
@@ -432,50 +490,75 @@ class AppGitops extends Component {
                   ctaLoadingText="Updating settings"
                   ctaText="Update settings"
                 />
-                <div className="disable-gitops-wrapper">
-                  <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-marginBottom--10">
-                    Disable GitOps for {appTitle}
-                  </p>
-                  <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-marginBottom--20">
-                    Disabling GitOps will only affect this application.{" "}
-                  </p>
-                  <button
-                    className="btn secondary red u-marginRight--10"
-                    disabled={disablingGitOps}
-                    onClick={this.promptToDisableGitOps}
-                  >
-                    {disablingGitOps ? "Disabling GitOps" : "Disable GitOps"}
-                  </button>
-                </div>
               </div>
             ) : (
               <div className="flex-column flex1">
                 <div className="GitopsSettings-noRepoAccess">
-                  <div className="u-textAlign--center">
-                    <span className="success-checkmark-icon icon u-marginBottom--10" />
-                  </div>
-                  <p className="title">
-                    GitOps has been enabled. You're almost ready to deploy
-                  </p>
+                  <p className="title">GitOps Configuration</p>
                   <p className="sub">
-                    In order for application updates to be pushed to your GitOps
-                    deployment pipeline we need to be able to access to the
-                    repository. To&nbsp;do this, copy the key below and add it
-                    to your repository settings page.
-                  </p>
-                  <p className="sub u-marginTop--10">
-                    If you have already added this key to your repository and
-                    are seeing this message, check to make sure that the key has
-                    "Write access" for the repository and click "Try again".
+                    Connect a git version control system so all application
+                    updates are committed to a git repository. When GitOps is
+                    enabled, you cannot deploy updates directly from the admin
+                    console.
                   </p>
                 </div>
+                <div className="flex alignItems--center">
+                  <div className="flex flex1 flex-column u-marginRight--10">
+                    <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
+                      Select an application to configure
+                    </p>
+                    <div className="u-position--relative u-marginTop--5 u-marginBottom--40">
+                      <Select
+                        className="replicated-select-container select-large"
+                        classNamePrefix="replicated-select"
+                        placeholder="Select an application"
+                        options={apps}
+                        isSearchable={false}
+                        getOptionLabel={(app) => getLabel(app)}
+                        value={this.props.selectedApp}
+                        onChange={this.props.handleAppChange}
+                        isOptionSelected={(option) => {
+                          option.value === this.props.selectedApp;
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex1 flex-column ">
+                    <a
+                      style={{ color: "blue", cursor: "pointer" }}
+                      disabled={disablingGitOps}
+                      onClick={this.promptToDisableGitOps}
+                    >
+                      {disablingGitOps
+                        ? "Disabling GitOps"
+                        : "Disable GitOps for this app"}
+                    </a>
+                  </div>
+                </div>
 
-                <div className="u-marginBottom--30">
-                  <p className="u-fontSize--large u-fontWeight--bold u-textColor--secondary u-lineHeight--normal u-marginBottom--5">
-                    Deployment key
+                <div
+                  style={{
+                    background: "#FBE9D7",
+                    padding: "30px",
+                    margin: "30px",
+                  }}
+                >
+                  <p
+                    className="u-fontSize--large u-fontWeight--bold u-lineHeight--normal u-marginBottom--5"
+                    style={{ color: "#DB9016" }}
+                  >
+                    GitOps is enabled but repository access is needed for
+                    pushing updates
+                  </p>
+                  <p
+                    className="u-textColor--primary"
+                    style={{ marginBottom: "30px" }}
+                  >
+                    To push application updates to your repository, access to
+                    your repository is needed.
                   </p>
                   <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy u-marginBottom--15">
-                    Copy this deploy key to the
+                    Add this SSH key on your
                     <a
                       className="replicated-link"
                       href={addKeyUri}
@@ -502,31 +585,28 @@ class AppGitops extends Component {
                 <div className="flex justifyContent--spaceBetween alignItems--center">
                   <div className="flex">
                     <button
-                      className="btn secondary blue u-marginRight--10"
-                      disabled={testingConnection}
-                      onClick={this.handleTestConnection}
+                      className="btn secondary blue"
+                      onClick={this.updateGitOpsSettings}
                     >
-                      {testingConnection ? "Testing connection" : "Try again"}
+                      Back to configuration
                     </button>
-                    <button
-                      className="btn primary blue u-marginRight--10"
-                      onClick={this.goToTroubleshootPage}
-                    >
-                      Troubleshoot
-                    </button>
-                    <button
+
+                    {/* <button
                       className="btn secondary red"
                       disabled={disablingGitOps}
                       onClick={this.promptToDisableGitOps}
                     >
                       {disablingGitOps ? "Disabling GitOps" : "Disable GitOps"}
-                    </button>
+                    </button> */}
                   </div>
                   <button
-                    className="btn secondary dustyGray"
-                    onClick={this.updateGitOpsSettings}
+                    className="btn primary blue u-marginRight--10"
+                    disabled={testingConnection}
+                    onClick={this.handleTestConnection}
                   >
-                    Update GitOps Settings
+                    {testingConnection
+                      ? "Testing connection"
+                      : "Test connection to repo"}
                   </button>
                 </div>
                 {errorMsg ? (
