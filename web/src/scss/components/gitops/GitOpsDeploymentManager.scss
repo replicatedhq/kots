@@ -13,7 +13,8 @@
 }
 
 .GitOpsDeploy--step {
-  background-color: #ffffff;
+  background-color: $really-light-accent;
+  padding: 15px;
   margin-bottom: 40px;
   text-align: center;
   position: relative;
@@ -23,7 +24,7 @@
   }
 
   .step-title {
-    font-size: 20px;
+    font-size: 26px;
     font-weight: 700;
     color: $text-color-secondary;
     margin-bottom: 12px;
@@ -36,6 +37,7 @@
     color: $text-color-body-copy;
     margin-bottom: 20px;
     line-height: 22px;
+    text-align: left;
   }
 }
 
