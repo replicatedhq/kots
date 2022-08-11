@@ -30,7 +30,7 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 
 	for _, file := range u.Files {
 		p := path.Join(chartPath, file.Path)
-		d, fileName := path.Split(p)
+		d, _ := path.Split(p)
 		if _, err := os.Stat(d); err != nil {
 			if os.IsNotExist(err) {
 				if err := os.MkdirAll(d, 0755); err != nil {
@@ -38,16 +38,6 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 				}
 			} else {
 				return nil, errors.Wrap(err, "failed to check if dir exists")
-			}
-		}
-
-		// check chart.yaml for Helm version if a helm version has not been explicitly provided
-		if strings.EqualFold(fileName, "Chart.yaml") && renderOptions.HelmVersion == "" {
-			renderOptions.HelmVersion, err = checkChartForVersion(&file)
-			if err != nil {
-				renderOptions.Log.Info("could not determine helm version (will use helm v2 by default): %v", err)
-			} else {
-				renderOptions.Log.Info("rendering with Helm %v", renderOptions.HelmVersion)
 			}
 		}
 
@@ -65,12 +55,12 @@ func RenderHelm(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*Base,
 
 	var rendered []BaseFile
 	switch strings.ToLower(renderOptions.HelmVersion) {
-	case "v3":
+	case "v3", "":
 		rendered, err = renderHelmV3(u.Name, chartPath, vals, renderOptions)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render with helm v3")
 		}
-	case "v2", "":
+	case "v2":
 		rendered, err = renderHelmV2(u.Name, chartPath, vals, renderOptions)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render with helm v2")
@@ -416,22 +406,6 @@ func getAllBasePaths(prefix string, base Base) []string {
 		basePaths = append(basePaths, getAllBasePaths(path.Join(prefix, base.Path), b)...)
 	}
 	return basePaths
-}
-
-func checkChartForVersion(file *upstreamtypes.UpstreamFile) (string, error) {
-	var chartValues map[string]interface{}
-
-	err := yaml.Unmarshal(file.Content, &chartValues)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to unmarshal chart.yaml")
-	}
-	// note: helm API v2 is equivilent to Helm V3
-	if version, ok := chartValues["apiVersion"]; ok && strings.EqualFold(version.(string), "v2") {
-		return "v3", nil
-	}
-
-	// if no determination is made, assume v2
-	return "v2", nil
 }
 
 // insert namespace if it's defined in the spec and not already present in the manifests
