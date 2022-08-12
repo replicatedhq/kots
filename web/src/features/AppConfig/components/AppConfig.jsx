@@ -712,7 +712,7 @@ class AppConfig extends Component {
           ariaHideApp={false}
           className="Modal MediumSize"
         >
-          {gitops?.enabled ? (
+          {gitops?.isConnected ? (
             <div className="Modal-body">
               {
                 <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">

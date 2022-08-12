@@ -4,7 +4,7 @@ import findIndex from "lodash/findIndex";
 import { Link } from "react-router-dom";
 
 const ConfigInfo = ({ match, fromLicenseFlow, app }) => {
-  if (fromLicenseFlow || app?.downstream?.gitops?.enabled) {
+  if (fromLicenseFlow || app?.downstream?.gitops?.isConnected) {
     return null;
   }
 

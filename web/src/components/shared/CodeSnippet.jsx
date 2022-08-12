@@ -67,6 +67,7 @@ class CodeSnippet extends Component {
       language,
       preText,
       canCopy,
+      clipboardEnabled = !!navigator.clipboard,
       copyText,
       onCopyText,
       variant,
@@ -93,7 +94,7 @@ class CodeSnippet extends Component {
             </div>
           )}
           <Prism language={language}>{content}</Prism>
-          {canCopy && (
+          {clipboardEnabled && canCopy && (
             <span
               className={classNames("CodeSnippet-copy", {
                 "is-copied": didCopy,
