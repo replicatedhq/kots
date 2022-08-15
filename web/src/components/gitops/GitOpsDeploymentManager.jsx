@@ -282,16 +282,16 @@ class GitOpsDeploymentManager extends React.Component {
       }
       await this.createGitOpsRepo(gitOpsInput);
 
-      if (this.isSingleApp()) {
-        const app = this.state.appsList[0];
-        const downstream = app?.downstream;
-        const clusterId = downstream?.cluster?.id;
+      const currentApp = find(this.state.appsList, {
+        id: this.state.selectedApp.id,
+      });
 
-        await this.updateAppGitOps(app.id, clusterId, gitOpsInput);
-      } else {
-        this.getAppsList();
-        this.getGitops();
-      }
+      const downstream = currentApp?.downstream;
+      const clusterId = downstream?.cluster?.id;
+
+      await this.updateAppGitOps(currentApp.id, clusterId, gitOpsInput);
+      this.getAppsList();
+      this.getGitops();
 
       return true;
     } catch (err) {

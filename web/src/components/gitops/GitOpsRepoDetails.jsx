@@ -117,7 +117,6 @@ class GitOpsRepoDetails extends React.Component {
     const success = await this.props.onFinishSetup(repoDetails);
     if (this._mounted) {
       if (success) {
-        console.log("success", success);
         this.setState({ finishingSetup: false, showFinishedConfirm: true });
         this.props.updateSettings();
         setTimeout(() => {

@@ -19,6 +19,9 @@ import "../../scss/components/gitops/GitOpsSettings.scss";
 import styled from "styled-components";
 
 import SetupProvider from "../gitops/SetupProvider";
+import ConnectionModal from "../gitops/modals/ConnectionModal";
+import Loader from "../shared/Loader";
+import DisableModal from "../gitops/modals/DisableModal";
 
 const IconWrapper = styled.div`
   height: 30px;
@@ -74,6 +77,8 @@ class AppGitops extends Component {
       showDisableGitopsModalPrompt: false,
       showGitOpsSettings: false,
       errorMsg: "",
+      showConnectionModal: false,
+      modalType: "",
     };
   }
 
@@ -104,6 +109,25 @@ class AppGitops extends Component {
     return ownerRepo;
   };
 
+  renderIcons = (service) => {
+    if (service) {
+      return <span className={`icon gitopsService--${service.value}`} />;
+    } else {
+      return;
+    }
+  };
+
+  getLabel = (service, label) => {
+    return (
+      <div style={{ alignItems: "center", display: "flex" }}>
+        <span style={{ fontSize: 18, marginRight: "10px" }}>
+          {this.renderIcons(service)}
+        </span>
+        <span style={{ fontSize: 14 }}>{label}</span>
+      </div>
+    );
+  };
+
   handleTestConnection = async () => {
     this.setState({ testingConnection: true, errorMsg: "" });
 
@@ -124,23 +148,27 @@ class AppGitops extends Component {
           },
         }
       );
+      console.log(res);
       if (!res.ok) {
         if (res.status === 401) {
           Utilities.logoutUser();
           return;
         }
-        this.props.refetch();
+        // this.props.refetch();
 
         if (res.status === 400) {
           const response = await res.json();
           if (response?.error) {
+            this.setState({ showConnectionModal: true, modalType: "fail" });
             console.log(response?.error);
           }
           throw new Error(`authentication failed`);
         }
         throw new Error(`unexpected status code: ${res.status}`);
       }
-      this.props.history.push("/gitops");
+
+      this.setState({ showConnectionModal: true, modalType: "success" });
+      //this.props.history.push("/gitops");
     } catch (err) {
       console.log(err);
       this.setState({
@@ -299,7 +327,10 @@ class AppGitops extends Component {
     } catch (err) {
       console.log(err);
     } finally {
-      this.setState({ disablingGitOps: false });
+      this.setState({
+        disablingGitOps: false,
+        showDisableGitopsModalPrompt: false,
+      });
     }
   };
 
@@ -365,9 +396,7 @@ class AppGitops extends Component {
     });
 
     const renderIcons = () => {
-      console.log(this.props.app);
       if (this.props.app?.iconUri) {
-        console.log("yueah");
         return (
           <IconWrapper
             style={{ backgroundImage: `url(${app?.iconUri})` }}
@@ -376,7 +405,6 @@ class AppGitops extends Component {
       }
     };
     const getLabel = (app) => {
-      console.log("get label", app);
       return (
         <div style={{ alignItems: "center", display: "flex" }}>
           <span style={{ fontSize: 18, marginRight: "10px" }}>
@@ -599,15 +627,17 @@ class AppGitops extends Component {
                       {disablingGitOps ? "Disabling GitOps" : "Disable GitOps"}
                     </button> */}
                   </div>
-                  <button
-                    className="btn primary blue u-marginRight--10"
-                    disabled={testingConnection}
-                    onClick={this.handleTestConnection}
-                  >
-                    {testingConnection
-                      ? "Testing connection"
-                      : "Test connection to repo"}
-                  </button>
+                  {testingConnection ? (
+                    <Loader size="30" />
+                  ) : (
+                    <button
+                      className="btn primary blue u-marginRight--10"
+                      disabled={testingConnection}
+                      onClick={this.handleTestConnection}
+                    >
+                      Test connection to repo
+                    </button>
+                  )}
                 </div>
                 {errorMsg ? (
                   <p className="u-textColor--error u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginTop--12">
@@ -618,45 +648,20 @@ class AppGitops extends Component {
             )}
           </div>
         )}
-        <Modal
-          isOpen={showDisableGitopsModalPrompt}
-          onRequestClose={() => {
-            this.setState({ showDisableGitopsModalPrompt: false });
-          }}
-          contentLabel="Disable GitOps"
-          ariaHideApp={false}
-          className="Modal"
-        >
-          <div className="Modal-body">
-            <div className="u-marginTop--10 u-marginBottom--10">
-              <p className="u-fontSize--larger u-fontWeight--bold u-textColor--primary u-marginBottom--10">
-                Are you sure you want to disable GitOps?
-              </p>
-              <p className="u-fontSize--large u-textColor--bodyCopy">
-                You can re-enable GitOps for this application by clicking
-                "GitOps" in the Nav bar
-              </p>
-            </div>
-            <div className="u-marginTop--30">
-              <button
-                type="button"
-                className="btn secondary u-marginRight--10"
-                onClick={() => {
-                  this.setState({ showDisableGitopsModalPrompt: false });
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="btn primary red"
-                onClick={this.disableGitOps}
-              >
-                Disable GitOps
-              </button>
-            </div>
-          </div>
-        </Modal>
+        <DisableModal
+          isOpen={this.state.showDisableGitopsModalPrompt}
+          setOpen={(e) => this.setState({ showDisableGitopsModalPrompt: e })}
+          disableGitOps={this.disableGitOps}
+          provider={selectedService}
+        />
+
+        <ConnectionModal
+          isOpen={this.state.showConnectionModal}
+          modalType={this.state.modalType}
+          setOpen={(e) => this.setState({ showConnectionModal: e })}
+          handleTestConnection={this.handleTestConnection}
+          isTestingConnection={this.state.testingConnection}
+        />
       </div>
     );
   }

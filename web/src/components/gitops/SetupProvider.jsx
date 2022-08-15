@@ -6,6 +6,8 @@ import enabled from "../../images/enabled.svg";
 import not_enabled from "../../images/not_enabled.svg";
 import warning from "../../images/warning.svg";
 import styled from "styled-components";
+import DisableModal from "./modals/DisableModal";
+import { useHistory } from "react-router";
 
 const BITBUCKET_SERVER_DEFAULT_HTTP_PORT = "7990";
 const BITBUCKET_SERVER_DEFAULT_SSH_PORT = "7999";
@@ -69,6 +71,8 @@ const SetupProvider = ({
   const gitopsEnabled = gitops?.enabled;
   const gitopsConnected = gitops?.isConnected;
 
+  const history = useHistory();
+
   const [showDisableGitopsModalPrompt, setShowDisableGitopsModalPrompt] =
     React.useState(false);
   const [disablingGitOps, setDisablingGitOps] = React.useState(false);
@@ -103,9 +107,8 @@ const SetupProvider = ({
         return;
       }
       if (res.ok && res.status === 204) {
-        //TODO: DEAL WITH THIS
-        //  this.props.history.push(`/app/${this.props.app?.slug}`);
-        //  this.props.refetch();
+        history.push(`/app/${app?.slug}`);
+        setShowDisableGitopsModalPrompt(false);
       }
     } catch (err) {
       console.log(err);
@@ -222,45 +225,12 @@ const SetupProvider = ({
         )} */}
       </div>
       <div>
-        <Modal
+        <DisableModal
           isOpen={showDisableGitopsModalPrompt}
-          onRequestClose={() => {
-            setShowDisableGitopsModalPrompt(false);
-          }}
-          contentLabel="Disable GitOps"
-          ariaHideApp={false}
-          className="Modal"
-        >
-          <div className="Modal-body">
-            <div className="u-marginTop--10 u-marginBottom--10">
-              <p className="u-fontSize--larger u-fontWeight--bold u-textColor--primary u-marginBottom--10">
-                Are you sure you want to disable GitOps?
-              </p>
-              <p className="u-fontSize--large u-textColor--bodyCopy">
-                You can re-enable GitOps for this application by clicking
-                "GitOps" in the Nav bar
-              </p>
-            </div>
-            <div className="u-marginTop--30">
-              <button
-                type="button"
-                className="btn secondary u-marginRight--10"
-                onClick={() => {
-                  setShowDisableGitopsModalPrompt(false);
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="btn primary red"
-                onClick={disableGitOps}
-              >
-                Disable GitOps
-              </button>
-            </div>
-          </div>
-        </Modal>
+          setOpen={setShowDisableGitopsModalPrompt}
+          disableGitOps={disableGitOps}
+          provider={provider}
+        />
       </div>
     </div>
   );
