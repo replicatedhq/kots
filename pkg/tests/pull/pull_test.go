@@ -8,9 +8,11 @@ import (
 	"strings"
 	"testing"
 
+	envsubst "github.com/drone/envsubst/v2"
 	"github.com/ghodss/yaml"
 	"github.com/replicatedhq/kots/pkg/pull"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -150,14 +152,19 @@ func TestKotsPull(t *testing.T) {
 
 					wantContents, err := ioutil.ReadFile(wantPath)
 					if err != nil {
-						fmt.Printf("unable to open file %s\n", path)
+						fmt.Printf("unable to open file %s\n", wantPath)
 					}
-					require.NoError(t, err, path)
+					require.NoError(t, err, wantPath)
 
 					contentsString := string(contents)
 					wantContentsString := string(wantContents)
-					assert.Equal(t, wantContentsString, contentsString, path)
 
+					if ext := filepath.Ext(wantPath); ext == ".yaml" || ext == ".yml" {
+						wantContentsString, err = envsubst.Eval(wantContentsString, util.TestGetenv)
+						require.NoError(t, err, wantPath)
+					}
+
+					assert.Equal(t, wantContentsString, contentsString, wantPath)
 					return nil
 				})
 

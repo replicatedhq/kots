@@ -16,4 +16,4 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: fluent-bit
-    namespace: 
+    namespace: ${POD_NAMESPACE}

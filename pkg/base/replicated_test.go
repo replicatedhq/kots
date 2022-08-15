@@ -6,14 +6,15 @@ import (
 	"reflect"
 	"testing"
 
+	envsubst "github.com/drone/envsubst/v2"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -698,6 +699,11 @@ var postgresqlChart []byte
 
 func Test_renderReplicatedHelm(t *testing.T) {
 
+	setenv := func(content string) string {
+		c, err := envsubst.Eval(content, util.TestGetenv)
+		require.NoError(t, err)
+		return c
+	}
 	tests := []struct {
 		name          string
 		upstream      *upstreamtypes.Upstream
@@ -812,6 +818,7 @@ spec:
 `),
 				},
 			}},
+			expectedHelm: []Base{},
 		},
 		{
 			name: "helm install test",
@@ -936,7 +943,7 @@ spec:
 					Files: []BaseFile{
 						{
 							Path: "templates/secrets.yaml",
-							Content: []byte(`# Source: postgresql/templates/secrets.yaml
+							Content: []byte(setenv(`# Source: postgresql/templates/secrets.yaml
 apiVersion: v1
 kind: Secret
 metadata:
@@ -946,14 +953,14 @@ metadata:
     helm.sh/chart: postgresql-10.13.8
     app.kubernetes.io/instance: postgresql
     app.kubernetes.io/managed-by: Helm
-  namespace: 
+  namespace: ${POD_NAMESPACE}
 type: Opaque
 data:
-  postgresql-password: "YWJjMTIz"`),
+  postgresql-password: "YWJjMTIz"`)),
 						},
 						{
 							Path: "templates/statefulset.yaml",
-							Content: []byte(`# Source: postgresql/templates/statefulset.yaml
+							Content: []byte(setenv(`# Source: postgresql/templates/statefulset.yaml
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -965,7 +972,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: primary
   annotations:
-  namespace: 
+  namespace: ${POD_NAMESPACE}
 spec:
   serviceName: postgresql-headless
   replicas: 1
@@ -999,7 +1006,7 @@ spec:
                     app.kubernetes.io/instance: postgresql
                     app.kubernetes.io/component: primary
                 namespaces:
-                  - ""
+                  - "${POD_NAMESPACE}"
                 topologyKey: kubernetes.io/hostname
               weight: 1
         nodeAffinity:
@@ -1095,11 +1102,11 @@ spec:
           - "ReadWriteOnce"
         resources:
           requests:
-            storage: "8Gi"`),
+            storage: "8Gi"`)),
 						},
 						{
 							Path: "templates/svc-headless.yaml",
-							Content: []byte(`# Source: postgresql/templates/svc-headless.yaml
+							Content: []byte(setenv(`# Source: postgresql/templates/svc-headless.yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -1114,7 +1121,7 @@ metadata:
     # field is broken in some versions of Kubernetes:
     # https://github.com/kubernetes/kubernetes/issues/58662
     service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
-  namespace: 
+  namespace: ${POD_NAMESPACE}
 spec:
   type: ClusterIP
   clusterIP: None
@@ -1128,11 +1135,11 @@ spec:
       targetPort: tcp-postgresql
   selector:
     app.kubernetes.io/name: postgresql
-    app.kubernetes.io/instance: postgresql`),
+    app.kubernetes.io/instance: postgresql`)),
 						},
 						{
 							Path: "templates/svc.yaml",
-							Content: []byte(`# Source: postgresql/templates/svc.yaml
+							Content: []byte(setenv(`# Source: postgresql/templates/svc.yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -1143,7 +1150,7 @@ metadata:
     app.kubernetes.io/instance: postgresql
     app.kubernetes.io/managed-by: Helm
   annotations:
-  namespace: 
+  namespace: ${POD_NAMESPACE}
 spec:
   type: ClusterIP
   ports:
@@ -1153,7 +1160,7 @@ spec:
   selector:
     app.kubernetes.io/name: postgresql
     app.kubernetes.io/instance: postgresql
-    role: primary`),
+    role: primary`)),
 						},
 					},
 					ErrorFiles: []BaseFile{},
@@ -1247,7 +1254,6 @@ version: 1.10.1
 
 			base, helmBase, err := renderReplicated(test.upstream, test.renderOptions)
 			req.NoError(err)
-
 			req.ElementsMatch(test.expectedHelm, helmBase)
 			req.ElementsMatch(test.expectedBase.Files, base.Files)
 		})

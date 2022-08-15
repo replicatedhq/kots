@@ -38,12 +38,20 @@ func (s kustPatches) Less(i, j int) bool {
 }
 
 func WriteKustomizationToFile(kustomization kustomizetypes.Kustomization, file string) error {
-	// we remove newTags from here... because...
 	cleanedImages := []kustomizetypes.Image{}
+
+	// Remove tags and deduplicate image list.
+	// Tags are removed because we don't want kustomize to change tags, only image names
+	imageDedup := map[string]bool{}
 	for _, image := range kustomization.Images {
+		if _, ok := imageDedup[image.Name]; ok {
+			continue
+		}
 		image.NewTag = ""
 		cleanedImages = append(cleanedImages, image)
+		imageDedup[image.Name] = true
 	}
+
 	kustomization.Images = cleanedImages
 
 	sort.Strings(kustomization.Bases)
