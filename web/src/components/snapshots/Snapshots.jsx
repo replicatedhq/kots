@@ -15,7 +15,6 @@ import SnapshotDifferencesModal from "../modals/SnapshotDifferencesModal";
 import "../../scss/components/snapshots/AppSnapshots.scss";
 import { isVeleroCorrectVersion, Utilities } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
-import dayjs from "dayjs";
 
 class Snapshots extends Component {
   state = {
@@ -138,7 +137,7 @@ class Snapshots extends Component {
       status: "InProgress",
       trigger: "manual",
       sequence: "",
-      startedAt: dayjs().format("MM/DD/YY @ hh:mm a z"),
+      startedAt: new Date().toISOString(),
       finishedAt: "",
       expiresAt: "",
       volumeCount: 0,

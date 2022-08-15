@@ -19,7 +19,6 @@ import ErrorModal from "../modals/ErrorModal";
 import "../../scss/components/snapshots/AppSnapshots.scss";
 import { isVeleroCorrectVersion, Utilities } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
-import dayjs from "dayjs";
 
 class AppSnapshots extends Component {
   state = {
@@ -426,7 +425,7 @@ class AppSnapshots extends Component {
       trigger: "manual",
       appID: selectedApp.id,
       sequence: "",
-      startedAt: dayjs().format("MM/DD/YY @ hh:mm a z"),
+      startedAt: new Date().toISOString(),
       finishedAt: "",
       expiresAt: "",
       volumeCount: 0,
