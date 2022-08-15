@@ -984,8 +984,10 @@ class AppVersionHistory extends Component {
   handleViewLogs = async (version, isFailing) => {
     try {
       const { app } = this.props;
-      const clusterId = app.downstream.cluster?.id;
-
+      let clusterId = app.downstream.cluster?.id;
+      if (this.props.isHelmManaged) {
+        clusterId = 0;
+      }
       this.setState({
         logsLoading: true,
         showLogsModal: true,
