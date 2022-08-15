@@ -1,14 +1,18 @@
 import React from "react";
 import Modal from "react-modal";
 import Loader from "../../shared/Loader";
+import { useHistory } from "react-router";
 
-const SuccessModal = ({
+const ConnectionModal = ({
   isOpen,
   modalType,
   setOpen,
   handleTestConnection,
   isTestingConnection,
+  stepFrom,
+  appSlug,
 }) => {
+  const history = useHistory();
   switch (modalType) {
     case "success":
       return (
@@ -40,6 +44,7 @@ const SuccessModal = ({
                   className="btn secondary blue u-marginRight--10"
                   onClick={() => {
                     setOpen(false);
+                    stepFrom("action", "provider");
                   }}
                 >
                   View configuration
@@ -48,7 +53,7 @@ const SuccessModal = ({
                   type="button"
                   className="btn primary blue"
                   //TODO: WORK ON THIS
-                  //  onClick={this.disableGitOps}
+                  onClick={() => history.push(`/app/${appSlug}`)}
                 >
                   Go to dashboard
                 </button>
@@ -115,4 +120,4 @@ const SuccessModal = ({
   }
 };
 
-export default SuccessModal;
+export default ConnectionModal;

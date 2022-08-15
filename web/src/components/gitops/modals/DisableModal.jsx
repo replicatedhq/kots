@@ -2,7 +2,6 @@ import React from "react";
 import Modal from "react-modal";
 
 const DisableModal = ({ isOpen, setOpen, disableGitOps, provider }) => {
-  console.log(provider);
   const renderIcons = (service) => {
     if (service) {
       return <div className={`icon ${service}-icon u-marginBottom--20`} />;

@@ -79,14 +79,24 @@ class GitOpsDeploymentManager extends React.Component {
     errorMsg: "",
     errorTitle: "",
     displayErrorModal: false,
-
-    // new
     selectedApp: {},
   };
 
   componentDidMount() {
     this.getAppsList();
     this.getGitops();
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    if (this.state.appsList !== prevState.appsList) {
+      const updateSelectedApp = this.state.appsList.find((app) => {
+        if (app.id === this.state.selectedApp?.id) {
+          return { ...app, label: app.name, value: app.name };
+        }
+      });
+
+      this.setState({ selectedApp: updateSelectedApp });
+    }
   }
 
   getAppsList = async () => {
@@ -111,9 +121,11 @@ class GitOpsDeploymentManager extends React.Component {
       }
       const response = await res.json();
       const apps = response.apps;
+
       this.setState({
         appsList: apps,
       });
+
       return apps;
     } catch (err) {
       console.log(err);
@@ -290,8 +302,8 @@ class GitOpsDeploymentManager extends React.Component {
       const clusterId = downstream?.cluster?.id;
 
       await this.updateAppGitOps(currentApp.id, clusterId, gitOpsInput);
-      this.getAppsList();
-      this.getGitops();
+      await this.getAppsList();
+      await this.getGitops();
 
       return true;
     } catch (err) {
@@ -411,6 +423,7 @@ class GitOpsDeploymentManager extends React.Component {
       const clusterId = downstream?.cluster?.id;
 
       await this.updateAppGitOps(app.id, clusterId, gitOpsInput);
+      console.log("here push to app");
       this.props.history.push(`/app/${app.slug}/gitops`);
     } catch (err) {
       console.log(err);
@@ -443,7 +456,6 @@ class GitOpsDeploymentManager extends React.Component {
 
   stepFrom = (from, to) => {
     if (this.validStep(from)) {
-      console.log("to", to);
       this.setState({
         step: to,
       });
@@ -470,7 +482,6 @@ class GitOpsDeploymentManager extends React.Component {
   };
 
   handleServiceChange = (selectedService) => {
-    console.log(selectedService);
     this.setState({ selectedService });
   };
 
@@ -656,7 +667,9 @@ class GitOpsDeploymentManager extends React.Component {
   };
 
   handleAppChange = (app) => {
-    this.setState({ selectedApp: app });
+    console.log(app);
+    const currentApp = find(this.state.appsList, { id: app.id });
+    this.setState({ selectedApp: app, currentApp });
   };
 
   renderActiveStep = (step) => {
@@ -668,13 +681,11 @@ class GitOpsDeploymentManager extends React.Component {
       selectedService,
       providerError,
       finishingSetup,
+      selectedApp,
     } = this.state;
 
-    const app = this.state.appsList.find(
-      (app) => app.id === this.state.selectedApp.id
-    );
-
     const provider = selectedService?.value;
+    console.log("selected", selectedApp);
 
     switch (step.step) {
       case "provider":
@@ -697,10 +708,11 @@ class GitOpsDeploymentManager extends React.Component {
       case "action":
         return (
           <AppGitops
-            app={app}
+            app={selectedApp}
             appsList={this.state.appsList}
-            selectedApp={this.state.selectedApp}
+            selectedApp={selectedApp}
             handleAppChange={this.handleAppChange}
+            stepFrom={this.stepFrom}
           />
         );
       default:

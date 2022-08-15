@@ -49,10 +49,9 @@ const SetupProvider = ({
     finishingSetup,
   } = state;
   const apps = appsList.map((app) => ({
+    ...app,
     value: app.name,
     label: app.name,
-    id: app.id,
-    slug: app.slug,
   }));
   const [app, setApp] = React.useState({});
 
@@ -60,7 +59,7 @@ const SetupProvider = ({
     if (appsList.length > 0) {
       setApp(
         appsList.find((app) => {
-          return app.id === selectedApp.id;
+          return app.id === selectedApp?.id;
         })
       );
     }
@@ -193,7 +192,7 @@ const SetupProvider = ({
               />
             </div>
           </div>
-          <div className="flex flex1 flex-column ">
+          <div className="flex flex1 flex-column u-fontSize--small ">
             <a
               style={{ color: "blue", cursor: "pointer" }}
               disabled={disablingGitOps}

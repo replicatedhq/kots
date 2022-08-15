@@ -169,7 +169,7 @@ class GitOpsRepoDetails extends React.Component {
       <>
         <Flex
           key={`action-active`}
-          className="GitOpsDeploy--step u-textAlign--left"
+          // className="GitOpsDeploy--step u-textAlign--left"
           width="100%"
           direction="column"
         >
