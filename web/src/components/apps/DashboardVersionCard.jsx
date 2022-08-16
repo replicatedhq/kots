@@ -132,6 +132,10 @@ class DashboardVersionCard extends React.Component {
     try {
       const { app } = this.props;
       const clusterId = app.downstream.cluster?.id;
+      
+      if (this.props.isHelmManaged === true){
+        clusterId = 0;
+      }
 
       this.setState({
         logsLoading: true,
