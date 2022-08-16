@@ -180,8 +180,7 @@ const SetupProvider = ({
             <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
               Select an application to configure
             </p>
-
-            <div className="u-position--relative u-marginTop--5 u-marginBottom--40">
+            <div className="u-position--relative u-marginTop--5 u-marginBottom--10">
               <Select
                 className="replicated-select-container select-large "
                 classNamePrefix="replicated-select"
@@ -198,7 +197,7 @@ const SetupProvider = ({
               />
             </div>
           </div>
-          <div className="flex flex1 flex-column u-fontSize--small ">
+          <div className="flex flex1 flex-column u-fontSize--small u-marginTop--20">
             <a
               style={{ color: "blue", cursor: "pointer" }}
               disabled={disablingGitOps}
