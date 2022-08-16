@@ -1485,18 +1485,18 @@ class AppVersionHistory extends Component {
                         this.deployButtonStatus(version) === "Rollback"
                           ? `Follow the steps below to rollback to revision ${version.sequence}.`
                           : this.deployButtonStatus(version) === "Redeploy"
-                          ? "Follow the steps below to redeploy the application using the currently deployed chart version and values."
-                          : "Follow the steps below to upgrade the application."
+                          ? "Follow the steps below to redeploy the release using the currently deployed chart version and values."
+                          : "Follow the steps below to upgrade the release."
                       }
                       title={` ${this.deployButtonStatus(version)} ${
                         this.props?.app.slug
-                      } ${this.deployButtonStatus(version) !== "Rollback" ? version.versionLabel : ""}`}
+                      } ${this.deployButtonStatus(version) === "Deploy" ? version.versionLabel : ""}`}
                       upgradeTitle={
                         this.deployButtonStatus(version) === "Rollback"
                           ? "Rollback release"
                           : this.deployButtonStatus(version) === "Redeploy"
-                          ? "Redeploy application"
-                          : "Upgrade application"
+                          ? "Redeploy release"
+                          : "Upgrade release"
                       }
                       version={version.versionLabel}
                     />

@@ -1706,17 +1706,17 @@ class DashboardVersionCard extends React.Component {
                     showDownloadValues={showDownloadValues}
                     subtitle={
                       showDownloadValues
-                        ? "Follow the steps below to upgrade the application."
-                        : "Follow the steps below to redeploy the application using the currently deployed chart version and values."
+                        ? "Follow the steps below to upgrade the release."
+                        : "Follow the steps below to redeploy the release using the currently deployed chart version and values."
                     }
                     title={
                       showDownloadValues
-                        ? `Upgrade ${this.props?.app?.slug}`
+                        ? `Deploy ${this.props?.app?.slug} ${this.state.showHelmDeployModalWithVersionLabel}`
                         : `Redeploy ${this.props?.app?.slug}`
                     }
                     upgradeTitle={
                       showDownloadValues
-                        ? "Upgrade application"
+                        ? "Upgrade release"
                         : "Redeploy release"
                     }
                     version={this.state.showHelmDeployModalWithVersionLabel}

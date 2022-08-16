@@ -685,9 +685,9 @@ class AppConfig extends Component {
                           saveError={saveError}
                           showHelmDeployModal={true}
                           showDownloadValues={true}
-                          subtitle="Follow the steps below to upgrade your application with your new values.yaml."
-                          title="Upgrade application"
-                          upgradeTitle="Upgrade application"
+                          subtitle="Follow the steps below to upgrade your release with your new values.yaml."
+                          title="Upgrade release"
+                          upgradeTitle="Upgrade release"
                         />
                         <a
                           href={url}
