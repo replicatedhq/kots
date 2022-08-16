@@ -1706,7 +1706,7 @@ class DashboardVersionCard extends React.Component {
                     showDownloadValues={showDownloadValues}
                     subtitle={
                       showDownloadValues
-                        ? "Follow the steps below to upgrade your application with your latest values.yaml."
+                        ? "Follow the steps below to upgrade the application."
                         : "Follow the steps below to redeploy the application using the currently deployed chart version and values."
                     }
                     title={
