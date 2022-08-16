@@ -1496,7 +1496,7 @@ class AppVersionHistory extends Component {
                           ? "Rollback application"
                           : this.deployButtonStatus(version) === "Redeploy"
                           ? "Redeploy application"
-                          : "Upgrade applicaiton"
+                          : "Upgrade application"
                       }
                       version={version.versionLabel}
                     />
