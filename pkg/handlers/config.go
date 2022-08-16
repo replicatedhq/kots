@@ -32,7 +32,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
-	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -160,20 +159,7 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		configValues, err := helm.GetTempConfigValues(helmApp)
-		if err != nil && !kuberneteserrors.IsNotFound(errors.Cause(err)) {
-			logger.Error(errors.Wrap(err, "failed to get temp config values"))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		configValues.Spec.Values = updateAppConfigValues(configValues.Spec.Values, updateAppConfigRequest.ConfigGroups)
-		err = helm.SetTempConfigValues(helmApp, updateAppConfigRequest.Sequence, configValues)
-		if err != nil {
-			logger.Error(errors.Wrap(err, "failed to update temp config values"))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
+		helmApp.TempConfigValues = updateAppConfigValues(helmApp.TempConfigValues, updateAppConfigRequest.ConfigGroups)
 
 		JSON(w, http.StatusOK, UpdateAppConfigResponse{Success: true})
 		return
@@ -377,7 +363,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	appSlug := mux.Vars(r)["appSlug"]
-	sequence, err := strconv.Atoi(mux.Vars(r)["sequence"])
+	sequence, err := strconv.ParseInt(mux.Vars(r)["sequence"], 10, 64)
 	if err != nil {
 		logger.Error(err)
 		currentAppConfigResponse.Error = "failed to parse app sequence"
@@ -400,9 +386,9 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		}
 		app = helmApp
 
-		k, err := helm.GetKotsKinds(helmApp)
+		k, err := helm.GetKotsKindsForRevision(helmApp.Release.Name, sequence)
 		if err != nil {
-			logger.Error(errors.Wrap(err, "faile to get kots kinds for helm"))
+			logger.Error(errors.Wrap(err, "failed to get kots kinds for helm"))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -418,7 +404,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		}
 		app = foundApp
 
-		status, err := store.GetStore().GetDownstreamVersionStatus(foundApp.ID, int64(sequence))
+		status, err := store.GetStore().GetDownstreamVersionStatus(foundApp.ID, sequence)
 		if err != nil {
 			logger.Error(err)
 			currentAppConfigResponse.Error = "failed to get downstream version status"
@@ -450,7 +436,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		}
 		defer os.RemoveAll(archiveDir)
 
-		err = store.GetStore().GetAppVersionArchive(foundApp.ID, int64(sequence), archiveDir)
+		err = store.GetStore().GetAppVersionArchive(foundApp.ID, sequence, archiveDir)
 		if err != nil {
 			logger.Error(err)
 			currentAppConfigResponse.Error = "failed to get app version archive"
@@ -498,7 +484,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	versionInfo := template.VersionInfoFromInstallation(int64(sequence)+1, app.GetIsAirgap(), kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
+	versionInfo := template.VersionInfoFromInstallation(sequence+1, app.GetIsAirgap(), kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
 	appInfo := template.ApplicationInfo{Slug: app.GetSlug()}
 	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, license, &kotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, false)
 	if err != nil {
