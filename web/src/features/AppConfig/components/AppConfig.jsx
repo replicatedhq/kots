@@ -687,7 +687,7 @@ class AppConfig extends Component {
                           showDownloadValues={true}
                           subtitle="Follow the steps below to upgrade your application with your new values.yaml."
                           title="Upgrade application"
-                          upgradeTitle="Upgrade application with Helm"
+                          upgradeTitle="Upgrade application"
                         />
                         <a
                           href={url}

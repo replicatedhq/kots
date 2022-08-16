@@ -28,7 +28,10 @@ export default function SubNavBar({
   // config view always shows the deployed version, falling back to the top version if nothing is deployed
   if (app?.downstream?.pendingVersions?.length) {
     kotsSequence = app?.downstream?.pendingVersions[0]?.parentSequence;
-    if (!app?.downstream?.currentVersion || app?.downstream?.gitops?.isConnected) {
+    if (
+      !app?.downstream?.currentVersion ||
+      app?.downstream?.gitops?.isConnected
+    ) {
       configSequence = app?.downstream?.pendingVersions[0]?.parentSequence;
     }
   }
