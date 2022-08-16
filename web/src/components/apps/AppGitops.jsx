@@ -395,8 +395,8 @@ class AppGitops extends Component {
       return service.value === gitops?.provider;
     });
 
-    const renderIcons = () => {
-      if (this.props.app?.iconUri) {
+    const renderIcons = (app) => {
+      if (app?.iconUri) {
         return (
           <IconWrapper
             style={{ backgroundImage: `url(${app?.iconUri})` }}
@@ -405,10 +405,14 @@ class AppGitops extends Component {
       }
     };
     const getLabel = (app) => {
+      const downstream = app?.downstream;
+      const gitops = downstream?.gitops;
+      const gitopsEnabled = gitops?.enabled;
+      const gitopsConnected = gitops?.isConnected;
       return (
         <div style={{ alignItems: "center", display: "flex" }}>
           <span style={{ fontSize: 18, marginRight: "10px" }}>
-            {renderIcons()}
+            {renderIcons(app)}
           </span>
           <div className="flex flex-column">
             <div>
@@ -416,10 +420,7 @@ class AppGitops extends Component {
             </div>
             <div>
               {!gitopsEnabled && !gitopsConnected ? (
-                <div
-                  className="flex"
-                  style={{ gap: "5px", color: "light-gray" }}
-                >
+                <div className="flex" style={{ gap: "5px", color: "gray" }}>
                   <img src={not_enabled} alt="not_enabled" />
                   <p>Not Enabled</p>
                 </div>
@@ -429,10 +430,13 @@ class AppGitops extends Component {
                   <p>Enabled, repository access needed</p>
                 </div>
               ) : (
-                <div className="flex" style={{ gap: "5px", color: "green" }}>
-                  <img src={enabled} alt="enabled" />
-                  <p>Enabled</p>
-                </div>
+                gitopsEnabled &&
+                gitopsConnected && (
+                  <div className="flex" style={{ gap: "5px", color: "green" }}>
+                    <img src={enabled} alt="enabled" />
+                    <p>Enabled</p>
+                  </div>
+                )
               )}
             </div>
           </div>
@@ -441,10 +445,9 @@ class AppGitops extends Component {
     };
 
     const apps = this.props?.appsList?.map((app) => ({
+      ...app,
       value: app.name,
       label: app.name,
-      id: app.id,
-      slug: app.slug,
     }));
 
     return (

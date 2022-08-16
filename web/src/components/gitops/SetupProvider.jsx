@@ -65,11 +65,6 @@ const SetupProvider = ({
     }
   }, [selectedApp, appsList]);
 
-  const downstream = app?.downstream;
-  const gitops = downstream?.gitops;
-  const gitopsEnabled = gitops?.enabled;
-  const gitopsConnected = gitops?.isConnected;
-
   const history = useHistory();
 
   const [showDisableGitopsModalPrompt, setShowDisableGitopsModalPrompt] =
@@ -115,7 +110,7 @@ const SetupProvider = ({
       setDisablingGitOps(false);
     }
   };
-  const renderIcons = () => {
+  const renderIcons = (app) => {
     if (app?.iconUri) {
       return (
         <IconWrapper
@@ -125,10 +120,15 @@ const SetupProvider = ({
     }
   };
   const getLabel = (app) => {
+    const downstream = app?.downstream;
+    const gitops = downstream?.gitops;
+    const gitopsEnabled = gitops?.enabled;
+    const gitopsConnected = gitops?.isConnected;
+
     return (
       <div style={{ alignItems: "center", display: "flex" }}>
         <span style={{ fontSize: 18, marginRight: "10px" }}>
-          {renderIcons()}
+          {renderIcons(app)}
         </span>
         <div className="flex flex-column">
           <div>
@@ -136,7 +136,7 @@ const SetupProvider = ({
           </div>
           <div>
             {!gitopsEnabled && !gitopsConnected ? (
-              <div className="flex" style={{ gap: "5px", color: "light-gray" }}>
+              <div className="flex" style={{ gap: "5px", color: "gray" }}>
                 <img src={not_enabled} alt="not_enabled" />
                 <p>Not Enabled</p>
               </div>
@@ -146,10 +146,13 @@ const SetupProvider = ({
                 <p>Enabled, repository access needed</p>
               </div>
             ) : (
-              <div className="flex" style={{ gap: "5px", color: "green" }}>
-                <img src={enabled} alt="enabled" />
-                <p>Enabled</p>
-              </div>
+              gitopsEnabled &&
+              gitopsConnected && (
+                <div className="flex" style={{ gap: "5px", color: "green" }}>
+                  <img src={enabled} alt="enabled" />
+                  <p>Enabled</p>
+                </div>
+              )
             )}
           </div>
         </div>

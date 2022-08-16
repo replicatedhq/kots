@@ -89,13 +89,19 @@ class GitOpsDeploymentManager extends React.Component {
 
   componentDidUpdate(prevProps, prevState) {
     if (this.state.appsList !== prevState.appsList) {
-      const updateSelectedApp = this.state.appsList.find((app) => {
-        if (app.id === this.state.selectedApp?.id) {
+      const updateSelectedApp = this.state.appsList.map((app) => {
+        console.log(isEmpty(this.state.selectedApp));
+        if (isEmpty(this.state.selectedApp)) {
+          return {
+            ...this.state.appsList[0],
+            label: this.state.appsList[0].name,
+            value: this.state.appsList[0].name,
+          };
+        } else if (app.id === this.state.selectedApp?.id) {
           return { ...app, label: app.name, value: app.name };
         }
       });
-
-      this.setState({ selectedApp: updateSelectedApp });
+      this.setState({ selectedApp: updateSelectedApp[0] });
     }
   }
 
