@@ -11,6 +11,8 @@ const ConnectionModal = ({
   isTestingConnection,
   stepFrom,
   appSlug,
+  getAppsList,
+  getGitops,
 }) => {
   const history = useHistory();
   switch (modalType) {
@@ -44,6 +46,8 @@ const ConnectionModal = ({
                   className="btn secondary blue u-marginRight--10"
                   onClick={() => {
                     setOpen(false);
+                    getAppsList();
+                    getGitops();
                     stepFrom("action", "provider");
                   }}
                 >

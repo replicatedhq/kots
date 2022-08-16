@@ -368,7 +368,7 @@ class AppGitops extends Component {
 
   render() {
     const { app } = this.props;
-    const appTitle = app.name;
+    const appTitle = app?.name;
 
     if (!app.downstream) {
       return <div />;
@@ -395,6 +395,7 @@ class AppGitops extends Component {
       return service.value === gitops?.provider;
     });
 
+    console.log("slelected", this.props.selectedApp);
     const renderIcons = (app) => {
       if (app?.iconUri) {
         return (
@@ -524,7 +525,7 @@ class AppGitops extends Component {
                 style={{
                   background: "#FBE9D7",
                   padding: "30px",
-                  margin: "30px",
+                  margin: "30px 0",
                 }}
               >
                 <p
@@ -570,7 +571,7 @@ class AppGitops extends Component {
                 <div className="flex">
                   <button
                     className="btn secondary blue"
-                    onClick={this.updateGitOpsSettings}
+                    onClick={() => this.props.stepFrom("action", "provider")}
                   >
                     Back to configuration
                   </button>
@@ -591,7 +592,7 @@ class AppGitops extends Component {
                     disabled={testingConnection}
                     onClick={this.handleTestConnection}
                   >
-                    Test connection to repo
+                    Test connection to repository
                   </button>
                 )}
               </div>
@@ -619,6 +620,8 @@ class AppGitops extends Component {
           isTestingConnection={this.state.testingConnection}
           stepFrom={this.props.stepFrom}
           appSlug={this.props.app.slug}
+          getAppsList={this.props.getAppsList}
+          getGitops={this.props.getGitops}
         />
       </div>
     );

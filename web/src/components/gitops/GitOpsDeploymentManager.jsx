@@ -80,6 +80,12 @@ class GitOpsDeploymentManager extends React.Component {
     errorTitle: "",
     displayErrorModal: false,
     selectedApp: {},
+    owner: "",
+    repo: "",
+    branch: "",
+    path: "",
+    gitopsConnected: false,
+    gitopsEnabled: false,
   };
 
   componentDidMount() {
@@ -89,19 +95,30 @@ class GitOpsDeploymentManager extends React.Component {
 
   componentDidUpdate(prevProps, prevState) {
     if (this.state.appsList !== prevState.appsList) {
-      const updateSelectedApp = this.state.appsList.map((app) => {
-        console.log(isEmpty(this.state.selectedApp));
-        if (isEmpty(this.state.selectedApp)) {
+      if (isEmpty(this.state.selectedApp)) {
+        const updateSelectedApp = this.state.appsList.map((app) => {
           return {
             ...this.state.appsList[0],
             label: this.state.appsList[0].name,
             value: this.state.appsList[0].name,
           };
-        } else if (app.id === this.state.selectedApp?.id) {
+        });
+        this.setState({ selectedApp: updateSelectedApp[0] });
+
+        // this.getInitialOwnerRepo(updateSelectedApp[0]);
+        // this.getAppsList();
+      } else {
+        const updateSelectedApp = this.state.appsList.map((app) => {
           return { ...app, label: app.name, value: app.name };
-        }
-      });
-      this.setState({ selectedApp: updateSelectedApp[0] });
+        });
+
+        const newApp = updateSelectedApp.find((app) => {
+          console.log(this.state.selectedApp, app);
+          return app.id === this.state.selectedApp?.id;
+        });
+        console.log("new", newApp);
+        this.setState({ selectedApp: newApp });
+      }
     }
   }
 
@@ -127,10 +144,15 @@ class GitOpsDeploymentManager extends React.Component {
       }
       const response = await res.json();
       const apps = response.apps;
+      console.log("apps,", apps);
 
       this.setState({
         appsList: apps,
       });
+      const updateSelectedApp = apps.find((app) => {
+        return app.id === this.state.selectedApp?.id;
+      });
+      this.getInitialOwnerRepo(updateSelectedApp);
 
       return apps;
     } catch (err) {
@@ -163,6 +185,7 @@ class GitOpsDeploymentManager extends React.Component {
       const freshGitops = await res.json();
 
       if (freshGitops?.enabled) {
+        this.getInitialOwnerRepo(this.state.selectedApp);
         const selectedService = find(
           SERVICES,
           (service) => service.value === freshGitops.provider
@@ -184,6 +207,66 @@ class GitOpsDeploymentManager extends React.Component {
     } catch (err) {
       console.log(err);
       throw err;
+    }
+  };
+  getInitialOwnerRepo = (app) => {
+    console.log(app?.downstream);
+    if (!app?.downstream) {
+      this.setState({
+        owner: "",
+        repo: "",
+        branch: "",
+        path: "",
+        gitopsEnabled: false,
+        gitopsConnected: false,
+      });
+      return "";
+    }
+
+    const gitops = app.downstream.gitops;
+    if (!gitops?.uri) {
+      this.setState(
+        {
+          owner: "",
+          repo: "",
+          branch: "",
+          path: "",
+          gitopsEnabled: gitops.enabled,
+          gitopsConnected: gitops.isConnected,
+        },
+        () => {
+          console.log("app but no gitops", this.state);
+        }
+      );
+      return "";
+    }
+
+    const parsed = new URL(gitops?.uri);
+    if (gitops?.provider === "bitbucket_server") {
+      const project =
+        parsed.pathname.split("/").length > 2 && parsed.pathname.split("/")[2];
+      const repo =
+        parsed.pathname.split("/").length > 4 && parsed.pathname.split("/")[4];
+      if (project && repo) {
+        this.setState({ owner: project, repo: repo });
+      }
+    } else {
+      let path = parsed.pathname.slice(1); // remove the "/"
+      const project = path.split("/")[0];
+      const repo = path.split("/")[1];
+      this.setState(
+        {
+          owner: project,
+          repo: repo,
+          branch: gitops.branch,
+          path: gitops.path,
+          gitopsEnabled: gitops.enabled,
+          gitopsConnected: gitops.isConnected,
+        },
+        () => {
+          console.log("updated", this.state);
+        }
+      );
     }
   };
 
@@ -501,6 +584,7 @@ class GitOpsDeploymentManager extends React.Component {
     providerError,
   }) => {
     const isBitbucketServer = provider === "bitbucket_server";
+
     return (
       <Flex direction="column">
         <Flex width="100%">
@@ -552,6 +636,10 @@ class GitOpsDeploymentManager extends React.Component {
           </Flex>
         </Flex>
         <GitOpsRepoDetails
+          owner={this.state.owner}
+          repo={this.state.repo}
+          branch={this.state.branch}
+          path={this.state.path}
           appName={this.props.appName}
           hostname={hostname}
           selectedService={selectedService}
@@ -559,6 +647,8 @@ class GitOpsDeploymentManager extends React.Component {
           ctaLoadingText="Finishing setup"
           ctaText="Finish setup"
           updateSettings={this.updateSettings}
+          gitopsEnabled={this.state.gitopsEnabled}
+          gitopsConnected={this.state.gitopsConnected}
         />
       </Flex>
     );
@@ -569,7 +659,7 @@ class GitOpsDeploymentManager extends React.Component {
       return <div className="flex flex1" />;
     }
     return (
-      <Flex flex="1" direction="column" mr="10" width="100%">
+      <Flex flex="1" direction="column" width="100%">
         <Paragraph size="16" weight="bold" className="u-lineHeight--normal">
           HTTP Port <span>(Required)</span>
         </Paragraph>
@@ -590,7 +680,7 @@ class GitOpsDeploymentManager extends React.Component {
       return <div className="flex flex1" />;
     }
     return (
-      <div className="flex flex1 flex-column u-marginLeft--10">
+      <div className="flex flex1 flex-column">
         <Paragraph size="16" weight="bold" className="u-lineHeight--normal">
           SSH Port <span>(Required)</span>
         </Paragraph>
@@ -611,7 +701,7 @@ class GitOpsDeploymentManager extends React.Component {
       return <div className="flex flex1" />;
     }
     return (
-      <Flex direction="column" ml="10" className="flex1" width="100%">
+      <Flex direction="column" className="flex1" width="100%">
         <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
           Hostname
           <span> (Required)</span>
@@ -673,8 +763,9 @@ class GitOpsDeploymentManager extends React.Component {
   };
 
   handleAppChange = (app) => {
-    console.log(app);
+    console.log("app change");
     const currentApp = find(this.state.appsList, { id: app.id });
+    this.getInitialOwnerRepo(currentApp);
     this.setState({ selectedApp: app, currentApp });
   };
 
@@ -688,11 +779,13 @@ class GitOpsDeploymentManager extends React.Component {
       providerError,
       finishingSetup,
       selectedApp,
+      owner,
+      repo,
+      branch,
+      path,
     } = this.state;
 
     const provider = selectedService?.value;
-    console.log("selected", selectedApp);
-
     switch (step.step) {
       case "provider":
         return (
@@ -719,6 +812,8 @@ class GitOpsDeploymentManager extends React.Component {
             selectedApp={selectedApp}
             handleAppChange={this.handleAppChange}
             stepFrom={this.stepFrom}
+            getAppsList={this.getAppsList}
+            getGitops={this.getGitops}
           />
         );
       default:

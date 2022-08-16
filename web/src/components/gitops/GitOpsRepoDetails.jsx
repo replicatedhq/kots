@@ -36,11 +36,11 @@ class GitOpsRepoDetails extends React.Component {
     const {
       appName,
       selectedService,
-      hostname = "",
-      owner = "",
-      repo = "",
-      branch = "",
-      path = "",
+      hostname,
+      owner,
+      repo,
+      branch,
+      path,
       action = "commit",
       format = "single",
     } = this.props;
@@ -59,6 +59,21 @@ class GitOpsRepoDetails extends React.Component {
       finishingSetup: false,
       showFinishedConfirm: false,
     };
+  }
+  componentDidUpdate(prevProps, prevState) {
+    if (
+      prevProps.owner !== this.props.owner ||
+      prevProps.repo !== this.props.repo ||
+      prevProps.branch !== this.props.branch ||
+      prevProps.path !== this.props.path
+    ) {
+      this.setState({
+        owner: this.props.owner,
+        repo: this.props.repo,
+        branch: this.props.branch,
+        path: this.props.path,
+      });
+    }
   }
 
   componentDidMount() {
@@ -161,6 +176,7 @@ class GitOpsRepoDetails extends React.Component {
       showFinishedConfirm,
     } = this.state;
 
+    const { gitopsConnected, gitopsEnabled } = this.props;
     const provider = selectedService?.value;
     const serviceSite = getGitOpsServiceSite(provider, hostname);
     const isBitbucketServer = provider === "bitbucket_server";
@@ -264,16 +280,31 @@ class GitOpsRepoDetails extends React.Component {
             )}
           </Flex>
         </Flex>
-        <div className="flex">
-          <button
-            className="btn primary blue"
-            type="button"
-            disabled={finishingSetup || !this.allowUpdate()}
-            onClick={this.onFinishSetup}
-          >
-            Generate SSH key
-          </button>
-          {finishingSetup && <Loader className="u-marginLeft--5" size="30" />}
+        <div
+          className="flex justifyContent--flexEnd u-marginTop--30"
+          style={{ width: "100%" }}
+        >
+          {finishingSetup ? (
+            <Loader className="u-marginLeft--5" size="30" />
+          ) : gitopsConnected && gitopsEnabled ? (
+            <button
+              className="btn primary blue"
+              type="button"
+              disabled={finishingSetup || !this.allowUpdate()}
+              onClick={this.onFinishSetup}
+            >
+              Save Configuration
+            </button>
+          ) : (
+            <button
+              className="btn primary blue"
+              type="button"
+              disabled={finishingSetup || !this.allowUpdate()}
+              onClick={this.onFinishSetup}
+            >
+              Generate SSH key
+            </button>
+          )}
         </div>
       </>
     );

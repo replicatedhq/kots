@@ -40,6 +40,10 @@ const SetupProvider = ({
   finishSetup,
 }) => {
   const {
+    owner,
+    repo,
+    branch,
+    path,
     hostname,
     httpPort,
     sshPort,
@@ -95,7 +99,6 @@ const SetupProvider = ({
           method: "POST",
         }
       );
-      console.log("res", res);
       if (!res.ok && res.status === 401) {
         Utilities.logoutUser();
         return;
@@ -209,6 +212,10 @@ const SetupProvider = ({
         </div>
         {/* <div className="flex flex1"> */}
         {renderGitOpsProviderSelector({
+          owner,
+          repo,
+          branch,
+          path,
           provider,
           hostname,
           httpPort,
