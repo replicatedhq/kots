@@ -1486,7 +1486,7 @@ class AppVersionHistory extends Component {
                           ? "Follow the steps below to rollback to the previous revision."
                           : this.deployButtonStatus(version) === "Redeploy"
                           ? "Follow the steps below to redeploy the application using the currently deployed chart version and values."
-                          : "Follow the steps below to deploy your application with your latest values.yaml."
+                          : "Follow the steps below to upgrade the application."
                       }
                       title={` ${this.deployButtonStatus(version)} ${
                         this.props?.app.slug
