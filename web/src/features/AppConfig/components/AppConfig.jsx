@@ -686,7 +686,7 @@ class AppConfig extends Component {
                           showHelmDeployModal={true}
                           showDownloadValues={true}
                           subtitle="Follow the steps below to upgrade your release with your new values.yaml."
-                          title="Upgrade release"
+                          title={`Upgrade ${this.props?.app?.slug}`}
                           upgradeTitle="Upgrade release"
                         />
                         <a

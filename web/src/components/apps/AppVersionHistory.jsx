@@ -1490,7 +1490,11 @@ class AppVersionHistory extends Component {
                       }
                       title={` ${this.deployButtonStatus(version)} ${
                         this.props?.app.slug
-                      } ${this.deployButtonStatus(version) === "Deploy" ? version.versionLabel : ""}`}
+                      } ${
+                        this.deployButtonStatus(version) === "Deploy"
+                          ? version.versionLabel
+                          : ""
+                      }`}
                       upgradeTitle={
                         this.deployButtonStatus(version) === "Rollback"
                           ? "Rollback release"
