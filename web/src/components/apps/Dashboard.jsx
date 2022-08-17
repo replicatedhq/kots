@@ -82,6 +82,10 @@ class Dashboard extends Component {
       this.setWatchState(app);
       this.getAppLicense(app);
     }
+
+    this.setState({
+      clusterId: this.props?.cluster?.id,
+    });
   }
 
   getAppLicense = async (app) => {

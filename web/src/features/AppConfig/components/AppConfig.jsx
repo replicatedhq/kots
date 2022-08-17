@@ -71,7 +71,6 @@ class AppConfig extends Component {
       this.getApp();
     }
     this.getConfig();
-
   }
 
   componentDidUpdate(lastProps, lastState) {
