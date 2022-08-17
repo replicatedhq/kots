@@ -55,24 +55,23 @@ class AppConfig extends Component {
     this.determineSidebarHeight = debounce(this.determineSidebarHeight, 250);
   }
 
-  UNSAFE_componentWillMount() {
+  componentWillUnmount() {
+    window.removeEventListener("resize", this.determineSidebarHeight);
+  }
+
+  componentDidMount() {
     const { app, history } = this.props;
     if (app && !app.isConfigurable) {
       // app not configurable - redirect
       history.replace(`/app/${app.slug}`);
     }
     window.addEventListener("resize", this.determineSidebarHeight);
-  }
 
-  componentWillUnmount() {
-    window.removeEventListener("resize", this.determineSidebarHeight);
-  }
-
-  componentDidMount() {
     if (!this.props.app) {
       this.getApp();
     }
     this.getConfig();
+
   }
 
   componentDidUpdate(lastProps, lastState) {
@@ -685,9 +684,9 @@ class AppConfig extends Component {
                           saveError={saveError}
                           showHelmDeployModal={true}
                           showDownloadValues={true}
-                          subtitle="Follow the steps below to upgrade your application with your new values.yaml."
-                          title="Upgrade application"
-                          upgradeTitle="Upgrade application with Helm"
+                          subtitle="Follow the steps below to upgrade the release with your new values.yaml."
+                          title={`Upgrade ${this.props?.app?.slug}`}
+                          upgradeTitle="Upgrade release"
                         />
                         <a
                           href={url}
