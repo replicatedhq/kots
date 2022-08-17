@@ -84,9 +84,11 @@ class Dashboard extends Component {
       this.getAppLicense(app);
     }
 
-    this.setState({
-      clusterId: this.props?.cluster?.id,
-    });
+    if (this.state.clusterId !== this.props?.cluster?.id) {
+      this.setState({
+        clusterId: this.props?.cluster?.id,
+      });
+    }
   }
 
   getAppLicense = async (app) => {
