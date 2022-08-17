@@ -192,8 +192,8 @@ class Dashboard extends Component {
       if (this.state.clusterId === "" && this.props.isHelmManaged === true) {
         // TODO: use a callback to update the state in the parent component
         this.setState({
-          clusterId: 0
-        })
+          clusterId: 0,
+        });
         return;
       }
 
