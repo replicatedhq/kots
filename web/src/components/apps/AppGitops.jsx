@@ -316,6 +316,8 @@ class AppGitops extends Component {
         return;
       }
       if (res.ok && res.status === 204) {
+        this.props.getAppsList();
+        this.props.getGitops();
         this.props.refetch();
       }
     } catch (err) {

@@ -110,7 +110,6 @@ class GitOpsDeploymentManager extends React.Component {
         });
 
         const newApp = updateSelectedApp.find((app) => {
-          console.log(this.state.selectedApp, app);
           return app.id === this.state.selectedApp?.id;
         });
         this.setState({ selectedApp: newApp });
@@ -140,7 +139,6 @@ class GitOpsDeploymentManager extends React.Component {
       }
       const response = await res.json();
       const apps = response.apps;
-      console.log("apps,", apps);
 
       this.setState({
         appsList: apps,
@@ -207,7 +205,6 @@ class GitOpsDeploymentManager extends React.Component {
   };
 
   getInitialOwnerRepo = (app) => {
-    console.log(app?.downstream);
     if (!app?.downstream) {
       this.setState({
         owner: "",
@@ -222,19 +219,14 @@ class GitOpsDeploymentManager extends React.Component {
 
     const gitops = app.downstream.gitops;
     if (!gitops?.uri) {
-      this.setState(
-        {
-          owner: "",
-          repo: "",
-          branch: "",
-          path: "",
-          gitopsEnabled: gitops.enabled,
-          gitopsConnected: gitops.isConnected,
-        },
-        () => {
-          console.log("app but no gitops", this.state);
-        }
-      );
+      this.setState({
+        owner: "",
+        repo: "",
+        branch: "",
+        path: "",
+        gitopsEnabled: gitops.enabled,
+        gitopsConnected: gitops.isConnected,
+      });
       return "";
     }
 
@@ -504,7 +496,6 @@ class GitOpsDeploymentManager extends React.Component {
       const clusterId = downstream?.cluster?.id;
 
       await this.updateAppGitOps(app.id, clusterId, gitOpsInput);
-      console.log("here push to app");
       this.props.history.push(`/app/${app.slug}/gitops`);
     } catch (err) {
       console.log(err);
@@ -576,7 +567,6 @@ class GitOpsDeploymentManager extends React.Component {
     providerError,
   }) => {
     const isBitbucketServer = provider === "bitbucket_server";
-    console.log(selectedService, provider);
 
     return (
       <Flex direction="column">
@@ -762,6 +752,8 @@ class GitOpsDeploymentManager extends React.Component {
             renderGitOpsProviderSelector={this.renderGitOpsProviderSelector}
             renderHostName={this.renderHostName}
             handleAppChange={this.handleAppChange}
+            getAppsList={this.getAppsList}
+            getGitops={this.getGitops}
           />
         );
       case "action":

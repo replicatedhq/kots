@@ -7,7 +7,6 @@ import not_enabled from "../../images/not_enabled.svg";
 import warning from "../../images/warning.svg";
 import styled from "styled-components";
 import DisableModal from "./modals/DisableModal";
-import { useHistory } from "react-router";
 
 const BITBUCKET_SERVER_DEFAULT_HTTP_PORT = "7990";
 const BITBUCKET_SERVER_DEFAULT_SSH_PORT = "7999";
@@ -38,6 +37,8 @@ const SetupProvider = ({
   handleAppChange,
   selectedApp,
   finishSetup,
+  getAppsList,
+  getGitops,
 }) => {
   const {
     owner,
@@ -68,8 +69,6 @@ const SetupProvider = ({
       );
     }
   }, [selectedApp, appsList]);
-
-  const history = useHistory();
 
   const [showDisableGitopsModalPrompt, setShowDisableGitopsModalPrompt] =
     React.useState(false);
@@ -104,6 +103,9 @@ const SetupProvider = ({
         return;
       }
       if (res.ok && res.status === 204) {
+        getAppsList();
+        getGitops();
+
         setShowDisableGitopsModalPrompt(false);
       }
     } catch (err) {
