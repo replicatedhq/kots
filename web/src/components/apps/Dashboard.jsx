@@ -717,9 +717,15 @@ class Dashboard extends Component {
                           startASnapshot={this.startASnapshot}
                           startSnapshotOptions={this.state.startSnapshotOptions}
                           startSnapshotErr={this.state.startSnapshotErr}
-                          startSnapshotErrorMsg={this.state.startSnapshotErrorMsg}
-                          snapshotInProgressApps={this.props.snapshotInProgressApps}
-                          selectedSnapshotOption={this.state.selectedSnapshotOption}
+                          startSnapshotErrorMsg={
+                            this.state.startSnapshotErrorMsg
+                          }
+                          snapshotInProgressApps={
+                            this.props.snapshotInProgressApps
+                          }
+                          selectedSnapshotOption={
+                            this.state.selectedSnapshotOption
+                          }
                           onSnapshotOptionChange={this.onSnapshotOptionChange}
                           onSnapshotOptionClick={this.onSnapshotOptionClick}
                         />
@@ -729,7 +735,9 @@ class Dashboard extends Component {
                       appLicense={appLicense}
                       app={app}
                       syncCallback={() => this.getAppLicense(this.props.app)}
-                      gettingAppLicenseErrMsg={this.state.gettingAppLicenseErrMsg}
+                      gettingAppLicenseErrMsg={
+                        this.state.gettingAppLicenseErrMsg
+                      }
                     />
                   </div>
                 </div>
@@ -870,7 +878,9 @@ class Dashboard extends Component {
             {this.state.snapshotDifferencesModal && (
               <SnapshotDifferencesModal
                 snapshotDifferencesModal={this.state.snapshotDifferencesModal}
-                toggleSnapshotDifferencesModal={this.toggleSnaphotDifferencesModal}
+                toggleSnapshotDifferencesModal={
+                  this.toggleSnaphotDifferencesModal
+                }
               />
             )}
           </div>
