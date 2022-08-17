@@ -176,6 +176,14 @@ class Dashboard extends Component {
 
   getAppDashboard = () => {
     return new Promise((resolve, reject) => {
+      // this function is in a repeating callback that terminates when
+      // the promise is resolved
+
+      // TODO: use react-query to refetch this instead of the custom repeater
+      if (!this.props.app) {
+        return;
+      }
+
       if (this.props.cluster?.id == "" && this.props.isHelmManaged === true) {
         // TODO: use a callback to update the state in the parent component
         this.props.cluster.id = 0;
