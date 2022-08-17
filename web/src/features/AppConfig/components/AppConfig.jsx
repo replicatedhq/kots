@@ -55,24 +55,23 @@ class AppConfig extends Component {
     this.determineSidebarHeight = debounce(this.determineSidebarHeight, 250);
   }
 
-  componentWillMount() {
+  componentWillUnmount() {
+    window.removeEventListener("resize", this.determineSidebarHeight);
+  }
+
+  componentDidMount() {
     const { app, history } = this.props;
     if (app && !app.isConfigurable) {
       // app not configurable - redirect
       history.replace(`/app/${app.slug}`);
     }
     window.addEventListener("resize", this.determineSidebarHeight);
-  }
 
-  componentWillUnmount() {
-    window.removeEventListener("resize", this.determineSidebarHeight);
-  }
-
-  componentDidMount() {
     if (!this.props.app) {
       this.getApp();
     }
     this.getConfig();
+
   }
 
   componentDidUpdate(lastProps, lastState) {
