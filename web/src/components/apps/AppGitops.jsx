@@ -500,9 +500,7 @@ class AppGitops extends Component {
                   rel="noopener noreferrer"
                 >
                   {this.props.selectedApp.downstream.gitops.provider ===
-                    "bitbucket" ||
-                  this.props.selectedApp.downstream.gitops.provider ===
-                    "bitbucket_server"
+                  "bitbucket_server"
                     ? " account settings page."
                     : " repository settings page."}
                 </a>
