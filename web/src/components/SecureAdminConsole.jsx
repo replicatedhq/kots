@@ -225,13 +225,12 @@ class SecureAdminConsole extends React.Component {
         token: token.replace(/"/g, ""),
         sessionRoles: Utilities.getCookie("session_roles"),
       };
-      const loggedIn = this.completeLogin(loginData)
-        .then(() => {
-          if (loggedIn) {
-            Utilities.removeCookie("token");
-            Utilities.removeCookie("session_roles");
-          }
-        });
+      const loggedIn = this.completeLogin(loginData).then(() => {
+        if (loggedIn) {
+          Utilities.removeCookie("token");
+          Utilities.removeCookie("session_roles");
+        }
+      });
     }
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -299,8 +298,9 @@ class SecureAdminConsole extends React.Component {
     return (
       <div className="container flex-column flex1 u-overflow--auto Login-wrapper justifyContent--center alignItems--center">
         <Helmet>
-          <title>{`${appName ? `${appName} Admin Console` : "Admin Console"
-            }`}</title>
+          <title>{`${
+            appName ? `${appName} Admin Console` : "Admin Console"
+          }`}</title>
         </Helmet>
         <div className="LoginBox-wrapper u-flexTabletReflow flex-auto">
           <div className="flex-auto flex-column login-form-wrapper secure-console justifyContent--center">
