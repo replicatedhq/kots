@@ -176,6 +176,14 @@ class Dashboard extends Component {
 
   getAppDashboard = () => {
     return new Promise((resolve, reject) => {
+      // this function is in a repeating callback that terminates when
+      // the promise is resolved
+
+      // TODO: use react-query to refetch this instead of the custom repeater
+      if (!this.props.app) {
+        return;
+      }
+
       if (this.props.cluster?.id == "" && this.props.isHelmManaged === true) {
         // TODO: use a callback to update the state in the parent component
         this.props.cluster.id = 0;
@@ -620,253 +628,264 @@ class Dashboard extends Component {
       // empty
     }
 
-    if (!app) {
-      return (
-        <div className="flex-column flex1 alignItems--center justifyContent--center">
-          <Loader size="60" />
-        </div>
-      );
-    }
-
     const appResourcesByState = this.getAppResourcesByState();
     const hasStatusInformers = this.checkStatusInformers();
 
     return (
-      <div className="flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
-        <Helmet>
-          <title>{appName}</title>
-        </Helmet>
-        <div className="Dashboard flex flex-auto justifyContent--center alignSelf--center alignItems--center">
-          <div className="flex1 flex-column">
-            <div className="flex flex1 alignItems--center">
-              <div className="flex flex-auto">
-                <div
-                  style={{ backgroundImage: `url(${iconUri})` }}
-                  className="Dashboard--appIcon u-position--relative"
-                />
-              </div>
-              <div className="u-marginLeft--20">
-                <p className="u-fontSize--30 u-textColor--primary u-fontWeight--bold">
-                  {appName}
-                </p>
-                <AppStatus
-                  appStatus={this.state.dashboard?.appStatus?.state}
-                  url={this.props.match.url}
-                  onViewAppStatusDetails={this.toggleAppStatusModal}
-                  links={links}
-                  app={app}
-                  hasStatusInformers={hasStatusInformers}
-                />
-              </div>
-            </div>
-
-            <div className="u-marginTop--30 flex flex1 u-width--full">
-              <div className="flex1 u-paddingRight--15">
-                <DashboardVersionCard
-                  currentVersion={currentVersion}
-                  downstream={downstream}
-                  app={app}
-                  url={this.props.match.url}
-                  checkingForUpdates={checkingForUpdates}
-                  checkingUpdateText={checkingUpdateText}
-                  onDropBundle={this.onDropBundle}
-                  airgapUploader={this.state.airgapUploader}
-                  uploadingAirgapFile={uploadingAirgapFile}
-                  airgapUploadError={airgapUploadError}
-                  refetchData={this.props.updateCallback}
-                  downloadCallback={this.startFetchAppDownstreamJob}
-                  uploadProgress={this.state.uploadProgress}
-                  uploadSize={this.state.uploadSize}
-                  uploadResuming={this.state.uploadResuming}
-                  makeCurrentVersion={this.props.makeCurrentVersion}
-                  redeployVersion={this.props.redeployVersion}
-                  onProgressError={this.onProgressError}
-                  onCheckForUpdates={() => this.onCheckForUpdates()}
-                  onUploadNewVersion={() => this.onUploadNewVersion()}
-                  isBundleUploading={isBundleUploading}
-                  checkingForUpdateError={this.state.checkingForUpdateError}
-                  viewAirgapUploadError={() =>
-                    this.toggleViewAirgapUploadError()
-                  }
-                  viewAirgapUpdateError={(err) =>
-                    this.toggleViewAirgapUpdateError(err)
-                  }
-                  showAutomaticUpdatesModal={this.showAutomaticUpdatesModal}
-                  noUpdatesAvalable={this.state.noUpdatesAvalable}
-                  isHelmManaged={this.props.isHelmManaged}
-                />
-              </div>
-              <div className="flex1 flex-column u-paddingLeft--15">
-                {app.allowSnapshots && isVeleroInstalled ? (
-                  <div className="u-marginBottom--30">
-                    <DashboardSnapshotsCard
-                      url={this.props.match.url}
-                      app={app}
-                      ping={this.props.ping}
-                      isSnapshotAllowed={
-                        app.allowSnapshots && isVeleroInstalled
-                      }
-                      isVeleroInstalled={isVeleroInstalled}
-                      startASnapshot={this.startASnapshot}
-                      startSnapshotOptions={this.state.startSnapshotOptions}
-                      startSnapshotErr={this.state.startSnapshotErr}
-                      startSnapshotErrorMsg={this.state.startSnapshotErrorMsg}
-                      snapshotInProgressApps={this.props.snapshotInProgressApps}
-                      selectedSnapshotOption={this.state.selectedSnapshotOption}
-                      onSnapshotOptionChange={this.onSnapshotOptionChange}
-                      onSnapshotOptionClick={this.onSnapshotOptionClick}
+      <>
+        {!app && (
+          <div className="flex-column flex1 alignItems--center justifyContent--center">
+            <Loader size="60" />
+          </div>
+        )}
+        {app && (
+          <div className="flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
+            <Helmet>
+              <title>{appName}</title>
+            </Helmet>
+            <div className="Dashboard flex flex-auto justifyContent--center alignSelf--center alignItems--center">
+              <div className="flex1 flex-column">
+                <div className="flex flex1 alignItems--center">
+                  <div className="flex flex-auto">
+                    <div
+                      style={{ backgroundImage: `url(${iconUri})` }}
+                      className="Dashboard--appIcon u-position--relative"
                     />
                   </div>
-                ) : null}
-                <DashboardLicenseCard
-                  appLicense={appLicense}
-                  app={app}
-                  syncCallback={() => this.getAppLicense(this.props.app)}
-                  gettingAppLicenseErrMsg={this.state.gettingAppLicenseErrMsg}
-                />
-              </div>
-            </div>
-            <div className="u-marginTop--30 flex flex1">
-              <DashboardGraphsCard
-                prometheusAddress={this.state.dashboard?.prometheusAddress}
-                metrics={this.state.dashboard?.metrics}
-                appSlug={app.slug}
-                clusterId={this.props.cluster?.id}
-                isHelmManaged={this.props.isHelmManaged}
-              />
-            </div>
-          </div>
-        </div>
-        {this.state.viewAirgapUploadError && (
-          <Modal
-            isOpen={this.state.viewAirgapUploadError}
-            onRequestClose={this.toggleViewAirgapUploadError}
-            contentLabel="Error uploading airgap bundle"
-            ariaHideApp={false}
-            className="Modal"
-          >
-            <div className="Modal-body">
-              <p className="u-fontSize--large u-fontWeight--bold u-textColor--primary">
-                Error uploading airgap buundle
-              </p>
-              <div className="ExpandedError--wrapper u-marginTop--10 u-marginBottom--10">
-                <p className="u-fontSize--normal u-textColor--error">
-                  {this.state.airgapUploadError}
-                </p>
-              </div>
-              <button
-                type="button"
-                className="btn primary u-marginTop--15"
-                onClick={this.toggleViewAirgapUploadError}
-              >
-                Ok, got it!
-              </button>
-            </div>
-          </Modal>
-        )}
-        {this.state.viewAirgapUpdateError && (
-          <Modal
-            isOpen={this.state.viewAirgapUpdateError}
-            onRequestClose={this.toggleViewAirgapUpdateError}
-            contentLabel="Error updating airgap version"
-            ariaHideApp={false}
-            className="Modal"
-          >
-            <div className="Modal-body">
-              <p className="u-fontSize--large u-fontWeight--bold u-textColor--primary">
-                Error updating version
-              </p>
-              <div className="ExpandedError--wrapper u-marginTop--10 u-marginBottom--10">
-                <p className="u-fontSize--normal u-textColor--error">
-                  {this.state.airgapUpdateError}
-                </p>
-              </div>
-              <button
-                type="button"
-                className="btn primary u-marginTop--15"
-                onClick={this.toggleViewAirgapUpdateError}
-              >
-                Ok, got it!
-              </button>
-            </div>
-          </Modal>
-        )}
-        {this.state.showAppStatusModal && (
-          <Modal
-            isOpen={this.state.showAppStatusModal}
-            onRequestClose={this.toggleAppStatusModal}
-            ariaHideApp={false}
-            className="Modal DefaultSize"
-          >
-            <div className="Modal-body">
-              <Paragraph size="16" weight="bold">
-                Resource status
-              </Paragraph>
-              <div
-                className="u-marginTop--10 u-marginBottom--10 u-overflow--auto"
-                style={{ maxHeight: "50vh" }}
-              >
-                {appResourcesByState?.sortedStates?.map((state, i) => (
-                  <div key={i}>
-                    <p className="u-fontSize--normal u-color--mutedteal u-fontWeight--bold u-marginTop--20">
-                      {Utilities.toTitleCase(state)}
+                  <div className="u-marginLeft--20">
+                    <p className="u-fontSize--30 u-textColor--primary u-fontWeight--bold">
+                      {appName}
                     </p>
-                    {appResourcesByState?.statesMap[state]?.map(
-                      (resource, i) => (
-                        <div key={`${resource?.name}-${i}`}>
-                          <p
-                            className={`ResourceStateText u-fontSize--normal ${resource.state}`}
-                          >
-                            {resource?.namespace}/{resource?.kind}/
-                            {resource?.name}
-                          </p>
-                        </div>
-                      )
-                    )}
+                    <AppStatus
+                      appStatus={this.state.dashboard?.appStatus?.state}
+                      url={this.props.match.url}
+                      onViewAppStatusDetails={this.toggleAppStatusModal}
+                      links={links}
+                      app={app}
+                      hasStatusInformers={hasStatusInformers}
+                    />
                   </div>
-                ))}
-              </div>
-              <div className="flex alignItems--center u-marginTop--30">
-                <button
-                  type="button"
-                  className="btn primary"
-                  onClick={this.toggleAppStatusModal}
-                >
-                  Ok, got it!
-                </button>
-                <button
-                  type="button"
-                  className="btn secondary blue u-marginLeft--10"
-                  onClick={this.goToTroubleshootPage}
-                >
-                  Troubleshoot
-                </button>
+                </div>
+
+                <div className="u-marginTop--30 flex flex1 u-width--full">
+                  <div className="flex1 u-paddingRight--15">
+                    <DashboardVersionCard
+                      currentVersion={currentVersion}
+                      downstream={downstream}
+                      app={app}
+                      url={this.props.match.url}
+                      checkingForUpdates={checkingForUpdates}
+                      checkingUpdateText={checkingUpdateText}
+                      onDropBundle={this.onDropBundle}
+                      airgapUploader={this.state.airgapUploader}
+                      uploadingAirgapFile={uploadingAirgapFile}
+                      airgapUploadError={airgapUploadError}
+                      refetchData={this.props.updateCallback}
+                      downloadCallback={this.startFetchAppDownstreamJob}
+                      uploadProgress={this.state.uploadProgress}
+                      uploadSize={this.state.uploadSize}
+                      uploadResuming={this.state.uploadResuming}
+                      makeCurrentVersion={this.props.makeCurrentVersion}
+                      redeployVersion={this.props.redeployVersion}
+                      onProgressError={this.onProgressError}
+                      onCheckForUpdates={() => this.onCheckForUpdates()}
+                      onUploadNewVersion={() => this.onUploadNewVersion()}
+                      isBundleUploading={isBundleUploading}
+                      checkingForUpdateError={this.state.checkingForUpdateError}
+                      viewAirgapUploadError={() =>
+                        this.toggleViewAirgapUploadError()
+                      }
+                      viewAirgapUpdateError={(err) =>
+                        this.toggleViewAirgapUpdateError(err)
+                      }
+                      showAutomaticUpdatesModal={this.showAutomaticUpdatesModal}
+                      noUpdatesAvalable={this.state.noUpdatesAvalable}
+                      isHelmManaged={this.props.isHelmManaged}
+                    />
+                  </div>
+                  <div className="flex1 flex-column u-paddingLeft--15">
+                    {app.allowSnapshots && isVeleroInstalled ? (
+                      <div className="u-marginBottom--30">
+                        <DashboardSnapshotsCard
+                          url={this.props.match.url}
+                          app={app}
+                          ping={this.props.ping}
+                          isSnapshotAllowed={
+                            app.allowSnapshots && isVeleroInstalled
+                          }
+                          isVeleroInstalled={isVeleroInstalled}
+                          startASnapshot={this.startASnapshot}
+                          startSnapshotOptions={this.state.startSnapshotOptions}
+                          startSnapshotErr={this.state.startSnapshotErr}
+                          startSnapshotErrorMsg={
+                            this.state.startSnapshotErrorMsg
+                          }
+                          snapshotInProgressApps={
+                            this.props.snapshotInProgressApps
+                          }
+                          selectedSnapshotOption={
+                            this.state.selectedSnapshotOption
+                          }
+                          onSnapshotOptionChange={this.onSnapshotOptionChange}
+                          onSnapshotOptionClick={this.onSnapshotOptionClick}
+                        />
+                      </div>
+                    ) : null}
+                    <DashboardLicenseCard
+                      appLicense={appLicense}
+                      app={app}
+                      syncCallback={() => this.getAppLicense(this.props.app)}
+                      gettingAppLicenseErrMsg={
+                        this.state.gettingAppLicenseErrMsg
+                      }
+                    />
+                  </div>
+                </div>
+                <div className="u-marginTop--30 flex flex1">
+                  <DashboardGraphsCard
+                    prometheusAddress={this.state.dashboard?.prometheusAddress}
+                    metrics={this.state.dashboard?.metrics}
+                    appSlug={app.slug}
+                    clusterId={this.props.cluster?.id}
+                    isHelmManaged={this.props.isHelmManaged}
+                  />
+                </div>
               </div>
             </div>
-          </Modal>
+            {this.state.viewAirgapUploadError && (
+              <Modal
+                isOpen={this.state.viewAirgapUploadError}
+                onRequestClose={this.toggleViewAirgapUploadError}
+                contentLabel="Error uploading airgap bundle"
+                ariaHideApp={false}
+                className="Modal"
+              >
+                <div className="Modal-body">
+                  <p className="u-fontSize--large u-fontWeight--bold u-textColor--primary">
+                    Error uploading airgap buundle
+                  </p>
+                  <div className="ExpandedError--wrapper u-marginTop--10 u-marginBottom--10">
+                    <p className="u-fontSize--normal u-textColor--error">
+                      {this.state.airgapUploadError}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn primary u-marginTop--15"
+                    onClick={this.toggleViewAirgapUploadError}
+                  >
+                    Ok, got it!
+                  </button>
+                </div>
+              </Modal>
+            )}
+            {this.state.viewAirgapUpdateError && (
+              <Modal
+                isOpen={this.state.viewAirgapUpdateError}
+                onRequestClose={this.toggleViewAirgapUpdateError}
+                contentLabel="Error updating airgap version"
+                ariaHideApp={false}
+                className="Modal"
+              >
+                <div className="Modal-body">
+                  <p className="u-fontSize--large u-fontWeight--bold u-textColor--primary">
+                    Error updating version
+                  </p>
+                  <div className="ExpandedError--wrapper u-marginTop--10 u-marginBottom--10">
+                    <p className="u-fontSize--normal u-textColor--error">
+                      {this.state.airgapUpdateError}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn primary u-marginTop--15"
+                    onClick={this.toggleViewAirgapUpdateError}
+                  >
+                    Ok, got it!
+                  </button>
+                </div>
+              </Modal>
+            )}
+            {this.state.showAppStatusModal && (
+              <Modal
+                isOpen={this.state.showAppStatusModal}
+                onRequestClose={this.toggleAppStatusModal}
+                ariaHideApp={false}
+                className="Modal DefaultSize"
+              >
+                <div className="Modal-body">
+                  <Paragraph size="16" weight="bold">
+                    Resource status
+                  </Paragraph>
+                  <div
+                    className="u-marginTop--10 u-marginBottom--10 u-overflow--auto"
+                    style={{ maxHeight: "50vh" }}
+                  >
+                    {appResourcesByState?.sortedStates?.map((state, i) => (
+                      <div key={i}>
+                        <p className="u-fontSize--normal u-color--mutedteal u-fontWeight--bold u-marginTop--20">
+                          {Utilities.toTitleCase(state)}
+                        </p>
+                        {appResourcesByState?.statesMap[state]?.map(
+                          (resource, i) => (
+                            <div key={`${resource?.name}-${i}`}>
+                              <p
+                                className={`ResourceStateText u-fontSize--normal ${resource.state}`}
+                              >
+                                {resource?.namespace}/{resource?.kind}/
+                                {resource?.name}
+                              </p>
+                            </div>
+                          )
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex alignItems--center u-marginTop--30">
+                    <button
+                      type="button"
+                      className="btn primary"
+                      onClick={this.toggleAppStatusModal}
+                    >
+                      Ok, got it!
+                    </button>
+                    <button
+                      type="button"
+                      className="btn secondary blue u-marginLeft--10"
+                      onClick={this.goToTroubleshootPage}
+                    >
+                      Troubleshoot
+                    </button>
+                  </div>
+                </div>
+              </Modal>
+            )}
+            {this.state.showAutomaticUpdatesModal && (
+              <AutomaticUpdatesModal
+                isOpen={this.state.showAutomaticUpdatesModal}
+                onRequestClose={this.hideAutomaticUpdatesModal}
+                updateCheckerSpec={app.updateCheckerSpec}
+                autoDeploy={app.autoDeploy}
+                appSlug={app.slug}
+                isSemverRequired={app?.isSemverRequired}
+                gitopsIsConnected={downstream?.gitops?.isConnected}
+                onAutomaticUpdatesConfigured={() => {
+                  this.hideAutomaticUpdatesModal();
+                  this.props.refreshAppData();
+                }}
+              />
+            )}
+            {this.state.snapshotDifferencesModal && (
+              <SnapshotDifferencesModal
+                snapshotDifferencesModal={this.state.snapshotDifferencesModal}
+                toggleSnapshotDifferencesModal={
+                  this.toggleSnaphotDifferencesModal
+                }
+              />
+            )}
+          </div>
         )}
-        {this.state.showAutomaticUpdatesModal && (
-          <AutomaticUpdatesModal
-            isOpen={this.state.showAutomaticUpdatesModal}
-            onRequestClose={this.hideAutomaticUpdatesModal}
-            updateCheckerSpec={app.updateCheckerSpec}
-            autoDeploy={app.autoDeploy}
-            appSlug={app.slug}
-            isSemverRequired={app?.isSemverRequired}
-            gitopsIsConnected={downstream?.gitops?.isConnected}
-            onAutomaticUpdatesConfigured={() => {
-              this.hideAutomaticUpdatesModal();
-              this.props.refreshAppData();
-            }}
-          />
-        )}
-        {this.state.snapshotDifferencesModal && (
-          <SnapshotDifferencesModal
-            snapshotDifferencesModal={this.state.snapshotDifferencesModal}
-            toggleSnapshotDifferencesModal={this.toggleSnaphotDifferencesModal}
-          />
-        )}
-      </div>
+      </>
     );
   }
 }
