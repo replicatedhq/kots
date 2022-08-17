@@ -211,6 +211,12 @@ func Test_BuildImageAltNames(t *testing.T) {
 					NewTag:  "unchanged",
 					Digest:  "unchanged",
 				},
+				{
+					Name:    "docker.io/image:latest",
+					NewName: "unchanged",
+					NewTag:  "unchanged",
+					Digest:  "unchanged",
+				},
 			},
 		},
 		{
@@ -264,8 +270,8 @@ func Test_BuildImageAltNames(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			req := require.New(t)
 
-			got := BuildImageAltNames(tt.rewrittenImage)
-
+			got, err := BuildImageAltNames(tt.rewrittenImage)
+			req.NoError(err)
 			req.Equal(tt.want, got)
 		})
 	}
@@ -304,6 +310,12 @@ func Test_kustomizeImage(t *testing.T) {
 					NewTag:  "latest",
 					Digest:  "",
 				},
+				{
+					Name:    "docker.io/redis",
+					NewName: "localhost:5000/somebigbank/redis",
+					NewTag:  "latest",
+					Digest:  "",
+				},
 			},
 		},
 		{
@@ -332,6 +344,12 @@ func Test_kustomizeImage(t *testing.T) {
 					NewTag:  "v1",
 					Digest:  "",
 				},
+				{
+					Name:    "docker.io/redis",
+					NewName: "localhost:5000/somebigbank/redis",
+					NewTag:  "v1",
+					Digest:  "",
+				},
 			},
 		},
 		{
@@ -340,25 +358,31 @@ func Test_kustomizeImage(t *testing.T) {
 				Endpoint:  "localhost:5000",
 				Namespace: "somesmallcorp",
 			},
-			image: "redis@sha256:mytestdigest",
+			image: "redis@sha256:ae39a6f5c07297d7ab64dbd4f82c77c874cc6a94cea29fdec309d0992574b4f7",
 			want: []kustomizetypes.Image{
 				{
 					Name:    "redis",
 					NewName: "localhost:5000/somesmallcorp/redis",
 					NewTag:  "",
-					Digest:  "mytestdigest",
+					Digest:  "ae39a6f5c07297d7ab64dbd4f82c77c874cc6a94cea29fdec309d0992574b4f7",
 				},
 				{
 					Name:    "docker.io/library/redis",
 					NewName: "localhost:5000/somesmallcorp/redis",
 					NewTag:  "",
-					Digest:  "mytestdigest",
+					Digest:  "ae39a6f5c07297d7ab64dbd4f82c77c874cc6a94cea29fdec309d0992574b4f7",
 				},
 				{
 					Name:    "library/redis",
 					NewName: "localhost:5000/somesmallcorp/redis",
 					NewTag:  "",
-					Digest:  "mytestdigest",
+					Digest:  "ae39a6f5c07297d7ab64dbd4f82c77c874cc6a94cea29fdec309d0992574b4f7",
+				},
+				{
+					Name:    "docker.io/redis",
+					NewName: "localhost:5000/somesmallcorp/redis",
+					NewTag:  "",
+					Digest:  "ae39a6f5c07297d7ab64dbd4f82c77c874cc6a94cea29fdec309d0992574b4f7",
 				},
 			},
 		},
@@ -378,6 +402,12 @@ func Test_kustomizeImage(t *testing.T) {
 				},
 				{
 					Name:    "redis",
+					NewName: "localhost:5000/somebigbank/redis",
+					NewTag:  "v1",
+					Digest:  "",
+				},
+				{
+					Name:    "docker.io/redis",
 					NewName: "localhost:5000/somebigbank/redis",
 					NewTag:  "v1",
 					Digest:  "",
@@ -461,14 +491,30 @@ func Test_kustomizeImage(t *testing.T) {
 			},
 		},
 		{
+			name: "ecr",
+			destRegistry: registry.RegistryOptions{
+				Endpoint:  "localhost:5000",
+				Namespace: "somebigbank",
+			},
+			image: "111122222333.dkr.ecr.us-east-1.amazonaws.com/frontend:v1.0.1",
+			want: []kustomizetypes.Image{
+				{
+					Name:    "111122222333.dkr.ecr.us-east-1.amazonaws.com/frontend",
+					NewName: "localhost:5000/somebigbank/frontend",
+					NewTag:  "v1.0.1",
+					Digest:  "",
+				},
+			},
+		},
+		{
 			name: "no namespace",
 			destRegistry: registry.RegistryOptions{
 				Endpoint: "localhost:5000",
 			},
-			image: "library/redis:v1",
+			image: "docker.io/redis:v1",
 			want: []kustomizetypes.Image{
 				{
-					Name:    "library/redis",
+					Name:    "docker.io/redis",
 					NewName: "localhost:5000/redis",
 					NewTag:  "v1",
 					Digest:  "",
@@ -481,6 +527,12 @@ func Test_kustomizeImage(t *testing.T) {
 				},
 				{
 					Name:    "docker.io/library/redis",
+					NewName: "localhost:5000/redis",
+					NewTag:  "v1",
+					Digest:  "",
+				},
+				{
+					Name:    "library/redis",
 					NewName: "localhost:5000/redis",
 					NewTag:  "v1",
 					Digest:  "",

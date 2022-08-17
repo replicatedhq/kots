@@ -109,6 +109,11 @@ func Test_ProcessUpstreamImages(t *testing.T) {
 						NewTag:  "latest",
 					},
 					{
+						Name:    "docker.io/busybox",
+						NewName: "ttl.sh/testing-ns/busybox",
+						NewTag:  "latest",
+					},
+					{
 						Name:    "registry.replicated.com/appslug/image",
 						NewName: "ttl.sh/testing-ns/image",
 						NewTag:  "version",
@@ -140,6 +145,11 @@ func Test_ProcessUpstreamImages(t *testing.T) {
 					},
 					{
 						Name:    "library/nginx",
+						NewName: "ttl.sh/testing-ns/nginx",
+						NewTag:  "1",
+					},
+					{
+						Name:    "docker.io/nginx",
 						NewName: "ttl.sh/testing-ns/nginx",
 						NewTag:  "1",
 					},

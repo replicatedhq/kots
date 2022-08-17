@@ -117,7 +117,6 @@ func GetCachedHelmApps() []string {
 func AddHelmApp(releaseName string, helmApp *apptypes.HelmApp) {
 	appCacheLock.Lock()
 	defer appCacheLock.Unlock()
-
 	helmAppCache[releaseName] = helmApp
 }
 

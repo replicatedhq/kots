@@ -76,7 +76,11 @@ func ProcessUpstreamImages(u *types.Upstream, options ProcessUpstreamImagesOptio
 
 	withAltNames := make([]kustomizetypes.Image, 0)
 	for _, i := range foundImages {
-		withAltNames = append(withAltNames, image.BuildImageAltNames(i)...)
+		altNames, err := image.BuildImageAltNames(i)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to build image alt names")
+		}
+		withAltNames = append(withAltNames, altNames...)
 	}
 
 	result := &ProcessUpstreamImageResult{

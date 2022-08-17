@@ -9,7 +9,7 @@ on:
         required: true
   release:
     types:
-      - created
+      - published
 
 env:
   addon_version: ${{ inputs.addon_version | github.ref_name }}
