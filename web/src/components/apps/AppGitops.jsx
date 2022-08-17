@@ -398,7 +398,7 @@ class AppGitops extends Component {
               ) : gitopsEnabled && !gitopsConnected ? (
                 <div className="flex" style={{ gap: "5px", color: "orange" }}>
                   <img src={warning} alt="warning" />
-                  <p>Enabled, repository access needed</p>
+                  <p>Repository access needed</p>
                 </div>
               ) : (
                 gitopsEnabled &&
@@ -429,7 +429,7 @@ class AppGitops extends Component {
         <div className="GitOpsSettings">
           <div className="flex-column flex1">
             <div className="GitopsSettings-noRepoAccess">
-              <p className="title">GitOps Configuration</p>
+              <p className="step-title">GitOps Configuration</p>
               <p className="sub">
                 Connect a git version control system so all application updates
                 are committed to a git repository. When GitOps is enabled, you
@@ -474,7 +474,7 @@ class AppGitops extends Component {
               style={{
                 background: "#FBE9D7",
                 padding: "30px",
-                margin: "30px 0",
+                marginBottom: "30px",
               }}
             >
               <p
@@ -509,9 +509,7 @@ class AppGitops extends Component {
                 canCopy={true}
                 copyText="Copy key"
                 onCopyText={
-                  <span className="u-textColor--success">
-                    Deploy key has been copied to your clipboard
-                  </span>
+                  <span className="u-textColor--success">Copied</span>
                 }
               >
                 {deployKey}

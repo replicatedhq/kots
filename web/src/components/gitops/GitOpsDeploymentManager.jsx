@@ -6,7 +6,6 @@ import classNames from "classnames";
 import Loader from "../shared/Loader";
 import ErrorModal from "../modals/ErrorModal";
 import { withRouter, Link } from "react-router-dom";
-import GitOpsFlowIllustration from "./GitOpsFlowIllustration";
 import GitOpsRepoDetails from "./GitOpsRepoDetails";
 import {
   getGitOpsUri,
@@ -957,10 +956,6 @@ class GitOpsDeploymentManager extends React.Component {
     const activeStep = find(STEPS, { step: this.state.step });
     return (
       <div className="GitOpsDeploymentManager--wrapper flex-column flex1">
-        {/* once gitops is enabled (provider connected) that ui with all the apps  */}
-        {/* {this.state.gitops?.enabled && this.state.step !== "action"
-          ? this.renderConfiguredGitOps()
-          : this.renderActiveStep(activeStep)} */}
         {this.renderActiveStep(activeStep)}
         {errorMsg && (
           <ErrorModal

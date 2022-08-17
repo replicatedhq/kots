@@ -267,7 +267,7 @@ class GitOpsRepoDetails extends React.Component {
                   Path
                 </p>
                 <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">
-                  Path in repository to cmmmit deployment file
+                  Path in repository to commit deployment file
                 </p>
                 <input
                   type="text"

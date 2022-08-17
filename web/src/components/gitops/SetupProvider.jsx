@@ -147,7 +147,7 @@ const SetupProvider = ({
             ) : gitopsEnabled && !gitopsConnected ? (
               <div className="flex" style={{ gap: "5px", color: "orange" }}>
                 <img src={warning} alt="warning" />
-                <p>Enabled, repository access needed</p>
+                <p>Repository access needed</p>
               </div>
             ) : (
               gitopsEnabled &&

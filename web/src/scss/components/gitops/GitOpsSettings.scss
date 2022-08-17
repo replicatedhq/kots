@@ -25,7 +25,6 @@
 }
 
 .GitopsSettings-noRepoAccess {
-  padding: 10px;
   text-align: center;
   margin: 0 auto 30px;
 
@@ -47,4 +46,13 @@
 .disable-gitops-wrapper {
   padding-top: 30px;
   border-top: 1px solid $border-color;
+}
+
+.step-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: $text-color-secondary;
+  margin-bottom: 12px;
+  line-height: 28px;
+  text-align: left;
 }
