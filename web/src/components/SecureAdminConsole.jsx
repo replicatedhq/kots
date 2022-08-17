@@ -207,7 +207,16 @@ class SecureAdminConsole extends React.Component {
     }
   }
 
-  async componentWillMount() {
+  redirectLoginIfNeeded = async () => {
+    const loginInfo = await this.getLoginInfo();
+    if (loginInfo?.method === "identity-service") {
+      await this.loginWithIdentityProvider();
+    }
+  };
+
+  componentDidMount() {
+    window.addEventListener("keydown", this.submitForm);
+
     const token = Utilities.getCookie("token");
     if (token) {
       // this is a redirect from identity service login
@@ -216,12 +225,12 @@ class SecureAdminConsole extends React.Component {
         token: token.replace(/"/g, ""),
         sessionRoles: Utilities.getCookie("session_roles"),
       };
-      const loggedIn = await this.completeLogin(loginData);
-      if (loggedIn) {
-        Utilities.removeCookie("token");
-        Utilities.removeCookie("session_roles");
-      }
-      return;
+      this.completeLogin(loginData).then((loggedIn) => {
+        if (loggedIn) {
+          Utilities.removeCookie("token");
+          Utilities.removeCookie("session_roles");
+        }
+      });
     }
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -238,18 +247,7 @@ class SecureAdminConsole extends React.Component {
       }
     }
 
-    await this.redirectLoginIfNeeded();
-  }
-
-  redirectLoginIfNeeded = async () => {
-    const loginInfo = await this.getLoginInfo();
-    if (loginInfo?.method === "identity-service") {
-      await this.loginWithIdentityProvider();
-    }
-  };
-
-  componentDidMount() {
-    window.addEventListener("keydown", this.submitForm);
+    this.redirectLoginIfNeeded();
   }
 
   componentWillUnmount() {
