@@ -104,9 +104,6 @@ class GitOpsDeploymentManager extends React.Component {
           };
         });
         this.setState({ selectedApp: updateSelectedApp[0] });
-
-        // this.getInitialOwnerRepo(updateSelectedApp[0]);
-        // this.getAppsList();
       } else {
         const updateSelectedApp = this.state.appsList.map((app) => {
           return { ...app, label: app.name, value: app.name };
@@ -116,7 +113,6 @@ class GitOpsDeploymentManager extends React.Component {
           console.log(this.state.selectedApp, app);
           return app.id === this.state.selectedApp?.id;
         });
-        console.log("new", newApp);
         this.setState({ selectedApp: newApp });
       }
     }
@@ -209,6 +205,7 @@ class GitOpsDeploymentManager extends React.Component {
       throw err;
     }
   };
+
   getInitialOwnerRepo = (app) => {
     console.log(app?.downstream);
     if (!app?.downstream) {
@@ -254,19 +251,14 @@ class GitOpsDeploymentManager extends React.Component {
       let path = parsed.pathname.slice(1); // remove the "/"
       const project = path.split("/")[0];
       const repo = path.split("/")[1];
-      this.setState(
-        {
-          owner: project,
-          repo: repo,
-          branch: gitops.branch,
-          path: gitops.path,
-          gitopsEnabled: gitops.enabled,
-          gitopsConnected: gitops.isConnected,
-        },
-        () => {
-          console.log("updated", this.state);
-        }
-      );
+      this.setState({
+        owner: project,
+        repo: repo,
+        branch: gitops.branch,
+        path: gitops.path,
+        gitopsEnabled: gitops.enabled,
+        gitopsConnected: gitops.isConnected,
+      });
     }
   };
 
@@ -584,6 +576,7 @@ class GitOpsDeploymentManager extends React.Component {
     providerError,
   }) => {
     const isBitbucketServer = provider === "bitbucket_server";
+    console.log(selectedService, provider);
 
     return (
       <Flex direction="column">
@@ -622,7 +615,6 @@ class GitOpsDeploymentManager extends React.Component {
           </Flex>
           <Flex direction="column" flex="1" width="100%">
             {/* right column */}
-
             {this.renderHostName(
               provider,
               hostname,
@@ -630,9 +622,11 @@ class GitOpsDeploymentManager extends React.Component {
               httpPort,
               sshPort
             )}
-            <Flex flex="1" mt="30" width="100%">
-              {this.renderSshPort(provider, sshPort)}
-            </Flex>
+            {isBitbucketServer && (
+              <Flex flex="1" mt="30" width="100%">
+                {this.renderSshPort(provider, sshPort)}
+              </Flex>
+            )}
           </Flex>
         </Flex>
         <GitOpsRepoDetails
@@ -655,23 +649,22 @@ class GitOpsDeploymentManager extends React.Component {
   };
   renderHttpPort = (provider, httpPort) => {
     const isBitbucketServer = provider === "bitbucket_server";
-    if (!isBitbucketServer) {
-      return <div className="flex flex1" />;
+    if (isBitbucketServer) {
+      return (
+        <Flex flex="1" direction="column" width="100%">
+          <Paragraph size="16" weight="bold" className="u-lineHeight--normal">
+            HTTP Port <span>(Required)</span>
+          </Paragraph>
+          <input
+            type="text"
+            className="Input"
+            placeholder={BITBUCKET_SERVER_DEFAULT_HTTP_PORT}
+            value={httpPort}
+            onChange={(e) => this.setState({ httpPort: e.target.value })}
+          />
+        </Flex>
+      );
     }
-    return (
-      <Flex flex="1" direction="column" width="100%">
-        <Paragraph size="16" weight="bold" className="u-lineHeight--normal">
-          HTTP Port <span>(Required)</span>
-        </Paragraph>
-        <input
-          type="text"
-          className="Input"
-          placeholder={BITBUCKET_SERVER_DEFAULT_HTTP_PORT}
-          value={httpPort}
-          onChange={(e) => this.setState({ httpPort: e.target.value })}
-        />
-      </Flex>
-    );
   };
 
   renderSshPort = (provider, sshPort) => {
@@ -695,63 +688,31 @@ class GitOpsDeploymentManager extends React.Component {
     );
   };
 
-  // TODO: CHANGE FUNCTION NAME
   renderHostName = (provider, hostname, providerError) => {
-    if (!requiresHostname(provider)) {
-      return <div className="flex flex1" />;
-    }
-    return (
-      <Flex direction="column" className="flex1" width="100%">
-        <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
-          Hostname
-          <span> (Required)</span>
-        </p>
-        <input
-          type="text"
-          className={`Input ${
-            providerError?.field === "hostname" && "has-error"
-          } u-marginTop--5`}
-          placeholder="hostname"
-          value={hostname}
-          onChange={(e) => this.setState({ hostname: e.target.value })}
-        />
-        {providerError?.field === "hostname" && (
-          <p className="u-fontSize--small u-marginTop--5 u-textColor--error u-fontWeight--medium u-lineHeight--normal">
-            A hostname must be provided
+    if (requiresHostname(provider)) {
+      return (
+        <Flex direction="column" className="flex1" width="100%">
+          <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
+            Hostname
+            <span> (Required)</span>
           </p>
-        )}
-      </Flex>
-    );
-  };
-
-  oldRenderHostName = (provider, hostname, providerError) => {
-    if (!requiresHostname(provider)) {
-      return <div className="flex flex1" />;
+          <input
+            type="text"
+            className={`Input ${
+              providerError?.field === "hostname" && "has-error"
+            } u-marginTop--5`}
+            placeholder="hostname"
+            value={hostname}
+            onChange={(e) => this.setState({ hostname: e.target.value })}
+          />
+          {providerError?.field === "hostname" && (
+            <p className="u-fontSize--small u-marginTop--5 u-textColor--error u-fontWeight--medium u-lineHeight--normal">
+              A hostname must be provided
+            </p>
+          )}
+        </Flex>
+      );
     }
-    return (
-      <div className="flex flex1 flex-column u-marginLeft--10">
-        <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
-          Hostname
-        </p>
-        <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">
-          Hostname of your GitOps server.
-        </p>
-        <input
-          type="text"
-          className={`Input ${
-            providerError?.field === "hostname" && "has-error"
-          }`}
-          placeholder="hostname"
-          value={hostname}
-          onChange={(e) => this.setState({ hostname: e.target.value })}
-        />
-        {providerError?.field === "hostname" && (
-          <p className="u-fontSize--small u-marginTop--5 u-textColor--error u-fontWeight--medium u-lineHeight--normal">
-            A hostname must be provided
-          </p>
-        )}
-      </div>
-    );
   };
 
   updateHttpPort = (httpPort) => {
@@ -763,7 +724,6 @@ class GitOpsDeploymentManager extends React.Component {
   };
 
   handleAppChange = (app) => {
-    console.log("app change");
     const currentApp = find(this.state.appsList, { id: app.id });
     this.getInitialOwnerRepo(currentApp);
     this.setState({ selectedApp: app, currentApp });
@@ -956,13 +916,14 @@ class GitOpsDeploymentManager extends React.Component {
           </p>
           <div className="flex u-marginBottom--30">
             {this.renderGitOpsProviderSelector(services, selectedService)}
-            {this.renderHostName(
-              selectedService?.value,
-              hostname,
-              providerError,
-              httpPort,
-              sshPort
-            )}
+            {requiresHostname(selectedService?.value) &&
+              this.renderHostName(
+                selectedService?.value,
+                hostname,
+                providerError,
+                httpPort,
+                sshPort
+              )}
           </div>
           {isBitbucketServer && (
             <div className="flex u-marginBottom--30">

@@ -174,8 +174,8 @@ const SetupProvider = ({
         committed to a git repository. When GitOps is enabled, you cannot deploy
         updates directly from the admin console.
       </p>
-      <div className="flex-column u-textAlign--left u-marginBottom--30">
-        <div className="flex alignItems--center">
+      <div className="flex-column u-textAlign--left ">
+        <div className="flex alignItems--center u-marginBottom--30">
           <div className="flex flex1 flex-column u-marginRight--10">
             <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
               Select an application to configure
