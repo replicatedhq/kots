@@ -207,40 +207,6 @@ class SecureAdminConsole extends React.Component {
     }
   }
 
-  // async componentWillMount() {
-  //   const token = Utilities.getCookie("token");
-  //   if (token) {
-  //     // this is a redirect from identity service login
-  //     // strip quotes from token (golang adds them when the cookie value has spaces, commas, etc..)
-  //     const loginData = {
-  //       token: token.replace(/"/g, ""),
-  //       sessionRoles: Utilities.getCookie("session_roles"),
-  //     };
-  //     const loggedIn = await this.completeLogin(loginData);
-  //     if (loggedIn) {
-  //       Utilities.removeCookie("token");
-  //       Utilities.removeCookie("session_roles");
-  //     }
-  //     return;
-  //   }
-
-  //   const urlParams = new URLSearchParams(window.location.search);
-  //   const encodedMessage = urlParams.get("message");
-  //   if (encodedMessage) {
-  //     try {
-  //       const message = JSON.parse(atob(encodedMessage));
-  //       if (message.error) {
-  //         this.setState({ loginErr: true, loginErrMessage: message.error });
-  //         return;
-  //       }
-  //     } catch (err) {
-  //       console.log("failed to decode message:", err);
-  //     }
-  //   }
-
-  //   await this.redirectLoginIfNeeded();
-  // }
-
   redirectLoginIfNeeded = async () => {
     const loginInfo = await this.getLoginInfo();
     if (loginInfo?.method === "identity-service") {
