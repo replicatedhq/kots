@@ -68,12 +68,6 @@ export default [
       Utilities.sessionRolesHasOneOf([rbacRoles.CLUSTER_ADMIN]),
   },
   {
-    tabName: "gitops",
-    displayName: "GitOps",
-    to: (slug) => `/app/${slug}/gitops`,
-    displayRule: ({ app }) => app.downstream?.gitops?.enabled,
-  },
-  {
     tabName: "registry-settings",
     displayName: "Registry settings",
     to: (slug) => `/app/${slug}/registry-settings`,
