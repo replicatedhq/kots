@@ -104,7 +104,6 @@ const SetupProvider = ({
         return;
       }
       if (res.ok && res.status === 204) {
-        history.push(`/app/${app?.slug}`);
         setShowDisableGitopsModalPrompt(false);
       }
     } catch (err) {

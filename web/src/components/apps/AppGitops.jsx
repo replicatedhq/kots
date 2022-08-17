@@ -181,11 +181,6 @@ class AppGitops extends Component {
     }
   };
 
-  goToTroubleshootPage = () => {
-    const { app, history } = this.props;
-    history.push(`/app/${app.slug}/troubleshoot`);
-  };
-
   updateGitOpsSettings = () => {
     this.setState({ showGitOpsSettings: true });
   };
@@ -321,7 +316,6 @@ class AppGitops extends Component {
         return;
       }
       if (res.ok && res.status === 204) {
-        this.props.history.push(`/app/${this.props.app?.slug}`);
         this.props.refetch();
       }
     } catch (err) {
@@ -336,22 +330,6 @@ class AppGitops extends Component {
 
   hideGitOpsSettings = () => {
     this.setState({ showGitOpsSettings: false });
-  };
-
-  getProviderIconClassName = (provider) => {
-    switch (provider) {
-      case "github":
-      case "github_enterprise":
-        return "github-icon";
-      case "gitlab":
-      case "gitlab_enterprise":
-        return "gitlab-icon";
-      case "bitbucket":
-      case "bitbucket_server":
-        return "bitbucket-icon";
-      default:
-        return "github-icon";
-    }
   };
 
   toggleErrorModal = () => {
@@ -376,26 +354,16 @@ class AppGitops extends Component {
 
     const gitops = app.downstream.gitops;
 
-    const {
-      ownerRepo,
-      testingConnection,
-      disablingGitOps,
-      showGitOpsSettings,
-      showDisableGitopsModalPrompt,
-      errorMsg,
-    } = this.state;
+    const { ownerRepo, testingConnection, disablingGitOps, errorMsg } =
+      this.state;
 
     const deployKey = gitops?.deployKey;
     const addKeyUri = getAddKeyUri(gitops, ownerRepo);
-    const gitopsEnabled = gitops?.enabled;
-    const gitopsConnected = gitops?.isConnected;
-    const gitopsIsConnected = gitops?.enabled && gitops?.isConnected;
 
     const selectedService = SERVICES.find((service) => {
       return service.value === gitops?.provider;
     });
 
-    console.log("slelected", this.props.selectedApp);
     const renderIcons = (app) => {
       if (app?.iconUri) {
         return (
@@ -452,157 +420,131 @@ class AppGitops extends Component {
     }));
 
     return (
-      <div className="GitOpsSettings--wrapper container flex-column u-overflow--auto u-paddingBottom--20 alignItems--center">
+      <div className="GitOpsSettings--wrapper container flex-column u-paddingBottom--20 alignItems--center">
         <Helmet>
           <title>{`${appTitle} GitOps`}</title>
         </Helmet>
         <div className="GitOpsSettings">
-          {gitopsEnabled && gitopsConnected ? (
-            <div className="u-marginLeft--auto u-marginRight--auto">
-              {/* work on this later basically rendergitopsproviderselecteer */}
-              {/* <GitOpsRepoDetails
-                  stepTitle={`GitOps settings for ${appTitle}`}
-                  appName={appTitle}
-                  hostname={gitops?.hostname}
-                  ownerRepo={ownerRepo}
-                  branch={gitops?.branch}
-                  path={gitops?.path}
-                  format={gitops?.format}
-                  action={gitops?.action}
-                  selectedService={selectedService}
-                  onFinishSetup={this.finishGitOpsSetup}
-                  otherService=""
-                  ctaLoadingText="Updating settings"
-                  ctaText="Update settings"
-            /> */}
+          <div className="flex-column flex1">
+            <div className="GitopsSettings-noRepoAccess">
+              <p className="title">GitOps Configuration</p>
+              <p className="sub">
+                Connect a git version control system so all application updates
+                are committed to a git repository. When GitOps is enabled, you
+                cannot deploy updates directly from the admin console.
+              </p>
             </div>
-          ) : (
-            <div className="flex-column flex1">
-              <div className="GitopsSettings-noRepoAccess">
-                <p className="title">GitOps Configuration</p>
-                <p className="sub">
-                  Connect a git version control system so all application
-                  updates are committed to a git repository. When GitOps is
-                  enabled, you cannot deploy updates directly from the admin
-                  console.
+            <div className="flex alignItems--center u-marginBottom--30">
+              <div className="flex flex1 flex-column u-marginRight--10">
+                <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
+                  Select an application to configure
                 </p>
-              </div>
-              <div className="flex alignItems--center u-marginBottom--30">
-                <div className="flex flex1 flex-column u-marginRight--10">
-                  <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
-                    Select an application to configure
-                  </p>
-                  <div className="u-position--relative u-marginTop--5 u-marginBottom--10">
-                    <Select
-                      className="replicated-select-container select-large"
-                      classNamePrefix="replicated-select"
-                      placeholder="Select an application"
-                      options={apps}
-                      isSearchable={false}
-                      getOptionLabel={(app) => getLabel(app)}
-                      value={this.props.selectedApp}
-                      onChange={this.props.handleAppChange}
-                      isOptionSelected={(option) => {
-                        option.value === this.props.selectedApp;
-                      }}
-                    />
-                  </div>
-                </div>
-                <div className="flex flex1 flex-column u-fontSize--small u-marginTop--20">
-                  <a
-                    style={{ color: "blue", cursor: "pointer" }}
-                    disabled={disablingGitOps}
-                    onClick={this.promptToDisableGitOps}
-                  >
-                    {disablingGitOps
-                      ? "Disabling GitOps"
-                      : "Disable GitOps for this app"}
-                  </a>
+                <div className="u-position--relative u-marginTop--5 u-marginBottom--10">
+                  <Select
+                    className="replicated-select-container select-large"
+                    classNamePrefix="replicated-select"
+                    placeholder="Select an application"
+                    options={apps}
+                    isSearchable={false}
+                    getOptionLabel={(app) => getLabel(app)}
+                    value={this.props.selectedApp}
+                    onChange={this.props.handleAppChange}
+                    isOptionSelected={(option) => {
+                      option.value === this.props.selectedApp;
+                    }}
+                  />
                 </div>
               </div>
+              <div className="flex flex1 flex-column u-fontSize--small u-marginTop--20">
+                <a
+                  style={{ color: "blue", cursor: "pointer" }}
+                  disabled={disablingGitOps}
+                  onClick={this.promptToDisableGitOps}
+                >
+                  {disablingGitOps
+                    ? "Disabling GitOps"
+                    : "Disable GitOps for this app"}
+                </a>
+              </div>
+            </div>
 
-              <div
-                style={{
-                  background: "#FBE9D7",
-                  padding: "30px",
-                  margin: "30px 0",
-                }}
+            <div
+              style={{
+                background: "#FBE9D7",
+                padding: "30px",
+                margin: "30px 0",
+              }}
+            >
+              <p
+                className="u-fontSize--large u-fontWeight--bold u-lineHeight--normal u-marginBottom--5"
+                style={{ color: "#DB9016" }}
               >
-                <p
-                  className="u-fontSize--large u-fontWeight--bold u-lineHeight--normal u-marginBottom--5"
-                  style={{ color: "#DB9016" }}
+                GitOps is enabled but repository access is needed for pushing
+                updates
+              </p>
+              <p
+                className="u-textColor--primary"
+                style={{ marginBottom: "30px" }}
+              >
+                To push application updates to your repository, access to your
+                repository is needed.
+              </p>
+              <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy u-marginBottom--15">
+                Add this SSH key on your
+                <a
+                  className="replicated-link"
+                  href={addKeyUri}
+                  target="_blank"
+                  rel="noopener noreferrer"
                 >
-                  GitOps is enabled but repository access is needed for pushing
-                  updates
-                </p>
-                <p
-                  className="u-textColor--primary"
-                  style={{ marginBottom: "30px" }}
-                >
-                  To push application updates to your repository, access to your
-                  repository is needed.
-                </p>
-                <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy u-marginBottom--15">
-                  Add this SSH key on your
-                  <a
-                    className="replicated-link"
-                    href={addKeyUri}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {" "}
-                    repo settings page.
-                  </a>
-                </p>
-                <CodeSnippet
-                  canCopy={true}
-                  copyText="Copy key"
-                  onCopyText={
-                    <span className="u-textColor--success">
-                      Deploy key has been copied to your clipboard
-                    </span>
-                  }
-                >
-                  {deployKey}
-                </CodeSnippet>
-              </div>
-
-              <div className="flex justifyContent--spaceBetween alignItems--center">
-                <div className="flex">
-                  <button
-                    className="btn secondary blue"
-                    onClick={() => this.props.stepFrom("action", "provider")}
-                  >
-                    Back to configuration
-                  </button>
-
-                  {/* <button
-                      className="btn secondary red"
-                      disabled={disablingGitOps}
-                      onClick={this.promptToDisableGitOps}
-                    >
-                      {disablingGitOps ? "Disabling GitOps" : "Disable GitOps"}
-                    </button> */}
-                </div>
-                {testingConnection ? (
-                  <Loader size="30" />
-                ) : (
-                  <button
-                    className="btn primary blue"
-                    disabled={testingConnection}
-                    onClick={this.handleTestConnection}
-                  >
-                    Test connection to repository
-                  </button>
-                )}
-              </div>
-              {errorMsg ? (
-                <p className="u-textColor--error u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginTop--12">
-                  {errorMsg}
-                </p>
-              ) : null}
+                  {this.props.selectedApp.downstream.gitops.provider ===
+                    "bitbucket" ||
+                  this.props.selectedApp.downstream.gitops.provider ===
+                    "bitbucket_server"
+                    ? " account settings page."
+                    : " repository settings page."}
+                </a>
+              </p>
+              <CodeSnippet
+                canCopy={true}
+                copyText="Copy key"
+                onCopyText={
+                  <span className="u-textColor--success">
+                    Deploy key has been copied to your clipboard
+                  </span>
+                }
+              >
+                {deployKey}
+              </CodeSnippet>
             </div>
-          )}
+
+            <div className="flex justifyContent--spaceBetween alignItems--center">
+              <div className="flex">
+                <button
+                  className="btn secondary blue"
+                  onClick={() => this.props.stepFrom("action", "provider")}
+                >
+                  Back to configuration
+                </button>
+              </div>
+              {testingConnection ? (
+                <Loader size="30" />
+              ) : (
+                <button
+                  className="btn primary blue"
+                  disabled={testingConnection}
+                  onClick={this.handleTestConnection}
+                >
+                  Test connection to repository
+                </button>
+              )}
+            </div>
+            {errorMsg ? (
+              <p className="u-textColor--error u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginTop--12">
+                {errorMsg}
+              </p>
+            ) : null}
+          </div>
         </div>
 
         <DisableModal
