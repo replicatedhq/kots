@@ -747,7 +747,8 @@ class DashboardVersionCard extends React.Component {
   renderGitopsVersionAction = (version) => {
     const { app } = this.props;
     const downstream = app?.downstream;
-    const nothingToCommit = downstream?.gitops?.isConnected && !version?.commitUrl;
+    const nothingToCommit =
+      downstream?.gitops?.isConnected && !version?.commitUrl;
 
     if (version.status === "pending_download") {
       const isDownloading =
@@ -1703,10 +1704,21 @@ class DashboardVersionCard extends React.Component {
                     registryPassword={this.props?.app?.credentials?.password}
                     showHelmDeployModal={true}
                     showDownloadValues={showDownloadValues}
-                    subtitle="Follow the steps below to redeploy your application using the values from the last release."
-                    title={`${
-                      showDownloadValues ? "Upgrade" : "Redeploy"
-                    } application`}
+                    subtitle={
+                      showDownloadValues
+                        ? "Follow the steps below to upgrade the release."
+                        : "Follow the steps below to redeploy the release using the currently deployed chart version and values."
+                    }
+                    title={
+                      showDownloadValues
+                        ? `Deploy ${this.props?.app?.slug} ${this.state.showHelmDeployModalWithVersionLabel}`
+                        : `Redeploy ${this.props?.app?.slug}`
+                    }
+                    upgradeTitle={
+                      showDownloadValues
+                        ? "Upgrade release"
+                        : "Redeploy release"
+                    }
                     version={this.state.showHelmDeployModalWithVersionLabel}
                   />
                   <a href={url} download={name} className="hidden" ref={ref} />

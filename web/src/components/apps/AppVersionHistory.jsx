@@ -1481,15 +1481,27 @@ class AppVersionHistory extends Component {
                       showDownloadValues={
                         this.deployButtonStatus(version) === "Deploy"
                       }
-                      subtitle="Follow the steps below to upgrade your application with your new values.yaml."
+                      subtitle={
+                        this.deployButtonStatus(version) === "Rollback"
+                          ? `Follow the steps below to rollback to revision ${version.sequence}.`
+                          : this.deployButtonStatus(version) === "Redeploy"
+                          ? "Follow the steps below to redeploy the release using the currently deployed chart version and values."
+                          : "Follow the steps below to upgrade the release."
+                      }
                       title={` ${this.deployButtonStatus(version)} ${
                         this.props?.app.slug
-                      } ${version.versionLabel}`}
-                      upgradeTitle={`${
+                      } ${
+                        this.deployButtonStatus(version) === "Deploy"
+                          ? version.versionLabel
+                          : ""
+                      }`}
+                      upgradeTitle={
                         this.deployButtonStatus(version) === "Rollback"
-                          ? "Rollback"
-                          : "Upgrade"
-                      } application with Helm`}
+                          ? "Rollback release"
+                          : this.deployButtonStatus(version) === "Redeploy"
+                          ? "Redeploy release"
+                          : "Upgrade release"
+                      }
                       version={version.versionLabel}
                     />
                     <a
