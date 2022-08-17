@@ -225,7 +225,7 @@ class SecureAdminConsole extends React.Component {
         token: token.replace(/"/g, ""),
         sessionRoles: Utilities.getCookie("session_roles"),
       };
-      const loggedIn = this.completeLogin(loginData).then(() => {
+      this.completeLogin(loginData).then((loggedIn) => {
         if (loggedIn) {
           Utilities.removeCookie("token");
           Utilities.removeCookie("session_roles");
