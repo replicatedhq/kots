@@ -207,7 +207,50 @@ class SecureAdminConsole extends React.Component {
     }
   }
 
-  async componentWillMount() {
+  // async componentWillMount() {
+  //   const token = Utilities.getCookie("token");
+  //   if (token) {
+  //     // this is a redirect from identity service login
+  //     // strip quotes from token (golang adds them when the cookie value has spaces, commas, etc..)
+  //     const loginData = {
+  //       token: token.replace(/"/g, ""),
+  //       sessionRoles: Utilities.getCookie("session_roles"),
+  //     };
+  //     const loggedIn = await this.completeLogin(loginData);
+  //     if (loggedIn) {
+  //       Utilities.removeCookie("token");
+  //       Utilities.removeCookie("session_roles");
+  //     }
+  //     return;
+  //   }
+
+  //   const urlParams = new URLSearchParams(window.location.search);
+  //   const encodedMessage = urlParams.get("message");
+  //   if (encodedMessage) {
+  //     try {
+  //       const message = JSON.parse(atob(encodedMessage));
+  //       if (message.error) {
+  //         this.setState({ loginErr: true, loginErrMessage: message.error });
+  //         return;
+  //       }
+  //     } catch (err) {
+  //       console.log("failed to decode message:", err);
+  //     }
+  //   }
+
+  //   await this.redirectLoginIfNeeded();
+  // }
+
+  redirectLoginIfNeeded = async () => {
+    const loginInfo = await this.getLoginInfo();
+    if (loginInfo?.method === "identity-service") {
+      await this.loginWithIdentityProvider();
+    }
+  };
+
+  componentDidMount() {
+    window.addEventListener("keydown", this.submitForm);
+
     const token = Utilities.getCookie("token");
     if (token) {
       // this is a redirect from identity service login
@@ -216,12 +259,13 @@ class SecureAdminConsole extends React.Component {
         token: token.replace(/"/g, ""),
         sessionRoles: Utilities.getCookie("session_roles"),
       };
-      const loggedIn = await this.completeLogin(loginData);
-      if (loggedIn) {
-        Utilities.removeCookie("token");
-        Utilities.removeCookie("session_roles");
-      }
-      return;
+      const loggedIn = this.completeLogin(loginData)
+        .then(() => {
+          if (loggedIn) {
+            Utilities.removeCookie("token");
+            Utilities.removeCookie("session_roles");
+          }
+        });
     }
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -238,18 +282,7 @@ class SecureAdminConsole extends React.Component {
       }
     }
 
-    await this.redirectLoginIfNeeded();
-  }
-
-  redirectLoginIfNeeded = async () => {
-    const loginInfo = await this.getLoginInfo();
-    if (loginInfo?.method === "identity-service") {
-      await this.loginWithIdentityProvider();
-    }
-  };
-
-  componentDidMount() {
-    window.addEventListener("keydown", this.submitForm);
+    this.redirectLoginIfNeeded();
   }
 
   componentWillUnmount() {
@@ -300,9 +333,8 @@ class SecureAdminConsole extends React.Component {
     return (
       <div className="container flex-column flex1 u-overflow--auto Login-wrapper justifyContent--center alignItems--center">
         <Helmet>
-          <title>{`${
-            appName ? `${appName} Admin Console` : "Admin Console"
-          }`}</title>
+          <title>{`${appName ? `${appName} Admin Console` : "Admin Console"
+            }`}</title>
         </Helmet>
         <div className="LoginBox-wrapper u-flexTabletReflow flex-auto">
           <div className="flex-auto flex-column login-form-wrapper secure-console justifyContent--center">
