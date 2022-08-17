@@ -31,6 +31,7 @@ class Dashboard extends Component {
     appName: "",
     iconUri: "",
     currentVersion: {},
+    clusterId: null,
     downstream: [],
     links: [],
     checkingForUpdates: false,
@@ -184,17 +185,20 @@ class Dashboard extends Component {
       // the promise is resolved
 
       // TODO: use react-query to refetch this instead of the custom repeater
-      if (!this.props.app) {
+      if (!this.props.app || this.state.clusterId === null) {
         return;
       }
 
-      if (this.props.cluster?.id == "" && this.props.isHelmManaged === true) {
+      if (this.state.clusterId === "" && this.props.isHelmManaged === true) {
         // TODO: use a callback to update the state in the parent component
-        this.props.cluster.id = 0;
+        this.setState({
+          clusterId: 0
+        })
+        return;
       }
 
       fetch(
-        `${process.env.API_ENDPOINT}/app/${this.props.app?.slug}/cluster/${this.props.cluster?.id}/dashboard`,
+        `${process.env.API_ENDPOINT}/app/${this.props.app?.slug}/cluster/${this.state.clusterId}/dashboard`,
         {
           headers: {
             Authorization: Utilities.getToken(),
@@ -750,7 +754,7 @@ class Dashboard extends Component {
                     prometheusAddress={this.state.dashboard?.prometheusAddress}
                     metrics={this.state.dashboard?.metrics}
                     appSlug={app.slug}
-                    clusterId={this.props.cluster?.id}
+                    clusterId={this.state.clusterId}
                     isHelmManaged={this.props.isHelmManaged}
                   />
                 </div>
