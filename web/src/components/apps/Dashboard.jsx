@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Helmet from "react-helmet";
 import { withRouter } from "react-router-dom";
 import get from "lodash/get";
@@ -19,7 +19,6 @@ import { AirgapUploader } from "../../utilities/airgapUploader";
 import "../../scss/components/watches/Dashboard.scss";
 import "../../../node_modules/react-vis/dist/style";
 import { Paragraph } from "../../styles/common";
-import { useEffect } from "react";
 
 const COMMON_ERRORS = {
   "HTTP 401": "Registry credentials are invalid",
@@ -33,7 +32,7 @@ const fetchAppDownloadstreamJobRepeater = new Repeater();
 
 const Dashboard = ({
   app,
-  cluster,
+  cluster: clusterProp,
   refreshAppData,
   updateCallback,
   toggleIsBundleUploading,
@@ -46,6 +45,7 @@ const Dashboard = ({
   snapshotInProgressApps,
   isVeleroInstalled,
   isBundleUploading,
+  onUploadNewVersion,
 }) => {
   // state = {
   //   appName: "",
@@ -95,17 +95,20 @@ const Dashboard = ({
   const [checkingUpdateMessage, setCheckingUpdateMessage] = useState(
     "Checking for updates"
   );
+  const [checkingForUpdateError, setCheckingForUpdateError] = useState(false);
   const [appLicense, setAppLicense] = useState(null);
   const [activeChart, setActiveChart] = useState(null);
   const [crosshairValues, setCrosshairValues] = useState([]);
   const [noUpdatesAvalable, setNoUpdatesAvalable] = useState(false);
   const [updateChecker, setUpdateChecker] = useState(updateCheckerRepeater);
   const [uploadingAirgapFile, setUploadingAirgapFile] = useState(false);
+  const [airgapUploader, setAirgapUploader] = useState(null);
   const [airgapUploadError, setAirgapUploadError] = useState(null);
   const [viewAirgapUploadError, setViewAirgapUploadError] = useState(false);
   const [viewAirgapUpdateError, setViewAirgapUpdateError] = useState(false);
   const [airgapUpdateError, setAirgapUpdateError] = useState("");
   const [startSnapshotErr, setStartSnapshotErr] = useState(false);
+  const [snapshotError, setSnapshotError] = useState(false);
   const [startSnapshotErrorMsg, setStartSnapshotErrorMsg] = useState("");
   const [showAutomaticUpdatesModalState, setShowAutomaticUpdatesModalState] =
     useState(false);
@@ -137,11 +140,20 @@ const Dashboard = ({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadSize, setUploadSize] = useState(0);
   const [uploadResuming, setUploadResuming] = useState(false);
+  const [loadingApp, setLoadingApp] = useState(false);
+  const [displayErrorModal, setDisplayErrorModal] = useState(false);
+  const [startingSnapshot, setStartingSnapshot] = useState(false);
+  const [cluster, setCluster] = useState(clusterProp);
+
 
   useEffect(() => {
     setWatchState(app);
     getAppLicense(app);
   }, [app]);
+
+  useEffect(() => {
+    setCluster(clusterProp);
+  } , [clusterProp]);
 
   const setWatchState = (app) => {
     setAppName(app.name);
@@ -212,6 +224,7 @@ const Dashboard = ({
   };
 
   useEffect(() => {
+    console.log("mount use effect called")
     if (app?.isAirgap && !airgapUploader) {
       getAirgapConfig();
     }
@@ -230,6 +243,7 @@ const Dashboard = ({
   }, []);
 
   const getAppDashboard = () => {
+    console.log("getAppDashboard called")
     return new Promise((resolve, reject) => {
       // this function is in a repeating callback that terminates when
       // the promise is resolved
@@ -241,7 +255,8 @@ const Dashboard = ({
 
       if (cluster?.id == "" && isHelmManaged === true) {
         // TODO: use a callback to update the state in the parent component
-        cluster.id = 0;
+        setCluster({...cluster, id: 0 });
+        return;
       }
 
       fetch(
@@ -266,6 +281,7 @@ const Dashboard = ({
             metrics: response.metrics,
           });
 
+          getAppDashboardJob.stop();
           resolve();
         })
         .catch((err) => {
@@ -277,7 +293,7 @@ const Dashboard = ({
 
   const onCheckForUpdates = async () => {
     setCheckingForUpdates(true);
-    setCheckingForUpdatesError(false);
+    setCheckingForUpdateError(false);
 
     fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/updatecheck`, {
       headers: {
@@ -439,7 +455,7 @@ const Dashboard = ({
     setUploadingAirgapFile(false);
     setUploadProgress(0);
     setUploadSize(0);
-    setuploadResuming(false);
+    setUploadResuming(false);
     toggleIsBundleUploading(false);
   };
 
@@ -454,7 +470,7 @@ const Dashboard = ({
     setCheckingForUpdates(false);
     setUploadProgress(0);
     setUploadSize(0);
-    setuploadResuming(false);
+    setUploadResuming(false);
   };
 
   const toggleViewAirgapUploadError = () => {
@@ -527,7 +543,6 @@ const Dashboard = ({
   };
 
   const onSnapshotOptionClick = () => {
-    const { selectedSnapshotOption } = state;
     startASnapshot(selectedSnapshotOption.option);
   };
 
