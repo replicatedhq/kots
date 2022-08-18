@@ -145,20 +145,21 @@ const Dashboard = ({
   const [startingSnapshot, setStartingSnapshot] = useState(false);
   const [cluster, setCluster] = useState(clusterProp);
 
-
   useEffect(() => {
-    setWatchState(app);
-    getAppLicense(app);
+    if (app) {
+      setWatchState(app);
+      getAppLicense(app);
+    }
   }, [app]);
 
   useEffect(() => {
     setCluster(clusterProp);
-  } , [clusterProp]);
+  }, [clusterProp]);
 
   const setWatchState = (app) => {
     setAppName(app.name);
     setIconUri(app.iconUri);
-    setCurrentVersion(app.currentVersion);
+    setCurrentVersion(app?.downstream.currentVersion);
     setDownstream(app.downstream);
     setLinks(app.links);
   };
@@ -224,7 +225,7 @@ const Dashboard = ({
   };
 
   useEffect(() => {
-    console.log("mount use effect called")
+    console.log("mount use effect called");
     if (app?.isAirgap && !airgapUploader) {
       getAirgapConfig();
     }
@@ -243,7 +244,7 @@ const Dashboard = ({
   }, []);
 
   const getAppDashboard = () => {
-    console.log("getAppDashboard called")
+    console.log("getAppDashboard called");
     return new Promise((resolve, reject) => {
       // this function is in a repeating callback that terminates when
       // the promise is resolved
@@ -255,7 +256,7 @@ const Dashboard = ({
 
       if (cluster?.id == "" && isHelmManaged === true) {
         // TODO: use a callback to update the state in the parent component
-        setCluster({...cluster, id: 0 });
+        setCluster({ ...cluster, id: 0 });
         return;
       }
 
