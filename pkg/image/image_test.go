@@ -505,7 +505,7 @@ func Test_kustomizeImage(t *testing.T) {
 		},
 		{
 			name: "ecr",
-			destRegistry: registry.RegistryOptions{
+			destRegistry: registrytypes.RegistryOptions{
 				Endpoint:  "localhost:5000",
 				Namespace: "somebigbank",
 			},
