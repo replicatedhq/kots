@@ -375,29 +375,24 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options Rewrit
 		pullSecretPassword = options.License.Spec.LicenseID
 	}
 
-	// Note that there maybe no rewritten images if only replicated private images are being used.
-	// We still need to create the secret in that case.
-	var pullSecrets registry.ImagePullSecrets
-	if len(objects) > 0 {
-		namePrefix := options.AppSlug
-		// For the newer style charts, create a new secret per chart as helm adds chart specific
-		// details to annotations and labels to it.
-		for _, v := range writeMidstreamOptions.NewHelmCharts {
-			if v.Spec.UseHelmInstall && filepath.Base(b.Path) != "." {
-				namePrefix = fmt.Sprintf("%s-%s", options.AppSlug, filepath.Base(b.Path))
-				break
-			}
+	// For the newer style charts, create a new secret per chart as helm adds chart specific
+	// details to annotations and labels to it.
+	namePrefix := options.AppSlug
+	for _, v := range writeMidstreamOptions.NewHelmCharts {
+		if v.Spec.UseHelmInstall && filepath.Base(b.Path) != "." {
+			namePrefix = fmt.Sprintf("%s-%s", options.AppSlug, filepath.Base(b.Path))
+			break
 		}
-		pullSecrets, err = registry.PullSecretForRegistries(
-			pullSecretRegistries,
-			pullSecretUsername,
-			pullSecretPassword,
-			options.K8sNamespace,
-			namePrefix,
-		)
-		if err != nil {
-			return nil, errors.Wrap(err, "create pull secret")
-		}
+	}
+	pullSecrets, err := registry.PullSecretForRegistries(
+		pullSecretRegistries,
+		pullSecretUsername,
+		pullSecretPassword,
+		options.K8sNamespace,
+		namePrefix,
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "create pull secret")
 	}
 	pullSecrets.DockerHubSecret = dockerhubSecret
 
