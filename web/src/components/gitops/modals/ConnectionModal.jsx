@@ -44,10 +44,10 @@ const ConnectionModal = ({
                 <button
                   type="button"
                   className="btn secondary blue u-marginRight--10"
-                  onClick={() => {
+                  onClick={async () => {
+                    await getAppsList();
+                    await getGitops();
                     setOpen(false);
-                    getAppsList();
-                    getGitops();
                     stepFrom("action", "provider");
                   }}
                 >
