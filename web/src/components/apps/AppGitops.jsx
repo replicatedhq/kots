@@ -499,13 +499,6 @@ class AppGitops extends Component {
                 GitOps is enabled but repository access is needed for pushing
                 updates
               </p>
-              <p
-                className="u-textColor--primary"
-                style={{ marginBottom: "30px" }}
-              >
-                To push application updates to your repository, access to your
-                repository is needed.
-              </p>
               <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy u-marginBottom--15">
                 Add this SSH key on your
                 <a
