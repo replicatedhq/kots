@@ -355,6 +355,8 @@ class AppGitops extends Component {
     }
 
     const gitops = app.downstream.gitops;
+    const gitopsEnabled = gitops?.enabled;
+    const gitopsConnected = gitops.isConnected;
 
     const { ownerRepo, testingConnection, disablingGitOps, errorMsg } =
       this.state;
@@ -458,15 +460,17 @@ class AppGitops extends Component {
                 </div>
               </div>
               <div className="flex flex1 flex-column u-fontSize--small u-marginTop--20">
-                <a
-                  style={{ color: "blue", cursor: "pointer" }}
-                  disabled={disablingGitOps}
-                  onClick={this.promptToDisableGitOps}
-                >
-                  {disablingGitOps
-                    ? "Disabling GitOps"
-                    : "Disable GitOps for this app"}
-                </a>
+                {gitopsEnabled && gitopsConnected && (
+                  <a
+                    style={{ color: "blue", cursor: "pointer" }}
+                    disabled={disablingGitOps}
+                    onClick={this.promptToDisableGitOps}
+                  >
+                    {disablingGitOps
+                      ? "Disabling GitOps"
+                      : "Disable GitOps for this app"}
+                  </a>
+                )}
               </div>
             </div>
 

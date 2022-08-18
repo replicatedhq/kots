@@ -164,6 +164,11 @@ const SetupProvider = ({
     );
   };
 
+  const downstream = app?.downstream;
+  const gitops = downstream?.gitops;
+  const gitopsEnabled = gitops?.enabled;
+  const gitopsConnected = gitops?.isConnected;
+
   return (
     <div
       key={`${step.step}-active`}
@@ -199,18 +204,19 @@ const SetupProvider = ({
             </div>
           </div>
           <div className="flex flex1 flex-column u-fontSize--small u-marginTop--20">
-            <a
-              style={{ color: "blue", cursor: "pointer" }}
-              disabled={disablingGitOps}
-              onClick={promptToDisableGitOps}
-            >
-              {disablingGitOps
-                ? "Disabling GitOps"
-                : "Disable GitOps for this app"}
-            </a>
+            {gitopsEnabled && gitopsConnected && (
+              <a
+                style={{ color: "blue", cursor: "pointer" }}
+                disabled={disablingGitOps}
+                onClick={promptToDisableGitOps}
+              >
+                {disablingGitOps
+                  ? "Disabling GitOps"
+                  : "Disable GitOps for this app"}
+              </a>
+            )}
           </div>
         </div>
-        {/* <div className="flex flex1"> */}
         {renderGitOpsProviderSelector({
           owner,
           repo,
