@@ -47,45 +47,6 @@ const Dashboard = ({
   isBundleUploading,
   onUploadNewVersion,
 }) => {
-  // state = {
-  //   appName: "",
-  //   iconUri: "",
-  //   currentVersion: {},
-  //   downstream: [],
-  //   links: [],
-  //   checkingForUpdates: false,
-  //   checkingUpdateMessage: "Checking for updates",
-  //   checkingForUpdateError: false,
-  //   appLicense: null,
-  //   activeChart: null,
-  //   crosshairValues: [],
-  //   noUpdatesAvalable: false,
-  //   updateChecker: new Repeater(),
-  //   uploadingAirgapFile: false,
-  //   airgapUploadError: null,
-  //   viewAirgapUploadError: false,
-  //   viewAirgapUpdateError: false,
-  //   airgapUpdateError: "",
-  //   startSnapshotErrorMsg: "",
-  //   showAutomaticUpdatesModal: false,
-  //   showAppStatusModal: false,
-  //   dashboard: {
-  //     appStatus: null,
-  //     metrics: [],
-  //     prometheusAddress: "",
-  //   },
-  //   getAppDashboardJob: new Repeater(),
-  //   fetchAppDownstreamJob: new Repeater(),
-  //   gettingAppLicenseErrMsg: "",
-  //   startSnapshotOptions: [
-  //     { option: "partial", name: "Start a Partial snapshot" },
-  //     { option: "full", name: "Start a Full snapshot" },
-  //     { option: "learn", name: "Learn about the difference" },
-  //   ],
-  //   selectedSnapshotOption: { option: "full", name: "Start a Full snapshot" },
-  //   snapshotDifferencesModal: false,
-  // };
-
   const [appName, setAppName] = useState("");
   const [iconUri, setIconUri] = useState("");
   const [currentVersion, setCurrentVersion] = useState({});
@@ -225,7 +186,6 @@ const Dashboard = ({
   };
 
   useEffect(() => {
-    console.log("mount use effect called");
     if (app?.isAirgap && !airgapUploader) {
       getAirgapConfig();
     }
@@ -244,7 +204,6 @@ const Dashboard = ({
   }, []);
 
   const getAppDashboard = () => {
-    console.log("getAppDashboard called");
     return new Promise((resolve, reject) => {
       // this function is in a repeating callback that terminates when
       // the promise is resolved
