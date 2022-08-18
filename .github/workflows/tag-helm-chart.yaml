@@ -17,8 +17,8 @@ jobs:
             ref: main
         - name: Tag Chart
           run: |
-            git tag ${github.ref_name}-alpha
-            git push origin ${github.ref_name}-alpha
+            git tag ${GITHUB_REF_NAME}-alpha
+            git push origin ${GITHUB_REF_NAME}-alpha
 
   tag-helm-chart-prod:
       runs-on: ubuntu-20.04
@@ -32,5 +32,5 @@ jobs:
             ref: main
         - name: Tag Chart
           run: |
-            git tag ${github.ref_name}
-            git push origin ${github.ref_name}
+            git tag ${GITHUB_REF_NAME}
+            git push origin ${GITHUB_REF_NAME}
