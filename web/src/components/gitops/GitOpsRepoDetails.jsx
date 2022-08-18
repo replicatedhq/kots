@@ -146,15 +146,26 @@ class GitOpsRepoDetails extends React.Component {
   allowUpdate = () => {
     const { owner, repo, branch, path, action, format, selectedService } =
       this.state;
+
     const provider = selectedService?.value;
     if (provider === "other") {
       return true;
     }
-    if (this.props.gitopsConnected) {
-      return false;
-    } else {
+
+    if (
+      owner !== this.props.owner ||
+      repo !== this.props.repo ||
+      branch !== this.props.branch ||
+      path !== this.props.path ||
+      action !== this.props.action ||
+      format !== this.props.format
+    ) {
       return true;
+    } else if (this.props.gitopsConnected) {
+      return false;
     }
+
+    return true;
     // const isAllowed =
     //   owner !== this.props.owner ||
     //   repo !== this.props.repo ||
