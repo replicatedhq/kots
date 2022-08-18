@@ -347,8 +347,6 @@ jobs:
         run: |
           git tag ${GIT_TAG}-alpha
           git push origin ${GIT_TAG}-alpha
-          git tag ${GIT_TAG}
-          git push origin ${GIT_TAG}
 
   build-airgap:
     runs-on: ubuntu-20.04
