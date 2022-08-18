@@ -94,25 +94,14 @@ class GitOpsDeploymentManager extends React.Component {
 
   componentDidUpdate(prevProps, prevState) {
     if (this.state.appsList !== prevState.appsList) {
-      if (isEmpty(this.state.selectedApp)) {
-        const updateSelectedApp = this.state.appsList.map((app) => {
-          return {
-            ...this.state.appsList[0],
-            label: this.state.appsList[0].name,
-            value: this.state.appsList[0].name,
-          };
-        });
-        this.setState({ selectedApp: updateSelectedApp[0] });
-      } else {
-        const updateSelectedApp = this.state.appsList.map((app) => {
-          return { ...app, label: app.name, value: app.name };
-        });
+      const updateSelectedApp = this.state.appsList.map((app) => {
+        return { ...app, label: app.name, value: app.name };
+      });
 
-        const newApp = updateSelectedApp.find((app) => {
-          return app.id === this.state.selectedApp?.id;
-        });
-        this.setState({ selectedApp: newApp });
-      }
+      const newApp = updateSelectedApp.find((app) => {
+        return app.id === this.state.selectedApp?.id;
+      });
+      this.setState({ selectedApp: newApp });
     }
   }
 
@@ -139,12 +128,23 @@ class GitOpsDeploymentManager extends React.Component {
       const response = await res.json();
       const apps = response.apps;
 
+      const setInitSelectedApp = apps.map((app) => {
+        return {
+          ...apps[0],
+          label: apps[0].name,
+          value: apps[0].name,
+        };
+      });
+      if (isEmpty(this.state.selectedApp)) {
+        this.setState({ selectedApp: setInitSelectedApp[0] });
+      }
       this.setState({
         appsList: apps,
       });
       const updateSelectedApp = apps.find((app) => {
         return app.id === this.state.selectedApp?.id;
       });
+
       this.getInitialOwnerRepo(updateSelectedApp);
 
       return apps;
@@ -566,7 +566,6 @@ class GitOpsDeploymentManager extends React.Component {
     providerError,
   }) => {
     const isBitbucketServer = provider === "bitbucket_server";
-
     return (
       <Flex direction="column">
         <Flex width="100%">
@@ -746,7 +745,7 @@ class GitOpsDeploymentManager extends React.Component {
             selectedApp={this.state.selectedApp}
             provider={provider}
             updateSettings={this.updateSettings}
-            isSingleApp={this.isSingleApp}
+            isSingleApp={this.isSingleApp()}
             updateHttpPort={this.updateHttpPort}
             renderGitOpsProviderSelector={this.renderGitOpsProviderSelector}
             renderHostName={this.renderHostName}
@@ -765,6 +764,7 @@ class GitOpsDeploymentManager extends React.Component {
             stepFrom={this.stepFrom}
             getAppsList={this.getAppsList}
             getGitops={this.getGitops}
+            isSingleApp={this.isSingleApp()}
           />
         );
       default:

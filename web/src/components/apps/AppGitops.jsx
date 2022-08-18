@@ -1,7 +1,6 @@
 import React, { Component } from "react";
 import { withRouter } from "react-router-dom";
 import Helmet from "react-helmet";
-import GitOpsRepoDetails from "../gitops/GitOpsRepoDetails";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
 import {
   getGitOpsUri,
@@ -9,7 +8,6 @@ import {
   requiresHostname,
   Utilities,
 } from "../../utilities/utilities";
-import Modal from "react-modal";
 import Select from "react-select";
 import not_enabled from "../../images/not_enabled.svg";
 import warning from "../../images/warning.svg";
@@ -18,7 +16,6 @@ import enabled from "../../images/enabled.svg";
 import "../../scss/components/gitops/GitOpsSettings.scss";
 import styled from "styled-components";
 
-import SetupProvider from "../gitops/SetupProvider";
 import ConnectionModal from "../gitops/modals/ConnectionModal";
 import Loader from "../shared/Loader";
 import DisableModal from "../gitops/modals/DisableModal";
@@ -148,7 +145,6 @@ class AppGitops extends Component {
           },
         }
       );
-      console.log(res);
       if (!res.ok) {
         if (res.status === 401) {
           Utilities.logoutUser();
@@ -168,7 +164,6 @@ class AppGitops extends Component {
       }
 
       this.setState({ showConnectionModal: true, modalType: "success" });
-      //this.props.history.push("/gitops");
     } catch (err) {
       console.log(err);
       this.setState({
@@ -347,7 +342,7 @@ class AppGitops extends Component {
   }
 
   render() {
-    const { app } = this.props;
+    const { app, isSingleApp } = this.props;
     const appTitle = app?.name;
 
     if (!app.downstream) {
@@ -388,10 +383,22 @@ class AppGitops extends Component {
             {renderIcons(app)}
           </span>
           <div className="flex flex-column">
-            <div>
-              <span style={{ fontSize: 14 }}>{app.label}</span>{" "}
+            <div className={isSingleApp && "u-marginBottom--5"}>
+              {isSingleApp ? (
+                <span
+                  style={{
+                    fontSize: "16",
+                    fontWeight: "bold",
+                    color: "#323232",
+                  }}
+                >
+                  {app.label}
+                </span>
+              ) : (
+                <span style={{ fontSize: 14 }}>{app.label}</span>
+              )}
             </div>
-            <div>
+            <div style={{ fontSize: "14px" }}>
               {!gitopsEnabled && !gitopsConnected ? (
                 <div className="flex" style={{ gap: "5px", color: "gray" }}>
                   <img src={not_enabled} alt="not_enabled" />
@@ -439,26 +446,30 @@ class AppGitops extends Component {
               </p>
             </div>
             <div className="flex alignItems--center u-marginBottom--30">
-              <div className="flex flex1 flex-column u-marginRight--10">
-                <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
-                  Select an application to configure
-                </p>
-                <div className="u-position--relative u-marginTop--5 u-marginBottom--10">
-                  <Select
-                    className="replicated-select-container select-large"
-                    classNamePrefix="replicated-select"
-                    placeholder="Select an application"
-                    options={apps}
-                    isSearchable={false}
-                    getOptionLabel={(app) => getLabel(app)}
-                    value={this.props.selectedApp}
-                    onChange={this.props.handleAppChange}
-                    isOptionSelected={(option) => {
-                      option.value === this.props.selectedApp;
-                    }}
-                  />
+              {isSingleApp && app ? (
+                <div className="u-marginRight--5">{getLabel(app)}</div>
+              ) : (
+                <div className="flex flex1 flex-column u-marginRight--10">
+                  <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
+                    Select an application to configure
+                  </p>
+                  <div className="u-position--relative u-marginTop--5 u-marginBottom--10">
+                    <Select
+                      className="replicated-select-container select-large"
+                      classNamePrefix="replicated-select"
+                      placeholder="Select an application"
+                      options={apps}
+                      isSearchable={false}
+                      getOptionLabel={(app) => getLabel(app)}
+                      value={this.props.selectedApp}
+                      onChange={this.props.handleAppChange}
+                      isOptionSelected={(option) => {
+                        option.value === this.props.selectedApp;
+                      }}
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
               <div className="flex flex1 flex-column u-fontSize--small u-marginTop--20">
                 {gitopsEnabled && gitopsConnected && (
                   <a

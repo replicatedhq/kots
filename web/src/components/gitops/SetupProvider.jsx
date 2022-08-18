@@ -53,22 +53,29 @@ const SetupProvider = ({
     providerError,
     finishingSetup,
   } = state;
-  const apps = appsList.map((app) => ({
-    ...app,
-    value: app.name,
-    label: app.name,
-  }));
+
   const [app, setApp] = React.useState({});
 
+  const [apps, setApps] = React.useState({});
+
   React.useEffect(() => {
-    if (appsList.length > 0) {
+    if (apps.length > 0) {
       setApp(
-        appsList.find((app) => {
+        apps.find((app) => {
           return app.id === selectedApp?.id;
         })
       );
     }
-  }, [selectedApp, appsList]);
+  }, [selectedApp, apps]);
+
+  React.useEffect(() => {
+    const apps = appsList?.map((app) => ({
+      ...app,
+      value: app.name,
+      label: app.name,
+    }));
+    setApps(apps);
+  }, [appsList]);
 
   const [showDisableGitopsModalPrompt, setShowDisableGitopsModalPrompt] =
     React.useState(false);
@@ -135,10 +142,22 @@ const SetupProvider = ({
           {renderIcons(app)}
         </span>
         <div className="flex flex-column">
-          <div>
-            <span style={{ fontSize: 14 }}>{app.label}</span>{" "}
+          <div className={isSingleApp && "u-marginBottom--5"}>
+            {isSingleApp ? (
+              <span
+                style={{
+                  fontSize: "16",
+                  fontWeight: "bold",
+                  color: "#323232",
+                }}
+              >
+                {app.label}
+              </span>
+            ) : (
+              <span style={{ fontSize: 14 }}>{app.label}</span>
+            )}
           </div>
-          <div>
+          <div style={{ fontSize: "14px" }}>
             {!gitopsEnabled && !gitopsConnected ? (
               <div className="flex" style={{ gap: "5px", color: "gray" }}>
                 <img src={not_enabled} alt="not_enabled" />
@@ -182,27 +201,31 @@ const SetupProvider = ({
       </p>
       <div className="flex-column u-textAlign--left ">
         <div className="flex alignItems--center u-marginBottom--30">
-          <div className="flex flex1 flex-column u-marginRight--10">
-            <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
-              Select an application to configure
-            </p>
-            <div className="u-position--relative u-marginTop--5 u-marginBottom--10">
-              <Select
-                className="replicated-select-container select-large "
-                classNamePrefix="replicated-select"
-                placeholder="Select an application"
-                options={apps}
-                isSearchable={false}
-                getOptionLabel={(app) => getLabel(app)}
-                // getOptionValue={(app) => app.label}
-                value={selectedApp}
-                onChange={handleAppChange}
-                isOptionSelected={(option) => {
-                  option.value === selectedApp;
-                }}
-              />
+          {isSingleApp && app ? (
+            <div className="u-marginRight--5">{getLabel(app)}</div>
+          ) : (
+            <div className="flex flex1 flex-column u-marginRight--10">
+              <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
+                Select an application to configure
+              </p>
+              <div className="u-position--relative u-marginTop--5 u-marginBottom--10">
+                <Select
+                  className="replicated-select-container select-large "
+                  classNamePrefix="replicated-select"
+                  placeholder="Select an application"
+                  options={apps}
+                  isSearchable={false}
+                  getOptionLabel={(app) => getLabel(app)}
+                  // getOptionValue={(app) => app.label}
+                  value={selectedApp}
+                  onChange={handleAppChange}
+                  isOptionSelected={(option) => {
+                    option.value === selectedApp;
+                  }}
+                />
+              </div>
             </div>
-          </div>
+          )}
           <div className="flex flex1 flex-column u-fontSize--small u-marginTop--20">
             {gitopsEnabled && gitopsConnected && (
               <a
@@ -230,14 +253,6 @@ const SetupProvider = ({
           services,
           selectedService,
         })}
-
-        {/* </div> */}
-        {/* {isBitbucketServer && (
-          <div className="flex flex1 u-marginTop--30">
-            {renderHttpPort(provider, httpPort)}
-            {renderSshPort(provider, sshPort)}
-          </div>
-        )} */}
       </div>
       <div>
         <DisableModal
