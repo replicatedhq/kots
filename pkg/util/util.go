@@ -3,12 +3,15 @@ package util
 import (
 	"bytes"
 	crand "crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"math/big"
 	rand "math/rand"
 	"net/url"
 	"os"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 func init() {
@@ -160,4 +163,58 @@ func HomeDir() string {
 
 func IsHelmManaged() bool {
 	return os.Getenv("IS_HELM_MANAGED") == "true"
+}
+
+func GetValueFromMapPath(m interface{}, path []string) interface{} {
+	if len(path) == 0 {
+		return nil
+	}
+
+	key := path[0]
+	if ms, ok := m.(map[string]interface{}); ok {
+		for k, v := range ms {
+			if k != key {
+				continue
+			}
+			if len(path) == 1 {
+				return v
+			}
+			return GetValueFromMapPath(v, path[1:])
+		}
+		return nil
+	}
+
+	if mi, ok := m.(map[interface{}]interface{}); ok {
+		for k, v := range mi {
+			if s, ok := k.(string); !ok || s != key {
+				continue
+			}
+			if len(path) == 1 {
+				return v
+			}
+			return GetValueFromMapPath(v, path[1:])
+		}
+		return nil
+	}
+
+	return nil
+}
+
+func Base64DecodeInterface(d interface{}) ([]byte, error) {
+	var bytes []byte
+	switch d := d.(type) {
+	case string:
+		bytes = []byte(d)
+	case []byte:
+		bytes = d
+	default:
+		return nil, errors.Errorf("cannot base64 decode %T", d)
+	}
+
+	decoded := make([]byte, base64.StdEncoding.DecodedLen(len(bytes)))
+	n, err := base64.StdEncoding.Decode(decoded, []byte(bytes))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to bse64 decode interface data")
+	}
+	return decoded[:n], nil
 }

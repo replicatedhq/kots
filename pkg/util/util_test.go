@@ -183,3 +183,98 @@ func TestCompareStringArrays(t *testing.T) {
 		})
 	}
 }
+
+func TestGetValueFromMapPath(t *testing.T) {
+	tests := []struct {
+		name   string
+		object interface{}
+		path   []string
+		want   interface{}
+	}{
+		{
+			name: "empty path",
+			object: map[string]interface{}{
+				"key": "val",
+			},
+			path: []string{},
+			want: nil,
+		},
+		{
+			name:   "not a map",
+			object: 5,
+			path:   []string{"key1", "key2"},
+			want:   nil,
+		},
+		{
+			name: "valid path",
+			object: map[string]interface{}{
+				"key1": map[interface{}]interface{}{
+					"key2": map[string]interface{}{
+						"key3": "abc",
+					},
+				},
+			},
+			path: []string{"key1", "key2", "key3"},
+			want: "abc",
+		},
+		{
+			name: "invalid path",
+			object: map[string]interface{}{
+				"key1": map[interface{}]interface{}{
+					"key2": map[string]interface{}{
+						"key3": "abc",
+					},
+				},
+			},
+			path: []string{"key1", "key2", "key4"},
+			want: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := require.New(t)
+			got := GetValueFromMapPath(tt.object, tt.path)
+			req.Equal(tt.want, got)
+		})
+	}
+}
+
+func TestBase64DecodeInterface(t *testing.T) {
+	tests := []struct {
+		name    string
+		encoded interface{}
+		want    []byte
+		isError bool
+	}{
+		{
+			name:    "test string",
+			encoded: "YWJj", // "abc"
+			want:    []byte("abc"),
+			isError: false,
+		},
+		{
+			name:    "test bytes",
+			encoded: []byte("eHl6"), // "xyz"
+			want:    []byte("xyz"),
+			isError: false,
+		},
+		{
+			name:    "test invalid",
+			encoded: 5,
+			want:    nil,
+			isError: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := require.New(t)
+			got, err := Base64DecodeInterface(tt.encoded)
+			if tt.isError {
+				req.Error(err)
+			} else {
+				req.NoError(err)
+			}
+			req.Equal(tt.want, got)
+		})
+	}
+}
