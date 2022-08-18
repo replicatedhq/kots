@@ -55,27 +55,28 @@ const SetupProvider = ({
   } = state;
 
   const [app, setApp] = React.useState({});
-
-  const [apps, setApps] = React.useState({});
+  const apps = appsList?.map((app) => ({
+    ...app,
+    value: app.name,
+    label: app.name,
+  }));
 
   React.useEffect(() => {
-    if (apps.length > 0) {
+    //TO DO: will refactor in next PR
+    const apps = appsList?.map((app) => ({
+      ...app,
+      value: app.name,
+      label: app.name,
+    }));
+    if (appsList.length > 0) {
+      console.log("setting", apps);
       setApp(
         apps.find((app) => {
           return app.id === selectedApp?.id;
         })
       );
     }
-  }, [selectedApp, apps]);
-
-  React.useEffect(() => {
-    const apps = appsList?.map((app) => ({
-      ...app,
-      value: app.name,
-      label: app.name,
-    }));
-    setApps(apps);
-  }, [appsList]);
+  }, [selectedApp, appsList]);
 
   const [showDisableGitopsModalPrompt, setShowDisableGitopsModalPrompt] =
     React.useState(false);
@@ -131,6 +132,7 @@ const SetupProvider = ({
     }
   };
   const getLabel = (app) => {
+    console.log("app", app);
     const downstream = app?.downstream;
     const gitops = downstream?.gitops;
     const gitopsEnabled = gitops?.enabled;
