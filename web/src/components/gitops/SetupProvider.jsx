@@ -69,7 +69,6 @@ const SetupProvider = ({
       label: app.name,
     }));
     if (appsList.length > 0) {
-      console.log("setting", apps);
       setApp(
         apps.find((app) => {
           return app.id === selectedApp?.id;
@@ -132,7 +131,6 @@ const SetupProvider = ({
     }
   };
   const getLabel = (app) => {
-    console.log("app", app);
     const downstream = app?.downstream;
     const gitops = downstream?.gitops;
     const gitopsEnabled = gitops?.enabled;
