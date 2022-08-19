@@ -241,7 +241,6 @@ const Dashboard = ({
             metrics: response.metrics,
           });
 
-          getAppDashboardJob.stop();
           resolve();
         })
         .catch((err) => {
