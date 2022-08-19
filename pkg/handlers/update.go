@@ -60,7 +60,7 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		license, err := helm.GetChartLicenseFromSecret(helmApp)
+		license, err := helm.GetChartLicenseFromSecretOrDownload(helmApp)
 		if err != nil {
 			logger.Errorf("failed to get license for helm app: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)

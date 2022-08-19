@@ -1,7 +1,6 @@
 package helm
 
 import (
-	"bytes"
 	"context"
 	"io/ioutil"
 	"strconv"
@@ -9,9 +8,9 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
-	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
 	helmrelease "helm.sh/helm/v3/pkg/release"
@@ -19,9 +18,7 @@ import (
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/client-go/kubernetes/scheme"
 )
 
 // TODO: Support same releases names in different namespaces
@@ -81,6 +78,9 @@ func Init(ctx context.Context) error {
 			if releaseInfo == nil {
 				continue
 			}
+			if releaseInfo.Release.Chart.Values["replicated"] == nil {
+				continue
+			}
 
 			AddHelmApp(releaseInfo.Release.Name, releaseInfo)
 		}
@@ -133,11 +133,6 @@ func helmAppFromSecret(secret *corev1.Secret) (*apptypes.HelmApp, error) {
 		return nil, errors.Wrap(err, "failed to get helm release from secret")
 	}
 
-	licenseID := GetKotsLicenseID(helmRelease)
-	if licenseID == "" { // not a kots managed chart
-		return nil, nil
-	}
-
 	version, err := strconv.ParseInt(secret.Labels["version"], 10, 64)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse release version")
@@ -149,6 +144,7 @@ func helmAppFromSecret(secret *corev1.Secret) (*apptypes.HelmApp, error) {
 		Version:           version,
 		CreationTimestamp: secret.CreationTimestamp.Time,
 		Namespace:         secret.Namespace,
+		TempConfigValues:  map[string]kotsv1beta1.ConfigValue{},
 	}
 
 	configSecret, err := GetChartConfigSecret(helmApp)
@@ -162,23 +158,6 @@ func helmAppFromSecret(secret *corev1.Secret) (*apptypes.HelmApp, error) {
 
 	_, helmApp.IsConfigurable = configSecret.Data["config"] // TODO: also check if there are any config items
 	helmApp.ChartPath = string(configSecret.Data["chartPath"])
-
-	if configSecret.Data["license"] == nil {
-		// This block does not return an error.
-		// This allows the app cache to be populated and app be accessible via Admin Console.
-		// If there is no license, the license card will be empty.
-		// License data can be healed by syncing the license from Admin Console.
-		licenseData, err := kotslicense.GetLatestLicenseForHelm(licenseID)
-		if err != nil {
-			logger.Warnf("failed to get license for helm chart %s: %v", helmRelease.Name, err)
-		} else {
-			configSecret.Data["license"] = licenseData.LicenseBytes
-			err := UpdateChartConfig(configSecret)
-			if err != nil {
-				logger.Warnf("failed to save license for helm chart %s: %v", helmRelease.Name, err)
-			}
-		}
-	}
 
 	return helmApp, nil
 }
@@ -250,12 +229,11 @@ func watchSecrets(ctx context.Context, namespace string, labelSelector string) e
 				if helmApp == nil {
 					break
 				}
+				if helmApp.Release.Chart.Values["replicated"] == nil {
+					break
+				}
 
 				removeFromCachedUpdates(helmApp.ChartPath, helmApp.Release.Chart.Metadata.Version)
-
-				if err := finalizeChartConfig(helmApp); err != nil {
-					logger.Errorf("failed to copy chart config from temp secret into helm release: %v", err)
-				}
 
 				logger.Debugf("adding secret %s to cache", secret.Name)
 				AddHelmApp(helmApp.Release.Name, helmApp)
@@ -293,78 +271,4 @@ func watchSecrets(ctx context.Context, namespace string, labelSelector string) e
 		logger.Infof("watch of secrets in ns %s unexpectedly terminated. Reconnecting...\n", namespace)
 		time.Sleep(time.Second * 5)
 	}
-}
-
-// Find replicated secret in helm release's templates, decode it, add config values to it, save helm release
-func finalizeChartConfig(helmApp *apptypes.HelmApp) error {
-	configValues, err := GetTempConfigValues(helmApp)
-	if err != nil {
-		if kuberneteserrors.IsNotFound(errors.Cause(err)) {
-			return nil
-		}
-		return errors.Wrap(err, "failed to get temp config values")
-	}
-
-	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
-	var configValuesBuffer bytes.Buffer
-	if err := s.Encode(configValues, &configValuesBuffer); err != nil {
-		return errors.Wrap(err, "failed to encode config values")
-	}
-	configValuesData := configValuesBuffer.Bytes()
-
-	for _, template := range helmApp.Release.Chart.Templates {
-		if template.Name != "templates/_replicated/secret.yaml" {
-			continue
-		}
-
-		decode := scheme.Codecs.UniversalDeserializer().Decode
-		decoded, gvk, err := decode(template.Data, nil, nil)
-		if err != nil {
-			return errors.Wrap(err, "failed to decode replicated secret template")
-		}
-
-		if gvk.Group != "" || gvk.Version != "v1" || gvk.Kind != "Secret" {
-			return errors.Errorf("%q is not a valid Secret GVK", gvk.String())
-		}
-
-		replicatedSecret := decoded.(*corev1.Secret)
-		if _, ok := replicatedSecret.Data["configValues"]; ok {
-			return errors.Errorf("replicated secret for chart %s in ns %s already has configValues", helmApp.Release.Name, helmApp.Namespace)
-		}
-
-		replicatedSecret.Data["configValues"] = configValuesData
-
-		var replicatedSecretData bytes.Buffer
-		if err := s.Encode(replicatedSecret, &replicatedSecretData); err != nil {
-			return errors.Wrap(err, "failed to encode config values")
-		}
-
-		template.Data = replicatedSecretData.Bytes()
-		break
-	}
-
-	// Deleting first because saving Helm secret will send another update event here
-	if err := deleteTempConfigValues(helmApp); err != nil {
-		return errors.Wrap(err, "failed to delete temp config values")
-	}
-
-	if err := saveHelmApp(helmApp); err != nil {
-		return errors.Wrap(err, "failed to save helm release")
-	}
-
-	configSecret, err := GetChartConfigSecret(helmApp)
-	if err != nil {
-		return errors.Wrap(err, "failed to get config secret for license update")
-	}
-
-	if configSecret == nil {
-		return errors.Errorf("secret not found")
-	}
-
-	configSecret.Data["configValues"] = configValuesData
-	if err := UpdateChartConfig(configSecret); err != nil {
-		return errors.Wrap(err, "failed to update config secret")
-	}
-
-	return nil
 }

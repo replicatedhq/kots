@@ -130,7 +130,7 @@ func (h *Handler) SyncLicense(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		currentLicense, err := helm.GetChartLicenseFromSecret(helmApp)
+		currentLicense, err := helm.GetChartLicenseFromSecretOrDownload(helmApp)
 		if err != nil {
 			syncLicenseResponse.Error = "failed to get license from secret"
 			logger.Error(errors.Wrap(err, syncLicenseResponse.Error))
@@ -175,7 +175,7 @@ func (h *Handler) SyncLicense(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = helm.SaveChartLicenseInSecret(helmApp, latestLicense)
+		err = helm.SaveChartLicenseInSecret(helmApp, licenseData.LicenseBytes)
 		if err != nil {
 			syncLicenseResponse.Error = "failed to update helm license"
 			logger.Error(errors.Wrap(err, syncLicenseResponse.Error))
@@ -255,7 +255,7 @@ func (h *Handler) GetLicense(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		currentLicense, err := helm.GetChartLicenseFromSecret(helmApp)
+		currentLicense, err := helm.GetChartLicenseFromSecretOrDownload(helmApp)
 		if err != nil {
 			getLicenseResponse.Error = "failed to get license from secret"
 			logger.Error(errors.Wrap(err, getLicenseResponse.Error))

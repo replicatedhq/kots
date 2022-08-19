@@ -31,6 +31,8 @@ func (ctx licenseCtx) licenseFieldValue(name string) string {
 	// Update docs at https://github.com/replicatedhq/kots.io/blob/main/content/reference/template-functions/license-context.md
 	// when adding new values
 	switch name {
+	case "isSnapshotSupported":
+		return strconv.FormatBool(ctx.License.Spec.IsSnapshotSupported)
 	case "isGitOpsSupported":
 		return strconv.FormatBool(ctx.License.Spec.IsGitOpsSupported)
 	case "isSupportBundleUploadSupported":

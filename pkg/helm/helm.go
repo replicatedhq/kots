@@ -1,6 +1,7 @@
 package helm
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -23,6 +24,8 @@ import (
 	helmval "helm.sh/helm/v3/pkg/cli/values"
 	"helm.sh/helm/v3/pkg/helmpath"
 	helmregistry "helm.sh/helm/v3/pkg/registry"
+	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 func RenderValuesFromConfig(helmApp *apptypes.HelmApp, kotsKinds *kotsutil.KotsKinds, chart []byte) (map[string]interface{}, error) {
@@ -43,11 +46,11 @@ func RenderValuesFromConfig(helmApp *apptypes.HelmApp, kotsKinds *kotsutil.KotsK
 
 	mergedValues := kotsHelmChart.Spec.Values
 	for _, optionalValues := range kotsHelmChart.Spec.OptionalValues {
-		parsedBool, err := strconv.ParseBool(optionalValues.When)
+		include, err := strconv.ParseBool(optionalValues.When)
 		if err != nil {
 			return nil, err
 		}
-		if !parsedBool {
+		if !include {
 			continue
 		}
 		if optionalValues.RecursiveMerge {
@@ -139,4 +142,22 @@ func CreateHelmRegistryCreds(username string, password string, url string) error
 	}
 
 	return nil
+}
+
+func GetConfigValuesMap(configValues *kotsv1beta1.ConfigValues) (map[string]interface{}, error) {
+	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+	var configValuesBuffer bytes.Buffer
+	if err := s.Encode(configValues, &configValuesBuffer); err != nil {
+		return nil, errors.Wrap(err, "failed to encode config values")
+	}
+
+	configValuesMap := map[string]interface{}{
+		"replicated": map[string]interface{}{
+			"app": map[string][]byte{ // "byte" for base64 encoding
+				"configValues": configValuesBuffer.Bytes(),
+			},
+		},
+	}
+
+	return configValuesMap, nil
 }
