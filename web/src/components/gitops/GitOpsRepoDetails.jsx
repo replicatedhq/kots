@@ -166,14 +166,6 @@ class GitOpsRepoDetails extends React.Component {
     }
 
     return true;
-    // const isAllowed =
-    //   owner !== this.props.owner ||
-    //   repo !== this.props.repo ||
-    //   branch !== this.props.branch ||
-    //   path !== this.props.path ||
-    //   action !== this.props.action ||
-    //   format !== this.props.format;
-    // return isAllowed;
   };
 
   render() {
