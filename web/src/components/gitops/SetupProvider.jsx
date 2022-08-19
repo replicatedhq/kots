@@ -196,8 +196,10 @@ const SetupProvider = ({
       <p className="step-title">{step.title}</p>
       <p className="step-sub">
         Connect a git version control system so all application updates are
-        committed to a git repository. When GitOps is enabled, you cannot deploy
-        updates directly from the admin console.
+        committed to a git <br />
+        repository. When GitOps is enabled, you cannot deploy updates directly
+        from the <br />
+        admin console.
       </p>
       <div className="flex-column u-textAlign--left ">
         <div className="flex alignItems--center u-marginBottom--30">

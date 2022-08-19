@@ -13,10 +13,12 @@ import not_enabled from "../../images/not_enabled.svg";
 import warning from "../../images/warning.svg";
 import enabled from "../../images/enabled.svg";
 
+import "../../scss/components/gitops/GitOpsDeploymentManager.scss";
 import "../../scss/components/gitops/GitOpsSettings.scss";
 import styled from "styled-components";
 
 import ConnectionModal from "../gitops/modals/ConnectionModal";
+
 import Loader from "../shared/Loader";
 import DisableModal from "../gitops/modals/DisableModal";
 
@@ -431,126 +433,123 @@ class AppGitops extends Component {
     }));
 
     return (
-      <div className="GitOpsSettings--wrapper container flex-column u-paddingBottom--20 alignItems--center">
+      <div className="GitOpsDeploy--step u-textAlign--left">
         <Helmet>
           <title>{`${appTitle} GitOps`}</title>
         </Helmet>
-        <div className="GitOpsSettings">
-          <div className="flex-column flex1">
-            <div className="GitopsSettings-noRepoAccess">
-              <p className="step-title">GitOps Configuration</p>
-              <p className="sub">
-                Connect a git version control system so all application updates
-                are committed to a git repository. When GitOps is enabled, you
-                cannot deploy updates directly from the admin console.
-              </p>
-            </div>
-            <div className="flex alignItems--center u-marginBottom--30">
-              {isSingleApp && app ? (
-                <div className="u-marginRight--5">{getLabel(app)}</div>
-              ) : (
-                <div className="flex flex1 flex-column u-marginRight--10">
-                  <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
-                    Select an application to configure
-                  </p>
-                  <div className="u-position--relative u-marginTop--5 u-marginBottom--10">
-                    <Select
-                      className="replicated-select-container select-large"
-                      classNamePrefix="replicated-select"
-                      placeholder="Select an application"
-                      options={apps}
-                      isSearchable={false}
-                      getOptionLabel={(app) => getLabel(app)}
-                      value={this.props.selectedApp}
-                      onChange={this.props.handleAppChange}
-                      isOptionSelected={(option) => {
-                        option.value === this.props.selectedApp;
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-              <div className="flex flex1 flex-column u-fontSize--small u-marginTop--20">
-                {gitopsEnabled && gitopsConnected && (
-                  <a
-                    style={{ color: "blue", cursor: "pointer" }}
-                    disabled={disablingGitOps}
-                    onClick={this.promptToDisableGitOps}
-                  >
-                    {disablingGitOps
-                      ? "Disabling GitOps"
-                      : "Disable GitOps for this app"}
-                  </a>
-                )}
-              </div>
-            </div>
-
-            <div
-              style={{
-                background: "#FBE9D7",
-                padding: "30px",
-                marginBottom: "30px",
-              }}
-            >
-              <p
-                className="u-fontSize--large u-fontWeight--bold u-lineHeight--normal u-marginBottom--5"
-                style={{ color: "#DB9016" }}
-              >
-                GitOps is enabled but repository access is needed for pushing
-                updates
-              </p>
-              <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy u-marginBottom--15">
-                Add this SSH key on your
-                <a
-                  className="replicated-link"
-                  href={addKeyUri}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {this.props.selectedApp.downstream.gitops.provider ===
-                  "bitbucket_server"
-                    ? " account settings page."
-                    : " repository settings page."}
-                </a>
-              </p>
-              <CodeSnippet
-                canCopy={true}
-                copyText="Copy key"
-                onCopyText={
-                  <span className="u-textColor--success">Copied</span>
-                }
-              >
-                {deployKey}
-              </CodeSnippet>
-            </div>
-
-            <div className="flex justifyContent--spaceBetween alignItems--center">
-              <div className="flex">
-                <button
-                  className="btn secondary blue"
-                  onClick={() => this.props.stepFrom("action", "provider")}
-                >
-                  Back to configuration
-                </button>
-              </div>
-              {testingConnection ? (
-                <Loader size="30" />
-              ) : (
-                <button
-                  className="btn primary blue"
-                  disabled={testingConnection}
-                  onClick={this.handleTestConnection}
-                >
-                  Test connection to repository
-                </button>
-              )}
-            </div>
-            {errorMsg ? (
-              <p className="u-textColor--error u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginTop--12">
-                {errorMsg}
-              </p>
-            ) : null}
+        <div className="flex-column flex1">
+          <div className="GitopsSettings-noRepoAccess u-textAlign--left">
+            <p className="step-title">GitOps Configuration</p>
+            <p className="step-sub">
+              Connect a git version control system so all application updates
+              are committed to a git <br />
+              repository. When GitOps is enabled, you cannot deploy updates
+              directly from the <br />
+              admin console.
+            </p>
           </div>
+          <div className="flex alignItems--center u-marginBottom--30">
+            {isSingleApp && app ? (
+              <div className="u-marginRight--5">{getLabel(app)}</div>
+            ) : (
+              <div className="flex flex1 flex-column u-marginRight--10">
+                <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
+                  Select an application to configure
+                </p>
+                <div className="u-position--relative u-marginTop--5 u-marginBottom--10">
+                  <Select
+                    className="replicated-select-container select-large"
+                    classNamePrefix="replicated-select"
+                    placeholder="Select an application"
+                    options={apps}
+                    isSearchable={false}
+                    getOptionLabel={(app) => getLabel(app)}
+                    value={this.props.selectedApp}
+                    onChange={this.props.handleAppChange}
+                    isOptionSelected={(option) => {
+                      option.value === this.props.selectedApp;
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+            <div className="flex flex1 flex-column u-fontSize--small u-marginTop--20">
+              {gitopsEnabled && gitopsConnected && (
+                <a
+                  style={{ color: "blue", cursor: "pointer" }}
+                  disabled={disablingGitOps}
+                  onClick={this.promptToDisableGitOps}
+                >
+                  {disablingGitOps
+                    ? "Disabling GitOps"
+                    : "Disable GitOps for this app"}
+                </a>
+              )}
+            </div>
+          </div>
+
+          <div
+            style={{
+              background: "#FBE9D7",
+              padding: "30px",
+              marginBottom: "30px",
+            }}
+          >
+            <p
+              className="u-fontSize--large u-fontWeight--bold u-lineHeight--normal u-marginBottom--5"
+              style={{ color: "#DB9016" }}
+            >
+              Access to your repository is needed to push application updates
+            </p>
+            <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy u-marginBottom--15">
+              Add this SSH key on your
+              <a
+                className="replicated-link"
+                href={addKeyUri}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {this.props.selectedApp.downstream.gitops.provider ===
+                "bitbucket_server"
+                  ? " account settings page."
+                  : " repository settings page."}
+              </a>
+            </p>
+            <CodeSnippet
+              canCopy={true}
+              copyText="Copy key"
+              onCopyText={<span className="u-textColor--success">Copied</span>}
+            >
+              {deployKey}
+            </CodeSnippet>
+          </div>
+
+          <div className="flex justifyContent--spaceBetween alignItems--center">
+            <div className="flex">
+              <button
+                className="btn secondary blue"
+                onClick={() => this.props.stepFrom("action", "provider")}
+              >
+                Back to configuration
+              </button>
+            </div>
+            {testingConnection ? (
+              <Loader size="30" />
+            ) : (
+              <button
+                className="btn primary blue"
+                disabled={testingConnection}
+                onClick={this.handleTestConnection}
+              >
+                Test connection to repository
+              </button>
+            )}
+          </div>
+          {errorMsg ? (
+            <p className="u-textColor--error u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginTop--12">
+              {errorMsg}
+            </p>
+          ) : null}
         </div>
 
         <DisableModal

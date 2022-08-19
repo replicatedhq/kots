@@ -89,7 +89,8 @@ const ConnectionModal = ({
               </p>
               <p className="u-fontSize--normal u-textColor--bodyCopy u-textAlign--center u-lineHeight--normal">
                 Ensure that you added the SSH key with write access, and that
-                the repository has at least one file committed to it already.
+                the <br />
+                repository has at least one file committed to it already.
               </p>
               {isTestingConnection ? (
                 <div className="u-marginTop--30">

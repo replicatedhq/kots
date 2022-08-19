@@ -205,7 +205,7 @@ class GitOpsRepoDetails extends React.Component {
           width="100%"
           direction="column"
         >
-          <Flex flex="1" my="20" width="100%">
+          <Flex flex="1" mt="30" mb="20" width="100%">
             {provider !== "other" && (
               <div className="flex flex1 flex-column u-marginRight--20">
                 <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">

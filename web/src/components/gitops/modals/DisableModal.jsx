@@ -24,11 +24,13 @@ const DisableModal = ({ isOpen, setOpen, disableGitOps, provider }) => {
         <div className="u-marginTop--10 u-marginBottom--10 flex flex-column alignItems--center">
           {renderIcons(provider)}
           <p className="u-fontSize--largest u-fontWeight--medium u-textColor--primary u-marginBottom--15 u-textAlign--center">
-            Are you sure you want to disable GitOps for this application?
+            Are you sure you want to disable GitOps <br />
+            for this application?
           </p>
           <p className="u-fontSize--normal u-textColor--bodyCopy  u-textAlign--center u-lineHeight--normal">
             Commits will no longer be made to your repository, and you will have
-            to deploy from the admin console.
+            to <br />
+            deploy from the admin console.
           </p>
           <div className="u-marginTop--30">
             <button
