@@ -328,7 +328,7 @@ func processOneImage(srcRegistry, destRegistry registrytypes.RegistryOptions, im
 
 	imageListSelection := copy.CopySystemImage
 	if _, ok := parsedSrc.(reference.Canonical); ok {
-		// this could be a multi-arch image, copy all architectures so that the digest matches
+		// this could be a multi-arch image, copy all architectures so that the digests match.
 		imageListSelection = copy.CopyAllImages
 	}
 
