@@ -490,17 +490,20 @@ class AppGitops extends Component {
           <div
             style={{
               background: "#FBE9D7",
-              padding: "30px",
+              padding: "15px",
               marginBottom: "30px",
             }}
           >
             <p
-              className="u-fontSize--large u-fontWeight--bold u-lineHeight--normal u-marginBottom--5"
+              className="u-fontSize--large u-fontWeight--bold u-lineHeight--normal u-marginBottom--15"
               style={{ color: "#DB9016" }}
             >
               Access to your repository is needed to push application updates
             </p>
-            <p className="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy u-marginBottom--15">
+            <p
+              className="u-fontSize--normal u-fontWeight--normal u-marginBottom--15"
+              style={{ color: "#585858" }}
+            >
               Add this SSH key on your
               <a
                 className="replicated-link"
@@ -510,9 +513,10 @@ class AppGitops extends Component {
               >
                 {this.props.selectedApp.downstream.gitops.provider ===
                 "bitbucket_server"
-                  ? " account settings page."
-                  : " repository settings page."}
+                  ? " account settings page, "
+                  : " repository settings page, "}
               </a>
+              and grant it write access.
             </p>
             <CodeSnippet
               canCopy={true}
