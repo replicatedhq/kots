@@ -452,11 +452,7 @@ class GitOpsDeploymentManager extends React.Component {
   };
 
   updateSettings = () => {
-    //  if (this.isSingleApp()) {
     this.stepFrom("provider", "action");
-    // } else {
-    //   this.finishSetup();
-    // }
   };
 
   enableAppGitOps = async (app) => {
