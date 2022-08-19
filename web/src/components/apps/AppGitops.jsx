@@ -545,11 +545,6 @@ class AppGitops extends Component {
               </button>
             )}
           </div>
-          {errorMsg ? (
-            <p className="u-textColor--error u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginTop--12">
-              {errorMsg}
-            </p>
-          ) : null}
         </div>
 
         <DisableModal
