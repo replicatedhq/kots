@@ -326,6 +326,12 @@ func processOneImage(srcRegistry, destRegistry registrytypes.RegistryOptions, im
 		return kustomizeImage(destRegistry, image)
 	}
 
+	imageListSelection := copy.CopySystemImage
+	if _, ok := parsedSrc.(reference.Canonical); ok {
+		// this could be a multi-arch image, copy all architectures so that the digest matches
+		imageListSelection = copy.CopyAllImages
+	}
+
 	_, err = CopyImageWithGC(context.Background(), destRef, srcRef, &copy.Options{
 		RemoveSignatures:      true,
 		SignBy:                "",
@@ -333,6 +339,7 @@ func processOneImage(srcRegistry, destRegistry registrytypes.RegistryOptions, im
 		SourceCtx:             sourceCtx,
 		DestinationCtx:        destCtx,
 		ForceManifestMIMEType: "",
+		ImageListSelection:    imageListSelection,
 	})
 	if err != nil {
 		log.Info("failed to copy image directly with error %q, attempting fallback transfer method", err.Error())
