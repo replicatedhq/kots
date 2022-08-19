@@ -69,8 +69,7 @@ export default function DashboardGitOpsCard(props) {
       </div>
       <div className="VersionCard-content--wrapper">
         <p className="u-fontSize--normal u-fontWeight--medium u-textColor--header u-lineHeight--normal">
-          Gitops is enabled for this application. To view information about the
-          version currently deployed and track all versions visit{" "}
+          GitOps is enabled for this application. Visit{" "}
           <a
             target="_blank"
             rel="noopener noreferrer"
@@ -80,15 +79,16 @@ export default function DashboardGitOpsCard(props) {
             {isAirgap
               ? gitops.uri
               : getReadableGitOpsProviderName(gitops.provider)}
-          </a>
-          . Application config for the latest version is editable from the{" "}
+          </a>{" "}
+          to track all versions and to view information about the currently
+          deployed version. Config for the latest version can be edited from the{" "}
           <Link
             to={`/app/${appSlug}/config/${latestConfigSequence}`}
             className="replicated-link"
           >
             Config
           </Link>{" "}
-          page.
+          page in the admin console.
         </p>
       </div>
       <div className="u-marginTop--10">
