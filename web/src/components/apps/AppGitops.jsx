@@ -152,7 +152,6 @@ class AppGitops extends Component {
           Utilities.logoutUser();
           return;
         }
-        // this.props.refetch();
 
         if (res.status === 400) {
           const response = await res.json();
