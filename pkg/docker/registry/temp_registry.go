@@ -213,3 +213,8 @@ func (r *TempRegistry) SrcRef(image string) (containerstypes.ImageReference, err
 
 	return srcRef, nil
 }
+
+// This is only used for integration tests
+func (r *TempRegistry) OverridePort(port string) {
+	r.port = port
+}

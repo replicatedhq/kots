@@ -206,6 +206,7 @@ var _ = Describe("E2E", func() {
 			Entry(nil, inventory.NewVersionHistoryPagination()),
 			Entry(nil, inventory.NewChangeLicense()),
 			Entry(nil, inventory.NewHelmManagedMode()),
+			Entry(nil, inventory.NewTagAndDigest()),
 		)
 
 	})

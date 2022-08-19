@@ -2,6 +2,7 @@ package image
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 
 	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
@@ -102,6 +103,313 @@ func Test_ImageNameFromNameParts(t *testing.T) {
 	}
 }
 
+func TestRewriteDockerRegistryImage(t *testing.T) {
+	type args struct {
+		srcImage     string
+		destRegistry registrytypes.RegistryOptions
+	}
+
+	tests := []struct {
+		name    string
+		args    args
+		want    *kustomizetypes.Image
+		wantErr bool
+	}{
+		{
+			name: "no tag or digest or namespace",
+			args: args{
+				srcImage: "alpine",
+				destRegistry: registrytypes.RegistryOptions{
+					Endpoint: "private.registry.com",
+				},
+			},
+			want: &kustomizetypes.Image{
+				Name:    "alpine",
+				NewName: "private.registry.com/alpine",
+				NewTag:  "latest",
+			},
+			wantErr: false,
+		},
+		{
+			name: "no tag or digest with namespace",
+			args: args{
+				srcImage: "alpine",
+				destRegistry: registrytypes.RegistryOptions{
+					Endpoint:  "private.registry.com",
+					Namespace: "replicatedcom",
+				},
+			},
+			want: &kustomizetypes.Image{
+				Name:    "alpine",
+				NewName: "private.registry.com/replicatedcom/alpine",
+				NewTag:  "latest",
+			},
+			wantErr: false,
+		},
+		{
+			name: "tag only no namespace",
+			args: args{
+				srcImage: "alpine:3.14",
+				destRegistry: registrytypes.RegistryOptions{
+					Endpoint: "private.registry.com",
+				},
+			},
+			want: &kustomizetypes.Image{
+				Name:    "alpine:3.14",
+				NewName: "private.registry.com/alpine",
+				NewTag:  "3.14",
+			},
+			wantErr: false,
+		},
+		{
+			name: "tag only with namespace",
+			args: args{
+				srcImage: "alpine:3.14",
+				destRegistry: registrytypes.RegistryOptions{
+					Endpoint:  "private.registry.com",
+					Namespace: "replicatedcom",
+				},
+			},
+			want: &kustomizetypes.Image{
+				Name:    "alpine:3.14",
+				NewName: "private.registry.com/replicatedcom/alpine",
+				NewTag:  "3.14",
+			},
+			wantErr: false,
+		},
+		{
+			name: "digest only no namespace",
+			args: args{
+				srcImage: "alpine@sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+				destRegistry: registrytypes.RegistryOptions{
+					Endpoint: "private.registry.com",
+				},
+			},
+			want: &kustomizetypes.Image{
+				Name:    "alpine@sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+				NewName: "private.registry.com/alpine",
+				Digest:  "sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+			},
+			wantErr: false,
+		},
+		{
+			name: "digest only with namespace",
+			args: args{
+				srcImage: "alpine@sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+				destRegistry: registrytypes.RegistryOptions{
+					Endpoint:  "private.registry.com",
+					Namespace: "replicatedcom",
+				},
+			},
+			want: &kustomizetypes.Image{
+				Name:    "alpine@sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+				NewName: "private.registry.com/replicatedcom/alpine",
+				Digest:  "sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+			},
+			wantErr: false,
+		},
+		{
+			name: "tag and digest no namespace",
+			args: args{
+				srcImage: "alpine:3.14@sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+				destRegistry: registrytypes.RegistryOptions{
+					Endpoint: "private.registry.com",
+				},
+			},
+			want: &kustomizetypes.Image{
+				Name:    "alpine:3.14@sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+				NewName: "private.registry.com/alpine",
+				Digest:  "sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+			},
+			wantErr: false,
+		},
+		{
+			name: "tag and digest with namespace",
+			args: args{
+				srcImage: "alpine:3.14@sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+				destRegistry: registrytypes.RegistryOptions{
+					Endpoint:  "private.registry.com",
+					Namespace: "replicatedcom",
+				},
+			},
+			want: &kustomizetypes.Image{
+				Name:    "alpine:3.14@sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+				NewName: "private.registry.com/replicatedcom/alpine",
+				Digest:  "sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+			},
+			wantErr: false,
+		},
+		{
+			name: "tag and digest with multipart namespace",
+			args: args{
+				srcImage: "alpine:3.14@sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+				destRegistry: registrytypes.RegistryOptions{
+					Endpoint:  "private.registry.com",
+					Namespace: "replicatedcom/test",
+				},
+			},
+			want: &kustomizetypes.Image{
+				Name:    "alpine:3.14@sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+				NewName: "private.registry.com/replicatedcom/test/alpine",
+				Digest:  "sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+			},
+			wantErr: false,
+		},
+		{
+			name: "private image - no tag or digest or namespace",
+			args: args{
+				srcImage: "quay.io/replicatedhq/alpine",
+				destRegistry: registrytypes.RegistryOptions{
+					Endpoint: "private.registry.com",
+				},
+			},
+			want: &kustomizetypes.Image{
+				Name:    "quay.io/replicatedhq/alpine",
+				NewName: "private.registry.com/alpine",
+				NewTag:  "latest",
+			},
+			wantErr: false,
+		},
+		{
+			name: "private image - no tag or digest with namespace",
+			args: args{
+				srcImage: "quay.io/replicatedhq/alpine",
+				destRegistry: registrytypes.RegistryOptions{
+					Endpoint:  "private.registry.com",
+					Namespace: "replicatedcom",
+				},
+			},
+			want: &kustomizetypes.Image{
+				Name:    "quay.io/replicatedhq/alpine",
+				NewName: "private.registry.com/replicatedcom/alpine",
+				NewTag:  "latest",
+			},
+			wantErr: false,
+		},
+		{
+			name: "private image - tag only no namespace",
+			args: args{
+				srcImage: "quay.io/replicatedhq/alpine:3.14",
+				destRegistry: registrytypes.RegistryOptions{
+					Endpoint: "private.registry.com",
+				},
+			},
+			want: &kustomizetypes.Image{
+				Name:    "quay.io/replicatedhq/alpine:3.14",
+				NewName: "private.registry.com/alpine",
+				NewTag:  "3.14",
+			},
+			wantErr: false,
+		},
+		{
+			name: "private image - tag only with namespace",
+			args: args{
+				srcImage: "quay.io/replicatedhq/alpine:3.14",
+				destRegistry: registrytypes.RegistryOptions{
+					Endpoint:  "private.registry.com",
+					Namespace: "replicatedcom",
+				},
+			},
+			want: &kustomizetypes.Image{
+				Name:    "quay.io/replicatedhq/alpine:3.14",
+				NewName: "private.registry.com/replicatedcom/alpine",
+				NewTag:  "3.14",
+			},
+			wantErr: false,
+		},
+		{
+			name: "private image - digest only no namespace",
+			args: args{
+				srcImage: "quay.io/replicatedhq/alpine@sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+				destRegistry: registrytypes.RegistryOptions{
+					Endpoint: "private.registry.com",
+				},
+			},
+			want: &kustomizetypes.Image{
+				Name:    "quay.io/replicatedhq/alpine@sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+				NewName: "private.registry.com/alpine",
+				Digest:  "sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+			},
+			wantErr: false,
+		},
+		{
+			name: "private image - digest only with namespace",
+			args: args{
+				srcImage: "quay.io/replicatedhq/alpine@sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+				destRegistry: registrytypes.RegistryOptions{
+					Endpoint:  "private.registry.com",
+					Namespace: "replicatedcom",
+				},
+			},
+			want: &kustomizetypes.Image{
+				Name:    "quay.io/replicatedhq/alpine@sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+				NewName: "private.registry.com/replicatedcom/alpine",
+				Digest:  "sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+			},
+			wantErr: false,
+		},
+		{
+			name: "private image - tag and digest no namespace",
+			args: args{
+				srcImage: "quay.io/replicatedhq/alpine:3.14@sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+				destRegistry: registrytypes.RegistryOptions{
+					Endpoint: "private.registry.com",
+				},
+			},
+			want: &kustomizetypes.Image{
+				Name:    "quay.io/replicatedhq/alpine:3.14@sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+				NewName: "private.registry.com/alpine",
+				Digest:  "sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+			},
+			wantErr: false,
+		},
+		{
+			name: "private image - tag and digest with namespace",
+			args: args{
+				srcImage: "quay.io/replicatedhq/alpine:3.14@sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+				destRegistry: registrytypes.RegistryOptions{
+					Endpoint:  "private.registry.com",
+					Namespace: "replicatedcom",
+				},
+			},
+			want: &kustomizetypes.Image{
+				Name:    "quay.io/replicatedhq/alpine:3.14@sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+				NewName: "private.registry.com/replicatedcom/alpine",
+				Digest:  "sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+			},
+			wantErr: false,
+		},
+		{
+			name: "private image - tag and digest with multipart namespace",
+			args: args{
+				srcImage: "quay.io/replicatedhq/alpine:3.14@sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+				destRegistry: registrytypes.RegistryOptions{
+					Endpoint:  "private.registry.com",
+					Namespace: "replicatedcom/test",
+				},
+			},
+			want: &kustomizetypes.Image{
+				Name:    "quay.io/replicatedhq/alpine:3.14@sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+				NewName: "private.registry.com/replicatedcom/test/alpine",
+				Digest:  "sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := RewriteDockerRegistryImage(tt.args.destRegistry, tt.args.srcImage)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("RewriteDockerRegistryImage() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("RewriteDockerRegistryImage() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func Test_DestImage(t *testing.T) {
 	registryOps := registrytypes.RegistryOptions{
 		Endpoint:  "localhost:5000",
@@ -169,6 +477,66 @@ func Test_DestImage(t *testing.T) {
 
 			if got != tt.want {
 				t.Errorf("DestImageName() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDestImageFromKustomizeImage(t *testing.T) {
+	type args struct {
+		image kustomizetypes.Image
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "latest tag",
+			args: args{
+				image: kustomizetypes.Image{
+					NewName: "private.registry.com/replicatedcom/alpine",
+					NewTag:  "latest",
+				},
+			},
+			want: "private.registry.com/replicatedcom/alpine:latest",
+		},
+		{
+			name: "tag only",
+			args: args{
+				image: kustomizetypes.Image{
+					NewName: "private.registry.com/replicatedcom/alpine",
+					NewTag:  "3.14",
+				},
+			},
+			want: "private.registry.com/replicatedcom/alpine:3.14",
+		},
+		{
+			name: "digest only",
+			args: args{
+				image: kustomizetypes.Image{
+					NewName: "private.registry.com/replicatedcom/alpine",
+					Digest:  "sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+				},
+			},
+			want: "private.registry.com/replicatedcom/alpine@sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+		},
+		{
+			name: "tag and digest",
+			args: args{
+				image: kustomizetypes.Image{
+					NewName: "private.registry.com/replicatedcom/alpine",
+					NewTag:  "3.14",
+					Digest:  "sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+				},
+			},
+			want: "private.registry.com/replicatedcom/alpine@sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := DestImageFromKustomizeImage(tt.args.image); got != tt.want {
+				t.Errorf("DestImageFromKustomizeImage() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -446,6 +814,22 @@ func Test_kustomizeImage(t *testing.T) {
 					NewName: "localhost:5000/somebigbank/redis",
 					NewTag:  "v1",
 					Digest:  "",
+				},
+			},
+		},
+		{
+			name: "quay.io tagged and digested image",
+			destRegistry: registrytypes.RegistryOptions{
+				Endpoint:  "localhost:5000",
+				Namespace: "somebigbank",
+			},
+			image: "quay.io/library/alpine:3.14@sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+			want: []kustomizetypes.Image{
+				{
+					Name:    "quay.io/library/alpine",
+					NewName: "localhost:5000/somebigbank/alpine",
+					NewTag:  "",
+					Digest:  "sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
 				},
 			},
 		},
