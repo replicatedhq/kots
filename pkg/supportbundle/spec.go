@@ -461,7 +461,7 @@ func getDefaultDynamicCollectors(app apptypes.AppType, imageName string, pullSec
 			logger.Errorf("Failed to load license data from store: %v", err)
 		}
 	case *apptypes.HelmApp:
-		license, err = helm.GetChartLicenseFromSecret(a)
+		license, err = helm.GetChartLicenseFromSecretOrDownload(a)
 		if err != nil {
 			logger.Errorf("Failed to load license data from helm: %v", err)
 		}

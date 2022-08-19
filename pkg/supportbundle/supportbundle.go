@@ -204,7 +204,7 @@ func getKotsKindsForApp(app *apptypes.App, sequence int64) (*kotsutil.KotsKinds,
 }
 
 func getKotsKindsForHelmApp(app *apptypes.HelmApp) (*kotsutil.KotsKinds, error) {
-	license, err := helm.GetChartLicenseFromSecret(app)
+	license, err := helm.GetChartLicenseFromSecretOrDownload(app)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get license from secret")
 	}
