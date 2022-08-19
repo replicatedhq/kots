@@ -449,6 +449,7 @@ class Dashboard extends Component {
     });
   };
 
+  // comment
   startASnapshot = (option) => {
     const { app } = this.props;
     this.setState({
