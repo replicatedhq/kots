@@ -21,6 +21,7 @@ import ConnectionModal from "../gitops/modals/ConnectionModal";
 
 import Loader from "../shared/Loader";
 import DisableModal from "../gitops/modals/DisableModal";
+import { Flex } from "../../styles/common";
 
 const IconWrapper = styled.div`
   height: 30px;
@@ -489,17 +490,22 @@ class AppGitops extends Component {
 
           <div
             style={{
-              background: "#FBE9D7",
               padding: "15px",
               marginBottom: "30px",
             }}
           >
-            <p
-              className="u-fontSize--large u-fontWeight--bold u-lineHeight--normal u-marginBottom--15"
-              style={{ color: "#DB9016" }}
-            >
-              Access to your repository is needed to push application updates
-            </p>
+            <Flex mb="15" align="center">
+              <span
+                className="icon small-warning-icon"
+                style={{ width: "35px" }}
+              />
+              <p
+                className="u-fontSize--large u-fontWeight--bold u-lineHeight--normal"
+                style={{ color: "#DB9016" }}
+              >
+                Access to your repository is needed to push application updates
+              </p>
+            </Flex>
             <p
               className="u-fontSize--normal u-fontWeight--normal u-marginBottom--15"
               style={{ color: "#585858" }}
