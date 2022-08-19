@@ -122,7 +122,7 @@ const Dashboard = ({
     setIconUri(app.iconUri);
     setCurrentVersion(app?.downstream.currentVersion);
     setDownstream(app.downstream);
-    setLinks(app.links);
+    setLinks(app.downstream?.links);
   };
 
   const getAppLicense = async (app) => {
