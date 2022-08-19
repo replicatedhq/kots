@@ -15,6 +15,8 @@ import enabled from "../../images/enabled.svg";
 
 import "../../scss/components/gitops/GitOpsDeploymentManager.scss";
 import "../../scss/components/gitops/GitOpsSettings.scss";
+import "../../scss/components/gitops/GitopsPrism.scss";
+
 import styled from "styled-components";
 
 import ConnectionModal from "../gitops/modals/ConnectionModal";
@@ -490,7 +492,6 @@ class AppGitops extends Component {
 
           <div
             style={{
-              padding: "15px",
               marginBottom: "30px",
             }}
           >
