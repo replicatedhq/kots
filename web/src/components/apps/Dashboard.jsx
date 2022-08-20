@@ -123,6 +123,9 @@ const Dashboard = ({
   console.log("dashboard", dashboard);
   console.log("app", app);
 
+  window.dashboard = dashboard;
+  window.app = app;
+
   useEffect(() => {
     if (cluster?.id == "" && isHelmManaged === true) {
       // TODO: use a callback to update the state in the parent component
