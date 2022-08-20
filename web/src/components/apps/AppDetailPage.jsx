@@ -55,6 +55,8 @@ class AppDetailPage extends Component {
       this.props;
     const { app, loadingApp } = this.state;
 
+    console.log('appdetailpage componentdidupdate', history.location.pathname)
+
     // Used for a fresh reload
     if (history.location.pathname === "/apps") {
       this.checkForFirstApp();
