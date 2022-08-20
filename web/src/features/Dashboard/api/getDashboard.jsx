@@ -2,7 +2,7 @@
 import { useQuery } from "react-query";
 import { Utilities } from "../../../utilities/utilities";
 
-async function getDashbaord({
+async function getDashboard({
   appSlug,
   clusterId,
   accessToken = Utilities.getToken(),
@@ -11,10 +11,10 @@ async function getDashbaord({
 } = {}) {
   try {
     let response = await _fetch(
-      `${process.env.API_ENDPOINT}/app/${appSlug}/cluster/${clusterId}/dashboard`,
+      `${apiEndpoint}/app/${appSlug}/cluster/${clusterId}/dashboard`,
       {
         headers: {
-          Authorization: Utilities.getToken(),
+          Authorization: accessToken,
           "Content-Type": "application/json",
         },
         method: "GET",
@@ -45,4 +45,4 @@ function useDashboard({
   );
 }
 
-export { getDashbaord, useDashboard };
+export { getDashboard, useDashboard };
