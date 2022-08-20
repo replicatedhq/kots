@@ -15,6 +15,7 @@ import Modal from "react-modal";
 import { Repeater } from "../../utilities/repeater";
 import { Utilities, isAwaitingResults } from "../../utilities/utilities";
 import { AirgapUploader } from "../../utilities/airgapUploader";
+import { useDashboard } from "../../features/Dashboard";
 
 import "../../scss/components/watches/Dashboard.scss";
 import "../../../node_modules/react-vis/dist/style";
@@ -105,6 +106,28 @@ const Dashboard = ({
   const [displayErrorModal, setDisplayErrorModal] = useState(false);
   const [startingSnapshot, setStartingSnapshot] = useState(false);
   const [cluster, setCluster] = useState(clusterProp);
+
+  const { data: dashboardData, loading: loadingDashboard } = useDashboard({
+    appSlug: app?.slug,
+    cluster: cluster?.id,
+    refetchInterval: 2000,
+  });
+
+  useEffect(() => {
+    if (cluster?.id == "" && isHelmManaged === true) {
+      // TODO: use a callback to update the state in the parent component
+      setCluster({ ...cluster, id: 0 });
+      return;
+    }
+  }, [cluster, isHelmManaged]);
+
+  useEffect(() => {
+    setDashboard({
+      appStatus: response.appStatus,
+      prometheusAddress: response.prometheusAddress,
+      metrics: response.metrics,
+    });
+  }, [dashboardData]);
 
   useEffect(() => {
     if (app) {
