@@ -103,7 +103,7 @@ class AppDetailPage extends Component {
     clearInterval(this.interval);
     this.props.clearThemeState();
     this.state.getAppJob.stop();
-    this.state.checkForFirstAppJob.stop();
+    this.state.checkForFirstAppJob?.stop?.();
   }
 
   makeCurrentRelease = async (
@@ -218,7 +218,7 @@ class AppDetailPage extends Component {
     if (!rootDidInitialAppFetch) {
       return;
     }
-    this.state.checkForFirstAppJob.stop();
+    this.state.checkForFirstAppJob?.stop?.();
     const firstApp = appsList?.find((app) => app.name);
 
     if (firstApp) {
