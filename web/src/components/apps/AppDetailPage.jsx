@@ -56,7 +56,7 @@ class AppDetailPage extends Component {
       this.props;
     const { app, loadingApp } = this.state;
 
-    console.log('appdetailpage componentdidupdate', history.location.pathname)
+    console.log("appdetailpage componentdidupdate", history.location.pathname)
 
     // Used for a fresh reload
     if (history.location.pathname === "/apps") {
@@ -212,7 +212,7 @@ class AppDetailPage extends Component {
    *  Runs on mount and on update. Also handles redirect logic
    *  if no apps are found, or the first app is found.
    */
-  checkForFirstApp = () => {
+  checkForFirstApp = async () => {
     const { history, rootDidInitialAppFetch, appsList } = this.props;
     console.log("checkForFirstApp rootDidInitialAppFetch", rootDidInitialAppFetch)
     if (!rootDidInitialAppFetch) {
