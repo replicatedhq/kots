@@ -210,6 +210,7 @@ class AppDetailPage extends Component {
    */
   checkForFirstApp = () => {
     const { history, rootDidInitialAppFetch, appsList } = this.props;
+    console.log("checkForFirstApp rootDidInitialAppFetch", rootDidInitialAppFetch)
     if (!rootDidInitialAppFetch) {
       return;
     }
@@ -299,6 +300,8 @@ class AppDetailPage extends Component {
 
   render() {
     const { match, appsList, rootDidInitialAppFetch, appName } = this.props;
+
+    console.log("render rootDidInitialAppFetch", rootDidInitialAppFetch);
 
     const {
       app,
