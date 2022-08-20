@@ -120,6 +120,9 @@ const Dashboard = ({
     refetchInterval: 2000,
   });
 
+  console.log("dashboard", dashboard);
+  console.log("app", app);
+
   useEffect(() => {
     if (cluster?.id == "" && isHelmManaged === true) {
       // TODO: use a callback to update the state in the parent component
