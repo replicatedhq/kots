@@ -44,7 +44,7 @@ func RewriteImages(options RewriteImageOptions) (*RewriteImagesResult, error) {
 		}
 	}
 
-	newImages, err := image.ProcessImages(options.SourceRegistry, options.DestRegistry, options.AppSlug, options.Log, options.ReportWriter, options.BaseDir, additionalImages, options.CopyImages, allImagesPrivate, checkedImages, options.DockerHubRegistry)
+	newImages, err := image.RewriteImages(options.SourceRegistry, options.DestRegistry, options.AppSlug, options.Log, options.ReportWriter, options.BaseDir, additionalImages, options.CopyImages, allImagesPrivate, checkedImages, options.DockerHubRegistry)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to save images")
 	}

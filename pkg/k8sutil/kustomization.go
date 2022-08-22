@@ -40,14 +40,17 @@ func (s kustPatches) Less(i, j int) bool {
 func WriteKustomizationToFile(kustomization kustomizetypes.Kustomization, file string) error {
 	cleanedImages := []kustomizetypes.Image{}
 
-	// Remove tags and deduplicate image list.
-	// Tags are removed because we don't want kustomize to change tags, only image names
+	// Remove tags and digests and deduplicate image list.
+	// Tags are removed because we don't want kustomize to change tags, only image names.
+	// Digests are removed so that more than one digest of the same image can be used (this applies to Tags too).
+	// When Tags and Digests are not set, kustomize will only rewrite the image name and keep the original tag or digest.
 	imageDedup := map[string]bool{}
 	for _, image := range kustomization.Images {
 		if _, ok := imageDedup[image.Name]; ok {
 			continue
 		}
 		image.NewTag = ""
+		image.Digest = ""
 		cleanedImages = append(cleanedImages, image)
 		imageDedup[image.Name] = true
 	}

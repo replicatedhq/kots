@@ -11,7 +11,7 @@ import (
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
-func Test_ImageNameFromNameParts(t *testing.T) {
+func Test_RewriteDockerArchiveImage(t *testing.T) {
 	tests := []struct {
 		name        string
 		parts       []string
@@ -37,7 +37,7 @@ func Test_ImageNameFromNameParts(t *testing.T) {
 				Namespace: "somebigbank",
 			},
 			expected: kustomizetypes.Image{
-				Name:    "411111111111.dkr.ecr.us-west-1.amazonaws.com/myrepo:v0.0.1",
+				Name:    "411111111111.dkr.ecr.us-west-1.amazonaws.com/myrepo",
 				NewName: "localhost:5000/somebigbank/myrepo",
 				NewTag:  "v0.0.1",
 				Digest:  "",
@@ -52,7 +52,7 @@ func Test_ImageNameFromNameParts(t *testing.T) {
 				Namespace: "somebigbank",
 			},
 			expected: kustomizetypes.Image{
-				Name:    "quay.io/someorg/debian:0.1",
+				Name:    "quay.io/someorg/debian",
 				NewName: "localhost:5000/somebigbank/debian",
 				NewTag:  "0.1",
 				Digest:  "",
@@ -67,7 +67,7 @@ func Test_ImageNameFromNameParts(t *testing.T) {
 				Namespace: "somebigbank",
 			},
 			expected: kustomizetypes.Image{
-				Name:    "quay.io/someorg/debian@sha256:1234567890abcdef",
+				Name:    "quay.io/someorg/debian",
 				NewName: "localhost:5000/somebigbank/debian",
 				NewTag:  "",
 				Digest:  "sha256:1234567890abcdef",
@@ -81,7 +81,7 @@ func Test_ImageNameFromNameParts(t *testing.T) {
 				Endpoint: "localhost:5000",
 			},
 			expected: kustomizetypes.Image{
-				Name:    "quay.io/someorg/debian:0.1",
+				Name:    "quay.io/someorg/debian",
 				NewName: "localhost:5000/debian",
 				NewTag:  "0.1",
 				Digest:  "",
@@ -155,7 +155,7 @@ func TestRewriteDockerRegistryImage(t *testing.T) {
 				},
 			},
 			want: &kustomizetypes.Image{
-				Name:    "alpine:3.14",
+				Name:    "alpine",
 				NewName: "private.registry.com/alpine",
 				NewTag:  "3.14",
 			},
@@ -171,7 +171,7 @@ func TestRewriteDockerRegistryImage(t *testing.T) {
 				},
 			},
 			want: &kustomizetypes.Image{
-				Name:    "alpine:3.14",
+				Name:    "alpine",
 				NewName: "private.registry.com/replicatedcom/alpine",
 				NewTag:  "3.14",
 			},
@@ -186,7 +186,7 @@ func TestRewriteDockerRegistryImage(t *testing.T) {
 				},
 			},
 			want: &kustomizetypes.Image{
-				Name:    "alpine@sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+				Name:    "alpine",
 				NewName: "private.registry.com/alpine",
 				Digest:  "sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
 			},
@@ -202,7 +202,7 @@ func TestRewriteDockerRegistryImage(t *testing.T) {
 				},
 			},
 			want: &kustomizetypes.Image{
-				Name:    "alpine@sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+				Name:    "alpine",
 				NewName: "private.registry.com/replicatedcom/alpine",
 				Digest:  "sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
 			},
@@ -217,7 +217,7 @@ func TestRewriteDockerRegistryImage(t *testing.T) {
 				},
 			},
 			want: &kustomizetypes.Image{
-				Name:    "alpine:3.14@sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+				Name:    "alpine",
 				NewName: "private.registry.com/alpine",
 				Digest:  "sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
 			},
@@ -233,7 +233,7 @@ func TestRewriteDockerRegistryImage(t *testing.T) {
 				},
 			},
 			want: &kustomizetypes.Image{
-				Name:    "alpine:3.14@sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+				Name:    "alpine",
 				NewName: "private.registry.com/replicatedcom/alpine",
 				Digest:  "sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
 			},
@@ -249,7 +249,7 @@ func TestRewriteDockerRegistryImage(t *testing.T) {
 				},
 			},
 			want: &kustomizetypes.Image{
-				Name:    "alpine:3.14@sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+				Name:    "alpine",
 				NewName: "private.registry.com/replicatedcom/test/alpine",
 				Digest:  "sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
 			},
@@ -295,7 +295,7 @@ func TestRewriteDockerRegistryImage(t *testing.T) {
 				},
 			},
 			want: &kustomizetypes.Image{
-				Name:    "quay.io/replicatedhq/alpine:3.14",
+				Name:    "quay.io/replicatedhq/alpine",
 				NewName: "private.registry.com/alpine",
 				NewTag:  "3.14",
 			},
@@ -311,7 +311,7 @@ func TestRewriteDockerRegistryImage(t *testing.T) {
 				},
 			},
 			want: &kustomizetypes.Image{
-				Name:    "quay.io/replicatedhq/alpine:3.14",
+				Name:    "quay.io/replicatedhq/alpine",
 				NewName: "private.registry.com/replicatedcom/alpine",
 				NewTag:  "3.14",
 			},
@@ -326,7 +326,7 @@ func TestRewriteDockerRegistryImage(t *testing.T) {
 				},
 			},
 			want: &kustomizetypes.Image{
-				Name:    "quay.io/replicatedhq/alpine@sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+				Name:    "quay.io/replicatedhq/alpine",
 				NewName: "private.registry.com/alpine",
 				Digest:  "sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
 			},
@@ -342,7 +342,7 @@ func TestRewriteDockerRegistryImage(t *testing.T) {
 				},
 			},
 			want: &kustomizetypes.Image{
-				Name:    "quay.io/replicatedhq/alpine@sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+				Name:    "quay.io/replicatedhq/alpine",
 				NewName: "private.registry.com/replicatedcom/alpine",
 				Digest:  "sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
 			},
@@ -357,7 +357,7 @@ func TestRewriteDockerRegistryImage(t *testing.T) {
 				},
 			},
 			want: &kustomizetypes.Image{
-				Name:    "quay.io/replicatedhq/alpine:3.14@sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+				Name:    "quay.io/replicatedhq/alpine",
 				NewName: "private.registry.com/alpine",
 				Digest:  "sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
 			},
@@ -373,7 +373,7 @@ func TestRewriteDockerRegistryImage(t *testing.T) {
 				},
 			},
 			want: &kustomizetypes.Image{
-				Name:    "quay.io/replicatedhq/alpine:3.14@sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+				Name:    "quay.io/replicatedhq/alpine",
 				NewName: "private.registry.com/replicatedcom/alpine",
 				Digest:  "sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
 			},
@@ -389,7 +389,7 @@ func TestRewriteDockerRegistryImage(t *testing.T) {
 				},
 			},
 			want: &kustomizetypes.Image{
-				Name:    "quay.io/replicatedhq/alpine:3.14@sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
+				Name:    "quay.io/replicatedhq/alpine",
 				NewName: "private.registry.com/replicatedcom/test/alpine",
 				Digest:  "sha256:06b5d462c92fc39303e6363c65e074559f8d6b1363250027ed5053557e3398c5",
 			},
@@ -947,7 +947,7 @@ func Test_kustomizeImage(t *testing.T) {
 	}
 }
 
-func Test_stripImageTag(t *testing.T) {
+func Test_stripImageTagAndDigest(t *testing.T) {
 	tests := []struct {
 		name  string
 		image string
@@ -983,11 +983,21 @@ func Test_stripImageTag(t *testing.T) {
 			image: "example.com:5000/myimage@sha256:abc",
 			want:  "example.com:5000/myimage",
 		},
+		{
+			name:  "tagged and digest image",
+			image: "myimage:1@sha256:abc",
+			want:  "myimage",
+		},
+		{
+			name:  "tagged and digest image on ported registry",
+			image: "example.com:5000/myimage:1@sha256:abc",
+			want:  "example.com:5000/myimage",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := stripImageTag(tt.image); got != tt.want {
-				t.Errorf("stripImageTag() = %v, want %v", got, tt.want)
+			if got := stripImageTagAndDigest(tt.image); got != tt.want {
+				t.Errorf("stripImageTagAndDigest() = %v, want %v", got, tt.want)
 			}
 		})
 	}

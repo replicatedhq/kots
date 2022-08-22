@@ -36,8 +36,9 @@ var imagePolicy = []byte(`{
   "default": [{"type": "insecureAcceptAnything"}]
 }`)
 
-func ProcessImages(srcRegistry, destRegistry registrytypes.RegistryOptions, appSlug string, log *logger.CLILogger, reportWriter io.Writer, upstreamDir string, additionalImages []string, copyImages, allImagesPrivate bool, checkedImages map[string]types.ImageInfo, dockerHubRegistry registrytypes.RegistryOptions) ([]kustomizeimage.Image, error) {
+func RewriteImages(srcRegistry, destRegistry registrytypes.RegistryOptions, appSlug string, log *logger.CLILogger, reportWriter io.Writer, upstreamDir string, additionalImages []string, copyImages, allImagesPrivate bool, checkedImages map[string]types.ImageInfo, dockerHubRegistry registrytypes.RegistryOptions) ([]kustomizeimage.Image, error) {
 	newImages := []kustomizeimage.Image{}
+	savedImages := map[string]bool{}
 
 	err := filepath.Walk(upstreamDir,
 		func(path string, info os.FileInfo, err error) error {
@@ -54,7 +55,7 @@ func ProcessImages(srcRegistry, destRegistry registrytypes.RegistryOptions, appS
 				return err
 			}
 
-			newImagesSubset, err := processImagesInFileBetweenRegistries(srcRegistry, destRegistry, appSlug, log, reportWriter, contents, copyImages, allImagesPrivate, checkedImages, newImages, dockerHubRegistry)
+			newImagesSubset, err := rewriteImagesInFileBetweenRegistries(srcRegistry, destRegistry, appSlug, log, reportWriter, contents, copyImages, allImagesPrivate, checkedImages, savedImages, dockerHubRegistry)
 			if err != nil {
 				return errors.Wrapf(err, "failed to copy images mentioned in %s", path)
 			}
@@ -68,7 +69,7 @@ func ProcessImages(srcRegistry, destRegistry registrytypes.RegistryOptions, appS
 	}
 
 	for _, additionalImage := range additionalImages {
-		newImage, err := processOneImage(srcRegistry, destRegistry, additionalImage, appSlug, reportWriter, log, copyImages, allImagesPrivate, checkedImages, dockerHubRegistry)
+		newImage, err := rewriteOneImage(srcRegistry, destRegistry, additionalImage, appSlug, reportWriter, log, copyImages, allImagesPrivate, checkedImages, dockerHubRegistry)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to process addditional image %s", additionalImage)
 		}
@@ -177,13 +178,8 @@ func GetPrivateImages(upstreamDir string, kotsKindsImages []string, checkedImage
 	return result, objectsWithImages, nil
 }
 
-func processImagesInFileBetweenRegistries(srcRegistry, destRegistry registrytypes.RegistryOptions, appSlug string, log *logger.CLILogger, reportWriter io.Writer, fileData []byte, copyImages, allImagesPrivate bool, checkedImages map[string]types.ImageInfo, alreadyPushedImagesFromOtherFiles []kustomizeimage.Image, dockerHubRegistry registrytypes.RegistryOptions) ([]kustomizeimage.Image, error) {
-	savedImages := make(map[string]bool)
+func rewriteImagesInFileBetweenRegistries(srcRegistry, destRegistry registrytypes.RegistryOptions, appSlug string, log *logger.CLILogger, reportWriter io.Writer, fileData []byte, copyImages, allImagesPrivate bool, checkedImages map[string]types.ImageInfo, savedImages map[string]bool, dockerHubRegistry registrytypes.RegistryOptions) ([]kustomizeimage.Image, error) {
 	newImages := []kustomizeimage.Image{}
-
-	for _, image := range alreadyPushedImagesFromOtherFiles {
-		savedImages[fmt.Sprintf("%s:%s", image.Name, image.NewTag)] = true
-	}
 
 	err := listImagesInFile(fileData, func(images []string, doc k8sdoc.K8sDoc) error {
 		for _, image := range images {
@@ -197,7 +193,7 @@ func processImagesInFileBetweenRegistries(srcRegistry, destRegistry registrytype
 				log.ChildActionWithSpinner("Found image %s", image)
 			}
 
-			newImage, err := processOneImage(srcRegistry, destRegistry, image, appSlug, reportWriter, log, copyImages, allImagesPrivate, checkedImages, dockerHubRegistry)
+			newImage, err := rewriteOneImage(srcRegistry, destRegistry, image, appSlug, reportWriter, log, copyImages, allImagesPrivate, checkedImages, dockerHubRegistry)
 			if err != nil {
 				log.FinishChildSpinner()
 				return errors.Wrapf(err, "failed to transfer image %s", image)
@@ -237,7 +233,7 @@ func listImagesInFile(contents []byte, handler processImagesFunc) error {
 	return nil
 }
 
-func processOneImage(srcRegistry, destRegistry registrytypes.RegistryOptions, image string, appSlug string, reportWriter io.Writer, log *logger.CLILogger, copyImages, allImagesPrivate bool, checkedImages map[string]types.ImageInfo, dockerHubRegistry registrytypes.RegistryOptions) ([]kustomizeimage.Image, error) {
+func rewriteOneImage(srcRegistry, destRegistry registrytypes.RegistryOptions, image string, appSlug string, reportWriter io.Writer, log *logger.CLILogger, copyImages, allImagesPrivate bool, checkedImages map[string]types.ImageInfo, dockerHubRegistry registrytypes.RegistryOptions) ([]kustomizeimage.Image, error) {
 	sourceCtx := &containerstypes.SystemContext{DockerDisableV1Ping: true}
 
 	// allow pulling images from http/invalid https docker repos
