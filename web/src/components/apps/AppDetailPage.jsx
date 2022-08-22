@@ -235,7 +235,10 @@ class AppDetailPage extends Component {
         return this.checkForFirstApp();
       }, 2000);
     }
-    if (!this.props.rootDidInitialAppFetch && history.location.pathname === "/apps") {
+    if (
+      !this.props.rootDidInitialAppFetch &&
+      history.location.pathname === "/apps"
+    ) {
       this.checkForFirstApp();
       return;
     }
