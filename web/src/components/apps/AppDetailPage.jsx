@@ -210,7 +210,7 @@ class AppDetailPage extends Component {
    *  if no apps are found, or the first app is found.
    */
   checkForFirstApp = async () => {
-    console.log("checkForFirstApp called");
+    console.log("checkForFirstApp called with ", this.props.rootDidInitialAppFetch");
     const { history, rootDidInitialAppFetch, appsList } = this.props;
     if (!rootDidInitialAppFetch) {
       return;
