@@ -230,10 +230,10 @@ class AppDetailPage extends Component {
   componentDidMount() {
     const { history } = this.props;
 
-    if (!rootDidInitialAppFetch) {
+    if (!this.props.rootDidInitialAppFetch) {
       this.state.checkForFirstAppJob.start(this.checkForFirstApp, 2000);
     }
-    if (!rootDidInitialAppFetch && history.location.pathname === "/apps") {
+    if (!this.props.rootDidInitialAppFetch && history.location.pathname === "/apps") {
       this.checkForFirstApp();
       return;
     }
