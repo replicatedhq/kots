@@ -109,7 +109,7 @@ const Dashboard = ({
     remove: removeDashboard,
   } = useDashboard({
     appSlug: app?.slug,
-    cluster: cluster?.id,
+    clusterId: cluster?.id,
     refetchInterval: 2000,
   });
 

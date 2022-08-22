@@ -35,7 +35,6 @@ function useDashboard({
   refetchInterval,
   _getDashboard = getDashboard,
 } = {}) {
-  console.log('useDashboard called with', appSlug, clusterId, refetchInterval)
   return useQuery(
     ["apps", appSlug, clusterId],
     () => _getDashboard({ appSlug, clusterId }),
