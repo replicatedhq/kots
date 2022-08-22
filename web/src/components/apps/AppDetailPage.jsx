@@ -47,6 +47,7 @@ class AppDetailPage extends Component {
       displayErrorModal: false,
       isVeleroInstalled: false,
       redeployVersionErrMsg: "",
+      checkForFirstAppJob: new Repeater(),
     };
   }
 
@@ -54,13 +55,6 @@ class AppDetailPage extends Component {
     const { getThemeState, setThemeState, match, appsList, history } =
       this.props;
     const { app, loadingApp } = this.state;
-
-    // Used for a fresh reload
-    if (history.location.pathname === "/apps") {
-      this.checkForFirstApp();
-      // updates state but does not cause infinite loop because app navigates away from /apps
-      return;
-    }
 
     // Refetch app info when switching between apps
     if (app && !loadingApp && match.params.slug != app.slug) {
@@ -100,6 +94,7 @@ class AppDetailPage extends Component {
     clearInterval(this.interval);
     this.props.clearThemeState();
     this.state.getAppJob.stop();
+    this.state.checkForFirstAppJob.stop();
   }
 
   makeCurrentRelease = async (
@@ -208,11 +203,12 @@ class AppDetailPage extends Component {
    *  Runs on mount and on update. Also handles redirect logic
    *  if no apps are found, or the first app is found.
    */
-  checkForFirstApp = () => {
+  checkForFirstApp = async () => {
     const { history, rootDidInitialAppFetch, appsList } = this.props;
     if (!rootDidInitialAppFetch) {
       return;
     }
+    this.state.checkForFirstAppJob.stop();
     const firstApp = appsList?.find((app) => app.name);
 
     if (firstApp) {
@@ -226,6 +222,7 @@ class AppDetailPage extends Component {
   componentDidMount() {
     const { history } = this.props;
 
+    this.state.checkForFirstAppJob.start(this.checkForFirstApp, 2000);
     if (history.location.pathname === "/apps") {
       this.checkForFirstApp();
       return;
