@@ -1,4 +1,3 @@
-// This hook has not been integrated yet.
 import { useQuery } from "react-query";
 import { Utilities } from "../../../utilities/utilities";
 
