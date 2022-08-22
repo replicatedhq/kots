@@ -219,7 +219,7 @@ class AppDetailPage extends Component {
     const firstApp = appsList?.find((app) => app.name);
 
     if (firstApp) {
-      console.log('updating history to /apps/' + firstApp.slug);
+      console.log("updating history to /apps/" + firstApp.slug);
       history.replace(`/app/${firstApp.slug}`);
       this.getApp(firstApp.slug);
     } else {
@@ -230,8 +230,10 @@ class AppDetailPage extends Component {
   componentDidMount() {
     const { history } = this.props;
 
-    this.state.checkForFirstAppJob.start(this.checkForFirstApp, 2000);
-    if (history.location.pathname === "/apps") {
+    if (!rootDidInitialAppFetch) {
+      this.state.checkForFirstAppJob.start(this.checkForFirstApp, 2000);
+    }
+    if (!rootDidInitialAppFetch && history.location.pathname === "/apps") {
       this.checkForFirstApp();
       return;
     }
