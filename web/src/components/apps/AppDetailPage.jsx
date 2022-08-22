@@ -57,7 +57,6 @@ class AppDetailPage extends Component {
     const { app, loadingApp } = this.state;
 
     if (history.location.pathname === "/apps") {
-      console.log('checkForFirstApp called in componentDidUpdate')
       this.checkForFirstApp();
       // updates state but does not cause infinite loop because app navigates away from /apps
       return;
@@ -211,7 +210,6 @@ class AppDetailPage extends Component {
    *  if no apps are found, or the first app is found.
    */
   checkForFirstApp = async () => {
-    console.log("checkForFirstApp called with ", this.props.rootDidInitialAppFetch);
     const { history, rootDidInitialAppFetch, appsList } = this.props;
     if (!rootDidInitialAppFetch) {
       return;
@@ -220,7 +218,6 @@ class AppDetailPage extends Component {
     const firstApp = appsList?.find((app) => app.name);
 
     if (firstApp) {
-      console.log("updating history to /apps/" + firstApp.slug);
       history.replace(`/app/${firstApp.slug}`);
       this.getApp(firstApp.slug);
     } else {
@@ -231,9 +228,10 @@ class AppDetailPage extends Component {
   componentDidMount() {
     const { history } = this.props;
 
-    if (!this.props.rootDidInitialAppFetch) {
+    const firstApp = appsList?.find((app) => app.name);
+
+    if (!this.props.rootDidInitialAppFetch && !firstApp) {
       this.state.checkForFirstAppJob.start(() => {
-        console.log("check for first app called from job")
         return this.checkForFirstApp();
       }, 2000);
     }
