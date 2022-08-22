@@ -106,6 +106,7 @@ const Dashboard = ({
       prometheusAddress: "",
     },
     loading: loadingDashboard,
+    remove: removeDashboard,
   } = useDashboard({
     appSlug: app?.slug,
     cluster: cluster?.id,
@@ -214,6 +215,8 @@ const Dashboard = ({
       updateChecker.stop();
       // getAppDashboardJob.stop();
       fetchAppDownstreamJob.stop();
+      // cancel / remove fetching
+      removeDashboard();
     };
   }, []);
 
