@@ -13,7 +13,7 @@ COPY kotskinds ./kotskinds
 
 ARG DEBUG_KOTSADM=0
 
-RUN make build
+RUN make build kots
 
 FROM debian:buster
 
@@ -180,6 +180,7 @@ RUN cd /tmp && curl -fsSL -o s3cmd.tar.gz "${S3CMD_URL}" \
 
 COPY --from=builder /go/bin/dlv .
 COPY --from=builder /go/src/github.com/replicatedhq/kots/bin/kotsadm /kotsadm
+COPY --from=builder /go/src/github.com/replicatedhq/kots/bin/kots /kots
 
 EXPOSE 40000
 

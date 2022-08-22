@@ -157,7 +157,7 @@ COPY . .
 
 RUN --mount=target=$GOMODCACHE,id=kots-gomodcache,type=cache \
     --mount=target=$GOCACHE,id=kots-gocache,type=cache \
-    make build
+    make build kots
 
 RUN --mount=target=/tmp/.cache/gocache,id=kots-gocache,type=cache \
     --mount=target=/tmp/.cache/gomodcache,id=kots-gomodcache,type=cache \
