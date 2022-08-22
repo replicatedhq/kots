@@ -210,6 +210,7 @@ class AppDetailPage extends Component {
    *  if no apps are found, or the first app is found.
    */
   checkForFirstApp = async () => {
+    console.log("checkForFirstApp called");
     const { history, rootDidInitialAppFetch, appsList } = this.props;
     if (!rootDidInitialAppFetch) {
       return;
@@ -218,6 +219,7 @@ class AppDetailPage extends Component {
     const firstApp = appsList?.find((app) => app.name);
 
     if (firstApp) {
+      console.log('updating history to /apps/' + firstApp.slug);
       history.replace(`/app/${firstApp.slug}`);
       this.getApp(firstApp.slug);
     } else {
