@@ -56,6 +56,12 @@ class AppDetailPage extends Component {
       this.props;
     const { app, loadingApp } = this.state;
 
+    if (history.location.pathname === "/apps") {
+      this.checkForFirstApp();
+      // updates state but does not cause infinite loop because app navigates away from /apps
+      return;
+    }
+
     // Refetch app info when switching between apps
     if (app && !loadingApp && match.params.slug != app.slug) {
       this.getApp();
