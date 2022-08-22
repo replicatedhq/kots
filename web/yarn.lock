@@ -14152,11 +14152,6 @@ url@^0.11.0:
     punycode "1.3.2"
     querystring "0.2.0"
 
-urlize@^0.2.1:
-  version "0.2.1"
-  resolved "https://registry.yarnpkg.com/urlize/-/urlize-0.2.1.tgz#0fcec862eeb0bc0f6dd9e73d7b500e71bd6837c8"
-  integrity sha1-D87IYu6wvA9t2ec9e1AOcb1oN8g=
-
 use-memo-one@^1.1.1:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/use-memo-one/-/use-memo-one-1.1.2.tgz#0c8203a329f76e040047a35a1197defe342fab20"
