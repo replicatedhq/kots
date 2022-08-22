@@ -234,7 +234,7 @@ class AppDetailPage extends Component {
     if (!this.props.rootDidInitialAppFetch) {
       this.state.checkForFirstAppJob.start(() => {
         console.log("check for first app called from job")
-        this.checkForFirstApp();
+        return this.checkForFirstApp();
       }, 2000);
     }
     if (!this.props.rootDidInitialAppFetch && history.location.pathname === "/apps") {
