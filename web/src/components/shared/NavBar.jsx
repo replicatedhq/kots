@@ -7,6 +7,11 @@ import ErrorModal from "../modals/ErrorModal";
 import NavBarDropdown from "./NavBarDropdown";
 
 import "@src/scss/components/shared/NavBar.scss";
+import styled from "styled-components";
+
+const StyledThemeButton = styled.button`
+  background: ${(props) => props.theme.colors.primary};
+`;
 
 export class NavBar extends PureComponent {
   constructor(props) {
@@ -154,6 +159,7 @@ export class NavBar extends PureComponent {
           "cluster-scope": isClusterScope,
         })}
       >
+        <StyledThemeButton>Hello!!</StyledThemeButton>
         <div className="flex flex-auto u-height--full">
           <div className="flex alignItems--center flex1 flex-verticalCenter u-position--relative">
             <div className="HeaderLogo">
