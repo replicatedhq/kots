@@ -60,6 +60,9 @@
 .gitops-checkboxes .BoxedCheckbox {
   min-height: 60px;
 }
+.replicated-select__value-container {
+  height: 100%;
+}
 
 .replicated-select-container {
   .replicated-select__placeholder,
@@ -87,6 +90,11 @@
       .replicated-select__dropdown-indicator {
         transform: rotate(180deg);
       }
+    }
+  }
+  &.select-large {
+    .replicated-select__control {
+      height: 50px;
     }
   }
 

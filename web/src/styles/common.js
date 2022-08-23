@@ -29,6 +29,9 @@ export const Flex = styled.div`
     (props.ml && `${props.ml}px`) || (props.mx && `${props.mx}px`)};
   width: ${(props) => props.width};
   flex: ${(props) => props.flex};
+  -webkit-flex: ${(props) => props.flex};
+  -moz-flex: ${(props) => props.flex};
+  -ms-flex: ${(props) => props.flex};
 `;
 
 export const Paragraph = styled.p`

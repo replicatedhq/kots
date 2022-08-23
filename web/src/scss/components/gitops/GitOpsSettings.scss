@@ -10,6 +10,8 @@
 .GitOpsSettings {
   max-width: 800px;
   width: 100%;
+  background-color: $really-light-accent;
+  padding: 15px;
 }
 
 .appIcon {
@@ -23,10 +25,6 @@
 }
 
 .GitopsSettings-noRepoAccess {
-  padding: 10px;
-  text-align: center;
-  margin: 0 auto 30px;
-
   .title {
     font-size: 20px;
     font-weight: bold;
@@ -45,4 +43,20 @@
 .disable-gitops-wrapper {
   padding-top: 30px;
   border-top: 1px solid $border-color;
+}
+.step-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: $text-color-secondary;
+  margin-bottom: 12px;
+  line-height: 28px;
+}
+
+.step-sub {
+  font-size: 14px;
+  font-weight: 500;
+  color: $text-color-body-copy;
+  margin-bottom: 25px;
+  line-height: 24px;
+  text-align: left;
 }

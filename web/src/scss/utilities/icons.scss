@@ -90,17 +90,20 @@
   width: 37px;
   height: 44px;
 }
-.icon.github-icon {
+.icon.github-icon,
+.icon.github_enterprise-icon {
   background-position: -39px -183px;
   width: 46px;
   height: 44px;
 }
-.icon.bitbucket-icon {
+.icon.bitbucket-icon,
+.icon.bitbucket_server-icon {
   background-position: -123px -185px;
   width: 44px;
   height: 40px;
 }
-.icon.gitlab-icon {
+.icon.gitlab-icon,
+.icon.gitlab_enterprise-icon {
   background-position: -170px -183px;
   width: 44px;
   height: 44px;
