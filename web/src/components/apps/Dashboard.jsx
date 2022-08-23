@@ -15,7 +15,6 @@ import Modal from "react-modal";
 import { Repeater } from "../../utilities/repeater";
 import { Utilities, isAwaitingResults } from "../../utilities/utilities";
 import { AirgapUploader } from "../../utilities/airgapUploader";
-import { useDashboard } from "../../features/Dashboard";
 
 import "../../scss/components/watches/Dashboard.scss";
 import "../../../node_modules/react-vis/dist/style";
@@ -75,6 +74,14 @@ const Dashboard = ({
   const [showAutomaticUpdatesModalState, setShowAutomaticUpdatesModalState] =
     useState(false);
   const [showAppStatusModal, setShowAppStatusModal] = useState(false);
+  const [dashboard, setDashboard] = useState({
+    appStatus: null,
+    metrics: [],
+    prometheusAddress: "",
+  });
+  const [getAppDashboardJob, setGetAppDashboardJob] = useState(
+    getAppDashboardJobRepeater
+  );
   const [fetchAppDownstreamJob, setFetchAppDownstreamJob] = useState(
     fetchAppDownloadstreamJobRepeater
   );
@@ -98,28 +105,6 @@ const Dashboard = ({
   const [displayErrorModal, setDisplayErrorModal] = useState(false);
   const [startingSnapshot, setStartingSnapshot] = useState(false);
   const [cluster, setCluster] = useState(clusterProp);
-
-  const {
-    data: dashboard = {
-      appStatus: null,
-      metrics: [],
-      prometheusAddress: "",
-    },
-    loading: loadingDashboard,
-    remove: removeDashboard,
-  } = useDashboard({
-    appSlug: app?.slug,
-    clusterId: cluster?.id,
-    refetchInterval: 2000,
-  });
-
-  useEffect(() => {
-    if (cluster?.id == "" && isHelmManaged === true) {
-      // TODO: use a callback to update the state in the parent component
-      setCluster({ ...cluster, id: 0 });
-      return;
-    }
-  }, [cluster.id, isHelmManaged]);
 
   useEffect(() => {
     if (app) {
@@ -206,19 +191,64 @@ const Dashboard = ({
     }
 
     updateChecker.start(updateStatus, 1000);
-    // getAppDashboardJob.start(getAppDashboard, 2000);
+    getAppDashboardJob.start(getAppDashboard, 2000);
     if (app) {
       setWatchState(app);
       getAppLicense(app);
     }
     return () => {
       updateChecker.stop();
-      // getAppDashboardJob.stop();
+      getAppDashboardJob.stop();
       fetchAppDownstreamJob.stop();
-      // cancel / remove fetching
-      removeDashboard();
     };
   }, []);
+
+  const getAppDashboard = () => {
+    return new Promise((resolve, reject) => {
+      // this function is in a repeating callback that terminates when
+      // the promise is resolved
+
+      // TODO: use react-query to refetch this instead of the custom repeater
+      if (!app) {
+        return;
+      }
+
+      if (cluster?.id == "" && isHelmManaged === true) {
+        // TODO: use a callback to update the state in the parent component
+        setCluster({ ...cluster, id: 0 });
+        return;
+      }
+
+      fetch(
+        `${process.env.API_ENDPOINT}/app/${app?.slug}/cluster/${cluster?.id}/dashboard`,
+        {
+          headers: {
+            Authorization: Utilities.getToken(),
+            "Content-Type": "application/json",
+          },
+          method: "GET",
+        }
+      )
+        .then(async (res) => {
+          if (!res.ok && res.status === 401) {
+            Utilities.logoutUser();
+            return;
+          }
+          const response = await res.json();
+          setDashboard({
+            appStatus: response.appStatus,
+            prometheusAddress: response.prometheusAddress,
+            metrics: response.metrics,
+          });
+
+          resolve();
+        })
+        .catch((err) => {
+          console.log(err);
+          reject(err);
+        });
+    });
+  };
 
   const onCheckForUpdates = async () => {
     setCheckingForUpdates(true);
