@@ -134,6 +134,11 @@ func Test_RewriteImages(t *testing.T) {
 						NewTag:  "alpine-3.6",
 					},
 					{
+						Name:    "quay.io/replicatedcom/someimage",
+						NewName: "ttl.sh/testing-ns/someimage",
+						Digest:  "sha256:25dedae0aceb6b4fe5837a0acbacc6580453717f126a095aa05a3c6fcea14dd4",
+					},
+					{
 						Name:    "nginx",
 						NewName: "ttl.sh/testing-ns/nginx",
 						NewTag:  "1",
@@ -153,10 +158,34 @@ func Test_RewriteImages(t *testing.T) {
 						NewName: "ttl.sh/testing-ns/nginx",
 						NewTag:  "1",
 					},
+					{
+						Name:    "redis",
+						NewName: "ttl.sh/testing-ns/redis",
+						Digest:  "sha256:e96c03a6dda7d0f28e2de632048a3d34bb1636d0858b65ef9a554441c70f6633",
+					},
+					{
+						Name:    "docker.io/library/redis",
+						NewName: "ttl.sh/testing-ns/redis",
+						Digest:  "sha256:e96c03a6dda7d0f28e2de632048a3d34bb1636d0858b65ef9a554441c70f6633",
+					},
+					{
+						Name:    "library/redis",
+						NewName: "ttl.sh/testing-ns/redis",
+						Digest:  "sha256:e96c03a6dda7d0f28e2de632048a3d34bb1636d0858b65ef9a554441c70f6633",
+					},
+					{
+						Name:    "docker.io/redis",
+						NewName: "ttl.sh/testing-ns/redis",
+						Digest:  "sha256:e96c03a6dda7d0f28e2de632048a3d34bb1636d0858b65ef9a554441c70f6633",
+					},
 				},
 				CheckedImages: []kotsv1beta1.InstallationImage{
 					{
 						Image:     "busybox",
+						IsPrivate: false,
+					},
+					{
+						Image:     "redis:7@sha256:e96c03a6dda7d0f28e2de632048a3d34bb1636d0858b65ef9a554441c70f6633",
 						IsPrivate: false,
 					},
 					{
@@ -173,6 +202,10 @@ func Test_RewriteImages(t *testing.T) {
 					},
 					{
 						Image:     "quay.io/replicatedcom/qa-kots-3:alpine-3.6",
+						IsPrivate: true,
+					},
+					{
+						Image:     "quay.io/replicatedcom/someimage:1@sha256:25dedae0aceb6b4fe5837a0acbacc6580453717f126a095aa05a3c6fcea14dd4",
 						IsPrivate: true,
 					},
 					{
@@ -196,6 +229,11 @@ func Test_RewriteImages(t *testing.T) {
 						NewName: "proxy.replicated.com/proxy/test-app-slug/quay.io/replicatedcom/qa-kots-3",
 						NewTag:  "alpine-3.6",
 					},
+					{
+						Name:    "quay.io/replicatedcom/someimage",
+						NewName: "proxy.replicated.com/proxy/test-app-slug/quay.io/replicatedcom/someimage",
+						Digest:  "sha256:25dedae0aceb6b4fe5837a0acbacc6580453717f126a095aa05a3c6fcea14dd4",
+					},
 				},
 				CheckedImages: []kotsv1beta1.InstallationImage{
 					{
@@ -213,6 +251,14 @@ func Test_RewriteImages(t *testing.T) {
 					{
 						Image:     "quay.io/replicatedcom/qa-kots-3:alpine-3.6",
 						IsPrivate: true,
+					},
+					{
+						Image:     "quay.io/replicatedcom/someimage:1@sha256:25dedae0aceb6b4fe5837a0acbacc6580453717f126a095aa05a3c6fcea14dd4",
+						IsPrivate: true,
+					},
+					{
+						Image:     "redis:7@sha256:e96c03a6dda7d0f28e2de632048a3d34bb1636d0858b65ef9a554441c70f6633",
+						IsPrivate: false,
 					},
 					{
 						Image:     "nginx:1",
