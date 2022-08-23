@@ -30,6 +30,7 @@ const COMMON_ERRORS = {
 const updateCheckerRepeater = new Repeater();
 const getAppDashboardJobRepeater = new Repeater();
 const fetchAppDownloadstreamJobRepeater = new Repeater();
+let airgapUploader;
 
 const Dashboard = ({
   app,
@@ -64,7 +65,6 @@ const Dashboard = ({
   const [noUpdatesAvalable, setNoUpdatesAvalable] = useState(false);
   const [updateChecker, setUpdateChecker] = useState(updateCheckerRepeater);
   const [uploadingAirgapFile, setUploadingAirgapFile] = useState(false);
-  const [airgapUploader, setAirgapUploader] = useState(null);
   const [airgapUploadError, setAirgapUploadError] = useState(null);
   const [viewAirgapUploadError, setViewAirgapUploadError] = useState(false);
   const [viewAirgapUpdateError, setViewAirgapUpdateError] = useState(false);
@@ -98,7 +98,6 @@ const Dashboard = ({
   const [displayErrorModal, setDisplayErrorModal] = useState(false);
   const [startingSnapshot, setStartingSnapshot] = useState(false);
   const [cluster, setCluster] = useState(clusterProp);
-
   const {
     data: dashboard = {
       appStatus: null,
@@ -195,8 +194,11 @@ const Dashboard = ({
       // no-op
     }
 
-    setAirgapUploader(
-      new AirgapUploader(true, app.slug, onDropBundle, simultaneousUploads)
+    airgapUploader = new AirgapUploader(
+      true,
+      app.slug,
+      onDropBundle,
+      simultaneousUploads
     );
   };
 
@@ -608,7 +610,6 @@ const Dashboard = ({
                     url={match.url}
                     checkingForUpdates={checkingForUpdates}
                     checkingUpdateText={checkingUpdateText}
-                    onDropBundle={onDropBundle}
                     airgapUploader={airgapUploader}
                     uploadingAirgapFile={uploadingAirgapFile}
                     airgapUploadError={airgapUploadError}
