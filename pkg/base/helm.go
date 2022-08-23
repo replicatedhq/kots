@@ -248,7 +248,7 @@ func removeCommonPrefix(baseFiles []BaseFile) []BaseFile {
 func getUpstreamToBasePathsMap(upstreamFiles map[string][]byte) map[string][]string {
 	upstreamToBasePathsMap := make(map[string][]string)
 	for upstreamFilePath := range upstreamFiles {
-		if !strings.HasSuffix(upstreamFilePath, "Chart.yaml") {
+		if path.Base(upstreamFilePath) != "Chart.yaml" {
 			continue
 		}
 		upstreamPath := strings.TrimSuffix(upstreamFilePath, "Chart.yaml")
@@ -374,7 +374,7 @@ func helmChartBaseAppendMissingDependencies(base Base, upstreamFiles []upstreamt
 	}
 
 	for _, upstreamFile := range upstreamFiles {
-		if !strings.HasSuffix(upstreamFile.Path, "Chart.yaml") {
+		if path.Base(upstreamFile.Path) != "Chart.yaml" {
 			continue // only care about Chart.yaml files
 		}
 		upstreamPath := strings.TrimSuffix(upstreamFile.Path, "Chart.yaml")
