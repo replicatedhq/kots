@@ -9,7 +9,7 @@ import (
 
 	dockerref "github.com/containers/image/v5/docker/reference"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/docker/registry"
+	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
@@ -25,7 +25,7 @@ func GetTag(imageRef string) (string, error) {
 	return "", fmt.Errorf("image reference is not tagged")
 }
 
-func ImageInfoFromFile(registry registry.RegistryOptions, nameParts []string) (kustomizetypes.Image, error) {
+func RewriteDockerArchiveImage(registry registrytypes.RegistryOptions, nameParts []string) (kustomizetypes.Image, error) {
 	// imageNameParts looks like this:
 	// ["quay.io", "someorg", "imagename", "imagetag"]
 	// or
@@ -42,36 +42,80 @@ func ImageInfoFromFile(registry registry.RegistryOptions, nameParts []string) (k
 	if registry.Namespace != "" {
 		newImageNameParts = append(newImageNameParts, registry.Namespace)
 	}
-	var originalName, tag, separator string
+	var originalName string
 	if nameParts[len(nameParts)-2] == "sha256" {
 		newImageNameParts = append(newImageNameParts, nameParts[len(nameParts)-3])
 		originalName = path.Join(nameParts[:len(nameParts)-2]...)
-		tag = fmt.Sprintf("sha256:%s", nameParts[len(nameParts)-1])
-		separator = "@"
-		image.Digest = nameParts[len(nameParts)-1]
+		image.Digest = fmt.Sprintf("sha256:%s", nameParts[len(nameParts)-1])
 	} else {
 		newImageNameParts = append(newImageNameParts, nameParts[len(nameParts)-2])
 		originalName = path.Join(nameParts[:len(nameParts)-1]...)
-		tag = fmt.Sprintf("%s", nameParts[len(nameParts)-1])
-		separator = ":"
-		image.NewTag = tag
+		image.NewTag = fmt.Sprintf("%s", nameParts[len(nameParts)-1])
 	}
 
-	image.Name = fmt.Sprintf("%s%s%s", originalName, separator, tag)
+	image.Name = originalName
 	image.NewName = path.Join(newImageNameParts...)
 
 	return image, nil
 }
 
-// DestRef returns the location to push the image to on the dest registry
-func DestRef(registry registry.RegistryOptions, srcImage string) string {
+func RewriteDockerRegistryImage(destRegistry registrytypes.RegistryOptions, srcImage string) (*kustomizetypes.Image, error) {
+	parsedSrc, err := reference.ParseDockerRef(srcImage)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to normalize source image")
+	}
+
+	destImage, err := DestImage(destRegistry, srcImage)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get destination image")
+	}
+
+	rewrittenImage := kustomizetypes.Image{}
+	rewrittenImage.Name = stripImageTagAndDigest(srcImage)
+	rewrittenImage.NewName = stripImageTagAndDigest(destImage)
+
+	if can, ok := parsedSrc.(reference.Canonical); ok {
+		rewrittenImage.Digest = can.Digest().String()
+	} else if tagged, ok := parsedSrc.(reference.Tagged); ok {
+		rewrittenImage.NewTag = tagged.Tag()
+	} else {
+		rewrittenImage.NewTag = "latest"
+	}
+
+	return &rewrittenImage, nil
+}
+
+// DestImage returns the location to push the image to on the dest registry
+func DestImage(destRegistry registrytypes.RegistryOptions, srcImage string) (string, error) {
+	// parsing as a docker reference strips the tag if both a tag and a digest are used
+	parsed, err := reference.ParseDockerRef(srcImage)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to normalize source image")
+	}
+	srcImage = parsed.String()
+
 	imageParts := strings.Split(srcImage, "/")
 	lastPart := imageParts[len(imageParts)-1]
 
-	if registry.Namespace == "" {
-		return fmt.Sprintf("%s/%s", registry.Endpoint, lastPart)
+	if destRegistry.Namespace == "" {
+		return fmt.Sprintf("%s/%s", destRegistry.Endpoint, lastPart), nil
 	}
-	return fmt.Sprintf("%s/%s/%s", registry.Endpoint, registry.Namespace, lastPart)
+	return fmt.Sprintf("%s/%s/%s", destRegistry.Endpoint, destRegistry.Namespace, lastPart), nil
+}
+
+// DestImageFromKustomizeImage returns the location to push the image to from a kustomize image type
+func DestImageFromKustomizeImage(image kustomizetypes.Image) string {
+	destImage := image.NewName
+
+	if image.Digest != "" {
+		destImage += "@"
+		destImage += image.Digest
+	} else if image.NewTag != "" {
+		destImage += ":"
+		destImage += image.NewTag
+	}
+
+	return destImage
 }
 
 func BuildImageAltNames(rewrittenImage kustomizetypes.Image) ([]kustomizetypes.Image, error) {
@@ -209,8 +253,9 @@ func BuildImageAltNames(rewrittenImage kustomizetypes.Image) ([]kustomizetypes.I
 	return images, nil
 }
 
-// stripImageTag removes the tag or digest from an image
-func stripImageTag(image string) string {
+// stripImageTagAndDigest removes the tag and digest from an image while preserving the original name.
+// This can be helpful because parsing the image as a docker reference can modify the hostname (e.g. adds docker.io/library)
+func stripImageTagAndDigest(image string) string {
 	// grab last section of image name
 	imageParts := strings.Split(image, "/")
 	lastPart := imageParts[len(imageParts)-1]
@@ -225,64 +270,14 @@ func stripImageTag(image string) string {
 	return image
 }
 
-// destImageName returns the name of the image on the dest registry (without tag or digest)
-func destImageName(registry registry.RegistryOptions, srcImage string) string {
-	imageParts := strings.Split(srcImage, "/")
-	lastPart := imageParts[len(imageParts)-1]
-	lastPart = stripImageTag(lastPart)
-
-	if registry.Namespace == "" {
-		return fmt.Sprintf("%s/%s", registry.Endpoint, lastPart)
-	}
-	return fmt.Sprintf("%s/%s/%s", registry.Endpoint, registry.Namespace, lastPart)
-}
-
-func kustomizeImage(destRegistry registry.RegistryOptions, image string) ([]kustomizetypes.Image, error) {
-	imgParts := strings.Split(image, "/")
-
-	dockerRef, err := dockerref.ParseDockerRef(image)
+func kustomizeImage(destRegistry registrytypes.RegistryOptions, image string) ([]kustomizetypes.Image, error) {
+	rewrittenImage, err := RewriteDockerRegistryImage(destRegistry, image)
 	if err != nil {
-		return nil, errors.Wrapf(err, "parse docker ref: %q", image)
+		return nil, errors.Wrap(err, "failed to rewrite image")
 	}
-
-	registryHost := dockerref.Domain(dockerRef)
-	if registryHost == "docker.io" || strings.HasSuffix(registryHost, ".docker.io") {
-		if len(imgParts) == 1 {
-			// this means the image is something like "redis", which refers to "docker.io/library/redis"
-			imgParts = append([]string{"docker.io", "library"}, imgParts...)
-		} else if len(imgParts) == 2 && imgParts[0] == "library" {
-			// this means the image is something like "kotsadm/kotsadm", which refers to "docker.io/kotsadm/kotsadm"
-			imgParts = append([]string{"docker.io"}, imgParts...)
-		}
-	}
-
-	// if the last substring doesn't contain ':', it is untagged and needs 'latest' appended
-	// otherwise, split it on '@' and then ':'
-	if strings.Contains(imgParts[len(imgParts)-1], ":") {
-		imgParts = append(imgParts[:len(imgParts)-1], strings.Split(imgParts[len(imgParts)-1], "@")...)
-		imgParts = append(imgParts[:len(imgParts)-1], strings.Split(imgParts[len(imgParts)-1], ":")...)
-	} else {
-		imgParts = append(imgParts, "latest")
-	}
-
-	imageInfo, err := ImageInfoFromFile(destRegistry, imgParts)
-	if err != nil {
-		return nil, errors.Wrap(err, "get image info")
-	}
-
-	newName := destImageName(destRegistry, image)
-	imageWithoutTag := stripImageTag(image)
-
-	kustomizedImage := kustomizetypes.Image{
-		Name:    imageWithoutTag,
-		NewName: newName,
-		NewTag:  imageInfo.NewTag,
-		Digest:  imageInfo.Digest,
-	}
-	images, err := BuildImageAltNames(kustomizedImage)
+	rewrittenImages, err := BuildImageAltNames(*rewrittenImage)
 	if err != nil {
 		return nil, errors.Wrap(err, "build image name alts")
 	}
-
-	return images, nil
+	return rewrittenImages, nil
 }

@@ -221,7 +221,6 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		RewriteImages:       true,
 		ReportWriter:        pipeWriter,
 		RewriteImageOptions: pull.RewriteImageOptions{
-			ImageFiles: filepath.Join(archiveDir, "images"),
 			Host:       opts.RegistryHost,
 			Namespace:  opts.RegistryNamespace,
 			Username:   opts.RegistryUsername,

@@ -25,6 +25,13 @@ func Test_MakeProxiedImageURL(t *testing.T) {
 			want:      "host/proxy/slug/image",
 		},
 		{
+			name:      "MakeProxiedImageURL multi part image parameter with a namespace returns valid proxied image URL",
+			proxyHost: "host",
+			appSlug:   "slug",
+			image:     "namespace/image:image",
+			want:      "host/proxy/slug/namespace/image",
+		},
+		{
 			name:      "MakeProxiedImageURL multi part image parameter with : and @ characters returns valid proxied image URL",
 			proxyHost: "host",
 			appSlug:   "slug",

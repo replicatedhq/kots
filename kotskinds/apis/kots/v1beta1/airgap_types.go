@@ -29,6 +29,8 @@ type AirgapSpec struct {
 	AppSlug           string              `json:"appSlug,omitempty"`
 	IsRequired        bool                `json:"isRequired,omitempty"`
 	RequiredReleases  []AirgapReleaseMeta `json:"requiredReleases,omitempty"`
+	SavedImages       []string            `json:"savedImages,omitempty"`
+	Format            string              `json:"format,omitempty"`
 }
 
 // AirgapStatus defines airgap release metadata

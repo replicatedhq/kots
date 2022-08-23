@@ -26,6 +26,9 @@
         "channelName": {
           "type": "string"
         },
+        "format": {
+          "type": "string"
+        },
         "isRequired": {
           "type": "boolean"
         },
@@ -48,6 +51,12 @@
                 "type": "string"
               }
             }
+          }
+        },
+        "savedImages": {
+          "type": "array",
+          "items": {
+            "type": "string"
           }
         },
         "signature": {

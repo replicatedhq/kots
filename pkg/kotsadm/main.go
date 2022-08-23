@@ -15,6 +15,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
+	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/identity"
 	"github.com/replicatedhq/kots/pkg/ingress"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -149,7 +150,7 @@ func Deploy(deployOptions types.DeployOptions, log *logger.CLILogger) error {
 	if deployOptions.AirgapRootDir != "" && deployOptions.RegistryConfig.OverrideRegistry != "" {
 		var err error
 		pushOptions := types.PushImagesOptions{
-			Registry: registry.RegistryOptions{
+			Registry: registrytypes.RegistryOptions{
 				Endpoint:  deployOptions.RegistryConfig.OverrideRegistry,
 				Namespace: deployOptions.RegistryConfig.OverrideNamespace,
 				Username:  deployOptions.RegistryConfig.Username,
@@ -164,10 +165,9 @@ func Deploy(deployOptions types.DeployOptions, log *logger.CLILogger) error {
 				return errors.Wrap(err, "failed to get images from bundle")
 			}
 		} else {
-			imagesRootDir := filepath.Join(deployOptions.AirgapRootDir, "images")
-			images, err = TagAndPushAppImagesFromPath(imagesRootDir, pushOptions)
+			images, err = TagAndPushAppImagesFromPath(deployOptions.AirgapRootDir, pushOptions)
 			if err != nil {
-				return errors.Wrap(err, "failed to list image formats")
+				return errors.Wrap(err, "failed to tag and push app images from path")
 			}
 		}
 

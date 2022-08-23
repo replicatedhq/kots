@@ -3,7 +3,6 @@ package template
 import (
 	"encoding/base64"
 	"fmt"
-	"path"
 	"regexp"
 	"text/template"
 
@@ -11,6 +10,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
+	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/image"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -66,7 +66,7 @@ func (i ItemValue) DefaultStr() string {
 type ConfigCtx struct {
 	ItemValues        map[string]ItemValue
 	LocalRegistry     LocalRegistry
-	DockerHubRegistry registry.RegistryOptions
+	DockerHubRegistry registrytypes.RegistryOptions
 	AppSlug           string
 	DecryptValues     bool
 
@@ -75,7 +75,7 @@ type ConfigCtx struct {
 }
 
 // newConfigContext creates and returns a context for template rendering
-func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, existingValues map[string]ItemValue, localRegistry LocalRegistry, license *kotsv1beta1.License, app *kotsv1beta1.Application, info *VersionInfo, dockerHubRegistry registry.RegistryOptions, appSlug string, decryptValues bool) (*ConfigCtx, error) {
+func (b *Builder) newConfigContext(configGroups []kotsv1beta1.ConfigGroup, existingValues map[string]ItemValue, localRegistry LocalRegistry, license *kotsv1beta1.License, app *kotsv1beta1.Application, info *VersionInfo, dockerHubRegistry registrytypes.RegistryOptions, appSlug string, decryptValues bool) (*ConfigCtx, error) {
 	configCtx := &ConfigCtx{
 		ItemValues:        existingValues,
 		LocalRegistry:     localRegistry,
@@ -291,19 +291,21 @@ func (ctx ConfigCtx) localRegistryNamespace() string {
 }
 
 func (ctx ConfigCtx) localImageName(imageRef string) string {
-	// If there's a private registry. Always rewrite everything.  This covers airgap installs too.
+	// If there's a private registry. Always rewrite everything. This covers airgap installs too.
 	if ctx.LocalRegistry.Host != "" {
-		ref, err := image.RefFromImage(imageRef)
+		destRegistry := registrytypes.RegistryOptions{
+			Endpoint:  ctx.localRegistryHost(),
+			Namespace: ctx.localRegistryNamespace(),
+		}
+		destImage, err := image.DestImage(destRegistry, imageRef)
 		if err != nil {
 			// TODO: log
 			return ""
 		}
-		ref.Domain = ctx.localRegistryHost()
-		ref.Name = path.Join(ctx.localRegistryAddress(), ref.NameBase())
-		return ref.String()
+		return destImage
 	}
 
-	// Not airgap and no local registry.  Rewrite images that are private only.
+	// Not airgap and no local registry. Rewrite images that are private only.
 
 	if ctx.app == nil || !ctx.app.Spec.ProxyPublicImages {
 		isPrivate, err := image.IsPrivateImage(imageRef, ctx.DockerHubRegistry)
@@ -318,7 +320,7 @@ func (ctx ConfigCtx) localImageName(imageRef string) string {
 	}
 
 	proxyInfo := registry.ProxyEndpointFromLicense(ctx.license)
-	registryOptions := registry.RegistryOptions{
+	registryOptions := registrytypes.RegistryOptions{
 		Endpoint:      proxyInfo.Registry,
 		ProxyEndpoint: proxyInfo.Proxy,
 	}

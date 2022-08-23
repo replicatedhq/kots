@@ -4,5 +4,7 @@ bases:
 commonAnnotations:
   kots.io/app-slug: my-app
 kind: Kustomization
+resources:
+- secret.yaml
 transformers:
 - backup-label-transformer.yaml

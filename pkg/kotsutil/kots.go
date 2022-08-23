@@ -16,6 +16,7 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	"github.com/replicatedhq/kots/pkg/archives"
 	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/crypto"
@@ -985,4 +986,65 @@ func RemoveAppVersionLabelFromInstallationParams(configMapName string) error {
 	}
 
 	return nil
+}
+
+func FindAirgapMetaInDir(root string) (*kotsv1beta1.Airgap, error) {
+	files, err := ioutil.ReadDir(root)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read airgap directory content")
+	}
+
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+
+		contents, err := ioutil.ReadFile(filepath.Join(root, file.Name()))
+		if err != nil {
+			// TODO: log?
+			continue
+		}
+
+		airgap, err := LoadAirgapFromBytes(contents)
+		if err != nil {
+			// TODO: log?
+			continue
+		}
+
+		return airgap, nil
+	}
+
+	return nil, errors.Errorf("airgap meta not found in %s", root)
+}
+
+func FindAirgapMetaInBundle(airgapBundle string) (*kotsv1beta1.Airgap, error) {
+	content, err := archives.GetFileFromAirgap("airgap.yaml", airgapBundle)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to extract airgap.yaml file")
+	}
+	return LoadAirgapFromBytes(content)
+}
+
+func LoadAirgapFromBytes(data []byte) (*kotsv1beta1.Airgap, error) {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, gvk, err := decode([]byte(data), nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode airgap data")
+	}
+
+	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "Airgap" {
+		return nil, errors.Errorf("unexpected GVK: %s", gvk.String())
+	}
+
+	return obj.(*kotsv1beta1.Airgap), nil
+}
+
+func GetKOTSBinPath() string {
+	if util.PodNamespace != "" {
+		// we're inside the kotsadm pod, the kots binary exists at /kots
+		return "/kots"
+	} else {
+		// we're not inside the kotsadm pod, return the command used to run kots
+		return os.Args[0]
+	}
 }

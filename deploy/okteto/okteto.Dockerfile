@@ -157,7 +157,9 @@ COPY . .
 
 RUN --mount=target=$GOMODCACHE,id=kots-gomodcache,type=cache \
     --mount=target=$GOCACHE,id=kots-gocache,type=cache \
-    make build
+    make build kots && \
+    mv ./bin/kotsadm /kotsadm && \
+    mv ./bin/kots /kots
 
 RUN --mount=target=/tmp/.cache/gocache,id=kots-gocache,type=cache \
     --mount=target=/tmp/.cache/gomodcache,id=kots-gomodcache,type=cache \
@@ -166,4 +168,4 @@ RUN --mount=target=/tmp/.cache/gocache,id=kots-gocache,type=cache \
     && mkdir -p $GOMODCACHE \
     && cp -r /tmp/.cache/gomodcache/* $GOMODCACHE
 
-ENTRYPOINT [ "./bin/kotsadm", "api"]
+ENTRYPOINT [ "/kotsadm", "api"]

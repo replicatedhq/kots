@@ -1,4 +1,4 @@
-package registry
+package types
 
 type RegistryOptions struct {
 	Endpoint      string

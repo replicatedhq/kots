@@ -2,12 +2,14 @@ package base
 
 import (
 	dockerref "github.com/containers/image/v5/docker/reference"
-	"github.com/docker/distribution/reference"
+	"github.com/distribution/distribution/v3/reference"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
+	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/image"
 	kotsimage "github.com/replicatedhq/kots/pkg/image"
+	imagetypes "github.com/replicatedhq/kots/pkg/image/types"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
 	kustomizeimage "sigs.k8s.io/kustomize/api/types"
 )
@@ -15,8 +17,8 @@ import (
 type FindPrivateImagesOptions struct {
 	BaseDir            string
 	AppSlug            string
-	ReplicatedRegistry registry.RegistryOptions
-	DockerHubRegistry  registry.RegistryOptions
+	ReplicatedRegistry registrytypes.RegistryOptions
+	DockerHubRegistry  registrytypes.RegistryOptions
 	Installation       *kotsv1beta1.Installation
 	AllImagesPrivate   bool
 	HelmChartPath      string
@@ -55,10 +57,10 @@ func FindPrivateImages(options FindPrivateImagesOptions) (*FindPrivateImagesResu
 			NewName: registry.MakeProxiedImageURL(options.ReplicatedRegistry.ProxyEndpoint, options.AppSlug, upstreamImage),
 		}
 
-		if tagged, ok := dockerRef.(reference.Tagged); ok {
+		if can, ok := dockerRef.(reference.Canonical); ok {
+			image.Digest = can.Digest().String()
+		} else if tagged, ok := dockerRef.(reference.Tagged); ok {
 			image.NewTag = tagged.Tag()
-		} else if can, ok := dockerRef.(reference.Canonical); ok {
-			image.NewTag = can.Digest().String()
 		} else {
 			image.NewTag = "latest"
 		}
@@ -77,17 +79,17 @@ func FindPrivateImages(options FindPrivateImagesOptions) (*FindPrivateImagesResu
 	}, nil
 }
 
-func makeImageInfoMap(images []kotsv1beta1.InstallationImage) map[string]image.ImageInfo {
-	result := make(map[string]image.ImageInfo)
+func makeImageInfoMap(images []kotsv1beta1.InstallationImage) map[string]imagetypes.ImageInfo {
+	result := make(map[string]imagetypes.ImageInfo)
 	for _, i := range images {
-		result[i.Image] = image.ImageInfo{
+		result[i.Image] = imagetypes.ImageInfo{
 			IsPrivate: i.IsPrivate,
 		}
 	}
 	return result
 }
 
-func makeInstallationImages(images map[string]image.ImageInfo) []kotsv1beta1.InstallationImage {
+func makeInstallationImages(images map[string]imagetypes.ImageInfo) []kotsv1beta1.InstallationImage {
 	result := make([]kotsv1beta1.InstallationImage, 0)
 	for image, info := range images {
 		result = append(result, kotsv1beta1.InstallationImage{
