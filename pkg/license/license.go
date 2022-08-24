@@ -71,7 +71,7 @@ func GetLatestLicenseForHelm(licenseID string) (*LicenseData, error) {
 	url := fmt.Sprintf("%s/license", util.GetReplicatedAPIEndpoint())
 	licenseData, err := getLicenseFromAPI(url, licenseID)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get license from api")
+		return nil, errors.Wrap(err, "failed to get helm license from api")
 	}
 
 	return licenseData, nil
