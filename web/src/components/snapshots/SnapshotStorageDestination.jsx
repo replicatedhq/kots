@@ -984,7 +984,7 @@ class SnapshotStorageDestination extends Component {
                   className="Input"
                   placeholder="/path/to/destination"
                   value={this.state.s3CompatiblePath}
-                  nChange={(e) => this.handleFormChange("s3CompatiblePath", e)}
+                  onChange={(e) => this.handleFormChange("s3CompatiblePath", e)}
                 />
               </div>
             </div>
