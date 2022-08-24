@@ -86,39 +86,16 @@
   }
 
   .flag {
-    width: 139px;
     height: 24px;
     position: relative;
     background: #f7b500;
     margin-top: 3px;
-    right: 6px;
-  }
-  .flag:after {
-    content: "";
-    position: absolute;
-    left: 126px;
-    top: 0;
-    width: 0;
-    height: 0;
-    border-right: 13px solid #fff;
-    border-top: 11px solid transparent;
-    border-bottom: 15px solid transparent;
-  }
-  .flag:before {
-    content: "";
-    position: absolute;
-    right: 133px;
-    top: 0;
-    width: 0;
-    height: 0;
-    border-left: 18px solid #fff;
-    border-top: 21px solid transparent;
-    border-bottom: 2px solid transparent;
-    border-radius: 50%;
+    border-radius: 8px;
+    margin-left: 10px;
   }
 
   .flagText {
-    padding: 5px 20px 7px 13px;
+    padding: 5px 15px;
     color: #ffffff;
     font-weight: 500;
     font-size: 12px;
