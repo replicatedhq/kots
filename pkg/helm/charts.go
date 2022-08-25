@@ -1,14 +1,12 @@
 package helm
 
 import (
-	"bufio"
 	"bytes"
 	"compress/gzip"
 	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"sort"
 	"strconv"
@@ -122,41 +120,82 @@ func ListChartVersions(releaseName string, namespace string) ([]InstalledRelease
 
 	releases := InstalledReleases{}
 	for _, secret := range secrets.Items {
-		revision, err := strconv.Atoi(secret.Labels["version"])
+		release, err := getChartVersionFromSecretData(&secret)
 		if err != nil {
-			logger.Warnf("failed to parse chart %s revision number %v: %v", releaseName, secret.Labels["version"], err)
+			logger.Warnf("failed to create release from secret chart %s revision number %v: %v", releaseName, secret.Labels["version"], err)
 			continue
 		}
 
-		helmRelease, err := HelmReleaseFromSecretData(secret.Data["release"])
-		if err != nil {
-			logger.Warnf("failed to parse chart %s release info: %v", releaseName, err)
-			continue
-		}
-
-		release := InstalledRelease{
-			ReleaseName: releaseName,
-			Revision:    revision,
-			Status:      helmrelease.Status(secret.Labels["status"]),
-		}
-
-		if helmRelease.Chart != nil && helmRelease.Chart.Metadata != nil {
-			release.Version = helmRelease.Chart.Metadata.Version
-		}
-
-		sv, err := semver.ParseTolerant(release.Version)
-		if err != nil {
-			logger.Warnf("failed to parse chart %s version %s: %v", releaseName, release.Version, err)
-			continue
-		}
-		release.Semver = &sv
-
-		releases = append(releases, release)
+		releases = append(releases, *release)
 	}
 
 	sort.Sort(sort.Reverse(releases))
 
 	return releases, nil
+}
+
+func GetChartVersion(releaseName string, revision int64, namespace string) (*InstalledRelease, error) {
+	clientSet, err := k8sutil.GetClientset()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get clientset")
+	}
+
+	selectorLabels := map[string]string{
+		"owner":   "helm",
+		"name":    releaseName,
+		"version": fmt.Sprintf("%d", revision),
+	}
+	listOpts := metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(selectorLabels).String(),
+	}
+
+	secrets, err := clientSet.CoreV1().Secrets(namespace).List(context.TODO(), listOpts)
+	if err != nil {
+		if kuberneteserrors.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, errors.Wrap(err, "failed to list secrets")
+	}
+
+	if len(secrets.Items) > 1 {
+		return nil, errors.Errorf("found %d secrets but expected 1", len(secrets.Items))
+	}
+
+	release, err := getChartVersionFromSecretData(&secrets.Items[0])
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create release from secret")
+	}
+
+	return release, nil
+}
+func getChartVersionFromSecretData(secret *corev1.Secret) (*InstalledRelease, error) {
+	revision, err := strconv.Atoi(secret.Labels["version"])
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse release version")
+	}
+
+	helmRelease, err := HelmReleaseFromSecretData(secret.Data["release"])
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse release data")
+	}
+
+	release := InstalledRelease{
+		ReleaseName: secret.Labels["releaseName"],
+		Revision:    revision,
+		Status:      helmrelease.Status(secret.Labels["status"]),
+	}
+
+	if helmRelease.Chart != nil && helmRelease.Chart.Metadata != nil {
+		release.Version = helmRelease.Chart.Metadata.Version
+	}
+
+	sv, err := semver.ParseTolerant(release.Version)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse release version")
+	}
+	release.Semver = &sv
+
+	return &release, nil
 }
 
 func HelmReleaseFromSecretData(data []byte) (*helmrelease.Release, error) {
@@ -179,31 +218,6 @@ func HelmReleaseFromSecretData(data []byte) (*helmrelease.Release, error) {
 	}
 
 	return release, nil
-}
-
-func HelmReleaseToSecretData(release *helmrelease.Release) ([]byte, error) {
-	jsonData, err := json.Marshal(release)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to marshal release data")
-	}
-
-	var data bytes.Buffer
-	dataWriter := bufio.NewWriter(&data)
-
-	gzwriter := gzip.NewWriter(dataWriter)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create gzip reader")
-	}
-	defer gzwriter.Close()
-
-	base64Writer := base64.NewEncoder(base64.StdEncoding, gzwriter)
-
-	_, err = io.Copy(base64Writer, bytes.NewReader(jsonData))
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to copy data")
-	}
-
-	return data.Bytes(), nil
 }
 
 func GetChartConfigSecret(helmApp *apptypes.HelmApp) (*corev1.Secret, error) {
@@ -353,7 +367,7 @@ func GetKotsKinds(helmApp *apptypes.HelmApp) (kotsutil.KotsKinds, error) {
 	return kotsKinds, nil
 }
 
-func GetKotsKindsForRevision(releaseName string, revision int64) (kotsutil.KotsKinds, error) {
+func GetKotsKindsForRevision(releaseName string, revision int64, namespace string) (kotsutil.KotsKinds, error) {
 	kotsKinds := kotsutil.EmptyKotsKinds()
 
 	clientSet, err := k8sutil.GetClientset()
@@ -370,7 +384,7 @@ func GetKotsKindsForRevision(releaseName string, revision int64) (kotsutil.KotsK
 		LabelSelector: labels.SelectorFromSet(selectorLabels).String(),
 	}
 
-	secrets, err := clientSet.CoreV1().Secrets(util.PodNamespace).List(context.TODO(), listOpts)
+	secrets, err := clientSet.CoreV1().Secrets(namespace).List(context.TODO(), listOpts)
 	if err != nil {
 		return kotsKinds, errors.Wrap(err, "failed to list secrets")
 	}
