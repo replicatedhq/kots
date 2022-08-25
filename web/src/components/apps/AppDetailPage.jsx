@@ -56,8 +56,6 @@ class AppDetailPage extends Component {
       this.props;
     const { app, loadingApp } = this.state;
 
-    console.log("appdetailpage componentdidupdate", history.location.pathname);
-
     // Used for a fresh reload
     if (history.location.pathname === "/apps") {
       this.checkForFirstApp();
@@ -214,15 +212,10 @@ class AppDetailPage extends Component {
    */
   checkForFirstApp = async () => {
     const { history, rootDidInitialAppFetch, appsList } = this.props;
-    console.log(
-      "checkForFirstApp rootDidInitialAppFetch",
-      rootDidInitialAppFetch
-    );
     if (!rootDidInitialAppFetch) {
       return;
     }
     this.state.checkForFirstAppJob?.stop?.();
-    console.log("checkForFirstApp appsList", appsList);
     const firstApp = appsList?.find((app) => app.name);
 
     if (firstApp) {
@@ -235,11 +228,11 @@ class AppDetailPage extends Component {
 
   componentDidMount() {
     const { history } = this.props;
+    console.log("appdetail page mounted");
 
-    console.log("app detail page did mount");
-    this.state.checkForFirstAppJob.start(this.checkForFirstApp, 2000);
     if (history.location.pathname === "/apps") {
-      this.checkForFirstApp();
+      this.state.checkForFirstAppJob.start(this.checkForFirstApp, 2000);
+      // this.checkForFirstApp();
       return;
     }
     this.getApp();
@@ -312,7 +305,6 @@ class AppDetailPage extends Component {
   render() {
     const { match, appsList, rootDidInitialAppFetch, appName } = this.props;
 
-    console.log("render rootDidInitialAppFetch", rootDidInitialAppFetch);
 
     const {
       app,
