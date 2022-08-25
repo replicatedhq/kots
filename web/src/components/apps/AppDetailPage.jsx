@@ -56,7 +56,7 @@ class AppDetailPage extends Component {
       this.props;
     const { app, loadingApp } = this.state;
 
-    console.log("appdetailpage componentdidupdate", history.location.pathname)
+    console.log("appdetailpage componentdidupdate", history.location.pathname);
 
     // Used for a fresh reload
     if (history.location.pathname === "/apps") {
@@ -214,12 +214,15 @@ class AppDetailPage extends Component {
    */
   checkForFirstApp = async () => {
     const { history, rootDidInitialAppFetch, appsList } = this.props;
-    console.log("checkForFirstApp rootDidInitialAppFetch", rootDidInitialAppFetch)
+    console.log(
+      "checkForFirstApp rootDidInitialAppFetch",
+      rootDidInitialAppFetch
+    );
     if (!rootDidInitialAppFetch) {
       return;
     }
     this.state.checkForFirstAppJob?.stop?.();
-    console.log("checkForFirstApp appsList", appsList)
+    console.log("checkForFirstApp appsList", appsList);
     const firstApp = appsList?.find((app) => app.name);
 
     if (firstApp) {

@@ -365,7 +365,10 @@ class Root extends PureComponent {
       isHelmManaged,
     } = this.state;
 
-    console.log("rootDidInitialWatchFetch", this.state.rootDidInitialWatchFetch);
+    console.log(
+      "rootDidInitialWatchFetch",
+      this.state.rootDidInitialWatchFetch
+    );
 
     return (
       <QueryClientProvider client={queryClient}>

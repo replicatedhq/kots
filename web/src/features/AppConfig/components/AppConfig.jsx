@@ -688,12 +688,13 @@ class AppConfig extends Component {
                           upgradeTitle="Upgrade release"
                         />
                         {url && name && ref && (
-                        <a
-                          href={url}
-                          download={name}
-                          className="hidden"
-                          ref={ref}
-                        />)}
+                          <a
+                            href={url}
+                            download={name}
+                            className="hidden"
+                            ref={ref}
+                          />
+                        )}
                       </>
                     )}
                   </>
