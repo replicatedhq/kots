@@ -219,7 +219,7 @@ class AppDetailPage extends Component {
       return;
     }
     this.state.checkForFirstAppJob?.stop?.();
-    console.log('checkForFirstApp appsList', appsList)
+    console.log("checkForFirstApp appsList", appsList)
     const firstApp = appsList?.find((app) => app.name);
 
     if (firstApp) {
@@ -233,7 +233,7 @@ class AppDetailPage extends Component {
   componentDidMount() {
     const { history } = this.props;
 
-    console.log('app detail page did mount');
+    console.log("app detail page did mount");
     this.state.checkForFirstAppJob.start(this.checkForFirstApp, 2000);
     if (history.location.pathname === "/apps") {
       this.checkForFirstApp();
