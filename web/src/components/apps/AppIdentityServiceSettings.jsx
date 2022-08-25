@@ -10,7 +10,7 @@ class AppIdentityServiceSettings extends Component {
     const { app } = this.props;
 
     return (
-      <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
+      <div className="AppDetailPage--wrapper flex-column flex1 u-overflow--auto">
         <Helmet>
           <title>{`${app.name} Airgap settings`}</title>
         </Helmet>

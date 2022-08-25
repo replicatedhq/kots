@@ -20,7 +20,7 @@ class SnapshotsWrapper extends Component {
     const snapshotsApps = appsList.filter((app) => app.allowSnapshots);
 
     return (
-      <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
+      <div className="AppDetailPage--wrapper flex-column flex1 u-overflow--auto">
         <Helmet>
           <title> Snapshots </title>
         </Helmet>

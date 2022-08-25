@@ -331,7 +331,7 @@ class AppDetailPage extends Component {
     }
 
     return (
-      <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
+      <div className="AppDetailPage--wrapper flex-column flex1 u-overflow--auto">
         <Helmet>
           <title>{`${
             appName ? `${appName} Admin Console` : "Admin Console"
