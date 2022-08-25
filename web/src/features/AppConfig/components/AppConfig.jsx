@@ -576,9 +576,6 @@ class AppConfig extends Component {
                   clearError: clearDownloadError,
                   error: downloadError,
                   isDownloading,
-                  name,
-                  ref,
-                  url,
                 } = useDownloadValues({
                   appSlug: this.getSlug(),
                   fileName: "values.yaml",
@@ -687,14 +684,6 @@ class AppConfig extends Component {
                           title={`Upgrade ${this.props?.app?.slug}`}
                           upgradeTitle="Upgrade release"
                         />
-                        {url && name && ref && (
-                          <a
-                            href={url}
-                            download={name}
-                            className="hidden"
-                            ref={ref}
-                          />
-                        )}
                       </>
                     )}
                   </>
