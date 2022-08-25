@@ -449,7 +449,6 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 		history.NumOfRemainingVersions = 0
 		chartUpdates := helm.GetCachedUpdates(release.ChartPath)
 
-		now := time.Now()
 		installedReleases, err := helm.ListChartVersions(appSlug, release.Namespace)
 		if err != nil {
 			err = errors.Wrapf(err, "failed to get installed releases of %s", appSlug)
@@ -460,18 +459,7 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 
 		installedVersions := []*downstreamtypes.DownstreamVersion{}
 		for _, installedRelease := range installedReleases {
-			installedVersions = append(installedVersions, &downstreamtypes.DownstreamVersion{
-				VersionLabel:       installedRelease.Version,
-				Semver:             installedRelease.Semver,
-				UpdateCursor:       installedRelease.Version,
-				CreatedOn:          &now,                // TODO: implement
-				UpstreamReleasedAt: &now,                // TODO: implement
-				IsDeployable:       false,               // TODO: implement
-				NonDeployableCause: "already installed", // TODO: implement
-				ParentSequence:     int64(installedRelease.Revision),
-				Sequence:           int64(installedRelease.Revision),
-				Status:             storetypes.DownstreamVersionStatus(installedRelease.Status.String()),
-			})
+			installedVersions = append(installedVersions, helmReleaseToDownsreamVersion(&installedRelease))
 		}
 
 		// Parity with Helm history output, which lists revisions sorted by revision number in descending order.
@@ -819,5 +807,21 @@ func helmUpdateToDownsreamVersion(update helm.ChartUpdate, sequence int64) *down
 		NonDeployableCause: "not implemented", // TODO: implement
 		Source:             "Upstream Update",
 		Status:             storetypes.VersionPending,
+	}
+}
+
+func helmReleaseToDownsreamVersion(installedRelease *helm.InstalledRelease) *downstreamtypes.DownstreamVersion {
+	now := time.Now()
+	return &downstreamtypes.DownstreamVersion{
+		VersionLabel:       installedRelease.Version,
+		Semver:             installedRelease.Semver,
+		UpdateCursor:       installedRelease.Version,
+		CreatedOn:          &now,                // TODO: implement
+		UpstreamReleasedAt: &now,                // TODO: implement
+		IsDeployable:       false,               // TODO: implement
+		NonDeployableCause: "already installed", // TODO: implement
+		ParentSequence:     int64(installedRelease.Revision),
+		Sequence:           int64(installedRelease.Revision),
+		Status:             storetypes.DownstreamVersionStatus(installedRelease.Status.String()),
 	}
 }

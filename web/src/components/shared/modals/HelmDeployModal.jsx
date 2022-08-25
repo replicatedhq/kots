@@ -12,15 +12,12 @@ function makeDeployCommand({
   if (revision) {
     return `helm rollback ${appSlug} ${revision}`;
   }
+
   if (showDownloadValues) {
-    if (!version) {
-      return `helm upgrade ${appSlug} ${chartPath} -f <path-to-values-yaml>`;
-    } else {
-      return `helm upgrade ${appSlug} ${chartPath} --version ${version} -f <path-to-values-yaml>`;
-    }
+    return `helm upgrade ${appSlug} ${chartPath} --version ${version} -f <path-to-values-yaml>`;
   }
 
-  return `helm upgrade ${appSlug} ${chartPath} --reuse-values`;
+  return `helm upgrade ${appSlug} ${chartPath} --reuse-values --version ${version}`;
 }
 
 function makeLoginCommand({
