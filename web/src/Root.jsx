@@ -68,6 +68,7 @@ class Root extends PureComponent {
   state = {
     appsList: [],
     appLogo: null,
+    appBrandingCss: "",
     selectedAppName: null,
     appNameSpace: null,
     appSlugFromMetadata: null,
@@ -241,6 +242,7 @@ class Root extends PureComponent {
 
         this.setState({
           appLogo: data.iconUri,
+          appBrandingCss: data.brandingCss,
           selectedAppName: data.name,
           appSlugFromMetadata: parseUpstreamUri(data.upstreamUri),
           appNameSpace: data.namespace,
@@ -377,6 +379,10 @@ class Root extends PureComponent {
           {this.state.appLogo && (
             <link rel="icon" type="image/png" href={this.state.appLogo} />
           )}
+          {this.state.appBrandingCss && (
+            <style rel="stylesheet" type="text/css" id="kots-branding-css">{ this.state.appBrandingCss }</style>
+          )}
+
         </Helmet>
         <ThemeContext.Provider
           value={{
