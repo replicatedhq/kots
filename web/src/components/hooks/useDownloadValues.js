@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Utilities } from "../../utilities/utilities";
 
 const getValues = async ({
@@ -33,11 +33,27 @@ const useDownloadValues = ({
   appSlug,
   fileName,
 } = {}) => {
-  const ref = useRef(null);
+  // const ref = useRef(null);
+
   const [isDownloading, setIsDownloading] = useState(false);
   const [error, setError] = useState(null);
   const [url, setUrl] = useState(null);
   const [name, setName] = useState(null);
+
+  useEffect(() => {
+    if (url) {
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", name);
+
+      document.body.appendChild(link);
+
+      link.click();
+      link.parentNode.removeChild(link);
+      _revokeObjectURL(url);
+      setUrl(null);
+    }
+  }, [url]);
 
   const download = async () => {
     try {
@@ -55,10 +71,7 @@ const useDownloadValues = ({
       const newUrl = _createObjectURL(new Blob([data]));
       setUrl(newUrl);
       setName(fileName);
-      ref.current?.click();
-
       setIsDownloading(false);
-      _revokeObjectURL(newUrl);
     } catch (downloadError) {
       setIsDownloading(false);
       setError(downloadError);
@@ -74,9 +87,6 @@ const useDownloadValues = ({
     download,
     error,
     isDownloading,
-    name,
-    ref,
-    url,
   };
 };
 
