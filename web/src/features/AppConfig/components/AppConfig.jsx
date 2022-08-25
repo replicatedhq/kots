@@ -689,9 +689,10 @@ class AppConfig extends Component {
                         />
                         <a
                           href={url}
-                          download={name}
+                          download={name || "www.google.com"}
                           className="hidden"
                           ref={ref}
+                          target="__blank"
                         />
                       </>
                     )}

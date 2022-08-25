@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Utilities } from "../../utilities/utilities";
 
 const getValues = async ({
@@ -39,6 +39,14 @@ const useDownloadValues = ({
   const [url, setUrl] = useState(null);
   const [name, setName] = useState(null);
 
+  useEffect(() => {
+    if (url) {
+      console.log("blah")
+      console.log(ref);
+      // ref.current?.click();
+    }
+  }, [url, ref]);
+
   const download = async () => {
     try {
       setIsDownloading(true);
@@ -55,7 +63,6 @@ const useDownloadValues = ({
       const newUrl = _createObjectURL(new Blob([data]));
       setUrl(newUrl);
       setName(fileName);
-      ref.current?.click();
 
       setIsDownloading(false);
       _revokeObjectURL(newUrl);
