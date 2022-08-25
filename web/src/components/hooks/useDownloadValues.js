@@ -43,7 +43,7 @@ const useDownloadValues = ({
     if (url) {
       console.log("blah")
       console.log(ref);
-      // ref.current?.click();
+      ref.current?.click();
     }
   }, [url, ref]);
 
