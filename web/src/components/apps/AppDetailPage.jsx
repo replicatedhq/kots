@@ -27,6 +27,7 @@ import ErrorModal from "../modals/ErrorModal";
 
 import "../../scss/components/watches/WatchDetailPage.scss";
 
+// comment
 class AppDetailPage extends Component {
   constructor(props) {
     super(props);
