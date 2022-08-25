@@ -687,12 +687,13 @@ class AppConfig extends Component {
                           title={`Upgrade ${this.props?.app?.slug}`}
                           upgradeTitle="Upgrade release"
                         />
+                        {url && name && ref && (
                         <a
                           href={url}
                           download={name}
                           className="hidden"
                           ref={ref}
-                        />
+                        />)}
                       </>
                     )}
                   </>
