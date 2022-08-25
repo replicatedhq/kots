@@ -305,7 +305,6 @@ class AppDetailPage extends Component {
   render() {
     const { match, appsList, rootDidInitialAppFetch, appName } = this.props;
 
-
     const {
       app,
       displayRequiredKotsUpdateModal,
