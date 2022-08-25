@@ -5,19 +5,20 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/pkg/docker/registry"
+	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/image"
+	imagetypes "github.com/replicatedhq/kots/pkg/image/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	kustomizeimage "sigs.k8s.io/kustomize/api/types"
 )
 
-type WriteUpstreamImageOptions struct {
+type RewriteImageOptions struct {
 	BaseDir           string
 	AppSlug           string
-	SourceRegistry    registry.RegistryOptions
-	DestRegistry      registry.RegistryOptions
-	DockerHubRegistry registry.RegistryOptions
+	SourceRegistry    registrytypes.RegistryOptions
+	DestRegistry      registrytypes.RegistryOptions
+	DockerHubRegistry registrytypes.RegistryOptions
 	CopyImages        bool
 	IsAirgap          bool
 	Log               *logger.CLILogger
@@ -25,30 +26,30 @@ type WriteUpstreamImageOptions struct {
 	KotsKinds         *kotsutil.KotsKinds
 }
 
-type WriteUpstreamImageResult struct {
+type RewriteImagesResult struct {
 	Images        []kustomizeimage.Image          // images to be rewritten
 	CheckedImages []kotsv1beta1.InstallationImage // all images found in the installation
 }
 
-func ProcessUpstreamImages(options WriteUpstreamImageOptions) (*WriteUpstreamImageResult, error) {
-	rewriteAll := options.IsAirgap
+func RewriteImages(options RewriteImageOptions) (*RewriteImagesResult, error) {
+	allImagesPrivate := options.IsAirgap
 	additionalImages := make([]string, 0)
-	checkedImages := make(map[string]image.ImageInfo)
+	checkedImages := make(map[string]imagetypes.ImageInfo)
 
 	if options.KotsKinds != nil {
 		additionalImages = kotsutil.GetImagesFromKotsKinds(options.KotsKinds)
 		checkedImages = makeImageInfoMap(options.KotsKinds.Installation.Spec.KnownImages)
 		if options.KotsKinds.KotsApplication.Spec.ProxyPublicImages {
-			rewriteAll = true
+			allImagesPrivate = true
 		}
 	}
 
-	newImages, err := image.ProcessImages(options.SourceRegistry, options.DestRegistry, options.AppSlug, options.Log, options.ReportWriter, options.BaseDir, additionalImages, options.CopyImages, rewriteAll, checkedImages, options.DockerHubRegistry)
+	newImages, err := image.RewriteImages(options.SourceRegistry, options.DestRegistry, options.AppSlug, options.Log, options.ReportWriter, options.BaseDir, additionalImages, options.CopyImages, allImagesPrivate, checkedImages, options.DockerHubRegistry)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to save images")
 	}
 
-	return &WriteUpstreamImageResult{
+	return &RewriteImagesResult{
 		Images:        newImages,
 		CheckedImages: makeInstallationImages(checkedImages),
 	}, nil

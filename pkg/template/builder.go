@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
+	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 )
 
@@ -39,12 +40,12 @@ func NewBuilder(opts BuilderOptions) (Builder, map[string]ItemValue, error) {
 	b := Builder{}
 
 	// do not fail on being unable to get dockerhub credentials, since they're just used to increase the rate limit
-	dockerHubRegistry := registry.RegistryOptions{}
+	dockerHubRegistry := registrytypes.RegistryOptions{}
 	if opts.Namespace != "" {
 		clientset, err := k8sutil.GetClientset()
 		if err == nil {
 			dockerHubRegistryCreds, _ := registry.GetDockerHubCredentials(clientset, opts.Namespace)
-			dockerHubRegistry = registry.RegistryOptions{
+			dockerHubRegistry = registrytypes.RegistryOptions{
 				Username: dockerHubRegistryCreds.Username,
 				Password: dockerHubRegistryCreds.Password,
 			}

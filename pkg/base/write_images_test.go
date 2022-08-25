@@ -7,7 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/pkg/docker/registry"
+	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
@@ -17,11 +17,11 @@ import (
 	kustomizeimage "sigs.k8s.io/kustomize/api/types"
 )
 
-func Test_ProcessUpstreamImages(t *testing.T) {
+func Test_RewriteImages(t *testing.T) {
 	testBaseDir := "./testdata/base-specs"
 	appSlug := "test-app-slug"
 
-	replicatedRegistry := registry.RegistryOptions{
+	replicatedRegistry := registrytypes.RegistryOptions{
 		Endpoint:      "registry.replicated.com",
 		ProxyEndpoint: "proxy.replicated.com",
 		Username:      "test-license-id",
@@ -30,14 +30,14 @@ func Test_ProcessUpstreamImages(t *testing.T) {
 
 	tests := []struct {
 		name              string
-		processOptions    WriteUpstreamImageOptions
-		wantProcessResult WriteUpstreamImageResult
+		processOptions    RewriteImageOptions
+		wantProcessResult RewriteImagesResult
 		findOptions       FindPrivateImagesOptions
 		wantFindResult    FindPrivateImagesResult
 	}{
 		{
 			name: "all unique",
-			processOptions: WriteUpstreamImageOptions{
+			processOptions: RewriteImageOptions{
 				BaseDir:        testBaseDir,
 				SourceRegistry: replicatedRegistry,
 				KotsKinds: &kotsutil.KotsKinds{
@@ -84,14 +84,14 @@ func Test_ProcessUpstreamImages(t *testing.T) {
 				},
 				CopyImages: false,
 				AppSlug:    appSlug,
-				DestRegistry: registry.RegistryOptions{
+				DestRegistry: registrytypes.RegistryOptions{
 					Endpoint:  "ttl.sh",
 					Namespace: "testing-ns",
 					Username:  "testing-user-name",
 					Password:  "testing-password",
 				},
 			},
-			wantProcessResult: WriteUpstreamImageResult{
+			wantProcessResult: RewriteImagesResult{
 				Images: []kustomizeimage.Image{
 					{
 						Name:    "busybox",
@@ -134,6 +134,11 @@ func Test_ProcessUpstreamImages(t *testing.T) {
 						NewTag:  "alpine-3.6",
 					},
 					{
+						Name:    "quay.io/replicatedcom/someimage",
+						NewName: "ttl.sh/testing-ns/someimage",
+						Digest:  "sha256:25dedae0aceb6b4fe5837a0acbacc6580453717f126a095aa05a3c6fcea14dd4",
+					},
+					{
 						Name:    "nginx",
 						NewName: "ttl.sh/testing-ns/nginx",
 						NewTag:  "1",
@@ -153,10 +158,34 @@ func Test_ProcessUpstreamImages(t *testing.T) {
 						NewName: "ttl.sh/testing-ns/nginx",
 						NewTag:  "1",
 					},
+					{
+						Name:    "redis",
+						NewName: "ttl.sh/testing-ns/redis",
+						Digest:  "sha256:e96c03a6dda7d0f28e2de632048a3d34bb1636d0858b65ef9a554441c70f6633",
+					},
+					{
+						Name:    "docker.io/library/redis",
+						NewName: "ttl.sh/testing-ns/redis",
+						Digest:  "sha256:e96c03a6dda7d0f28e2de632048a3d34bb1636d0858b65ef9a554441c70f6633",
+					},
+					{
+						Name:    "library/redis",
+						NewName: "ttl.sh/testing-ns/redis",
+						Digest:  "sha256:e96c03a6dda7d0f28e2de632048a3d34bb1636d0858b65ef9a554441c70f6633",
+					},
+					{
+						Name:    "docker.io/redis",
+						NewName: "ttl.sh/testing-ns/redis",
+						Digest:  "sha256:e96c03a6dda7d0f28e2de632048a3d34bb1636d0858b65ef9a554441c70f6633",
+					},
 				},
 				CheckedImages: []kotsv1beta1.InstallationImage{
 					{
 						Image:     "busybox",
+						IsPrivate: false,
+					},
+					{
+						Image:     "redis:7@sha256:e96c03a6dda7d0f28e2de632048a3d34bb1636d0858b65ef9a554441c70f6633",
 						IsPrivate: false,
 					},
 					{
@@ -173,6 +202,10 @@ func Test_ProcessUpstreamImages(t *testing.T) {
 					},
 					{
 						Image:     "quay.io/replicatedcom/qa-kots-3:alpine-3.6",
+						IsPrivate: true,
+					},
+					{
+						Image:     "quay.io/replicatedcom/someimage:1@sha256:25dedae0aceb6b4fe5837a0acbacc6580453717f126a095aa05a3c6fcea14dd4",
 						IsPrivate: true,
 					},
 					{
@@ -196,6 +229,11 @@ func Test_ProcessUpstreamImages(t *testing.T) {
 						NewName: "proxy.replicated.com/proxy/test-app-slug/quay.io/replicatedcom/qa-kots-3",
 						NewTag:  "alpine-3.6",
 					},
+					{
+						Name:    "quay.io/replicatedcom/someimage",
+						NewName: "proxy.replicated.com/proxy/test-app-slug/quay.io/replicatedcom/someimage",
+						Digest:  "sha256:25dedae0aceb6b4fe5837a0acbacc6580453717f126a095aa05a3c6fcea14dd4",
+					},
 				},
 				CheckedImages: []kotsv1beta1.InstallationImage{
 					{
@@ -215,6 +253,14 @@ func Test_ProcessUpstreamImages(t *testing.T) {
 						IsPrivate: true,
 					},
 					{
+						Image:     "quay.io/replicatedcom/someimage:1@sha256:25dedae0aceb6b4fe5837a0acbacc6580453717f126a095aa05a3c6fcea14dd4",
+						IsPrivate: true,
+					},
+					{
+						Image:     "redis:7@sha256:e96c03a6dda7d0f28e2de632048a3d34bb1636d0858b65ef9a554441c70f6633",
+						IsPrivate: false,
+					},
+					{
 						Image:     "nginx:1",
 						IsPrivate: false,
 					},
@@ -231,7 +277,7 @@ func Test_ProcessUpstreamImages(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			req := require.New(t)
 
-			gotUpstreamResult, err := ProcessUpstreamImages(test.processOptions)
+			gotUpstreamResult, err := RewriteImages(test.processOptions)
 			req.NoError(err)
 
 			assert.ElementsMatch(t, test.wantProcessResult.Images, gotUpstreamResult.Images)

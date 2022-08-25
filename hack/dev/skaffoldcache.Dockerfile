@@ -13,4 +13,4 @@ COPY pkg ./pkg
 COPY web/webcontent.go ./web/webcontent.go
 COPY kotskinds ./kotskinds
 
-RUN make build
+RUN make build kots

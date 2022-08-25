@@ -6,35 +6,34 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/pkg/docker/registry"
+	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/image"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
-	"github.com/replicatedhq/kots/pkg/upstream/types"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
 
-type ProcessUpstreamImagesOptions struct {
+type ProcessAirgapImagesOptions struct {
 	RootDir             string
-	ImagesDir           string
+	AirgapRoot          string
 	AirgapBundle        string
 	CreateAppDir        bool
 	PushImages          bool
 	UseKnownImages      bool
 	KnownImages         []kustomizetypes.Image
 	Log                 *logger.CLILogger
-	ReplicatedRegistry  registry.RegistryOptions
+	ReplicatedRegistry  registrytypes.RegistryOptions
 	ReportWriter        io.Writer
-	DestinationRegistry registry.RegistryOptions
+	DestinationRegistry registrytypes.RegistryOptions
 }
 
-type ProcessUpstreamImageResult struct {
+type ProcessAirgapImagesResult struct {
 	KustomizeImages []kustomizetypes.Image
 	KnownImages     []kotsv1beta1.InstallationImage
 }
 
-func ProcessUpstreamImages(u *types.Upstream, options ProcessUpstreamImagesOptions) (*ProcessUpstreamImageResult, error) {
+func ProcessAirgapImages(options ProcessAirgapImagesOptions) (*ProcessAirgapImagesResult, error) {
 	pushOpts := kotsadmtypes.PushImagesOptions{
 		Registry:       options.DestinationRegistry,
 		Log:            options.Log,
@@ -65,7 +64,7 @@ func ProcessUpstreamImages(u *types.Upstream, options ProcessUpstreamImagesOptio
 				}
 				foundImages = images
 			} else {
-				images, err := kotsadm.TagAndPushAppImagesFromPath(options.ImagesDir, pushOpts)
+				images, err := kotsadm.TagAndPushAppImagesFromPath(options.AirgapRoot, pushOpts)
 				if err != nil {
 					return nil, errors.Wrap(err, "failed to push images from dir")
 				}
@@ -83,7 +82,7 @@ func ProcessUpstreamImages(u *types.Upstream, options ProcessUpstreamImagesOptio
 		withAltNames = append(withAltNames, altNames...)
 	}
 
-	result := &ProcessUpstreamImageResult{
+	result := &ProcessAirgapImagesResult{
 		KustomizeImages: withAltNames,
 		// This list is slightly different from the list we get from app specs because of alternative names,
 		// but it still works because after rewriting image names with private registry, the lists become the same.

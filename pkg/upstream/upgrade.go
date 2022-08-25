@@ -14,7 +14,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/auth"
-	"github.com/replicatedhq/kots/pkg/docker/registry"
+	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -105,7 +105,7 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 		}
 
 		pushOptions := kotsadmtypes.PushImagesOptions{
-			Registry: registry.RegistryOptions{
+			Registry: registrytypes.RegistryOptions{
 				Endpoint:  registryEndpoint,
 				Namespace: registryNamespace,
 				Username:  registryUsername,
@@ -120,10 +120,9 @@ func Upgrade(appSlug string, options UpgradeOptions) (*UpgradeResponse, error) {
 				return nil, errors.Wrap(err, "failed to get images from bundle")
 			}
 		} else {
-			imagesRootDir := filepath.Join(airgapRootDir, "images")
-			images, err = kotsadm.TagAndPushAppImagesFromPath(imagesRootDir, pushOptions)
+			images, err = kotsadm.TagAndPushAppImagesFromPath(airgapRootDir, pushOptions)
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to list image formats")
+				return nil, errors.Wrap(err, "failed to tag and push app images from path")
 			}
 		}
 	}

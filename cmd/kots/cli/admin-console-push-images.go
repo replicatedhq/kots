@@ -9,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
+	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -77,7 +78,7 @@ func AdminPushImagesCmd() *cobra.Command {
 
 			options := kotsadmtypes.PushImagesOptions{
 				KotsadmTag: v.GetString("kotsadm-tag"),
-				Registry: registry.RegistryOptions{
+				Registry: registrytypes.RegistryOptions{
 					Endpoint: endpoint,
 					Username: username,
 					Password: password,

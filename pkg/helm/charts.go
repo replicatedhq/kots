@@ -416,7 +416,16 @@ func GetKotsKindsForRevision(releaseName string, revision int64) (kotsutil.KotsK
 		break
 	}
 
+	// If chart was deployed with --values, they will be in Config.  Otherwise, get the default values injected by the registry
 	encodedConfigValues := util.GetValueFromMapPath(helmApp.Release.Config, []string{"replicated", "app", "configValues"})
+	if encodedConfigValues == nil {
+		encodedConfigValues = util.GetValueFromMapPath(helmApp.Release.Chart.Values, []string{"replicated", "app", "configValues"})
+	}
+
+	if encodedConfigValues == nil {
+		return kotsKinds, errors.Errorf("failed to find configValues from release %s", helmApp.Release.Name)
+	}
+
 	configValuesData, err := util.Base64DecodeInterface(encodedConfigValues)
 	if err != nil {
 		return kotsKinds, errors.Wrap(err, "failed to base64 decode config values from chart release")

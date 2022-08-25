@@ -109,6 +109,15 @@ func NewHelmManagedMode() Test {
 	}
 }
 
+func NewTagAndDigest() Test {
+	return Test{
+		Name:        "Tag and Digest",
+		Suite:       "tag-and-digest",
+		Namespace:   "tag-and-digest",
+		UpstreamURI: "tag-and-digest/automated",
+	}
+}
+
 func SetupRegressionTest(kubectlCLI *kubectl.CLI) TestimParams {
 	cmd := kubectlCLI.Command(
 		context.Background(),
