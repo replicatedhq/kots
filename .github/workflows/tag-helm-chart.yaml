@@ -2,25 +2,10 @@ name: tag-helm-chart
 
 on:
   release:
-    types: [released,prereleased]
+    types: [released]
 
 jobs:
-  tag-helm-chart-staging:
-      runs-on: ubuntu-20.04
-      if: github.event.action == 'prereleased'
-      steps:
-        - name: Checkout Chart
-          uses: actions/checkout@v3
-          with:
-            repository: replicatedhq/kots-helm
-            token: ${{ secrets.GH_PAT }}
-            ref: main
-        - name: Tag Chart
-          run: |
-            git tag ${GITHUB_REF_NAME}-alpha
-            git push origin ${GITHUB_REF}-alpha
-
-  tag-helm-chart-prod:
+  tag-helm-chart:
       runs-on: ubuntu-20.04
       if: github.event.action == 'released'
       steps:
@@ -32,5 +17,7 @@ jobs:
             ref: main
         - name: Tag Chart
           run: |
+            git tag ${GITHUB_REF_NAME}-alpha
+            git push origin ${GITHUB_REF}-alpha
             git tag ${GITHUB_REF_NAME}
             git push origin ${GITHUB_REF_NAME}
