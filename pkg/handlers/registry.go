@@ -175,7 +175,7 @@ func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		registryPassword = registrySettings.Password
 	}
 
-	err = dockerregistry.CheckAccess(updateAppRegistryRequest.Hostname, updateAppRegistryRequest.Username, registryPassword, updateAppRegistryRequest.Namespace)
+	err = dockerregistry.CheckAccess(updateAppRegistryRequest.Hostname, updateAppRegistryRequest.Username, registryPassword)
 	if err != nil {
 		logger.Infof("Failed to test access to %q with user %q: %v", updateAppRegistryRequest.Hostname, updateAppRegistryRequest.Username, err)
 		JSON(w, 400, NewErrorResponse(err))
@@ -450,7 +450,7 @@ func (h *Handler) ValidateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = dockerregistry.CheckAccess(validateAppRegistryRequest.Hostname, validateAppRegistryRequest.Username, password, validateAppRegistryRequest.Namespace)
+	err = dockerregistry.CheckAccess(validateAppRegistryRequest.Hostname, validateAppRegistryRequest.Username, password)
 	if err != nil {
 		// NOTE: it is possible this is a 500 sometimes
 		logger.Infof("Failed to test access to %q with user %q: %v", validateAppRegistryRequest.Hostname, validateAppRegistryRequest.Username, err)

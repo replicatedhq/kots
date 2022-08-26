@@ -36,7 +36,7 @@ func LoadAuthForRegistry(endpoint string) (string, string, error) {
 	return username, password, nil
 }
 
-func CheckAccess(endpoint, username, password, org string) error {
+func CheckAccess(endpoint, username, password string) error {
 	endpoint = sanitizeEndpoint(endpoint)
 
 	pingURL := fmt.Sprintf("https://%s/v2/", endpoint)
