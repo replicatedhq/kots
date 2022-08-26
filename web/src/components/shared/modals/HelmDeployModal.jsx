@@ -8,19 +8,17 @@ function makeDeployCommand({
   revision = null,
   showDownloadValues,
   version,
+  namespace,
 }) {
   if (revision) {
-    return `helm rollback ${appSlug} ${revision}`;
-  }
-  if (showDownloadValues) {
-    if (!version) {
-      return `helm upgrade ${appSlug} ${chartPath} -f <path-to-values-yaml>`;
-    } else {
-      return `helm upgrade ${appSlug} ${chartPath} --version ${version} -f <path-to-values-yaml>`;
-    }
+    return `helm -n ${namespace} rollback ${appSlug} ${revision}`;
   }
 
-  return `helm upgrade ${appSlug} ${chartPath} --reuse-values`;
+  if (showDownloadValues) {
+    return `helm -n ${namespace} upgrade ${appSlug} ${chartPath} --version ${version} -f <path-to-values-yaml>`;
+  }
+
+  return `helm -n ${namespace} upgrade ${appSlug} ${chartPath} --reuse-values --version ${version}`;
 }
 
 function makeLoginCommand({
@@ -50,6 +48,7 @@ function HelmDeployModal({
   upgradeTitle,
   showDownloadValues = false,
   version = null,
+  namespace = null,
 }) {
   return (
     <Modal
@@ -141,6 +140,7 @@ function HelmDeployModal({
                   revision,
                   showDownloadValues,
                   version,
+                  namespace,
                 })}
               </CodeSnippet>
             </div>

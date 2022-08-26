@@ -175,6 +175,7 @@ class AppConfig extends Component {
         const data = await response.json();
         this.setState({
           configGroups: data.configGroups,
+          downstreamVersion: data.downstreamVersion,
           changed: false,
           configLoading: false,
         });
@@ -468,6 +469,7 @@ class AppConfig extends Component {
   render() {
     const {
       configGroups,
+      downstreamVersion,
       savingConfig,
       changed,
       showNextStepModal,
@@ -683,6 +685,8 @@ class AppConfig extends Component {
                           subtitle="Follow the steps below to upgrade the release with your new values.yaml."
                           title={`Upgrade ${this.props?.app?.slug}`}
                           upgradeTitle="Upgrade release"
+                          version={downstreamVersion?.versionLabel}
+                          namespace={this.props?.app?.namespace}
                         />
                       </>
                     )}

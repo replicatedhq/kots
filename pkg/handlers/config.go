@@ -15,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/kotskinds/multitype"
+	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/config"
 	kotsconfig "github.com/replicatedhq/kots/pkg/config"
@@ -60,9 +61,10 @@ type LiveAppConfigResponse struct {
 }
 
 type CurrentAppConfigResponse struct {
-	Success      bool                      `json:"success"`
-	Error        string                    `json:"error,omitempty"`
-	ConfigGroups []kotsv1beta1.ConfigGroup `json:"configGroups"`
+	Success           bool                               `json:"success"`
+	Error             string                             `json:"error,omitempty"`
+	DownstreamVersion *downstreamtypes.DownstreamVersion `json:"downstreamVersion"`
+	ConfigGroups      []kotsv1beta1.ConfigGroup          `json:"configGroups"`
 }
 
 type DownloadFileFromConfigResponse struct {
@@ -375,6 +377,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 	var license *kotsv1beta1.License
 	var localRegistry template.LocalRegistry
 	var app apptypes.AppType
+	var downstreamVersion *downstreamtypes.DownstreamVersion
 
 	configGroups := []kotsv1beta1.ConfigGroup{}
 
@@ -386,7 +389,21 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		}
 		app = helmApp
 
-		k, err := helm.GetKotsKindsForRevision(helmApp.Release.Name, sequence)
+		installedRelease, err := helm.GetChartVersion(helmApp.Release.Name, sequence, helmApp.Namespace)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to get helm release"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		if installedRelease == nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		downstreamVersion = helmReleaseToDownsreamVersion(installedRelease)
+
+		k, err := helm.GetKotsKindsForRevision(helmApp.Release.Name, sequence, helmApp.Namespace)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to get kots kinds for helm"))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -467,6 +484,8 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 			Password:  registryInfo.Password,
 			ReadOnly:  registryInfo.IsReadOnly,
 		}
+
+		// TODO: set downstreamVersion
 	}
 
 	// get values from saved app version
@@ -498,7 +517,10 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		configGroups = renderedConfig.Spec.Groups
 	}
 
-	JSON(w, http.StatusOK, CurrentAppConfigResponse{Success: true, ConfigGroups: configGroups})
+	currentAppConfigResponse.Success = true
+	currentAppConfigResponse.ConfigGroups = configGroups
+	currentAppConfigResponse.DownstreamVersion = downstreamVersion
+	JSON(w, http.StatusOK, currentAppConfigResponse)
 }
 
 func isVersionConfigEditable(app *apptypes.App, sequence int64) (bool, error) {
