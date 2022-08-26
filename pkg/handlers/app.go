@@ -136,6 +136,7 @@ func responseAppFromHelmApp(helmApp *apptypes.HelmApp) (*types.HelmResponseApp, 
 	return &types.HelmResponseApp{
 		ResponseApp: types.ResponseApp{
 			Name:           helmApp.Labels["name"],
+			Namespace:      helmApp.Namespace,
 			Slug:           helmApp.Labels["name"],
 			CreatedAt:      helmApp.CreationTimestamp,
 			IsConfigurable: helmApp.IsConfigurable,
@@ -379,6 +380,7 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 		ID:                             a.ID,
 		Slug:                           a.Slug,
 		Name:                           a.Name,
+		Namespace:                      util.PodNamespace,
 		IsAirgap:                       a.IsAirgap,
 		CurrentSequence:                latestVersion.ParentSequence,
 		UpstreamURI:                    a.UpstreamURI,

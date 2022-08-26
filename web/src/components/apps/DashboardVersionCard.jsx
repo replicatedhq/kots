@@ -1720,6 +1720,7 @@ class DashboardVersionCard extends React.Component {
                         : "Redeploy release"
                     }
                     version={this.state.showHelmDeployModalWithVersionLabel}
+                    namespace={this.props?.app?.namespace}
                   />
                   <a href={url} download={name} className="hidden" ref={ref} />
                 </>

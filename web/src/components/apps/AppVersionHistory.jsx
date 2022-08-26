@@ -1503,6 +1503,7 @@ class AppVersionHistory extends Component {
                           : "Upgrade release"
                       }
                       version={version.versionLabel}
+                      namespace={this.props?.app?.namespace}
                     />
                     <a
                       href={url}
