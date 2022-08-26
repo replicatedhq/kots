@@ -21,67 +21,84 @@ import {
   FILE_SYSTEM_HOSTPATH_TYPE,
 } from "./SnapshotStorageDestination.data";
 
-class SnapshotStorageDestination extends Component {
-  state = {
-    determiningDestination: true,
-    selectedDestination: {},
-    updatingSettings: false,
-    s3bucket: "",
-    s3Region: "",
-    s3Path: "",
-    useIamAws: false,
-    s3KeyId: "",
-    s3KeySecret: "",
-    azureBucket: "",
-    azurePath: "",
-    azureSubscriptionId: "",
-    azureTenantId: "",
-    azureClientId: "",
-    azureClientSecret: "",
-    azureResourceGroupName: "",
-    azureStorageAccountId: "",
-    selectedAzureCloudName: {
-      value: "AzurePublicCloud",
-      label: "Public",
-    },
-    caCertificate: {
-      name: "",
-      data: [],
-    },
-    showCACertificateField: false,
+interface Destination {
+  value: string;
+  label: string;
+}
+interface State {
+  determiningDestination: boolean;
+  selectedDestination: Destination | object;
+}
 
-    gcsBucket: "",
-    gcsPath: "",
-    gcsServiceAccount: "",
-    gcsJsonFile: "",
-    gcsUseIam: false,
+interface Props {
+  snapshotSettings: object;
+}
 
-    s3CompatibleBucket: "",
-    s3CompatiblePath: "",
-    s3CompatibleKeyId: "",
-    s3CompatibleKeySecret: "",
-    s3CompatibleEndpoint: "",
-    s3CompatibleRegion: "",
-    s3CompatibleFieldErrors: {},
+class SnapshotStorageDestination extends Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
 
-    configuringFileSystemProvider: false,
-    configureFileSystemProviderErrorMsg: "",
-    configureFileSystemProviderNamespace: "",
-    showConfigureFileSystemProviderNextStepsModal: false,
-    showConfigureFileSystemProviderModal: false,
-    showResetFileSystemWarningModal: false,
-    resetFileSystemWarningMessage: "",
+    this.state = {
+      determiningDestination: true,
+      selectedDestination: {},
+      updatingSettings: false,
+      s3bucket: "",
+      s3Region: "",
+      s3Path: "",
+      useIamAws: false,
+      s3KeyId: "",
+      s3KeySecret: "",
+      azureBucket: "",
+      azurePath: "",
+      azureSubscriptionId: "",
+      azureTenantId: "",
+      azureClientId: "",
+      azureClientSecret: "",
+      azureResourceGroupName: "",
+      azureStorageAccountId: "",
+      selectedAzureCloudName: {
+        value: "AzurePublicCloud",
+        label: "Public",
+      },
+      caCertificate: {
+        name: "",
+        data: [],
+      },
+      showCACertificateField: false,
 
-    fileSystemType: "",
-    fileSystemNFSPath: "",
-    fileSystemNFSServer: "",
-    fileSystemHostPath: "",
+      gcsBucket: "",
+      gcsPath: "",
+      gcsServiceAccount: "",
+      gcsJsonFile: "",
+      gcsUseIam: false,
 
-    tmpFileSystemType: "",
-    tmpFileSystemNFSPath: "",
-    tmpFileSystemNFSServer: "",
-    tmpFileSystemHostPath: "",
-  };
+      s3CompatibleBucket: "",
+      s3CompatiblePath: "",
+      s3CompatibleKeyId: "",
+      s3CompatibleKeySecret: "",
+      s3CompatibleEndpoint: "",
+      s3CompatibleRegion: "",
+      s3CompatibleFieldErrors: {},
+
+      configuringFileSystemProvider: false,
+      configureFileSystemProviderErrorMsg: "",
+      configureFileSystemProviderNamespace: "",
+      showConfigureFileSystemProviderNextStepsModal: false,
+      showConfigureFileSystemProviderModal: false,
+      showResetFileSystemWarningModal: false,
+      resetFileSystemWarningMessage: "",
+
+      fileSystemType: "",
+      fileSystemNFSPath: "",
+      fileSystemNFSServer: "",
+      fileSystemHostPath: "",
+
+      tmpFileSystemType: "",
+      tmpFileSystemNFSPath: "",
+      tmpFileSystemNFSServer: "",
+      tmpFileSystemHostPath: "",
+    };
+  }
 
   componentDidMount() {
     if (this.props.snapshotSettings && !this.props.checkForVeleroAndRestic) {
@@ -141,16 +158,16 @@ class SnapshotStorageDestination extends Component {
     if (provider === "azure") {
       return (
         snapshotSettings?.store?.azure?.resourceGroup !==
-          azureResourceGroupName ||
+        azureResourceGroupName ||
         snapshotSettings?.store?.azure?.storageAccount !==
-          azureStorageAccountId ||
+        azureStorageAccountId ||
         snapshotSettings?.store?.azure?.subscriptionId !==
-          azureSubscriptionId ||
+        azureSubscriptionId ||
         snapshotSettings?.store?.azure?.tenantId !== azureTenantId ||
         snapshotSettings?.store?.azure?.clientId !== azureClientId ||
         snapshotSettings?.store?.azure?.clientSecret !== azureClientSecret ||
         snapshotSettings?.store?.azure?.cloudName !==
-          selectedAzureCloudName.value
+        selectedAzureCloudName.value
       );
     }
     if (provider === "other") {
@@ -158,7 +175,7 @@ class SnapshotStorageDestination extends Component {
         snapshotSettings?.store?.other?.region !== s3CompatibleRegion ||
         snapshotSettings?.store?.other?.accessKeyID !== s3CompatibleKeyId ||
         snapshotSettings?.store?.other?.secretAccessKey !==
-          s3CompatibleKeySecret ||
+        s3CompatibleKeySecret ||
         snapshotSettings?.store?.other?.endpoint !== s3CompatibleEndpoint
       );
     }
@@ -323,8 +340,8 @@ class SnapshotStorageDestination extends Component {
       destination?.value === "hostpath"
         ? FILE_SYSTEM_HOSTPATH_TYPE
         : destination?.value === "nfs"
-        ? FILE_SYSTEM_NFS_TYPE
-        : "";
+          ? FILE_SYSTEM_NFS_TYPE
+          : "";
     this.setState({
       selectedDestination: destination,
       fileSystemType: fileSystemType,
@@ -661,9 +678,8 @@ class SnapshotStorageDestination extends Component {
                 </p>
                 <div className="BoxedCheckbox-wrapper flex1 u-textAlign--left">
                   <div
-                    className={`BoxedCheckbox flex-auto flex alignItems--center ${
-                      this.state.useIamAws ? "is-active" : ""
-                    }`}
+                    className={`BoxedCheckbox flex-auto flex alignItems--center ${this.state.useIamAws ? "is-active" : ""
+                      }`}
                   >
                     <input
                       type="checkbox"
@@ -888,9 +904,8 @@ class SnapshotStorageDestination extends Component {
             </div>
             <div className="BoxedCheckbox-wrapper u-textAlign--left u-marginBottom--20">
               <div
-                className={`BoxedCheckbox flex-auto flex alignItems--center u-width--half ${
-                  this.state.gcsUseIam ? "is-active" : ""
-                }`}
+                className={`BoxedCheckbox flex-auto flex alignItems--center u-width--half ${this.state.gcsUseIam ? "is-active" : ""
+                  }`}
               >
                 <input
                   type="checkbox"
