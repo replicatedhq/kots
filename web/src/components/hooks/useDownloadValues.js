@@ -33,8 +33,6 @@ const useDownloadValues = ({
   appSlug,
   fileName,
 } = {}) => {
-  // const ref = useRef(null);
-
   const [isDownloading, setIsDownloading] = useState(false);
   const [error, setError] = useState(null);
   const [url, setUrl] = useState(null);
