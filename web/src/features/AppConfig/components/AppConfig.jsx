@@ -689,6 +689,7 @@ class AppConfig extends Component {
                           title={`Upgrade ${this.props?.app?.slug}`}
                           upgradeTitle="Upgrade release"
                           version={downstreamVersion?.versionLabel}
+                          namespace={this.props?.app?.namespace}
                         />
                         <a
                           href={url}
