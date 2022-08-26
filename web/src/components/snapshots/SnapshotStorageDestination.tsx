@@ -28,6 +28,51 @@ interface Destination {
 interface State {
   determiningDestination: boolean;
   selectedDestination: Destination | object;
+  updatingSettings: boolean;
+  s3bucket: string;
+  s3Region: string;
+  s3Path: string;
+  useIamAws: boolean;
+  s3KeyId: string;
+  s3KeySecret: string;
+  azureBucket: string;
+      azurePath: string;
+      azureSubscriptionId: string;
+      azureTenantId: string;
+      azureClientId: string;
+      azureClientSecret: string;
+      azureResourceGroupName: string;
+      azureStorageAccountId: string;
+      selectedAzureCloudName: Destination;
+      caCertificate: { name: string, data: Array<string> };
+      showCACertificateField: boolean;
+      gcsBucket: string;
+      gcsPath: string;
+      gcsServiceAccount: string;
+      gcsJsonFile: string;
+      gcsUseIam: boolean;
+      s3CompatibleBucket: string;
+      s3CompatiblePath: string;
+      s3CompatibleKeyId: string;
+      s3CompatibleKeySecret: string;
+      s3CompatibleEndpoint: string
+      s3CompatibleRegion: string;
+      s3CompatibleFieldErrors: { endpoint: string; } | object;
+      configuringFileSystemProvider: boolean;
+      configureFileSystemProviderErrorMsg: string;
+      configureFileSystemProviderNamespace: string;
+      showConfigureFileSystemProviderNextStepsModal: boolean;
+      showConfigureFileSystemProviderModal: boolean;
+      showResetFileSystemWarningModal: boolean;
+      resetFileSystemWarningMessage: string;
+      fileSystemType: string;
+      fileSystemNFSPath: string;
+      fileSystemNFSServer: string;
+      fileSystemHostPath: string;
+      tmpFileSystemType: string;
+      tmpFileSystemNFSPath: string;
+      tmpFileSystemNFSServer: string;
+      tmpFileSystemHostPath: string;
 }
 
 interface Props {
