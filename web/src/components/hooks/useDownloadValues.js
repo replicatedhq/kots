@@ -38,6 +38,7 @@ const useDownloadValues = ({
   const [url, setUrl] = useState(null);
   const [name, setName] = useState(null);
 
+// creates a download url and adds it to the dom triggering download of file defined in url
   useEffect(() => {
     if (url) {
       const link = document.createElement("a");
