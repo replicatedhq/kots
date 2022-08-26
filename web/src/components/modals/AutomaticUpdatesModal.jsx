@@ -189,7 +189,7 @@ export default class AutomaticUpdatesModal extends React.Component {
   };
 
   render() {
-    const { isOpen, onRequestClose, isSemverRequired, gitopsIsConnected } =
+    const { isOpen, onRequestClose, isSemverRequired, gitopsIsConnected, isHelmManaged } =
       this.props;
     const {
       updateCheckerSpec,
@@ -276,7 +276,7 @@ export default class AutomaticUpdatesModal extends React.Component {
               </div>
             </div>
           </div>
-          {!gitopsIsConnected && (
+          {!gitopsIsConnected && !isHelmManaged && (
             <div className="flex-column flex1 u-marginTop--15">
               <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
                 Automatically deploy new versions
