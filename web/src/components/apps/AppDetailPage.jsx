@@ -232,7 +232,6 @@ class AppDetailPage extends Component {
 
     if (history.location.pathname === "/apps") {
       this.state.checkForFirstAppJob.start(this.checkForFirstApp, 2000);
-      // this.checkForFirstApp();
       return;
     }
     this.getApp();
