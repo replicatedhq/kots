@@ -167,13 +167,21 @@
 }
 
 .AirgapSettings--wrapper {
-  max-width: 415px;
+  max-width: 465px;
   width: 100%;
+  background-color: $really-light-accent;
+  border-radius: 6px;
 
   .test-connection-box {
     padding: 14px 12px;
     border-radius: 4px;
     background-color: lighten($primary-color, 43.5%);
     border: 1px solid $border-color;
+  }
+  .registry-settings-content {
+    background: #ffffff;
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 6px;
   }
 }
