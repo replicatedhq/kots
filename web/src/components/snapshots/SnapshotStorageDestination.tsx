@@ -999,7 +999,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                   isSearchable={false}
                   getOptionValue={(cloudName) => cloudName.label}
                   value={selectedAzureCloudName}
-                  onChange={e => this.handleAzureCloudNameChange}
+                  onChange={this.handleAzureCloudNameChange}
                   isOptionSelected={(option) =>
                     // TODO: fix this
                     // @ts-ignore
