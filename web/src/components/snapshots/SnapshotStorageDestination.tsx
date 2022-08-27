@@ -999,6 +999,8 @@ class SnapshotStorageDestination extends Component<Props, State> {
                   isSearchable={false}
                   getOptionValue={(cloudName) => cloudName.label}
                   value={selectedAzureCloudName}
+                  // TODO: upgrade react-select and fix this
+                  // @ts-ignore
                   onChange={this.handleAzureCloudNameChange}
                   isOptionSelected={(option) =>
                     // TODO: fix this
