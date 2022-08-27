@@ -1795,4 +1795,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
   }
 }
 
-export default withRouter(SnapshotStorageDestination);
+
+// TODO: fix this typing thing
+const RoutedSnapshotStorageDestination: any = withRouter(SnapshotStorageDestination);
+export default RoutedSnapshotStorageDestination;
