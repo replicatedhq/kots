@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import Select from "react-select";
-import { withRouter } from "react-router-dom";
+import { withRouter, RouteComponentProps } from "react-router-dom";
 import MonacoEditor from "@monaco-editor/react";
 import find from "lodash/find";
 import Modal from "react-modal";
@@ -57,7 +57,7 @@ type State = {
   s3bucket?: string;
   s3CompatibleBucket?: string;
   s3CompatibleEndpoint?: string
-  s3CompatibleFieldErrors?: { endpoint: string; } | object;
+  s3CompatibleFieldErrors?: { endpoint?: string; };
   s3CompatibleKeyId?: string;
   s3CompatibleKeySecret?: string;
   s3CompatiblePath?: string;
@@ -133,14 +133,35 @@ type ProviderPayload = {
   internal?: boolean;
 } | StoreProvider;
 
-type Props = {
-  snapshotSettings: {
-    store: StoreProvider & StoreMetadata;
-    fileSystemConfig?: FileSystemConfig;
-  };
+type Props = RouteComponentProps & {
+  // TODO: add apps type for apps response
+  apps: Array<any>;
   checkForVeleroAndRestic: boolean;
-  updateSettings: (payload: ProviderPayload) => void;
+  fetchSnapshotSettings: () => void;
+  hideCheckVeleroButton: () => void;
   hideResetFileSystemWarningModal: () => void;
+  isKurlEnabled: boolean;
+  kotsadmRequiresVeleroAccess: boolean;
+  minimalRBACKotsadmNamespace: string;
+  openConfigureSnapshotsMinimalRBACModal: () => void;
+  renderNotVeleroMessage: () => void;
+  resetFileSystemWarningMessage: string;
+  showConfigureSnapshotsModal: boolean;
+  showResetFileSystemWarningModal: boolean;
+  snapshotSettings: {
+    fileSystemConfig?: FileSystemConfig;
+    isKurl?: boolean;
+    isMinioDisabled?: boolean;
+    isVeleroRunning?: boolean;
+    store: StoreProvider & StoreMetadata;
+    veleroPlugins?: string[];
+    veleroVersion?: string;
+  };
+  toggleConfigureSnapshotsModal: () => void;
+  updateConfirm: boolean;
+  updateErrorMsg: string;
+  updateSettings: (payload: ProviderPayload) => void;
+  updatingSettings: boolean;
 }
 
 type FieldName = "azureBucket" |
@@ -499,7 +520,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
     this.setState({ showCACertificateField: true });
   };
 
-  onGcsEditorChange = (value: string) => {
+  onGcsEditorChange = (value: string | undefined) => {
     this.setState({ gcsJsonFile: value });
   };
 
@@ -742,7 +763,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
       });
   };
 
-  renderIcons = (destination) => {
+  renderIcons = (destination: ValueType) => {
     if (destination) {
       return (
         <span className={`icon snapshotDestination--${destination.value}`} />
@@ -751,7 +772,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
     return;
   };
 
-  getDestinationLabel = (destination, label) => {
+  getDestinationLabel = (destination: ValueType, label: string) => {
     return (
       <div style={{ alignItems: "center", display: "flex" }}>
         <span
@@ -772,9 +793,9 @@ class SnapshotStorageDestination extends Component<Props, State> {
   renderDestinationFields = () => {
     const { selectedDestination, useIamAws, gcsUseIam } = this.state;
     const selectedAzureCloudName = AZURE_CLOUD_NAMES.find((cn) => {
-      return cn.value === this.state.selectedAzureCloudName.value;
+      return cn.value === this.state?.selectedAzureCloudName?.value;
     });
-    switch (selectedDestination.value) {
+    switch (selectedDestination?.value) {
       case "aws":
         return (
           <>
@@ -980,9 +1001,9 @@ class SnapshotStorageDestination extends Component<Props, State> {
                   value={selectedAzureCloudName}
                   onChange={e => this.handleAzureCloudNameChange}
                   isOptionSelected={(option) =>
-                    /* tslint:disable */
+                    // TODO: fix this
+                    // @ts-ignore
                     option.value === selectedAzureCloudName
-                    /* tslint:enable */
                   }
                 />
               </div>
@@ -1101,7 +1122,6 @@ class SnapshotStorageDestination extends Component<Props, State> {
                   </p>
                   <div className="gcs-editor">
                     <MonacoEditor
-                      ref={(editor) => (this.monacoEditor = editor)}
                       language="json"
                       value={this.state.gcsJsonFile}
                       height="420px"
@@ -1211,9 +1231,9 @@ class SnapshotStorageDestination extends Component<Props, State> {
                   />
                 </div>
               </div>
-              {this.state.s3CompatibleFieldErrors.endpoint && (
+              {this.state?.s3CompatibleFieldErrors?.endpoint && (
                 <div className="u-fontWeight--bold u-fontSize--small u-textColor--error u-marginBottom--10 u-marginTop--10">
-                  {this.state.s3CompatibleFieldErrors.endpoint}
+                  {this.state?.s3CompatibleFieldErrors?.endpoint}
                 </div>
               )}
             </div>
@@ -1493,7 +1513,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
     }
 
     const selectedDestination = availableDestinations.find(
-      (d) => d.value === this.state.selectedDestination.value
+      (d) => d.value === this.state?.selectedDestination?.value
     );
 
     const showResetFileSystemWarningModal =
@@ -1563,7 +1583,10 @@ class SnapshotStorageDestination extends Component<Props, State> {
                       </div>
                     )}
                   <div className="flex1">
-                    {availableDestinations.length > 1 ? (
+                    {availableDestinations.length > 1 ?
+                    (
+                      // TODO: upgrade react-select and use the current typing
+                      // @ts-ignore
                       <Select
                         className="replicated-select-container"
                         classNamePrefix="replicated-select"
@@ -1580,6 +1603,8 @@ class SnapshotStorageDestination extends Component<Props, State> {
                         value={selectedDestination}
                         onChange={this.handleDestinationChange}
                         isOptionSelected={(option) => {
+                          // TODO: fix this is probably a bug
+                          // @ts-ignore
                           option.value === selectedDestination;
                         }}
                       />
@@ -1590,7 +1615,9 @@ class SnapshotStorageDestination extends Component<Props, State> {
                           availableDestinations[0].label
                         )}
                       </div>
-                    ) : null}
+                    )
+
+                    : null}
                   </div>
                 </div>
                 {!this.state.determiningDestination && (
