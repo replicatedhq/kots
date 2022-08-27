@@ -1503,6 +1503,7 @@ class AppVersionHistory extends Component {
                           : "Upgrade release"
                       }
                       version={version.versionLabel}
+                      namespace={this.props?.app?.namespace}
                     />
                     <a
                       href={url}
@@ -2159,7 +2160,8 @@ class AppVersionHistory extends Component {
               this.toggleAutomaticUpdatesModal();
               this.props.updateCallback();
             }}
-          />
+            isHelmManaged={this.props.isHelmManaged}
+            />
         )}
       </div>
     );

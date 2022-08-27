@@ -1,6 +1,10 @@
 package types
 
-import "time"
+import (
+	"time"
+
+	"github.com/replicatedhq/kots/pkg/util"
+)
 
 type App struct {
 	ID                    string         `json:"id"`
@@ -42,4 +46,8 @@ func (a *App) GetCurrentSequence() int64 {
 
 func (a *App) GetIsAirgap() bool {
 	return a.IsAirgap
+}
+
+func (a *App) GetNamespace() string {
+	return util.PodNamespace
 }

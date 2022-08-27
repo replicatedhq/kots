@@ -873,6 +873,7 @@ class Dashboard extends Component {
                   this.hideAutomaticUpdatesModal();
                   this.props.refreshAppData();
                 }}
+                isHelmManaged={this.props.isHelmManaged}
               />
             )}
             {this.state.snapshotDifferencesModal && (

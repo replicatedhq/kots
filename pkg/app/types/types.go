@@ -24,4 +24,5 @@ type AppType interface {
 	GetSlug() string
 	GetCurrentSequence() int64
 	GetIsAirgap() bool
+	GetNamespace() string
 }

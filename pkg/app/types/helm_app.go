@@ -35,3 +35,7 @@ func (a *HelmApp) GetCurrentSequence() int64 {
 func (a *HelmApp) GetIsAirgap() bool {
 	return false // no airgap support yet
 }
+
+func (a *HelmApp) GetNamespace() string {
+	return a.Namespace
+}

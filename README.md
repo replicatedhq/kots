@@ -80,20 +80,15 @@ Your permissions will be the same between both namespaces, and you will be able 
 4. `okteto exec bash` - Runs bash interactively in the kots pod.
 5. `./bin/kots {{COMMAND}}` - Run the kots commands you need.
 
-#### Running KOTS in Helm managed mode
+#### Running KOTS in Helm managed mode in Okteto
 Steps to run in Helm managed mode:
 1. `okteto pipeline deploy`
 1. Ensure your local context is set to your okteto environment
 1. Set the `IS_HELM_MANAGED` environment variable for the kots deployment `kubectl set env deployment/kotsadm IS_HELM_MANAGED=true`
 1. Remove S3 endpoint: `kubectl set env deployment/kotsadm S3_ENDPOINT=""`
-
-
-Note that in order to use non-production environment, `REPLICATED_API_ENDPOINT` must also be set in the deployment:
-
-```
-kubectl set env deployment/kotsadm REPLICATED_API_ENDPOINT=https://<replicated-app host name>
-```
-
+1. Optional:
+   - if you wish to use Admin Console with production: `kubectl set env deployment/kotsadm REPLICATED_API_ENDPOINT=""`
+   - if you wish to use Admin Console with staging: `kubectl set env deployment/kotsadm REPLICATED_API_ENDPOINT="https://staging.replicated.app"`
 
 ### Build V2 (EXPERIMENTAL)
 
