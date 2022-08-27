@@ -21,63 +21,156 @@ import {
   FILE_SYSTEM_HOSTPATH_TYPE,
 } from "./SnapshotStorageDestination.data";
 
-interface Destination {
-  value: string;
-  label: string;
-}
-interface State {
-  determiningDestination: boolean;
-  selectedDestination: Destination | object;
-  updatingSettings: boolean;
-  s3bucket: string;
-  s3Region: string;
-  s3Path: string;
-  useIamAws: boolean;
-  s3KeyId: string;
-  s3KeySecret: string;
-  azureBucket: string;
-      azurePath: string;
-      azureSubscriptionId: string;
-      azureTenantId: string;
-      azureClientId: string;
-      azureClientSecret: string;
-      azureResourceGroupName: string;
-      azureStorageAccountId: string;
-      selectedAzureCloudName: Destination;
-      caCertificate: { name: string, data: Array<string> };
-      showCACertificateField: boolean;
-      gcsBucket: string;
-      gcsPath: string;
-      gcsServiceAccount: string;
-      gcsJsonFile: string;
-      gcsUseIam: boolean;
-      s3CompatibleBucket: string;
-      s3CompatiblePath: string;
-      s3CompatibleKeyId: string;
-      s3CompatibleKeySecret: string;
-      s3CompatibleEndpoint: string
-      s3CompatibleRegion: string;
-      s3CompatibleFieldErrors: { endpoint: string; } | object;
-      configuringFileSystemProvider: boolean;
-      configureFileSystemProviderErrorMsg: string;
-      configureFileSystemProviderNamespace: string;
-      showConfigureFileSystemProviderNextStepsModal: boolean;
-      showConfigureFileSystemProviderModal: boolean;
-      showResetFileSystemWarningModal: boolean;
-      resetFileSystemWarningMessage: string;
-      fileSystemType: string;
-      fileSystemNFSPath: string;
-      fileSystemNFSServer: string;
-      fileSystemHostPath: string;
-      tmpFileSystemType: string;
-      tmpFileSystemNFSPath: string;
-      tmpFileSystemNFSServer: string;
-      tmpFileSystemHostPath: string;
+type ValueType = {
+  value?: string;
+  label?: string;
 }
 
-interface Props {
-  snapshotSettings: object;
+type CACertificate = {
+  name: string;
+  data: Array<string>
 }
+type State = {
+  azureBucket?: string;
+  azureClientId?: string;
+  azureClientSecret?: string;
+  azurePath?: string;
+  azureResourceGroupName?: string;
+  azureStorageAccountId?: string;
+  azureSubscriptionId?: string;
+  azureTenantId?: string;
+  caCertificate?: CACertificate;
+  configureFileSystemProviderErrorMsg?: string;
+  configureFileSystemProviderNamespace?: string;
+  configuringFileSystemProvider?: boolean;
+  determiningDestination?: boolean;
+  fileSystemHostPath?: string;
+  fileSystemNFSPath?: string;
+  fileSystemNFSServer?: string;
+  fileSystemType?: string;
+  gcsBucket?: string;
+  gcsJsonFile?: string;
+  gcsPath?: string;
+  gcsServiceAccount?: string;
+  gcsUseIam?: boolean;
+  resetFileSystemWarningMessage?: string;
+  s3bucket?: string;
+  s3CompatibleBucket?: string;
+  s3CompatibleEndpoint?: string
+  s3CompatibleFieldErrors?: { endpoint: string; } | object;
+  s3CompatibleKeyId?: string;
+  s3CompatibleKeySecret?: string;
+  s3CompatiblePath?: string;
+  s3CompatibleRegion?: string;
+  s3KeyId?: string;
+  s3KeySecret?: string;
+  s3Path?: string;
+  s3Region?: string;
+  selectedAzureCloudName?: ValueType;
+  selectedDestination?: ValueType & {};
+  showCACertificateField?: boolean;
+  showConfigureFileSystemProviderModal?: boolean;
+  showConfigureFileSystemProviderNextStepsModal?: boolean;
+  showResetFileSystemWarningModal?: boolean;
+  tmpFileSystemHostPath?: string;
+  tmpFileSystemNFSPath?: string;
+  tmpFileSystemNFSServer?: string;
+  tmpFileSystemType?: string;
+  updatingSettings?: boolean;
+  useIamAws?: boolean;
+}
+
+type StoreProviderName = "aws" | "gcp" | "azure" | "other";
+type StoreProvider = {
+  [K in StoreProviderName]?: {
+    accessKeyID?: string,
+    accessKeySecret?: string,
+    clientId?: string,
+    clientSecret?: string,
+    cloudName?: string,
+    endpoint?: string,
+    jsonFile?: string,
+    region?: string,
+    resourceGroup?: string,
+    secretAccessKey?: string,
+    serviceAccount?: string,
+    storageAccount?: string,
+    subscriptionId?: string,
+    tenantId?: string,
+    useInstanceRole?: boolean,
+  }
+}
+type StoreMetadata = {
+  bucket?: string;
+  internal?: boolean;
+  fileSystem?: string;
+  path?: string;
+};
+
+type FileSystemConfig = {
+  nfs?: {
+    path: string;
+    server: string;
+  };
+  hostPath?: string;
+}
+
+type FileSystemOptions = {
+  forceReset?: boolean;
+  hostPath?: string;
+  nfs?: {
+    path?: string;
+    server?: string;
+  };
+}
+
+type ProviderPayload = {
+  bucket?: string;
+  caCertData?: string;
+  fileSystem?: FileSystemOptions;
+  path?: string;
+  provider?: StoreProviderName;
+  internal?: boolean;
+} | StoreProvider;
+
+type Props = {
+  snapshotSettings: {
+    store: StoreProvider & StoreMetadata;
+    fileSystemConfig?: FileSystemConfig;
+  };
+  checkForVeleroAndRestic: boolean;
+  updateSettings: (payload: ProviderPayload) => void;
+  hideResetFileSystemWarningModal: () => void;
+}
+
+type FieldName = "azureBucket" |
+  "azureClientId" |
+  "azureClientSecret" |
+  "azurePath" |
+  "azureResourceGroupName" |
+  "azureStorageAccountId" |
+  "azureSubscriptionId" |
+  "azureTenantId" |
+  "fileSystemHostPath" |
+  "fileSystemNFSPath" |
+  "fileSystemNFSServer" |
+  "gcsBucket" |
+  "gcsPath" |
+  "gcsServiceAccount" |
+  "gcsUseIam" |
+  "s3bucket" |
+  "s3CompatibleBucket" |
+  "s3CompatiblePath" |
+  "s3CompatibleKeyId" |
+  "s3CompatibleKeySecret" |
+  "s3CompatibleEndpoint" |
+  "s3CompatibleRegion" |
+  "s3KeyId" |
+  "s3KeySecret" |
+  "s3Region" |
+  "s3Path" |
+  "useIamAws";
+
 
 class SnapshotStorageDestination extends Component<Props, State> {
   constructor(props: Props) {
@@ -151,7 +244,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
     }
   }
 
-  componentDidUpdate(lastProps) {
+  componentDidUpdate(lastProps: Props) {
     if (
       this.props.snapshotSettings !== lastProps.snapshotSettings &&
       this.props.snapshotSettings &&
@@ -161,7 +254,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
     }
   }
 
-  checkForStoreChanges = (provider) => {
+  checkForStoreChanges = (provider: StoreProviderName) => {
     const {
       s3Region,
       s3KeyId,
@@ -212,7 +305,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
         snapshotSettings?.store?.azure?.clientId !== azureClientId ||
         snapshotSettings?.store?.azure?.clientSecret !== azureClientSecret ||
         snapshotSettings?.store?.azure?.cloudName !==
-        selectedAzureCloudName.value
+        selectedAzureCloudName?.value
       );
     }
     if (provider === "other") {
@@ -226,7 +319,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
     }
   };
 
-  getCurrentProviderStores = (provider) => {
+  getCurrentProviderStores = (provider: StoreProviderName): StoreProvider | null => {
     const hasChanges = this.checkForStoreChanges(provider);
     if (hasChanges) {
       switch (provider) {
@@ -250,7 +343,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
               tenantId: this.state.azureTenantId,
               clientId: this.state.azureClientId,
               clientSecret: this.state.azureClientSecret,
-              cloudName: this.state.selectedAzureCloudName.value,
+              cloudName: this.state?.selectedAzureCloudName?.value,
             },
           };
         case "gcp":
@@ -272,8 +365,12 @@ class SnapshotStorageDestination extends Component<Props, State> {
               endpoint: this.state.s3CompatibleEndpoint,
             },
           };
+        default:
+          console.error(new Error("Unknown provider"));
+          return null;
       }
     }
+    return null;
   };
 
   setFields = () => {
@@ -370,8 +467,8 @@ class SnapshotStorageDestination extends Component<Props, State> {
     });
   };
 
-  handleFormChange = (field, e) => {
-    let nextState = {};
+  handleFormChange = (field: FieldName, e: React.ChangeEvent<HTMLInputElement>) => {
+    let nextState: State = {};
     if (field === "useIamAws" || field === "gcsUseIam") {
       nextState[field] = e.target.checked;
     } else {
@@ -380,7 +477,8 @@ class SnapshotStorageDestination extends Component<Props, State> {
     this.setState(nextState);
   };
 
-  handleDestinationChange = (destination) => {
+  // TODO: upgrade react-select and use it's latest Option type
+  handleDestinationChange = (destination: { value: string }) => {
     const fileSystemType =
       destination?.value === "hostpath"
         ? FILE_SYSTEM_HOSTPATH_TYPE
@@ -393,7 +491,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
     });
   };
 
-  handleAzureCloudNameChange = (azureCloudName) => {
+  handleAzureCloudNameChange = (azureCloudName: ValueType) => {
     this.setState({ selectedAzureCloudName: azureCloudName });
   };
 
@@ -401,14 +499,14 @@ class SnapshotStorageDestination extends Component<Props, State> {
     this.setState({ showCACertificateField: true });
   };
 
-  onGcsEditorChange = (value) => {
+  onGcsEditorChange = (value: string) => {
     this.setState({ gcsJsonFile: value });
   };
 
-  onSubmit = async (e) => {
+  onSubmit = async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     e.preventDefault();
     let s3CompatibleFieldErrors = this.state.s3CompatibleFieldErrors;
-    switch (this.state.selectedDestination.value) {
+    switch (this.state.selectedDestination?.value) {
       case "aws":
         await this.snapshotProviderAWS();
         break;
@@ -440,14 +538,16 @@ class SnapshotStorageDestination extends Component<Props, State> {
     const urlRe =
       /\b(https?):\/\/[-A-Za-z0-9+&@#/%?=~_|!:,.;]*[-A-Za-z0-9+&@#/%=~_|]/;
 
-    if (!urlRe.test(this.state.s3CompatibleEndpoint)) {
+    // TODO: clean up the state so we don't need to check for string here
+    if (typeof this.state?.s3CompatibleEndpoint === "string" &&
+      !urlRe.test(this.state?.s3CompatibleEndpoint)) {
       return { endpoint: "Please enter a valid endpoint with protocol" };
     }
     return {};
   };
 
-  getProviderPayload = (provider, bucket, path) => {
-    const caCertData = this.state.caCertificate.data;
+  getProviderPayload = (provider: StoreProviderName, bucket?: string, path?: string): ProviderPayload => {
+    const caCertData = this.state?.caCertificate?.data;
     return Object.assign(
       {
         provider,
@@ -459,15 +559,15 @@ class SnapshotStorageDestination extends Component<Props, State> {
     );
   };
 
-  handleSetCACert = (caCertificate) => {
+  handleSetCACert = (caCertificate: CACertificate) => {
     this.setState({ caCertificate });
   };
 
   snapshotProviderAWS = async () => {
     const payload = this.getProviderPayload(
       "aws",
-      this.state.s3bucket,
-      this.state.s3Path
+      this.state?.s3bucket,
+      this.state?.s3Path
     );
     this.props.updateSettings(payload);
   };
@@ -526,8 +626,8 @@ class SnapshotStorageDestination extends Component<Props, State> {
     this.props.updateSettings(payload);
   };
 
-  buildFileSystemOptions = (type, path, server, hostPath, forceReset) => {
-    const options = {
+  buildFileSystemOptions = (type?: string, path?: string, server?: string, hostPath?: string, forceReset?: boolean): FileSystemOptions => {
+    const options: FileSystemOptions = {
       forceReset: forceReset,
     };
     if (type === FILE_SYSTEM_HOSTPATH_TYPE) {
@@ -541,7 +641,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
     return options;
   };
 
-  openConfigureFileSystemProviderModal = (fileSystemType) => {
+  openConfigureFileSystemProviderModal = (fileSystemType: string) => {
     this.setState({
       showConfigureFileSystemProviderModal:
         !this.state.showConfigureFileSystemProviderModal,
@@ -589,7 +689,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
     fetch(`${process.env.API_ENDPOINT}/snapshots/filesystem`, {
       method: "PUT",
       headers: {
-        Authorization: Utilities.getToken(),
+        Authorization: Utilities.getToken() || "",
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -878,9 +978,11 @@ class SnapshotStorageDestination extends Component<Props, State> {
                   isSearchable={false}
                   getOptionValue={(cloudName) => cloudName.label}
                   value={selectedAzureCloudName}
-                  onChange={this.handleAzureCloudNameChange}
+                  onChange={e => this.handleAzureCloudNameChange}
                   isOptionSelected={(option) =>
+                    /* tslint:disable */
                     option.value === selectedAzureCloudName
+                    /* tslint:enable */
                   }
                 />
               </div>

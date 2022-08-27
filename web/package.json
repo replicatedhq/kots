@@ -20,6 +20,7 @@
     "start": "VENDOR_WEB_ENV=dev webpack-dev-server --env dev"
   },
   "devDependencies": {
+    "@aws-sdk/types": "^3.159.0",
     "@babel/cli": "^7.16.0",
     "@babel/core": "^7.16.0",
     "@babel/eslint-parser": "^7.18.2",
