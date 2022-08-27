@@ -330,6 +330,24 @@ jobs:
           -d "{\"event_type\": \"auto-kotsadm-update\", \"client_payload\": {\"version\": \"${GIT_TAG:1}\" }}" \
           "https://api.github.com/repos/replicatedhq/kurl/dispatches"
 
+  generate-kots-release-notes-pr:
+    runs-on: ubuntu-20.04
+    needs: [generate-tag]
+    if: github.ref_type != 'branch'
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Generate Kots Release Notes PR
+      env:
+        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
+        GH_PAT: ${{ secrets.GH_PAT }}
+      run: |
+        curl -H "Authorization: token $GH_PAT" \
+          -H 'Accept: application/json' \
+          -d "{\"event_type\": \"app-manager-release-notes\", \"client_payload\": {\"version\": \"${GIT_TAG}\" }}" \
+          "https://api.github.com/repos/replicatedhq/replicated-docs/dispatches"
+
   build-airgap:
     runs-on: ubuntu-20.04
     if: github.ref_type != 'branch'
