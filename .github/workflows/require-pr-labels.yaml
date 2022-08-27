@@ -19,7 +19,7 @@ jobs:
         with:
           mode: exactly
           count: 1
-          labels: "type::feature, type::bug, type::chore, type::tests, type::security, type::docs"
+          labels: "type::feature, type::improvement, type::bug, type::chore, type::tests, type::security, type::docs"
 
       - uses: mheap/github-action-required-labels@v2
         if: ${{ github.event.label.name == 'type::bug' }}
