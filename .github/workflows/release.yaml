@@ -338,7 +338,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
 
-    - name: Generate Kots Release Notes PR
+    - name: Generate KOTS Release Notes PR
       env:
         GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
         GH_PAT: ${{ secrets.GH_PAT }}
