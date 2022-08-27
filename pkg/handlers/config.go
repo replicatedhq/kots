@@ -220,6 +220,8 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		Success: false,
 	}
 
+	appSlug := mux.Vars(r)["appSlug"]
+
 	liveAppConfigRequest := LiveAppConfigRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&liveAppConfigRequest); err != nil {
 		logger.Error(err)
@@ -228,76 +230,92 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	configGroups := []kotsv1beta1.ConfigGroup{}
-	if util.IsHelmManaged() {
-		configGroups = liveAppConfigRequest.ConfigGroups
-		JSON(w, http.StatusOK, LiveAppConfigResponse{Success: true, ConfigGroups: configGroups})
-		return
-	}
+	var kotsKinds *kotsutil.KotsKinds
+	var appLicense *kotsv1beta1.License
+	var app apptypes.AppType
+	var localRegistry template.LocalRegistry
 
-	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
-	if err != nil {
-		logger.Error(err)
-		liveAppConfigResponse.Error = "failed to get app from app slug"
-		JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
-		return
-	}
-
-	appLicense, err := store.GetStore().GetLatestLicenseForApp(foundApp.ID)
-	if err != nil {
-		logger.Error(err)
-		liveAppConfigResponse.Error = "failed to get license for app"
-		JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
-		return
-	}
-
-	archiveDir, err := ioutil.TempDir("", "kotsadm")
-	if err != nil {
-		logger.Error(err)
-		liveAppConfigResponse.Error = "failed to create temp dir"
-		JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
-		return
-	}
-	defer os.RemoveAll(archiveDir)
-
-	err = store.GetStore().GetAppVersionArchive(foundApp.ID, liveAppConfigRequest.Sequence, archiveDir)
-	if err != nil {
-		logger.Error(err)
-		liveAppConfigResponse.Error = "failed to get app version archive"
-		JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
-		return
-	}
-
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
-	if err != nil {
-		logger.Error(err)
-		liveAppConfigResponse.Error = "failed to load kots kinds from path"
-		JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
-		return
-	}
-
-	// get values from request
 	configValues := configValuesFromConfigGroups(liveAppConfigRequest.ConfigGroups)
 
-	registryInfo, err := store.GetStore().GetRegistryDetailsForApp(foundApp.ID)
-	if err != nil {
-		logger.Error(err)
-		liveAppConfigResponse.Error = "failed to get app registry info"
-		JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
-		return
+	if util.IsHelmManaged() {
+		helmApp := helm.GetHelmApp(appSlug)
+		if helmApp == nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		app = helmApp
+
+		k, err := helm.GetKotsKindsForRevision(helmApp.Release.Name, liveAppConfigRequest.Sequence, helmApp.Namespace)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to get kots kinds for helm"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		kotsKinds = &k
+		appLicense = kotsKinds.License
+	} else {
+		foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
+		if err != nil {
+			logger.Error(err)
+			liveAppConfigResponse.Error = "failed to get app from app slug"
+			JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
+			return
+		}
+		app = foundApp
+
+		appLicense, err = store.GetStore().GetLatestLicenseForApp(foundApp.ID)
+		if err != nil {
+			logger.Error(err)
+			liveAppConfigResponse.Error = "failed to get license for app"
+			JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
+			return
+		}
+
+		archiveDir, err := ioutil.TempDir("", "kotsadm")
+		if err != nil {
+			logger.Error(err)
+			liveAppConfigResponse.Error = "failed to create temp dir"
+			JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
+			return
+		}
+		defer os.RemoveAll(archiveDir)
+
+		err = store.GetStore().GetAppVersionArchive(foundApp.ID, liveAppConfigRequest.Sequence, archiveDir)
+		if err != nil {
+			logger.Error(err)
+			liveAppConfigResponse.Error = "failed to get app version archive"
+			JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
+			return
+		}
+
+		kotsKinds, err = kotsutil.LoadKotsKindsFromPath(archiveDir)
+		if err != nil {
+			logger.Error(err)
+			liveAppConfigResponse.Error = "failed to load kots kinds from path"
+			JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
+			return
+		}
+
+		registryInfo, err := store.GetStore().GetRegistryDetailsForApp(foundApp.ID)
+		if err != nil {
+			logger.Error(err)
+			liveAppConfigResponse.Error = "failed to get app registry info"
+			JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
+			return
+		}
+
+		localRegistry = template.LocalRegistry{
+			Host:      registryInfo.Hostname,
+			Namespace: registryInfo.Namespace,
+			Username:  registryInfo.Username,
+			Password:  registryInfo.Password,
+			ReadOnly:  registryInfo.IsReadOnly,
+		}
 	}
 
-	localRegistry := template.LocalRegistry{
-		Host:      registryInfo.Hostname,
-		Namespace: registryInfo.Namespace,
-		Username:  registryInfo.Username,
-		Password:  registryInfo.Password,
-		ReadOnly:  registryInfo.IsReadOnly,
-	}
-
-	versionInfo := template.VersionInfoFromInstallation(liveAppConfigRequest.Sequence+1, foundApp.IsAirgap, kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
-	appInfo := template.ApplicationInfo{Slug: foundApp.Slug}
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, &kotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, false)
+	versionInfo := template.VersionInfoFromInstallation(liveAppConfigRequest.Sequence+1, app.GetIsAirgap(), kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
+	appInfo := template.ApplicationInfo{Slug: app.GetSlug()}
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, appLicense, &kotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, app.GetNamespace(), false)
 	if err != nil {
 		logger.Error(err)
 		liveAppConfigResponse.Error = "failed to render templates"
@@ -305,11 +323,14 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if renderedConfig != nil {
-		configGroups = renderedConfig.Spec.Groups
+	liveAppConfigResponse.Success = true
+	if renderedConfig == nil {
+		liveAppConfigResponse.ConfigGroups = []kotsv1beta1.ConfigGroup{}
+	} else {
+		liveAppConfigResponse.ConfigGroups = renderedConfig.Spec.Groups
 	}
 
-	JSON(w, http.StatusOK, LiveAppConfigResponse{Success: true, ConfigGroups: configGroups})
+	JSON(w, http.StatusOK, liveAppConfigResponse)
 }
 
 func configValuesFromConfigGroups(configGroups []kotsv1beta1.ConfigGroup) map[string]template.ItemValue {
@@ -505,7 +526,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 
 	versionInfo := template.VersionInfoFromInstallation(sequence+1, app.GetIsAirgap(), kotsKinds.Installation.Spec) // sequence +1 because the sequence will be incremented on save (and we want the preview to be accurate)
 	appInfo := template.ApplicationInfo{Slug: app.GetSlug()}
-	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, license, &kotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, util.PodNamespace, false)
+	renderedConfig, err := kotsconfig.TemplateConfigObjects(kotsKinds.Config, configValues, license, &kotsKinds.KotsApplication, localRegistry, &versionInfo, &appInfo, kotsKinds.IdentityConfig, app.GetNamespace(), false)
 	if err != nil {
 		logger.Error(err)
 		currentAppConfigResponse.Error = "failed to render templates"
