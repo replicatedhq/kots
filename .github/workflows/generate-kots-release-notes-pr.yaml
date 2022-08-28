@@ -1,0 +1,17 @@
+name: app-manager-release-notes
+on:
+  pull_request:
+
+jobs:
+  generate-release-notes-pr:
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Generate KOTS Release Notes PR
+      env:
+        GIT_TAG: v1.82.0
+        GH_PAT: ${{ secrets.GH_PAT }}
+      run: |
+        curl -H "Authorization: token $GH_PAT" \
+          -H 'Accept: application/json' \
+          -d "{\"event_type\": \"app-manager-release-notes\", \"client_payload\": {\"version\": \"${GIT_TAG}\" }}" \
+          "https://api.github.com/repos/replicatedhq/replicated-docs/dispatches"
