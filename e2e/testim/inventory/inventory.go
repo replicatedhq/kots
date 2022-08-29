@@ -19,6 +19,10 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+const (
+	HelmPassword = "password"
+)
+
 func NewRegressionTest() Test {
 	return Test{
 		Name:            "Regression",
@@ -160,7 +164,7 @@ func SetupNoRequiredConfig(kubectlCLI *kubectl.CLI) TestimParams {
 
 func SetupHelmManagedMode(kubectlCLI *kubectl.CLI) TestimParams {
 	return TestimParams{
-		"kotsadmPassword":  "password",
+		"kotsadmPassword":  HelmPassword,
 		"kotsadmNamespace": "helm-managed",
 	}
 }
