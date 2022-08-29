@@ -159,25 +159,8 @@ func SetupNoRequiredConfig(kubectlCLI *kubectl.CLI) TestimParams {
 }
 
 func SetupHelmManagedMode(kubectlCLI *kubectl.CLI) TestimParams {
-	namespace := "helm-managed"
-	cmd := kubectlCLI.Command(
-		context.Background(),
-		fmt.Sprintf("--namespace=%s", namespace),
-		"get",
-		"secret",
-		"kotsadm-password",
-		`--template='{{ index .data "passwordB64" }}'`,
-	)
-	buf := bytes.NewBuffer(nil)
-	session, err := gexec.Start(cmd, buf, GinkgoWriter)
-	Expect(err).WithOffset(1).Should(Succeed(), "Get kotsadm-password secret failed")
-	Eventually(session).WithOffset(1).WithTimeout(30*time.Minute).Should(gexec.Exit(0), "Get kotsadm-password secret failed with non-zero exit code")
-
-	kotsadmPassword, err := base64.StdEncoding.DecodeString(strings.Trim(buf.String(), `"' `))
-	Expect(err).WithOffset(1).Should(Succeed(), "Decode kotsadm-password secret failed")
-
 	return TestimParams{
-		"kotsadmPassword":  string(kotsadmPassword),
-		"kotsadmNamespace": namespace,
+		"kotsadmPassword":  "password",
+		"kotsadmNamespace": "helm-managed",
 	}
 }
