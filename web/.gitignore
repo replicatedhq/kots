@@ -35,4 +35,4 @@ env/skaffold_*
 logs/
 
 # typescript
-.tsbuildinfo
+tsconfig.tsbuildinfo

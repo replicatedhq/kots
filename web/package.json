@@ -16,6 +16,7 @@
     "format:fix": "yarn prettier:fix && yarn lint:fix",
     "test:unit": "jest --no-cache",
     "test:unit:watch": "jest --no-cache --watch",
+    "test:typecheck": "tsc --noEmit",
     "test": "yarn concurrently -g 'yarn:test:*'",
     "start": "VENDOR_WEB_ENV=dev webpack-dev-server --env dev"
   },
