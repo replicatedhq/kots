@@ -355,17 +355,17 @@ func ensureDesiredVersionIsDeployed(opts CheckForUpdatesOpts, clusterID string) 
 		return nil
 	}
 
-	if opts.IsAutomatic {
-		a, err := store.GetApp(opts.AppID)
-		if err != nil {
-			return errors.Wrap(err, "failed to get app")
-		}
-		if err := autoDeploy(opts, clusterID, a.AutoDeploy); err != nil {
-			return errors.Wrap(err, "failed to auto deploy")
-		}
+	if !opts.IsAutomatic || util.IsHelmManaged() {
 		return nil
 	}
 
+	a, err := store.GetApp(opts.AppID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get app")
+	}
+	if err := autoDeploy(opts, clusterID, a.AutoDeploy); err != nil {
+		return errors.Wrap(err, "failed to auto deploy")
+	}
 	return nil
 }
 
