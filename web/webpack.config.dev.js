@@ -24,18 +24,18 @@ module.exports = {
           plugins: [require.resolve('react-refresh/babel')]
         }
       },
-      // {
-      //   test: /\.[jt]sx?$/,
-      //   include: srcPath,
-      //   exclude: [
-      //     /node_modules/,
-      //   ],
-      //   enforce: "pre",
-      //   loader: "eslint-loader",
-      //   options: {
-      //     fix: true,
-      //   }
-      // }
+      {
+        test: /\.[jt]sx?$/,
+        include: srcPath,
+        exclude: [
+          /node_modules/,
+        ],
+        enforce: "pre",
+        loader: "eslint-loader",
+        options: {
+          fix: true,
+        }
+      }
     ]
   },
   plugins: [

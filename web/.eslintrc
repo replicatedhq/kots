@@ -14,31 +14,56 @@
     "import/resolver": {
       "node": {
         "extensions": [".js", ".jsx", ".ts", ".tsx", ".json"]
+      },
+      "alias": {
+        "map": [
+          [
+            "@src",
+            "./src"
+          ]
+        ]
       }
     }
   },
   "extends": [
-    "eslint:recommended",
-    "plugin:@typescript-eslint/recommended",
-    "plugin:react/recommended",
-    "plugin:prettier/recommended"
+    "prettier",
+    "airbnb",
+    "airbnb/hooks",
+    "airbnb-typescript"
   ],
-  "plugins": ["react", "jsx-a11y", "prettier"],
+  "plugins": ["react", "jsx-a11y", "prettier", "jest"],
   "rules": {
-    "semi": 0,
-    "react/jsx-indent": ["error", 2],
-    "max-len": [2, 120, 2],
-    "no-console": "warn",
-    "comma-dangle": ["error", "never"],
-    "react/prop-types": [2, { "ignore": ["history"] }],
-    "jsx-a11y/label-has-associated-control": "off",
-    "react/jsx-filename-extension": [1,
-      { "extensions": [".js", ".jsx", ".ts", ".tsx"] }
+    "prettier/prettier": [
+      "error"
     ],
-    "react/no-set-state": "off",
-    "prettier/prettier": ["error"],
-    "react/jsx-props-no-spreading": "off",
-    "prefer-promise-reject-errors": "off",
-    "camelcase": "off"
-  }
+    // use object destructured imports / exports
+    "import/prefer-default-export": "off",
+    // allows window._paq to be used in the code
+    "no-underscore-dangle": "off",
+    "react/function-component-definition": [
+      2,
+      {
+        "namedComponents": "function-declaration",
+      },
+    ],
+    "jest/no-disabled-tests": "warn",
+    "jest/no-focused-tests": "error",
+    "jest/no-identical-title": "error",
+    "jest/prefer-to-have-length": "warn",
+    "jest/valid-expect": "error"
+  },
+  "overrides": [
+    {
+      "files": [
+        "**/*.test.js",
+        "**/*.test.jsx"
+      ],
+      "env": {
+        "jest": true
+      },
+      "rules": {
+        "react/prop-types": "off"
+      }
+    }
+  ]
 }
