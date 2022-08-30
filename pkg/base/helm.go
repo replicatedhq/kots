@@ -502,7 +502,8 @@ func kustomizeHelmNamespace(baseFiles []BaseFile, renderOptions *RenderOptions) 
 
 	splitManifests := splitManifests(string(updatedManifests))
 	for _, manifest := range splitManifests {
-		if len(manifest) == 0 {
+		if strings.TrimSpace(manifest) == "" {
+			// filter out empty docs
 			continue
 		}
 

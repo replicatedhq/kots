@@ -157,7 +157,7 @@ func splitManifests(bigFile string) []string {
 	bigFileTmp := strings.TrimSpace(bigFile)
 	docs := sep.Split(bigFileTmp, -1)
 	for _, d := range docs {
-		d = strings.TrimSpace(d)
+		d = strings.TrimSpace(d) + "\n"
 		res = append(res, d)
 	}
 	return res
