@@ -42,7 +42,7 @@ export class AirgapUploader {
             "Content-Type": "application/json",
           },
         },
-        10000
+        10000,
       );
 
       if (res.status === 401) {
@@ -73,10 +73,10 @@ export class AirgapUploader {
       let installableResponse;
       try {
         const appSpec = await Utilities.getAppSpecFromAirgapBundle(
-          this.resumableFile.file
+          this.resumableFile.file,
         );
         const airgapSpec = await Utilities.getAirgapMetaFromAirgapBundle(
-          this.resumableFile.file
+          this.resumableFile.file,
         );
         installableResponse = await this.canInstallRelease(appSpec, airgapSpec);
       } catch (err) {
@@ -188,7 +188,7 @@ export class AirgapUploader {
           isInstall: !this.isUpdate,
         }),
         method: "POST",
-      }
+      },
     );
     if (!res.ok) {
       if (res.status === 401) {
@@ -209,7 +209,7 @@ export class AirgapUploader {
           Authorization: Utilities.getToken(),
         },
         method: "GET",
-      }
+      },
     );
     if (!res.ok) {
       if (res.status === 401) {
@@ -230,7 +230,7 @@ export class AirgapUploader {
           Authorization: Utilities.getToken(),
         },
         method: "GET",
-      }
+      },
     );
     if (!res.ok) {
       if (res.status === 401) {
@@ -252,7 +252,7 @@ export class AirgapUploader {
         },
         body: JSON.stringify(this.processParams),
         method: this.isUpdate ? "PUT" : "POST",
-      }
+      },
     );
     if (!res.ok) {
       if (res.status === 401) {

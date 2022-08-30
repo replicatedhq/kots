@@ -31,7 +31,7 @@ class SnapshotRestore extends Component {
       this.state.fetchRestoreDetailJob.start(this.fetchRestoreDetail, 2000);
     } else {
       const currentAppDetails = this.state.restoreDetail?.find(
-        (a) => a.appSlug === appSlug
+        (a) => a.appSlug === appSlug,
       );
       const phase = currentAppDetails?.restoreDetail?.phase;
       if (phase && phase !== "New" && phase !== "InProgress") {
@@ -65,7 +65,7 @@ class SnapshotRestore extends Component {
           body: JSON.stringify({
             appSlugs: [appSlug],
           }),
-        }
+        },
       );
       if (!res.ok) {
         if (res.status === 401) {
@@ -138,7 +138,7 @@ class SnapshotRestore extends Component {
         headers: {
           Authorization: Utilities.getToken(),
         },
-      }
+      },
     );
     if (!res.ok) {
       if (res.status === 401) {

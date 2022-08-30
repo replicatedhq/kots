@@ -119,7 +119,7 @@ export default class RBACGroupPolicyRow extends Component {
                             handleFormChange(
                               `${role.id}-${index}-${i}`,
                               index,
-                              e
+                              e,
                             );
                           }}
                         />

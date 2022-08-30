@@ -39,7 +39,7 @@ class KotsApplicationTree extends React.Component {
         if (this.props.history.location.search) {
           this.setState({
             selectedFile: `/skippedFiles/${this.props.history.location.search.slice(
-              1
+              1,
             )}`,
           });
         }

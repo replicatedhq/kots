@@ -20,13 +20,13 @@ const ConfigInfo = ({ match, fromLicenseFlow, app }) => {
     app?.downstream?.pendingVersions,
     function (v) {
       return v.parentSequence == sequence;
-    }
+    },
   );
   const pastSequenceIndex = findIndex(
     app?.downstream?.pastVersions,
     function (v) {
       return v.parentSequence == sequence;
-    }
+    },
   );
   const pendingVersions = app?.downstream?.pendingVersions;
 

@@ -271,7 +271,7 @@ class ConfigureSnapshots extends React.Component {
                               className="snapshotOptions"
                               onClick={() =>
                                 openConfigureFileSystemProviderModal(
-                                  FILE_SYSTEM_NFS_TYPE
+                                  FILE_SYSTEM_NFS_TYPE,
                                 )
                               }
                             >
@@ -285,7 +285,7 @@ class ConfigureSnapshots extends React.Component {
                               className="snapshotOptions"
                               onClick={() =>
                                 openConfigureFileSystemProviderModal(
-                                  FILE_SYSTEM_HOSTPATH_TYPE
+                                  FILE_SYSTEM_HOSTPATH_TYPE,
                                 )
                               }
                             >

@@ -11,7 +11,7 @@ export default function PaperIcon(props) {
       className={classNames(
         "PaperIcon flex alignItems--center justifyContent--center",
         { clickable: onClick },
-        className
+        className,
       )}
       onClick={onClick}
       style={{ height, width }}

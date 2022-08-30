@@ -44,7 +44,7 @@ export class PodAnalyzerDetails extends React.Component {
         headers: {
           Authorization: Utilities.getToken(),
         },
-      }
+      },
     )
       .then(async (result) => {
         const data = await result.json();
@@ -52,10 +52,10 @@ export class PodAnalyzerDetails extends React.Component {
         let selectedContainer = {};
         let groupedPodOptions = [];
         const initContainers = data.podContainers.filter(
-          (c) => c.isInitContainer
+          (c) => c.isInitContainer,
         );
         const regContainers = data.podContainers.filter(
-          (c) => !c.isInitContainer
+          (c) => !c.isInitContainer,
         );
         if (initContainers.length > 0) {
           groupedPodOptions.push({
@@ -104,13 +104,13 @@ export class PodAnalyzerDetails extends React.Component {
           Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
-      }
+      },
     )
       .then(async (result) => {
         const data = await result.json();
         const decodedLogs = Buffer.from(
           data.files[selectedContainer.logsFilePath],
-          "base64"
+          "base64",
         ).toString();
         this.setState({ loading: false, selectedContainerLogs: decodedLogs });
       })
@@ -131,7 +131,7 @@ export class PodAnalyzerDetails extends React.Component {
               "definition",
               this.state.podDefinition,
               "yaml",
-              "Definition not found"
+              "Definition not found",
             )}
           </div>
         );
@@ -173,7 +173,7 @@ export class PodAnalyzerDetails extends React.Component {
                 "logs",
                 this.state.selectedContainerLogs,
                 "text",
-                "No logs found"
+                "No logs found",
               )}
             </div>
           </div>
@@ -185,7 +185,7 @@ export class PodAnalyzerDetails extends React.Component {
               "events",
               this.state.podEvents,
               "yaml",
-              "No events found"
+              "No events found",
             )}
           </div>
         );

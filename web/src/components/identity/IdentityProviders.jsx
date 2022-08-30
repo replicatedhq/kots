@@ -185,7 +185,7 @@ class IdentityProviders extends Component {
       if (isKurlEnabled) {
         nextState["identityServiceAddress"] = `${e.target.value.replace(
           /\/$/,
-          ""
+          "",
         )}/dex`;
       }
       this.setState(nextState);
@@ -1046,7 +1046,7 @@ class IdentityProviders extends Component {
                             onChange={(e) => {
                               this.handleFormChange(
                                 "insecureSkipEmailVerified",
-                                e
+                                e,
                               );
                             }}
                           />

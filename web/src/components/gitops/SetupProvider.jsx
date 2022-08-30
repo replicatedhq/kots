@@ -70,7 +70,7 @@ const SetupProvider = ({
       setApp(
         apps.find((app) => {
           return app.id === selectedApp?.id;
-        })
+        }),
       );
     }
   }, [selectedApp, appsList]);
@@ -101,7 +101,7 @@ const SetupProvider = ({
             "Content-Type": "application/json",
           },
           method: "POST",
-        }
+        },
       );
       if (!res.ok && res.status === 401) {
         Utilities.logoutUser();

@@ -69,7 +69,7 @@ class AnalyzerFileTree extends React.Component {
     const { watchSlug } = this.props;
     const newPath = rootPath(path);
     this.props.history.replace(
-      `/app/${watchSlug}/troubleshoot/analyze/${this.props.match.params.bundleSlug}/contents${newPath}`
+      `/app/${watchSlug}/troubleshoot/analyze/${this.props.match.params.bundleSlug}/contents${newPath}`,
     );
     this.setState({ selectedFile: newPath, activeMarkers: [] });
     if (this.hasContentAlready(newPath)) {
@@ -92,7 +92,7 @@ class AnalyzerFileTree extends React.Component {
       `${
         process.env.API_ENDPOINT
       }/troubleshoot/supportbundle/${bundleId}/files?filename=${encodeURIComponent(
-        path
+        path,
       )}`,
       {
         method: "GET",
@@ -100,7 +100,7 @@ class AnalyzerFileTree extends React.Component {
           Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
-      }
+      },
     )
       .then(async (result) => {
         const data = await result.json();
@@ -153,7 +153,7 @@ class AnalyzerFileTree extends React.Component {
         // Clear hash from URL to prevent highlighting again on a refresh
         const splitLocation = this.props.location.pathname.split("#");
         this.props.history.replace(splitLocation[0]);
-      }
+      },
     );
   };
 
@@ -190,7 +190,7 @@ class AnalyzerFileTree extends React.Component {
             this.props.location.pathname
               .split("/")
               .slice(7, this.props.location.pathname.length)
-              .join("/")
+              .join("/"),
         );
         if (this.props.location.hash) {
           this.setRedactorMarkersFromHash();
@@ -230,7 +230,7 @@ class AnalyzerFileTree extends React.Component {
             this.props.location.pathname
               .split("/")
               .slice(7, this.props.location.pathname.length)
-              .join("/")
+              .join("/"),
         );
         if (this.props.location.hash) {
           this.setRedactorMarkersFromHash();
@@ -314,7 +314,7 @@ class AnalyzerFileTree extends React.Component {
                         ? undefined
                         : () =>
                             this.scrollToRedactions(
-                              this.state.currentViewIndex - 1
+                              this.state.currentViewIndex - 1,
                             )
                     }
                   >
@@ -344,7 +344,7 @@ class AnalyzerFileTree extends React.Component {
                         ? undefined
                         : () =>
                             this.scrollToRedactions(
-                              this.state.currentViewIndex + 1
+                              this.state.currentViewIndex + 1,
                             )
                     }
                   >
@@ -413,7 +413,7 @@ class AnalyzerFileTree extends React.Component {
                   onLoad={(editor) =>
                     editor.gotoLine(
                       this.props.location.hash !== "" &&
-                        parseInt(this.props.location.hash.substring(2))
+                        parseInt(this.props.location.hash.substring(2)),
                     )
                   }
                   onSelectionChange={this.onSelectionChange}

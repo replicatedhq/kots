@@ -152,7 +152,7 @@ export function dynamicallyResizeText(
   text,
   maxWidth,
   defaultFontSize,
-  minFontSize
+  minFontSize,
 ) {
   let size;
   const resizerElm = document.createElement("p");
@@ -160,7 +160,7 @@ export function dynamicallyResizeText(
   resizerElm.setAttribute("class", "u-fontWeight--bold");
   resizerElm.setAttribute(
     "style",
-    `visibility: hidden; z-index: -1; position: absolute; font-size: ${defaultFontSize}`
+    `visibility: hidden; z-index: -1; position: absolute; font-size: ${defaultFontSize}`,
   );
   document.body.appendChild(resizerElm);
 
@@ -238,7 +238,7 @@ export function getGitOpsUri(
   provider,
   ownerRepo,
   hostname = "",
-  httpPort = ""
+  httpPort = "",
 ) {
   const owner = (ownerRepo.split("/").length && ownerRepo.split("/")[0]) || "";
   const repo =
@@ -476,7 +476,7 @@ export function getGitProviderDiffUrl(
   repoUri,
   provider,
   oldCommitHash,
-  newCommitHash
+  newCommitHash,
 ) {
   switch (provider) {
     case "github" || "gitlab":
@@ -639,7 +639,7 @@ export const Utilities = {
     const _word = typeof word === "string" ? word : this;
     str = _word.replace(
       /([^\W_]+[^\s-]*) */g,
-      (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
+      (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase(),
     );
 
     // Certain minor words should be left lowercase unless
@@ -669,7 +669,7 @@ export const Utilities = {
     ];
     for (i = 0, j = lowers.length; i < j; i++) {
       str = str.replace(new RegExp(`\\s${lowers[i]}\\s`, "g"), (txt) =>
-        txt.toLowerCase()
+        txt.toLowerCase(),
       );
     }
 
@@ -678,7 +678,7 @@ export const Utilities = {
     for (i = 0, j = uppers.length; i < j; i++) {
       str = str.replace(
         new RegExp(`\\b${uppers[i]}\\b`, "g"),
-        uppers[i].toUpperCase()
+        uppers[i].toUpperCase(),
       );
     }
 
@@ -917,7 +917,7 @@ export const Utilities = {
         this.getFileFromAirgapBundle(bundleArchive, "airgap.yaml").then(
           (metaFile) => {
             resolve(metaFile.text());
-          }
+          },
         );
       } catch (err) {
         reject(err);

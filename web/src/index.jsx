@@ -9,5 +9,5 @@ const root = createRoot(container); // createRoot(container!) if you use TypeScr
 root.render(
   <ReplicatedErrorBoundary>
     <Root />
-  </ReplicatedErrorBoundary>
+  </ReplicatedErrorBoundary>,
 );

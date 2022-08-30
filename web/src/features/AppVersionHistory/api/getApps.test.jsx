@@ -27,7 +27,7 @@ describe("getApps", () => {
         () => useApps({ _getApps: getAppsSpy }),
         {
           wrapper,
-        }
+        },
       );
 
       await waitFor(() => result.current.isSuccess);
@@ -47,7 +47,7 @@ describe("getApps", () => {
         Promise.resolve({
           ok: true,
           json: jsonSpy,
-        })
+        }),
       );
       const testToken = "testToken";
       const testAPIEndpoint = "testAPIEndpoint";
@@ -66,12 +66,12 @@ describe("getApps", () => {
         },
       };
       await expect(getApps(testgetAppsFetchConfig)).resolves.toEqual(
-        expectedBody
+        expectedBody,
       );
       expect(getAppsSpy).toHaveBeenCalledTimes(1);
       expect(getAppsSpy).toHaveBeenCalledWith(
         expectedAPIEndpoint,
-        expectedFetchConfig
+        expectedFetchConfig,
       );
       expect(jsonSpy).toHaveBeenCalledTimes(1);
     });
@@ -81,7 +81,7 @@ describe("getApps", () => {
         Promise.resolve({
           ok: false,
           status: 400,
-        })
+        }),
       );
       const testToken = "testToken";
       const testAPIEndpoint = "testAPIEndpoint";
@@ -92,7 +92,7 @@ describe("getApps", () => {
       };
 
       await expect(getApps(testgetAppsFetchConfig)).rejects.toThrowError(
-        "Failed to fetch apps with status 400"
+        "Failed to fetch apps with status 400",
       );
     });
 
@@ -101,7 +101,7 @@ describe("getApps", () => {
         Promise.resolve({
           ok: true,
           json: () => Promise.reject(new Error("Error parsing json")),
-        })
+        }),
       );
 
       const testToken = "testToken";
@@ -113,12 +113,12 @@ describe("getApps", () => {
       };
 
       await expect(getApps(testgetAppsFetchConfig)).rejects.toThrowError(
-        "Error parsing json"
+        "Error parsing json",
       );
     });
     it("throws error when network error", async () => {
       const getAppsSpy = jest.fn(() =>
-        Promise.reject(new Error("Error fetching"))
+        Promise.reject(new Error("Error fetching")),
       );
 
       const testToken = "testToken";
@@ -130,7 +130,7 @@ describe("getApps", () => {
       };
 
       await expect(getApps(testgetAppsFetchConfig)).rejects.toThrowError(
-        "Error fetching"
+        "Error fetching",
       );
     });
   });

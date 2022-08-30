@@ -33,7 +33,7 @@ describe("getVersions", () => {
               sequence: "0",
             },
           ],
-        })
+        }),
       );
 
       const { result, waitFor } = renderHook(
@@ -47,7 +47,7 @@ describe("getVersions", () => {
           }),
         {
           wrapper,
-        }
+        },
       );
 
       await waitFor(() => result.current.isSuccess);
@@ -67,7 +67,7 @@ describe("getVersions", () => {
         Promise.resolve({
           ok: true,
           json: jsonSpy,
-        })
+        }),
       );
       const testToken = "testToken";
       const testAPIEndpoint = "testAPIEndpoint";
@@ -89,12 +89,12 @@ describe("getVersions", () => {
         },
       };
       await expect(getVersions(testgetVersionsFetchConfig)).resolves.toEqual(
-        expectedBody
+        expectedBody,
       );
       expect(getVersionsSpy).toHaveBeenCalledTimes(1);
       expect(getVersionsSpy).toHaveBeenCalledWith(
         expectedAPIEndpoint,
-        expectedFetchConfig
+        expectedFetchConfig,
       );
       expect(jsonSpy).toHaveBeenCalledTimes(1);
     });
@@ -104,7 +104,7 @@ describe("getVersions", () => {
         Promise.resolve({
           ok: false,
           status: 400,
-        })
+        }),
       );
       const testToken = "testToken";
       const testAPIEndpoint = "testAPIEndpoint";
@@ -115,7 +115,7 @@ describe("getVersions", () => {
       };
 
       await expect(
-        getVersions(testgetVersionsFetchConfig)
+        getVersions(testgetVersionsFetchConfig),
       ).rejects.toThrowError("Failed to fetch apps with status 400");
     });
 
@@ -124,7 +124,7 @@ describe("getVersions", () => {
         Promise.resolve({
           ok: true,
           json: () => Promise.reject(new Error("Error parsing json")),
-        })
+        }),
       );
 
       const testToken = "testToken";
@@ -136,12 +136,12 @@ describe("getVersions", () => {
       };
 
       await expect(
-        getVersions(testgetVersionsFetchConfig)
+        getVersions(testgetVersionsFetchConfig),
       ).rejects.toThrowError("Error parsing json");
     });
     it("throws error when network error", async () => {
       const getVersionsSpy = jest.fn(() =>
-        Promise.reject(new Error("Error fetching"))
+        Promise.reject(new Error("Error fetching")),
       );
 
       const testToken = "testToken";
@@ -153,7 +153,7 @@ describe("getVersions", () => {
       };
 
       await expect(
-        getVersions(testgetVersionsFetchConfig)
+        getVersions(testgetVersionsFetchConfig),
       ).rejects.toThrowError("Error fetching");
     });
   });

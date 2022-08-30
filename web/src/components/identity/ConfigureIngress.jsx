@@ -55,7 +55,7 @@ class ConfigureIngress extends Component {
           key={i}
           number={i}
           removeAnnotation={this.removeAnnotation}
-        />
+        />,
       );
     }
 

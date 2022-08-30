@@ -32,7 +32,7 @@ class AppVersionHistoryRow extends Component {
     }
     this.props.handleSelectReleasesToDiff(
       this.props.version,
-      !this.props.isChecked
+      !this.props.isChecked,
     );
   };
 
@@ -433,7 +433,7 @@ class AppVersionHistoryRow extends Component {
                 this.props.handleActionButtonClicked();
                 if (needsConfiguration) {
                   this.props.history.push(
-                    `/app/${app.slug}/config/${version.sequence}`
+                    `/app/${app.slug}/config/${version.sequence}`,
                   );
                   return null;
                 }
@@ -507,7 +507,7 @@ class AppVersionHistoryRow extends Component {
                         : "Deployed"
                     } ${Utilities.dateFormat(
                       version.deployedAt,
-                      "MMMM D, YYYY @ hh:mm a z"
+                      "MMMM D, YYYY @ hh:mm a z",
                     )}`
                   : "Unable to find deployed at date"
               }
@@ -575,7 +575,7 @@ class AppVersionHistoryRow extends Component {
                 version.deployedAt
                   ? `Deployed ${Utilities.dateFormat(
                       version.deployedAt,
-                      "MMMM D, YYYY @ hh:mm a z"
+                      "MMMM D, YYYY @ hh:mm a z",
                     )}`
                   : "Unable to find deployed at date"
               }
@@ -665,7 +665,7 @@ class AppVersionHistoryRow extends Component {
             selected: isChecked && !nothingToCommit,
             "is-new": isNew,
             "show-preflight-passed-text": newPreflightResults,
-          }
+          },
         )}
         onClick={this.handleSelectReleasesToDiff}
       >
@@ -675,7 +675,7 @@ class AppVersionHistoryRow extends Component {
               className={classNames(
                 "checkbox u-marginRight--20",
                 { checked: isChecked && !nothingToCommit },
-                { disabled: nothingToCommit }
+                { disabled: nothingToCommit },
               )}
             />
           )}
@@ -710,11 +710,11 @@ class AppVersionHistoryRow extends Component {
                 {version.upstreamReleasedAt
                   ? Utilities.dateFormat(
                       version.upstreamReleasedAt,
-                      "MM/DD/YY @ hh:mm a z"
+                      "MM/DD/YY @ hh:mm a z",
                     )
                   : Utilities.dateFormat(
                       version.createdOn,
-                      "MM/DD/YY @ hh:mm a z"
+                      "MM/DD/YY @ hh:mm a z",
                     )}
               </span>
             </p>
@@ -725,7 +725,7 @@ class AppVersionHistoryRow extends Component {
                 handleShowDetailsClicked={() =>
                   this.props.toggleShowDetailsModal(
                     version.yamlErrors,
-                    version.sequence
+                    version.sequence,
                   )
                 }
               />

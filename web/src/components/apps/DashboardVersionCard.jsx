@@ -148,7 +148,7 @@ class DashboardVersionCard extends React.Component {
             "Content-Type": "application/json",
           },
           method: "GET",
-        }
+        },
       );
       if (res.ok && res.status === 200) {
         const response = await res.json();
@@ -194,7 +194,7 @@ class DashboardVersionCard extends React.Component {
             "Content-Type": "application/json",
           },
           method: "GET",
-        }
+        },
       );
 
       if (!res.ok) {
@@ -448,7 +448,7 @@ class DashboardVersionCard extends React.Component {
                         : "Deployed"
                     } ${Utilities.dateFormat(
                       currentVersion?.deployedAt,
-                      "MM/DD/YY @ hh:mm a z"
+                      "MM/DD/YY @ hh:mm a z",
                     )}`}
               </p>
             </div>
@@ -468,7 +468,7 @@ class DashboardVersionCard extends React.Component {
                 onClick={() =>
                   this.handleViewLogs(
                     currentVersion,
-                    currentVersion?.status === "failed"
+                    currentVersion?.status === "failed",
                   )
                 }
                 data-tip="View deploy logs"
@@ -608,7 +608,7 @@ class DashboardVersionCard extends React.Component {
     version,
     force = false,
     continueWithFailedPreflights = false,
-    redeploy = false
+    redeploy = false,
   ) => {
     if (this.props.isHelmManaged) {
       this.setState({
@@ -677,7 +677,7 @@ class DashboardVersionCard extends React.Component {
       match.params.slug,
       versionToDeploy,
       isSkipPreflights,
-      continueWithFailedPreflights
+      continueWithFailedPreflights,
     );
     this.setState({ versionToDeploy: null, isRedeploy: false });
 
@@ -827,7 +827,7 @@ class DashboardVersionCard extends React.Component {
             onClick={() => {
               if (needsConfiguration) {
                 this.props.history.push(
-                  `/app/${app?.slug}/config/${version.sequence}`
+                  `/app/${app?.slug}/config/${version.sequence}`,
                 );
                 return;
               }
@@ -942,7 +942,7 @@ class DashboardVersionCard extends React.Component {
           "Content-Type": "application/json",
         },
         method: "POST",
-      }
+      },
     )
       .then(async (res) => {
         if (!res.ok) {
@@ -979,7 +979,7 @@ class DashboardVersionCard extends React.Component {
             "Content-Type": "application/json",
           },
           method: "GET",
-        }
+        },
       )
         .then(async (res) => {
           if (res.status === 404) {
@@ -1040,7 +1040,7 @@ class DashboardVersionCard extends React.Component {
           "Content-Type": "application/json",
         },
         method: "POST",
-      }
+      },
     )
       .then(async (res) => {
         if (!res.ok) {
@@ -1059,7 +1059,7 @@ class DashboardVersionCard extends React.Component {
         }
         this.versionDownloadStatusJobs[version.sequence].start(
           () => this.updateVersionDownloadStatus(version),
-          1000
+          1000,
         );
       })
       .catch((err) => {
@@ -1090,7 +1090,7 @@ class DashboardVersionCard extends React.Component {
             "Content-Type": "application/json",
           },
           method: "GET",
-        }
+        },
       )
         .then(async (res) => {
           const response = await res.json();
@@ -1306,7 +1306,7 @@ class DashboardVersionCard extends React.Component {
                 Released{" "}
                 {Utilities.dateFormat(
                   latestDeployableVersion?.createdOn,
-                  "MM/DD/YY @ hh:mm a z"
+                  "MM/DD/YY @ hh:mm a z",
                 )}{" "}
               </p>
               {this.renderDiff(latestDeployableVersion)}

@@ -236,7 +236,7 @@ class AppConfig extends Component {
       this.props.history.push(`/${slug}/config#${requiredItems[0]}-group`);
     } else if (match.params.sequence) {
       this.props.history.push(
-        `/app/${slug}/config/${match.params.sequence}#${requiredItems[0]}-group`
+        `/app/${slug}/config/${match.params.sequence}#${requiredItems[0]}-group`,
       );
     } else {
       this.props.history.push(`/app/${slug}/config#${requiredItems[0]}-group`);
@@ -248,7 +248,7 @@ class AppConfig extends Component {
     requiredItems.forEach((requiredItem) => {
       configGroups.forEach((configGroup) => {
         const item = configGroup.items.find(
-          (item) => item.name === requiredItem
+          (item) => item.name === requiredItem,
         );
         if (item) {
           item.error = "This item is required";
@@ -338,7 +338,7 @@ class AppConfig extends Component {
         const newItem = group.items[i];
         const oldItem = this.getItemInConfigGroups(
           initialConfigGroups,
-          newItem.name
+          newItem.name,
         );
         if (!oldItem || oldItem.value !== newItem.value) {
           return true;
@@ -404,7 +404,7 @@ class AppConfig extends Component {
             if (newItem.type === "password") {
               const oldItem = this.getItemInConfigGroups(
                 oldGroups,
-                newItem.name
+                newItem.name,
               );
               if (oldItem) {
                 newItem.value = oldItem.value;
@@ -462,7 +462,7 @@ class AppConfig extends Component {
 
     const pendingVersions = app?.downstream?.pendingVersions;
     this.props.history.push(
-      `/app/${app?.slug}/config/${pendingVersions[0].parentSequence}`
+      `/app/${app?.slug}/config/${pendingVersions[0].parentSequence}`,
     );
   };
 
@@ -610,7 +610,7 @@ class AppConfig extends Component {
                     <div
                       className={classNames(
                         "ConfigOuterWrapper u-paddingTop--30",
-                        { "u-marginTop--20": fromLicenseFlow }
+                        { "u-marginTop--20": fromLicenseFlow },
                       )}
                       style={{ width: "100%" }}
                     >

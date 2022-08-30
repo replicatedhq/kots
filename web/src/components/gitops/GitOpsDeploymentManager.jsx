@@ -121,7 +121,7 @@ class GitOpsDeploymentManager extends React.Component {
         }
         console.log(
           "failed to get apps list, unexpected status code",
-          res.status
+          res.status,
         );
         return;
       }
@@ -170,7 +170,7 @@ class GitOpsDeploymentManager extends React.Component {
         }
         console.log(
           "failed to get gitops settings, unexpected status code",
-          res.status
+          res.status,
         );
         return;
       }
@@ -181,7 +181,7 @@ class GitOpsDeploymentManager extends React.Component {
         this.getInitialOwnerRepo(this.state.selectedApp);
         const selectedService = find(
           SERVICES,
-          (service) => service.value === freshGitops.provider
+          (service) => service.value === freshGitops.provider,
         );
         this.setState({
           selectedService: selectedService
@@ -302,7 +302,7 @@ class GitOpsDeploymentManager extends React.Component {
     action,
     hostname,
     httpPort,
-    sshPort
+    sshPort,
   ) => {
     let gitOpsInput = new Object();
     gitOpsInput.provider = provider;
@@ -357,7 +357,7 @@ class GitOpsDeploymentManager extends React.Component {
       action,
       hostname,
       httpPort,
-      sshPort
+      sshPort,
     );
 
     try {
@@ -440,7 +440,7 @@ class GitOpsDeploymentManager extends React.Component {
           gitOpsInput: gitOpsInput,
         }),
         method: "PUT",
-      }
+      },
     );
     if (!res.ok) {
       if (res.status === 401) {
@@ -484,7 +484,7 @@ class GitOpsDeploymentManager extends React.Component {
       action,
       hostname,
       httpPort,
-      sshPort
+      sshPort,
     );
 
     try {
@@ -604,7 +604,7 @@ class GitOpsDeploymentManager extends React.Component {
               hostname,
               providerError,
               httpPort,
-              sshPort
+              sshPort,
             )}
             {isBitbucketServer && (
               <Flex flex="1" mt="30" width="100%">
@@ -858,7 +858,7 @@ class GitOpsDeploymentManager extends React.Component {
                         "u-textColor--error": gitopsEnabled && !gitopsConnected,
                         "u-textColor--success":
                           gitopsEnabled && gitopsConnected,
-                      }
+                      },
                     )}
                   >
                     {this.getGitOpsStatus(gitops)}
@@ -909,7 +909,7 @@ class GitOpsDeploymentManager extends React.Component {
                 hostname,
                 providerError,
                 httpPort,
-                sshPort
+                sshPort,
               )}
           </div>
           {isBitbucketServer && (

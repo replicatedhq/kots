@@ -169,7 +169,7 @@ class Dashboard extends Component {
         true,
         app.slug,
         this.onDropBundle,
-        simultaneousUploads
+        simultaneousUploads,
       ),
     });
   };
@@ -197,7 +197,7 @@ class Dashboard extends Component {
             "Content-Type": "application/json",
           },
           method: "GET",
-        }
+        },
       )
         .then(async (res) => {
           if (!res.ok && res.status === 401) {
@@ -335,7 +335,7 @@ class Dashboard extends Component {
             "Content-Type": "application/json",
           },
           method: "GET",
-        }
+        },
       )
         .then(async (res) => {
           const response = await res.json();
@@ -387,7 +387,7 @@ class Dashboard extends Component {
       params,
       this.onUploadProgress,
       this.onUploadError,
-      this.onUploadComplete
+      this.onUploadComplete,
     );
   };
 
@@ -836,7 +836,7 @@ class Dashboard extends Component {
                                 {resource?.name}
                               </p>
                             </div>
-                          )
+                          ),
                         )}
                       </div>
                     ))}

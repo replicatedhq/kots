@@ -1,51 +1,80 @@
 {
+  "plugins": [
+    "prettier",
+    "@typescript-eslint",
+    "jest"
+  ],
+  "extends": [
+    "airbnb-typescript",
+    "prettier"
+  ],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
-    "ecmaVersion": 2020,
-    "sourceType": "module",
-    "ecmaFeatures": {
-      "jsx": true
-    }
+    "project": "./tsconfig.json"
   },
   "settings": {
-    "react": {
-      "version": "detect"
-    },
     "import/resolver": {
-      "node": {
-        "extensions": [".js", ".jsx", ".ts", ".tsx", ".json"]
-      },
-      "alias": {
-        "map": [
-          [
-            "@src",
-            "./src"
-          ]
-        ]
+      "typescript": {
+        "alwaysTryTypes": true
       }
     }
   },
-  "extends": [
-    "prettier",
-    "airbnb",
-    "airbnb/hooks",
-    "airbnb-typescript"
-  ],
-  "plugins": ["react", "jsx-a11y", "prettier", "jest"],
   "rules": {
-    "prettier/prettier": [
-      "error"
+    "object-curly-spacing": [
+      "warn",
+      "always"
     ],
-    // use object destructured imports / exports
-    "import/prefer-default-export": "off",
-    // allows window._paq to be used in the code
-    "no-underscore-dangle": "off",
-    "react/function-component-definition": [
-      2,
+    "no-unused-vars": [
+      "warn",
       {
-        "namedComponents": "function-declaration",
-      },
+        "vars": "all",
+        "args": "none"
+      }
     ],
+    "@typescript-eslint/semi": [
+      "off"
+    ],
+    "@typescript-eslint/no-unused-vars": [
+      "warn",
+      {
+        "vars": "all",
+        "args": "none"
+      }
+    ],
+    "@typescript-eslint/no-explicit-any": [
+      "error",
+      {
+        "ignoreRestArgs": true
+      }
+    ],
+    "max-len": [
+      "warn",
+      {
+        "code": 80,
+        "ignoreStrings": true,
+        "ignoreTemplateLiterals": true,
+        "ignoreComments": true
+      }
+    ],
+    "no-plusplus": [
+      "error",
+      {
+        "allowForLoopAfterthoughts": true
+      }
+    ],
+    // "react/jsx-key": "error",
+    "react/jsx-filename-extension": "off",
+    "react/jsx-props-no-spreading": "off",
+    "import/extensions": "off",
+    "import/no-extraneous-dependencies": "off",
+    "import/prefer-default-export": "off",
+    "react/jsx-boolean-value": "off",
+    "react/prop-types": "off",
+    "@typescript-eslint/naming-convention": "off",
+    "react/no-unescaped-entities": "off",
+    "react/jsx-one-expression-per-line": "off",
+    "react/jsx-wrap-multilines": "off",
+    "react/destructuring-assignment": "off",
     "jest/no-disabled-tests": "warn",
     "jest/no-focused-tests": "error",
     "jest/no-identical-title": "error",

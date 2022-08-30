@@ -146,7 +146,7 @@ class AppGitops extends Component {
             Authorization: Utilities.getToken(),
             "Content-Type": "application/json",
           },
-        }
+        },
       );
       if (!res.ok) {
         if (res.status === 401) {
@@ -273,7 +273,7 @@ class AppGitops extends Component {
           gitOpsInput: gitOpsInput,
         }),
         method: "PUT",
-      }
+      },
     );
     if (!res.ok) {
       if (res.status === 401) {
@@ -306,7 +306,7 @@ class AppGitops extends Component {
             "Content-Type": "application/json",
           },
           method: "POST",
-        }
+        },
       );
       if (!res.ok && res.status === 401) {
         Utilities.logoutUser();

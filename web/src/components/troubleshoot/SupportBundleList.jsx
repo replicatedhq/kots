@@ -36,7 +36,7 @@ class SupportBundleList extends React.Component {
           "Content-Type": "application/json",
         },
         method: "GET",
-      }
+      },
     )
       .then(async (res) => {
         if (!res.ok) {
@@ -127,7 +127,7 @@ class SupportBundleList extends React.Component {
                   title: "Support bundles",
                   onClick: () =>
                     this.props.history.push(
-                      `/app/${this.props.watch.slug}/troubleshoot`
+                      `/app/${this.props.watch.slug}/troubleshoot`,
                     ),
                   isActive: true,
                 },
@@ -135,7 +135,7 @@ class SupportBundleList extends React.Component {
                   title: "Redactors",
                   onClick: () =>
                     this.props.history.push(
-                      `/app/${this.props.watch.slug}/troubleshoot/redactors`
+                      `/app/${this.props.watch.slug}/troubleshoot/redactors`,
                     ),
                   isActive: false,
                 },

@@ -49,7 +49,7 @@ export default function RestoreSnapshotModal(props) {
               <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginRight--20">
                 {Utilities.dateFormat(
                   snapshotToRestore?.startedAt,
-                  "MMM D YYYY @ hh:mm a z"
+                  "MMM D YYYY @ hh:mm a z",
                 )}
               </p>
             </div>

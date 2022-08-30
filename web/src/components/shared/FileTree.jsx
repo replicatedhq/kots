@@ -103,7 +103,7 @@ export default class FileTree extends React.Component {
               >
                 <div>{file.name}</div>
               </li>
-            )
+            ),
           )}
       </ul>
     );

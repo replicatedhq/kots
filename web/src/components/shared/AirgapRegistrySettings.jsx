@@ -112,7 +112,7 @@ class AirgapRegistrySettings extends Component {
             password: this.state.password,
             isReadOnly: this.state.isReadOnly,
           }),
-        }
+        },
       );
     } catch (err) {
       this.setState({

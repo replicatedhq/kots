@@ -81,7 +81,7 @@ class UploadSupportBundleModal extends React.Component {
     clipboard.on("error", () => {
       this.showCopyToast(
         "Unable to copy, select the text and use 'Command/Ctl + C'",
-        false
+        false,
       );
     });
   }

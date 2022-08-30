@@ -36,7 +36,7 @@ export default class TabView extends Component {
       {
         currentTab: name,
       },
-      () => onTabChange(name)
+      () => onTabChange(name),
     );
   };
 
@@ -44,7 +44,7 @@ export default class TabView extends Component {
     const { className, children, separator } = this.props;
     const { currentTab } = this.state;
     const childToRender = React.Children.toArray(children).find(
-      (child) => child.props.name === currentTab
+      (child) => child.props.name === currentTab,
     );
     return (
       <div className={classNames("tabview", className)}>
@@ -58,7 +58,7 @@ export default class TabView extends Component {
                     "tabview-tabname u-cursor--pointer u-fontSize--small",
                     {
                       selected: name === currentTab,
-                    }
+                    },
                   )}
                   onClick={() => {
                     this.setTab(name);

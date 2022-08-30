@@ -24,12 +24,12 @@ import {
 type ValueType = {
   value?: string;
   label?: string;
-}
+};
 
 type CACertificate = {
   name: string;
-  data: Array<string>
-}
+  data: Array<string>;
+};
 type State = {
   azureBucket?: string;
   azureClientId?: string;
@@ -56,8 +56,8 @@ type State = {
   resetFileSystemWarningMessage?: string;
   s3bucket?: string;
   s3CompatibleBucket?: string;
-  s3CompatibleEndpoint?: string
-  s3CompatibleFieldErrors?: { endpoint?: string; };
+  s3CompatibleEndpoint?: string;
+  s3CompatibleFieldErrors?: { endpoint?: string };
   s3CompatibleKeyId?: string;
   s3CompatibleKeySecret?: string;
   s3CompatiblePath?: string;
@@ -78,28 +78,28 @@ type State = {
   tmpFileSystemType?: string;
   updatingSettings?: boolean;
   useIamAws?: boolean;
-}
+};
 
 type StoreProviderName = "aws" | "gcp" | "azure" | "other";
 type StoreProvider = {
   [K in StoreProviderName]?: {
-    accessKeyID?: string,
-    accessKeySecret?: string,
-    clientId?: string,
-    clientSecret?: string,
-    cloudName?: string,
-    endpoint?: string,
-    jsonFile?: string,
-    region?: string,
-    resourceGroup?: string,
-    secretAccessKey?: string,
-    serviceAccount?: string,
-    storageAccount?: string,
-    subscriptionId?: string,
-    tenantId?: string,
-    useInstanceRole?: boolean,
-  }
-}
+    accessKeyID?: string;
+    accessKeySecret?: string;
+    clientId?: string;
+    clientSecret?: string;
+    cloudName?: string;
+    endpoint?: string;
+    jsonFile?: string;
+    region?: string;
+    resourceGroup?: string;
+    secretAccessKey?: string;
+    serviceAccount?: string;
+    storageAccount?: string;
+    subscriptionId?: string;
+    tenantId?: string;
+    useInstanceRole?: boolean;
+  };
+};
 type StoreMetadata = {
   bucket?: string;
   internal?: boolean;
@@ -113,7 +113,7 @@ type FileSystemConfig = {
     server: string;
   };
   hostPath?: string;
-}
+};
 
 type FileSystemOptions = {
   forceReset?: boolean;
@@ -122,16 +122,18 @@ type FileSystemOptions = {
     path?: string;
     server?: string;
   };
-}
+};
 
-type ProviderPayload = {
-  bucket?: string;
-  caCertData?: string;
-  fileSystem?: FileSystemOptions;
-  path?: string;
-  provider?: StoreProviderName;
-  internal?: boolean;
-} | StoreProvider;
+type ProviderPayload =
+  | {
+      bucket?: string;
+      caCertData?: string;
+      fileSystem?: FileSystemOptions;
+      path?: string;
+      provider?: StoreProviderName;
+      internal?: boolean;
+    }
+  | StoreProvider;
 
 type Props = RouteComponentProps & {
   // TODO: add apps type for apps response
@@ -162,36 +164,36 @@ type Props = RouteComponentProps & {
   updateErrorMsg: string;
   updateSettings: (payload: ProviderPayload) => void;
   updatingSettings: boolean;
-}
+};
 
-type FieldName = "azureBucket" |
-  "azureClientId" |
-  "azureClientSecret" |
-  "azurePath" |
-  "azureResourceGroupName" |
-  "azureStorageAccountId" |
-  "azureSubscriptionId" |
-  "azureTenantId" |
-  "fileSystemHostPath" |
-  "fileSystemNFSPath" |
-  "fileSystemNFSServer" |
-  "gcsBucket" |
-  "gcsPath" |
-  "gcsServiceAccount" |
-  "gcsUseIam" |
-  "s3bucket" |
-  "s3CompatibleBucket" |
-  "s3CompatiblePath" |
-  "s3CompatibleKeyId" |
-  "s3CompatibleKeySecret" |
-  "s3CompatibleEndpoint" |
-  "s3CompatibleRegion" |
-  "s3KeyId" |
-  "s3KeySecret" |
-  "s3Region" |
-  "s3Path" |
-  "useIamAws";
-
+type FieldName =
+  | "azureBucket"
+  | "azureClientId"
+  | "azureClientSecret"
+  | "azurePath"
+  | "azureResourceGroupName"
+  | "azureStorageAccountId"
+  | "azureSubscriptionId"
+  | "azureTenantId"
+  | "fileSystemHostPath"
+  | "fileSystemNFSPath"
+  | "fileSystemNFSServer"
+  | "gcsBucket"
+  | "gcsPath"
+  | "gcsServiceAccount"
+  | "gcsUseIam"
+  | "s3bucket"
+  | "s3CompatibleBucket"
+  | "s3CompatiblePath"
+  | "s3CompatibleKeyId"
+  | "s3CompatibleKeySecret"
+  | "s3CompatibleEndpoint"
+  | "s3CompatibleRegion"
+  | "s3KeyId"
+  | "s3KeySecret"
+  | "s3Region"
+  | "s3Path"
+  | "useIamAws";
 
 class SnapshotStorageDestination extends Component<Props, State> {
   constructor(props: Props) {
@@ -317,16 +319,16 @@ class SnapshotStorageDestination extends Component<Props, State> {
     if (provider === "azure") {
       return (
         snapshotSettings?.store?.azure?.resourceGroup !==
-        azureResourceGroupName ||
+          azureResourceGroupName ||
         snapshotSettings?.store?.azure?.storageAccount !==
-        azureStorageAccountId ||
+          azureStorageAccountId ||
         snapshotSettings?.store?.azure?.subscriptionId !==
-        azureSubscriptionId ||
+          azureSubscriptionId ||
         snapshotSettings?.store?.azure?.tenantId !== azureTenantId ||
         snapshotSettings?.store?.azure?.clientId !== azureClientId ||
         snapshotSettings?.store?.azure?.clientSecret !== azureClientSecret ||
         snapshotSettings?.store?.azure?.cloudName !==
-        selectedAzureCloudName?.value
+          selectedAzureCloudName?.value
       );
     }
     if (provider === "other") {
@@ -334,13 +336,15 @@ class SnapshotStorageDestination extends Component<Props, State> {
         snapshotSettings?.store?.other?.region !== s3CompatibleRegion ||
         snapshotSettings?.store?.other?.accessKeyID !== s3CompatibleKeyId ||
         snapshotSettings?.store?.other?.secretAccessKey !==
-        s3CompatibleKeySecret ||
+          s3CompatibleKeySecret ||
         snapshotSettings?.store?.other?.endpoint !== s3CompatibleEndpoint
       );
     }
   };
 
-  getCurrentProviderStores = (provider: StoreProviderName): StoreProvider | null => {
+  getCurrentProviderStores = (
+    provider: StoreProviderName,
+  ): StoreProvider | null => {
     const hasChanges = this.checkForStoreChanges(provider);
     if (hasChanges) {
       switch (provider) {
@@ -488,7 +492,10 @@ class SnapshotStorageDestination extends Component<Props, State> {
     });
   };
 
-  handleFormChange = (field: FieldName, e: React.ChangeEvent<HTMLInputElement>) => {
+  handleFormChange = (
+    field: FieldName,
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     let nextState: State = {};
     if (field === "useIamAws" || field === "gcsUseIam") {
       nextState[field] = e.target.checked;
@@ -504,8 +511,8 @@ class SnapshotStorageDestination extends Component<Props, State> {
       destination?.value === "hostpath"
         ? FILE_SYSTEM_HOSTPATH_TYPE
         : destination?.value === "nfs"
-          ? FILE_SYSTEM_NFS_TYPE
-          : "";
+        ? FILE_SYSTEM_NFS_TYPE
+        : "";
     this.setState({
       selectedDestination: destination,
       fileSystemType: fileSystemType,
@@ -560,14 +567,20 @@ class SnapshotStorageDestination extends Component<Props, State> {
       /\b(https?):\/\/[-A-Za-z0-9+&@#/%?=~_|!:,.;]*[-A-Za-z0-9+&@#/%=~_|]/;
 
     // TODO: clean up the state so we don't need to check for string here
-    if (typeof this.state?.s3CompatibleEndpoint === "string" &&
-      !urlRe.test(this.state?.s3CompatibleEndpoint)) {
+    if (
+      typeof this.state?.s3CompatibleEndpoint === "string" &&
+      !urlRe.test(this.state?.s3CompatibleEndpoint)
+    ) {
       return { endpoint: "Please enter a valid endpoint with protocol" };
     }
     return {};
   };
 
-  getProviderPayload = (provider: StoreProviderName, bucket?: string, path?: string): ProviderPayload => {
+  getProviderPayload = (
+    provider: StoreProviderName,
+    bucket?: string,
+    path?: string,
+  ): ProviderPayload => {
     const caCertData = this.state?.caCertificate?.data;
     return Object.assign(
       {
@@ -576,7 +589,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
         path,
         caCertData,
       },
-      this.getCurrentProviderStores(provider)
+      this.getCurrentProviderStores(provider),
     );
   };
 
@@ -588,7 +601,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
     const payload = this.getProviderPayload(
       "aws",
       this.state?.s3bucket,
-      this.state?.s3Path
+      this.state?.s3Path,
     );
     this.props.updateSettings(payload);
   };
@@ -597,7 +610,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
     const payload = this.getProviderPayload(
       "azure",
       this.state.azureBucket,
-      this.state.azurePath
+      this.state.azurePath,
     );
     this.props.updateSettings(payload);
   };
@@ -606,7 +619,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
     const payload = this.getProviderPayload(
       "gcp",
       this.state.gcsBucket,
-      this.state.gcsPath
+      this.state.gcsPath,
     );
     this.props.updateSettings(payload);
   };
@@ -615,7 +628,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
     const payload = this.getProviderPayload(
       "other",
       this.state.s3CompatibleBucket,
-      this.state.s3CompatiblePath
+      this.state.s3CompatiblePath,
     );
     this.props.updateSettings(payload);
   };
@@ -641,13 +654,19 @@ class SnapshotStorageDestination extends Component<Props, State> {
         path,
         server,
         hostPath,
-        forceReset
+        forceReset,
       ),
     };
     this.props.updateSettings(payload);
   };
 
-  buildFileSystemOptions = (type?: string, path?: string, server?: string, hostPath?: string, forceReset?: boolean): FileSystemOptions => {
+  buildFileSystemOptions = (
+    type?: string,
+    path?: string,
+    server?: string,
+    hostPath?: string,
+    forceReset?: boolean,
+  ): FileSystemOptions => {
     const options: FileSystemOptions = {
       forceReset: forceReset,
     };
@@ -699,7 +718,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
       path,
       server,
       hostPath,
-      forceReset
+      forceReset,
     );
 
     this.setState({
@@ -844,8 +863,9 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 </p>
                 <div className="BoxedCheckbox-wrapper flex1 u-textAlign--left">
                   <div
-                    className={`BoxedCheckbox flex-auto flex alignItems--center ${this.state.useIamAws ? "is-active" : ""
-                      }`}
+                    className={`BoxedCheckbox flex-auto flex alignItems--center ${
+                      this.state.useIamAws ? "is-active" : ""
+                    }`}
                   >
                     <input
                       type="checkbox"
@@ -1074,8 +1094,9 @@ class SnapshotStorageDestination extends Component<Props, State> {
             </div>
             <div className="BoxedCheckbox-wrapper u-textAlign--left u-marginBottom--20">
               <div
-                className={`BoxedCheckbox flex-auto flex alignItems--center u-width--half ${this.state.gcsUseIam ? "is-active" : ""
-                  }`}
+                className={`BoxedCheckbox flex-auto flex alignItems--center u-width--half ${
+                  this.state.gcsUseIam ? "is-active" : ""
+                }`}
               >
                 <input
                   type="checkbox"
@@ -1515,7 +1536,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
     }
 
     const selectedDestination = availableDestinations.find(
-      (d) => d.value === this.state?.selectedDestination?.value
+      (d) => d.value === this.state?.selectedDestination?.value,
     );
 
     const showResetFileSystemWarningModal =
@@ -1585,8 +1606,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                       </div>
                     )}
                   <div className="flex1">
-                    {availableDestinations.length > 1 ?
-                    (
+                    {availableDestinations.length > 1 ? (
                       // TODO: upgrade react-select and use the current typing
                       // @ts-ignore
                       <Select
@@ -1598,7 +1618,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                         getOptionLabel={(destination) =>
                           this.getDestinationLabel(
                             destination,
-                            destination.label
+                            destination.label,
                           )
                         }
                         getOptionValue={(destination) => destination.label}
@@ -1614,12 +1634,10 @@ class SnapshotStorageDestination extends Component<Props, State> {
                       <div className="u-textColor--primary u-fontWeight--medium flex alignItems--center">
                         {this.getDestinationLabel(
                           availableDestinations[0],
-                          availableDestinations[0].label
+                          availableDestinations[0].label,
                         )}
                       </div>
-                    )
-
-                    : null}
+                    ) : null}
                   </div>
                 </div>
                 {!this.state.determiningDestination && (
@@ -1797,7 +1815,8 @@ class SnapshotStorageDestination extends Component<Props, State> {
   }
 }
 
-
 // TODO: fix this typing thing
-const RoutedSnapshotStorageDestination: any = withRouter(SnapshotStorageDestination);
+const RoutedSnapshotStorageDestination: any = withRouter(
+  SnapshotStorageDestination,
+);
 export default RoutedSnapshotStorageDestination;

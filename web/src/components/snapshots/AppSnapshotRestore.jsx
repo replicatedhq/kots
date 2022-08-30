@@ -57,7 +57,7 @@ class AppSnapshotRestore extends Component {
           headers: {
             Authorization: Utilities.getToken(),
           },
-        }
+        },
       );
       if (!res.ok) {
         if (res.status === 401) {
@@ -129,7 +129,7 @@ class AppSnapshotRestore extends Component {
         headers: {
           Authorization: Utilities.getToken(),
         },
-      }
+      },
     );
     if (!res.ok) {
       if (res.status === 401) {

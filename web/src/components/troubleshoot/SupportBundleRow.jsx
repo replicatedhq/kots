@@ -45,7 +45,7 @@ class SupportBundleRow extends React.Component {
   handleBundleClick = (bundle) => {
     const { watchSlug } = this.props;
     this.props.history.push(
-      `/app/${watchSlug}/troubleshoot/analyze/${bundle.slug}`
+      `/app/${watchSlug}/troubleshoot/analyze/${bundle.slug}`,
     );
   };
 
@@ -58,7 +58,7 @@ class SupportBundleRow extends React.Component {
         headers: {
           Authorization: Utilities.getToken(),
         },
-      }
+      },
     )
       .then(async (result) => {
         if (!result.ok) {
@@ -75,7 +75,7 @@ class SupportBundleRow extends React.Component {
           filename = disposition.split("filename=")[1];
         } else {
           const createdAt = dayjs(bundle.createdAt).format(
-            "YYYY-MM-DDTHH_mm_ss"
+            "YYYY-MM-DDTHH_mm_ss",
           );
           filename = `supportbundle-${createdAt}.tar.gz`;
         }
@@ -109,7 +109,7 @@ class SupportBundleRow extends React.Component {
         headers: {
           Authorization: Utilities.getToken(),
         },
-      }
+      },
     )
       .then(async (result) => {
         if (!result.ok) {
@@ -208,7 +208,7 @@ class SupportBundleRow extends React.Component {
                             Collected on{" "}
                             <span className="u-fontWeight--bold">
                               {dayjs(bundle.createdAt).format(
-                                "MMMM D, YYYY @ h:mm a"
+                                "MMMM D, YYYY @ h:mm a",
                               )}
                             </span>
                           </span>
@@ -221,7 +221,7 @@ class SupportBundleRow extends React.Component {
                             Collected on{" "}
                             <span className="u-fontWeight--medium">
                               {dayjs(bundle.createdAt).format(
-                                "MMMM D, YYYY @ h:mm a"
+                                "MMMM D, YYYY @ h:mm a",
                               )}
                             </span>
                           </span>

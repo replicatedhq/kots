@@ -35,7 +35,7 @@ export default class ConfigSelectOne extends React.Component {
           value={this.props.value}
           readOnly={this.props.readonly}
           handleChange={(itemName, val) => this.handleOnChange(itemName, val)}
-        />
+        />,
       );
     });
 

@@ -57,7 +57,7 @@ export class ClusterNodes extends Component {
         }
         console.log(
           "failed to get node status list, unexpected status code",
-          res.status
+          res.status,
         );
         return;
       }
@@ -136,7 +136,7 @@ export class ClusterNodes extends Component {
           Accept: "application/json",
         },
         method: "POST",
-      }
+      },
     )
       .then(async (res) => {
         const data = await res.json();
@@ -207,7 +207,7 @@ export class ClusterNodes extends Component {
           Accept: "application/json",
         },
         method: "POST",
-      }
+      },
     )
       .then(async (res) => {
         const data = await res.json();
@@ -233,7 +233,7 @@ export class ClusterNodes extends Component {
       },
       async () => {
         await this.generateWorkerAddNodeCommand();
-      }
+      },
     );
   };
 
@@ -249,7 +249,7 @@ export class ClusterNodes extends Component {
         } else {
           await this.generatePrimaryAddNodeCommand();
         }
-      }
+      },
     );
   };
 
@@ -322,7 +322,7 @@ export class ClusterNodes extends Component {
                           "is-active":
                             this.state.selectedNodeType === "primary",
                           "is-disabled": !kurl?.ha,
-                        }
+                        },
                       )}
                     >
                       <input
@@ -358,7 +358,7 @@ export class ClusterNodes extends Component {
                         {
                           "is-active":
                             this.state.selectedNodeType === "secondary",
-                        }
+                        },
                       )}
                     >
                       <input
@@ -413,7 +413,7 @@ export class ClusterNodes extends Component {
                       {this.state.expiry && (
                         <span className="timestamp u-marginTop--15 u-width--full u-textAlign--right u-fontSize--small u-fontWeight--bold u-textColor--primary">
                           {`Expires on ${dayjs(this.state.expiry).format(
-                            "MMM Do YYYY, h:mm:ss a z"
+                            "MMM Do YYYY, h:mm:ss a z",
                           )} UTC${(-1 * new Date().getTimezoneOffset()) / 60}`}
                         </span>
                       )}

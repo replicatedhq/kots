@@ -39,7 +39,7 @@ class AnalyzerRedactorReportRow extends React.Component {
       }
     });
     history.push(
-      `/app/${match.params.slug}/troubleshoot/analyze/${match.params.bundleSlug}/contents/${filePath}?file=${redactor}${rowString}`
+      `/app/${match.params.slug}/troubleshoot/analyze/${match.params.bundleSlug}/contents/${filePath}?file=${redactor}${rowString}`,
     );
   };
 
@@ -52,7 +52,7 @@ class AnalyzerRedactorReportRow extends React.Component {
         <div className="flex u-marginRight--10">
           <span
             className={`icon redactor-${this.getRedactorExtension(
-              file?.file
+              file?.file,
             )}-icon`}
           />
         </div>
@@ -118,7 +118,7 @@ class AnalyzerRedactorReportRow extends React.Component {
     const { redactor, redactorFiles } = this.props;
     const groupedFiles = groupBy(redactorFiles, "file");
     const groupedFilesArray = Object.keys(groupedFiles).map(
-      (i) => groupedFiles[i]
+      (i) => groupedFiles[i],
     );
 
     return (
@@ -136,7 +136,7 @@ class AnalyzerRedactorReportRow extends React.Component {
                 </p>
                 {this.renderRedactionDetails(
                   groupedFilesArray,
-                  redactorFiles.length
+                  redactorFiles.length,
                 )}
               </div>
             </div>

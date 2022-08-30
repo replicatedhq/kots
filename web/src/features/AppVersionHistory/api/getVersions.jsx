@@ -23,7 +23,7 @@ async function getVersions({
           "Content-Type": "application/json",
         },
         method: "GET",
-      }
+      },
     );
     if (!res.ok) {
       if (res.status === 401) {
@@ -47,7 +47,7 @@ function getVersionsSelectorForKotsManaged({ versions, currentApp, metadata }) {
       version.sequence === downstream?.currentVersion?.sequence;
     const isDeploying = version.status === "deploying";
     const isPastVersion = !!downstream?.pastVersions?.find(
-      (downstreamVersion) => downstreamVersion.sequence === version.sequence
+      (downstreamVersion) => downstreamVersion.sequence === version.sequence,
     );
     const needsConfiguration = version.status === "pending_config";
     const isRollback =
@@ -102,7 +102,7 @@ function getVersionsSelectorForAirgapped({ versions, currentApp, metadata }) {
 
 function getVersionsSelectorForHelmManaged({ versions }) {
   const deployedSequence = versions?.versionHistory?.find(
-    (v) => v.status === "deployed"
+    (v) => v.status === "deployed",
   )?.sequence;
 
   const versionHistory = versions?.versionHistory.map((version) => {
@@ -179,7 +179,7 @@ function useVersions({
       enabled: !!currentApp,
       select: (versions) => versionSelector({ versions, currentApp, metadata }),
       refetchInterval,
-    }
+    },
   );
 }
 

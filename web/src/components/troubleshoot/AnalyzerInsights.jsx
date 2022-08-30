@@ -18,7 +18,7 @@ export class AnalyzerInsights extends React.Component {
   componentDidUpdate(lastProps) {
     if (this.props.insights !== lastProps.insights && this.props.insights) {
       const hasProblems = this.props.insights.some(
-        (i) => i.severity === "warn" || i.severity === "error"
+        (i) => i.severity === "warn" || i.severity === "error",
       );
       this.handleFilterTiles(hasProblems);
     }
@@ -31,7 +31,7 @@ export class AnalyzerInsights extends React.Component {
   componentDidMount() {
     if (this.props.insights) {
       const hasProblems = this.props.insights.some(
-        (i) => i.severity === "warn" || i.severity === "error"
+        (i) => i.severity === "warn" || i.severity === "error",
       );
       this.handleFilterTiles(hasProblems);
     }
@@ -60,7 +60,7 @@ export class AnalyzerInsights extends React.Component {
     if (checked) {
       insights = filter(
         insights,
-        (i) => i.severity === "error" || i.severity === "warn"
+        (i) => i.severity === "error" || i.severity === "warn",
       );
     }
     this.setState({
@@ -212,7 +212,7 @@ export class AnalyzerInsights extends React.Component {
                                   className="replicated-link u-fontSize--small u-marginTop--5"
                                   onClick={() =>
                                     this.props.openPodDetailsModal(
-                                      tile?.involvedObject
+                                      tile?.involvedObject,
                                     )
                                   }
                                 >

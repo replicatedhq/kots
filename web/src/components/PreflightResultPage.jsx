@@ -28,7 +28,7 @@ class PreflightResultPage extends Component {
   componentDidMount() {
     this.state.getKotsPreflightResultJob.start(
       this.getKotsPreflightResult,
-      1000
+      1000,
     );
   }
 
@@ -41,7 +41,7 @@ class PreflightResultPage extends Component {
 
   deployKotsDownstream = async (
     continueWithFailedPreflights = false,
-    isSkipPreflights = false
+    isSkipPreflights = false,
   ) => {
     this.setState({ errorMessage: "" });
     try {
@@ -75,7 +75,7 @@ class PreflightResultPage extends Component {
             isSkipPreflights: isSkipPreflights,
             continueWithFailedPreflights: !!continueWithFailedPreflights,
           }),
-        }
+        },
       );
 
       history.push(`/app/${slug}`);
@@ -130,7 +130,7 @@ class PreflightResultPage extends Component {
           Authorization: Utilities.getToken(),
         },
         method: "POST",
-      }
+      },
     )
       .then(async (res) => {
         this.setState({
@@ -138,7 +138,7 @@ class PreflightResultPage extends Component {
         });
         this.state.getKotsPreflightResultJob.start(
           this.getKotsPreflightResult,
-          1000
+          1000,
         );
       })
       .catch((err) => {
@@ -168,7 +168,7 @@ class PreflightResultPage extends Component {
           Authorization: Utilities.getToken(),
         },
         method: "POST",
-      }
+      },
     )
       .then((res) => {
         if (res.status === 200) {
@@ -177,7 +177,7 @@ class PreflightResultPage extends Component {
           });
           this.state.getKotsPreflightResultJob.start(
             this.getKotsPreflightResult,
-            1000
+            1000,
           );
         } else {
           this.setState({
@@ -228,7 +228,7 @@ class PreflightResultPage extends Component {
         : 0;
       return this.getKotsPreflightResultForSequence(
         match.params.slug,
-        sequence
+        sequence,
       );
     }
     return this.getLatestKotsPreflightResult();
@@ -243,7 +243,7 @@ class PreflightResultPage extends Component {
           headers: {
             Authorization: Utilities.getToken(),
           },
-        }
+        },
       );
       if (!res.ok) {
         this.state.getKotsPreflightResultJob.stop();
@@ -291,7 +291,7 @@ class PreflightResultPage extends Component {
           headers: {
             Authorization: Utilities.getToken(),
           },
-        }
+        },
       );
       if (!res.ok) {
         this.state.getKotsPreflightResultJob.stop();
@@ -366,7 +366,7 @@ class PreflightResultPage extends Component {
         <div className="flex1 flex u-overflow--auto">
           <div className="PreflightChecks--wrapper flex1 flex-column u-paddingTop--30">
             {this.props.history.location.pathname.includes(
-              "version-history"
+              "version-history",
             ) && (
               <div
                 className="u-fontWeight--bold u-linkColor u-cursor--pointer"

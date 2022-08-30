@@ -59,7 +59,7 @@ class SnapshotSettings extends Component {
             }, 5000);
             this.openConfigureSnapshotsMinimalRBACModal(
               result.kotsadmRequiresVeleroAccess,
-              result.kotsadmNamespace
+              result.kotsadmNamespace,
             );
             return;
           }
@@ -204,7 +204,7 @@ class SnapshotSettings extends Component {
             });
             this.openConfigureSnapshotsMinimalRBACModal(
               result.kotsadmRequiresVeleroAccess,
-              result.kotsadmNamespace
+              result.kotsadmNamespace,
             );
             return;
           }
@@ -231,7 +231,7 @@ class SnapshotSettings extends Component {
               snapshotSettings: settingsResponse,
               updateErrorMsg: "",
             },
-            this.pollSnapshotSettingsOnUpdate
+            this.pollSnapshotSettingsOnUpdate,
           );
         } else {
           this.setState({
@@ -259,7 +259,7 @@ class SnapshotSettings extends Component {
 
   openConfigureSnapshotsMinimalRBACModal = (
     kotsadmRequiresVeleroAccess,
-    minimalRBACKotsadmNamespace
+    minimalRBACKotsadmNamespace,
   ) => {
     this.setState(
       {
@@ -269,7 +269,7 @@ class SnapshotSettings extends Component {
       },
       () => {
         this.props.history.replace("/snapshots/settings?configure=true");
-      }
+      },
     );
   };
 

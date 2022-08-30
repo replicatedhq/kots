@@ -89,15 +89,15 @@ export default function NodeRow(props) {
                     node?.pods?.available !== -1 &&
                     getPercentageStatus(
                       node?.pods?.available,
-                      node?.pods?.capacity
+                      node?.pods?.capacity,
                     ) === "warning",
                   "u-textColor--error":
                     node?.pods?.available !== -1 &&
                     getPercentageStatus(
                       node?.pods?.available,
-                      node?.pods?.capacity
+                      node?.pods?.capacity,
                     ) === "danger",
-                }
+                },
               )}
             >
               <span className={classNames("icon kubernetesLogoSmall")} />
@@ -124,15 +124,15 @@ export default function NodeRow(props) {
                     node?.cpu?.available !== -1 &&
                     getPercentageStatus(
                       node?.cpu?.available,
-                      node?.cpu?.capacity
+                      node?.cpu?.capacity,
                     ) === "warning",
                   "u-textColor--error":
                     node?.cpu?.available !== -1 &&
                     getPercentageStatus(
                       node?.cpu?.available,
-                      node?.cpu?.capacity
+                      node?.cpu?.capacity,
                     ) === "danger",
-                }
+                },
               )}
             >
               <span className={"icon analysis-os_cpu"} />
@@ -164,15 +164,15 @@ export default function NodeRow(props) {
                     node?.memory?.available !== -1 &&
                     getPercentageStatus(
                       node?.memory?.available,
-                      node?.memory?.capacity
+                      node?.memory?.capacity,
                     ) === "warning",
                   "u-textColor--error":
                     node?.memory?.available !== -1 &&
                     getPercentageStatus(
                       node?.memory?.available,
-                      node?.memory?.capacity
+                      node?.memory?.capacity,
                     ) === "danger",
-                }
+                },
               )}
             >
               <span className={"icon analysis-os_memory"} />

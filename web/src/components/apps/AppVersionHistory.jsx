@@ -178,7 +178,7 @@ class AppVersionHistory extends Component {
             "Content-Type": "application/json",
           },
           method: "GET",
-        }
+        },
       );
       if (!res.ok) {
         if (res.status === 401) {
@@ -199,7 +199,7 @@ class AppVersionHistory extends Component {
       if (isAwaitingResults(versionHistory) && this._mounted) {
         this.state.versionHistoryJob.start(
           this.fetchKotsDownstreamHistory,
-          2000
+          2000,
         );
       } else {
         this.state.versionHistoryJob.stop();
@@ -228,7 +228,7 @@ class AppVersionHistory extends Component {
       () => {
         this.fetchKotsDownstreamHistory();
         this.props.history.push(`${this.props.location.pathname}?page=0`);
-      }
+      },
     );
   };
 
@@ -257,7 +257,7 @@ class AppVersionHistory extends Component {
         true,
         app.slug,
         this.onDropBundle,
-        simultaneousUploads
+        simultaneousUploads,
       ),
     });
   };
@@ -281,7 +281,7 @@ class AppVersionHistory extends Component {
       params,
       this.onUploadProgress,
       this.onUploadError,
-      this.onUploadComplete
+      this.onUploadComplete,
     );
   };
 
@@ -485,7 +485,7 @@ class AppVersionHistory extends Component {
           "Content-Type": "application/json",
         },
         method: "POST",
-      }
+      },
     )
       .then(async (res) => {
         if (!res.ok) {
@@ -504,7 +504,7 @@ class AppVersionHistory extends Component {
         }
         this.versionDownloadStatusJobs[version.sequence].start(
           () => this.updateVersionDownloadStatus(version),
-          1000
+          1000,
         );
       })
       .catch((err) => {
@@ -542,7 +542,7 @@ class AppVersionHistory extends Component {
           "Content-Type": "application/json",
         },
         method: "POST",
-      }
+      },
     )
       .then(async (res) => {
         if (!res.ok) {
@@ -579,7 +579,7 @@ class AppVersionHistory extends Component {
             "Content-Type": "application/json",
           },
           method: "GET",
-        }
+        },
       )
         .then(async (res) => {
           if (res.status === 404) {
@@ -626,7 +626,7 @@ class AppVersionHistory extends Component {
             "Content-Type": "application/json",
           },
           method: "GET",
-        }
+        },
       )
         .then(async (res) => {
           const response = await res.json();
@@ -717,7 +717,7 @@ class AppVersionHistory extends Component {
   deployVersion = (
     version,
     force = false,
-    continueWithFailedPreflights = false
+    continueWithFailedPreflights = false,
   ) => {
     const { app } = this.props;
     const clusterSlug = app.downstream.cluster?.slug;
@@ -775,7 +775,7 @@ class AppVersionHistory extends Component {
       match.params.slug,
       versionToDeploy,
       isSkipPreflights,
-      continueWithFailedPreflights
+      continueWithFailedPreflights,
     );
     await this.fetchKotsDownstreamHistory();
     this.setState({ versionToDeploy: null });
@@ -948,7 +948,7 @@ class AppVersionHistory extends Component {
             "Content-Type": "application/json",
           },
           method: "GET",
-        }
+        },
       )
         .then(async (res) => {
           const response = await res.json();
@@ -1002,7 +1002,7 @@ class AppVersionHistory extends Component {
             "Content-Type": "application/json",
           },
           method: "GET",
-        }
+        },
       );
       if (res.ok && res.status === 200) {
         const response = await res.json();
@@ -1063,7 +1063,7 @@ class AppVersionHistory extends Component {
                   downstream.gitops?.uri,
                   downstream.gitops?.provider,
                   firstHash,
-                  secondHash
+                  secondHash,
                 );
                 window.open(diffUrl, "_blank");
               }
@@ -1103,7 +1103,8 @@ class AppVersionHistory extends Component {
     } else {
       this.setState({
         checkedReleasesToDiff: this.state.checkedReleasesToDiff.filter(
-          (release) => release.parentSequence !== selectedRelease.parentSequence
+          (release) =>
+            release.parentSequence !== selectedRelease.parentSequence,
         ),
       });
     }
@@ -1124,7 +1125,7 @@ class AppVersionHistory extends Component {
     const { checkedReleasesToDiff } = this.state;
     if (checkedReleasesToDiff.length === 2) {
       checkedReleasesToDiff.sort(
-        (r1, r2) => r1.parentSequence - r2.parentSequence
+        (r1, r2) => r1.parentSequence - r2.parentSequence,
       );
       firstSequence = checkedReleasesToDiff[0].parentSequence;
       secondSequence = checkedReleasesToDiff[1].parentSequence;
@@ -1143,7 +1144,7 @@ class AppVersionHistory extends Component {
     const { checkedReleasesToDiff } = this.state;
     if (checkedReleasesToDiff.length === 2) {
       checkedReleasesToDiff.sort(
-        (r1, r2) => r1.parentSequence - r2.parentSequence
+        (r1, r2) => r1.parentSequence - r2.parentSequence,
       );
       firstCommitUrl = checkedReleasesToDiff[0].commitUrl;
       secondCommitUrl = checkedReleasesToDiff[1].commitUrl;
@@ -1289,7 +1290,7 @@ class AppVersionHistory extends Component {
           </div>
         </div>
         {allVersions?.map((version, index) =>
-          this.renderAppVersionHistoryRow(version, index)
+          this.renderAppVersionHistoryRow(version, index),
         )}
         <Pager
           pagerType="releases"
@@ -1396,7 +1397,7 @@ class AppVersionHistory extends Component {
     const gitopsIsConnected = downstream?.gitops?.isConnected;
     const nothingToCommit = gitopsIsConnected && !version.commitUrl;
     const isChecked = !!this.state.checkedReleasesToDiff.find(
-      (diffRelease) => diffRelease.parentSequence === version.parentSequence
+      (diffRelease) => diffRelease.parentSequence === version.parentSequence,
     );
     const isNew = secondsAgo(version.createdOn) < 10;
     let newPreflightResults = false;
@@ -1665,7 +1666,7 @@ class AppVersionHistory extends Component {
                                 : "Deployed"}{" "}
                               {Utilities.dateFormat(
                                 currentDownstreamVersion.deployedAt,
-                                "MM/DD/YY @ hh:mm a z"
+                                "MM/DD/YY @ hh:mm a z",
                               )}
                             </p>
                           ) : null}
@@ -1677,7 +1678,7 @@ class AppVersionHistory extends Component {
                                     className="icon releaseNotes--icon u-marginRight--10 u-cursor--pointer"
                                     onClick={() =>
                                       this.showReleaseNotes(
-                                        currentDownstreamVersion?.releaseNotes
+                                        currentDownstreamVersion?.releaseNotes,
                                       )
                                     }
                                     data-tip="View release notes"
@@ -1708,7 +1709,7 @@ class AppVersionHistory extends Component {
                                     this.handleViewLogs(
                                       currentDownstreamVersion,
                                       currentDownstreamVersion?.status ===
-                                        "failed"
+                                        "failed",
                                     )
                                   }
                                   data-tip="View deploy logs"
@@ -2161,7 +2162,7 @@ class AppVersionHistory extends Component {
               this.props.updateCallback();
             }}
             isHelmManaged={this.props.isHelmManaged}
-            />
+          />
         )}
       </div>
     );
