@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"html/template"
 	"net/http"
 
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -91,7 +92,7 @@ func GetMetadataHandler(getK8sInfoFn MetadataK8sFn) http.HandlerFunc {
 		}
 		application := obj.(*kotsv1beta1.Application)
 		metadataResponse.IconURI = application.Spec.Icon
-		metadataResponse.BrandingCss = application.Spec.Branding
+		metadataResponse.BrandingCss = template.HTMLEscapeString(application.Spec.Branding)
 		metadataResponse.Name = application.Spec.Title
 		metadataResponse.UpstreamURI = brandingConfigMap.Data[upstreamUriKey]
 		metadataResponse.ConsoleFeatureFlags = application.Spec.ConsoleFeatureFlags
