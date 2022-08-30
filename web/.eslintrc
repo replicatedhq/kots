@@ -1,0 +1,44 @@
+{
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaVersion": 2020,
+    "sourceType": "module",
+    "ecmaFeatures": {
+      "jsx": true
+    }
+  },
+  "settings": {
+    "react": {
+      "version": "detect"
+    },
+    "import/resolver": {
+      "node": {
+        "extensions": [".js", ".jsx", ".ts", ".tsx", ".json"]
+      }
+    }
+  },
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:react/recommended",
+    "plugin:prettier/recommended"
+  ],
+  "plugins": ["react", "jsx-a11y", "prettier"],
+  "rules": {
+    "semi": 0,
+    "react/jsx-indent": ["error", 2],
+    "max-len": [2, 120, 2],
+    "no-console": "warn",
+    "comma-dangle": ["error", "never"],
+    "react/prop-types": [2, { "ignore": ["history"] }],
+    "jsx-a11y/label-has-associated-control": "off",
+    "react/jsx-filename-extension": [1,
+      { "extensions": [".js", ".jsx", ".ts", ".tsx"] }
+    ],
+    "react/no-set-state": "off",
+    "prettier/prettier": ["error"],
+    "react/jsx-props-no-spreading": "off",
+    "prefer-promise-reject-errors": "off",
+    "camelcase": "off"
+  }
+}

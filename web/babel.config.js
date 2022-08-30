@@ -1,0 +1,17 @@
+console.log('babel config loaded')
+module.exports = {
+  "presets": [
+    '@babel/preset-env',
+    '@babel/preset-react',
+    '@babel/preset-typescript',
+  ],
+  "plugins": [
+    "@babel/plugin-proposal-class-properties",
+    "@babel/plugin-proposal-optional-chaining"
+  ],
+  // "env": {
+  //   "development": {
+  //     "plugins": ["react-refresh/babel"]
+  //   }
+  // }
+};

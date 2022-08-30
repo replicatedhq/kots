@@ -34,7 +34,7 @@ module.exports = function (env) {
       filename: "[name].[fullhash].js"
     },
     resolve: {
-      extensions: [".js", ".mjs", ".jsx", ".css", ".scss", ".png", ".jpg", ".svg", ".ico"],
+      extensions: [".js", ".mjs", ".jsx", ".css", ".scss", ".png", ".jpg", ".svg", ".ico", ".tsx", ".ts"],
       fallback: {
         fs: false,
         stream: require.resolve("stream-browserify"),
@@ -55,6 +55,11 @@ module.exports = function (env) {
     },
     module: {
       rules: [
+        // {
+        //   test: /\.tsx?$/,
+        //   use: 'ts-loader',
+        //   exclude: /node_modules/,
+        // },
         {
           test: /\.mjs$/,
           include: /node_modules/,
