@@ -9,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	sessiontypes "github.com/replicatedhq/kots/pkg/session/types"
@@ -25,10 +26,6 @@ import (
    The keys in the secret.data are the session id, and the values are the JSON marshalled session (userId, expireAt, etc)
    No data is actually written to the OCI registry in this store
 */
-
-const (
-	SessionSecretName = "kotsadm-sessions"
-)
 
 var (
 	sessionLock = sync.Mutex{}
@@ -214,13 +211,14 @@ func (s *KOTSStore) getSessionSecret() (*corev1.Secret, error) {
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      SessionSecretName,
+			Name:      util.SessionsSecretName,
 			Namespace: util.PodNamespace,
+			Labels:    types.GetKotsadmLabels(),
 		},
 		Data: map[string][]byte{},
 	}
 
-	existingSecret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), SessionSecretName, metav1.GetOptions{})
+	existingSecret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), util.SessionsSecretName, metav1.GetOptions{})
 	if err == nil {
 		secret.Data = existingSecret.DeepCopy().Data
 	} else if err != nil && !kuberneteserrors.IsNotFound(err) {
@@ -247,7 +245,7 @@ func (s *KOTSStore) saveSessionSecret(secret *corev1.Secret) error {
 		return errors.Wrap(err, "failed to get clientset")
 	}
 
-	existingSecret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), SessionSecretName, metav1.GetOptions{})
+	existingSecret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), util.SessionsSecretName, metav1.GetOptions{})
 	if err == nil {
 		existingSecret.Data = secret.DeepCopy().Data
 		if _, err := clientset.CoreV1().Secrets(util.PodNamespace).Update(context.TODO(), existingSecret, metav1.UpdateOptions{}); err != nil {

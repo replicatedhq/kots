@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -130,6 +131,7 @@ func deleteAllSessions(clientset kubernetes.Interface, namespace string) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      util.SessionsSecretName,
 			Namespace: namespace,
+			Labels:    types.GetKotsadmLabels(),
 		},
 		Data: map[string][]byte{},
 	}
