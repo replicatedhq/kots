@@ -380,7 +380,7 @@ class AirgapRegistrySettings extends Component {
     const showStatusError = rewriteStatus === "failed";
 
     return (
-      <div>
+      <div className="registry-settings-content">
         <form>
           <div className="flex u-marginBottom--20">
             <div className="flex1">
@@ -528,7 +528,7 @@ class AirgapRegistrySettings extends Component {
           </div>
         </form>
         {hideCta ? null : (
-          <div className="u-marginBottom--20 u-paddingTop--10">
+          <div className="u-paddingTop--10">
             {showProgress ? (
               <div className="u-marginTop--20">
                 <Loader size="30" />
