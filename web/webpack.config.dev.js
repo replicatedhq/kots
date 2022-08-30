@@ -1,4 +1,4 @@
-// const ReactRefreshWebpackPlugin = require("@pmmmwh/react-refresh-webpack-plugin");
+const ReactRefreshWebpackPlugin = require("@pmmmwh/react-refresh-webpack-plugin");
 const webpack = require("webpack");
 const path = require("path");
 const srcPath = path.join(__dirname, "src");
@@ -19,7 +19,10 @@ module.exports = {
       {
         test: /\.[jt]sx?$/,
         exclude: /node_modules/,
-        loader: "babel-loader"
+        loader: "babel-loader",
+        options: {
+          plugins: [require.resolve('react-refresh/babel')]
+        }
       },
       // {
       //   test: /\.[jt]sx?$/,
@@ -37,7 +40,7 @@ module.exports = {
   },
   plugins: [
     new webpack.HotModuleReplacementPlugin(),
- //    new ReactRefreshWebpackPlugin(),
+    new ReactRefreshWebpackPlugin(),
   ],
   optimization: {
     moduleIds: "named"
