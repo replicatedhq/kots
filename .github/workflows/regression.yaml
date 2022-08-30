@@ -84,10 +84,9 @@ jobs:
         run: |
           terraform init
           terraform workspace new $WORKSPACE || true
+          terraform workspace select $WORKSPACE
       - name: Create Jumpbox Environment
         if: always()
-        env:
-          TF_WORKSPACE: ${{ env.WORKSPACE }}
         working-directory: automation/jumpbox
         run: terraform apply --auto-approve
       - name: Notify Slack
@@ -202,17 +201,14 @@ jobs:
         run: |
           terraform init -backend-config ${{ matrix.test.backend_config }}
           terraform workspace new $WORKSPACE || true
+          terraform workspace select $WORKSPACE
       - name: Destroy test environment before re-run
         if: always() && github.run_attempt > 1
         working-directory: automation/cluster
-        env:
-          TF_WORKSPACE: ${{ env.WORKSPACE }}
         run: ./${{ matrix.test.terraform_script }} destroy
       - name: Create test environment
         if: always()
         working-directory: automation/cluster
-        env:
-          TF_WORKSPACE: ${{ env.WORKSPACE }}
         run: |
           export CURRENT_TAG=${{ github.event.inputs.version_tag_old || inputs.version_tag_old }}
           export NEXT_TAG=${{ github.event.inputs.version_tag_new || inputs.version_tag_new }}
