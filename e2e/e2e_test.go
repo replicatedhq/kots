@@ -172,7 +172,7 @@ var _ = Describe("E2E", func() {
 				var adminConsolePort string
 				if test.IsHelmManaged {
 					GinkgoWriter.Println("Installing KOTS Helm chart")
-					session, err := helmCLI.Install(c.GetKubeconfig(), "-n", test.Namespace, "admin-console", kotsHelmChartURL, "--set", fmt.Sprintf("adminConsole.password=%s", inventory.HelmPassword), "--version", kotsHelmChartVersion, "--create-namespace", "--wait")
+					session, err := helmCLI.Install(c.GetKubeconfig(), "-n", test.Namespace, "admin-console", kotsHelmChartURL, "--set", fmt.Sprintf("password=%s", inventory.HelmPassword), "--version", kotsHelmChartVersion, "--create-namespace", "--wait")
 					Expect(err).WithOffset(1).Should(Succeed(), "helm install")
 					Eventually(session).WithOffset(1).WithTimeout(time.Minute).Should(gexec.Exit(0), "helm install failed with non-zero exit code")
 
