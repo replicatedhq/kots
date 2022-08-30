@@ -6,7 +6,7 @@
   ],
   "extends": [
     "airbnb-typescript",
-    "prettier"
+    "prettier",
   ],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
@@ -24,13 +24,7 @@
       "warn",
       "always"
     ],
-    "no-unused-vars": [
-      "warn",
-      {
-        "vars": "all",
-        "args": "none"
-      }
-    ],
+    "no-unused-vars": "off",
     "@typescript-eslint/semi": [
       "off"
     ],
@@ -79,7 +73,7 @@
     "jest/no-focused-tests": "error",
     "jest/no-identical-title": "error",
     "jest/prefer-to-have-length": "warn",
-    "jest/valid-expect": "error"
+    "jest/valid-expect": "error",
   },
   "overrides": [
     {
