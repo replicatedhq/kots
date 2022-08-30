@@ -35,6 +35,9 @@
         "allowRollback": {
           "type": "boolean"
         },
+        "branding": {
+          "type": "string"
+        },
         "consoleFeatureFlags": {
           "type": "array",
           "items": {

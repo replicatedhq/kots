@@ -46,6 +46,8 @@ spec:
                 type: array
               allowRollback:
                 type: boolean
+              branding:
+                type: string
               consoleFeatureFlags:
                 items:
                   type: string
