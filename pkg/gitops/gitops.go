@@ -650,7 +650,7 @@ func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 	}
 	cloned, workTree, err := CloneAndCheckout(workDir, cloneOptions, gitOpsConfig.Branch)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "failed to checkout branch")
 	}
 
 	dirPath := filepath.Join(workDir, gitOpsConfig.Path)
@@ -713,7 +713,7 @@ func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName stri
 func generateKeyPair() (*KeyPair, error) {
 	privateKey, err := getPrivateKey()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to generate private key")
 	}
 
 	var publicKey *rsa.PublicKey
@@ -729,7 +729,7 @@ func generateKeyPair() (*KeyPair, error) {
 
 	publicKeySSH, err := ssh.NewPublicKey(publicKey)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to generate public key")
 	}
 	pubKeySSHBytes := ssh.MarshalAuthorizedKey(publicKeySSH)
 
