@@ -93,12 +93,12 @@ class Dashboard extends Component {
       },
     })
       .then(async (res) => {
+        const body = await res.json();
         if (!res.ok) {
           this.setState({ gettingAppLicenseErrMsg: body.error });
           return;
         }
 
-        const body = await res.json();
         if (body === null) {
           this.setState({ appLicense: {}, gettingAppLicenseErrMsg: "" });
         } else if (body.success) {
