@@ -956,7 +956,8 @@ metadata:
   namespace: ${POD_NAMESPACE}
 type: Opaque
 data:
-  postgresql-password: "YWJjMTIz"`)),
+  postgresql-password: "YWJjMTIz"
+`)),
 						},
 						{
 							Path: "templates/statefulset.yaml",
@@ -1102,7 +1103,8 @@ spec:
           - "ReadWriteOnce"
         resources:
           requests:
-            storage: "8Gi"`)),
+            storage: "8Gi"
+`)),
 						},
 						{
 							Path: "templates/svc-headless.yaml",
@@ -1135,7 +1137,8 @@ spec:
       targetPort: tcp-postgresql
   selector:
     app.kubernetes.io/name: postgresql
-    app.kubernetes.io/instance: postgresql`)),
+    app.kubernetes.io/instance: postgresql
+`)),
 						},
 						{
 							Path: "templates/svc.yaml",
@@ -1160,7 +1163,8 @@ spec:
   selector:
     app.kubernetes.io/name: postgresql
     app.kubernetes.io/instance: postgresql
-    role: primary`)),
+    role: primary
+`)),
 						},
 					},
 					ErrorFiles: []BaseFile{},
