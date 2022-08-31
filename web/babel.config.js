@@ -1,4 +1,3 @@
-console.log('babel config loaded')
 module.exports = {
   "presets": [
     '@babel/preset-env',
