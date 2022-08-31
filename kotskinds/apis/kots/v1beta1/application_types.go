@@ -46,6 +46,7 @@ type ApplicationList struct {
 type ApplicationSpec struct {
 	Title                        string            `json:"title"`
 	Icon                         string            `json:"icon,omitempty"`
+	Branding                     string            `json:"branding,omitempty"`
 	ApplicationPorts             []ApplicationPort `json:"ports,omitempty"`
 	ReleaseNotes                 string            `json:"releaseNotes,omitempty"`
 	AllowRollback                bool              `json:"allowRollback,omitempty"`

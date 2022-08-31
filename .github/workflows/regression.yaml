@@ -78,15 +78,18 @@ jobs:
       - name: Make kotsadm airgap archive with minio image
         working-directory: automation/jumpbox
         run: tar czf ./kotsadm.tar.gz -C ./ ./docker-archive
-      - name: Create Jumpbox Environment
+      - name: Initialize terraform
         if: always()
         working-directory: automation/jumpbox
-        env:
-          TF_WORKSPACE: ${{ env.WORKSPACE }}
         run: |
           terraform init
           terraform workspace new $WORKSPACE || true
-          terraform apply --auto-approve
+      - name: Create Jumpbox Environment
+        if: always()
+        env:
+          TF_WORKSPACE: ${{ env.WORKSPACE }}
+        working-directory: automation/jumpbox
+        run: terraform apply --auto-approve
       - name: Notify Slack
         if: failure() && github.ref_name == 'main'
         uses: 8398a7/action-slack@v3

@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"html/template"
 	"net/http"
 
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -28,6 +29,7 @@ const (
 // MetadataResponse non sensitive information to be used by ui pre-login
 type MetadataResponse struct {
 	IconURI     string `json:"iconUri"`
+	BrandingCss string `json:"brandingCss"`
 	Name        string `json:"name"`
 	Namespace   string `json:"namespace"`
 	UpstreamURI string `json:"upstreamUri"`
@@ -90,6 +92,7 @@ func GetMetadataHandler(getK8sInfoFn MetadataK8sFn) http.HandlerFunc {
 		}
 		application := obj.(*kotsv1beta1.Application)
 		metadataResponse.IconURI = application.Spec.Icon
+		metadataResponse.BrandingCss = template.HTMLEscapeString(application.Spec.Branding)
 		metadataResponse.Name = application.Spec.Title
 		metadataResponse.UpstreamURI = brandingConfigMap.Data[upstreamUriKey]
 		metadataResponse.ConsoleFeatureFlags = application.Spec.ConsoleFeatureFlags
