@@ -98,14 +98,14 @@ class SnapshotDetails extends Component {
             '<span class="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy u-marginTop--10">' +
             "Started at " +
             dayjs(
-              w.globals.seriesRangeStart[seriesIndex][dataPointIndex],
+              w.globals.seriesRangeStart[seriesIndex][dataPointIndex]
             ).format("h:mm:ss") +
             "</span>" +
             "<br />" +
             '<span class="u-fontSize--normal u-fontWeight--normal u-textColor--bodyCopy">' +
             "Finished at " +
             dayjs(w.globals.seriesRangeEnd[seriesIndex][dataPointIndex]).format(
-              "h:mm:ss",
+              "h:mm:ss"
             ) +
             "</span>" +
             "</div>"
@@ -143,7 +143,7 @@ class SnapshotDetails extends Component {
           headers: {
             Authorization: Utilities.getToken(),
           },
-        },
+        }
       );
       if (!res.ok) {
         if (res.status === 401) {
@@ -166,21 +166,21 @@ class SnapshotDetails extends Component {
         if (snapshotDetails?.hooks && !isEmpty(snapshotDetails?.hooks)) {
           series = this.getSeriesData(
             [...snapshotDetails?.volumes, ...snapshotDetails?.hooks].sort(
-              (a, b) => new Date(a.started) - new Date(b.started),
-            ),
+              (a, b) => new Date(a.started) - new Date(b.started)
+            )
           );
         } else {
           series = this.getSeriesData(
             (snapshotDetails?.volumes).sort(
-              (a, b) => new Date(a.started) - new Date(b.started),
-            ),
+              (a, b) => new Date(a.started) - new Date(b.started)
+            )
           );
         }
       } else if (snapshotDetails?.hooks && !isEmpty(snapshotDetails?.hooks)) {
         series = this.getSeriesData(
           (snapshotDetails?.hooks).sort(
-            (a, b) => new Date(a.started) - new Date(b.started),
-          ),
+            (a, b) => new Date(a.started) - new Date(b.started)
+          )
         );
       }
 
@@ -287,7 +287,7 @@ class SnapshotDetails extends Component {
               snapshotLogsErrMsg: err,
             });
           });
-      },
+      }
     );
   };
 
@@ -313,7 +313,7 @@ class SnapshotDetails extends Component {
     return volumes.map((volume) => {
       const diffMinutes = dayjs(volume?.finished).diff(
         dayjs(volume?.started),
-        "minutes",
+        "minutes"
       );
       return (
         <div
@@ -408,7 +408,7 @@ class SnapshotDetails extends Component {
     return hooks.map((hook, i) => {
       const diffMinutes = dayjs(hook?.finishedAt).diff(
         dayjs(hook?.startedAt),
-        "minutes",
+        "minutes"
       );
       return (
         <div
@@ -553,7 +553,7 @@ class SnapshotDetails extends Component {
       let finishedTime;
       if (d.startedAt === d.finishedAt) {
         finishedTime = new Date(
-          dayjs(d.finishedAt).add(1, "seconds"),
+          dayjs(d.finishedAt).add(1, "seconds")
         ).getTime();
       } else {
         finishedTime = new Date(d.finishedAt).getTime();
@@ -766,7 +766,7 @@ class SnapshotDetails extends Component {
                   </div>
                   {!isEmpty(snapshotDetails?.volumes) ? (
                     this.renderShowAllVolumes(
-                      snapshotDetails?.volumes?.slice(0, 3),
+                      snapshotDetails?.volumes?.slice(0, 3)
                     )
                   ) : (
                     <div className="flex flex1 u-paddingTop--20 alignItems--center justifyContent--center">
@@ -821,7 +821,7 @@ class SnapshotDetails extends Component {
                     {selectedScriptTab === "Pre-snapshot scripts" ? (
                       !isEmpty(this.preSnapshotScripts()) ? (
                         this.renderShowAllScripts(
-                          this.preSnapshotScripts().slice(0, 3),
+                          this.preSnapshotScripts().slice(0, 3)
                         )
                       ) : (
                         <div className="flex flex1 u-paddingTop--20 alignItems--center justifyContent--center">
@@ -834,7 +834,7 @@ class SnapshotDetails extends Component {
                     ) : selectedScriptTab === "Post-snapshot scripts" &&
                       !isEmpty(this.postSnapshotScripts()) ? (
                       this.renderShowAllScripts(
-                        this.postSnapshotScripts().slice(0, 3),
+                        this.postSnapshotScripts().slice(0, 3)
                       )
                     ) : (
                       <div className="flex flex1 u-paddingTop--20 alignItems--center justifyContent--center">
@@ -891,7 +891,7 @@ class SnapshotDetails extends Component {
                       {selectedErrorsWarningTab === "Errors" ? (
                         !isEmpty(snapshotDetails?.errors) ? (
                           this.renderShowAllErrors(
-                            snapshotDetails?.errors.slice(0, 3),
+                            snapshotDetails?.errors.slice(0, 3)
                           )
                         ) : (
                           <div className="flex flex1 u-paddingTop--20 alignItems--center justifyContent--center">
@@ -904,7 +904,7 @@ class SnapshotDetails extends Component {
                       ) : selectedErrorsWarningTab === "Warnings" &&
                         !isEmpty(snapshotDetails?.warnings) ? (
                         this.renderShowAllWarnings(
-                          snapshotDetails?.warnings?.slice(0, 3),
+                          snapshotDetails?.warnings?.slice(0, 3)
                         )
                       ) : (
                         <div className="flex flex1 u-paddingTop--20 alignItems--center justifyContent--center">
@@ -988,7 +988,7 @@ class SnapshotDetails extends Component {
             displayShowAllModal={showAllPostSnapshotScripts}
             toggleShowAllModal={this.toggleShowAllPostScripts}
             dataToShow={this.renderShowAllPostscripts(
-              this.postSnapshotScripts(),
+              this.postSnapshotScripts()
             )}
             name="Post-snapshot scripts"
           />

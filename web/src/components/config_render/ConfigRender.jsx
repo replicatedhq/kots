@@ -128,7 +128,7 @@ export default class ConfigRender extends React.Component {
       this.setState({
         groups: keyBy(
           ConfigService.filterGroups(this.props.fields, this.props.filters),
-          "name",
+          "name"
         ),
       });
     }

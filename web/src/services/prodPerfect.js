@@ -36,7 +36,7 @@
 })(
   "ProdPerfectKeen",
   "https://replicated-ship-clusters.trackinglibrary.prodperfect.com/keen-tracking.min.js",
-  this,
+  this
 );
 
 ProdPerfectKeen.ready(() => {

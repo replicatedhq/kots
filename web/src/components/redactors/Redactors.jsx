@@ -53,7 +53,7 @@ class Redactors extends Component {
               if (this.state.selectedOption) {
                 this.sortRedactors(this.state.selectedOption.value);
               }
-            },
+            }
           );
         } else {
           this.setState({
@@ -84,19 +84,19 @@ class Redactors extends Component {
     if (value === "createdAt") {
       this.setState({
         sortedRedactors: this.state.redactors.sort(
-          (a, b) => dayjs(b.createdAt) - dayjs(a.createdAt),
+          (a, b) => dayjs(b.createdAt) - dayjs(a.createdAt)
         ),
       });
     } else if (value === "updatedAt") {
       this.setState({
         sortedRedactors: this.state.redactors.sort(
-          (a, b) => dayjs(b.updatedAt) - dayjs(a.updatedAt),
+          (a, b) => dayjs(b.updatedAt) - dayjs(a.updatedAt)
         ),
       });
     } else {
       this.setState({
         sortedRedactors: this.state.redactors.sort((a, b) =>
-          a.enabled === b.enabled ? 0 : a.enabled ? -1 : 1,
+          a.enabled === b.enabled ? 0 : a.enabled ? -1 : 1
         ),
       });
     }
@@ -139,7 +139,7 @@ class Redactors extends Component {
           },
           () => {
             this.getRedactors();
-          },
+          }
         );
       })
       .catch((err) => {
@@ -231,7 +231,7 @@ class Redactors extends Component {
                   title: "Support bundles",
                   onClick: () =>
                     this.props.history.push(
-                      `/app/${this.props.appSlug}/troubleshoot`,
+                      `/app/${this.props.appSlug}/troubleshoot`
                     ),
                   isActive: false,
                 },
@@ -239,7 +239,7 @@ class Redactors extends Component {
                   title: "Redactors",
                   onClick: () =>
                     this.props.history.push(
-                      `/app/${this.props.appSlug}/troubleshoot/redactors`,
+                      `/app/${this.props.appSlug}/troubleshoot/redactors`
                     ),
                   isActive: true,
                 },

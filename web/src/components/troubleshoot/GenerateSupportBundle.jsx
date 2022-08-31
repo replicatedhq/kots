@@ -67,7 +67,7 @@ class GenerateSupportBundle extends React.Component {
           if (bundle.status !== "running") {
             this.state.listSupportBundlesJob.stop();
             history.push(
-              `/app/${watch.slug}/troubleshoot/analyze/${bundle.id}`,
+              `/app/${watch.slug}/troubleshoot/analyze/${bundle.id}`
             );
           }
         }
@@ -100,7 +100,7 @@ class GenerateSupportBundle extends React.Component {
           "Content-Type": "application/json",
         },
         method: "GET",
-      },
+      }
     )
       .then(async (res) => {
         if (!res.ok) {
@@ -116,7 +116,7 @@ class GenerateSupportBundle extends React.Component {
         let bundleRunning = false;
         if (response.supportBundles) {
           bundleRunning = response.supportBundles.find(
-            (bundle) => bundle.status === "running",
+            (bundle) => bundle.status === "running"
           );
         }
         if (bundleRunning) {
@@ -134,7 +134,7 @@ class GenerateSupportBundle extends React.Component {
 
           this.state.pollForBundleAnalysisProgress.start(
             this.pollForBundleAnalysisProgress,
-            1000,
+            1000
           );
         } else {
           this.setState({
@@ -177,7 +177,7 @@ class GenerateSupportBundle extends React.Component {
             "Content-Type": "application/json",
           },
           method: "GET",
-        },
+        }
       )
         .then(async (res) => {
           if (!res.ok) {
@@ -273,7 +273,7 @@ class GenerateSupportBundle extends React.Component {
           Authorization: Utilities.getToken(),
         },
         method: "GET",
-      },
+      }
     )
       .then(async (res) => {
         if (!res.ok) {
@@ -289,7 +289,7 @@ class GenerateSupportBundle extends React.Component {
         if (bundle.status !== "running") {
           this.state.pollForBundleAnalysisProgress.stop();
           this.props.history.push(
-            `/app/${this.props.watch.slug}/troubleshoot/analyze/${bundle.slug}`,
+            `/app/${this.props.watch.slug}/troubleshoot/analyze/${bundle.slug}`
           );
         }
       })
@@ -337,7 +337,7 @@ class GenerateSupportBundle extends React.Component {
         this.setState({ newBundleSlug: response.slug });
         this.state.pollForBundleAnalysisProgress.start(
           this.pollForBundleAnalysisProgress,
-          1000,
+          1000
         );
       })
       .catch((err) => {
@@ -365,7 +365,7 @@ class GenerateSupportBundle extends React.Component {
         body: JSON.stringify({
           origin: window.location.origin,
         }),
-      },
+      }
     );
     if (!res.ok) {
       throw new Error(`Unexpected status code: ${res.status}`);
@@ -457,7 +457,7 @@ class GenerateSupportBundle extends React.Component {
                     type="button"
                     onClick={this.collectBundle.bind(
                       this,
-                      watch.downstream?.cluster?.id,
+                      watch.downstream?.cluster?.id
                     )}
                   >
                     Analyze {appTitle}

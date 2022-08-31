@@ -41,14 +41,14 @@ export default function PreflightRenderer(props) {
               key={idx}
               className={classNames(
                 "flex justifyContent--space-between preflight-check-row",
-                rowClass,
+                rowClass
               )}
             >
               <div
                 className={classNames(
                   "flex-auto icon",
                   icon,
-                  "u-marginRight--10",
+                  "u-marginRight--10"
                 )}
               />
               <div className="flex flex1">

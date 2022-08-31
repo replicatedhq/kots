@@ -18,7 +18,7 @@ class LicenseUploadProgress extends React.Component {
   componentDidMount() {
     this.state.getOnlineInstallStatusJob.start(
       this.getOnlineInstallStatus,
-      2000,
+      2000
     );
   }
 

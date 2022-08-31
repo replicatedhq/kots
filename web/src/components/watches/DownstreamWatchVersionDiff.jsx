@@ -77,7 +77,7 @@ class DownstreamWatchVersionDiff extends React.Component {
       window.history.replaceState(
         "",
         "",
-        `${url}/diff/${firstSequence}/${secondSequence}`,
+        `${url}/diff/${firstSequence}/${secondSequence}`
       );
     }
   }
@@ -90,7 +90,7 @@ class DownstreamWatchVersionDiff extends React.Component {
       window.history.replaceState(
         "",
         "",
-        url.substring(0, url.indexOf(diffPath)),
+        url.substring(0, url.indexOf(diffPath))
       );
     }
   }
@@ -195,7 +195,7 @@ class DownstreamWatchVersionDiff extends React.Component {
               readOnly: true,
             }}
           />
-        </div>,
+        </div>
       );
     }
 

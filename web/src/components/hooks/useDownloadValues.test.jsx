@@ -34,7 +34,7 @@ describe("useDownloadValues", () => {
         () => useDownloadValues(testConfig),
         {
           wrapper,
-        },
+        }
       );
 
       await act(async () => {
@@ -51,7 +51,7 @@ describe("useDownloadValues", () => {
       expect(fetchValuesSpy).toHaveBeenCalledWith(expectedFetchConfig);
     });
     it.todo(
-      "test the rest of this or figure out how to use react-query with it",
+      "test the rest of this or figure out how to use react-query with it"
     );
   });
   describe("getValues", () => {
@@ -64,7 +64,7 @@ describe("useDownloadValues", () => {
         Promise.resolve({
           ok: true,
           blob: blobSpy,
-        }),
+        })
       );
       const testAppSlug = "testAppSlug";
       const testToken = "testToken";
@@ -88,12 +88,12 @@ describe("useDownloadValues", () => {
         },
       };
       await expect(getValues(testGetValuesConfig)).resolves.toEqual(
-        expectedResponse,
+        expectedResponse
       );
       expect(_fetchValuesSpy).toHaveBeenCalledTimes(1);
       expect(_fetchValuesSpy).toHaveBeenCalledWith(
         expectedAPIEndpoint,
-        expectedFetchConfig,
+        expectedFetchConfig
       );
       expect(blobSpy).toHaveBeenCalledTimes(1);
     });
@@ -102,7 +102,7 @@ describe("useDownloadValues", () => {
       const _fetchValuesSpy = jest.fn(() =>
         Promise.resolve({
           ok: false,
-        }),
+        })
       );
       const testAppSlug = "testAppSlug";
 
@@ -116,7 +116,7 @@ describe("useDownloadValues", () => {
       };
 
       await expect(getValues(testGetValuesConfig)).rejects.toThrowError(
-        "Error fetching values",
+        "Error fetching values"
       );
     });
 
@@ -125,7 +125,7 @@ describe("useDownloadValues", () => {
         Promise.resolve({
           ok: true,
           blob: () => Promise.reject(new Error("Error parsing blob")),
-        }),
+        })
       );
 
       const testAppSlug = "testAppSlug";
@@ -139,12 +139,12 @@ describe("useDownloadValues", () => {
       };
 
       await expect(getValues(testGetValuesConfig)).rejects.toThrowError(
-        "Error parsing blob",
+        "Error parsing blob"
       );
     });
     it("throws error when network error", async () => {
       const _fetchValuesSpy = jest.fn(() =>
-        Promise.reject(new Error("Error fetching")),
+        Promise.reject(new Error("Error fetching"))
       );
 
       const testToken = "testToken";
@@ -156,7 +156,7 @@ describe("useDownloadValues", () => {
       };
 
       await expect(getValues(testGetValuesConfig)).rejects.toThrowError(
-        "Error fetching",
+        "Error fetching"
       );
     });
   });

@@ -43,7 +43,7 @@ class AppLicense extends Component {
           Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
-      },
+      }
     )
       .then(async (res) => {
         const body = await res.json();
@@ -341,7 +341,7 @@ class AppLicense extends Component {
                     ></span>
                     {appLicense?.licenseType !== "---"
                       ? `${Utilities.toTitleCase(
-                          appLicense.licenseType,
+                          appLicense.licenseType
                         )} license`
                       : `---`}
                   </div>
@@ -364,7 +364,7 @@ class AppLicense extends Component {
                     {appLicense.entitlements?.map((entitlement, i) => {
                       const currEntitlement =
                         this.state.entitlementsToShow.find(
-                          (f) => f === entitlement.title,
+                          (f) => f === entitlement.title
                         );
                       const isTextField = entitlement.valueType === "Text";
                       const isBooleanField =
@@ -524,7 +524,7 @@ class AppLicense extends Component {
                       {
                         "u-textColor--error": messageType === "error",
                         "u-textColor--primary": messageType === "info",
-                      },
+                      }
                     )}
                   >
                     {message}
@@ -676,7 +676,7 @@ class AppLicense extends Component {
                         licenseChangeMessageType === "error",
                       "u-textColor--primary":
                         licenseChangeMessageType === "info",
-                    },
+                    }
                   )}
                 >
                   {licenseChangeMessage}

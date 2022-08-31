@@ -56,7 +56,7 @@ class BackupRestore extends React.Component {
       .then((result) => {
         this.setState({
           backups: result.backups?.sort(
-            (a, b) => new Date(b.startedAt) - new Date(a.startedAt),
+            (a, b) => new Date(b.startedAt) - new Date(a.startedAt)
           ),
           isLoadingBackups: false,
           backupsErr: false,
@@ -282,7 +282,7 @@ class BackupRestore extends React.Component {
           : this.renderSelectedBackupView(
               selectedBackup,
               applicationName,
-              logo,
+              logo
             )}
       </div>
     );

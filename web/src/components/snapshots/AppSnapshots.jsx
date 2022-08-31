@@ -111,7 +111,7 @@ class AppSnapshots extends Component {
           Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
-      },
+      }
     )
       .then(async (result) => {
         const body = await result.json();
@@ -122,7 +122,7 @@ class AppSnapshots extends Component {
           });
         } else if (body.status == "running") {
           this.props.history.replace(
-            `/snapshots/partial/${selectedApp.slug}/${body.restore_name}/restore`,
+            `/snapshots/partial/${selectedApp.slug}/${body.restore_name}/restore`
           );
         } else {
           this.state.listSnapshotsJob.start(this.listSnapshots, 2000);
@@ -153,7 +153,7 @@ class AppSnapshots extends Component {
             Authorization: Utilities.getToken(),
             "Content-Type": "application/json",
           },
-        },
+        }
       );
       if (!res.ok) {
         if (res.status === 401) {
@@ -174,7 +174,7 @@ class AppSnapshots extends Component {
         snapshots: response.backups?.sort((a, b) =>
           b.startedAt
             ? new Date(b.startedAt) - new Date(a.startedAt)
-            : -99999999,
+            : -99999999
         ),
         hasSnapshotsLoaded: true,
         snapshotsListErr: false,
@@ -297,15 +297,15 @@ class AppSnapshots extends Component {
       sequence: snapshot.sequence,
       startedAt: Utilities.dateFormat(
         snapshot.startedAt,
-        "MM/DD/YY @ hh:mm a z",
+        "MM/DD/YY @ hh:mm a z"
       ),
       finishedAt: Utilities.dateFormat(
         snapshot.finishedAt,
-        "MM/DD/YY @ hh:mm a z",
+        "MM/DD/YY @ hh:mm a z"
       ),
       expiresAt: Utilities.dateFormat(
         snapshot.expiresAt,
-        "MM/DD/YY @ hh:mm a z",
+        "MM/DD/YY @ hh:mm a z"
       ),
       volumeCount: snapshot.volumeCount,
       volumeSuccessCount: snapshot.volumeSuccessCount,
@@ -318,7 +318,7 @@ class AppSnapshots extends Component {
       deleteErr: false,
       deleteErrorMsg: "",
       snapshots: this.state.snapshots.map((s) =>
-        s === snapshot ? fakeDeletionSnapshot : s,
+        s === snapshot ? fakeDeletionSnapshot : s
       ),
     });
 
@@ -384,7 +384,7 @@ class AppSnapshots extends Component {
           Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
-      },
+      }
     )
       .then(async (result) => {
         if (result.ok) {
@@ -396,7 +396,7 @@ class AppSnapshots extends Component {
           });
 
           this.props.history.replace(
-            `/snapshots/partial/${selectedApp.slug}/${snapshot.name}/restore`,
+            `/snapshots/partial/${selectedApp.slug}/${snapshot.name}/restore`
           );
         } else {
           const body = await result.json();
@@ -440,7 +440,7 @@ class AppSnapshots extends Component {
       startSnapshotErrorMsg: "",
       isStartButtonClicked: true,
       snapshots: [...this.state.snapshots, fakeProgressSnapshot].sort(
-        (a, b) => new Date(b.startedAt) - new Date(a.startedAt),
+        (a, b) => new Date(b.startedAt) - new Date(a.startedAt)
       ),
     });
 
@@ -452,7 +452,7 @@ class AppSnapshots extends Component {
           Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
-      },
+      }
     )
       .then(async (result) => {
         if (!result.ok && result.status === 409) {
@@ -552,7 +552,7 @@ class AppSnapshots extends Component {
     const { app, appsList } = this.props;
     const appTitle = app?.name;
     const inProgressSnapshotExist = snapshots?.find(
-      (snapshot) => snapshot.status === "InProgress",
+      (snapshot) => snapshot.status === "InProgress"
     );
 
     if (

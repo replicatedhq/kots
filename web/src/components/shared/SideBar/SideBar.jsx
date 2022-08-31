@@ -33,7 +33,7 @@ class SideBar extends Component {
       <div
         className={classNames(
           "sidebar flex-column flex-auto u-overflow--auto",
-          className,
+          className
         )}
       >
         <div className="flex-column u-width--full">

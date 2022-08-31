@@ -199,7 +199,7 @@ export default class DashboardLicenseCard extends React.Component {
                     {
                       "u-textColor--error": messageType === "error",
                       "u-textColor--primary": messageType === "info",
-                    },
+                    }
                   )}
                 >
                   {message}
@@ -249,7 +249,7 @@ export default class DashboardLicenseCard extends React.Component {
                     ></span>
                     {appLicense?.licenseType !== "---"
                       ? `${Utilities.toTitleCase(
-                          appLicense.licenseType,
+                          appLicense.licenseType
                         )} license`
                       : `---`}
                   </div>
@@ -272,7 +272,7 @@ export default class DashboardLicenseCard extends React.Component {
                     {appLicense.entitlements?.map((entitlement, i) => {
                       const currEntitlement =
                         this.state.entitlementsToShow?.find(
-                          (f) => f === entitlement.title,
+                          (f) => f === entitlement.title
                         );
                       const isTextField = entitlement.valueType === "Text";
                       const isBooleanField =

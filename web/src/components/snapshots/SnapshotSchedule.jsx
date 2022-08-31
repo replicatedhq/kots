@@ -90,7 +90,7 @@ class SnapshotSchedule extends Component {
           ]),
           frequency: snapshotConfig.autoSchedule.schedule,
         },
-        () => this.getReadableCronExpression(),
+        () => this.getReadableCronExpression()
       );
     } else {
       this.setState(
@@ -100,7 +100,7 @@ class SnapshotSchedule extends Component {
           selectedSchedule: find(SCHEDULES, ["value", "weekly"]),
           frequency: "0 0 * * MON",
         },
-        () => this.getReadableCronExpression(),
+        () => this.getReadableCronExpression()
       );
     }
   };
@@ -140,7 +140,7 @@ class SnapshotSchedule extends Component {
       },
       () => {
         this.getReadableCronExpression();
-      },
+      }
     );
   };
 
@@ -216,7 +216,7 @@ class SnapshotSchedule extends Component {
   componentDidMount = () => {
     if (!isEmpty(this.props.apps) && this.props.location.search) {
       const currentApp = this.props.apps.find(
-        (app) => app.slug === this.props.location.search.slice(1),
+        (app) => app.slug === this.props.location.search.slice(1)
       );
       this.setState({ selectedApp: currentApp }, () => {
         this.settingSnapshotConfig(currentApp);
@@ -241,7 +241,7 @@ class SnapshotSchedule extends Component {
       } else {
         if (!isEmpty(this.props.apps) && this.props.location.search) {
           const currentApp = this.props.apps.find(
-            (app) => app.slug === this.props.location.search.slice(1),
+            (app) => app.slug === this.props.location.search.slice(1)
           );
           this.setState({ selectedApp: currentApp }, () => {
             this.settingSnapshotConfig(currentApp);
@@ -252,7 +252,7 @@ class SnapshotSchedule extends Component {
             this.settingSnapshotConfig(this.props.apps[0]);
           });
           this.props.history.replace(
-            `/snapshots/settings?${this.props.apps[0].slug}`,
+            `/snapshots/settings?${this.props.apps[0].slug}`
           );
         }
       }
@@ -264,7 +264,7 @@ class SnapshotSchedule extends Component {
     ) {
       this.settingSnapshotConfig(this.state.selectedApp);
       this.props.history.replace(
-        `/snapshots/settings?${this.state.selectedApp.slug}`,
+        `/snapshots/settings?${this.state.selectedApp.slug}`
       );
     }
   };
@@ -311,7 +311,7 @@ class SnapshotSchedule extends Component {
             });
             this.props.openConfigureSnapshotsMinimalRBACModal(
               result.kotsadmRequiresVeleroAccess,
-              result.kotsadmNamespace,
+              result.kotsadmNamespace
             );
             return;
           }
@@ -410,7 +410,7 @@ class SnapshotSchedule extends Component {
     }
 
     const isSettingsPage = window.location.pathname.includes(
-      "/snapshots/settings",
+      "/snapshots/settings"
     );
 
     return (

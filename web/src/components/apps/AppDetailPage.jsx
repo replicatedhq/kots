@@ -87,7 +87,7 @@ class AppDetailPage extends Component {
       const downstream = app?.downstream;
       if (downstream?.pendingVersions?.length) {
         const firstVersion = downstream.pendingVersions.find(
-          (version) => version?.sequence === 0,
+          (version) => version?.sequence === 0
         );
         if (firstVersion?.status === "pending_config") {
           this.props.history.push(`/${app.slug}/config`);
@@ -108,7 +108,7 @@ class AppDetailPage extends Component {
     upstreamSlug,
     version,
     isSkipPreflights,
-    continueWithFailedPreflights = false,
+    continueWithFailedPreflights = false
   ) => {
     try {
       this.setState({ makingCurrentReleaseErrMsg: "" });
@@ -126,7 +126,7 @@ class AppDetailPage extends Component {
             continueWithFailedPreflights: continueWithFailedPreflights,
             isCLI: false,
           }),
-        },
+        }
       );
       if (res.ok && res.status < 300) {
         this.setState({ makingCurrentReleaseErrMsg: "" });
@@ -159,7 +159,7 @@ class AppDetailPage extends Component {
             "Content-Type": "application/json",
           },
           method: "POST",
-        },
+        }
       );
       if (res.ok && res.status === 204) {
         this.setState({ redeployVersionErrMsg: "" });

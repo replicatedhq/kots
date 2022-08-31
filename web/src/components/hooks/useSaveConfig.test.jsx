@@ -57,7 +57,7 @@ describe("useSaveConfig", () => {
         Promise.resolve({
           ok: true,
           json: jsonSpy,
-        }),
+        })
       );
       const testAppSlug = "testAppSlug";
       const testToken = "testToken";
@@ -86,7 +86,7 @@ describe("useSaveConfig", () => {
       expect(testFetch).toHaveBeenCalledTimes(1);
       expect(testFetch).toHaveBeenCalledWith(
         expectedAPIEndpoint,
-        expectedFetchConfig,
+        expectedFetchConfig
       );
       expect(jsonSpy).toHaveBeenCalledTimes(1);
     });
@@ -98,7 +98,7 @@ describe("useSaveConfig", () => {
       const testFetch = jest.fn(() =>
         Promise.resolve({
           ok: false,
-        }),
+        })
       );
       const testAppSlug = "testAppSlug";
       const testToken = "testToken";
@@ -112,7 +112,7 @@ describe("useSaveConfig", () => {
       };
 
       await expect(putConfig(testPutConfig)).rejects.toThrowError(
-        "Error saving config",
+        "Error saving config"
       );
     });
 
@@ -125,7 +125,7 @@ describe("useSaveConfig", () => {
         Promise.resolve({
           ok: true,
           json: () => Promise.reject(new Error("Error parsing json")),
-        }),
+        })
       );
 
       const testAppSlug = "testAppSlug";
@@ -140,12 +140,12 @@ describe("useSaveConfig", () => {
       };
 
       await expect(putConfig(testPutConfig)).rejects.toThrowError(
-        "Error parsing json",
+        "Error parsing json"
       );
     });
     it("throws error when network error", async () => {
       const testFetch = jest.fn(() =>
-        Promise.reject(new Error("Error fetching")),
+        Promise.reject(new Error("Error fetching"))
       );
 
       const testAppSlug = "testAppSlug";
@@ -159,7 +159,7 @@ describe("useSaveConfig", () => {
       };
 
       await expect(putConfig(testPutConfig)).rejects.toThrowError(
-        "Error fetching",
+        "Error fetching"
       );
     });
   });

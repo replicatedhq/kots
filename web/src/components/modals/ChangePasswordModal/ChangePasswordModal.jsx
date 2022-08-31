@@ -34,7 +34,7 @@ const ChangePasswordModal = ({ closeModal, isOpen }) => {
           const res = await response.json();
           if (res.error) {
             throw new Error(
-              `Unexpected status code ${response.status}: ${res.error}`,
+              `Unexpected status code ${response.status}: ${res.error}`
             );
           }
           throw new Error(`Unexpected status code ${response.status}`);

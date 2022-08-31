@@ -27,7 +27,7 @@ class AirgapUploadProgress extends React.Component {
     processingImages = null;
     this.state.getAirgapInstallStatusJob.start(
       this.getAirgapInstallStatus,
-      1000,
+      1000
     );
   }
 
@@ -47,7 +47,7 @@ class AirgapUploadProgress extends React.Component {
           },
           method: "GET",
         },
-        10000,
+        10000
       );
 
       if (!res.ok) {
@@ -167,7 +167,7 @@ class AirgapUploadProgress extends React.Component {
       if (type === "progressReport") {
         statusMsg = jsonMessage.compatibilityMessage;
         processingImages = jsonMessage.images.sort((a, b) =>
-          a.displayName < b.displayName ? -1 : 1,
+          a.displayName < b.displayName ? -1 : 1
         );
       }
     } catch {
@@ -217,7 +217,7 @@ class AirgapUploadProgress extends React.Component {
                   if (image.total > 0 && image.current > 0) {
                     percentage =
                       Math.floor(
-                        (image.current / image.total) * 100,
+                        (image.current / image.total) * 100
                       ).toFixed() + "%";
                     imageProgressBar = (
                       <div className="progressbar">
@@ -250,7 +250,7 @@ class AirgapUploadProgress extends React.Component {
                   } else if (image.status === "uploaded") {
                     const completedTime = calculateTimeDifference(
                       image.startTime,
-                      image.endTime,
+                      image.endTime
                     );
                     currentMessage = `Completed in ${completedTime}`;
                   } else if (image.status === "uploading") {

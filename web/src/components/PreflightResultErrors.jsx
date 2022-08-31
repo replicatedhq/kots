@@ -50,7 +50,7 @@ class PreflightResultErrors extends Component {
     try {
       const command = await this.fetchPreflightCommand(
         preflightResultData.appSlug,
-        sequence,
+        sequence
       );
       this.setState({
         command,
@@ -76,7 +76,7 @@ class PreflightResultErrors extends Component {
         body: JSON.stringify({
           origin: window.location.origin,
         }),
-      },
+      }
     );
     if (!res.ok) {
       throw new Error(`Unexpected status code: ${res.status}`);

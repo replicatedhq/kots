@@ -17,7 +17,7 @@ export default class ConnectionTerminated extends React.Component {
         },
         () => {
           this.ping();
-        },
+        }
       );
     } else {
       const nextCount = seconds - 1;
@@ -37,7 +37,7 @@ export default class ConnectionTerminated extends React.Component {
           "Content-Type": "application/json",
         },
       },
-      10000,
+      10000
     )
       .then(async (res) => {
         if (res.status === 401) {

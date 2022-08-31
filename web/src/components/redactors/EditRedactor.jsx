@@ -54,7 +54,7 @@ class EditRedactor extends Component {
               if (this.state.selectedOption) {
                 this.sortRedactors(this.state.selectedOption.value);
               }
-            },
+            }
           );
         } else {
           this.setState({
@@ -110,7 +110,7 @@ class EditRedactor extends Component {
             this.setState({ editConfirm: false });
           }, 3000);
           this.props.history.replace(
-            `/app/${this.props.appSlug}/troubleshoot/redactors`,
+            `/app/${this.props.appSlug}/troubleshoot/redactors`
           );
         } else {
           this.setState({
@@ -173,12 +173,12 @@ class EditRedactor extends Component {
           editor.scrollToLine(
             this.getEmptyNameLine(this.state.redactorYaml),
             true,
-            true,
+            true
           );
           editor.gotoLine(
             this.getEmptyNameLine(this.state.redactorYaml),
             1,
-            true,
+            true
           );
         }
 
@@ -195,7 +195,7 @@ class EditRedactor extends Component {
             this.setState({ createConfirm: false });
           }, 3000);
           this.props.history.replace(
-            `/app/${this.props.appSlug}/troubleshoot/redactors`,
+            `/app/${this.props.appSlug}/troubleshoot/redactors`
           );
         } else {
           this.setState({
@@ -254,13 +254,13 @@ spec:
       this.editRedactor(
         this.props.match.params.redactorSlug,
         this.state.redactorEnabled,
-        this.state.redactorYaml,
+        this.state.redactorYaml
       );
     } else {
       this.createRedactor(
         this.state.redactorEnabled,
         true,
-        this.state.redactorYaml,
+        this.state.redactorYaml
       );
     }
   };

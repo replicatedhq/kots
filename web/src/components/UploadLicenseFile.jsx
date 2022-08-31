@@ -76,7 +76,7 @@ class UploadLicenseFile extends React.Component {
     if (isRliFile) {
       try {
         const base64String = btoa(
-          String.fromCharCode.apply(null, new Uint8Array(licenseFileContent)),
+          String.fromCharCode.apply(null, new Uint8Array(licenseFileContent))
         );
         licenseText = await this.exchangeRliFileForLicense(base64String);
       } catch (err) {
@@ -133,7 +133,7 @@ class UploadLicenseFile extends React.Component {
 
           if (!data.success) {
             const licenseExistErr = data?.error?.includes(
-              "License already exist",
+              "License already exist"
             );
             this.setState({
               fileUploading: false,
@@ -239,7 +239,7 @@ class UploadLicenseFile extends React.Component {
             reject(
               res.status === 401
                 ? "Invalid license. Please try again"
-                : "There was an error uploading your license. Please try again",
+                : "There was an error uploading your license. Please try again"
             );
             return;
           }

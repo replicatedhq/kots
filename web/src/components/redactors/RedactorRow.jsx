@@ -12,7 +12,7 @@ class RedactorRow extends React.Component {
     this.setState({ redactorEnabled: !this.state.redactorEnabled }, () => {
       this.props.handleSetRedactEnabled(
         this.props.redactor,
-        this.state.redactorEnabled,
+        this.state.redactorEnabled
       );
     });
   };
@@ -52,7 +52,7 @@ class RedactorRow extends React.Component {
               Last updated on{" "}
               {Utilities.dateFormat(
                 redactor?.updatedAt,
-                "MM/DD/YY @ hh:mm a z",
+                "MM/DD/YY @ hh:mm a z"
               )}{" "}
             </span>
           </div>

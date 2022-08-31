@@ -66,7 +66,7 @@ export default function BackupRestoreModal(props) {
               <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginRight--20">
                 {Utilities.dateFormat(
                   snapshotToRestore?.startedAt,
-                  "MMM D YYYY @ hh:mm a z",
+                  "MMM D YYYY @ hh:mm a z"
                 )}
               </p>
             </div>
@@ -277,7 +277,7 @@ export default function BackupRestoreModal(props) {
               onClick={() => {
                 handlePartialRestoreSnapshot(
                   snapshotToRestore,
-                  includedApps?.length === 1,
+                  includedApps?.length === 1
                 );
               }}
               disabled={restoringSnapshot}

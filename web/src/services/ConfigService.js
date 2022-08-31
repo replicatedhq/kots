@@ -23,7 +23,7 @@ export const ConfigService = {
               return item;
             }
           })
-          .value(),
+          .value()
       )
       .flattenDeep()
       .without(null)

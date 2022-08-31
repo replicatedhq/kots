@@ -47,7 +47,7 @@ export default class DashboardGraphsCard extends React.Component {
             "Content-Type": "application/json",
           },
           method: "GET",
-        },
+        }
       )
         .then(async (res) => {
           if (!res.ok && res.status === 401) {

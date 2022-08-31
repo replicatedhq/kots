@@ -77,7 +77,7 @@ class UploadAirgapBundle extends React.Component {
         false,
         match.params.slug,
         this.onDropBundle,
-        simultaneousUploads,
+        simultaneousUploads
       ),
     });
   };
@@ -146,7 +146,7 @@ class UploadAirgapBundle extends React.Component {
               password: this.state.registryDetails.password,
               isReadOnly: this.state.registryDetails.isReadOnly,
             }),
-          },
+          }
         );
       } catch (err) {
         this.setState({
@@ -188,7 +188,7 @@ class UploadAirgapBundle extends React.Component {
     this.state.airgapUploader.upload(
       params,
       this.onUploadProgress,
-      this.onUploadError,
+      this.onUploadError
     );
   };
 
@@ -325,7 +325,7 @@ class UploadAirgapBundle extends React.Component {
         body: JSON.stringify({
           origin: window.location.origin,
         }),
-      },
+      }
     );
     if (!res.ok) {
       throw new Error(`Unexpected status code: ${res.status}`);
@@ -621,7 +621,7 @@ class UploadAirgapBundle extends React.Component {
           className={classNames(
             "u-marginTop--10 u-textAlign--center",
             { "u-marginBottom--20": !onlineInstallErrorMessage },
-            { "u-display--none": preparingOnlineInstall },
+            { "u-display--none": preparingOnlineInstall }
           )}
         >
           <span

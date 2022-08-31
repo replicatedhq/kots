@@ -53,7 +53,7 @@ export class NavBar extends PureComponent {
       console.log(err);
       this.setState({ loggingOut: false, displayErrorModal: true });
       onLogoutError(
-        err ? err.message : "Something went wrong, please try again.",
+        err ? err.message : "Something went wrong, please try again."
       );
     }
   };

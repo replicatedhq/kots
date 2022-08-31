@@ -13,17 +13,17 @@ export default class ConfigFileInput extends React.Component {
       } else {
         const data = map(
           files.filter((f) => f),
-          "filename",
+          "filename"
         );
         const value = map(
           files.filter((f) => f),
-          "value",
+          "value"
         );
         // TODO: @GraysonNull (07/09/2021) This is backwards but switching it breaks things and I don't have the time to search through and fix it all right now.
         this.props.handleChange(
           this.props.name,
           data ? data[0] : "",
-          value ? value[0] : "",
+          value ? value[0] : ""
         );
       }
     }
@@ -68,7 +68,7 @@ export default class ConfigFileInput extends React.Component {
         Object.keys(this.props.valuesByGroup[this.props.groupName]).map(
           (key) => {
             filenames.push(key);
-          },
+          }
         );
         if (filenames.length > 0) {
           return filenames;

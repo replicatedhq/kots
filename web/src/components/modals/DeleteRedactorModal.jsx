@@ -46,7 +46,7 @@ export default function DeleteRedactorModal(props) {
                 Last updated on{" "}
                 {Utilities.dateFormat(
                   redactorToDelete?.updatedOn,
-                  "MM/DD/YY @ hh:mm a z",
+                  "MM/DD/YY @ hh:mm a z"
                 )}
               </p>
             </div>

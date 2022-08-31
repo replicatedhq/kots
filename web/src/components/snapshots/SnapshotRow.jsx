@@ -43,7 +43,7 @@ class SnapshotRow extends React.Component {
               {snapshot?.startedAt
                 ? Utilities.dateFormat(
                     snapshot?.startedAt,
-                    "MMM D YYYY @ hh:mm a z",
+                    "MMM D YYYY @ hh:mm a z"
                   )
                 : "n/a"}
             </p>
@@ -59,7 +59,7 @@ class SnapshotRow extends React.Component {
                   ? snapshot?.finishedAt
                     ? Utilities.dateFormat(
                         snapshot?.finishedAt,
-                        "MMM D YYYY @ hh:mm a z",
+                        "MMM D YYYY @ hh:mm a z"
                       )
                     : "TBD"
                   : "n/a"}

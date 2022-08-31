@@ -59,7 +59,7 @@ export default class ScheduleSnapshotForm extends Component {
       },
       () => {
         this.getReadableCronExpression();
-      },
+      }
     );
   };
 

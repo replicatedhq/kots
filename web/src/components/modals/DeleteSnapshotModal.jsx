@@ -49,7 +49,7 @@ export default function DeleteSnapshotModal(props) {
                 </span>{" "}
                 {Utilities.dateFormat(
                   snapshotToDelete?.startedAt,
-                  "MM/DD/YY @ hh:mm a z",
+                  "MM/DD/YY @ hh:mm a z"
                 )}
               </p>
             </div>

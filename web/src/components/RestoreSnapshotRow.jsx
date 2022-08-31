@@ -83,7 +83,7 @@ class RestoreSnapshotRow extends React.Component {
                   {" "}
                   {Utilities.dateFormat(
                     snapshot?.startedAt,
-                    "MM/DD/YY @ hh:mm a z",
+                    "MM/DD/YY @ hh:mm a z"
                   )}
                 </p>
               </div>

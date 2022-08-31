@@ -163,7 +163,7 @@ class SecureAdminConsole extends React.Component {
     const newFontSize = dynamicallyResizeText(
       this.loginText.current.innerHTML,
       this.loginText.current.clientWidth,
-      "32px",
+      "32px"
     );
     this.loginText.current.style.fontSize = newFontSize;
   };
@@ -181,7 +181,7 @@ class SecureAdminConsole extends React.Component {
         const res = await response.json();
         if (res.error) {
           throw new Error(
-            `Unexpected status code ${response.status}: ${res.error}`,
+            `Unexpected status code ${response.status}: ${res.error}`
           );
         }
         throw new Error(`Unexpected status code ${response.status}`);

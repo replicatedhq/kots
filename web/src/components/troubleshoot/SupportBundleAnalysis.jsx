@@ -56,7 +56,7 @@ export class SupportBundleAnalysis extends React.Component {
         headers: {
           Authorization: Utilities.getToken(),
         },
-      },
+      }
     )
       .then(async (result) => {
         if (!result.ok) {
@@ -95,7 +95,7 @@ export class SupportBundleAnalysis extends React.Component {
         headers: {
           Authorization: Utilities.getToken(),
         },
-      },
+      }
     )
       .then(async (result) => {
         if (!result.ok) {
@@ -112,7 +112,7 @@ export class SupportBundleAnalysis extends React.Component {
           filename = disposition.split("filename=")[1];
         } else {
           const createdAt = dayjs(bundle.createdAt).format(
-            "YYYY-MM-DDTHH_mm_ss",
+            "YYYY-MM-DDTHH_mm_ss"
           );
           filename = `supportbundle-${createdAt}.tar.gz`;
         }
@@ -148,7 +148,7 @@ export class SupportBundleAnalysis extends React.Component {
           Authorization: Utilities.getToken(),
         },
         method: "GET",
-      },
+      }
     )
       .then(async (res) => {
         if (!res.ok) {
@@ -259,7 +259,7 @@ export class SupportBundleAnalysis extends React.Component {
                           Collected on{" "}
                           <span className="u-fontWeight--bold u-marginLeft--5">
                             {dayjs(bundle.createdAt).format(
-                              "MMMM D, YYYY @ h:mm a",
+                              "MMMM D, YYYY @ h:mm a"
                             )}
                           </span>
                         </p>
@@ -290,7 +290,7 @@ export class SupportBundleAnalysis extends React.Component {
                             Sent to vendor on{" "}
                             {Utilities.dateFormat(
                               bundle.sharedAt,
-                              "MM/DD/YYYY",
+                              "MM/DD/YYYY"
                             )}
                           </span>
                         </div>

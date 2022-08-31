@@ -31,7 +31,7 @@ export class AnalyzerRedactorReport extends Component {
           Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
         },
-      },
+      }
     )
       .then((res) => res.json())
       .then((result) => {

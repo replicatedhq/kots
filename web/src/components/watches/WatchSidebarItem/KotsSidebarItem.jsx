@@ -54,7 +54,7 @@ export default function KotsSidebarItem(props) {
                   {
                     "u-textColor--bodyCopy": !isBehind,
                     "u-textColor--warning": isBehind,
-                  },
+                  }
                 )}
               >
                 {versionsBehindText}

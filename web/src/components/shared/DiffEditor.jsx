@@ -13,7 +13,7 @@ export default class DiffEditor extends React.Component {
   componentDidMount() {
     const lineChanges = diffContent(
       this.props.original || "",
-      this.props.value || "",
+      this.props.value || ""
     );
     this.setState(lineChanges);
   }

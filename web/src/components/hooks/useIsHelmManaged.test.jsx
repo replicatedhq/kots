@@ -27,7 +27,7 @@ describe("useIsHelmManaged", () => {
         () => useIsHelmManaged({ _fetchIsHelmManaged: fetchIsHelmManagedSpy }),
         {
           wrapper,
-        },
+        }
       );
 
       await waitFor(() => result.current.isSuccess);
@@ -47,7 +47,7 @@ describe("useIsHelmManaged", () => {
         Promise.resolve({
           ok: true,
           json: jsonSpy,
-        }),
+        })
       );
       const testToken = "testToken";
       const testAPIEndpoint = "testAPIEndpoint";
@@ -69,12 +69,12 @@ describe("useIsHelmManaged", () => {
         },
       };
       await expect(
-        fetchIsHelmManaged(testFetchIsHelmManagedConfig),
+        fetchIsHelmManaged(testFetchIsHelmManagedConfig)
       ).resolves.toEqual(expectedResponse);
       expect(fetchIsHelmManagedSpy).toHaveBeenCalledTimes(1);
       expect(fetchIsHelmManagedSpy).toHaveBeenCalledWith(
         expectedAPIEndpoint,
-        expectedFetchConfig,
+        expectedFetchConfig
       );
       expect(jsonSpy).toHaveBeenCalledTimes(1);
     });
@@ -83,7 +83,7 @@ describe("useIsHelmManaged", () => {
       const fetchIsHelmManagedSpy = jest.fn(() =>
         Promise.resolve({
           ok: false,
-        }),
+        })
       );
       const testToken = "testToken";
       const testAPIEndpoint = "testAPIEndpoint";
@@ -94,7 +94,7 @@ describe("useIsHelmManaged", () => {
       };
 
       await expect(
-        fetchIsHelmManaged(testFetchIsHelmManagedConfig),
+        fetchIsHelmManaged(testFetchIsHelmManagedConfig)
       ).rejects.toThrowError("Error fetching isHelmManaged");
     });
 
@@ -103,7 +103,7 @@ describe("useIsHelmManaged", () => {
         Promise.resolve({
           ok: true,
           json: () => Promise.reject(new Error("Error parsing json")),
-        }),
+        })
       );
 
       const testToken = "testToken";
@@ -115,12 +115,12 @@ describe("useIsHelmManaged", () => {
       };
 
       await expect(
-        fetchIsHelmManaged(testFetchIsHelmManagedConfig),
+        fetchIsHelmManaged(testFetchIsHelmManagedConfig)
       ).rejects.toThrowError("Error parsing json");
     });
     it("throws error when network error", async () => {
       const fetchIsHelmManagedSpy = jest.fn(() =>
-        Promise.reject(new Error("Error fetching")),
+        Promise.reject(new Error("Error fetching"))
       );
 
       const testToken = "testToken";
@@ -132,7 +132,7 @@ describe("useIsHelmManaged", () => {
       };
 
       await expect(
-        fetchIsHelmManaged(testFetchIsHelmManagedConfig),
+        fetchIsHelmManaged(testFetchIsHelmManagedConfig)
       ).rejects.toThrowError("Error fetching");
     });
   });

@@ -41,7 +41,7 @@ const ChangePasswordForm = ({
       updateFormStatus(
         false,
         true,
-        "Please ensure you've filled out both new password fields.",
+        "Please ensure you've filled out both new password fields."
       );
       return false;
     }
@@ -89,7 +89,7 @@ const ChangePasswordForm = ({
           updateFormStatus(
             false,
             true,
-            "There was an error changing your password. Please try again.",
+            "There was an error changing your password. Please try again."
           );
           handleSetPasswordChangeSuccessful(false);
         });

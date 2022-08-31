@@ -95,7 +95,7 @@ class Root extends PureComponent {
       {
         themeState: { ...newThemeState },
       },
-      callback,
+      callback
     );
   };
 
@@ -178,7 +178,7 @@ class Root extends PureComponent {
 
         console.log(
           "failed to get pending apps, unexpected status code",
-          res.status,
+          res.status
         );
         return;
       }
@@ -267,7 +267,7 @@ class Root extends PureComponent {
           "Content-Type": "application/json",
         },
       },
-      10000,
+      10000
     )
       .then(async (result) => {
         if (result.status === 401) {
