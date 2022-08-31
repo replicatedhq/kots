@@ -228,7 +228,6 @@ class AppDetailPage extends Component {
 
   componentDidMount() {
     const { history } = this.props;
-    console.log("appdetail page mounted");
 
     if (history.location.pathname === "/apps") {
       this.state.checkForFirstAppJob.start(this.checkForFirstApp, 2000);
