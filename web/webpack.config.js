@@ -55,11 +55,6 @@ module.exports = function (env) {
     },
     module: {
       rules: [
-        // {
-        //   test: /\.tsx?$/,
-        //   use: 'ts-loader',
-        //   exclude: /node_modules/,
-        // },
         {
           test: /\.mjs$/,
           include: /node_modules/,
