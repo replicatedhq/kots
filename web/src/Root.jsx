@@ -380,9 +380,10 @@ class Root extends PureComponent {
             <link rel="icon" type="image/png" href={this.state.appLogo} />
           )}
           {this.state.appBrandingCss && (
-            <style rel="stylesheet" type="text/css" id="kots-branding-css">{ this.state.appBrandingCss }</style>
+            <style rel="stylesheet" type="text/css" id="kots-branding-css">
+              {this.state.appBrandingCss}
+            </style>
           )}
-
         </Helmet>
         <ThemeContext.Provider
           value={{

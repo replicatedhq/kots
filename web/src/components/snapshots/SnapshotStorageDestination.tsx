@@ -343,7 +343,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
   };
 
   getCurrentProviderStores = (
-    provider: StoreProviderName,
+    provider: StoreProviderName
   ): StoreProvider | null => {
     const hasChanges = this.checkForStoreChanges(provider);
     if (hasChanges) {
@@ -494,7 +494,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
 
   handleFormChange = (
     field: FieldName,
-    e: React.ChangeEvent<HTMLInputElement>,
+    e: React.ChangeEvent<HTMLInputElement>
   ) => {
     let nextState: State = {};
     if (field === "useIamAws" || field === "gcsUseIam") {
@@ -579,7 +579,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
   getProviderPayload = (
     provider: StoreProviderName,
     bucket?: string,
-    path?: string,
+    path?: string
   ): ProviderPayload => {
     const caCertData = this.state?.caCertificate?.data;
     return Object.assign(
@@ -589,7 +589,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
         path,
         caCertData,
       },
-      this.getCurrentProviderStores(provider),
+      this.getCurrentProviderStores(provider)
     );
   };
 
@@ -601,7 +601,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
     const payload = this.getProviderPayload(
       "aws",
       this.state?.s3bucket,
-      this.state?.s3Path,
+      this.state?.s3Path
     );
     this.props.updateSettings(payload);
   };
@@ -610,7 +610,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
     const payload = this.getProviderPayload(
       "azure",
       this.state.azureBucket,
-      this.state.azurePath,
+      this.state.azurePath
     );
     this.props.updateSettings(payload);
   };
@@ -619,7 +619,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
     const payload = this.getProviderPayload(
       "gcp",
       this.state.gcsBucket,
-      this.state.gcsPath,
+      this.state.gcsPath
     );
     this.props.updateSettings(payload);
   };
@@ -628,7 +628,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
     const payload = this.getProviderPayload(
       "other",
       this.state.s3CompatibleBucket,
-      this.state.s3CompatiblePath,
+      this.state.s3CompatiblePath
     );
     this.props.updateSettings(payload);
   };
@@ -654,7 +654,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
         path,
         server,
         hostPath,
-        forceReset,
+        forceReset
       ),
     };
     this.props.updateSettings(payload);
@@ -665,7 +665,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
     path?: string,
     server?: string,
     hostPath?: string,
-    forceReset?: boolean,
+    forceReset?: boolean
   ): FileSystemOptions => {
     const options: FileSystemOptions = {
       forceReset: forceReset,
@@ -718,7 +718,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
       path,
       server,
       hostPath,
-      forceReset,
+      forceReset
     );
 
     this.setState({
@@ -1536,7 +1536,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
     }
 
     const selectedDestination = availableDestinations.find(
-      (d) => d.value === this.state?.selectedDestination?.value,
+      (d) => d.value === this.state?.selectedDestination?.value
     );
 
     const showResetFileSystemWarningModal =
@@ -1618,7 +1618,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                         getOptionLabel={(destination) =>
                           this.getDestinationLabel(
                             destination,
-                            destination.label,
+                            destination.label
                           )
                         }
                         getOptionValue={(destination) => destination.label}
@@ -1634,7 +1634,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                       <div className="u-textColor--primary u-fontWeight--medium flex alignItems--center">
                         {this.getDestinationLabel(
                           availableDestinations[0],
-                          availableDestinations[0].label,
+                          availableDestinations[0].label
                         )}
                       </div>
                     ) : null}
@@ -1817,7 +1817,5 @@ class SnapshotStorageDestination extends Component<Props, State> {
 
 // TODO: fix this typing thing
 // @ts-ignore
-const RoutedSnapshotStorageDestination = withRouter(
-  SnapshotStorageDestination,
-);
+const RoutedSnapshotStorageDestination = withRouter(SnapshotStorageDestination);
 export default RoutedSnapshotStorageDestination;
