@@ -1,4 +1,5 @@
 const ReactRefreshWebpackPlugin = require("@pmmmwh/react-refresh-webpack-plugin");
+const ESLintPlugin = require('eslint-webpack-plugin');
 const webpack = require("webpack");
 const path = require("path");
 const srcPath = path.join(__dirname, "src");
@@ -19,25 +20,17 @@ module.exports = {
       {
         test: /\.[jt]sx?$/,
         exclude: /node_modules/,
-        loader: "babel-loader"
-      },
-      {
-        test: /\.[jt]sx?$/,
-        include: srcPath,
-        exclude: [
-          /node_modules/,
-        ],
-        enforce: "pre",
-        loader: "eslint-loader",
+        loader: "babel-loader",
         options: {
-          fix: true,
+          plugins: [require.resolve('react-refresh/babel')]
         }
-      }
+      },
     ]
   },
   plugins: [
     new webpack.HotModuleReplacementPlugin(),
     new ReactRefreshWebpackPlugin(),
+    new ESLintPlugin(),
   ],
   optimization: {
     moduleIds: "named"

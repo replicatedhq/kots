@@ -33,3 +33,6 @@ dist/*
 env/skaffold_*
 
 logs/
+
+# typescript
+tsconfig.tsbuildinfo

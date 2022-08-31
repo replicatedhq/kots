@@ -1,51 +1,92 @@
 {
-  "extends": [
-    "eslint:recommended",
-    "plugin:react/recommended"
-  ],
-  "parser": "@babel/eslint-parser",
-  "parserOptions": {
-    "ecmaVersion": 2017,
-    "ecmaFeatures": {
-      "jsx": true,
-      "experimentalDecorators": true,
-      "legacyDecorators": true,
-      "decoratorsBeforeExport": true
-    },
-    "sourceType": "module"
-  },
-  "env": {
-    "browser": true,
-    "node": true,
-    "es6": true
-  },
   "plugins": [
-    "react"
+    "prettier",
+    "@typescript-eslint",
+    "jest"
   ],
-  "rules": {
-    "quotes": ["error", "double", { "allowTemplateLiterals": true }],
-    "indent": "off",
-    "no-console": [0],
-    "no-debugger": [0],
-    "no-unused-vars": "off",
-    "curly": [2],
-    "no-mixed-spaces-and-tabs": ["error"],
-    "jsx-quotes": ["error", "prefer-double"],
-    "react/prop-types": [0, { "skipUndeclared": true }],
-    "react/display-name": [0],
-    "react/no-unescaped-entities": [0],
-    "react/no-string-refs": [1],
-    "react/no-deprecated": [0],
-    "react/jsx-no-duplicate-props": [2],
-    "react/jsx-no-target-blank": [1],
-    "no-useless-escape": [1],
-    "template-curly-spacing": "off",
-    "no-useless-catch": "off",
-    "no-prototype-builtins": "off"
+  "extends": [
+    "airbnb-typescript",
+    "prettier",
+  ],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "project": "./tsconfig.json"
   },
   "settings": {
-    "react": {
-      "version": "detect"
+    "import/resolver": {
+      "typescript": {
+        "alwaysTryTypes": true
+      }
     }
-  }
+  },
+  "rules": {
+    "object-curly-spacing": [
+      "warn",
+      "always"
+    ],
+    "no-unused-vars": "off",
+    "@typescript-eslint/semi": [
+      "off"
+    ],
+    "@typescript-eslint/no-unused-vars": [
+      "warn",
+      {
+        "vars": "all",
+        "args": "none"
+      }
+    ],
+    "@typescript-eslint/no-explicit-any": [
+      "error",
+      {
+        "ignoreRestArgs": true
+      }
+    ],
+    "max-len": [
+      "warn",
+      {
+        "code": 80,
+        "ignoreStrings": true,
+        "ignoreTemplateLiterals": true,
+        "ignoreComments": true
+      }
+    ],
+    "no-plusplus": [
+      "error",
+      {
+        "allowForLoopAfterthoughts": true
+      }
+    ],
+    // "react/jsx-key": "error",
+    "react/jsx-filename-extension": "off",
+    "react/jsx-props-no-spreading": "off",
+    "import/extensions": "off",
+    "import/no-extraneous-dependencies": "off",
+    "import/prefer-default-export": "off",
+    "react/jsx-boolean-value": "off",
+    "react/prop-types": "off",
+    "@typescript-eslint/naming-convention": "off",
+    "react/no-unescaped-entities": "off",
+    "react/jsx-one-expression-per-line": "off",
+    "react/jsx-wrap-multilines": "off",
+    "react/destructuring-assignment": "off",
+    "jest/no-disabled-tests": "warn",
+    "jest/no-focused-tests": "error",
+    "jest/no-identical-title": "error",
+    "jest/prefer-to-have-length": "warn",
+    "jest/valid-expect": "error",
+  },
+  "overrides": [
+    {
+      "files": [
+        "**/*.test.js",
+        "**/*.test.jsx"
+      ],
+      "env": {
+        "jest": true
+      },
+      "rules": {
+        "react/prop-types": "off"
+      }
+    }
+  ]
 }

@@ -2161,7 +2161,7 @@ class AppVersionHistory extends Component {
               this.props.updateCallback();
             }}
             isHelmManaged={this.props.isHelmManaged}
-            />
+          />
         )}
       </div>
     );
