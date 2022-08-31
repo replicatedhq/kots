@@ -137,7 +137,7 @@ type ProviderPayload =
 
 type Props = RouteComponentProps & {
   // TODO: add apps type for apps response
-  apps: Array<any>;
+  apps: Array<object>;
   checkForVeleroAndRestic: boolean;
   fetchSnapshotSettings: () => void;
   hideCheckVeleroButton: () => void;
@@ -1627,7 +1627,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                         isOptionSelected={(option) => {
                           // TODO: fix this is probably a bug
                           // @ts-ignore
-                          option.value === selectedDestination;
+                          return option.value === selectedDestination;
                         }}
                       />
                     ) : availableDestinations.length === 1 ? (
@@ -1816,7 +1816,8 @@ class SnapshotStorageDestination extends Component<Props, State> {
 }
 
 // TODO: fix this typing thing
-const RoutedSnapshotStorageDestination: any = withRouter(
+// @ts-ignore
+const RoutedSnapshotStorageDestination = withRouter(
   SnapshotStorageDestination,
 );
 export default RoutedSnapshotStorageDestination;
