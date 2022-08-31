@@ -1,5 +1,7 @@
 import React from "react";
 import Modal from "react-modal";
+// TODO: add type to CodeSnippet
+// @ts-ignore
 import CodeSnippet from "@src/components/shared/CodeSnippet";
 
 function makeDeployCommand({
@@ -9,6 +11,13 @@ function makeDeployCommand({
   showDownloadValues,
   version,
   namespace,
+}: {
+  appSlug: string;
+  chartPath: string;
+  revision: string | null;
+  showDownloadValues: boolean;
+  version: string;
+  namespace: string;
 }) {
   if (revision) {
     return `helm -n ${namespace} rollback ${appSlug} ${revision}`;
@@ -25,6 +34,10 @@ function makeLoginCommand({
   registryHostname = "",
   registryUsername,
   registryPassword,
+}: {
+  registryHostname?: string;
+  registryUsername?: string;
+  registryPassword?: string;
 } = {}) {
   return `helm registry login ${
     registryHostname.slice(6).split("/")[0]
@@ -37,7 +50,8 @@ function HelmDeployModal({
   downloadClicked = () => {},
   downloadError = false,
   hideHelmDeployModal = () => {},
-  isDownloading = false,
+  // TODO: add downloading state
+  // isDownloading = false,
   saveError = false,
   showHelmDeployModal,
   subtitle,
@@ -49,9 +63,29 @@ function HelmDeployModal({
   showDownloadValues = false,
   version = null,
   namespace = null,
+}: {
+  appSlug: string;
+  chartPath: string;
+  downloadClicked: () => void;
+  downloadError: boolean;
+  hideHelmDeployModal: () => void;
+  // isDownloading: boolean;
+  saveError: boolean;
+  showHelmDeployModal?: boolean;
+  subtitle: string;
+  registryUsername: string;
+  registryPassword: string;
+  revision: string | null;
+  title: string;
+  upgradeTitle: string;
+  showDownloadValues: boolean;
+  version: boolean | null;
+  namespace: boolean | null;
 }) {
   return (
     <Modal
+      // TODO: figure out if this prop is even needed
+      // @ts-ignore
       isOpen={showHelmDeployModal}
       onRequestClose={hideHelmDeployModal}
       shouldReturnFocusAfterClose={false}
