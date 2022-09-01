@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -241,11 +240,23 @@ func (h *Handler) GetSupportBundleCommand(w http.ResponseWriter, r *http.Request
 			return
 		}
 
-		sbUrl := strings.TrimSuffix(helmApp.ChartPath, fmt.Sprintf("/%s", helmApp.Release.Chart.Name()))
 		response.Command = []string{
 			"curl https://krew.sh/support-bundle | bash",
-			fmt.Sprintf("kubectl support-bundle %s", sbUrl),
+			fmt.Sprintf("kubectl support-bundle secret/%s/%s", util.PodNamespace, supportbundle.GetSpecSecretName(appSlug)),
 		}
+
+		opts := types.TroubleshootOptions{
+			Origin:    getSupportBundleCommandRequest.Origin,
+			InCluster: false,
+		}
+
+		if _, err := supportbundle.CreateSupportBundleDependencies(helmApp, helmApp.GetCurrentSequence(), opts); err != nil {
+			logger.Error(errors.Wrap(err, "failed to create support bundle spec"))
+			JSON(w, http.StatusOK, response)
+			return
+		}
+
+		response.Command = supportbundle.GetBundleCommand(helmApp.GetSlug())
 		JSON(w, http.StatusOK, response)
 		return
 	}
