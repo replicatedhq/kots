@@ -21,7 +21,6 @@ import SideBar from "../shared/SideBar";
 import Loader from "../shared/Loader";
 import AppRegistrySettings from "./AppRegistrySettings";
 import AppIdentityServiceSettings from "./AppIdentityServiceSettings";
-import AppGitops from "./AppGitops";
 import TroubleshootContainer from "../troubleshoot/TroubleshootContainer";
 import ErrorModal from "../modals/ErrorModal";
 
@@ -501,17 +500,6 @@ class AppDetailPage extends Component {
                       <AppRegistrySettings
                         app={app}
                         updateCallback={this.refetchData}
-                      />
-                    )}
-                  />
-                  <Route
-                    exact
-                    path="/app/:slug/gitops"
-                    render={() => (
-                      <AppGitops
-                        app={app}
-                        history={this.props.history}
-                        refetch={this.getApp}
                       />
                     )}
                   />

@@ -36,7 +36,7 @@ class UploadAirgapBundle extends React.Component {
     uploadResuming: false,
   };
 
-  emptyHostnameErrMessage = 'Please enter a value for "Hostname" field';
+  emptyHostnameErrMessage = "Please enter a value for \"Hostname\" field";
 
   componentDidMount() {
     if (!this.state.airgapUploader) {
