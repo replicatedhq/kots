@@ -170,7 +170,7 @@ func StoreFromEnv() *KOTSStore {
 	}
 }
 
-func (s *KOTSStore) getConfigmap(name string) (*corev1.ConfigMap, error) {
+func (s *KOTSStore) GetConfigmap(name string) (*corev1.ConfigMap, error) {
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get clientset")
@@ -204,7 +204,7 @@ func (s *KOTSStore) getConfigmap(name string) (*corev1.ConfigMap, error) {
 	return existingConfigmap, nil
 }
 
-func (s *KOTSStore) updateConfigmap(configmap *corev1.ConfigMap) error {
+func (s *KOTSStore) UpdateConfigmap(configmap *corev1.ConfigMap) error {
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get clientset")

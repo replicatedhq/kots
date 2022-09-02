@@ -10,17 +10,22 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/blang/semver"
 	imagedocker "github.com/containers/image/v5/docker"
 	dockerref "github.com/containers/image/v5/docker/reference"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
+	"github.com/replicatedhq/kots/pkg/api/handlers/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	kotsbase "github.com/replicatedhq/kots/pkg/base"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/render"
+	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	helmval "helm.sh/helm/v3/pkg/cli/values"
 	"helm.sh/helm/v3/pkg/helmpath"
 	helmregistry "helm.sh/helm/v3/pkg/registry"
@@ -160,4 +165,90 @@ func GetConfigValuesMap(configValues *kotsv1beta1.ConfigValues) (map[string]inte
 	}
 
 	return configValuesMap, nil
+}
+
+func HelmUpdateToDownsreamVersion(update ChartUpdate, sequence int64) *downstreamtypes.DownstreamVersion {
+	now := time.Now()
+	return &downstreamtypes.DownstreamVersion{
+		VersionLabel:       update.Tag,
+		Semver:             &update.Version,
+		UpdateCursor:       update.Tag,
+		Sequence:           sequence,
+		ParentSequence:     sequence,
+		CreatedOn:          &now,              // TODO: implement
+		UpstreamReleasedAt: &now,              // TODO: implement
+		IsDeployable:       false,             // TODO: implement
+		NonDeployableCause: "not implemented", // TODO: implement
+		Source:             "Upstream Update",
+		Status:             storetypes.VersionPending,
+	}
+}
+
+func ResponseAppFromHelmApp(helmApp *apptypes.HelmApp) (*types.HelmResponseApp, error) {
+	unixIntValue, err := strconv.ParseInt(helmApp.Labels["modifiedAt"], 10, 64)
+	var updatedTs time.Time
+	if err == nil {
+		updatedTs = time.Unix(unixIntValue, 0)
+	}
+
+	sv, err := semver.ParseTolerant(helmApp.Release.Chart.Metadata.Version)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse release version into semver")
+	}
+
+	iconURI := "https://cncf-branding.netlify.app/img/projects/helm/horizontal/color/helm-horizontal-color.png"
+	// use chart icon if it exists, if not use default helm icon
+	if helmApp.Release.Chart.Metadata.Icon != "" {
+		iconURI = helmApp.Release.Chart.Metadata.Icon
+	}
+
+	revision, err := strconv.Atoi(helmApp.Labels["version"])
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse release revision number")
+	}
+
+	downstreamVersion := &downstreamtypes.DownstreamVersion{
+		VersionLabel:   helmApp.Release.Chart.Metadata.Version,
+		Semver:         &sv,
+		Sequence:       int64(revision),
+		ParentSequence: int64(revision),
+		Status:         storetypes.VersionDeployed,
+		CreatedOn:      &helmApp.Release.Info.FirstDeployed.Time,
+		DeployedAt:     &helmApp.Release.Info.LastDeployed.Time,
+	}
+
+	var username, password string
+	if replVals := helmApp.Release.Chart.Values["replicated"].(map[string]interface{}); replVals != nil {
+		username, _ = replVals["username"].(string)
+		password, _ = replVals["license_id"].(string)
+	}
+
+	chartUpdates := GetCachedUpdates(helmApp.ChartPath)
+	pendingVersions := make([]*downstreamtypes.DownstreamVersion, len(chartUpdates), len(chartUpdates))
+	nextSequence := revision + 1
+	for i := len(chartUpdates) - 1; i >= 0; i-- {
+		pendingVersions[i] = HelmUpdateToDownsreamVersion(chartUpdates[i], int64(nextSequence))
+		nextSequence = nextSequence + 1
+	}
+
+	return &types.HelmResponseApp{
+		ResponseApp: types.ResponseApp{
+			Name:           helmApp.Labels["name"],
+			Namespace:      helmApp.Namespace,
+			Slug:           helmApp.Labels["name"],
+			CreatedAt:      helmApp.CreationTimestamp,
+			IsConfigurable: helmApp.IsConfigurable,
+			UpdatedAt:      &updatedTs,
+			IconURI:        iconURI,
+			Downstream: types.ResponseDownstream{
+				CurrentVersion:  downstreamVersion,
+				PendingVersions: pendingVersions,
+			},
+		},
+		Credentials: types.Credentials{
+			Username: username,
+			Password: password,
+		},
+		ChartPath: helmApp.ChartPath,
+	}, nil
 }

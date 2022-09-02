@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/blang/semver"
+	"github.com/replicatedhq/kots/pkg/helm"
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/preflight"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -49,7 +51,7 @@ func Start() error {
 		if a.IsAirgap {
 			continue
 		}
-		if err := Configure(a.ID); err != nil {
+		if err := Configure(a); err != nil {
 			logger.Error(errors.Wrapf(err, "failed to configure app %s", a.Slug))
 		}
 	}
@@ -62,26 +64,35 @@ func Start() error {
 // if enabled, and a cron job was found, update the existing cron job with the latest cron spec
 // if disabled: stop the current running cron job (if exists)
 // no-op for airgap applications
-func Configure(appID string) error {
-	a, err := store.GetApp(appID)
-	if err != nil {
-		return errors.Wrap(err, "failed to get app")
-	}
+func Configure(a apptypes.AppType) error {
+	var updateCheckerSpec string
+	appId := a.GetID()
+	appSlug := a.GetSlug()
+	isAirgap := a.GetIsAirgap()
 
-	if a.IsAirgap {
+	cm, err := store.GetConfigmap(types.KotsadmConfigMap)
+	if err != nil {
+		return errors.New(fmt.Sprintf("failed to get config map"))
+	}
+	if cm.Data == nil {
+		cm.Data = make(map[string]string)
+	}
+	updateCheckerSpec = cm.Data[fmt.Sprintf("update-schedule-%s", appId)]
+
+	if isAirgap {
 		return nil
 	}
 
 	logger.Debug("configure update checker for app",
-		zap.String("slug", a.Slug))
+		zap.String("slug", appSlug))
 
 	mtx.Lock()
 	defer mtx.Unlock()
 
-	cronSpec := a.UpdateCheckerSpec
+	cronSpec := updateCheckerSpec
 
 	if cronSpec == "@never" || cronSpec == "" {
-		Stop(a.ID)
+		Stop(appId)
 		return nil
 	}
 
@@ -93,7 +104,7 @@ func Configure(appID string) error {
 		cronSpec = fmt.Sprintf("%d %d/4 * * *", m, h)
 	}
 
-	job, ok := jobs[a.ID]
+	job, ok := jobs[appId]
 	if ok {
 		// job already exists, remove entries
 		entries := job.Entries()
@@ -107,8 +118,8 @@ func Configure(appID string) error {
 		))
 	}
 
-	jobAppID := a.ID
-	jobAppSlug := a.Slug
+	jobAppID := appId
+	jobAppSlug := appSlug
 
 	_, err = job.AddFunc(cronSpec, func() {
 		logger.Debug("checking updates for app", zap.String("slug", jobAppSlug))
@@ -136,7 +147,7 @@ func Configure(appID string) error {
 	}
 
 	job.Start()
-	jobs[a.ID] = job
+	jobs[appId] = job
 
 	return nil
 }
@@ -187,12 +198,64 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get task status")
 	}
-
 	if currentStatus == "running" {
 		logger.Debug("update-download is already running, not starting a new one")
 		return nil, nil
 	}
 
+	if util.IsHelmManaged() {
+		release := helm.GetHelmApp(opts.AppID)
+		app, err := helm.ResponseAppFromHelmApp(release)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to convert release to helm app")
+		}
+
+		license, err := helm.GetChartLicenseFromSecretOrDownload(release)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get license for helm app")
+		}
+
+		if license == nil {
+			return nil, errors.Wrap(err, "license not found for helm app")
+		}
+
+		var currentVersion *semver.Version
+		if app.Downstream.CurrentVersion != nil {
+			v, err := semver.ParseTolerant(app.Downstream.CurrentVersion.VersionLabel)
+			if err != nil {
+				return nil, errors.Wrap(err, fmt.Sprintf("failed to get parse current version %v", app.Downstream.CurrentVersion))
+			}
+			currentVersion = &v
+		}
+
+		availableUpdateTags, err := helm.CheckForUpdates(app.ChartPath, license.Spec.LicenseID, currentVersion)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get available updates")
+		}
+
+		var updates []UpdateCheckRelease
+		for _, update := range availableUpdateTags {
+			updates = append(updates, UpdateCheckRelease{
+				Sequence: 0, // TODO
+				Version:  update.Tag,
+			})
+		}
+
+		ucr := UpdateCheckResponse{
+			AvailableUpdates:  int64(len(updates)),
+			AvailableReleases: updates,
+			DeployingRelease:  nil,
+		}
+
+		status := fmt.Sprintf("%d Updates available...", ucr.AvailableUpdates)
+		if err := store.SetTaskStatus("update-download", status, "running"); err != nil {
+			return nil, errors.Wrap(err, "failed to set task status")
+		}
+
+		return &ucr, nil
+	}
+
+	// clear task status in config map
 	if err := store.ClearTaskStatus("update-download"); err != nil {
 		return nil, errors.Wrap(err, "failed to clear task status")
 	}

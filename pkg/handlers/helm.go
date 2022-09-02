@@ -134,7 +134,7 @@ func (h *Handler) GetAppValuesFile(w http.ResponseWriter, r *http.Request) {
 }
 
 func getCompatibleAppFromHelmApp(helmApp *apptypes.HelmApp) (*apptypes.App, error) {
-	chartApp, err := responseAppFromHelmApp(helmApp)
+	chartApp, err := helm.ResponseAppFromHelmApp(helmApp)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to convert release to app")
 	}

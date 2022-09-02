@@ -22,6 +22,7 @@ import (
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	usertypes "github.com/replicatedhq/kots/pkg/user/types"
 	troubleshootredact "github.com/replicatedhq/troubleshoot/pkg/redact"
+	corev1 "k8s.io/api/core/v1"
 )
 
 type Store interface {
@@ -135,6 +136,8 @@ type AppStore interface {
 	SetSnapshotSchedule(appID string, snapshotSchedule string) error
 	RemoveApp(appID string) error
 	SetAppChannelChanged(appID string, channelChanged bool) error
+	GetConfigmap(name string) (*corev1.ConfigMap, error)
+	UpdateConfigmap(configmap *corev1.ConfigMap) error
 }
 
 type DownstreamStore interface {
