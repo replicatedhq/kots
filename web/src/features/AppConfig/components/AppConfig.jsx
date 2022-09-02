@@ -160,7 +160,7 @@ class AppConfig extends Component {
       configError: false,
     });
 
-    fetch(`${process.env.API_ENDPOINT}/app/${slug}/config/${sequence}`, {
+    fetch(`${process.env.API_ENDPOINT}/app/${slug}/config/${sequence}${window.location.search}`, {
       method: "GET",
       headers: {
         Authorization: Utilities.getToken(),
@@ -372,7 +372,7 @@ class AppConfig extends Component {
     this.fetchController = new AbortController();
     const signal = this.fetchController.signal;
 
-    fetch(`${process.env.API_ENDPOINT}/app/${slug}/liveconfig`, {
+    fetch(`${process.env.API_ENDPOINT}/app/${slug}/liveconfig${window.location.search}`, {
       signal,
       headers: {
         Authorization: Utilities.getToken(),
@@ -492,6 +492,12 @@ class AppConfig extends Component {
 
     const gitops = app.downstream?.gitops;
     const isNewVersion = !fromLicenseFlow && match.params.sequence == undefined;
+
+    let downstreamVersionLabel = downstreamVersion?.versionLabel;
+    if (!downstreamVersionLabel) {
+      const urlParams = new URLSearchParams(window.location.search);
+      downstreamVersionLabel = urlParams.get("semver");
+    }
 
     return (
       <Flex flex="1" direction="column" p="20" align="center">
@@ -685,7 +691,7 @@ class AppConfig extends Component {
                           subtitle="Follow the steps below to upgrade the release with your new values.yaml."
                           title={`Upgrade ${this.props?.app?.slug}`}
                           upgradeTitle="Upgrade release"
-                          version={downstreamVersion?.versionLabel}
+                          version={downstreamVersionLabel}
                           namespace={this.props?.app?.namespace}
                         />
                       </>

@@ -61,8 +61,8 @@ function HelmDeployModal({
   title,
   upgradeTitle,
   showDownloadValues = false,
-  version = null,
-  namespace = null,
+  version,
+  namespace,
 }: {
   appSlug: string;
   chartPath: string;
@@ -79,8 +79,8 @@ function HelmDeployModal({
   title: string;
   upgradeTitle: string;
   showDownloadValues: boolean;
-  version: boolean | null;
-  namespace: boolean | null;
+  version: string;
+  namespace: string;
 }) {
   return (
     <Modal

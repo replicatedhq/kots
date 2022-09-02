@@ -207,6 +207,11 @@ class AppVersionHistoryRow extends Component {
       checksStatusText = "Checks passed";
     }
 
+    let configScreenURL = `/app/${app.slug}/config/${version.sequence}`;
+    if (this.props.isHelmManaged && version.status === "pending") {
+      configScreenURL = `${configScreenURL}?isPending=true&semver=${version.semver}`;
+    }
+
     if (downstream.gitops?.isConnected) {
       if (version.gitDeployable === false) {
         return (
@@ -392,7 +397,7 @@ class AppVersionHistoryRow extends Component {
         {app.isConfigurable && (
           <div className="flex alignItems--center">
             <Link
-              to={`/app/${app.slug}/config/${version.sequence}`}
+              to={configScreenURL}
               className={`icon ${
                 editableConfig ? "configEdit--icon" : "configView--icon"
               } u-cursor--pointer`}

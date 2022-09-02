@@ -23,6 +23,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/helm"
 	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
 	"github.com/replicatedhq/kots/pkg/preflight"
@@ -245,14 +246,49 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		}
 		app = helmApp
 
-		k, err := helm.GetKotsKindsForRevision(helmApp.Release.Name, liveAppConfigRequest.Sequence, helmApp.Namespace)
-		if err != nil {
-			logger.Error(errors.Wrap(err, "failed to get kots kinds for helm"))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+		isPending, _ := strconv.ParseBool(r.URL.Query().Get("isPending"))
+		if !isPending {
+			k, err := helm.GetKotsKindsForRevision(helmApp.Release.Name, liveAppConfigRequest.Sequence, helmApp.Namespace)
+			if err != nil {
+				logger.Error(errors.Wrap(err, "failed to get kots kinds for helm"))
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			kotsKinds = &k
+			appLicense = kotsKinds.License
+		} else {
+			licenseID := helm.GetKotsLicenseID(&helmApp.Release)
+			if licenseID == "" {
+				logger.Error(errors.Errorf("no license and no license ID found for release %s", helmApp.Release.Name))
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			chartData, err := helm.PullChartVersion(helmApp, licenseID, r.URL.Query().Get("semver"))
+			if err != nil {
+				logger.Error(errors.Wrap(err, "failed to download chart"))
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			k, err := helm.GetKotsKindsFromChartArchive(chartData)
+			if err != nil {
+				logger.Error(errors.Wrap(err, "failed to get kotskinds from chart archive"))
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			licenseData, err := kotslicense.GetLatestLicenseForHelm(licenseID)
+			if err != nil {
+				logger.Error(errors.Wrap(err, "failed to download license for chart archive"))
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			k.License = licenseData.License
+
+			kotsKinds = &k
+			appLicense = kotsKinds.License
 		}
-		kotsKinds = &k
-		appLicense = kotsKinds.License
 	} else {
 		foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
 		if err != nil {
@@ -410,28 +446,63 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		}
 		app = helmApp
 
-		installedRelease, err := helm.GetChartVersion(helmApp.Release.Name, sequence, helmApp.Namespace)
-		if err != nil {
-			logger.Error(errors.Wrap(err, "failed to get helm release"))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
+		isPending, _ := strconv.ParseBool(r.URL.Query().Get("isPending"))
+		if !isPending {
+			installedRelease, err := helm.GetChartVersion(helmApp.Release.Name, sequence, helmApp.Namespace)
+			if err != nil {
+				logger.Error(errors.Wrap(err, "failed to get helm release"))
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
 
-		if installedRelease == nil {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
+			if installedRelease == nil {
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
 
-		downstreamVersion = helmReleaseToDownsreamVersion(installedRelease)
+			downstreamVersion = helmReleaseToDownsreamVersion(installedRelease)
 
-		k, err := helm.GetKotsKindsForRevision(helmApp.Release.Name, sequence, helmApp.Namespace)
-		if err != nil {
-			logger.Error(errors.Wrap(err, "failed to get kots kinds for helm"))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+			k, err := helm.GetKotsKindsForRevision(helmApp.Release.Name, sequence, helmApp.Namespace)
+			if err != nil {
+				logger.Error(errors.Wrap(err, "failed to get kots kinds for helm"))
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			kotsKinds = &k
+			license = kotsKinds.License
+		} else {
+			licenseID := helm.GetKotsLicenseID(&helmApp.Release)
+			if licenseID == "" {
+				logger.Error(errors.Errorf("no license and no license ID found for release %s", helmApp.Release.Name))
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			chartData, err := helm.PullChartVersion(helmApp, licenseID, r.URL.Query().Get("semver"))
+			if err != nil {
+				logger.Error(errors.Wrap(err, "failed to download chart"))
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			k, err := helm.GetKotsKindsFromChartArchive(chartData)
+			if err != nil {
+				logger.Error(errors.Wrap(err, "failed to get kotskinds from chart archive"))
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			licenseData, err := kotslicense.GetLatestLicenseForHelm(licenseID)
+			if err != nil {
+				logger.Error(errors.Wrap(err, "failed to download license for chart archive"))
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			k.License = licenseData.License
+
+			kotsKinds = &k
+			license = kotsKinds.License
 		}
-		kotsKinds = &k
-		license = kotsKinds.License
 	} else {
 		foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
 		if err != nil {
