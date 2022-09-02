@@ -78,10 +78,9 @@ const SEMVER_AUTO_DEPLOY_OPTIONS = [
 export default class AutomaticUpdatesModal extends React.Component {
   constructor(props) {
     super(props);
-
     let selectedSchedule = find(SCHEDULES, { value: props.updateCheckerSpec });
     if (!selectedSchedule) {
-      selectedSchedule = find(SCHEDULES, { value: "custom" });
+      selectedSchedule = find(SCHEDULES, { value: "@default" });
     }
 
     let selectedAutoDeploy = find(AUTO_DEPLOY_OPTIONS, [
@@ -98,6 +97,10 @@ export default class AutomaticUpdatesModal extends React.Component {
       selectedSchedule,
       selectedAutoDeploy,
     };
+
+    if (this.state.updateCheckerSpec === ""){
+      this.state.updateCheckerSpec = "@default"
+    }
   }
 
   onConfigureAutomaticUpdates = () => {
@@ -202,9 +205,23 @@ export default class AutomaticUpdatesModal extends React.Component {
       selectedAutoDeploy,
       configureAutomaticUpdatesErr,
     } = this.state;
-
     const humanReadableCron = this.getReadableCronExpression(updateCheckerSpec);
-
+    let configureText = <p className="u-fontSize--normal u-lineHeight--normal u-textColor--bodyCopy u-marginBottom--20">
+    Configure how often you would like to automatically check for
+    updates, and whether updates will be deployed automatically.
+  </p>;
+    if (isHelmManaged){
+      configureText = <p className="u-fontSize--normal u-lineHeight--normal u-textColor--bodyCopy u-marginBottom--20">
+      Configure how often you would like to automatically check for
+      updates.
+    </p>;
+    }else if (gitopsIsConnected){
+      configureText =  <p className="u-fontSize--normal u-lineHeight--normal u-textColor--bodyCopy u-marginBottom--20">
+      Configure how often you would like to automatically check for
+      updates.
+      <br />A commit will be made if an update was found.
+    </p>;
+    }
     return (
       <Modal
         isOpen={isOpen}
@@ -218,18 +235,7 @@ export default class AutomaticUpdatesModal extends React.Component {
           <span className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-marginBottom--15">
             Configure automatic updates
           </span>
-          {gitopsIsConnected ? (
-            <p className="u-fontSize--normal u-lineHeight--normal u-textColor--bodyCopy u-marginBottom--20">
-              Configure how often you would like to automatically check for
-              updates.
-              <br />A commit will be made if an update was found.
-            </p>
-          ) : (
-            <p className="u-fontSize--normal u-lineHeight--normal u-textColor--bodyCopy u-marginBottom--20">
-              Configure how often you would like to automatically check for
-              updates, and whether updates will be deployed automatically.
-            </p>
-          )}
+          {configureText}
           <div className="flex-column flex1">
             <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
               Automatically check for updates

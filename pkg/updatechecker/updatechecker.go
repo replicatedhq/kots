@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/blang/semver"
+	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/preflight"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -63,25 +64,39 @@ func Start() error {
 // if disabled: stop the current running cron job (if exists)
 // no-op for airgap applications
 func Configure(appID string) error {
-	a, err := store.GetApp(appID)
-	if err != nil {
-		return errors.Wrap(err, "failed to get app")
+	var updateCheckerSpec, appSlug, appid string
+	var isAirgap bool
+
+	if util.IsHelmManaged() {
+		release := helm.GetHelmApp(appID)
+		updateCheckerSpec = release.UpdateCheckerSpec
+		appSlug = release.GetSlug()
+		appid = release.GetID()
+		isAirgap = release.GetIsAirgap()
+	} else {
+		a, err := store.GetApp(appID)
+		if err != nil {
+			return errors.Wrap(err, "failed to get app")
+		}
+		appSlug = a.Slug
+		appid = a.ID
+		isAirgap = a.IsAirgap
 	}
 
-	if a.IsAirgap {
+	if isAirgap {
 		return nil
 	}
 
 	logger.Debug("configure update checker for app",
-		zap.String("slug", a.Slug))
+		zap.String("slug", appSlug))
 
 	mtx.Lock()
 	defer mtx.Unlock()
 
-	cronSpec := a.UpdateCheckerSpec
+	cronSpec := updateCheckerSpec
 
 	if cronSpec == "@never" || cronSpec == "" {
-		Stop(a.ID)
+		Stop(appid)
 		return nil
 	}
 
@@ -93,7 +108,7 @@ func Configure(appID string) error {
 		cronSpec = fmt.Sprintf("%d %d/4 * * *", m, h)
 	}
 
-	job, ok := jobs[a.ID]
+	job, ok := jobs[appID]
 	if ok {
 		// job already exists, remove entries
 		entries := job.Entries()
@@ -107,10 +122,10 @@ func Configure(appID string) error {
 		))
 	}
 
-	jobAppID := a.ID
-	jobAppSlug := a.Slug
+	jobAppID := appid
+	jobAppSlug := appSlug
 
-	_, err = job.AddFunc(cronSpec, func() {
+	_, err := job.AddFunc(cronSpec, func() {
 		logger.Debug("checking updates for app", zap.String("slug", jobAppSlug))
 
 		opts := CheckForUpdatesOpts{
@@ -136,7 +151,7 @@ func Configure(appID string) error {
 	}
 
 	job.Start()
-	jobs[a.ID] = job
+	jobs[appid] = job
 
 	return nil
 }
@@ -183,6 +198,58 @@ type UpdateCheckRelease struct {
 // otherwise, if "IsAutomatic" is set to true (which means it's an automatic update check), then the version that matches the auto deploy configuration (if enabled) will be deployed.
 // returns the number of available updates.
 func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
+	if util.IsHelmManaged() {
+		release := helm.GetHelmApp(opts.AppID)
+		currentStatus := release.UpdateStatus
+		if currentStatus == "running" {
+			logger.Debug("update-download is already running, not starting a new one")
+			return nil, nil
+		}
+		release.UpdateStatus = "running"
+		app, err := helm.ResponseAppFromHelmApp(release)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to convert release to helm app")
+		}
+
+		license, err := helm.GetChartLicenseFromSecretOrDownload(release)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get license for helm app")
+		}
+
+		if license == nil {
+			return nil, errors.Wrap(err, "license not found for helm app")
+		}
+
+		var currentVersion *semver.Version
+		if app.Downstream.CurrentVersion != nil {
+			v, err := semver.ParseTolerant(app.Downstream.CurrentVersion.VersionLabel)
+			if err != nil {
+				return nil, errors.Wrap(err, fmt.Sprintf("failed to get parse current version %v", app.Downstream.CurrentVersion))
+			}
+			currentVersion = &v
+		}
+
+		availableUpdateTags, err := helm.CheckForUpdates(app.ChartPath, license.Spec.LicenseID, currentVersion)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get available updates")
+		}
+
+		var updates []UpdateCheckRelease
+		for _, update := range availableUpdateTags {
+			updates = append(updates, UpdateCheckRelease{
+				Sequence: 0, // TODO
+				Version:  update.Tag,
+			})
+		}
+
+		ucr := UpdateCheckResponse{
+			AvailableUpdates:  int64(len(updates)),
+			AvailableReleases: updates,
+			DeployingRelease:  nil,
+		}
+
+		return &ucr, nil
+	}
 	currentStatus, _, err := store.GetTaskStatus("update-download")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get task status")

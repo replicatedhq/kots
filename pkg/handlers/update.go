@@ -53,7 +53,7 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		app, err := responseAppFromHelmApp(helmApp)
+		app, err := helm.ResponseAppFromHelmApp(helmApp)
 		if err != nil {
 			logger.Errorf("failed to convert release to helm app: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)

@@ -5,7 +5,9 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/util"
 
 	"github.com/gorilla/mux"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
@@ -33,6 +35,52 @@ func (h *Handler) ConfigureAutomaticUpdates(w http.ResponseWriter, r *http.Reque
 		updateCheckerSpecResponse.Error = "failed to decode request body"
 		JSON(w, 400, updateCheckerSpecResponse)
 		return
+	}
+
+	if util.IsHelmManaged() {
+		release := helm.GetHelmApp(mux.Vars(r)["appSlug"])
+		license, err := helm.GetChartLicenseFromSecretOrDownload(release)
+		if err != nil {
+			updateCheckerSpecResponse.Error = "failed to get license from secret"
+			JSON(w, http.StatusInternalServerError, updateCheckerSpecResponse)
+			return
+		}
+		if license == nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		if release.GetIsAirgap() {
+			logger.Error(errors.New("airgap scheduled update checks are not supported"))
+			updateCheckerSpecResponse.Error = "airgap scheduled update checks are not supported"
+			JSON(w, 400, updateCheckerSpecResponse)
+			return
+		}
+
+		// // validate cron spec
+		cronSpec := configureAutomaticUpdatesRequest.UpdateCheckerSpec
+		if cronSpec != "@never" && cronSpec != "@default" {
+			_, err := cron.ParseStandard(cronSpec)
+			if err != nil {
+				logger.Error(err)
+				updateCheckerSpecResponse.Error = "failed to parse cron spec"
+				JSON(w, 500, updateCheckerSpecResponse)
+				return
+			}
+		}
+
+		release.UpdateCheckerSpec = cronSpec
+		helm.AddHelmApp(release.Release.Name, release)
+
+		// reconfigure update checker for the app
+		if err := updatechecker.Configure(release.GetID()); err != nil {
+			logger.Error(err)
+			updateCheckerSpecResponse.Error = "failed to reconfigure update checker cron job"
+			JSON(w, 500, updateCheckerSpecResponse)
+			return
+		}
+
+		JSON(w, 204, "")
 	}
 
 	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
