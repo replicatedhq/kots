@@ -3,6 +3,8 @@ package operator_test
 import (
 	"errors"
 	"fmt"
+	"os"
+
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -13,10 +15,126 @@ import (
 	operatortypes "github.com/replicatedhq/kots/pkg/operator/types"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	mock_store "github.com/replicatedhq/kots/pkg/store/mock"
-	"os"
+	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 )
 
 var _ = Describe("Operator", func() {
+	Describe("Start()", func() {
+		When("there is a currently deployed app sequence", func() {
+			var (
+				mockStore    *mock_store.MockStore
+				mockClient   *mock_client.MockClientInterface
+				mockCtrl     *gomock.Controller
+				clusterToken       = "cluster-token"
+				appID              = "some-app-id"
+				sequence     int64 = 0
+				archiveDir   string
+			)
+
+			BeforeEach(func() {
+				mockCtrl = gomock.NewController(GinkgoT())
+				mockStore = mock_store.NewMockStore(mockCtrl)
+
+				mockClient = mock_client.NewMockClientInterface(mockCtrl)
+				operator.OperatorClient = mockClient
+			})
+
+			AfterEach(func() {
+				mockCtrl.Finish()
+
+				err := os.RemoveAll(archiveDir)
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("starts the status informers", func() {
+				mockClient.EXPECT().Init().Return(nil)
+
+				mockStore.EXPECT().GetClusterIDFromDeployToken(clusterToken).Return("", nil)
+
+				apps := []*apptypes.App{
+					{
+						ID:                    appID,
+						Slug:                  "some-app-slug",
+						IsAirgap:              false,
+						RestoreInProgressName: "",
+					},
+				}
+				mockStore.EXPECT().ListAppsForDownstream("").AnyTimes().Return(apps, nil)
+
+				deployedVersion := &downstreamtypes.DownstreamVersion{
+					ParentSequence: sequence,
+					Status:         storetypes.VersionDeployed,
+				}
+				mockStore.EXPECT().GetCurrentDownstreamVersion(appID, "").AnyTimes().Return(deployedVersion, nil)
+
+				mockStore.EXPECT().GetAppVersionArchive(appID, sequence, gomock.Any()).DoAndReturn(func(id string, seq int64, archDir string) error {
+					archiveDir = archDir
+					err := setupDirectoriesAndFiles(archiveDir, true)
+					Expect(err).ToNot(HaveOccurred())
+					return nil
+				})
+
+				registrySettings := registrytypes.RegistrySettings{
+					Hostname:   "hostname",
+					Username:   "user",
+					Password:   "pass",
+					Namespace:  "namespace",
+					IsReadOnly: false,
+				}
+				mockStore.EXPECT().GetRegistryDetailsForApp(appID).Return(registrySettings, nil)
+
+				mockClient.EXPECT().ApplyAppInformers(gomock.Any()).Times(1)
+
+				err := operator.Start(clusterToken, mockClient, mockStore)
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+		When("there is not a currently deployed app sequence", func() {
+			var (
+				mockStore    *mock_store.MockStore
+				mockClient   *mock_client.MockClientInterface
+				mockCtrl     *gomock.Controller
+				clusterToken = "cluster-token"
+				appID        = "some-app-id"
+			)
+
+			BeforeEach(func() {
+				mockCtrl = gomock.NewController(GinkgoT())
+				mockStore = mock_store.NewMockStore(mockCtrl)
+
+				mockClient = mock_client.NewMockClientInterface(mockCtrl)
+				operator.OperatorClient = mockClient
+			})
+
+			AfterEach(func() {
+				mockCtrl.Finish()
+			})
+
+			It("should not start the status informers", func() {
+				mockClient.EXPECT().Init().Return(nil)
+
+				mockStore.EXPECT().GetClusterIDFromDeployToken(clusterToken).Return("", nil)
+
+				apps := []*apptypes.App{
+					{
+						ID:                    appID,
+						Slug:                  "some-app-slug",
+						IsAirgap:              false,
+						RestoreInProgressName: "",
+					},
+				}
+				mockStore.EXPECT().ListAppsForDownstream("").AnyTimes().Return(apps, nil)
+
+				mockStore.EXPECT().GetCurrentDownstreamVersion(appID, "").AnyTimes().Return(nil, nil)
+
+				mockClient.EXPECT().ApplyAppInformers(gomock.Any()).Times(0)
+
+				err := operator.Start(clusterToken, mockClient, mockStore)
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+	})
+
 	Describe("DeployApp()", func() {
 		When("there is a deployment and app file with a status informer", func() {
 			var (
