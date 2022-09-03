@@ -2,6 +2,7 @@ package util
 
 import (
 	"archive/tar"
+	"bytes"
 	"compress/gzip"
 	"io"
 	"os"
@@ -64,4 +65,47 @@ func ExtractTGZArchive(tgzFile string, destDir string) error {
 	}
 
 	return nil
+}
+
+func GetFileFromTGZArchive(archive *bytes.Buffer, fileName string) (*bytes.Buffer, error) {
+	gzReader, err := gzip.NewReader(archive)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create gzip reader")
+	}
+
+	tarReader := tar.NewReader(gzReader)
+	for {
+		hdr, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to read tar data")
+		}
+
+		if hdr.Typeflag != tar.TypeReg {
+			continue
+		}
+
+		match, err := filepath.Match(fileName, hdr.Name)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to check filename match")
+		}
+
+		if !match {
+			_, err = io.Copy(io.Discard, tarReader)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to discard file %q", hdr.Name)
+			}
+		} else {
+			buf := bytes.NewBuffer(nil)
+			_, err = io.Copy(buf, tarReader)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to copy file %q", hdr.Name)
+			}
+			return bytes.NewBuffer(buf.Bytes()), nil
+		}
+	}
+
+	return nil, errors.Errorf("file %s not found in archive", fileName)
 }

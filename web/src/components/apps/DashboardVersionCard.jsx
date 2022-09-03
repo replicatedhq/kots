@@ -391,7 +391,7 @@ class DashboardVersionCard extends React.Component {
     );
   };
 
-  renderEditConfigIcon = (app, version) => {
+  renderEditConfigIcon = (app, version, isPending) => {
     if (!app?.isConfigurable) {
       return null;
     }
@@ -405,10 +405,16 @@ class DashboardVersionCard extends React.Component {
       // action button will already be set to "Configure", no need to show edit config icon as well
       return null;
     }
+
+    let url = `/app/${app?.slug}/config/${version.sequence}`;
+    if (this.props.isHelmManaged) {
+      url = `${url}?isPending=${isPending}&semver=${version.versionLabel}`;
+    }
+
     return (
       <div className="u-marginLeft--10">
         <Link
-          to={`/app/${app?.slug}/config/${version.sequence}`}
+          to={ url }
           className="icon configEdit--icon u-cursor--pointer"
           data-tip="Edit config"
         />
@@ -461,7 +467,7 @@ class DashboardVersionCard extends React.Component {
           <div className="flex flex1 alignItems--center justifyContent--flexEnd">
             {this.renderReleaseNotes(currentVersion)}
             {this.renderPreflights(currentVersion)}
-            {this.renderEditConfigIcon(app, currentVersion)}
+            {this.renderEditConfigIcon(app, currentVersion, false)}
             <div className="u-marginLeft--10">
               <span
                 className="icon deployLogs--icon u-cursor--pointer"
@@ -816,7 +822,7 @@ class DashboardVersionCard extends React.Component {
       <div className="flex flex1 alignItems--center justifyContent--flexEnd">
         {this.renderReleaseNotes(version)}
         {this.renderPreflights(version)}
-        {this.renderEditConfigIcon(app, version)}
+        {this.renderEditConfigIcon(app, version, true)}
         <div className="flex-column justifyContent--center u-marginLeft--10">
           <button
             className={classNames("btn", {

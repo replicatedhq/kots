@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strconv"
 	"sync"
+	"text/template"
 
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
@@ -22,12 +23,12 @@ import (
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
-	"gopkg.in/yaml.v2"
 	helmrelease "helm.sh/helm/v3/pkg/release"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 var (
@@ -151,13 +152,14 @@ func GetChartVersion(releaseName string, revision int64, namespace string) (*Ins
 
 	secrets, err := clientSet.CoreV1().Secrets(namespace).List(context.TODO(), listOpts)
 	if err != nil {
-		if kuberneteserrors.IsNotFound(err) {
-			return nil, nil
-		}
 		return nil, errors.Wrap(err, "failed to list secrets")
 	}
 
-	if len(secrets.Items) > 1 {
+	if len(secrets.Items) == 0 {
+		return nil, nil
+	}
+
+	if len(secrets.Items) != 1 {
 		return nil, errors.Errorf("found %d secrets but expected 1", len(secrets.Items))
 	}
 
@@ -319,7 +321,7 @@ func SaveChartLicenseInSecret(helmApp *apptypes.HelmApp, licenseData []byte) err
 	return nil
 }
 
-func GetKotsKinds(helmApp *apptypes.HelmApp) (kotsutil.KotsKinds, error) {
+func GetKotsKindsFromHelmApp(helmApp *apptypes.HelmApp) (kotsutil.KotsKinds, error) {
 	kotsKinds := kotsutil.EmptyKotsKinds()
 
 	secret, err := GetChartConfigSecret(helmApp)
@@ -331,14 +333,27 @@ func GetKotsKinds(helmApp *apptypes.HelmApp) (kotsutil.KotsKinds, error) {
 		return kotsKinds, nil
 	}
 
-	licenseData := secret.Data["license"]
-	if len(licenseData) == 0 {
+	kotsKinds, err = GetKotsKindsFromReplicatedSecret(secret)
+	if err != nil {
+		return kotsKinds, errors.Wrap(err, "failed to get kots kinds from secret")
+	}
+
+	if kotsKinds.License == nil {
 		license, err := downloadAppLicense(helmApp)
 		if err != nil {
 			return kotsKinds, errors.Wrap(err, "failed to download license")
 		}
 		kotsKinds.License = license
-	} else {
+	}
+
+	return kotsKinds, nil
+}
+
+func GetKotsKindsFromReplicatedSecret(secret *corev1.Secret) (kotsutil.KotsKinds, error) {
+	kotsKinds := kotsutil.EmptyKotsKinds()
+
+	licenseData := secret.Data["license"]
+	if len(licenseData) != 0 {
 		license, err := kotsutil.LoadLicenseFromBytes(licenseData)
 		if err != nil {
 			return kotsKinds, errors.Wrap(err, "failed to load license from data")
@@ -411,21 +426,27 @@ func GetKotsKindsForRevision(releaseName string, revision int64, namespace strin
 			continue
 		}
 
-		// Can't use client-go decoder here because raw data contains templates.
-		secret := map[string]interface{}{}
-		if err := yaml.Unmarshal(template.Data, &secret); err != nil {
-			return kotsKinds, errors.Wrap(err, "failed to unmarshal secret data")
+		secretData, err := removeHelmTemplate(template.Data)
+		if err != nil {
+			return kotsKinds, errors.Wrap(err, "failed to remove helm templates from replicated secret file")
 		}
-		encodedConfig := util.GetValueFromMapPath(secret, []string{"data", "config"})
 
-		configData, err := util.Base64DecodeInterface(encodedConfig)
+		decode := scheme.Codecs.UniversalDeserializer().Decode
+		obj, gvk, err := decode(secretData, nil, nil)
 		if err != nil {
-			return kotsKinds, errors.Wrap(err, "failed to base64 decode config from chart templates")
+			return kotsKinds, errors.Wrap(err, "failed to decode secret data")
 		}
-		kotsKinds.Config, err = kotsutil.LoadConfigFromBytes(configData)
+
+		if gvk.Group != "" || gvk.Version != "v1" || gvk.Kind != "Secret" {
+			return kotsKinds, errors.Errorf("unexpected secret GVK: %s", gvk.String())
+		}
+
+		k, err := GetKotsKindsFromReplicatedSecret(obj.(*corev1.Secret))
 		if err != nil {
-			return kotsKinds, errors.Wrap(err, "failed to get config from chart templates")
+			return kotsKinds, errors.Wrap(err, "failed to get kots kinds from secret")
 		}
+
+		kotsKinds.Config = k.Config
 
 		break
 	}
@@ -451,4 +472,63 @@ func GetKotsKindsForRevision(releaseName string, revision int64, namespace strin
 	}
 
 	return kotsKinds, nil
+}
+
+func GetKotsKindsFromChartArchive(archive *bytes.Buffer) (kotsutil.KotsKinds, error) {
+	kotsKinds := kotsutil.EmptyKotsKinds()
+
+	templatedData, err := util.GetFileFromTGZArchive(archive, "**/templates/_replicated/secret.yaml")
+	if err != nil {
+		return kotsKinds, errors.Wrap(err, "failed to get secret file from chart archive")
+	}
+
+	secretData, err := removeHelmTemplate(templatedData.Bytes())
+	if err != nil {
+		return kotsKinds, errors.Wrap(err, "failed to remove helm templates from replicated secret file")
+	}
+
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, gvk, err := decode(secretData, nil, nil)
+	if err != nil {
+		return kotsKinds, errors.Wrap(err, "failed to decode secret data")
+	}
+
+	if gvk.Group != "" || gvk.Version != "v1" || gvk.Kind != "Secret" {
+		return kotsKinds, errors.Errorf("unexpected secret GVK: %s", gvk.String())
+	}
+
+	kotsKinds, err = GetKotsKindsFromReplicatedSecret(obj.(*corev1.Secret))
+	if err != nil {
+		return kotsKinds, errors.Wrap(err, "failed to get kots kinds from secret")
+	}
+
+	return kotsKinds, nil
+}
+
+func removeHelmTemplate(doc []byte) ([]byte, error) {
+	type Inventory struct {
+		Material string
+		Count    uint
+	}
+	replicatedValues := map[string]interface{}{
+		"Values": map[string]interface{}{
+			"replicated": map[string]interface{}{
+				"app": map[string]interface{}{
+					"configValues": base64.RawStdEncoding.EncodeToString(nil),
+				},
+			},
+		},
+	}
+	tmpl, err := template.New("sanitize-helm").Parse(string(doc))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse doc as template")
+	}
+
+	b := bytes.NewBuffer(nil)
+	err = tmpl.Execute(b, replicatedValues)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to execute template")
+	}
+
+	return b.Bytes(), nil
 }

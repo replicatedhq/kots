@@ -69,13 +69,13 @@ func (h *Handler) GetAppValuesFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kotsKinds, err := helm.GetKotsKinds(helmApp)
+	kotsKinds, err := helm.GetKotsKindsFromHelmApp(helmApp)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get kotskinds values"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	// keeping this assignment out of GetKotsKinds because this is specific to file download endpoint
+	// keeping this assignment out of GetKotsKindsFromHelmApp because this is specific to file download endpoint
 	kotsKinds.ConfigValues = &kotsv1beta1.ConfigValues{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "kots.io/v1beta1",

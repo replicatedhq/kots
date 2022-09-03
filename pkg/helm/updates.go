@@ -1,7 +1,9 @@
 package helm
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"sort"
 	"strings"
 	"sync"
@@ -10,6 +12,8 @@ import (
 	"github.com/containers/image/v5/docker"
 	imagetypes "github.com/containers/image/v5/types"
 	"github.com/pkg/errors"
+	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	helmgetter "helm.sh/helm/v3/pkg/getter"
 )
 
 type ChartUpdate struct {
@@ -153,4 +157,24 @@ func removeDuplicates(tags []string) []string {
 	}
 
 	return u
+}
+
+// TODO: Add caching
+func PullChartVersion(helmApp *apptypes.HelmApp, licenseID string, version string) (*bytes.Buffer, error) {
+	err := CreateHelmRegistryCreds(licenseID, licenseID, helmApp.ChartPath)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create helm credentials file")
+	}
+	chartGetter, err := helmgetter.NewOCIGetter()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create chart getter")
+	}
+
+	imageName := fmt.Sprintf("%s:%s", helmApp.ChartPath, version)
+	data, err := chartGetter.Get(imageName)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get chart %q", imageName)
+	}
+
+	return data, nil
 }
