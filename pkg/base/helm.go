@@ -244,15 +244,34 @@ func removeCommonPrefix(baseFiles []BaseFile) []BaseFile {
 	return cleanedBaseFiles
 }
 
+// shouldMapUpstreamPath returns true if it's a Chart.yaml file and it exists in one of:
+// - the root of the chart (the parent chart)
+// - a sub-chart in a 'charts' directory
+func shouldMapUpstreamPath(upstreamPath string) bool {
+	parts := strings.Split(upstreamPath, string(os.PathSeparator))
+	if fileName := parts[len(parts)-1]; fileName != "Chart.yaml" {
+		return false
+	}
+	if len(parts) == 1 {
+		// this is the parent chart
+		return true
+	}
+	if len(parts) < 3 { // charts/<subchart>/Chart.yaml
+		return false
+	}
+	parentDir := parts[len(parts)-3] // charts/<subchart>/Chart.yaml -> charts ... this applies to all nested subcharts too
+	return parentDir == "charts"
+}
+
 // creates a map of the upstream chart paths and their cooresponding base paths
 func getUpstreamToBasePathsMap(upstreamFiles map[string][]byte) map[string][]string {
 	upstreamToBasePathsMap := make(map[string][]string)
 	for upstreamFilePath := range upstreamFiles {
-		if !strings.HasSuffix(upstreamFilePath, "Chart.yaml") {
+		if !shouldMapUpstreamPath(upstreamFilePath) {
 			continue
 		}
-		upstreamPath := strings.TrimSuffix(upstreamFilePath, "Chart.yaml")
-		upstreamPath = strings.TrimSuffix(upstreamPath, string(os.PathSeparator))
+		upstreamPath := strings.TrimSuffix(upstreamFilePath, "Chart.yaml")        // charts/subchart/Chart.yaml -> charts/subchart/
+		upstreamPath = strings.TrimSuffix(upstreamPath, string(os.PathSeparator)) // charts/subchart/ -> charts/subchart
 		basePaths, err := helmChartUpstreamPathToBasePaths(upstreamPath, upstreamFiles)
 		if err != nil {
 			logger.Errorf("failed to get base paths for upstream path %s: %v", upstreamFilePath, err)
@@ -287,7 +306,8 @@ func helmChartBaseAppendAdditionalFiles(base Base, fullBasePath string, upstream
 			}
 		}
 	} else {
-		logger.Errorf("failed to find upstream path for base path %s", fullBasePath)
+		// not an error since the map only contains information about charts and nested subcharts, not all files.
+		logger.Debugf("upstream path not found for base path '%s'", fullBasePath)
 	}
 
 	var nextBases []Base
@@ -374,8 +394,8 @@ func helmChartBaseAppendMissingDependencies(base Base, upstreamFiles []upstreamt
 	}
 
 	for _, upstreamFile := range upstreamFiles {
-		if !strings.HasSuffix(upstreamFile.Path, "Chart.yaml") {
-			continue // only care about Chart.yaml files
+		if !shouldMapUpstreamPath(upstreamFile.Path) {
+			continue
 		}
 		upstreamPath := strings.TrimSuffix(upstreamFile.Path, "Chart.yaml")
 		upstreamPath = strings.TrimSuffix(upstreamPath, string(os.PathSeparator))
@@ -384,6 +404,9 @@ func helmChartBaseAppendMissingDependencies(base Base, upstreamFiles []upstreamt
 		}
 		basePaths := upstreamToBasePathsMap[upstreamPath]
 		for _, basePath := range basePaths {
+			if basePath == "" {
+				continue // empty sub-base path is not allowed
+			}
 			b := Base{
 				Path: basePath,
 				AdditionalFiles: []BaseFile{
