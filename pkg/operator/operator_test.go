@@ -24,6 +24,7 @@ var _ = Describe("Operator", func() {
 			var (
 				mockStore    *mock_store.MockStore
 				mockClient   *mock_client.MockClientInterface
+				testOperator *operator.Operator
 				mockCtrl     *gomock.Controller
 				clusterToken       = "cluster-token"
 				appID              = "some-app-id"
@@ -36,7 +37,7 @@ var _ = Describe("Operator", func() {
 				mockStore = mock_store.NewMockStore(mockCtrl)
 
 				mockClient = mock_client.NewMockClientInterface(mockCtrl)
-				operator.OperatorClient = mockClient
+				testOperator = operator.Init(mockClient, mockStore, clusterToken)
 			})
 
 			AfterEach(func() {
@@ -85,7 +86,7 @@ var _ = Describe("Operator", func() {
 
 				mockClient.EXPECT().ApplyAppInformers(gomock.Any()).Times(1)
 
-				err := operator.Start(clusterToken, mockClient, mockStore)
+				err := testOperator.Start()
 				Expect(err).ToNot(HaveOccurred())
 			})
 		})
@@ -93,6 +94,7 @@ var _ = Describe("Operator", func() {
 			var (
 				mockStore    *mock_store.MockStore
 				mockClient   *mock_client.MockClientInterface
+				testOperator *operator.Operator
 				mockCtrl     *gomock.Controller
 				clusterToken = "cluster-token"
 				appID        = "some-app-id"
@@ -103,7 +105,7 @@ var _ = Describe("Operator", func() {
 				mockStore = mock_store.NewMockStore(mockCtrl)
 
 				mockClient = mock_client.NewMockClientInterface(mockCtrl)
-				operator.OperatorClient = mockClient
+				testOperator = operator.Init(mockClient, mockStore, clusterToken)
 			})
 
 			AfterEach(func() {
@@ -129,7 +131,7 @@ var _ = Describe("Operator", func() {
 
 				mockClient.EXPECT().ApplyAppInformers(gomock.Any()).Times(0)
 
-				err := operator.Start(clusterToken, mockClient, mockStore)
+				err := testOperator.Start()
 				Expect(err).ToNot(HaveOccurred())
 			})
 		})
@@ -138,11 +140,13 @@ var _ = Describe("Operator", func() {
 	Describe("DeployApp()", func() {
 		When("there is a deployment and app file with a status informer", func() {
 			var (
-				mockStore  *mock_store.MockStore
-				mockClient *mock_client.MockClientInterface
-				mockCtrl   *gomock.Controller
-				appID            = "some-app-id"
-				sequence   int64 = 0
+				mockStore    *mock_store.MockStore
+				mockClient   *mock_client.MockClientInterface
+				testOperator *operator.Operator
+				mockCtrl     *gomock.Controller
+				clusterToken       = "cluster-token"
+				appID              = "some-app-id"
+				sequence     int64 = 0
 
 				archiveDir                 string
 				previouslyDeployedSequence int64
@@ -154,7 +158,7 @@ var _ = Describe("Operator", func() {
 				mockStore = mock_store.NewMockStore(mockCtrl)
 
 				mockClient = mock_client.NewMockClientInterface(mockCtrl)
-				operator.OperatorClient = mockClient
+				testOperator = operator.Init(mockClient, mockStore, clusterToken)
 			})
 
 			AfterEach(func() {
@@ -200,7 +204,7 @@ var _ = Describe("Operator", func() {
 
 				mockClient.EXPECT().ApplyAppInformers(gomock.Any())
 
-				deployed, err := operator.DeployApp(appID, sequence, mockStore)
+				deployed, err := testOperator.DeployApp(appID, sequence)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(deployed).To(BeTrue())
 			})
@@ -261,7 +265,7 @@ var _ = Describe("Operator", func() {
 
 					mockClient.EXPECT().ApplyAppInformers(gomock.Any())
 
-					deployed, err := operator.DeployApp(appID, sequence, mockStore)
+					deployed, err := testOperator.DeployApp(appID, sequence)
 					Expect(err).ToNot(HaveOccurred())
 					Expect(deployed).To(BeTrue())
 				})
