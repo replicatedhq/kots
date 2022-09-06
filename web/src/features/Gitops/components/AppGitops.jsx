@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import Helmet from "react-helmet";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
 import { getAddKeyUri, Utilities } from "../../../utilities/utilities";
@@ -15,16 +15,15 @@ import AppSelector from "./AppSelector";
 import "../../../scss/components/gitops/GitOpsDeploymentManager.scss";
 import "../../../scss/components/gitops/GitOpsSettings.scss";
 import "../../../scss/components/gitops/GitopsPrism.scss";
-import { updateAppSList } from "../utils";
 
 const AppGitops = () => {
-  const [ownerRepo, setOwnerRepo] = React.useState("");
-  const [testingConnection, setTestingConnection] = React.useState(false);
-  const [disablingGitOps, setDisablingGitOps] = React.useState(false);
+  const [ownerRepo, setOwnerRepo] = useState("");
+  const [testingConnection, setTestingConnection] = useState(false);
+  const [disablingGitOps, setDisablingGitOps] = useState(false);
   const [showDisableGitopsModalPrompt, setShowDisableGitopsModalPrompt] =
-    React.useState(false);
-  const [showConnectionModal, setShowConnectionModal] = React.useState(false);
-  const [modalType, setModalType] = React.useState("");
+    useState(false);
+  const [showConnectionModal, setShowConnectionModal] = useState(false);
+  const [modalType, setModalType] = useState("");
 
   const {
     selectedApp,
@@ -39,7 +38,7 @@ const AppGitops = () => {
 
   const history = useHistory();
 
-  React.useEffect(() => {
+  useEffect(() => {
     getInitialOwnerRepo();
 
     if (!gitopsEnabled) {

@@ -1,4 +1,4 @@
-import React, { useContext, useCallback } from "react";
+import React, { useContext, useCallback, useEffect, useState } from "react";
 import { Utilities } from "../../../utilities/utilities";
 import DisableModal from "./modals/DisableModal";
 import { GitOpsContext, withGitOpsConsumer } from "../context";
@@ -20,7 +20,7 @@ const SetupProvider = ({ appName }) => {
     gitopsEnabled,
     gitopsConnected,
   } = useContext(GitOpsContext);
-  const [app, setApp] = React.useState({});
+  const [app, setApp] = useState({});
 
   // something funky is happening here, if we use appsList from context,
   // the app selector hover state gets messed up
@@ -31,7 +31,7 @@ const SetupProvider = ({ appName }) => {
     label: app.name,
   }));
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (appsList.length > 0) {
       setApp(
         apps.find((app) => {
@@ -42,8 +42,8 @@ const SetupProvider = ({ appName }) => {
   }, [selectedApp, appsList]);
 
   const [showDisableGitopsModalPrompt, setShowDisableGitopsModalPrompt] =
-    React.useState(false);
-  const [disablingGitOps, setDisablingGitOps] = React.useState(false);
+    useState(false);
+  const [disablingGitOps, setDisablingGitOps] = useState(false);
 
   const promptToDisableGitOps = () => {
     setShowDisableGitopsModalPrompt(true);

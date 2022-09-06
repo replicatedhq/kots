@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { GitOpsContext, withGitOpsConsumer } from "../context";
 import { Flex, Paragraph } from "../../../styles/common";
 import Loader from "../../../components/shared/Loader";
@@ -23,7 +23,7 @@ const GitopsRepoDetails = () => {
     providerError,
     setProviderError,
     stepFrom,
-  } = React.useContext(GitOpsContext);
+  } = useContext(GitOpsContext);
   const [action, setAction] = useState("commit");
   const [format, setFormat] = useState("single");
   const previousOwner = usePrevious(owner);
@@ -89,94 +89,82 @@ const GitopsRepoDetails = () => {
     <>
       <Flex key={`action-active`} width="100%" direction="column">
         <Flex flex="1" mt="30" mb="20" width="100%">
-          {provider !== "other" && (
-            <div className="flex flex1 flex-column u-marginRight--20">
-              <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
-                {isBitbucketServer ? "Project" : "Owner"}
-                <span> (Required)</span>
+          <div className="flex flex1 flex-column u-marginRight--20">
+            <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
+              {isBitbucketServer ? "Project" : "Owner"}
+              <span> (Required)</span>
+            </p>
+            <input
+              type="text"
+              className={`Input ${
+                providerError?.field === "owner" && "has-error"
+              }`}
+              placeholder={isBitbucketServer ? "project" : "owner"}
+              value={owner}
+              onChange={(e) => setOwner(e.target.value)}
+              autoFocus
+            />
+            {providerError?.field === "owner" && (
+              <p className="u-fontSize--small u-marginTop--5 u-color--chestnut u-fontWeight--medium u-lineHeight--normal">
+                {isBitbucketServer
+                  ? "A project must be provided"
+                  : "An owner must be provided"}
               </p>
-              <input
-                type="text"
-                className={`Input ${
-                  providerError?.field === "owner" && "has-error"
-                }`}
-                placeholder={isBitbucketServer ? "project" : "owner"}
-                value={owner}
-                onChange={(e) => setOwner(e.target.value)}
-                autoFocus
-              />
-              {providerError?.field === "owner" && (
-                <p className="u-fontSize--small u-marginTop--5 u-color--chestnut u-fontWeight--medium u-lineHeight--normal">
-                  {isBitbucketServer
-                    ? "A project must be provided"
-                    : "An owner must be provided"}
-                </p>
-              )}
-            </div>
-          )}
-
-          {provider !== "other" && (
-            <Flex flex="1" direction="column">
-              <Paragraph
-                size="16"
-                weight="bold"
-                className="u-lineHeight--normal"
-              >
-                Repository <span>(Required)</span>
-              </Paragraph>
-              <input
-                type="text"
-                className={`Input ${
-                  providerError?.field === "repo" && "has-error"
-                }`}
-                placeholder={"Repository"}
-                value={repo}
-                onChange={(e) => setRepo(e.target.value)}
-                autoFocus
-              />
-              {providerError?.field === "owner" && (
-                <p className="u-fontSize--small u-marginTop--5 u-color--chestnut u-fontWeight--medium u-lineHeight--normal">
-                  A repository must be provided
-                </p>
-              )}
-            </Flex>
-          )}
+            )}
+          </div>
+          <Flex flex="1" direction="column">
+            <Paragraph size="16" weight="bold" className="u-lineHeight--normal">
+              Repository <span>(Required)</span>
+            </Paragraph>
+            <input
+              type="text"
+              className={`Input ${
+                providerError?.field === "repo" && "has-error"
+              }`}
+              placeholder={"Repository"}
+              value={repo}
+              onChange={(e) => setRepo(e.target.value)}
+              autoFocus
+            />
+            {providerError?.field === "owner" && (
+              <p className="u-fontSize--small u-marginTop--5 u-color--chestnut u-fontWeight--medium u-lineHeight--normal">
+                A repository must be provided
+              </p>
+            )}
+          </Flex>
         </Flex>
+
         <Flex width="100%">
-          {provider !== "other" && (
-            <div className="flex flex1 flex-column u-marginRight--20">
-              <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
-                Branch
-              </p>
-              <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">
-                Leave blank to use the default branch.
-              </p>
-              <input
-                type="text"
-                className={`Input`}
-                placeholder="main"
-                value={branch}
-                onChange={(e) => setBranch(e.target.value)}
-              />
-            </div>
-          )}
-          {provider !== "other" && (
-            <div className="flex flex1 flex-column">
-              <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
-                Path
-              </p>
-              <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">
-                Path in repository to commit deployment file
-              </p>
-              <input
-                type="text"
-                className={"Input"}
-                placeholder="/path/to-deployment"
-                value={path}
-                onChange={(e) => setPath(e.target.value)}
-              />
-            </div>
-          )}
+          <div className="flex flex1 flex-column u-marginRight--20">
+            <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
+              Branch
+            </p>
+            <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">
+              Leave blank to use the default branch.
+            </p>
+            <input
+              type="text"
+              className={`Input`}
+              placeholder="main"
+              value={branch}
+              onChange={(e) => setBranch(e.target.value)}
+            />
+          </div>
+          <div className="flex flex1 flex-column">
+            <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
+              Path
+            </p>
+            <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">
+              Path in repository to commit deployment file
+            </p>
+            <input
+              type="text"
+              className={"Input"}
+              placeholder="/path/to-deployment"
+              value={path}
+              onChange={(e) => setPath(e.target.value)}
+            />
+          </div>
         </Flex>
       </Flex>
       <div
