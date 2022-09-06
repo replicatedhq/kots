@@ -46,27 +46,26 @@ import (
 )
 
 var OperatorClient client.ClientInterface
+var operatorStore store.Store
 var clusterID string
 var deployMtxs = map[string]*sync.Mutex{} // key is app id
 
-func Start(clusterToken string) error {
+func Start(clusterToken string, operatorClient client.ClientInterface, store store.Store) error {
 	logger.Debug("starting the operator")
 
-	OperatorClient = &client.Client{
-		TargetNamespace:   util.AppNamespace(),
-		ExistingInformers: map[string]bool{},
-		HookStopChans:     []chan struct{}{},
-	}
+	OperatorClient = operatorClient
 	if err := OperatorClient.Init(); err != nil {
 		return errors.Wrap(err, "failed to initialize the operator client")
 	}
 
-	id, err := store.GetStore().GetClusterIDFromDeployToken(clusterToken)
+	operatorStore = store
+	id, err := operatorStore.GetClusterIDFromDeployToken(clusterToken)
 	if err != nil {
 		return errors.Wrap(err, "failed to get cluster id from deploy token")
 	}
 	clusterID = id
 
+	startStatusInformers()
 	go resumeDeployments()
 	startLoop(restoreLoop, 2)
 
@@ -90,7 +89,7 @@ func startLoop(fn func(), intervalInSeconds time.Duration) {
 }
 
 func resumeDeployments() {
-	apps, err := store.GetStore().ListAppsForDownstream(clusterID)
+	apps, err := operatorStore.ListAppsForDownstream(clusterID)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to list installed apps for downstream"))
 		return
@@ -108,7 +107,7 @@ func resumeDeployment(a *apptypes.App) (bool, error) {
 		return false, nil
 	}
 
-	deployedVersion, err := store.GetStore().GetCurrentDownstreamVersion(a.ID, clusterID)
+	deployedVersion, err := operatorStore.GetCurrentDownstreamVersion(a.ID, clusterID)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to get current downstream version")
 	} else if deployedVersion == nil {
@@ -121,7 +120,7 @@ func resumeDeployment(a *apptypes.App) (bool, error) {
 		return false, nil
 	}
 
-	if _, err := DeployApp(a.ID, deployedVersion.ParentSequence, store.GetStore()); err != nil {
+	if _, err := DeployApp(a.ID, deployedVersion.ParentSequence, operatorStore); err != nil {
 		return false, errors.Wrap(err, "failed to deploy version")
 	}
 
@@ -395,8 +394,65 @@ func applyStatusInformers(a *apptypes.App, sequence int64, kotsKinds *kotsutil.K
 	return nil
 }
 
+func startStatusInformers() {
+	apps, err := operatorStore.ListAppsForDownstream(clusterID)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to list installed apps for downstream"))
+		return
+	}
+	for _, app := range apps {
+		if err := startStatusInformersForApp(app); err != nil {
+			logger.Error(errors.Wrapf(err, "failed to start status informers for app %s in cluster %s", app.ID, clusterID))
+		}
+	}
+}
+
+func startStatusInformersForApp(app *apptypes.App) error {
+	deployedVersion, err := operatorStore.GetCurrentDownstreamVersion(app.ID, clusterID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get current downstream version")
+	} else if deployedVersion == nil {
+		return nil
+	}
+	sequence := deployedVersion.ParentSequence
+
+	logger.Debugf("starting status informers for app %s", app.ID)
+
+	deployedVersionArchive, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		return errors.Wrap(err, "failed to create temp dir")
+	}
+	defer os.RemoveAll(deployedVersionArchive)
+
+	err = operatorStore.GetAppVersionArchive(app.ID, sequence, deployedVersionArchive)
+	if err != nil {
+		return errors.Wrap(err, "failed to get app version archive")
+	}
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(deployedVersionArchive)
+	if err != nil {
+		return errors.Wrap(err, "failed to load kotskinds")
+	}
+
+	registrySettings, err := operatorStore.GetRegistryDetailsForApp(app.ID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get registry settings for app")
+	}
+
+	builder, err := render.NewBuilder(kotsKinds, registrySettings, app.Slug, sequence, app.IsAirgap, util.PodNamespace)
+	if err != nil {
+		return errors.Wrap(err, "failed to get template builder")
+	}
+
+	if err := applyStatusInformers(app, sequence, kotsKinds, builder, operatorStore); err != nil {
+		return errors.Wrapf(err, "failed to apply status informers for app %s", app.ID)
+	}
+
+	return nil
+}
+
 func restoreLoop() {
-	apps, err := store.GetStore().ListAppsForDownstream(clusterID)
+	apps, err := operatorStore.ListAppsForDownstream(clusterID)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to list installed apps for downstream"))
 		return
@@ -431,7 +487,7 @@ func processRestoreForApp(a *apptypes.App) error {
 		break
 
 	default:
-		downstreams, err := store.GetStore().GetDownstream(clusterID)
+		downstreams, err := operatorStore.GetDownstream(clusterID)
 		if err != nil {
 			return errors.Wrap(err, "failed to get downstream")
 		}
@@ -525,10 +581,10 @@ func checkRestoreComplete(a *apptypes.App, restore *velerov1.Restore) error {
 		logger.Info(fmt.Sprintf("restore complete, marking version %d as deployed", sequence))
 
 		// mark the sequence as deployed so that the admin console does not try to re-deploy it
-		if err := store.GetStore().MarkAsCurrentDownstreamVersion(a.ID, sequence); err != nil {
+		if err := operatorStore.MarkAsCurrentDownstreamVersion(a.ID, sequence); err != nil {
 			return errors.Wrap(err, "failed to mark as current downstream version")
 		}
-		if err := store.GetStore().SetDownstreamVersionStatus(a.ID, sequence, storetypes.VersionDeployed, ""); err != nil {
+		if err := operatorStore.SetDownstreamVersionStatus(a.ID, sequence, storetypes.VersionDeployed, ""); err != nil {
 			logger.Error(errors.Wrap(err, "failed to update downstream status"))
 		}
 
@@ -568,7 +624,7 @@ func undeployApp(a *apptypes.App, d *downstreamtypes.Downstream, isRestore bool)
 	deployMtxs[a.ID].Lock()
 	defer deployMtxs[a.ID].Unlock()
 
-	deployedVersion, err := store.GetStore().GetCurrentDownstreamVersion(a.ID, d.ClusterID)
+	deployedVersion, err := operatorStore.GetCurrentDownstreamVersion(a.ID, d.ClusterID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get current downstream version")
 	}
@@ -579,7 +635,7 @@ func undeployApp(a *apptypes.App, d *downstreamtypes.Downstream, isRestore bool)
 	}
 	defer os.RemoveAll(deployedVersionArchive)
 
-	err = store.GetStore().GetAppVersionArchive(a.ID, deployedVersion.ParentSequence, deployedVersionArchive)
+	err = operatorStore.GetAppVersionArchive(a.ID, deployedVersion.ParentSequence, deployedVersionArchive)
 	if err != nil {
 		return errors.Wrap(err, "failed to get app version archive")
 	}

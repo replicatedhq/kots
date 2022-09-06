@@ -18,6 +18,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/informers"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/operator"
+	"github.com/replicatedhq/kots/pkg/operator/client"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/policy"
 	"github.com/replicatedhq/kots/pkg/rbac"
@@ -87,7 +88,13 @@ func Start(params *APIServerParams) {
 	}
 
 	if !util.IsHelmManaged() {
-		if err := operator.Start(params.AutocreateClusterToken); err != nil {
+		client := &client.Client{
+			TargetNamespace:   util.AppNamespace(),
+			ExistingInformers: map[string]bool{},
+			HookStopChans:     []chan struct{}{},
+		}
+		store := store.GetStore()
+		if err := operator.Start(params.AutocreateClusterToken, client, store); err != nil {
 			log.Println("error starting the operator")
 			panic(err)
 		}
