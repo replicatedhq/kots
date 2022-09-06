@@ -5,7 +5,7 @@ package image
 // image name.
 
 const (
-	Minio      = "minio/minio:RELEASE.2022-08-13T21-54-44Z"
+	Minio      = "minio/minio:RELEASE.2022-09-01T23-53-36Z"
 	Postgres10 = "postgres:10.22-alpine"
 	Postgres14 = "postgres:14.5-alpine"
 	Dex        = "ghcr.io/dexidp/dex:v2.33.0"
