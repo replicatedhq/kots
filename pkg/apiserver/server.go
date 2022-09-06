@@ -94,11 +94,12 @@ func Start(params *APIServerParams) {
 			HookStopChans:     []chan struct{}{},
 		}
 		store := store.GetStore()
-		if err := operator.Start(params.AutocreateClusterToken, client, store); err != nil {
+		op := operator.Init(client, store, params.AutocreateClusterToken)
+		if err := op.Start(); err != nil {
 			log.Println("error starting the operator")
 			panic(err)
 		}
-		defer operator.Shutdown()
+		defer op.Shutdown()
 	}
 
 	if params.SharedPassword != "" {
