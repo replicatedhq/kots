@@ -214,18 +214,18 @@ class SecureAdminConsole extends React.Component {
     }
   };
 
-  componentDidMount() {
+  async componentDidMount() {
     window.addEventListener("keydown", this.submitForm);
 
     const token = window.localStorage.getItem("token");
-    if (token) {
+    if (Utilities.isLoggedIn()) {
       // this is a redirect from identity service login
       // strip quotes from token (golang adds them when the cookie value has spaces, commas, etc..)
       const loginData = {
         token: token.replace(/"/g, ""),
         sessionRoles: window.localStorage.getItem("session_roles"),
       };
-      this.completeLogin(loginData);
+      await this.completeLogin(loginData);
     }
 
     const urlParams = new URLSearchParams(window.location.search);
