@@ -217,13 +217,17 @@ class SecureAdminConsole extends React.Component {
   async componentDidMount() {
     window.addEventListener("keydown", this.submitForm);
 
-    const token = window.localStorage.getItem("token");
-    if (Utilities.isLoggedIn()) {
+    const localStorageToken = window.localStorage.getItem("token");
+    const cookieToken = Utilities.getCookie("token");
+    const cookieSessionRole = Utilities.getCookie("session_role");
+    const localStorageSessionRole = window.localStorage.getItem("session_role");
+    if (Utilities.isLoggedIn() || cookieToken) {
       // this is a redirect from identity service login
       // strip quotes from token (golang adds them when the cookie value has spaces, commas, etc..)
       const loginData = {
-        token: token.replace(/"/g, ""),
-        sessionRoles: window.localStorage.getItem("session_roles"),
+        token:
+          localStorageToken.replace(/"/g, "") || cookieToken.replace(/"/g, ""),
+        sessionRoles: localStorageSessionRole || cookieSessionRole,
       };
       await this.completeLogin(loginData);
     }
