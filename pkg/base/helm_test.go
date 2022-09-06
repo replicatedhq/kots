@@ -1173,9 +1173,9 @@ func Test_getUpstreamToBasePathsMap(t *testing.T) {
   repository: file://./subcharts/subchart
   version: 0.0.0`),
 				"subcharts/subchart/Chart.yaml": []byte(`dependencies:
-	- name: subsubchart
-		repository: file://./subcharts/subsubchart
-		version: 0.0.0`),
+- name: subsubchart
+	repository: file://./subcharts/subsubchart
+	version: 0.0.0`),
 				"subcharts/subchart/subcharts/subsubchart/Chart.yaml": []byte(``),
 			},
 			want: map[string][]string{
