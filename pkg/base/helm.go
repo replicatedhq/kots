@@ -244,6 +244,9 @@ func removeCommonPrefix(baseFiles []BaseFile) []BaseFile {
 	return cleanedBaseFiles
 }
 
+// shouldMapUpstreamPath returns true if it's a Chart.yaml file and it exists in one of:
+// - the root of the chart (the parent chart)
+// - a sub-chart in a 'charts' directory
 func shouldMapUpstreamPath(upstreamPath string) bool {
 	parts := strings.Split(upstreamPath, string(os.PathSeparator))
 	if fileName := parts[len(parts)-1]; fileName != "Chart.yaml" {
