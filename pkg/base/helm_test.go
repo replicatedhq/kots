@@ -923,6 +923,55 @@ func Test_pathToCharts(t *testing.T) {
 	}
 }
 
+func Test_shouldMapUpstreamPath(t *testing.T) {
+	type args struct {
+		upstreamPath string
+	}
+	tests := []struct {
+		name         string
+		upstreamPath string
+		want         bool
+	}{
+		{
+			name:         "parent chart",
+			upstreamPath: "Chart.yaml",
+			want:         true,
+		},
+		{
+			name:         "subchart under 'charts' dir",
+			upstreamPath: "charts/subchart/Chart.yaml",
+			want:         true,
+		},
+		{
+			name:         "subsubchart under 'charts' dir",
+			upstreamPath: "charts/subchart/charts/subsubchart/Chart.yaml",
+			want:         true,
+		},
+		{
+			name:         "subchart NOT under 'charts' dir",
+			upstreamPath: "subcharts/subchart/Chart.yaml",
+			want:         false,
+		},
+		{
+			name:         "subsubchart NOT under 'charts' dir",
+			upstreamPath: "subcharts/subchart/subcharts/subsubchart/Chart.yaml",
+			want:         false,
+		},
+		{
+			name:         "some random file that ends with Chart.yaml",
+			upstreamPath: "charts/subchart/MyChart.yaml",
+			want:         false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := shouldMapUpstreamPath(tt.upstreamPath); got != tt.want {
+				t.Errorf("shouldMapUpstreamPath() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func Test_getUpstreamToBasePathsMap(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -1114,6 +1163,23 @@ func Test_getUpstreamToBasePathsMap(t *testing.T) {
 					"charts/subchart-aliased/charts/subsubchart-aliased/charts/subsubsubchart",
 					"charts/subchart-aliased/charts/subsubchart-aliased/charts/subsubsubchart-aliased",
 				},
+			},
+		},
+		{
+			name: "ignores subcharts not under a 'charts' directory",
+			upstreamFiles: map[string][]byte{
+				"Chart.yaml": []byte(`dependencies:
+- name: subchart
+  repository: file://./subcharts/subchart
+  version: 0.0.0`),
+				"subcharts/subchart/Chart.yaml": []byte(`dependencies:
+	- name: subsubchart
+		repository: file://./subcharts/subsubchart
+		version: 0.0.0`),
+				"subcharts/subchart/subcharts/subsubchart/Chart.yaml": []byte(``),
+			},
+			want: map[string][]string{
+				"": {""},
 			},
 		},
 	}
