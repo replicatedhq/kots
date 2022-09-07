@@ -41,7 +41,7 @@ jobs:
         run: |
           go run ./cmd/imagedeps
       - name: Create Pull Request # creates a PR if there are differences
-        uses: peter-evans/create-pull-request@v3
+        uses: peter-evans/create-pull-request@v4.1.1
         id: cpr
         with:
           token: ${{ secrets.NIGHTLY_GH_PAT }}
@@ -64,7 +64,7 @@ jobs:
   generate-schema:
     runs-on: ubuntu-20.04
     container:
-      image: schemahero/schemahero:0.12.2
+      image: schemahero/schemahero:0.13.2
     steps:
       - name: Checkout
         uses: actions/checkout@v2
