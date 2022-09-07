@@ -1,6 +1,7 @@
 package updatechecker
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"sync"
@@ -8,8 +9,11 @@ import (
 
 	"github.com/blang/semver"
 	"github.com/replicatedhq/kots/pkg/helm"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/preflight"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/wait"
 
 	"github.com/pkg/errors"
@@ -29,6 +33,8 @@ import (
 	"github.com/replicatedhq/kots/pkg/version"
 	cron "github.com/robfig/cron/v3"
 	"go.uber.org/zap"
+	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // jobs maps app ids to their cron jobs
@@ -108,6 +114,40 @@ func Configure(appID string) error {
 		cronSpec = fmt.Sprintf("%d %d/4 * * *", m, h)
 	}
 
+	clientSet, err := k8sutil.GetClientset()
+	if err != nil {
+		return errors.Wrap(err, "failed to get clientset")
+	}
+
+	selectorLabels := map[string]string{
+		"name": fmt.Sprintf("kots-%s-updatechecker", appID),
+	}
+	listOpts := metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(selectorLabels).String(),
+	}
+
+	configMaps, err := clientSet.CoreV1().ConfigMaps(util.PodNamespace).List(context.TODO(), listOpts)
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to list config maps")
+	}
+
+	cm := new(v1.ConfigMap)
+	if len(configMaps.Items) == 0 {
+		cm.Labels = map[string]string{
+			"name": fmt.Sprintf("kots-%s-updatechecker", appID),
+		}
+	} else {
+		for _, configMap := range configMaps.Items {
+			cm = &configMap
+		}
+	}
+	cm.Data["spec"] = cronSpec
+	c, err := clientSet.CoreV1().ConfigMaps(util.PodNamespace).Update(context.TODO(), cm, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update config map")
+	}
+	fmt.Printf("UPDATE CONFIG MAP: %+v\n", c)
+
 	job, ok := jobs[appID]
 	if ok {
 		// job already exists, remove entries
@@ -125,7 +165,7 @@ func Configure(appID string) error {
 	jobAppID := appid
 	jobAppSlug := appSlug
 
-	_, err := job.AddFunc(cronSpec, func() {
+	_, err = job.AddFunc(cronSpec, func() {
 		logger.Debug("checking updates for app", zap.String("slug", jobAppSlug))
 
 		opts := CheckForUpdatesOpts{
@@ -198,14 +238,42 @@ type UpdateCheckRelease struct {
 // otherwise, if "IsAutomatic" is set to true (which means it's an automatic update check), then the version that matches the auto deploy configuration (if enabled) will be deployed.
 // returns the number of available updates.
 func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
+	// TODO: get config map or create it if it does not exist
+	clientSet, err := k8sutil.GetClientset()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get clientset")
+	}
+
+	selectorLabels := map[string]string{
+		"name": fmt.Sprintf("kots-%s-updatechecker", opts.AppID),
+	}
+	listOpts := metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(selectorLabels).String(),
+	}
+
+	configMaps, err := clientSet.CoreV1().ConfigMaps(util.PodNamespace).List(context.TODO(), listOpts)
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return nil, errors.Wrap(err, "failed to list secrets")
+	}
+
+	var currentStatus string
+	cm := new(v1.ConfigMap)
+	if len(configMaps.Items) == 0 {
+		// we will create the config map or err out?
+
+	} else {
+		for _, configMap := range configMaps.Items {
+			cm = &configMap
+		}
+	}
+
+	if currentStatus == "running" {
+		logger.Debug("update-download is already running, not starting a new one")
+		return nil, nil
+	}
+
 	if util.IsHelmManaged() {
 		release := helm.GetHelmApp(opts.AppID)
-		currentStatus := release.UpdateStatus
-		if currentStatus == "running" {
-			logger.Debug("update-download is already running, not starting a new one")
-			return nil, nil
-		}
-		release.UpdateStatus = "running"
 		app, err := helm.ResponseAppFromHelmApp(release)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to convert release to helm app")
@@ -248,18 +316,16 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 			DeployingRelease:  nil,
 		}
 
+		cm.Data["status"] = "running"
+		clientSet.CoreV1().ConfigMaps(util.PodNamespace).Update(context.TODO(), cm, metav1.UpdateOptions{})
+		if err != nil && !kuberneteserrors.IsNotFound(err) {
+			return nil, errors.Wrap(err, "failed to list secrets")
+		}
+
 		return &ucr, nil
 	}
-	currentStatus, _, err := store.GetTaskStatus("update-download")
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get task status")
-	}
 
-	if currentStatus == "running" {
-		logger.Debug("update-download is already running, not starting a new one")
-		return nil, nil
-	}
-
+	// TODO: clear task status in config map
 	if err := store.ClearTaskStatus("update-download"); err != nil {
 		return nil, errors.Wrap(err, "failed to clear task status")
 	}
