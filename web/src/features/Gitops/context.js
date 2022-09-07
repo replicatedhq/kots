@@ -262,8 +262,8 @@ const GitOpsProvider = ({ children }) => {
 
     const {
       ownerRepo = "",
-      tempBranch = "",
-      tempPath = "",
+      tempBranch = branch,
+      tempPath = path,
       action = "commit",
       format = "single",
     } = repoDetails;
