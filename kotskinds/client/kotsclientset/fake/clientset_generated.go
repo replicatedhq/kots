@@ -73,7 +73,10 @@ func (c *Clientset) Tracker() testing.ObjectTracker {
 	return c.tracker
 }
 
-var _ clientset.Interface = &Clientset{}
+var (
+	_ clientset.Interface = &Clientset{}
+	_ testing.FakeClient  = &Clientset{}
+)
 
 // KotsV1beta1 retrieves the KotsV1beta1Client
 func (c *Clientset) KotsV1beta1() kotsv1beta1.KotsV1beta1Interface {

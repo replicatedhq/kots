@@ -47,7 +47,26 @@ spec:
               allowRollback:
                 type: boolean
               branding:
-                type: string
+                properties:
+                  css:
+                    type: string
+                  fontFiles:
+                    items:
+                      properties:
+                        fontFamily:
+                          type: string
+                        sources:
+                          items:
+                            properties:
+                              data:
+                                type: string
+                              format:
+                                type: string
+                            type: object
+                          type: array
+                      type: object
+                    type: array
+                type: object
               consoleFeatureFlags:
                 items:
                   type: string

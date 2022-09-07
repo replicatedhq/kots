@@ -242,7 +242,7 @@ class Root extends PureComponent {
 
         this.setState({
           appLogo: data.iconUri,
-          appBrandingCss: data.brandingCss,
+          appBranding: data.branding,
           selectedAppName: data.name,
           appSlugFromMetadata: parseUpstreamUri(data.upstreamUri),
           appNameSpace: data.namespace,
@@ -379,9 +379,17 @@ class Root extends PureComponent {
           {this.state.appLogo && (
             <link rel="icon" type="image/png" href={this.state.appLogo} />
           )}
-          {this.state.appBrandingCss && (
+          {this.state.appBranding?.fontFaces &&
+            this.state.appBranding.fontFaces.map((fontFace, index) => (
+              <style rel="stylesheet" type="text/css" id={`kots-branding-font-face-${index}`}
+              key={`kots-branding-font-face-${index}`}>
+                {fontFace}
+              </style>
+            ))
+          }
+          {this.state.appBranding?.css && (
             <style rel="stylesheet" type="text/css" id="kots-branding-css">
-              {this.state.appBrandingCss}
+              {this.state.appBranding.css}
             </style>
           )}
         </Helmet>
@@ -570,6 +578,7 @@ class Root extends PureComponent {
                       rootDidInitialAppFetch={rootDidInitialWatchFetch}
                       appsList={appsList}
                       refetchAppsList={this.getAppsList}
+                      refetchAppMetadata={this.fetchKotsAppMetadata}
                       onActiveInitSession={this.handleActiveInitSession}
                       appNameSpace={this.state.appNameSpace}
                       appName={this.state.selectedAppName}

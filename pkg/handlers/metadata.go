@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"strings"
 
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -28,14 +29,19 @@ const (
 
 // MetadataResponse non sensitive information to be used by ui pre-login
 type MetadataResponse struct {
-	IconURI     string `json:"iconUri"`
-	BrandingCss string `json:"brandingCss"`
-	Name        string `json:"name"`
-	Namespace   string `json:"namespace"`
-	UpstreamURI string `json:"upstreamUri"`
+	IconURI     string                   `json:"iconUri"`
+	Branding    MetadataResponseBranding `json:"branding"`
+	Name        string                   `json:"name"`
+	Namespace   string                   `json:"namespace"`
+	UpstreamURI string                   `json:"upstreamUri"`
 	// ConsoleFeatureFlags optional flags from application.yaml used to enable ui features
 	ConsoleFeatureFlags  []string             `json:"consoleFeatureFlags"`
 	AdminConsoleMetadata AdminConsoleMetadata `json:"adminConsoleMetadata"`
+}
+
+type MetadataResponseBranding struct {
+	Css       string   `json:"css"`
+	FontFaces []string `json:"fontFaces"`
 }
 
 type AdminConsoleMetadata struct {
@@ -92,7 +98,7 @@ func GetMetadataHandler(getK8sInfoFn MetadataK8sFn) http.HandlerFunc {
 		}
 		application := obj.(*kotsv1beta1.Application)
 		metadataResponse.IconURI = application.Spec.Icon
-		metadataResponse.BrandingCss = template.HTMLEscapeString(application.Spec.Branding)
+		metadataResponse.Branding = formatBrandingResponse(application.Spec.Branding)
 		metadataResponse.Name = application.Spec.Title
 		metadataResponse.UpstreamURI = brandingConfigMap.Data[upstreamUriKey]
 		metadataResponse.ConsoleFeatureFlags = application.Spec.ConsoleFeatureFlags
@@ -103,6 +109,26 @@ func GetMetadataHandler(getK8sInfoFn MetadataK8sFn) http.HandlerFunc {
 
 		JSON(w, http.StatusOK, metadataResponse)
 	}
+}
+
+// Converts the application spec branding field into the response format expected by the UI
+func formatBrandingResponse(branding kotsv1beta1.ApplicationBranding) MetadataResponseBranding {
+	response := MetadataResponseBranding{
+		Css:       template.HTMLEscapeString(branding.Css),
+		FontFaces: []string{},
+	}
+	for _, fontFile := range branding.FontFiles {
+		if len(fontFile.Sources) == 0 {
+			continue
+		}
+		sources := []string{}
+		for _, source := range fontFile.Sources {
+			sources = append(sources, fmt.Sprintf(`url("data:font/%s; base64, %s") format("%s")`, source.Format, source.Data, source.Format))
+		}
+		fontFace := fmt.Sprintf(`@font-face { font-family: "%s"; src: %s; }`, fontFile.FontFamily, strings.Join(sources, ", "))
+		response.FontFaces = append(response.FontFaces, fontFace)
+	}
+	return response
 }
 
 // GetMetaDataConfig retrieves configMap from k8s used to construct metadata

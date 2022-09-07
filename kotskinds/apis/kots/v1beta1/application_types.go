@@ -44,24 +44,39 @@ type ApplicationList struct {
 
 // ApplicationSpec defines the desired state of ApplicationSpec
 type ApplicationSpec struct {
-	Title                        string            `json:"title"`
-	Icon                         string            `json:"icon,omitempty"`
-	Branding                     string            `json:"branding,omitempty"`
-	ApplicationPorts             []ApplicationPort `json:"ports,omitempty"`
-	ReleaseNotes                 string            `json:"releaseNotes,omitempty"`
-	AllowRollback                bool              `json:"allowRollback,omitempty"`
-	StatusInformers              []string          `json:"statusInformers,omitempty"`
-	Graphs                       []MetricGraph     `json:"graphs,omitempty"`
-	MinKotsVersion               string            `json:"minKotsVersion,omitempty"`
-	TargetKotsVersion            string            `json:"targetKotsVersion,omitempty"`
-	KubectlVersion               string            `json:"kubectlVersion,omitempty"`
-	KustomizeVersion             string            `json:"kustomizeVersion,omitempty"`
-	AdditionalImages             []string          `json:"additionalImages,omitempty"`
-	AdditionalNamespaces         []string          `json:"additionalNamespaces,omitempty"`
-	RequireMinimalRBACPrivileges bool              `json:"requireMinimalRBACPrivileges,omitempty"`
-	SupportMinimalRBACPrivileges bool              `json:"supportMinimalRBACPrivileges,omitempty"`
-	ProxyPublicImages            bool              `json:"proxyPublicImages,omitempty"`
-	ConsoleFeatureFlags          []string          `json:"consoleFeatureFlags,omitempty"`
+	Title                        string              `json:"title"`
+	Icon                         string              `json:"icon,omitempty"`
+	Branding                     ApplicationBranding `json:"branding,omitempty"`
+	ApplicationPorts             []ApplicationPort   `json:"ports,omitempty"`
+	ReleaseNotes                 string              `json:"releaseNotes,omitempty"`
+	AllowRollback                bool                `json:"allowRollback,omitempty"`
+	StatusInformers              []string            `json:"statusInformers,omitempty"`
+	Graphs                       []MetricGraph       `json:"graphs,omitempty"`
+	MinKotsVersion               string              `json:"minKotsVersion,omitempty"`
+	TargetKotsVersion            string              `json:"targetKotsVersion,omitempty"`
+	KubectlVersion               string              `json:"kubectlVersion,omitempty"`
+	KustomizeVersion             string              `json:"kustomizeVersion,omitempty"`
+	AdditionalImages             []string            `json:"additionalImages,omitempty"`
+	AdditionalNamespaces         []string            `json:"additionalNamespaces,omitempty"`
+	RequireMinimalRBACPrivileges bool                `json:"requireMinimalRBACPrivileges,omitempty"`
+	SupportMinimalRBACPrivileges bool                `json:"supportMinimalRBACPrivileges,omitempty"`
+	ProxyPublicImages            bool                `json:"proxyPublicImages,omitempty"`
+	ConsoleFeatureFlags          []string            `json:"consoleFeatureFlags,omitempty"`
+}
+
+type ApplicationBranding struct {
+	Css       string                        `json:"css,omitempty"`
+	FontFiles []ApplicationBrandingFontFile `json:"fontFiles,omitempty"`
+}
+
+type ApplicationBrandingFontFile struct {
+	FontFamily string                              `json:"fontFamily,omitempty"`
+	Sources    []ApplicationBrandingFontFileSource `json:"sources,omitempty"`
+}
+
+type ApplicationBrandingFontFileSource struct {
+	Format string `json:"format,omitempty"`
+	Data   string `json:"data,omitempty"`
 }
 
 type ApplicationPort struct {
