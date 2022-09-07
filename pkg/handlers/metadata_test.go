@@ -68,7 +68,11 @@ metadata:
 				AdminConsoleMetadata: AdminConsoleMetadata{
 					IsKurl: true,
 				},
-				IconURI:             "https://foo.com/icon.png",
+				IconURI: "https://foo.com/icon.png",
+				Branding: MetadataResponseBranding{
+					Css:       "",
+					FontFaces: []string{},
+				},
 				Name:                "App Name",
 				ConsoleFeatureFlags: []string{"feature1", "feature2"},
 				Namespace:           util.PodNamespace,
@@ -93,6 +97,282 @@ metadata:
 				Name:      defaultAppName,
 				Namespace: util.PodNamespace,
 			},
+		},
+		{
+			name: "application branding css only",
+			funcPtr: func() (*v1.ConfigMap, types.Metadata, error) {
+
+				cm := `apiVersion: v1
+data:
+  application.yaml: |
+    apiVersion: kots.io/v1beta1
+    kind: Application
+    metadata:
+      name: app-slug
+    spec:
+      title: App Name
+      branding:
+        css: "body { background-color: red; }"
+    status: {}
+kind: ConfigMap
+metadata:
+  name: kotsadm-application-metadata
+`
+
+				// parse data as a kotskind
+				obj, _, err := scheme.Codecs.UniversalDeserializer().Decode([]byte(cm), nil, nil)
+				require.Nil(t, err)
+
+				return obj.(*v1.ConfigMap), types.Metadata{}, nil
+
+			},
+			expected: MetadataResponse{
+				AdminConsoleMetadata: AdminConsoleMetadata{},
+				Name:                 "App Name",
+				Branding: MetadataResponseBranding{
+					Css:       "body { background-color: red; }",
+					FontFaces: []string{},
+				},
+				Namespace: util.PodNamespace,
+			},
+			httpStatus: http.StatusOK,
+		},
+		{
+			name: "application branding font files only",
+			funcPtr: func() (*v1.ConfigMap, types.Metadata, error) {
+
+				cm := `apiVersion: v1
+data:
+  application.yaml: |
+    apiVersion: kots.io/v1beta1
+    kind: Application
+    metadata:
+      name: app-slug
+    spec:
+      title: App Name
+      branding:
+        fontFiles:
+        - fontFamily: "MyFont"
+          sources:
+          - format: "woff"
+            data: "woff-base64-data"
+          - format: "woff2"
+            data: "woff2-base64-data"
+kind: ConfigMap
+metadata:
+  name: kotsadm-application-metadata
+`
+
+				// parse data as a kotskind
+				obj, _, err := scheme.Codecs.UniversalDeserializer().Decode([]byte(cm), nil, nil)
+				require.Nil(t, err)
+
+				return obj.(*v1.ConfigMap), types.Metadata{}, nil
+
+			},
+			expected: MetadataResponse{
+				AdminConsoleMetadata: AdminConsoleMetadata{},
+				Name:                 "App Name",
+				Branding: MetadataResponseBranding{
+					Css: "",
+					FontFaces: []string{
+						`@font-face { font-family: "MyFont"; src: url("data:font/woff; base64, woff-base64-data") format("woff"), url("data:font/woff2; base64, woff2-base64-data") format("woff2"); }`,
+					},
+				},
+				Namespace: util.PodNamespace,
+			},
+			httpStatus: http.StatusOK,
+		},
+		{
+			name: "application branding css and font files",
+			funcPtr: func() (*v1.ConfigMap, types.Metadata, error) {
+
+				cm := `apiVersion: v1
+data:
+  application.yaml: |
+    apiVersion: kots.io/v1beta1
+    kind: Application
+    metadata:
+      name: app-slug
+    spec:
+      title: App Name
+      branding:
+        css: "body { background-color: red; }"
+        fontFiles:
+        - fontFamily: "MyFont"
+          sources:
+          - format: "woff"
+            data: "woff-base64-data"
+          - format: "woff2"
+            data: "woff2-base64-data"
+kind: ConfigMap
+metadata:
+  name: kotsadm-application-metadata
+`
+
+				// parse data as a kotskind
+				obj, _, err := scheme.Codecs.UniversalDeserializer().Decode([]byte(cm), nil, nil)
+				require.Nil(t, err)
+
+				return obj.(*v1.ConfigMap), types.Metadata{}, nil
+
+			},
+			expected: MetadataResponse{
+				AdminConsoleMetadata: AdminConsoleMetadata{},
+				Name:                 "App Name",
+				Branding: MetadataResponseBranding{
+					Css: "body { background-color: red; }",
+					FontFaces: []string{
+						`@font-face { font-family: "MyFont"; src: url("data:font/woff; base64, woff-base64-data") format("woff"), url("data:font/woff2; base64, woff2-base64-data") format("woff2"); }`,
+					},
+				},
+				Namespace: util.PodNamespace,
+			},
+			httpStatus: http.StatusOK,
+		},
+		{
+			name: "application branding font files with empty sources",
+			funcPtr: func() (*v1.ConfigMap, types.Metadata, error) {
+
+				cm := `apiVersion: v1
+data:
+  application.yaml: |
+    apiVersion: kots.io/v1beta1
+    kind: Application
+    metadata:
+      name: app-slug
+    spec:
+      title: App Name
+      branding:
+        fontFiles:
+        - fontFamily: "MyFont"
+          sources:
+kind: ConfigMap
+metadata:
+  name: kotsadm-application-metadata
+`
+
+				// parse data as a kotskind
+				obj, _, err := scheme.Codecs.UniversalDeserializer().Decode([]byte(cm), nil, nil)
+				require.Nil(t, err)
+
+				return obj.(*v1.ConfigMap), types.Metadata{}, nil
+
+			},
+			expected: MetadataResponse{
+				AdminConsoleMetadata: AdminConsoleMetadata{},
+				Name:                 "App Name",
+				Branding: MetadataResponseBranding{
+					Css:       "",
+					FontFaces: []string{},
+				},
+				Namespace: util.PodNamespace,
+			},
+			httpStatus: http.StatusOK,
+		},
+		{
+			name: "application branding css and empty font files",
+			funcPtr: func() (*v1.ConfigMap, types.Metadata, error) {
+
+				cm := `apiVersion: v1
+data:
+  application.yaml: |
+    apiVersion: kots.io/v1beta1
+    kind: Application
+    metadata:
+      name: app-slug
+    spec:
+      title: App Name
+      branding:
+        css: "body { background-color: red; }"
+        fontFiles:
+kind: ConfigMap
+metadata:
+  name: kotsadm-application-metadata
+`
+
+				// parse data as a kotskind
+				obj, _, err := scheme.Codecs.UniversalDeserializer().Decode([]byte(cm), nil, nil)
+				require.Nil(t, err)
+
+				return obj.(*v1.ConfigMap), types.Metadata{}, nil
+
+			},
+			expected: MetadataResponse{
+				AdminConsoleMetadata: AdminConsoleMetadata{},
+				Name:                 "App Name",
+				Branding: MetadataResponseBranding{
+					Css:       "body { background-color: red; }",
+					FontFaces: []string{},
+				},
+				Namespace: util.PodNamespace,
+			},
+			httpStatus: http.StatusOK,
+		},
+		{
+			name: "empty application branding",
+			funcPtr: func() (*v1.ConfigMap, types.Metadata, error) {
+
+				cm := `apiVersion: v1
+data:
+  application.yaml: |
+    apiVersion: kots.io/v1beta1
+    kind: Application
+    metadata:
+      name: app-slug
+    spec:
+      title: App Name
+      branding:
+kind: ConfigMap
+metadata:
+  name: kotsadm-application-metadata
+`
+
+				// parse data as a kotskind
+				obj, _, err := scheme.Codecs.UniversalDeserializer().Decode([]byte(cm), nil, nil)
+				require.Nil(t, err)
+
+				return obj.(*v1.ConfigMap), types.Metadata{}, nil
+
+			},
+			expected: MetadataResponse{
+				AdminConsoleMetadata: AdminConsoleMetadata{},
+				Name:                 "App Name",
+				Branding: MetadataResponseBranding{
+					Css:       "",
+					FontFaces: []string{},
+				},
+				Namespace: util.PodNamespace,
+			},
+			httpStatus: http.StatusOK,
+		},
+		{
+			name: "invalid application branding",
+			funcPtr: func() (*v1.ConfigMap, types.Metadata, error) {
+
+				cm := `apiVersion: v1
+data:
+  application.yaml: |
+    apiVersion: kots.io/v1beta1
+    kind: Application
+    metadata:
+      name: app-slug
+    spec:
+      title: App Name
+      branding: "this is not a valid branding"
+kind: ConfigMap
+metadata:
+  name: kotsadm-application-metadata
+`
+
+				// parse data as a kotskind
+				obj, _, err := scheme.Codecs.UniversalDeserializer().Decode([]byte(cm), nil, nil)
+				require.Nil(t, err)
+
+				return obj.(*v1.ConfigMap), types.Metadata{}, nil
+
+			},
+			httpStatus: http.StatusInternalServerError,
 		},
 	}
 

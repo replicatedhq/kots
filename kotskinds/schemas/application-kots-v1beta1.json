@@ -36,7 +36,37 @@
           "type": "boolean"
         },
         "branding": {
-          "type": "string"
+          "type": "object",
+          "properties": {
+            "css": {
+              "type": "string"
+            },
+            "fontFiles": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "fontFamily": {
+                    "type": "string"
+                  },
+                  "sources": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "string"
+                        },
+                        "format": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
         },
         "consoleFeatureFlags": {
           "type": "array",

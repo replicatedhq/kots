@@ -203,6 +203,7 @@ class AppDetailPage extends Component {
   refetchData = () => {
     this.getApp();
     this.props.refetchAppsList();
+    this.props.refetchAppMetadata();
     this.checkIsVeleroInstalled();
   };
 
