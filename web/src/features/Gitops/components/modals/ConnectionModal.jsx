@@ -1,6 +1,6 @@
 import React from "react";
 import Modal from "react-modal";
-import Loader from "../../shared/Loader";
+import Loader from "../../../../components/shared/Loader";
 import { useHistory } from "react-router";
 
 const ConnectionModal = ({
@@ -12,7 +12,6 @@ const ConnectionModal = ({
   stepFrom,
   appSlug,
   getAppsList,
-  getGitops,
 }) => {
   const history = useHistory();
   switch (modalType) {
@@ -46,7 +45,6 @@ const ConnectionModal = ({
                   className="btn secondary blue u-marginRight--10"
                   onClick={async () => {
                     await getAppsList();
-                    await getGitops();
                     setOpen(false);
                     stepFrom("action", "provider");
                   }}
