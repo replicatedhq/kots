@@ -48,15 +48,7 @@ build-kotsadm: deps
 		--env enterprise
 
 run-unit-tests:
-	if yarn test:unit; then \
-		printf "\nUnit tests passed "; \
-	else \
-		printf "\nUnit tests failed. Try running locally: yarn test:unit"; \
-	fi
+	yarn test:unit
 
 run-prettier-eslint:
-	if yarn format; then \
-		printf "\nFormatting and linting passed "; \
-	else \
-		printf "\nFormatting or linting check failed. Try running locally: yarn format:fix "; \
-	fi
+	yarn format
