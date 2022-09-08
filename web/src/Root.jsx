@@ -381,12 +381,15 @@ class Root extends PureComponent {
           )}
           {this.state.appBranding?.fontFaces &&
             this.state.appBranding.fontFaces.map((fontFace, index) => (
-              <style rel="stylesheet" type="text/css" id={`kots-branding-font-face-${index}`}
-              key={`kots-branding-font-face-${index}`}>
+              <style
+                rel="stylesheet"
+                type="text/css"
+                id={`kots-branding-font-face-${index}`}
+                key={`kots-branding-font-face-${index}`}
+              >
                 {fontFace}
               </style>
-            ))
-          }
+            ))}
           {this.state.appBranding?.css && (
             <style rel="stylesheet" type="text/css" id="kots-branding-css">
               {this.state.appBranding.css}
