@@ -76,7 +76,7 @@ jobs:
       - name: Build web
         env:
           GIT_COMMIT: ${{ github.sha }}
-        run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C web deps build-kotsadm
+        run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C web deps run-prettier-eslint run-unit-tests build-kotsadm
 
       - name: Upload web artifact
         uses: actions/upload-artifact@v2
