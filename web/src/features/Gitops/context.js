@@ -160,15 +160,7 @@ const GitOpsProvider = ({ children }) => {
     setSelectedService(service);
   };
 
-  const getGitOpsInput = (
-    uri,
-    tempBranch,
-    tempPath,
-    format,
-    action,
-    newHttpPort,
-    newSshPort
-  ) => {
+  const getGitOpsInput = (uri, tempBranch, tempPath, format, action) => {
     let gitOpsInput = new Object();
     gitOpsInput.provider = provider;
     gitOpsInput.uri = uri;
