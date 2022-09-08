@@ -187,7 +187,7 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 	}
 
 	if app.RestoreInProgressName != "" {
-		return false, errors.Errorf("failed to deploy version %downstreams because app restore is already in progress", sequence)
+		return false, errors.Errorf("failed to deploy version %d because app restore is already in progress", sequence)
 	}
 
 	downstreams, err := o.store.GetDownstream(o.clusterID)
