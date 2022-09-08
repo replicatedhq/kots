@@ -52,3 +52,6 @@ run-unit-tests:
 
 run-prettier-eslint:
 	yarn format
+
+run-typecheck:
+	yarn test:typecheck
