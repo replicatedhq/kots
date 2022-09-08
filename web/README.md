@@ -26,3 +26,8 @@ yarn test:unit
 yarn format:fix
 ```
 
+### Typechecking
+```
+yarn test:typecheck
+```
+
