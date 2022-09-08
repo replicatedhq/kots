@@ -17,7 +17,6 @@
     "test:unit": "jest --no-cache",
     "test:unit:watch": "jest --no-cache --watch",
     "test:typecheck": "tsc --noEmit",
-    "test:typecheck:watch": "tsc --watch --noEmit",
     "test": "yarn concurrently -g 'yarn:test:*'",
     "start": "VENDOR_WEB_ENV=dev webpack-dev-server --env dev"
   },
