@@ -141,25 +141,6 @@ type OtherStoreProvider = {
   path?: undefined;
 };
 
-// type StoreProvider = {
-//   [K in StoreProviderName]?: {
-//     accessKeyID?: string;
-//     accessKeySecret?: string;
-//     clientId?: string;
-//     clientSecret?: string;
-//     cloudName?: string;
-//     endpoint?: string;
-//     jsonFile?: string;
-//     region?: string;
-//     resourceGroup?: string;
-//     secretAccessKey?: string;
-//     serviceAccount?: string;
-//     storageAccount?: string;
-//     subscriptionId?: string;
-//     tenantId?: string;
-//     useInstanceRole?: boolean;
-//   };
-// };
 type StoreMetadata = {
   aws?: undefined;
   gcp?: undefined;
