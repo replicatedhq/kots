@@ -10,4 +10,24 @@ kotsadm/kotsadm-web:alpha and replicated/kotsadm-web:alpha. These are the same, 
 
 When a git tag is made, tagged images (not :alpha) are created.
 
+## CI / CD checks
+
+The **build-web** job will fail if unit tests fail or there are formatting or linting issues. Run these command locally and resolve issues to pass CI checks.
+
+### Unit tests
+
+```
+yarn test:unit
+```
+
+### Linting and formatting
+
+```
+yarn format:fix
+```
+
+### Typechecking
+```
+yarn test:typecheck
+```
 

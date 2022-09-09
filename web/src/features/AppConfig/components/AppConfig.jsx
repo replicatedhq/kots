@@ -160,13 +160,16 @@ class AppConfig extends Component {
       configError: false,
     });
 
-    fetch(`${process.env.API_ENDPOINT}/app/${slug}/config/${sequence}${window.location.search}`, {
-      method: "GET",
-      headers: {
-        Authorization: Utilities.getToken(),
-        "Content-Type": "application/json",
-      },
-    })
+    fetch(
+      `${process.env.API_ENDPOINT}/app/${slug}/config/${sequence}${window.location.search}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+      }
+    )
       .then(async (response) => {
         if (!response.ok) {
           const res = await response.json();
@@ -372,16 +375,19 @@ class AppConfig extends Component {
     this.fetchController = new AbortController();
     const signal = this.fetchController.signal;
 
-    fetch(`${process.env.API_ENDPOINT}/app/${slug}/liveconfig${window.location.search}`, {
-      signal,
-      headers: {
-        Authorization: Utilities.getToken(),
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      method: "POST",
-      body: JSON.stringify({ configGroups: groups, sequence: sequence }),
-    })
+    fetch(
+      `${process.env.API_ENDPOINT}/app/${slug}/liveconfig${window.location.search}`,
+      {
+        signal,
+        headers: {
+          Authorization: Utilities.getToken(),
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        method: "POST",
+        body: JSON.stringify({ configGroups: groups, sequence: sequence }),
+      }
+    )
       .then(async (response) => {
         if (!response.ok) {
           if (response.status == 401) {

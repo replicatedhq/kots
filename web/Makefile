@@ -39,7 +39,7 @@ build-local: deps
 
 .PHONY: build-kotsadm
 build-kotsadm: KOTSADM_BUILD_VERSION = $(if ${GIT_TAG},${GIT_TAG},$(shell echo ${GIT_COMMIT} | cut -c1-7))
-build-kotsadm: deps test
+build-kotsadm: deps
 	KOTSADM_BUILD_VERSION=$(KOTSADM_BUILD_VERSION) \
 	node \
 		--max_old_space_size=6144 \
@@ -47,9 +47,11 @@ build-kotsadm: deps test
 		--config webpack.config.js \
 		--env enterprise
 
-.PHONY: lint
-test-unit-vendor-web: deps
+run-unit-tests:
+	yarn test:unit
+
+run-prettier-eslint:
 	yarn format
 
-.PHONY: test
-test: lint
+run-typecheck:
+	yarn test:typecheck

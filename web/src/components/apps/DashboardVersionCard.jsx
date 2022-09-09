@@ -414,7 +414,7 @@ class DashboardVersionCard extends React.Component {
     return (
       <div className="u-marginLeft--10">
         <Link
-          to={ url }
+          to={url}
           className="icon configEdit--icon u-cursor--pointer"
           data-tip="Edit config"
         />
