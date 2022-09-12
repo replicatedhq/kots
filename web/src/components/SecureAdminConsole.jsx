@@ -37,8 +37,6 @@ class SecureAdminConsole extends React.Component {
         this.setState({ authLoading: false });
         if (apps.length > 0) {
           this.props.history.replace(`/app/${apps[0].slug}`);
-        } else if (true) {
-          this.props.history.replace("install-with-helm");
         } else if (pendingApp?.slug && pendingApp?.needsRegistry) {
           this.props.history.replace(`/${pendingApp.slug}/airgap`);
         } else if (pendingApp?.slug && !pendingApp?.needsRegistry) {
