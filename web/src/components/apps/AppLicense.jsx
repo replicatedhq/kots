@@ -12,6 +12,7 @@ import {
   getLicenseExpiryDate,
 } from "../../utilities/utilities";
 import Loader from "../shared/Loader";
+import styled from "styled-components";
 
 import "@src/scss/components/apps/AppLicense.scss";
 
@@ -31,6 +32,7 @@ class AppLicense extends Component {
       changingLicense: false,
       licenseChangeMessage: "",
       licenseChangeMessageType: "info",
+      isViewingLicenseEntitlements: false,
     };
   }
 
@@ -50,7 +52,12 @@ class AppLicense extends Component {
         if (body === null) {
           this.setState({ appLicense: {} });
         } else if (body.success) {
-          this.setState({ appLicense: body.license });
+          console.log(body.license?.entitlements);
+          this.setState({
+            appLicense: body.license,
+            isViewingLicenseEntitlements:
+              size(body.license?.entitlements) <= 5 ? true : false,
+          });
         } else if (body.error) {
           console.log(body.error);
         }
@@ -258,6 +265,118 @@ class AppLicense extends Component {
     this.setState({ entitlementsToShow });
   };
 
+  getCustomLicenseFields = () => {
+    const {
+      appLicense,
+      loading,
+      message,
+      messageType,
+      showNextStepModal,
+      showLicenseChangeModal,
+      licenseChangeFile,
+      changingLicense,
+      licenseChangeMessage,
+      licenseChangeMessageType,
+    } = this.state;
+
+    return (
+      <CustomerLicenseFields className="flexWrap--wrap flex-auto flex1 u-marginTop--12">
+        {appLicense.entitlements?.map((entitlement, i) => {
+          const currEntitlement = this.state.entitlementsToShow.find(
+            (f) => f === entitlement.title
+          );
+          const isTextField = entitlement.valueType === "Text";
+          const isBooleanField = entitlement.valueType === "Boolean";
+          if (
+            entitlement.value.length > 30 &&
+            currEntitlement !== entitlement.title
+          ) {
+            return (
+              <CustomerLicenseField
+                key={entitlement.label}
+                className={`u-fontSize--small u-lineHeight--normal u-textColor--secondary u-fontWeight--medium u-marginRight--10 ${
+                  i !== 0 ? "u-marginLeft--5" : ""
+                }`}
+              >
+                {" "}
+                {entitlement.title}:{" "}
+                <span
+                  className={`u-fontWeight--bold ${
+                    isTextField && "u-fontFamily--monospace"
+                  }`}
+                >
+                  {" "}
+                  {entitlement.value.slice(0, 30) + "..."}{" "}
+                </span>
+                <ExpandButton
+                  onClick={() => this.toggleShowDetails(entitlement.title)}
+                >
+                  show
+                </ExpandButton>
+              </CustomerLicenseField>
+            );
+          } else if (
+            entitlement.value.length > 30 &&
+            currEntitlement === entitlement.title
+          ) {
+            return (
+              <CustomerLicenseField
+                key={entitlement.label}
+                className={`flex-column u-fontSize--small u-lineHeight--normal u-textColor--secondary u-fontWeight--medium u-marginRight--10 ${
+                  i !== 0 ? "u-marginLeft--5" : ""
+                }`}
+              >
+                {" "}
+                {entitlement.title}:{" "}
+                <span
+                  className={`u-fontWeight--bold ${
+                    isTextField && "u-fontFamily--monospace"
+                  }`}
+                >
+                  {" "}
+                  {entitlement.value}{" "}
+                </span>
+                <ExpandButton
+                  onClick={() => this.toggleHideDetails(entitlement.title)}
+                >
+                  hide
+                </ExpandButton>
+              </CustomerLicenseField>
+            );
+          } else {
+            return (
+              <span
+                key={entitlement.label}
+                className={`u-fontSize--small u-lineHeight--normal u-textColor--secondary u-fontWeight--medium u-marginRight--10 ${
+                  i !== 0 ? "u-marginLeft--5" : ""
+                }`}
+              >
+                {" "}
+                {entitlement.title}:{" "}
+                <span
+                  className={`u-fontWeight--bold ${
+                    isTextField && "u-fontFamily--monospace"
+                  }`}
+                >
+                  {" "}
+                  {isBooleanField
+                    ? entitlement.value.toString()
+                    : entitlement.value}{" "}
+                </span>
+              </span>
+            );
+          }
+        })}
+      </CustomerLicenseFields>
+    );
+  };
+
+  viewLicenseEntitlements = () => {
+    this.setState({
+      isViewingLicenseEntitlements: !this.state.isViewingLicenseEntitlements,
+    });
+  };
+
   render() {
     const {
       appLicense,
@@ -314,228 +433,170 @@ class AppLicense extends Component {
                 </div>
               )}
             </div>
-            <div className="LicenseDetails flex flex1 justifyContent--spaceBetween">
-              <div className="flex1 flex-column u-paddingRight--20">
-                <div className="flex flex-auto alignItems--center">
-                  <span className="u-fontSize--larger u-fontWeight--bold u-lineHeight--normal u-textColor--secondary">
-                    {" "}
-                    {appLicense.assignee}{" "}
-                  </span>
-                  {appLicense?.channelName && (
-                    <span className="channelTag flex-auto alignItems--center u-fontWeight--medium u-marginLeft--10">
+            <div className="LicenseDetails flex-row">
+              <div className=" flex flex1 justifyContent--spaceBetween">
+                <div className="flex1 flex-column u-paddingRight--20">
+                  <div className="flex flex-auto alignItems--center">
+                    <span className="u-fontSize--larger u-fontWeight--bold u-lineHeight--normal u-textColor--secondary">
                       {" "}
-                      {appLicense.channelName}{" "}
+                      {appLicense.assignee}{" "}
                     </span>
-                  )}
-                </div>
-                <div className="flex flex1 alignItems--center u-marginTop--5">
-                  <div
-                    className={`LicenseTypeTag ${appLicense?.licenseType} flex-auto flex-verticalCenter alignItems--center`}
-                  >
-                    <span
-                      className={`icon ${
-                        appLicense?.licenseType === "---"
-                          ? ""
-                          : appLicense?.licenseType
-                      }-icon`}
-                    ></span>
-                    {appLicense?.licenseType !== "---"
-                      ? `${Utilities.toTitleCase(
-                          appLicense.licenseType
-                        )} license`
-                      : `---`}
-                  </div>
-                  <p
-                    className={`u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-marginLeft--10 ${
-                      Utilities.checkIsDateExpired(expiresAt)
-                        ? "u-textColor--error"
-                        : "u-textColor--info"
-                    }`}
-                  >
-                    {expiresAt === "Never"
-                      ? "Does not expire"
-                      : Utilities.checkIsDateExpired(expiresAt)
-                      ? `Expired ${expiresAt}`
-                      : `Expires ${expiresAt}`}
-                  </p>
-                </div>
-                {size(appLicense?.entitlements) > 0 && (
-                  <div className="flexWrap--wrap flex-auto flex1 u-marginTop--12">
-                    {appLicense.entitlements?.map((entitlement, i) => {
-                      const currEntitlement =
-                        this.state.entitlementsToShow.find(
-                          (f) => f === entitlement.title
-                        );
-                      const isTextField = entitlement.valueType === "Text";
-                      const isBooleanField =
-                        entitlement.valueType === "Boolean";
-                      if (
-                        entitlement.value.length > 30 &&
-                        currEntitlement !== entitlement.title
-                      ) {
-                        return (
-                          <span
-                            key={entitlement.label}
-                            className={`u-fontSize--small u-lineHeight--normal u-textColor--secondary u-fontWeight--medium u-marginRight--10 ${
-                              i !== 0 ? "u-marginLeft--5" : ""
-                            }`}
-                          >
-                            {" "}
-                            {entitlement.title}:{" "}
-                            <span
-                              className={`u-fontWeight--bold ${
-                                isTextField && "u-fontFamily--monospace"
-                              }`}
-                            >
-                              {" "}
-                              {entitlement.value.slice(0, 30) + "..."}{" "}
-                            </span>
-                            <span
-                              className="icon clickable down-arrow-icon"
-                              onClick={() =>
-                                this.toggleShowDetails(entitlement.title)
-                              }
-                            />
-                          </span>
-                        );
-                      } else if (
-                        entitlement.value.length > 30 &&
-                        currEntitlement === entitlement.title
-                      ) {
-                        return (
-                          <span
-                            key={entitlement.label}
-                            className={`flex-column u-fontSize--small u-lineHeight--normal u-textColor--secondary u-fontWeight--medium u-marginRight--10 ${
-                              i !== 0 ? "u-marginLeft--5" : ""
-                            }`}
-                          >
-                            {" "}
-                            {entitlement.title}:{" "}
-                            <span
-                              className={`u-fontWeight--bold ${
-                                isTextField && "u-fontFamily--monospace"
-                              }`}
-                              style={{ whiteSpace: "pre" }}
-                            >
-                              {" "}
-                              {entitlement.value}{" "}
-                            </span>
-                            <span
-                              className="icon clickable up-arrow-icon u-marginTop--5 u-marginLeft--5"
-                              onClick={() =>
-                                this.toggleHideDetails(entitlement.title)
-                              }
-                            />
-                          </span>
-                        );
-                      } else {
-                        return (
-                          <span
-                            key={entitlement.label}
-                            className={`u-fontSize--small u-lineHeight--normal u-textColor--secondary u-fontWeight--medium u-marginRight--10 ${
-                              i !== 0 ? "u-marginLeft--5" : ""
-                            }`}
-                          >
-                            {" "}
-                            {entitlement.title}:{" "}
-                            <span
-                              className={`u-fontWeight--bold ${
-                                isTextField && "u-fontFamily--monospace"
-                              }`}
-                            >
-                              {" "}
-                              {isBooleanField
-                                ? entitlement.value.toString()
-                                : entitlement.value}{" "}
-                            </span>
-                          </span>
-                        );
-                      }
-                    })}
-                  </div>
-                )}
-                <div className="flexWrap--wrap flex alignItems--center entitlementItems">
-                  {appLicense?.isAirgapSupported ? (
-                    <span className="flex alignItems--center">
-                      <span className="icon licenseAirgapIcon" /> Airgap enabled{" "}
-                    </span>
-                  ) : null}
-                  {appLicense?.isSnapshotSupported ? (
-                    <span className="flex alignItems--center">
-                      <span className="icon licenseVeleroIcon" /> Snapshots
-                      enabled{" "}
-                    </span>
-                  ) : null}
-                  {appLicense?.isGitOpsSupported ? (
-                    <span className="flex alignItems--center">
-                      <span className="icon licenseGithubIcon" /> GitOps enabled{" "}
-                    </span>
-                  ) : null}
-                  {appLicense?.isIdentityServiceSupported ? (
-                    <span className="flex alignItems--center">
-                      <span className="icon licenseIdentityIcon" /> Identity
-                      Service enabled{" "}
-                    </span>
-                  ) : null}
-                  {appLicense?.isGeoaxisSupported ? (
-                    <span className="flex alignItems--center">
-                      <span className="icon licenseGeoaxisIcon" /> GEOAxIS
-                      Provider enabled{" "}
-                    </span>
-                  ) : null}
-                </div>
-              </div>
-              <div className="flex-column flex-auto alignItems--flexEnd justifyContent--center">
-                <div className="flex alignItems--center">
-                  {appLicense?.licenseType === "community" && (
-                    <button
-                      className="btn secondary blue u-marginRight--10"
-                      disabled={changingLicense}
-                      onClick={this.showLicenseChangeModal}
-                    >
-                      {changingLicense ? "Changing" : "Change license"}
-                    </button>
-                  )}
-                  {app.isAirgap ? (
-                    <Dropzone
-                      className="Dropzone-wrapper"
-                      accept={["application/x-yaml", ".yaml", ".yml"]}
-                      onDropAccepted={this.onDrop}
-                      multiple={false}
-                    >
-                      <button className="btn primary blue" disabled={loading}>
-                        {loading ? "Uploading" : "Upload license"}
-                      </button>
-                    </Dropzone>
-                  ) : (
-                    <button
-                      className="btn primary blue"
-                      disabled={loading}
-                      onClick={() => this.syncAppLicense("")}
-                    >
-                      {loading ? "Syncing" : "Sync license"}
-                    </button>
-                  )}
-                </div>
-                {message && (
-                  <p
-                    className={classNames(
-                      "u-fontWeight--bold u-fontSize--small u-marginTop--10",
-                      {
-                        "u-textColor--error": messageType === "error",
-                        "u-textColor--primary": messageType === "info",
-                      }
+                    {appLicense?.channelName && (
+                      <span className="channelTag flex-auto alignItems--center u-fontWeight--medium u-marginLeft--10">
+                        {" "}
+                        {appLicense.channelName}{" "}
+                      </span>
                     )}
-                  >
-                    {message}
-                  </p>
-                )}
-                {appLicense?.lastSyncedAt && (
-                  <p className="u-fontWeight--bold u-fontSize--small u-textColor--header u-lineHeight--default u-marginTop--10">
-                    Last synced {Utilities.dateFromNow(appLicense.lastSyncedAt)}
-                  </p>
-                )}
+                  </div>
+                  <div className="flex flex1 alignItems--center u-marginTop--5">
+                    <div
+                      className={`LicenseTypeTag ${appLicense?.licenseType} flex-auto flex-verticalCenter alignItems--center`}
+                    >
+                      <span
+                        className={`icon ${
+                          appLicense?.licenseType === "---"
+                            ? ""
+                            : appLicense?.licenseType
+                        }-icon`}
+                      ></span>
+                      {appLicense?.licenseType !== "---"
+                        ? `${Utilities.toTitleCase(
+                            appLicense.licenseType
+                          )} license`
+                        : `---`}
+                    </div>
+                    <p
+                      className={`u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-marginLeft--10 ${
+                        Utilities.checkIsDateExpired(expiresAt)
+                          ? "u-textColor--error"
+                          : "u-textColor--info"
+                      }`}
+                    >
+                      {expiresAt === "Never"
+                        ? "Does not expire"
+                        : Utilities.checkIsDateExpired(expiresAt)
+                        ? `Expired ${expiresAt}`
+                        : `Expires ${expiresAt}`}
+                    </p>
+                  </div>
+
+                  <div className="flexWrap--wrap flex alignItems--center entitlementItems">
+                    {appLicense?.isAirgapSupported ? (
+                      <span className="flex alignItems--center">
+                        <span className="icon licenseAirgapIcon" /> Airgap
+                        enabled{" "}
+                      </span>
+                    ) : null}
+                    {appLicense?.isSnapshotSupported ? (
+                      <span className="flex alignItems--center">
+                        <span className="icon licenseVeleroIcon" /> Snapshots
+                        enabled{" "}
+                      </span>
+                    ) : null}
+                    {appLicense?.isGitOpsSupported ? (
+                      <span className="flex alignItems--center">
+                        <span className="icon licenseGithubIcon" /> GitOps
+                        enabled{" "}
+                      </span>
+                    ) : null}
+                    {appLicense?.isIdentityServiceSupported ? (
+                      <span className="flex alignItems--center">
+                        <span className="icon licenseIdentityIcon" /> Identity
+                        Service enabled{" "}
+                      </span>
+                    ) : null}
+                    {appLicense?.isGeoaxisSupported ? (
+                      <span className="flex alignItems--center">
+                        <span className="icon licenseGeoaxisIcon" /> GEOAxIS
+                        Provider enabled{" "}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+                <div className="flex-column flex-auto alignItems--flexEnd justifyContent--center">
+                  <div className="flex alignItems--center">
+                    {appLicense?.licenseType === "community" && (
+                      <button
+                        className="btn secondary blue u-marginRight--10"
+                        disabled={changingLicense}
+                        onClick={this.showLicenseChangeModal}
+                      >
+                        {changingLicense ? "Changing" : "Change license"}
+                      </button>
+                    )}
+                    {app.isAirgap ? (
+                      <Dropzone
+                        className="Dropzone-wrapper"
+                        accept={["application/x-yaml", ".yaml", ".yml"]}
+                        onDropAccepted={this.onDrop}
+                        multiple={false}
+                      >
+                        <button className="btn primary blue" disabled={loading}>
+                          {loading ? "Uploading" : "Upload license"}
+                        </button>
+                      </Dropzone>
+                    ) : (
+                      <button
+                        className="btn primary blue"
+                        disabled={loading}
+                        onClick={() => this.syncAppLicense("")}
+                      >
+                        {loading ? "Syncing" : "Sync license"}
+                      </button>
+                    )}
+                  </div>
+                  {message && (
+                    <p
+                      className={classNames(
+                        "u-fontWeight--bold u-fontSize--small u-marginTop--10",
+                        {
+                          "u-textColor--error": messageType === "error",
+                          "u-textColor--primary": messageType === "info",
+                        }
+                      )}
+                    >
+                      {message}
+                    </p>
+                  )}
+                  {appLicense?.lastSyncedAt && (
+                    <p className="u-fontWeight--bold u-fontSize--small u-textColor--header u-lineHeight--default u-marginTop--10">
+                      Last synced{" "}
+                      {Utilities.dateFromNow(appLicense.lastSyncedAt)}
+                    </p>
+                  )}
+                </div>
               </div>
+              {size(appLicense?.entitlements) > 5 && (
+                <span
+                  className="flexWrap--wrap flex u-fontSize--small u-lineHeight--normal u-color--doveGray u-fontWeight--medium u-marginRight--normal alignItems--center"
+                  style={{ margin: "10px 0" }}
+                >
+                  <span
+                    className={`u-fontWeight--bold`}
+                    style={{ whiteSpace: "pre" }}
+                  >
+                    View {size(appLicense?.entitlements)} license entitlements
+                  </span>
+                  <span
+                    className={`icon clickable ${
+                      this.state.isViewingLicenseEntitlements
+                        ? "up-arrow-icon"
+                        : "down-arrow-icon"
+                    } u-marginLeft--5`}
+                    style={{
+                      marginBottom:
+                        this.state.isViewingLicenseEntitlements && "4px",
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      this.viewLicenseEntitlements();
+                    }}
+                  />
+                </span>
+              )}
+
+              {this.state.isViewingLicenseEntitlements &&
+                this.getCustomLicenseFields()}
             </div>
           </div>
         ) : (
@@ -710,3 +771,27 @@ class AppLicense extends Component {
 }
 
 export default AppLicense;
+
+const CustomerLicenseFields = styled.div`
+  background: #f5f8f9;
+  border-radius: 6px;
+  border: 1px solid #bccacd;
+  padding: 10px;
+  line-height: 25px;
+`;
+
+const CustomerLicenseField = styled.span`
+  margin-right: 15px;
+  display: block;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+`;
+
+const ExpandButton = styled.button`
+  background: none;
+  border: none;
+  color: #007cbb;
+  cursor: pointer;
+  font-size: 12px;
+  padding-left: 0;
+`;
