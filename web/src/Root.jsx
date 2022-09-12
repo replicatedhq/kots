@@ -22,6 +22,7 @@ import RestoreCompleted from "./components/RestoreCompleted";
 import Access from "./components/identity/Access";
 import SnapshotsWrapper from "./components/snapshots/SnapshotsWrapper";
 import { QueryClient, QueryClientProvider } from "react-query";
+import { InstallWithHelm } from "@features/AddNewApp/components/InstallWithHelm";
 
 import Footer from "./components/shared/Footer";
 import NavBar from "./components/shared/NavBar";
@@ -491,6 +492,11 @@ class Root extends PureComponent {
                       onUploadSuccess={this.getAppsList}
                     />
                   )}
+                />
+                <ProtectedRoute
+                  exact
+                  path="/install-with-helm"
+                  render={() => <InstallWithHelm />}
                 />
                 <ProtectedRoute
                   exact
