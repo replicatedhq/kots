@@ -15,7 +15,6 @@ type HelmApp struct {
 	IsConfigurable    bool
 	ChartPath         string
 	CreationTimestamp time.Time
-
 	// TODO: This is values the user is editing on the Config screen. This is a temporary solution while we figure out the UX.
 	TempConfigValues map[string]kotsv1beta1.ConfigValue
 }

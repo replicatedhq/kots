@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/blang/semver"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -86,75 +85,6 @@ func (h *Handler) GetPendingApp(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, pendingAppResponse)
 }
 
-func responseAppFromHelmApp(helmApp *apptypes.HelmApp) (*types.HelmResponseApp, error) {
-	unixIntValue, err := strconv.ParseInt(helmApp.Labels["modifiedAt"], 10, 64)
-	var updatedTs time.Time
-	if err == nil {
-		updatedTs = time.Unix(unixIntValue, 0)
-	}
-
-	sv, err := semver.ParseTolerant(helmApp.Release.Chart.Metadata.Version)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse release version into semver")
-	}
-
-	iconURI := "https://cncf-branding.netlify.app/img/projects/helm/horizontal/color/helm-horizontal-color.png"
-	// use chart icon if it exists, if not use default helm icon
-	if helmApp.Release.Chart.Metadata.Icon != "" {
-		iconURI = helmApp.Release.Chart.Metadata.Icon
-	}
-
-	revision, err := strconv.Atoi(helmApp.Labels["version"])
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse release revision number")
-	}
-
-	downstreamVersion := &downstreamtypes.DownstreamVersion{
-		VersionLabel:   helmApp.Release.Chart.Metadata.Version,
-		Semver:         &sv,
-		Sequence:       int64(revision),
-		ParentSequence: int64(revision),
-		Status:         storetypes.VersionDeployed,
-		CreatedOn:      &helmApp.Release.Info.FirstDeployed.Time,
-		DeployedAt:     &helmApp.Release.Info.LastDeployed.Time,
-	}
-
-	var username, password string
-	if replVals := helmApp.Release.Chart.Values["replicated"].(map[string]interface{}); replVals != nil {
-		username, _ = replVals["username"].(string)
-		password, _ = replVals["license_id"].(string)
-	}
-
-	chartUpdates := helm.GetCachedUpdates(helmApp.ChartPath)
-	pendingVersions := make([]*downstreamtypes.DownstreamVersion, len(chartUpdates), len(chartUpdates))
-	nextSequence := revision + 1
-	for i := len(chartUpdates) - 1; i >= 0; i-- {
-		pendingVersions[i] = helmUpdateToDownsreamVersion(chartUpdates[i], int64(nextSequence))
-		nextSequence = nextSequence + 1
-	}
-
-	return &types.HelmResponseApp{
-		ResponseApp: types.ResponseApp{
-			Name:           helmApp.Labels["name"],
-			Namespace:      helmApp.Namespace,
-			Slug:           helmApp.Labels["name"],
-			CreatedAt:      helmApp.CreationTimestamp,
-			IsConfigurable: helmApp.IsConfigurable,
-			UpdatedAt:      &updatedTs,
-			IconURI:        iconURI,
-			Downstream: types.ResponseDownstream{
-				CurrentVersion:  downstreamVersion,
-				PendingVersions: pendingVersions,
-			},
-		},
-		Credentials: types.Credentials{
-			Username: username,
-			Password: password,
-		},
-		ChartPath: helmApp.ChartPath,
-	}, nil
-}
-
 func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 	sess := session.ContextGetSession(r)
 	if sess == nil {
@@ -173,7 +103,7 @@ func (h *Handler) ListApps(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			app, err := responseAppFromHelmApp(release)
+			app, err := helm.ResponseAppFromHelmApp(release)
 			if err != nil {
 				logger.Error(errors.Wrap(err, "failed to convert release to app"))
 				w.WriteHeader(http.StatusInternalServerError)
@@ -259,7 +189,7 @@ func (h *Handler) GetApp(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		app, err := responseAppFromHelmApp(release)
+		app, err := helm.ResponseAppFromHelmApp(release)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to convert release to app"))
 			w.WriteHeader(http.StatusInternalServerError)
@@ -475,7 +405,7 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 		newVersions := make([]*downstreamtypes.DownstreamVersion, len(chartUpdates), len(chartUpdates))
 		nextUpdateSequence := lastInstalledSequence + 1
 		for i := len(chartUpdates) - 1; i >= 0; i-- {
-			newVersions[i] = helmUpdateToDownsreamVersion(chartUpdates[i], int64(nextUpdateSequence))
+			newVersions[i] = helm.HelmUpdateToDownsreamVersion(chartUpdates[i], int64(nextUpdateSequence))
 			nextUpdateSequence = nextUpdateSequence + 1
 		}
 
@@ -793,23 +723,6 @@ func (h *Handler) GetAutomatedInstallStatus(w http.ResponseWriter, r *http.Reque
 	}
 
 	JSON(w, http.StatusOK, response)
-}
-
-func helmUpdateToDownsreamVersion(update helm.ChartUpdate, sequence int64) *downstreamtypes.DownstreamVersion {
-	now := time.Now()
-	return &downstreamtypes.DownstreamVersion{
-		VersionLabel:       update.Tag,
-		Semver:             &update.Version,
-		UpdateCursor:       update.Tag,
-		Sequence:           sequence,
-		ParentSequence:     sequence,
-		CreatedOn:          &now,              // TODO: implement
-		UpstreamReleasedAt: &now,              // TODO: implement
-		IsDeployable:       false,             // TODO: implement
-		NonDeployableCause: "not implemented", // TODO: implement
-		Source:             "Upstream Update",
-		Status:             storetypes.VersionPending,
-	}
 }
 
 func helmReleaseToDownsreamVersion(installedRelease *helm.InstalledRelease) *downstreamtypes.DownstreamVersion {

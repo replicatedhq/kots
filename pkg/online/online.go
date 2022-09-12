@@ -67,7 +67,7 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 			if err := store.GetStore().SetAppInstallState(opts.PendingApp.ID, "installed"); err != nil {
 				logger.Error(errors.Wrap(err, "failed to set app status to installed"))
 			}
-			if err := updatechecker.Configure(opts.PendingApp.ID); err != nil {
+			if err := updatechecker.Configure(opts.PendingApp); err != nil {
 				logger.Error(errors.Wrap(err, "failed to configure update checker"))
 			}
 		} else {
