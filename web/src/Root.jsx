@@ -496,9 +496,7 @@ class Root extends PureComponent {
                 <ProtectedRoute
                   exact
                   path="/install-with-helm"
-                  render={() => (
-                    <InstallWithHelm />
-                  )}
+                  render={() => <InstallWithHelm />}
                 />
                 <ProtectedRoute
                   exact

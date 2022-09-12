@@ -13,18 +13,29 @@ function InstallWithHelm() {
               <p className="u-fontSize--header2 u-textColor--secondary u-fontWeight--bold u-textAlign--center u-marginTop--10 u-paddingTop--5">
                 Install a Helm chart
               </p>
-              <p className="u-fontSize--normal u-textColor--accent u-fontWeight--medium u-lineHeight--normal u-marginTop--20 u-marginRight--30 u-marginLeft--30" style={{ maxWidth: "300px"}}>
-                In order to use the admin console you need to install a Helm chart.
+              <p
+                className="u-fontSize--normal u-textColor--accent u-fontWeight--medium u-lineHeight--normal u-marginTop--20 u-marginRight--30 u-marginLeft--30"
+                style={{ maxWidth: "300px" }}
+              >
+                In order to use the admin console you need to install a Helm
+                chart.
               </p>
             </div>
           </div>
         </div>
       </div>
       <p className="u-fontSize--small u-textColor--accent u-fontWeight--normal u-lineHeight--normal u-marginTop--10">
-        To learn more, <a href="https://docs.replicated.com/vendor/helm-install" target="_blank">read the documentation</a> on supporting Helm CLI installations.
+        To learn more,{" "}
+        <a
+          href="https://docs.replicated.com/vendor/helm-install"
+          target="_blank"
+        >
+          read the documentation
+        </a>{" "}
+        on supporting Helm CLI installations.
       </p>
-    </div >
-  )
+    </div>
+  );
 }
 
 export { InstallWithHelm };
