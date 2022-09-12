@@ -288,7 +288,7 @@ class AppLicense extends Component {
           const isTextField = entitlement.valueType === "Text";
           const isBooleanField = entitlement.valueType === "Boolean";
           if (
-            entitlement.value.length > 30 &&
+            entitlement.value.length > 100 &&
             currEntitlement !== entitlement.title
           ) {
             return (
@@ -306,7 +306,7 @@ class AppLicense extends Component {
                   }`}
                 >
                   {" "}
-                  {entitlement.value.slice(0, 30) + "..."}{" "}
+                  {entitlement.value.slice(0, 100) + "..."}{" "}
                 </span>
                 <ExpandButton
                   onClick={() => this.toggleShowDetails(entitlement.title)}
@@ -316,7 +316,7 @@ class AppLicense extends Component {
               </CustomerLicenseField>
             );
           } else if (
-            entitlement.value.length > 30 &&
+            entitlement.value.length > 100 &&
             currEntitlement === entitlement.title
           ) {
             return (
