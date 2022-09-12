@@ -32,13 +32,13 @@ type CACertificate = {
 };
 type State = {
   azureBucket?: string;
-  azureClientId: string;
-  azureClientSecret: string;
+  azureClientId?: string;
+  azureClientSecret?: string;
   azurePath?: string;
-  azureResourceGroupName: string;
-  azureStorageAccountId: string;
-  azureSubscriptionId: string;
-  azureTenantId: string;
+  azureResourceGroupName?: string;
+  azureStorageAccountId?: string;
+  azureSubscriptionId?: string;
+  azureTenantId?: string;
   caCertificate?: CACertificate;
   configureFileSystemProviderErrorMsg?: string;
   configureFileSystemProviderNamespace?: string;
@@ -49,24 +49,24 @@ type State = {
   fileSystemNFSServer?: string;
   fileSystemType?: string;
   gcsBucket?: string;
-  gcsJsonFile: string;
+  gcsJsonFile?: string;
   gcsPath?: string;
-  gcsServiceAccount: string;
-  gcsUseIam: boolean;
+  gcsServiceAccount?: string;
+  gcsUseIam?: boolean;
   resetFileSystemWarningMessage?: string;
   s3bucket?: string;
   s3CompatibleBucket?: string;
-  s3CompatibleEndpoint: string;
+  s3CompatibleEndpoint?: string;
   s3CompatibleFieldErrors?: { endpoint?: string };
-  s3CompatibleKeyId: string;
-  s3CompatibleKeySecret: string;
+  s3CompatibleKeyId?: string;
+  s3CompatibleKeySecret?: string;
   s3CompatiblePath?: string;
-  s3CompatibleRegion: string;
-  s3KeyId: string;
-  s3KeySecret: string;
+  s3CompatibleRegion?: string;
+  s3KeyId?: string;
+  s3KeySecret?: string;
   s3Path?: string;
-  s3Region: string;
-  selectedAzureCloudName: ValueType;
+  s3Region?: string;
+  selectedAzureCloudName?: ValueType;
   selectedDestination?: ValueType & {};
   showCACertificateField?: boolean;
   showConfigureFileSystemProviderModal?: boolean;
@@ -77,87 +77,35 @@ type State = {
   tmpFileSystemNFSServer?: string;
   tmpFileSystemType?: string;
   updatingSettings?: boolean;
-  useIamAws: boolean;
+  useIamAws?: boolean;
 };
 
 type StoreProviderName = "aws" | "gcp" | "azure" | "other";
-
-type AWSStoreProvider = {
-  aws: {
-    region: string;
-    accessKeyID: string;
-    secretAccessKey: string;
-    useInstanceRole: boolean;
-  };
-  gcp?: undefined;
-  azure?: undefined;
-  other?: undefined;
-  path?: string;
-  bucket?: string;
-};
-
-type GCPStoreProvider = {
-  gcp: {
-    jsonFile: string;
-    serviceAccount: string;
-    useInstanceRole: boolean;
-  };
-  bucket?: undefined;
-  aws?: undefined;
-  azure?: undefined;
-  other?: undefined;
-  path?: undefined;
-};
-
-type AzureStoreProvider = {
-  azure: {
-    clientId: string;
-    clientSecret: string;
-    cloudName: string;
-    resourceGroup: string;
-    storageAccount: string;
-    subscriptionId: string;
-    tenantId: string;
-  };
-  bucket?: undefined;
-  aws?: undefined;
-  gcp?: undefined;
-  other?: undefined;
-  path?: undefined;
-};
-
-type OtherStoreProvider = {
-  other: {
-    region: string;
-    accessKeyID: string;
+type StoreProvider = {
+  [K in StoreProviderName]?: {
+    accessKeyID?: string;
     accessKeySecret?: string;
-    secretAccessKey: string;
-    endpoint: string;
+    clientId?: string;
+    clientSecret?: string;
+    cloudName?: string;
+    endpoint?: string;
+    jsonFile?: string;
+    region?: string;
+    resourceGroup?: string;
+    secretAccessKey?: string;
+    serviceAccount?: string;
+    storageAccount?: string;
+    subscriptionId?: string;
+    tenantId?: string;
+    useInstanceRole?: boolean;
   };
-  bucket?: undefined;
-  aws?: undefined;
-  gcp?: undefined;
-  azure?: undefined;
-  path?: undefined;
 };
-
 type StoreMetadata = {
-  aws?: undefined;
-  gcp?: undefined;
-  azure?: undefined;
-  other?: undefined;
   bucket?: string;
   internal?: boolean;
   fileSystem?: string;
   path?: string;
 };
-
-type StoreProvider =
-  | StoreMetadata
-  | AWSStoreProvider
-  | GCPStoreProvider
-  | AzureStoreProvider
-  | OtherStoreProvider;
 
 type FileSystemConfig = {
   nfs?: {
@@ -207,7 +155,7 @@ type Props = RouteComponentProps & {
     isKurl?: boolean;
     isMinioDisabled?: boolean;
     isVeleroRunning?: boolean;
-    store: StoreProvider;
+    store: StoreProvider & StoreMetadata;
     veleroPlugins?: string[];
     veleroVersion?: string;
   };
@@ -313,12 +261,6 @@ class SnapshotStorageDestination extends Component<Props, State> {
     };
   }
 
-  static defaultProps = {
-    snapshotSettings: {
-      store: {},
-    },
-  };
-
   componentDidMount() {
     if (this.props.snapshotSettings && !this.props.checkForVeleroAndRestic) {
       this.setFields();
@@ -359,19 +301,19 @@ class SnapshotStorageDestination extends Component<Props, State> {
 
     const { snapshotSettings } = this.props;
 
-    if (provider === "aws" && snapshotSettings.store.aws) {
+    if (provider === "aws") {
       return (
-        snapshotSettings.store.aws.region !== s3Region ||
-        snapshotSettings.store.aws.accessKeyID !== s3KeyId ||
-        snapshotSettings.store.aws.secretAccessKey !== s3KeySecret ||
-        snapshotSettings.store.aws.useInstanceRole !== useIamAws
+        snapshotSettings?.store?.aws?.region !== s3Region ||
+        snapshotSettings?.store?.aws?.accessKeyID !== s3KeyId ||
+        snapshotSettings?.store?.aws?.secretAccessKey !== s3KeySecret ||
+        snapshotSettings?.store?.aws?.useInstanceRole !== useIamAws
       );
     }
-    if (provider === "gcp" && snapshotSettings.store.gcp) {
+    if (provider === "gcp") {
       return (
-        snapshotSettings.store.gcp.useInstanceRole !== gcsUseIam ||
-        snapshotSettings.store.gcp.serviceAccount !== gcsServiceAccount ||
-        snapshotSettings.store.gcp.jsonFile !== gcsJsonFile
+        snapshotSettings?.store?.gcp?.useInstanceRole !== gcsUseIam ||
+        snapshotSettings?.store?.gcp?.serviceAccount !== gcsServiceAccount ||
+        snapshotSettings?.store?.gcp?.jsonFile !== gcsJsonFile
       );
     }
     if (provider === "azure") {
@@ -386,7 +328,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
         snapshotSettings?.store?.azure?.clientId !== azureClientId ||
         snapshotSettings?.store?.azure?.clientSecret !== azureClientSecret ||
         snapshotSettings?.store?.azure?.cloudName !==
-          selectedAzureCloudName.value
+          selectedAzureCloudName?.value
       );
     }
     if (provider === "other") {
@@ -426,7 +368,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
               tenantId: this.state.azureTenantId,
               clientId: this.state.azureClientId,
               clientSecret: this.state.azureClientSecret,
-              cloudName: this.state.selectedAzureCloudName.value || "",
+              cloudName: this.state?.selectedAzureCloudName?.value,
             },
           };
         case "gcp":
@@ -467,12 +409,12 @@ class SnapshotStorageDestination extends Component<Props, State> {
       return this.setState({
         determiningDestination: false,
         selectedDestination: find(DESTINATIONS, ["value", "aws"]),
-        s3bucket: store?.bucket || "",
-        s3Region: store.aws.region,
+        s3bucket: store.bucket,
+        s3Region: store?.aws?.region,
         s3Path: store.path,
-        useIamAws: store.aws.useInstanceRole,
-        s3KeyId: store.aws.accessKeyID || "",
-        s3KeySecret: store.aws.secretAccessKey || "",
+        useIamAws: store?.aws?.useInstanceRole,
+        s3KeyId: store?.aws?.accessKeyID || "",
+        s3KeySecret: store?.aws?.secretAccessKey || "",
       });
     }
 
@@ -491,10 +433,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
         selectedAzureCloudName: find(AZURE_CLOUD_NAMES, [
           "value",
           store?.azure?.cloudName,
-        ]) || {
-          value: "AzurePublicCloud",
-          label: "Public",
-        },
+        ]),
       });
     }
 
@@ -517,7 +456,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
         s3CompatibleBucket: store.bucket,
         s3CompatiblePath: store.path,
         s3CompatibleKeyId: store?.other?.accessKeyID,
-        s3CompatibleKeySecret: store?.other?.accessKeySecret || "",
+        s3CompatibleKeySecret: store?.other?.accessKeySecret,
         s3CompatibleEndpoint: store?.other?.endpoint,
         s3CompatibleRegion: store?.other?.region,
       });
@@ -557,16 +496,12 @@ class SnapshotStorageDestination extends Component<Props, State> {
     field: FieldName,
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
-    let nextState: {
-      [K in FieldName]?: string | boolean;
-    } = {};
+    let nextState: State = {};
     if (field === "useIamAws" || field === "gcsUseIam") {
       nextState[field] = e.target.checked;
     } else {
       nextState[field] = e.target.value;
     }
-    // TODO: make this more explicit
-    // @ts-ignore
     this.setState(nextState);
   };
 
@@ -593,7 +528,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
   };
 
   onGcsEditorChange = (value: string | undefined) => {
-    this.setState({ gcsJsonFile: value || "" });
+    this.setState({ gcsJsonFile: value });
   };
 
   onSubmit = async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
