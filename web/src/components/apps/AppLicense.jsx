@@ -460,7 +460,7 @@ class AppLicense extends Component {
                   )}
                 </div>
               </div>
-              {size(appLicense?.entitlements) > 5 && (
+              {size(appLicense?.entitlements) >= 5 && (
                 <span
                   className="flexWrap--wrap flex u-fontSize--small u-lineHeight--normal u-color--doveGray u-fontWeight--medium u-marginRight--normal alignItems--center"
                   style={{ margin: "10px 0" }}
