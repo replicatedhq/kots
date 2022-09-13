@@ -37,11 +37,11 @@ func Test_makeInstallationImages(t *testing.T) {
 					IsPrivate: true,
 				},
 				{
-					Image:     "registry.replicated.com/appslug/taggedimage@sha256:25dedae0aceb6b4fe5837a0acbacc6580453717f126a095aa05a3c6fcea14dd4",
+					Image:     "registry.replicated.com/appslug/digestimage@sha256:25dedae0aceb6b4fe5837a0acbacc6580453717f126a095aa05a3c6fcea14dd4",
 					IsPrivate: true,
 				},
 				{
-					Image:     "registry.replicated.com/appslug/taggedimage@sha256:25dedae0aceb6b4fe5837a0acbacc6580453717f126a095aa05a3c6fcea14dd4",
+					Image:     "registry.replicated.com/appslug/taganddigestimage@sha256:25dedae0aceb6b4fe5837a0acbacc6580453717f126a095aa05a3c6fcea14dd4",
 					IsPrivate: true,
 				},
 			},
