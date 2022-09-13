@@ -98,8 +98,8 @@ export default class AutomaticUpdatesModal extends React.Component {
       selectedAutoDeploy,
     };
 
-    if (this.state.updateCheckerSpec === ""){
-      this.state.updateCheckerSpec = "@default"
+    if (this.state.updateCheckerSpec === "") {
+      this.state.updateCheckerSpec = "@default";
     }
   }
 
@@ -206,21 +206,25 @@ export default class AutomaticUpdatesModal extends React.Component {
       configureAutomaticUpdatesErr,
     } = this.state;
     const humanReadableCron = this.getReadableCronExpression(updateCheckerSpec);
-    let configureText = <p className="u-fontSize--normal u-lineHeight--normal u-textColor--bodyCopy u-marginBottom--20">
-    Configure how often you would like to automatically check for
-    updates, and whether updates will be deployed automatically.
-  </p>;
-    if (isHelmManaged){
-      configureText = <p className="u-fontSize--normal u-lineHeight--normal u-textColor--bodyCopy u-marginBottom--20">
-      Configure how often you would like to automatically check for
-      updates.
-    </p>;
-    }else if (gitopsIsConnected){
-      configureText =  <p className="u-fontSize--normal u-lineHeight--normal u-textColor--bodyCopy u-marginBottom--20">
-      Configure how often you would like to automatically check for
-      updates.
-      <br />A commit will be made if an update was found.
-    </p>;
+    let configureText = (
+      <p className="u-fontSize--normal u-lineHeight--normal u-textColor--bodyCopy u-marginBottom--20">
+        Configure how often you would like to automatically check for updates,
+        and whether updates will be deployed automatically.
+      </p>
+    );
+    if (isHelmManaged) {
+      configureText = (
+        <p className="u-fontSize--normal u-lineHeight--normal u-textColor--bodyCopy u-marginBottom--20">
+          Configure how often you would like to automatically check for updates.
+        </p>
+      );
+    } else if (gitopsIsConnected) {
+      configureText = (
+        <p className="u-fontSize--normal u-lineHeight--normal u-textColor--bodyCopy u-marginBottom--20">
+          Configure how often you would like to automatically check for updates.
+          <br />A commit will be made if an update was found.
+        </p>
+      );
     }
     return (
       <Modal
