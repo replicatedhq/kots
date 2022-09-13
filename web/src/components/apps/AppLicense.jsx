@@ -15,6 +15,7 @@ import Loader from "../shared/Loader";
 import styled from "styled-components";
 
 import "@src/scss/components/apps/AppLicense.scss";
+import LicenseFields from "./LicenseFields";
 
 class AppLicense extends Component {
   constructor(props) {
@@ -52,11 +53,10 @@ class AppLicense extends Component {
         if (body === null) {
           this.setState({ appLicense: {} });
         } else if (body.success) {
-          console.log(body.license?.entitlements);
           this.setState({
             appLicense: body.license,
             isViewingLicenseEntitlements:
-              size(body.license?.entitlements) <= 5 ? true : false,
+              size(body.license?.entitlements) <= 5 ? false : true,
           });
         } else if (body.error) {
           console.log(body.error);
@@ -263,106 +263,6 @@ class AppLicense extends Component {
     const index = this.state.entitlementsToShow.indexOf(entitlement);
     entitlementsToShow.splice(index, 1);
     this.setState({ entitlementsToShow });
-  };
-
-  getCustomLicenseFields = () => {
-    const {
-      appLicense,
-      loading,
-      message,
-      messageType,
-      showNextStepModal,
-      showLicenseChangeModal,
-      licenseChangeFile,
-      changingLicense,
-      licenseChangeMessage,
-      licenseChangeMessageType,
-    } = this.state;
-
-    return (
-      <CustomerLicenseFields className="flexWrap--wrap flex-auto flex1 u-marginTop--12">
-        {appLicense.entitlements?.map((entitlement, i) => {
-          const currEntitlement = this.state.entitlementsToShow.find(
-            (f) => f === entitlement.title
-          );
-          const isTextField = entitlement.valueType === "Text";
-          const isBooleanField = entitlement.valueType === "Boolean";
-          if (
-            entitlement.value.length > 100 &&
-            currEntitlement !== entitlement.title
-          ) {
-            return (
-              <CustomerLicenseField
-                key={entitlement.label}
-                className={`u-fontSize--small u-lineHeight--normal u-textColor--secondary u-fontWeight--medium u-marginRight--10 u-marginLeft--5`}
-              >
-                {" "}
-                {entitlement.title}:{" "}
-                <span
-                  className={`u-fontWeight--bold ${
-                    isTextField && "u-fontFamily--monospace"
-                  }`}
-                >
-                  {" "}
-                  {entitlement.value.slice(0, 100) + "..."}{" "}
-                </span>
-                <ExpandButton
-                  onClick={() => this.toggleShowDetails(entitlement.title)}
-                >
-                  show
-                </ExpandButton>
-              </CustomerLicenseField>
-            );
-          } else if (
-            entitlement.value.length > 100 &&
-            currEntitlement === entitlement.title
-          ) {
-            return (
-              <CustomerLicenseField
-                key={entitlement.label}
-                className={`flex-column u-fontSize--small u-lineHeight--normal u-textColor--secondary u-fontWeight--medium u-marginRight--10 u-marginLeft--5`}
-              >
-                {" "}
-                {entitlement.title}:{" "}
-                <span
-                  className={`u-fontWeight--bold ${
-                    isTextField && "u-fontFamily--monospace"
-                  }`}
-                >
-                  {" "}
-                  {entitlement.value}{" "}
-                </span>
-                <ExpandButton
-                  onClick={() => this.toggleHideDetails(entitlement.title)}
-                >
-                  hide
-                </ExpandButton>
-              </CustomerLicenseField>
-            );
-          } else {
-            return (
-              <CustomerLicenseField
-                key={entitlement.label}
-                className={`u-fontSize--small u-lineHeight--normal u-textColor--secondary u-fontWeight--medium u-marginRight--10 u-marginLeft--5`}
-              >
-                {" "}
-                {entitlement.title}:{" "}
-                <span
-                  className={`u-fontWeight--bold ${
-                    isTextField && "u-fontFamily--monospace"
-                  }`}
-                >
-                  {" "}
-                  {isBooleanField
-                    ? entitlement.value.toString()
-                    : entitlement.value}{" "}
-                </span>
-              </CustomerLicenseField>
-            );
-          }
-        })}
-      </CustomerLicenseFields>
-    );
   };
 
   viewLicenseEntitlements = () => {
@@ -577,10 +477,6 @@ class AppLicense extends Component {
                         ? "up-arrow-icon"
                         : "down-arrow-icon"
                     } u-marginLeft--5`}
-                    style={{
-                      marginBottom:
-                        this.state.isViewingLicenseEntitlements && "4px",
-                    }}
                     onClick={(e) => {
                       e.stopPropagation();
                       this.viewLicenseEntitlements();
@@ -589,8 +485,25 @@ class AppLicense extends Component {
                 </span>
               )}
 
-              {this.state.isViewingLicenseEntitlements &&
-                this.getCustomLicenseFields()}
+              {this.state.isViewingLicenseEntitlements ? (
+                <LicenseFields
+                  appLicense={this.state.appLicense}
+                  entitlementsToShow={this.state.entitlementsToShow}
+                  toggleHideDetails={this.toggleHideDetails}
+                  toggleShowDetails={this.toggleShowDetails}
+                />
+              ) : (
+                appLicense.entitlements.length < 5 && (
+                  <div style={{ marginTop: "15px" }}>
+                    <LicenseFields
+                      appLicense={this.state.appLicense}
+                      entitlementsToShow={this.state.entitlementsToShow}
+                      toggleHideDetails={this.toggleHideDetails}
+                      toggleShowDetails={this.toggleShowDetails}
+                    />
+                  </div>
+                )
+              )}
             </div>
           </div>
         ) : (

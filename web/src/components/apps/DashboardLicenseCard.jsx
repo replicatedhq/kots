@@ -13,7 +13,7 @@ import {
 import "../../scss/components/watches/DashboardCard.scss";
 import "@src/scss/components/apps/AppLicense.scss";
 import { Link } from "react-router-dom";
-import { CustomerLicenseFields, CustomerLicenseField } from "./AppLicense";
+import LicenseFields from "./LicenseFields";
 
 export default class DashboardLicenseCard extends React.Component {
   state = {
@@ -137,96 +137,6 @@ export default class DashboardLicenseCard extends React.Component {
     const index = this.state.entitlementsToShow?.indexOf(entitlement);
     entitlementsToShow.splice(index, 1);
     this.setState({ entitlementsToShow });
-  };
-
-  getCustomLicenseFields = () => {
-    const { appLicense } = this.props;
-    return (
-      <CustomerLicenseFields className="flex flexWrap--wrap">
-        {appLicense.entitlements?.map((entitlement, i) => {
-          const currEntitlement = this.state.entitlementsToShow?.find(
-            (f) => f === entitlement.title
-          );
-          const isTextField = entitlement.valueType === "Text";
-          const isBooleanField = entitlement.valueType === "Boolean";
-          if (
-            entitlement.value.length > 100 &&
-            currEntitlement !== entitlement.title
-          ) {
-            return (
-              <CustomerLicenseField
-                key={entitlement.label}
-                className={`u-fontSize--small u-lineHeight--normal u-textColor--secondary u-fontWeight--medium u-marginRight--10 u-marginLeft--5`}
-              >
-                {" "}
-                {entitlement.title}:{" "}
-                <span
-                  className={`u-fontWeight--bold ${
-                    isTextField && "u-fontFamily--monospace"
-                  }`}
-                >
-                  {" "}
-                  {entitlement.value.slice(0, 100) + "..."}{" "}
-                </span>
-                <span
-                  className="replicated-link"
-                  onClick={() => this.toggleShowDetails(entitlement.title)}
-                >
-                  show
-                </span>
-              </CustomerLicenseField>
-            );
-          } else if (
-            entitlement.value.length > 100 &&
-            currEntitlement === entitlement.title
-          ) {
-            return (
-              <CustomerLicenseField
-                key={entitlement.label}
-                className={`u-fontSize--small u-lineHeight--normal u-textColor--secondary u-fontWeight--medium u-marginRight--10 u-marginLeft--5`}
-              >
-                {" "}
-                {entitlement.title}:{" "}
-                <span
-                  className={`u-fontWeight--bold ${
-                    isTextField && "u-fontFamily--monospace"
-                  }`}
-                >
-                  {" "}
-                  {entitlement.value}{" "}
-                </span>
-                <span
-                  className="replicated-link"
-                  onClick={() => this.toggleHideDetails(entitlement.title)}
-                >
-                  hide
-                </span>
-              </CustomerLicenseField>
-            );
-          } else {
-            return (
-              <CustomerLicenseField
-                key={entitlement.label}
-                className={`u-fontSize--small u-lineHeight--normal u-textColor--secondary u-fontWeight--medium u-marginRight--10 u-marginLeft--5`}
-              >
-                {" "}
-                {entitlement.title}:{" "}
-                <span
-                  className={`u-fontWeight--bold ${
-                    isTextField && "u-fontFamily--monospace"
-                  }`}
-                >
-                  {" "}
-                  {isBooleanField
-                    ? entitlement.value.toString()
-                    : entitlement.value}{" "}
-                </span>
-              </CustomerLicenseField>
-            );
-          }
-        })}
-      </CustomerLicenseFields>
-    );
   };
 
   viewLicenseEntitlements = () => {
@@ -384,10 +294,6 @@ export default class DashboardLicenseCard extends React.Component {
                           ? "up-arrow-icon"
                           : "down-arrow-icon"
                       } u-marginLeft--5`}
-                      style={{
-                        marginBottom:
-                          this.state.isViewingLicenseEntitlements && "4px",
-                      }}
                       onClick={(e) => {
                         e.stopPropagation();
                         this.viewLicenseEntitlements();
@@ -395,8 +301,25 @@ export default class DashboardLicenseCard extends React.Component {
                     />
                   </span>
                 )}
-                {this.state.isViewingLicenseEntitlements &&
-                  this.getCustomLicenseFields()}
+                {this.state.isViewingLicenseEntitlements ? (
+                  <LicenseFields
+                    appLicense={this.props.appLicense}
+                    entitlementsToShow={this.state.entitlementsToShow}
+                    toggleHideDetails={this.toggleHideDetails}
+                    toggleShowDetails={this.toggleShowDetails}
+                  />
+                ) : (
+                  appLicense.entitlements.length < 5 && (
+                    <div style={{ marginTop: "15px" }}>
+                      <LicenseFields
+                        appLicense={this.props.appLicense}
+                        entitlementsToShow={this.state.entitlementsToShow}
+                        toggleHideDetails={this.toggleHideDetails}
+                        toggleShowDetails={this.toggleShowDetails}
+                      />
+                    </div>
+                  )
+                )}
               </div>
             </div>
           ) : (
