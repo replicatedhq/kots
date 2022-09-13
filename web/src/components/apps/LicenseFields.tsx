@@ -2,6 +2,30 @@ import React from "react";
 // @ts-ignore
 import styled from "styled-components";
 
+export const CustomerLicenseFields = styled.div`
+  background: #f5f8f9;
+  border-radius: 6px;
+  border: 1px solid #bccacd;
+  padding: 10px;
+  line-height: 25px;
+`;
+
+export const CustomerLicenseField = styled.span`
+  margin-right: 15px;
+  display: block;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+`;
+
+export const ExpandButton = styled.button`
+  background: none;
+  border: none;
+  color: #007cbb;
+  cursor: pointer;
+  font-size: 12px;
+  padding-left: 0;
+`;
+
 type Entitlements = {
   label: string;
   title: string;
@@ -22,7 +46,7 @@ const LicenseFields = ({
 }) => {
   return (
     <CustomerLicenseFields className="flex flexWrap--wrap">
-      {entitlements?.map((entitlement, i) => {
+      {entitlements?.map((entitlement) => {
         const currEntitlement = entitlementsToShow?.find(
           (f) => f === entitlement.title
         );
@@ -109,27 +133,3 @@ const LicenseFields = ({
 };
 
 export default LicenseFields;
-
-export const CustomerLicenseFields = styled.div`
-  background: #f5f8f9;
-  border-radius: 6px;
-  border: 1px solid #bccacd;
-  padding: 10px;
-  line-height: 25px;
-`;
-
-export const CustomerLicenseField = styled.span`
-  margin-right: 15px;
-  display: block;
-  overflow-wrap: anywhere;
-  max-width: 100%;
-`;
-
-export const ExpandButton = styled.button`
-  background: none;
-  border: none;
-  color: #007cbb;
-  cursor: pointer;
-  font-size: 12px;
-  padding-left: 0;
-`;
