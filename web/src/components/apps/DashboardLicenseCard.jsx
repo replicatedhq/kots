@@ -303,7 +303,7 @@ export default class DashboardLicenseCard extends React.Component {
                 )}
                 {this.state.isViewingLicenseEntitlements ? (
                   <LicenseFields
-                    appLicense={this.props.appLicense}
+                    entitlements={appLicense?.entitlements}
                     entitlementsToShow={this.state.entitlementsToShow}
                     toggleHideDetails={this.toggleHideDetails}
                     toggleShowDetails={this.toggleShowDetails}
@@ -312,7 +312,7 @@ export default class DashboardLicenseCard extends React.Component {
                   appLicense.entitlements.length < 5 && (
                     <div style={{ marginTop: "15px" }}>
                       <LicenseFields
-                        appLicense={this.props.appLicense}
+                        entitlements={appLicense?.entitlements}
                         entitlementsToShow={this.state.entitlementsToShow}
                         toggleHideDetails={this.toggleHideDetails}
                         toggleShowDetails={this.toggleShowDetails}

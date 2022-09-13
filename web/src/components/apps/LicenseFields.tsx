@@ -1,15 +1,28 @@
 import React from "react";
+// @ts-ignore
 import styled from "styled-components";
 
+type Entitlements = {
+  label: string;
+  title: string;
+  value: string;
+  valueType: string;
+};
+
 const LicenseFields = ({
-  appLicense,
+  entitlements,
   toggleShowDetails,
   toggleHideDetails,
   entitlementsToShow,
+}: {
+  entitlements: Entitlements[];
+  toggleShowDetails: (arg0: string) => void;
+  toggleHideDetails: (arg0: string) => void;
+  entitlementsToShow: string[];
 }) => {
   return (
     <CustomerLicenseFields className="flex flexWrap--wrap">
-      {appLicense.entitlements?.map((entitlement, i) => {
+      {entitlements?.map((entitlement, i) => {
         const currEntitlement = entitlementsToShow?.find(
           (f) => f === entitlement.title
         );
