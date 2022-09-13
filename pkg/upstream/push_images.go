@@ -119,9 +119,9 @@ type ProgressImage struct {
 
 func makeInstallationImages(images []kustomizetypes.Image) []kotsv1beta1.InstallationImage {
 	result := make([]kotsv1beta1.InstallationImage, 0)
-	for _, image := range images {
+	for _, kustomizeImage := range images {
 		result = append(result, kotsv1beta1.InstallationImage{
-			Image:     image.Name,
+			Image:     image.SrcImageFromKustomizeImage(kustomizeImage),
 			IsPrivate: true,
 		})
 	}
