@@ -294,9 +294,7 @@ class AppLicense extends Component {
             return (
               <CustomerLicenseField
                 key={entitlement.label}
-                className={`u-fontSize--small u-lineHeight--normal u-textColor--secondary u-fontWeight--medium u-marginRight--10 ${
-                  i !== 0 ? "u-marginLeft--5" : ""
-                }`}
+                className={`u-fontSize--small u-lineHeight--normal u-textColor--secondary u-fontWeight--medium u-marginRight--10 u-marginLeft--5`}
               >
                 {" "}
                 {entitlement.title}:{" "}
@@ -322,9 +320,7 @@ class AppLicense extends Component {
             return (
               <CustomerLicenseField
                 key={entitlement.label}
-                className={`flex-column u-fontSize--small u-lineHeight--normal u-textColor--secondary u-fontWeight--medium u-marginRight--10 ${
-                  i !== 0 ? "u-marginLeft--5" : ""
-                }`}
+                className={`flex-column u-fontSize--small u-lineHeight--normal u-textColor--secondary u-fontWeight--medium u-marginRight--10 u-marginLeft--5`}
               >
                 {" "}
                 {entitlement.title}:{" "}
@@ -345,11 +341,9 @@ class AppLicense extends Component {
             );
           } else {
             return (
-              <span
+              <CustomerLicenseField
                 key={entitlement.label}
-                className={`u-fontSize--small u-lineHeight--normal u-textColor--secondary u-fontWeight--medium u-marginRight--10 ${
-                  i !== 0 ? "u-marginLeft--5" : ""
-                }`}
+                className={`u-fontSize--small u-lineHeight--normal u-textColor--secondary u-fontWeight--medium u-marginRight--10 u-marginLeft--5`}
               >
                 {" "}
                 {entitlement.title}:{" "}
@@ -363,7 +357,7 @@ class AppLicense extends Component {
                     ? entitlement.value.toString()
                     : entitlement.value}{" "}
                 </span>
-              </span>
+              </CustomerLicenseField>
             );
           }
         })}
@@ -772,7 +766,7 @@ class AppLicense extends Component {
 
 export default AppLicense;
 
-const CustomerLicenseFields = styled.div`
+export const CustomerLicenseFields = styled.div`
   background: #f5f8f9;
   border-radius: 6px;
   border: 1px solid #bccacd;
@@ -780,14 +774,14 @@ const CustomerLicenseFields = styled.div`
   line-height: 25px;
 `;
 
-const CustomerLicenseField = styled.span`
+export const CustomerLicenseField = styled.span`
   margin-right: 15px;
   display: block;
   overflow-wrap: anywhere;
   max-width: 100%;
 `;
 
-const ExpandButton = styled.button`
+export const ExpandButton = styled.button`
   background: none;
   border: none;
   color: #007cbb;
