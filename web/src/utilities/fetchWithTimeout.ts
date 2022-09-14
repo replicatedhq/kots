@@ -4,7 +4,7 @@ export default function fetchWithTimeout(
     | RequestInit
     | {
         headers: {
-          Authorization: string | null;
+          Authorization: string;
           "Content-Type": string;
         };
       },
