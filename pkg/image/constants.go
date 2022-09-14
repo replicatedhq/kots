@@ -5,10 +5,10 @@ package image
 // image name.
 
 const (
-	Minio      = "minio/minio:RELEASE.2022-09-01T23-53-36Z"
+	Minio      = "minio/minio:RELEASE.2022-09-07T22-25-02Z"
 	Postgres10 = "postgres:10.22-alpine"
 	Postgres14 = "postgres:14.5-alpine"
-	Dex        = "ghcr.io/dexidp/dex:v2.33.0"
+	Dex        = "ghcr.io/dexidp/dex:v2.33.1"
 	Schemahero = "schemahero/schemahero:0.13.2"
-	Lvp        = "replicated/local-volume-provider:v0.3.7"
+	Lvp        = "replicated/local-volume-provider:v0.3.8"
 )
