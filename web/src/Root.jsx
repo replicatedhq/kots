@@ -22,7 +22,7 @@ import RestoreCompleted from "./components/RestoreCompleted";
 import Access from "./components/identity/Access";
 import SnapshotsWrapper from "./components/snapshots/SnapshotsWrapper";
 import { QueryClient, QueryClientProvider } from "react-query";
-import { InstallWithHelm } from "@features/AddNewApp/components/InstallWithHelm";
+import { InstallWithHelm } from "@features/AddNewApp/InstallWithHelm";
 
 import Footer from "./components/shared/Footer";
 import NavBar from "./components/shared/NavBar";
