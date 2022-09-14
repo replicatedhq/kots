@@ -31,7 +31,7 @@ type Entitlements = {
   label: string;
   title: string;
   value: string;
-  valueType: string;
+  valueType: "Text" | "Boolean";
 };
 
 const LicenseFields = ({
@@ -48,14 +48,13 @@ const LicenseFields = ({
   return (
     <CustomerLicenseFields className="flex flexWrap--wrap">
       {entitlements?.map((entitlement) => {
-        const currEntitlement = entitlementsToShow?.find(
+        const displayedEntitlement = entitlementsToShow?.find(
           (f) => f === entitlement.title
         );
         const isTextField = entitlement.valueType === "Text";
-        const isBooleanField = entitlement.valueType === "Boolean";
         if (
           entitlement.value.length > 100 &&
-          currEntitlement !== entitlement.title
+          displayedEntitlement !== entitlement.title
         ) {
           return (
             <CustomerLicenseField
@@ -82,7 +81,7 @@ const LicenseFields = ({
           );
         } else if (
           entitlement.value.length > 100 &&
-          currEntitlement === entitlement.title
+          displayedEntitlement === entitlement.title
         ) {
           return (
             <CustomerLicenseField
@@ -120,10 +119,7 @@ const LicenseFields = ({
                   isTextField && "u-fontFamily--monospace"
                 }`}
               >
-                {" "}
-                {isBooleanField
-                  ? entitlement.value.toString()
-                  : entitlement.value}{" "}
+                {entitlement.value.toString() + " "}
               </span>
             </CustomerLicenseField>
           );
