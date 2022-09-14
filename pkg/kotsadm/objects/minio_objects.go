@@ -199,7 +199,7 @@ func MinioStatefulset(deployOptions types.DeployOptions, size resource.Quantity)
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
 									"cpu":    resource.MustParse("100m"),
-									"memory": resource.MustParse("200Mi"),
+									"memory": resource.MustParse("512Mi"),
 								},
 								Requests: corev1.ResourceList{
 									"cpu":    resource.MustParse("50m"),

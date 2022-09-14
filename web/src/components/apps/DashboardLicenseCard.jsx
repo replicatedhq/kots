@@ -13,6 +13,7 @@ import {
 import "../../scss/components/watches/DashboardCard.scss";
 import "@src/scss/components/apps/AppLicense.scss";
 import { Link } from "react-router-dom";
+import LicenseFields from "./LicenseFields";
 
 export default class DashboardLicenseCard extends React.Component {
   state = {
@@ -20,6 +21,7 @@ export default class DashboardLicenseCard extends React.Component {
     message: null,
     messageType: "",
     entitlementsToShow: [],
+    isViewingLicenseEntitlements: false,
   };
 
   syncLicense = (licenseData) => {
@@ -66,6 +68,8 @@ export default class DashboardLicenseCard extends React.Component {
 
         this.setState({
           appLicense: licenseResponse.license,
+          isViewingLicenseEntitlements:
+            size(licenseResponse.license?.entitlements) <= 5 ? true : false,
           message,
           messageType: "info",
           showNextStepModal: licenseResponse.synced,
@@ -133,6 +137,12 @@ export default class DashboardLicenseCard extends React.Component {
     const index = this.state.entitlementsToShow?.indexOf(entitlement);
     entitlementsToShow.splice(index, 1);
     this.setState({ entitlementsToShow });
+  };
+
+  viewLicenseEntitlements = () => {
+    this.setState({
+      isViewingLicenseEntitlements: !this.state.isViewingLicenseEntitlements,
+    });
   };
 
   render() {
@@ -267,104 +277,48 @@ export default class DashboardLicenseCard extends React.Component {
                       : `Expires ${expiresAt}`}
                   </p>
                 </div>
-                {size(appLicense?.entitlements) > 0 && (
-                  <div className="u-marginTop--10">
-                    {appLicense.entitlements?.map((entitlement, i) => {
-                      const currEntitlement =
-                        this.state.entitlementsToShow?.find(
-                          (f) => f === entitlement.title
-                        );
-                      const isTextField = entitlement.valueType === "Text";
-                      const isBooleanField =
-                        entitlement.valueType === "Boolean";
-                      if (
-                        entitlement.value.length > 30 &&
-                        currEntitlement !== entitlement.title
-                      ) {
-                        return (
-                          <span
-                            key={entitlement.label}
-                            className={`u-fontSize--small u-lineHeight--normal u-textColor--secondary u-fontWeight--medium u-marginRight--10 ${
-                              i !== 0 ? "u-marginLeft--5" : ""
-                            }`}
-                          >
-                            {" "}
-                            {entitlement.title}:{" "}
-                            <span
-                              className={`u-fontWeight--bold ${
-                                isTextField && "u-fontFamily--monospace"
-                              }`}
-                            >
-                              {" "}
-                              {entitlement.value.slice(0, 30) + "..."}{" "}
-                            </span>
-                            <span
-                              className="replicated-link"
-                              onClick={() =>
-                                this.toggleShowDetails(entitlement.title)
-                              }
-                            >
-                              show
-                            </span>
-                          </span>
-                        );
-                      } else if (
-                        entitlement.value.length > 30 &&
-                        currEntitlement === entitlement.title
-                      ) {
-                        return (
-                          <span
-                            key={entitlement.label}
-                            className={`u-fontSize--small u-lineHeight--normal u-textColor--secondary u-fontWeight--medium u-marginRight--10 ${
-                              i !== 0 ? "u-marginLeft--5" : ""
-                            }`}
-                          >
-                            {" "}
-                            {entitlement.title}:{" "}
-                            <span
-                              className={`u-fontWeight--bold ${
-                                isTextField && "u-fontFamily--monospace"
-                              }`}
-                              style={{ whiteSpace: "pre" }}
-                            >
-                              {" "}
-                              {entitlement.value}{" "}
-                            </span>
-                            <span
-                              className="replicated-link"
-                              onClick={() =>
-                                this.toggleHideDetails(entitlement.title)
-                              }
-                            >
-                              hide
-                            </span>
-                          </span>
-                        );
-                      } else {
-                        return (
-                          <span
-                            key={entitlement.label}
-                            className={`u-fontSize--small u-lineHeight--normal u-textColor--secondary u-fontWeight--medium u-marginRight--10 ${
-                              i !== 0 ? "u-marginLeft--5" : ""
-                            }`}
-                          >
-                            {" "}
-                            {entitlement.title}:{" "}
-                            <span
-                              className={`u-fontWeight--bold ${
-                                isTextField && "u-fontFamily--monospace"
-                              }`}
-                            >
-                              {" "}
-                              {isBooleanField
-                                ? entitlement.value.toString()
-                                : entitlement.value}{" "}
-                            </span>
-                          </span>
-                        );
-                      }
-                    })}
-                  </div>
+                {size(appLicense?.entitlements) >= 5 && (
+                  <span
+                    className="flexWrap--wrap flex u-fontSize--small u-lineHeight--normal u-color--doveGray u-fontWeight--medium u-marginRight--normal alignItems--center"
+                    style={{ margin: "10px 0" }}
+                  >
+                    <span
+                      className={`u-fontWeight--bold`}
+                      style={{ whiteSpace: "pre" }}
+                    >
+                      View {size(appLicense?.entitlements)} license entitlements
+                    </span>
+                    <span
+                      className={`icon clickable ${
+                        this.state.isViewingLicenseEntitlements
+                          ? "up-arrow-icon"
+                          : "down-arrow-icon"
+                      } u-marginLeft--5`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        this.viewLicenseEntitlements();
+                      }}
+                    />
+                  </span>
+                )}
+                {this.state.isViewingLicenseEntitlements ? (
+                  <LicenseFields
+                    entitlements={appLicense?.entitlements}
+                    entitlementsToShow={this.state.entitlementsToShow}
+                    toggleHideDetails={this.toggleHideDetails}
+                    toggleShowDetails={this.toggleShowDetails}
+                  />
+                ) : (
+                  appLicense.entitlements.length < 5 && (
+                    <div style={{ marginTop: "15px" }}>
+                      <LicenseFields
+                        entitlements={appLicense?.entitlements}
+                        entitlementsToShow={this.state.entitlementsToShow}
+                        toggleHideDetails={this.toggleHideDetails}
+                        toggleShowDetails={this.toggleShowDetails}
+                      />
+                    </div>
+                  )
                 )}
               </div>
             </div>
