@@ -47,6 +47,10 @@ func (h *Handler) ConfigureAutomaticUpdates(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	if cm.Data == nil {
+		cm.Data = make(map[string]string)
+	}
+
 	if util.IsHelmManaged() {
 		release := helm.GetHelmApp(mux.Vars(r)["appSlug"])
 		license, err := helm.GetChartLicenseFromSecretOrDownload(release)
