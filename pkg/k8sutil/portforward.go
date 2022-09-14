@@ -63,32 +63,14 @@ func IsPortAvailable(clientset kubernetes.Interface, port int) (bool, error) {
 }
 
 func FindFreePort(clientset kubernetes.Interface) (int, error) {
-	portCh := make(chan int)
-	errCh := make(chan error)
-
-	go func() {
-		port, err := findFreePort(clientset)
-		if err != nil {
-			errCh <- err
-			return
-		}
-		portCh <- port
-	}()
-
-	select {
-	case err := <-errCh:
-		if err != nil {
-			return 0, err
-		}
-	case port := <-portCh:
-		return port, nil
-	case <-time.After(30 * time.Second):
-	}
-
-	return 0, errors.New("Timed out trying to find a free port")
+	return findFreePort(clientset, 10, 1)
 }
 
-func findFreePort(clientset kubernetes.Interface) (int, error) {
+func findFreePort(clientset kubernetes.Interface, maxAttempts int, currAttempt int) (int, error) {
+	if currAttempt > maxAttempts {
+		return 0, errors.New(fmt.Sprintf("Timed out after %d attempts", maxAttempts))
+	}
+
 	port, err := freeport.GetFreePort()
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get free port")
@@ -100,7 +82,7 @@ func findFreePort(clientset kubernetes.Interface) (int, error) {
 	}
 
 	if !isPortAvailable {
-		return findFreePort(clientset)
+		return findFreePort(clientset, maxAttempts, currAttempt+1)
 	}
 
 	return port, nil
