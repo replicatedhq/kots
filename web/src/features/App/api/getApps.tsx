@@ -55,11 +55,9 @@ function UseApps({
 }) {
   const query = useApps();
 
-  if (query.data) {
-    // TODO: figure this out
-    // @ts-ignore
-    return children(query);
-  }
+  // TODO: figure this out
+  // @ts-ignore
+  return children(query);
 }
 
 export { getApps, useApps, UseApps };
