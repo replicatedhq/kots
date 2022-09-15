@@ -29,8 +29,11 @@ async function getApps({
     }
     return await res.json();
   } catch (err) {
-    console.error(err);
-    throw Error("Failed to fetch apps");
+    if (err instanceof Error) {
+      throw err;
+    }
+
+    throw Error(`Failed to fetch apps with error ${err}`);
   }
 }
 
