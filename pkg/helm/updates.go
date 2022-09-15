@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -13,6 +16,8 @@ import (
 	imagetypes "github.com/containers/image/v5/types"
 	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/logger"
+	"go.uber.org/zap"
 	helmgetter "helm.sh/helm/v3/pkg/getter"
 )
 
@@ -159,9 +164,17 @@ func removeDuplicates(tags []string) []string {
 	return u
 }
 
-// TODO: Add caching
 func PullChartVersion(helmApp *apptypes.HelmApp, licenseID string, version string) (*bytes.Buffer, error) {
-	err := CreateHelmRegistryCreds(licenseID, licenseID, helmApp.ChartPath)
+	data, err := getUpdateChartFromCache(helmApp, version)
+	if err != nil {
+		logger.Info("failed to get chart release from cache", zap.String("error", err.Error()))
+	}
+
+	if data != nil {
+		return data, nil
+	}
+
+	err = CreateHelmRegistryCreds(licenseID, licenseID, helmApp.ChartPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create helm credentials file")
 	}
@@ -171,10 +184,63 @@ func PullChartVersion(helmApp *apptypes.HelmApp, licenseID string, version strin
 	}
 
 	imageName := fmt.Sprintf("%s:%s", helmApp.ChartPath, version)
-	data, err := chartGetter.Get(imageName)
+	data, err = chartGetter.Get(imageName)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get chart %q", imageName)
 	}
 
+	data, err = saveUpdateChartInCache(helmApp, version, data)
+	if err != nil {
+		logger.Info("failed to save chart in cache", zap.String("error", err.Error()))
+	}
+
 	return data, nil
+}
+
+var (
+	updateCacheDir = ""
+)
+
+func getUpdateChartFromCache(helmApp *apptypes.HelmApp, version string) (*bytes.Buffer, error) {
+	fileName := getUpdateChacheFileName(helmApp, version)
+	b, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, errors.Wrap(err, "failed to read file")
+	}
+
+	return bytes.NewBuffer(b), nil
+}
+
+func saveUpdateChartInCache(helmApp *apptypes.HelmApp, version string, data *bytes.Buffer) (*bytes.Buffer, error) {
+	b := data.Bytes()
+	newBuff := bytes.NewBuffer(b)
+
+	if updateCacheDir == "" {
+		dirName, err := ioutil.TempDir("", "chart-updates-")
+		if err != nil {
+			return newBuff, errors.Wrap(err, "failed to create temp dir")
+		}
+		updateCacheDir = dirName
+	}
+
+	fileName := getUpdateChacheFileName(helmApp, version)
+
+	err := os.MkdirAll(filepath.Dir(fileName), 0755)
+	if err != nil {
+		return newBuff, errors.Wrap(err, "failed to create cache dir")
+	}
+
+	err = ioutil.WriteFile(fileName, b, 0744)
+	if err != nil {
+		return newBuff, errors.Wrap(err, "failed to save cache file")
+	}
+
+	return newBuff, nil
+}
+
+func getUpdateChacheFileName(helmApp *apptypes.HelmApp, version string) string {
+	return filepath.Join(updateCacheDir, strings.TrimPrefix(helmApp.ChartPath, "oci://"), fmt.Sprintf("%s.tgz", version))
 }
