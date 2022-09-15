@@ -13,7 +13,6 @@ function useCurrentApp() {
 
   useEffect(() => {
     if (apps && isFetched) {
-      // TODO: fiddle with the app typing
       setCurrentApp(apps.find((app: App) => app.slug === slug) || null);
     }
   }, [apps, slug]);
