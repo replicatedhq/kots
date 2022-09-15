@@ -7,15 +7,6 @@ export type App = {
   slug: string;
 };
 
-// export type KotsRequest = RequestInit
-//   | {
-//     headers: {
-//       Authorization: string;
-//       "Content-Type": string;
-//     };
-//     method: "GET";
-//   };
-
 async function getApps({
   accessToken = Utilities.getToken(),
   apiEndpoint = process.env.API_ENDPOINT,
