@@ -550,7 +550,7 @@ export function getSnapshotDestinationLabel(provider) {
 export const Utilities = {
   getToken() {
     if (this.localStorageEnabled()) {
-      return window.localStorage.getItem("token");
+      return window.localStorage.getItem("token") || "";
     }
     return "";
   },

@@ -17,6 +17,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/auth"
 	"github.com/replicatedhq/kots/pkg/logger"
 	corev1 "k8s.io/api/core/v1"
+	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/httpstream"
@@ -26,16 +27,65 @@ import (
 	"k8s.io/client-go/transport/spdy"
 )
 
-func IsPortAvailable(port int) bool {
+func IsPortAvailable(clientset kubernetes.Interface, port int) (bool, error) {
+	// kube-proxy stopped opening ports on the host for NodePort services in recent versions of kubernetes,
+	// so net.Listen won't be able to detect if the port is used by a NodePort service or not, and port forwarding might hang or redirect to the wrong component.
+	// https://github.com/kubernetes/kubernetes/pull/108496
+	// so we check if the port is used by a NodePort service.
+	services, err := clientset.CoreV1().Services("").List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		// TODO: make this work with minimal RBAC
+		if !kuberneteserrors.IsForbidden(err) {
+			return false, errors.Wrap(err, "failed to list services")
+		}
+	}
+
+	for _, service := range services.Items {
+		if service.Spec.Type != corev1.ServiceTypeNodePort {
+			continue
+		}
+		for _, p := range service.Spec.Ports {
+			if p.NodePort > 0 && int(p.NodePort) == port {
+				return false, nil
+			}
+		}
+	}
+
 	// portforward explicitly listens on localhost
 	host := net.JoinHostPort("127.0.0.1", strconv.Itoa(port))
 	server, err := net.Listen("tcp4", host)
 	if err != nil {
-		return false
+		return false, nil
 	}
 
 	server.Close()
-	return true
+	return true, nil
+}
+
+func FindFreePort(clientset kubernetes.Interface) (int, error) {
+	return findFreePort(clientset, 10, 1)
+}
+
+func findFreePort(clientset kubernetes.Interface, maxAttempts int, currAttempt int) (int, error) {
+	if currAttempt > maxAttempts {
+		return 0, errors.New(fmt.Sprintf("Timed out after %d attempts", maxAttempts))
+	}
+
+	port, err := freeport.GetFreePort()
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to get free port")
+	}
+
+	isPortAvailable, err := IsPortAvailable(clientset, port)
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to check if port is available")
+	}
+
+	if !isPortAvailable {
+		return findFreePort(clientset, maxAttempts, currAttempt+1)
+	}
+
+	return port, nil
 }
 
 // PortForward starts a local port forward to a pod in the cluster
@@ -43,22 +93,32 @@ func IsPortAvailable(port int) bool {
 // always check the port number returned though, because a port conflict
 // could cause a different port to be used
 func PortForward(localPort int, remotePort int, namespace string, getPodName func() (string, error), pollForAdditionalPorts bool, stopCh <-chan struct{}, log *logger.CLILogger) (int, chan error, error) {
-	if localPort == 0 {
-		freePort, err := freeport.GetFreePort()
-		if err != nil {
-			return 0, nil, errors.Wrap(err, "failed to get free port")
-		}
-
-		localPort = freePort
+	// This process is long lived, avoid creating too many clientsets here
+	// https://github.com/kubernetes/client-go/issues/803
+	clientset, err := GetClientset()
+	if err != nil {
+		return 0, nil, errors.Wrap(err, "failed to get clientset")
 	}
 
-	if !IsPortAvailable(localPort) {
-		freePort, err := freeport.GetFreePort()
+	if localPort == 0 {
+		freePort, err := FindFreePort(clientset)
 		if err != nil {
-			return 0, nil, errors.Wrap(err, "failed to get free port")
+			return 0, nil, errors.Wrap(err, "failed to find free port")
 		}
-
 		localPort = freePort
+	} else {
+		isPortAvailable, err := IsPortAvailable(clientset, localPort)
+		if err != nil {
+			return 0, nil, errors.Wrap(err, "failed to check if port is available")
+		}
+		if !isPortAvailable {
+			freePort, err := FindFreePort(clientset)
+			if err != nil {
+				return 0, nil, errors.Wrap(err, "failed to find free port")
+			}
+
+			localPort = freePort
+		}
 	}
 
 	podName, err := getPodName()
@@ -181,13 +241,6 @@ func PortForward(localPort int, remotePort int, namespace string, getPodName fun
 		}()
 
 		uri := fmt.Sprintf("http://localhost:%d/api/v1/kots/ports", localPort)
-
-		// This process is long lived, avoid creating too many clientsets here
-		// https://github.com/kubernetes/client-go/issues/803
-		clientset, err := GetClientset()
-		if err != nil {
-			return 0, nil, errors.Wrap(err, "failed to get clientset")
-		}
 
 		consecutiveErrorsLogged := struct {
 			read      int
@@ -313,7 +366,11 @@ func createDialer(cfg *rest.Config, namespace string, podName string) (httpstrea
 }
 
 func ServiceForward(clientset *kubernetes.Clientset, cfg *rest.Config, localPort int, remotePort int, namespace string, serviceName string) (chan struct{}, error) {
-	if !IsPortAvailable(localPort) {
+	isPortAvailable, err := IsPortAvailable(clientset, localPort)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to check if port is available")
+	}
+	if !isPortAvailable {
 		return nil, errors.Errorf("Unable to connect to cluster. There's another process using port %d.", localPort)
 	}
 

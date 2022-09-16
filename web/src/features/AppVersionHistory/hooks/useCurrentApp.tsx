@@ -1,19 +1,19 @@
 // This hook has not been integrated yet. It's considered a work in progress
 import { useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { useApps } from "../api/getApps";
+import { App, useApps } from "@features/App";
 
 function useCurrentApp() {
-  let { slug } = useParams();
-  let { data = {}, isFetched } = useApps();
+  let { slug } = useParams<{ slug: string }>();
+  let { data, isFetched } = useApps();
 
-  const { apps } = data;
+  const { apps = [] } = data || {};
 
-  const [currentApp, setCurrentApp] = useState(null);
+  const [currentApp, setCurrentApp] = useState<App | null>(null);
 
   useEffect(() => {
     if (apps && isFetched) {
-      setCurrentApp(apps.find((app) => app.slug === slug));
+      setCurrentApp(apps.find((app: App) => app.slug === slug) || null);
     }
   }, [apps, slug]);
 

@@ -14,6 +14,15 @@ When a git tag is made, tagged images (not :alpha) are created.
 
 The **build-web** job will fail if unit tests fail or there are formatting or linting issues. Run these command locally and resolve issues to pass CI checks.
 
+### All CI tests
+
+```
+yarn test
+
+```
+
+** This will run all of the `test:*` commands concurrently. Recommend using to determine if there is an error. Use the individual commands for debugging since the logging output is easier to read than the output from `concurrently`.
+
 ### Unit tests
 
 ```
