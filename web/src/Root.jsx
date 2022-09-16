@@ -14,7 +14,7 @@ import UnsupportedBrowser from "./components/static/UnsupportedBrowser";
 import NotFound from "./components/static/NotFound";
 import { Utilities, parseUpstreamUri } from "./utilities/utilities";
 import fetch from "./utilities/fetchWithTimeout";
-import SecureAdminConsole from "./components/SecureAdminConsole";
+import { SecureAdminConsole } from "@features/Auth";
 import UploadLicenseFile from "./components/UploadLicenseFile";
 import BackupRestore from "./components/BackupRestore";
 import UploadAirgapBundle from "./components/UploadAirgapBundle";

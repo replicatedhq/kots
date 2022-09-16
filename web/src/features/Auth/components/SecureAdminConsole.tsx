@@ -5,8 +5,23 @@ import Loader from "./shared/Loader";
 import ErrorModal from "./modals/ErrorModal";
 import "../scss/components/Login.scss";
 
-class SecureAdminConsole extends React.Component {
-  constructor(props) {
+type Props = {
+  children: React.ReactNode;
+  title: string;
+  loading: boolean;
+  error: string;
+  clearError: () => void;
+}
+
+type LoginResponse = {
+  token: string;
+  expires: number;
+
+}
+class SecureAdminConsole extends React.Component<Props> {
+  loginText: React.RefObject<HTMLDivElement>;
+
+  constructor(props: Props) {
     super(props);
 
     this.state = {
@@ -99,7 +114,9 @@ class SecureAdminConsole extends React.Component {
             });
             return;
           }
-          this.completeLogin(await res.json());
+          // TODO: refactor this fetch function to return the result instead of using the callback in the fetch
+          // TODO: remove "as" and use type Promise<LoginResponse> on loginWithSharedPassword
+          this.completeLogin(await res.json() as LoginResponse);
         })
         .catch((err) => {
           console.log("Login failed:", err);
@@ -365,4 +382,4 @@ class SecureAdminConsole extends React.Component {
   }
 }
 
-export default SecureAdminConsole;
+export { SecureAdminConsole };
