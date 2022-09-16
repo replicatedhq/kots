@@ -9,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
-	"github.com/replicatedhq/kots/pkg/util"
 )
 
 type GetUpdateDownloadStatusResponse struct {
@@ -18,18 +17,11 @@ type GetUpdateDownloadStatusResponse struct {
 }
 
 func (h *Handler) GetUpdateDownloadStatus(w http.ResponseWriter, r *http.Request) {
-	var status, message string
-	var err error
-	if util.IsHelmManaged() {
-		status = ""
-		message = ""
-	} else {
-		status, message, err = store.GetStore().GetTaskStatus("update-download")
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			logger.Error(err)
-			return
-		}
+	status, message, err := store.GetStore().GetTaskStatus("update-download")
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		logger.Error(err)
+		return
 	}
 
 	JSON(w, http.StatusOK, GetUpdateDownloadStatusResponse{

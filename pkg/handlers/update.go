@@ -12,17 +12,18 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/blang/semver"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/airgap"
+	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/tasks"
 	"github.com/replicatedhq/kots/pkg/updatechecker"
 	"github.com/replicatedhq/kots/pkg/util"
 )
@@ -45,92 +46,6 @@ type AppUpdateRelease struct {
 
 func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 	appSlug := mux.Vars(r)["appSlug"]
-
-	if util.IsHelmManaged() {
-		helmApp := helm.GetHelmApp(appSlug)
-		if helmApp == nil {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-
-		app, err := helm.ResponseAppFromHelmApp(helmApp)
-		if err != nil {
-			logger.Errorf("failed to convert release to helm app: %v", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		license, err := helm.GetChartLicenseFromSecretOrDownload(helmApp)
-		if err != nil {
-			logger.Errorf("failed to get license for helm app: %v", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		if license == nil {
-			logger.Errorf("license not found for helm app")
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		var currentVersion *semver.Version
-		if app.Downstream.CurrentVersion != nil {
-			v, err := semver.ParseTolerant(app.Downstream.CurrentVersion.VersionLabel)
-			if err != nil {
-				logger.Errorf("failed to get parse current version %q: %v", app.Downstream.CurrentVersion, err)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-			currentVersion = &v
-		}
-
-		availableUpdateTags, err := helm.CheckForUpdates(app.ChartPath, license.Spec.LicenseID, currentVersion)
-		if err != nil {
-			logger.Errorf("failed to get available updates: %v", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		var appUpdateCheckResponse AppUpdateCheckResponse
-		var updates []AppUpdateRelease
-		for _, update := range availableUpdateTags {
-			updates = append(updates, AppUpdateRelease{
-				Sequence: 0, // TODO
-				Version:  update.Tag,
-			})
-		}
-
-		appUpdateCheckResponse = AppUpdateCheckResponse{
-			AvailableUpdates:   int64(len(updates)),
-			CurrentAppSequence: int64(helmApp.Release.Version),
-			AvailableReleases:  updates,
-		}
-
-		// TODO:
-		// if ucr.CurrentRelease != nil {
-		// 	appUpdateCheckResponse.CurrentRelease = &AppUpdateRelease{
-		// 		Sequence: ucr.CurrentRelease.Sequence,
-		// 		Version:  ucr.CurrentRelease.Version,
-		// 	}
-		// }
-		// if ucr.DeployingRelease != nil {
-		// 	appUpdateCheckResponse.DeployingRelease = &AppUpdateRelease{
-		// 		Sequence: ucr.DeployingRelease.Sequence,
-		// 		Version:  ucr.DeployingRelease.Version,
-		// 	}
-		// }
-
-		JSON(w, http.StatusOK, appUpdateCheckResponse)
-		return
-	}
-
-	foundApp, err := store.GetStore().GetAppFromSlug(appSlug)
-	if err != nil {
-		logger.Error(errors.Wrapf(err, "failed to get app for slug %q", appSlug))
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-
 	deploy, _ := strconv.ParseBool(r.URL.Query().Get("deploy"))
 	deployVersionLabel := r.URL.Query().Get("deployVersionLabel")
 	skipPreflights, _ := strconv.ParseBool(r.URL.Query().Get("skipPreflights"))
@@ -141,9 +56,30 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 	contentType := strings.Split(r.Header.Get("Content-Type"), ";")[0]
 	contentType = strings.TrimSpace(contentType)
 
+	var app apptypes.AppType
+	var kotsApp *apptypes.App
+	var err error
+
+	if util.IsHelmManaged() {
+		helmApp := helm.GetHelmApp(appSlug)
+		if helmApp == nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		app = helmApp
+	} else {
+		kotsApp, err = store.GetStore().GetAppFromSlug(appSlug)
+		if err != nil {
+			logger.Error(errors.Wrapf(err, "failed to get app for slug %q", appSlug))
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		app = kotsApp
+	}
+
 	if contentType == "application/json" {
 		opts := updatechecker.CheckForUpdatesOpts{
-			AppID:                  foundApp.ID,
+			AppID:                  app.GetID(),
 			DeployLatest:           deploy,
 			DeployVersionLabel:     deployVersionLabel,
 			SkipPreflights:         skipPreflights,
@@ -163,12 +99,15 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// refresh the app to get the correct sequence
-		a, err := store.GetStore().GetApp(foundApp.ID)
-		if err != nil {
-			logger.Error(errors.Wrap(err, "failed to get app"))
-			w.WriteHeader(http.StatusNotFound)
-			return
+		if !util.IsHelmManaged() {
+			// refresh the app to get the correct sequence
+			kotsApp, err = store.GetStore().GetApp(app.GetID())
+			if err != nil {
+				logger.Error(errors.Wrap(err, "failed to get app"))
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
+			app = kotsApp
 		}
 
 		var appUpdateCheckResponse AppUpdateCheckResponse
@@ -183,7 +122,7 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 
 			appUpdateCheckResponse = AppUpdateCheckResponse{
 				AvailableUpdates:   ucr.AvailableUpdates,
-				CurrentAppSequence: a.CurrentSequence,
+				CurrentAppSequence: app.GetCurrentSequence(),
 				AvailableReleases:  availableReleases,
 			}
 
@@ -207,7 +146,7 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if contentType == "multipart/form-data" {
-		if !foundApp.IsAirgap {
+		if !kotsApp.IsAirgap {
 			logger.Error(errors.New("not an airgap app"))
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte("Cannot update an online install using an airgap bundle"))
@@ -261,9 +200,9 @@ func (h *Handler) AppUpdateCheck(w http.ResponseWriter, r *http.Request) {
 		finishedChan := make(chan error)
 		defer close(finishedChan)
 
-		airgap.StartUpdateTaskMonitor(finishedChan)
+		tasks.StartUpdateTaskMonitor("update-download", finishedChan)
 
-		err = airgap.UpdateAppFromPath(foundApp, rootDir, "", deploy, skipPreflights, skipCompatibilityCheck)
+		err = airgap.UpdateAppFromPath(kotsApp, rootDir, "", deploy, skipPreflights, skipCompatibilityCheck)
 		if err != nil {
 			finishedChan <- err
 

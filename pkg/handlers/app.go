@@ -639,29 +639,30 @@ func (h *Handler) GetLatestDeployableVersion(w http.ResponseWriter, r *http.Requ
 	appSlug := mux.Vars(r)["appSlug"]
 
 	if util.IsHelmManaged() {
-		release := helm.GetHelmApp(appSlug)
-		if release == nil {
+		helmApp := helm.GetHelmApp(appSlug)
+		if helmApp == nil {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 
-		availableUpdates := helm.GetCachedUpdates(release.ChartPath)
+		availableUpdates := helm.GetCachedUpdates(helmApp.ChartPath)
 		if len(availableUpdates) == 0 {
 			JSON(w, http.StatusOK, getLatestDeployableVersionResponse)
 			return
 		}
 
-		now := time.Now()
-		getLatestDeployableVersionResponse.Error = ""
-		getLatestDeployableVersionResponse.LatestDeployableVersion = &downstreamtypes.DownstreamVersion{
-			VersionLabel:       availableUpdates[0].Tag,
-			Semver:             &availableUpdates[0].Version,
-			UpdateCursor:       availableUpdates[0].Tag,
-			CreatedOn:          &now,              // TODO: implement
-			UpstreamReleasedAt: &now,              // TODO: implement
-			IsDeployable:       false,             // TODO: implement
-			NonDeployableCause: "not implemented", // TODO: implement
+		installedReleases, err := helm.ListChartVersions(appSlug, helmApp.Namespace)
+		if err != nil {
+			errMsg := "failed to get installed releases"
+			logger.Error(errors.Wrap(err, errMsg))
+			getLatestDeployableVersionResponse.Error = errMsg
+			JSON(w, http.StatusInternalServerError, getLatestDeployableVersionResponse)
+			return
 		}
+
+		getLatestDeployableVersionResponse.Error = ""
+		sequence := len(installedReleases) + len(availableUpdates) // helm revisions are 1-based
+		getLatestDeployableVersionResponse.LatestDeployableVersion = helm.HelmUpdateToDownsreamVersion(availableUpdates[0], int64(sequence))
 		getLatestDeployableVersionResponse.NumOfSkippedVersions = 0   // TODO
 		getLatestDeployableVersionResponse.NumOfRemainingVersions = 0 // TODO
 

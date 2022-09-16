@@ -208,7 +208,7 @@ class AppVersionHistoryRow extends Component {
     }
 
     let configScreenURL = `/app/${app.slug}/config/${version.sequence}`;
-    if (this.props.isHelmManaged && version.status === "pending") {
+    if (this.props.isHelmManaged && version.status.startsWith("pending")) {
       configScreenURL = `${configScreenURL}?isPending=true&semver=${version.semver}`;
     }
 
@@ -437,9 +437,7 @@ class AppVersionHistoryRow extends Component {
               onClick={() => {
                 this.props.handleActionButtonClicked();
                 if (needsConfiguration) {
-                  this.props.history.push(
-                    `/app/${app.slug}/config/${version.sequence}`
-                  );
+                  this.props.history.push(configScreenURL);
                   return null;
                 }
                 if (isRollback) {
