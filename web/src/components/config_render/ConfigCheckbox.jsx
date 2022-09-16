@@ -48,34 +48,35 @@ export default class ConfigCheckbox extends React.Component {
               this.props.readonly ? "readonly" : ""
             }`}
           />
-          <div>
-            <label
-              htmlFor={this.props.name}
-              className={`u-marginLeft--5 header-color field-section-sub-header u-userSelect--none ${
-                this.props.readonly ? "u-cursor--default" : "u-cursor--pointer"
-              }`}
-            >
-              {this.props.title}{" "}
-              {this.props.required ? (
-                <span className="field-label required">Required</span>
-              ) : this.props.recommended ? (
-                <span className="field-label recommended">Recommended</span>
-              ) : null}
-            </label>
-            {this.props.help_text !== "" ? (
-              <div className="field-section-help-text u-marginTop--5 u-marginLeft--5">
-                <Markdown
-                  options={{
-                    linkTarget: "_blank",
-                    linkify: true,
-                  }}
-                >
-                  {this.props.help_text}
-                </Markdown>
-              </div>
+          <label
+            htmlFor={this.props.name}
+            className={`u-marginLeft--5 header-color field-section-sub-header u-userSelect--none ${
+              this.props.readonly ? "u-cursor--default" : "u-cursor--pointer"
+            }`}
+          >
+            {this.props.title}{" "}
+            {this.props.required ? (
+              <span className="field-label required">Required</span>
+            ) : this.props.recommended ? (
+              <span className="field-label recommended">Recommended</span>
             ) : null}
-          </div>
+          </label>
         </div>
+        {this.props.help_text !== "" ? (
+          <div
+            className="field-section-help-text u-marginTop--5"
+            style={{ marginLeft: "25px" }}
+          >
+            <Markdown
+              options={{
+                linkTarget: "_blank",
+                linkify: true,
+              }}
+            >
+              {this.props.help_text}
+            </Markdown>
+          </div>
+        ) : null}
       </ConfigWrapper>
     );
   }
