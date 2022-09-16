@@ -28,27 +28,29 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 	taskID := "update-download"
 	if update.AppSequence != nil {
 		taskID = fmt.Sprintf("update-download.%d", *update.AppSequence)
+
+		// The entire "update-download" task state is managed ouside of this function.
+		// Version specific tasks are managed in this sope only.
+		finishedCh := make(chan struct{})
+		defer close(finishedCh)
+		go func() {
+			for {
+				select {
+				case <-time.After(time.Second):
+					if err := store.GetStore().UpdateTaskStatusTimestamp(taskID); err != nil {
+						logger.Error(errors.Wrapf(err, "failed to update %s task status timestamp", taskID))
+					}
+				case <-finishedCh:
+					return
+				}
+			}
+		}()
 	}
 
 	if err := store.GetStore().SetTaskStatus(taskID, "Fetching update...", "running"); err != nil {
 		finalError = errors.Wrap(err, "failed to set task status")
 		return
 	}
-
-	finishedCh := make(chan struct{})
-	defer close(finishedCh)
-	go func() {
-		for {
-			select {
-			case <-time.After(time.Second):
-				if err := store.GetStore().UpdateTaskStatusTimestamp(taskID); err != nil {
-					logger.Error(errors.Wrapf(err, "failed to update %s task status timestamp", taskID))
-				}
-			case <-finishedCh:
-				return
-			}
-		}
-	}()
 
 	defer func() {
 		if finalError == nil {

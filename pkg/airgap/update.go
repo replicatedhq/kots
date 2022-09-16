@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
@@ -23,48 +22,16 @@ import (
 	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
+	"github.com/replicatedhq/kots/pkg/tasks"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
 )
-
-func StartUpdateTaskMonitor(finishedChan <-chan error) {
-	go func() {
-		var finalError error
-		defer func() {
-			if finalError == nil {
-				if err := store.GetStore().ClearTaskStatus("update-download"); err != nil {
-					logger.Error(errors.Wrap(err, "failed to clear update-download task status"))
-				}
-			} else {
-				errMsg := finalError.Error()
-				if cause, ok := errors.Cause(finalError).(util.ActionableError); ok {
-					errMsg = cause.Error()
-				}
-				if err := store.GetStore().SetTaskStatus("update-download", errMsg, "failed"); err != nil {
-					logger.Error(errors.Wrap(err, "failed to set error on update-download task status"))
-				}
-			}
-		}()
-
-		for {
-			select {
-			case <-time.After(time.Second):
-				if err := store.GetStore().UpdateTaskStatusTimestamp("update-download"); err != nil {
-					logger.Error(err)
-				}
-			case err := <-finishedChan:
-				finalError = err
-				return
-			}
-		}
-	}()
-}
 
 func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string, deploy bool, skipPreflights bool, skipCompatibilityCheck bool) (finalError error) {
 	finishedChan := make(chan error)
 	defer close(finishedChan)
 
-	StartUpdateTaskMonitor(finishedChan)
+	tasks.StartUpdateTaskMonitor("update-download", finishedChan)
 	defer func() {
 		finishedChan <- finalError
 	}()

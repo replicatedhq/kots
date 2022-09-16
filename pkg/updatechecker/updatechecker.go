@@ -7,29 +7,31 @@ import (
 	"time"
 
 	"github.com/blang/semver"
-	"github.com/replicatedhq/kots/pkg/helm"
-	"github.com/replicatedhq/kots/pkg/kotsadm/types"
-	"github.com/replicatedhq/kots/pkg/preflight"
-	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
-	"k8s.io/apimachinery/pkg/util/wait"
-
 	"github.com/pkg/errors"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/app"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/helm"
+	"github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
 	upstream "github.com/replicatedhq/kots/pkg/kotsadmupstream"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/preflight"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
+	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	kotssemver "github.com/replicatedhq/kots/pkg/semver"
 	storepkg "github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
+	"github.com/replicatedhq/kots/pkg/tasks"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
+	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	cron "github.com/robfig/cron/v3"
 	"go.uber.org/zap"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 // jobs maps app ids to their cron jobs
@@ -193,7 +195,7 @@ type UpdateCheckRelease struct {
 // otherwise, if "DeployVersionLabel" is set to true, then the version with the corresponding version label will be deployed (if found).
 // otherwise, if "IsAutomatic" is set to true (which means it's an automatic update check), then the version that matches the auto deploy configuration (if enabled) will be deployed.
 // returns the number of available updates.
-func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
+func CheckForUpdates(opts CheckForUpdatesOpts) (ucr *UpdateCheckResponse, finalError error) {
 	currentStatus, _, err := store.GetTaskStatus("update-download")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get task status")
@@ -203,63 +205,98 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 		return nil, nil
 	}
 
+	if err := store.SetTaskStatus("update-download", "Checking for updates...", "running"); err != nil {
+		return nil, errors.Wrap(err, "failed to set task status")
+	}
+
+	finishedChan := make(chan error)
+	if opts.Wait {
+		defer close(finishedChan)
+	}
+
+	tasks.StartUpdateTaskMonitor("update-download", finishedChan)
+	if opts.Wait {
+		defer func() {
+			finishedChan <- finalError
+		}()
+	}
+
 	if util.IsHelmManaged() {
-		release := helm.GetHelmApp(opts.AppID)
-		app, err := helm.ResponseAppFromHelmApp(release)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to convert release to helm app")
+		ucr, finalError = checkForHelmAppUpdates(opts, finishedChan)
+		if finalError != nil {
+			finalError = errors.Wrap(finalError, "failed to get helm app updates")
+			return
 		}
-
-		license, err := helm.GetChartLicenseFromSecretOrDownload(release)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get license for helm app")
+	} else {
+		ucr, finalError = checkForKotsAppUpdates(opts, finishedChan)
+		if finalError != nil {
+			finalError = errors.Wrap(finalError, "failed to get kots app updates")
+			return
 		}
+	}
 
-		if license == nil {
-			return nil, errors.Wrap(err, "license not found for helm app")
+	return
+}
+
+func checkForHelmAppUpdates(opts CheckForUpdatesOpts, finishedChan chan<- error) (*UpdateCheckResponse, error) {
+	helmApp := helm.GetHelmApp(opts.AppID)
+
+	license, err := helm.GetChartLicenseFromSecretOrDownload(helmApp)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get license for helm app")
+	}
+
+	if license == nil {
+		return nil, errors.Wrap(err, "license not found for helm app")
+	}
+
+	currentVersion, err := semver.ParseTolerant(helmApp.Release.Chart.Metadata.Version)
+	if err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("failed to get parse current version %s", helmApp.Release.Chart.Metadata.Version))
+	}
+
+	availableUpdateTags, err := helm.CheckForUpdates(helmApp.ChartPath, license.Spec.LicenseID, &currentVersion)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get available updates")
+	}
+
+	var updates []UpdateCheckRelease
+	for _, update := range availableUpdateTags {
+		updates = append(updates, UpdateCheckRelease{
+			Sequence: 0, // TODO
+			Version:  update.Tag,
+		})
+	}
+
+	ucr := UpdateCheckResponse{
+		AvailableUpdates:  int64(len(updates)),
+		AvailableReleases: updates,
+		DeployingRelease:  nil,
+	}
+
+	status := fmt.Sprintf("%d Updates available...", ucr.AvailableUpdates)
+	if err := store.SetTaskStatus("update-download", status, "running"); err != nil {
+		return nil, errors.Wrap(err, "failed to set task status")
+	}
+
+	if opts.Wait {
+		if err := downloadHelmAppUpdates(opts, helmApp, license.Spec.LicenseID, updates); err != nil {
+			return nil, errors.Wrap(err, "failed to process updates")
 		}
-
-		var currentVersion *semver.Version
-		if app.Downstream.CurrentVersion != nil {
-			v, err := semver.ParseTolerant(app.Downstream.CurrentVersion.VersionLabel)
-			if err != nil {
-				return nil, errors.Wrap(err, fmt.Sprintf("failed to get parse current version %v", app.Downstream.CurrentVersion))
+	} else {
+		go func() {
+			defer close(finishedChan)
+			if err := downloadHelmAppUpdates(opts, helmApp, license.Spec.LicenseID, updates); err != nil {
+				logger.Error(errors.Wrap(err, "failed to process updates"))
 			}
-			currentVersion = &v
-		}
-
-		availableUpdateTags, err := helm.CheckForUpdates(app.ChartPath, license.Spec.LicenseID, currentVersion)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get available updates")
-		}
-
-		var updates []UpdateCheckRelease
-		for _, update := range availableUpdateTags {
-			updates = append(updates, UpdateCheckRelease{
-				Sequence: 0, // TODO
-				Version:  update.Tag,
-			})
-		}
-
-		ucr := UpdateCheckResponse{
-			AvailableUpdates:  int64(len(updates)),
-			AvailableReleases: updates,
-			DeployingRelease:  nil,
-		}
-
-		status := fmt.Sprintf("%d Updates available...", ucr.AvailableUpdates)
-		if err := store.SetTaskStatus("update-download", status, "running"); err != nil {
-			return nil, errors.Wrap(err, "failed to set task status")
-		}
-
-		return &ucr, nil
+			finishedChan <- err
+		}()
 	}
 
-	// clear task status in config map
-	if err := store.ClearTaskStatus("update-download"); err != nil {
-		return nil, errors.Wrap(err, "failed to clear task status")
-	}
+	return &ucr, nil
+}
 
+func checkForKotsAppUpdates(opts CheckForUpdatesOpts, finishedChan chan<- error) (*UpdateCheckResponse, error) {
 	a, err := store.GetApp(opts.AppID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get app")
@@ -361,21 +398,58 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (*UpdateCheckResponse, error) {
 	}
 
 	if opts.Wait {
-		if err := processUpdates(opts, a.ID, d.ClusterID, filteredUpdates, updates.UpdateCheckTime); err != nil {
-			return nil, errors.Wrap(err, "failed to process updates")
+		if err := downloadKotsAppUpdates(opts, a.ID, d.ClusterID, filteredUpdates, updates.UpdateCheckTime); err != nil {
+			return nil, errors.Wrap(err, "failed to download updates")
 		}
 	} else {
 		go func() {
-			if err := processUpdates(opts, a.ID, d.ClusterID, filteredUpdates, updates.UpdateCheckTime); err != nil {
-				logger.Error(errors.Wrap(err, "failed to process updates"))
+			defer close(finishedChan)
+			err := downloadKotsAppUpdates(opts, a.ID, d.ClusterID, filteredUpdates, updates.UpdateCheckTime)
+			if err != nil {
+				logger.Error(errors.Wrap(err, "failed to download updates"))
 			}
+			finishedChan <- err
 		}()
 	}
 
 	return &ucr, nil
 }
 
-func processUpdates(opts CheckForUpdatesOpts, appID string, clusterID string, updates []upstreamtypes.Update, updateCheckTime time.Time) error {
+func downloadHelmAppUpdates(opts CheckForUpdatesOpts, helmApp *apptypes.HelmApp, licenseID string, updates []UpdateCheckRelease) error {
+	for _, update := range updates {
+		status := fmt.Sprintf("Downloading release %s...", update.Version)
+		if err := store.SetTaskStatus("update-download", status, "running"); err != nil {
+			logger.Info("failed to set task status", zap.String("error", err.Error()))
+		}
+
+		kotsKinds, err := helm.GetKotsKindsFromUpstreamChartVersion(helmApp, licenseID, update.Version)
+		if err != nil {
+			return errors.Wrapf(err, "failed to pull update %s for chart", update.Version)
+		}
+
+		downstreamStatus := storetypes.VersionPending
+		// TODO: preflight handling
+		// if kotsKinds.HasPreflights() {
+		// 	downstreamStatus = types.VersionPendingPreflight
+		// }
+
+		sequence := int64(-1)                                // TODO: do something sensible, this value isn't used
+		registrySettings := registrytypes.RegistrySettings{} // TODO: private registries aren't supported yet
+		t, err := kotsadmconfig.NeedsConfiguration(helmApp.GetSlug(), sequence, helmApp.GetIsAirgap(), &kotsKinds, registrySettings)
+		if err != nil {
+			return errors.Wrap(err, "failed to check if version needs configuration")
+		}
+		if t {
+			downstreamStatus = storetypes.VersionPendingConfig
+		}
+
+		helm.SetCachedUpdateStatus(helmApp.ChartPath, update.Version, downstreamStatus)
+	}
+
+	return nil
+}
+
+func downloadKotsAppUpdates(opts CheckForUpdatesOpts, appID string, clusterID string, updates []upstreamtypes.Update, updateCheckTime time.Time) error {
 	for index, update := range updates {
 		appSequence, err := upstream.DownloadUpdate(appID, update, opts.SkipPreflights, opts.SkipCompatibilityCheck)
 		if appSequence != nil {

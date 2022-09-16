@@ -818,6 +818,11 @@ class DashboardVersionCard extends React.Component {
     const isPendingDownload = version.status === "pending_download";
     const isSecondaryActionBtn = needsConfiguration || isPendingDownload;
 
+    let url = `/app/${app?.slug}/config/${version.sequence}`;
+    if (this.props.isHelmManaged) {
+      url = `${url}?isPending=true&semver=${version.versionLabel}`;
+    }
+
     return (
       <div className="flex flex1 alignItems--center justifyContent--flexEnd">
         {this.renderReleaseNotes(version)}
@@ -832,9 +837,7 @@ class DashboardVersionCard extends React.Component {
             disabled={this.isActionButtonDisabled(version)}
             onClick={() => {
               if (needsConfiguration) {
-                this.props.history.push(
-                  `/app/${app?.slug}/config/${version.sequence}`
-                );
+                this.props.history.push(url);
                 return;
               }
               if (version.needsKotsUpgrade) {

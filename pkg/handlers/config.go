@@ -264,16 +264,9 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			chartData, err := helm.PullChartVersion(helmApp, licenseID, r.URL.Query().Get("semver"))
+			k, err := helm.GetKotsKindsFromUpstreamChartVersion(helmApp, licenseID, r.URL.Query().Get("semver"))
 			if err != nil {
-				logger.Error(errors.Wrap(err, "failed to download chart"))
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-
-			k, err := helm.GetKotsKindsFromChartArchive(chartData)
-			if err != nil {
-				logger.Error(errors.Wrap(err, "failed to get kotskinds from chart archive"))
+				logger.Error(errors.Wrap(err, "failed to get kotskinds from upstream chart"))
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
@@ -485,19 +478,13 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			chartData, err := helm.PullChartVersion(helmApp, licenseID, r.URL.Query().Get("semver"))
+			k, err := helm.GetKotsKindsFromUpstreamChartVersion(helmApp, licenseID, r.URL.Query().Get("semver"))
 			if err != nil {
-				logger.Error(errors.Wrap(err, "failed to download chart"))
+				logger.Error(errors.Wrap(err, "failed to get kotskinds from upstream chart"))
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 
-			k, err := helm.GetKotsKindsFromChartArchive(chartData)
-			if err != nil {
-				logger.Error(errors.Wrap(err, "failed to get kotskinds from chart archive"))
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
 			k.ConfigValues = appKotsKinds.ConfigValues.DeepCopy()
 
 			licenseData, err := kotslicense.GetLatestLicenseForHelm(licenseID)
