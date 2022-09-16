@@ -1,16 +1,21 @@
 // This hook has not been integrated yet.
-import { useQuery } from "react-query";
+import React from "react";
+import { useQuery, UseQueryResult } from "react-query";
 import { Utilities } from "../../../utilities/utilities";
+
+export type App = {
+  slug: string;
+};
 
 async function getApps({
   accessToken = Utilities.getToken(),
   apiEndpoint = process.env.API_ENDPOINT,
   _fetch = fetch,
-} = {}) {
+} = {}): Promise<{ apps: App[] } | null> {
   try {
     const res = await _fetch(`${apiEndpoint}/apps`, {
       headers: {
-        Authorization: accessToken,
+        Authorization: accessToken || "",
         "Content-Type": "application/json",
       },
       method: "GET",
@@ -24,19 +29,37 @@ async function getApps({
     }
     return await res.json();
   } catch (err) {
-    throw Error(err);
+    if (err instanceof Error) {
+      throw err;
+    }
+
+    throw Error(`Failed to fetch apps with error ${err}`);
   }
 }
 
-function useApps({ _getApps = getApps } = {}) {
-  return useQuery("apps", () => _getApps(), {
+function useApps({ _getApps = getApps } = {}): UseQueryResult<{
+  apps: App[] | null;
+}> {
+  const query: UseQueryResult<{
+    apps: App[] | null;
+  }> = useQuery("apps", () => _getApps(), {
     staleTime: 2000,
   });
+
+  return query;
 }
 
-function UseApps({ children }) {
+function UseApps({
+  children,
+}: {
+  children: (
+    props: UseQueryResult<{ apps: App[] | null }, Error>
+  ) => React.ReactNode;
+}) {
   const query = useApps();
 
+  // TODO: figure this out
+  // @ts-ignore
   return children(query);
 }
 
