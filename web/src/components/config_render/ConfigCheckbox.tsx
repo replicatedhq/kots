@@ -15,11 +15,11 @@ type Props = {
   hidden: boolean;
   index: number;
   name: string;
-  readonly: any;
+  readonly: boolean;
   title: string;
   type: string;
   value: string;
-  when: any;
+  when: string;
   affix: string;
   className: string;
   required: boolean;
