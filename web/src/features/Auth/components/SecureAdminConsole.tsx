@@ -1,24 +1,41 @@
 import * as React from "react";
 import Helmet from "react-helmet";
-import { Utilities, dynamicallyResizeText } from "../utilities/utilities";
-import Loader from "./shared/Loader";
-import ErrorModal from "./modals/ErrorModal";
+import { Utilities, dynamicallyResizeText } from "@src/utilities/utilities";
+import Loader from "@src/components/shared/Loader";
+import ErrorModal from "@src/components/modals/ErrorModal";
 import "../scss/components/Login.scss";
+import { App } from "@features/App";
+import { RouteComponentProps } from "react-router-dom";
 
 type Props = {
+  appName: string;
   children: React.ReactNode;
   title: string;
   loading: boolean;
+  fetchingMetadata: boolean;
   error: string;
   clearError: () => void;
-}
+  onLoginSuccess: () => App[];
+  pendingApp: () => App;
+  checkIsHelmManaged: () => boolean;
+  logo: string;
+} & RouteComponentProps;
 
+type State = {
+  password: string;
+  loginErr: boolean;
+  loginErrMessage: string;
+  authLoading: boolean;
+  loginInfo: {
+    method: string;
+  };
+};
 type LoginResponse = {
   token: string;
-  expires: number;
-
-}
-class SecureAdminConsole extends React.Component<Props> {
+  expires?: number;
+  sessionRoles: string;
+};
+class SecureAdminConsole extends React.Component<Props, State> {
   loginText: React.RefObject<HTMLDivElement>;
 
   constructor(props: Props) {
@@ -35,7 +52,7 @@ class SecureAdminConsole extends React.Component<Props> {
     this.loginText = React.createRef();
   }
 
-  completeLogin = async (data) => {
+  completeLogin = async (data: LoginResponse) => {
     let loggedIn = false;
     try {
       let token = data.token;
@@ -71,7 +88,7 @@ class SecureAdminConsole extends React.Component<Props> {
   };
 
   validatePassword = () => {
-    if (!this.state.password || this.state.password.length === "0") {
+    if (!this.state.password || this.state.password.length === 0) {
       this.setState({
         loginErr: true,
         loginErrMessage: `Please provide your password`,
@@ -116,7 +133,7 @@ class SecureAdminConsole extends React.Component<Props> {
           }
           // TODO: refactor this fetch function to return the result instead of using the callback in the fetch
           // TODO: remove "as" and use type Promise<LoginResponse> on loginWithSharedPassword
-          this.completeLogin(await res.json() as LoginResponse);
+          this.completeLogin((await res.json()) as LoginResponse);
         })
         .catch((err) => {
           console.log("Login failed:", err);
@@ -164,7 +181,8 @@ class SecureAdminConsole extends React.Component<Props> {
     }
   };
 
-  submitForm = (e) => {
+  submitForm = (e: KeyboardEvent) => {
+    // TODO: keyCode is deprecated
     const enterKey = e.keyCode === 13;
     if (enterKey) {
       e.preventDefault();
@@ -180,7 +198,8 @@ class SecureAdminConsole extends React.Component<Props> {
     const newFontSize = dynamicallyResizeText(
       this.loginText.current.innerHTML,
       this.loginText.current.clientWidth,
-      "32px"
+      "32px",
+      null
     );
     this.loginText.current.style.fontSize = newFontSize;
   };
@@ -215,7 +234,7 @@ class SecureAdminConsole extends React.Component<Props> {
     return null;
   };
 
-  componentDidUpdate(lastProps) {
+  componentDidUpdate(lastProps: Props) {
     const { appName } = this.props;
     if (appName && appName !== lastProps.appName) {
       if (this.loginText) {
@@ -242,9 +261,10 @@ class SecureAdminConsole extends React.Component<Props> {
       // this is a redirect from identity service login
       // strip quotes from token (golang adds them when the cookie value has spaces, commas, etc..)
       const loginData = {
-        token:
-          localStorageToken.replace(/"/g, "") || cookieToken.replace(/"/g, ""),
-        sessionRoles: localStorageSessionRole || cookieSessionRole,
+        token: (
+          localStorageToken?.replace(/"/g, "") || cookieToken.replace(/"/g, "")
+        ).toString(),
+        sessionRoles: (localStorageSessionRole || cookieSessionRole).toString(),
       };
       await this.completeLogin(loginData);
     }
