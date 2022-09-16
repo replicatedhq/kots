@@ -1,10 +1,35 @@
-import React from "react";
+import React, { createRef } from "react";
+// TODO: add type checking support for react-remarkable or add a global ignore
+// @ts-ignore
 import Markdown from "react-remarkable";
 import { setOrder } from "./ConfigUtil";
 import { ConfigWrapper } from "./ConfigComponents";
 
-export default class ConfigCheckbox extends React.Component {
-  handleOnChange = (e) => {
+type Props = {
+  default: string;
+  groupName: string;
+  handleAddItem: () => void;
+  handleOnChange: (name: String, val: string) => void;
+  handleRemoveItem: () => void;
+  help_text: string;
+  hidden: boolean;
+  index: number;
+  name: string;
+  readonly: any;
+  title: string;
+  type: string;
+  value: string;
+  when: any;
+  affix: string;
+  className: string;
+  required: boolean;
+  recommended: boolean;
+};
+
+export default class ConfigCheckbox extends React.Component<Props> {
+  private checkbox = createRef<HTMLInputElement>();
+
+  handleOnChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const { handleOnChange, name } = this.props;
     var val = e.target.checked ? "1" : "0";
     if (this.props.handleOnChange && typeof handleOnChange === "function") {
@@ -35,7 +60,7 @@ export default class ConfigCheckbox extends React.Component {
         ></span>
         <div className="flex1 flex u-marginRight--20">
           <input
-            ref={(checkbox) => (this.checkbox = checkbox)}
+            ref={this.checkbox}
             type="checkbox"
             name={this.props.name}
             id={this.props.name}
