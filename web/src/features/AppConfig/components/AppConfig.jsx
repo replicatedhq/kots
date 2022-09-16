@@ -236,13 +236,17 @@ class AppConfig extends Component {
     const slug = this.getSlug();
 
     if (fromLicenseFlow) {
-      this.props.history.push(`/${slug}/config#${requiredItems[0]}-group`);
+      this.props.history.push(
+        `/${slug}/config${window.location.search}#${requiredItems[0]}-group`
+      );
     } else if (match.params.sequence) {
       this.props.history.push(
-        `/app/${slug}/config/${match.params.sequence}#${requiredItems[0]}-group`
+        `/app/${slug}/config/${match.params.sequence}${window.location.search}#${requiredItems[0]}-group`
       );
     } else {
-      this.props.history.push(`/app/${slug}/config#${requiredItems[0]}-group`);
+      this.props.history.push(
+        `/app/${slug}/config${window.location.search}#${requiredItems[0]}-group`
+      );
     }
   };
 
@@ -266,7 +270,7 @@ class AppConfig extends Component {
   handleSave = async () => {
     this.setState({ savingConfig: true, configError: "" });
 
-    const { fromLicenseFlow, history, match } = this.props;
+    const { fromLicenseFlow, history, match, isHelmManaged } = this.props;
     const sequence = this.getSequence();
     const slug = this.getSlug();
     const createNewVersion =
@@ -300,6 +304,13 @@ class AppConfig extends Component {
 
         if (this.props.refreshAppData) {
           await this.props.refreshAppData();
+        }
+
+        if (isHelmManaged) {
+          this.setState({
+            showHelmDeployModal: true,
+          });
+          return;
         }
 
         if (fromLicenseFlow) {
@@ -485,7 +496,7 @@ class AppConfig extends Component {
       displayErrorModal,
       errorTitle,
     } = this.state;
-    const { fromLicenseFlow, match } = this.props;
+    const { fromLicenseFlow, match, isHelmManaged } = this.props;
     const app = this.props.app || this.state.app;
 
     if (configLoading || !app) {
@@ -503,6 +514,11 @@ class AppConfig extends Component {
     if (!downstreamVersionLabel) {
       const urlParams = new URLSearchParams(window.location.search);
       downstreamVersionLabel = urlParams.get("semver");
+    }
+
+    let saveButtonText = fromLicenseFlow ? "Continue" : "Save config";
+    if (isHelmManaged) {
+      saveButtonText = "Generate Upgrade Command";
     }
 
     return (
@@ -595,21 +611,6 @@ class AppConfig extends Component {
                   fileName: "values.yaml",
                 });
 
-                const handleGenerateConfig = () => {
-                  this.setState({
-                    showHelmDeployModal: true,
-                  });
-                  saveConfig({
-                    body: JSON.stringify({
-                      configGroups: this.state.configGroups,
-                      sequence: this.getSequence(),
-                      createNewVersion:
-                        !this.props.fromLicenseFlow &&
-                        this.props.match.params.sequence == undefined,
-                    }),
-                  });
-                };
-
                 return (
                   <>
                     {!isHelmManaged && (
@@ -637,23 +638,12 @@ class AppConfig extends Component {
                       </div>
                     </div>
                     <div className="flex alignItems--flexStart">
-                      {isHelmManaged && (
-                        <div className="ConfigError--wrapper flex-column u-paddingBottom--30 alignItems--flexStart">
-                          <button
-                            className="btn primary blue"
-                            disabled={isSaving}
-                            onClick={handleGenerateConfig}
-                          >
-                            Generate Upgrade Command
-                          </button>
-                        </div>
-                      )}
-                      {!isHelmManaged && savingConfig && (
+                      {savingConfig && (
                         <div className="u-paddingBottom--30">
                           <Loader size="30" />
                         </div>
                       )}
-                      {!isHelmManaged && !savingConfig && (
+                      {!savingConfig && (
                         <div className="ConfigError--wrapper flex-column u-paddingBottom--30 alignItems--flexStart">
                           {configError && (
                             <span className="u-textColor--error u-marginBottom--20 u-fontWeight--bold">
@@ -668,7 +658,7 @@ class AppConfig extends Component {
                             }
                             onClick={this.handleSave}
                           >
-                            {fromLicenseFlow ? "Continue" : "Save config"}
+                            {saveButtonText}
                           </button>
                         </div>
                       )}
