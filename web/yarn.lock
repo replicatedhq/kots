@@ -3538,6 +3538,13 @@
   dependencies:
     "@types/react" "*"
 
+"@types/react-helmet@5":
+  version "5.0.20"
+  resolved "https://registry.yarnpkg.com/@types/react-helmet/-/react-helmet-5.0.20.tgz#8d27d8a38bca710055eb021db5a65af07829752b"
+  integrity sha512-0gv4NbI5dqBR9l5iMAfDo0udcPfjvv0H8V3tCL1JxCYvXfqYixzsEPVuOIrLCwezELie90S3r+gQuHpEy7SHvg==
+  dependencies:
+    "@types/react" "*"
+
 "@types/react-modal@^3.11.2":
   version "3.13.1"
   resolved "https://registry.yarnpkg.com/@types/react-modal/-/react-modal-3.13.1.tgz#5b9845c205fccc85d9a77966b6e16dc70a60825a"

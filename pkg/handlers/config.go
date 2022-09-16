@@ -471,6 +471,13 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 			kotsKinds = &k
 			license = kotsKinds.License
 		} else {
+			appKotsKinds, err := helm.GetKotsKindsFromHelmApp(helmApp)
+			if err != nil {
+				logger.Error(errors.Wrap(err, "failed to get app kotskinds"))
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
 			licenseID := helm.GetKotsLicenseID(&helmApp.Release)
 			if licenseID == "" {
 				logger.Error(errors.Errorf("no license and no license ID found for release %s", helmApp.Release.Name))
@@ -491,6 +498,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
+			k.ConfigValues = appKotsKinds.ConfigValues.DeepCopy()
 
 			licenseData, err := kotslicense.GetLatestLicenseForHelm(licenseID)
 			if err != nil {
