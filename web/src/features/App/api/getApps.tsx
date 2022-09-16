@@ -5,6 +5,7 @@ import { Utilities } from "../../../utilities/utilities";
 
 export type App = {
   slug: string;
+  needsRegistry?: boolean;
 };
 
 async function getApps({
