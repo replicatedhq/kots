@@ -3,7 +3,7 @@ import Helmet from "react-helmet";
 import { Utilities, dynamicallyResizeText } from "@src/utilities/utilities";
 import Loader from "@src/components/shared/Loader";
 import ErrorModal from "@src/components/modals/ErrorModal";
-import "../scss/components/Login.scss";
+import "@src/scss/components/Login.scss";
 import { App } from "@features/App";
 import { RouteComponentProps } from "react-router-dom";
 
