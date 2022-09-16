@@ -8,17 +8,12 @@ import { App } from "@features/App";
 import { RouteComponentProps } from "react-router-dom";
 
 type Props = {
-  appName: string;
-  children: React.ReactNode;
-  title: string;
-  loading: boolean;
+  appName: string | null;
   fetchingMetadata: boolean;
-  error: string;
-  clearError: () => void;
-  onLoginSuccess: () => App[];
-  pendingApp: () => App;
-  checkIsHelmManaged: () => boolean;
-  logo: string;
+  onLoginSuccess: () => Promise<App[]>;
+  pendingApp: () => Promise<App>;
+  checkIsHelmManaged: () => Promise<void>;
+  logo: string | null;
 } & RouteComponentProps;
 
 type State = {
@@ -28,7 +23,7 @@ type State = {
   authLoading: boolean;
   loginInfo: {
     method: string;
-  };
+  } | null;
 };
 type LoginResponse = {
   token: string;
