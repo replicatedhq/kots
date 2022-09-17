@@ -648,7 +648,7 @@ class AppVersionHistoryRow extends Component {
     } = this.props;
 
     let showSequence = true;
-    if (isHelmManaged && version.status === "pending") {
+    if (isHelmManaged && version.status.startsWith("pending")) {
       showSequence = false;
     }
 
