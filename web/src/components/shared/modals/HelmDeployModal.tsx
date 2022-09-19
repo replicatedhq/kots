@@ -3,7 +3,7 @@ import Modal from "react-modal";
 // TODO: add type to CodeSnippet
 // @ts-ignore
 import CodeSnippet from "@src/components/shared/CodeSnippet";
-import './styles/HelmDeployModal.scss'
+import "./styles/HelmDeployModal.scss";
 
 function makeDeployCommand({
   appSlug,
