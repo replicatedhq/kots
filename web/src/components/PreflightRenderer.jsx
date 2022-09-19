@@ -76,14 +76,12 @@ export default function PreflightRenderer(props) {
                       </a>
                     </div>
                   )}
-                </div>
-                {row.isFail && row.strict ? (
-                  <div className="flex flex-auto alignItems--center">
-                    <p className="u-textColor--error u-fontSize--small u-fontWeight--medium">
+                  {row.isFail && row.strict ? (
+                    <p className="u-textColor--error u-fontSize--small u-fontWeight--medium u-marginTop--10">
                       To deploy the application, this check cannot fail.
                     </p>
-                  </div>
-                ) : null}
+                  ) : null}
+                </div>
               </div>
             </div>
           );
