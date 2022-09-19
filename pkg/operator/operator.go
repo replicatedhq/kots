@@ -87,7 +87,7 @@ func (o *Operator) Start() error {
 	}
 	o.clusterID = id
 
-	o.startStatusInformers()
+	go o.resumeStatusInformers()
 	go o.resumeDeployments()
 	startLoop(o.restoreLoop, 2)
 
@@ -416,20 +416,20 @@ func (o *Operator) applyStatusInformers(a *apptypes.App, sequence int64, kotsKin
 	return nil
 }
 
-func (o *Operator) startStatusInformers() {
+func (o *Operator) resumeStatusInformers() {
 	apps, err := o.store.ListAppsForDownstream(o.clusterID)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to list installed apps for downstream"))
 		return
 	}
 	for _, app := range apps {
-		if err := o.startStatusInformersForApp(app); err != nil {
-			logger.Error(errors.Wrapf(err, "failed to start status informers for app %s in cluster %s", app.ID, o.clusterID))
+		if err := o.resumeStatusInformersForApp(app); err != nil {
+			logger.Error(errors.Wrapf(err, "failed to resume status informers for app %s in cluster %s", app.ID, o.clusterID))
 		}
 	}
 }
 
-func (o *Operator) startStatusInformersForApp(app *apptypes.App) error {
+func (o *Operator) resumeStatusInformersForApp(app *apptypes.App) error {
 	deployedVersion, err := o.store.GetCurrentDownstreamVersion(app.ID, o.clusterID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get current downstream version")

@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sync"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
@@ -84,10 +86,27 @@ var _ = Describe("Operator", func() {
 				}
 				mockStore.EXPECT().GetRegistryDetailsForApp(appID).Return(registrySettings, nil)
 
-				mockClient.EXPECT().ApplyAppInformers(gomock.Any()).Times(1)
+				wg := sync.WaitGroup{}
+				wg.Add(1)
+				mockClient.EXPECT().ApplyAppInformers(gomock.Any()).Times(1).Do(func(args operatortypes.AppInformersArgs) {
+					wg.Done()
+				})
 
 				err := testOperator.Start()
 				Expect(err).ToNot(HaveOccurred())
+
+				done := make(chan struct{})
+				go func() {
+					wg.Wait()
+					close(done)
+				}()
+
+				// wait for the informers to start or timeout
+				select {
+				case <-done:
+				case <-time.After(2 * time.Second):
+					Fail("timed out waiting for informers to start")
+				}
 			})
 		})
 		When("there is not a currently deployed app sequence", func() {
@@ -129,10 +148,27 @@ var _ = Describe("Operator", func() {
 
 				mockStore.EXPECT().GetCurrentDownstreamVersion(appID, "").AnyTimes().Return(nil, nil)
 
-				mockClient.EXPECT().ApplyAppInformers(gomock.Any()).Times(0)
+				wg := sync.WaitGroup{}
+				wg.Add(1)
+				mockClient.EXPECT().ApplyAppInformers(gomock.Any()).Times(0).Do(func(args operatortypes.AppInformersArgs) {
+					wg.Done()
+				})
 
 				err := testOperator.Start()
 				Expect(err).ToNot(HaveOccurred())
+
+				done := make(chan struct{})
+				go func() {
+					wg.Wait()
+					close(done)
+				}()
+
+				// wait for the informers to start or timeout
+				select {
+				case <-done:
+					Fail("informers should not have started")
+				case <-time.After(2 * time.Second):
+				}
 			})
 		})
 	})
