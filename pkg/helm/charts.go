@@ -505,6 +505,62 @@ func GetKotsKindsFromChartArchive(archive *bytes.Buffer) (kotsutil.KotsKinds, er
 	return kotsKinds, nil
 }
 
+func GetReplicatedSecretForRevision(releaseName string, revision int64, namespace string) (*corev1.Secret, error) {
+	clientSet, err := k8sutil.GetClientset()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get clientset")
+	}
+
+	selectorLabels := map[string]string{
+		"owner":   "helm",
+		"version": fmt.Sprintf("%d", revision),
+		"name":    releaseName,
+	}
+	listOpts := metav1.ListOptions{
+		LabelSelector: labels.SelectorFromSet(selectorLabels).String(),
+	}
+
+	secrets, err := clientSet.CoreV1().Secrets(namespace).List(context.TODO(), listOpts)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to list secrets")
+	}
+
+	if len(secrets.Items) != 1 {
+		return nil, errors.Errorf("expected to match 1 secret, but found %d", len(secrets.Items))
+	}
+
+	chartSecret := secrets.Items[0]
+	helmApp, err := helmAppFromSecret(&chartSecret)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to convert secret to helm app")
+	}
+
+	for _, template := range helmApp.Release.Chart.Templates {
+		if template.Name != "templates/_replicated/secret.yaml" {
+			continue
+		}
+
+		secretData, err := removeHelmTemplate(template.Data)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to remove helm templates from replicated secret file")
+		}
+
+		decode := scheme.Codecs.UniversalDeserializer().Decode
+		obj, gvk, err := decode(secretData, nil, nil)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to decode secret data")
+		}
+
+		if gvk.Group != "" || gvk.Version != "v1" || gvk.Kind != "Secret" {
+			return nil, errors.Errorf("unexpected secret GVK: %s", gvk.String())
+		}
+
+		return obj.(*corev1.Secret), nil
+	}
+
+	return nil, errors.Errorf("replicated secret template not found for chart %q, revision %d, in ns %q", releaseName, revision, namespace)
+}
+
 func removeHelmTemplate(doc []byte) ([]byte, error) {
 	type Inventory struct {
 		Material string

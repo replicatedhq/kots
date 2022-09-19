@@ -12,6 +12,8 @@ import (
 	kotsbase "github.com/replicatedhq/kots/pkg/base"
 	"github.com/replicatedhq/kots/pkg/helm"
 	kotshelm "github.com/replicatedhq/kots/pkg/helm"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
 	yaml "github.com/replicatedhq/yaml/v3"
@@ -35,46 +37,98 @@ func (h *Handler) IsHelmManaged(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetAppValuesFile(w http.ResponseWriter, r *http.Request) {
+	if !util.IsHelmManaged() {
+		logger.Errorf("values file can only be dowloaded in Helm managed mode")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	appSlug := mux.Vars(r)["appSlug"]
+	sequence, err := strconv.ParseInt(mux.Vars(r)["sequence"], 10, 64)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to parse app sequence"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	helmApp := helm.GetHelmApp(appSlug)
 	if helmApp == nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
-	appSecret, err := helm.GetChartConfigSecret(helmApp)
-	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to get secret"))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+	var kotsKinds *kotsutil.KotsKinds
+	var tmplVals map[string]interface{}
+	var helmChartFile []byte
+
+	isPending, _ := strconv.ParseBool(r.URL.Query().Get("isPending"))
+	if isPending {
+		licenseID := helm.GetKotsLicenseID(&helmApp.Release)
+		if licenseID == "" {
+			logger.Error(errors.Errorf("no license and no license ID found for release %s", helmApp.Release.Name))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		secret, err := helm.GetReplicatedSecretFromUpstreamChartVersion(helmApp, licenseID, r.URL.Query().Get("semver"))
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to get replicated secret from upstream chart"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		helmChartFile = secret.Data["chart"]
+
+		k, err := helm.GetKotsKindsFromUpstreamChartVersion(helmApp, licenseID, r.URL.Query().Get("semver"))
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to get kotskinds from upstream chart"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		licenseData, err := kotslicense.GetLatestLicenseForHelm(licenseID)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to download license for chart archive"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		k.License = licenseData.License
+
+		kotsKinds = &k
+	} else {
+		replicatedSecret, err := helm.GetReplicatedSecretForRevision(helmApp.Release.Name, sequence, helmApp.Namespace)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to get secret"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		helmChartFile = replicatedSecret.Data["chart"]
+
+		k, err := helm.GetKotsKindsForRevision(helmApp.Release.Name, sequence, helmApp.Namespace)
+		if err != nil {
+			logger.Error(errors.Wrap(err, "failed to get kots kinds for helm"))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		kotsKinds = &k
 	}
 
-	// if there is no config secret then app is not configurable
-	if appSecret == nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	helmChart, err := kotsbase.ParseHelmChart(appSecret.Data["chart"])
+	helmChart, err := kotsbase.ParseHelmChart(helmChartFile)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to parse HelmChart file"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	tmplVals, err := helmChart.Spec.GetReplTmplValues(helmChart.Spec.Values)
+	tmplVals, err = helmChart.Spec.GetReplTmplValues(helmChart.Spec.Values)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get templated values"))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	kotsKinds, err := helm.GetKotsKindsFromHelmApp(helmApp)
-	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to get kotskinds values"))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
 	// keeping this assignment out of GetKotsKindsFromHelmApp because this is specific to file download endpoint
 	kotsKinds.ConfigValues = &kotsv1beta1.ConfigValues{
 		TypeMeta: metav1.TypeMeta{
@@ -86,7 +140,7 @@ func (h *Handler) GetAppValuesFile(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	renderedValues, err := kotshelm.RenderValuesFromConfig(helmApp, &kotsKinds, appSecret.Data["chart"])
+	renderedValues, err := kotshelm.RenderValuesFromConfig(helmApp, kotsKinds, helmChartFile)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to get render values from config"))
 		w.WriteHeader(http.StatusInternalServerError)

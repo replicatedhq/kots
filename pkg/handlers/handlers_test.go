@@ -1298,7 +1298,7 @@ var HandlerPolicyTests = map[string][]HandlerPolicyTest{
 	},
 	"GetAppValuesFile": {
 		{
-			Vars:         map[string]string{"appSlug": "123"},
+			Vars:         map[string]string{"appSlug": "123", "sequence": "1"},
 			Roles:        []rbactypes.Role{rbac.ClusterAdminRole},
 			SessionRoles: []string{rbac.ClusterAdminRoleID},
 			Calls: func(storeRecorder *mock_store.MockStoreMockRecorder, handlerRecorder *mock_handlers.MockKOTSHandlerMockRecorder) {

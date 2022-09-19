@@ -296,7 +296,7 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 	// Helm
 	r.Name("IsHelmManaged").Path("/api/v1/is-helm-managed").Methods("GET").
 		HandlerFunc(middleware.EnforceAccess(policy.IsHelmManaged, handler.IsHelmManaged))
-	r.Name("GetAppValuesFile").Path("/api/v1/app/{appSlug}/values").Methods("GET").
+	r.Name("GetAppValuesFile").Path("/api/v1/app/{appSlug}/values/{sequence}").Methods("GET").
 		HandlerFunc(middleware.EnforceAccess(policy.GetAppValuesFile, handler.GetAppValuesFile))
 }
 
