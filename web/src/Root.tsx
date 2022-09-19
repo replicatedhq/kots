@@ -202,12 +202,15 @@ const Root = () => {
       if (res.ok && res.status === 200) {
         const response = await res.json();
         setState({ isHelmManaged: response.isHelmManaged });
+        return response.isHelmManaged;
       } else {
         setState({ isHelmManaged: false });
       }
+      return false;
     } catch (err) {
       console.log(err);
       setState({ isHelmManaged: false });
+      return false;
     }
   };
 
