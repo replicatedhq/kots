@@ -1,8 +1,8 @@
 include Makefile.build.mk
 CURRENT_USER := $(shell id -u -n)
-MINIO_TAG ?= RELEASE.2022-09-07T22-25-02Z
+MINIO_TAG ?= RELEASE.2022-09-17T00-09-45Z
 POSTGRES_14_TAG ?= 14.5-alpine
-DEX_TAG ?= v2.33.1
+DEX_TAG ?= v2.34.0
 LVP_TAG ?= v0.3.8
 
 define sendMetrics
