@@ -609,6 +609,7 @@ class AppConfig extends Component {
                 } = useDownloadValues({
                   appSlug: this.getSlug(),
                   fileName: "values.yaml",
+                  sequence: match.params.sequence,
                 });
 
                 return (

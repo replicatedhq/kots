@@ -19,8 +19,11 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	"go.uber.org/zap"
 	helmgetter "helm.sh/helm/v3/pkg/getter"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 type ChartUpdate struct {
@@ -184,24 +187,9 @@ func GetKotsKindsFromUpstreamChartVersion(helmApp *apptypes.HelmApp, licenseID s
 	}
 
 	if chartData == nil {
-		err = CreateHelmRegistryCreds(licenseID, licenseID, helmApp.ChartPath)
+		chartData, err = pullChartVersion(helmApp, licenseID, version)
 		if err != nil {
-			return kotsutil.KotsKinds{}, errors.Wrap(err, "failed to create helm credentials file")
-		}
-		chartGetter, err := helmgetter.NewOCIGetter()
-		if err != nil {
-			return kotsutil.KotsKinds{}, errors.Wrap(err, "failed to create chart getter")
-		}
-
-		imageName := fmt.Sprintf("%s:%s", helmApp.ChartPath, version)
-		chartData, err = chartGetter.Get(imageName)
-		if err != nil {
-			return kotsutil.KotsKinds{}, errors.Wrapf(err, "failed to get chart %q", imageName)
-		}
-
-		chartData, err = saveUpdateChartInCache(helmApp, version, chartData)
-		if err != nil {
-			logger.Info("failed to save chart in cache", zap.String("error", err.Error()))
+			return kotsutil.KotsKinds{}, errors.Wrap(err, "failed to pull chart data")
 		}
 	}
 
@@ -211,6 +199,66 @@ func GetKotsKindsFromUpstreamChartVersion(helmApp *apptypes.HelmApp, licenseID s
 	}
 
 	return kotsKinds, nil
+}
+
+func GetReplicatedSecretFromUpstreamChartVersion(helmApp *apptypes.HelmApp, licenseID string, version string) (*corev1.Secret, error) {
+	chartData, err := getUpdateChartFromCache(helmApp, version)
+	if err != nil {
+		logger.Info("failed to get chart release from cache", zap.String("error", err.Error()))
+	}
+
+	if chartData == nil {
+		chartData, err = pullChartVersion(helmApp, licenseID, version)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to pull chart data")
+		}
+	}
+
+	templatedData, err := util.GetFileFromTGZArchive(chartData, "**/templates/_replicated/secret.yaml")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get secret file from chart archive")
+	}
+
+	secretData, err := removeHelmTemplate(templatedData.Bytes())
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to remove helm templates from replicated secret file")
+	}
+
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, gvk, err := decode(secretData, nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode secret data")
+	}
+
+	if gvk.Group != "" || gvk.Version != "v1" || gvk.Kind != "Secret" {
+		return nil, errors.Errorf("unexpected secret GVK: %s", gvk.String())
+	}
+
+	return obj.(*corev1.Secret), nil
+}
+
+func pullChartVersion(helmApp *apptypes.HelmApp, licenseID string, version string) (*bytes.Buffer, error) {
+	err := CreateHelmRegistryCreds(licenseID, licenseID, helmApp.ChartPath)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create helm credentials file")
+	}
+	chartGetter, err := helmgetter.NewOCIGetter()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create chart getter")
+	}
+
+	imageName := fmt.Sprintf("%s:%s", helmApp.ChartPath, version)
+	chartData, err := chartGetter.Get(imageName)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get chart %q", imageName)
+	}
+
+	chartData, err = saveUpdateChartInCache(helmApp, version, chartData)
+	if err != nil {
+		logger.Info("failed to save chart in cache", zap.String("error", err.Error()))
+	}
+
+	return chartData, nil
 }
 
 var (

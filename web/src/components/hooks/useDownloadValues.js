@@ -6,15 +6,19 @@ const getValues = async ({
   _token = Utilities.getToken(),
   apiEndpoint = process.env.API_ENDPOINT,
   appSlug,
+  sequence,
 }) => {
   try {
-    const response = await _fetch(`${apiEndpoint}/app/${appSlug}/values`, {
-      method: "GET",
-      headers: {
-        Authorization: _token,
-        "Content-Type": "application/blob",
-      },
-    });
+    const response = await _fetch(
+      `${apiEndpoint}/app/${appSlug}/values/${sequence}${window.location.search}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: _token,
+          "Content-Type": "application/blob",
+        },
+      }
+    );
     if (!response.ok) {
       throw new Error("Error fetching values");
     }
@@ -32,6 +36,7 @@ const useDownloadValues = ({
   _revokeObjectURL = URL.revokeObjectURL,
   appSlug,
   fileName,
+  sequence,
 } = {}) => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [error, setError] = useState(null);
@@ -60,6 +65,7 @@ const useDownloadValues = ({
       setError(null);
       const { data, error: _error } = await _getValues({
         appSlug,
+        sequence,
       });
       if (_error) {
         setError(_error);
