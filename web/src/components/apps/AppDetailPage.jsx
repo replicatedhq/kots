@@ -221,6 +221,8 @@ class AppDetailPage extends Component {
     if (firstApp) {
       history.replace(`/app/${firstApp.slug}`);
       this.getApp(firstApp.slug);
+    } else if (this.props.isHelmManaged) {
+      history.replace("/install-with-helm");
     } else {
       history.replace("/upload-license");
     }

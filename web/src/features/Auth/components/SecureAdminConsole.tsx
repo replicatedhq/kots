@@ -12,7 +12,7 @@ type Props = {
   fetchingMetadata: boolean;
   onLoginSuccess: () => Promise<App[]>;
   pendingApp: () => Promise<App>;
-  checkIsHelmManaged: () => Promise<void>;
+  checkIsHelmManaged: () => Promise<boolean>;
   logo: string | null;
 } & RouteComponentProps;
 
@@ -54,6 +54,7 @@ class SecureAdminConsole extends React.Component<Props, State> {
       if (Utilities.localStorageEnabled()) {
         window.localStorage.setItem("token", token);
         loggedIn = true;
+        const isHelmManaged = await this.props.checkIsHelmManaged();
 
         if (data.sessionRoles) {
           window.localStorage.setItem("session_roles", data.sessionRoles);
@@ -68,13 +69,14 @@ class SecureAdminConsole extends React.Component<Props, State> {
           this.props.history.replace(`/${pendingApp.slug}/airgap`);
         } else if (pendingApp?.slug && !pendingApp?.needsRegistry) {
           this.props.history.replace(`/${pendingApp.slug}/airgap-bundle`);
+        } else if (isHelmManaged) {
+          this.props.history.replace("install-with-helm");
         } else {
           this.props.history.replace("upload-license");
         }
       } else {
         this.props.history.push("/unsupported");
       }
-      this.props.checkIsHelmManaged();
     } catch (err) {
       console.log(err);
     }
