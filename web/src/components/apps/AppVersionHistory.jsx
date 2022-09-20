@@ -1262,9 +1262,21 @@ class AppVersionHistory extends Component {
     // This is kinda hacky. This finds the equivalent downstream version because the midstream
     // version type does not contain metadata like version label or release notes.
     let allVersions = this.state.versionHistory;
-    if (this.state.updatesAvailable) {
-      allVersions = this.state.versionHistory?.slice(1); // exclude pinned version
+
+    // exclude pinned version
+    if (this.props.isHelmManaged) {
+      // Only show pending versions in the "New version available" card. Helm, unlike kots, always adds a new version, even when we rollback.
+      if (this.state.updatesAvailable && allVersions?.length > 0) {
+        if (allVersions[0].status.startsWith("pending")) {
+          allVersions = allVersions?.slice(1);
+        }
+      }
+    } else {
+      if (this.state.updatesAvailable) {
+        allVersions = this.state.versionHistory?.slice(1);
+      }
     }
+
     if (!allVersions?.length) {
       return null;
     }
@@ -1593,6 +1605,21 @@ class AppVersionHistory extends Component {
       sequenceLabel = "Revision";
     }
 
+    // In Helm, only pending versions are updates.  In kots native, a deployed version can be an update after a rollback.
+    let pendingVersion;
+    if (this.props.isHelmManaged) {
+      if (
+        this.state.updatesAvailable &&
+        versionHistory[0].status.startsWith("pending")
+      ) {
+        pendingVersion = versionHistory[0];
+      }
+    } else {
+      if (this.state.updatesAvailable) {
+        pendingVersion = versionHistory[0];
+      }
+    }
+
     return (
       <div className="flex flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
         <Helmet>
@@ -1846,8 +1873,8 @@ class AppVersionHistory extends Component {
                                 : null}
                             </div>
                           </div>
-                          {this.state.updatesAvailable ? (
-                            this.renderAppVersionHistoryRow(versionHistory[0])
+                          {pendingVersion ? (
+                            this.renderAppVersionHistoryRow(pendingVersion)
                           ) : (
                             <div className="flex-column flex1 u-marginTop--20 u-marginBottom--10 alignItems--center justifyContent--center u-backgroundColor--white u-borderRadius--rounded">
                               <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-padding--10">
