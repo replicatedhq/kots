@@ -36,6 +36,9 @@
       "@stores/*": [
         "src/stores/*"
       ],
+      "@types": [
+        "src/types/index"
+      ],
       "handlebars": [
         "handlebars/dist/handlebars.js"
       ]

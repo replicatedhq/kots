@@ -1,5 +1,3 @@
-import { App, getApps, useApps, UseApps } from "./api/getApps";
-
-export type { App };
+import { getApps, useApps, UseApps } from "./api/getApps";
 
 export { getApps, useApps, UseApps };
