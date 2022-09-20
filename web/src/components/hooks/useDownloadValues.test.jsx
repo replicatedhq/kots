@@ -68,15 +68,17 @@ describe("useDownloadValues", () => {
       );
       const testAppSlug = "testAppSlug";
       const testToken = "testToken";
+      const testSequence = 1;
       const testAPIEndpoint = "testAPIEndpoint";
       const testGetValuesConfig = {
         _fetch: _fetchValuesSpy,
         _token: testToken,
         apiEndpoint: testAPIEndpoint,
         appSlug: testAppSlug,
+        sequence: testSequence,
       };
 
-      const expectedAPIEndpoint = `${testAPIEndpoint}/app/${testAppSlug}/values`;
+      const expectedAPIEndpoint = `${testAPIEndpoint}/app/${testAppSlug}/values/${testSequence}`;
       const expectedResponse = {
         data: expectedBody,
       };
@@ -105,6 +107,7 @@ describe("useDownloadValues", () => {
         })
       );
       const testAppSlug = "testAppSlug";
+      const testSequence = 1;
 
       const testToken = "testToken";
       const testAPIEndpoint = "testAPIEndpoint";
@@ -113,6 +116,7 @@ describe("useDownloadValues", () => {
         _token: testToken,
         apiEndpoint: testAPIEndpoint,
         appSlug: testAppSlug,
+        sequence: testSequence,
       };
 
       await expect(getValues(testGetValuesConfig)).rejects.toThrowError(
@@ -129,6 +133,7 @@ describe("useDownloadValues", () => {
       );
 
       const testAppSlug = "testAppSlug";
+      const testSequence = 1;
       const testToken = "testToken";
       const testAPIEndpoint = "testAPIEndpoint";
       const testGetValuesConfig = {
@@ -136,6 +141,7 @@ describe("useDownloadValues", () => {
         _token: testToken,
         apiEndpoint: testAPIEndpoint,
         appSlug: testAppSlug,
+        sequence: testSequence,
       };
 
       await expect(getValues(testGetValuesConfig)).rejects.toThrowError(
