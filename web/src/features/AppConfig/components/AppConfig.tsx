@@ -28,7 +28,7 @@ import {
 } from "../styles";
 
 // Types
-import { App, KotsParams, Version } from "@types"
+import { App, KotsParams, Version } from "@types";
 import { RouteComponentProps } from "react-router-dom";
 
 type Props = {
@@ -46,7 +46,7 @@ type ConfigGroup = {
   name: string;
   title: string;
   when: "true" | "false";
-}
+};
 
 type ConfigGroupItem = {
   name: string;
@@ -57,7 +57,7 @@ type ConfigGroupItem = {
   type: string;
   // TODO: refactor backend to return a boolean not a string
   when: "true" | "false";
-}
+};
 
 type RequiredItems = string[];
 
@@ -76,7 +76,7 @@ type State = {
   savingConfig: boolean;
   showHelmDeployModal: boolean;
   showNextStepModal: boolean;
-}
+};
 
 class AppConfig extends Component<Props, State> {
   sidebarWrapper: HTMLElement;
@@ -310,9 +310,7 @@ class AppConfig extends Component<Props, State> {
     const configGroups = this.state.configGroups;
     requiredItems.forEach((requiredItem) => {
       configGroups.forEach((configGroup) => {
-        const item = configGroup.items.find(
-          (i) => i.name === requiredItem
-        );
+        const item = configGroup.items.find((i) => i.name === requiredItem);
         if (item) {
           item.error = "This item is required";
         }
@@ -418,8 +416,10 @@ class AppConfig extends Component<Props, State> {
     return false;
   };
 
-  getItemInConfigGroups = (configGroups: ConfigGroup[], itemName: string):
-    ConfigGroupItem | undefined => {
+  getItemInConfigGroups = (
+    configGroups: ConfigGroup[],
+    itemName: string
+  ): ConfigGroupItem | undefined => {
     let foundItem;
     map(configGroups, (group) => {
       map(group.items, (item) => {
@@ -606,10 +606,11 @@ class AppConfig extends Component<Props, State> {
               return (
                 <SideNavGroup
                   key={`${i}-${group.name}-${group.title}`}
-                  className={`${this.state.activeGroups.includes(group.name)
+                  className={`${
+                    this.state.activeGroups.includes(group.name)
                       ? "group-open"
                       : ""
-                    }`}
+                  }`}
                 >
                   <Flex
                     align="center"
@@ -629,8 +630,9 @@ class AppConfig extends Component<Props, State> {
                         }
                         return (
                           <a
-                            className={`u-fontSize--normal u-lineHeight--normal ${hash === `${item.name}-group` ? "active-item" : ""
-                              }`}
+                            className={`u-fontSize--normal u-lineHeight--normal ${
+                              hash === `${item.name}-group` ? "active-item" : ""
+                            }`}
                             href={`#${item.name}-group`}
                             key={`${j}-${item.name}-${item.title}`}
                           >
@@ -649,20 +651,16 @@ class AppConfig extends Component<Props, State> {
               {({ data = {} }: { data: { isHelmManaged?: boolean } }) => {
                 const { isHelmManaged: isHelmManagedFromHook } = data;
 
-                const {
-                  isError: saveError,
-                } = useSaveConfig({
+                const { isError: saveError } = useSaveConfig({
                   appSlug: this.getSlug(),
                 });
 
-                const {
-                  download,
-                  clearError: clearDownloadError,
-                } = useDownloadValues({
-                  appSlug: this.getSlug(),
-                  fileName: "values.yaml",
-                  sequence: match.params.sequence,
-                });
+                const { download, clearError: clearDownloadError } =
+                  useDownloadValues({
+                    appSlug: this.getSlug(),
+                    fileName: "values.yaml",
+                    sequence: match.params.sequence,
+                  });
 
                 return (
                   <>
@@ -725,9 +723,13 @@ class AppConfig extends Component<Props, State> {
                           hideHelmDeployModal={() => {
                             this.setState({ showHelmDeployModal: false });
                             clearDownloadError();
-                          } }
-                          registryUsername={this.props?.app?.credentials?.username || ""}
-                          registryPassword={this.props?.app?.credentials?.password || ""}
+                          }}
+                          registryUsername={
+                            this.props?.app?.credentials?.username || ""
+                          }
+                          registryPassword={
+                            this.props?.app?.credentials?.password || ""
+                          }
                           saveError={saveError}
                           showHelmDeployModal={true}
                           showDownloadValues={true}
@@ -735,7 +737,10 @@ class AppConfig extends Component<Props, State> {
                           title={`Upgrade ${this.props?.app?.slug}`}
                           upgradeTitle="Upgrade release"
                           version={downstreamVersionLabel || ""}
-                          namespace={this.props?.app?.namespace || ""} downloadError={false} revision={null}                        />
+                          namespace={this.props?.app?.namespace || ""}
+                          downloadError={false}
+                          revision={null}
+                        />
                       </>
                     )}
                   </>
@@ -827,7 +832,7 @@ class AppConfig extends Component<Props, State> {
 }
 
 // TODO: fix this type
-// @ts-ignore
+// eslint-disable-next-line
 const AppConfigWithRouter: any = withRouter(AppConfig);
 
-export default AppConfigWithRouter
+export default AppConfigWithRouter;

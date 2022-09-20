@@ -1,4 +1,3 @@
-
 export type App = {
   allowSnapshots: boolean;
   chartPath: string;
@@ -19,28 +18,27 @@ export type App = {
 export type Credentials = {
   username: string;
   password: string;
-}
+};
 
 export type DownStream = {
   currentVersion: Version;
   gitops: GitOps;
   pendingVersions: Version[];
-}
+};
 
 export type GitOps = {
   isConnected: true;
   uri: string;
-}
+};
 
 export type KotsParams = {
   sequence: string;
   slug: string;
-}
-
+};
 
 export type Version = {
   parentSequence: number;
   semver: string;
   sequence: number;
   versionLabel?: string;
-}
+};
