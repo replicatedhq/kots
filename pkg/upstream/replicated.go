@@ -22,7 +22,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	reportingtypes "github.com/replicatedhq/kots/pkg/api/reporting/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
-	kotslicense "github.com/replicatedhq/kots/pkg/license"
+	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	reporting "github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/upstream/types"
@@ -217,7 +217,7 @@ func downloadReplicated(
 			return nil, errors.Wrap(err, "failed to download replicated app")
 		}
 
-		licenseData, err := kotslicense.GetLatestLicense(license)
+		licenseData, err := replicatedapp.GetLatestLicense(license)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get latest license")
 		}

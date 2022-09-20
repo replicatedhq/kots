@@ -210,16 +210,18 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (ucr *UpdateCheckResponse, finalE
 	}
 
 	finishedChan := make(chan error)
-	if opts.Wait {
-		defer close(finishedChan)
-	}
+	defer func() {
+		if opts.Wait || finalError != nil {
+			defer close(finishedChan)
+		}
+	}()
 
 	tasks.StartUpdateTaskMonitor("update-download", finishedChan)
-	if opts.Wait {
-		defer func() {
+	defer func() {
+		if opts.Wait || finalError != nil {
 			finishedChan <- finalError
-		}()
-	}
+		}
+	}()
 
 	if util.IsHelmManaged() {
 		ucr, finalError = checkForHelmAppUpdates(opts, finishedChan)
@@ -255,7 +257,7 @@ func checkForHelmAppUpdates(opts CheckForUpdatesOpts, finishedChan chan<- error)
 		return nil, errors.Wrap(err, fmt.Sprintf("failed to get parse current version %s", helmApp.Release.Chart.Metadata.Version))
 	}
 
-	availableUpdateTags, err := helm.CheckForUpdates(helmApp.ChartPath, license.Spec.LicenseID, &currentVersion)
+	availableUpdateTags, err := helm.CheckForUpdates(helmApp, license, &currentVersion)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get available updates")
 	}
