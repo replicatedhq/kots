@@ -133,7 +133,7 @@ func (h *Handler) SyncLicense(w http.ResponseWriter, r *http.Request) {
 
 		isSynced, err = helm.SyncLicense(helmApp)
 		if err != nil {
-			syncLicenseResponse.Error = "failed to get sync helm license"
+			syncLicenseResponse.Error = "failed to sync helm license"
 			logger.Error(errors.Wrap(err, syncLicenseResponse.Error))
 			JSON(w, http.StatusInternalServerError, syncLicenseResponse)
 			return

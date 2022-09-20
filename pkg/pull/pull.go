@@ -25,6 +25,7 @@ import (
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
+	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -93,7 +94,7 @@ func PullApplicationMetadata(upstreamURI string, versionLabel string) ([]byte, e
 		return nil, nil
 	}
 
-	data, err := upstream.GetApplicationMetadata(u, versionLabel)
+	data, err := replicatedapp.GetApplicationMetadata(u, versionLabel)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get application metadata")
 	}
