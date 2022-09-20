@@ -25,6 +25,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/online"
 	onlinetypes "github.com/replicatedhq/kots/pkg/online/types"
+	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -202,7 +203,7 @@ func installLicenseSecret(clientset *kubernetes.Clientset, licenseSecret corev1.
 	}
 
 	if !kotsadm.IsAirgap() {
-		licenseData, err := kotslicense.GetLatestLicense(verifiedLicense)
+		licenseData, err := replicatedapp.GetLatestLicense(verifiedLicense)
 		if err != nil {
 			return errors.Wrap(err, "failed to get latest license")
 		}

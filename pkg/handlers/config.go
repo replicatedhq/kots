@@ -23,12 +23,12 @@ import (
 	"github.com/replicatedhq/kots/pkg/helm"
 	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
-	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
 	"github.com/replicatedhq/kots/pkg/preflight"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/render"
+	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/template"
@@ -271,7 +271,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			licenseData, err := kotslicense.GetLatestLicenseForHelm(licenseID)
+			licenseData, err := replicatedapp.GetLatestLicenseForHelm(licenseID)
 			if err != nil {
 				logger.Error(errors.Wrap(err, "failed to download license for chart archive"))
 				w.WriteHeader(http.StatusInternalServerError)
@@ -487,7 +487,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 
 			k.ConfigValues = appKotsKinds.ConfigValues.DeepCopy()
 
-			licenseData, err := kotslicense.GetLatestLicenseForHelm(licenseID)
+			licenseData, err := replicatedapp.GetLatestLicenseForHelm(licenseID)
 			if err != nil {
 				logger.Error(errors.Wrap(err, "failed to download license for chart archive"))
 				w.WriteHeader(http.StatusInternalServerError)

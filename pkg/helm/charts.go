@@ -20,8 +20,8 @@ import (
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
-	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/util"
 	helmrelease "helm.sh/helm/v3/pkg/release"
 	corev1 "k8s.io/api/core/v1"
@@ -279,7 +279,7 @@ func downloadAppLicense(helmApp *apptypes.HelmApp) (*kotsv1beta1.License, error)
 		return nil, errors.Errorf("no license and no license ID found for release %s", helmApp.Release.Name)
 	}
 
-	licenseData, err := kotslicense.GetLatestLicenseForHelm(licenseID)
+	licenseData, err := replicatedapp.GetLatestLicenseForHelm(licenseID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get license for helm chart %s", helmApp.Release.Name)
 	}

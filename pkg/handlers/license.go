@@ -22,6 +22,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/online"
 	installationtypes "github.com/replicatedhq/kots/pkg/online/types"
 	"github.com/replicatedhq/kots/pkg/registry"
+	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/updatechecker"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -130,41 +131,20 @@ func (h *Handler) SyncLicense(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		currentLicense, err := helm.GetChartLicenseFromSecretOrDownload(helmApp)
+		isSynced, err = helm.SyncLicense(helmApp)
+		if err != nil {
+			syncLicenseResponse.Error = "failed to sync helm license"
+			logger.Error(errors.Wrap(err, syncLicenseResponse.Error))
+			JSON(w, http.StatusInternalServerError, syncLicenseResponse)
+			return
+		}
+
+		latestLicense, err = helm.GetChartLicenseFromSecretOrDownload(helmApp)
 		if err != nil {
 			syncLicenseResponse.Error = "failed to get license from secret"
 			logger.Error(errors.Wrap(err, syncLicenseResponse.Error))
 			JSON(w, http.StatusInternalServerError, syncLicenseResponse)
 			return
-		}
-
-		licenseID := helm.GetKotsLicenseID(&helmApp.Release)
-
-		if currentLicense == nil && licenseID == "" {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		if licenseID == "" {
-			licenseID = currentLicense.Spec.LicenseID
-		} else if currentLicense != nil && licenseID != currentLicense.Spec.LicenseID {
-			syncLicenseResponse.Error = "license ID in the chart does not match license ID in secret"
-			logger.Errorf(syncLicenseResponse.Error)
-			JSON(w, http.StatusBadRequest, syncLicenseResponse)
-		}
-
-		licenseData, err := kotslicense.GetLatestLicenseForHelm(licenseID)
-		if err != nil {
-			syncLicenseResponse.Error = "failed to get latest license for helm app"
-			logger.Error(errors.Wrap(err, syncLicenseResponse.Error))
-			JSON(w, http.StatusInternalServerError, syncLicenseResponse)
-			return
-		}
-		latestLicense = licenseData.License
-
-		if currentLicense == nil {
-			isSynced = true
-		} else if currentLicense.Spec.LicenseSequence != latestLicense.Spec.LicenseSequence {
-			isSynced = true
 		}
 
 		foundApp, err = getCompatibleAppFromHelmApp(helmApp)
@@ -174,15 +154,6 @@ func (h *Handler) SyncLicense(w http.ResponseWriter, r *http.Request) {
 			JSON(w, http.StatusInternalServerError, syncLicenseResponse)
 			return
 		}
-
-		err = helm.SaveChartLicenseInSecret(helmApp, licenseData.LicenseBytes)
-		if err != nil {
-			syncLicenseResponse.Error = "failed to update helm license"
-			logger.Error(errors.Wrap(err, syncLicenseResponse.Error))
-			JSON(w, http.StatusInternalServerError, syncLicenseResponse)
-			return
-		}
-
 	} else {
 		foundApp, err = store.GetStore().GetAppFromSlug(appSlug)
 		if err != nil {
@@ -375,7 +346,7 @@ func (h *Handler) UploadNewLicense(w http.ResponseWriter, r *http.Request) {
 	if !kotsadm.IsAirgap() {
 		// sync license
 		logger.Info("syncing license with server to retrieve latest version")
-		licenseData, err := kotslicense.GetLatestLicense(verifiedLicense)
+		licenseData, err := replicatedapp.GetLatestLicense(verifiedLicense)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to get latest license"))
 			uploadLicenseResponse.Error = err.Error()

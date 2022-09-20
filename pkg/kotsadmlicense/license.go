@@ -12,6 +12,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight"
 	"github.com/replicatedhq/kots/pkg/render"
+	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/version"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -45,7 +46,7 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 		updatedLicense = verifiedLicense
 	} else {
 		// get from the api
-		licenseData, err := kotslicense.GetLatestLicense(currentLicense)
+		licenseData, err := replicatedapp.GetLatestLicense(currentLicense)
 		if err != nil {
 			return nil, false, errors.Wrap(err, "failed to get latest license")
 		}
@@ -118,7 +119,7 @@ func Change(a *apptypes.App, newLicenseString string) (*kotsv1beta1.License, err
 	}
 
 	if !a.IsAirgap {
-		licenseData, err := kotslicense.GetLatestLicense(newLicense)
+		licenseData, err := replicatedapp.GetLatestLicense(newLicense)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get latest license")
 		}

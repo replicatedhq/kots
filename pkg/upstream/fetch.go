@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
 )
@@ -88,15 +89,15 @@ func pickVersionLabel(fetchOptions *types.FetchOptions) string {
 	return fetchOptions.CurrentVersionLabel
 }
 
-func pickCursor(fetchOptions *types.FetchOptions) ReplicatedCursor {
+func pickCursor(fetchOptions *types.FetchOptions) replicatedapp.ReplicatedCursor {
 	if fetchOptions.Airgap != nil && fetchOptions.Airgap.Spec.UpdateCursor != "" {
-		return ReplicatedCursor{
+		return replicatedapp.ReplicatedCursor{
 			ChannelID:   fetchOptions.Airgap.Spec.ChannelID,
 			ChannelName: fetchOptions.Airgap.Spec.ChannelName,
 			Cursor:      fetchOptions.Airgap.Spec.UpdateCursor,
 		}
 	}
-	return ReplicatedCursor{
+	return replicatedapp.ReplicatedCursor{
 		ChannelID:   fetchOptions.CurrentChannelID,
 		ChannelName: fetchOptions.CurrentChannelName,
 		Cursor:      fetchOptions.CurrentCursor,
