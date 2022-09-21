@@ -1700,10 +1700,10 @@ class AppVersionHistory extends Component {
                           {currentDownstreamVersion ? (
                             <div className="flex alignItems--center u-marginTop--10">
                               {currentDownstreamVersion?.releaseNotes && (
-                                <div>
+                                <div className="u-marginRight--5">
                                   <Icon
                                     icon="release-notes"
-                                    className="clickable u-marginRight--10"
+                                    className="clickable"
                                     size={24}
                                     onClick={() =>
                                       this.showReleaseNotes(

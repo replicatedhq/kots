@@ -311,7 +311,7 @@ class DashboardVersionCard extends React.Component {
       return null;
     }
     return (
-      <div>
+      <div className="u-marginRight--10">
         <Icon
           icon="release-notes"
           size={24}
