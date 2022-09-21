@@ -493,6 +493,7 @@ class AppLicense extends Component {
                   toggleShowDetails={this.toggleShowDetails}
                 />
               ) : (
+                appLicense.entitlements.length > 0 &&
                 appLicense.entitlements.length < 5 && (
                   <div style={{ marginTop: "15px" }}>
                     <LicenseFields
