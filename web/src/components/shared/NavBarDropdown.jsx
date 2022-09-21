@@ -1,5 +1,6 @@
 import React from "react";
 import { useHistory } from "react-router-dom";
+import Icon from "../Icon";
 import ChangePasswordModal from "../modals/ChangePasswordModal/ChangePasswordModal";
 
 const NavBarDropdown = ({ handleLogOut, isHelmManaged }) => {
@@ -37,11 +38,9 @@ const NavBarDropdown = ({ handleLogOut, isHelmManaged }) => {
 
   return (
     <div className="navbar-dropdown-container">
-      <span
-        tabIndex={0}
-        onClick={() => setShowDropdown(!showDropdown)}
-        className="icon menu-dots-icon"
-      />
+      <span tabIndex={0} onClick={() => setShowDropdown(!showDropdown)}>
+        <Icon icon="more-circle-outline" size={20} className="gray-color" />
+      </span>
       <ul
         ref={testRef}
         tabIndex={0}

@@ -14,6 +14,7 @@ import { getPreflightResultState, Utilities } from "../utilities/utilities";
 import { Repeater } from "../utilities/repeater";
 import "../scss/components/PreflightCheckPage.scss";
 import PreflightsProgress from "./troubleshoot/PreflightsProgress";
+import Icon from "./Icon";
 
 class PreflightResultPage extends Component {
   state = {
@@ -372,8 +373,10 @@ class PreflightResultPage extends Component {
                 className="u-fontWeight--bold u-linkColor u-cursor--pointer"
                 onClick={() => this.props.history.goBack()}
               >
-                <span
-                  className="icon clickable backArrow-icon u-marginRight--10"
+                <Icon
+                  icon="prev-arrow"
+                  size={12}
+                  className="clickable u-marginRight--10"
                   style={{ verticalAlign: "0" }}
                 />
                 Back

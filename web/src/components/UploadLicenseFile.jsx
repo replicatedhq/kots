@@ -14,6 +14,7 @@ import LicenseUploadProgress from "./LicenseUploadProgress";
 
 import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
 import "../scss/components/UploadLicenseFile.scss";
+import Icon from "./Icon";
 
 class UploadLicenseFile extends React.Component {
   state = {
@@ -407,7 +408,11 @@ class UploadLicenseFile extends React.Component {
                     {hasFile ? (
                       <div className="has-file-wrapper">
                         <div className="flex">
-                          <div className="icon u-yamlLtGray-small u-marginRight--10" />
+                          <Icon
+                            icon="yaml-icon"
+                            size={24}
+                            className="u-marginRight--10 gray-color"
+                          />
                           <div>
                             <p className="u-fontSize--normal u-textColor--primary u-fontWeight--medium">
                               {licenseFile.name}
@@ -457,7 +462,11 @@ class UploadLicenseFile extends React.Component {
                         multiple={false}
                       >
                         <div className="u-textAlign--center">
-                          <div className="icon u-yamlLtGray-lrg u-marginBottom--10" />
+                          <Icon
+                            icon="yaml-icon"
+                            size={40}
+                            className="u-marginBottom--10 gray-color"
+                          />
                           <p className="u-fontSize--normal u-textColor--secondary u-fontWeight--medium u-lineHeight--normal">
                             Drag your license here or{" "}
                             <span className="u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover">
@@ -521,7 +530,7 @@ class UploadLicenseFile extends React.Component {
                 applicationName ? `${applicationName}` : "app"
               } from a snapshot`}{" "}
             </Link>
-            <span className="icon u-arrow" style={{ marginTop: "2px" }} />
+            <Icon icon="next-arrow" style={{ marginTop: "2px" }} size={9} />
           </div>
         )}
         {isBackupRestore ? (

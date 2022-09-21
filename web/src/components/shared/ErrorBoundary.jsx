@@ -1,4 +1,5 @@
 import React from "react";
+import Icon from "../Icon";
 
 export default class ErrorBoundaryComponent extends React.Component {
   constructor(props) {
@@ -37,7 +38,11 @@ export default class ErrorBoundaryComponent extends React.Component {
         <div className="flex1 flex-column u-overflow--auto">
           <div className="flex1 flex-column justifyContent--center alignItems--center">
             <div className="flex-column u-width--half">
-              <span className="icon errorWarningIcon u-marginBottom--20 u-textAlign--center alignSelf--center"></span>
+              <Icon
+                icon="warning"
+                size={40}
+                className="warning-color u-marginBottom--20 u-textAlign--center alignSelf--center"
+              />
               <p className="u-textAlign--center alignItems--center u-fontSize--header2 u-fontWeight--bold u-textColor--secondary">
                 Oops, something went wrong.
               </p>

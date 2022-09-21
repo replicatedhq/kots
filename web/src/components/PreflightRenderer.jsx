@@ -2,6 +2,7 @@ import React from "react";
 import classNames from "classnames";
 import Markdown from "react-remarkable";
 import size from "lodash/size";
+import Icon from "./Icon";
 
 export default function PreflightRenderer(props) {
   const { className, results, skipped } = props;
@@ -27,14 +28,18 @@ export default function PreflightRenderer(props) {
         preflightJSON?.results.map((row, idx) => {
           let icon;
           let rowClass;
+          let iconClass;
           if (row.isWarn) {
-            icon = "preflightCheckWarning--icon";
+            icon = "warning";
+            iconClass = "warning-color";
             rowClass = "warn";
           } else if (row.isFail) {
-            icon = "preflightCheckError--icon";
+            icon = "warning-circle-filled";
+            iconClass = "error-color";
             rowClass = "fail";
           } else {
-            icon = "preflightCheckPass--icon";
+            icon = "check-circle-filled";
+            iconClass = "success-color";
           }
           return (
             <div
@@ -44,12 +49,10 @@ export default function PreflightRenderer(props) {
                 rowClass
               )}
             >
-              <div
-                className={classNames(
-                  "flex-auto icon",
-                  icon,
-                  "u-marginRight--10"
-                )}
+              <Icon
+                icon={icon}
+                size={18}
+                className={`${iconClass} flex-auto u-marginRight--10`}
               />
               <div className="flex flex1">
                 <div className="flex1">
@@ -69,9 +72,11 @@ export default function PreflightRenderer(props) {
                       >
                         {" "}
                         Learn more{" "}
-                        <span
+                        <Icon
+                          icon="external-page"
+                          size={13}
+                          className="clickable"
                           style={{ top: "2px", marginLeft: "2px" }}
-                          className="icon external-link-icon u-cursor--pointer"
                         />
                       </a>
                     </div>

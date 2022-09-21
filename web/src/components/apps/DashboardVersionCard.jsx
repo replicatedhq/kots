@@ -24,6 +24,7 @@ import {
 import { Repeater } from "@src/utilities/repeater";
 
 import "../../scss/components/watches/DashboardCard.scss";
+import Icon from "../Icon";
 
 class DashboardVersionCard extends React.Component {
   constructor(props) {
@@ -311,9 +312,10 @@ class DashboardVersionCard extends React.Component {
     }
     return (
       <div>
-        <span
-          className="icon releaseNotes--icon u-cursor--pointer"
-          onClick={() => this.showReleaseNotes(version?.releaseNotes)}
+        <Icon
+          icon="release-notes"
+          size={24}
+          className="clickable"
           data-tip="View release notes"
         />
         <ReactTooltip effect="solid" className="replicated-tooltip" />
@@ -355,21 +357,28 @@ class DashboardVersionCard extends React.Component {
           <>
             <Link
               to={`/app/${app?.slug}/downstreams/${app?.downstream.cluster?.slug}/version-history/preflight/${version?.sequence}`}
-              className="icon preflightChecks--icon u-marginLeft--10 u-cursor--pointer u-position--relative"
+              className="u-position--relative"
               data-tip="View preflight checks"
             >
+              <Icon icon="preflight-checks" size={20} className="clickable" />
               {preflightState.preflightsFailed ||
               preflightState.preflightState === "warn" ? (
-                <div>
-                  <span
-                    className={`icon version-row-preflight-status-icon ${
-                      preflightState.preflightsFailed
-                        ? "preflight-checks-failed-icon"
-                        : preflightState.preflightState === "warn"
-                        ? "preflight-checks-warn-icon"
-                        : ""
-                    }`}
-                  />
+                <>
+                  {preflightState.preflightsFailed ? (
+                    <Icon
+                      icon={"warning-circle-filled"}
+                      size={12}
+                      className="version-row-preflight-status-icon error-color"
+                    />
+                  ) : preflightState.preflightState === "warn" ? (
+                    <Icon
+                      icon={"warning"}
+                      size={12}
+                      className="version-row-preflight-status-icon warning-color"
+                    />
+                  ) : (
+                    ""
+                  )}
                   <p
                     className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${
                       preflightState.preflightsFailed
@@ -381,7 +390,7 @@ class DashboardVersionCard extends React.Component {
                   >
                     {checksStatusText}
                   </p>
-                </div>
+                </>
               ) : null}
             </Link>
             <ReactTooltip effect="solid" className="replicated-tooltip" />
@@ -413,11 +422,9 @@ class DashboardVersionCard extends React.Component {
 
     return (
       <div className="u-marginLeft--10">
-        <Link
-          to={url}
-          className="icon configEdit--icon u-cursor--pointer"
-          data-tip="Edit config"
-        />
+        <Link to={url} data-tip="Edit config">
+          <Icon icon="edit-config" size={22} />
+        </Link>
         <ReactTooltip effect="solid" className="replicated-tooltip" />
       </div>
     );
@@ -460,7 +467,7 @@ class DashboardVersionCard extends React.Component {
             </div>
           </div>
           <div className="flex alignItems--center u-paddingLeft--20">
-            <p className="u-fontSize--small u-fontWeight--bold u-textColor--lightAccent u-lineHeight--default">
+            <p className="u-fontSize--small u-fontWeight--bold u-textColor--lightAccent u-lineHeight--default u-marginRight--5">
               {currentVersion.source}
             </p>
           </div>
@@ -470,7 +477,6 @@ class DashboardVersionCard extends React.Component {
             {this.renderEditConfigIcon(app, currentVersion, false)}
             <div className="u-marginLeft--10">
               <span
-                className="icon deployLogs--icon u-cursor--pointer"
                 onClick={() =>
                   this.handleViewLogs(
                     currentVersion,
@@ -478,7 +484,9 @@ class DashboardVersionCard extends React.Component {
                   )
                 }
                 data-tip="View deploy logs"
-              />
+              >
+                <Icon icon="view-logs" size={22} className="clickable" />
+              </span>
               <ReactTooltip effect="solid" className="replicated-tooltip" />
             </div>
             {currentVersion.status === "deploying" ? null : (
@@ -592,7 +600,7 @@ class DashboardVersionCard extends React.Component {
     }
     return (
       <div className="flex alignItems--center u-marginTop--5">
-        <span className="icon error-small" />
+        <Icon icon="warning-circle-filled" size={16} className="error-color" />
         <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5 u-textColor--error">
           {version.yamlErrors?.length} Invalid file
           {version.yamlErrors?.length !== 1 ? "s" : ""}{" "}
@@ -786,8 +794,10 @@ class DashboardVersionCard extends React.Component {
           <span className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--normal">
             No commit URL found
           </span>
-          <span
-            className="icon grayOutlineQuestionMark--icon u-marginLeft--5"
+          <Icon
+            icon="info-circle-outline"
+            size={16}
+            className="gray-color u-marginLeft--5"
             data-tip="This version may have been created before Gitops was enabled"
           />
           <ReactTooltip effect="solid" className="replicated-tooltip" />
@@ -1430,7 +1440,11 @@ class DashboardVersionCard extends React.Component {
                   </div>
                 ) : (
                   <div className="flex alignItems--center u-marginRight--20">
-                    <span className="icon clickable dashboard-card-check-update-icon u-marginRight--5" />
+                    <Icon
+                      icon="check-update"
+                      size={18}
+                      className="clickable u-marginRight--5"
+                    />
                     <span
                       className="replicated-link u-fontSize--small"
                       onClick={this.props.onCheckForUpdates}
@@ -1439,7 +1453,11 @@ class DashboardVersionCard extends React.Component {
                     </span>
                   </div>
                 )}
-                <span className="icon clickable dashboard-card-configure-update-icon u-marginRight--5" />
+                <Icon
+                  icon="schedule-sync"
+                  size={18}
+                  className="clickable u-marginRight--5"
+                />
                 <span
                   className="replicated-link u-fontSize--small u-lineHeight--default"
                   onClick={this.props.showAutomaticUpdatesModal}
@@ -1466,9 +1484,14 @@ class DashboardVersionCard extends React.Component {
         <div className="u-marginTop--10">
           <Link
             to={`/app/${this.props.app?.slug}/version-history`}
-            className="replicated-link has-arrow u-fontSize--small"
+            className="replicated-link u-fontSize--small"
           >
             See all versions
+            <Icon
+              icon="next-arrow"
+              size={10}
+              className="has-arrow u-marginLeft--5"
+            />
           </Link>
         </div>
         {this.state.showReleaseNotes && (
@@ -1662,7 +1685,6 @@ class DashboardVersionCard extends React.Component {
             sequence={this.state.selectedSequence}
           />
         )}
-
         {this.state.showDeployWarningModal && (
           <DeployWarningModal
             showDeployWarningModal={this.state.showDeployWarningModal}

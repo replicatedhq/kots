@@ -7,6 +7,7 @@ import ConfigRadio from "./ConfigRadio";
 import Markdown from "react-remarkable";
 import { setOrder } from "./ConfigUtil";
 import { ConfigWrapper } from "./ConfigComponents";
+import Icon from "../Icon";
 
 export default class ConfigSelectOne extends React.Component {
   handleOnChange = (itemName, val) => {
@@ -79,7 +80,7 @@ export default class ConfigSelectOne extends React.Component {
             onClick={() => this.props.handleAddItem(this.props.name)}
           >
             <span className="add-btn u-fontSize--small u-fontWeight--bold u-linkColor u-cursor--pointer">
-              <span className="icon u-addIcon--blue clickable" />
+              <Icon icon="plus" size={14} className="clickable" />
               Add another {this.props.title}
             </span>
           </div>

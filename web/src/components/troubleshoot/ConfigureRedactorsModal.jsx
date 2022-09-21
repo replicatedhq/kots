@@ -7,6 +7,7 @@ import { Utilities } from "../../utilities/utilities";
 import "brace/mode/text";
 import "brace/mode/yaml";
 import "brace/theme/chrome";
+import Icon from "../Icon";
 
 const CUSTOM_SPEC_TEMPLATE = `
 apiVersion: troubleshoot.sh/v1beta2
@@ -214,7 +215,11 @@ export default class ConfigureRedactorsModal extends Component {
               </button>
               {this.state.specSaved && (
                 <span className="u-marginLeft--10 flex alignItems--center">
-                  <span className="icon checkmark-icon u-marginRight--5" />
+                  <Icon
+                    icon="check-circle-filled"
+                    size={16}
+                    className="success-color u-marginRight--5"
+                  />
                   <span className="u-textColor--success u-fontSize--small u-fontWeight--medium u-lineHeight--normal">
                     Saved
                   </span>
@@ -271,7 +276,11 @@ export default class ConfigureRedactorsModal extends Component {
               </button>
               {this.state.specSaved && (
                 <span className="u-marginLeft--10 flex alignItems--center">
-                  <span className="icon checkmark-icon u-marginRight--5" />
+                  <Icon
+                    icon="check-circle-filled"
+                    size={16}
+                    className="success-color u-marginRight--5"
+                  />
                   <span className="u-textColor--success u-fontSize--small u-fontWeight--medium u-lineHeight--normal">
                     Spec saved
                   </span>

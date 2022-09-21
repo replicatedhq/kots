@@ -12,6 +12,7 @@ import { Utilities } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
 
 import "../../scss/components/troubleshoot/GenerateSupportBundle.scss";
+import Icon from "../Icon";
 
 class GenerateSupportBundle extends React.Component {
   constructor(props) {
@@ -232,9 +233,9 @@ class GenerateSupportBundle extends React.Component {
 
   renderIcons = (shipOpsRef, gitOpsRef) => {
     if (shipOpsRef) {
-      return <span className="icon clusterType ship"></span>;
+      return <Icon icon="kots-o-filled" size="18" />;
     } else if (gitOpsRef) {
-      return <span className="icon clusterType git"></span>;
+      return <Icon icon="github-icon" size="19" />;
     } else {
       return;
     }
@@ -466,7 +467,11 @@ class GenerateSupportBundle extends React.Component {
                     className="replicated-link flex alignItems--center u-fontSize--small u-marginLeft--20"
                     onClick={this.toggleRedactorModal}
                   >
-                    <span className="icon clickable redactor-spec-icon u-marginRight--5" />{" "}
+                    <Icon
+                      icon="marker-tip-outline"
+                      size={18}
+                      className="clickable u-marginRight--5"
+                    />
                     Configure redaction
                   </span>
                 </div>

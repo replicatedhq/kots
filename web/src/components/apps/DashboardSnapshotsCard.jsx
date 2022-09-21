@@ -5,6 +5,7 @@ import find from "lodash/find";
 import "../../scss/components/watches/DashboardCard.scss";
 import InlineDropdown from "../shared/InlineDropdown";
 import SnapshotDifferencesModal from "@src/components/modals/SnapshotDifferencesModal";
+import Icon from "../Icon";
 
 const DESTINATIONS = [
   {
@@ -248,7 +249,11 @@ class DashboardSnapshotsCard extends React.Component {
               className="replicated-link u-marginRight--20 flex alignItems--center"
               to="/snapshots/settings"
             >
-              <span className="icon clickable dashboard-card-settings-icon u-marginRight--5" />
+              <Icon
+                icon="settings-gear-outline"
+                size={16}
+                className="clickable u-marginRight--5"
+              />
               Snapshot settings
             </Link>
             <span className="icon clickable dashboard-card-snapshot-icon u-marginRight--5" />
@@ -308,11 +313,13 @@ class DashboardSnapshotsCard extends React.Component {
           </div>
         </div>
         <div className="u-marginTop--10">
-          <Link
-            to={`/snapshots`}
-            className="replicated-link has-arrow u-fontSize--small"
-          >
+          <Link to={`/snapshots`} className="replicated-link u-fontSize--small">
             See all snapshots
+            <Icon
+              icon="next-arrow"
+              size={10}
+              className="has-arrow u-marginLeft--5"
+            />
           </Link>
         </div>
         {this.state.snapshotDifferencesModal && (

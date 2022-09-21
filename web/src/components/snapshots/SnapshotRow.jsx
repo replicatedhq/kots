@@ -6,6 +6,7 @@ import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 dayjs.extend(isSameOrAfter);
 
 import { Utilities } from "../../utilities/utilities";
+import Icon from "../Icon";
 
 class SnapshotRow extends React.Component {
   handleDeleteClick = (snapshot) => {
@@ -93,8 +94,10 @@ class SnapshotRow extends React.Component {
           <div className="flex flex-auto">
             {snapshot?.status === "Completed" && (
               <div className="flex">
-                <span
-                  className="icon snapshot-restore-icon u-cursor--pointer"
+                <Icon
+                  icon="sync"
+                  size={20}
+                  className="clickable"
                   onClick={() => this.handleRestoreClick(snapshot)}
                   data-tip="Restore from this backup"
                 />
@@ -102,8 +105,10 @@ class SnapshotRow extends React.Component {
               </div>
             )}
             {snapshot?.status !== "InProgress" && (
-              <span
-                className="icon snapshot-trash-icon u-marginLeft--20 u-cursor--pointer"
+              <Icon
+                icon="trash"
+                size="20"
+                className="clickable u-marginLeft--20 error-color"
                 onClick={() => this.handleDeleteClick(snapshot)}
               />
             )}
@@ -114,8 +119,10 @@ class SnapshotRow extends React.Component {
                     ? `/snapshots/partial/${this.props.app.slug}/${snapshot?.name}`
                     : `/snapshots/details/${snapshot?.name}`
                 }
-                className="icon menu-dots-icon u-marginLeft--20 u-cursor--pointer"
-              />
+                className="u-marginLeft--20"
+              >
+                <Icon icon="more-circle-outline" size="12" />
+              </Link>
             )}
           </div>
         )}

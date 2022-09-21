@@ -516,7 +516,7 @@ class Snapshots extends Component {
         </Helmet>
         {!isVeleroCorrectVersion(snapshotSettings) ? (
           <div className="VeleroWarningBlock">
-            <span className="icon small-warning-icon" />
+            <Icon icon={"warning"} size={24} className="warning-color" />
             <p>
               {" "}
               To use snapshots reliably, install Velero version 1.5.1 or greater{" "}
@@ -553,7 +553,11 @@ class Snapshots extends Component {
                   to={`/snapshots/settings`}
                   className="replicated-link u-fontSize--small u-fontWeight--bold u-marginRight--20 flex alignItems--center"
                 >
-                  <span className="icon snapshotSettingsIcon u-marginRight--5" />
+                  <Icon
+                    icon="settings-gear-outline"
+                    size="18"
+                    className="u-marginRight--5"
+                  />
                   Settings
                 </Link>
                 {snapshots?.length > 0 && snapshotSettings?.veleroVersion && (

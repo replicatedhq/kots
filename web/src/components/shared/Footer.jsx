@@ -3,6 +3,7 @@ import { withRouter } from "react-router-dom";
 import semverjs from "semver";
 import { getBuildVersion } from "@src/utilities/utilities";
 import "@src/scss/components/shared/Footer.scss";
+import Icon from "../Icon";
 
 export class Footer extends React.Component {
   state = {
@@ -79,7 +80,11 @@ export class Footer extends React.Component {
           </div>
           {this.state.targetKotsVersion && (
             <div className="TargetKotsVersionWrapper flex u-marginLeft--10">
-              <span className="icon megaPhoneIcon flex u-marginRight--10" />
+              <Icon
+                icon="megaphone-filled"
+                size={28}
+                className="flex u-marginRight--10 gray-color"
+              />
               <p className="u-fontSize--small u-fontWeight--bold">
                 {" "}
                 v{this.state.targetKotsVersion} available.{" "}

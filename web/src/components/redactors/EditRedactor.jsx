@@ -10,6 +10,7 @@ import Loader from "../shared/Loader";
 import { Utilities } from "../../utilities/utilities";
 
 import "../../scss/components/redactors/EditRedactor.scss";
+import Icon from "../Icon";
 
 class EditRedactor extends Component {
   state = {
@@ -389,7 +390,11 @@ spec:
               {createConfirm ||
                 (editConfirm && (
                   <div className="u-marginRight--10 flex alignItems--center">
-                    <span className="icon checkmark-icon" />
+                    <Icon
+                      icon="check-circle-filled"
+                      size={16}
+                      className="success-color"
+                    />
                     <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-textColor--success">
                       {createConfirm ? "Redactor created" : "Redactor updated"}
                     </span>

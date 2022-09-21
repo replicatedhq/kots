@@ -1,6 +1,7 @@
 import React from "react";
 import Modal from "react-modal";
 import { Link } from "react-router-dom";
+import Icon from "../Icon";
 
 export default function ErrorModal(props) {
   const {
@@ -26,8 +27,10 @@ export default function ErrorModal(props) {
     >
       <div className="Modal-body">
         <div className="flex justifyContent--flexEnd">
-          <span
-            className="icon u-grayX-icon u-cursor--pointer"
+          <Icon
+            icon="close"
+            size={14}
+            className="gray-color clickable close-icon"
             onClick={() => toggleErrorModal()}
           />
         </div>

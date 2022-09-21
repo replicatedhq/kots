@@ -2,6 +2,7 @@ import React from "react";
 import map from "lodash/map";
 import after from "lodash/after";
 import forEach from "lodash/forEach";
+import Icon from "../Icon";
 
 export default class FileInput extends React.Component {
   constructor(props) {
@@ -66,14 +67,18 @@ export default class FileInput extends React.Component {
     return arr.map((item, index) => {
       return (
         <div key={`${item}-${index}`} className="u-marginTop--10">
-          <span
-            className={`icon u-smallCheckGreen u-marginRight--10 u-top--3`}
-          ></span>
+          <Icon
+            icon="check-circle-filled"
+            size={18}
+            className="success-color u-marginRight--10 u-top--3"
+          />
           {item}
           {arr.length > 1 ? (
-            <span
+            <Icon
+              icon="trash"
+              size={16}
+              className="gray-color clickable u-marginLeft--5 u-top--3"
               onClick={() => this.handleRemoveFile(this.props.name, item)}
-              className="icon gray-trash-small clickable u-marginLeft--5 u-top--3"
             />
           ) : null}
         </div>
@@ -124,18 +129,24 @@ export default class FileInput extends React.Component {
                 hasFileOrValue ? (
                   <div>
                     <div>
-                      <span
-                        className={`icon u-smallCheckGreen u-marginRight--10 u-top--3`}
-                      ></span>
+                      <Icon
+                        icon="check-circle-filled"
+                        size={18}
+                        className="clickable success-color u-marginRight--10 u-top--3"
+                      />
                       {this.props.filenamesText}
-                      <span
+                      <Icon
+                        icon="trash"
+                        size={16}
+                        className="clickable gray-color u-marginLeft--10 u-top--3"
                         onClick={() => this.handleRemoveFile(this.props.name)}
-                        className="icon gray-trash-small clickable u-marginLeft--10 u-top--3"
                       />
                       {this.state.showDownloadIcon && (
-                        <span
+                        <Icon
+                          icon="download"
+                          size={16}
+                          className="clickable gray-color u-marginLeft--10 u-top--3"
                           onClick={this.handleDownloadFile}
-                          className="icon gray-download-small clickable u-marginLeft--10 u-top--3"
                         />
                       )}
                     </div>
@@ -153,9 +164,11 @@ export default class FileInput extends React.Component {
                     htmlFor={`${this.props.name} selector`}
                     className="u-position--relative"
                   >
-                    <span
-                      className={`icon u-ovalIcon clickable u-marginRight--10 u-top--3`}
-                    ></span>
+                    <Icon
+                      icon="dotted-circle"
+                      size={16}
+                      className="clickable gray-color u-marginRight--10 u-top--3"
+                    />
                     Browse files for {this.props.title}
                   </label>
                 )

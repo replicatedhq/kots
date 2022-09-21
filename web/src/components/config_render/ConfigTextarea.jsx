@@ -103,8 +103,10 @@ export default class ConfigTextarea extends React.Component {
                 }`}
               ></textarea>
               {variadicItemsLen > 1 ? (
-                <div
-                  className="icon gray-trash clickable u-marginLeft--10"
+                <Icon
+                  icon="trash"
+                  size={20}
+                  className="gray-color u-marginLeft--10 clickable"
                   onClick={() =>
                     this.props.handleRemoveItem(this.props.name, objKey)
                   }
@@ -117,7 +119,7 @@ export default class ConfigTextarea extends React.Component {
                 onClick={() => this.props.handleAddItem(this.props.name)}
               >
                 <span className="add-btn u-fontSize--small u-fontWeight--bold u-linkColor u-cursor--pointer">
-                  <span className="icon u-addIcon--blue clickable" />
+                  <Icon icon="plus" size={14} className="clickable" />
                   Add another {this.props.title}
                 </span>
               </div>
@@ -176,7 +178,7 @@ export default class ConfigTextarea extends React.Component {
             onClick={() => this.props.handleAddItem(this.props.name)}
           >
             <span className="add-btn u-fontSize--small u-fontWeight--bold u-linkColor u-cursor--pointer">
-              <span className="icon u-addIcon--blue clickable" />
+              <Icon icon="plus" size={14} className="clickable" />
               Add another {this.props.title}
             </span>
           </div>

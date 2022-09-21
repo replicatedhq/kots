@@ -3,6 +3,7 @@ import ConfigItemTitle from "./ConfigItemTitle";
 import Markdown from "react-remarkable";
 import { setOrder } from "./ConfigUtil";
 import { ConfigWrapper } from "./ConfigComponents";
+import Icon from "../Icon";
 
 export default class ConfigInput extends React.Component {
   constructor(props) {
@@ -119,8 +120,10 @@ export default class ConfigInput extends React.Component {
                 }`}
               />
               {variadicItemsLen > 1 ? (
-                <div
-                  className="icon gray-trash clickable u-marginLeft--10"
+                <Icon
+                  icon="trash"
+                  size={20}
+                  className="clickable gray-color u-marginLeft--10"
                   onClick={() =>
                     this.props.handleRemoveItem(this.props.name, objKey)
                   }
@@ -139,7 +142,11 @@ export default class ConfigInput extends React.Component {
                 onClick={() => this.props.handleAddItem(this.props.name)}
               >
                 <span className="add-btn u-fontSize--small u-fontWeight--bold u-linkColor u-cursor--pointer">
-                  <span className="icon u-addIcon--blue clickable" />
+                  <Icon
+                    icon="plus"
+                    size={10}
+                    className="clickable u-marginRight--5"
+                  />
                   Add another {this.props.title}
                 </span>
               </div>
@@ -204,7 +211,7 @@ export default class ConfigInput extends React.Component {
             onClick={() => this.props.handleAddItem(this.props.name)}
           >
             <span className="add-btn u-fontSize--small u-fontWeight--bold u-linkColor u-cursor--pointer">
-              <span className="icon u-addIcon--blue clickable" />
+              <Icon icon="plus" size={14} className="clickable" />
               Add another {this.props.title}
             </span>
           </div>

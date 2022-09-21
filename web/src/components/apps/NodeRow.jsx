@@ -28,7 +28,11 @@ export default function NodeRow(props) {
       } else if (drainNodeSuccessful && drainingNodeName === node?.name) {
         return (
           <div className="flex flex-auto alignItems--center">
-            <span className="u-marginRight--5 icon checkmark-icon" />
+            <Icon
+              icon="check-circle-filled"
+              size={16}
+              className="u-marginRight--5 success-color"
+            />
             <span className="u-fontSize--normal u-textColor--secondary u-fontWeight--medium">
               Node successfully drained
             </span>
@@ -196,7 +200,7 @@ export default function NodeRow(props) {
         <div className="flex flex1 alignItems--center u-marginTop--15 NodeRow--items">
           <div className="flex-column flex1 u-marginRight--10">
             <p className="flex1 u-fontSize--small u-fontWeight--medium u-textColor--primary">
-              <span className="icon versionHistoryIcon"></span>
+              <Icon icon="schedule-update" size={16} />
               {node?.kubeletVersion}
             </p>
           </div>

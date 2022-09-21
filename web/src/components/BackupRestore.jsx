@@ -10,6 +10,7 @@ import RestoreSnapshotRow from "./RestoreSnapshotRow";
 import UploadLicenseFile from "./UploadLicenseFile";
 import Loader from "./shared/Loader";
 import ConfigureSnapshots from "./snapshots/ConfigureSnapshots";
+import Icon from "./Icon";
 
 class BackupRestore extends React.Component {
   state = {
@@ -121,8 +122,10 @@ class BackupRestore extends React.Component {
             to="/upload-license"
             className="u-fontSize--normal u-fontWeight--medium u-linkColor u-cursor--pointer"
           >
-            <span
-              className="icon clickable backArrow-icon u-marginRight--10"
+            <Icon
+              icon="prev-arrow"
+              size={12}
+              className="clickable u-marginRight--10"
               style={{ verticalAlign: "0" }}
             />
             Back to license upload

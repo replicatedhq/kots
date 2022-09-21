@@ -14,6 +14,7 @@ import "../../scss/components/watches/DashboardCard.scss";
 import "@src/scss/components/apps/AppLicense.scss";
 import { Link } from "react-router-dom";
 import LicenseFields from "./LicenseFields";
+import Icon from "../Icon";
 
 export default class DashboardLicenseCard extends React.Component {
   state = {
@@ -220,7 +221,11 @@ export default class DashboardLicenseCard extends React.Component {
                   Last synced {Utilities.dateFromNow(appLicense.lastSyncedAt)}
                 </span>
               ) : null}
-              <span className="icon clickable dashboard-card-sync-icon u-marginRight--5" />
+              <Icon
+                icon="sync-license"
+                className="clickable u-marginRight--5"
+                size={16}
+              />
               <span
                 className="replicated-link u-fontSize--small"
                 onClick={() => this.syncLicense("")}
@@ -250,13 +255,24 @@ export default class DashboardLicenseCard extends React.Component {
                   <div
                     className={`LicenseTypeTag ${appLicense?.licenseType} flex-auto justifyContent--center alignItems--center`}
                   >
-                    <span
-                      className={`icon ${
-                        appLicense?.licenseType === "---"
-                          ? ""
-                          : appLicense?.licenseType
-                      }-icon`}
-                    ></span>
+                    {/* TODO: refactor logic */}
+                    <Icon
+                      icon={
+                        appLicense?.licenseType === "dev"
+                          ? "code"
+                          : appLicense?.licenseType === "trial"
+                          ? "stopwatch"
+                          : appLicense?.licenseType === "prod"
+                          ? "dollar-sign"
+                          : appLicense?.licenseType === "community" &&
+                            "user-outline"
+                      }
+                      size={12}
+                      style={{ marginRight: "2px" }}
+                      className={
+                        appLicense?.licenseType === "prod" && "success-color"
+                      }
+                    />
                     {appLicense?.licenseType !== "---"
                       ? `${Utilities.toTitleCase(
                           appLicense.licenseType
@@ -291,12 +307,14 @@ export default class DashboardLicenseCard extends React.Component {
                       }}
                     >
                       View {size(appLicense?.entitlements)} license entitlements
-                      <span
-                        className={`icon clickable ${
+                      <Icon
+                        icon={
                           this.state.isViewingLicenseEntitlements
-                            ? "up-arrow-icon"
-                            : "down-arrow-icon"
-                        } u-marginLeft--5`}
+                            ? "up-arrow"
+                            : "down-arrow"
+                        }
+                        size={12}
+                        className="clickable u-marginLeft--5 gray-color"
                       />
                     </span>
                   </span>
@@ -332,9 +350,14 @@ export default class DashboardLicenseCard extends React.Component {
         <div className="u-marginTop--10">
           <Link
             to={`/app/${app?.slug}/license`}
-            className="replicated-link has-arrow u-fontSize--small"
+            className="replicated-link u-fontSize--small"
           >
             See license details
+            <Icon
+              icon="next-arrow"
+              size={10}
+              className="has-arrow u-marginLeft--5"
+            />
           </Link>
         </div>
         <Modal

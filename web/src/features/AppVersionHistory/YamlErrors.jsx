@@ -1,9 +1,10 @@
+import Icon from "@src/components/Icon";
 import React from "react";
 
 const YamlErrors = ({ yamlErrors, handleShowDetailsClicked }) => {
   return (
     <div className="flex alignItems--center u-marginTop--5">
-      <span className="icon error-small" />
+      <Icon icon={"warning-circle-filled"} size={16} className="error-color" />
       <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5 u-textColor--error">
         {yamlErrors?.length} Invalid file
         {yamlErrors?.length !== 1 ? "s" : ""}{" "}

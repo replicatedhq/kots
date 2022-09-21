@@ -6,6 +6,7 @@ import filter from "lodash/filter";
 import isEmpty from "lodash/isEmpty";
 import { Utilities } from "../../utilities/utilities";
 import download from "downloadjs";
+import Icon from "../Icon";
 // import { VendorUtilities } from "../../utilities/VendorUtilities";
 
 class SupportBundleRow extends React.Component {
@@ -236,14 +237,22 @@ class SupportBundleRow extends React.Component {
                     <div className="flex flex1 alignItems--center">
                       {errorInsights.length > 0 && (
                         <span className="flex alignItems--center u-marginRight--30 u-fontSize--small u-fontWeight--medium u-textColor--error">
-                          <span className="icon u-bundleInsightErrIcon u-marginRight--5" />
+                          <Icon
+                            icon={"warning-circle-filled"}
+                            size={15}
+                            className="error-color u-marginRight--5"
+                          />
                           {errorInsights.length} error
                           {errorInsights.length > 1 ? "s" : ""} found
                         </span>
                       )}
                       {warningInsights.length > 0 && (
                         <span className="flex alignItems--center u-marginRight--30 u-fontSize--small u-fontWeight--medium u-textColor--warning">
-                          <span className="icon u-bundleInsightWarningIcon u-marginRight--5" />
+                          <Icon
+                            icon="warning"
+                            className="warning-color u-marginRight--5"
+                            size={16}
+                          />
                           {warningInsights.length} warning
                           {warningInsights.length > 1 ? "s" : ""} found
                         </span>
@@ -269,7 +278,11 @@ class SupportBundleRow extends React.Component {
                 )}
                 {this.props.bundle.sharedAt ? (
                   <div className="sentToVendorWrapper flex alignItems--flexEnd u-paddingLeft--10 u-paddingRight--10 u-marginRight--10">
-                    <span className="icon send-icon u-marginRight--5" />
+                    <Icon
+                      icon="paper-airplane"
+                      size="16"
+                      className="u-marginRight--5"
+                    />
                     <span className="u-fontWeight--bold u-fontSize--small u-color--mutedteal">
                       Sent to vendor on{" "}
                       {Utilities.dateFormat(bundle.sharedAt, "MM/DD/YYYY")}

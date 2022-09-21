@@ -1,4 +1,5 @@
 import React, { Component } from "react";
+import Icon from "../Icon";
 
 export default class SnapshotInstallationBox extends Component {
   renderVeleroErrors = (snapshotSettings) => {
@@ -124,7 +125,11 @@ export default class SnapshotInstallationBox extends Component {
           )}
           {snapshotSettings?.veleroVersion ? (
             <span className="flex alignItems--center u-marginTop--10 u-fontSize--small u-fontWeight--medium u-textColor--primary">
-              <span className="icon checkmark-icon u-marginRight--5" />
+              <Icon
+                icon="check-circle-filled"
+                size={16}
+                className="u-marginRight--5 success-color"
+              />
               Velero is installed on your cluster
             </span>
           ) : null}

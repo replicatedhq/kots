@@ -42,7 +42,11 @@ class Pager extends React.Component {
                     : null
                 }
               >
-                <span className="icon clickable u-dropdownArrowIcon previous"></span>{" "}
+                <Icon
+                  icon="prev-arrow"
+                  size={10}
+                  className="clickable gray-color u-marginRight--5"
+                />
                 Prev
               </p>
             </div>
@@ -78,7 +82,11 @@ class Pager extends React.Component {
                 }
               >
                 Next{" "}
-                <span className="icon clickable u-dropdownArrowIcon next"></span>
+                <Icon
+                  icon="next-arrow"
+                  size={10}
+                  className="clickable gray-color u-marginLeft--5"
+                />
               </p>
             </div>
           ) : null}
