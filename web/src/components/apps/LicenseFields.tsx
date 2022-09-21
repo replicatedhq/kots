@@ -4,7 +4,8 @@ import React from "react";
 import styled from "styled-components";
 
 export const CustomerLicenseFields = styled.div`
-  background: #f5f8f9;
+  background: ${(props: { count: number }) =>
+    props.count < 5 ? "none" : "#f5f8f9"};
   border-radius: 6px;
   border: 1px solid #bccacd;
   padding: 10px;
@@ -45,8 +46,12 @@ const LicenseFields = ({
   toggleHideDetails: (title: string) => void;
   entitlementsToShow: string[];
 }) => {
+  console.log(entitlements.length);
   return (
-    <CustomerLicenseFields className="flex flexWrap--wrap">
+    <CustomerLicenseFields
+      className="flex flexWrap--wrap"
+      count={entitlements.length}
+    >
       {entitlements?.map((entitlement) => {
         const displayedEntitlement = entitlementsToShow?.find(
           (f) => f === entitlement.title
