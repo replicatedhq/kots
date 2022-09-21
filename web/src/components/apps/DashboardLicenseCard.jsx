@@ -283,22 +283,22 @@ export default class DashboardLicenseCard extends React.Component {
                     style={{ margin: "10px 0" }}
                   >
                     <span
-                      className={`u-fontWeight--bold`}
+                      className={`u-fontWeight--bold u-cursor--pointer`}
                       style={{ whiteSpace: "pre" }}
-                    >
-                      View {size(appLicense?.entitlements)} license entitlements
-                    </span>
-                    <span
-                      className={`icon clickable ${
-                        this.state.isViewingLicenseEntitlements
-                          ? "up-arrow-icon"
-                          : "down-arrow-icon"
-                      } u-marginLeft--5`}
                       onClick={(e) => {
                         e.stopPropagation();
                         this.viewLicenseEntitlements();
                       }}
-                    />
+                    >
+                      View {size(appLicense?.entitlements)} license entitlements
+                      <span
+                        className={`icon clickable ${
+                          this.state.isViewingLicenseEntitlements
+                            ? "up-arrow-icon"
+                            : "down-arrow-icon"
+                        } u-marginLeft--5`}
+                      />
+                    </span>
                   </span>
                 )}
                 {this.state.isViewingLicenseEntitlements ? (

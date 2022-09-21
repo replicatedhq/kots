@@ -46,7 +46,6 @@ const LicenseFields = ({
   toggleHideDetails: (title: string) => void;
   entitlementsToShow: string[];
 }) => {
-  console.log(entitlements.length);
   return (
     <CustomerLicenseFields
       className="flex flexWrap--wrap"
