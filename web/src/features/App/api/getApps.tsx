@@ -2,11 +2,7 @@
 import React from "react";
 import { useQuery, UseQueryResult } from "react-query";
 import { Utilities } from "../../../utilities/utilities";
-
-export type App = {
-  slug: string;
-  needsRegistry?: boolean;
-};
+import { App } from "@types";
 
 async function getApps({
   accessToken = Utilities.getToken(),
