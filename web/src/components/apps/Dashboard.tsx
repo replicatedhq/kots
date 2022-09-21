@@ -26,47 +26,101 @@ const COMMON_ERRORS = {
   "no such host": "No such host",
 };
 
-class Dashboard extends Component {
+// Types
+import { App, AppLicense, Downstream, Dashboard as DashboardType, DashboardActionLink, KotsParams, Version } from "@types";
+import { RouteComponentProps } from "react-router-dom";
+import { resolve } from "node:path/win32";
+
+type Props = {
+  app: App,
+  cluster: {
+    // TODO: figure out if this is actually a "" | number- maybe just go with number
+    id: "" | number;
+  };
+  isHelmManaged: boolean;
+} & RouteComponentProps<KotsParams>
+
+type SnapshotOption = {
+    option: string;
+    name: string;
+  }
+
+// TODO:  update these strings so that they are not nullable (maybe just set default to "")
+type State = {
+  activeChart: string | null;
+  airgapUpdateError: string;
+  airgapUploader: AirgapUploader | null;
+  airgapUploadError: string | null;
+  appLicense: AppLicense | {};
+  appName: string;
+  checkingForUpdateError: boolean;
+  checkingForUpdates: boolean;
+  checkingUpdateMessage: string;
+  currentVersion: Version | {};
+  dashboard: DashboardType;
+  downstream: Downstream | null;
+  fetchAppDownstreamJob: Repeater;
+  getAppDashboardJob: Repeater;
+  gettingAppLicenseErrMsg: string;
+  iconUri: string;
+  loadingApp: boolean;
+  links: DashboardActionLink[];
+  noUpdatesAvalable: boolean;
+  selectedSnapshotOption: SnapshotOption;
+  showAppStatusModal: boolean;
+  showAutomaticUpdatesModal: boolean;
+  snapshotDifferencesModal: boolean;
+  startSnapshotErrorMsg: string;
+  startSnapshotOptions: SnapshotOption[];
+  updateChecker: Repeater;
+  uploadingAirgapFile: boolean;
+  viewAirgapUpdateError: boolean;
+  viewAirgapUploadError: boolean;
+}
+
+class Dashboard extends Component<Props, State> {
   state = {
+    activeChart: null,
+    airgapUploader: null,
+    airgapUpdateError: "",
+    airgapUploadError: null,
+    appLicense: {},
     appName: "",
-    iconUri: "",
-    currentVersion: {},
-    downstream: [],
-    links: [],
+    checkingForUpdateError: false,
     checkingForUpdates: false,
     checkingUpdateMessage: "Checking for updates",
-    checkingForUpdateError: false,
-    appLicense: null,
-    activeChart: null,
-    crosshairValues: [],
-    noUpdatesAvalable: false,
-    updateChecker: new Repeater(),
-    uploadingAirgapFile: false,
-    airgapUploadError: null,
-    viewAirgapUploadError: false,
-    viewAirgapUpdateError: false,
-    airgapUpdateError: "",
-    startSnapshotErrorMsg: "",
-    showAutomaticUpdatesModal: false,
-    showAppStatusModal: false,
     dashboard: {
       appStatus: null,
       metrics: [],
       prometheusAddress: "",
     },
-    getAppDashboardJob: new Repeater(),
+    currentVersion: {},
+    downstream: null,
     fetchAppDownstreamJob: new Repeater(),
+    getAppDashboardJob: new Repeater(),
     gettingAppLicenseErrMsg: "",
+    iconUri: "",
+    loadingApp: false,
+    links: [],
+    // TODO: fix misspelling of available
+    noUpdatesAvalable: false,
+    selectedSnapshotOption: { option: "full", name: "Start a Full snapshot" },
+    showAppStatusModal: false,
+    showAutomaticUpdatesModal: false,
+    snapshotDifferencesModal: false,
+    startSnapshotErrorMsg: "",
     startSnapshotOptions: [
       { option: "partial", name: "Start a Partial snapshot" },
       { option: "full", name: "Start a Full snapshot" },
       { option: "learn", name: "Learn about the difference" },
     ],
-    selectedSnapshotOption: { option: "full", name: "Start a Full snapshot" },
-    snapshotDifferencesModal: false,
+    updateChecker: new Repeater(),
+    uploadingAirgapFile: false,
+    viewAirgapUpdateError: false,
+    viewAirgapUploadError: false,
   };
 
-  setWatchState = (app) => {
+  setWatchState = (app: App) => {
     this.setState({
       appName: app.name,
       iconUri: app.iconUri,
@@ -76,7 +130,7 @@ class Dashboard extends Component {
     });
   };
 
-  componentDidUpdate(lastProps) {
+  componentDidUpdate(lastProps: Props) {
     const { app } = this.props;
     if (app !== lastProps.app && app) {
       this.setWatchState(app);
@@ -84,7 +138,7 @@ class Dashboard extends Component {
     }
   }
 
-  getAppLicense = async (app) => {
+  getAppLicense = async (app: App) => {
     await fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/license`, {
       method: "GET",
       headers: {
@@ -174,17 +228,17 @@ class Dashboard extends Component {
     });
   };
 
-  getAppDashboard = () => {
-    return new Promise((resolve, reject) => {
+  getAppDashboard = (): Promise<void> => {
+    return new Promise((resolveGetAppDashboard, reject) => {
       // this function is in a repeating callback that terminates when
       // the promise is resolved
 
       // TODO: use react-query to refetch this instead of the custom repeater
       if (!this.props.app) {
-        return;
+        resolveGetAppDashboard();
       }
 
-      if (this.props.cluster?.id == "" && this.props.isHelmManaged === true) {
+      if (this.props.cluster?.id === "" && this.props.isHelmManaged === true) {
         // TODO: use a callback to update the state in the parent component
         this.props.cluster.id = 0;
       }
@@ -202,7 +256,7 @@ class Dashboard extends Component {
         .then(async (res) => {
           if (!res.ok && res.status === 401) {
             Utilities.logoutUser();
-            return;
+            resolveGetAppDashboard();
           }
           const response = await res.json();
           this.setState({
@@ -212,7 +266,7 @@ class Dashboard extends Component {
               metrics: response.metrics,
             },
           });
-          resolve();
+          resolveGetAppDashboard();
         })
         .catch((err) => {
           console.log(err);
