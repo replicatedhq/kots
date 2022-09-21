@@ -12,9 +12,28 @@ import FileTree from "../shared/FileTree";
 
 import "../../scss/components/troubleshoot/FileTree.scss";
 
-class KotsApplicationTree extends React.Component {
-  constructor() {
-    super();
+// Types
+import { App, KotsParams } from "@types";
+import { RouteComponentProps } from "react-router-dom";
+
+type Props = {
+  app: App;
+  appName: string;
+  appNameSpace: string;
+  isHelmManaged: boolean;
+} & RouteComponentProps<KotsParams>;
+
+type State = {
+  files: {
+    [key: string]: string;
+  };
+  selectedFile: string;
+  displayInstructionsModal: boolean;
+  applicationTree: object[];
+};
+class KotsApplicationTree extends React.Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
     this.state = {
       files: {},
       selectedFile: "/",
@@ -53,7 +72,7 @@ class KotsApplicationTree extends React.Component {
       });
   };
 
-  componentDidUpdate(lastProps, lastState) {
+  componentDidUpdate(lastProps: Props) {
     if (
       this.props.match.params.slug != lastProps.match.params.slug ||
       this.props.match.params.sequence != lastProps.match.params.sequence
@@ -72,7 +91,7 @@ class KotsApplicationTree extends React.Component {
     });
   };
 
-  setSelectedFile = (path) => {
+  setSelectedFile = (path: string) => {
     this.setState({
       selectedFile: path,
     });
@@ -133,9 +152,6 @@ class KotsApplicationTree extends React.Component {
               </div>
             ) : (
               <MonacoEditor
-                ref={(editor) => {
-                  this.monacoEditor = editor;
-                }}
                 language={"yaml"}
                 value={contents}
                 options={{
@@ -233,4 +249,5 @@ class KotsApplicationTree extends React.Component {
   }
 }
 
-export default withRouter(KotsApplicationTree);
+// eslint-disable-next-line
+export default withRouter(KotsApplicationTree) as any;
