@@ -4,7 +4,7 @@ import { Utilities, dynamicallyResizeText } from "@src/utilities/utilities";
 import Loader from "@src/components/shared/Loader";
 import ErrorModal from "@src/components/modals/ErrorModal";
 import "@src/scss/components/Login.scss";
-import { App } from "@features/App";
+import { App } from "@types";
 import { RouteComponentProps } from "react-router-dom";
 
 type Props = {
