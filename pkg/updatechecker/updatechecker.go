@@ -418,6 +418,11 @@ func checkForKotsAppUpdates(opts CheckForUpdatesOpts, finishedChan chan<- error)
 }
 
 func downloadHelmAppUpdates(opts CheckForUpdatesOpts, helmApp *apptypes.HelmApp, licenseID string, updates []UpdateCheckRelease) error {
+	currentKotsKinds, err := helm.GetKotsKindsFromHelmApp(helmApp)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get current config values")
+	}
+
 	for _, update := range updates {
 		status := fmt.Sprintf("Downloading release %s...", update.Version)
 		if err := store.SetTaskStatus("update-download", status, "running"); err != nil {
@@ -428,6 +433,7 @@ func downloadHelmAppUpdates(opts CheckForUpdatesOpts, helmApp *apptypes.HelmApp,
 		if err != nil {
 			return errors.Wrapf(err, "failed to pull update %s for chart", update.Version)
 		}
+		kotsKinds.ConfigValues = currentKotsKinds.ConfigValues.DeepCopy()
 
 		downstreamStatus := storetypes.VersionPending
 		// TODO: preflight handling
