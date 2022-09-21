@@ -69,7 +69,7 @@ export default class DashboardLicenseCard extends React.Component {
         this.setState({
           appLicense: licenseResponse.license,
           isViewingLicenseEntitlements:
-            size(licenseResponse.license?.entitlements) <= 5 ? true : false,
+            size(licenseResponse.license?.entitlements) < 5 ? false : true,
           message,
           messageType: "info",
           showNextStepModal: licenseResponse.synced,
@@ -283,41 +283,42 @@ export default class DashboardLicenseCard extends React.Component {
                     style={{ margin: "10px 0" }}
                   >
                     <span
-                      className={`u-fontWeight--bold`}
+                      className={`u-fontWeight--bold u-cursor--pointer`}
                       style={{ whiteSpace: "pre" }}
-                    >
-                      View {size(appLicense?.entitlements)} license entitlements
-                    </span>
-                    <span
-                      className={`icon clickable ${
-                        this.state.isViewingLicenseEntitlements
-                          ? "up-arrow-icon"
-                          : "down-arrow-icon"
-                      } u-marginLeft--5`}
                       onClick={(e) => {
                         e.stopPropagation();
                         this.viewLicenseEntitlements();
                       }}
-                    />
+                    >
+                      View {size(appLicense?.entitlements)} license entitlements
+                      <span
+                        className={`icon clickable ${
+                          this.state.isViewingLicenseEntitlements
+                            ? "up-arrow-icon"
+                            : "down-arrow-icon"
+                        } u-marginLeft--5`}
+                      />
+                    </span>
                   </span>
                 )}
-                {this.state.isViewingLicenseEntitlements ? (
-                  <LicenseFields
-                    entitlements={appLicense?.entitlements}
-                    entitlementsToShow={this.state.entitlementsToShow}
-                    toggleHideDetails={this.toggleHideDetails}
-                    toggleShowDetails={this.toggleShowDetails}
-                  />
+                {appLicense.entitlements.length > 0 &&
+                appLicense.entitlements.length < 5 ? (
+                  <div style={{ marginTop: "15px" }}>
+                    <LicenseFields
+                      entitlements={appLicense?.entitlements}
+                      entitlementsToShow={this.state.entitlementsToShow}
+                      toggleHideDetails={this.toggleHideDetails}
+                      toggleShowDetails={this.toggleShowDetails}
+                    />
+                  </div>
                 ) : (
-                  appLicense.entitlements.length < 5 && (
-                    <div style={{ marginTop: "15px" }}>
-                      <LicenseFields
-                        entitlements={appLicense?.entitlements}
-                        entitlementsToShow={this.state.entitlementsToShow}
-                        toggleHideDetails={this.toggleHideDetails}
-                        toggleShowDetails={this.toggleShowDetails}
-                      />
-                    </div>
+                  this.state.isViewingLicenseEntitlements && (
+                    <LicenseFields
+                      entitlements={appLicense?.entitlements}
+                      entitlementsToShow={this.state.entitlementsToShow}
+                      toggleHideDetails={this.toggleHideDetails}
+                      toggleShowDetails={this.toggleShowDetails}
+                    />
                   )
                 )}
               </div>
