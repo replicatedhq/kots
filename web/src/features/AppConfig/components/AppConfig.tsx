@@ -625,6 +625,9 @@ class AppConfig extends Component<Props, State> {
                       className="darkGray-color clickable flex-auto u-marginLeft--5"
                       size="12"
                       style={{ marginTop: "10px" }}
+                      color={""}
+                      disableFill={false}
+                      removeInlineStyle={false}
                     />
                   </Flex>
                   {group.items ? (
