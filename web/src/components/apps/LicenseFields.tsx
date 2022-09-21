@@ -4,10 +4,12 @@ import React from "react";
 import styled from "styled-components";
 
 export const CustomerLicenseFields = styled.div`
-  background: #f5f8f9;
-  border-radius: 6px;
-  border: 1px solid #bccacd;
-  padding: 10px;
+  background: ${(props: { count: number }) =>
+    props.count < 5 ? "none" : "#f5f8f9"};
+  border-radius: ${(props: { count: number }) => (props.count < 5 ? 0 : "6px")};
+  border: ${(props: { count: number }) =>
+    props.count < 5 ? "none" : "1px solid #bccacd"};
+  padding: ${(props: { count: number }) => (props.count < 5 ? 0 : "10px")};
   line-height: 25px;
 `;
 
@@ -46,7 +48,10 @@ const LicenseFields = ({
   entitlementsToShow: string[];
 }) => {
   return (
-    <CustomerLicenseFields className="flex flexWrap--wrap">
+    <CustomerLicenseFields
+      className="flex flexWrap--wrap"
+      count={entitlements.length}
+    >
       {entitlements?.map((entitlement) => {
         const displayedEntitlement = entitlementsToShow?.find(
           (f) => f === entitlement.title
