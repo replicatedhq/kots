@@ -210,16 +210,18 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (ucr *UpdateCheckResponse, finalE
 	}
 
 	finishedChan := make(chan error)
-	if opts.Wait {
-		defer close(finishedChan)
-	}
+	defer func() {
+		if opts.Wait || finalError != nil {
+			defer close(finishedChan)
+		}
+	}()
 
 	tasks.StartUpdateTaskMonitor("update-download", finishedChan)
-	if opts.Wait {
-		defer func() {
+	defer func() {
+		if opts.Wait || finalError != nil {
 			finishedChan <- finalError
-		}()
-	}
+		}
+	}()
 
 	if util.IsHelmManaged() {
 		ucr, finalError = checkForHelmAppUpdates(opts, finishedChan)
@@ -255,7 +257,7 @@ func checkForHelmAppUpdates(opts CheckForUpdatesOpts, finishedChan chan<- error)
 		return nil, errors.Wrap(err, fmt.Sprintf("failed to get parse current version %s", helmApp.Release.Chart.Metadata.Version))
 	}
 
-	availableUpdateTags, err := helm.CheckForUpdates(helmApp.ChartPath, license.Spec.LicenseID, &currentVersion)
+	availableUpdateTags, err := helm.CheckForUpdates(helmApp, license, &currentVersion)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get available updates")
 	}
@@ -416,6 +418,11 @@ func checkForKotsAppUpdates(opts CheckForUpdatesOpts, finishedChan chan<- error)
 }
 
 func downloadHelmAppUpdates(opts CheckForUpdatesOpts, helmApp *apptypes.HelmApp, licenseID string, updates []UpdateCheckRelease) error {
+	currentKotsKinds, err := helm.GetKotsKindsFromHelmApp(helmApp)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get current config values")
+	}
+
 	for _, update := range updates {
 		status := fmt.Sprintf("Downloading release %s...", update.Version)
 		if err := store.SetTaskStatus("update-download", status, "running"); err != nil {
@@ -426,6 +433,7 @@ func downloadHelmAppUpdates(opts CheckForUpdatesOpts, helmApp *apptypes.HelmApp,
 		if err != nil {
 			return errors.Wrapf(err, "failed to pull update %s for chart", update.Version)
 		}
+		kotsKinds.ConfigValues = currentKotsKinds.ConfigValues.DeepCopy()
 
 		downstreamStatus := storetypes.VersionPending
 		// TODO: preflight handling

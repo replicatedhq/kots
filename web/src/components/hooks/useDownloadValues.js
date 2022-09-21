@@ -63,6 +63,7 @@ const useDownloadValues = ({
     try {
       setIsDownloading(true);
       setError(null);
+      // TODO: error will never be returned. probably refactor to return error or use react-query
       const { data, error: _error } = await _getValues({
         appSlug,
         sequence,

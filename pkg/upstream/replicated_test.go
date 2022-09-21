@@ -1,7 +1,6 @@
 package upstream
 
 import (
-	"net/url"
 	"testing"
 
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -12,64 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-var (
-	v1_2_0  = "v1.2.0"
-	channel = "channel"
-)
-
-func Test_parseReplicatedURL(t *testing.T) {
-	tests := []struct {
-		name                 string
-		uri                  string
-		expectedAppSlug      string
-		expectedChannel      *string
-		expectedVersionLabel *string
-		expectedSequence     *int
-	}{
-		{
-			name:                 "replicated://app-slug",
-			uri:                  "replicated://app-slug",
-			expectedAppSlug:      "app-slug",
-			expectedChannel:      nil,
-			expectedVersionLabel: nil,
-			expectedSequence:     nil,
-		},
-		{
-			name:                 "replicated://app-slug@v1.2.0",
-			uri:                  "replicated://app-slug@v1.2.0",
-			expectedAppSlug:      "app-slug",
-			expectedChannel:      nil,
-			expectedVersionLabel: &v1_2_0,
-			expectedSequence:     nil,
-		},
-		{
-			name:                 "replicated://app-slug/channel",
-			uri:                  "replicated://app-slug/channel",
-			expectedAppSlug:      "app-slug",
-			expectedChannel:      &channel,
-			expectedVersionLabel: nil,
-			expectedSequence:     nil,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			req := require.New(t)
-
-			u, err := url.ParseRequestURI(test.uri)
-			req.NoError(err)
-
-			replicatedUpstream, err := parseReplicatedURL(u)
-			req.NoError(err)
-			assert.Equal(t, test.expectedAppSlug, replicatedUpstream.AppSlug)
-
-			if test.expectedVersionLabel != nil || replicatedUpstream.VersionLabel != nil {
-				assert.Equal(t, test.expectedVersionLabel, replicatedUpstream.VersionLabel)
-			}
-		})
-	}
-}
 
 func Test_releaseToFiles(t *testing.T) {
 	tests := []struct {
@@ -281,75 +222,4 @@ func Test_createConfigValues(t *testing.T) {
 	values3, err := createConfigValues(applicationName, config, configValues, nil, nil, appInfo, nil, template.LocalRegistry{}, nil)
 	req.NoError(err)
 	assert.Equal(t, expected3, values3.Spec.Values)
-}
-
-func Test_getRequest(t *testing.T) {
-	beta := "beta"
-	unstable := "unstable"
-	version := "1.1.0"
-	tests := []struct {
-		endpoint        string
-		appSlug         string
-		channel         *string
-		channelSequence string
-		versionLabel    *string
-		expectedURL     string
-	}{
-		{
-			endpoint:        "https://replicated-app",
-			appSlug:         "sluggy1",
-			channel:         nil,
-			channelSequence: "",
-			versionLabel:    nil,
-			expectedURL:     "https://replicated-app/release/sluggy1?channelSequence=&isSemverSupported=true&licenseSequence=23",
-		},
-		{
-			endpoint:        "http://localhost:30016",
-			appSlug:         "sluggy2",
-			channel:         &beta,
-			channelSequence: "",
-			versionLabel:    nil,
-			expectedURL:     "http://localhost:30016/release/sluggy2/beta?channelSequence=&isSemverSupported=true&licenseSequence=23",
-		},
-		{
-			endpoint:        "https://replicated-app",
-			appSlug:         "sluggy3",
-			channel:         &unstable,
-			channelSequence: "10",
-			versionLabel:    nil,
-			expectedURL:     "https://replicated-app/release/sluggy3/unstable?channelSequence=10&isSemverSupported=true&licenseSequence=23",
-		},
-		{
-			endpoint:        "https://replicated-app",
-			appSlug:         "sluggy3",
-			channel:         &unstable,
-			channelSequence: "",
-			versionLabel:    &version,
-			expectedURL:     "https://replicated-app/release/sluggy3/unstable?channelSequence=&isSemverSupported=true&licenseSequence=23&versionLabel=1.1.0",
-		},
-	}
-
-	req := require.New(t)
-	for _, test := range tests {
-		license := &kotsv1beta1.License{
-			Spec: kotsv1beta1.LicenseSpec{
-				Endpoint:        test.endpoint,
-				AppSlug:         test.appSlug,
-				LicenseSequence: 23,
-			},
-		}
-		r := &ReplicatedUpstream{
-			Channel:      test.channel,
-			VersionLabel: test.versionLabel,
-		}
-		cursor := ReplicatedCursor{
-			Cursor: test.channelSequence,
-		}
-		if test.channel != nil {
-			cursor.ChannelName = *test.channel
-		}
-		request, err := r.getRequest("GET", license, cursor)
-		req.NoError(err)
-		assert.Equal(t, test.expectedURL, request.URL.String())
-	}
 }

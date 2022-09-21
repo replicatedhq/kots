@@ -239,6 +239,7 @@ class Dashboard extends Component {
       .then(async (res) => {
         const response = await res.json();
         if (response.availableUpdates === 0) {
+          this.getAppLicense(this.props.app);
           this.setState({
             checkingForUpdates: false,
             noUpdatesAvalable: true,
@@ -252,6 +253,7 @@ class Dashboard extends Component {
       })
       .catch((err) => {
         console.log(err);
+        this.getAppLicense(this.props.app);
         this.setState({
           checkingForUpdateError: true,
           checkingForUpdates: false,
@@ -349,6 +351,7 @@ class Dashboard extends Component {
               checkingForUpdateError: response.status === "failed",
             });
 
+            this.getAppLicense(this.props.app);
             if (this.props.updateCallback) {
               this.props.updateCallback();
             }

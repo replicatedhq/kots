@@ -31,6 +31,9 @@ import NavBar from "./components/shared/NavBar";
 import "./scss/index.scss";
 import connectHistory from "./services/matomo";
 
+// types
+import { App } from "@types";
+
 // react-query client
 const queryClient = new QueryClient();
 
@@ -78,13 +81,6 @@ type AppBranding = {
   logo: string;
 };
 
-type App = {
-  slug: string;
-  isGitOpsSupported: boolean;
-  isIdentityServiceSupported: boolean;
-  isGeoaxisSupported: boolean;
-  allowSnapshots: boolean;
-};
 type State = {
   appBranding: AppBranding | null;
   appLogo: string | null;

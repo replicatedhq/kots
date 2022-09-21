@@ -15,6 +15,7 @@ import (
 	"github.com/containers/image/v5/docker"
 	imagetypes "github.com/containers/image/v5/types"
 	"github.com/pkg/errors"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -117,8 +118,14 @@ func deleteUpdateCacheForChart(chartPath string) {
 	delete(updateCache, chartPath)
 }
 
-func CheckForUpdates(chartPath string, licenseID string, currentVersion *semver.Version) (ChartUpdates, error) {
-	availableUpdates := ChartUpdates{}
+func CheckForUpdates(helmApp *apptypes.HelmApp, license *kotsv1beta1.License, currentVersion *semver.Version) (ChartUpdates, error) {
+	chartPath := helmApp.ChartPath
+	licenseID := license.Spec.LicenseID
+
+	_, err := SyncLicense(helmApp)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to sync license before update check")
+	}
 
 	imageName := strings.TrimLeft(chartPath, "oci:")
 	ref, err := docker.ParseReference(imageName)
@@ -142,6 +149,7 @@ func CheckForUpdates(chartPath string, licenseID string, currentVersion *semver.
 
 	tags = removeDuplicates(tags) // registry should not be returning duplicate tags
 
+	availableUpdates := ChartUpdates{}
 	for _, tag := range tags {
 		v, err := semver.ParseTolerant(tag)
 		if err != nil {

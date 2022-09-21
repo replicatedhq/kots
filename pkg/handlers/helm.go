@@ -13,8 +13,8 @@ import (
 	"github.com/replicatedhq/kots/pkg/helm"
 	kotshelm "github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
-	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/util"
 	yaml "github.com/replicatedhq/yaml/v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -86,7 +86,7 @@ func (h *Handler) GetAppValuesFile(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		licenseData, err := kotslicense.GetLatestLicenseForHelm(licenseID)
+		licenseData, err := replicatedapp.GetLatestLicenseForHelm(licenseID)
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to download license for chart archive"))
 			w.WriteHeader(http.StatusInternalServerError)

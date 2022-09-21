@@ -22,7 +22,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	reportingtypes "github.com/replicatedhq/kots/pkg/api/reporting/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
-	kotslicense "github.com/replicatedhq/kots/pkg/license"
+	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	reporting "github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/upstream/types"
@@ -42,35 +42,12 @@ func (e IncompatibleAppError) Error() string {
 	return e.Message
 }
 
-const DefaultMetadata = `apiVersion: kots.io/v1beta1
-kind: Application
-metadata:
-  name: "default-application"
-spec:
-  title: "the application"
-  icon: https://cdn2.iconfinder.com/data/icons/mixd/512/16_kubernetes-512.png
-  releaseNotes: |
-    release notes`
-
-type ReplicatedUpstream struct {
-	Channel      *string
-	AppSlug      string
-	VersionLabel *string
-	Sequence     *int
-}
-
-type ReplicatedCursor struct {
-	ChannelID   string
-	ChannelName string
-	Cursor      string
-}
-
 type App struct {
 	Name string
 }
 
 type Release struct {
-	UpdateCursor ReplicatedCursor
+	UpdateCursor replicatedapp.ReplicatedCursor
 	VersionLabel string
 	IsRequired   bool
 	ReleaseNotes string
@@ -87,15 +64,8 @@ type ChannelRelease struct {
 	ReleaseNotes    string `json:"releaseNotes"`
 }
 
-func (this ReplicatedCursor) Equal(other ReplicatedCursor) bool {
-	if this.ChannelID != "" && other.ChannelID != "" {
-		return this.ChannelID == other.ChannelID && this.Cursor == other.Cursor
-	}
-	return this.ChannelName == other.ChannelName && this.Cursor == other.Cursor
-}
-
 func getUpdatesReplicated(u *url.URL, fetchOptions *types.FetchOptions) (*types.UpdateCheckResult, error) {
-	currentCursor := ReplicatedCursor{
+	currentCursor := replicatedapp.ReplicatedCursor{
 		ChannelID:   fetchOptions.CurrentChannelID,
 		ChannelName: fetchOptions.CurrentChannelName,
 		Cursor:      fetchOptions.CurrentCursor,
@@ -116,12 +86,12 @@ func getUpdatesReplicated(u *url.URL, fetchOptions *types.FetchOptions) (*types.
 		return nil, errors.New("No license was provided")
 	}
 
-	replicatedUpstream, err := parseReplicatedURL(u)
+	replicatedUpstream, err := replicatedapp.ParseReplicatedURL(u)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse replicated upstream")
 	}
 
-	if err := getSuccessfulHeadResponse(replicatedUpstream, fetchOptions.License); err != nil {
+	if err := replicatedapp.GetSuccessfulHeadResponse(replicatedUpstream, fetchOptions.License); err != nil {
 		return nil, errors.Wrap(err, "failed to get successful head response")
 	}
 
@@ -161,7 +131,7 @@ func downloadReplicated(
 	license *kotsv1beta1.License,
 	existingConfigValues *kotsv1beta1.ConfigValues,
 	existingIdentityConfig *kotsv1beta1.IdentityConfig,
-	updateCursor ReplicatedCursor,
+	updateCursor replicatedapp.ReplicatedCursor,
 	versionLabel string,
 	isRequired bool,
 	appSlug string,
@@ -192,7 +162,7 @@ func downloadReplicated(
 			return nil, errors.New("No license was provided")
 		}
 
-		replicatedUpstream, err := parseReplicatedURL(u)
+		replicatedUpstream, err := replicatedapp.ParseReplicatedURL(u)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to parse replicated upstream")
 		}
@@ -208,7 +178,7 @@ func downloadReplicated(
 			}
 		}
 
-		if err := getSuccessfulHeadResponse(replicatedUpstream, license); err != nil {
+		if err := replicatedapp.GetSuccessfulHeadResponse(replicatedUpstream, license); err != nil {
 			return nil, errors.Wrap(err, "failed to get successful head response")
 		}
 
@@ -217,7 +187,7 @@ func downloadReplicated(
 			return nil, errors.Wrap(err, "failed to download replicated app")
 		}
 
-		licenseData, err := kotslicense.GetLatestLicense(license)
+		licenseData, err := replicatedapp.GetLatestLicense(license)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get latest license")
 		}
@@ -348,91 +318,7 @@ func downloadReplicated(
 	return upstream, nil
 }
 
-func (r *ReplicatedUpstream) getRequest(method string, license *kotsv1beta1.License, cursor ReplicatedCursor) (*http.Request, error) {
-	u, err := url.Parse(license.Spec.Endpoint)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse endpoint from license")
-	}
-
-	hostname := u.Hostname()
-	if u.Port() != "" {
-		hostname = fmt.Sprintf("%s:%s", u.Hostname(), u.Port())
-	}
-
-	urlPath := path.Join(hostname, "release", license.Spec.AppSlug)
-	if r.Channel != nil {
-		urlPath = path.Join(urlPath, *r.Channel)
-	}
-
-	urlValues := url.Values{}
-	urlValues.Set("channelSequence", cursor.Cursor)
-	if r.VersionLabel != nil {
-		urlValues.Set("versionLabel", *r.VersionLabel)
-	}
-	urlValues.Add("licenseSequence", fmt.Sprintf("%d", license.Spec.LicenseSequence))
-	urlValues.Add("isSemverSupported", "true")
-
-	url := fmt.Sprintf("%s://%s?%s", u.Scheme, urlPath, urlValues.Encode())
-
-	req, err := util.NewRequest(method, url, nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to call newrequest")
-	}
-
-	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", license.Spec.LicenseID, license.Spec.LicenseID)))))
-
-	return req, nil
-}
-
-func parseReplicatedURL(u *url.URL) (*ReplicatedUpstream, error) {
-	replicatedUpstream := ReplicatedUpstream{}
-
-	if u.User != nil {
-		if u.User.Username() != "" {
-			replicatedUpstream.AppSlug = u.User.Username()
-			versionLabel := u.Hostname()
-			replicatedUpstream.VersionLabel = &versionLabel
-		}
-	}
-
-	if replicatedUpstream.AppSlug == "" {
-		replicatedUpstream.AppSlug = u.Hostname()
-		if u.Path != "" {
-			channel := strings.TrimPrefix(u.Path, "/")
-			replicatedUpstream.Channel = &channel
-		}
-	}
-
-	return &replicatedUpstream, nil
-}
-
-func getSuccessfulHeadResponse(replicatedUpstream *ReplicatedUpstream, license *kotsv1beta1.License) error {
-	headReq, err := replicatedUpstream.getRequest("HEAD", license, ReplicatedCursor{})
-	if err != nil {
-		return errors.Wrap(err, "failed to create http request")
-	}
-	headResp, err := http.DefaultClient.Do(headReq)
-	if err != nil {
-		return errors.Wrap(err, "failed to execute head request")
-	}
-	defer headResp.Body.Close()
-
-	if headResp.StatusCode == 401 {
-		return errors.New("license was not accepted")
-	}
-
-	if headResp.StatusCode == 403 {
-		return util.ActionableError{Message: "License is expired"}
-	}
-
-	if headResp.StatusCode >= 400 {
-		return errors.Errorf("unexpected result from head request: %d", headResp.StatusCode)
-	}
-
-	return nil
-}
-
-func readReplicatedAppFromLocalPath(localPath string, localCursor ReplicatedCursor, versionLabel string, isRequired bool) (*Release, error) {
+func readReplicatedAppFromLocalPath(localPath string, localCursor replicatedapp.ReplicatedCursor, versionLabel string, isRequired bool) (*Release, error) {
 	release := Release{
 		Manifests:    make(map[string][]byte),
 		UpdateCursor: localCursor,
@@ -470,8 +356,8 @@ func readReplicatedAppFromLocalPath(localPath string, localCursor ReplicatedCurs
 	return &release, nil
 }
 
-func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kotsv1beta1.License, cursor ReplicatedCursor, reportingInfo *reportingtypes.ReportingInfo) (*Release, error) {
-	getReq, err := replicatedUpstream.getRequest("GET", license, cursor)
+func downloadReplicatedApp(replicatedUpstream *replicatedapp.ReplicatedUpstream, license *kotsv1beta1.License, cursor replicatedapp.ReplicatedCursor, reportingInfo *reportingtypes.ReportingInfo) (*Release, error) {
+	getReq, err := replicatedUpstream.GetRequest("GET", license, cursor)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create http request")
 	}
@@ -514,7 +400,7 @@ func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kots
 
 	release := Release{
 		Manifests: make(map[string][]byte),
-		UpdateCursor: ReplicatedCursor{
+		UpdateCursor: replicatedapp.ReplicatedCursor{
 			ChannelID:   updateChannelID,
 			ChannelName: updateChannelName,
 			Cursor:      updateSequence,
@@ -556,7 +442,7 @@ func downloadReplicatedApp(replicatedUpstream *ReplicatedUpstream, license *kots
 	return &release, nil
 }
 
-func listPendingChannelReleases(replicatedUpstream *ReplicatedUpstream, license *kotsv1beta1.License, lastUpdateCheckAt *time.Time, currentCursor ReplicatedCursor, channelChanged bool, reportingInfo *reportingtypes.ReportingInfo) ([]ChannelRelease, *time.Time, error) {
+func listPendingChannelReleases(replicatedUpstream *replicatedapp.ReplicatedUpstream, license *kotsv1beta1.License, lastUpdateCheckAt *time.Time, currentCursor replicatedapp.ReplicatedCursor, channelChanged bool, reportingInfo *reportingtypes.ReportingInfo) ([]ChannelRelease, *time.Time, error) {
 	u, err := url.Parse(license.Spec.Endpoint)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to parse endpoint from license")
@@ -945,72 +831,4 @@ func releaseToFiles(release *Release) ([]types.UpstreamFile, error) {
 	upstreamFiles = append(upstreamFiles, userdataFiles...)
 
 	return upstreamFiles, nil
-}
-
-// GetApplicationMetadata will return any available application yaml from
-// the upstream. If there is no application.yaml, it will return
-// a placeholder one
-func GetApplicationMetadata(upstream *url.URL, versionLabel string) ([]byte, error) {
-	metadata, err := getApplicationMetadataFromHost("replicated.app", upstream, versionLabel)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get metadata from replicated.app")
-	}
-
-	if len(metadata) == 0 {
-		metadata = []byte(DefaultMetadata)
-	}
-
-	return metadata, nil
-}
-
-func getApplicationMetadataFromHost(host string, upstream *url.URL, versionLabel string) ([]byte, error) {
-	r, err := parseReplicatedURL(upstream)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse replicated upstream")
-	}
-
-	if r.VersionLabel != nil && *r.VersionLabel != "" && versionLabel != "" && *r.VersionLabel != versionLabel {
-		return nil, errors.Errorf("version label in upstream (%q) does not match version label in parameter (%q)", *r.VersionLabel, versionLabel)
-	}
-
-	getUrl := fmt.Sprintf("https://%s/metadata/%s", host, url.PathEscape(r.AppSlug))
-
-	if r.Channel != nil {
-		getUrl = fmt.Sprintf("%s/%s", getUrl, url.PathEscape(*r.Channel))
-	}
-
-	v := url.Values{}
-	if r.VersionLabel != nil && *r.VersionLabel != "" {
-		v.Set("versionLabel", *r.VersionLabel)
-	} else if versionLabel != "" {
-		v.Set("versionLabel", versionLabel)
-	}
-	getUrl = fmt.Sprintf("%s?%s", getUrl, v.Encode())
-
-	getReq, err := util.NewRequest("GET", getUrl, nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to call newrequest")
-	}
-
-	getResp, err := http.DefaultClient.Do(getReq)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to execute get request")
-	}
-	defer getResp.Body.Close()
-
-	if getResp.StatusCode == 404 {
-		// no metadata is not an error
-		return nil, nil
-	}
-
-	if getResp.StatusCode >= 400 {
-		return nil, errors.Errorf("unexpected result from get request: %d", getResp.StatusCode)
-	}
-
-	respBody, err := ioutil.ReadAll(getResp.Body)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to read response body")
-	}
-
-	return respBody, nil
 }

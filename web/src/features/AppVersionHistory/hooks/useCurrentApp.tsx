@@ -1,7 +1,8 @@
 // This hook has not been integrated yet. It's considered a work in progress
 import { useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { App, useApps } from "@features/App";
+import { useApps } from "@features/App";
+import { App } from "@types";
 
 function useCurrentApp() {
   let { slug } = useParams<{ slug: string }>();
