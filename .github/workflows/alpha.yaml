@@ -131,7 +131,7 @@ jobs:
 
   build_web:
     runs-on: ubuntu-20.04
-    needs: [build-schema-migrations]
+    needs: [build-schema-migrations, generate-tag]
     container:
       image: replicated/gitops-builder:buildkite
       options: --user root
@@ -146,8 +146,7 @@ jobs:
 
     - name: Build web
       env:
-        GIT_COMMIT: ${{ github.sha }}
-        GIT_TAG: ""
+        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
       run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C web deps build-kotsadm
       shell: bash
 
@@ -160,7 +159,7 @@ jobs:
 
   build_kurl_proxy:
     runs-on: ubuntu-20.04
-    needs: [build-schema-migrations]
+    needs: [build-schema-migrations, generate-tag]
     steps:
     - name: Setup Go
       uses: actions/setup-go@v2
@@ -182,8 +181,7 @@ jobs:
 
     - name: Build kurl_proxy
       env:
-        GIT_COMMIT: ${{ github.sha }}
-        GIT_TAG: ""
+        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
         SCOPE_DSN_PUBLIC: ""
       run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C kurl_proxy test build
       shell: bash
@@ -197,7 +195,7 @@ jobs:
 
   build_go_api:
     runs-on: ubuntu-20.04
-    needs: [test_web, build_web, build_kurl_proxy]
+    needs: [test_web, build_web, build_kurl_proxy, generate-tag]
     steps:
     - uses: actions/setup-go@v2
       with:
@@ -224,11 +222,7 @@ jobs:
 
     - name: Build Go API
       env:
-        GIT_COMMIT: ${{ github.sha }}
-        # GITHUB_SHA: ${{ github.sha }}
-        GIT_TAG: ""
-        # GITHUB_REPOSITORY:
-        # GITHUB_WORKSPACE:
+        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
         SCOPE_DSN_PUBLIC: ""
       run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make vet ci-test kots build
       shell: bash
@@ -242,7 +236,7 @@ jobs:
 
   release_go_api_alpha:
     runs-on: ubuntu-20.04
-    needs: [build_web, build_go_api]
+    needs: [build_web, build_go_api, generate-tag]
     steps:
 
     - name: Checkout
@@ -266,14 +260,14 @@ jobs:
 
     - name: Build alpha release
       env:
-        GIT_COMMIT: ${{ github.sha }}
+        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
       run: |
         export $(cat .image.env | sed 's/#.*//g' | xargs) && make build-alpha
 
 
   build_kurl_proxy_alpha:
     runs-on: ubuntu-20.04
-    needs: [build_kurl_proxy]
+    needs: [build_kurl_proxy, generate-tag]
     steps:
     - uses: azure/docker-login@v1
       with:
@@ -294,7 +288,7 @@ jobs:
 
     - name: Build alpha release
       env:
-        GIT_COMMIT: ${{ github.sha }}
+        GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
       run: |
         export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C kurl_proxy build-alpha
 
