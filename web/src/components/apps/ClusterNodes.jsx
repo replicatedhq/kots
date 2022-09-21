@@ -13,6 +13,7 @@ import ErrorModal from "../modals/ErrorModal";
 import Modal from "react-modal";
 
 import "@src/scss/components/apps/ClusterNodes.scss";
+import Icon from "../Icon";
 
 export class ClusterNodes extends Component {
   state = {

@@ -4,6 +4,7 @@ import { formatNumber } from "accounting";
 import Loader from "./Loader";
 
 import "../../scss/components/shared/Pager.scss";
+import Icon from "../Icon";
 
 class Pager extends React.Component {
   pageCount() {

@@ -15,6 +15,7 @@ import SnapshotDifferencesModal from "../modals/SnapshotDifferencesModal";
 import "../../scss/components/snapshots/AppSnapshots.scss";
 import { isVeleroCorrectVersion, Utilities } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
+import Icon from "../Icon";
 
 class Snapshots extends Component {
   state = {
