@@ -7,7 +7,15 @@ import GenerateSupportBundle from "../troubleshoot/GenerateSupportBundle";
 import Redactors from "../redactors/Redactors";
 import EditRedactor from "../redactors/EditRedactor";
 
-class TroubleshootContainer extends Component {
+// Types
+import { App } from "@types";
+import { RouteComponentProps } from "react-router-dom";
+
+type Props = {
+  app: App;
+  appName: string;
+};
+class TroubleshootContainer extends Component<Props & RouteComponentProps> {
   render() {
     const { app, appName } = this.props;
 
@@ -61,4 +69,6 @@ class TroubleshootContainer extends Component {
   }
 }
 
-export default withRouter(TroubleshootContainer);
+// TODO: narrow type
+// eslint-disable-next-line
+export default withRouter(TroubleshootContainer) as any;
