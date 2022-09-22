@@ -43,8 +43,8 @@ const LicenseFields = ({
   entitlementsToShow,
 }: {
   entitlements: Entitlement[];
-  toggleShowDetails: (title: string) => void;
-  toggleHideDetails: (title: string) => void;
+  toggleShowDetails: (title: Entitlement) => void;
+  toggleHideDetails: (title: Entitlement) => void;
   entitlementsToShow: Entitlement[];
 }) => {
   return (
