@@ -19,7 +19,7 @@ import Loader from "../shared/Loader";
 // @ts-ignore
 import styled from "styled-components";
 
-import { App } from "@src/types";
+import { App, Entitlement } from "@src/types";
 import "@src/scss/components/apps/AppLicense.scss";
 import LicenseFields from "./LicenseFields";
 
@@ -29,17 +29,10 @@ type Props = {
   syncCallback: () => void;
 };
 
-type entitlement = {
-  title: string;
-  value: string;
-  label: string;
-  valueType: "Text" | "Boolean" | "Integer" | "String";
-};
-
 type License = {
   assignee: string;
   channelName: string;
-  entitlements: entitlement[];
+  entitlements: Entitlement[];
   expiresAt: string;
   id: string;
   isAirgapSupported: boolean;
@@ -53,7 +46,7 @@ type License = {
   licenseSequence: number;
   licenseType: string;
   changingLicense: boolean;
-  entitlementsToShow: entitlement[];
+  entitlementsToShow: string[];
   isViewingLicenseEntitlements: boolean;
   //
   licenseChangeFile: any;
@@ -72,7 +65,7 @@ type State = {
   message: string;
   messageType: string;
   showNextStepModal: boolean;
-  entitlementsToShow: entitlement[];
+  entitlementsToShow: string[];
   showLicenseChangeModal: boolean;
   licenseChangeFile: any;
   changingLicense: boolean;
@@ -136,7 +129,8 @@ class AppLicense extends Component<Props, State> {
   }
 
   onDrop = async (files: Object[]) => {
-    const content: any = await getFileContent(files[0]);
+    const content = await getFileContent(files[0]);
+    console.log("content", content);
     const contentStr = new TextDecoder("utf-8").decode(content);
     const airgapLicense = await yaml.safeLoad(contentStr);
     const { appLicense } = this.state;
@@ -225,7 +219,8 @@ class AppLicense extends Component<Props, State> {
       });
   };
 
-  onLicenseChangeDrop = async (files: any[]) => {
+  onLicenseChangeDrop = async (files: Object[]) => {
+    console.log("files", files[0]);
     this.setState({
       licenseChangeFile: files[0],
       licenseChangeMessage: "",
@@ -241,7 +236,10 @@ class AppLicense extends Component<Props, State> {
       return;
     }
 
-    const content: any = await getFileContent(this.state.licenseChangeFile);
+    let content: BufferSource | undefined = await getFileContent(
+      this.state.licenseChangeFile
+    );
+
     const licenseData = new TextDecoder("utf-8").decode(content);
 
     this.setState({
@@ -316,13 +314,13 @@ class AppLicense extends Component<Props, State> {
     this.setState({ showLicenseChangeModal: true });
   };
 
-  toggleShowDetails = (entitlement: entitlement) => {
+  toggleShowDetails = (entitlement: string) => {
     this.setState({
       entitlementsToShow: [...this.state.entitlementsToShow, entitlement],
     });
   };
 
-  toggleHideDetails = (entitlement: entitlement) => {
+  toggleHideDetails = (entitlement: string) => {
     let entitlementsToShow = [...this.state.entitlementsToShow];
     const index = this.state.entitlementsToShow.indexOf(entitlement);
     entitlementsToShow.splice(index, 1);
@@ -361,7 +359,6 @@ class AppLicense extends Component<Props, State> {
     const expiresAt = getLicenseExpiryDate(appLicense);
     const gitops = app.downstream?.gitops;
     const appName = app?.name || "Your application";
-    console.log("this.psrars", this.state);
     return (
       <div className="flex flex-column justifyContent--center alignItems--center">
         <Helmet>

@@ -2,6 +2,7 @@ import React from "react";
 // TODO: add type checking support for styled components or add a global ignore
 // @ts-ignore
 import styled from "styled-components";
+import { Entitlement } from "@src/types";
 
 export const CustomerLicenseFields = styled.div`
   background: ${(props: { count: number }) =>
@@ -29,13 +30,6 @@ export const ExpandButton = styled.button`
   padding-left: 0;
 `;
 
-type Entitlement = {
-  label: string;
-  title: string;
-  value: string;
-  valueType: "Text" | "Boolean" | "Integer" | "String";
-};
-
 const LicenseFields = ({
   entitlements,
   toggleShowDetails,
@@ -43,9 +37,9 @@ const LicenseFields = ({
   entitlementsToShow,
 }: {
   entitlements: Entitlement[];
-  toggleShowDetails: (title: Entitlement) => void;
-  toggleHideDetails: (title: Entitlement) => void;
-  entitlementsToShow: Entitlement[];
+  toggleShowDetails: (title: string) => void;
+  toggleHideDetails: (title: string) => void;
+  entitlementsToShow: string[];
 }) => {
   return (
     <CustomerLicenseFields
