@@ -482,7 +482,7 @@ func (o *Operator) restoreLoop() {
 
 	for _, a := range apps {
 		if err := o.processRestoreForApp(a); err != nil {
-			logger.Error(errors.Wrapf(err, "failed to handle restoe for app %s", a.ID))
+			logger.Error(errors.Wrapf(err, "failed to handle restore for app %s", a.ID))
 			continue
 		}
 	}
