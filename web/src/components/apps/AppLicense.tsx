@@ -30,6 +30,16 @@ type Props = {
   syncCallback: () => void;
 };
 
+type File = {
+  preview: string;
+  lastModified: number;
+  lastModifiedDate: Date;
+  name: string;
+  size: number;
+  type: string;
+  webkitRelativePath: string;
+};
+
 type License = {
   assignee: string;
   channelName: string;
@@ -49,8 +59,7 @@ type License = {
   changingLicense: boolean;
   entitlementsToShow: string[];
   isViewingLicenseEntitlements: boolean;
-  //
-  licenseChangeFile: any;
+  licenseChangeFile: File | null;
   licenseChangeMessage: string;
   licenseChangeMessageType: string;
   loading: boolean;
@@ -68,7 +77,7 @@ type State = {
   showNextStepModal: boolean;
   entitlementsToShow: string[];
   showLicenseChangeModal: boolean;
-  licenseChangeFile: any;
+  licenseChangeFile: File | null;
   changingLicense: boolean;
   licenseChangeMessage: string;
   licenseChangeMessageType: string;
@@ -129,9 +138,10 @@ class AppLicense extends Component<Props, State> {
     this.getAppLicense();
   }
 
-  onDrop = async (files: Object[]) => {
+  onDrop = async (files: File[]) => {
     // TODO: TextDecoder.decode() expects arg of BufferSource | undefined
     // getFileContent returns string, ArrayBuffer, or null. Need to figure out
+    // eslint-disable-next-line
     const content: any = await getFileContent(files[0]);
     const contentStr = new TextDecoder("utf-8").decode(content);
     const airgapLicense = await yaml.safeLoad(contentStr);
@@ -221,7 +231,7 @@ class AppLicense extends Component<Props, State> {
       });
   };
 
-  onLicenseChangeDrop = async (files: Object[]) => {
+  onLicenseChangeDrop = async (files: File[]) => {
     this.setState({
       licenseChangeFile: files[0],
       licenseChangeMessage: "",
@@ -239,6 +249,7 @@ class AppLicense extends Component<Props, State> {
 
     // TODO: TextDecoder.decode() expects arg of BufferSource | undefined
     // getFileContent returns string, ArrayBuffer, or null. Need to figure out
+    // eslint-disable-next-line
     const content: any = await getFileContent(this.state.licenseChangeFile);
 
     const licenseData = new TextDecoder("utf-8").decode(content);
@@ -455,6 +466,10 @@ class AppLicense extends Component<Props, State> {
                           icon="github-icon"
                           size={22}
                           className="u-marginRight--5 github-icon"
+                          color={""}
+                          style={{}}
+                          disableFill={false}
+                          removeInlineStyle={false}
                         />{" "}
                         GitOps enabled{" "}
                       </span>
@@ -548,6 +563,10 @@ class AppLicense extends Component<Props, State> {
                       }
                       size={12}
                       className="clickable u-marginLeft--5 gray-color"
+                      color={""}
+                      style={{}}
+                      disableFill={false}
+                      removeInlineStyle={false}
                     />
                   </span>
                 </span>
@@ -671,6 +690,10 @@ class AppLicense extends Component<Props, State> {
                         icon="yaml-icon"
                         size={24}
                         className="u-marginRight--10 gray-color"
+                        color={""}
+                        style={{}}
+                        disableFill={false}
+                        removeInlineStyle={false}
                       />
                       <div>
                         <p className="u-fontSize--normal u-textColor--primary u-fontWeight--medium">
@@ -697,6 +720,10 @@ class AppLicense extends Component<Props, State> {
                         icon="yaml-icon"
                         size={40}
                         className="u-marginBottom--10 gray-color"
+                        color={""}
+                        style={{}}
+                        disableFill={false}
+                        removeInlineStyle={false}
                       />
                       <p className="u-fontSize--normal u-textColor--secondary u-fontWeight--medium u-lineHeight--normal">
                         Drag your new license here or{" "}
