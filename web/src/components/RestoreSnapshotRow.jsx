@@ -2,6 +2,7 @@ import React from "react";
 
 import { Utilities } from "../utilities/utilities";
 import "../scss/components/RestoreSnapshotRow.scss";
+import Icon from "./Icon";
 
 class RestoreSnapshotRow extends React.Component {
   state = {
@@ -93,12 +94,13 @@ class RestoreSnapshotRow extends React.Component {
                   {snapshot?.volumeCount} volume
                   {snapshot?.volumeCount === 1 ? "" : "s"}
                   {!isBackupSelected && snapshot?.volumeCount > 0 ? (
-                    <span
-                      className={`icon ${
-                        toggleVolumes ? "up" : "down"
-                      }-arrow-icon u-marginLeft--5 u-cursor--pointer`}
-                      onClick={this.showVolumes}
-                    />
+                    <span onClick={this.showVolumes}>
+                      <Icon
+                        icon={toggleVolumes ? "up-arrow" : "down-arrow"}
+                        size={12}
+                        className="clickable u-marginLeft--5"
+                      />
+                    </span>
                   ) : null}{" "}
                 </span>
                 <span className="flex alignItems--center u-fontSize--normal u-textColor--bodyCopy u-fontWeight--bold u-lineHeight--normal u-marginRight--20">

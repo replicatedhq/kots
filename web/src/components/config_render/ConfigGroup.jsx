@@ -13,6 +13,7 @@ import ConfigCheckbox from "./ConfigCheckbox";
 import ConfigFileInput from "./ConfigFileInput";
 import { setOrder } from "./ConfigUtil";
 import { ConfigWrapper, ConfigItems } from "./ConfigComponents";
+import Icon from "../Icon";
 
 export default class ConfigGroup extends React.Component {
   constructor() {
@@ -249,7 +250,7 @@ export default class ConfigGroup extends React.Component {
             {item.repeatable && (
               <div className="u-marginTop--15">
                 <button className="btn secondary blue rounded add-btn">
-                  <span className="icon u-addIcon--blue" />
+                  <Icon icon="plus" size={14} />
                   Add another {item.title}
                 </button>
               </div>

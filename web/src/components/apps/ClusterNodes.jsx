@@ -13,6 +13,7 @@ import ErrorModal from "../modals/ErrorModal";
 import Modal from "react-modal";
 
 import "@src/scss/components/apps/ClusterNodes.scss";
+import Icon from "../Icon";
 
 export class ClusterNodes extends Component {
   state = {
@@ -340,7 +341,11 @@ export class ClusterNodes extends Component {
                         className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none"
                       >
                         <div className="flex-auto">
-                          <span className="icon clickable commitOptionIcon u-marginRight--10" />
+                          <Icon
+                            icon="commit"
+                            size={32}
+                            className="clickable u-marginRight--10"
+                          />
                         </div>
                         <div className="flex1">
                           <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium">
@@ -375,7 +380,11 @@ export class ClusterNodes extends Component {
                         className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none"
                       >
                         <div className="flex-auto">
-                          <span className="icon clickable commitOptionIcon u-marginRight--10" />
+                          <Icon
+                            icon="commit"
+                            size={32}
+                            className="clickable u-marginRight--10"
+                          />
                         </div>
                         <div className="flex1">
                           <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium">

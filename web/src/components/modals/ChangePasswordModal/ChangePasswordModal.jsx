@@ -5,6 +5,7 @@ import ChangePasswordForm from "./ChangePasswordForm";
 import { Link } from "react-router-dom";
 
 import "@src/scss/components/modals/ChangePasswordModal/ChangePasswordModal.scss";
+import Icon from "@src/components/Icon";
 
 const ChangePasswordModal = ({ closeModal, isOpen }) => {
   const [passwordChangeSuccessful, setPasswordChangeSuccessful] =
@@ -84,7 +85,11 @@ const ChangePasswordModal = ({ closeModal, isOpen }) => {
       )}
       {passwordChangeSuccessful && (
         <>
-          <span className="icon success-checkmark-icon-bright u-marginTop--20" />
+          <Icon
+            icon="check-circle-filled"
+            size={50}
+            className="success-color u-marginTop--20"
+          />
           <h3>Your password has been changed</h3>
           <p className="modal-text">
             Password changed successfully. You will be redirected to log in

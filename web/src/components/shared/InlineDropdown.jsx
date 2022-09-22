@@ -2,6 +2,7 @@ import * as React from "react";
 import { Link } from "react-router-dom";
 import ClickOutsideAction from "./ClickOutsideAction";
 import "../../scss/components/shared/InlineDropdown.scss";
+import Icon from "../Icon";
 
 export default class InlineDropdown extends React.Component {
   state = {
@@ -72,7 +73,11 @@ export default class InlineDropdown extends React.Component {
             <span className="display-text">
               {this.props.defaultDisplayText || ""}
             </span>
-            <span className="icon clickable down-arrow-icon-blue u-marginLeft--5" />
+            <Icon
+              icon="down-arrow"
+              size={12}
+              className="clickable u-marginLeft--5"
+            />
           </div>
           <div className="Options--wrapper">{this.buildOptions()}</div>
         </div>

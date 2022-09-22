@@ -11,6 +11,7 @@ import ErrorModal from "../modals/ErrorModal";
 import { Utilities } from "../../utilities/utilities";
 
 import "../../scss/components/troubleshoot/SupportBundleList.scss";
+import Icon from "../Icon";
 
 class SupportBundleList extends React.Component {
   state = {
@@ -165,7 +166,11 @@ class SupportBundleList extends React.Component {
                         className="replicated-link flex alignItems--center u-fontSize--small u-marginLeft--20"
                         onClick={this.toggleRedactorModal}
                       >
-                        <span className="icon clickable redactor-spec-icon u-marginRight--5" />{" "}
+                        <Icon
+                          icon="marker-tip-outline"
+                          size={18}
+                          className="clickable u-marginRight--5"
+                        />
                         Configure redaction
                       </span>
                     </div>

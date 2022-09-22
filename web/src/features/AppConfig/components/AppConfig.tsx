@@ -26,6 +26,7 @@ import {
   GroupTitle,
   SideNavItems,
 } from "../styles";
+import Icon from "@src/components/Icon";
 
 // Types
 import { App, KotsParams, Version } from "@types";
@@ -619,7 +620,15 @@ class AppConfig extends Component<Props, State> {
                     <GroupTitle fontSize="16" className="u-lineHeight--normal">
                       {group.title}
                     </GroupTitle>
-                    <span className="icon u-darkDropdownArrow clickable flex-auto" />
+                    <Icon
+                      icon="down-arrow"
+                      className="darkGray-color clickable flex-auto u-marginLeft--5"
+                      size="12"
+                      style={{ marginTop: "10px" }}
+                      color={""}
+                      disableFill={false}
+                      removeInlineStyle={false}
+                    />
                   </Flex>
                   {group.items ? (
                     <SideNavItems>

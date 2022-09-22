@@ -16,6 +16,7 @@ import "brace/mode/json";
 import "brace/mode/text";
 import "brace/mode/yaml";
 import "brace/theme/chrome";
+import Icon from "../Icon";
 
 class AnalyzerFileTree extends React.Component {
   constructor(props) {
@@ -318,10 +319,10 @@ class AnalyzerFileTree extends React.Component {
                             )
                     }
                   >
-                    <span
-                      className={`icon u-iconFullArrow${
-                        isFirstRedaction ? "Gray" : "Blue clickable"
-                      } previous`}
+                    <Icon
+                      icon="left-arrow-pointer"
+                      size="14"
+                      className={isFirstRedaction ? "gray-color" : "clickable"}
                     />
                   </div>
                   <div className="flex alignItems--center">
@@ -329,8 +330,10 @@ class AnalyzerFileTree extends React.Component {
                       Redaction {this.state.currentViewIndex + 1} of{" "}
                       {this.state.activeMarkers.length}
                     </span>
-                    <span
-                      className="icon grayOutlineQuestionMark--icon u-marginLeft--10"
+                    <Icon
+                      icon="info-circle-outline"
+                      size={16}
+                      className="gray-color u-marginLeft--10"
                       data-tip
                       data-for="current-redator-filename"
                     />
@@ -348,10 +351,10 @@ class AnalyzerFileTree extends React.Component {
                             )
                     }
                   >
-                    <span
-                      className={`icon u-iconFullArrow${
-                        isLastRedaction ? "Gray" : "Blue clickable"
-                      }`}
+                    <Icon
+                      icon="right-arrow-pointer"
+                      size="13"
+                      className={isLastRedaction ? "gray-color" : "clickable"}
                     />
                   </div>
                 </div>

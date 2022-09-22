@@ -54,9 +54,10 @@
   }
 }
 
-.icon.version-row-preflight-status-icon {
-  top: -6px;
-  right: -12px;
+.version-row-preflight-status-icon {
+  position: absolute;
+  top: -11px;
+  right: -5px;
 
   &.logs {
     top: -10px;

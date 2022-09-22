@@ -1,4 +1,5 @@
 import React, { Component } from "react";
+import Icon from "../Icon";
 
 export default class AnnotationRow extends Component {
   state = {
@@ -52,8 +53,10 @@ export default class AnnotationRow extends Component {
             </div>
           </div>
           <div className="flex fle1 justifyContent--flexEnd">
-            <span
-              className="icon gray-trash u-cursor--pointer"
+            <Icon
+              icon="trash"
+              size={20}
+              className="clickable gray-color"
               onClick={this.props.removeAnnotation}
             />
           </div>

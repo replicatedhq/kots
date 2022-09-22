@@ -42,6 +42,7 @@ body a {
   color: $link-color;
   cursor: pointer;
   font-weight: 500;
+  position: relative;
 
   &.has-arrow {
     position: relative;
@@ -50,12 +51,12 @@ body a {
       content: "";
       display: inline-block;
       position: absolute;
-      width: 12px;
-      height: 7px;
-      background-image: url("../images/main_spritesheet.svg");
-      background-repeat: no-repeat;
-      background-size: initial;
-      background-position: -275px -85px;
+      // width: 12px;
+      // height: 7px;
+      // background-image: url("@src/images/main_spritesheet.svg");
+      // background-repeat: no-repeat;
+      // background-size: initial;
+      // background-position: -275px -85px;
       top: 4px;
       right: -15px;
       transform: rotate(90deg);
@@ -63,6 +64,31 @@ body a {
     }
   }
 
+  &:hover {
+    text-decoration: underline;
+
+    &.has-arrow::after {
+      right: -18px;
+    }
+  }
+}
+.replicated-link > .has-arrow {
+  position: relative;
+  &::after {
+    content: "";
+    display: inline-block;
+    position: absolute;
+    // width: 12px;
+    // height: 7px;
+    // background-image: url("@src/images/main_spritesheet.svg");
+    // background-repeat: no-repeat;
+    // background-size: initial;
+    // background-position: -275px -85px;
+    top: 4px;
+    right: -15px;
+    transform: rotate(90deg);
+    transition: ease-in-out 0.2s;
+  }
   &:hover {
     text-decoration: underline;
 
@@ -371,7 +397,7 @@ all you need to do is supply a `width: [value]` `height: [value]`
 and `background-position: [value]`
 */
 .icon {
-  background-image: url("../images/main_spritesheet.svg");
+  background-image: url("@src/images/main_spritesheet.svg");
   background-repeat: no-repeat;
   background-size: initial;
   display: inline-block;

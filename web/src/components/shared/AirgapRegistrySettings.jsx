@@ -8,6 +8,7 @@ import ErrorModal from "../modals/ErrorModal";
 import "../../scss/components/watches/WatchDetailPage.scss";
 import { Utilities } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
+import Icon from "../Icon";
 
 class AirgapRegistrySettings extends Component {
   constructor(props) {
@@ -453,8 +454,10 @@ class AirgapRegistrySettings extends Component {
                 {this.state.pingedEndpoint && (
                   <div className="flex-column justifyContent--center">
                     <p className="u-marginLeft--10 u-fontSize--small u-fontWeight--medium u-textColor--secondary">
-                      <span
-                        className={`icon checkmark-icon u-marginRight--5 u-verticalAlign--neg3`}
+                      <Icon
+                        icon="check-circle-filled"
+                        size={16}
+                        className="success-color u-marginRight--5 u-verticalAlign--neg3"
                       />
                       Connected to {this.state.pingedEndpoint}
                     </p>

@@ -6,6 +6,7 @@ import Loader from "../shared/Loader";
 import { Utilities } from "@src/utilities/utilities";
 import { Repeater } from "@src/utilities/repeater";
 import "../../scss/components/snapshots/AppSnapshots.scss";
+import Icon from "../Icon";
 
 class SnapshotRestore extends Component {
   state = {
@@ -155,9 +156,11 @@ class SnapshotRestore extends Component {
         className="RestoreError--wrapper flex justifyContent--space-between alignItems--center"
         key={`${error.title}-${i}`}
       >
-        <div className="flex-auto icon error-small u-marginRight--10 u-marginLeft--10">
-          {" "}
-        </div>
+        <Icon
+          icon={"warning-circle-filled"}
+          size={16}
+          className="flex-auto u-marginRight--10 u-marginLeft--10 error-color"
+        />
         <p className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal">
           {error.message}
         </p>
@@ -171,9 +174,11 @@ class SnapshotRestore extends Component {
         className="RestoreWarning--wrapper flex justifyContent--space-between alignItems--center"
         key={`${warning.title}-${i}`}
       >
-        <div className="flex-auto icon exclamationMark--icon u-marginRight--10 u-marginLeft--10">
-          {" "}
-        </div>
+        <Icon
+          icon={"warning-circle-filled"}
+          className="warning-color flex-auto u-marginRight--10 u-marginLeft--10"
+          size={16}
+        />
         <p className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal">
           {warning.message}
         </p>
@@ -191,7 +196,11 @@ class SnapshotRestore extends Component {
       return (
         <div className="FailedRestore--wrapper">
           <div className="flex flex-column alignItems--center">
-            <span className="icon u-superWarning--large"></span>
+            <Icon
+              icon={"warning-circle-filled"}
+              size={40}
+              className="error-color"
+            />
             <p className="u-fontWeight--bold u-textColor--primary u-fontSize--larger u-lineHeight--normal u-marginTop--15 u-marginBottom--10">
               Application failed to restore{" "}
             </p>
@@ -249,7 +258,11 @@ class SnapshotRestore extends Component {
       return (
         <div className="FailedRestore--wrapper">
           <div className="flex flex-column alignItems--center">
-            <span className="icon u-superWarning--large"></span>
+            <Icon
+              icon={"warning-circle-filled"}
+              size={40}
+              className="error-color"
+            />
             <p className="u-fontWeight--bold u-textColor--primary u-fontSize--larger u-lineHeight--normal u-marginTop--15 u-marginBottom--10">
               Your partial restore failed{" "}
             </p>
@@ -409,7 +422,11 @@ class SnapshotRestore extends Component {
                       )}
                     </div>
                     {volume.completionPercent === 100 ? (
-                      <span className="icon checkmark-icon u-marginLeft--10 u-marginBottom--15"></span>
+                      <Icon
+                        icon="check-circle-filled"
+                        size={16}
+                        className="u-marginLeft--10 u-marginBottom--15 success-color"
+                      />
                     ) : (
                       <span className="u-fontSize-small u-fontWeight--medium u-textColor--info u-marginLeft--10 u-marginBottom--15">
                         {volume.completionPercent

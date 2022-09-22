@@ -12,6 +12,7 @@ import ErrorModal from "../modals/ErrorModal";
 import { Utilities } from "../../utilities/utilities";
 import "../../scss/components/troubleshoot/SupportBundleAnalysis.scss";
 import download from "downloadjs";
+import Icon from "../Icon";
 
 export class SupportBundleAnalysis extends React.Component {
   constructor(props) {
@@ -282,9 +283,10 @@ export class SupportBundleAnalysis extends React.Component {
                         <Loader className="u-marginRight--10" size="30" />
                       ) : bundle.sharedAt ? (
                         <div className="sentToVendorWrapper flex alignItems--flexEnd u-paddingLeft--10 u-paddingRight--10 u-marginRight--10">
-                          <span
+                          <Icon
+                            icon="paper-airplane"
+                            size="16"
                             style={{ marginRight: 7 }}
-                            className="icon send-icon"
                           />
                           <span className="u-fontWeight--bold u-fontSize--small u-color--mutedteal">
                             Sent to vendor on{" "}

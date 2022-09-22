@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import Loader from "../shared/Loader";
 import { getReadableGitOpsProviderName } from "../../utilities/utilities";
+import Icon from "../Icon";
 
 export default function DashboardGitOpsCard(props) {
   const {
@@ -49,7 +50,11 @@ export default function DashboardGitOpsCard(props) {
             </div>
           ) : (
             <div className="flex alignItems--center u-marginRight--20">
-              <span className="icon clickable dashboard-card-check-update-icon u-marginRight--5" />
+              <Icon
+                icon="check-update"
+                size={18}
+                className="clickable u-marginRight--5"
+              />
               <span
                 className="replicated-link u-fontSize--small"
                 onClick={onCheckForUpdates}
@@ -58,7 +63,11 @@ export default function DashboardGitOpsCard(props) {
               </span>
             </div>
           )}
-          <span className="icon clickable dashboard-card-configure-update-icon u-marginRight--5" />
+          <Icon
+            icon="schedule-sync"
+            size="16"
+            className="clickable u-marginRight--5"
+          />
           <span
             className="replicated-link u-fontSize--small u-lineHeight--default"
             onClick={showAutomaticUpdatesModal}
@@ -92,11 +101,13 @@ export default function DashboardGitOpsCard(props) {
         </p>
       </div>
       <div className="u-marginTop--10">
-        <Link
-          to="/gitops"
-          className="replicated-link has-arrow u-fontSize--small"
-        >
+        <Link to="/gitops" className="replicated-link  u-fontSize--small">
           Manage GitOps settings
+          <Icon
+            icon="next-arrow"
+            size={10}
+            className="has-arrow u-marginLeft--5"
+          />
         </Link>
       </div>
     </div>

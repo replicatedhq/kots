@@ -36,6 +36,7 @@ import { UseDownloadValues } from "../hooks";
 
 import "@src/scss/components/apps/AppVersionHistory.scss";
 import DashboardGitOpsCard from "./DashboardGitOpsCard";
+import Icon from "../Icon";
 dayjs.extend(relativeTime);
 
 class AppVersionHistory extends Component {
@@ -1085,7 +1086,7 @@ class AppVersionHistory extends Component {
         className="flex-auto flex alignItems--center u-marginLeft--20"
         onClick={this.onSelectReleasesToDiff}
       >
-        <span className="icon clickable diffReleasesIcon"></span>
+        <Icon icon="diff-icon" size={21} className="clickable" />
         <span className="u-fontSize--small u-fontWeight--medium u-linkColor u-cursor--pointer u-marginLeft--5">
           Diff versions
         </span>
@@ -1699,9 +1700,11 @@ class AppVersionHistory extends Component {
                           {currentDownstreamVersion ? (
                             <div className="flex alignItems--center u-marginTop--10">
                               {currentDownstreamVersion?.releaseNotes && (
-                                <div>
-                                  <span
-                                    className="icon releaseNotes--icon u-marginRight--10 u-cursor--pointer"
+                                <div className="u-marginRight--5">
+                                  <Icon
+                                    icon="release-notes"
+                                    className="clickable"
+                                    size={24}
                                     onClick={() =>
                                       this.showReleaseNotes(
                                         currentDownstreamVersion?.releaseNotes
@@ -1716,12 +1719,17 @@ class AppVersionHistory extends Component {
                                 </div>
                               )}
                               {this.state.hasPreflightChecks ? (
-                                <div>
+                                <div className="u-marginRight--5">
                                   <Link
                                     to={`/app/${app?.slug}/downstreams/${app.downstream.cluster?.slug}/version-history/preflight/${currentDownstreamVersion?.sequence}`}
-                                    className="icon preflightChecks--icon u-marginRight--10 u-cursor--pointer"
                                     data-tip="View preflight checks"
-                                  />
+                                  >
+                                    <Icon
+                                      icon="preflight-checks"
+                                      size={22}
+                                      className="clickable"
+                                    />
+                                  </Link>
                                   <ReactTooltip
                                     effect="solid"
                                     className="replicated-tooltip"
@@ -1730,7 +1738,6 @@ class AppVersionHistory extends Component {
                               ) : null}
                               <div>
                                 <span
-                                  className="icon deployLogs--icon u-cursor--pointer"
                                   onClick={() =>
                                     this.handleViewLogs(
                                       currentDownstreamVersion,
@@ -1739,23 +1746,41 @@ class AppVersionHistory extends Component {
                                     )
                                   }
                                   data-tip="View deploy logs"
-                                />
+                                >
+                                  <Icon
+                                    icon="view-logs"
+                                    size={22}
+                                    className="clickable"
+                                  />
+                                </span>
                                 <ReactTooltip
                                   effect="solid"
                                   className="replicated-tooltip"
                                 />
-                                {currentDownstreamVersion?.status ===
-                                "failed" ? (
-                                  <span className="icon version-row-preflight-status-icon preflight-checks-failed-icon logs" />
-                                ) : null}
                               </div>
+                              {currentDownstreamVersion?.status === "failed" ? (
+                                <div className="u-position--relative u-marginLeft--10 u-marginRight--10">
+                                  <Icon
+                                    icon="preflight-checks"
+                                    size={22}
+                                    className="clickable"
+                                  />
+                                  <Icon
+                                    icon={"warning-circle-filled"}
+                                    size={12}
+                                    className="version-row-preflight-status-icon warning-color"
+                                    style={{ left: "15px", top: "-6px" }}
+                                  />
+                                </div>
+                              ) : null}
                               {app.isConfigurable && (
                                 <div>
                                   <Link
                                     to={`/app/${app?.slug}/config/${app?.downstream?.currentVersion?.parentSequence}`}
-                                    className="icon configEdit--icon u-cursor--pointer"
                                     data-tip="Edit config"
-                                  />
+                                  >
+                                    <Icon icon="edit-config" size={22} />
+                                  </Link>
                                   <ReactTooltip
                                     effect="solid"
                                     className="replicated-tooltip"
@@ -1847,20 +1872,28 @@ class AppVersionHistory extends Component {
                                       </div>
                                     ) : (
                                       <div className="flex alignItems--center u-marginRight--20">
-                                        <span className="icon clickable dashboard-card-check-update-icon u-marginRight--5" />
                                         <span
                                           className="replicated-link u-fontSize--small"
                                           onClick={this.onCheckForUpdates}
                                         >
+                                          <Icon
+                                            icon="check-update"
+                                            size="18"
+                                            className="clickable u-marginRight--5"
+                                          />
                                           Check for update
                                         </span>
                                       </div>
                                     )}
-                                    <span className="icon clickable dashboard-card-configure-update-icon u-marginRight--5" />
                                     <span
-                                      className="replicated-link u-fontSize--small"
+                                      className="flex-auto flex alignItems--center replicated-link u-fontSize--small"
                                       onClick={this.toggleAutomaticUpdatesModal}
                                     >
+                                      <Icon
+                                        icon="schedule-sync"
+                                        size="16"
+                                        className="clickable u-marginRight--5"
+                                      />
                                       Configure automatic updates
                                     </span>
                                   </div>

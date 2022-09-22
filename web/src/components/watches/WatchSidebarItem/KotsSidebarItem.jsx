@@ -1,6 +1,7 @@
 import React from "react";
 import classNames from "classnames";
 import { Link } from "react-router-dom";
+import Icon from "@src/components/Icon";
 
 export default function KotsSidebarItem(props) {
   const { className, app } = props;
@@ -41,12 +42,22 @@ export default function KotsSidebarItem(props) {
           </p>
           {!gitopsIsConnected && (
             <div className="flex alignItems--center">
-              <div
-                className={classNames("icon", {
-                  "checkmark-icon": !isBehind,
-                  "exclamationMark--icon": isBehind,
-                  "grayCircleMinus--icon": !app.downstream,
-                })}
+              <Icon
+                icon={
+                  isBehind
+                    ? "warning-circle-filled"
+                    : !isBehind
+                    ? "check-circle-filled"
+                    : !app.downstream && "no-activity-circle-filled--icon"
+                }
+                className={
+                  isBehind
+                    ? "warning-color"
+                    : !isBehind
+                    ? "success-color"
+                    : !app.downstream && "no-activity-circle-filled--icon"
+                }
+                size={16}
               />
               <span
                 className={classNames(

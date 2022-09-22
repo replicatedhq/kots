@@ -12,6 +12,7 @@ import DummyRbacRow from "./DummyRbacRow";
 import AddRoleGroup from "./AddRoleGroup";
 
 import { Utilities } from "../../utilities/utilities";
+import Icon from "../Icon";
 
 class IdentityProviders extends Component {
   state = {
@@ -785,8 +786,10 @@ class IdentityProviders extends Component {
                       {" "}
                       Issuer{" "}
                     </p>
-                    <span
-                      className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
+                    <Icon
+                      icon="info-circle-outline"
+                      size={16}
+                      className="gray-color u-marginLeft--10 clickable"
                       data-tip="Canonical URL of the provider, also used for configuration discovery. This value MUST match the value returned in the provider config discovery."
                     />
                     <ReactTooltip
@@ -938,11 +941,13 @@ class IdentityProviders extends Component {
                 >
                   {" "}
                   Advanced options
-                  <span
-                    className={`icon ${
-                      this.state.showAdvancedOptions ? "up" : "down"
-                    }-arrow-icon-blue u-marginLeft--5 u-cursor--pointer`}
-                  />{" "}
+                  <Icon
+                    icon={
+                      this.state.showAdvancedOptions ? "up-arrow" : "down-arrow"
+                    }
+                    size={12}
+                    className="u-marginLeft--5 clickable"
+                  />
                 </p>
                 {this.state.showAdvancedOptions && (
                   <div className="flex flex-column u-marginTop--12">
@@ -976,10 +981,12 @@ class IdentityProviders extends Component {
                             <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium">
                               Get user info
                             </p>
-                            <span
-                              className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
+                            <Icon
+                              icon="info-circle-outline"
+                              size={16}
+                              className="gray-color u-marginLeft--10 clickable"
                               data-tip="When enabled, the OpenID Connector will query the UserInfo endpoint for additional claims. UserInfo claims
-                      take priority over claims returned by the IDToken. This option should be used when the IDToken doesn't contain all the claims requested."
+          take priority over claims returned by the IDToken. This option should be used when the IDToken doesn't contain all the claims requested."
                             />
                             <ReactTooltip
                               effect="solid"
@@ -1014,12 +1021,14 @@ class IdentityProviders extends Component {
                             <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium">
                               Enable insecure groups
                             </p>
-                            <span
-                              className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
+                            <Icon
+                              icon="info-circle-outline"
+                              size={16}
+                              className="gray-color u-marginLeft--10 clickable"
                               data-tip="Groups claims (like the rest of oidc claims through dex) only refresh when the id token is refreshed
-                      meaning the regular refresh flow doesn't update the groups claim. As such by default the oidc connector
-                      doesn't allow groups claims. If you are okay with having potentially stale group claims you can use
-                      this option to enable groups claims through the oidc connector on a per-connector basis."
+          meaning the regular refresh flow doesn't update the groups claim. As such by default the oidc connector
+          doesn't allow groups claims. If you are okay with having potentially stale group claims you can use
+          this option to enable groups claims through the oidc connector on a per-connector basis."
                             />
                             <ReactTooltip
                               effect="solid"
@@ -1058,10 +1067,12 @@ class IdentityProviders extends Component {
                             <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium">
                               Skip email verification
                             </p>
-                            <span
-                              className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
+                            <Icon
+                              icon="info-circle-outline"
+                              size={16}
+                              className="gray-color u-marginLeft--10 clickable"
                               data-tip='Some providers return claims without "email_verified", when they had no usage of emails verification in enrollment process
-                      or if they are acting as a proxy for another IDP etc AWS Cognito with an upstream SAML IDP'
+                              or if they are acting as a proxy for another IDP etc AWS Cognito with an upstream SAML IDP'
                             />
                             <ReactTooltip
                               effect="solid"
@@ -1077,8 +1088,10 @@ class IdentityProviders extends Component {
                               {" "}
                               User ID key{" "}
                             </p>
-                            <span
-                              className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
+                            <Icon
+                              icon="info-circle-outline"
+                              size={16}
+                              className="gray-color u-marginLeft--10 clickable"
                               data-tip="The set claim is used as user id."
                             />
                             <ReactTooltip
@@ -1104,8 +1117,10 @@ class IdentityProviders extends Component {
                               {" "}
                               User name key{" "}
                             </p>
-                            <span
-                              className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
+                            <Icon
+                              icon="info-circle-outline"
+                              size={16}
+                              className="gray-color u-marginLeft--10 clickable"
                               data-tip="The set claim is used as user name."
                             />
                             <ReactTooltip
@@ -1133,10 +1148,12 @@ class IdentityProviders extends Component {
                             {" "}
                             Prompt type{" "}
                           </p>
-                          <span
-                            className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
+                          <Icon
+                            icon="info-circle-outline"
+                            size={16}
+                            className="gray-color u-marginLeft--10 clickable"
                             data-tip='For offline_access, the prompt parameter is set by default to "prompt=consent". 
-                      However this is not supported by all OIDC providers, some of them support different value for prompt, like "prompt=login" or "prompt=none"'
+                              However this is not supported by all OIDC providers, some of them support different value for prompt, like "prompt=login" or "prompt=none"'
                           />
                           <ReactTooltip
                             effect="solid"
@@ -1160,8 +1177,10 @@ class IdentityProviders extends Component {
                             {" "}
                             Scopes{" "}
                           </p>
-                          <span
-                            className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
+                          <Icon
+                            icon="info-circle-outline"
+                            size={16}
+                            className="gray-color u-marginLeft--10 clickable"
                             data-tip="Comma-separated list of additional scopes to request in token response. Default is profile and email"
                           />
                           <ReactTooltip
@@ -1188,8 +1207,10 @@ class IdentityProviders extends Component {
                           {" "}
                           Claim mapping{" "}
                         </p>
-                        <span
-                          className="icon grayOutlineQuestionMark--icon u-marginLeft--10 u-cursor--pointer"
+                        <Icon
+                          icon="info-circle-outline"
+                          size={16}
+                          className="gray-color u-marginLeft--10 clickable"
                           data-tip="Some providers return non-standard claims (eg. mail). Use claimMapping to map those claims to standard claims"
                         />
                         <ReactTooltip
@@ -1281,7 +1302,11 @@ class IdentityProviders extends Component {
                 </button>
                 {this.state.saveConfirm && (
                   <div className="u-marginLeft--10 flex alignItems--center">
-                    <span className="icon checkmark-icon" />
+                    <Icon
+                      icon="check-circle-filled"
+                      size={16}
+                      className="success-color"
+                    />
                     <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-textColor--success">
                       Settings saved
                     </span>

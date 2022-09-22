@@ -1,5 +1,6 @@
 import React from "react";
 import groupBy from "lodash/groupBy";
+import Icon from "../Icon";
 
 class AnalyzerRedactorReportRow extends React.Component {
   state = {
@@ -73,7 +74,11 @@ class AnalyzerRedactorReportRow extends React.Component {
               {" "}
               {file?.file}{" "}
             </p>
-            <div className="icon u-iconFullArrowGray" />
+            <Icon
+              icon="right-arrow-pointer"
+              size="13"
+              className="gray-color u-marginLeft--5"
+            />
           </div>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import React, { Component } from "react";
+import Icon from "../Icon";
 
 export default class RBACGroupPolicyRow extends Component {
   render() {
@@ -157,12 +158,16 @@ export default class RBACGroupPolicyRow extends Component {
               </div>
             ) : (
               <div className="flex flex1">
-                <span
-                  className="icon gray-edit u-cursor--pointer u-marginRight--10"
+                <Icon
+                  icon="edit"
+                  size={20}
+                  className="gray-color u-marginRight--10 clickable"
                   onClick={() => onEdit(index)}
                 />
-                <span
-                  className="icon gray-trash u-cursor--pointer"
+                <Icon
+                  icon="trash"
+                  size={20}
+                  className="gray-color clickable"
                   onClick={() => onRemoveGroupRow(index)}
                 />
               </div>
