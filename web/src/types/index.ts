@@ -31,7 +31,6 @@ export type AppLicense = {
   isGeoaxisSupported: boolean;
   isGitOpsSupported: boolean;
   isIdentityServiceSupported: boolean;
-  j;
   isSemverRequired: boolean;
   isSnapshotsSupported: boolean;
   isSupportBundleUploadSupported: boolean;
