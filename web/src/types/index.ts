@@ -1,5 +1,6 @@
 export type App = {
   allowSnapshots: boolean;
+  autoDeploy: boolean;
   chartPath: string;
   credentials: Credentials;
   currentSequence: number;
@@ -12,10 +13,12 @@ export type App = {
   isGeoaxisSupported: boolean;
   isGitOpsSupported: boolean;
   isIdentityServiceSupported: boolean;
+  isSemverRequired: boolean;
   name: string;
   namespace: string;
   needsRegistry?: boolean;
   slug: string;
+  updateCheckerSpec: string;
 };
 
 export type AppLicense = {
@@ -27,37 +30,42 @@ export type AppLicense = {
   isAirgapSupported: boolean;
   isGeoaxisSupported: boolean;
   isGitOpsSupported: boolean;
-  isIdentityServiceSupported: boolean;j
+  isIdentityServiceSupported: boolean;
+  j;
   isSemverRequired: boolean;
   isSnapshotsSupported: boolean;
   isSupportBundleUploadSupported: boolean;
   lastSyncedAt: string;
   licenseSequence: number;
   licenseType: string;
-}
+};
 
 export type Credentials = {
   username: string;
   password: string;
 };
 
-export type Dashboard = {
-  appStatus: {
-    appId: string;
-    resourceStates: {
-      kind: string;
-      name: string;
-      namespace: string;
-      // from https://github.com/replicatedhq/kots/blob/84b7e4e0e9275bb200a36be69691c4944eb8cf8f/pkg/appstate/types/types.go#L10-L14
-      state: "ready" | "updating" | "degrading" | "unavailable" | "missing";
-    }[];
-    sequence: number;
-    state: string;
-    updatedAt: string;
-  } | null;
+export type ResourceStates = {
+  kind: string;
+  name: string;
+  namespace: string;
+  // from https://github.com/replicatedhq/kots/blob/84b7e4e0e9275bb200a36be69691c4944eb8cf8f/pkg/appstate/types/types.go#L10-L14
+  state: "ready" | "updating" | "degrading" | "unavailable" | "missing";
+};
+
+type AppStatus = {
+  appId: string;
+  resourceStates: ResourceStates[];
+  sequence: number;
+  state: string;
+  updatedAt: string;
+};
+
+export type DashboardResponse = {
+  appStatus: AppStatus | null;
   metrics: string[];
   prometheusAddress: string;
-}
+};
 
 export type Downstream = {
   currentVersion: Version;
@@ -79,7 +87,7 @@ export type KotsParams = {
 export type DashboardActionLink = {
   title: string;
   uri: string;
-}
+};
 
 export type Version = {
   parentSequence: number;

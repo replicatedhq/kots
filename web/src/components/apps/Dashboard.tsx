@@ -27,27 +27,40 @@ const COMMON_ERRORS = {
 };
 
 // Types
-import { App, AppLicense, Downstream, Dashboard as DashboardType, DashboardActionLink, KotsParams, Version } from "@types";
+import {
+  App,
+  AppLicense,
+  Downstream,
+  DashboardResponse,
+  DashboardActionLink,
+  KotsParams,
+  ResourceStates,
+  Version,
+} from "@types";
 import { RouteComponentProps } from "react-router-dom";
 
 type Props = {
-  app: App,
+  app: App;
   cluster: {
     // TODO: figure out if this is actually a "" | number- maybe just go with number
     id: "" | number;
   };
   isBundleUploading: boolean;
   isHelmManaged: boolean;
+  isVeleroInstalled: boolean;
+  makeCurrentVersion: (version: Version) => void;
   ping: (clusterId?: string) => void;
+  redeployVersion: (version: Version) => void;
   refreshAppData: () => void;
+  snapshotInProgressApps: string[];
   toggleIsBundleUploading: (isUploading: boolean) => void;
   updateCallback: () => void | null;
-} & RouteComponentProps<KotsParams>
+} & RouteComponentProps<KotsParams>;
 
 type SnapshotOption = {
   option: string;
   name: string;
-}
+};
 
 // TODO:  update these strings so that they are not nullable (maybe just set default to "")
 type State = {
@@ -61,7 +74,7 @@ type State = {
   checkingForUpdates: boolean;
   checkingUpdateMessage: string;
   currentVersion: Version | {};
-  dashboard: DashboardType;
+  dashboard: DashboardResponse;
   displayErrorModal: boolean;
   downstream: Downstream | null;
   fetchAppDownstreamJob: Repeater;
@@ -87,56 +100,60 @@ type State = {
   uploadingAirgapFile: boolean;
   viewAirgapUpdateError: boolean;
   viewAirgapUploadError: boolean;
-}
+};
 
 class Dashboard extends Component<Props, State> {
-  state = {
-    activeChart: null,
-    airgapUploader: null,
-    airgapUpdateError: "",
-    airgapUploadError: null,
-    appLicense: {},
-    appName: "",
-    checkingForUpdateError: false,
-    checkingForUpdates: false,
-    checkingUpdateMessage: "Checking for updates",
-    dashboard: {
-      appStatus: null,
-      metrics: [],
-      prometheusAddress: "",
-    },
-    currentVersion: {},
-    displayErrorModal: false,
-    downstream: null,
-    fetchAppDownstreamJob: new Repeater(),
-    getAppDashboardJob: new Repeater(),
-    gettingAppErrMsg: "",
-    gettingAppLicenseErrMsg: "",
-    iconUri: "",
-    loadingApp: false,
-    links: [],
-    // TODO: fix misspelling of available
-    noUpdatesAvalable: false,
-    selectedSnapshotOption: { option: "full", name: "Start a Full snapshot" },
-    showAppStatusModal: false,
-    showAutomaticUpdatesModal: false,
-    snapshotDifferencesModal: false,
-    startingSnapshot: false,
-    startSnapshotErr: false,
-    startSnapshotErrorMsg: "",
-    startSnapshotOptions: [
-      { option: "partial", name: "Start a Partial snapshot" },
-      { option: "full", name: "Start a Full snapshot" },
-      { option: "learn", name: "Learn about the difference" },
-    ],
-    updateChecker: new Repeater(),
-    uploadingAirgapFile: false,
-    uploadProgress: 0,
-    uploadResuming: false,
-    uploadSize: 0,
-    viewAirgapUpdateError: false,
-    viewAirgapUploadError: false,
-  };
+  constructor(props: Props) {
+    super(props);
+
+    this.state = {
+      activeChart: null,
+      airgapUploader: null,
+      airgapUpdateError: "",
+      airgapUploadError: null,
+      appLicense: {},
+      appName: "",
+      checkingForUpdateError: false,
+      checkingForUpdates: false,
+      checkingUpdateMessage: "Checking for updates",
+      dashboard: {
+        appStatus: null,
+        metrics: [],
+        prometheusAddress: "",
+      },
+      currentVersion: {},
+      displayErrorModal: false,
+      downstream: null,
+      fetchAppDownstreamJob: new Repeater(),
+      getAppDashboardJob: new Repeater(),
+      gettingAppErrMsg: "",
+      gettingAppLicenseErrMsg: "",
+      iconUri: "",
+      loadingApp: false,
+      links: [],
+      // TODO: fix misspelling of available
+      noUpdatesAvalable: false,
+      selectedSnapshotOption: { option: "full", name: "Start a Full snapshot" },
+      showAppStatusModal: false,
+      showAutomaticUpdatesModal: false,
+      snapshotDifferencesModal: false,
+      startingSnapshot: false,
+      startSnapshotErr: false,
+      startSnapshotErrorMsg: "",
+      startSnapshotOptions: [
+        { option: "partial", name: "Start a Partial snapshot" },
+        { option: "full", name: "Start a Full snapshot" },
+        { option: "learn", name: "Learn about the difference" },
+      ],
+      updateChecker: new Repeater(),
+      uploadingAirgapFile: false,
+      uploadProgress: 0,
+      uploadResuming: false,
+      uploadSize: 0,
+      viewAirgapUpdateError: false,
+      viewAirgapUploadError: false,
+    };
+  }
 
   setWatchState = (app: App) => {
     this.setState({
@@ -383,7 +400,10 @@ class Dashboard extends Component<Props, State> {
       }
     } catch (err) {
       console.log(err);
-      const errorMessage = err instanceof Error ? err.message : "Something went wrong, please try again.";
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : "Something went wrong, please try again.";
       this.setState({
         loadingApp: false,
         gettingAppErrMsg: errorMessage,
@@ -520,10 +540,10 @@ class Dashboard extends Component<Props, State> {
     this.setState({ viewAirgapUploadError: !this.state.viewAirgapUploadError });
   };
 
-  toggleViewAirgapUpdateError = (err: string) => {
+  toggleViewAirgapUpdateError = (err?: string) => {
     this.setState({
       viewAirgapUpdateError: !this.state.viewAirgapUpdateError,
-      airgapUpdateError: !this.state.viewAirgapUpdateError ? err : "",
+      airgapUpdateError: !this.state.viewAirgapUpdateError && err ? err : "",
     });
   };
 
@@ -565,7 +585,7 @@ class Dashboard extends Component<Props, State> {
           });
           this.props.ping();
           if (option === "full") {
-            this.props.history.push("/snapshots")
+            this.props.history.push("/snapshots");
           } else {
             this.props.history.push(`/snapshots/partial/${app.slug}`);
           }
@@ -616,13 +636,15 @@ class Dashboard extends Component<Props, State> {
   };
 
   getAppResourcesByState = () => {
-    const appStatus = this.state.dashboard?.appStatus;
+    const { appStatus } = this.state.dashboard;
     if (!appStatus?.resourceStates?.length) {
       return {};
     }
 
     const resourceStates = appStatus?.resourceStates;
-    const statesMap = {};
+    const statesMap: {
+      [key: string]: ResourceStates[];
+    } = {};
 
     for (let i = 0; i < resourceStates.length; i++) {
       const resourceState = resourceStates[i];
@@ -711,6 +733,9 @@ class Dashboard extends Component<Props, State> {
     const appResourcesByState = this.getAppResourcesByState();
     const hasStatusInformers = this.checkStatusInformers();
 
+    // TODO: remove the type casting
+    const { appStatus } = this.state.dashboard;
+
     return (
       <>
         {!app && (
@@ -737,7 +762,7 @@ class Dashboard extends Component<Props, State> {
                       {appName}
                     </p>
                     <AppStatus
-                      appStatus={this.state.dashboard?.appStatus?.state}
+                      appStatus={appStatus?.state}
                       url={this.props.match.url}
                       onViewAppStatusDetails={this.toggleAppStatusModal}
                       links={links}
@@ -769,13 +794,12 @@ class Dashboard extends Component<Props, State> {
                       redeployVersion={this.props.redeployVersion}
                       onProgressError={this.onProgressError}
                       onCheckForUpdates={() => this.onCheckForUpdates()}
-                      onUploadNewVersion={() => this.onUploadNewVersion()}
                       isBundleUploading={isBundleUploading}
                       checkingForUpdateError={this.state.checkingForUpdateError}
                       viewAirgapUploadError={() =>
                         this.toggleViewAirgapUploadError()
                       }
-                      viewAirgapUpdateError={(err) =>
+                      viewAirgapUpdateError={(err: string) =>
                         this.toggleViewAirgapUpdateError(err)
                       }
                       showAutomaticUpdatesModal={this.showAutomaticUpdatesModal}
@@ -862,7 +886,7 @@ class Dashboard extends Component<Props, State> {
             {this.state.viewAirgapUpdateError && (
               <Modal
                 isOpen={this.state.viewAirgapUpdateError}
-                onRequestClose={this.toggleViewAirgapUpdateError}
+                onRequestClose={() => this.toggleViewAirgapUpdateError()}
                 contentLabel="Error updating airgap version"
                 ariaHideApp={false}
                 className="Modal"
@@ -879,7 +903,7 @@ class Dashboard extends Component<Props, State> {
                   <button
                     type="button"
                     className="btn primary u-marginTop--15"
-                    onClick={this.toggleViewAirgapUpdateError}
+                    onClick={() => this.toggleViewAirgapUpdateError()}
                   >
                     Ok, got it!
                   </button>
@@ -907,8 +931,8 @@ class Dashboard extends Component<Props, State> {
                           {Utilities.toTitleCase(state)}
                         </p>
                         {appResourcesByState?.statesMap[state]?.map(
-                          (resource, i) => (
-                            <div key={`${resource?.name}-${i}`}>
+                          (resource, j) => (
+                            <div key={`${resource?.name}-${j}`}>
                               <p
                                 className={`ResourceStateText u-fontSize--normal ${resource.state}`}
                               >
@@ -971,4 +995,6 @@ class Dashboard extends Component<Props, State> {
   }
 }
 
-export default withRouter(Dashboard);
+// TODO: fix withRouter type
+// eslint-disable-next-line
+export default withRouter(Dashboard) as any;
