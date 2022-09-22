@@ -30,7 +30,7 @@ type Props = {
   syncCallback: () => void;
 };
 
-type File = {
+type LicenseFile = {
   preview: string;
   lastModified: number;
   lastModifiedDate: Date;
@@ -59,7 +59,7 @@ type License = {
   changingLicense: boolean;
   entitlementsToShow: string[];
   isViewingLicenseEntitlements: boolean;
-  licenseChangeFile: File | null;
+  licenseChangeFile: LicenseFile | null;
   licenseChangeMessage: string;
   licenseChangeMessageType: string;
   loading: boolean;
@@ -77,7 +77,7 @@ type State = {
   showNextStepModal: boolean;
   entitlementsToShow: string[];
   showLicenseChangeModal: boolean;
-  licenseChangeFile: File | null;
+  licenseChangeFile: LicenseFile | null;
   changingLicense: boolean;
   licenseChangeMessage: string;
   licenseChangeMessageType: string;
@@ -138,7 +138,7 @@ class AppLicense extends Component<Props, State> {
     this.getAppLicense();
   }
 
-  onDrop = async (files: File[]) => {
+  onDrop = async (files: LicenseFile[]) => {
     // TODO: TextDecoder.decode() expects arg of BufferSource | undefined
     // getFileContent returns string, ArrayBuffer, or null. Need to figure out
     // eslint-disable-next-line
@@ -231,7 +231,7 @@ class AppLicense extends Component<Props, State> {
       });
   };
 
-  onLicenseChangeDrop = async (files: File[]) => {
+  onLicenseChangeDrop = async (files: LicenseFile[]) => {
     this.setState({
       licenseChangeFile: files[0],
       licenseChangeMessage: "",
