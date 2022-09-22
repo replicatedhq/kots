@@ -5,6 +5,7 @@ export type App = {
   currentSequence: number;
   downstream: Downstream;
   hasPreflight: boolean;
+  id: string;
   iconUri: string;
   isAirgap: boolean;
   isConfigurable: boolean;

@@ -29,7 +29,6 @@ const COMMON_ERRORS = {
 // Types
 import { App, AppLicense, Downstream, Dashboard as DashboardType, DashboardActionLink, KotsParams, Version } from "@types";
 import { RouteComponentProps } from "react-router-dom";
-import { resolve } from "node:path/win32";
 
 type Props = {
   app: App,
@@ -37,13 +36,18 @@ type Props = {
     // TODO: figure out if this is actually a "" | number- maybe just go with number
     id: "" | number;
   };
+  isBundleUploading: boolean;
   isHelmManaged: boolean;
+  ping: (clusterId?: string) => void;
+  refreshAppData: () => void;
+  toggleIsBundleUploading: (isUploading: boolean) => void;
+  updateCallback: () => void | null;
 } & RouteComponentProps<KotsParams>
 
 type SnapshotOption = {
-    option: string;
-    name: string;
-  }
+  option: string;
+  name: string;
+}
 
 // TODO:  update these strings so that they are not nullable (maybe just set default to "")
 type State = {
@@ -58,9 +62,11 @@ type State = {
   checkingUpdateMessage: string;
   currentVersion: Version | {};
   dashboard: DashboardType;
+  displayErrorModal: boolean;
   downstream: Downstream | null;
   fetchAppDownstreamJob: Repeater;
   getAppDashboardJob: Repeater;
+  gettingAppErrMsg: string;
   gettingAppLicenseErrMsg: string;
   iconUri: string;
   loadingApp: boolean;
@@ -70,9 +76,14 @@ type State = {
   showAppStatusModal: boolean;
   showAutomaticUpdatesModal: boolean;
   snapshotDifferencesModal: boolean;
+  startingSnapshot: boolean;
+  startSnapshotErr: boolean;
   startSnapshotErrorMsg: string;
   startSnapshotOptions: SnapshotOption[];
   updateChecker: Repeater;
+  uploadProgress: number;
+  uploadResuming: boolean;
+  uploadSize: number;
   uploadingAirgapFile: boolean;
   viewAirgapUpdateError: boolean;
   viewAirgapUploadError: boolean;
@@ -95,9 +106,11 @@ class Dashboard extends Component<Props, State> {
       prometheusAddress: "",
     },
     currentVersion: {},
+    displayErrorModal: false,
     downstream: null,
     fetchAppDownstreamJob: new Repeater(),
     getAppDashboardJob: new Repeater(),
+    gettingAppErrMsg: "",
     gettingAppLicenseErrMsg: "",
     iconUri: "",
     loadingApp: false,
@@ -108,6 +121,8 @@ class Dashboard extends Component<Props, State> {
     showAppStatusModal: false,
     showAutomaticUpdatesModal: false,
     snapshotDifferencesModal: false,
+    startingSnapshot: false,
+    startSnapshotErr: false,
     startSnapshotErrorMsg: "",
     startSnapshotOptions: [
       { option: "partial", name: "Start a Partial snapshot" },
@@ -116,6 +131,9 @@ class Dashboard extends Component<Props, State> {
     ],
     updateChecker: new Repeater(),
     uploadingAirgapFile: false,
+    uploadProgress: 0,
+    uploadResuming: false,
+    uploadSize: 0,
     viewAirgapUpdateError: false,
     viewAirgapUploadError: false,
   };
@@ -229,13 +247,13 @@ class Dashboard extends Component<Props, State> {
   };
 
   getAppDashboard = (): Promise<void> => {
-    return new Promise((resolveGetAppDashboard, reject) => {
+    return new Promise((resolve, reject) => {
       // this function is in a repeating callback that terminates when
       // the promise is resolved
 
       // TODO: use react-query to refetch this instead of the custom repeater
       if (!this.props.app) {
-        resolveGetAppDashboard();
+        resolve();
       }
 
       if (this.props.cluster?.id === "" && this.props.isHelmManaged === true) {
@@ -256,7 +274,7 @@ class Dashboard extends Component<Props, State> {
         .then(async (res) => {
           if (!res.ok && res.status === 401) {
             Utilities.logoutUser();
-            resolveGetAppDashboard();
+            resolve();
           }
           const response = await res.json();
           this.setState({
@@ -266,7 +284,7 @@ class Dashboard extends Component<Props, State> {
               metrics: response.metrics,
             },
           });
-          resolveGetAppDashboard();
+          resolve();
         })
         .catch((err) => {
           console.log(err);
@@ -343,12 +361,12 @@ class Dashboard extends Component<Props, State> {
         method: "GET",
       });
       if (res.ok && res.status == 200) {
-        const app = await res.json();
-        if (!isAwaitingResults(app.downstream.pendingVersions)) {
+        const appResponse = await res.json();
+        if (!isAwaitingResults(appResponse.downstream.pendingVersions)) {
           this.state.fetchAppDownstreamJob.stop();
         }
         this.setState({
-          downstream: app.downstream,
+          downstream: appResponse.downstream,
         });
         // wait a couple of seconds to avoid any race condiditons with the update checker then refetch the app to ensure we have the latest everything
         // this is hacky and I hate it but it's just building up more evidence in my case for having the FE be able to listen to BE envents
@@ -365,11 +383,10 @@ class Dashboard extends Component<Props, State> {
       }
     } catch (err) {
       console.log(err);
+      const errorMessage = err instanceof Error ? err.message : "Something went wrong, please try again.";
       this.setState({
         loadingApp: false,
-        gettingAppErrMsg: err
-          ? err.message
-          : "Something went wrong, please try again.",
+        gettingAppErrMsg: errorMessage,
         displayErrorModal: true,
       });
     }
@@ -379,7 +396,7 @@ class Dashboard extends Component<Props, State> {
     this.state.fetchAppDownstreamJob.start(this.fetchAppDownstream, 2000);
   };
 
-  updateStatus = () => {
+  updateStatus = (): Promise<void> => {
     const { app } = this.props;
 
     return new Promise((resolve, reject) => {
@@ -440,7 +457,11 @@ class Dashboard extends Component<Props, State> {
     const params = {
       appId: this.props.app?.id,
     };
-    this.state.airgapUploader.upload(
+
+    // TODO: remove after adding type to airgap uploader
+    // eslint-disable-next-line
+    // @ts-ignore
+    this.state.airgapUploader?.upload(
       params,
       this.onUploadProgress,
       this.onUploadError,
@@ -448,7 +469,7 @@ class Dashboard extends Component<Props, State> {
     );
   };
 
-  onUploadProgress = (progress, size, resuming = false) => {
+  onUploadProgress = (progress: number, size: number, resuming = false) => {
     this.setState({
       uploadProgress: progress,
       uploadSize: size,
@@ -456,7 +477,7 @@ class Dashboard extends Component<Props, State> {
     });
   };
 
-  onUploadError = (message) => {
+  onUploadError = (message: string) => {
     this.setState({
       uploadingAirgapFile: false,
       checkingForUpdates: false,
@@ -479,7 +500,7 @@ class Dashboard extends Component<Props, State> {
     this.props.toggleIsBundleUploading(false);
   };
 
-  onProgressError = async (airgapUploadError) => {
+  onProgressError = async (airgapUploadError: string) => {
     Object.entries(COMMON_ERRORS).forEach(([errorString, message]) => {
       if (airgapUploadError.includes(errorString)) {
         airgapUploadError = message;
@@ -499,14 +520,14 @@ class Dashboard extends Component<Props, State> {
     this.setState({ viewAirgapUploadError: !this.state.viewAirgapUploadError });
   };
 
-  toggleViewAirgapUpdateError = (err) => {
+  toggleViewAirgapUpdateError = (err: string) => {
     this.setState({
       viewAirgapUpdateError: !this.state.viewAirgapUpdateError,
       airgapUpdateError: !this.state.viewAirgapUpdateError ? err : "",
     });
   };
 
-  startASnapshot = (option) => {
+  startASnapshot = (option: string) => {
     const { app } = this.props;
     this.setState({
       startingSnapshot: true,
@@ -543,9 +564,11 @@ class Dashboard extends Component<Props, State> {
             startingSnapshot: false,
           });
           this.props.ping();
-          option === "full"
-            ? this.props.history.push("/snapshots")
-            : this.props.history.push(`/snapshots/partial/${app.slug}`);
+          if (option === "full") {
+            this.props.history.push("/snapshots")
+          } else {
+            this.props.history.push(`/snapshots/partial/${app.slug}`);
+          }
         } else {
           const body = await result.json();
           this.setState({
@@ -565,7 +588,7 @@ class Dashboard extends Component<Props, State> {
       });
   };
 
-  onSnapshotOptionChange = (selectedSnapshotOption) => {
+  onSnapshotOptionChange = (selectedSnapshotOption: SnapshotOption) => {
     if (selectedSnapshotOption.option === "learn") {
       this.setState({ snapshotDifferencesModal: true });
     } else {
