@@ -129,8 +129,9 @@ class AppLicense extends Component<Props, State> {
   }
 
   onDrop = async (files: Object[]) => {
-    const content = await getFileContent(files[0]);
-    console.log("content", content);
+    // TODO: TextDecoder.decode() expects arg of BufferSource | undefined
+    // getFileContent returns string, ArrayBuffer, or null. Need to figure out
+    const content: any = await getFileContent(files[0]);
     const contentStr = new TextDecoder("utf-8").decode(content);
     const airgapLicense = await yaml.safeLoad(contentStr);
     const { appLicense } = this.state;
@@ -220,7 +221,6 @@ class AppLicense extends Component<Props, State> {
   };
 
   onLicenseChangeDrop = async (files: Object[]) => {
-    console.log("files", files[0]);
     this.setState({
       licenseChangeFile: files[0],
       licenseChangeMessage: "",
