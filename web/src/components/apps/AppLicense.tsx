@@ -22,6 +22,7 @@ import styled from "styled-components";
 import { App, Entitlement } from "@src/types";
 import "@src/scss/components/apps/AppLicense.scss";
 import LicenseFields from "./LicenseFields";
+import Icon from "../Icon";
 
 type Props = {
   app: App;
@@ -450,8 +451,12 @@ class AppLicense extends Component<Props, State> {
                     ) : null}
                     {appLicense?.isGitOpsSupported ? (
                       <span className="flex alignItems--center">
-                        <span className="icon licenseGithubIcon" /> GitOps
-                        enabled{" "}
+                        <Icon
+                          icon="github-icon"
+                          size={22}
+                          className="u-marginRight--5 github-icon"
+                        />{" "}
+                        GitOps enabled{" "}
                       </span>
                     ) : null}
                     {appLicense?.isIdentityServiceSupported ? (
@@ -535,12 +540,14 @@ class AppLicense extends Component<Props, State> {
                     }}
                   >
                     View {size(appLicense?.entitlements)} license entitlements
-                    <span
-                      className={`icon clickable ${
+                    <Icon
+                      icon={
                         this.state.isViewingLicenseEntitlements
-                          ? "up-arrow-icon"
-                          : "down-arrow-icon"
-                      } u-marginLeft--5`}
+                          ? "up-arrow"
+                          : "down-arrow"
+                      }
+                      size={12}
+                      className="clickable u-marginLeft--5 gray-color"
                     />
                   </span>
                 </span>
@@ -660,7 +667,11 @@ class AppLicense extends Component<Props, State> {
                 {licenseChangeFile ? (
                   <div className="has-file-wrapper">
                     <div className="flex">
-                      <div className="icon u-yamlLtGray-small u-marginRight--10" />
+                      <Icon
+                        icon="yaml-icon"
+                        size={24}
+                        className="u-marginRight--10 gray-color"
+                      />
                       <div>
                         <p className="u-fontSize--normal u-textColor--primary u-fontWeight--medium">
                           {licenseChangeFile.name}
@@ -682,7 +693,11 @@ class AppLicense extends Component<Props, State> {
                     multiple={false}
                   >
                     <div className="u-textAlign--center">
-                      <div className="icon u-yamlLtGray-lrg u-marginBottom--10" />
+                      <Icon
+                        icon="yaml-icon"
+                        size={40}
+                        className="u-marginBottom--10 gray-color"
+                      />
                       <p className="u-fontSize--normal u-textColor--secondary u-fontWeight--medium u-lineHeight--normal">
                         Drag your new license here or{" "}
                         <span className="u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover">
