@@ -29,11 +29,11 @@ export const ExpandButton = styled.button`
   padding-left: 0;
 `;
 
-type Entitlements = {
+type Entitlement = {
   label: string;
   title: string;
   value: string;
-  valueType: "Text" | "Boolean";
+  valueType: "Text" | "Boolean" | "Integer" | "String";
 };
 
 const LicenseFields = ({
@@ -42,10 +42,10 @@ const LicenseFields = ({
   toggleHideDetails,
   entitlementsToShow,
 }: {
-  entitlements: Entitlements[];
+  entitlements: Entitlement[];
   toggleShowDetails: (title: string) => void;
   toggleHideDetails: (title: string) => void;
-  entitlementsToShow: string[];
+  entitlementsToShow: Entitlement[];
 }) => {
   return (
     <CustomerLicenseFields

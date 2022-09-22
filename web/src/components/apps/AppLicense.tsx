@@ -19,36 +19,70 @@ import Loader from "../shared/Loader";
 // @ts-ignore
 import styled from "styled-components";
 
+import { App } from "@src/types";
 import "@src/scss/components/apps/AppLicense.scss";
 import LicenseFields from "./LicenseFields";
 
 type Props = {
   app: App;
-  fromLicenseFlow: boolean;
-  isHelmManaged: boolean;
-  refreshAppData: () => void;
-  refetchAppsList: () => void;
+  changeCallback: () => void;
+  syncCallback: () => void;
 };
 
-type State = {
-  activeGroups: string[];
-  app: App | null;
-  changed: boolean;
-  configError: boolean;
-  configGroups: ConfigGroup[];
-  configLoading: boolean;
-  displayErrorModal: boolean;
-  downstreamVersion: Version | null;
-  errorTitle: string;
-  gettingConfigErrMsg: string;
-  initialConfigGroups: ConfigGroup[];
-  savingConfig: boolean;
-  showHelmDeployModal: boolean;
+type entitlement = {
+  title: string;
+  value: string;
+  label: string;
+  valueType: "Text" | "Boolean" | "Integer" | "String";
+};
+
+type License = {
+  assignee: string;
+  channelName: string;
+  entitlements: entitlement[];
+  expiresAt: string;
+  id: string;
+  isAirgapSupported: boolean;
+  isGeoaxisSupported: boolean;
+  isGitOpsSupported: boolean;
+  isIdentityServiceSupported: boolean;
+  isSemverRequired: boolean;
+  isSnapshotSupported: boolean;
+  isSupportBundleUploadSupported: boolean;
+  lastSyncedAt: string;
+  licenseSequence: number;
+  licenseType: string;
+  changingLicense: boolean;
+  entitlementsToShow: entitlement[];
+  isViewingLicenseEntitlements: boolean;
+  //
+  licenseChangeFile: any;
+  licenseChangeMessage: string;
+  licenseChangeMessageType: string;
+  loading: boolean;
+  message: string;
+  messageType: string;
+  showLicenseChangeModal: boolean;
   showNextStepModal: boolean;
 };
 
+type State = {
+  appLicense: License | null;
+  loading: boolean;
+  message: string;
+  messageType: string;
+  showNextStepModal: boolean;
+  entitlementsToShow: entitlement[];
+  showLicenseChangeModal: boolean;
+  licenseChangeFile: any;
+  changingLicense: boolean;
+  licenseChangeMessage: string;
+  licenseChangeMessageType: string;
+  isViewingLicenseEntitlements: boolean;
+};
+
 class AppLicense extends Component<Props, State> {
-  constructor(props) {
+  constructor(props: Props) {
     super(props);
 
     this.state = {
@@ -81,7 +115,7 @@ class AppLicense extends Component<Props, State> {
       .then(async (res) => {
         const body = await res.json();
         if (body === null) {
-          this.setState({ appLicense: {} });
+          this.setState({ appLicense: null });
         } else if (body.success) {
           this.setState({
             appLicense: body.license,
@@ -101,7 +135,7 @@ class AppLicense extends Component<Props, State> {
     this.getAppLicense();
   }
 
-  onDrop = async (files) => {
+  onDrop = async (files: Object[]) => {
     const content = await getFileContent(files[0]);
     const contentStr = new TextDecoder("utf-8").decode(content);
     const airgapLicense = await yaml.safeLoad(contentStr);
@@ -126,7 +160,7 @@ class AppLicense extends Component<Props, State> {
     this.syncAppLicense(contentStr);
   };
 
-  syncAppLicense = (licenseData) => {
+  syncAppLicense = (licenseData: string) => {
     this.setState({
       loading: true,
       message: "",
@@ -191,7 +225,7 @@ class AppLicense extends Component<Props, State> {
       });
   };
 
-  onLicenseChangeDrop = async (files) => {
+  onLicenseChangeDrop = async (files: any[]) => {
     this.setState({
       licenseChangeFile: files[0],
       licenseChangeMessage: "",
@@ -282,13 +316,13 @@ class AppLicense extends Component<Props, State> {
     this.setState({ showLicenseChangeModal: true });
   };
 
-  toggleShowDetails = (entitlement) => {
+  toggleShowDetails = (entitlement: entitlement) => {
     this.setState({
       entitlementsToShow: [...this.state.entitlementsToShow, entitlement],
     });
   };
 
-  toggleHideDetails = (entitlement) => {
+  toggleHideDetails = (entitlement: entitlement) => {
     let entitlementsToShow = [...this.state.entitlementsToShow];
     const index = this.state.entitlementsToShow.indexOf(entitlement);
     entitlementsToShow.splice(index, 1);
@@ -327,7 +361,7 @@ class AppLicense extends Component<Props, State> {
     const expiresAt = getLicenseExpiryDate(appLicense);
     const gitops = app.downstream?.gitops;
     const appName = app?.name || "Your application";
-
+    console.log("this.psrars", this.state);
     return (
       <div className="flex flex-column justifyContent--center alignItems--center">
         <Helmet>
