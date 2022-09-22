@@ -733,7 +733,6 @@ class Dashboard extends Component<Props, State> {
     const appResourcesByState = this.getAppResourcesByState();
     const hasStatusInformers = this.checkStatusInformers();
 
-    // TODO: remove the type casting
     const { appStatus } = this.state.dashboard;
 
     return (
