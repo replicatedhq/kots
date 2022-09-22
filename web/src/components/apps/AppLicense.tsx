@@ -236,9 +236,9 @@ class AppLicense extends Component<Props, State> {
       return;
     }
 
-    let content: BufferSource | undefined = await getFileContent(
-      this.state.licenseChangeFile
-    );
+    // TODO: TextDecoder.decode() expects arg of BufferSource | undefined
+    // getFileContent returns string, ArrayBuffer, or null. Need to figure out
+    const content: any = await getFileContent(this.state.licenseChangeFile);
 
     const licenseData = new TextDecoder("utf-8").decode(content);
 
