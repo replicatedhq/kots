@@ -446,12 +446,13 @@ class AppVersionHistory extends Component {
       <div className="flex action-tab-bar u-marginTop--10">
         {tabs
           .filter((tab) => tab !== "renderError")
-          .filter(tab => {
+          .filter((tab) => {
             if (this.props.isHelmManaged) {
-              return tab.startsWith("helm")
+              return tab.startsWith("helm");
             }
-            return !tab.startsWith("helm")
-          }).map((tab) => (
+            return !tab.startsWith("helm");
+          })
+          .map((tab) => (
             <div
               className={`tab-item blue ${tab === selectedTab && "is-active"}`}
               key={tab}
