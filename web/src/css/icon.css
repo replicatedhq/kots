@@ -1,0 +1,30 @@
+.icomoon {
+  color: #326de6;
+}
+.clickable {
+  cursor: pointer;
+}
+.warning-color {
+  color: #f7b500;
+}
+
+.success-color {
+  color: #38cc97;
+}
+.no-activity-circle-filled--icon {
+  color: #c4c8ca;
+}
+
+.error-color {
+  color: #f65c5c;
+}
+.gray-color {
+  color: #9b9b9b;
+}
+.darkGray-color {
+  color: #717171;
+}
+
+.close-icon:hover {
+  color: #717171;
+}

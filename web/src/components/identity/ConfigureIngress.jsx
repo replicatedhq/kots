@@ -5,6 +5,7 @@ import Dropzone from "react-dropzone";
 import isEmpty from "lodash/isEmpty";
 
 import AnnotationRow from "./AnnotationRow";
+import Icon from "../Icon";
 
 class ConfigureIngress extends Component {
   state = {
@@ -244,7 +245,11 @@ class ConfigureIngress extends Component {
                   </button>
                   {this.state.saveConfirm && (
                     <div className="u-marginLeft--10 flex alignItems--center">
-                      <span className="icon checkmark-icon" />
+                      <Icon
+                        icon="check-circle-filled"
+                        size={16}
+                        className="success-color"
+                      />
                       <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-textColor--success">
                         Settings saved
                       </span>

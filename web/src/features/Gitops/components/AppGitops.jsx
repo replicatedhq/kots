@@ -15,6 +15,7 @@ import AppSelector from "./AppSelector";
 import "../../../scss/components/gitops/GitOpsDeploymentManager.scss";
 import "../../../scss/components/gitops/GitOpsSettings.scss";
 import "../../../scss/components/gitops/GitopsPrism.scss";
+import Icon from "@src/components/Icon";
 
 const AppGitops = () => {
   const [ownerRepo, setOwnerRepo] = useState("");
@@ -225,8 +226,10 @@ const AppGitops = () => {
           }}
         >
           <Flex mb="15" align="center">
-            <span
-              className="icon small-warning-icon"
+            <Icon
+              icon="warning"
+              className="warning-color"
+              size={25}
               style={{ width: "35px" }}
             />
             <p

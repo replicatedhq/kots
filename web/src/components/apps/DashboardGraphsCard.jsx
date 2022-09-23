@@ -19,6 +19,7 @@ import { Repeater } from "../../utilities/repeater";
 import ConfigureGraphs from "../shared/ConfigureGraphs";
 import "../../scss/components/watches/DashboardCard.scss";
 import "@src/scss/components/apps/AppLicense.scss";
+import Icon from "../Icon";
 dayjs.extend(localizedFormat);
 
 export default class DashboardGraphsCard extends React.Component {
@@ -300,7 +301,11 @@ export default class DashboardGraphsCard extends React.Component {
             Monitoring
           </p>
           <div className="flex alignItems--center">
-            <span className="icon clickable dashboard-card-settings-icon u-marginRight--5" />
+            <Icon
+              icon="settings-gear-outline"
+              size={16}
+              className="clickable u-marginRight--5"
+            />
             <span
               className="replicated-link u-fontSize--small"
               onClick={this.toggleConfigureGraphs}

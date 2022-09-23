@@ -10,6 +10,7 @@ import SnapshotStorageDestination from "./SnapshotStorageDestination";
 import "../../scss/components/shared/SnapshotForm.scss";
 import { isVeleroCorrectVersion, Utilities } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
+import Icon from "../Icon";
 
 class SnapshotSettings extends Component {
   state = {
@@ -318,7 +319,7 @@ class SnapshotSettings extends Component {
         {!isVeleroCorrectVersion(snapshotSettings) &&
         !checkForVeleroAndRestic ? (
           <div className="VeleroWarningBlock">
-            <span className="icon small-warning-icon" />
+            <Icon icon={"warning"} size={24} className="warning-color" />
             <p>
               {" "}
               To use snapshots reliably, install Velero version 1.5.1 or greater{" "}

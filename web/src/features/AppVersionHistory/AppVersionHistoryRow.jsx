@@ -9,6 +9,7 @@ import Loader from "../../components/shared/Loader";
 import { Utilities, getPreflightResultState } from "@src/utilities/utilities";
 
 import { YamlErrors } from "./YamlErrors";
+import Icon from "@src/components/Icon";
 
 class AppVersionHistoryRow extends Component {
   renderDiff = (version) => {
@@ -117,10 +118,12 @@ class AppVersionHistoryRow extends Component {
     }
     return (
       <div>
-        <span
-          className="icon releaseNotes--icon u-marginRight--10 u-cursor--pointer"
+        <Icon
+          icon="release-notes"
+          size="24"
           onClick={() => this.props.showReleaseNotes(version?.releaseNotes)}
           data-tip="View release notes"
+          className="u-marginRight--10 clickable"
         />
         <ReactTooltip effect="solid" className="replicated-tooltip" />
       </div>
@@ -242,22 +245,33 @@ class AppVersionHistoryRow extends Component {
                 <>
                   <Link
                     to={`/app/${app?.slug}/downstreams/${app?.downstream.cluster?.slug}/version-history/preflight/${version?.sequence}`}
-                    className="icon preflightChecks--icon u-cursor--pointer u-position--relative"
+                    className="u-position--relative u-marginRight--10"
                     data-tip="View preflight checks"
                   >
+                    <Icon
+                      icon="preflight-checks"
+                      size={22}
+                      className="clickable"
+                    />
                     {preflightState.preflightsFailed ||
                     preflightState.preflightState === "warn" ||
                     newPreflightResults ? (
-                      <div>
-                        <span
-                          className={`icon version-row-preflight-status-icon ${
-                            preflightState.preflightsFailed
-                              ? "preflight-checks-failed-icon"
-                              : preflightState.preflightState === "warn"
-                              ? "preflight-checks-warn-icon"
-                              : ""
-                          }`}
-                        />
+                      <>
+                        {preflightState.preflightsFailed ? (
+                          <Icon
+                            icon={"warning-circle-filled"}
+                            size={12}
+                            className="version-row-preflight-status-icon error-color"
+                          />
+                        ) : preflightState.preflightState === "warn" ? (
+                          <Icon
+                            icon={"warning"}
+                            size={12}
+                            className="version-row-preflight-status-icon warning-color"
+                          />
+                        ) : (
+                          ""
+                        )}
                         <p
                           className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${
                             preflightState.preflightsFailed
@@ -271,7 +285,7 @@ class AppVersionHistoryRow extends Component {
                         >
                           {checksStatusText}
                         </p>
-                      </div>
+                      </>
                     ) : null}
                   </Link>
                   <ReactTooltip effect="solid" className="replicated-tooltip" />
@@ -296,22 +310,33 @@ class AppVersionHistoryRow extends Component {
               <>
                 <Link
                   to={`/app/${app?.slug}/downstreams/${app?.downstream.cluster?.slug}/version-history/preflight/${version?.sequence}`}
-                  className="icon preflightChecks--icon u-cursor--pointer u-position--relative"
+                  className="u-position--relative u-marginRight--10"
                   data-tip="View preflight checks"
                 >
+                  <Icon
+                    icon="preflight-checks"
+                    size={20}
+                    className="clickable"
+                  />
                   {preflightState.preflightsFailed ||
                   preflightState.preflightState === "warn" ||
                   newPreflightResults ? (
-                    <div>
-                      <span
-                        className={`icon version-row-preflight-status-icon ${
-                          preflightState.preflightsFailed
-                            ? "preflight-checks-failed-icon"
-                            : preflightState.preflightState === "warn"
-                            ? "preflight-checks-warn-icon"
-                            : ""
-                        }`}
-                      />
+                    <>
+                      {preflightState.preflightsFailed ? (
+                        <Icon
+                          icon={"warning-circle-filled"}
+                          size={12}
+                          className="version-row-preflight-status-icon error-color"
+                        />
+                      ) : preflightState.preflightState === "warn" ? (
+                        <Icon
+                          icon={"warning"}
+                          size={12}
+                          className="version-row-preflight-status-icon warning-color"
+                        />
+                      ) : (
+                        ""
+                      )}
                       <p
                         className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${
                           preflightState.preflightsFailed
@@ -325,7 +350,7 @@ class AppVersionHistoryRow extends Component {
                       >
                         {checksStatusText}
                       </p>
-                    </div>
+                    </>
                   ) : null}
                 </Link>
                 <ReactTooltip effect="solid" className="replicated-tooltip" />
@@ -358,22 +383,29 @@ class AppVersionHistoryRow extends Component {
             <>
               <Link
                 to={`/app/${app?.slug}/downstreams/${app?.downstream.cluster?.slug}/version-history/preflight/${version?.sequence}`}
-                className="icon preflightChecks--icon u-marginRight--10 u-cursor--pointer u-position--relative"
+                className="u-position--relative u-marginRight--10"
                 data-tip="View preflight checks"
               >
+                <Icon icon="preflight-checks" size={20} className="clickable" />
                 {preflightState.preflightsFailed ||
                 preflightState.preflightState === "warn" ||
                 newPreflightResults ? (
-                  <div>
-                    <span
-                      className={`icon version-row-preflight-status-icon ${
-                        preflightState.preflightsFailed
-                          ? "preflight-checks-failed-icon"
-                          : preflightState.preflightState === "warn"
-                          ? "preflight-checks-warn-icon"
-                          : ""
-                      }`}
-                    />
+                  <>
+                    {preflightState.preflightsFailed ? (
+                      <Icon
+                        icon={"warning-circle-filled"}
+                        size={12}
+                        className="version-row-preflight-status-icon error-color"
+                      />
+                    ) : preflightState.preflightState === "warn" ? (
+                      <Icon
+                        icon={"warning"}
+                        size={12}
+                        className="version-row-preflight-status-icon warning-color"
+                      />
+                    ) : (
+                      ""
+                    )}
                     <p
                       className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${
                         preflightState.preflightsFailed
@@ -387,7 +419,7 @@ class AppVersionHistoryRow extends Component {
                     >
                       {checksStatusText}
                     </p>
-                  </div>
+                  </>
                 ) : null}
               </Link>
               <ReactTooltip effect="solid" className="replicated-tooltip" />
@@ -396,13 +428,12 @@ class AppVersionHistoryRow extends Component {
         </div>
         {app.isConfigurable && (
           <div className="flex alignItems--center">
-            <Link
-              to={configScreenURL}
-              className={`icon ${
-                editableConfig ? "configEdit--icon" : "configView--icon"
-              } u-cursor--pointer`}
-              data-tip={tooltipTip}
-            />
+            <Link to={configScreenURL} data-tip={tooltipTip}>
+              <Icon
+                icon={editableConfig ? "edit-config" : "view-config"}
+                size={22}
+              />
+            </Link>
             <ReactTooltip effect="solid" className="replicated-tooltip" />
           </div>
         )}
@@ -413,15 +444,24 @@ class AppVersionHistoryRow extends Component {
         version?.status !== "pending" ? (
           <div className="u-marginLeft--10">
             <span
-              className="icon deployLogs--icon u-cursor--pointer"
               onClick={() =>
                 this.props.handleViewLogs(version, version?.status === "failed")
               }
               data-tip="View deploy logs"
-            />
+            >
+              <Icon icon="view-logs" size={22} className="clickable" />
+            </span>
             <ReactTooltip effect="solid" className="replicated-tooltip" />
             {version.status === "failed" ? (
-              <span className="icon version-row-preflight-status-icon preflight-checks-failed-icon logs" />
+              <div className="u-position--relative">
+                <Icon icon="preflight-checks" size={20} className="clickable" />
+                <Icon
+                  icon={"warning-circle-filled"}
+                  size={12}
+                  className="version-row-preflight-status-icon error-color"
+                  style={{ left: "15px", top: "-6px" }}
+                />
+              </div>
             ) : null}
           </div>
         ) : null}

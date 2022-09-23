@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Link } from "react-router-dom";
+import Icon from "./Icon";
 
 export default class RestoreCompleted extends React.Component {
   render() {
@@ -8,7 +9,11 @@ export default class RestoreCompleted extends React.Component {
         <div className="u-flexTabletReflow flex1 alignItems--center">
           <div className="Text-wrapper flex justifyContent--center flex1">
             <div className="Text u-textAlign--center">
-              <span className="icon success-checkmark-icon"></span>
+              <Icon
+                icon="check-circle-filled"
+                size={40}
+                className="success-color"
+              />
               <p className="u-fontWeight--bold u-textColor--primary u-fontSize--larger u-lineHeight--normal u-marginTop--15 u-marginBottom--10">
                 Application has been restored
               </p>

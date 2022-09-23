@@ -2,6 +2,7 @@ import React from "react";
 import Modal from "react-modal";
 import Loader from "../../../../components/shared/Loader";
 import { useHistory } from "react-router";
+import Icon from "@src/components/Icon";
 
 const ConnectionModal = ({
   isOpen,
@@ -28,11 +29,11 @@ const ConnectionModal = ({
         >
           <div className="Modal-body" style={{ width: "500px" }}>
             <div className="u-marginTop--10 u-marginBottom--10 flex flex-column alignItems--center">
-              <div
-                className={
-                  "icon success-checkmark-icon-bright u-marginBottom--20"
-                }
-              ></div>
+              <Icon
+                icon="check-circle-filled"
+                size={50}
+                className="success-color u-marginBottom--20"
+              />
               <p className="u-fontSize--largest u-fontWeight--medium u-textColor--primary u-marginBottom--15">
                 GitOps is enabled
               </p>
@@ -77,11 +78,11 @@ const ConnectionModal = ({
         >
           <div className="Modal-body" style={{ width: "500px" }}>
             <div className="u-marginTop--10 u-marginBottom--10 flex flex-column alignItems--center">
-              <div
-                className={
-                  "icon instanceSnapshot-warning-icon-large u-marginBottom--20"
-                }
-              ></div>
+              <Icon
+                icon="warning"
+                className="warning-color u-marginBottom--20"
+                size={40}
+              />
               <p className="u-fontSize--largest u-fontWeight--medium u-textColor--primary u-marginBottom--15">
                 Connection to repository failed
               </p>

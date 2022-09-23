@@ -10,6 +10,7 @@ import { Repeater } from "@src/utilities/repeater";
 import fetch from "../utilities/fetchWithTimeout";
 import "@src/scss/components/AirgapUploadProgress.scss";
 import get from "lodash/get";
+import Icon from "./Icon";
 let processingImages = null;
 
 class AirgapUploadProgress extends React.Component {
@@ -272,7 +273,11 @@ class AirgapUploadProgress extends React.Component {
                         </p>
                         {imageProgressBar}
                         {image.status === "uploaded" ? (
-                          <span className="u-marginLeft--10 icon checkmark-icon" />
+                          <Icon
+                            icon="check-circle-filled"
+                            size={16}
+                            className="u-marginLeft--10 success-color"
+                          />
                         ) : (
                           <span className="u-fontWeight--medium u-fontSize--normal u-textColor--secondary u-marginLeft--10">
                             {percentage}
@@ -308,7 +313,11 @@ class AirgapUploadProgress extends React.Component {
                 </span>
                 {progressBar}
                 {uploadComplete ? (
-                  <span className="u-marginLeft--10 icon checkmark-icon" />
+                  <Icon
+                    icon="check-circle-filled"
+                    size={16}
+                    className="u-marginLeft--10 success-color"
+                  />
                 ) : (
                   <span className="u-fontWeight--medium u-fontSize--normal u-textColor--secondary u-marginLeft--10">
                     {formatByteSize(total)}

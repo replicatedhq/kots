@@ -2,6 +2,7 @@ import React from "react";
 import size from "lodash/size";
 import findIndex from "lodash/findIndex";
 import { Link } from "react-router-dom";
+import Icon from "@src/components/Icon";
 
 const ConfigInfo = ({ match, fromLicenseFlow, app }) => {
   if (fromLicenseFlow || app?.downstream?.gitops?.isConnected) {
@@ -54,8 +55,12 @@ const ConfigInfo = ({ match, fromLicenseFlow, app }) => {
       <div className="ConfigInfo older justifyContent--center">
         <p className="flex alignItems--center u-marginRight--5">
           {" "}
-          <span className="icon info-warning-icon flex u-marginRight--5" /> This
-          config is {pastSequenceIndex + 1} version
+          <Icon
+            icon={"warning"}
+            size={24}
+            className="warning-color u-marginRight--10"
+          />{" "}
+          This config is {pastSequenceIndex + 1} version
           {pastSequenceIndex === 0 ? "" : "s"} older than the currently deployed
           config.{" "}
         </p>

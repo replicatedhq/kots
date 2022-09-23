@@ -6,6 +6,7 @@ import Loader from "../shared/Loader";
 import DiffEditor from "../shared/DiffEditor";
 
 import "../../scss/components/watches/DownstreamWatchVersionDiff.scss";
+import Icon from "../Icon";
 
 class DownstreamWatchVersionDiff extends React.Component {
   constructor() {
@@ -223,8 +224,10 @@ class DownstreamWatchVersionDiff extends React.Component {
               className="u-fontWeight--bold u-marginRight--20 u-linkColor u-cursor--pointer"
               onClick={this.goBack}
             >
-              <span
-                className="icon clickable backArrow-icon u-marginRight--10"
+              <Icon
+                icon="prev-arrow"
+                size="10"
+                className="clickable u-marginRight--10"
                 style={{ verticalAlign: "0" }}
               />
               Back

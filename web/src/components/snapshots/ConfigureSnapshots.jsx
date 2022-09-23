@@ -6,6 +6,7 @@ import {
   FILE_SYSTEM_NFS_TYPE,
   FILE_SYSTEM_HOSTPATH_TYPE,
 } from "./SnapshotStorageDestination.data";
+import Icon from "../Icon";
 
 const VELERO_IS_NOT_INSTALLED_TAB = "velero-not-installed";
 const VELERO_IS_INSTALLED_TAB = "velero-installed";
@@ -195,7 +196,11 @@ class ConfigureSnapshots extends React.Component {
                             <span className="icon awsIcon u-cursor--pointer u-marginRight--5" />
                             Amazon AWS{" "}
                           </span>
-                          <span className="icon external-link-icon u-cursor--pointer justifyContent--flexEnd u-marginLeft--30" />
+                          <Icon
+                            icon="external-page"
+                            size={13}
+                            className="clickable justifyContent--flexEnd u-marginLeft--30"
+                          />
                         </a>
                         <a
                           href="https://github.com/vmware-tanzu/velero-plugin-for-microsoft-azure#setup"
@@ -208,7 +213,11 @@ class ConfigureSnapshots extends React.Component {
                             <span className="icon azureIcon u-cursor--pointer u-marginRight--5" />
                             Microsoft Azure{" "}
                           </span>
-                          <span className="icon external-link-icon u-cursor--pointer u-marginLeft--30" />
+                          <Icon
+                            icon="external-page"
+                            size={13}
+                            className="clickable u-marginLeft--30"
+                          />
                         </a>
                         <a
                           href="https://github.com/vmware-tanzu/velero-plugin-for-gcp#setup"
@@ -221,7 +230,11 @@ class ConfigureSnapshots extends React.Component {
                             <span className="icon googleCloudIcon u-cursor--pointer u-marginRight--5" />
                             Google Cloud{" "}
                           </span>
-                          <span className="icon external-link-icon u-cursor--pointer u-marginLeft--30" />
+                          <Icon
+                            icon="external-page"
+                            size={13}
+                            className="clickable u-marginLeft--30"
+                          />
                         </a>
                         <a
                           href="https://velero.io/docs/v1.6/supported-providers/"
@@ -234,7 +247,11 @@ class ConfigureSnapshots extends React.Component {
                             <span className="icon cloudIcon u-cursor--pointer u-marginRight--5" />{" "}
                             Other provider{" "}
                           </span>
-                          <span className="icon external-link-icon u-cursor--pointer u-marginLeft--30" />
+                          <Icon
+                            icon="external-page"
+                            size={13}
+                            className="clickable u-marginLeft--30"
+                          />
                         </a>
                         {snapshotSettings?.isMinioDisabled ? (
                           <>
@@ -249,7 +266,11 @@ class ConfigureSnapshots extends React.Component {
                                 <span className="icon nfsIcon u-cursor--pointer u-marginRight--5" />{" "}
                                 NFS{" "}
                               </span>
-                              <span className="icon external-link-icon u-cursor--pointer u-marginLeft--30" />
+                              <Icon
+                                icon="external-page"
+                                size={13}
+                                className="clickable u-marginLeft--30"
+                              />
                             </a>
                             <a
                               href="https://github.com/replicatedhq/local-volume-provider"
@@ -262,7 +283,11 @@ class ConfigureSnapshots extends React.Component {
                                 <span className="icon hostpathIcon u-cursor--pointer u-marginRight--5" />{" "}
                                 Host Path{" "}
                               </span>
-                              <span className="icon external-link-icon u-cursor--pointer u-marginLeft--30" />
+                              <Icon
+                                icon="external-page"
+                                size={13}
+                                className="clickable u-marginLeft--30"
+                              />
                             </a>
                           </>
                         ) : (

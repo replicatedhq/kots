@@ -1,6 +1,7 @@
 import React from "react";
 import classNames from "classnames";
 import { Link } from "react-router-dom";
+import Icon from "@src/components/Icon";
 
 export default function HelmChartSidebarItem(props) {
   const { className, helmChart } = props;
@@ -22,7 +23,7 @@ export default function HelmChartSidebarItem(props) {
             {helmName}
           </p>
           <div className="flex alignItems--center">
-            <div className="icon blueCircleMinus--icon" />
+            <Icon icon="no-activity-circle-filled" size="16" />
             <span className="u-marginLeft--5 u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy">
               Pending Helm chart
             </span>

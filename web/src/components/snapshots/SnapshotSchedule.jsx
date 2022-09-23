@@ -14,6 +14,7 @@ import isEmpty from "lodash/isEmpty";
 
 import GettingStartedSnapshots from "./GettingStartedSnapshots";
 import "../../scss/components/shared/SnapshotForm.scss";
+import Icon from "../Icon";
 
 const SCHEDULES = [
   {
@@ -622,7 +623,11 @@ class SnapshotSchedule extends Component {
                 </button>
                 {updateConfirm && (
                   <div className="u-marginLeft--10 flex alignItems--center">
-                    <span className="icon checkmark-icon" />
+                    <Icon
+                      icon="check-circle-filled"
+                      size={16}
+                      className="success-color"
+                    />
                     <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-textColor--success">
                       Schedule updated
                     </span>

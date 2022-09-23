@@ -160,6 +160,7 @@
     "react-dropzone": "^4.2.9",
     "react-favicon": "^0.0.17",
     "react-helmet": "^5.2.1",
+    "react-icomoon": "^2.5.4",
     "react-modal": "3.11.2",
     "react-query": "^3.39.1",
     "react-refresh": "^0.14.0",
