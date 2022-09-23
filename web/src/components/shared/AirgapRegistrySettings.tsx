@@ -1,7 +1,6 @@
 import React, { Component } from "react";
 import { withRouter } from "react-router-dom";
 import get from "lodash/get";
-import isEmpty from "lodash/isEmpty";
 
 import Loader from "../shared/Loader";
 import ErrorModal from "../modals/ErrorModal";
@@ -9,9 +8,47 @@ import "../../scss/components/watches/WatchDetailPage.scss";
 import { Utilities } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
 import Icon from "../Icon";
+import { App } from "@types";
+import { RouteComponentProps } from "react-router-dom";
 
-class AirgapRegistrySettings extends Component {
-  constructor(props) {
+type Props = {
+  app: App;
+  registryDetails: Object;
+  updateCallback: () => void;
+  match: Object;
+  gatherDetails: GatherDetails;
+} & RouteComponentProps;
+
+type GatherDetails = {
+  hostname: string;
+  username: string;
+  password: string;
+  namespace: string;
+  isReadOnly: boolean;
+};
+
+type State = {
+  loading: boolean;
+  hostname: string;
+  username: string;
+  password: string;
+  namespace: string;
+  //idk
+  lastSync: Object | null;
+  testInProgress: boolean;
+  testFailed: boolean;
+  /// type unknown cannot be assigned to string
+  testMessage: any;
+  updateChecker: Repeater;
+  rewriteStatus: string;
+  rewriteMessage: string;
+  fetchRegistryErrMsg: string;
+  displayErrorModal: boolean;
+  isReadOnly: boolean;
+};
+
+class AirgapRegistrySettings extends Component<Props, State> {
+  constructor(props: Props) {
     super(props);
 
     const {
@@ -23,22 +60,21 @@ class AirgapRegistrySettings extends Component {
 
     this.state = {
       loading: false,
-
       hostname,
       username,
       password,
       namespace,
-
       lastSync: null,
       testInProgress: false,
       testFailed: false,
       testMessage: "",
-
       updateChecker: new Repeater(),
       rewriteStatus: "",
       rewriteMessage: "",
       fetchRegistryErrMsg: "",
       displayErrorModal: false,
+      //newly added
+      isReadOnly: false,
     };
   }
 
@@ -143,7 +179,7 @@ class AirgapRegistrySettings extends Component {
     }
   };
 
-  handleFormChange = (field, val) => {
+  handleFormChange = (field: string, val: string | boolean) => {
     let nextState = {};
     nextState[field] = val;
 
@@ -168,7 +204,7 @@ class AirgapRegistrySettings extends Component {
     });
   };
 
-  componentDidUpdate(lastProps) {
+  componentDidUpdate(lastProps: { app: { slug: string } }) {
     const { app } = this.props;
 
     if (app?.slug !== lastProps.app?.slug) {
@@ -335,6 +371,8 @@ class AirgapRegistrySettings extends Component {
       testMessage,
     } = this.state;
     const { rewriteMessage, rewriteStatus } = this.state;
+
+    console.log(this.props);
 
     let statusText = rewriteMessage;
     try {
@@ -571,4 +609,4 @@ class AirgapRegistrySettings extends Component {
   }
 }
 
-export default withRouter(AirgapRegistrySettings);
+export default withRouter(AirgapRegistrySettings) as any;
