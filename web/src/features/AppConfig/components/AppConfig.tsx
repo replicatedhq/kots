@@ -620,9 +620,10 @@ class AppConfig extends Component<Props, State> {
                     <GroupTitle fontSize="16" className="u-lineHeight--normal">
                       {group.title}
                     </GroupTitle>
+                    {/* adding the arrow-down classes, will rotate the icon when clicked */}
                     <Icon
                       icon="down-arrow"
-                      className="darkGray-color clickable flex-auto u-marginLeft--5"
+                      className="darkGray-color clickable flex-auto u-marginLeft--5 arrow-down"
                       size="12"
                       style={{ marginTop: "10px" }}
                       color={""}
