@@ -8,16 +8,26 @@ import "../../scss/components/watches/WatchDetailPage.scss";
 import { Utilities } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
 import Icon from "../Icon";
-import { App } from "@types";
+import { App, KotsParams } from "@types";
 import { RouteComponentProps } from "react-router-dom";
 
-type Props = {
+type Props = RouteComponentProps<KotsParams> & {
   app: App;
-  registryDetails: Object;
+  registryDetails: RegistryDetails;
   updateCallback: () => void;
-  match: Object;
-  gatherDetails: GatherDetails;
-} & RouteComponentProps;
+  gatherDetails: (fields: GatherDetails) => void;
+  hideCta: boolean;
+  hideTestConnection: boolean;
+  namespaceDescription: string;
+  showHostnameAsRequired: boolean;
+};
+
+type RegistryDetails = {
+  hostname: string;
+  username: string;
+  password: string;
+  namespace: string;
+};
 
 type GatherDetails = {
   hostname: string;
@@ -38,13 +48,16 @@ type State = {
   testInProgress: boolean;
   testFailed: boolean;
   /// type unknown cannot be assigned to string
-  testMessage: any;
+  testMessage: string | "unknown";
   updateChecker: Repeater;
   rewriteStatus: string;
   rewriteMessage: string;
   fetchRegistryErrMsg: string;
   displayErrorModal: boolean;
   isReadOnly: boolean;
+  // idk
+  originalRegistry: RegistryDetails | null;
+  pingedEndpoint: string;
 };
 
 class AirgapRegistrySettings extends Component<Props, State> {
@@ -75,6 +88,8 @@ class AirgapRegistrySettings extends Component<Props, State> {
       displayErrorModal: false,
       //newly added
       isReadOnly: false,
+      originalRegistry: null,
+      pingedEndpoint: "",
     };
   }
 
@@ -180,7 +195,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
   };
 
   handleFormChange = (field: string, val: string | boolean) => {
-    let nextState = {};
+    let nextState: { hostname: string; namespace: string } = {};
     nextState[field] = val;
 
     if (this.props.app?.isAirgap && field === "isReadOnly" && !val) {
@@ -318,7 +333,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
     if (this.props.app) {
       url = `${process.env.API_ENDPOINT}/app/${this.props.app.slug}/imagerewritestatus`;
     }
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       fetch(url, {
         headers: {
           Authorization: Utilities.getToken(),
@@ -371,8 +386,6 @@ class AirgapRegistrySettings extends Component<Props, State> {
       testMessage,
     } = this.state;
     const { rewriteMessage, rewriteStatus } = this.state;
-
-    console.log(this.props);
 
     let statusText = rewriteMessage;
     try {
@@ -496,6 +509,10 @@ class AirgapRegistrySettings extends Component<Props, State> {
                         icon="check-circle-filled"
                         size={16}
                         className="success-color u-marginRight--5 u-verticalAlign--neg3"
+                        color={""}
+                        style={{}}
+                        disableFill={false}
+                        removeInlineStyle={false}
                       />
                       Connected to {this.state.pingedEndpoint}
                     </p>
