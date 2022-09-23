@@ -3,10 +3,13 @@ description: 'Updates the version file for the kots kurl addon.'
 inputs:
   ADDON_VERSION:
     required: true
-    description: 'Addon version'
+    description: 'Kots version.'
+  ADDON_PACKAGE_URL:
+    required: true
+    description: 'kURL add-on package url.'
   GITHUB_TOKEN:
     required: true
-    description: 'GitHub token'
+    description: 'GitHub token.'
 runs:
   using: 'node16'
   main: 'dist/index.js'
