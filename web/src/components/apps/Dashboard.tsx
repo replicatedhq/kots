@@ -214,6 +214,9 @@ class Dashboard extends Component<Props, State> {
 
   componentDidMount() {
     const { app } = this.props;
+    if (this.props.isHelmManaged()){
+      throw new Error("oh no");
+    }
 
     if (app?.isAirgap && !this.state.airgapUploader) {
       this.getAirgapConfig();
