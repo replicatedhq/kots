@@ -282,7 +282,11 @@ func watchSecrets(ctx context.Context, namespace string, labelSelector string) e
 func recalculateCachedUpdates(newHelmApp *apptypes.HelmApp) error {
 	removeFromCachedUpdates(newHelmApp.ChartPath, newHelmApp.Release.Chart.Metadata.Version)
 
-	currentHelmApp := GetHelmApp(newHelmApp.Release.Name) // this should be the same, but just in case
+	currentHelmApp := GetHelmApp(newHelmApp.Release.Name)
+	if currentHelmApp == nil {
+		// no app installed yet
+		return nil
+	}
 	updates := GetCachedUpdates(currentHelmApp.ChartPath)
 	currentKotsKinds, err := GetKotsKindsFromHelmApp(currentHelmApp)
 	if err != nil {

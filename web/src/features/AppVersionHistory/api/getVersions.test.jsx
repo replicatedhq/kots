@@ -58,7 +58,7 @@ describe("getVersions", () => {
     });
   });
   describe("getVersionsFetch", () => {
-    it("calls fetch with the correct url and configuration", async () => {
+    it("calls getVersionsFetch with the correct url and configuration", async () => {
       const expectedBody = {
         apps: "myapps",
       };
