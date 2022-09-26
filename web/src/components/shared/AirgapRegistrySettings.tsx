@@ -37,25 +37,27 @@ type GatherDetails = {
   isReadOnly: boolean;
 };
 
+type NextState = {
+  hostname?: string | boolean | undefined;
+  namespace?: string | boolean | undefined;
+};
+
 type State = {
   loading: boolean;
   hostname: string;
   username: string;
   password: string;
   namespace: string;
-  //idk
   lastSync: Object | null;
   testInProgress: boolean;
   testFailed: boolean;
-  /// type unknown cannot be assigned to string
-  testMessage: string | "unknown";
+  testMessage: string | unknown;
   updateChecker: Repeater;
   rewriteStatus: string;
   rewriteMessage: string;
   fetchRegistryErrMsg: string;
   displayErrorModal: boolean;
   isReadOnly: boolean;
-  // idk
   originalRegistry: RegistryDetails | null;
   pingedEndpoint: string;
 };
@@ -195,13 +197,13 @@ class AirgapRegistrySettings extends Component<Props, State> {
   };
 
   handleFormChange = (field: string, val: string | boolean) => {
-    let nextState: { hostname: string; namespace: string } = {};
-    nextState[field] = val;
+    let nextState: NextState = { hostname: "", namespace: "" };
+    nextState[field as keyof NextState] = val;
 
     if (this.props.app?.isAirgap && field === "isReadOnly" && !val) {
       // Pushing images in airgap mode is not yet supported, so registry name cannot be changed.
-      nextState["hostname"] = this.state.originalRegistry.hostname;
-      nextState["namespace"] = this.state.originalRegistry.namespace;
+      nextState["hostname"] = this.state.originalRegistry!.hostname;
+      nextState["namespace"] = this.state.originalRegistry!.namespace;
     }
 
     this.setState(nextState, () => {
@@ -421,7 +423,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
     if (testInProgress) {
       testStatusText = "Testing...";
     } else if (lastSync) {
-      testStatusText = testMessage;
+      testStatusText = testMessage as string;
     } else {
       // TODO: this will always be displayed when page is refreshed
       testStatusText = "Connection has not been tested";
