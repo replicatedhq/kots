@@ -4,7 +4,7 @@
   "description": "",
   "scripts": {
     "build": "ncc build index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha --require @babel/register test/*.js"
   },
   "module": "index.js",
   "keywords": [],
@@ -17,5 +17,12 @@
     "@actions/http-client": "^2.0.1",
     "@vercel/ncc": "^0.33.4",
     "semver": "^7.3.7"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.19.1",
+    "@babel/preset-env": "^7.19.1",
+    "@babel/register": "^7.18.9",
+    "chai": "^4.3.6",
+    "mocha": "^10.0.0"
   }
 }
