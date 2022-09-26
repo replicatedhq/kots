@@ -7,6 +7,17 @@ on:
 
 jobs:
 
+  generate-tag:
+    runs-on: ubuntu-20.04
+    outputs:
+      tag: ${{ steps.get_tag.outputs.GIT_TAG }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Get tags
+        id: get_tag
+        uses: ./actions/version-tag
+
   generate-schema:
     runs-on: ubuntu-20.04
     container:
