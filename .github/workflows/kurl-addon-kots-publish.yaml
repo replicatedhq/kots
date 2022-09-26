@@ -11,16 +11,13 @@ on:
     types:
       - published
 
-env:
-  addon_version: ${{ inputs.addon_version || github.ref_name }}
-
 concurrency: kurl-addon-publish
 
 jobs:
   generate-kots-addon:
     uses: ./.github/workflows/kurl-addon-kots-test.yaml
     with:
-      addon_version: "${{ env.addon_version }}"
+      addon_version: "${{ inputs.addon_version || github.ref_name }}"
       s3_prefix: ""
       priority: 1
 
@@ -29,6 +26,6 @@ jobs:
     needs: generate-kots-addon
     uses: ./.github/actions/kurl-addon-kots-publisher
     with:
-      ADDON_VERSION: ${{ env.addon_version }}
+      ADDON_VERSION: ${{ inputs.addon_version || github.ref_name }}
       ADDON_PACKAGE_URL: ${{ needs.generate-kots-addon.outputs.addon_package_url }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
