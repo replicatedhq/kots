@@ -22,6 +22,7 @@ jobs:
     with:
       addon_version: "${{ env.addon_version }}"
       s3_prefix: ""
+      priority: 1
 
   publish-kots-addon:
     runs-on: ubuntu-20.04
