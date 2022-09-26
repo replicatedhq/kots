@@ -20,12 +20,7 @@ import ConfigInfo from "./ConfigInfo";
 import "../../../scss/components/watches/WatchConfig.scss";
 import { Utilities } from "../../../utilities/utilities";
 import { Flex, Span } from "../../../styles/common";
-import {
-  SideNavWrapper,
-  SideNavGroup,
-  GroupTitle,
-  SideNavItems,
-} from "../styles";
+import { GroupTitle, SideNavItems } from "../styles";
 import Icon from "@src/components/Icon";
 
 // Types
@@ -594,9 +589,9 @@ class AppConfig extends Component<Props, State> {
           </Span>
         )}
         <Flex gap="20px">
-          <SideNavWrapper
+          <div
             id="configSidebarWrapper"
-            ref={(wrapper: HTMLElement) => (this.sidebarWrapper = wrapper)}
+            className="config-sidebar-wrapper clickable"
           >
             {configGroups?.map((group, i) => {
               if (
@@ -608,9 +603,9 @@ class AppConfig extends Component<Props, State> {
                 return;
               }
               return (
-                <SideNavGroup
+                <div
                   key={`${i}-${group.name}-${group.title}`}
-                  className={`${
+                  className={`side-nav-group ${
                     this.state.activeGroups.includes(group.name)
                       ? "group-open"
                       : ""
@@ -620,7 +615,10 @@ class AppConfig extends Component<Props, State> {
                     align="center"
                     onClick={() => this.toggleActiveGroups(group.name)}
                   >
-                    <GroupTitle fontSize="16" className="u-lineHeight--normal">
+                    <GroupTitle
+                      fontSize="16"
+                      className="u-lineHeight--normal group-title"
+                    >
                       {group.title}
                     </GroupTitle>
                     {/* adding the arrow-down classes, will rotate the icon when clicked */}
@@ -628,14 +626,14 @@ class AppConfig extends Component<Props, State> {
                       icon="down-arrow"
                       className="darkGray-color clickable flex-auto u-marginLeft--5 arrow-down"
                       size="12"
-                      style={{ marginTop: "10px" }}
+                      style={{}}
                       color={""}
                       disableFill={false}
                       removeInlineStyle={false}
                     />
                   </Flex>
                   {group.items ? (
-                    <SideNavItems>
+                    <SideNavItems className="side-nav-items">
                       {group.items?.map((item, j) => {
                         const hash = this.props.location.hash.slice(1);
                         if (item.hidden || item.when === "false") {
@@ -655,10 +653,10 @@ class AppConfig extends Component<Props, State> {
                       })}
                     </SideNavItems>
                   ) : null}
-                </SideNavGroup>
+                </div>
               );
             })}
-          </SideNavWrapper>
+          </div>
           <div className="ConfigArea--wrapper">
             <UseIsHelmManaged>
               {({ data = {} }: { data: { isHelmManaged?: boolean } }) => {
