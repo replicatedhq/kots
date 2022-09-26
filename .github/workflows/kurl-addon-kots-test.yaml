@@ -11,6 +11,10 @@ on:
         type: string
         description: "S3 key prefix."
         default: "test/"
+      priority:
+        type: number
+        description: 'Testgrid run priority.'
+        default: 0
   workflow_call:
     inputs:
       addon_version:
@@ -21,6 +25,10 @@ on:
         type: string
         description: "S3 key prefix."
         default: "test/"
+      priority:
+        type: number
+        description: 'Testgrid run priority.'
+        default: 0
     outputs:
       addon_package_url:
         description: "S3 package url"
@@ -32,6 +40,8 @@ concurrency:
 
 env:
   addon_version: ${{ inputs.addon_version }}
+  s3_prefix: ${{ inputs.s3_prefix }}
+  priority: ${{ inputs.priority }}
 
 jobs:
   generate-kots-addon:
@@ -56,3 +66,4 @@ jobs:
           testgrid-spec-path: "deploy/kurl/kotsadm/template/testgrid"
           testgrid-run-prefix: "KOTS-${{ env.addon_version }}-${{ github.ref }}-${{ steps.vars.outputs.sha_short }}"
           testgrid-api-token: "${{ secrets.TESTGRID_PROD_API_TOKEN }}"
+          priority: "${{ env.priority }}"
