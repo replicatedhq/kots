@@ -38,17 +38,12 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  addon_version: ${{ inputs.addon_version }}
-  s3_prefix: ${{ inputs.s3_prefix }}
-  priority: ${{ inputs.priority }}
-
 jobs:
   generate-kots-addon:
     uses: ./.github/workflows/kurl-addon-kots-generate.yaml
     with:
-      addon_version: "${{ env.addon_version }}"
-      s3_prefix: "${{ env.s3_prefix }}"
+      addon_version: "${{ inputs.addon_version }}"
+      s3_prefix: "${{ inputs.s3_prefix }}"
 
   test-kots-addon:
     runs-on: ubuntu-20.04
@@ -61,9 +56,9 @@ jobs:
       - uses: replicatedhq/kurl/.github/actions/addon-testgrid-tester@main
         with:
           addon: "kotsadm"
-          version: "${{ env.addon_version }}"
+          version: "${{ inputs.addon_version }}"
           package-url: "${{ needs.generate-kots-addon.outputs.addon_package_url }}"
           testgrid-spec-path: "deploy/kurl/kotsadm/template/testgrid"
-          testgrid-run-prefix: "KOTS-${{ env.addon_version }}-${{ github.ref }}-${{ steps.vars.outputs.sha_short }}"
+          testgrid-run-prefix: "KOTS-${{ inputs.addon_version }}-${{ github.ref }}-${{ steps.vars.outputs.sha_short }}"
           testgrid-api-token: "${{ secrets.TESTGRID_PROD_API_TOKEN }}"
-          priority: "${{ env.priority }}"
+          priority: "${{ inputs.priority }}"
