@@ -14,7 +14,7 @@ on:
 env:
   addon_version: ${{ inputs.addon_version || github.ref_name }}
 
-concurrency: kurl-addon-kots-publish
+concurrency: kurl-addon-publish
 
 jobs:
   generate-kots-addon:
