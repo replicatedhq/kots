@@ -1,0 +1,53 @@
+name: kurl-addon-generate
+
+on:
+  workflow_call:
+    inputs:
+      addon_version:
+        type: string
+        description: "Kots version."
+        required: true
+      s3_prefix:
+        type: string
+        description: "S3 key prefix."
+    outputs:
+      addon_package_url:
+        description: "S3 package url"
+        value: ${{ jobs.generate-kots-addon.outputs.addon_package_url }}
+
+env:
+  addon_version: ${{ inputs.addon_version }}
+  s3_prefix: ${{ inputs.s3_prefix }}
+
+jobs:
+  generate-kots-addon:
+    runs-on: ubuntu-20.04
+    outputs:
+      addon_package_url: ${{ steps.s3-upload.outputs.addon_package_url }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: generate add-on version
+        working-directory: ./deploy/kurl/kotsadm/template
+        run: ./generate.sh "${{ env.addon_version }}"
+      - uses: replicatedhq/kurl/.github/actions/addon-manifest-downloader@main
+        with:
+          package-name: "kotsadm-${{ env.addon_version }}"
+          manifest-path: "deploy/kurl/kotsadm/${{ env.addon_version }}/Manifest"
+          output-path: "deploy/kurl/kotsadm/${{ env.addon_version }}"
+      - name: build add-on package
+        working-directory: ./deploy/kurl
+        run: |
+          mkdir -p addons/kotsadm
+          cp -R kotsadm/${{ env.addon_version }} addons/kotsadm
+          tar -czvf kotsadm-${{ env.addon_version }}.tar.gz addons
+      - name: s3 upload
+        id: s3-upload
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_PROD_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_PROD_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "us-east-1"
+        working-directory: ./deploy/kurl
+        run: |
+          out=${{ env.s3_prefix }}kotsadm-${{ env.addon_version }}-${GITHUB_SHA:0:7}.tar.gz
+          aws s3 cp kotsadm-${{ env.addon_version }}.tar.gz s3://kots-kurl-addons-production-1658439274/$out
+          echo "::set-output name=addon_package_url::https://kots-kurl-addons-production-1658439274.s3.amazonaws.com/$out"

@@ -1,48 +1,33 @@
-name: kurl-addon-kots-publish
+name: kurl-addon-publish
 
 on:
   workflow_dispatch:
     inputs:
       addon_version:
         type: string
-        description: "Addon version."
+        description: "Kots version."
         required: true
   release:
     types:
       - published
 
 env:
-  addon_version: ${{ inputs.addon_version | github.ref_name }}
+  addon_version: ${{ inputs.addon_version || github.ref_name }}
+
+concurrency: kurl-addon-publish
 
 jobs:
+  generate-kots-addon:
+    uses: ./.github/workflows/kurl-addon-kots-test.yaml
+    with:
+      addon_version: "${{ env.addon_version }}"
+      s3_prefix: ""
+
   publish-kots-addon:
-    concurrency: kurl-addon-kots-publish
     runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - working-directory: ./deploy/kurl/kotsadm/template
-        env:
-          KOTSADM_VERSION: ${{ env.addon_version }}
-        run: ./generate.sh
-      - uses: replicatedhq/kurl/.github/actions/addon-manifest-downloader@main
-        with:
-          package-name: "kotsadm-${{ env.addon_version }}"
-          manifest-path: "deploy/kurl/kotsadm/${{ env.addon_version }}/Manifest"
-          output-path: "deploy/kurl/kotsadm/${{ env.addon_version }}"
-      - uses: ./.github/actions/kurl-addon-kots-publisher
-        with:
-          ADDON_VERSION: ${{ env.addon_version }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_PROD_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_PROD_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: "us-east-1"
-        working-directory: ./deploy/kurl
-        run: |
-          mkdir -p addons/kotsadm
-          cp -R kotsadm/${{ env.addon_version }} addons/kotsadm
-          tar -czvf kotsadm-${{ env.addon_version }}.tar.gz addons
-          aws s3 cp kotsadm-${{ env.addon_version }}.tar.gz s3://kots-kurl-addons-production-1658439274
-          aws s3 cp versions.json s3://kots-kurl-addons-production-1658439274
+    needs: generate-kots-addon
+    uses: ./.github/actions/kurl-addon-kots-publisher
+    with:
+      ADDON_VERSION: ${{ env.addon_version }}
+      ADDON_PACKAGE_URL: ${{ needs.generate-kots-addon.outputs.addon_package_url }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
