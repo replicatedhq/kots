@@ -214,7 +214,7 @@ class Dashboard extends Component<Props, State> {
 
   componentDidMount() {
     const { app } = this.props;
-    if (this.props.isHelmManaged){
+    if (this.props.isHelmManaged) {
       throw new Error("oh no");
     }
 
