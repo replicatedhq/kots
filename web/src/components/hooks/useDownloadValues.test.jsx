@@ -28,6 +28,9 @@ describe("useDownloadValues", () => {
         _revokeObjectURL: jest.fn(() => "test"),
         appSlug: "test",
         fileName: "test",
+        sequence: 1,
+        vaersionLabel: "1.2.3",
+        isPending: false,
       };
 
       const { result, waitFor } = renderHook(
@@ -44,6 +47,9 @@ describe("useDownloadValues", () => {
 
       const expectedFetchConfig = {
         appSlug: testConfig.appSlug,
+        sequence: testConfig.sequence,
+        versionLabel: testConfig.versionLabel,
+        isPending: testConfig.isPending,
       };
 
       expect(result.current.variables).toEqual(undefined);
@@ -55,7 +61,7 @@ describe("useDownloadValues", () => {
     );
   });
   describe("getValues", () => {
-    it("calls fetch with the correct url and configuration", async () => {
+    it("calls getValues with the correct url and configuration", async () => {
       const expectedBody = {
         test: "test",
       };
@@ -69,6 +75,8 @@ describe("useDownloadValues", () => {
       const testAppSlug = "testAppSlug";
       const testToken = "testToken";
       const testSequence = 1;
+      const versionLabel = "1.2.3";
+      const isPending = false;
       const testAPIEndpoint = "testAPIEndpoint";
       const testGetValuesConfig = {
         _fetch: _fetchValuesSpy,
@@ -76,9 +84,11 @@ describe("useDownloadValues", () => {
         apiEndpoint: testAPIEndpoint,
         appSlug: testAppSlug,
         sequence: testSequence,
+        versionLabel: versionLabel,
+        isPending: isPending,
       };
 
-      const expectedAPIEndpoint = `${testAPIEndpoint}/app/${testAppSlug}/values/${testSequence}`;
+      const expectedAPIEndpoint = `${testAPIEndpoint}/app/${testAppSlug}/values/${testSequence}?isPending=${isPending}&semver=${versionLabel}`;
       const expectedResponse = {
         data: expectedBody,
       };
@@ -108,6 +118,8 @@ describe("useDownloadValues", () => {
       );
       const testAppSlug = "testAppSlug";
       const testSequence = 1;
+      const testVersionLabel = "1.2.3";
+      const testIsPending = false;
 
       const testToken = "testToken";
       const testAPIEndpoint = "testAPIEndpoint";
@@ -117,6 +129,8 @@ describe("useDownloadValues", () => {
         apiEndpoint: testAPIEndpoint,
         appSlug: testAppSlug,
         sequence: testSequence,
+        versionLabel: testVersionLabel,
+        isPending: testIsPending,
       };
 
       await expect(getValues(testGetValuesConfig)).rejects.toThrowError(

@@ -48,7 +48,7 @@ describe("useSaveConfig", () => {
     });
   });
   describe("putConfig", () => {
-    it("calls fetch with the correct url and configuration", async () => {
+    it("calls putConfig with the correct url and configuration", async () => {
       const testBody = JSON.stringify({
         test: "test",
       });
