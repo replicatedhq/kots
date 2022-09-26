@@ -1,6 +1,7 @@
 import { getInput } from '@actions/core'
 import { getOctokit } from '@actions/github'
 import { HttpClient } from '@actions/http-client';
+import * as semverCompare from 'semver/functions/compare';
 import fs from 'node:fs/promises';
 
 const addonVersion = getInput('ADDON_VERSION');
@@ -20,14 +21,7 @@ const kotsAddonVersions = await client.get('https://kots-kurl-addons-production-
 const appendVersion = (kotsAddonVersions, version) => {
   kotsAddonVersions = kotsAddonVersions.filter(el => el.version !== version.version);
   kotsAddonVersions.unshift(version);
-  return kotsAddonVersions.sort((a, b) => {
-    if (a.version < b.version) {
-      return -1;
-    } else if (a.version > b.version) {
-      return 1;
-    }
-    return 0;
-  }).reverse();
+  return kotsAddonVersions.sort((a, b) => semverCompare(a.version, b.version)).reverse();
 };
 
 kotsAddonVersions = appendVersion(kotsAddonVersions, {
