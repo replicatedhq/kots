@@ -24,8 +24,15 @@ jobs:
   publish-kots-addon:
     runs-on: ubuntu-20.04
     needs: generate-kots-addon
-    uses: ./.github/actions/kurl-addon-kots-publisher
-    with:
-      ADDON_VERSION: ${{ inputs.addon_version || github.ref_name }}
-      ADDON_PACKAGE_URL: ${{ needs.generate-kots-addon.outputs.addon_package_url }}
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: ./.github/actions/kurl-addon-kots-publisher
+        with:
+          ADDON_VERSION: ${{ inputs.addon_version || github.ref_name }}
+          ADDON_PACKAGE_URL: ${{ needs.generate-kots-addon.outputs.addon_package_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_PROD_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_PROD_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "us-east-1"
+        working-directory: ./deploy/kurl
+        run: aws s3 cp versions.json s3://kots-kurl-addons-production-1658439274
