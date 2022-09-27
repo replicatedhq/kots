@@ -35,7 +35,7 @@ const latestKurlVersion = await github.rest.repos.getLatestRelease({
   owner: 'replicatedhq',
   repo: 'kurl'
 });
-const kotsAddonVersions = await client.get('https://kots-kurl-addons-production-1658439274.s3.amazonaws.com/versions.json')
+let kotsAddonVersions = await client.get('https://kots-kurl-addons-production-1658439274.s3.amazonaws.com/versions.json')
   .then(response => response.readBody())
   .then(response => JSON.parse(response));
 

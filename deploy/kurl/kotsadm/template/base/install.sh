@@ -139,7 +139,7 @@ function kotsadm_already_applied() {
 # TODO (dans): remove this when the KOTS default state is set disableS3=true
 # Having no object storage in your spec and not setting disableS3 to true is invalid and not supported
 function validate_object_storage() {
-    if ! object_store_exists && [ "$KOTSADM_DISABLE_S3" != 1 ]; then
+    if ! object_store_exists && [ "$KOTSADM_DISABLE_S3" != 1 ]; then 
         bail "KOTS must have an object storage provider as part of the installer spec (e.g. Rook or Minio), or must have 'kotsadm.disableS3=true' set in the installer"
     fi
 }
@@ -249,7 +249,7 @@ function kotsadm_secret_dex_postgres() {
 }
 
 function kotsadm_secret_s3() {
-    # When no object store is defined and S3 is disabled for KOTS, bail from adding the secret.
+    # When no object store is defined and S3 is disabled for KOTS, bail from adding the secret. 
     if [ -z "$OBJECT_STORE_ACCESS_KEY" ] && [ "$KOTSADM_DISABLE_S3" == "1" ]; then
         return
     fi

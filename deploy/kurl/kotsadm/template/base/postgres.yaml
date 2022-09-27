@@ -13,16 +13,16 @@ spec:
     matchLabels:
       app: kotsadm-postgres
   volumeClaimTemplates:
-    - metadata:
-        name: kotsadm-postgres
-        labels:
-          kots.io/kotsadm: "true"
-      spec:
-        accessModes:
-          - ReadWriteOnce
-        resources:
-          requests:
-            storage: 1Gi
+  - metadata:
+      name: kotsadm-postgres
+      labels:
+        kots.io/kotsadm: "true"
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
   template:
     metadata:
       labels:
@@ -34,156 +34,156 @@ spec:
         runAsUser: 999
         fsGroup: 999
       volumes:
-        - name: kotsadm-postgres
-          persistentVolumeClaim:
-            claimName: kotsadm-postgres
-        - name: etc-passwd
-          configMap:
-            name: kotsadm-postgres
-            items:
-              - key: passwd
-                mode: 420
-                path: passwd
-        - name: upgrade
-          emptyDir: {}
-        - name: scripts
-          configMap:
-            name: kotsadm-postgres
-            defaultMode: 0755
-            items:
-              - key: copy-postgres-10.sh
-                path: copy-postgres-10.sh
-              - key: upgrade-postgres.sh
-                path: upgrade-postgres.sh
-      containers:
-        - image: postgres:__POSTGRES_14_TAG__
+      - name: kotsadm-postgres
+        persistentVolumeClaim:
+          claimName: kotsadm-postgres
+      - name: etc-passwd
+        configMap:
           name: kotsadm-postgres
-          ports:
-            - name: postgres
-              containerPort: 5432
-          volumeMounts:
-            - name: kotsadm-postgres
-              mountPath: /var/lib/postgresql/data
-            - mountPath: /etc/passwd
-              name: etc-passwd
-              subPath: passwd
-          env:
-            - name: PGDATA
-              value: /var/lib/postgresql/data/pg14data
-            - name: POSTGRES_USER
-              value: kotsadm
-            - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: kotsadm-postgres
-                  key: password
-            - name: POSTGRES_DB
-              value: kotsadm
-            - name: POSTGRES_HOST_AUTH_METHOD
-              value: md5
-          livenessProbe:
-            initialDelaySeconds: 30
-            timeoutSeconds: 5
-            failureThreshold: 3
-            exec:
-              command:
-                - "/bin/sh"
-                - "-i"
-                - "-c"
-                - "pg_isready -U kotsadm -h 127.0.0.1 -p 5432"
-          readinessProbe:
-            initialDelaySeconds: 1
-            periodSeconds: 1
-            timeoutSeconds: 1
-            exec:
-              command:
-                - "/bin/sh"
-                - "-i"
-                - "-c"
-                - "pg_isready -U kotsadm -h 127.0.0.1 -p 5432"
-          resources:
-            limits:
-              cpu: 200m
-              memory: 200Mi
-            requests:
-              cpu: 100m
-              memory: 100Mi
+          items:
+          - key: passwd
+            mode: 420
+            path: passwd
+      - name: upgrade
+        emptyDir: {}
+      - name: scripts
+        configMap:
+          name: kotsadm-postgres
+          defaultMode: 0755
+          items:
+          - key: copy-postgres-10.sh
+            path: copy-postgres-10.sh
+          - key: upgrade-postgres.sh
+            path: upgrade-postgres.sh
+      containers:
+      - image: postgres:__POSTGRES_14_TAG__
+        name: kotsadm-postgres
+        ports:
+        - name: postgres
+          containerPort: 5432
+        volumeMounts:
+        - name: kotsadm-postgres
+          mountPath: /var/lib/postgresql/data
+        - mountPath: /etc/passwd
+          name: etc-passwd
+          subPath: passwd
+        env:
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pg14data
+        - name: POSTGRES_USER
+          value: kotsadm
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: kotsadm-postgres
+              key: password
+        - name: POSTGRES_DB
+          value: kotsadm
+        - name: POSTGRES_HOST_AUTH_METHOD
+          value: md5
+        livenessProbe:
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+          exec:
+            command:
+            - "/bin/sh"
+            - "-i"
+            - "-c"
+            - "pg_isready -U kotsadm -h 127.0.0.1 -p 5432"
+        readinessProbe:
+          initialDelaySeconds: 1
+          periodSeconds: 1
+          timeoutSeconds: 1
+          exec:
+            command:
+            - "/bin/sh"
+            - "-i"
+            - "-c"
+            - "pg_isready -U kotsadm -h 127.0.0.1 -p 5432"
+        resources:
+          limits:
+            cpu: 200m
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
 
       initContainers:
-        - image: postgres:__POSTGRES_10_TAG__
-          name: copy-postgres-10
-          command:
-            - "/scripts/copy-postgres-10.sh"
-          volumeMounts:
-            - name: kotsadm-postgres
-              mountPath: /var/lib/postgresql/data
-            - name: etc-passwd
-              mountPath: /etc/passwd
-              subPath: passwd
-            - name: upgrade
-              mountPath: /var/lib/postgresql/upgrade
-            - name: scripts
-              mountPath: /scripts
-          env:
-            - name: PGDATA
-              value: /var/lib/postgresql/data/pgdata
-            - name: POSTGRES_UPGRADE_DIR
-              value: /var/lib/postgresql/upgrade
-          resources:
-            limits:
-              cpu: 200m
-              memory: 200Mi
-            requests:
-              cpu: 100m
-              memory: 100Mi
+      - image: postgres:__POSTGRES_10_TAG__
+        name: copy-postgres-10
+        command:
+        - "/scripts/copy-postgres-10.sh"
+        volumeMounts:
+        - name: kotsadm-postgres
+          mountPath: /var/lib/postgresql/data
+        - name: etc-passwd
+          mountPath: /etc/passwd
+          subPath: passwd
+        - name: upgrade
+          mountPath: /var/lib/postgresql/upgrade
+        - name: scripts
+          mountPath: /scripts
+        env:
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        - name: POSTGRES_UPGRADE_DIR
+          value: /var/lib/postgresql/upgrade
+        resources:
+          limits:
+            cpu: 200m
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
 
-        - image: postgres:__POSTGRES_14_TAG__
-          name: upgrade-postgres
-          command:
-            - "/scripts/upgrade-postgres.sh"
-          volumeMounts:
-            - name: kotsadm-postgres
-              mountPath: /var/lib/postgresql/data
-            - name: etc-passwd
-              mountPath: /etc/passwd
-              subPath: passwd
-            - name: upgrade
-              mountPath: /var/lib/postgresql/upgrade
-            - name: scripts
-              mountPath: /scripts
-          env:
-            - name: PGPORT
-              value: "50432" # run on different port to avoid unintended client connections.
-            - name: PGDATA
-              value: /var/lib/postgresql/data/pg14data
-            - name: POSTGRES_USER
-              value: kotsadm
-            - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: kotsadm-postgres
-                  key: password
-            - name: POSTGRES_DB
-              value: kotsadm
-            - name: POSTGRES_HOST_AUTH_METHOD
-              value: md5
-            - name: POSTGRES_UPGRADE_DIR
-              value: /var/lib/postgresql/upgrade
-            - name: PGDATAOLD
-              value: /var/lib/postgresql/data/pgdata
-            - name: PGDATANEW
-              value: /var/lib/postgresql/data/pg14data
-            - name: PGBINOLD
-              value: /var/lib/postgresql/upgrade/pg10/bin
-            - name: PGBINNEW
-              value: /usr/local/bin
-          resources:
-            limits:
-              cpu: 200m
-              memory: 200Mi
-            requests:
-              cpu: 100m
-              memory: 100Mi
+      - image: postgres:__POSTGRES_14_TAG__
+        name: upgrade-postgres
+        command:
+        - "/scripts/upgrade-postgres.sh"
+        volumeMounts:
+        - name: kotsadm-postgres
+          mountPath: /var/lib/postgresql/data
+        - name: etc-passwd
+          mountPath: /etc/passwd
+          subPath: passwd
+        - name: upgrade
+          mountPath: /var/lib/postgresql/upgrade
+        - name: scripts
+          mountPath: /scripts
+        env:
+        - name: PGPORT
+          value: "50432" # run on different port to avoid unintended client connections.
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pg14data
+        - name: POSTGRES_USER
+          value: kotsadm
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: kotsadm-postgres
+              key: password
+        - name: POSTGRES_DB
+          value: kotsadm
+        - name: POSTGRES_HOST_AUTH_METHOD
+          value: md5
+        - name: POSTGRES_UPGRADE_DIR
+          value: /var/lib/postgresql/upgrade
+        - name: PGDATAOLD
+          value: /var/lib/postgresql/data/pgdata
+        - name: PGDATANEW
+          value: /var/lib/postgresql/data/pg14data
+        - name: PGBINOLD
+          value: /var/lib/postgresql/upgrade/pg10/bin
+        - name: PGBINNEW
+          value: /usr/local/bin
+        resources:
+          limits:
+            cpu: 200m
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
 ---
 apiVersion: v1
 kind: Service
@@ -197,9 +197,9 @@ spec:
     app: kotsadm-postgres
   type: ClusterIP
   ports:
-    - name: postgres
-      port: 5432
-      targetPort: postgres
+  - name: postgres
+    port: 5432
+    targetPort: postgres
 ---
 apiVersion: v1
 kind: ConfigMap

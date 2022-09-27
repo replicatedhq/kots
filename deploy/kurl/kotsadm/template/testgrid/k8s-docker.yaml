@@ -5,7 +5,7 @@
     weave:
       version: "latest"
     rook:
-      version: 1.5.x
+      version: 1.7.x
     containerd:
       version: "latest"
     kotsadm:
@@ -17,8 +17,8 @@
       version: "latest"
     weave:
       version: "latest"
-    rook:
-      version: 1.5.x
+    longhorn:
+      version: latest
     containerd:
       version: "latest"
     registry:
@@ -110,6 +110,37 @@
     containerd:
       version: "latest"
     velero: 
+      version: "latest"
+    registry:
+      version: "latest"
+    kotsadm:
+      version: "__testver__"
+      s3Override: "__testdist__"
+      disableS3: true
+- name: "minimal rook airgap"
+  airgap: true
+  installerSpec:
+    kubernetes:
+      version: "latest"
+    weave:
+      version: "latest"
+    rook:
+      version: 1.7.x
+    containerd:
+      version: "latest"
+    kotsadm:
+      version: "__testver__"
+      s3Override: "__testdist__"
+- name: "minimal disableS3 airgap"
+  airgap: true
+  installerSpec:
+    kubernetes:
+      version: "latest"
+    weave:
+      version: "latest"
+    longhorn:
+      version: latest
+    containerd:
       version: "latest"
     registry:
       version: "latest"
