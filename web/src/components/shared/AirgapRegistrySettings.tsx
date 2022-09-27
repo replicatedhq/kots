@@ -22,25 +22,16 @@ type Props = RouteComponentProps<KotsParams> & {
   showHostnameAsRequired: boolean;
 };
 
-type RegistryDetails = {
+interface RegistryDetails {
   hostname: string;
   username: string;
   password: string;
   namespace: string;
-};
+}
 
-type GatherDetails = {
-  hostname: string;
-  username: string;
-  password: string;
-  namespace: string;
+interface GatherDetails extends RegistryDetails {
   isReadOnly: boolean;
-};
-
-type NextState = {
-  hostname?: string | boolean | undefined;
-  namespace?: string | boolean | undefined;
-};
+}
 
 type State = {
   loading: boolean;
@@ -197,8 +188,8 @@ class AirgapRegistrySettings extends Component<Props, State> {
   };
 
   handleFormChange = (field: string, val: string | boolean) => {
-    let nextState: NextState = { hostname: "", namespace: "" };
-    nextState[field as keyof NextState] = val;
+    let nextState: { [key: string]: string | boolean } = {};
+    nextState[field] = val;
 
     if (this.props.app?.isAirgap && field === "isReadOnly" && !val) {
       // Pushing images in airgap mode is not yet supported, so registry name cannot be changed.
@@ -206,6 +197,10 @@ class AirgapRegistrySettings extends Component<Props, State> {
       nextState["namespace"] = this.state.originalRegistry!.namespace;
     }
 
+    //TODO: understand this better
+    // Argument of type '{ [key: string]: string | boolean; }' is not assignable to parameter of type 'State | Pick<State, keyof State>
+    // | ((prevState: Readonly<State>, props: Readonly<Props>) => State | Pick<...> | null) | null'.
+    // @ts-ignore
     this.setState(nextState, () => {
       if (this.props.gatherDetails) {
         const { hostname, username, password, namespace, isReadOnly } =
@@ -628,4 +623,6 @@ class AirgapRegistrySettings extends Component<Props, State> {
   }
 }
 
+// TODO: fix withRouter type
+// @ts-ignore
 export default withRouter(AirgapRegistrySettings) as any;
