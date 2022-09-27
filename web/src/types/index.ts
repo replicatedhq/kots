@@ -94,3 +94,9 @@ export type Version = {
   sequence: number;
   versionLabel?: string;
 };
+export type Entitlement = {
+  title: string;
+  value: string;
+  label: string;
+  valueType: "Text" | "Boolean" | "Integer" | "String";
+};
