@@ -624,5 +624,5 @@ class AirgapRegistrySettings extends Component<Props, State> {
 }
 
 // TODO: fix withRouter type
-// @eslint-disable-next-line
+// eslint-disable-next-line
 export default withRouter(AirgapRegistrySettings) as any;
