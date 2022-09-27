@@ -11,7 +11,6 @@ import (
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/gitops"
-	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
@@ -419,16 +418,12 @@ func (s *KOTSStore) SetUpdateCheckerSpec(appID string, updateCheckerSpec string)
 	logger.Debug("setting update checker spec",
 		zap.String("appID", appID))
 
-	cm, err := s.GetConfigmap(types.KotsadmConfigMap)
-	if err != nil {
-		return errors.Wrap(err, "failed to get config map")
-	}
+	db := persistence.MustGetDBSession()
+	query := `update app set update_checker_spec = $1 where id = $2`
+	_, err := db.Exec(query, updateCheckerSpec, appID)
 
-	cm.Data[fmt.Sprintf("update-schedule-%s", appID)] = updateCheckerSpec
-
-	err = s.UpdateConfigmap(cm)
 	if err != nil {
-		return errors.Wrap(err, "failed to update config map")
+		return errors.Wrap(err, "failed to exec db query")
 	}
 	return nil
 }

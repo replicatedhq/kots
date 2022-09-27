@@ -12,7 +12,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/app"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/helm"
-	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
 	upstream "github.com/replicatedhq/kots/pkg/kotsadmupstream"
@@ -53,7 +52,7 @@ func Start() error {
 		if a.IsAirgap {
 			continue
 		}
-		if err := Configure(a); err != nil {
+		if err := Configure(a, a.UpdateCheckerSpec); err != nil {
 			logger.Error(errors.Wrapf(err, "failed to configure app %s", a.Slug))
 		}
 	}
@@ -66,20 +65,10 @@ func Start() error {
 // if enabled, and a cron job was found, update the existing cron job with the latest cron spec
 // if disabled: stop the current running cron job (if exists)
 // no-op for airgap applications
-func Configure(a apptypes.AppType) error {
-	var updateCheckerSpec string
+func Configure(a apptypes.AppType, updateCheckerSpec string) error {
 	appId := a.GetID()
 	appSlug := a.GetSlug()
 	isAirgap := a.GetIsAirgap()
-
-	cm, err := store.GetConfigmap(types.KotsadmConfigMap)
-	if err != nil {
-		return errors.New(fmt.Sprintf("failed to get config map"))
-	}
-	if cm.Data == nil {
-		cm.Data = make(map[string]string)
-	}
-	updateCheckerSpec = cm.Data[fmt.Sprintf("update-schedule-%s", appId)]
 
 	if isAirgap {
 		return nil
@@ -123,7 +112,7 @@ func Configure(a apptypes.AppType) error {
 	jobAppID := appId
 	jobAppSlug := appSlug
 
-	_, err = job.AddFunc(cronSpec, func() {
+	_, err := job.AddFunc(cronSpec, func() {
 		logger.Debug("checking updates for app", zap.String("slug", jobAppSlug))
 
 		opts := CheckForUpdatesOpts{
