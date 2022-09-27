@@ -116,6 +116,12 @@ class DashboardVersionCard extends React.Component {
       <div className="flex action-tab-bar u-marginTop--10">
         {tabs
           .filter((tab) => tab !== "renderError")
+          .filter((tab) => {
+            if (this.props.isHelmManaged) {
+              return tab.startsWith("helm");
+            }
+            return !tab.startsWith("helm");
+          })
           .map((tab) => (
             <div
               className={`tab-item blue ${tab === selectedTab && "is-active"}`}
