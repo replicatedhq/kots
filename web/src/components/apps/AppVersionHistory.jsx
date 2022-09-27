@@ -37,6 +37,7 @@ import { UseDownloadValues } from "../hooks";
 import "@src/scss/components/apps/AppVersionHistory.scss";
 import DashboardGitOpsCard from "./DashboardGitOpsCard";
 import Icon from "../Icon";
+import { makePageTitle } from "@utils";
 dayjs.extend(relativeTime);
 
 class AppVersionHistory extends Component {
@@ -1624,7 +1625,7 @@ class AppVersionHistory extends Component {
     return (
       <div className="flex flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
         <Helmet>
-          <title>{`${app.name} Version History`}</title>
+          <title>{makePageTitle({ appSlug: app.slug, pageName: "Version History" })}</title>
         </Helmet>
         <div className="flex-column flex1">
           <div className="flex flex1 justifyContent--center">

@@ -198,6 +198,7 @@
       "@features/(.*)$": "<rootDir>/src/features/$1",
       "@stores/(.*)$": "<rootDir>/src/stores/$1",
       "@types": "<rootDir>/src/types/index",
+      "@utils": "<rootDir>/src/utilities/index",
       "handlebars" : "<rootDir>/handlebars/dist/handlebars.js"
     }
   }

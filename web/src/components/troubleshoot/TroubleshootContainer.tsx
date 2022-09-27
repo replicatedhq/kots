@@ -7,6 +7,10 @@ import GenerateSupportBundle from "../troubleshoot/GenerateSupportBundle";
 import Redactors from "../redactors/Redactors";
 import EditRedactor from "../redactors/EditRedactor";
 
+
+import { Helmet } from "react-helmet";
+import { makePageTitle } from "@utils";
+
 // Types
 import { App } from "@types";
 import { RouteComponentProps } from "react-router-dom";
@@ -21,6 +25,9 @@ class TroubleshootContainer extends Component<Props & RouteComponentProps> {
 
     return (
       <div className="flex-column flex1">
+        <Helmet>
+          <title>{makePageTitle({ appSlug: app.slug, pageName: "Troubleshoot" })}</title>
+        </Helmet>
         <Switch>
           <Route
             exact

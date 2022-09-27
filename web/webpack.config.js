@@ -50,6 +50,7 @@ module.exports = function (env) {
         "@features": path.resolve(__dirname, "src/features"),
         "@stores": path.resolve(__dirname, "src/stores"),
         "@types": path.resolve(__dirname, "src/types/index"),
+        "@utils": path.resolve(__dirname, "src/utilities/index"),
         "handlebars" : "handlebars/dist/handlebars.js"
       },
       mainFields: ["browser", "main"],

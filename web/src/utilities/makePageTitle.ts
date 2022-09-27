@@ -1,12 +1,12 @@
 function makePageTitle({
-  appName,
+  appSlug,
   pageName,
 }: {
-  appName?: string;
+  appSlug?: string;
   pageName: string;
 }): string {
-  if (appName) {
-    return `${appName} | ${pageName} | Admin Console`;
+  if (appSlug) {
+    return `${pageName} | ${appSlug} | Admin Console`;
   }
 
   return `${pageName} | Admin Console`;

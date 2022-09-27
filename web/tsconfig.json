@@ -39,6 +39,9 @@
       "@types": [
         "src/types/index"
       ],
+      "@utils": [
+        "src/utilities/index"
+      ],
       "handlebars": [
         "handlebars/dist/handlebars.js"
       ]
