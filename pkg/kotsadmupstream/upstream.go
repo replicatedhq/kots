@@ -26,13 +26,13 @@ import (
 
 func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skipCompatibilityCheck bool) (finalSequence *int64, finalError error) {
 	taskID := "update-download"
+	var finishedCh chan struct{}
 	if update.AppSequence != nil {
 		taskID = fmt.Sprintf("update-download.%d", *update.AppSequence)
 
 		// The entire "update-download" task state is managed ouside of this function.
 		// Version specific tasks are managed in this sope only.
-		finishedCh := make(chan struct{})
-		defer close(finishedCh)
+		finishedCh = make(chan struct{}, 1)
 		go func() {
 			for {
 				select {
@@ -53,6 +53,10 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 	}
 
 	defer func() {
+		if finishedCh != nil {
+			close(finishedCh)
+		}
+
 		if finalError == nil {
 			if update.AppSequence != nil {
 				// this could be an older version that is being downloaded at a later point

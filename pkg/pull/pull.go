@@ -266,11 +266,13 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	io.WriteString(pullOptions.ReportWriter, "Pulling upstream\n")
 	u, err := upstream.FetchUpstream(upstreamURI, &fetchOptions)
 	if err != nil {
+		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to fetch upstream")
 	}
 
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
+		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to get k8s clientset")
 	}
 
@@ -289,6 +291,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		IncludeMinio:        pullOptions.IncludeMinio,
 	}
 	if err := upstream.WriteUpstream(u, writeUpstreamOptions); err != nil {
+		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to write upstream")
 	}
 	log.FinishSpinner()
@@ -349,6 +352,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 	commonBase, helmBases, err := base.RenderUpstream(u, &renderOptions)
 	if err != nil {
+		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to render upstream")
 	}
 
@@ -378,6 +382,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 		err = upstream.SaveInstallation(&newKotsKinds.Installation, u.GetUpstreamDir(writeUpstreamOptions))
 		if err != nil {
+			log.FinishSpinnerWithError()
 			return "", errors.Wrap(err, "failed to save installation")
 		}
 	}
@@ -390,6 +395,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		IsHelmBase:       false,
 	}
 	if err := commonBase.WriteBase(writeBaseOptions); err != nil {
+		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to write common base")
 	}
 
@@ -405,6 +411,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			IsHelmBase:       true,
 		}
 		if err := helmBaseCopy.WriteBase(writeBaseOptions); err != nil {
+			log.FinishSpinnerWithError()
 			return "", errors.Wrapf(err, "failed to write helm base %s", helmBaseCopy.Path)
 		}
 	}
@@ -416,16 +423,19 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 	builder, _, err := base.NewConfigContextTemplateBuilder(u, &renderOptions)
 	if err != nil {
+		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to create new config context template builder")
 	}
 
 	newKotsKinds, err := kotsutil.LoadKotsKindsFromPath(u.GetUpstreamDir(writeUpstreamOptions))
 	if err != nil {
+		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to load kotskinds")
 	}
 
 	err = crypto.InitFromString(newKotsKinds.Installation.Spec.EncryptionKey)
 	if err != nil {
+		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to load encryption cipher")
 	}
 
@@ -452,6 +462,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		if v.Spec.UseHelmInstall {
 			subcharts, err := base.FindHelmSubChartsFromBase(writeBaseOptions.BaseDir, chartBaseName)
 			if err != nil {
+				log.FinishSpinnerWithError()
 				return "", errors.Wrapf(err, "failed to find subcharts for parent chart %s", chartBaseName)
 			}
 			for _, subchart := range subcharts.SubCharts {
@@ -466,6 +477,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 	m, err := writeMidstream(writeMidstreamOptions, pullOptions, u, commonBase, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), pushImages, log)
 	if err != nil {
+		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to write common midstream")
 	}
 
@@ -489,6 +501,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 		helmMidstream, err := writeMidstream(writeMidstreamOptions, pullOptionsCopy, u, helmBaseCopy, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), pushImages, log)
 		if err != nil {
+			log.FinishSpinnerWithError()
 			return "", errors.Wrapf(err, "failed to write helm midstream %s", helmBase.Path)
 		}
 
@@ -500,6 +513,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 	err = removeUnusedHelmOverlays(writeMidstreamOptions.MidstreamDir, writeMidstreamOptions.BaseDir)
 	if err != nil {
+		log.FinishSpinnerWithError()
 		return "", errors.Wrapf(err, "failed to remove unused helm midstreams")
 	}
 

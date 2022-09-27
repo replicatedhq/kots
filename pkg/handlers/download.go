@@ -274,14 +274,14 @@ func (h *Handler) DownloadAppVersion(w http.ResponseWriter, r *http.Request) {
 			} else {
 				downloadUpstreamVersionResponse.Error = fmt.Sprintf("failed to get app version %d", sequence)
 			}
-			logger.Error(err)
+			logger.Error(errors.Wrap(err, "failed synchronously"))
 			JSON(w, http.StatusInternalServerError, downloadUpstreamVersionResponse)
 			return
 		}
 	} else {
 		go func() {
 			if err := downloadFn(a.ID, version, skipPreflights, skipCompatibilityCheck); err != nil {
-				logger.Error(err)
+				logger.Error(errors.Wrap(err, "failed asynchronously"))
 			}
 		}()
 	}

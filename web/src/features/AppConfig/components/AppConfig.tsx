@@ -568,12 +568,15 @@ class AppConfig extends Component<Props, State> {
     const gitops = app.downstream?.gitops;
     const isNewVersion = !fromLicenseFlow && match.params.sequence == undefined;
 
+    const urlParams = new URLSearchParams(window.location.search);
+
     let downstreamVersionLabel = downstreamVersion?.versionLabel;
     if (!downstreamVersionLabel) {
-      const urlParams = new URLSearchParams(window.location.search);
       // TODO: add error handling for this. empty string is not valid
       downstreamVersionLabel = urlParams.get("semver") || "";
     }
+
+    const isPending = urlParams.get("isPending") === "true";
 
     let saveButtonText = fromLicenseFlow ? "Continue" : "Save config";
     if (isHelmManaged) {
@@ -670,6 +673,8 @@ class AppConfig extends Component<Props, State> {
                     appSlug: this.getSlug(),
                     fileName: "values.yaml",
                     sequence: match.params.sequence,
+                    versionLabel: downstreamVersionLabel,
+                    isPending: isPending,
                   });
 
                 return (
