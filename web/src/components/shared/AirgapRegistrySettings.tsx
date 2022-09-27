@@ -193,8 +193,8 @@ class AirgapRegistrySettings extends Component<Props, State> {
 
     if (this.props.app?.isAirgap && field === "isReadOnly" && !val) {
       // Pushing images in airgap mode is not yet supported, so registry name cannot be changed.
-      nextState["hostname"] = this.state.originalRegistry!.hostname;
-      nextState["namespace"] = this.state.originalRegistry!.namespace;
+      nextState.hostname = this.state.originalRegistry!.hostname;
+      nextState.namespace = this.state.originalRegistry!.namespace;
     }
 
     //TODO: understand this better
@@ -624,5 +624,5 @@ class AirgapRegistrySettings extends Component<Props, State> {
 }
 
 // TODO: fix withRouter type
-// @ts-ignore
+// @eslint-disable-next-line
 export default withRouter(AirgapRegistrySettings) as any;
