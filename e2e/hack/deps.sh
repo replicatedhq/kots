@@ -1,6 +1,8 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 set -e
+set -o pipefail
+set -x
 
 : ${USE_SUDO:="true"}
 : ${INSTALL_DIR:="/usr/local/bin"}
@@ -50,19 +52,16 @@ main() {
 
     mkdir -p $INSTALL_DIR
 
-    EUID=$(id -u)
-    EGID=$(id -g)
-
     curl -fsLO "https://dl.k8s.io/release/$(curl -sL https://dl.k8s.io/release/stable.txt)/bin/$OS/$ARCH/kubectl" \
         && install -m 0755 kubectl $INSTALL_DIR/kubectl
 
     export K3D_INSTALL_DIR=$INSTALL_DIR
     curl -sL https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash -e && \
-        ( [ $EUID -eq 0 -o "$USE_SUDO" != "true" ] || runAsRoot chown $EUID:$EGID $INSTALL_DIR/k3d )
+        ( [ $(id -u) -eq 0 -o "$USE_SUDO" != "true" ] || runAsRoot chown $(id -u):$(id -g) $INSTALL_DIR/k3d )
 
     export HELM_INSTALL_DIR=$INSTALL_DIR
     curl -sL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash -e && \
-        ( [ $EUID -eq 0 -o "$USE_SUDO" != "true" ] || runAsRoot chown $EUID:$EGID $INSTALL_DIR/helm )
+        ( [ $(id -u) -eq 0 -o "$USE_SUDO" != "true" ] || runAsRoot chown $(id -u):$(id -g) $INSTALL_DIR/helm )
 
     VELERO_RELEASE=$(curl -s "https://api.github.com/repos/vmware-tanzu/velero/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
     echo "VELERO_RELEASE=$VELERO_RELEASE"

@@ -11,7 +11,10 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	"github.com/replicatedhq/kots/pkg/logger"
+	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
+	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	helmrelease "helm.sh/helm/v3/pkg/release"
 	corev1 "k8s.io/api/core/v1"
@@ -233,7 +236,10 @@ func watchSecrets(ctx context.Context, namespace string, labelSelector string) e
 					break
 				}
 
-				removeFromCachedUpdates(helmApp.ChartPath, helmApp.Release.Chart.Metadata.Version)
+				if err := recalculateCachedUpdates(helmApp); err != nil {
+					logger.Errorf("failed to recalculate updates for helm release info from secret %s in namespace %s: %s", secret.Name, namespace)
+					// Continue here.  Release has been installed and should show up up in Admin Console.
+				}
 
 				logger.Debugf("adding secret %s to cache", secret.Name)
 				AddHelmApp(helmApp.Release.Name, helmApp)
@@ -271,4 +277,44 @@ func watchSecrets(ctx context.Context, namespace string, labelSelector string) e
 		logger.Infof("watch of secrets in ns %s unexpectedly terminated. Reconnecting...\n", namespace)
 		time.Sleep(time.Second * 5)
 	}
+}
+
+func recalculateCachedUpdates(newHelmApp *apptypes.HelmApp) error {
+	removeFromCachedUpdates(newHelmApp.ChartPath, newHelmApp.Release.Chart.Metadata.Version)
+
+	currentHelmApp := GetHelmApp(newHelmApp.Release.Name)
+	if currentHelmApp == nil {
+		// no app installed yet
+		return nil
+	}
+	updates := GetCachedUpdates(currentHelmApp.ChartPath)
+	currentKotsKinds, err := GetKotsKindsFromHelmApp(currentHelmApp)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get current config values")
+	}
+
+	// Check if new configuration has been applied and now required items have been set in pending updates.
+	for _, update := range updates {
+		if update.Status != storetypes.VersionPendingConfig {
+			continue
+		}
+
+		kotsKinds, err := GetKotsKindsFromUpstreamChartVersion(currentHelmApp, currentKotsKinds.License.Spec.LicenseID, update.Tag)
+		if err != nil {
+			return errors.Wrapf(err, "failed to pull update %s for chart", update.Version)
+		}
+		kotsKinds.ConfigValues = currentKotsKinds.ConfigValues.DeepCopy()
+
+		sequence := int64(-1)                                // TODO: do something sensible, this value isn't used
+		registrySettings := registrytypes.RegistrySettings{} // TODO: private registries aren't supported yet
+		t, err := kotsadmconfig.NeedsConfiguration(currentHelmApp.GetSlug(), sequence, currentHelmApp.GetIsAirgap(), &kotsKinds, registrySettings)
+		if err != nil {
+			return errors.Wrap(err, "failed to check if version needs configuration")
+		}
+		if !t {
+			SetCachedUpdateStatus(currentHelmApp.ChartPath, update.Tag, storetypes.VersionPending)
+		}
+	}
+
+	return nil
 }

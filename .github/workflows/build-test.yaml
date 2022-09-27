@@ -41,6 +41,26 @@ jobs:
       - name: ok
         run: echo "yes"
 
+  # Use this to disable tests when iteratig on a specific test to save time
+  enable-tests:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: ok
+        # change 0 to a positive interger to prevent all tests from running
+        run: exit 0
+
+
+  generate-tag:
+    runs-on: ubuntu-20.04
+    outputs:
+      tag: ${{ steps.get_tag.outputs.GIT_TAG }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Get tags
+        id: get_tag
+        uses: ./actions/version-tag
+
 
   test-okteto-env:
     runs-on: ubuntu-latest
@@ -57,7 +77,7 @@ jobs:
 
   build-web:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci ]
+    needs: [ can-run-ci, generate-tag ]
     steps:
       # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets. 
       # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
@@ -75,7 +95,7 @@ jobs:
 
       - name: Build web
         env:
-          GIT_COMMIT: ${{ github.sha }}
+          GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
         run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C web deps run-prettier-eslint run-typecheck run-unit-tests build-kotsadm
 
       - name: Upload web artifact
@@ -87,7 +107,7 @@ jobs:
 
   build-kots:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci, build-web ]
+    needs: [ can-run-ci, build-web, generate-tag ]
 
     steps:
       - uses: actions/setup-go@v2
@@ -123,7 +143,10 @@ jobs:
         with:
           name: web
           path: ./web/dist
-      - run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make vet ci-test kots build
+      - name: Build kots
+        env:
+          GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
+        run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make vet ci-test kots build
       - uses: actions/upload-artifact@v2
         with:
           name: kots
@@ -319,7 +342,7 @@ jobs:
 
   validate-existing-online-install-minimal:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -340,7 +363,7 @@ jobs:
       - uses: ./.github/actions/kots-e2e
         with:
           test-focus: 'Regression'
-          k8s-version: 'v1.23.3-k3s1'
+          k8s-version: 'v1.24.4-k3s1'
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
@@ -349,11 +372,11 @@ jobs:
 
   validate-smoke-test:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1 ]
+        k8s_version: [ v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1,v1.24.4-k3s1 ]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -383,11 +406,11 @@ jobs:
 
   validate-minimal-rbac:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1 ]
+        k8s_version: [ v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1,v1.24.4-k3s1 ]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -417,11 +440,11 @@ jobs:
 
   validate-backup-and-restore:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1 ]
+        k8s_version: [ v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1,v1.24.4-k3s1 ]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -451,11 +474,11 @@ jobs:
 
   validate-no-required-config:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.23.3-k3s1 ] # there's no need to run this test on multiple k3s versions
+        k8s_version: [ v1.24.4-k3s1 ] # there's no need to run this test on multiple k3s versions
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -485,11 +508,11 @@ jobs:
 
   validate-strict-preflight-checks:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.23.3-k3s1 ] # there's no need to run this test on multiple k3s versions
+        k8s_version: [ v1.24.4-k3s1 ] # there's no need to run this test on multiple k3s versions
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -519,11 +542,11 @@ jobs:
 
   validate-version-history-pagination:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.23.3-k3s1 ] # there's no need to run this test on multiple k3s versions
+        k8s_version: [ v1.24.4-k3s1 ] # there's no need to run this test on multiple k3s versions
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -553,11 +576,11 @@ jobs:
 
   validate-change-license:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.23.3-k3s1 ] # there's no need to run this test on multiple k3s versions
+        k8s_version: [ v1.24.4-k3s1 ] # there's no need to run this test on multiple k3s versions
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -584,13 +607,14 @@ jobs:
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
+
   validate-helm-managed:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.23.3-k3s1 ] # there's no need to run this test on multiple k3s versions
+        k8s_version: [ v1.24.4-k3s1 ] # there's no need to run this test on multiple k3s versions
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -622,11 +646,11 @@ jobs:
 
   validate-minimal-rbac-override:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1 ]
+        k8s_version: [ v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1,v1.24.4-k3s1 ]
     env:
       APP_SLUG: minimal-rbac
       APP_VERSION_LABEL: "0.0.1"
@@ -702,11 +726,11 @@ jobs:
 
   validate-multi-namespace:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1 ]
+        k8s_version: [ v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1,v1.24.4-k3s1 ]
     env:
       APP_SLUG: multi-namespace-yeti
     steps:
@@ -775,11 +799,11 @@ jobs:
 
   validate-kots-pull:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1 ]
+        k8s_version: [ v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1,v1.24.4-k3s1 ]
     env:
       APP_NAME: multi-namespace-yeti
       APP_SLUG: multi-namespace
@@ -861,11 +885,11 @@ jobs:
 
   validate-app-version-label:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.23.3-k3s1 ] # there's no need to run this test on multiple k3s versions
+        k8s_version: [ v1.24.4-k3s1 ] # there's no need to run this test on multiple k3s versions
     env:
       APP_SLUG: app-version-label
       APP_VERSION_LABEL: v1.0.0
@@ -995,11 +1019,11 @@ jobs:
 
   validate-helm-install-order:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1 ]
+        k8s_version: [ v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1,v1.24.4-k3s1 ]
     env:
       APP_SLUG: helm-install-order
     steps:
@@ -1069,11 +1093,11 @@ jobs:
 
   validate-yamlescape:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1 ]
+        k8s_version: [ v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1,v1.24.4-k3s1 ]
     env:
       APP_SLUG: yamlescape
     steps:
@@ -1143,11 +1167,11 @@ jobs:
 
   validate-no-redeploy-on-restart:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.23.3-k3s1 ]
+        k8s_version: [ v1.24.4-k3s1 ]
     env:
       APP_SLUG: no-redeploy-on-restart
     steps:
@@ -1241,11 +1265,11 @@ jobs:
 
   validate-kubernetes-installer-preflight:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.23.3-k3s1 ]
+        k8s_version: [ v1.24.4-k3s1 ]
     env:
       APP_SLUG: kubernetes-installer-preflight
     steps:
@@ -1340,11 +1364,11 @@ jobs:
 
   validate-postgres-upgrade:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.20.14-k3s2,v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1 ]
+        k8s_version: [ v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1,v1.24.4-k3s1 ]
     env:
       APP_SLUG: upgrade-postgres
       BASE_KOTS_VERSION: v1.77.0
@@ -1443,11 +1467,11 @@ jobs:
 
   validate-tag-and-digest:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
     strategy:
       fail-fast: false
       matrix:
-        k8s_version: [ v1.23.3-k3s1 ]
+        k8s_version: [ v1.24.4-k3s1 ]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -1477,7 +1501,7 @@ jobs:
 
   validate-kots-push-images-anonymous:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
+    needs: [ enable-tests, can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
     strategy:
       fail-fast: false
     steps:
@@ -1498,6 +1522,159 @@ jobs:
           ./bin/kots admin-console push-images ./hack/tests/small.airgap ttl.sh/automated-${{ github.run_id }} 
 
 
+  validate-min-kots-version:
+    runs-on: ubuntu-20.04
+    needs: [ enable-tests, can-run-ci, build-e2e, build-kots, build-kurl-proxy, build-migrations, push-minio, push-postgres, generate-tag ]
+    env:
+      APP_SLUG: min-kots-version
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_version: [v1.25.0-k3s1]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: download e2e deps
+        uses: actions/download-artifact@v2
+        with:
+          name: e2e
+          path: e2e/bin/
+      - name: download kots binary
+        uses: actions/download-artifact@v2
+        with:
+          name: kots
+          path: bin/
+      - run: |
+          docker load -i e2e/bin/e2e-deps.tar
+          chmod +x e2e/bin/*
+          chmod +x bin/*
+          cp ./bin/kots /usr/local/bin/kubectl-kots
+          sudo apt-get update -y && sudo apt-get install jq -y
+      - uses: ./.github/actions/kots-e2e
+        with:
+          test-focus: 'Min KOTS Version'
+          kots-namespace: 'min-kots-version'
+          k8s-version: '${{ matrix.k8s_version }}'
+          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
+          testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
+          kotsadm-image-registry: ttl.sh
+          kotsadm-namespace: automated-${{ github.run_id }}
+          kotsadm-tag: 12h
+          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
+          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+
+      - name: validate that kots install fails early
+        run: |
+          set +e
+
+          result=$(kubectl kots install $APP_SLUG/automated --no-port-forward --namespace $APP_SLUG --shared-password password 2>&1 >/dev/null)
+          echo "$result"
+
+          if [[ "$result" =~ "requires" ]] && [[ "$result" =~ "10000.0.0" ]]; then
+            exit 0
+          else
+            exit 1
+          fi
+
+
+  validate-target-kots-version:
+    runs-on: ubuntu-20.04
+    needs: [ enable-tests, can-run-ci, build-e2e, build-kots, build-kurl-proxy, build-migrations, push-minio, push-postgres, generate-tag ]
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_version: [v1.25.0-k3s1]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: download e2e deps
+        uses: actions/download-artifact@v2
+        with:
+          name: e2e
+          path: e2e/bin/
+      - name: download kots binary
+        uses: actions/download-artifact@v2
+        with:
+          name: kots
+          path: bin/
+      - run: |
+          docker load -i e2e/bin/e2e-deps.tar
+          chmod +x e2e/bin/*
+          chmod +x bin/*
+          cp ./bin/kots /usr/local/bin/kubectl-kots
+          sudo apt-get update -y && sudo apt-get install jq -y
+      - uses: ./.github/actions/kots-e2e
+        with:
+          test-focus: 'Target KOTS Version'
+          kots-namespace: 'target-kots-version'
+          k8s-version: '${{ matrix.k8s_version }}'
+          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
+          testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
+          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
+          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+      - name: validate that kots install fails early
+        run: |
+          set +e
+
+          result=$(kubectl kots install target-kots-version/automated --no-port-forward --namespace target-kots-version --shared-password password 2>&1 >/dev/null)
+          echo "$result"
+
+          if [[ "$result" =~ "requires" ]] && [[ "$result" =~ "1.0.0" ]]; then
+            exit 0
+          else
+            exit 1
+          fi
+
+
+  validate-range-kots-version:
+    runs-on: ubuntu-20.04
+    needs: [ enable-tests, can-run-ci, build-e2e, build-kots, build-kurl-proxy, build-migrations, push-minio, push-postgres, generate-tag ]
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_version: [v1.25.0-k3s1]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: download e2e deps
+        uses: actions/download-artifact@v2
+        with:
+          name: e2e
+          path: e2e/bin/
+      - name: download kots binary
+        uses: actions/download-artifact@v2
+        with:
+          name: kots
+          path: bin/
+      - run: |
+          docker load -i e2e/bin/e2e-deps.tar
+          chmod +x e2e/bin/*
+          chmod +x bin/*
+          cp ./bin/kots /usr/local/bin/kubectl-kots
+          sudo apt-get update -y && sudo apt-get install jq -y
+      - uses: ./.github/actions/kots-e2e
+        with:
+          test-focus: 'Range KOTS Version'
+          kots-namespace: 'range-kots-version'
+          k8s-version: '${{ matrix.k8s_version }}'
+          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
+          testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
+          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
+          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+      - name: validate that kots install fails early
+        run: |
+          set +e
+
+          result=$(kubectl kots install range-kots-version/automated --no-port-forward --namespace range-kots-version --shared-password password 2>&1 >/dev/null)
+          echo "$result"
+
+          if [[ "$result" =~ "requires" ]] && [[ "$result" =~ "11000.0.0" ]]; then
+            exit 0
+          else
+            exit 1
+          fi
+
+
   # this job will validate that all validate-* jobs succeed and is used for the github branch protection rule
   validate-success:
     runs-on: ubuntu-20.04
@@ -1512,6 +1689,9 @@ jobs:
       - validate-change-license
       - validate-helm-managed
       - validate-tag-and-digest
+      - validate-min-kots-version
+      - validate-target-kots-version
+      - validate-range-kots-version
       # non-testim tests
       - validate-minimal-rbac-override
       - validate-multi-namespace

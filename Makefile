@@ -112,7 +112,7 @@ all-ttl.sh: build-ttl.sh
 
 .PHONY: build-alpha
 build-alpha:
-	docker build --pull -f deploy/Dockerfile --build-arg version=${GIT_COMMIT} -t kotsadm/kotsadm:alpha .
+	docker build --pull -f deploy/Dockerfile --build-arg version=${GIT_TAG} -t kotsadm/kotsadm:alpha .
 	docker push kotsadm/kotsadm:alpha
 
 .PHONY: build-release

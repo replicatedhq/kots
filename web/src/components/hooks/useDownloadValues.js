@@ -7,10 +7,12 @@ const getValues = async ({
   apiEndpoint = process.env.API_ENDPOINT,
   appSlug,
   sequence,
+  versionLabel,
+  isPending,
 }) => {
   try {
     const response = await _fetch(
-      `${apiEndpoint}/app/${appSlug}/values/${sequence}${window.location.search}`,
+      `${apiEndpoint}/app/${appSlug}/values/${sequence}?isPending=${isPending}&semver=${versionLabel}`,
       {
         method: "GET",
         headers: {
@@ -37,6 +39,8 @@ const useDownloadValues = ({
   appSlug,
   fileName,
   sequence,
+  versionLabel,
+  isPending,
 } = {}) => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [error, setError] = useState(null);
@@ -67,6 +71,8 @@ const useDownloadValues = ({
       const { data, error: _error } = await _getValues({
         appSlug,
         sequence,
+        versionLabel,
+        isPending,
       });
       if (_error) {
         setError(_error);
@@ -96,8 +102,21 @@ const useDownloadValues = ({
   };
 };
 
-function UseDownloadValues({ appSlug, fileName, children }) {
-  const query = useDownloadValues({ appSlug, fileName });
+function UseDownloadValues({
+  appSlug,
+  fileName,
+  sequence,
+  versionLabel,
+  isPending,
+  children,
+}) {
+  const query = useDownloadValues({
+    appSlug,
+    fileName,
+    sequence,
+    versionLabel,
+    isPending,
+  });
 
   return children(query);
 }

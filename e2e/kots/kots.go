@@ -35,7 +35,7 @@ func NewInstaller(imageRegistry, imageNamespace, imageTag string) *Installer {
 }
 
 func (i *Installer) Install(kubeconfig string, test inventory.Test, adminConsolePort string) string {
-	session, err := i.install(kubeconfig, test.UpstreamURI, test.Namespace, test.UseMinimalRBAC)
+	session, err := i.install(kubeconfig, test)
 	Expect(err).WithOffset(1).Should(Succeed(), "Kots install failed")
 	Eventually(session).WithOffset(1).WithTimeout(InstallWaitDuration).Should(gexec.Exit(0), "Kots install failed with non-zero exit code")
 
@@ -44,30 +44,35 @@ func (i *Installer) Install(kubeconfig string, test inventory.Test, adminConsole
 
 func (i *Installer) AdminConsolePortForward(kubeconfig string, test inventory.Test, adminConsolePort string) string {
 	var err error
-	if adminConsolePort == "" {
-		adminConsolePort, err = getFreePort()
-		Expect(err).WithOffset(1).Should(Succeed(), "get free port")
+	for x := 0; x < 3; x++ {
+		if adminConsolePort == "" {
+			adminConsolePort, err = getFreePort()
+			Expect(err).WithOffset(1).Should(Succeed(), "get free port")
+		}
+		err = i.portForward(kubeconfig, test.Namespace, adminConsolePort)
+		if err == nil {
+			break
+		}
+		time.Sleep(5 * time.Second)
 	}
-	err = i.portForward(kubeconfig, test.Namespace, adminConsolePort)
 	Expect(err).WithOffset(1).Should(Succeed(), "port forward")
 	return adminConsolePort
 }
 
-func (i *Installer) install(kubeconfig, upstreamURI, namespace string, useMinimalRBAC bool) (*gexec.Session, error) {
+func (i *Installer) install(kubeconfig string, test inventory.Test) (*gexec.Session, error) {
 	args := []string{
 		"install",
-		upstreamURI,
+		test.UpstreamURI,
 		fmt.Sprintf("--kubeconfig=%s", kubeconfig),
 		"--no-port-forward",
-		fmt.Sprintf("--namespace=%s", namespace),
+		fmt.Sprintf("--namespace=%s", test.Namespace),
 		"--shared-password=password",
 		fmt.Sprintf("--kotsadm-registry=%s", i.imageRegistry),
 		fmt.Sprintf("--kotsadm-namespace=%s", i.imageNamespace),
 		fmt.Sprintf("--kotsadm-tag=%s", i.imageTag),
 		fmt.Sprintf("--wait-duration=%s", InstallWaitDuration),
-	}
-	if useMinimalRBAC {
-		args = append(args, "--use-minimal-rbac")
+		fmt.Sprintf("--use-minimal-rbac=%t", test.UseMinimalRBAC),
+		fmt.Sprintf("--skip-compatibility-check=%t", test.SkipCompatibilityCheck),
 	}
 
 	return util.RunCommand(exec.Command("kots", args...))

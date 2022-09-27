@@ -122,6 +122,36 @@ func NewTagAndDigest() Test {
 	}
 }
 
+func NewMinKotsVersion() Test {
+	return Test{
+		Name:                   "Min KOTS Version",
+		Suite:                  "min-kots-version",
+		Namespace:              "min-kots-version",
+		UpstreamURI:            "min-kots-version/automated",
+		SkipCompatibilityCheck: true,
+	}
+}
+
+func NewTargetKotsVersion() Test {
+	return Test{
+		Name:                   "Target KOTS Version",
+		Suite:                  "target-kots-version",
+		Namespace:              "target-kots-version",
+		UpstreamURI:            "target-kots-version/automated",
+		SkipCompatibilityCheck: true,
+	}
+}
+
+func NewRangeKotsVersion() Test {
+	return Test{
+		Name:                   "Range KOTS Version",
+		Suite:                  "range-kots-version",
+		Namespace:              "range-kots-version",
+		UpstreamURI:            "range-kots-version/automated",
+		SkipCompatibilityCheck: true,
+	}
+}
+
 func SetupRegressionTest(kubectlCLI *kubectl.CLI) TestimParams {
 	cmd := kubectlCLI.Command(
 		context.Background(),

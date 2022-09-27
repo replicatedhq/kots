@@ -568,12 +568,15 @@ class AppConfig extends Component<Props, State> {
     const gitops = app.downstream?.gitops;
     const isNewVersion = !fromLicenseFlow && match.params.sequence == undefined;
 
+    const urlParams = new URLSearchParams(window.location.search);
+
     let downstreamVersionLabel = downstreamVersion?.versionLabel;
     if (!downstreamVersionLabel) {
-      const urlParams = new URLSearchParams(window.location.search);
       // TODO: add error handling for this. empty string is not valid
       downstreamVersionLabel = urlParams.get("semver") || "";
     }
+
+    const isPending = urlParams.get("isPending") === "true";
 
     let saveButtonText = fromLicenseFlow ? "Continue" : "Save config";
     if (isHelmManaged) {
@@ -620,9 +623,10 @@ class AppConfig extends Component<Props, State> {
                     <GroupTitle fontSize="16" className="u-lineHeight--normal">
                       {group.title}
                     </GroupTitle>
+                    {/* adding the arrow-down classes, will rotate the icon when clicked */}
                     <Icon
                       icon="down-arrow"
-                      className="darkGray-color clickable flex-auto u-marginLeft--5"
+                      className="darkGray-color clickable flex-auto u-marginLeft--5 arrow-down"
                       size="12"
                       style={{ marginTop: "10px" }}
                       color={""}
@@ -669,6 +673,8 @@ class AppConfig extends Component<Props, State> {
                     appSlug: this.getSlug(),
                     fileName: "values.yaml",
                     sequence: match.params.sequence,
+                    versionLabel: downstreamVersionLabel,
+                    isPending: isPending,
                   });
 
                 return (

@@ -53,7 +53,8 @@ export const SideNavWrapper = styled.div`
   border-radius: 4px;
   overflow: auto;
   & ${SideNavGroup} {
-    .icon.u-darkDropdownArrow {
+    .icon.u-darkDropdownArrow,
+    .arrow-down {
       margin-left: 6px;
       top: 6px;
       transition: transform 0.1s ease-in-out;
@@ -63,7 +64,8 @@ export const SideNavWrapper = styled.div`
       & ${GroupTitle} {
         font-weight: 700;
       }
-      .icon.u-darkDropdownArrow {
+      .icon.u-darkDropdownArrow,
+      .arrow-down {
         transform: rotate(180deg);
       }
       & ${SideNavItems} {
