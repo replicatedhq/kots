@@ -1,5 +1,6 @@
 import React from "react";
 import { useParams } from "react-router-dom";
+import { Helmet } from "react-helmet";
 
 import { KotsParams } from "@types";
 
@@ -17,12 +18,21 @@ function makePageTitle({
   return `${pageName} | Admin Console`;
 }
 
-
-function KotsPageTitle(pageName: string, showAppSlug: boolean) {
+/* example output:
+Troubleshoot | http-echo | Admin Console
+Gitops | Admin Console
+*/
+function KotsPageTitle({pageName, showAppSlug} : {pageName: string, showAppSlug: boolean}) {
   const { slug } = useParams<KotsParams>();
+  debugger;
 
-  if (app)
-return (<title>{makePageTitle({ appSlug: showAppSlug ? slug: undefined, pageName })}</title>);
+  if (slug && showAppSlug) {
+    return <Helmet><title>
+      {makePageTitle({ appSlug: slug, pageName })}
+      </title></Helmet>;
+  }
+
+  return <Helmet><title>{makePageTitle({ pageName })}</title></Helmet>;
 }
 
 export { KotsPageTitle }

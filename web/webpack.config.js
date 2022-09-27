@@ -46,12 +46,13 @@ module.exports = function (env) {
         tty: require.resolve("tty-browserify")
       },
       alias: {
-        "@src": path.resolve(__dirname, "src"),
+        "@components": path.resolve(__dirname, "src/components"),
         "@features": path.resolve(__dirname, "src/features"),
         "@stores": path.resolve(__dirname, "src/stores"),
         "@types": path.resolve(__dirname, "src/types/index"),
         "@utils": path.resolve(__dirname, "src/utilities/index"),
-        "handlebars" : "handlebars/dist/handlebars.js"
+        "handlebars" : "handlebars/dist/handlebars.js",
+        "@src": path.resolve(__dirname, "src")
       },
       mainFields: ["browser", "main"],
     },

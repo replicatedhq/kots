@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { withRouter, Link } from "react-router-dom";
-import Helmet from "react-helmet";
+import { Helmet } from "react-helmet";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Modal from "react-modal";
@@ -33,11 +33,11 @@ import ReactTooltip from "react-tooltip";
 import Pager from "../shared/Pager";
 import { HelmDeployModal } from "../shared/modals/HelmDeployModal";
 import { UseDownloadValues } from "../hooks";
+import { KotsPageTitle } from "@components/Head";
 
 import "@src/scss/components/apps/AppVersionHistory.scss";
 import DashboardGitOpsCard from "./DashboardGitOpsCard";
 import Icon from "../Icon";
-import { makePageTitle } from "@utils";
 dayjs.extend(relativeTime);
 
 class AppVersionHistory extends Component {
@@ -1632,9 +1632,10 @@ class AppVersionHistory extends Component {
 
     return (
       <div className="flex flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
-        <Helmet>
-          <title>{makePageTitle({ appSlug: app.slug, pageName: "Version History" })}</title>
-        </Helmet>
+          <KotsPageTitle
+            pageName="Version History"
+            showAppSlug
+          />
         <div className="flex-column flex1">
           <div className="flex flex1 justifyContent--center">
             <div className="flex1 flex AppVersionHistory">

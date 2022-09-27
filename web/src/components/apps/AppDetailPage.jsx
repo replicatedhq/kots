@@ -23,7 +23,7 @@ import AppRegistrySettings from "./AppRegistrySettings";
 import AppIdentityServiceSettings from "./AppIdentityServiceSettings";
 import TroubleshootContainer from "../troubleshoot/TroubleshootContainer";
 import ErrorModal from "../modals/ErrorModal";
-import { makePageTitle } from "@utils";
+import { KotsPageTitle } from "@components/Head";
 
 import "../../scss/components/watches/WatchDetailPage.scss";
 

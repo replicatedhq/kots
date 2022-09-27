@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { withRouter, Link } from "react-router-dom";
-import Helmet from "react-helmet";
+import { Helmet } from "react-helmet";
 import AceEditor from "react-ace";
 import "brace/mode/text";
 import "brace/mode/yaml";
@@ -228,7 +228,7 @@ class EditRedactor extends Component {
       const defaultYaml = `kind: Redactor
 apiVersion: troubleshoot.sh/v1beta2
 metadata:
-  name: 
+  name:
 spec:
   redactors:
   - name: myredactor

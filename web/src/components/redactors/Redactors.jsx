@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { withRouter, Link } from "react-router-dom";
-import Helmet from "react-helmet";
+import { Helmet } from "react-helmet";
 import dayjs from "dayjs";
 import Select from "react-select";
 import Toggle from "../shared/Toggle";

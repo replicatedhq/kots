@@ -1,6 +1,6 @@
 import * as React from "react";
 import PropTypes from "prop-types";
-import Helmet from "react-helmet";
+import { Helmet } from "react-helmet";
 import { withRouter } from "react-router-dom";
 import GitOpsDeploymentManager from "../../features/Gitops/GitOpsDeploymentManager";
 import { GitOpsProvider } from "../../features/Gitops/context";

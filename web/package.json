@@ -45,7 +45,7 @@
     "@types/node": "^18.7.13",
     "@types/react": "^18.0.17",
     "@types/react-dom": "^18.0.6",
-    "@types/react-helmet": "5",
+    "@types/react-helmet": "^6.1.5",
     "@types/react-modal": "^3.11.2",
     "@types/react-router": "^5.1.18",
     "@types/react-router-dom": "^5",
@@ -159,7 +159,7 @@
     "react-dom": "^18.2.0",
     "react-dropzone": "^4.2.9",
     "react-favicon": "^0.0.17",
-    "react-helmet": "^5.2.1",
+    "react-helmet": "^6.1.0",
     "react-icomoon": "^2.5.4",
     "react-modal": "3.11.2",
     "react-query": "^3.39.1",
@@ -194,12 +194,13 @@
     "moduleNameMapper": {
       "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/__mocks__/fileMock.js",
       "\\.(scss|css|less)$": "<rootDir>/__mocks__/styleMock.js",
-      "@src/(.*)$": "<rootDir>/src/$1",
+      "@components/(.*)$": "<rootDir>/src/components/$1",
       "@features/(.*)$": "<rootDir>/src/features/$1",
       "@stores/(.*)$": "<rootDir>/src/stores/$1",
       "@types": "<rootDir>/src/types/index",
       "@utils": "<rootDir>/src/utilities/index",
-      "handlebars" : "<rootDir>/handlebars/dist/handlebars.js"
+      "handlebars": "<rootDir>/handlebars/dist/handlebars.js",
+      "@src/(.*)$": "<rootDir>/src/$1"
     }
   }
 }

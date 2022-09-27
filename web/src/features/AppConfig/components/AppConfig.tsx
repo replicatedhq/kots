@@ -2,7 +2,7 @@ import React, { Component } from "react";
 import { AppConfigRenderer } from "../../../components/AppConfigRenderer";
 import { withRouter, Link } from "react-router-dom";
 import classNames from "classnames";
-import Helmet from "react-helmet";
+import { Helmet } from "react-helmet";
 import debounce from "lodash/debounce";
 import find from "lodash/find";
 import map from "lodash/map";

@@ -1,5 +1,5 @@
 import * as React from "react";
-import Helmet from "react-helmet";
+import { Helmet } from "react-helmet";
 import { withRouter, Link } from "react-router-dom";
 import Modal from "react-modal";
 

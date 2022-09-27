@@ -1,7 +1,7 @@
 import * as React from "react";
 import { withRouter } from "react-router-dom";
 import { Utilities } from "../../utilities/utilities";
-import Helmet from "react-helmet";
+import { Helmet } from "react-helmet";
 import isEmpty from "lodash/isEmpty";
 import keys from "lodash/keys";
 import MonacoEditor from "@monaco-editor/react";

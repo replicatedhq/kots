@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { withRouter } from "react-router-dom";
-import Helmet from "react-helmet";
+import { Helmet } from "react-helmet";
 import ReactTooltip from "react-tooltip";
 import isEmpty from "lodash/isEmpty";
 import size from "lodash/size";
@@ -1152,7 +1152,7 @@ class IdentityProviders extends Component {
                             icon="info-circle-outline"
                             size={16}
                             className="gray-color u-marginLeft--10 clickable"
-                            data-tip='For offline_access, the prompt parameter is set by default to "prompt=consent". 
+                            data-tip='For offline_access, the prompt parameter is set by default to "prompt=consent".
                               However this is not supported by all OIDC providers, some of them support different value for prompt, like "prompt=login" or "prompt=none"'
                           />
                           <ReactTooltip

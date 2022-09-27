@@ -1,5 +1,5 @@
 import * as React from "react";
-import Helmet from "react-helmet";
+import { Helmet } from "react-helmet";
 import { Utilities, dynamicallyResizeText } from "@src/utilities/utilities";
 import Loader from "@src/components/shared/Loader";
 import ErrorModal from "@src/components/modals/ErrorModal";

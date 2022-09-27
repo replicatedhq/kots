@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 // TODO: add type checking support for the following packages
 // @ts-ignore
-import Helmet from "react-helmet";
+import { Helmet } from "react-helmet";
 // @ts-ignore
 import Dropzone from "react-dropzone";
 // @ts-ignore

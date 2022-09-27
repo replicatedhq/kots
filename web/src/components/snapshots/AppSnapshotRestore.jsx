@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { withRouter } from "react-router-dom";
-import Helmet from "react-helmet";
+import { Helmet } from "react-helmet";
 import { Line } from "rc-progress";
 import Loader from "../shared/Loader";
 import { Utilities } from "@src/utilities/utilities";

@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { withRouter } from "react-router-dom";
-import Helmet from "react-helmet";
+import { Helmet } from "react-helmet";
 import isEmpty from "lodash/isEmpty";
 import isEqual from "lodash/isEqual";
 
