@@ -43,3 +43,47 @@ a:visited {
     color: $success-color;
   }
 }
+.config-sidebar-wrapper {
+  background: $sub-nav-color;
+  width: 250px;
+  padding: 10px;
+  border-radius: 4px;
+  overflow: auto;
+  & .side-nav-group {
+    .icon.u-darkDropdownArrow,
+    .arrow-down {
+      margin-left: 6px;
+      top: 6px;
+      transition: transform 0.1s ease-in-out;
+    }
+
+    &.group-open {
+      & .group-title {
+        font-weight: 700;
+      }
+      .icon.u-darkDropdownArrow,
+      .arrow-down {
+        transform: rotate(180deg);
+      }
+      & .side-nav-items {
+        display: block;
+      }
+    }
+  }
+}
+.config-items {
+  padding: 10px;
+  background-color: #f5f8f9;
+  border-radius: 4px;
+  margin-top: 15px;
+  //display: ${(props) => (props.display ? props.display : "block")};
+  grid-template-columns: 1fr 1fr;
+  grid-gap: 15px 0;
+}
+
+@media screen and (max-width: 1200px) {
+  .config-sidebar-wrapper {
+    width: 100%;
+    max-width: 200px;
+  }
+}
