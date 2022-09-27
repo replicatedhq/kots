@@ -44,6 +44,7 @@ jobs:
     with:
       addon_version: "${{ inputs.addon_version }}"
       s3_prefix: "${{ inputs.s3_prefix }}"
+    secrets: inherit
 
   test-kots-addon:
     runs-on: ubuntu-20.04

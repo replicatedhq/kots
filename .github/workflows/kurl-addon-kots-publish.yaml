@@ -20,6 +20,7 @@ jobs:
       addon_version: "${{ inputs.addon_version || github.ref_name }}"
       s3_prefix: ""
       priority: 1
+    secrets: inherit
 
   publish-kots-addon:
     runs-on: ubuntu-20.04
