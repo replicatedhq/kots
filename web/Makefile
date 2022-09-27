@@ -38,9 +38,8 @@ build-local: deps
 		--env development
 
 .PHONY: build-kotsadm
-build-kotsadm: KOTSADM_BUILD_VERSION = $(if ${GIT_TAG},${GIT_TAG},$(shell echo ${GIT_COMMIT} | cut -c1-7))
 build-kotsadm: deps
-	KOTSADM_BUILD_VERSION=$(KOTSADM_BUILD_VERSION) \
+	KOTSADM_BUILD_VERSION=$(GIT_TAG) \
 	node \
 		--max_old_space_size=6144 \
 		./node_modules/webpack/bin/webpack.js \

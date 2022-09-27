@@ -62,5 +62,7 @@ func GetUpdates(upstreamURI string, getUpdatesOptions GetUpdatesOptions) (*upstr
 		return nil, errors.Wrap(err, "failed to peek upstream")
 	}
 
+	log.FinishSpinner()
+
 	return v, nil
 }

@@ -38,7 +38,7 @@ describe("useIsHelmManaged", () => {
     });
   });
   describe("fetchIsHelmManaged", () => {
-    it("calls fetch with the correct url and configuration", async () => {
+    it("calls fetchIsHelmManaged with the correct url and configuration", async () => {
       const expectedBody = {
         isHelmManaged: true,
       };
