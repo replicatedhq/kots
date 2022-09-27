@@ -230,11 +230,24 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 	}
 	d := downstreams[0]
 
-	appVersions, err := store.GetStore().GetDownstreamVersions(a.ID, d.ClusterID, true)
+	appVersions, err := store.GetStore().GetDownstreamVersions(a.ID, d.ClusterID, false)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get downstream versions")
 	}
-	latestVersion := appVersions.AllVersions[0]
+
+	// "latest" is the version that can be viewed and configured (and possibly has been deployed)
+	var latestVersion *downstreamtypes.DownstreamVersion
+	for _, version := range appVersions.AllVersions {
+		if version.Status != storetypes.VersionPendingDownload {
+			latestVersion = version
+			break
+		}
+	}
+
+	if latestVersion == nil {
+		// should never happen
+		return nil, errors.Errorf("found %d versions, and 0 have been downloaded", len(appVersions.AllVersions))
+	}
 
 	isIdentityServiceSupportedForVersion, err := store.GetStore().IsIdentityServiceSupportedForVersion(a.ID, latestVersion.ParentSequence)
 	if err != nil {

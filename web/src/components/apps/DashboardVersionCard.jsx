@@ -1403,6 +1403,14 @@ class DashboardVersionCard extends React.Component {
       );
     }
 
+    let isPending = false;
+    if (
+      this.props.isHelmManaged &&
+      this.state?.latestDeployableVersion?.status?.startsWith("pending")
+    ) {
+      isPending = true;
+    }
+
     return (
       <div className="flex-column flex1 dashboard-card">
         <div className="flex flex1 justifyContent--spaceBetween alignItems--center u-marginBottom--10">
@@ -1705,6 +1713,9 @@ class DashboardVersionCard extends React.Component {
           <UseDownloadValues
             appSlug={this.props?.app?.slug}
             fileName="values.yaml"
+            sequence={this.state?.latestDeployableVersion?.parentSequence}
+            versionLabel={this.state?.latestDeployableVersion?.versionLabel}
+            isPending={isPending}
           >
             {({
               download,

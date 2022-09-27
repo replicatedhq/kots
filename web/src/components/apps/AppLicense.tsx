@@ -1,6 +1,10 @@
 import React, { Component } from "react";
+// TODO: add type checking support for the following packages
+// @ts-ignore
 import Helmet from "react-helmet";
+// @ts-ignore
 import Dropzone from "react-dropzone";
+// @ts-ignore
 import yaml from "js-yaml";
 import classNames from "classnames";
 import size from "lodash/size";
@@ -12,14 +16,76 @@ import {
   getLicenseExpiryDate,
 } from "../../utilities/utilities";
 import Loader from "../shared/Loader";
+// @ts-ignore
 import styled from "styled-components";
 
+import { App, Entitlement } from "@src/types";
 import "@src/scss/components/apps/AppLicense.scss";
 import LicenseFields from "./LicenseFields";
 import Icon from "../Icon";
 
-class AppLicense extends Component {
-  constructor(props) {
+type Props = {
+  app: App;
+  changeCallback: () => void;
+  syncCallback: () => void;
+};
+
+type LicenseFile = {
+  preview: string;
+  lastModified: number;
+  lastModifiedDate: Date;
+  name: string;
+  size: number;
+  type: string;
+  webkitRelativePath: string;
+};
+
+type License = {
+  assignee: string;
+  channelName: string;
+  entitlements: Entitlement[];
+  expiresAt: string;
+  id: string;
+  isAirgapSupported: boolean;
+  isGeoaxisSupported: boolean;
+  isGitOpsSupported: boolean;
+  isIdentityServiceSupported: boolean;
+  isSemverRequired: boolean;
+  isSnapshotSupported: boolean;
+  isSupportBundleUploadSupported: boolean;
+  lastSyncedAt: string;
+  licenseSequence: number;
+  licenseType: string;
+  changingLicense: boolean;
+  entitlementsToShow: string[];
+  isViewingLicenseEntitlements: boolean;
+  licenseChangeFile: LicenseFile | null;
+  licenseChangeMessage: string;
+  licenseChangeMessageType: string;
+  loading: boolean;
+  message: string;
+  messageType: string;
+  showLicenseChangeModal: boolean;
+  showNextStepModal: boolean;
+};
+
+type State = {
+  appLicense: License | null;
+  loading: boolean;
+  message: string;
+  messageType: string;
+  showNextStepModal: boolean;
+  entitlementsToShow: string[];
+  showLicenseChangeModal: boolean;
+  licenseChangeFile: LicenseFile | null;
+  changingLicense: boolean;
+  licenseChangeMessage: string;
+  licenseChangeMessageType: string;
+  isViewingLicenseEntitlements: boolean;
+};
+
+class AppLicense extends Component<Props, State> {
+  constructor(props: Props) {
     super(props);
 
     this.state = {
@@ -52,7 +118,7 @@ class AppLicense extends Component {
       .then(async (res) => {
         const body = await res.json();
         if (body === null) {
-          this.setState({ appLicense: {} });
+          this.setState({ appLicense: null });
         } else if (body.success) {
           this.setState({
             appLicense: body.license,
@@ -72,8 +138,11 @@ class AppLicense extends Component {
     this.getAppLicense();
   }
 
-  onDrop = async (files) => {
-    const content = await getFileContent(files[0]);
+  onDrop = async (files: LicenseFile[]) => {
+    // TODO: TextDecoder.decode() expects arg of BufferSource | undefined
+    // getFileContent returns string, ArrayBuffer, or null. Need to figure out
+    // eslint-disable-next-line
+    const content: any = await getFileContent(files[0]);
     const contentStr = new TextDecoder("utf-8").decode(content);
     const airgapLicense = await yaml.safeLoad(contentStr);
     const { appLicense } = this.state;
@@ -97,7 +166,7 @@ class AppLicense extends Component {
     this.syncAppLicense(contentStr);
   };
 
-  syncAppLicense = (licenseData) => {
+  syncAppLicense = (licenseData: string) => {
     this.setState({
       loading: true,
       message: "",
@@ -162,7 +231,7 @@ class AppLicense extends Component {
       });
   };
 
-  onLicenseChangeDrop = async (files) => {
+  onLicenseChangeDrop = async (files: LicenseFile[]) => {
     this.setState({
       licenseChangeFile: files[0],
       licenseChangeMessage: "",
@@ -178,7 +247,11 @@ class AppLicense extends Component {
       return;
     }
 
-    const content = await getFileContent(this.state.licenseChangeFile);
+    // TODO: TextDecoder.decode() expects arg of BufferSource | undefined
+    // getFileContent returns string, ArrayBuffer, or null. Need to figure out
+    // eslint-disable-next-line
+    const content: any = await getFileContent(this.state.licenseChangeFile);
+
     const licenseData = new TextDecoder("utf-8").decode(content);
 
     this.setState({
@@ -253,13 +326,13 @@ class AppLicense extends Component {
     this.setState({ showLicenseChangeModal: true });
   };
 
-  toggleShowDetails = (entitlement) => {
+  toggleShowDetails = (entitlement: string) => {
     this.setState({
       entitlementsToShow: [...this.state.entitlementsToShow, entitlement],
     });
   };
 
-  toggleHideDetails = (entitlement) => {
+  toggleHideDetails = (entitlement: string) => {
     let entitlementsToShow = [...this.state.entitlementsToShow];
     const index = this.state.entitlementsToShow.indexOf(entitlement);
     entitlementsToShow.splice(index, 1);
@@ -298,7 +371,6 @@ class AppLicense extends Component {
     const expiresAt = getLicenseExpiryDate(appLicense);
     const gitops = app.downstream?.gitops;
     const appName = app?.name || "Your application";
-
     return (
       <div className="flex flex-column justifyContent--center alignItems--center">
         <Helmet>
@@ -394,6 +466,10 @@ class AppLicense extends Component {
                           icon="github-icon"
                           size={22}
                           className="u-marginRight--5 github-icon"
+                          color={""}
+                          style={{}}
+                          disableFill={false}
+                          removeInlineStyle={false}
                         />{" "}
                         GitOps enabled{" "}
                       </span>
@@ -487,6 +563,10 @@ class AppLicense extends Component {
                       }
                       size={12}
                       className="clickable u-marginLeft--5 gray-color"
+                      color={""}
+                      style={{}}
+                      disableFill={false}
+                      removeInlineStyle={false}
                     />
                   </span>
                 </span>
@@ -610,6 +690,10 @@ class AppLicense extends Component {
                         icon="yaml-icon"
                         size={24}
                         className="u-marginRight--10 gray-color"
+                        color={""}
+                        style={{}}
+                        disableFill={false}
+                        removeInlineStyle={false}
                       />
                       <div>
                         <p className="u-fontSize--normal u-textColor--primary u-fontWeight--medium">
@@ -636,6 +720,10 @@ class AppLicense extends Component {
                         icon="yaml-icon"
                         size={40}
                         className="u-marginBottom--10 gray-color"
+                        color={""}
+                        style={{}}
+                        disableFill={false}
+                        removeInlineStyle={false}
                       />
                       <p className="u-fontSize--normal u-textColor--secondary u-fontWeight--medium u-lineHeight--normal">
                         Drag your new license here or{" "}

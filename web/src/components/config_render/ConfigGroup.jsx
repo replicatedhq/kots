@@ -244,9 +244,12 @@ export default class ConfigGroup extends React.Component {
                 </Markdown>
               </div>
             ) : null}
-            <ConfigItems display={hasAffix ? "grid" : "block"}>
+            <div
+              className="config-items"
+              style={{ display: hasAffix ? "grid" : "block" }}
+            >
               {this.renderConfigItems(item.items, readonly)}
-            </ConfigItems>
+            </div>
             {item.repeatable && (
               <div className="u-marginTop--15">
                 <button className="btn secondary blue rounded add-btn">

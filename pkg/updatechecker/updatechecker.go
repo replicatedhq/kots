@@ -209,19 +209,16 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (ucr *UpdateCheckResponse, finalE
 		return nil, errors.Wrap(err, "failed to set task status")
 	}
 
-	finishedChan := make(chan error)
+	finishedChan := make(chan error, 1)
 	defer func() {
-		if opts.Wait || finalError != nil {
+		// When "wait" is not set, the go routine will close this channel
+		if opts.Wait || finalError != nil || ucr.AvailableUpdates == 0 {
+			finishedChan <- finalError
 			defer close(finishedChan)
 		}
 	}()
 
 	tasks.StartUpdateTaskMonitor("update-download", finishedChan)
-	defer func() {
-		if opts.Wait || finalError != nil {
-			finishedChan <- finalError
-		}
-	}()
 
 	if util.IsHelmManaged() {
 		ucr, finalError = checkForHelmAppUpdates(opts, finishedChan)
@@ -401,14 +398,14 @@ func checkForKotsAppUpdates(opts CheckForUpdatesOpts, finishedChan chan<- error)
 
 	if opts.Wait {
 		if err := downloadKotsAppUpdates(opts, a.ID, d.ClusterID, filteredUpdates, updates.UpdateCheckTime); err != nil {
-			return nil, errors.Wrap(err, "failed to download updates")
+			return nil, errors.Wrap(err, "failed to download updates synchronously")
 		}
 	} else {
 		go func() {
 			defer close(finishedChan)
 			err := downloadKotsAppUpdates(opts, a.ID, d.ClusterID, filteredUpdates, updates.UpdateCheckTime)
 			if err != nil {
-				logger.Error(errors.Wrap(err, "failed to download updates"))
+				logger.Error(errors.Wrap(err, "failed to download updates asynchronously"))
 			}
 			finishedChan <- err
 		}()

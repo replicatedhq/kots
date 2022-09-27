@@ -1417,6 +1417,11 @@ class AppVersionHistory extends Component {
     if (version.preflightResultCreatedAt) {
       newPreflightResults = secondsAgo(version.preflightResultCreatedAt) < 12;
     }
+    let isPending = false;
+    if (this.props.isHelmManaged && version.status.startsWith("pending")) {
+      isPending = true;
+    }
+
     return (
       <React.Fragment key={index}>
         <AppVersionHistoryRow
@@ -1460,6 +1465,9 @@ class AppVersionHistory extends Component {
             <UseDownloadValues
               appSlug={this.props?.app?.slug}
               fileName="values.yaml"
+              sequence={version.parentSequence}
+              versionLabel={version.versionLabel}
+              isPending={isPending}
             >
               {({
                 download,
