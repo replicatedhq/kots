@@ -37,7 +37,6 @@ import {
   ResourceStates,
   Version,
 } from "@types";
-
 import { RouteComponentProps } from "react-router-dom";
 
 type Props = {
