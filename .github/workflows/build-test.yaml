@@ -56,7 +56,7 @@ jobs:
       tag: ${{ steps.get_tag.outputs.GIT_TAG }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Get tags
         id: get_tag
         uses: ./actions/version-tag
@@ -67,7 +67,7 @@ jobs:
     needs: [ can-run-ci ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Test Okteto development environment
         uses: replicatedhq/action-okteto-test@main
         with:
@@ -83,7 +83,7 @@ jobs:
       # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
       # this action checks out the remote branch and runs CI
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
@@ -123,7 +123,7 @@ jobs:
       # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets. 
       # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
       # this action checks out the remote branch and runs CI
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
@@ -165,7 +165,7 @@ jobs:
     needs: [ can-run-ci ]
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           ref: main
           repository: replicatedhq/kots-helm
@@ -197,7 +197,7 @@ jobs:
         with:
           go-version: '^1.17.4'
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
@@ -236,7 +236,7 @@ jobs:
       # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets. 
       # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
       # this action creates a branch based on remote branch and runs the tests
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
@@ -275,7 +275,7 @@ jobs:
       # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets. 
       # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
       # this action creates a branch based on remote branch and runs the tests
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
@@ -300,7 +300,7 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [ can-run-ci ]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: load environment variables from .image.env
         uses: falti/dotenv-action@v0.2
@@ -319,7 +319,7 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [ can-run-ci ]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: load environment variables from .image.env
         uses: falti/dotenv-action@v0.2
@@ -345,7 +345,7 @@ jobs:
     needs: [ enable-tests, can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: download e2e deps
         uses: actions/download-artifact@v2
         with:
@@ -379,7 +379,7 @@ jobs:
         k8s_version: [ v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1,v1.24.4-k3s1 ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: download e2e deps
         uses: actions/download-artifact@v2
         with:
@@ -413,7 +413,7 @@ jobs:
         k8s_version: [ v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1,v1.24.4-k3s1 ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: download e2e deps
         uses: actions/download-artifact@v2
         with:
@@ -447,7 +447,7 @@ jobs:
         k8s_version: [ v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1,v1.24.4-k3s1 ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: download e2e deps
         uses: actions/download-artifact@v2
         with:
@@ -481,7 +481,7 @@ jobs:
         k8s_version: [ v1.24.4-k3s1 ] # there's no need to run this test on multiple k3s versions
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: download e2e deps
         uses: actions/download-artifact@v2
         with:
@@ -515,7 +515,7 @@ jobs:
         k8s_version: [ v1.24.4-k3s1 ] # there's no need to run this test on multiple k3s versions
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: download e2e deps
         uses: actions/download-artifact@v2
         with:
@@ -549,7 +549,7 @@ jobs:
         k8s_version: [ v1.24.4-k3s1 ] # there's no need to run this test on multiple k3s versions
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: download e2e deps
         uses: actions/download-artifact@v2
         with:
@@ -583,7 +583,7 @@ jobs:
         k8s_version: [ v1.24.4-k3s1 ] # there's no need to run this test on multiple k3s versions
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: download e2e deps
         uses: actions/download-artifact@v2
         with:
@@ -617,7 +617,7 @@ jobs:
         k8s_version: [ v1.24.4-k3s1 ] # there's no need to run this test on multiple k3s versions
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: download e2e deps
         uses: actions/download-artifact@v2
         with:
@@ -656,7 +656,7 @@ jobs:
       APP_VERSION_LABEL: "0.0.1"
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - uses: replicatedhq/action-k3s@main
         with:
@@ -735,7 +735,7 @@ jobs:
       APP_SLUG: multi-namespace-yeti
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - uses: replicatedhq/action-k3s@main
         with:
@@ -809,7 +809,7 @@ jobs:
       APP_SLUG: multi-namespace
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - uses: replicatedhq/action-k3s@main
         with:
@@ -896,7 +896,7 @@ jobs:
       LATEST_APP_VERSION_LABEL: v1.0.1
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - uses: replicatedhq/action-k3s@main
         with:
@@ -1028,7 +1028,7 @@ jobs:
       APP_SLUG: helm-install-order
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - uses: replicatedhq/action-k3s@main
         with:
@@ -1102,7 +1102,7 @@ jobs:
       APP_SLUG: yamlescape
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - uses: replicatedhq/action-k3s@main
         with:
@@ -1176,7 +1176,7 @@ jobs:
       APP_SLUG: no-redeploy-on-restart
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - uses: replicatedhq/action-k3s@main
         with:
@@ -1374,7 +1374,7 @@ jobs:
       BASE_KOTS_VERSION: v1.77.0
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - uses: replicatedhq/action-k3s@main
         with:
@@ -1474,7 +1474,7 @@ jobs:
         k8s_version: [ v1.24.4-k3s1 ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: download e2e deps
         uses: actions/download-artifact@v2
         with:
@@ -1506,7 +1506,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: download kots binary
         uses: actions/download-artifact@v2
@@ -1533,7 +1533,7 @@ jobs:
         k8s_version: [v1.25.0-k3s1]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: download e2e deps
         uses: actions/download-artifact@v2
         with:
@@ -1586,7 +1586,7 @@ jobs:
         k8s_version: [v1.25.0-k3s1]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: download e2e deps
         uses: actions/download-artifact@v2
         with:
@@ -1635,7 +1635,7 @@ jobs:
         k8s_version: [v1.25.0-k3s1]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: download e2e deps
         uses: actions/download-artifact@v2
         with:

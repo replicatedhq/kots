@@ -14,7 +14,7 @@ jobs:
       tag: ${{ github.ref_type == 'branch' && steps.get_tag.outputs.GIT_TAG || github.ref_name }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Get tags
         id: get_tag
         uses: ./actions/version-tag
@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
@@ -67,7 +67,7 @@ jobs:
       image: schemahero/schemahero:0.13.2
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Generate fixtures
         run: |
           /schemahero fixtures \
@@ -88,7 +88,7 @@ jobs:
       options: --user root
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Download schema artifact
       uses: actions/download-artifact@v2
       with:
@@ -107,7 +107,7 @@ jobs:
     needs: [generate-fixtures, generate-tag]
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - uses: azure/docker-login@v1
       env:
         DOCKER_CONFIG: ./migrations/.docker
@@ -134,7 +134,7 @@ jobs:
       options: --user root
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Build web
       env:
         GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
@@ -155,7 +155,7 @@ jobs:
       with:
         go-version: '^1.17.4'
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Cache Go modules
       uses: actions/cache@v3
       with:
@@ -194,7 +194,7 @@ jobs:
       with:
         go-version: '^1.17.4'
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Cache Go modules
       uses: actions/cache@v3
       with:
@@ -225,7 +225,7 @@ jobs:
     needs: [build-go-api, generate-tag]
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Download go_api artifact
       uses: actions/download-artifact@v2
       with:
@@ -263,7 +263,7 @@ jobs:
         go-version: '^1.17.4'
 
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Cache Go modules
       uses: actions/cache@v3
@@ -316,7 +316,7 @@ jobs:
     needs: [build-kurl-proxy, build-airgap, generate-tag]
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Generate Kurl Addon PR
       env:
         GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
@@ -334,7 +334,7 @@ jobs:
     if: github.ref_type != 'branch'
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Generate KOTS Release Notes PR
       env:
@@ -423,7 +423,7 @@ jobs:
       GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - uses: kceb/pull-request-url-action@v2
       id: pr_url
     - name: Expose git commit data

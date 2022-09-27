@@ -13,7 +13,7 @@ jobs:
       tag: ${{ steps.get_tag.outputs.GIT_TAG }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Get tags
         id: get_tag
         uses: ./actions/version-tag
@@ -24,7 +24,7 @@ jobs:
       image: schemahero/schemahero:0.13.2
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Generate fixtures
         run: |
@@ -48,7 +48,7 @@ jobs:
       options: --user root
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Download schema artifact
       uses: actions/download-artifact@v2
@@ -73,7 +73,7 @@ jobs:
     needs: [generate-fixtures]
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - uses: azure/docker-login@v1
       with:
@@ -97,7 +97,7 @@ jobs:
     needs: [publish-fixtures]
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - uses: azure/docker-login@v1
       env:
@@ -121,7 +121,7 @@ jobs:
       options: --user root
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Setup Node.js environment
       uses: actions/setup-node@v2
@@ -148,7 +148,7 @@ jobs:
       options: --user root
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Setup Node.js environment
       uses: actions/setup-node@v2
@@ -178,7 +178,7 @@ jobs:
         go-version: '^1.17.4'
 
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Cache Go modules
       uses: actions/cache@v3
@@ -213,7 +213,7 @@ jobs:
         go-version: '^1.17.4'
 
     - name: Checkout
-      uses: actions/checkout@v1 # not @v2 because of: https://github.com/actions/checkout/issues/126
+      uses: actions/checkout@v3 # not @v2 because of: https://github.com/actions/checkout/issues/126
 
     - name: Cache Go modules
       uses: actions/cache@v3
@@ -251,7 +251,7 @@ jobs:
     steps:
 
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Download go_api artifact
       uses: actions/download-artifact@v2
@@ -286,7 +286,7 @@ jobs:
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Download kurl_proxy artifact
       uses: actions/download-artifact@v2
@@ -324,7 +324,7 @@ jobs:
     needs: [build-schema-migrations]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Read image tags from env file
         uses: falti/dotenv-action@v0.2
         id: dotenv
@@ -352,7 +352,7 @@ jobs:
     needs: [build-schema-migrations]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Read image tags from env file
         uses: falti/dotenv-action@v0.2
         id: dotenv
@@ -379,7 +379,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Read image tags from env file
         uses: falti/dotenv-action@v0.2
         id: dotenv
@@ -407,7 +407,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Read image tags from env file
         uses: falti/dotenv-action@v0.2
         id: dotenv
@@ -435,7 +435,7 @@ jobs:
     needs: [build_kurl_proxy_alpha]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Scan kurl-proxy for vulnerabilities
         id: scan
         uses: aquasecurity/trivy-action@master
@@ -457,7 +457,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Read image tags from env file
         uses: falti/dotenv-action@v0.2
         id: dotenv
@@ -485,7 +485,7 @@ jobs:
     needs: [release_go_api_alpha]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Scan kotsadm for vulnerabilities
         id: scan
         uses: aquasecurity/trivy-action@master
@@ -508,7 +508,7 @@ jobs:
     needs: [build-schema-migrations]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Scan migrations for vulnerabilities
         id: scan
         uses: aquasecurity/trivy-action@master
