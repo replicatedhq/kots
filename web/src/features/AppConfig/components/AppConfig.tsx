@@ -580,7 +580,7 @@ class AppConfig extends Component<Props, State> {
 
     return (
       <Flex flex="1" direction="column" p="20" align="center">
-   <KotsPageTitle pageName="Config" showAppSlug />
+        <KotsPageTitle pageName="Config" showAppSlug />
         {fromLicenseFlow && app && (
           <Span size="18" weight="bold" mt="30" ml="38">
             Configure {app.name}

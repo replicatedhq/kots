@@ -21,7 +21,7 @@ class SnapshotsWrapper extends Component {
 
     return (
       <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
-<KotsPageTitle pageName="Version History"/>
+        <KotsPageTitle pageName="Version History" />
         <div className="flex-column flex1 u-width--full u-height--full u-overflow--auto">
           {!snapshotsApps[0] ? (
             <div className="flex-column flex1 alignItems--center justifyContent--center">

@@ -220,7 +220,7 @@ class Redactors extends Component {
 
     return (
       <div className="centered-container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 justifyContent--center alignItems--center">
-<KotsPageTitle pageName="Redactors" showAppSlug />
+        <KotsPageTitle pageName="Redactors" showAppSlug />
         <div className="Redactors--wrapper flex1 flex-column u-width--full">
           <div className="flex justifyContent--center u-paddingBottom--30">
             <Toggle

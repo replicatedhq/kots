@@ -313,7 +313,7 @@ class SnapshotSettings extends Component {
 
     return (
       <div className="flex1 flex-column u-overflow--auto">
-   <KotsPageTitle pageName="Snapshot Settings" />
+        <KotsPageTitle pageName="Snapshot Settings" />
         {!isVeleroCorrectVersion(snapshotSettings) &&
         !checkForVeleroAndRestic ? (
           <div className="VeleroWarningBlock">

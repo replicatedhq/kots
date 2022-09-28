@@ -408,7 +408,7 @@ class GenerateSupportBundle extends React.Component {
 
     return (
       <div className="GenerateSupportBundle--wrapper container flex-column u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">
-  <KotsPageTitle pageName="Troubleshoot" showAppSlug />
+        <KotsPageTitle pageName="Troubleshoot" showAppSlug />
         <div className="GenerateSupportBundle">
           {!watch.downstream && !this.state.supportBundles?.length ? (
             <Link

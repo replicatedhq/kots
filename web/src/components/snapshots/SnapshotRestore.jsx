@@ -356,7 +356,7 @@ class SnapshotRestore extends Component {
 
     return (
       <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">
-    <KotsPageTitle pageName="Snapshot Restore" showAppSlug />
+        <KotsPageTitle pageName="Snapshot Restore" showAppSlug />
         {!restoreCompleted && !restoreFailing ? (
           <div className="flex1 flex-column alignItems--center">
             <p className="u-fontWeight--bold u-textColor--primary u-fontSize--larger u-lineHeight--normal u-marginBottom--10">

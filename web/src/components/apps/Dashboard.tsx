@@ -744,7 +744,7 @@ class Dashboard extends Component<Props, State> {
         )}
         {app && (
           <div className="flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
-        <KotsPageTitle pageName="Dashboard" showAppSlug />
+            <KotsPageTitle pageName="Dashboard" showAppSlug />
             <div className="Dashboard flex flex-auto justifyContent--center alignSelf--center alignItems--center">
               <div className="flex1 flex-column">
                 <div className="flex flex1 alignItems--center">

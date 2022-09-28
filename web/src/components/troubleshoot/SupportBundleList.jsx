@@ -117,7 +117,7 @@ class SupportBundleList extends React.Component {
 
     return (
       <div className="centered-container u-paddingBottom--30 u-paddingTop--30 flex1 flex">
-     <KotsPageTitle pageName="Version History" showAppSlug />
+        <KotsPageTitle pageName="Version History" showAppSlug />
         <div className="flex1 flex-column">
           <div className="flex justifyContent--center u-paddingBottom--30">
             <Toggle

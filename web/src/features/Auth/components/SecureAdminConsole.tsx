@@ -330,7 +330,7 @@ class SecureAdminConsole extends React.Component<Props, State> {
 
     return (
       <div className="container flex-column flex1 u-overflow--auto Login-wrapper justifyContent--center alignItems--center">
-       <KotsPageTitle pageName="Login" showAppSlug />
+        <KotsPageTitle pageName="Login" showAppSlug />
         <div className="LoginBox-wrapper u-flexTabletReflow flex-auto">
           <div className="flex-auto flex-column login-form-wrapper secure-console justifyContent--center">
             <div className="flex-column alignItems--center">
