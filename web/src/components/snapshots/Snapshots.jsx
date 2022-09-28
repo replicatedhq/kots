@@ -512,7 +512,7 @@ class Snapshots extends Component {
 
     return (
       <div className="flex1 flex-column u-overflow--auto">
-        <KotsPageTitle pageName="Snapshots" showAppSlug />
+        <KotsPageTitle pageName="Full Snapshots" showAppSlug />
         {!isVeleroCorrectVersion(snapshotSettings) ? (
           <div className="VeleroWarningBlock">
             <Icon icon={"warning"} size={24} className="warning-color" />

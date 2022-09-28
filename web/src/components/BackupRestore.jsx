@@ -270,7 +270,7 @@ class BackupRestore extends React.Component {
 
     return (
       <div className="BackupRestore--wrapper container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 u-marginTop--10 alignItems--center">
-        <KotsPageTitle pageName="Restore Backup" />
+        <KotsPageTitle pageName="Restore from Backup" />
         {!snapshotSettings?.isVeleroRunning ||
         !snapshotSettings?.isResticRunning
           ? this.navigateToSnapshotConfiguration()
