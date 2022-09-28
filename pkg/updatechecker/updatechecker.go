@@ -15,6 +15,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	license "github.com/replicatedhq/kots/pkg/kotsadmlicense"
 	upstream "github.com/replicatedhq/kots/pkg/kotsadmupstream"
+	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
@@ -246,6 +247,23 @@ func checkForHelmAppUpdates(opts CheckForUpdatesOpts, finishedChan chan<- error)
 
 	availableUpdateTags, err := helm.CheckForUpdates(helmApp, license, &currentVersion)
 	if err != nil {
+		expiredErr := util.ActionableError{
+			NoRetry: true,
+			Message: "License is expired",
+		}
+		isExpired := false
+
+		newLicense, _ := helm.GetChartLicenseFromSecretOrDownload(helmApp)
+		if newLicense != nil {
+			isExpired, _ = kotslicense.LicenseIsExpired(newLicense)
+		} else {
+			isExpired, _ = kotslicense.LicenseIsExpired(license)
+		}
+
+		if isExpired {
+			return nil, expiredErr
+		}
+
 		return nil, errors.Wrap(err, "failed to get available updates")
 	}
 
