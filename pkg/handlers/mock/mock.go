@@ -166,18 +166,6 @@ func (mr *MockKOTSHandlerMockRecorder) ConfigureAppIdentityService(w, r interfac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureAppIdentityService", reflect.TypeOf((*MockKOTSHandler)(nil).ConfigureAppIdentityService), w, r)
 }
 
-// ConfigureAutomaticUpdates mocks base method.
-func (m *MockKOTSHandler) ConfigureAutomaticUpdates(w http.ResponseWriter, r *http.Request) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ConfigureAutomaticUpdates", w, r)
-}
-
-// ConfigureAutomaticUpdates indicates an expected call of ConfigureAutomaticUpdates.
-func (mr *MockKOTSHandlerMockRecorder) ConfigureAutomaticUpdates(w, r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureAutomaticUpdates", reflect.TypeOf((*MockKOTSHandler)(nil).ConfigureAutomaticUpdates), w, r)
-}
-
 // ConfigureFileSystemSnapshotProvider mocks base method.
 func (m *MockKOTSHandler) ConfigureFileSystemSnapshotProvider(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
@@ -644,6 +632,18 @@ func (m *MockKOTSHandler) GetAutomatedInstallStatus(w http.ResponseWriter, r *ht
 func (mr *MockKOTSHandlerMockRecorder) GetAutomatedInstallStatus(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAutomatedInstallStatus", reflect.TypeOf((*MockKOTSHandler)(nil).GetAutomatedInstallStatus), w, r)
+}
+
+// GetAutomaticUpdatesConfig mocks base method.
+func (m *MockKOTSHandler) GetAutomaticUpdatesConfig(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetAutomaticUpdatesConfig", w, r)
+}
+
+// GetAutomaticUpdatesConfig indicates an expected call of GetAutomaticUpdatesConfig.
+func (mr *MockKOTSHandlerMockRecorder) GetAutomaticUpdatesConfig(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAutomaticUpdatesConfig", reflect.TypeOf((*MockKOTSHandler)(nil).GetAutomaticUpdatesConfig), w, r)
 }
 
 // GetBackup mocks base method.
@@ -1232,6 +1232,18 @@ func (m *MockKOTSHandler) SetAppConfigValues(w http.ResponseWriter, r *http.Requ
 func (mr *MockKOTSHandlerMockRecorder) SetAppConfigValues(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAppConfigValues", reflect.TypeOf((*MockKOTSHandler)(nil).SetAppConfigValues), w, r)
+}
+
+// SetAutomaticUpdatesConfig mocks base method.
+func (m *MockKOTSHandler) SetAutomaticUpdatesConfig(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetAutomaticUpdatesConfig", w, r)
+}
+
+// SetAutomaticUpdatesConfig indicates an expected call of SetAutomaticUpdatesConfig.
+func (mr *MockKOTSHandlerMockRecorder) SetAutomaticUpdatesConfig(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetAutomaticUpdatesConfig", reflect.TypeOf((*MockKOTSHandler)(nil).SetAutomaticUpdatesConfig), w, r)
 }
 
 // SetPrometheusAddress mocks base method.

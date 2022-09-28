@@ -80,7 +80,11 @@ export default class AutomaticUpdatesModal extends React.Component {
     super(props);
     let selectedSchedule = find(SCHEDULES, { value: props.updateCheckerSpec });
     if (!selectedSchedule) {
-      selectedSchedule = find(SCHEDULES, { value: "@default" });
+      if (props.updateCheckerSpec?.length > 0) {
+        selectedSchedule = find(SCHEDULES, { value: "custom" });
+      } else {
+        selectedSchedule = find(SCHEDULES, { value: "@default" });
+      }
     }
 
     let selectedAutoDeploy = find(AUTO_DEPLOY_OPTIONS, [
@@ -97,10 +101,10 @@ export default class AutomaticUpdatesModal extends React.Component {
       selectedSchedule,
       selectedAutoDeploy,
     };
+  }
 
-    if (this.state.updateCheckerSpec === "") {
-      this.state.updateCheckerSpec = "@default";
-    }
+  componentDidMount() {
+    this.getAutomaticUpdatesConfig();
   }
 
   onConfigureAutomaticUpdates = () => {
@@ -138,6 +142,57 @@ export default class AutomaticUpdatesModal extends React.Component {
         if (this.props.onAutomaticUpdatesConfigured) {
           this.props.onAutomaticUpdatesConfigured();
         }
+      })
+      .catch((err) => {
+        this.setState({
+          configureAutomaticUpdatesErr: String(err),
+        });
+      });
+  };
+
+  getAutomaticUpdatesConfig = () => {
+    const { appSlug } = this.props;
+
+    fetch(`${process.env.API_ENDPOINT}/app/${appSlug}/automaticupdates`, {
+      headers: {
+        Authorization: Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      method: "GET",
+    })
+      .then(async (res) => {
+        const response = await res.json();
+
+        if (response?.updateCheckerSpec !== "") {
+          let selectedSchedule = find(SCHEDULES, {
+            value: response?.updateCheckerSpec,
+          });
+          if (!selectedSchedule) {
+            selectedSchedule = find(SCHEDULES, { value: "custom" });
+          }
+
+          this.setState({
+            updateCheckerSpec: response?.updateCheckerSpec,
+            selectedSchedule: selectedSchedule,
+          });
+        }
+
+        if (response?.autoDeploy !== "") {
+          let selectedAutoDeploy = find(AUTO_DEPLOY_OPTIONS, [
+            "value",
+            response?.autoDeploy,
+          ]);
+          if (selectedAutoDeploy) {
+            this.setState({
+              selectedAutoDeploy: selectedAutoDeploy,
+            });
+          }
+        }
+
+        // set or clear out error
+        this.setState({
+          configureAutomaticUpdatesErr: response?.error,
+        });
       })
       .catch((err) => {
         this.setState({

@@ -28,7 +28,6 @@ import (
 	types13 "github.com/replicatedhq/kots/pkg/upstream/types"
 	types14 "github.com/replicatedhq/kots/pkg/user/types"
 	redact "github.com/replicatedhq/troubleshoot/pkg/redact"
-	v1 "k8s.io/api/core/v1"
 )
 
 // MockStore is a mock of Store interface.
@@ -562,21 +561,6 @@ func (m *MockStore) GetClusterIDFromSlug(slug string) (string, error) {
 func (mr *MockStoreMockRecorder) GetClusterIDFromSlug(slug interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClusterIDFromSlug", reflect.TypeOf((*MockStore)(nil).GetClusterIDFromSlug), slug)
-}
-
-// GetConfigmap mocks base method.
-func (m *MockStore) GetConfigmap(name string) (*v1.ConfigMap, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetConfigmap", name)
-	ret0, _ := ret[0].(*v1.ConfigMap)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetConfigmap indicates an expected call of GetConfigmap.
-func (mr *MockStoreMockRecorder) GetConfigmap(name interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfigmap", reflect.TypeOf((*MockStore)(nil).GetConfigmap), name)
 }
 
 // GetCurrentDownstreamSequence mocks base method.
@@ -1798,20 +1782,6 @@ func (mr *MockStoreMockRecorder) UpdateAppVersionInstallationSpec(appID, sequenc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppVersionInstallationSpec", reflect.TypeOf((*MockStore)(nil).UpdateAppVersionInstallationSpec), appID, sequence, spec)
 }
 
-// UpdateConfigmap mocks base method.
-func (m *MockStore) UpdateConfigmap(configmap *v1.ConfigMap) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateConfigmap", configmap)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateConfigmap indicates an expected call of UpdateConfigmap.
-func (mr *MockStoreMockRecorder) UpdateConfigmap(configmap interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateConfigmap", reflect.TypeOf((*MockStore)(nil).UpdateConfigmap), configmap)
-}
-
 // UpdateDownstreamDeployStatus mocks base method.
 func (m *MockStore) UpdateDownstreamDeployStatus(appID, clusterID string, sequence int64, isError bool, output types0.DownstreamOutput) error {
 	m.ctrl.T.Helper()
@@ -2804,21 +2774,6 @@ func (mr *MockAppStoreMockRecorder) GetAppIDFromSlug(slug interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppIDFromSlug", reflect.TypeOf((*MockAppStore)(nil).GetAppIDFromSlug), slug)
 }
 
-// GetConfigmap mocks base method.
-func (m *MockAppStore) GetConfigmap(name string) (*v1.ConfigMap, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetConfigmap", name)
-	ret0, _ := ret[0].(*v1.ConfigMap)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetConfigmap indicates an expected call of GetConfigmap.
-func (mr *MockAppStoreMockRecorder) GetConfigmap(name interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfigmap", reflect.TypeOf((*MockAppStore)(nil).GetConfigmap), name)
-}
-
 // GetDownstream mocks base method.
 func (m *MockAppStore) GetDownstream(clusterID string) (*types0.Downstream, error) {
 	m.ctrl.T.Helper()
@@ -3020,20 +2975,6 @@ func (m *MockAppStore) SetUpdateCheckerSpec(appID, updateCheckerSpec string) err
 func (mr *MockAppStoreMockRecorder) SetUpdateCheckerSpec(appID, updateCheckerSpec interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetUpdateCheckerSpec", reflect.TypeOf((*MockAppStore)(nil).SetUpdateCheckerSpec), appID, updateCheckerSpec)
-}
-
-// UpdateConfigmap mocks base method.
-func (m *MockAppStore) UpdateConfigmap(configmap *v1.ConfigMap) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateConfigmap", configmap)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateConfigmap indicates an expected call of UpdateConfigmap.
-func (mr *MockAppStoreMockRecorder) UpdateConfigmap(configmap interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateConfigmap", reflect.TypeOf((*MockAppStore)(nil).UpdateConfigmap), configmap)
 }
 
 // MockDownstreamStore is a mock of DownstreamStore interface.
