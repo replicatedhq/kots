@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from "react";
-import { Helmet } from "react-helmet";
+import { KotsPageTitle } from "@components/Head";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
 import { getAddKeyUri, Utilities } from "../../../utilities/utilities";
 import { useHistory } from "react-router-dom";
