@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { withRouter } from "react-router-dom";
-import { Helmet } from "react-helmet";
+import { KotsPageTitle } from "@components/Head";
 import ReactTooltip from "react-tooltip";
 import isEmpty from "lodash/isEmpty";
 import size from "lodash/size";
@@ -570,9 +570,7 @@ class IdentityProviders extends Component {
 
     return (
       <div className="flex-column flex1 u-position--relative u-overflow--auto u-padding--20 alignItems--center">
-        <Helmet>
-          <title>Identity Providers</title>
-        </Helmet>
+        <KotsPageTitle pageName="Configure Identity Provider" showAppSlug={isApplicationSettings} />
         {/* <div className="IdentityProviderWarning--wrapper flex alignItems--center u-marginTop--30">
           <span className="icon small-warning-icon u-marginRight--10" />
           <p>

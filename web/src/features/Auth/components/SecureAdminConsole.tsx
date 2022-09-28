@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Helmet } from "react-helmet";
+import { KotsPageTitle } from "@components/Head";
 import { Utilities, dynamicallyResizeText } from "@src/utilities/utilities";
 import Loader from "@src/components/shared/Loader";
 import ErrorModal from "@src/components/modals/ErrorModal";
@@ -330,11 +330,7 @@ class SecureAdminConsole extends React.Component<Props, State> {
 
     return (
       <div className="container flex-column flex1 u-overflow--auto Login-wrapper justifyContent--center alignItems--center">
-        <Helmet>
-          <title>{`${
-            appName ? `${appName} Admin Console` : "Admin Console"
-          }`}</title>
-        </Helmet>
+       <KotsPageTitle pageName="Login" showAppSlug />
         <div className="LoginBox-wrapper u-flexTabletReflow flex-auto">
           <div className="flex-auto flex-column login-form-wrapper secure-console justifyContent--center">
             <div className="flex-column alignItems--center">

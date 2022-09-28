@@ -14,8 +14,7 @@ import "../../scss/components/troubleshoot/SupportBundleAnalysis.scss";
 import download from "downloadjs";
 import Icon from "../Icon";
 
-import { Helmet } from "react-helmet";
-import { makePageTitle } from "@utils";
+import { KotsPageTitle } from "@components/Head";
 
 export class SupportBundleAnalysis extends React.Component {
   constructor(props) {
@@ -232,9 +231,7 @@ export class SupportBundleAnalysis extends React.Component {
 
     return (
       <div className="container u-marginTop--20 u-paddingBottom--30 flex1 flex-column">
-        {/* <Helmet>
-          <title>{makePageTitle({ appSlug: this.props.match.params.slug, pageName: "Support Bundle Analysis" })}</title>
-        </Helmet> */}
+  <KotsPageTitle pageName="Support Bundle Analysis" showAppSlug />
         <div className="flex1 flex-column">
           {bundle && (
             <div className="flex1 flex-column">

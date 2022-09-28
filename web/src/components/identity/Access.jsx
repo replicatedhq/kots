@@ -1,6 +1,5 @@
 import React, { Component, Fragment } from "react";
 import { withRouter, Switch, Route } from "react-router-dom";
-import { Helmet } from "react-helmet";
 
 import withTheme from "@src/components/context/withTheme";
 // import NotFound from "../static/NotFound";
@@ -27,9 +26,6 @@ class Access extends Component {
 
     return (
       <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
-        <Helmet>
-          <title> Access </title>
-        </Helmet>
         <div className="flex-column flex1 u-width--full u-height--full u-overflow--auto">
           {/* TODO ===> THIS WILL COME LATER */}
           {/* <Fragment>

@@ -501,7 +501,7 @@ class AppDetailPage extends Component {
                       />
                     )}
                   />
-                  {app.isAppIdentityServiceSupported && (
+                  {true && (
                     <Route
                       exact
                       path="/app/:slug/access"

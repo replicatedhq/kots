@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { withRouter } from "react-router-dom";
-import { Helmet } from "react-helmet";
+import { KotsPageTitle } from "@components/Head";
 import Dropzone from "react-dropzone";
 import isEmpty from "lodash/isEmpty";
 
@@ -62,9 +62,7 @@ class ConfigureIngress extends Component {
 
     return (
       <div className="flex-column flex1 u-position--relative u-overflow--auto u-padding--20 alignItems--center">
-        <Helmet>
-          <title>Configure Ingress</title>
-        </Helmet>
+        <KotsPageTitle pageName="Configure Ingress" showAppSlug />
         <form className="flex flex-column Identity--wrapper u-marginTop--30">
           <p className="u-fontSize--largest u-lineHeight--default u-fontWeight--bold u-textColor--primary">
             {" "}

@@ -1,7 +1,7 @@
 import * as React from "react";
 import { withRouter } from "react-router-dom";
 import { Utilities } from "../../utilities/utilities";
-import { Helmet } from "react-helmet";
+import { KotsPageTitle } from "@components/Head";
 import isEmpty from "lodash/isEmpty";
 import keys from "lodash/keys";
 import MonacoEditor from "@monaco-editor/react";
@@ -111,9 +111,7 @@ class KotsApplicationTree extends React.Component<Props, State> {
 
     return (
       <div className="flex-column flex1 ApplicationTree--wrapper u-paddingBottom--30">
-        <Helmet>
-          <title>{`${this.props.app?.name} Files`}</title>
-        </Helmet>
+        <KotsPageTitle pageName="View Files" showAppSlug />
         {!this.props.isHelmManaged && (
           <div className="edit-files-banner u-fontSize--small u-fontWeight--medium">
             Need to edit these files?{" "}

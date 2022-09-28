@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Helmet } from "react-helmet";
+import { KotsPageTitle } from "@components/Head";
 import { withRouter, Link } from "react-router-dom";
 
 import Toggle from "../shared/Toggle";
@@ -117,9 +117,7 @@ class SupportBundleList extends React.Component {
 
     return (
       <div className="centered-container u-paddingBottom--30 u-paddingTop--30 flex1 flex">
-        <Helmet>
-          <title>{`${appTitle} Troubleshoot`}</title>
-        </Helmet>
+     <KotsPageTitle pageName="Version History" showAppSlug />
         <div className="flex1 flex-column">
           <div className="flex justifyContent--center u-paddingBottom--30">
             <Toggle
