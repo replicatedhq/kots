@@ -17,6 +17,8 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/k8sutil"
+	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
@@ -24,6 +26,8 @@ import (
 	"go.uber.org/zap"
 	helmgetter "helm.sh/helm/v3/pkg/getter"
 	corev1 "k8s.io/api/core/v1"
+	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -315,4 +319,81 @@ func saveUpdateChartInCache(helmApp *apptypes.HelmApp, version string, data *byt
 
 func getUpdateChacheFileName(helmApp *apptypes.HelmApp, version string) string {
 	return filepath.Join(updateCacheDir, strings.TrimPrefix(helmApp.ChartPath, "oci://"), fmt.Sprintf("%s.tgz", version))
+}
+
+func GetUpdateCheckSpec(helmApp *apptypes.HelmApp) (string, error) {
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get clientset")
+	}
+
+	spec := "@default"
+
+	cm, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), kotsadmtypes.KotsadmConfigMap, metav1.GetOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return "", errors.Wrap(err, "failed to get configmap")
+	} else if kuberneteserrors.IsNotFound(err) {
+		return spec, nil
+	}
+
+	if cm.Data == nil {
+		return spec, nil
+	}
+
+	key := fmt.Sprintf("update-schedule-%s", helmApp.GetID())
+	if s := cm.Data[key]; s != "" {
+		spec = s
+	}
+
+	return spec, nil
+}
+
+var configMapMutex sync.Mutex
+
+func SetUpdateCheckSpec(helmApp *apptypes.HelmApp, updateSpec string) error {
+	configMapMutex.Lock()
+	defer configMapMutex.Unlock()
+
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return errors.Wrap(err, "failed to get clientset")
+	}
+
+	key := fmt.Sprintf("update-schedule-%s", helmApp.GetID())
+
+	cm, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), kotsadmtypes.KotsadmConfigMap, metav1.GetOptions{})
+	if err != nil && !kuberneteserrors.IsNotFound(err) {
+		return errors.Wrap(err, "failed to get configmap")
+	} else if kuberneteserrors.IsNotFound(err) {
+		cm := &corev1.ConfigMap{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "v1",
+				Kind:       "ConfigMap",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      kotsadmtypes.KotsadmConfigMap,
+				Namespace: util.PodNamespace,
+				Labels:    kotsadmtypes.GetKotsadmLabels(),
+			},
+			Data: map[string]string{
+				key: updateSpec,
+			},
+		}
+		_, err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Create(context.Background(), cm, metav1.CreateOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to update config map")
+		}
+	}
+
+	if cm.Data == nil {
+		cm.Data = map[string]string{}
+	}
+	cm.Data[key] = updateSpec
+
+	_, err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Update(context.Background(), cm, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update config map")
+	}
+
+	return nil
 }

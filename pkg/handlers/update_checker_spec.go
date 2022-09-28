@@ -2,60 +2,51 @@ package handlers
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
 	"net/http"
 
-	"github.com/replicatedhq/kots/pkg/helm"
-	"github.com/replicatedhq/kots/pkg/kotsadm/types"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
-	"github.com/replicatedhq/kots/pkg/util"
-
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/helm"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/updatechecker"
+	"github.com/replicatedhq/kots/pkg/util"
 	cron "github.com/robfig/cron/v3"
 )
 
-type ConfigureAutomaticUpdatesRequest struct {
+type SetAutomaticUpdatesConfigRequest struct {
 	UpdateCheckerSpec string              `json:"updateCheckerSpec"`
 	AutoDeploy        apptypes.AutoDeploy `json:"autoDeploy"`
 }
 
-type ConfigureAutomaticUpdatesResponse struct {
+type SetAutomaticUpdatesConfigResponse struct {
 	Error string `json:"error"`
 }
 
-func (h *Handler) ConfigureAutomaticUpdates(w http.ResponseWriter, r *http.Request) {
-	updateCheckerSpecResponse := &ConfigureAutomaticUpdatesResponse{}
+type GetAutomaticUpdatesConfigResponse struct {
+	UpdateCheckerSpec string              `json:"updateCheckerSpec"`
+	AutoDeploy        apptypes.AutoDeploy `json:"autoDeploy"`
+	Error             string              `json:"error"`
+}
 
-	configureAutomaticUpdatesRequest := ConfigureAutomaticUpdatesRequest{}
+func (h *Handler) SetAutomaticUpdatesConfig(w http.ResponseWriter, r *http.Request) {
+	updateCheckerSpecResponse := &SetAutomaticUpdatesConfigResponse{}
+
+	configureAutomaticUpdatesRequest := SetAutomaticUpdatesConfigRequest{}
 	if err := json.NewDecoder(r.Body).Decode(&configureAutomaticUpdatesRequest); err != nil {
-		logger.Error(err)
 		updateCheckerSpecResponse.Error = "failed to decode request body"
-		JSON(w, 400, updateCheckerSpecResponse)
+		logger.Error(errors.Wrap(err, updateCheckerSpecResponse.Error))
+		JSON(w, http.StatusBadRequest, updateCheckerSpecResponse)
 		return
-	}
-
-	cm, err := store.GetStore().GetConfigmap(types.KotsadmConfigMap)
-	if err != nil {
-		logger.Error(err)
-		updateCheckerSpecResponse.Error = "failed to get config map"
-		JSON(w, 500, updateCheckerSpecResponse)
-		return
-	}
-
-	if cm.Data == nil {
-		cm.Data = make(map[string]string)
 	}
 
 	if util.IsHelmManaged() {
-		release := helm.GetHelmApp(mux.Vars(r)["appSlug"])
-		license, err := helm.GetChartLicenseFromSecretOrDownload(release)
+		helmApp := helm.GetHelmApp(mux.Vars(r)["appSlug"])
+		license, err := helm.GetChartLicenseFromSecretOrDownload(helmApp)
 		if err != nil {
-			updateCheckerSpecResponse.Error = "failed to get license from secret"
+			logger.Error(errors.Wrap(err, updateCheckerSpecResponse.Error))
 			JSON(w, http.StatusInternalServerError, updateCheckerSpecResponse)
 			return
 		}
@@ -64,10 +55,10 @@ func (h *Handler) ConfigureAutomaticUpdates(w http.ResponseWriter, r *http.Reque
 			return
 		}
 
-		if release.GetIsAirgap() {
-			logger.Error(errors.New("airgap scheduled update checks are not supported"))
+		if helmApp.GetIsAirgap() {
 			updateCheckerSpecResponse.Error = "airgap scheduled update checks are not supported"
-			JSON(w, 400, updateCheckerSpecResponse)
+			logger.Error(errors.New(updateCheckerSpecResponse.Error))
+			JSON(w, http.StatusBadRequest, updateCheckerSpecResponse)
 			return
 		}
 
@@ -76,46 +67,40 @@ func (h *Handler) ConfigureAutomaticUpdates(w http.ResponseWriter, r *http.Reque
 		if cronSpec != "@never" && cronSpec != "@default" {
 			_, err := cron.ParseStandard(cronSpec)
 			if err != nil {
-				logger.Error(err)
 				updateCheckerSpecResponse.Error = "failed to parse cron spec"
-				JSON(w, 500, updateCheckerSpecResponse)
+				logger.Error(errors.Wrap(err, updateCheckerSpecResponse.Error))
+				JSON(w, http.StatusInternalServerError, updateCheckerSpecResponse)
 				return
 			}
 		}
 
-		cm.Data[fmt.Sprintf("update-schedule-%s", release.GetID())] = cronSpec
-		err = store.GetStore().UpdateConfigmap(cm)
-		if err != nil {
-			logger.Error(err)
-			updateCheckerSpecResponse.Error = "failed to update config map"
-			JSON(w, 500, updateCheckerSpecResponse)
-			return
-		}
+		helm.SetUpdateCheckSpec(helmApp, cronSpec)
 
 		// reconfigure update checker for the app
-		if err := updatechecker.Configure(release); err != nil {
-			logger.Error(err)
+		if err := updatechecker.Configure(helmApp, cronSpec); err != nil {
 			updateCheckerSpecResponse.Error = "failed to reconfigure update checker cron job"
-			JSON(w, 500, updateCheckerSpecResponse)
+			logger.Error(errors.Wrap(err, updateCheckerSpecResponse.Error))
+			JSON(w, http.StatusInternalServerError, updateCheckerSpecResponse)
 			return
 		}
 
-		JSON(w, 204, "")
+		JSON(w, http.StatusNoContent, "")
+		return
 	}
 
 	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
 	if err != nil {
-		logger.Error(err)
 		updateCheckerSpecResponse.Error = "failed to get app from slug"
-		JSON(w, 500, updateCheckerSpecResponse)
+		logger.Error(errors.Wrap(err, updateCheckerSpecResponse.Error))
+		JSON(w, http.StatusInternalServerError, updateCheckerSpecResponse)
 		return
 	}
 
 	license, err := kotsutil.LoadLicenseFromBytes([]byte(foundApp.License))
 	if err != nil {
-		logger.Error(err)
 		updateCheckerSpecResponse.Error = "failed to get license from app"
-		JSON(w, 500, updateCheckerSpecResponse)
+		logger.Error(errors.Wrap(err, updateCheckerSpecResponse.Error))
+		JSON(w, http.StatusInternalServerError, updateCheckerSpecResponse)
 		return
 	}
 
@@ -123,21 +108,21 @@ func (h *Handler) ConfigureAutomaticUpdates(w http.ResponseWriter, r *http.Reque
 	if license.Spec.IsSemverRequired {
 		if configureAutomaticUpdatesRequest.AutoDeploy == apptypes.AutoDeploySequence {
 			updateCheckerSpecResponse.Error = "automatic updates based on sequence type are not supported for semantic versioning apps"
-			JSON(w, 422, updateCheckerSpecResponse)
+			JSON(w, http.StatusUnprocessableEntity, updateCheckerSpecResponse)
 			return
 		}
 	} else {
 		if configureAutomaticUpdatesRequest.AutoDeploy != apptypes.AutoDeployDisabled && configureAutomaticUpdatesRequest.AutoDeploy != apptypes.AutoDeploySequence {
 			updateCheckerSpecResponse.Error = "automatic updates based on semantic versioning are not supported for non-semantic versioning apps"
-			JSON(w, 422, updateCheckerSpecResponse)
+			JSON(w, http.StatusUnprocessableEntity, updateCheckerSpecResponse)
 			return
 		}
 	}
 
 	if foundApp.IsAirgap {
-		logger.Error(errors.New("airgap scheduled update checks are not supported"))
 		updateCheckerSpecResponse.Error = "airgap scheduled update checks are not supported"
-		JSON(w, 400, updateCheckerSpecResponse)
+		logger.Error(errors.New(updateCheckerSpecResponse.Error))
+		JSON(w, http.StatusBadRequest, updateCheckerSpecResponse)
 		return
 	}
 
@@ -146,36 +131,68 @@ func (h *Handler) ConfigureAutomaticUpdates(w http.ResponseWriter, r *http.Reque
 	if cronSpec != "@never" && cronSpec != "@default" {
 		_, err := cron.ParseStandard(cronSpec)
 		if err != nil {
-			logger.Error(err)
 			updateCheckerSpecResponse.Error = "failed to parse cron spec"
-			JSON(w, 500, updateCheckerSpecResponse)
+			logger.Error(errors.Wrap(err, updateCheckerSpecResponse.Error))
+			JSON(w, http.StatusInternalServerError, updateCheckerSpecResponse)
 			return
 		}
 	}
 
-	cm.Data[fmt.Sprintf("update-schedule-%s", foundApp.ID)] = cronSpec
-	store.GetStore().UpdateConfigmap(cm)
-	if err != nil {
-		logger.Error(err)
-		updateCheckerSpecResponse.Error = "failed to update config map"
-		JSON(w, 500, updateCheckerSpecResponse)
+	if err := store.GetStore().SetUpdateCheckerSpec(foundApp.ID, cronSpec); err != nil {
+		updateCheckerSpecResponse.Error = "failed to set update checker spec"
+		logger.Error(errors.Wrap(err, updateCheckerSpecResponse.Error))
+		JSON(w, http.StatusInternalServerError, updateCheckerSpecResponse)
 		return
 	}
 
 	if err := store.GetStore().SetAutoDeploy(foundApp.ID, configureAutomaticUpdatesRequest.AutoDeploy); err != nil {
-		logger.Error(err)
 		updateCheckerSpecResponse.Error = "failed to set auto deploy"
-		JSON(w, 500, updateCheckerSpecResponse)
+		logger.Error(errors.Wrap(err, updateCheckerSpecResponse.Error))
+		JSON(w, http.StatusInternalServerError, updateCheckerSpecResponse)
 		return
 	}
 
 	// reconfigure update checker for the app
-	if err := updatechecker.Configure(foundApp); err != nil {
-		logger.Error(err)
+	if err := updatechecker.Configure(foundApp, cronSpec); err != nil {
 		updateCheckerSpecResponse.Error = "failed to reconfigure update checker cron job"
-		JSON(w, 500, updateCheckerSpecResponse)
+		logger.Error(errors.Wrap(err, updateCheckerSpecResponse.Error))
+		JSON(w, http.StatusInternalServerError, updateCheckerSpecResponse)
 		return
 	}
 
-	JSON(w, 204, "")
+	JSON(w, http.StatusNoContent, "")
+}
+
+func (h *Handler) GetAutomaticUpdatesConfig(w http.ResponseWriter, r *http.Request) {
+	getCheckerSpecResponse := &GetAutomaticUpdatesConfigResponse{}
+
+	if util.IsHelmManaged() {
+		helmApp := helm.GetHelmApp(mux.Vars(r)["appSlug"])
+		if helmApp == nil {
+			JSON(w, http.StatusNotFound, getCheckerSpecResponse)
+			return
+		}
+
+		spec, err := helm.GetUpdateCheckSpec(helmApp)
+		if err != nil {
+			getCheckerSpecResponse.Error = "failed to get schedule spec map"
+			logger.Error(errors.Wrap(err, getCheckerSpecResponse.Error))
+			JSON(w, http.StatusInternalServerError, getCheckerSpecResponse)
+			return
+		}
+
+		getCheckerSpecResponse.UpdateCheckerSpec = spec
+	} else {
+		foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
+		if err != nil {
+			getCheckerSpecResponse.Error = "failed to get app from slug"
+			logger.Error(errors.Wrap(err, getCheckerSpecResponse.Error))
+			JSON(w, http.StatusInternalServerError, getCheckerSpecResponse)
+			return
+		}
+		getCheckerSpecResponse.UpdateCheckerSpec = foundApp.UpdateCheckerSpec
+		getCheckerSpecResponse.AutoDeploy = foundApp.AutoDeploy
+	}
+
+	JSON(w, http.StatusOK, getCheckerSpecResponse)
 }
