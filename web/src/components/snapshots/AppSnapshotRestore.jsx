@@ -324,18 +324,18 @@ class AppSnapshotRestore extends Component {
       restoreDetail?.phase === "Failed";
     const restoreLoading = !restoreDetail?.warnings && !restoreDetail?.errors;
 
-    // if (loadingRestoreDetail) {
-    //   return (
-    //     <div className="flex-column flex1 alignItems--center justifyContent--center">
-    //       <Loader size="60" />
-    //     </div>
-    //   );
-    // }
+    if (loadingRestoreDetail) {
+      return (
+        <div className="flex-column flex1 alignItems--center justifyContent--center">
+          <Loader size="60" />
+        </div>
+      );
+    }
 
-    // if (restoreCompleted && hasNoErrorsOrWarnings) {
-    //   this.logOutUser();
-    //   this.props.history.push("/restore-completed");
-    // }
+    if (restoreCompleted && hasNoErrorsOrWarnings) {
+      this.logOutUser();
+      this.props.history.push("/restore-completed");
+    }
 
     return (
       <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">
