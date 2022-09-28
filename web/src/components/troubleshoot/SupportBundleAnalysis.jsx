@@ -17,8 +17,6 @@ import Icon from "../Icon";
 import { Helmet } from "react-helmet";
 import { makePageTitle } from "@utils";
 
-
-
 export class SupportBundleAnalysis extends React.Component {
   constructor(props) {
     super();

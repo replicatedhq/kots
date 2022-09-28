@@ -1,7 +1,7 @@
 import * as React from "react";
 import classNames from "classnames";
 import { withRouter } from "react-router-dom";
-import { Helmet } from "react-helmet";
+import { KotsPageTitle } from "@components/Head";
 import isEmpty from "lodash/isEmpty";
 import Modal from "react-modal";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
@@ -456,13 +456,7 @@ class UploadAirgapBundle extends React.Component {
 
     return (
       <div className="UploadLicenseFile--wrapper container flex-column u-overflow--auto u-marginTop--auto u-marginBottom--auto alignItems--center">
-        <Helmet>
-          <title>{`${
-            applicationName
-              ? `${applicationName} Admin Console`
-              : "Admin Console"
-          }`}</title>
-        </Helmet>
+        <KotsPageTitle pageName="Install in Airgapped Environment" showAppSlug/>
         <div className="LoginBox-wrapper u-flexTabletReflow flex-auto u-marginTop--20 u-marginBottom--5">
           <div className="flex-auto flex-column login-form-wrapper secure-console justifyContent--center">
             <div className="flex-column alignItems--center">

@@ -1,6 +1,5 @@
 import React, { Component } from "react";
 import { withRouter, Link } from "react-router-dom";
-import { Helmet } from "react-helmet";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Modal from "react-modal";
@@ -1632,10 +1631,7 @@ class AppVersionHistory extends Component {
 
     return (
       <div className="flex flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
-          <KotsPageTitle
-            pageName="Version History"
-            showAppSlug
-          />
+        <KotsPageTitle pageName="Version History" showAppSlug />
         <div className="flex-column flex1">
           <div className="flex flex1 justifyContent--center">
             <div className="flex1 flex AppVersionHistory">

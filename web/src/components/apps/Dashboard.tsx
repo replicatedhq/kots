@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Helmet } from "react-helmet";
+import { KotsPageTitle } from "@components/Head";
 import { withRouter } from "react-router-dom";
 import get from "lodash/get";
 import sortBy from "lodash/sortBy";
@@ -744,9 +744,7 @@ class Dashboard extends Component<Props, State> {
         )}
         {app && (
           <div className="flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
-            <Helmet>
-              <title>{appName}</title>
-            </Helmet>
+        <KotsPageTitle pageName="Dashboard" showAppSlug />
             <div className="Dashboard flex flex-auto justifyContent--center alignSelf--center alignItems--center">
               <div className="flex1 flex-column">
                 <div className="flex flex1 alignItems--center">

@@ -1,7 +1,5 @@
 import React, { Component } from "react";
-// TODO: add type checking support for the following packages
-// @ts-ignore
-import { Helmet } from "react-helmet";
+import { KotsPageTitle } from "@components/Head";
 // @ts-ignore
 import Dropzone from "react-dropzone";
 // @ts-ignore
@@ -373,9 +371,7 @@ class AppLicense extends Component<Props, State> {
     const appName = app?.name || "Your application";
     return (
       <div className="flex flex-column justifyContent--center alignItems--center">
-        <Helmet>
-          <title>{`${appName} License`}</title>
-        </Helmet>
+        <KotsPageTitle pageName="License" showAppSlug />
         {size(appLicense) > 0 ? (
           <div className="License--wrapper flex-column">
             <div className="flex flex-auto alignItems--center">

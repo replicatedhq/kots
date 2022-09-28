@@ -1,7 +1,6 @@
 import React, { Component, Fragment } from "react";
 import classNames from "classnames";
 import { withRouter, Switch, Route, Redirect } from "react-router-dom";
-import { Helmet } from "react-helmet";
 import Modal from "react-modal";
 import withTheme from "@src/components/context/withTheme";
 import { KotsSidebarItem } from "@src/components/watches/WatchSidebarItem";
@@ -23,7 +22,6 @@ import AppRegistrySettings from "./AppRegistrySettings";
 import AppIdentityServiceSettings from "./AppIdentityServiceSettings";
 import TroubleshootContainer from "../troubleshoot/TroubleshootContainer";
 import ErrorModal from "../modals/ErrorModal";
-import { KotsPageTitle } from "@components/Head";
 
 import "../../scss/components/watches/WatchDetailPage.scss";
 
@@ -338,9 +336,6 @@ class AppDetailPage extends Component {
 
     return (
       <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
-        {/* <Helmet>
-          <title>{makePageTitle({appSlug: this.props.appSlug, pageName: "App Detail" })}</title>
-        </Helmet> */}
         <SidebarLayout
           className="flex flex1 u-minHeight--full u-overflow--hidden"
           condition={appsList?.length > 1}

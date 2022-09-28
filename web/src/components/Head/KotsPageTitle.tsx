@@ -18,21 +18,33 @@ function makePageTitle({
   return `${pageName} | Admin Console`;
 }
 
-/* example output:
-Troubleshoot | http-echo | Admin Console
-Gitops | Admin Console
+/*
+  example output:
+  Troubleshoot | http-echo | Admin Console
+  Gitops | Admin Console
 */
-function KotsPageTitle({pageName, showAppSlug} : {pageName: string, showAppSlug: boolean}) {
+function KotsPageTitle({
+  pageName,
+  showAppSlug,
+}: {
+  pageName: string;
+  showAppSlug: boolean;
+}) {
   const { slug } = useParams<KotsParams>();
-  debugger;
 
   if (slug && showAppSlug) {
-    return <Helmet><title>
-      {makePageTitle({ appSlug: slug, pageName })}
-      </title></Helmet>;
+    return (
+      <Helmet>
+        <title>{makePageTitle({ appSlug: slug, pageName })}</title>
+      </Helmet>
+    );
   }
 
-  return <Helmet><title>{makePageTitle({ pageName })}</title></Helmet>;
+  return (
+    <Helmet>
+      <title>{makePageTitle({ pageName })}</title>
+    </Helmet>
+  );
 }
 
-export { KotsPageTitle }
+export { KotsPageTitle };

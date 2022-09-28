@@ -180,9 +180,7 @@ const AppGitops = () => {
   const appTitle = selectedApp?.name;
   return (
     <div className="GitOpsDeploy--step u-textAlign--left">
-      <Helmet>
-        <title>{`${appTitle} GitOps`}</title>
-      </Helmet>
+      <KotsPageTitle pageName={`${appTitle} GitOps`} />
       <div className="flex-column flex1">
         <div className="GitopsSettings-noRepoAccess u-textAlign--left">
           <p className="step-title">GitOps Configuration</p>
