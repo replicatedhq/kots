@@ -20,9 +20,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type LintLevel string
+
+const (
+	Off   LintLevel = "off"
+	Warn  LintLevel = "warn"
+	Error LintLevel = "error"
+)
+
 type LintRule struct {
-	Name   string `json:"name"`
-	Ignore bool   `json:"ignore,omitempty"`
+	Name  string    `json:"name"`
+	Level LintLevel `json:"level,omitempty"`
 }
 
 // LintConfigSpec defines the desired state of LintConfig

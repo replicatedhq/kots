@@ -39,8 +39,8 @@ spec:
               rules:
                 items:
                   properties:
-                    ignore:
-                      type: boolean
+                    level:
+                      type: string
                     name:
                       type: string
                   required:
