@@ -20,11 +20,13 @@ jobs:
       addon_version: "${{ inputs.addon_version || github.ref_name }}"
       s3_prefix: ""
       priority: 1
+    secrets: inherit
 
   publish-kots-addon:
     runs-on: ubuntu-20.04
     needs: generate-kots-addon
     steps:
+      - uses: actions/checkout@v3
       - uses: ./.github/actions/kurl-addon-kots-publisher
         with:
           ADDON_VERSION: ${{ inputs.addon_version || github.ref_name }}

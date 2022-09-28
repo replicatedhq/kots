@@ -135,13 +135,14 @@ func Configure(a apptypes.AppType) error {
 			logger.Error(errors.Wrapf(err, "failed to check updates for app %s", jobAppSlug))
 			return
 		}
-
-		if ucr.AvailableUpdates > 0 {
-			logger.Debug("updates found for app",
-				zap.String("slug", jobAppSlug),
-				zap.Int64("available updates", ucr.AvailableUpdates))
-		} else {
-			logger.Debug("no updates found for app", zap.String("slug", jobAppSlug))
+		if ucr != nil {
+			if ucr.AvailableUpdates > 0 {
+				logger.Debug("updates found for app",
+					zap.String("slug", jobAppSlug),
+					zap.Int64("available updates", ucr.AvailableUpdates))
+			} else {
+				logger.Debug("no updates found for app", zap.String("slug", jobAppSlug))
+			}
 		}
 	})
 	if err != nil {
@@ -201,7 +202,7 @@ func CheckForUpdates(opts CheckForUpdatesOpts) (ucr *UpdateCheckResponse, finalE
 		return nil, errors.Wrap(err, "failed to get task status")
 	}
 	if currentStatus == "running" {
-		logger.Debug("update-download is already running, not starting a new one")
+		logger.Infof("an update check is already running for %s, not starting a new one", opts.AppID)
 		return nil, nil
 	}
 
