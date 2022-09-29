@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from "react";
-import Helmet from "react-helmet";
+import { KotsPageTitle } from "@components/Head";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
 import { getAddKeyUri, Utilities } from "../../../utilities/utilities";
 import { useHistory } from "react-router-dom";
@@ -180,9 +180,7 @@ const AppGitops = () => {
   const appTitle = selectedApp?.name;
   return (
     <div className="GitOpsDeploy--step u-textAlign--left">
-      <Helmet>
-        <title>{`${appTitle} GitOps`}</title>
-      </Helmet>
+      <KotsPageTitle pageName={`${appTitle} GitOps`} />
       <div className="flex-column flex1">
         <div className="GitopsSettings-noRepoAccess u-textAlign--left">
           <p className="step-title">GitOps Configuration</p>

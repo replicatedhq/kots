@@ -107,7 +107,7 @@ class SnapshotRow extends React.Component {
             {snapshot?.status !== "InProgress" && (
               <Icon
                 icon="trash"
-                size="20"
+                size={20}
                 className="clickable u-marginLeft--20 error-color"
                 onClick={() => this.handleDeleteClick(snapshot)}
               />
@@ -121,7 +121,7 @@ class SnapshotRow extends React.Component {
                 }
                 className="u-marginLeft--20"
               >
-                <Icon icon="more-circle-outline" size="12" />
+                <Icon icon="more-circle-outline" size={13} />
               </Link>
             )}
           </div>

@@ -1,6 +1,6 @@
 import * as React from "react";
 import { withRouter, Link } from "react-router-dom";
-import { Helmet } from "react-helmet";
+import { KotsPageTitle } from "@components/Head";
 import Dropzone from "react-dropzone";
 import yaml from "js-yaml";
 import size from "lodash/size";
@@ -368,13 +368,7 @@ class UploadLicenseFile extends React.Component {
           isBackupRestore ? "" : "container"
         } flex-column flex1 u-overflow--auto Login-wrapper justifyContent--center alignItems--center`}
       >
-        <Helmet>
-          <title>{`${
-            applicationName
-              ? `${applicationName} Admin Console`
-              : "Admin Console"
-          }`}</title>
-        </Helmet>
+        <KotsPageTitle pageName="Upload License" />
         <div className="LoginBox-wrapper u-flexTabletReflow  u-flexTabletReflow flex-auto">
           <div className="flex-auto flex-column login-form-wrapper secure-console justifyContent--center">
             <div className="flex-column alignItems--center">

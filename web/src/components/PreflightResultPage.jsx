@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { Link } from "react-router-dom";
-import { Helmet } from "react-helmet";
+import { KotsPageTitle } from "@components/Head";
 import { withRouter } from "react-router-dom";
 import Modal from "react-modal";
 import size from "lodash/size";
@@ -357,13 +357,7 @@ class PreflightResultPage extends Component {
 
     return (
       <div className="flex-column flex1 container">
-        <Helmet>
-          <title>{`${
-            this.props.appName
-              ? `${this.props.appName} Admin Console`
-              : "Admin Console"
-          }`}</title>
-        </Helmet>
+        <KotsPageTitle pageName="Preflight Checks" showAppSlug />
         <div className="flex1 flex u-overflow--auto">
           <div className="PreflightChecks--wrapper flex1 flex-column u-paddingTop--30">
             {this.props.history.location.pathname.includes(

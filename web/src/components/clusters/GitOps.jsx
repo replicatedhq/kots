@@ -1,6 +1,6 @@
 import * as React from "react";
 import PropTypes from "prop-types";
-import Helmet from "react-helmet";
+import { KotsPageTitle } from "@components/Head";
 import { withRouter } from "react-router-dom";
 import GitOpsDeploymentManager from "../../features/Gitops/GitOpsDeploymentManager";
 import { GitOpsProvider } from "../../features/Gitops/context";
@@ -17,9 +17,7 @@ export class GitOps extends React.Component {
     return (
       <GitOpsProvider>
         <div className="ClusterDashboard--wrapper container flex-column flex1 u-overflow--auto">
-          <Helmet>
-            <title>GitOps deployments</title>
-          </Helmet>
+          <KotsPageTitle pageName="GitOps Deployments" />
           <div className="flex-column flex1">
             <div className="flex-column flex-1-auto u-paddingBottom--20 u-paddingTop--30 u-marginTop--10 u-overflow--auto">
               <GitOpsDeploymentManager appName={this.props.appName} />

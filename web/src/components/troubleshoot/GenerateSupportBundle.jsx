@@ -1,5 +1,5 @@
 import * as React from "react";
-import Helmet from "react-helmet";
+import { KotsPageTitle } from "@components/Head";
 import { withRouter, Link } from "react-router-dom";
 import Modal from "react-modal";
 
@@ -233,9 +233,9 @@ class GenerateSupportBundle extends React.Component {
 
   renderIcons = (shipOpsRef, gitOpsRef) => {
     if (shipOpsRef) {
-      return <Icon icon="kots-o-filled" size="18" />;
+      return <Icon icon="kots-o-filled" size={18} />;
     } else if (gitOpsRef) {
-      return <Icon icon="github-icon" size="19" />;
+      return <Icon icon="github-icon" size={19} />;
     } else {
       return;
     }
@@ -408,9 +408,7 @@ class GenerateSupportBundle extends React.Component {
 
     return (
       <div className="GenerateSupportBundle--wrapper container flex-column u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">
-        <Helmet>
-          <title>{`${appTitle} Troubleshoot`}</title>
-        </Helmet>
+        <KotsPageTitle pageName="Generate Support Bundle" showAppSlug />
         <div className="GenerateSupportBundle">
           {!watch.downstream && !this.state.supportBundles?.length ? (
             <Link

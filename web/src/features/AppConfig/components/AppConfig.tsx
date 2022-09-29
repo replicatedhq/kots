@@ -2,7 +2,7 @@ import React, { Component } from "react";
 import { AppConfigRenderer } from "../../../components/AppConfigRenderer";
 import { withRouter, Link } from "react-router-dom";
 import classNames from "classnames";
-import Helmet from "react-helmet";
+import { KotsPageTitle } from "@components/Head";
 import debounce from "lodash/debounce";
 import find from "lodash/find";
 import map from "lodash/map";
@@ -580,9 +580,7 @@ class AppConfig extends Component<Props, State> {
 
     return (
       <Flex flex="1" direction="column" p="20" align="center">
-        <Helmet>
-          <title>{`${app.name} Config`}</title>
-        </Helmet>
+        <KotsPageTitle pageName="Config" showAppSlug />
         {fromLicenseFlow && app && (
           <Span size="18" weight="bold" mt="30" ml="38">
             Configure {app.name}
@@ -625,7 +623,7 @@ class AppConfig extends Component<Props, State> {
                     <Icon
                       icon="down-arrow"
                       className="darkGray-color clickable flex-auto u-marginLeft--5 arrow-down"
-                      size="12"
+                      size={12}
                       style={{}}
                       color={""}
                       disableFill={false}

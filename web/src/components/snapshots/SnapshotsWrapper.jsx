@@ -1,6 +1,6 @@
 import React, { Component, Fragment } from "react";
 import { withRouter, Switch, Route, Redirect } from "react-router-dom";
-import { Helmet } from "react-helmet";
+import { KotsPageTitle } from "@components/Head";
 
 import withTheme from "@src/components/context/withTheme";
 import Loader from "@src/components/shared/Loader";
@@ -21,9 +21,7 @@ class SnapshotsWrapper extends Component {
 
     return (
       <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
-        <Helmet>
-          <title> Snapshots </title>
-        </Helmet>
+        <KotsPageTitle pageName="Version History" />
         <div className="flex-column flex1 u-width--full u-height--full u-overflow--auto">
           {!snapshotsApps[0] ? (
             <div className="flex-column flex1 alignItems--center justifyContent--center">

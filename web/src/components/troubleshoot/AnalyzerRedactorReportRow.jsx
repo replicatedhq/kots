@@ -76,7 +76,7 @@ class AnalyzerRedactorReportRow extends React.Component {
             </p>
             <Icon
               icon="right-arrow-pointer"
-              size="13"
+              size={13}
               className="gray-color u-marginLeft--5"
             />
           </div>

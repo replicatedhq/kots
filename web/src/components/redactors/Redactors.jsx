@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { withRouter, Link } from "react-router-dom";
-import Helmet from "react-helmet";
+import { KotsPageTitle } from "@components/Head";
 import dayjs from "dayjs";
 import Select from "react-select";
 import Toggle from "../shared/Toggle";
@@ -220,9 +220,7 @@ class Redactors extends Component {
 
     return (
       <div className="centered-container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 justifyContent--center alignItems--center">
-        <Helmet>
-          <title>Redactors </title>
-        </Helmet>
+        <KotsPageTitle pageName="Redactors" showAppSlug />
         <div className="Redactors--wrapper flex1 flex-column u-width--full">
           <div className="flex justifyContent--center u-paddingBottom--30">
             <Toggle

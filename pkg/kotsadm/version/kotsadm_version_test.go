@@ -56,9 +56,31 @@ func Test_KotsadmRegistry(t *testing.T) {
 			expected:         "localhost:32000",
 		},
 		{
-			name:              "local registry, custom namespace",
+			name:             "local registry with namespace",
+			overrideRegistry: "registry.somebigbank.com/my-namespace",
+			expected:         "registry.somebigbank.com/my-namespace",
+		},
+		{
+			name:             "local registry with multiple part namespace",
+			overrideRegistry: "registry.somebigbank.com/my-namespace/with/multiple/components",
+			expected:         "registry.somebigbank.com/my-namespace/with/multiple/components",
+		},
+		{
+			name:              "local registry, separate namespace",
+			overrideRegistry:  "registry.somebigbank.com",
+			overrideNamespace: "my-namespace",
+			expected:          "registry.somebigbank.com/my-namespace",
+		},
+		{
+			name:              "local registry, separate multiple part namespace",
 			overrideRegistry:  "registry.somebigbank.com",
 			overrideNamespace: "my-namespace/with/multiple/components",
+			expected:          "registry.somebigbank.com/my-namespace/with/multiple/components",
+		},
+		{
+			name:              "local registry with namespace and a separate multiple part namespace",
+			overrideRegistry:  "registry.somebigbank.com/my-namespace",
+			overrideNamespace: "with/multiple/components",
 			expected:          "registry.somebigbank.com/my-namespace/with/multiple/components",
 		},
 	}

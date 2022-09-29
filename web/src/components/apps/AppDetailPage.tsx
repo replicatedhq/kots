@@ -1,7 +1,6 @@
 import React, { Component, Fragment } from "react";
 import classNames from "classnames";
 import { withRouter, Switch, Route, Redirect } from "react-router-dom";
-import { Helmet } from "react-helmet";
 import Modal from "react-modal";
 import withTheme from "@src/components/context/withTheme";
 import { KotsSidebarItem } from "@src/components/watches/WatchSidebarItem";
@@ -389,11 +388,6 @@ class AppDetailPage extends Component<Props, State> {
 
     return (
       <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
-        <Helmet>
-          <title>{`${
-            appName ? `${appName} Admin Console` : "Admin Console"
-          }`}</title>
-        </Helmet>
         <SidebarLayout
           className="flex flex1 u-minHeight--full u-overflow--hidden"
           condition={appsList?.length > 1}
@@ -559,7 +553,7 @@ class AppDetailPage extends Component<Props, State> {
                       />
                     )}
                   />
-                  {app.isAppIdentityServiceSupported && (
+                  {true && (
                     <Route
                       exact
                       path="/app/:slug/access"
