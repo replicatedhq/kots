@@ -23,7 +23,7 @@ export default function HelmChartSidebarItem(props) {
             {helmName}
           </p>
           <div className="flex alignItems--center">
-            <Icon icon="no-activity-circle-filled" size="16" />
+            <Icon icon="no-activity-circle-filled" size={16} />
             <span className="u-marginLeft--5 u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy">
               Pending Helm chart
             </span>

@@ -65,7 +65,7 @@ export default function DashboardGitOpsCard(props) {
           )}
           <Icon
             icon="schedule-sync"
-            size="16"
+            size={16}
             className="clickable u-marginRight--5"
           />
           <span

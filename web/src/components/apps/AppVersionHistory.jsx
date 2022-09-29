@@ -1892,7 +1892,7 @@ class AppVersionHistory extends Component {
                                         >
                                           <Icon
                                             icon="check-update"
-                                            size="18"
+                                            size={18}
                                             className="clickable u-marginRight--5"
                                           />
                                           Check for update
@@ -1905,7 +1905,7 @@ class AppVersionHistory extends Component {
                                     >
                                       <Icon
                                         icon="schedule-sync"
-                                        size="16"
+                                        size={16}
                                         className="clickable u-marginRight--5"
                                       />
                                       Configure automatic updates

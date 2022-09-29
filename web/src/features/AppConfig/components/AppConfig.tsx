@@ -623,7 +623,7 @@ class AppConfig extends Component<Props, State> {
                     <Icon
                       icon="down-arrow"
                       className="darkGray-color clickable flex-auto u-marginLeft--5 arrow-down"
-                      size="12"
+                      size={12}
                       style={{}}
                       color={""}
                       disableFill={false}
