@@ -181,11 +181,13 @@ func Start(params *APIServerParams) {
 
 	handler := &handlers.Handler{}
 
+	kotsStore := store.GetStore()
+
 	/**********************************************************************
 	* Unauthenticated routes
 	**********************************************************************/
 
-	handlers.RegisterUnauthenticatedRoutes(handler, debugRouter, loggingRouter)
+	handlers.RegisterUnauthenticatedRoutes(handler, kotsStore, debugRouter, loggingRouter)
 
 	/**********************************************************************
 	* KOTS token auth routes
@@ -197,7 +199,6 @@ func Start(params *APIServerParams) {
 	* Session auth routes
 	**********************************************************************/
 
-	kotsStore := store.GetStore()
 	policyMiddleware := policy.NewMiddleware(kotsStore, rbac.DefaultRoles())
 
 	sessionAuthQuietRouter := r.PathPrefix("").Subrouter()

@@ -167,6 +167,21 @@ func (mr *MockStoreMockRecorder) CreateInProgressSupportBundle(supportBundle int
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateInProgressSupportBundle", reflect.TypeOf((*MockStore)(nil).CreateInProgressSupportBundle), supportBundle)
 }
 
+// CreateInitialBranding mocks base method.
+func (m *MockStore) CreateInitialBranding(brandingArchive []byte) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateInitialBranding", brandingArchive)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateInitialBranding indicates an expected call of CreateInitialBranding.
+func (mr *MockStoreMockRecorder) CreateInitialBranding(brandingArchive interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateInitialBranding", reflect.TypeOf((*MockStore)(nil).CreateInitialBranding), brandingArchive)
+}
+
 // CreateNewCluster mocks base method.
 func (m *MockStore) CreateNewCluster(userID string, isAllUsers bool, title, token string) (string, error) {
 	m.ctrl.T.Helper()
@@ -745,6 +760,21 @@ func (mr *MockStoreMockRecorder) GetIgnoreRBACErrors(appID, sequence interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIgnoreRBACErrors", reflect.TypeOf((*MockStore)(nil).GetIgnoreRBACErrors), appID, sequence)
 }
 
+// GetInitialBranding mocks base method.
+func (m *MockStore) GetInitialBranding() ([]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetInitialBranding")
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetInitialBranding indicates an expected call of GetInitialBranding.
+func (mr *MockStoreMockRecorder) GetInitialBranding() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInitialBranding", reflect.TypeOf((*MockStore)(nil).GetInitialBranding))
+}
+
 // GetLatestAppSequence mocks base method.
 func (m *MockStore) GetLatestAppSequence(appID string, downloadedOnly bool) (int64, error) {
 	m.ctrl.T.Helper()
@@ -758,6 +788,36 @@ func (m *MockStore) GetLatestAppSequence(appID string, downloadedOnly bool) (int
 func (mr *MockStoreMockRecorder) GetLatestAppSequence(appID, downloadedOnly interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestAppSequence", reflect.TypeOf((*MockStore)(nil).GetLatestAppSequence), appID, downloadedOnly)
+}
+
+// GetLatestBranding mocks base method.
+func (m *MockStore) GetLatestBranding() ([]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLatestBranding")
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLatestBranding indicates an expected call of GetLatestBranding.
+func (mr *MockStoreMockRecorder) GetLatestBranding() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestBranding", reflect.TypeOf((*MockStore)(nil).GetLatestBranding))
+}
+
+// GetLatestBrandingForApp mocks base method.
+func (m *MockStore) GetLatestBrandingForApp(appID string) ([]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLatestBrandingForApp", appID)
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLatestBrandingForApp indicates an expected call of GetLatestBrandingForApp.
+func (mr *MockStoreMockRecorder) GetLatestBrandingForApp(appID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestBrandingForApp", reflect.TypeOf((*MockStore)(nil).GetLatestBrandingForApp), appID)
 }
 
 // GetLatestDeployableDownstreamVersion mocks base method.
@@ -4184,4 +4244,87 @@ func (m *MockEmbeddedStore) SetEmbeddedClusterAuthToken(token string) error {
 func (mr *MockEmbeddedStoreMockRecorder) SetEmbeddedClusterAuthToken(token interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetEmbeddedClusterAuthToken", reflect.TypeOf((*MockEmbeddedStore)(nil).SetEmbeddedClusterAuthToken), token)
+}
+
+// MockBrandingStore is a mock of BrandingStore interface.
+type MockBrandingStore struct {
+	ctrl     *gomock.Controller
+	recorder *MockBrandingStoreMockRecorder
+}
+
+// MockBrandingStoreMockRecorder is the mock recorder for MockBrandingStore.
+type MockBrandingStoreMockRecorder struct {
+	mock *MockBrandingStore
+}
+
+// NewMockBrandingStore creates a new mock instance.
+func NewMockBrandingStore(ctrl *gomock.Controller) *MockBrandingStore {
+	mock := &MockBrandingStore{ctrl: ctrl}
+	mock.recorder = &MockBrandingStoreMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockBrandingStore) EXPECT() *MockBrandingStoreMockRecorder {
+	return m.recorder
+}
+
+// CreateInitialBranding mocks base method.
+func (m *MockBrandingStore) CreateInitialBranding(brandingArchive []byte) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateInitialBranding", brandingArchive)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateInitialBranding indicates an expected call of CreateInitialBranding.
+func (mr *MockBrandingStoreMockRecorder) CreateInitialBranding(brandingArchive interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateInitialBranding", reflect.TypeOf((*MockBrandingStore)(nil).CreateInitialBranding), brandingArchive)
+}
+
+// GetInitialBranding mocks base method.
+func (m *MockBrandingStore) GetInitialBranding() ([]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetInitialBranding")
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetInitialBranding indicates an expected call of GetInitialBranding.
+func (mr *MockBrandingStoreMockRecorder) GetInitialBranding() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInitialBranding", reflect.TypeOf((*MockBrandingStore)(nil).GetInitialBranding))
+}
+
+// GetLatestBranding mocks base method.
+func (m *MockBrandingStore) GetLatestBranding() ([]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLatestBranding")
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLatestBranding indicates an expected call of GetLatestBranding.
+func (mr *MockBrandingStoreMockRecorder) GetLatestBranding() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestBranding", reflect.TypeOf((*MockBrandingStore)(nil).GetLatestBranding))
+}
+
+// GetLatestBrandingForApp mocks base method.
+func (m *MockBrandingStore) GetLatestBrandingForApp(appID string) ([]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLatestBrandingForApp", appID)
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLatestBrandingForApp indicates an expected call of GetLatestBrandingForApp.
+func (mr *MockBrandingStoreMockRecorder) GetLatestBrandingForApp(appID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestBrandingForApp", reflect.TypeOf((*MockBrandingStore)(nil).GetLatestBrandingForApp), appID)
 }

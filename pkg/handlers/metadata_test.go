@@ -1,13 +1,18 @@
 package handlers
 
 import (
+	"archive/tar"
+	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	gomock "github.com/golang/mock/gomock"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
+	mock_store "github.com/replicatedhq/kots/pkg/store/mock"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
@@ -44,11 +49,16 @@ metadata:
   namespace: default
 `
 
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockStore := mock_store.NewMockStore(ctrl)
+
 	tests := []struct {
-		name       string
-		funcPtr    MetadataK8sFn
-		httpStatus int
-		expected   MetadataResponse
+		name                 string
+		funcPtr              MetadataK8sFn
+		httpStatus           int
+		expected             MetadataResponse
+		getBrandingArchiveFn func() ([]byte, error)
 	}{
 		{
 			name: "happy path feature flag test",
@@ -70,7 +80,7 @@ metadata:
 				},
 				IconURI: "https://foo.com/icon.png",
 				Branding: MetadataResponseBranding{
-					Css:       "",
+					Css:       []string{},
 					FontFaces: []string{},
 				},
 				Name:                "App Name",
@@ -112,8 +122,8 @@ data:
     spec:
       title: App Name
       branding:
-        css: "body { background-color: red; }"
-    status: {}
+        css:
+        - "styles/my-branding.css"
 kind: ConfigMap
 metadata:
   name: kotsadm-application-metadata
@@ -130,12 +140,40 @@ metadata:
 				AdminConsoleMetadata: AdminConsoleMetadata{},
 				Name:                 "App Name",
 				Branding: MetadataResponseBranding{
-					Css:       "body { background-color: red; }",
+					Css: []string{
+						"body { background-color: red; }",
+					},
 					FontFaces: []string{},
 				},
 				Namespace: util.PodNamespace,
 			},
 			httpStatus: http.StatusOK,
+			getBrandingArchiveFn: func() ([]byte, error) {
+				files := []brandingArchiveFile{
+					{
+						name: "styles/my-branding.css",
+						data: []byte("body { background-color: red; }"),
+					},
+					{
+						name: "application.yaml",
+						data: []byte(`apiVersion: kots.io/v1beta1
+kind: Application
+metadata:
+    name: app-slug
+spec:
+    title: App Name
+    branding:
+        css:
+        - "styles/my-branding.css"`),
+					},
+				}
+				b, err := createBrandingArchiveWithFiles(files)
+				if err != nil {
+					return nil, err
+				}
+
+				return b.Bytes(), nil
+			},
 		},
 		{
 			name: "application branding font files only",
@@ -151,13 +189,11 @@ data:
     spec:
       title: App Name
       branding:
-        fontFiles:
+        fonts:
         - fontFamily: "MyFont"
           sources:
-          - format: "woff"
-            data: "woff-base64-data"
-          - format: "woff2"
-            data: "woff2-base64-data"
+          - "fonts/MyFont.woff"
+          - "fonts/MyFont.woff2"
 kind: ConfigMap
 metadata:
   name: kotsadm-application-metadata
@@ -174,14 +210,47 @@ metadata:
 				AdminConsoleMetadata: AdminConsoleMetadata{},
 				Name:                 "App Name",
 				Branding: MetadataResponseBranding{
-					Css: "",
+					Css: []string{},
 					FontFaces: []string{
-						`@font-face { font-family: "MyFont"; src: url("data:font/woff; base64, woff-base64-data") format("woff"), url("data:font/woff2; base64, woff2-base64-data") format("woff2"); }`,
+						`@font-face { font-family: "MyFont"; src: url("data:font/woff;base64,woff-base64-data") format("woff"), url("data:font/woff2;base64,woff2-base64-data") format("woff2"); }`,
 					},
 				},
 				Namespace: util.PodNamespace,
 			},
 			httpStatus: http.StatusOK,
+			getBrandingArchiveFn: func() ([]byte, error) {
+				files := []brandingArchiveFile{
+					{
+						name: "fonts/MyFont.woff",
+						data: []byte("woff-base64-data"),
+					},
+					{
+						name: "fonts/MyFont.woff2",
+						data: []byte("woff2-base64-data"),
+					},
+					{
+						name: "application.yaml",
+						data: []byte(`apiVersion: kots.io/v1beta1
+kind: Application
+metadata:
+    name: app-slug
+spec:
+    title: App Name
+    branding:
+        fonts:
+        - fontFamily: "MyFont"
+          sources:
+          - "fonts/MyFont.woff"
+          - "fonts/MyFont.woff2"`),
+					},
+				}
+				b, err := createBrandingArchiveWithFiles(files)
+				if err != nil {
+					return nil, err
+				}
+
+				return b.Bytes(), nil
+			},
 		},
 		{
 			name: "application branding css and font files",
@@ -197,14 +266,13 @@ data:
     spec:
       title: App Name
       branding:
-        css: "body { background-color: red; }"
-        fontFiles:
+        css:
+        - "styles/my-branding.css"
+        fonts:
         - fontFamily: "MyFont"
           sources:
-          - format: "woff"
-            data: "woff-base64-data"
-          - format: "woff2"
-            data: "woff2-base64-data"
+          - "fonts/MyFont.woff"
+          - "fonts/MyFont.woff2"
 kind: ConfigMap
 metadata:
   name: kotsadm-application-metadata
@@ -221,14 +289,55 @@ metadata:
 				AdminConsoleMetadata: AdminConsoleMetadata{},
 				Name:                 "App Name",
 				Branding: MetadataResponseBranding{
-					Css: "body { background-color: red; }",
+					Css: []string{
+						"body { background-color: red; }",
+					},
 					FontFaces: []string{
-						`@font-face { font-family: "MyFont"; src: url("data:font/woff; base64, woff-base64-data") format("woff"), url("data:font/woff2; base64, woff2-base64-data") format("woff2"); }`,
+						`@font-face { font-family: "MyFont"; src: url("data:font/woff;base64,woff-base64-data") format("woff"), url("data:font/woff2;base64,woff2-base64-data") format("woff2"); }`,
 					},
 				},
 				Namespace: util.PodNamespace,
 			},
 			httpStatus: http.StatusOK,
+			getBrandingArchiveFn: func() ([]byte, error) {
+				files := []brandingArchiveFile{
+					{
+						name: "fonts/MyFont.woff",
+						data: []byte("woff-base64-data"),
+					},
+					{
+						name: "fonts/MyFont.woff2",
+						data: []byte("woff2-base64-data"),
+					},
+					{
+						name: "styles/my-branding.css",
+						data: []byte("body { background-color: red; }"),
+					},
+					{
+						name: "application.yaml",
+						data: []byte(`apiVersion: kots.io/v1beta1
+kind: Application
+metadata:
+    name: app-slug
+spec:
+    title: App Name
+    branding:
+        css:
+        - "styles/my-branding.css"
+        fonts:
+        - fontFamily: "MyFont"
+          sources:
+          - "fonts/MyFont.woff"
+          - "fonts/MyFont.woff2"`),
+					},
+				}
+				b, err := createBrandingArchiveWithFiles(files)
+				if err != nil {
+					return nil, err
+				}
+
+				return b.Bytes(), nil
+			},
 		},
 		{
 			name: "application branding font files with empty sources",
@@ -244,7 +353,7 @@ data:
     spec:
       title: App Name
       branding:
-        fontFiles:
+        fonts:
         - fontFamily: "MyFont"
           sources:
 kind: ConfigMap
@@ -263,15 +372,46 @@ metadata:
 				AdminConsoleMetadata: AdminConsoleMetadata{},
 				Name:                 "App Name",
 				Branding: MetadataResponseBranding{
-					Css:       "",
+					Css:       []string{},
 					FontFaces: []string{},
 				},
 				Namespace: util.PodNamespace,
 			},
 			httpStatus: http.StatusOK,
+			getBrandingArchiveFn: func() ([]byte, error) {
+				files := []brandingArchiveFile{
+					{
+						name: "fonts/MyFont.woff",
+						data: []byte("woff-base64-data"),
+					},
+					{
+						name: "fonts/MyFont.woff2",
+						data: []byte("woff2-base64-data"),
+					},
+					{
+						name: "application.yaml",
+						data: []byte(`apiVersion: kots.io/v1beta1
+kind: Application
+metadata:
+    name: app-slug
+spec:
+    title: App Name
+    branding:
+        fonts:
+        - fontFamily: "MyFont"
+          sources:`),
+					},
+				}
+				b, err := createBrandingArchiveWithFiles(files)
+				if err != nil {
+					return nil, err
+				}
+
+				return b.Bytes(), nil
+			},
 		},
 		{
-			name: "application branding css and empty font files",
+			name: "application branding css and empty fonts",
 			funcPtr: func() (*v1.ConfigMap, types.Metadata, error) {
 
 				cm := `apiVersion: v1
@@ -284,8 +424,9 @@ data:
     spec:
       title: App Name
       branding:
-        css: "body { background-color: red; }"
-        fontFiles:
+        css:
+        - "styles/my-branding.css"
+        fonts:
 kind: ConfigMap
 metadata:
   name: kotsadm-application-metadata
@@ -302,12 +443,41 @@ metadata:
 				AdminConsoleMetadata: AdminConsoleMetadata{},
 				Name:                 "App Name",
 				Branding: MetadataResponseBranding{
-					Css:       "body { background-color: red; }",
+					Css: []string{
+						"body { background-color: red; }",
+					},
 					FontFaces: []string{},
 				},
 				Namespace: util.PodNamespace,
 			},
 			httpStatus: http.StatusOK,
+			getBrandingArchiveFn: func() ([]byte, error) {
+				files := []brandingArchiveFile{
+					{
+						name: "styles/my-branding.css",
+						data: []byte("body { background-color: red; }"),
+					},
+					{
+						name: "application.yaml",
+						data: []byte(`apiVersion: kots.io/v1beta1
+kind: Application
+metadata:
+    name: app-slug
+spec:
+    title: App Name
+    branding:
+        css:
+        - "styles/my-branding.css"
+        fonts:`),
+					},
+				}
+				b, err := createBrandingArchiveWithFiles(files)
+				if err != nil {
+					return nil, err
+				}
+
+				return b.Bytes(), nil
+			},
 		},
 		{
 			name: "empty application branding",
@@ -339,12 +509,116 @@ metadata:
 				AdminConsoleMetadata: AdminConsoleMetadata{},
 				Name:                 "App Name",
 				Branding: MetadataResponseBranding{
-					Css:       "",
+					Css:       []string{},
 					FontFaces: []string{},
 				},
 				Namespace: util.PodNamespace,
 			},
 			httpStatus: http.StatusOK,
+			getBrandingArchiveFn: func() ([]byte, error) {
+				files := []brandingArchiveFile{
+					{
+						name: "application.yaml",
+						data: []byte(`apiVersion: kots.io/v1beta1
+kind: Application
+metadata:
+    name: app-slug
+spec:
+    title: App Name
+    branding:`),
+					},
+				}
+				b, err := createBrandingArchiveWithFiles(files)
+				if err != nil {
+					return nil, err
+				}
+
+				return b.Bytes(), nil
+			},
+		},
+		{
+			name: "nil branding archive",
+			funcPtr: func() (*v1.ConfigMap, types.Metadata, error) {
+
+				cm := `apiVersion: v1
+data:
+  application.yaml: |
+    apiVersion: kots.io/v1beta1
+    kind: Application
+    metadata:
+      name: app-slug
+    spec:
+      title: App Name
+      branding:
+        css:
+        - "styles/my-branding.css"
+kind: ConfigMap
+metadata:
+  name: kotsadm-application-metadata
+`
+
+				// parse data as a kotskind
+				obj, _, err := scheme.Codecs.UniversalDeserializer().Decode([]byte(cm), nil, nil)
+				require.Nil(t, err)
+
+				return obj.(*v1.ConfigMap), types.Metadata{}, nil
+
+			},
+			expected: MetadataResponse{
+				AdminConsoleMetadata: AdminConsoleMetadata{},
+				Name:                 "App Name",
+				Branding: MetadataResponseBranding{
+					Css:       []string{},
+					FontFaces: []string{},
+				},
+				Namespace: util.PodNamespace,
+			},
+			httpStatus: http.StatusOK,
+			getBrandingArchiveFn: func() ([]byte, error) {
+				return nil, nil
+			},
+		},
+		{
+			name: "error when getting branding archive",
+			funcPtr: func() (*v1.ConfigMap, types.Metadata, error) {
+
+				cm := `apiVersion: v1
+data:
+  application.yaml: |
+    apiVersion: kots.io/v1beta1
+    kind: Application
+    metadata:
+      name: app-slug
+    spec:
+      title: App Name
+      branding:
+        css:
+        - "styles/my-branding.css"
+kind: ConfigMap
+metadata:
+  name: kotsadm-application-metadata
+`
+
+				// parse data as a kotskind
+				obj, _, err := scheme.Codecs.UniversalDeserializer().Decode([]byte(cm), nil, nil)
+				require.Nil(t, err)
+
+				return obj.(*v1.ConfigMap), types.Metadata{}, nil
+
+			},
+			expected: MetadataResponse{
+				AdminConsoleMetadata: AdminConsoleMetadata{},
+				Name:                 "App Name",
+				Branding: MetadataResponseBranding{
+					Css:       []string{},
+					FontFaces: []string{},
+				},
+				Namespace: util.PodNamespace,
+			},
+			httpStatus: http.StatusOK,
+			getBrandingArchiveFn: func() ([]byte, error) {
+				return nil, errors.New("failed to get branding archive")
+			},
 		},
 		{
 			name: "invalid application branding",
@@ -378,7 +652,14 @@ metadata:
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			ts := httptest.NewServer(GetMetadataHandler(test.funcPtr))
+			mockStore.EXPECT().GetLatestBranding().AnyTimes().DoAndReturn(func() ([]byte, error) {
+				if test.getBrandingArchiveFn != nil {
+					return test.getBrandingArchiveFn()
+				}
+				return nil, nil
+			})
+
+			ts := httptest.NewServer(GetMetadataHandler(test.funcPtr, mockStore))
 			defer ts.Close()
 
 			response, err := http.Get(ts.URL)
@@ -393,4 +674,33 @@ metadata:
 		})
 	}
 
+}
+
+type brandingArchiveFile struct {
+	name string
+	data []byte
+}
+
+func createBrandingArchiveWithFiles(files []brandingArchiveFile) (*bytes.Buffer, error) {
+	buf := bytes.NewBuffer(nil)
+	gz := gzip.NewWriter(buf)
+	defer gz.Close()
+	tw := tar.NewWriter(gz)
+	defer tw.Close()
+
+	for _, file := range files {
+		hdr := &tar.Header{
+			Name: file.name,
+			Mode: 0600,
+			Size: int64(len(file.data)),
+		}
+		if err := tw.WriteHeader(hdr); err != nil {
+			return nil, err
+		}
+		if _, err := tw.Write(file.data); err != nil {
+			return nil, err
+		}
+	}
+
+	return buf, nil
 }
