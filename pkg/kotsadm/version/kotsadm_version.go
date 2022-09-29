@@ -52,20 +52,11 @@ func KotsadmRegistry(registryConfig types.RegistryConfig) string {
 		}
 	}
 
-	registry := registryConfig.OverrideRegistry
-	namespace := registryConfig.OverrideNamespace
-
-	hostParts := strings.Split(registryConfig.OverrideRegistry, "/")
-	if len(hostParts) == 2 {
-		registry = hostParts[0]
-		namespace = hostParts[1]
+	if registryConfig.OverrideNamespace == "" {
+		return registryConfig.OverrideRegistry
 	}
 
-	if namespace == "" {
-		return registry
-	}
-
-	return fmt.Sprintf("%s/%s", registry, namespace)
+	return fmt.Sprintf("%s/%s", registryConfig.OverrideRegistry, registryConfig.OverrideNamespace)
 }
 
 func KotsadmPullSecret(namespace string, registryConfig types.RegistryConfig) *corev1.Secret {
