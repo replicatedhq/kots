@@ -1,7 +1,6 @@
 import React, { Component } from "react";
 import { withRouter } from "react-router-dom";
 import get from "lodash/get";
-import isEmpty from "lodash/isEmpty";
 
 import Loader from "../shared/Loader";
 import ErrorModal from "../modals/ErrorModal";
@@ -9,9 +8,53 @@ import "../../scss/components/watches/WatchDetailPage.scss";
 import { Utilities } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
 import Icon from "../Icon";
+import { App, KotsParams } from "@types";
+import { RouteComponentProps } from "react-router-dom";
 
-class AirgapRegistrySettings extends Component {
-  constructor(props) {
+type Props = RouteComponentProps<KotsParams> & {
+  app: App;
+  registryDetails: RegistryDetails;
+  updateCallback: () => void;
+  gatherDetails: (fields: GatherDetails) => void;
+  hideCta: boolean;
+  hideTestConnection: boolean;
+  namespaceDescription: string;
+  showHostnameAsRequired: boolean;
+};
+
+interface RegistryDetails {
+  hostname: string;
+  username: string;
+  password: string;
+  namespace: string;
+}
+
+interface GatherDetails extends RegistryDetails {
+  isReadOnly: boolean;
+}
+
+type State = {
+  loading: boolean;
+  hostname: string;
+  username: string;
+  password: string;
+  namespace: string;
+  lastSync: Object | null;
+  testInProgress: boolean;
+  testFailed: boolean;
+  testMessage: string | unknown;
+  updateChecker: Repeater;
+  rewriteStatus: string;
+  rewriteMessage: string;
+  fetchRegistryErrMsg: string;
+  displayErrorModal: boolean;
+  isReadOnly: boolean;
+  originalRegistry: RegistryDetails | null;
+  pingedEndpoint: string;
+};
+
+class AirgapRegistrySettings extends Component<Props, State> {
+  constructor(props: Props) {
     super(props);
 
     const {
@@ -23,22 +66,23 @@ class AirgapRegistrySettings extends Component {
 
     this.state = {
       loading: false,
-
       hostname,
       username,
       password,
       namespace,
-
       lastSync: null,
       testInProgress: false,
       testFailed: false,
       testMessage: "",
-
       updateChecker: new Repeater(),
       rewriteStatus: "",
       rewriteMessage: "",
       fetchRegistryErrMsg: "",
       displayErrorModal: false,
+      //newly added
+      isReadOnly: false,
+      originalRegistry: null,
+      pingedEndpoint: "",
     };
   }
 
@@ -143,16 +187,20 @@ class AirgapRegistrySettings extends Component {
     }
   };
 
-  handleFormChange = (field, val) => {
-    let nextState = {};
+  handleFormChange = (field: string, val: string | boolean) => {
+    let nextState: { [key: string]: string | boolean } = {};
     nextState[field] = val;
 
     if (this.props.app?.isAirgap && field === "isReadOnly" && !val) {
       // Pushing images in airgap mode is not yet supported, so registry name cannot be changed.
-      nextState["hostname"] = this.state.originalRegistry.hostname;
-      nextState["namespace"] = this.state.originalRegistry.namespace;
+      nextState.hostname = this.state.originalRegistry!.hostname;
+      nextState.namespace = this.state.originalRegistry!.namespace;
     }
 
+    //TODO: understand this better
+    // Argument of type '{ [key: string]: string | boolean; }' is not assignable to parameter of type 'State | Pick<State, keyof State>
+    // | ((prevState: Readonly<State>, props: Readonly<Props>) => State | Pick<...> | null) | null'.
+    // @ts-ignore
     this.setState(nextState, () => {
       if (this.props.gatherDetails) {
         const { hostname, username, password, namespace, isReadOnly } =
@@ -168,7 +216,7 @@ class AirgapRegistrySettings extends Component {
     });
   };
 
-  componentDidUpdate(lastProps) {
+  componentDidUpdate(lastProps: { app: { slug: string } }) {
     const { app } = this.props;
 
     if (app?.slug !== lastProps.app?.slug) {
@@ -282,7 +330,7 @@ class AirgapRegistrySettings extends Component {
     if (this.props.app) {
       url = `${process.env.API_ENDPOINT}/app/${this.props.app.slug}/imagerewritestatus`;
     }
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       fetch(url, {
         headers: {
           Authorization: Utilities.getToken(),
@@ -370,7 +418,7 @@ class AirgapRegistrySettings extends Component {
     if (testInProgress) {
       testStatusText = "Testing...";
     } else if (lastSync) {
-      testStatusText = testMessage;
+      testStatusText = testMessage as string;
     } else {
       // TODO: this will always be displayed when page is refreshed
       testStatusText = "Connection has not been tested";
@@ -458,6 +506,10 @@ class AirgapRegistrySettings extends Component {
                         icon="check-circle-filled"
                         size={16}
                         className="success-color u-marginRight--5 u-verticalAlign--neg3"
+                        color={""}
+                        style={{}}
+                        disableFill={false}
+                        removeInlineStyle={false}
                       />
                       Connected to {this.state.pingedEndpoint}
                     </p>
@@ -571,4 +623,6 @@ class AirgapRegistrySettings extends Component {
   }
 }
 
-export default withRouter(AirgapRegistrySettings);
+// TODO: fix withRouter type
+// eslint-disable-next-line
+export default withRouter(AirgapRegistrySettings) as any;
