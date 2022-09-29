@@ -6,9 +6,11 @@ export type App = {
   currentSequence: number;
   downstream: Downstream;
   hasPreflight: boolean;
+  helmName: string;
   id: string;
   iconUri: string;
   isAirgap: boolean;
+  isAppIdentityServiceSupported: boolean;
   isConfigurable: boolean;
   isGeoaxisSupported: boolean;
   isGitOpsSupported: boolean;
@@ -39,25 +41,22 @@ export type AppLicense = {
   licenseType: string;
 };
 
-export type Credentials = {
-  username: string;
-  password: string;
-};
-
-export type ResourceStates = {
-  kind: string;
-  name: string;
-  namespace: string;
-  // from https://github.com/replicatedhq/kots/blob/84b7e4e0e9275bb200a36be69691c4944eb8cf8f/pkg/appstate/types/types.go#L10-L14
-  state: "ready" | "updating" | "degrading" | "unavailable" | "missing";
-};
-
 type AppStatus = {
   appId: string;
   resourceStates: ResourceStates[];
   sequence: number;
   state: string;
   updatedAt: string;
+};
+
+export type Credentials = {
+  username: string;
+  password: string;
+};
+
+export type DashboardActionLink = {
+  title: string;
+  uri: string;
 };
 
 export type DashboardResponse = {
@@ -67,10 +66,18 @@ export type DashboardResponse = {
 };
 
 export type Downstream = {
+  cluster: string;
   currentVersion: Version;
   gitops: GitOps;
   links: DashboardActionLink[];
   pendingVersions: Version[];
+};
+
+export type Entitlement = {
+  title: string;
+  value: string;
+  label: string;
+  valueType: "Text" | "Boolean" | "Integer" | "String";
 };
 
 export type GitOps = {
@@ -79,24 +86,42 @@ export type GitOps = {
 };
 
 export type KotsParams = {
+  owner: string;
   sequence: string;
   slug: string;
+  tab: string;
 };
 
-export type DashboardActionLink = {
-  title: string;
-  uri: string;
+export type Metadata = {
+  isAirgap: boolean;
+  isKurl: boolean;
+}
+
+export type ResourceStates = {
+  kind: string;
+  name: string;
+  namespace: string;
+  // from https://github.com/replicatedhq/kots/blob/84b7e4e0e9275bb200a36be69691c4944eb8cf8f/pkg/appstate/types/types.go#L10-L14
+  state: "ready" | "updating" | "degrading" | "unavailable" | "missing";
+};
+
+export type ThemeState = {
+  navbarLogo: string | null;
 };
 
 export type Version = {
   parentSequence: number;
   semver: string;
   sequence: number;
+  status: VersionStatus;
   versionLabel?: string;
 };
-export type Entitlement = {
-  title: string;
-  value: string;
-  label: string;
-  valueType: "Text" | "Boolean" | "Integer" | "String";
-};
+
+type VersionStatus =
+  | "deploying"
+  | "failed"
+  | "pending_config"
+  | "pending_download"
+  | "pending_preflight"
+  | "pending_app"
+  | "deployed";
