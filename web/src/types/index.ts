@@ -95,7 +95,7 @@ export type KotsParams = {
 export type Metadata = {
   isAirgap: boolean;
   isKurl: boolean;
-}
+};
 
 export type ResourceStates = {
   kind: string;

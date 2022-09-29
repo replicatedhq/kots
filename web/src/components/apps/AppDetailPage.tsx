@@ -178,7 +178,7 @@ class AppDetailPage extends Component<Props, State> {
       console.log(err);
       if (err instanceof Error) {
         this.setState({
-          makingCurrentReleaseErrMsg: `Unable to deploy release ${version.versionLabel}, sequence ${version.sequence}: ${err.message}`
+          makingCurrentReleaseErrMsg: `Unable to deploy release ${version.versionLabel}, sequence ${version.sequence}: ${err.message}`,
         });
       } else {
         this.setState({
@@ -390,8 +390,9 @@ class AppDetailPage extends Component<Props, State> {
     return (
       <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
         <Helmet>
-          <title>{`${appName ? `${appName} Admin Console` : "Admin Console"
-            }`}</title>
+          <title>{`${
+            appName ? `${appName} Admin Console` : "Admin Console"
+          }`}</title>
         </Helmet>
         <SidebarLayout
           className="flex flex1 u-minHeight--full u-overflow--hidden"
