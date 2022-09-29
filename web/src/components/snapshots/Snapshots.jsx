@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { Link, withRouter } from "react-router-dom";
-import Helmet from "react-helmet";
+import { KotsPageTitle } from "@components/Head";
 import ReactTooltip from "react-tooltip";
 
 import Loader from "../shared/Loader";
@@ -512,9 +512,7 @@ class Snapshots extends Component {
 
     return (
       <div className="flex1 flex-column u-overflow--auto">
-        <Helmet>
-          <title>Snapshots</title>
-        </Helmet>
+        <KotsPageTitle pageName="Full Snapshots" showAppSlug />
         {!isVeleroCorrectVersion(snapshotSettings) ? (
           <div className="VeleroWarningBlock">
             <Icon icon={"warning"} size={24} className="warning-color" />

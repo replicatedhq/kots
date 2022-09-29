@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { withRouter, Link } from "react-router-dom";
-import Helmet from "react-helmet";
+import { KotsPageTitle } from "@components/Head";
 import AceEditor from "react-ace";
 import "brace/mode/text";
 import "brace/mode/yaml";
@@ -228,7 +228,7 @@ class EditRedactor extends Component {
       const defaultYaml = `kind: Redactor
 apiVersion: troubleshoot.sh/v1beta2
 metadata:
-  name: 
+  name:
 spec:
   redactors:
   - name: myredactor
@@ -287,9 +287,7 @@ spec:
 
     return (
       <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 justifyContent--center alignItems--center">
-        <Helmet>
-          <title>Redactors</title>
-        </Helmet>
+        <KotsPageTitle pageName="New Redactor" showAppSlug />
         <div className="Redactors--wrapper flex1 flex-column u-width--full">
           {(createErrMsg || editingErrMsg) && (
             <p className="ErrorToast flex justifyContent--center alignItems--center">

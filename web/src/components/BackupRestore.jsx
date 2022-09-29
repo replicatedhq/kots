@@ -1,6 +1,6 @@
 import * as React from "react";
 import { withRouter, Link } from "react-router-dom";
-import { Helmet } from "react-helmet";
+import { KotsPageTitle } from "@components/Head";
 import isEmpty from "lodash/isEmpty";
 
 import "../scss/components/UploadLicenseFile.scss";
@@ -270,13 +270,7 @@ class BackupRestore extends React.Component {
 
     return (
       <div className="BackupRestore--wrapper container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 u-marginTop--10 alignItems--center">
-        <Helmet>
-          <title>{`${
-            applicationName
-              ? `${applicationName} Admin Console`
-              : "Admin Console"
-          }`}</title>
-        </Helmet>
+        <KotsPageTitle pageName="Restore from Backup" />
         {!snapshotSettings?.isVeleroRunning ||
         !snapshotSettings?.isResticRunning
           ? this.navigateToSnapshotConfiguration()

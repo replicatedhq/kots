@@ -1,5 +1,5 @@
 import * as React from "react";
-import Helmet from "react-helmet";
+import { KotsPageTitle } from "@components/Head";
 import { withRouter, Link } from "react-router-dom";
 import Modal from "react-modal";
 
@@ -408,9 +408,7 @@ class GenerateSupportBundle extends React.Component {
 
     return (
       <div className="GenerateSupportBundle--wrapper container flex-column u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">
-        <Helmet>
-          <title>{`${appTitle} Troubleshoot`}</title>
-        </Helmet>
+        <KotsPageTitle pageName="Generate Support Bundle" showAppSlug />
         <div className="GenerateSupportBundle">
           {!watch.downstream && !this.state.supportBundles?.length ? (
             <Link

@@ -7,6 +7,7 @@ import { getLabel, addLabelsToApps } from "../utils";
 import GitOpsProviderSelector from "./GitOpsProviderSelector";
 import GitOpsRepoDetails from "./GitOpsRepoDetails";
 import { updateAppsList } from "../utils";
+import { KotsPageTitle } from "@components/Head";
 
 const SetupProvider = ({ appName }) => {
   const {
@@ -90,6 +91,7 @@ const SetupProvider = ({ appName }) => {
       key={`${step}-active`}
       className="GitOpsDeploy--step u-textAlign--left"
     >
+      <KotsPageTitle pageName="Gitops Configuration" />
       <p className="step-title">GitOps Configuration</p>
       <p className="step-sub">
         Connect a git version control system so all application updates are

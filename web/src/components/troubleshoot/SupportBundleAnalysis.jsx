@@ -14,6 +14,8 @@ import "../../scss/components/troubleshoot/SupportBundleAnalysis.scss";
 import download from "downloadjs";
 import Icon from "../Icon";
 
+import { KotsPageTitle } from "@components/Head";
+
 export class SupportBundleAnalysis extends React.Component {
   constructor(props) {
     super();
@@ -229,6 +231,7 @@ export class SupportBundleAnalysis extends React.Component {
 
     return (
       <div className="container u-marginTop--20 u-paddingBottom--30 flex1 flex-column">
+        <KotsPageTitle pageName="Support Bundle Analysis" showAppSlug />
         <div className="flex1 flex-column">
           {bundle && (
             <div className="flex1 flex-column">

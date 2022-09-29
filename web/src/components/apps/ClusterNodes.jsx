@@ -2,7 +2,7 @@ import React, { Component, Fragment } from "react";
 import classNames from "classnames";
 import dayjs from "dayjs";
 import { withRouter } from "react-router-dom";
-import { Helmet } from "react-helmet";
+import { KotsPageTitle } from "@components/Head";
 import CodeSnippet from "../shared/CodeSnippet";
 import NodeRow from "./NodeRow";
 import Loader from "../shared/Loader";
@@ -271,13 +271,7 @@ export class ClusterNodes extends Component {
     }
     return (
       <div className="ClusterNodes--wrapper container flex-column flex1 u-overflow--auto u-paddingTop--50">
-        <Helmet>
-          <title>{`${
-            this.props.appName
-              ? `${this.props.appName} Cluster Management`
-              : "Cluster Management"
-          }`}</title>
-        </Helmet>
+        <KotsPageTitle pageName="Cluster Management" />
         <div className="flex-column flex1 alignItems--center">
           <div className="flex1 flex-column centered-container">
             <div className="u-paddingBottom--30">

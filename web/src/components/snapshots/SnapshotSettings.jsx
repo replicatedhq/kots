@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { withRouter } from "react-router-dom";
-import Helmet from "react-helmet";
+import { KotsPageTitle } from "@components/Head";
 import isEmpty from "lodash/isEmpty";
 import isEqual from "lodash/isEqual";
 
@@ -313,9 +313,7 @@ class SnapshotSettings extends Component {
 
     return (
       <div className="flex1 flex-column u-overflow--auto">
-        <Helmet>
-          <title>Snapshot Settings</title>
-        </Helmet>
+        <KotsPageTitle pageName="Snapshot Settings" />
         {!isVeleroCorrectVersion(snapshotSettings) &&
         !checkForVeleroAndRestic ? (
           <div className="VeleroWarningBlock">
