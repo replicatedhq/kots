@@ -260,8 +260,10 @@ class SecureAdminConsole extends React.Component<Props, State> {
       const loginData = {
         token: (
           localStorageToken?.replace(/"/g, "") || cookieToken.replace(/"/g, "")
-        ).toString(),
-        sessionRoles: (localStorageSessionRole || cookieSessionRole).toString(),
+        )?.toString(),
+        sessionRoles: (
+          localStorageSessionRole || cookieSessionRole
+        )?.toString(),
       };
       await this.completeLogin(loginData);
     }

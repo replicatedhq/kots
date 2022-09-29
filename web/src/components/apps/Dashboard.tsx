@@ -326,9 +326,21 @@ class Dashboard extends Component<Props, State> {
       method: "POST",
     })
       .then(async (res) => {
+        this.getAppLicense(this.props.app);
+        if (!res.ok) {
+          const text = await res.text();
+          this.setState({
+            checkingForUpdateError: true,
+            checkingForUpdates: false,
+            checkingUpdateMessage: text
+              ? text
+              : "There was an error checking for updates.",
+          });
+          return;
+        }
+
         const response = await res.json();
         if (response.availableUpdates === 0) {
-          this.getAppLicense(this.props.app);
           this.setState({
             checkingForUpdates: false,
             noUpdatesAvalable: true,
@@ -341,12 +353,12 @@ class Dashboard extends Component<Props, State> {
         }
       })
       .catch((err) => {
-        console.log(err);
-        this.getAppLicense(this.props.app);
         this.setState({
           checkingForUpdateError: true,
           checkingForUpdates: false,
-          checkingUpdateMessage: "Your license is expired.",
+          checkingUpdateMessage: err?.message
+            ? err?.message
+            : "There was an error checking for updates.",
         });
       });
   };

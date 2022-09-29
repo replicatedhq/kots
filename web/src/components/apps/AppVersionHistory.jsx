@@ -1002,7 +1002,7 @@ class AppVersionHistory extends Component {
       });
 
       const res = await fetch(
-        `${process.env.API_ENDPOINT}/app/${app?.slug}/cluster/${clusterId}/sequence/${version?.sequence}/downstreamoutput`,
+        `${process.env.API_ENDPOINT}/app/${app.slug}/cluster/${clusterId}/sequence/${version.sequence}/downstreamoutput`,
         {
           headers: {
             Authorization: Utilities.getToken(),
@@ -1748,28 +1748,30 @@ class AppVersionHistory extends Component {
                                   />
                                 </div>
                               ) : null}
-                              <div>
-                                <span
-                                  onClick={() =>
-                                    this.handleViewLogs(
-                                      currentDownstreamVersion,
-                                      currentDownstreamVersion?.status ===
-                                        "failed"
-                                    )
-                                  }
-                                  data-tip="View deploy logs"
-                                >
-                                  <Icon
-                                    icon="view-logs"
-                                    size={22}
-                                    className="clickable"
+                              {app ? (
+                                <div>
+                                  <span
+                                    onClick={() =>
+                                      this.handleViewLogs(
+                                        currentDownstreamVersion,
+                                        currentDownstreamVersion?.status ===
+                                          "failed"
+                                      )
+                                    }
+                                    data-tip="View deploy logs"
+                                  >
+                                    <Icon
+                                      icon="view-logs"
+                                      size={22}
+                                      className="clickable"
+                                    />
+                                  </span>
+                                  <ReactTooltip
+                                    effect="solid"
+                                    className="replicated-tooltip"
                                   />
-                                </span>
-                                <ReactTooltip
-                                  effect="solid"
-                                  className="replicated-tooltip"
-                                />
-                              </div>
+                                </div>
+                              ) : null}
                               {currentDownstreamVersion?.status === "failed" ? (
                                 <div className="u-position--relative u-marginLeft--10 u-marginRight--10">
                                   <Icon

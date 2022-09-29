@@ -138,8 +138,10 @@ class DashboardVersionCard extends React.Component {
   handleViewLogs = async (version, isFailing) => {
     try {
       const { app } = this.props;
-      const clusterId = app.downstream.cluster?.id;
-
+      let clusterId = app.downstream.cluster?.id;
+      if (this.props.isHelmManaged) {
+        clusterId = 0;
+      }
       this.setState({
         logsLoading: true,
         showLogsModal: true,
@@ -148,7 +150,7 @@ class DashboardVersionCard extends React.Component {
       });
 
       const res = await fetch(
-        `${process.env.API_ENDPOINT}/app/${app?.slug}/cluster/${clusterId}/sequence/${version?.sequence}/downstreamoutput`,
+        `${process.env.API_ENDPOINT}/app/${app.slug}/cluster/${clusterId}/sequence/${version.sequence}/downstreamoutput`,
         {
           headers: {
             Authorization: Utilities.getToken(),
@@ -481,20 +483,22 @@ class DashboardVersionCard extends React.Component {
             {this.renderReleaseNotes(currentVersion)}
             {this.renderPreflights(currentVersion)}
             {this.renderEditConfigIcon(app, currentVersion, false)}
-            <div className="u-marginLeft--10">
-              <span
-                onClick={() =>
-                  this.handleViewLogs(
-                    currentVersion,
-                    currentVersion?.status === "failed"
-                  )
-                }
-                data-tip="View deploy logs"
-              >
-                <Icon icon="view-logs" size={22} className="clickable" />
-              </span>
-              <ReactTooltip effect="solid" className="replicated-tooltip" />
-            </div>
+            {app ? (
+              <div className="u-marginLeft--10">
+                <span
+                  onClick={() =>
+                    this.handleViewLogs(
+                      currentVersion,
+                      currentVersion?.status === "failed"
+                    )
+                  }
+                  data-tip="View deploy logs"
+                >
+                  <Icon icon="view-logs" size={22} className="clickable" />
+                </span>
+                <ReactTooltip effect="solid" className="replicated-tooltip" />
+              </div>
+            ) : null}
             {currentVersion.status === "deploying" ? null : (
               <div className="flex-column justifyContent--center u-marginLeft--10">
                 <button
