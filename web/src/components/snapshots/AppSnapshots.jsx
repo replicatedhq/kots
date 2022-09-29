@@ -670,7 +670,7 @@ class AppSnapshots extends Component {
                 >
                   <Icon
                     icon="settings-gear-outline"
-                    size="18"
+                    size={18}
                     className="u-marginRight--5"
                   />
                   Settings

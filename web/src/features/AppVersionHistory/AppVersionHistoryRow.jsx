@@ -120,7 +120,7 @@ class AppVersionHistoryRow extends Component {
       <div>
         <Icon
           icon="release-notes"
-          size="24"
+          size={24}
           onClick={() => this.props.showReleaseNotes(version?.releaseNotes)}
           data-tip="View release notes"
           className="u-marginRight--10 clickable"

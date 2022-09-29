@@ -226,7 +226,7 @@ class DownstreamWatchVersionDiff extends React.Component {
             >
               <Icon
                 icon="prev-arrow"
-                size="10"
+                size={10}
                 className="clickable u-marginRight--10"
                 style={{ verticalAlign: "0" }}
               />

@@ -233,9 +233,9 @@ class GenerateSupportBundle extends React.Component {
 
   renderIcons = (shipOpsRef, gitOpsRef) => {
     if (shipOpsRef) {
-      return <Icon icon="kots-o-filled" size="18" />;
+      return <Icon icon="kots-o-filled" size={18} />;
     } else if (gitOpsRef) {
-      return <Icon icon="github-icon" size="19" />;
+      return <Icon icon="github-icon" size={19} />;
     } else {
       return;
     }

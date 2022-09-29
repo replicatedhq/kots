@@ -285,7 +285,7 @@ export class SupportBundleAnalysis extends React.Component {
                         <div className="sentToVendorWrapper flex alignItems--flexEnd u-paddingLeft--10 u-paddingRight--10 u-marginRight--10">
                           <Icon
                             icon="paper-airplane"
-                            size="16"
+                            size={16}
                             style={{ marginRight: 7 }}
                           />
                           <span className="u-fontWeight--bold u-fontSize--small u-color--mutedteal">
