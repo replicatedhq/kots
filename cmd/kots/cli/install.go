@@ -34,6 +34,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/metrics"
 	"github.com/replicatedhq/kots/pkg/pull"
+	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/store/kotsstore"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/troubleshoot/pkg/preflight"
@@ -142,7 +143,7 @@ func InstallCmd() *cobra.Command {
 				return err
 			}
 
-			var applicationMetadata []byte
+			applicationMetadata := &replicatedapp.ApplicationMetadata{}
 			if airgapBundle := v.GetString("airgap-bundle"); airgapBundle != "" {
 				applicationMetadata, err = pull.GetAppMetadataFromAirgap(airgapBundle)
 				if err != nil {
@@ -152,12 +153,13 @@ func InstallCmd() *cobra.Command {
 				applicationMetadata, err = pull.PullApplicationMetadata(upstream, v.GetString("app-version-label"))
 				if err != nil {
 					log.Info("Unable to pull application metadata. This can be ignored, but custom branding will not be available in the Admin Console until a license is installed. This may also cause the Admin Console to run without minimal role-based-access-control (RBAC) privileges, which may be required by the application.")
+					applicationMetadata = &replicatedapp.ApplicationMetadata{}
 				}
 			}
 
 			// checks kots version compatibility with the app
-			if len(applicationMetadata) > 0 && !v.GetBool("skip-compatibility-check") {
-				kotsApp, err := kotsutil.LoadKotsAppFromContents(applicationMetadata)
+			if len(applicationMetadata.Manifest) > 0 && !v.GetBool("skip-compatibility-check") {
+				kotsApp, err := kotsutil.LoadKotsAppFromContents(applicationMetadata.Manifest)
 				if err != nil {
 					return errors.Wrap(err, "failed to load kots app from metadata")
 				}
@@ -218,7 +220,7 @@ func InstallCmd() *cobra.Command {
 				Namespace:              namespace,
 				Context:                v.GetString("context"),
 				SharedPassword:         sharedPassword,
-				ApplicationMetadata:    applicationMetadata,
+				ApplicationMetadata:    applicationMetadata.Manifest,
 				UpstreamURI:            upstream,
 				License:                license,
 				ConfigValues:           configValues,
@@ -349,6 +351,19 @@ func InstallCmd() *cobra.Command {
 
 			apiEndpoint := fmt.Sprintf("http://localhost:%d/api/v1", adminConsolePort)
 
+			authSlug, err := auth.GetOrCreateAuthSlug(clientset, deployOptions.Namespace)
+			if err != nil {
+				return errors.Wrap(err, "failed to get kotsadm auth slug")
+			}
+
+			// upload branding
+			if len(applicationMetadata.Branding) > 0 {
+				_, err = uploadBrandingArchive(authSlug, apiEndpoint, applicationMetadata.Branding)
+				if err != nil {
+					return errors.Wrap(err, "failed to upload branding")
+				}
+			}
+
 			if deployOptions.AirgapRootDir != "" {
 				log.ActionWithoutSpinner("Uploading app archive")
 
@@ -356,7 +371,7 @@ func InstallCmd() *cobra.Command {
 				var err error
 
 				for i := 0; i < 5; i++ {
-					tryAgain, err = uploadAirgapArchive(deployOptions, clientset, apiEndpoint, filepath.Join(deployOptions.AirgapRootDir, "app.tar.gz"))
+					tryAgain, err = uploadAirgapArchive(deployOptions, authSlug, apiEndpoint, filepath.Join(deployOptions.AirgapRootDir, "app.tar.gz"))
 					if err == nil {
 						break
 					}
@@ -390,11 +405,6 @@ func InstallCmd() *cobra.Command {
 				case <-stopCh:
 				}
 			}()
-
-			authSlug, err := auth.GetOrCreateAuthSlug(clientset, deployOptions.Namespace)
-			if err != nil {
-				return errors.Wrap(err, "failed to get kotsadm auth slug")
-			}
 
 			if deployOptions.License != nil {
 				log.ActionWithSpinner("Waiting for installation to complete")
@@ -553,7 +563,47 @@ func promptForNamespace(upstreamURI string) (string, error) {
 	}
 }
 
-func uploadAirgapArchive(deployOptions kotsadmtypes.DeployOptions, clientset *kubernetes.Clientset, apiEndpoint string, filename string) (bool, error) {
+func uploadBrandingArchive(authSlug string, apiEndpoint string, data []byte) (bool, error) {
+	body := &bytes.Buffer{}
+	bodyWriter := multipart.NewWriter(body)
+
+	fileWriter, err := bodyWriter.CreateFormFile("brandingArchive", "branding.tar.gz")
+	if err != nil {
+		return false, errors.Wrap(err, "failed to create form from file")
+	}
+
+	reader := bytes.NewReader(data)
+
+	_, err = io.Copy(fileWriter, reader)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to copy branding archive")
+	}
+
+	contentType := bodyWriter.FormDataContentType()
+	bodyWriter.Close()
+
+	url := fmt.Sprintf("%s/branding/install", apiEndpoint)
+	newRequest, err := http.NewRequest("POST", url, body)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to create upload request")
+	}
+	newRequest.Header.Add("Authorization", authSlug)
+	newRequest.Header.Add("Content-Type", contentType)
+
+	resp, err := http.DefaultClient.Do(newRequest)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to upload branding archive")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return true, errors.Errorf("unexpected response status: %v", resp.StatusCode)
+	}
+
+	return false, nil
+}
+
+func uploadAirgapArchive(deployOptions kotsadmtypes.DeployOptions, authSlug string, apiEndpoint string, filename string) (bool, error) {
 	body := &bytes.Buffer{}
 	bodyWriter := multipart.NewWriter(body)
 
@@ -583,11 +633,6 @@ func uploadAirgapArchive(deployOptions kotsadmtypes.DeployOptions, clientset *ku
 
 	contentType := bodyWriter.FormDataContentType()
 	bodyWriter.Close()
-
-	authSlug, err := auth.GetOrCreateAuthSlug(clientset, deployOptions.Namespace)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to get kotsadm auth slug")
-	}
 
 	url := fmt.Sprintf("%s/airgap/install", apiEndpoint)
 	newRequest, err := http.NewRequest("POST", url, body)

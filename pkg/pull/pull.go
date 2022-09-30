@@ -83,7 +83,7 @@ type RewriteImageOptions struct {
 
 // PullApplicationMetadata will return the application metadata yaml, if one is
 // available for the upstream
-func PullApplicationMetadata(upstreamURI string, versionLabel string) ([]byte, error) {
+func PullApplicationMetadata(upstreamURI string, versionLabel string) (*replicatedapp.ApplicationMetadata, error) {
 	u, err := url.ParseRequestURI(upstreamURI)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse uri")
@@ -94,12 +94,12 @@ func PullApplicationMetadata(upstreamURI string, versionLabel string) ([]byte, e
 		return nil, nil
 	}
 
-	data, err := replicatedapp.GetApplicationMetadata(u, versionLabel)
+	metadata, err := replicatedapp.GetApplicationMetadata(u, versionLabel)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get application metadata")
 	}
 
-	return data, nil
+	return metadata, nil
 }
 
 // Pull will download the application specified in upstreamURI using the options
@@ -936,7 +936,7 @@ func ParseIdentityConfigFromFile(filename string) (*kotsv1beta1.IdentityConfig, 
 	return identityConfig, nil
 }
 
-func GetAppMetadataFromAirgap(airgapArchive string) ([]byte, error) {
+func GetAppMetadataFromAirgap(airgapArchive string) (*replicatedapp.ApplicationMetadata, error) {
 	appArchive, err := archives.GetFileFromAirgap("app.tar.gz", airgapArchive)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to extract app archive")
@@ -962,10 +962,18 @@ func GetAppMetadataFromAirgap(airgapArchive string) ([]byte, error) {
 
 	var b bytes.Buffer
 	if err := s.Encode(&kotsKinds.KotsApplication, &b); err != nil {
-		errors.Wrap(err, "failed to encode metadata")
+		return nil, errors.Wrap(err, "failed to encode metadata")
 	}
 
-	return b.Bytes(), nil
+	branding, err := kotsutil.LoadBrandingArchiveFromPath(tempDir)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to load branding archive")
+	}
+
+	return &replicatedapp.ApplicationMetadata{
+		Manifest: b.Bytes(),
+		Branding: branding.Bytes(),
+	}, nil
 }
 
 func parseInstallationFromFile(filename string) (*kotsv1beta1.Installation, error) {

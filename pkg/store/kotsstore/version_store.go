@@ -399,7 +399,7 @@ func (s *KOTSStore) CreatePendingDownloadAppVersion(appID string, update upstrea
 		},
 	}
 
-	newSequence, err := s.createAppVersionRecord(tx, a.ID, a.Name, a.IconURI, &kotsKinds)
+	newSequence, err := s.createAppVersionRecord(tx, a.ID, a.Name, a.IconURI, &kotsKinds, nil)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to create app version")
 	}
@@ -515,7 +515,12 @@ func (s *KOTSStore) upsertAppVersion(tx *sql.Tx, appID string, sequence int64, b
 	}
 	kotsKinds.Application = renderedApplication
 
-	if err := s.upsertAppVersionRecord(tx, appID, sequence, appName, appIcon, kotsKinds); err != nil {
+	brandingArchive, err := kotsutil.LoadBrandingArchiveFromPath(filepath.Join(filesInDir, "upstream"))
+	if err != nil {
+		return errors.Wrap(err, "failed to load branding archive")
+	}
+
+	if err := s.upsertAppVersionRecord(tx, appID, sequence, appName, appIcon, kotsKinds, brandingArchive.Bytes()); err != nil {
 		return errors.Wrap(err, "failed to upsert app version record")
 	}
 
@@ -625,20 +630,20 @@ func (s *KOTSStore) upsertAppVersion(tx *sql.Tx, appID string, sequence int64, b
 	return nil
 }
 
-func (s *KOTSStore) createAppVersionRecord(tx *sql.Tx, appID string, appName string, appIcon string, kotsKinds *kotsutil.KotsKinds) (int64, error) {
+func (s *KOTSStore) createAppVersionRecord(tx *sql.Tx, appID string, appName string, appIcon string, kotsKinds *kotsutil.KotsKinds, brandingArchive []byte) (int64, error) {
 	newSequence, err := s.getNextAppSequence(tx, appID)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get next sequence number")
 	}
 
-	if err := s.upsertAppVersionRecord(tx, appID, newSequence, appName, appIcon, kotsKinds); err != nil {
+	if err := s.upsertAppVersionRecord(tx, appID, newSequence, appName, appIcon, kotsKinds, brandingArchive); err != nil {
 		return 0, errors.Wrap(err, "failed to upsert app version record")
 	}
 
 	return newSequence, nil
 }
 
-func (s *KOTSStore) upsertAppVersionRecord(tx *sql.Tx, appID string, sequence int64, appName string, appIcon string, kotsKinds *kotsutil.KotsKinds) error {
+func (s *KOTSStore) upsertAppVersionRecord(tx *sql.Tx, appID string, sequence int64, appName string, appIcon string, kotsKinds *kotsutil.KotsKinds, brandingArchive []byte) error {
 	// we marshal these here because it's a decision of the store to cache them in the app version table
 	// not all stores will do this
 	supportBundleSpec, err := kotsKinds.Marshal("troubleshoot.replicated.com", "v1beta1", "Collector")
@@ -694,8 +699,8 @@ func (s *KOTSStore) upsertAppVersionRecord(tx *sql.Tx, appID string, sequence in
 		releasedAt = &kotsKinds.Installation.Spec.ReleasedAt.Time
 	}
 	query := `insert into app_version (app_id, sequence, created_at, version_label, is_required, release_notes, update_cursor, channel_id, channel_name, upstream_released_at, encryption_key,
-		supportbundle_spec, analyzer_spec, preflight_spec, app_spec, kots_app_spec, kots_installation_spec, kots_license, config_spec, config_values, backup_spec, identity_spec)
-		values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
+		supportbundle_spec, analyzer_spec, preflight_spec, app_spec, kots_app_spec, kots_installation_spec, kots_license, config_spec, config_values, backup_spec, identity_spec, branding_archive)
+		values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
 		ON CONFLICT(app_id, sequence) DO UPDATE SET
 		created_at = EXCLUDED.created_at,
 		version_label = EXCLUDED.version_label,
@@ -716,7 +721,8 @@ func (s *KOTSStore) upsertAppVersionRecord(tx *sql.Tx, appID string, sequence in
 		config_spec = EXCLUDED.config_spec,
 		config_values = EXCLUDED.config_values,
 		backup_spec = EXCLUDED.backup_spec,
-		identity_spec = EXCLUDED.identity_spec`
+		identity_spec = EXCLUDED.identity_spec,
+		branding_archive = EXCLUDED.branding_archive`
 	_, err = tx.Exec(query, appID, sequence, time.Now(),
 		kotsKinds.Installation.Spec.VersionLabel,
 		kotsKinds.Installation.Spec.IsRequired,
@@ -736,7 +742,8 @@ func (s *KOTSStore) upsertAppVersionRecord(tx *sql.Tx, appID string, sequence in
 		configSpec,
 		configValuesSpec,
 		backupSpec,
-		identitySpec)
+		identitySpec,
+		brandingArchive)
 	if err != nil {
 		return errors.Wrap(err, "failed to insert app version")
 	}

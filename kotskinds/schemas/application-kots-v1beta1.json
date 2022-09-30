@@ -39,9 +39,12 @@
           "type": "object",
           "properties": {
             "css": {
-              "type": "string"
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             },
-            "fontFiles": {
+            "fonts": {
               "type": "array",
               "items": {
                 "type": "object",
@@ -52,15 +55,7 @@
                   "sources": {
                     "type": "array",
                     "items": {
-                      "type": "object",
-                      "properties": {
-                        "data": {
-                          "type": "string"
-                        },
-                        "format": {
-                          "type": "string"
-                        }
-                      }
+                      "type": "string"
                     }
                   }
                 }

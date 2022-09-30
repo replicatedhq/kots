@@ -320,14 +320,15 @@ func RegisterTokenAuthRoutes(handler *Handler, debugRouter *mux.Router, loggingR
 	loggingRouter.Path("/api/v1/upload").Methods("PUT").HandlerFunc(handler.UploadExistingApp)
 	loggingRouter.Path("/api/v1/download").Methods("GET").HandlerFunc(handler.DownloadApp)
 	loggingRouter.Path("/api/v1/airgap/install").Methods("POST").HandlerFunc(handler.UploadInitialAirgapApp)
+	loggingRouter.Path("/api/v1/branding/install").Methods("POST").HandlerFunc(handler.UploadInitialBranding)
 }
 
-func RegisterUnauthenticatedRoutes(handler *Handler, debugRouter *mux.Router, loggingRouter *mux.Router) {
+func RegisterUnauthenticatedRoutes(handler *Handler, kotsStore store.Store, debugRouter *mux.Router, loggingRouter *mux.Router) {
 	debugRouter.HandleFunc("/healthz", handler.Healthz)
 	loggingRouter.HandleFunc("/api/v1/login", handler.Login)
 	loggingRouter.HandleFunc("/api/v1/login/info", handler.GetLoginInfo)
 	loggingRouter.HandleFunc("/api/v1/logout", handler.Logout) // this route uses its own auth
-	loggingRouter.Path("/api/v1/metadata").Methods("GET").HandlerFunc(GetMetadataHandler(GetMetaDataConfig))
+	loggingRouter.Path("/api/v1/metadata").Methods("GET").HandlerFunc(GetMetadataHandler(GetMetaDataConfig, kotsStore))
 
 	loggingRouter.HandleFunc("/api/v1/oidc/login", handler.OIDCLogin)
 	loggingRouter.HandleFunc("/api/v1/oidc/login/callback", handler.OIDCLoginCallback)

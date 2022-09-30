@@ -1,7 +1,9 @@
 package kotsutil
 
 import (
+	"archive/tar"
 	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/base64"
 	"fmt"
@@ -45,6 +47,17 @@ func init() {
 	kurlscheme.AddToScheme(scheme.Scheme)
 	applicationv1beta1.AddToScheme(scheme.Scheme)
 }
+
+var (
+	BrandingFontFileExtensions = map[string]string{
+		".woff":  "woff",
+		".woff2": "woff2",
+		".ttf":   "truetype",
+		".otf":   "opentype",
+		".eot":   "embedded-opentype",
+		".svg":   "svg",
+	}
+)
 
 // KotsKinds are all of the special "client-side" kinds that are packaged in
 // an application. These should be pointers because they are all optional.
@@ -1047,4 +1060,87 @@ func GetKOTSBinPath() string {
 		// we're not inside the kotsadm pod, return the command used to run kots
 		return os.Args[0]
 	}
+}
+
+func LoadBrandingArchiveFromPath(archivePath string) (*bytes.Buffer, error) {
+	fileInfo, err := os.Stat(archivePath)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to stat branding archive path")
+	}
+	if !fileInfo.IsDir() {
+		return nil, errors.New("branding archive path is not a directory")
+	}
+
+	buf := bytes.NewBuffer(nil)
+	gz := gzip.NewWriter(buf)
+	defer gz.Close()
+	tw := tar.NewWriter(gz)
+	defer tw.Close()
+
+	hasFiles := false
+
+	err = filepath.Walk(archivePath,
+		func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+
+			if info.IsDir() {
+				return nil
+			}
+
+			ext := filepath.Ext(path)
+			_, isFontFile := BrandingFontFileExtensions[ext]
+			if ext != ".yaml" && ext != ".css" && !isFontFile {
+				return nil
+			}
+
+			contents, err := ioutil.ReadFile(path)
+			if err != nil {
+				return errors.Wrap(err, "failed to read file")
+			}
+
+			name := strings.TrimPrefix(path, archivePath+string(os.PathSeparator))
+
+			if ext == ".yaml" {
+				_, gvk, err := scheme.Codecs.UniversalDeserializer().Decode(contents, nil, nil)
+				if err != nil {
+					return nil
+				}
+
+				if gvk.String() != "kots.io/v1beta1, Kind=Application" {
+					return nil
+				}
+
+				name = "application.yaml"
+			}
+
+			hdr := &tar.Header{
+				Name:    name,
+				Mode:    int64(info.Mode()),
+				Size:    info.Size(),
+				ModTime: info.ModTime(),
+			}
+
+			if err := tw.WriteHeader(hdr); err != nil {
+				return errors.Wrap(err, "failed to write tar header")
+			}
+
+			if _, err := tw.Write(contents); err != nil {
+				return errors.Wrap(err, "failed to write tar contents")
+			}
+
+			hasFiles = true
+
+			return nil
+		})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to walk archive path")
+	}
+
+	if !hasFiles {
+		return bytes.NewBuffer(nil), nil
+	}
+
+	return buf, nil
 }

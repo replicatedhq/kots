@@ -65,18 +65,13 @@ type ApplicationSpec struct {
 }
 
 type ApplicationBranding struct {
-	Css       string                        `json:"css,omitempty"`
-	FontFiles []ApplicationBrandingFontFile `json:"fontFiles,omitempty"`
+	Css   []string                      `json:"css,omitempty"`
+	Fonts []ApplicationBrandingFontFile `json:"fonts,omitempty"`
 }
 
 type ApplicationBrandingFontFile struct {
-	FontFamily string                              `json:"fontFamily,omitempty"`
-	Sources    []ApplicationBrandingFontFileSource `json:"sources,omitempty"`
-}
-
-type ApplicationBrandingFontFileSource struct {
-	Format string `json:"format,omitempty"`
-	Data   string `json:"data,omitempty"`
+	FontFamily string   `json:"fontFamily,omitempty"`
+	Sources    []string `json:"sources,omitempty"`
 }
 
 type ApplicationPort struct {

@@ -44,6 +44,7 @@ type Store interface {
 	InstallationStore
 	KotsadmParamsStore
 	EmbeddedStore
+	BrandingStore
 
 	Init() error // this may need options
 	WaitForReady(ctx context.Context) error
@@ -236,4 +237,11 @@ type KotsadmParamsStore interface {
 type EmbeddedStore interface {
 	GetEmbeddedClusterAuthToken() (string, error)
 	SetEmbeddedClusterAuthToken(token string) error
+}
+
+type BrandingStore interface {
+	GetInitialBranding() ([]byte, error)
+	CreateInitialBranding(brandingArchive []byte) (string, error)
+	GetLatestBranding() ([]byte, error)
+	GetLatestBrandingForApp(appID string) ([]byte, error)
 }
