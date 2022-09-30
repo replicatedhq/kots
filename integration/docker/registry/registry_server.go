@@ -19,6 +19,10 @@ func StartMockServer(opts MockServerOptions) (*http.Server, error) {
 		Handler: r,
 	}
 
+	r.Path("/").Methods("GET").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
 	r.Path("/v2/{imageName}/manifests/{reference}").Methods("GET").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		imageName := mux.Vars(r)["imageName"]
 		reference := mux.Vars(r)["reference"]
