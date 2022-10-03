@@ -65,6 +65,7 @@ runs:
         version: "${{ inputs.addon_version }}"
         package-url: "${{ steps.generate-addon.outputs.addon_package_url }}"
         testgrid-spec-path: "${{ github.action_path }}/../../../deploy/kurl/kotsadm/template/testgrid"
+        testgrid-os-spec-path: "${{ github.action_path }}/../../../deploy/kurl/kotsadm/testgrid-os-spec.yaml"
         testgrid-run-prefix: "KOTS-${{ inputs.addon_version }}-${{ steps.vars.outputs.ref_name }}-${{ steps.vars.outputs.sha_short }}"
         testgrid-api-token: "${{ inputs.testgrid_api_token }}"
         priority: "${{ inputs.priority }}"
