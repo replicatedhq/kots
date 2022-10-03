@@ -340,6 +340,24 @@ jobs:
           docker push ttl.sh/automated-${{ github.run_id }}/postgres:${{ steps.dotenv.outputs.POSTGRES_14_TAG }}
 
 
+  push-dex:
+    runs-on: ubuntu-20.04
+    needs: [ can-run-ci ]
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: load environment variables from .image.env
+        uses: falti/dotenv-action@v0.2
+        id: dotenv
+        with:
+          path: .image.env
+
+      - name: push dex for CI
+        run: |
+          docker build --pull -f deploy/dex.Dockerfile -t ttl.sh/automated-${{ github.run_id }}/dex:${DEX_TAG} --build-arg TAG=${DEX_TAG} .
+          docker push ttl.sh/automated-${{ github.run_id }}/dex:${DEX_TAG}
+
+
   # only run validate-kurl-addon if changes to "deploy/kurl/**"
   kurl-addon-changes-filter:
     runs-on: ubuntu-20.04
@@ -357,7 +375,7 @@ jobs:
   validate-kurl-addon:
     runs-on: ubuntu-20.04
     if: ${{ needs.kurl-addon-changes-filter.outputs.ok-to-test == 'true' }}
-    needs: [ can-run-ci, enable-tests, generate-tag, kurl-addon-changes-filter, build-kots, build-kurl-proxy, build-migrations ]
+    needs: [ can-run-ci, enable-tests, generate-tag, kurl-addon-changes-filter, build-kots, build-kurl-proxy, build-migrations, push-dex ]
     steps:
       - name: checkout
         uses: actions/checkout@v2
@@ -375,12 +393,6 @@ jobs:
         run: |
           chmod +x bin/*
           tar -C bin/ -czvf bin/kots.tar.gz kots
-      - name: push dex image
-        run: |
-          export $(grep -v '^#' .image.env | xargs)
-          docker pull ghcr.io/dexidp/dex:$DEX_TAG
-          docker tag ghcr.io/dexidp/dex:$DEX_TAG ttl.sh/automated-${{ github.run_id }}/dex:$DEX_TAG
-          docker push ttl.sh/automated-${{ github.run_id }}/dex:$DEX_TAG
       - name: test kurl add-on
         id: addon-test
         uses: ./.github/actions/kurl-addon-kots-test
