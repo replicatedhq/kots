@@ -375,7 +375,7 @@ jobs:
         with:
           addon_version: ${{ steps.vars.outputs.addon_version }}
           s3_prefix: ${{ github.ref_type != 'branch' && '' || 'test/' }}
-          s3_prefix: ${{ github.ref_type != 'branch' && '1' || '0' }}
+          priority: ${{ github.ref_type != 'branch' && '1' || '0' }}
           testgrid_api_token: ${{ secrets.TESTGRID_PROD_API_TOKEN }}
           kotsadm_binary_override: bin/kots.tar.gz
   publish-kurl-addon:
