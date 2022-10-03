@@ -4,10 +4,37 @@ import InlineDropdown from "../shared/InlineDropdown";
 import isEmpty from "lodash/isEmpty";
 import { Utilities } from "@src/utilities/utilities";
 
-export default class AppStatus extends React.Component {
-  state = {
-    dropdownOptions: [],
-  };
+import { App, AppStatusState } from "@types";
+
+type OptionLink = {
+  displayText: string;
+  href: string;
+};
+
+type PropLink = {
+  title: string;
+  uri: string;
+};
+
+type Props = {
+  app: App;
+  appStatus?: AppStatusState;
+  hasStatusInformers?: boolean;
+  links: PropLink[];
+  onViewAppStatusDetails: () => void;
+  url: string;
+};
+
+type State = {
+  dropdownOptions: OptionLink[];
+};
+export default class AppStatus extends React.Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+    this.state = {
+      dropdownOptions: [],
+    };
+  }
 
   componentDidMount() {
     if (this.props.links && this.props.links.length > 0) {
@@ -15,7 +42,7 @@ export default class AppStatus extends React.Component {
     }
   }
 
-  componentDidUpdate(lastProps) {
+  componentDidUpdate(lastProps: Props) {
     if (
       this.props.links !== lastProps.links &&
       this.props.links &&
@@ -27,7 +54,7 @@ export default class AppStatus extends React.Component {
 
   getOptions = () => {
     const { links } = this.props;
-    let dropdownLinks = [];
+    let dropdownLinks: OptionLink[] = [];
 
     links.map((link) => {
       const linkObj = {
@@ -39,7 +66,7 @@ export default class AppStatus extends React.Component {
     this.setState({ dropdownOptions: dropdownLinks });
   };
 
-  createDashboardActionLink = (uri) => {
+  createDashboardActionLink = (uri: string) => {
     try {
       const parsedUrl = new URL(uri);
       if (parsedUrl.hostname === "localhost") {
