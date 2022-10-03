@@ -6,6 +6,7 @@ on:
       - "v*.*.*"
     branches:
       - main
+      - emosbaugh/sc-59783/kots-regression-tests-should-test-the-most
 
 jobs:
   generate-tag:
@@ -376,8 +377,10 @@ jobs:
           kotsadm_binary_override: bin/kots.tar.gz
   publish-kurl-addon:
     runs-on: ubuntu-20.04
-    if: github.ref_type != 'branch'
-    needs: [generate-tag, build-kurl-proxy, build-schema-migrations, release-go-api-tagged]
+    if: ${{ github.ref_type != 'branch' }}
+    needs: [ generate-tag, build-kurl-proxy, build-schema-migrations, release-go-api-tagged ]
+    outputs:
+      addon_package_url: ${{ steps.addon-publish.outputs.addon_package_url }}
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.KURL_ADDONS_AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.KURL_ADDONS_AWS_SECRET_ACCESS_KEY }}
@@ -400,6 +403,7 @@ jobs:
           chmod +x bin/*
           tar -C bin/ -czvf bin/kots.tar.gz kots
       - name: publish kurl add-on
+        id: addon-publish
         uses: ./.github/actions/kurl-addon-kots-publish
         with:
           addon_version: ${{ steps.vars.outputs.addon_version }}
@@ -482,11 +486,12 @@ jobs:
 
   regression-test:
     if: github.ref_type == 'branch'
-    needs: [regression-test-setup, generate-tag, build-go-api, release-go-api-tagged]
-    uses: replicatedhq/kots/.github/workflows/regression.yaml@main
+    needs: [regression-test-setup, generate-tag, build-go-api, release-go-api-tagged, publish-kurl-addon]
+    uses: ./.github/workflows/regression.yaml
     with:
       version_tag_old: ${{ needs.regression-test-setup.outputs.last_release_tag }}
       version_tag_new: ${{ needs.generate-tag.outputs.tag }}
+      addon_package_url: ${{ needs.publish-kurl-addon.outputs.addon_package_url }}
       id: ${{ needs.regression-test-setup.outputs.automation_id }}
     secrets:
       E2E_TESTIM_AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
