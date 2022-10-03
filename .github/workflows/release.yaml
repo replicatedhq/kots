@@ -344,7 +344,7 @@ jobs:
               - 'deploy/kurl/**'
   validate-kurl-addon:
     runs-on: ubuntu-20.04
-    if: ${{ github.ref_type == 'branch' && needs.kurl-addon-changes-filter.outputs.ok-to-test == 'true' }}
+    if: ${{ github.ref_type == 'branch' }} # TODO && needs.kurl-addon-changes-filter.outputs.ok-to-test == 'true' }}
     needs: [ kurl-addon-changes-filter, generate-tag, build-kurl-proxy, build-schema-migrations, release-go-api-tagged ]
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.KURL_ADDONS_AWS_ACCESS_KEY_ID }}
