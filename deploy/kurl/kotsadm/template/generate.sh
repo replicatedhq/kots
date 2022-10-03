@@ -3,39 +3,58 @@
 set -euo pipefail
 
 function generate() {
-    local kotsadm_tag=$1
-    local kotsadm_dir=$2
-    local kotsadm_binary_version=$3
-    local dir="../${kotsadm_dir}"\
+    local kotsadm_version="$1"
+    local kotsadm_image_registry="$2"
+    local kotsadm_image_namespace="$3"
+    local kotsadm_image_tag="$4"
+    local kotsadm_binary="$5"
 
-    if [ -d "$dir" ]; then
-        echo "Kotsadm ${kotsadm_dir} add-on already exists"
-        
-        # Clean out the directory in case the template has removed any files
-        rm -rf "$dir"
-    fi
+    local dir="../$kotsadm_version"
+
+    # Clean out the directory in case the template has removed any files
+    rm -rf "$dir"
     mkdir -p "$dir"
 
     cp -r base/* "$dir/"
-    find "$dir" -type f -exec sed -i -e "s/__KOTSADM_TAG__/$kotsadm_tag/g" {} \;
-    find "$dir" -type f -exec sed -i -e "s/__KOTSADM_DIR__/$kotsadm_dir/g" {} \;
-    find "$dir" -type f -exec sed -i -e "s/__KOTSADM_BINARY_VERSION__/$kotsadm_binary_version/g" {} \;
 
-    # grab generated dot env file containing the latest version tags, export environment variables in dot env file
-    # and update manifest with latest image tags
-    # shellcheck disable=SC2046
-    export $(grep -v '^#' ../../../../.image.env | xargs)
-    find "$dir" -type f -exec sed -i -e "s/__POSTGRES_10_TAG__/$POSTGRES_10_TAG/g" {} \;
-    find "$dir" -type f -exec sed -i -e "s/__POSTGRES_14_TAG__/$POSTGRES_14_TAG/g" {} \;
-    sed -i -e "s/__DEX_TAG__/$DEX_TAG/g" "${dir}/Manifest"
+    local kotsadm_image="$kotsadm_image_registry/$kotsadm_image_namespace/kotsadm:$kotsadm_image_tag"
+    local kotsadm_migrations_image="$kotsadm_image_registry/$kotsadm_image_namespace/kotsadm-migrations:$kotsadm_image_tag"
+    local kurl_proxy_image="$kotsadm_image_registry/$kotsadm_image_namespace/kurl-proxy:$kotsadm_image_tag"
 
+    find "$dir" -type f -exec sed -i -e "s|__KOTSADM_IMAGE__|$kotsadm_image|g" {} \;
+    find "$dir" -type f -exec sed -i -e "s|__KOTSADM_MIGRATIONS_IMAGE__|$kotsadm_migrations_image|g" {} \;
+    find "$dir" -type f -exec sed -i -e "s|__KURL_PROXY_IMAGE__|$kurl_proxy_image|g" {} \;
+
+    sed -i -e "s|__KOTSADM_BINARY__|$kotsadm_binary|g" "${dir}/Manifest"
+
+    # The following environment variables will be exported by the .image.env file
+    find "$dir" -type f -exec sed -i -e "s|__POSTGRES_10_TAG__|$POSTGRES_10_TAG|g" {} \;
+    find "$dir" -type f -exec sed -i -e "s|__POSTGRES_14_TAG__|$POSTGRES_14_TAG|g" {} \;
+    local dex_image="$kotsadm_image_registry/$kotsadm_image_namespace/dex:$DEX_TAG"
+    find "$dir" -type f -exec sed -i -e "s|__DEX_IMAGE__|$dex_image|g" {} \;
 }
 
-function main() {
-    local version="${1#v}"
+DEFAULT_KOTSADM_IMAGE_REGISTRY=docker.io
+DEFAULT_KOTSADM_IMAGE_NAMESPACE=kotsadm
 
-    echo "generating v$version version"
-    generate "v$version" "$version" "v$version"
+function main() {
+    local kotsadm_version="$1"
+    local kotsadm_image_registry="${2:-$DEFAULT_KOTSADM_IMAGE_REGISTRY}"
+    local kotsadm_image_namespace="${3:-$DEFAULT_KOTSADM_IMAGE_NAMESPACE}"
+    local kotsadm_image_tag="${4:-}"
+    local kotsadm_binary="${5:-}"
+
+    if [ -z "$kotsadm_image_tag" ]; then
+        kotsadm_image_tag="v$kotsadm_version"
+    fi
+
+    if [ -z "$kotsadm_binary" ]; then
+        kotsadm_binary="https://github.com/replicatedhq/kots/releases/download/v$kotsadm_version/kots_linux_amd64.tar.gz"
+    fi
+
+    echo "Generating add-on version $kotsadm_version"
+    generate "$kotsadm_version" "$kotsadm_image_registry" "$kotsadm_image_namespace" "$kotsadm_image_tag" "$kotsadm_binary"
+    echo "Generating add-on version $kotsadm_version success"
 }
 
 main "$@"
