@@ -328,6 +328,73 @@ jobs:
           -d "{\"event_type\": \"auto-kotsadm-update\", \"client_payload\": {\"version\": \"${GIT_TAG:1}\" }}" \
           "https://api.github.com/repos/replicatedhq/kurl/dispatches"
 
+  test-kurl-addon:
+    runs-on: ubuntu-20.04
+    if: github.ref_type == 'branch'
+    needs: [generate-tag, build-kurl-proxy, build-schema-migrations, release-go-api-tagged]
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.KURL_ADDONS_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.KURL_ADDONS_AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: us-east-1
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: set outputs
+        id: vars
+        run: |
+          addon_version=${{ needs.generate-tag.outputs.tag }}
+          echo "::set-output name=addon_version::${addon_version#v}"
+      - name: download kots binary
+        uses: actions/download-artifact@v2
+        with:
+          name: go_api
+          path: bin/
+      - name: prepare kots binary executable
+        run: |
+          chmod +x bin/*
+          tar -C bin/ -czvf bin/kots.tar.gz kots
+      - name: test kurl add-on
+        uses: ./.github/actions/kurl-addon-kots-test
+        with:
+          addon_version: ${{ steps.vars.outputs.addon_version }}
+          s3_prefix: test/
+          priority: 0
+          testgrid_api_token: ${{ secrets.TESTGRID_PROD_API_TOKEN }}
+          kotsadm_binary_override: bin/kots.tar.gz
+  publish-kurl-addon:
+    runs-on: ubuntu-20.04
+    if: github.ref_type != 'branch'
+    needs: [generate-tag, build-kurl-proxy, build-schema-migrations, release-go-api-tagged]
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.KURL_ADDONS_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.KURL_ADDONS_AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: us-east-1
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: set outputs
+        id: vars
+        run: |
+          addon_version=${{ needs.generate-tag.outputs.tag }}
+          echo "::set-output name=addon_version::${addon_version#v}"
+      - name: download kots binary
+        uses: actions/download-artifact@v2
+        with:
+          name: go_api
+          path: bin/
+      - name: prepare kots binary executable
+        run: |
+          chmod +x bin/*
+          tar -C bin/ -czvf bin/kots.tar.gz kots
+      - name: publish kurl add-on
+        uses: ./.github/actions/kurl-addon-kots-publish
+        with:
+          addon_version: ${{ steps.vars.outputs.addon_version }}
+          s3_prefix: ""
+          priority: 1
+          testgrid_api_token: ${{ secrets.TESTGRID_PROD_API_TOKEN }}
+          kotsadm_binary_override: bin/kots.tar.gz
+
   generate-kots-release-notes-pr:
     runs-on: ubuntu-20.04
     needs: [generate-tag]
