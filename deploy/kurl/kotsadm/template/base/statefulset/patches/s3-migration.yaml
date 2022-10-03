@@ -28,7 +28,7 @@
           optional: true
     - name: S3_BUCKET_ENDPOINT
       value: "true"
-    image: kotsadm/kotsadm:__KOTSADM_TAG__
+    image: __KOTSADM_IMAGE__
     imagePullPolicy: IfNotPresent
     volumeMounts:
     - name: kotsadmdata

@@ -340,6 +340,83 @@ jobs:
           docker push ttl.sh/automated-${{ github.run_id }}/postgres:${{ steps.dotenv.outputs.POSTGRES_14_TAG }}
 
 
+  push-dex:
+    runs-on: ubuntu-20.04
+    needs: [ can-run-ci ]
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: load environment variables from .image.env
+        uses: falti/dotenv-action@v0.2
+        id: dotenv
+        with:
+          path: .image.env
+
+      - name: push dex for CI
+        run: |
+          docker build --pull -f deploy/dex.Dockerfile -t ttl.sh/automated-${{ github.run_id }}/dex:${{ steps.dotenv.outputs.DEX_TAG }} --build-arg TAG=${{ steps.dotenv.outputs.DEX_TAG }} .
+          docker push ttl.sh/automated-${{ github.run_id }}/dex:${{ steps.dotenv.outputs.DEX_TAG }}
+
+
+  # only run validate-kurl-addon if changes to "deploy/kurl/**"
+  kurl-addon-changes-filter:
+    runs-on: ubuntu-20.04
+    needs: [ can-run-ci, enable-tests ]
+    outputs:
+      ok-to-test: ${{ steps.filter.outputs.kurl-addon }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            kurl-addon:
+              - 'deploy/kurl/**'
+  validate-kurl-addon:
+    runs-on: ubuntu-20.04
+    if: ${{ needs.kurl-addon-changes-filter.outputs.ok-to-test == 'true' }}
+    needs: [ can-run-ci, enable-tests, generate-tag, kurl-addon-changes-filter, build-kots, build-kurl-proxy, build-migrations, push-dex ]
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: set outputs
+        id: vars
+        run: |
+          addon_version=${{ needs.generate-tag.outputs.tag }}
+          echo "::set-output name=addon_version::${addon_version#v}"
+      - name: download kots binary
+        uses: actions/download-artifact@v2
+        with:
+          name: kots
+          path: bin/
+      - name: prepare kots binary executable
+        run: |
+          chmod +x bin/*
+          tar -C bin/ -czvf bin/kots.tar.gz kots
+      - name: test kurl add-on
+        id: addon-test
+        uses: ./.github/actions/kurl-addon-kots-test
+        with:
+          addon_version: ${{ steps.vars.outputs.addon_version }}
+          s3_prefix: ${{ github.event.action == 'workflow_dispatch' && 'test/' || inputs.s3_prefix }}
+          priority: ${{ inputs.priority }}
+          testgrid_api_token: ${{ secrets.TESTGRID_PROD_API_TOKEN }}
+          kotsadm_image_registry: ttl.sh
+          kotsadm_image_namespace: automated-${{ github.run_id }}
+          kotsadm_image_tag: 12h
+          kotsadm_binary_override: bin/kots.tar.gz
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.KURL_ADDONS_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.KURL_ADDONS_AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+      - name: comment testgrid url
+        uses: mshick/add-pr-comment@v1
+        with:
+          message: ${{ steps.addon-test.outputs.testgrid_run_message }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          allow-repeats: false
+
+
   validate-existing-online-install-minimal:
     runs-on: ubuntu-20.04
     needs: [ enable-tests, can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-postgres ]
@@ -1679,6 +1756,8 @@ jobs:
   validate-success:
     runs-on: ubuntu-20.04
     needs:
+      # kurl add-on
+      - validate-kurl-addon
       # testim tests
       - validate-existing-online-install-minimal
       - validate-smoke-test
