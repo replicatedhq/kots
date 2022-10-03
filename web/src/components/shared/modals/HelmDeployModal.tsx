@@ -71,12 +71,12 @@ function HelmDeployModal({
   downloadError: boolean;
   hideHelmDeployModal: () => void;
   // isDownloading: boolean;
-  saveError: boolean;
+  saveError?: boolean;
   showHelmDeployModal?: boolean;
   subtitle: string;
   registryUsername: string;
   registryPassword: string;
-  revision: string | null;
+  revision?: string | null;
   title: string;
   upgradeTitle: string;
   showDownloadValues: boolean;
