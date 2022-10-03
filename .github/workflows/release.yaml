@@ -328,10 +328,23 @@ jobs:
           -d "{\"event_type\": \"auto-kotsadm-update\", \"client_payload\": {\"version\": \"${GIT_TAG:1}\" }}" \
           "https://api.github.com/repos/replicatedhq/kurl/dispatches"
 
-  test-kurl-addon:
+  # only run validate-kurl-addon if changes to "deploy/kurl/**"
+  kurl-addon-changes-filter:
     runs-on: ubuntu-20.04
-    if: github.ref_type == 'branch'
-    needs: [generate-tag, build-kurl-proxy, build-schema-migrations, release-go-api-tagged]
+    outputs:
+      ok-to-test: ${{ steps.filter.outputs.kurl-addon }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            kurl-addon:
+              - 'deploy/kurl/**'
+  validate-kurl-addon:
+    runs-on: ubuntu-20.04
+    if: ${{ github.ref_type == 'branch' && needs.kurl-addon-changes-filter.outputs.ok-to-test == 'true' }}
+    needs: [ kurl-addon-changes-filter, generate-tag, build-kurl-proxy, build-schema-migrations, release-go-api-tagged ]
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.KURL_ADDONS_AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.KURL_ADDONS_AWS_SECRET_ACCESS_KEY }}
