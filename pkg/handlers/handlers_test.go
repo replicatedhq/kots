@@ -1413,7 +1413,7 @@ func TestListUnauthedRoutes(t *testing.T) {
 	req := require.New(t)
 
 	r := mux.NewRouter()
-	handlers.RegisterUnauthenticatedRoutes(&handlers.Handler{}, r, r)
+	handlers.RegisterUnauthenticatedRoutes(&handlers.Handler{}, nil, r, r)
 	// build a list of patterns that are used by kots
 	patternList := []string{}
 	err := r.Walk(func(route *mux.Route, _ *mux.Router, _ []*mux.Route) error {

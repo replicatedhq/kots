@@ -65,3 +65,5 @@ spec:
         type: text
       - name: identity_spec
         type: text
+      - name: branding_archive
+        type: bytea

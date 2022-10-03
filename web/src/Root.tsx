@@ -72,7 +72,7 @@ const ThemeContext = React.createContext({
 });
 
 type AppBranding = {
-  css: string;
+  css?: string[];
   fontFaces?: string[];
   logo: string;
 };
@@ -422,11 +422,16 @@ const Root = () => {
               {fontFace}
             </style>
           ))}
-        {state.appBranding?.css && (
-          <style type="text/css" id="kots-branding-css">
-            {state.appBranding.css}
-          </style>
-        )}
+        {state.appBranding?.css &&
+          state.appBranding.css.map((style, index) => (
+            <style
+              type="text/css"
+              id={`kots-branding-css-${index}`}
+              key={`kots-branding-css-${index}`}
+            >
+              {style}
+            </style>
+          ))}
       </Helmet>
       <ThemeContext.Provider
         value={{

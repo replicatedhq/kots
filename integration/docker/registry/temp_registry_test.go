@@ -5,6 +5,7 @@ import (
 	"path"
 	"reflect"
 	"testing"
+	"time"
 
 	dockerregistry "github.com/replicatedhq/kots/pkg/docker/registry"
 	dockertypes "github.com/replicatedhq/kots/pkg/docker/types"
@@ -155,6 +156,9 @@ func TestTempRegistry_GetImageLayers(t *testing.T) {
 
 	r := &dockerregistry.TempRegistry{}
 	r.OverridePort("3002")
+
+	err = r.WaitForReady(time.Second * 30)
+	req.NoError(err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
