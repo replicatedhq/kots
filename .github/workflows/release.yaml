@@ -344,8 +344,10 @@ jobs:
               - 'deploy/kurl/**'
   validate-kurl-addon:
     runs-on: ubuntu-20.04
-    if: ${{ github.ref_type == 'branch' }} # TODO && needs.kurl-addon-changes-filter.outputs.ok-to-test == 'true' }}
+    if: ${{ github.ref_type != 'branch' || github.ref_type == 'branch' }} # TODO change to: || needs.kurl-addon-changes-filter.outputs.ok-to-test == 'true' }}
     needs: [ kurl-addon-changes-filter, generate-tag, build-kurl-proxy, build-schema-migrations, release-go-api-tagged ]
+    outputs:
+      addon_package_url: ${{ steps.addon-test.outputs.addon_package_url }}
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.KURL_ADDONS_AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.KURL_ADDONS_AWS_SECRET_ACCESS_KEY }}
@@ -368,49 +370,34 @@ jobs:
           chmod +x bin/*
           tar -C bin/ -czvf bin/kots.tar.gz kots
       - name: test kurl add-on
+        id: addon-test
         uses: ./.github/actions/kurl-addon-kots-test
         with:
           addon_version: ${{ steps.vars.outputs.addon_version }}
-          s3_prefix: test/
-          priority: 0
+          s3_prefix: ${{ github.ref_type != 'branch' && '' || 'test/' }}
+          s3_prefix: ${{ github.ref_type != 'branch' && '1' || '0' }}
           testgrid_api_token: ${{ secrets.TESTGRID_PROD_API_TOKEN }}
           kotsadm_binary_override: bin/kots.tar.gz
   publish-kurl-addon:
     runs-on: ubuntu-20.04
-    if: ${{ github.ref_type != 'branch' }}
-    needs: [ generate-tag, build-kurl-proxy, build-schema-migrations, release-go-api-tagged ]
-    outputs:
-      addon_package_url: ${{ steps.addon-publish.outputs.addon_package_url }}
+    # if: ${{ github.ref_type != 'branch' }} # TODO
+    needs: [ generate-tag, validate-kurl-addon ]
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.KURL_ADDONS_AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.KURL_ADDONS_AWS_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: us-east-1
     steps:
-      - name: checkout
-        uses: actions/checkout@v2
       - name: set outputs
         id: vars
         run: |
           addon_version=${{ needs.generate-tag.outputs.tag }}
           echo "::set-output name=addon_version::${addon_version#v}"
-      - name: download kots binary
-        uses: actions/download-artifact@v2
+      - uses: ./.github/actions/kurl-addon-kots-publisher
         with:
-          name: go_api
-          path: bin/
-      - name: prepare kots binary executable
-        run: |
-          chmod +x bin/*
-          tar -C bin/ -czvf bin/kots.tar.gz kots
-      - name: publish kurl add-on
-        id: addon-publish
-        uses: ./.github/actions/kurl-addon-kots-publish
-        with:
-          addon_version: ${{ steps.vars.outputs.addon_version }}
-          s3_prefix: ""
-          priority: 1
-          testgrid_api_token: ${{ secrets.TESTGRID_PROD_API_TOKEN }}
-          kotsadm_binary_override: bin/kots.tar.gz
+          ADDON_VERSION: ${{ steps.vars.outputs.addon_version }}
+          ADDON_PACKAGE_URL: ${{ needs.validate-kurl-addon.outputs.addon_package_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: aws s3 cp ./deploy/kurl/versions.json s3://kots-kurl-addons-production-1658439274
 
   generate-kots-release-notes-pr:
     runs-on: ubuntu-20.04
@@ -486,12 +473,12 @@ jobs:
 
   regression-test:
     if: github.ref_type == 'branch'
-    needs: [regression-test-setup, generate-tag, build-go-api, release-go-api-tagged, publish-kurl-addon]
+    needs: [ regression-test-setup, generate-tag, build-go-api, release-go-api-tagged, validate-kurl-addon ]
     uses: ./.github/workflows/regression.yaml
     with:
       version_tag_old: ${{ needs.regression-test-setup.outputs.last_release_tag }}
       version_tag_new: ${{ needs.generate-tag.outputs.tag }}
-      addon_package_url: ${{ needs.publish-kurl-addon.outputs.addon_package_url }}
+      addon_package_url: ${{ needs.validate-kurl-addon.outputs.addon_package_url }}
       id: ${{ needs.regression-test-setup.outputs.automation_id }}
     secrets:
       E2E_TESTIM_AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
