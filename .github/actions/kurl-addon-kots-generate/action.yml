@@ -29,10 +29,19 @@ runs:
   using: "composite"
   steps:
 
+    - name: load environment from .image.env
+      uses: falti/dotenv-action@v0.2
+      id: dotenv
+      with:
+        path: ${{ github.action_path }}/../../../.image.env
+
     - name: generate add-on version
       shell: bash
+      env:
+        DEX_TAG: ${{ steps.dotenv.outputs.DEX_TAG }}
+        POSTGRES_10_TAG: ${{ steps.dotenv.outputs.POSTGRES_10_TAG }}
+        POSTGRES_14_TAG: ${{ steps.dotenv.outputs.POSTGRES_14_TAG }}
       run: |
-        export $(grep -v '^#' ${{ github.action_path }}/../../../.image.env | xargs)
         ( cd ${{ github.action_path }}/../../../deploy/kurl/kotsadm/template; \
           ./generate.sh \
             "${{ inputs.addon_version }}" \

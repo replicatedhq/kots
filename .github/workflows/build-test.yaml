@@ -354,8 +354,8 @@ jobs:
 
       - name: push dex for CI
         run: |
-          docker build --pull -f deploy/dex.Dockerfile -t ttl.sh/automated-${{ github.run_id }}/dex:${DEX_TAG} --build-arg TAG=${DEX_TAG} .
-          docker push ttl.sh/automated-${{ github.run_id }}/dex:${DEX_TAG}
+          docker build --pull -f deploy/dex.Dockerfile -t ttl.sh/automated-${{ github.run_id }}/dex:${{ steps.dotenv.outputs.DEX_TAG }} --build-arg TAG=${{ steps.dotenv.outputs.DEX_TAG }} .
+          docker push ttl.sh/automated-${{ github.run_id }}/dex:${{ steps.dotenv.outputs.DEX_TAG }}
 
 
   # only run validate-kurl-addon if changes to "deploy/kurl/**"
