@@ -338,8 +338,15 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.KURL_ADDONS_AWS_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: us-east-1
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/download-artifact@v2
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: set outputs
+        id: vars
+        run: |
+          addon_version=${{ needs.generate-tag.outputs.tag }}
+          echo "::set-output name=addon_version::${addon_version#v}"
+      - name: download kots binary
+        uses: actions/download-artifact@v2
         with:
           name: go_api
           path: bin/
@@ -347,9 +354,10 @@ jobs:
         run: |
           chmod +x bin/*
           tar -C bin/ -czvf bin/kots.tar.gz kots
-      - uses: ./.github/actions/kurl-addon-kots-test
+      - name: test kurl add-on
+        uses: ./.github/actions/kurl-addon-kots-test
         with:
-          addon_version: ${{ needs.generate-tag.outputs.tag }}
+          addon_version: ${{ steps.vars.outputs.addon_version }}
           s3_prefix: test/
           priority: 0
           testgrid_api_token: ${{ secrets.TESTGRID_PROD_API_TOKEN }}
@@ -363,8 +371,15 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.KURL_ADDONS_AWS_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: us-east-1
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/download-artifact@v2
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: set outputs
+        id: vars
+        run: |
+          addon_version=${{ needs.generate-tag.outputs.tag }}
+          echo "::set-output name=addon_version::${addon_version#v}"
+      - name: download kots binary
+        uses: actions/download-artifact@v2
         with:
           name: go_api
           path: bin/
@@ -372,9 +387,10 @@ jobs:
         run: |
           chmod +x bin/*
           tar -C bin/ -czvf bin/kots.tar.gz kots
-      - uses: replicatedhq/kots/.github/actions/kurl-addon-kots-publish@emosbaugh/sc-55217/test-kurl-addon-on-release # TODO: change
+      - name: publish kurl add-on
+        uses: replicatedhq/kots/.github/actions/kurl-addon-kots-publish@emosbaugh/sc-55217/test-kurl-addon-on-release # TODO: change
         with:
-          addon_version: ${{ needs.generate-tag.outputs.tag }}
+          addon_version: ${{ steps.vars.outputs.addon_version }}
           s3_prefix: ""
           priority: 1
           testgrid_api_token: ${{ secrets.TESTGRID_PROD_API_TOKEN }}
