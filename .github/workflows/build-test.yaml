@@ -47,7 +47,7 @@ jobs:
     steps:
       - name: ok
         # change 0 to a positive interger to prevent all tests from running
-        run: exit 0
+        run: exit 1
 
 
   generate-tag:
@@ -361,7 +361,7 @@ jobs:
   # only run validate-kurl-addon if changes to "deploy/kurl/**"
   kurl-addon-changes-filter:
     runs-on: ubuntu-20.04
-    needs: [ can-run-ci, enable-tests ]
+    needs: [ can-run-ci ]
     outputs:
       ok-to-test: ${{ steps.filter.outputs.kurl-addon }}
     steps:
@@ -375,7 +375,7 @@ jobs:
   validate-kurl-addon:
     runs-on: ubuntu-20.04
     if: ${{ needs.kurl-addon-changes-filter.outputs.ok-to-test == 'true' }}
-    needs: [ can-run-ci, enable-tests, generate-tag, kurl-addon-changes-filter, build-kots, build-kurl-proxy, build-migrations, push-dex ]
+    needs: [ can-run-ci, generate-tag, kurl-addon-changes-filter, build-kots, build-kurl-proxy, build-migrations, push-dex ]
     steps:
       - name: checkout
         uses: actions/checkout@v2
