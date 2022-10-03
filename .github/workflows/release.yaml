@@ -387,6 +387,8 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.KURL_ADDONS_AWS_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: us-east-1
     steps:
+      - name: checkout
+        uses: actions/checkout@v2
       - name: set outputs
         id: vars
         run: |
