@@ -58,7 +58,7 @@ runs:
         echo "::set-output name=sha_short::${GITHUB_SHA:0:7}"
         echo "::set-output name=ref_name::${GITHUB_REF_NAME//\//"-"}" # replace forward slashes
 
-    - uses: replicatedhq/kurl/.github/actions/addon-testgrid-tester@emosbaugh/sc-55217/testgrid-os-spec-path
+    - uses: replicatedhq/kurl/.github/actions/addon-testgrid-tester@main
       id: testgrid-run
       with:
         addon: "kotsadm"
