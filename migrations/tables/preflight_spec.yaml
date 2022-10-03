@@ -3,10 +3,10 @@ kind: Table
 metadata:
   name: preflight-spec
 spec:
-  database: kotsadm-postgres
   name: preflight_spec
   schema:
-    postgres:
+    rqlite:
+      strict: true
       primaryKey:
       - watch_id
       - sequence
@@ -16,7 +16,7 @@ spec:
         constraints:
           notNull: true
       - name: sequence
-        type: int
+        type: integer
         constraints:
           notNull: true
       - name: spec

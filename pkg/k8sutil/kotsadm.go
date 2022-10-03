@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	types "github.com/replicatedhq/kots/pkg/k8sutil/types"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	corev1 "k8s.io/api/core/v1"
@@ -174,7 +175,7 @@ func FindKotsadm(clientset *kubernetes.Clientset, namespace string) (string, err
 	return "", errors.New("unable to find kotsadm pod")
 }
 
-func WaitForKotsadm(clientset *kubernetes.Clientset, namespace string, timeoutWaitingForWeb time.Duration) (string, error) {
+func WaitForKotsadm(clientset kubernetes.Interface, namespace string, timeoutWaitingForWeb time.Duration) (string, error) {
 	start := time.Now()
 
 	for {
@@ -203,7 +204,54 @@ func WaitForKotsadm(clientset *kubernetes.Clientset, namespace string, timeoutWa
 		time.Sleep(time.Second)
 
 		if time.Since(start) > timeoutWaitingForWeb {
-			return "", &kotsadmtypes.ErrorTimeout{Message: "timeout waiting for kotsadm pod"}
+			return "", &types.ErrorTimeout{Message: "timeout waiting for kotsadm pod"}
+		}
+	}
+}
+
+func RestartKotsadm(ctx context.Context, clientset *kubernetes.Clientset, namespace string, timeout time.Duration) error {
+	pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "app=kotsadm"})
+	if err != nil {
+		return errors.Wrap(err, "failed to list pods for termination")
+	}
+
+	deletedPods := make(map[string]bool)
+	for _, pod := range pods.Items {
+		err := clientset.CoreV1().Pods(namespace).Delete(context.TODO(), pod.Name, metav1.DeleteOptions{})
+		if err != nil {
+			return errors.Wrap(err, "failed to delete admin console")
+		}
+		deletedPods[pod.Name] = true
+	}
+
+	// wait for pods to stop running, or waiting for new pods will trip up.
+	start := time.Now()
+	for {
+		pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "app=kotsadm"})
+		if err != nil {
+			return errors.Wrap(err, "failed to list pods")
+		}
+
+		keepWaiting := false
+		for _, pod := range pods.Items {
+			if !deletedPods[pod.Name] {
+				continue
+			}
+
+			if pod.Status.Phase == corev1.PodRunning {
+				keepWaiting = true
+				break
+			}
+		}
+
+		if !keepWaiting {
+			return nil
+		}
+
+		time.Sleep(time.Second)
+
+		if time.Now().Sub(start) > timeout {
+			return &types.ErrorTimeout{Message: "timeout waiting for kotsadm pod to stop"}
 		}
 	}
 }

@@ -30,7 +30,7 @@ spec:
             mountPath: /migrations
         env:
           - name: SCHEMAHERO_DRIVER
-            value: postgres
+            value: rqlite
           - name: SCHEMAHERO_SPEC_FILE
             value: /go/src/github.com/replicatedhq/kots/tables
           - name: SCHEMAHERO_OUT
@@ -38,7 +38,7 @@ spec:
           - name: SCHEMAHERO_DDL
             value: /migrations/plan.yaml
           - name: SCHEMAHERO_URI
-            value: postgresql://kotsadm:password@kotsadm-postgres/kotsadm?connect_timeout=10&application_name=ship&sslmode=disable
+            value: kotsadm:password@kotsadm-rqlite
       initContainers:
       - image: migrations
         name: migrations-plan
@@ -48,13 +48,13 @@ spec:
         args: ["plan"]
         env:
           - name: SCHEMAHERO_DRIVER
-            value: postgres
+            value: rqlite
           - name: SCHEMAHERO_SPEC_FILE
             value: /go/src/github.com/replicatedhq/kots/tables
           - name: SCHEMAHERO_OUT
             value: /migrations/plan.yaml
           - name: SCHEMAHERO_URI
-            value: postgresql://kotsadm:password@kotsadm-postgres/kotsadm?connect_timeout=10&application_name=ship&sslmode=disable
+            value: kotsadm:password@kotsadm-rqlite
       - image: migrations
         name: migrations-apply
         volumeMounts:
@@ -63,8 +63,8 @@ spec:
         args: ["apply"]
         env:
           - name: SCHEMAHERO_DRIVER
-            value: postgres
+            value: rqlite
           - name: SCHEMAHERO_DDL
             value: /migrations/plan.yaml
           - name: SCHEMAHERO_URI
-            value: postgresql://kotsadm:password@kotsadm-postgres/kotsadm?connect_timeout=10&application_name=ship&sslmode=disable
+            value: kotsadm:password@kotsadm-rqlite

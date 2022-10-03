@@ -3,10 +3,10 @@ kind: Table
 metadata:
   name: app
 spec:
-  database: kotsadm-postgres
   name: app
   schema:
-    postgres:
+    rqlite:
+      strict: true
       primaryKey:
       - id
       columns:
@@ -21,11 +21,11 @@ spec:
       - name: icon_uri
         type: text
       - name: created_at
-        type: timestamp without time zone
+        type: integer
         constraints:
           notNull: true
       - name: updated_at
-        type: timestamp without time zone
+        type: integer
       - name: slug
         type: text
         constraints:
@@ -39,9 +39,9 @@ spec:
       - name: current_sequence
         type: integer
       - name: last_update_check_at
-        type: timestamp without time zone
+        type: integer
       - name: is_all_users
-        type: boolean
+        type: integer
       - name: registry_hostname
         type: text
       - name: registry_username
@@ -53,16 +53,16 @@ spec:
       - name: namespace
         type: text
       - name: registry_is_readonly
-        type: boolean
+        type: integer
       - name: last_registry_sync
-        type: timestamp without time zone
+        type: integer
       - name: last_license_sync
-        type: timestamp without time zone
+        type: integer
       - name: install_state
         type: text
       - name: is_airgap
-        type: boolean
-        default: "false"
+        type: integer
+        default: 0
       - name: snapshot_ttl_new
         type: text
         default: '720h'
@@ -81,7 +81,7 @@ spec:
         type: text
         default: 'disabled'
       - name: channel_changed
-        type: boolean
-        default: "false"
+        type: integer
+        default: 0
         constraints:
           notNull: true

@@ -6,11 +6,11 @@ metadata:
     controller-tools.k8s.io: "1.0"
   name: supportbundle
 spec:
-  database: kotsadm-postgres
   name: supportbundle
   requires: []
   schema:
-    postgres:
+    rqlite:
+      strict: true
       primaryKey:
       - id
       columns:
@@ -39,14 +39,14 @@ spec:
       - name: analysis_id
         type: text
       - name: created_at
-        type: timestamp without time zone
+        type: integer
         constraints:
           notNull: true
       - name: uploaded_at
-        type: timestamp without time zone
+        type: integer
       - name: shared_at
-        type: timestamp without time zone
+        type: integer
       - name: is_archived
-        type: boolean
+        type: integer
       - name: redact_report
         type: text

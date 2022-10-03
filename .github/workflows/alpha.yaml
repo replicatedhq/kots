@@ -16,85 +16,11 @@ jobs:
         uses: actions/checkout@v2
       - name: Get tags
         id: get_tag
-        uses: ./actions/version-tag
-
-  generate-schema:
-    runs-on: ubuntu-20.04
-    container:
-      image: schemahero/schemahero:0.13.2
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Generate fixtures
-        run: |
-          /schemahero fixtures \
-            --input-dir ./migrations/tables \
-            --output-dir ./migrations/fixtures/schema \
-            --dbname ship-cloud --driver postgres
-
-      - name: Upload schema artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: schema
-          path: ./migrations/fixtures/schema/fixtures.sql
-
-
-  generate-fixtures:
-    runs-on: ubuntu-20.04
-    needs: [generate-schema]
-    container:
-      image: replicated/gitops-builder:buildkite
-      options: --user root
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-
-    - name: Download schema artifact
-      uses: actions/download-artifact@v2
-      with:
-        name: schema
-        path: ./migrations/fixtures/schema
-
-    - name: Build fixtures
-      run: |
-        export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C migrations/fixtures deps build run
-      shell: bash
-
-    - name: Upload fixtures artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: fixtures
-        path: ./migrations/fixtures/fixtures.sql
-
-
-  publish-fixtures:
-    runs-on: ubuntu-20.04
-    needs: [generate-fixtures]
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-
-    - uses: azure/docker-login@v1
-      with:
-        username: ${{ secrets.DOCKERHUB_USER }}
-        password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-    - name: Download fixtures artifact
-      uses: actions/download-artifact@v2
-      with:
-        name: fixtures
-        path: ./migrations/fixtures
-
-    - name: Publish fixtures
-      run: |
-        export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C migrations/fixtures publish
-      shell: bash
+        uses: ./.github/actions/version-tag
 
 
   build-schema-migrations:
     runs-on: ubuntu-20.04
-    needs: [publish-fixtures]
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -113,36 +39,9 @@ jobs:
         export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C migrations schema-alpha
 
 
-  test_web:
-    runs-on: ubuntu-20.04
-    needs: [build-schema-migrations]
-    container:
-      image: replicated/gitops-builder:buildkite
-      options: --user root
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-
-    - name: Setup Node.js environment
-      uses: actions/setup-node@v2
-      with:
-        node-version: '17.x'
-
-    - name: Install cross-env
-      run: npm i -g cross-env
-      shell: bash
-
-    # - name: Test web
-    #   env:
-    #     PACT_BROKER_USERNAME: ${{ secrets.PACT_BROKER_USERNAME }}
-    #     PACT_BROKER_PASSWORD: ${{ secrets.PACT_BROKER_PASSWORD }}
-    #   run: |
-    #     make -C kotsadm/web deps test publish-pact
-
-
   build_web:
     runs-on: ubuntu-20.04
-    needs: [build-schema-migrations, generate-tag]
+    needs: [generate-tag]
     container:
       image: replicated/gitops-builder:buildkite
       options: --user root
@@ -170,7 +69,7 @@ jobs:
 
   build_kurl_proxy:
     runs-on: ubuntu-20.04
-    needs: [build-schema-migrations, generate-tag]
+    needs: [generate-tag]
     steps:
     - name: Setup Go
       uses: actions/setup-go@v2
@@ -206,7 +105,7 @@ jobs:
 
   build_go_api:
     runs-on: ubuntu-20.04
-    needs: [test_web, build_web, build_kurl_proxy, generate-tag]
+    needs: [build_web, build_kurl_proxy, generate-tag]
     steps:
     - uses: actions/setup-go@v2
       with:
@@ -319,9 +218,8 @@ jobs:
             "https://api.github.com/repos/replicatedhq/kurl/dispatches"
 
 
-  scan_postgres_10:
+  scan_rqlite:
     runs-on: ubuntu-20.04
-    needs: [build-schema-migrations]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -330,49 +228,21 @@ jobs:
         id: dotenv
         with:
           path: .image.env
-      - name: Scan postgres for vulnerabilities
+      - name: Scan rqlite for vulnerabilities
         id: scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "docker.io/library/postgres:${{ steps.dotenv.outputs.POSTGRES_10_TAG }}"
+          image-ref: "rqlite/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}"
           format: 'template'
           template: '@/contrib/sarif.tpl'
-          output: 'postgres-10-scan-output.sarif'
+          output: 'rqlite-scan-output.sarif'
           exit-code: '0'
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH,MEDIUM'
       - name: Upload scan report
         uses: github/codeql-action/upload-sarif@v1
         with:
-          sarif_file: postgres-10-scan-output.sarif
-
-
-  scan_postgres_14:
-    runs-on: ubuntu-20.04
-    needs: [build-schema-migrations]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Read image tags from env file
-        uses: falti/dotenv-action@v0.2
-        id: dotenv
-        with:
-          path: .image.env
-      - name: Scan postgres for vulnerabilities
-        id: scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: "docker.io/library/postgres:${{ steps.dotenv.outputs.POSTGRES_14_TAG }}"
-          format: 'template'
-          template: '@/contrib/sarif.tpl'
-          output: 'postgres-14-scan-output.sarif'
-          exit-code: '0'
-          ignore-unfixed: true
-          severity: 'CRITICAL,HIGH,MEDIUM'
-      - name: Upload scan report
-        uses: github/codeql-action/upload-sarif@v1
-        with:
-          sarif_file: postgres-14-scan-output.sarif
+          sarif_file: rqlite-scan-output.sarif
 
 
   scan_minio:

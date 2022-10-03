@@ -13,7 +13,7 @@ spec:
         kots.io/backup: velero
       annotations:
         backup.velero.io/backup-volumes: backup
-        pre.hook.backup.velero.io/command: '["/bin/bash", "-c", "PGPASSWORD=password pg_dump -U kotsadm -h kotsadm-postgres > /backup/kotsadm-postgres.sql"]'
+        pre.hook.backup.velero.io/command: '["/bin/bash", "-c", "curl -f http://kotsadm:password@kotsadm-rqlite:4001/db/backup -o /backup/kotsadm-rqlite.sql"]'
         pre.hook.backup.velero.io/timeout: 3m
     spec:
       serviceAccountName: kotsadm

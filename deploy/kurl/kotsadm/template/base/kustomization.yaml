@@ -1,4 +1,4 @@
 resources:
-- postgres.yaml
+- rqlite.yaml
 - kotsadm.yaml
 - kotsadm-web-scripts.yaml

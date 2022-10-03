@@ -39,8 +39,7 @@ runs:
       shell: bash
       env:
         DEX_TAG: ${{ steps.dotenv.outputs.DEX_TAG }}
-        POSTGRES_10_TAG: ${{ steps.dotenv.outputs.POSTGRES_10_TAG }}
-        POSTGRES_14_TAG: ${{ steps.dotenv.outputs.POSTGRES_14_TAG }}
+        RQLITE_TAG: ${{ steps.dotenv.outputs.RQLITE_TAG }}
       run: |
         ( cd ${{ github.action_path }}/../../../deploy/kurl/kotsadm/template; \
           ./generate.sh \

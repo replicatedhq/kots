@@ -10,11 +10,6 @@ updates:
   #   schedule:
   #     interval: "daily"
 
-  # - package-ecosystem: "npm"
-  #   directory: "/migrations/fixtures"
-  #   schedule:
-  #     interval: "daily"
-
   ## Go mod
 
   - package-ecosystem: "gomod"

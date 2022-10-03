@@ -1,0 +1,29 @@
+# DO NOT MODIFY.
+# THIS FILE IS ONLY USED FOR THE MIGRATION FROM POSTGRES TO RQLITE,
+# AND DOES NOT REFLECT THE DATABASE SCHEMA USED FOR THE ADMIN CONSOLE.
+apiVersion: schemas.schemahero.io/v1alpha4
+kind: Table
+metadata:
+  name: scheduled-snapshots
+spec:
+  database: kotsadm-postgres
+  name: scheduled_snapshots
+  schema:
+    postgres:
+      primaryKey:
+      - id
+      columns:
+      - name: id
+        type: text
+        constraints:
+          notNull: true
+      - name: app_id
+        type: text
+        constraints:
+          notNull: true
+      - name: scheduled_timestamp
+        type: timestamp without time zone
+        constraints:
+          notNull: true
+      - name: backup_name
+        type: text

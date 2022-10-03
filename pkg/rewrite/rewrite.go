@@ -296,7 +296,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 
 	err = store.GetStore().UpdateAppVersionInstallationSpec(rewriteOptions.AppID, rewriteOptions.AppSequence, kotsKinds.Installation)
 	if err != nil {
-		return errors.Wrap(err, "failed to updates installation spec")
+		return errors.Wrap(err, "failed to update installation spec")
 	}
 
 	log.FinishSpinner()

@@ -1,13 +1,13 @@
 package kotsstore
 
 import (
-	"database/sql"
 	"encoding/json"
 	"testing"
 
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	"github.com/replicatedhq/troubleshoot/pkg/multitype"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
+	"github.com/rqlite/gorqlite"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -67,12 +67,12 @@ var (
 	}
 )
 
-func toSqlString(t *testing.T, val interface{}) sql.NullString {
+func toSqlString(t *testing.T, val interface{}) gorqlite.NullString {
 	b, err := json.Marshal(val)
 	if err != nil {
 		t.Fatalf("hasFailingStrictPreflights() json Unmarshall error = %v", err)
 	}
-	return sql.NullString{
+	return gorqlite.NullString{
 		String: string(b),
 		Valid:  true,
 	}
@@ -81,8 +81,8 @@ func toSqlString(t *testing.T, val interface{}) sql.NullString {
 func Test_hasFailingStrictPreflights(t *testing.T) {
 	tests := []struct {
 		name               string
-		preflightSpecStr   sql.NullString
-		preflightResultStr sql.NullString
+		preflightSpecStr   gorqlite.NullString
+		preflightResultStr gorqlite.NullString
 		want               bool
 		wantErr            bool
 	}{
@@ -112,26 +112,26 @@ func Test_hasFailingStrictPreflights(t *testing.T) {
 			wantErr:            false,
 		}, {
 			name:               "expect false, error when preflightSpec has a parse error",
-			preflightSpecStr:   sql.NullString{Valid: true, String: "invalid"},
+			preflightSpecStr:   gorqlite.NullString{Valid: true, String: "invalid"},
 			preflightResultStr: toSqlString(t, strictFailFalsePreflightResultSpec),
 			want:               false,
 			wantErr:            true,
 		}, {
 			name:               "expect false, error when preflightResultSpec has a parse error",
 			preflightSpecStr:   toSqlString(t, strictTruePreflightSpec),
-			preflightResultStr: sql.NullString{Valid: true, String: "invalid"},
+			preflightResultStr: gorqlite.NullString{Valid: true, String: "invalid"},
 			want:               false,
 			wantErr:            true,
 		}, {
 			name:               "expect false, error when preflightSpec with strict:true analyzer and preflightResultSpec has a empty string",
 			preflightSpecStr:   toSqlString(t, strictTruePreflightSpec),
-			preflightResultStr: sql.NullString{Valid: true, String: ""},
+			preflightResultStr: gorqlite.NullString{Valid: true, String: ""},
 			want:               true,
 			wantErr:            false,
 		}, {
 			name:               "expect false, error when preflightSpec with strict:false analyzer and preflightResultSpec has a empty string",
 			preflightSpecStr:   toSqlString(t, strictFalsePreflightSpec),
-			preflightResultStr: sql.NullString{Valid: true, String: ""},
+			preflightResultStr: gorqlite.NullString{Valid: true, String: ""},
 			want:               false,
 			wantErr:            false,
 		},

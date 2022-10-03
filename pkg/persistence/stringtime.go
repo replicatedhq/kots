@@ -1,3 +1,6 @@
+// THIS IS CURRENTLY ONLY USED FOR THE MIGRATION FROM POSTGRES TO RQLITE
+// PLEASE DO NOT USE THIS FOR ANYTHING ELSE
+
 package persistence
 
 import "time"
@@ -7,8 +10,10 @@ type StringTime struct {
 	Valid bool
 }
 
-// this seems to be the format that we are using!
-//  2021-08-04 16:17:10.241794246+00:00
+// this seems to be the format that we were using for postgres.
+//
+// 2021-08-04 16:17:10.241794246+00:00
+//
 // it's rfc3339-like, but not exactly
 var (
 	formatString = "2006-01-02 15:04:05.999999999-07:00"

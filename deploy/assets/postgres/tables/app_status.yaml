@@ -1,0 +1,24 @@
+# DO NOT MODIFY.
+# THIS FILE IS ONLY USED FOR THE MIGRATION FROM POSTGRES TO RQLITE,
+# AND DOES NOT REFLECT THE DATABASE SCHEMA USED FOR THE ADMIN CONSOLE.
+apiVersion: schemas.schemahero.io/v1alpha4
+kind: Table
+metadata:
+  name: app-status
+spec:
+  database: kotsadm-postgres
+  name: app_status
+  requires: []
+  schema:
+    postgres:
+      primaryKey:
+        - app_id
+      columns:
+      - name: app_id
+        type: text
+      - name: resource_states
+        type: text
+      - name: updated_at
+        type: timestamp without time zone
+      - name: sequence
+        type: integer

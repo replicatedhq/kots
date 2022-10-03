@@ -19,6 +19,7 @@ import (
 	"go.uber.org/zap"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 )
 
 func GetRestore(ctx context.Context, kotsadmNamespace string, snapshotName string) (*velerov1.Restore, error) {
@@ -79,7 +80,6 @@ func CreateApplicationRestore(ctx context.Context, kotsadmNamespace string, snap
 		return errors.Wrap(err, "failed to find backup")
 	}
 
-	trueVal := true
 	restore := &velerov1.Restore{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: veleroNamespace,
@@ -87,8 +87,8 @@ func CreateApplicationRestore(ctx context.Context, kotsadmNamespace string, snap
 		},
 		Spec: velerov1.RestoreSpec{
 			BackupName:              snapshotName,
-			RestorePVs:              &trueVal,
-			IncludeClusterResources: &trueVal,
+			RestorePVs:              pointer.BoolPtr(true),
+			IncludeClusterResources: pointer.BoolPtr(true),
 		},
 	}
 

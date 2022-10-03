@@ -1,7 +1,7 @@
 include Makefile.build.mk
 CURRENT_USER := $(shell id -u -n)
-MINIO_TAG ?= RELEASE.2022-10-15T19-57-03Z
-POSTGRES_14_TAG ?= 14.5-alpine
+MINIO_TAG ?= RELEASE.2022-10-20T00-55-09Z
+RQLITE_TAG ?= 7.8.0
 DEX_TAG ?= v2.35.3
 LVP_TAG ?= v0.3.10
 
@@ -103,12 +103,12 @@ all-ttl.sh: build-ttl.sh
 	source .image.env && IMAGE=ttl.sh/${CURRENT_USER}/kotsadm-migrations:12h make -C migrations build_schema
 
 	docker pull minio/minio:${MINIO_TAG}
-	docker tag minio/minio:${MINIO_TAG} ttl.sh/${CURRENT_USER}/minio:12h
-	docker push ttl.sh/${CURRENT_USER}/minio:12h
+	docker tag minio/minio:${MINIO_TAG} ttl.sh/${CURRENT_USER}/minio:${MINIO_TAG}
+	docker push ttl.sh/${CURRENT_USER}/minio:${MINIO_TAG}
 
-	docker pull postgres:${POSTGRES_14_TAG}
-	docker tag postgres:${POSTGRES_14_TAG} ttl.sh/${CURRENT_USER}/postgres:12h
-	docker push ttl.sh/${CURRENT_USER}/postgres:12h
+	docker pull rqlite/rqlite:${RQLITE_TAG}
+	docker tag rqlite/rqlite:${RQLITE_TAG} ttl.sh/${CURRENT_USER}/rqlite:${RQLITE_TAG}
+	docker push ttl.sh/${CURRENT_USER}/rqlite:${RQLITE_TAG}
 
 .PHONY: build-alpha
 build-alpha:
@@ -135,19 +135,6 @@ build-release:
 
 	mkdir -p bin/docker-archive/local-volume-provider
 	skopeo copy docker://replicated/local-volume-provider:${LVP_TAG} docker-archive:bin/docker-archive/local-volume-provider/${LVP_TAG}
-
-.PHONY: project-pact-tests
-project-pact-tests:
-	make -C web test
-
-	make -C migrations/fixtures schema-fixtures build run
-	cd migrations && docker build -t kotsadm/kotsadm-fixtures:local -f ./fixtures/deploy/Dockerfile ./fixtures
-
-	mkdir -p api/pacts
-	cp web/pacts/kotsadm-web-kotsadm.json api/pacts/
-	make -C api test
-
-	@echo All contract tests have passed.
 
 .PHONY: cache
 cache:
@@ -185,7 +172,6 @@ scan:
 		--severity="HIGH,CRITICAL" \
 		--ignore-unfixed \
 		--skip-files actions/version-tag/package-lock.json \
-		--skip-files migrations/fixtures/yarn.lock \
 		--skip-files web/yarn.lock \
 		--ignorefile .trivyignore \
 		./
