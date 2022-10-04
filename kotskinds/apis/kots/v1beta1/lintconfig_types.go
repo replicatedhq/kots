@@ -23,9 +23,10 @@ import (
 type LintLevel string
 
 const (
-	Off   LintLevel = "off"
-	Warn  LintLevel = "warn"
 	Error LintLevel = "error"
+	Warn  LintLevel = "warn"
+	Info  LintLevel = "info"
+	Off   LintLevel = "off"
 )
 
 type LintRule struct {
