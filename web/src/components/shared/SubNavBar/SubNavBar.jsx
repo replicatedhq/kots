@@ -11,8 +11,8 @@ export default function SubNavBar({
   activeTab,
   app,
   isVeleroInstalled,
-  isAccess,
-  isSnapshots,
+  isAccess = false,
+  isSnapshots = false,
   isHelmManaged,
 }) {
   let { slug } = app;
