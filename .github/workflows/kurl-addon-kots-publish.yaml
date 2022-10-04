@@ -12,13 +12,16 @@ concurrency: kurl-addon-publish-${{ inputs.addon_version }}
 
 jobs:
   publish-kots-addon:
-    uses: ./.github/actions/kurl-addon-kots-publish
-    with:
-      addon_version: "${{ inputs.addon_version }}"
-      s3_prefix: ""
-      priority: 1
-      testgrid_api_token: ${{ secrets.TESTGRID_PROD_API_TOKEN }}
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.KURL_ADDONS_AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.KURL_ADDONS_AWS_SECRET_ACCESS_KEY }}
-      AWS_DEFAULT_REGION: us-east-1
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/kurl-addon-kots-publish
+        with:
+          addon_version: "${{ inputs.addon_version }}"
+          s3_prefix: ""
+          priority: 1
+          testgrid_api_token: ${{ secrets.TESTGRID_PROD_API_TOKEN }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.KURL_ADDONS_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.KURL_ADDONS_AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
