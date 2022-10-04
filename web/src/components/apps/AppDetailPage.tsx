@@ -348,7 +348,7 @@ function AppDetailPage(props: Props) {
       state.getAppJob.stop();
       state.checkForFirstAppJob?.stop?.();
     };
-  }, []);
+  }, [history.location.pathname]);
 
   // Handle updating the theme state when switching apps.
   useEffect(() => {
