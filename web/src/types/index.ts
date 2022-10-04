@@ -49,6 +49,14 @@ type AppStatus = {
   updatedAt: string;
 };
 
+export type AppStatusState =
+  | "degraded"
+  | "degrading"
+  | "missing"
+  | "ready"
+  | "unavailable"
+  | "updating";
+
 export type Credentials = {
   username: string;
   password: string;
