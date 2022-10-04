@@ -95,7 +95,9 @@ function AppDetailPage(props: Props) {
 
   const history = useHistory();
   const params = useParams<KotsParams>();
-  const { currentApp, setCurrentApp } = useState(  props.appsList?.find((w) => w.slug === params.slug))
+  const { currentApp, setCurrentApp } = useState(
+    props.appsList?.find((w) => w.slug === params.slug)
+  );
   const theme = useTheme();
 
   const toggleDisplayRequiredKotsUpdateModal = (message: string) => {
