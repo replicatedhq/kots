@@ -28,7 +28,6 @@ import AppRegistrySettings from "./AppRegistrySettings";
 import AppIdentityServiceSettings from "./AppIdentityServiceSettings";
 import TroubleshootContainer from "../troubleshoot/TroubleshootContainer";
 import ErrorModal from "../modals/ErrorModal";
-import { useCurrentApp } from "@features/App";
 
 import "../../scss/components/watches/WatchDetailPage.scss";
 
@@ -96,7 +95,7 @@ function AppDetailPage(props: Props) {
 
   const history = useHistory();
   const params = useParams<KotsParams>();
-  const { currentApp } = useCurrentApp();
+  const { currentApp, setCurrentApp } = useState(  props.appsList?.find((w) => w.slug === params.slug))
   const theme = useTheme();
 
   const toggleDisplayRequiredKotsUpdateModal = (message: string) => {
@@ -303,6 +302,8 @@ function AppDetailPage(props: Props) {
   // Enforce initial app configuration (if exists)
   useEffect(() => {
     const { app } = state;
+
+    setCurrentApp(props.appsList?.find((w) => w.slug === params.slug));
 
     // Refetch app info when switching between apps
     if (app && !state.loadingApp && params.slug != app.slug) {
