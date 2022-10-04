@@ -7,11 +7,11 @@ import "@src/css/icon.css";
 type IconProps = {
   icon: string;
   size: number | string;
-  color: string;
-  style: object;
-  className: string;
-  disableFill: boolean;
-  removeInlineStyle: boolean;
+  color?: string;
+  style?: object;
+  className?: string;
+  disableFill?: boolean;
+  removeInlineStyle?: boolean;
 };
 
 const Icon = (props: IconProps) => {
