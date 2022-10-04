@@ -24,13 +24,13 @@ import (
 var joinCertGenScript string
 
 func createCertAndKey(ctx context.Context, client kubernetes.Interface, namespace string) (string, error) {
-	configMap := getConfigMap(namespace)
+	configMap := getJoinCertGenConfigMapSpec(namespace)
 	_, err := client.CoreV1().ConfigMaps(namespace).Create(ctx, configMap, metav1.CreateOptions{})
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create configmap")
 	}
 
-	pod, err := getPodSpec(client, namespace)
+	pod, err := getJoinCertGenPodSpec(client, namespace)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create pod spec")
 	}
@@ -142,7 +142,7 @@ func parseCertGenOutput(logs []byte) (string, error) {
 	return "", fmt.Errorf("key not found in %d bytes of output", len(logs))
 }
 
-func getConfigMap(namespace string) *corev1.ConfigMap {
+func getJoinCertGenConfigMapSpec(namespace string) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kotsadm-kurl-join-cert-gen",
@@ -154,7 +154,7 @@ func getConfigMap(namespace string) *corev1.ConfigMap {
 	}
 }
 
-func getPodSpec(clientset kubernetes.Interface, namespace string) (*corev1.Pod, error) {
+func getJoinCertGenPodSpec(clientset kubernetes.Interface, namespace string) (*corev1.Pod, error) {
 	var labels map[string]string
 	var imagePullSecrets []corev1.LocalObjectReference
 	var containers []corev1.Container
