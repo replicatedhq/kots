@@ -6,9 +6,11 @@ export type App = {
   currentSequence: number;
   downstream: Downstream;
   hasPreflight: boolean;
+  helmName: string;
   id: string;
   iconUri: string;
   isAirgap: boolean;
+  isAppIdentityServiceSupported: boolean;
   isConfigurable: boolean;
   isGeoaxisSupported: boolean;
   isGitOpsSupported: boolean;
@@ -39,6 +41,14 @@ export type AppLicense = {
   licenseType: string;
 };
 
+type AppStatus = {
+  appId: string;
+  resourceStates: ResourceStates[];
+  sequence: number;
+  state: string;
+  updatedAt: string;
+};
+
 export type AppStatusState =
   | "degraded"
   | "degrading"
@@ -46,14 +56,6 @@ export type AppStatusState =
   | "ready"
   | "unavailable"
   | "updating";
-
-type AppStatus = {
-  appId: string;
-  resourceStates: ResourceStates[];
-  sequence: number;
-  state: AppStatusState;
-  updatedAt: string;
-};
 
 type Cluster = {
   id: number;
@@ -86,18 +88,32 @@ export type GitOps = {
 };
 
 export type KotsParams = {
+  owner: string;
   sequence: string;
   slug: string;
+  tab: string;
 };
 
 export type DashboardActionLink = {
   title: string;
   uri: string;
+}
+
+export type Entitlement = {
+  title: string;
+  value: string;
+  label: string;
+  valueType: "Text" | "Boolean" | "Integer" | "String";
 };
 
 export type Metadata = {
   isAirgap: boolean;
   isKurl: boolean;
+};
+
+
+export type ThemeState = {
+  navbarLogo: string | null;
 };
 
 export type ResourceStates = {
@@ -127,9 +143,9 @@ export type Version = {
   semver: string;
   sequence: number;
   source: string;
-  versionLabel?: string;
   status: VersionStatus;
   title: string;
+  versionLabel?: string;
   yamlErrors: string[];
 };
 
@@ -151,10 +167,3 @@ export type VersionStatus =
   | "pending_download"
   | "pending_preflight"
   | "waiting";
-
-export type Entitlement = {
-  title: string;
-  value: string;
-  label: string;
-  valueType: "Text" | "Boolean" | "Integer" | "String";
-};

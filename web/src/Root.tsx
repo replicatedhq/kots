@@ -32,7 +32,7 @@ import "./scss/index.scss";
 import connectHistory from "./services/matomo";
 
 // types
-import { App } from "@types";
+import { App, Metadata, ThemeState } from "@types";
 
 // react-query client
 const queryClient = new QueryClient();
@@ -65,10 +65,6 @@ const ProtectedRoute = ({
   );
 };
 
-type ThemeState = {
-  navbarLogo: string | null;
-};
-
 const ThemeContext = React.createContext({
   setThemeState: () => {},
   getThemeState: (): ThemeState => ({ navbarLogo: null }),
@@ -87,9 +83,7 @@ type State = {
   appNameSpace: string | null;
   appsList: App[];
   appSlugFromMetadata: string | null;
-  adminConsoleMetadata: {
-    isKurl?: boolean;
-  };
+  adminConsoleMetadata: Metadata | null;
   connectionTerminated: boolean;
   errLoggingOut: string;
   featureFlags: object;
@@ -116,7 +110,7 @@ const Root = () => {
       appsList: [],
       appSlugFromMetadata: null,
       appNameSpace: null,
-      adminConsoleMetadata: {},
+      adminConsoleMetadata: null,
       connectionTerminated: false,
       errLoggingOut: "",
       featureFlags: {},

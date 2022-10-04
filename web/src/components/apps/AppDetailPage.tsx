@@ -25,31 +25,70 @@ import ErrorModal from "../modals/ErrorModal";
 
 import "../../scss/components/watches/WatchDetailPage.scss";
 
-class AppDetailPage extends Component {
-  constructor(props) {
+// Types
+import { RouteComponentProps } from "react-router";
+import { App, Metadata, KotsParams, ThemeState, Version } from "@types";
+
+type Props = {
+  adminConsoleMetadata: Metadata;
+  appsList: App[];
+  appNameSpace: boolean;
+  appName: string;
+  clearThemeState: () => void;
+  getThemeState: () => ThemeState;
+  isHelmManaged: boolean;
+  onActiveInitSession: (session: string) => void;
+  ping: () => void;
+  refetchAppsList: () => void;
+  refetchAppMetadata: () => void;
+  rootDidInitialAppFetch: boolean;
+  setThemeState: (theme: ThemeState) => void;
+  snapshotInProgressApps: boolean;
+} & RouteComponentProps<KotsParams>;
+
+type State = {
+  app: App | null;
+  checkForFirstAppJob: Repeater;
+  clusterParentSlug: string;
+  displayErrorModal: boolean;
+  displayRequiredKotsUpdateModal: boolean;
+  getAppJob: Repeater;
+  gettingAppErrMsg: string;
+  isBundleUploading: boolean;
+  isVeleroInstalled: boolean;
+  loadingApp: boolean;
+  makingCurrentRelease: boolean;
+  makingCurrentReleaseErrMsg: string;
+  preparingUpdate: string;
+  requiredKotsUpdateMessage: string;
+  redeployVersionErrMsg: string;
+  selectedWatchName: string;
+};
+
+class AppDetailPage extends Component<Props, State> {
+  constructor(props: Props) {
     super(props);
     this.state = {
-      preparingUpdate: "",
-      clusterParentSlug: "",
-      selectedWatchName: "",
-      watchToEdit: {},
-      existingDeploymentClusters: [],
-      displayRequiredKotsUpdateModal: false,
-      isBundleUploading: false,
       app: null,
-      loadingApp: true,
+      checkForFirstAppJob: new Repeater(),
+      clusterParentSlug: "",
+      displayErrorModal: false,
+      displayRequiredKotsUpdateModal: false,
       getAppJob: new Repeater(),
       gettingAppErrMsg: "",
-      makingCurrentReleaseErrMsg: "",
-      makingCurrentRelease: false,
-      displayErrorModal: false,
+      isBundleUploading: false,
       isVeleroInstalled: false,
+      loadingApp: true,
+      makingCurrentRelease: false,
+      makingCurrentReleaseErrMsg: "",
+      preparingUpdate: "",
       redeployVersionErrMsg: "",
-      checkForFirstAppJob: new Repeater(),
+      requiredKotsUpdateMessage: "",
+      selectedWatchName: "",
     };
   }
 
-  componentDidUpdate(_, lastState) {
+  componentDidUpdate(_: Props, lastState: State) {
     const { getThemeState, setThemeState, match, appsList, history } =
       this.props;
     const { app, loadingApp } = this.state;
@@ -96,16 +135,15 @@ class AppDetailPage extends Component {
   }
 
   componentWillUnmount() {
-    clearInterval(this.interval);
     this.props.clearThemeState();
     this.state.getAppJob.stop();
     this.state.checkForFirstAppJob?.stop?.();
   }
 
   makeCurrentRelease = async (
-    upstreamSlug,
-    version,
-    isSkipPreflights,
+    upstreamSlug: string,
+    version: Version,
+    isSkipPreflights: boolean,
     continueWithFailedPreflights = false
   ) => {
     try {
@@ -137,15 +175,19 @@ class AppDetailPage extends Component {
       }
     } catch (err) {
       console.log(err);
-      this.setState({
-        makingCurrentReleaseErrMsg: err
-          ? `Unable to deploy release ${version.versionLabel}, sequence ${version.sequence}: ${err.message}`
-          : "Something went wrong, please try again.",
-      });
+      if (err instanceof Error) {
+        this.setState({
+          makingCurrentReleaseErrMsg: `Unable to deploy release ${version.versionLabel}, sequence ${version.sequence}: ${err.message}`,
+        });
+      } else {
+        this.setState({
+          makingCurrentReleaseErrMsg: "Something went wrong, please try again.",
+        });
+      }
     }
   };
 
-  redeployVersion = async (upstreamSlug, version) => {
+  redeployVersion = async (upstreamSlug: string, version: Version) => {
     try {
       this.setState({ redeployVersionErrMsg: "" });
 
@@ -169,15 +211,19 @@ class AppDetailPage extends Component {
       }
     } catch (err) {
       console.log(err);
-      this.setState({
-        redeployVersionErrMsg: err
-          ? `Unable to deploy release ${version.versionLabel}, sequence ${version.sequence}: ${err.message}`
-          : "Something went wrong, please try again.",
-      });
+      if (err instanceof Error) {
+        this.setState({
+          redeployVersionErrMsg: `Unable to deploy release ${version.versionLabel}, sequence ${version.sequence}: ${err.message}`,
+        });
+      } else {
+        this.setState({
+          redeployVersionErrMsg: "Something went wrong, please try again.",
+        });
+      }
     }
   };
 
-  toggleDisplayRequiredKotsUpdateModal = (message) => {
+  toggleDisplayRequiredKotsUpdateModal = (message: string) => {
     this.setState({
       displayRequiredKotsUpdateModal:
         !this.state.displayRequiredKotsUpdateModal,
@@ -185,7 +231,7 @@ class AppDetailPage extends Component {
     });
   };
 
-  toggleIsBundleUploading = (isUploading) => {
+  toggleIsBundleUploading = (isUploading: boolean) => {
     this.setState({ isBundleUploading: isUploading });
   };
 
@@ -270,13 +316,19 @@ class AppDetailPage extends Component {
       }
     } catch (err) {
       console.log(err);
-      this.setState({
-        loadingApp: false,
-        gettingAppErrMsg: err
-          ? err.message
-          : "Something went wrong, please try again.",
-        displayErrorModal: true,
-      });
+      if (err instanceof Error) {
+        this.setState({
+          loadingApp: false,
+          gettingAppErrMsg: err.message,
+          displayErrorModal: true,
+        });
+      } else {
+        this.setState({
+          loadingApp: false,
+          gettingAppErrMsg: "Something went wrong, please try again.",
+          displayErrorModal: true,
+        });
+      }
     }
   };
 

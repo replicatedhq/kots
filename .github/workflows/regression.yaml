@@ -11,6 +11,10 @@ on:
         description: 'The new version to use as the upgrade in upgrade scenarios and the initial version for fresh installs.'
         required: true
         type: string
+      addon_package_url:
+        description: 'The URL to the kURL add-on package to use as an override.'
+        required: false
+        type: string
       id:
         description: 'An arbitrary value used to identify the testing infrastructure. Using the same value twice will destroy the old infrastructure before creating.'
         required: false
@@ -32,9 +36,15 @@ on:
       version_tag_old:
         description: 'The initial install version to use for upgrade scenarios'
         required: true
+        type: string
       version_tag_new:
         description: 'The new version to use as the upgrade in upgrade scenarios and the initial version for fresh installs.'
         required: true
+        type: string
+      addon_package_url:
+        description: 'The URL to the kURL add-on package to use as an override.'
+        required: false
+        type: string
       id:
         description: 'An arbitrary value used to identify the testing infrastructure. Using the same value twice will destroy the old infrastructure before creating.'
         required: false
@@ -219,6 +229,7 @@ jobs:
           else
             export TF_VAR_kots_version_initial="${NEXT_TAG:1}"
           fi
+          export TF_VAR_kots_addon_package_url="${{ github.event.inputs.addon_package_url || inputs.addon_package_url }}"
           export TF_VAR_testim_branch="master"
           ./${{ matrix.test.terraform_script }} apply
       - name: Wait for instance to be ready

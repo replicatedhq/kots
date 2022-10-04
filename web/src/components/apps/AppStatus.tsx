@@ -18,7 +18,7 @@ type PropLink = {
 
 type Props = {
   app: App;
-  appStatus?: AppStatusState;
+  appStatus?: AppStatusState | string;
   hasStatusInformers?: boolean;
   links: PropLink[];
   onViewAppStatusDetails: () => void;
