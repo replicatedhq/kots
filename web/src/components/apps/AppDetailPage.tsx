@@ -1,4 +1,4 @@
-import React, { Fragment, useReducer, useEffect } from "react";
+import React, { Fragment, useReducer, useEffect, useState } from "react";
 import classNames from "classnames";
 import {
   Switch,
@@ -95,7 +95,7 @@ function AppDetailPage(props: Props) {
 
   const history = useHistory();
   const params = useParams<KotsParams>();
-  const { currentApp, setCurrentApp } = useState(
+  const [currentApp, setCurrentApp] = useState(
     props.appsList?.find((w) => w.slug === params.slug)
   );
   const theme = useTheme();
