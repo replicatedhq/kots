@@ -1,0 +1,71 @@
+name: Test kURL Add-On
+
+inputs:
+  addon_version:
+    type: string
+    description: "Kots version (without the 'v')."
+    required: true
+  s3_prefix:
+    type: string
+    description: "S3 key prefix."
+    default: "test/"
+  priority:
+    type: number
+    description: 'Testgrid run priority.'
+    default: 0
+  testgrid_api_token:
+    type: string
+    description: "Testgrid API token."
+    required: true
+  kotsadm_image_registry:
+    type: string
+    description: "Kots image registry override."
+  kotsadm_image_namespace:
+    type: string
+    description: "Kots image namespace override."
+  kotsadm_image_tag:
+    type: string
+    description: "Kots image tag override."
+  kotsadm_binary_override:
+    type: string
+    description: "Kots binary override."
+outputs:
+  addon_package_url:
+    description: "S3 package url"
+    value: ${{ steps.generate-addon.outputs.addon_package_url }}
+  testgrid_run_message:
+    description: "Testgrid run message"
+    value: ${{ steps.testgrid-run.outputs.message }}
+
+runs:
+  using: "composite"
+  steps:
+
+    - uses: ./.github/actions/kurl-addon-kots-generate
+      id: generate-addon
+      with:
+        addon_version: "${{ inputs.addon_version }}"
+        s3_prefix: "${{ github.event.action == 'workflow_dispatch' && 'test/' || inputs.s3_prefix }}"
+        kotsadm_image_registry: "${{ inputs.kotsadm_image_registry }}"
+        kotsadm_image_namespace: "${{ inputs.kotsadm_image_namespace }}"
+        kotsadm_image_tag: "${{ inputs.kotsadm_image_tag }}"
+        kotsadm_binary_override: "${{ inputs.kotsadm_binary_override }}"
+
+    - name: set outputs
+      id: vars
+      shell: bash
+      run: |
+        echo "::set-output name=sha_short::${GITHUB_SHA:0:7}"
+        echo "::set-output name=ref_name::${GITHUB_REF_NAME//\//"-"}" # replace forward slashes
+
+    - uses: replicatedhq/kurl/.github/actions/addon-testgrid-tester@main
+      id: testgrid-run
+      with:
+        addon: "kotsadm"
+        version: "${{ inputs.addon_version }}"
+        package-url: "${{ steps.generate-addon.outputs.addon_package_url }}"
+        testgrid-spec-path: "${{ github.action_path }}/../../../deploy/kurl/kotsadm/template/testgrid"
+        testgrid-os-spec-path: "${{ github.action_path }}/../../../deploy/kurl/kotsadm/testgrid-os-spec.yaml"
+        testgrid-run-prefix: "KOTS-${{ inputs.addon_version }}-${{ steps.vars.outputs.ref_name }}-${{ steps.vars.outputs.sha_short }}"
+        testgrid-api-token: "${{ inputs.testgrid_api_token }}"
+        priority: "${{ inputs.priority }}"
