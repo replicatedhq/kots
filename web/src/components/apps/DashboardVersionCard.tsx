@@ -26,36 +26,146 @@ import { Repeater } from "@src/utilities/repeater";
 import "../../scss/components/watches/DashboardCard.scss";
 import Icon from "../Icon";
 
-class DashboardVersionCard extends React.Component {
-  constructor(props) {
+import {
+  App,
+  Downstream,
+  KotsParams,
+  Metadata,
+  Version,
+  VersionDownloadStatus,
+  VersionStatus,
+} from "@types";
+import { RouteComponentProps } from "react-router-dom";
+import { AirgapUploader } from "@src/utilities/airgapUploader";
+
+type Props = {
+  adminConsoleMetadata: Metadata;
+  airgapUploader: AirgapUploader;
+  airgapUploadError: boolean;
+  app: App;
+  checkingForUpdates: boolean;
+  checkingForUpdateError: boolean;
+  checkingUpdateText: string;
+  currentVersion: Version;
+  downloadCallback: () => void;
+  downstream: Downstream;
+  isBundleUploading: boolean;
+  isHelmManaged: boolean;
+  links: string[];
+  makeCurrentVersion: (
+    slug: string,
+    versionToDeploy: Version,
+    isSkipPreflights: boolean,
+    continueWithFailedPreflights: boolean
+  ) => void;
+  // TODO:  fix this misspelling
+  noUpdatesAvalable: boolean;
+  onCheckForUpdates: () => void;
+  onProgressError: () => void;
+  redeployVersion: (slug: string, version: Version | null) => void;
+  refetchData: () => void;
+  showAutomaticUpdatesModal: () => void;
+  uploadingAirgapFile: boolean;
+  uploadProgress: number;
+  uploadResuming: boolean;
+  uploadSize: number;
+  viewAirgapUploadError: () => void;
+} & RouteComponentProps<KotsParams>;
+
+type State = {
+  confirmType: string;
+  deployView: boolean;
+  displayConfirmDeploymentModal: boolean;
+  displayKotsUpdateModal: boolean;
+  displayShowDetailsModal: boolean;
+  firstSequence: string;
+  secondSequence: string;
+  isRedeploy: boolean;
+  isSkipPreflights: boolean;
+  kotsUpdateChecker: Repeater;
+  kotsUpdateError: string | null;
+  kotsUpdateMessage: string | null;
+  kotsUpdateRunning: boolean;
+  kotsUpdateStatus: VersionStatus | null;
+  latestDeployableVersion: Version | null;
+  latestDeployableVersionErrMsg: string;
+  logs: null | string;
+  logsLoading: boolean;
+  numOfRemainingVersions: number;
+  numOfSkippedVersions: number;
+  releaseNotes: string;
+  releaseWithErr: Version | null;
+  releaseWithNoChanges: Version | null;
+  selectedAction: string;
+  selectedSequence: number;
+  selectedTab: string | null;
+  showDeployWarningModal: boolean;
+  showDiffErrModal: boolean;
+  showDiffModal: boolean;
+  showHelmDeployModal: boolean;
+  showHelmDeployModalWithVersionLabel?: string;
+  showLogsModal: boolean;
+  showNoChangesModal: boolean;
+  showReleaseNotes: boolean;
+  showSkipModal: boolean;
+  versionDownloadStatuses: {
+    [x: number]: VersionDownloadStatus;
+  };
+  versionFailing: boolean;
+  versionToDeploy: Version | null;
+  viewLogsErrMsg: string;
+  yamlErrorDetails: string[];
+};
+
+class DashboardVersionCard extends React.Component<Props, State> {
+  versionDownloadStatusJobs: {
+    [key: number]: Repeater;
+  };
+
+  constructor(props: Props) {
     super(props);
     this.state = {
-      selectedAction: "",
-      logsLoading: false,
-      logs: null,
-      selectedTab: null,
-      displayConfirmDeploymentModal: false,
-      displayShowDetailsModal: false,
-      yamlErrorDetails: [],
+      confirmType: "",
       deployView: false,
-      selectedSequence: -1,
-      showDiffModal: false,
-      showNoChangesModal: false,
-      releaseWithNoChanges: {},
-      releaseWithErr: {},
-      showDiffErrModal: false,
-      versionDownloadStatuses: {},
+      displayConfirmDeploymentModal: false,
+      displayKotsUpdateModal: false,
+      displayShowDetailsModal: false,
+      firstSequence: "",
+      isSkipPreflights: false,
+      isRedeploy: false,
       kotsUpdateChecker: new Repeater(),
+      kotsUpdateError: null,
+      kotsUpdateMessage: null,
       kotsUpdateRunning: false,
-      kotsUpdateStatus: undefined,
-      kotsUpdateMessage: undefined,
-      kotsUpdateError: undefined,
+      kotsUpdateStatus: null,
       latestDeployableVersion: null,
-      numOfSkippedVersions: 0,
-      numOfRemainingVersions: 0,
       latestDeployableVersionErrMsg: "",
+      logs: null,
+      logsLoading: false,
+      numOfRemainingVersions: 0,
+      numOfSkippedVersions: 0,
+      releaseNotes: "",
+      releaseWithErr: null,
+      releaseWithNoChanges: null,
+      secondSequence: "",
+      selectedAction: "",
+      selectedSequence: -1,
+      selectedTab: null,
+      showDiffErrModal: false,
+      showDiffModal: false,
+      showDeployWarningModal: false,
+      showHelmDeployModal: false,
+      showHelmDeployModalWithVersionLabel: "",
+      showLogsModal: false,
+      showNoChangesModal: false,
+      showReleaseNotes: false,
+      showSkipModal: false,
+      versionDownloadStatuses: {},
+      versionFailing: false,
+      versionToDeploy: null,
+      viewLogsErrMsg: "",
+      yamlErrorDetails: [],
     };
-    this.cardTitleText = React.createRef();
 
     // moving this out of the state because new repeater instances were getting created
     // and it doesn't really affect the UI
@@ -68,7 +178,7 @@ class DashboardVersionCard extends React.Component {
     }
   }
 
-  componentDidUpdate(lastProps) {
+  componentDidUpdate(lastProps: Props) {
     if (
       this.props.links !== lastProps.links &&
       this.props.links &&
@@ -135,7 +245,7 @@ class DashboardVersionCard extends React.Component {
     );
   };
 
-  handleViewLogs = async (version, isFailing) => {
+  handleViewLogs = async (version: Version, isFailing: boolean) => {
     try {
       const { app } = this.props;
       let clusterId = app.downstream.cluster?.id;
@@ -182,12 +292,17 @@ class DashboardVersionCard extends React.Component {
       }
     } catch (err) {
       console.log(err);
-      this.setState({
-        logsLoading: false,
-        viewLogsErrMsg: err
-          ? `Failed to view logs: ${err.message}`
-          : "Something went wrong, please try again.",
-      });
+      if (err instanceof Error) {
+        this.setState({
+          logsLoading: false,
+          viewLogsErrMsg: `Failed to view logs: ${err.message}`,
+        });
+      } else {
+        this.setState({
+          logsLoading: false,
+          viewLogsErrMsg: "Something went wrong, please try again.",
+        });
+      }
     }
   };
 
@@ -223,15 +338,20 @@ class DashboardVersionCard extends React.Component {
       });
     } catch (err) {
       console.log(err);
-      this.setState({
-        latestDeployableVersionErrMsg: err
-          ? `Failed to get next deployable version: ${err.message}`
-          : "Something went wrong, please try again.",
-      });
+      if (err instanceof Error) {
+        this.setState({
+          latestDeployableVersionErrMsg: `Failed to get latest deployable version: ${err.message}`,
+        });
+      } else {
+        this.setState({
+          latestDeployableVersionErrMsg:
+            "Something went wrong, please try again.",
+        });
+      }
     }
   };
 
-  getCurrentVersionStatus = (version) => {
+  getCurrentVersionStatus = (version: Version) => {
     if (
       version?.status === "deployed" ||
       version?.status === "merged" ||
@@ -276,21 +396,25 @@ class DashboardVersionCard extends React.Component {
     }
   };
 
-  toggleDiffErrModal = (release) => {
+  toggleDiffErrModal = (release?: Version) => {
     this.setState({
       showDiffErrModal: !this.state.showDiffErrModal,
-      releaseWithErr: !this.state.showDiffErrModal ? release : {},
+      releaseWithErr: !this.state.showDiffErrModal && release ? release : null,
     });
   };
 
-  toggleNoChangesModal = (version) => {
+  toggleNoChangesModal = (version?: Version) => {
     this.setState({
       showNoChangesModal: !this.state.showNoChangesModal,
-      releaseWithNoChanges: !this.state.showNoChangesModal ? version : {},
+      releaseWithNoChanges:
+        !this.state.showNoChangesModal && version ? version : null,
     });
   };
 
-  toggleShowDetailsModal = (yamlErrorDetails, selectedSequence) => {
+  toggleShowDetailsModal = (
+    yamlErrorDetails: string[],
+    selectedSequence: number
+  ) => {
     this.setState({
       displayShowDetailsModal: !this.state.displayShowDetailsModal,
       deployView: false,
@@ -299,7 +423,7 @@ class DashboardVersionCard extends React.Component {
     });
   };
 
-  getPreflightState = (version) => {
+  getPreflightState = (version: Version) => {
     let preflightsFailed = false;
     let preflightState = "";
     if (version?.preflightResult) {
@@ -314,7 +438,7 @@ class DashboardVersionCard extends React.Component {
     };
   };
 
-  renderReleaseNotes = (version) => {
+  renderReleaseNotes = (version: Version) => {
     if (!version?.releaseNotes) {
       return null;
     }
@@ -331,7 +455,7 @@ class DashboardVersionCard extends React.Component {
     );
   };
 
-  renderPreflights = (version) => {
+  renderPreflights = (version: Version) => {
     if (!version) {
       return null;
     }
@@ -408,7 +532,7 @@ class DashboardVersionCard extends React.Component {
     );
   };
 
-  renderEditConfigIcon = (app, version, isPending) => {
+  renderEditConfigIcon = (app: App, version: Version, isPending: boolean) => {
     if (!app?.isConfigurable) {
       return null;
     }
@@ -503,7 +627,6 @@ class DashboardVersionCard extends React.Component {
               <div className="flex-column justifyContent--center u-marginLeft--10">
                 <button
                   className="secondary blue btn"
-                  disabled={currentVersion.status === "deploying"}
                   onClick={() =>
                     this.deployVersion(currentVersion, false, false, true)
                   }
@@ -518,26 +641,7 @@ class DashboardVersionCard extends React.Component {
     );
   };
 
-  getUpdateTypeClassname = (updateType) => {
-    if (updateType.includes("Upstream Update")) {
-      return "upstream-update";
-    }
-    if (updateType.includes("Config Change")) {
-      return "config-update";
-    }
-    if (updateType.includes("License Change")) {
-      return "license-sync";
-    }
-    if (
-      updateType.includes("Airgap Install") ||
-      updateType.includes("Airgap Update")
-    ) {
-      return "airgap-install";
-    }
-    return "online-install";
-  };
-
-  getVersionDiffSummary = (version) => {
+  getVersionDiffSummary = (version: Version) => {
     if (!version.diffSummary || version.diffSummary === "") {
       return null;
     }
@@ -548,7 +652,7 @@ class DashboardVersionCard extends React.Component {
     }
   };
 
-  renderDiff = (version) => {
+  renderDiff = (version: Version) => {
     const { app } = this.props;
     const downstream = app?.downstream;
     const diffSummary = this.getVersionDiffSummary(version);
@@ -604,7 +708,7 @@ class DashboardVersionCard extends React.Component {
     }
   };
 
-  renderYamlErrors = (version) => {
+  renderYamlErrors = (version: Version) => {
     if (!version.yamlErrors) {
       return null;
     }
@@ -629,7 +733,7 @@ class DashboardVersionCard extends React.Component {
   };
 
   deployVersion = (
-    version,
+    version: Version,
     force = false,
     continueWithFailedPreflights = false,
     redeploy = false
@@ -690,23 +794,30 @@ class DashboardVersionCard extends React.Component {
     }
   };
 
-  finalizeDeployment = async (continueWithFailedPreflights, redeploy) => {
+  finalizeDeployment = async (
+    continueWithFailedPreflights: boolean,
+    redeploy: boolean
+  ) => {
     const { match } = this.props;
     const { versionToDeploy, isSkipPreflights } = this.state;
     this.setState({ displayConfirmDeploymentModal: false, confirmType: "" });
     if (redeploy) {
       await this.props.redeployVersion(match.params.slug, versionToDeploy);
     }
-    await this.props.makeCurrentVersion(
-      match.params.slug,
-      versionToDeploy,
-      isSkipPreflights,
-      continueWithFailedPreflights
-    );
-    this.setState({ versionToDeploy: null, isRedeploy: false });
+    if (versionToDeploy) {
+      await this.props.makeCurrentVersion(
+        match.params.slug,
+        versionToDeploy,
+        isSkipPreflights,
+        continueWithFailedPreflights
+      );
+      this.setState({ versionToDeploy: null, isRedeploy: false });
 
-    if (this.props.refetchData) {
-      this.props.refetchData();
+      if (this.props.refetchData) {
+        this.props.refetchData();
+      }
+    } else {
+      throw new Error("No version to deploy");
     }
   };
 
@@ -717,10 +828,14 @@ class DashboardVersionCard extends React.Component {
       displayShowDetailsModal: false,
     });
     const versionToDeploy = this.state.versionToDeploy;
-    this.deployVersion(versionToDeploy, true, continueWithFailedPreflights);
+    if (versionToDeploy) {
+      this.deployVersion(versionToDeploy, true, continueWithFailedPreflights);
+    } else {
+      throw new Error("No version to deploy");
+    }
   };
 
-  showReleaseNotes = (releaseNotes) => {
+  showReleaseNotes = (releaseNotes: string) => {
     this.setState({
       showReleaseNotes: true,
       releaseNotes: releaseNotes,
@@ -734,7 +849,7 @@ class DashboardVersionCard extends React.Component {
     });
   };
 
-  actionButtonStatus = (version) => {
+  actionButtonStatus = (version: Version) => {
     const isDeploying = version.status === "deploying";
     const isDownloading =
       this.state.versionDownloadStatuses?.[version.sequence]
@@ -768,7 +883,7 @@ class DashboardVersionCard extends React.Component {
     }
   };
 
-  renderGitopsVersionAction = (version) => {
+  renderGitopsVersionAction = (version: Version) => {
     const { app } = this.props;
     const downstream = app?.downstream;
     const nothingToCommit =
@@ -793,7 +908,7 @@ class DashboardVersionCard extends React.Component {
     }
     if (version.gitDeployable === false) {
       return (
-        <div className={nothingToCommit && "u-opacity--half"}>
+        <div className={nothingToCommit ? "u-opacity--half" : ""}>
           Nothing to commit
         </div>
       );
@@ -826,7 +941,7 @@ class DashboardVersionCard extends React.Component {
     );
   };
 
-  renderVersionAction = (version) => {
+  renderVersionAction = (version: Version) => {
     const { app } = this.props;
     const downstream = app?.downstream;
 
@@ -886,7 +1001,7 @@ class DashboardVersionCard extends React.Component {
     );
   };
 
-  isActionButtonDisabled = (version) => {
+  isActionButtonDisabled = (version: Version) => {
     if (this.props.isHelmManaged) {
       return false;
     }
@@ -907,7 +1022,7 @@ class DashboardVersionCard extends React.Component {
     return !version.isDeployable;
   };
 
-  renderVersionDownloadStatus = (version) => {
+  renderVersionDownloadStatus = (version: Version) => {
     const { versionDownloadStatuses } = this.state;
 
     if (!versionDownloadStatuses.hasOwnProperty(version.sequence)) {
@@ -952,15 +1067,15 @@ class DashboardVersionCard extends React.Component {
     );
   };
 
-  upgradeAdminConsole = (version) => {
+  upgradeAdminConsole = (version: Version) => {
     const { app } = this.props;
 
     this.setState({
       displayKotsUpdateModal: true,
       kotsUpdateRunning: true,
-      kotsUpdateStatus: undefined,
-      kotsUpdateMessage: undefined,
-      kotsUpdateError: undefined,
+      kotsUpdateStatus: null,
+      kotsUpdateMessage: null,
+      kotsUpdateError: null,
     });
 
     fetch(
@@ -999,7 +1114,8 @@ class DashboardVersionCard extends React.Component {
   getKotsUpdateStatus = () => {
     const { app } = this.props;
 
-    return new Promise((resolve, reject) => {
+    // TODO: handle with both resolve and reject or use async/await
+    return new Promise<void>((resolve) => {
       fetch(
         `${process.env.API_ENDPOINT}/app/${app.slug}/task/update-admin-console`,
         {
@@ -1036,17 +1152,17 @@ class DashboardVersionCard extends React.Component {
             kotsUpdateRunning: false,
             kotsUpdateStatus: "waiting",
             kotsUpdateMessage: "Waiting for pods to restart...",
-            kotsUpdateError: "",
+            kotsUpdateError: null,
           });
           resolve();
         });
     });
   };
 
-  downloadVersion = (version) => {
+  downloadVersion = (version: Version) => {
     const { app } = this.props;
 
-    if (!this.versionDownloadStatusJobs.hasOwnProperty(version.sequence)) {
+    if (!this.versionDownloadStatusJobs?.hasOwnProperty(version.sequence)) {
       this.versionDownloadStatusJobs[version.sequence] = new Repeater();
     }
 
@@ -1107,10 +1223,10 @@ class DashboardVersionCard extends React.Component {
       });
   };
 
-  updateVersionDownloadStatus = (version) => {
+  updateVersionDownloadStatus = (version: Version) => {
     const { app } = this.props;
 
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       fetch(
         `${process.env.API_ENDPOINT}/app/${app?.slug}/sequence/${version?.parentSequence}/task/updatedownload`,
         {
@@ -1234,7 +1350,7 @@ class DashboardVersionCard extends React.Component {
         <AirgapUploadProgress
           appSlug={app.slug}
           unkownProgress={true}
-          onProgressError={this.onProgressError}
+          onProgressError={this.props.onProgressError}
           smallSize={true}
         />
       );
@@ -1430,7 +1546,9 @@ class DashboardVersionCard extends React.Component {
           <div className="flex alignItems--center">
             {app?.isAirgap && airgapUploader ? (
               <MountAware
-                onMount={(el) => this.props.airgapUploader?.assignElement(el)}
+                onMount={(el: Element) =>
+                  this.props.airgapUploader?.assignElement(el)
+                }
               >
                 <div className="flex alignItems--center">
                   <span className="icon clickable dashboard-card-upload-version-icon u-marginRight--5" />
@@ -1548,7 +1666,7 @@ class DashboardVersionCard extends React.Component {
         {this.state.showDiffErrModal && (
           <Modal
             isOpen={true}
-            onRequestClose={this.toggleDiffErrModal}
+            onRequestClose={() => this.toggleDiffErrModal()}
             contentLabel="Unable to Get Diff"
             ariaHideApp={false}
             className="Modal MediumSize"
@@ -1560,21 +1678,22 @@ class DashboardVersionCard extends React.Component {
               <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">
                 The{" "}
                 <span className="u-fontWeight--bold">
-                  Upstream {this.state.releaseWithErr.versionLabel}, Sequence{" "}
-                  {this.state.releaseWithErr.sequence}
+                  {/* // TODO: add better error handling */}
+                  Upstream {this.state.releaseWithErr?.versionLabel || ""},
+                  Sequence {this.state.releaseWithErr?.sequence || ""}
                 </span>{" "}
                 release was unable to generate a diff because the following
                 error:
               </p>
               <div className="error-block-wrapper u-marginBottom--30 flex flex1">
                 <span className="u-textColor--error">
-                  {this.state.releaseWithErr.diffSummaryError}
+                  {this.state.releaseWithErr?.diffSummaryError || ""}
                 </span>
               </div>
               <div className="flex u-marginBottom--10">
                 <button
                   className="btn primary"
-                  onClick={this.toggleDiffErrModal}
+                  onClick={() => this.toggleDiffErrModal()}
                 >
                   Ok, got it!
                 </button>
@@ -1585,7 +1704,7 @@ class DashboardVersionCard extends React.Component {
         {this.state.showNoChangesModal && (
           <Modal
             isOpen={true}
-            onRequestClose={this.toggleNoChangesModal}
+            onRequestClose={() => this.toggleNoChangesModal()}
             contentLabel="No Changes"
             ariaHideApp={false}
             className="Modal DefaultSize"
@@ -1597,8 +1716,8 @@ class DashboardVersionCard extends React.Component {
               <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">
                 The{" "}
                 <span className="u-fontWeight--bold">
-                  Upstream {this.state.releaseWithNoChanges.versionLabel},
-                  Sequence {this.state.releaseWithNoChanges.sequence}
+                  Upstream {this.state.releaseWithNoChanges?.versionLabel},
+                  Sequence {this.state.releaseWithNoChanges?.sequence}
                 </span>{" "}
                 release was unable to generate a diff because the changes made
                 do not affect any manifests that will be deployed. Only changes
@@ -1607,7 +1726,7 @@ class DashboardVersionCard extends React.Component {
               <div className="flex u-paddingTop--10">
                 <button
                   className="btn primary"
-                  onClick={this.toggleNoChangesModal}
+                  onClick={() => this.toggleNoChangesModal()}
                 >
                   Ok, got it!
                 </button>
@@ -1729,12 +1848,18 @@ class DashboardVersionCard extends React.Component {
           >
             {({
               download,
-              clearError: clearDownloadError,
               error: downloadError,
-              isDownloading,
               name,
               ref,
               url,
+            }: {
+              download: () => void;
+              clearError: () => void;
+              error: string;
+              isDownloading: boolean;
+              name: string;
+              ref: React.RefObject<HTMLAnchorElement>;
+              url: string;
             }) => {
               const showDownloadValues =
                 this.state.showHelmDeployModalWithVersionLabel ===
@@ -1745,8 +1870,7 @@ class DashboardVersionCard extends React.Component {
                     appSlug={this.props?.app?.slug}
                     chartPath={this.props?.app?.chartPath || ""}
                     downloadClicked={download}
-                    error={downloadError}
-                    isDownloading={isDownloading}
+                    downloadError={!!downloadError}
                     hideHelmDeployModal={() => {
                       this.setState({
                         showHelmDeployModal: false,
@@ -1771,7 +1895,9 @@ class DashboardVersionCard extends React.Component {
                         ? "Upgrade release"
                         : "Redeploy release"
                     }
-                    version={this.state.showHelmDeployModalWithVersionLabel}
+                    version={
+                      this.state.showHelmDeployModalWithVersionLabel || ""
+                    }
                     namespace={this.props?.app?.namespace}
                   />
                   <a href={url} download={name} className="hidden" ref={ref} />
@@ -1810,4 +1936,5 @@ class DashboardVersionCard extends React.Component {
   }
 }
 
-export default withRouter(DashboardVersionCard);
+// eslint-disable-next-line
+export default withRouter(DashboardVersionCard) as any;
