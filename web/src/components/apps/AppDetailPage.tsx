@@ -1,7 +1,6 @@
 import React, { Fragment, useReducer, useEffect } from "react";
 import classNames from "classnames";
 import {
-  withRouter,
   Switch,
   Route,
   Redirect,
@@ -9,7 +8,7 @@ import {
   useParams,
 } from "react-router-dom";
 import Modal from "react-modal";
-import withTheme from "@src/components/context/withTheme";
+import { useTheme } from "@src/components/context/withTheme";
 import { KotsSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import { HelmChartSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import NotFound from "../static/NotFound";
@@ -35,22 +34,19 @@ import "../../scss/components/watches/WatchDetailPage.scss";
 
 // Types
 import { RouteComponentProps } from "react-router";
-import { App, Metadata, KotsParams, ThemeState, Version } from "@types";
+import { App, Metadata, KotsParams, Version } from "@types";
 
 type Props = {
   adminConsoleMetadata: Metadata;
   appsList: App[];
   appNameSpace: boolean;
   appName: string;
-  clearThemeState: () => void;
-  getThemeState: () => ThemeState;
   isHelmManaged: boolean;
   onActiveInitSession: (session: string) => void;
   ping: () => void;
   refetchAppsList: () => void;
   refetchAppMetadata: () => void;
   rootDidInitialAppFetch: boolean;
-  setThemeState: (theme: ThemeState) => void;
   snapshotInProgressApps: boolean;
 } & RouteComponentProps<KotsParams>;
 
@@ -102,6 +98,7 @@ function AppDetailPage(props: Props) {
   const history = useHistory();
   const params = useParams<KotsParams>();
   const { currentApp } = useCurrentApp();
+  const theme = useTheme();
 
   const toggleDisplayRequiredKotsUpdateModal = (message: string) => {
     setState({
@@ -345,7 +342,7 @@ function AppDetailPage(props: Props) {
     getApp();
     checkIsVeleroInstalled();
     return () => {
-      props.clearThemeState();
+      theme.clearThemeState();
       state.getAppJob.stop();
       state.checkForFirstAppJob?.stop?.();
     };
@@ -353,11 +350,10 @@ function AppDetailPage(props: Props) {
 
   // Handle updating the theme state when switching apps.
   useEffect(() => {
-    const { getThemeState, setThemeState } = props;
     if (currentApp?.iconUri) {
-      const { navbarLogo, ...rest } = getThemeState();
+      const { navbarLogo, ...rest } = theme.getThemeState();
       if (navbarLogo === null || navbarLogo !== currentApp.iconUri) {
-        setThemeState({
+        theme.setThemeState({
           ...rest,
           navbarLogo: currentApp.iconUri,
         });
@@ -644,4 +640,3 @@ function AppDetailPage(props: Props) {
 }
 
 export { AppDetailPage };
-export default withTheme(withRouter(AppDetailPage));

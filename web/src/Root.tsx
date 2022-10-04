@@ -8,7 +8,7 @@ import ConnectionTerminated from "./ConnectionTerminated";
 import GitOps from "./components/clusters/GitOps";
 import PreflightResultPage from "./components/PreflightResultPage";
 import AppConfig from "./features/AppConfig/components/AppConfig";
-import AppDetailPage from "./components/apps/AppDetailPage";
+import { AppDetailPage } from "./components/apps/AppDetailPage";
 import ClusterNodes from "./components/apps/ClusterNodes";
 import UnsupportedBrowser from "./components/static/UnsupportedBrowser";
 import NotFound from "./components/static/NotFound";
@@ -66,7 +66,9 @@ const ProtectedRoute = ({
 };
 
 const ThemeContext = React.createContext({
-  setThemeState: () => {},
+  setThemeState: (themeState?: ThemeState) => {
+    console.log("setThemeState used before being set", themeState);
+  },
   getThemeState: (): ThemeState => ({ navbarLogo: null }),
   clearThemeState: () => {},
 });
