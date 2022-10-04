@@ -625,7 +625,6 @@ const Root = () => {
                     appNameSpace={state.appNameSpace}
                     appName={state.selectedAppName}
                     snapshotInProgressApps={state.snapshotInProgressApps}
-                    featureFlags={state.featureFlags}
                     ping={ping}
                     isHelmManaged={state.isHelmManaged}
                   />

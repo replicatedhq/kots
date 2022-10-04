@@ -33,22 +33,21 @@ import { useCurrentApp } from "@features/App";
 import "../../scss/components/watches/WatchDetailPage.scss";
 
 // Types
-import { RouteComponentProps } from "react-router";
 import { App, Metadata, KotsParams, Version } from "@types";
 
 type Props = {
-  adminConsoleMetadata: Metadata;
+  adminConsoleMetadata?: Metadata;
   appsList: App[];
-  appNameSpace: boolean;
-  appName: string;
+  appNameSpace: string | null;
+  appName: string | null;
   isHelmManaged: boolean;
   onActiveInitSession: (session: string) => void;
   ping: () => void;
   refetchAppsList: () => void;
   refetchAppMetadata: () => void;
   rootDidInitialAppFetch: boolean;
-  snapshotInProgressApps: boolean;
-} & RouteComponentProps<KotsParams>;
+  snapshotInProgressApps: string[];
+};
 
 type State = {
   app: App | null;
@@ -327,7 +326,7 @@ function AppDetailPage(props: Props) {
           (version) => version?.sequence === 0
         );
         if (firstVersion?.status === "pending_config") {
-          props.history.push(`/${app.slug}/config`);
+          history.push(`/${app.slug}/config`);
           return;
         }
       }
@@ -488,7 +487,7 @@ function AppDetailPage(props: Props) {
                   render={() => (
                     <AppVersionHistory
                       app={app}
-                      match={props.match}
+                      match={{ match: { params: params } }}
                       makeCurrentVersion={makeCurrentRelease}
                       makingCurrentVersionErrMsg={
                         state.makingCurrentReleaseErrMsg
