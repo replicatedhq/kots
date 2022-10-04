@@ -248,7 +248,6 @@ class SecureAdminConsole extends React.Component<Props, State> {
   };
 
   async componentDidMount() {
-
     window.addEventListener("keydown", this.submitForm);
 
     const token = Utilities.getCookie("token");
