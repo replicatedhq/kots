@@ -248,24 +248,23 @@ class SecureAdminConsole extends React.Component<Props, State> {
   };
 
   async componentDidMount() {
+
     window.addEventListener("keydown", this.submitForm);
 
-    const localStorageToken = window.localStorage.getItem("token");
-    const cookieToken = Utilities.getCookie("token");
-    const cookieSessionRole = Utilities.getCookie("session_role");
-    const localStorageSessionRole = window.localStorage.getItem("session_role");
-    if (Utilities.isLoggedIn() || cookieToken) {
+    const token = Utilities.getCookie("token");
+    if (token) {
       // this is a redirect from identity service login
       // strip quotes from token (golang adds them when the cookie value has spaces, commas, etc..)
       const loginData = {
-        token: (
-          localStorageToken?.replace(/"/g, "") || cookieToken.replace(/"/g, "")
-        )?.toString(),
-        sessionRoles: (
-          localStorageSessionRole || cookieSessionRole
-        )?.toString(),
+        token: token.replace(/"/g, ""),
+        sessionRoles: Utilities.getCookie("session_roles"),
       };
-      await this.completeLogin(loginData);
+      const loggedIn = await this.completeLogin(loginData);
+      if (loggedIn) {
+        Utilities.removeCookie("token");
+        Utilities.removeCookie("session_roles");
+      }
+      return;
     }
 
     const urlParams = new URLSearchParams(window.location.search);
