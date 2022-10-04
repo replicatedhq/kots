@@ -97,7 +97,7 @@ export type KotsParams = {
 export type DashboardActionLink = {
   title: string;
   uri: string;
-}
+};
 
 export type Entitlement = {
   title: string;
@@ -110,7 +110,6 @@ export type Metadata = {
   isAirgap: boolean;
   isKurl: boolean;
 };
-
 
 export type ThemeState = {
   navbarLogo: string | null;
