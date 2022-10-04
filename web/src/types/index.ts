@@ -39,25 +39,25 @@ export type AppLicense = {
   licenseType: string;
 };
 
-export type Credentials = {
-  username: string;
-  password: string;
-};
-
-export type ResourceStates = {
-  kind: string;
-  name: string;
-  namespace: string;
-  // from https://github.com/replicatedhq/kots/blob/84b7e4e0e9275bb200a36be69691c4944eb8cf8f/pkg/appstate/types/types.go#L10-L14
-  state: "ready" | "updating" | "degrading" | "unavailable" | "missing";
-};
+export type AppStatusState =
+  | "degraded"
+  | "degrading"
+  | "missing"
+  | "ready"
+  | "unavailable"
+  | "updating";
 
 type AppStatus = {
   appId: string;
   resourceStates: ResourceStates[];
   sequence: number;
-  state: string;
+  state: AppStatusState;
   updatedAt: string;
+};
+
+export type Credentials = {
+  username: string;
+  password: string;
 };
 
 export type DashboardResponse = {
@@ -86,6 +86,14 @@ export type KotsParams = {
 export type DashboardActionLink = {
   title: string;
   uri: string;
+};
+
+export type ResourceStates = {
+  kind: string;
+  name: string;
+  namespace: string;
+  // from https://github.com/replicatedhq/kots/blob/84b7e4e0e9275bb200a36be69691c4944eb8cf8f/pkg/appstate/types/types.go#L10-L14
+  state: AppStatusState;
 };
 
 export type Version = {
