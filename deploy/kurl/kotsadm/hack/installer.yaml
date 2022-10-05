@@ -1,0 +1,21 @@
+apiVersion: cluster.kurl.sh/v1beta1
+kind: Installer
+metadata: 
+  name: hack
+spec: 
+  kubernetes: 
+    version: 1.24.6
+  containerd: 
+    version: 1.6.8
+  weave: 
+    version: 2.8.1
+  ekco: 
+    version: 0.21.1
+  openebs: 
+    version: 3.3.0
+    isLocalPVEnabled: true
+    localPVStorageClassName: default
+  minio: 
+    version: 2022-09-25T15-44-53Z
+  kotsadm: 
+    version: __KOTSADM_VERSION__

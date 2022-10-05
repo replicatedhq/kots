@@ -358,7 +358,7 @@ jobs:
           docker push ttl.sh/automated-${{ github.run_id }}/dex:${{ steps.dotenv.outputs.DEX_TAG }}
 
 
-  # only run validate-kurl-addon if changes to "deploy/kurl/**"
+  # only run validate-kurl-addon if changes to "deploy/kurl/kotsadm/template/**"
   kurl-addon-changes-filter:
     runs-on: ubuntu-20.04
     needs: [ can-run-ci, enable-tests ]
@@ -371,7 +371,8 @@ jobs:
         with:
           filters: |
             kurl-addon:
-              - 'deploy/kurl/**'
+              - 'deploy/kurl/kotsadm/template/**'
+              - 'deploy/kurl/kotsadm/testgrid-os-spec.yaml'
   validate-kurl-addon:
     runs-on: ubuntu-20.04
     if: ${{ needs.kurl-addon-changes-filter.outputs.ok-to-test == 'true' }}
