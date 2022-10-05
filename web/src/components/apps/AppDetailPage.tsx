@@ -72,7 +72,6 @@ function AppDetailPage(props: Props) {
       ...newState,
     }),
     {
-      // app: null,
       checkForFirstAppJob: new Repeater(),
       clusterParentSlug: "",
       displayErrorModal: false,
