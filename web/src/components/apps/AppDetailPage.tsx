@@ -95,11 +95,40 @@ function AppDetailPage(props: Props) {
   const { selectedApp } = useSelectedApp();
   const {
     data: appsData,
-    refetch: refetchApps,
+    error: appsError,
+    isError: appsIsError,
     isLoading: appsIsLoading,
+    refetch: refetchApps,
   } = useApps();
 
   const { apps: appsList } = appsData || {};
+
+  // loading state stuff that was in the old getApp() implementation
+  useEffect(() => {
+    if (appsIsLoading) {
+      setState({
+        loadingApp: true,
+      });
+    } else {
+      if (!appsIsError) {
+        setState({
+          loadingApp: false,
+          gettingAppErrMsg: "",
+          displayErrorModal: false,
+        });
+      } else {
+        setState({
+          loadingApp: false,
+          gettingAppErrMsg:
+            appsError instanceof Error
+              ? appsError.message
+              : "Unexpected error when fetching apps",
+          displayErrorModal: true,
+        });
+      }
+    }
+  }, [appsList, appsIsLoading, appsIsError]);
+
   const theme = useTheme();
 
   const toggleDisplayRequiredKotsUpdateModal = (message: string) => {
