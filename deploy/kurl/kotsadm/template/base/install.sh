@@ -456,6 +456,11 @@ function kotsadm_cli() {
         return 0
     fi
 
+    # this will not work in the dev environment
+    if [ ! -f "$src/assets/kots.tar.gz" ]; then
+        return 0
+    fi
+
     pushd "$src/assets"
     tar xf "kots.tar.gz"
     mkdir -p "$KUBECTL_PLUGINS_PATH"
