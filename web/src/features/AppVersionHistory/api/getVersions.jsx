@@ -2,7 +2,7 @@
 import { useQuery } from "react-query";
 import { Utilities } from "../../../utilities/utilities";
 import { useParams } from "react-router-dom";
-import { useCurrentApp } from "../hooks/useCurrentApp";
+import { useCurrentApp } from "@features/App";
 import { useMetadata } from "@src/stores";
 import { useIsHelmManaged } from "@src/components/hooks";
 
