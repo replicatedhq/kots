@@ -328,7 +328,7 @@ jobs:
           -d "{\"event_type\": \"auto-kotsadm-update\", \"client_payload\": {\"version\": \"${GIT_TAG:1}\" }}" \
           "https://api.github.com/repos/replicatedhq/kurl/dispatches"
 
-  # only run validate-kurl-addon if changes to "deploy/kurl/**"
+  # only run validate-kurl-addon if changes to "deploy/kurl/kotsadm/template/**"
   kurl-addon-changes-filter:
     runs-on: ubuntu-20.04
     outputs:
@@ -340,7 +340,8 @@ jobs:
         with:
           filters: |
             kurl-addon:
-              - 'deploy/kurl/**'
+              - 'deploy/kurl/kotsadm/template/**'
+              - 'deploy/kurl/kotsadm/testgrid-os-spec.yaml'
   validate-kurl-addon:
     runs-on: ubuntu-20.04
     if: ${{ github.ref_type != 'branch' || needs.kurl-addon-changes-filter.outputs.ok-to-test == 'true' }}

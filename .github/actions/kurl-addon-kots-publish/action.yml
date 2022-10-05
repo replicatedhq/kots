@@ -45,7 +45,8 @@ runs:
       with:
         ADDON_VERSION: ${{ inputs.addon_version }}
         ADDON_PACKAGE_URL: ${{ steps.addon-test.outputs.addon_package_url }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ github.token }}
 
     - run: aws s3 cp versions.json s3://kots-kurl-addons-production-1658439274
+      shell: bash
       working-directory: ${{ github.action_path }}/../../../deploy/kurl
