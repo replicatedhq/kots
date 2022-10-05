@@ -6,7 +6,7 @@ import { App } from "@types";
 
 import { KotsParams } from "@types";
 
-function useSelectedApp() {
+function useSelectedApp(): { selectedApp: App | null } {
   let { slug } = useParams<KotsParams>();
   let { data, isFetched } = useApps();
 

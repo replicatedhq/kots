@@ -121,54 +121,6 @@ function AppDetailPage(props: Props) {
     setState({ displayErrorModal: !state.displayErrorModal });
   };
 
-  // const getApp = async (slug = params.slug) => {
-  //   if (!slug) {
-  //     return;
-  //   }
-
-  //   try {
-  //     setState({ loadingApp: true });
-
-  //     const res = await fetch(`${process.env.API_ENDPOINT}/app/${slug}`, {
-  //       headers: {
-  //         Authorization: Utilities.getToken(),
-  //         "Content-Type": "application/json",
-  //       },
-  //       method: "GET",
-  //     });
-  //     if (res.ok && res.status == 200) {
-  //       const app = await res.json();
-  //       setState({
-  //         app,
-  //         loadingApp: false,
-  //         gettingAppErrMsg: "",
-  //         displayErrorModal: false,
-  //       });
-  //     } else {
-  //       setState({
-  //         loadingApp: false,
-  //         gettingAppErrMsg: `Unexpected status code: ${res.status}`,
-  //         displayErrorModal: true,
-  //       });
-  //     }
-  //   } catch (err) {
-  //     console.log(err);
-  //     if (err instanceof Error) {
-  //       setState({
-  //         loadingApp: false,
-  //         gettingAppErrMsg: err.message,
-  //         displayErrorModal: true,
-  //       });
-  //     } else {
-  //       setState({
-  //         loadingApp: false,
-  //         gettingAppErrMsg: "Something went wrong, please try again.",
-  //         displayErrorModal: true,
-  //       });
-  //     }
-  //   }
-  // };
-
   const checkIsVeleroInstalled = async () => {
     try {
       const res = await fetch(`${process.env.API_ENDPOINT}/velero`, {
@@ -296,11 +248,9 @@ function AppDetailPage(props: Props) {
       return;
     }
     state.checkForFirstAppJob?.stop?.();
-    // const firstApp = appsList?.find((app) => app.name);
 
     if (selectedApp) {
       history.replace(`/app/${selectedApp.slug}`);
-      // getApp(firstApp.slug);
     } else if (props.isHelmManaged) {
       history.replace("/install-with-helm");
     } else {
