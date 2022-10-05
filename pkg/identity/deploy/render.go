@@ -28,8 +28,37 @@ func Render(ctx context.Context, options Options) (map[string][]byte, error) {
 
 	resources := map[string][]byte{}
 
-	secret := secretResource(dexConfig, options)
+	// TODO (salah): make this work with minimal rbac
+	ns := namespaceResource(options)
 	buf := bytes.NewBuffer(nil)
+	if err := s.Encode(ns, buf); err != nil {
+		return nil, errors.Wrap(err, "failed to encode namespace")
+	}
+	resources["namespace.yaml"] = buf.Bytes()
+
+	clusterRole := clusterRoleResource(options)
+	buf = bytes.NewBuffer(nil)
+	if err := s.Encode(clusterRole, buf); err != nil {
+		return nil, errors.Wrap(err, "failed to encode cluster role")
+	}
+	resources["clusterrole.yaml"] = buf.Bytes()
+
+	serviceAccount := serviceAccountResource(options)
+	buf = bytes.NewBuffer(nil)
+	if err := s.Encode(serviceAccount, buf); err != nil {
+		return nil, errors.Wrap(err, "failed to encode service account")
+	}
+	resources["serviceaccount.yaml"] = buf.Bytes()
+
+	clusterRoleBinding := clusterRoleBindingResource(options)
+	buf = bytes.NewBuffer(nil)
+	if err := s.Encode(clusterRoleBinding, buf); err != nil {
+		return nil, errors.Wrap(err, "failed to encode cluster role binding")
+	}
+	resources["clusterrolebinding.yaml"] = buf.Bytes()
+
+	secret := secretResource(dexConfig, options)
+	buf = bytes.NewBuffer(nil)
 	if err := s.Encode(secret, buf); err != nil {
 		return nil, errors.Wrap(err, "failed to encode secret")
 	}
@@ -73,6 +102,18 @@ func Render(ctx context.Context, options Options) (map[string][]byte, error) {
 			}
 			resources["ingress.yaml"] = buf.Bytes()
 		}
+	}
+
+	if options.IdentityConfigSpec.ClientID != "" {
+		clientSecret, err := options.IdentityConfigSpec.ClientSecret.GetValue()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to decrypt client secret")
+		}
+		clientSecretResource, err := renderClientSecret(ctx, options.Namespace, options.IdentityConfigSpec.ClientID, clientSecret, options.AdditionalLabels)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to render client secret")
+		}
+		resources["clientsecret.yaml"] = clientSecretResource
 	}
 
 	return resources, nil

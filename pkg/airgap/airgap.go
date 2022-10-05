@@ -183,7 +183,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		configFile = tmpFile.Name()
 	}
 
-	identityConfigFile, err := identity.InitAppIdentityConfig(opts.PendingApp.Slug, kotsv1beta1.Storage{})
+	identityConfigFile, err := identity.InitAppIdentityConfig(opts.PendingApp.Slug)
 	if err != nil {
 		return errors.Wrap(err, "failed to init identity config")
 	}

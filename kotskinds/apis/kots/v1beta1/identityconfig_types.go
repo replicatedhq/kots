@@ -36,7 +36,6 @@ type IdentityConfigSpec struct {
 	IdentityServiceAddress string                  `json:"identityServiceAddress,omitempty" yaml:"identityServiceAddress,omitempty"`
 	CACertPemBase64        string                  `json:"caCertPemBase64,omitempty" yaml:"caCertPemBase64,omitempty"`
 	InsecureSkipTLSVerify  bool                    `json:"insecureSkipTLSVerify,omitempty" yaml:"insecureSkipTLSVerify,omitempty"`
-	Storage                Storage                 `json:"storage,omitempty" yaml:"storage,omitempty"`
 	ClientID               string                  `json:"clientID,omitempty" yaml:"clientID,omitempty"`
 	ClientSecret           *StringValueOrEncrypted `json:"clientSecret,omitempty" yaml:"clientSecret,omitempty"`
 	DexConnectors          DexConnectors           `json:"dexConnectors,omitempty" yaml:"dexConnectors,omitempty"`
@@ -74,18 +73,6 @@ func (v *StringValueOrEncrypted) EncryptValue() {
 	}
 	v.ValueEncrypted = base64.StdEncoding.EncodeToString(crypto.Encrypt([]byte(v.Value)))
 	v.Value = ""
-}
-
-type Storage struct {
-	PostgresConfig *IdentityPostgresConfig `json:"postgresConfig,omitempty" yaml:"postgresConfig,omitempty"`
-}
-
-type IdentityPostgresConfig struct {
-	Host     string                  `json:"host" yaml:"host"`
-	Port     string                  `json:"port,omitempty" yaml:"port,omitempty"`
-	Database string                  `json:"database" yaml:"database"`
-	User     string                  `json:"user" yaml:"user"`
-	Password *StringValueOrEncrypted `json:"password" yaml:"password"`
 }
 
 type IdentityConfigGroup struct {

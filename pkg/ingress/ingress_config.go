@@ -7,7 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func IngressFromConfig(ingressConfig kotsv1beta1.IngressResourceConfig, name string, serviceName string, servicePort int32, additionalLabels map[string]string) *networkingv1.Ingress {
+func IngressFromConfig(namespace string, ingressConfig kotsv1beta1.IngressResourceConfig, name string, serviceName string, servicePort int32, additionalLabels map[string]string) *networkingv1.Ingress {
 	ingressTLS := []networkingv1.IngressTLS{}
 	if ingressConfig.TLSSecretName != "" {
 		tls := networkingv1.IngressTLS{
@@ -35,6 +35,7 @@ func IngressFromConfig(ingressConfig kotsv1beta1.IngressResourceConfig, name str
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
+			Namespace:   namespace,
 			Labels:      kotsadmtypes.GetKotsadmLabels(additionalLabels),
 			Annotations: annotations,
 		},

@@ -15,6 +15,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/handlers"
 	"github.com/replicatedhq/kots/pkg/helm"
+	identitymigrate "github.com/replicatedhq/kots/pkg/identity/migrate"
 	"github.com/replicatedhq/kots/pkg/informers"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/operator"
@@ -36,7 +37,6 @@ type APIServerParams struct {
 	Version                string
 	PostgresURI            string
 	AutocreateClusterToken string
-	EnableIdentity         bool
 	SharedPassword         string
 	KubeconfigPath         string
 	KotsDataDir            string
@@ -75,6 +75,9 @@ func Start(params *APIServerParams) {
 
 	if !util.IsHelmManaged() {
 		store.GetStore().RunMigrations()
+		if err := identitymigrate.RunMigrations(context.TODO(), util.PodNamespace); err != nil {
+			log.Println("Failed to run identity migrations: ", err)
+		}
 	}
 
 	if err := binaries.InitKubectl(); err != nil {
@@ -110,18 +113,6 @@ func Start(params *APIServerParams) {
 			panic(err)
 		}
 		os.Setenv("SHARED_PASSWORD_BCRYPT", string(bcryptPassword))
-	}
-
-	if params.EnableIdentity {
-		if util.IsHelmManaged() {
-			log.Println("Identity integration is enabled but isn't suported in Helm managed mode")
-		} else {
-			err := bootstrapIdentity()
-			if err != nil {
-				log.Println("error bootstrapping identity")
-				panic(err)
-			}
-		}
 	}
 
 	if err := k8sutil.InitHelmCapabilities(); err != nil {

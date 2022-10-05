@@ -34,7 +34,6 @@ func APICmd() *cobra.Command {
 				Version:                buildversion.Version(),
 				PostgresURI:            os.Getenv("POSTGRES_URI"),
 				AutocreateClusterToken: os.Getenv("AUTO_CREATE_CLUSTER_TOKEN"),
-				EnableIdentity:         true,
 			}
 
 			apiserver.Start(&params)

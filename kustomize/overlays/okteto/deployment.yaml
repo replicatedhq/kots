@@ -44,11 +44,6 @@ spec:
               value: not-a-secret
             - name: S3_BUCKET_ENDPOINT
               value: "true"
-            - name: DEX_PGPASSWORD
-              valueFrom:
-                secretKeyRef:
-                  key: PGPASSWORD
-                  name: kotsadm-dex-postgres
             - name: KOTSADM_LOG_LEVEL
               value: "debug"
             - name: DISABLE_SPA_SERVING
@@ -101,9 +96,6 @@ spec:
           secret:
             secretName: kubelet-client-cert
             optional: true
-        - name: init-dex-db
-          configMap:
-            name: init-dex-db
       hostAliases:
         - ip: 172.17.0.1
           hostnames:

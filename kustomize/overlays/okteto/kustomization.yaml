@@ -1,8 +1,6 @@
   # - ../../../kurl_proxy/kustomize/overlays/dev
 
 resources:
-- ./dex-postgres-secret.yaml
-- ./configmap-init-dex-db.yaml
 - ../../base
 - ../../../web/kustomize/overlays/dev
 - ../../../migrations/kustomize/overlays/okteto
