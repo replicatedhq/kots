@@ -1,6 +1,8 @@
 
 SHELL := /bin/bash
 
+export PATH := $(GOPATH):$(PATH)
+
 GOSRC = $(shell find ../../../../cmd/ ../../../../pkg/ -name "*")
 WEBSRC = $(shell find ../../../../web/src/ -name "*") ../../../../web/package.json
 KURLPROXYSRC = $(shell find ../../../../kurl_proxy/ -name "*")
