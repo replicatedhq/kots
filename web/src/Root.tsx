@@ -362,6 +362,10 @@ const Root = () => {
   useEffect(() => {
     onRootMounted();
     interval = setInterval(ping, 10000);
+
+    return () => {
+      clearInterval(interval);
+    };
   }, []);
 
   useEffect(() => {
