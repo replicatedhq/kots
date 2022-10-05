@@ -15,9 +15,9 @@ function makeDeployCommand({
 }: {
   appSlug: string;
   chartPath: string;
-  revision: string | null;
+  revision: number | null;
   showDownloadValues: boolean;
-  version: string;
+  version?: string;
   namespace: string;
 }) {
   if (revision) {
@@ -76,11 +76,11 @@ function HelmDeployModal({
   subtitle: string;
   registryUsername: string;
   registryPassword: string;
-  revision?: string | null;
+  revision?: number | null;
   title: string;
   upgradeTitle: string;
   showDownloadValues: boolean;
-  version: string;
+  version?: string;
   namespace: string;
 }) {
   return (
