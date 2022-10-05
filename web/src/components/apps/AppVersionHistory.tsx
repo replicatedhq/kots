@@ -830,7 +830,7 @@ class AppVersionHistory extends Component<Props, State> {
       const status = versionDownloadStatuses[version.sequence];
       return (
         <div className="flex alignItems--center justifyContent--flexEnd">
-          {status.downloadingVersion && (
+          {status?.downloadingVersion && (
             <Loader className="u-marginRight--5" size="15" />
           )}
           <span
@@ -838,9 +838,9 @@ class AppVersionHistory extends Component<Props, State> {
               status.downloadingVersionError ? "u-textColor--error" : ""
             }`}
           >
-            {status.downloadingVersionMessage
-              ? status.downloadingVersionMessage
-              : status.downloadingVersion
+            {status?.downloadingVersionMessage
+              ? status?.downloadingVersionMessage
+              : status?.downloadingVersion
               ? "Downloading"
               : ""}
           </span>
