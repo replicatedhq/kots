@@ -37,7 +37,7 @@ import { KotsPageTitle } from "@components/Head";
 import "@src/scss/components/apps/AppVersionHistory.scss";
 import DashboardGitOpsCard from "./DashboardGitOpsCard";
 import Icon from "../Icon";
-import { App, Downstream, KotsParams, Version } from "@types";
+import { App, Downstream, KotsParams, Version, VersionDownloadStatus } from "@types";
 import { RouteComponentProps } from "react-router-dom";
 dayjs.extend(relativeTime);
 
@@ -52,13 +52,6 @@ type ReleaseWithError = {
   diffSummaryError?: string;
 };
 
-type VersionDownloadStatuses = {
-  [key: number | string]: {
-    downloadingVersion: boolean;
-    downloadingVersionMessage: string;
-    downloadingVersionError?: boolean;
-  };
-};
 
 type Props = {
   adminConsoleMetadata: { isAirgap: boolean; isKurl: boolean };
@@ -98,7 +91,9 @@ type State = {
   checkingUpdateMessage: string;
   checkingForUpdateError: boolean;
   airgapUploadError: string;
-  versionDownloadStatuses: VersionDownloadStatuses | null;
+  versionDownloadStatuses: {
+      [x: number]: VersionDownloadStatus;
+    };
   showDiffOverlay: boolean;
   firstSequence: Number | string;
   secondSequence: Number | string;
@@ -165,7 +160,7 @@ class AppVersionHistory extends Component<Props, State> {
       checkingUpdateMessage: "Checking for updates",
       checkingForUpdateError: false,
       airgapUploadError: "",
-      versionDownloadStatuses: null,
+      versionDownloadStatuses: {},
       showDiffOverlay: false,
       firstSequence: 0,
       secondSequence: 0,
@@ -806,7 +801,7 @@ class AppVersionHistory extends Component<Props, State> {
 
   renderVersionDownloadStatus = (version: Version) => {
     const { versionDownloadStatuses } = this.state;
-    if (versionDownloadStatuses === null) {
+    if (!versionDownloadStatuses.hasOwnProperty(version.sequence)) {
       // user hasn't tried to re-download the version yet, show last known download status if exists
       if (version.downloadStatus) {
         return (
