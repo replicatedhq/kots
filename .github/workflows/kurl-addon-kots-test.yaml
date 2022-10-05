@@ -36,7 +36,8 @@ jobs:
     outputs:
       addon_package_url: ${{ steps.addon-test.outputs.addon_package_url }}
     steps:
-      - uses: ./.github/actions/kurl-addon-kots-test
+      - uses: actions/checkout@v3
+      - uses: /.github/actions/kurl-addon-kots-test
         id: addon-test
         with:
           addon_version: "${{ inputs.addon_version }}"
