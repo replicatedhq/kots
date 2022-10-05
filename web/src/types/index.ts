@@ -1,6 +1,7 @@
 export type App = {
+  allowRollback: Object | undefined;
   allowSnapshots: boolean;
-  autoDeploy: boolean;
+  autoDeploy: boolean | string;
   chartPath: string;
   credentials: Credentials;
   currentSequence: number;
@@ -75,6 +76,7 @@ export type DashboardResponse = {
 
 export type Downstream = {
   cluster: Cluster;
+  pastVersions: Object;
   currentVersion: Version;
   gitops: GitOps;
   links: DashboardActionLink[];
@@ -82,8 +84,8 @@ export type Downstream = {
 };
 
 export type GitOps = {
-  isConnected: true;
   provider: string;
+  isConnected: true;
   uri: string;
 };
 
@@ -92,6 +94,8 @@ export type KotsParams = {
   sequence: string;
   slug: string;
   tab: string;
+  firstSequence: string | undefined;
+  secondSequence: string | undefined;
 };
 
 export type DashboardActionLink = {
@@ -124,6 +128,7 @@ export type ResourceStates = {
 };
 
 export type Version = {
+  channelId: string;
   commitUrl: string;
   createdOn: string;
   deployedAt: string;
@@ -137,6 +142,8 @@ export type Version = {
   nonDeployableCause: string;
   parentSequence: number;
   preflightResult: string;
+  preflightStatus: string;
+  preflightResultCreatedAt: string;
   preflightSkipped: boolean;
   releaseNotes: string;
   semver: string;
@@ -144,8 +151,10 @@ export type Version = {
   source: string;
   status: VersionStatus;
   title: string;
+  updateCursor: string;
   versionLabel?: string;
   yamlErrors: string[];
+  isChecked: boolean;
 };
 
 export type VersionDownloadStatus = {
