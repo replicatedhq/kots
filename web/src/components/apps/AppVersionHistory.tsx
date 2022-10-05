@@ -37,7 +37,13 @@ import { KotsPageTitle } from "@components/Head";
 import "@src/scss/components/apps/AppVersionHistory.scss";
 import DashboardGitOpsCard from "./DashboardGitOpsCard";
 import Icon from "../Icon";
-import { App, Downstream, KotsParams, Version, VersionDownloadStatus } from "@types";
+import {
+  App,
+  Downstream,
+  KotsParams,
+  Version,
+  VersionDownloadStatus,
+} from "@types";
 import { RouteComponentProps } from "react-router-dom";
 dayjs.extend(relativeTime);
 
@@ -51,7 +57,6 @@ type ReleaseWithError = {
   sequence: number;
   diffSummaryError?: string;
 };
-
 
 type Props = {
   adminConsoleMetadata: { isAirgap: boolean; isKurl: boolean };
@@ -92,8 +97,8 @@ type State = {
   checkingForUpdateError: boolean;
   airgapUploadError: string;
   versionDownloadStatuses: {
-      [x: number]: VersionDownloadStatus;
-    };
+    [x: number]: VersionDownloadStatus;
+  };
   showDiffOverlay: boolean;
   firstSequence: Number | string;
   secondSequence: Number | string;
