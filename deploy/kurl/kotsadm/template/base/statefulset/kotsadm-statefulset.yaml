@@ -124,11 +124,6 @@ spec:
             value: http://kotsadm.default.svc.cluster.local:3000
           - name: KURL_PROXY_TLS_CERT_PATH
             value: /etc/kurl-proxy/ca/tls.crt
-          - name: DEX_PGPASSWORD
-            valueFrom:
-              secretKeyRef:
-                key: PGPASSWORD
-                name: kotsadm-dex-postgres
         volumeMounts:
           - name: kotsadmdata
             mountPath: /kotsadmdata
