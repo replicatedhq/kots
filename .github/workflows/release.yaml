@@ -6,6 +6,7 @@ on:
       - "v*.*.*"
     branches:
       - main
+      - emosbaugh/fix-release-workflow
 
 jobs:
   generate-tag:
@@ -328,26 +329,11 @@ jobs:
           -d "{\"event_type\": \"auto-kotsadm-update\", \"client_payload\": {\"version\": \"${GIT_TAG:1}\" }}" \
           "https://api.github.com/repos/replicatedhq/kurl/dispatches"
 
-  # only run validate-kurl-addon if changes to "deploy/kurl/kotsadm/template/**"
-  kurl-addon-changes-filter:
+  generate-kurl-addon:
     runs-on: ubuntu-20.04
+    needs: [ generate-tag, build-kurl-proxy, build-schema-migrations, release-go-api-tagged ]
     outputs:
-      ok-to-test: ${{ steps.filter.outputs.kurl-addon }}
-    steps:
-      - uses: actions/checkout@v2
-      - uses: dorny/paths-filter@v2
-        id: filter
-        with:
-          filters: |
-            kurl-addon:
-              - 'deploy/kurl/kotsadm/template/**'
-              - 'deploy/kurl/kotsadm/testgrid-os-spec.yaml'
-  validate-kurl-addon:
-    runs-on: ubuntu-20.04
-    if: ${{ github.ref_type != 'branch' || needs.kurl-addon-changes-filter.outputs.ok-to-test == 'true' }}
-    needs: [ kurl-addon-changes-filter, generate-tag, build-kurl-proxy, build-schema-migrations, release-go-api-tagged ]
-    outputs:
-      addon_package_url: ${{ steps.addon-test.outputs.addon_package_url }}
+      addon_package_url: ${{ steps.addon-generate.outputs.addon_package_url }}
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.KURL_ADDONS_AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.KURL_ADDONS_AWS_SECRET_ACCESS_KEY }}
@@ -369,19 +355,55 @@ jobs:
         run: |
           chmod +x bin/*
           tar -C bin/ -czvf bin/kots.tar.gz kots
-      - name: test kurl add-on
-        id: addon-test
-        uses: ./.github/actions/kurl-addon-kots-test
+      - uses: ./.github/actions/kurl-addon-kots-generate
+        id: addon-generate
         with:
           addon_version: ${{ steps.vars.outputs.addon_version }}
           s3_prefix: "${{ github.ref_type != 'branch' && '' || 'test/' }}"
-          priority: ${{ github.ref_type != 'branch' && '1' || '0' }}
-          testgrid_api_token: ${{ secrets.TESTGRID_PROD_API_TOKEN }}
           kotsadm_binary_override: bin/kots.tar.gz
+  # only run validate-kurl-addon if changes to "deploy/kurl/kotsadm/template/**"
+  kurl-addon-changes-filter:
+    runs-on: ubuntu-20.04
+    outputs:
+      ok-to-test: ${{ steps.filter.outputs.kurl-addon }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            kurl-addon:
+              - 'deploy/kurl/kotsadm/template/**'
+              - 'deploy/kurl/kotsadm/testgrid-os-spec.yaml'
+  validate-kurl-addon:
+    runs-on: ubuntu-20.04
+    if: ${{ github.ref_type != 'branch' || needs.kurl-addon-changes-filter.outputs.ok-to-test == 'true' }}
+    needs: [ generate-kurl-addon, kurl-addon-changes-filter ]
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: set outputs
+        id: vars
+        run: |
+          addon_version=${{ needs.generate-tag.outputs.tag }}
+          echo "::set-output name=addon_version::${addon_version#v}"
+          echo "::set-output name=sha_short::${GITHUB_SHA:0:7}"
+          echo "::set-output name=ref_name::${GITHUB_REF_NAME//\//"-"}" # replace forward slashes
+      - uses: replicatedhq/kurl/.github/actions/addon-testgrid-tester@main
+        id: testgrid-run
+        with:
+          addon: "kotsadm"
+          addon_version: ${{ steps.vars.outputs.addon_version }}
+          package-url: "${{ needs.generate-kurl-addon.outputs.addon_package_url }}"
+          testgrid-spec-path: "deploy/kurl/kotsadm/template/testgrid"
+          testgrid-os-spec-path: "deploy/kurl/kotsadm/testgrid-os-spec.yaml"
+          testgrid-run-prefix: "KOTS-${{ steps.vars.outputs.addon_version }}-${{ steps.vars.outputs.ref_name }}-${{ steps.vars.outputs.sha_short }}"
+          testgrid_api_token: ${{ secrets.TESTGRID_PROD_API_TOKEN }}
+          priority: ${{ github.ref_type != 'branch' && '1' || '0' }}
   publish-kurl-addon:
     runs-on: ubuntu-20.04
     if: ${{ github.ref_type != 'branch' }}
-    needs: [ generate-tag, validate-kurl-addon ]
+    needs: [ generate-tag, generate-kurl-addon ]
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.KURL_ADDONS_AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.KURL_ADDONS_AWS_SECRET_ACCESS_KEY }}
@@ -397,7 +419,7 @@ jobs:
       - uses: ./.github/actions/kurl-addon-kots-publisher
         with:
           ADDON_VERSION: ${{ steps.vars.outputs.addon_version }}
-          ADDON_PACKAGE_URL: ${{ needs.validate-kurl-addon.outputs.addon_package_url }}
+          ADDON_PACKAGE_URL: ${{ needs.generate-kurl-addon.outputs.addon_package_url }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: aws s3 cp ./deploy/kurl/versions.json s3://kots-kurl-addons-production-1658439274
 
@@ -475,12 +497,12 @@ jobs:
 
   regression-test:
     if: github.ref_type == 'branch'
-    needs: [ regression-test-setup, generate-tag, build-go-api, release-go-api-tagged, validate-kurl-addon ]
+    needs: [ regression-test-setup, generate-tag, build-go-api, release-go-api-tagged, generate-kurl-addon ]
     uses: ./.github/workflows/regression.yaml
     with:
       version_tag_old: ${{ needs.regression-test-setup.outputs.last_release_tag }}
       version_tag_new: ${{ needs.generate-tag.outputs.tag }}
-      addon_package_url: ${{ needs.validate-kurl-addon.outputs.addon_package_url }}
+      addon_package_url: ${{ needs.generate-kurl-addon.outputs.addon_package_url }}
       id: ${{ needs.regression-test-setup.outputs.automation_id }}
     secrets:
       E2E_TESTIM_AWS_ACCESS_KEY_ID: ${{ secrets.E2E_TESTIM_AWS_ACCESS_KEY_ID }}
