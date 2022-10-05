@@ -4,8 +4,10 @@ import { useState, useEffect } from "react";
 import { useApps } from "@features/App";
 import { App } from "@types";
 
+import { KotsParams } from "@types";
+
 function useSelectedApp() {
-  let { slug } = useParams<{ slug: string }>();
+  let { slug } = useParams<KotsParams>();
   let { data, isFetched } = useApps();
 
   const { apps = [] } = data || {};
