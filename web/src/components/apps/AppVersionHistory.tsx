@@ -806,7 +806,6 @@ class AppVersionHistory extends Component<Props, State> {
 
   renderVersionDownloadStatus = (version: Version) => {
     const { versionDownloadStatuses } = this.state;
-    //!versionDownloadStatuses.hasOwnProperty(version.sequence)
     if (versionDownloadStatuses === null) {
       // user hasn't tried to re-download the version yet, show last known download status if exists
       if (version.downloadStatus) {
@@ -827,8 +826,8 @@ class AppVersionHistory extends Component<Props, State> {
       return null;
     }
 
-    const status = versionDownloadStatuses[version.sequence];
     if (versionDownloadStatuses !== null) {
+      const status = versionDownloadStatuses[version.sequence];
       return (
         <div className="flex alignItems--center justifyContent--flexEnd">
           {status.downloadingVersion && (
