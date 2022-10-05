@@ -12,7 +12,11 @@ function useSelectedApp(): { selectedApp: App | null } {
 
   const { apps = [] } = data || {};
 
-  const [selectedApp, setSelectedApp] = useState<App | null>(null);
+  const firstApp = apps && apps[0];
+
+  const [selectedApp, setSelectedApp] = useState<App | null>(
+    apps?.find((app: App) => app.slug === slug) || firstApp || null
+  );
 
   useEffect(() => {
     if (apps && isFetched) {

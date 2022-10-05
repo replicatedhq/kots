@@ -267,7 +267,7 @@ function AppDetailPage(props: Props) {
    */
   const checkForFirstApp = async () => {
     const { rootDidInitialAppFetch } = props;
-    if (!rootDidInitialAppFetch) {
+    if (!rootDidInitialAppFetch || appsIsLoading) {
       return;
     }
     state.checkForFirstAppJob?.stop?.();
