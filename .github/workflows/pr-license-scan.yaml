@@ -1,0 +1,19 @@
+name: PR license scan
+
+on:
+  pull_request:
+
+jobs:
+  fossa-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: "Run FOSSA Analyze" 
+        uses: fossas/fossa-action@main
+        with:
+          api-key: cf2d0196f5b5bb2fd245c559af8766d8 # push-only token, safe to expose
+      - name: "Run FOSSA Test"
+        uses: fossas/fossa-action@main
+        with:
+          api-key: cf2d0196f5b5bb2fd245c559af8766d8 # push-only token, safe to expose
+          run-tests: true
