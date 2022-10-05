@@ -553,7 +553,7 @@ class AppDetailPage extends Component<Props, State> {
                       />
                     )}
                   />
-                  {true && (
+                  {app.isAppIdentityServiceSupported && (
                     <Route
                       exact
                       path="/app/:slug/access"
