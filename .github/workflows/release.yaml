@@ -6,7 +6,6 @@ on:
       - "v*.*.*"
     branches:
       - main
-      - emosbaugh/fix-release-workflow
 
 jobs:
   generate-tag:
