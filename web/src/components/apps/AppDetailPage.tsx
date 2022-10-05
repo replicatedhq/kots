@@ -173,8 +173,6 @@ function AppDetailPage(props: Props) {
    * @return {undefined}
    */
   const refetchData = () => {
-    // getApp();
-    // props.refetchAppsList();
     refetchApps();
     props.refetchAppMetadata();
     checkIsVeleroInstalled();
