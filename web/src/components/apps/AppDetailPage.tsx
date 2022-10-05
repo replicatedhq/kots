@@ -37,20 +37,17 @@ import { App, Metadata, KotsParams, Version } from "@types";
 
 type Props = {
   adminConsoleMetadata?: Metadata;
-  // appsList: App[];
   appNameSpace: string | null;
   appName: string | null;
   isHelmManaged: boolean;
   onActiveInitSession: (session: string) => void;
   ping: () => void;
-  // refetchAppsList: () => void;
   refetchAppMetadata: () => void;
   rootDidInitialAppFetch: boolean;
   snapshotInProgressApps: string[];
 };
 
 type State = {
-  // app: App | null;
   checkForFirstAppJob: Repeater;
   clusterParentSlug: string;
   displayErrorModal: boolean;
