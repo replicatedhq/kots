@@ -618,8 +618,6 @@ const Root = () => {
                   <AppDetailPage
                     {...props}
                     rootDidInitialAppFetch={state.rootDidInitialWatchFetch}
-                    appsList={state.appsList}
-                    refetchAppsList={getAppsList}
                     refetchAppMetadata={fetchKotsAppMetadata}
                     onActiveInitSession={handleActiveInitSession}
                     appNameSpace={state.appNameSpace}
