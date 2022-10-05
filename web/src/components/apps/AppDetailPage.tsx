@@ -538,7 +538,7 @@ function AppDetailPage(props: Props) {
                     />
                   )}
                 />
-                {app.isAppIdentityServiceSupported && (
+                {selectedApp.isAppIdentityServiceSupported && (
                   <Route
                     exact
                     path="/app/:slug/access"
