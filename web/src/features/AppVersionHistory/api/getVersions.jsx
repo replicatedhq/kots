@@ -39,7 +39,11 @@ async function getVersions({
 }
 
 // TODO: refactor this function so that the airgapped / nonairgapped are separate
-function getVersionsSelectorForKotsManaged({ versions, selectedApp, metadata }) {
+function getVersionsSelectorForKotsManaged({
+  versions,
+  selectedApp,
+  metadata,
+}) {
   const downstream = selectedApp?.downstream;
 
   const versionHistory = versions?.versionHistory.map((version) => {
@@ -177,7 +181,8 @@ function useVersions({
     {
       // don't call versions until current app is ascertained
       enabled: !!selectedApp,
-      select: (versions) => versionSelector({ versions, selectedApp, metadata }),
+      select: (versions) =>
+        versionSelector({ versions, selectedApp, metadata }),
       refetchInterval,
     }
   );
