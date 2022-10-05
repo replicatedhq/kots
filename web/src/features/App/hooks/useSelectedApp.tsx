@@ -4,21 +4,21 @@ import { useState, useEffect } from "react";
 import { useApps } from "@features/App";
 import { App } from "@types";
 
-function useCurrentApp() {
+function useSelectedApp() {
   let { slug } = useParams<{ slug: string }>();
   let { data, isFetched } = useApps();
 
   const { apps = [] } = data || {};
 
-  const [currentApp, setCurrentApp] = useState<App | null>(null);
+  const [selectedApp, setSelectedApp] = useState<App | null>(null);
 
   useEffect(() => {
     if (apps && isFetched) {
-      setCurrentApp(apps.find((app: App) => app.slug === slug) || null);
+      setSelectedApp(apps.find((app: App) => app.slug === slug) || null);
     }
   }, [apps, slug]);
 
-  return { currentApp };
+  return { selectedApp };
 }
 
-export { useCurrentApp };
+export { useSelectedApp };

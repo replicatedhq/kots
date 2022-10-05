@@ -2,7 +2,7 @@
 import { useQuery } from "react-query";
 import { Utilities } from "../../../utilities/utilities";
 import { useParams } from "react-router-dom";
-import { useCurrentApp } from "@features/App";
+import { useSelectedApp } from "@features/App";
 import { useMetadata } from "@src/stores";
 import { useIsHelmManaged } from "@src/components/hooks";
 
@@ -39,8 +39,8 @@ async function getVersions({
 }
 
 // TODO: refactor this function so that the airgapped / nonairgapped are separate
-function getVersionsSelectorForKotsManaged({ versions, currentApp, metadata }) {
-  const downstream = currentApp?.downstream;
+function getVersionsSelectorForKotsManaged({ versions, selectedApp, metadata }) {
+  const downstream = selectedApp?.downstream;
 
   const versionHistory = versions?.versionHistory.map((version) => {
     const isCurrentVersion =
@@ -51,7 +51,7 @@ function getVersionsSelectorForKotsManaged({ versions, currentApp, metadata }) {
     );
     const needsConfiguration = version.status === "pending_config";
     const isRollback =
-      isPastVersion && version.deployedAt && currentApp?.allowRollback;
+      isPastVersion && version.deployedAt && selectedApp?.allowRollback;
     const isRedeploy =
       isCurrentVersion &&
       (version.status === "failed" || version.status === "deployed");
@@ -96,8 +96,8 @@ function getVersionsSelectorForKotsManaged({ versions, currentApp, metadata }) {
 }
 
 // TODO: refactor this function so that the airgapped / nonairgapped are separate
-function getVersionsSelectorForAirgapped({ versions, currentApp, metadata }) {
-  return getVersionsSelectorForKotsManaged({ versions, currentApp, metadata });
+function getVersionsSelectorForAirgapped({ versions, selectedApp, metadata }) {
+  return getVersionsSelectorForKotsManaged({ versions, selectedApp, metadata });
 }
 
 function getVersionsSelectorForHelmManaged({ versions }) {
@@ -155,12 +155,12 @@ function useVersions({
   pageSize,
   _getVersions = getVersions,
   _useParams = useParams,
-  _useCurrentApp = useCurrentApp,
+  _useSelectedApp = useSelectedApp,
   _useMetadata = useMetadata,
   _useIsHelmManaged = useIsHelmManaged,
 } = {}) {
   let { slug } = _useParams();
-  let { currentApp } = _useCurrentApp();
+  let { selectedApp } = _useSelectedApp();
   let { data: metadata } = _useMetadata();
   let { data: isHelmManagedResponse } = _useIsHelmManaged();
 
@@ -176,8 +176,8 @@ function useVersions({
     () => _getVersions({ slug, currentPage, pageSize }),
     {
       // don't call versions until current app is ascertained
-      enabled: !!currentApp,
-      select: (versions) => versionSelector({ versions, currentApp, metadata }),
+      enabled: !!selectedApp,
+      select: (versions) => versionSelector({ versions, selectedApp, metadata }),
       refetchInterval,
     }
   );
