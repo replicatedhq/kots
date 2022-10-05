@@ -140,12 +140,19 @@ export class ClusterNodes extends Component {
       }
     )
       .then(async (res) => {
-        const data = await res.json();
-        this.setState({
-          generating: false,
-          command: data.command,
-          expiry: data.expiry,
-        });
+        if (!res.ok) {
+          this.setState({
+            generating: false,
+            generateCommandErrMsg: `Failed to generate command with status ${res.status}`,
+          });
+        } else {
+          const data = await res.json();
+          this.setState({
+            generating: false,
+            command: data.command,
+            expiry: data.expiry,
+          });
+        }
       })
       .catch((err) => {
         console.log(err);
@@ -211,12 +218,19 @@ export class ClusterNodes extends Component {
       }
     )
       .then(async (res) => {
-        const data = await res.json();
-        this.setState({
-          generating: false,
-          command: data.command,
-          expiry: data.expiry,
-        });
+        if (!res.ok) {
+          this.setState({
+            generating: false,
+            generateCommandErrMsg: `Failed to generate command with status ${res.status}`,
+          });
+        } else {
+          const data = await res.json();
+          this.setState({
+            generating: false,
+            command: data.command,
+            expiry: data.expiry,
+          });
+        }
       })
       .catch((err) => {
         console.log(err);

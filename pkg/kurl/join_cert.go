@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	_ "embed"
+
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -18,8 +20,17 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+//go:embed scripts/join-cert-gen.sh
+var joinCertGenScript string
+
 func createCertAndKey(ctx context.Context, client kubernetes.Interface, namespace string) (string, error) {
-	pod, err := getPodSpec(client, namespace)
+	configMap := getJoinCertGenConfigMapSpec(namespace)
+	_, err := client.CoreV1().ConfigMaps(namespace).Create(ctx, configMap, metav1.CreateOptions{})
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create configmap")
+	}
+
+	pod, err := getJoinCertGenPodSpec(client, namespace)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create pod spec")
 	}
@@ -34,6 +45,10 @@ func createCertAndKey(ctx context.Context, client kubernetes.Interface, namespac
 			// use context.background for the after-completion cleanup, as the parent context might already be over
 			if err := client.CoreV1().Pods(pod.Namespace).Delete(context.Background(), pod.Name, metav1.DeleteOptions{}); err != nil {
 				logger.Errorf("Failed to delete pod %s: %v\n", pod.Name, err)
+			}
+
+			if err := client.CoreV1().ConfigMaps(pod.Namespace).Delete(context.Background(), configMap.Name, metav1.DeleteOptions{}); err != nil {
+				logger.Errorf("Failed to delete configmap %s: %v\n", configMap.Name, err)
 			}
 		}()
 	}()
@@ -127,7 +142,19 @@ func parseCertGenOutput(logs []byte) (string, error) {
 	return "", fmt.Errorf("key not found in %d bytes of output", len(logs))
 }
 
-func getPodSpec(clientset kubernetes.Interface, namespace string) (*corev1.Pod, error) {
+func getJoinCertGenConfigMapSpec(namespace string) *corev1.ConfigMap {
+	return &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kotsadm-kurl-join-cert-gen",
+			Namespace: namespace,
+		},
+		Data: map[string]string{
+			"join-cert-gen.sh": joinCertGenScript,
+		},
+	}
+}
+
+func getJoinCertGenPodSpec(clientset kubernetes.Interface, namespace string) (*corev1.Pod, error) {
 	var labels map[string]string
 	var imagePullSecrets []corev1.LocalObjectReference
 	var containers []corev1.Container
@@ -165,9 +192,9 @@ func getPodSpec(clientset kubernetes.Interface, namespace string) (*corev1.Pod, 
 		RunAsUser: util.IntPointer(0),
 	}
 
-	configVolumeType := corev1.HostPathDirectory
 	binVolumeType := corev1.HostPathFile
 	name := fmt.Sprintf("kurl-join-cert-%d", time.Now().Unix())
+	scriptsFileMode := int32(0755)
 	pod := &corev1.Pod{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -212,18 +239,10 @@ func getPodSpec(clientset kubernetes.Interface, namespace string) (*corev1.Pod, 
 					Effect:   corev1.TaintEffectNoSchedule,
 				},
 			},
-			RestartPolicy:    corev1.RestartPolicyNever,
-			ImagePullSecrets: imagePullSecrets,
+			RestartPolicy:      corev1.RestartPolicyNever,
+			ImagePullSecrets:   imagePullSecrets,
+			ServiceAccountName: "kotsadm",
 			Volumes: []corev1.Volume{
-				{
-					Name: "config",
-					VolumeSource: corev1.VolumeSource{
-						HostPath: &corev1.HostPathVolumeSource{
-							Path: "/etc/kubernetes/",
-							Type: &configVolumeType,
-						},
-					},
-				},
 				{
 					Name: "kubeadm",
 					VolumeSource: corev1.VolumeSource{
@@ -233,22 +252,38 @@ func getPodSpec(clientset kubernetes.Interface, namespace string) (*corev1.Pod, 
 						},
 					},
 				},
+				{
+					Name: "scripts",
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "kotsadm-kurl-join-cert-gen",
+							},
+							DefaultMode: &scriptsFileMode,
+							Items: []corev1.KeyToPath{
+								{
+									Key:  "join-cert-gen.sh",
+									Path: "join-cert-gen.sh",
+								},
+							},
+						},
+					},
+				},
 			},
 			Containers: []corev1.Container{
 				{
 					Image:           containers[apiContainerIndex].Image,
 					ImagePullPolicy: corev1.PullNever,
 					Name:            "join-cert-gen",
-					Command:         []string{"/usr/bin/kubeadm"},
-					Args:            []string{"init", "phase", "upload-certs", "--upload-certs"},
+					Command:         []string{"/scripts/join-cert-gen.sh"},
 					VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      "config",
-							MountPath: "/etc/kubernetes/",
-						},
 						{
 							Name:      "kubeadm",
 							MountPath: "/usr/bin/kubeadm",
+						},
+						{
+							Name:      "scripts",
+							MountPath: "/scripts",
 						},
 					},
 				},
