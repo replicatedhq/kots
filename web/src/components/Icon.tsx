@@ -12,6 +12,7 @@ type IconProps = {
   className?: string;
   disableFill?: boolean;
   removeInlineStyle?: boolean;
+  onClick?: () => void;
 };
 
 const Icon = (props: IconProps) => {
