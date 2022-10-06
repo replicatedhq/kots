@@ -67,6 +67,10 @@ func (c *FakeKotsV1beta1) Licenses(namespace string) v1beta1.LicenseInterface {
 	return &FakeLicenses{c, namespace}
 }
 
+func (c *FakeKotsV1beta1) LintConfigs(namespace string) v1beta1.LintConfigInterface {
+	return &FakeLintConfigs{c, namespace}
+}
+
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
 func (c *FakeKotsV1beta1) RESTClient() rest.Interface {
