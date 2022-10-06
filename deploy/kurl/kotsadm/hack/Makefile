@@ -1,6 +1,8 @@
 
 SHELL := /bin/bash
 
+export PATH := $(GOPATH):$(PATH)
+
 GOSRC = $(shell find ../../../../cmd/ ../../../../pkg/ -name "*")
 WEBSRC = $(shell find ../../../../web/src/ -name "*") ../../../../web/package.json
 KURLPROXYSRC = $(shell find ../../../../kurl_proxy/ -name "*")
@@ -41,6 +43,8 @@ _generate: generate-tag
 	@cd ../template && ./generate.sh $(KOTS_VERSION) ttl.sh $(CURRENT_USER) 12h ../../../../bin/kots
 	@rm -rf kurl/addons/kotsadm/$(KOTS_VERSION)
 	@cp -r ../$(KOTS_VERSION) kurl/addons/kotsadm/
+	mkdir -p kurl/addons/kotsadm/$(KOTS_VERSION)/assets/
+	tar czvf kurl/addons/kotsadm/$(KOTS_VERSION)/assets/kots.tar.gz ../../../../bin/kots
 
 .PHONY: generate-tag
 generate-tag:
