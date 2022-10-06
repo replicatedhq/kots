@@ -27,7 +27,7 @@ export type App = {
 export type AppLicense = {
   assignee: string;
   channelName: string;
-  entitlements: string[];
+  entitlements: Entitlement[];
   expiresAt: string;
   id: string;
   isAirgapSupported: boolean;
