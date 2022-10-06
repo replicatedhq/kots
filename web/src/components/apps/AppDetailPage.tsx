@@ -129,7 +129,6 @@ function AppDetailPage(props: Props) {
 
   // loading state stuff that was in the old getApp() implementation
   useEffect(() => {
-    console.log("useEffect applist");
     if (appsIsLoading) {
       setState({
         loadingApp: true,
@@ -137,7 +136,6 @@ function AppDetailPage(props: Props) {
     } else {
       if (!appsIsError) {
         if (appsList?.length === 0 || !params.slug) {
-          console.log("redirect called");
           redirectToFirstAppOrInstall();
           return;
         }
@@ -293,7 +291,6 @@ function AppDetailPage(props: Props) {
 
   // Enforce initial app configuration (if exists)
   useEffect(() => {
-    console.log("useeffect selected app");
     // Handle updating the theme state when switching apps.
     if (selectedApp?.iconUri) {
       const { navbarLogo, ...rest } = theme.getThemeState();
@@ -319,11 +316,12 @@ function AppDetailPage(props: Props) {
       return;
     }
 
+    // how do we know which app needs to be configured?
     if (selectedApp) {
       const downstream = selectedApp?.downstream;
       if (downstream?.pendingVersions?.length) {
         const firstVersion = downstream.pendingVersions.find(
-          (version) => version?.sequence === 0
+          (version: Version) => version?.sequence === 0
         );
         if (firstVersion?.status === "pending_config") {
           history.push(`/${selectedApp.slug}/config`);
@@ -334,7 +332,6 @@ function AppDetailPage(props: Props) {
   }, [selectedApp]);
 
   useEffect(() => {
-    console.log("use effect history");
     refetchApps();
     if (history.location.pathname === "/apps") {
       // state.checkForFirstAppJob.start(checkForFirstApp, 2000);
