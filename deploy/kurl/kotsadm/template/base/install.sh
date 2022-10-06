@@ -455,6 +455,7 @@ function kotsadm_cli() {
     if ! kubernetes_is_master; then
         return 0
     fi
+    
 
     # this will not work in the dev environment
     if [ ! -f "$src/assets/kots.tar.gz" ]; then
