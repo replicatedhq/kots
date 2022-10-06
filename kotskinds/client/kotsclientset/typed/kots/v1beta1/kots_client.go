@@ -35,6 +35,7 @@ type KotsV1beta1Interface interface {
 	IngressConfigsGetter
 	InstallationsGetter
 	LicensesGetter
+	LintConfigsGetter
 }
 
 // KotsV1beta1Client is used to interact with features provided by the kots.io group.
@@ -80,6 +81,10 @@ func (c *KotsV1beta1Client) Installations(namespace string) InstallationInterfac
 
 func (c *KotsV1beta1Client) Licenses(namespace string) LicenseInterface {
 	return newLicenses(c, namespace)
+}
+
+func (c *KotsV1beta1Client) LintConfigs(namespace string) LintConfigInterface {
+	return newLintConfigs(c, namespace)
 }
 
 // NewForConfig creates a new KotsV1beta1Client for the given config.

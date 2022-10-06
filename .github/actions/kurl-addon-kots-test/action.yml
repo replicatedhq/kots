@@ -5,10 +5,10 @@ inputs:
     type: string
     description: "Kots version (without the 'v')."
     required: true
-  s3_prefix:
+  addon_package_url:
     type: string
-    description: "S3 key prefix."
-    default: "test/"
+    description: "S3 package url (from actions/kurl-addon-kots-generate)"
+    required: true
   priority:
     type: number
     description: 'Testgrid run priority.'
@@ -17,22 +17,7 @@ inputs:
     type: string
     description: "Testgrid API token."
     required: true
-  kotsadm_image_registry:
-    type: string
-    description: "Kots image registry override."
-  kotsadm_image_namespace:
-    type: string
-    description: "Kots image namespace override."
-  kotsadm_image_tag:
-    type: string
-    description: "Kots image tag override."
-  kotsadm_binary_override:
-    type: string
-    description: "Kots binary override."
 outputs:
-  addon_package_url:
-    description: "S3 package url"
-    value: ${{ steps.generate-addon.outputs.addon_package_url }}
   testgrid_run_message:
     description: "Testgrid run message"
     value: ${{ steps.testgrid-run.outputs.message }}
@@ -40,16 +25,6 @@ outputs:
 runs:
   using: "composite"
   steps:
-
-    - uses: ./.github/actions/kurl-addon-kots-generate
-      id: generate-addon
-      with:
-        addon_version: "${{ inputs.addon_version }}"
-        s3_prefix: "${{ github.event.action == 'workflow_dispatch' && 'test/' || inputs.s3_prefix }}"
-        kotsadm_image_registry: "${{ inputs.kotsadm_image_registry }}"
-        kotsadm_image_namespace: "${{ inputs.kotsadm_image_namespace }}"
-        kotsadm_image_tag: "${{ inputs.kotsadm_image_tag }}"
-        kotsadm_binary_override: "${{ inputs.kotsadm_binary_override }}"
 
     - name: set outputs
       id: vars
@@ -63,7 +38,7 @@ runs:
       with:
         addon: "kotsadm"
         version: "${{ inputs.addon_version }}"
-        package-url: "${{ steps.generate-addon.outputs.addon_package_url }}"
+        package-url: "${{ inputs.addon_package_url }}"
         testgrid-spec-path: "${{ github.action_path }}/../../../deploy/kurl/kotsadm/template/testgrid"
         testgrid-os-spec-path: "${{ github.action_path }}/../../../deploy/kurl/kotsadm/testgrid-os-spec.yaml"
         testgrid-run-prefix: "KOTS-${{ inputs.addon_version }}-${{ steps.vars.outputs.ref_name }}-${{ steps.vars.outputs.sha_short }}"

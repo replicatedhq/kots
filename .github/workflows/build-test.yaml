@@ -394,22 +394,28 @@ jobs:
         run: |
           chmod +x bin/*
           tar -C bin/ -czvf bin/kots.tar.gz kots
+      - name: generate kurl add-on
+        id: addon-generate
+        uses: ./.github/actions/kurl-addon-kots-generate
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.KURL_ADDONS_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.KURL_ADDONS_AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+        with:
+          addon_version: ${{ steps.vars.outputs.addon_version }}
+          s3_prefix: ${{ github.event.action == 'workflow_dispatch' && 'test/' || inputs.s3_prefix }}
+          kotsadm_image_registry: ttl.sh
+          kotsadm_image_namespace: automated-${{ github.run_id }}
+          kotsadm_image_tag: 12h
+          kotsadm_binary_override: bin/kots.tar.gz
       - name: test kurl add-on
         id: addon-test
         uses: ./.github/actions/kurl-addon-kots-test
         with:
           addon_version: ${{ steps.vars.outputs.addon_version }}
-          s3_prefix: ${{ github.event.action == 'workflow_dispatch' && 'test/' || inputs.s3_prefix }}
+          addon_package_url: ${{ steps.addon-generate.outputs.addon_package_url }}
           priority: ${{ inputs.priority }}
           testgrid_api_token: ${{ secrets.TESTGRID_PROD_API_TOKEN }}
-          kotsadm_image_registry: ttl.sh
-          kotsadm_image_namespace: automated-${{ github.run_id }}
-          kotsadm_image_tag: 12h
-          kotsadm_binary_override: bin/kots.tar.gz
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.KURL_ADDONS_AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.KURL_ADDONS_AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: us-east-1
       - name: comment testgrid url
         uses: mshick/add-pr-comment@v1
         with:
