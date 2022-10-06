@@ -1,8 +1,10 @@
 import React from "react";
 import size from "lodash/size";
+// @ts-ignore
 import yaml from "js-yaml";
 import classNames from "classnames";
 import Loader from "../shared/Loader";
+// @ts-ignore
 import Dropzone from "react-dropzone";
 import Modal from "react-modal";
 import {
@@ -17,47 +19,19 @@ import LicenseFields from "./LicenseFields";
 import Icon from "../Icon";
 import {
   App,
-  Version,
-  Downstream,
   LicenseFile,
-  License,
+  AppLicense,
 } from "@src/types/index";
-import { AirgapUploader } from "@src/utilities/airgapUploader";
 
 type Props = {
-  airgapUploadError: boolean;
-  airgapUpLoader: AirgapUploader;
   app: App;
-  appLicense: License | null;
-  checkingForUpdateError: boolean;
-  checkingForUpdates: boolean;
-  checkingForUpdateText: string;
-  currentVersion: Version | null;
-  downloadCallback: () => void;
-  downstream: Downstream | null;
-  getingAppLicenseErrMsg: string;
-  isBundleUploading: boolean;
-  isHelmManaged: boolean;
-  makeCurrentVersion: (version: Version) => void;
-  noUpdatesAvalable: boolean;
-  onCheckForUpdates: () => void;
-  onDropBundle: (acceptedFiles: File[]) => void;
-  onProgressError: (error: string) => void;
-  redeployVersion: (version: Version) => void;
-  refetchData: () => void;
-  showAutomaticUpdatesModal: () => void;
+  appLicense: AppLicense | null;
+  gettingAppLicenseErrMsg: string | null;
   syncCallback: () => void;
-  uploadProgress: number;
-  uploadResuming: boolean;
-  uploadSize: number;
-  uploadingAirgapFile: boolean;
-  url: string;
-  viewAirgapUpdateError: () => void;
-  viewAirgapUploadError: () => void;
 };
 
 type State = {
-  appLicense: License | null;
+  appLicense: AppLicense | null;
   entitlementsToShow: string[];
   isViewingLicenseEntitlements: boolean;
   message: string;
@@ -208,7 +182,7 @@ export default class DashboardLicenseCard extends React.Component<
   };
 
   render() {
-    const { app, appLicense, getingAppLicenseErrMsg } = this.props;
+    const { app, appLicense, gettingAppLicenseErrMsg } = this.props;
     const { syncingLicense, showNextStepModal, message, messageType } =
       this.state;
     const expiresAt = getLicenseExpiryDate(appLicense);
@@ -409,7 +383,7 @@ export default class DashboardLicenseCard extends React.Component<
             </div>
           ) : (
             <p className="u-textColor--error u-fontSize--small u-fontWeight--medium u-lineHeight--normal flex">
-              {getingAppLicenseErrMsg}
+              {gettingAppLicenseErrMsg}
             </p>
           )}
         </div>
