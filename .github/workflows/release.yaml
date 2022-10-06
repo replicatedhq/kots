@@ -386,19 +386,12 @@ jobs:
         run: |
           addon_version=${{ needs.generate-tag.outputs.tag }}
           echo "::set-output name=addon_version::${addon_version#v}"
-          echo "::set-output name=sha_short::${GITHUB_SHA:0:7}"
-          echo "::set-output name=ref_name::${GITHUB_REF_NAME//\//"-"}" # replace forward slashes
-      - uses: replicatedhq/kurl/.github/actions/addon-testgrid-tester@main
-        id: testgrid-run
+      - uses: ./.github/actions/kurl-addon-kots-test
         with:
-          addon: "kotsadm"
           addon_version: ${{ steps.vars.outputs.addon_version }}
           package-url: "${{ needs.generate-kurl-addon.outputs.addon_package_url }}"
-          testgrid-spec-path: "deploy/kurl/kotsadm/template/testgrid"
-          testgrid-os-spec-path: "deploy/kurl/kotsadm/testgrid-os-spec.yaml"
-          testgrid-run-prefix: "KOTS-${{ steps.vars.outputs.addon_version }}-${{ steps.vars.outputs.ref_name }}-${{ steps.vars.outputs.sha_short }}"
-          testgrid_api_token: ${{ secrets.TESTGRID_PROD_API_TOKEN }}
           priority: ${{ github.ref_type != 'branch' && '1' || '0' }}
+          testgrid_api_token: ${{ secrets.TESTGRID_PROD_API_TOKEN }}
   publish-kurl-addon:
     runs-on: ubuntu-20.04
     if: ${{ github.ref_type != 'branch' }}
