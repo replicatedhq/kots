@@ -117,7 +117,6 @@ function AppDetailPage(props: Props) {
     // }
     // state.checkForFirstAppJob?.stop?.();
 
-
     // navigate to first app if available
     if (appsList && appsList?.length > 0) {
       history.replace(`/app/${appsList[0].slug}`);
@@ -130,7 +129,7 @@ function AppDetailPage(props: Props) {
 
   // loading state stuff that was in the old getApp() implementation
   useEffect(() => {
-    console.log('useEffect applist')
+    console.log("useEffect applist");
     if (appsIsLoading) {
       setState({
         loadingApp: true,
@@ -138,7 +137,7 @@ function AppDetailPage(props: Props) {
     } else {
       if (!appsIsError) {
         if (appsList?.length === 0 || !params.slug) {
-          console.log('redirect called')
+          console.log("redirect called");
           redirectToFirstAppOrInstall();
           return;
         }
@@ -294,7 +293,7 @@ function AppDetailPage(props: Props) {
 
   // Enforce initial app configuration (if exists)
   useEffect(() => {
-    console.log('useeffect selected app')
+    console.log("useeffect selected app");
     // Handle updating the theme state when switching apps.
     if (selectedApp?.iconUri) {
       const { navbarLogo, ...rest } = theme.getThemeState();
@@ -335,7 +334,7 @@ function AppDetailPage(props: Props) {
   }, [selectedApp]);
 
   useEffect(() => {
-    console.log('use effect history')
+    console.log("use effect history");
     refetchApps();
     if (history.location.pathname === "/apps") {
       // state.checkForFirstAppJob.start(checkForFirstApp, 2000);
