@@ -92,7 +92,7 @@ type State = {
   fetchingMetadata: boolean;
   initSessionId: string | null;
   isHelmManaged: boolean;
-  rootDidInitialWatchFetch: boolean;
+ //  rootDidInitialWatchFetch: boolean;
   selectedAppName: string | null;
   snapshotInProgressApps: string[];
   themeState: ThemeState;
@@ -121,7 +121,7 @@ const Root = () => {
       initSessionId: Utilities.localStorageEnabled()
         ? localStorage.getItem(INIT_SESSION_ID_STORAGE_KEY)
         : "",
-      rootDidInitialWatchFetch: false,
+   //   rootDidInitialWatchFetch: false,
       selectedAppName: null,
       snapshotInProgressApps: [],
       themeState: {
@@ -263,7 +263,7 @@ const Root = () => {
       const apps = response.apps;
       setState({
         appsList: apps,
-        rootDidInitialWatchFetch: true,
+        // rootDidInitialWatchFetch: true,
       });
       return apps;
     } catch (err) {
@@ -621,7 +621,7 @@ const Root = () => {
                 render={(props) => (
                   <AppDetailPage
                     {...props}
-                    rootDidInitialAppFetch={state.rootDidInitialWatchFetch}
+                    // rootDidInitialAppFetch={state.rootDidInitialWatchFetch}
                     refetchAppMetadata={fetchKotsAppMetadata}
                     onActiveInitSession={handleActiveInitSession}
                     appNameSpace={state.appNameSpace}
