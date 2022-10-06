@@ -32,19 +32,25 @@ runs:
   using: "composite"
   steps:
 
+    - uses: ./.github/actions/kurl-addon-kots-generate
+      id: addon-generate
+      with:
+        addon_version: ${{ inputs.addon_version }}
+        s3_prefix: ${{ inputs.s3_prefix }}
+        kotsadm_binary_override: ${{ inputs.kotsadm_binary_override }}
+
     - uses: ./.github/actions/kurl-addon-kots-test
       id: addon-test
       with:
-        addon_version: "${{ inputs.addon_version }}"
-        s3_prefix: "${{ inputs.s3_prefix }}"
-        priority: "${{ inputs.priority }}"
-        testgrid_api_token: "${{ inputs.testgrid_api_token }}"
-        kotsadm_binary_override: "${{ inputs.kotsadm_binary_override }}"
+        addon_version: ${{ inputs.addon_version }}
+        addon_package_url: ${{ steps.addon-generate.outputs.addon_package_url }}
+        priority: ${{ inputs.priority }}
+        testgrid_api_token: ${{ inputs.testgrid_api_token }}
 
     - uses: ./.github/actions/kurl-addon-kots-publisher
       with:
         ADDON_VERSION: ${{ inputs.addon_version }}
-        ADDON_PACKAGE_URL: ${{ steps.addon-test.outputs.addon_package_url }}
+        ADDON_PACKAGE_URL: ${{ steps.addon-generate.outputs.addon_package_url }}
         GITHUB_TOKEN: ${{ github.token }}
 
     - run: aws s3 cp versions.json s3://kots-kurl-addons-production-1658439274
