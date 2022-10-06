@@ -16,7 +16,7 @@ import Dashboard from "./Dashboard";
 import DownstreamTree from "../../components/tree/KotsApplicationTree";
 import AppVersionHistory from "./AppVersionHistory";
 import { isAwaitingResults, Utilities } from "../../utilities/utilities";
-import { Repeater } from "../../utilities/repeater";
+// import { Repeater } from "../../utilities/repeater";
 import PreflightResultPage from "../PreflightResultPage";
 import AppConfig from "../../features/AppConfig/components/AppConfig";
 import AppLicense from "./AppLicense";
@@ -43,16 +43,16 @@ type Props = {
   onActiveInitSession: (session: string) => void;
   ping: () => void;
   refetchAppMetadata: () => void;
-  rootDidInitialAppFetch: boolean;
+  //rootDidInitialAppFetch: boolean;
   snapshotInProgressApps: string[];
 };
 
 type State = {
-  checkForFirstAppJob: Repeater;
+  // checkForFirstAppJob: Repeater;
   clusterParentSlug: string;
   displayErrorModal: boolean;
   displayRequiredKotsUpdateModal: boolean;
-  getAppJob: Repeater;
+  // getAppJob: Repeater;
   gettingAppErrMsg: string;
   isBundleUploading: boolean;
   isVeleroInstalled: boolean;
@@ -72,11 +72,11 @@ function AppDetailPage(props: Props) {
       ...newState,
     }),
     {
-      checkForFirstAppJob: new Repeater(),
+      //     checkForFirstAppJob: new Repeater(),
       clusterParentSlug: "",
       displayErrorModal: false,
       displayRequiredKotsUpdateModal: false,
-      getAppJob: new Repeater(),
+      // getAppJob: new Repeater(),
       gettingAppErrMsg: "",
       isBundleUploading: false,
       isVeleroInstalled: false,
@@ -93,24 +93,55 @@ function AppDetailPage(props: Props) {
   const history = useHistory();
   const params = useParams<KotsParams>();
   const { selectedApp } = useSelectedApp();
+  const [appsRefetchInterval, setAppsRefetchInterval] = React.useState<
+    number | false
+  >(false);
   const {
     data: appsData,
     error: appsError,
     isError: appsIsError,
     isLoading: appsIsLoading,
     refetch: refetchApps,
-  } = useApps();
+  } = useApps({ refetchInterval: appsRefetchInterval });
 
   const { apps: appsList } = appsData || {};
 
+  /**
+   *  Runs on mount and on update. Also handles redirect logic
+   *  if no apps are found, or the first app is found.
+   */
+  const redirectToFirstAppOrInstall = () => {
+    // const { rootDidInitialAppFetch } = props;
+    // if (/*!rootDidInitialAppFetch ||*/ appsIsLoading) {
+    //   return;
+    // }
+    // state.checkForFirstAppJob?.stop?.();
+
+
+    // navigate to first app if available
+    if (appsList && appsList?.length > 0) {
+      history.replace(`/app/${appsList[0].slug}`);
+    } else if (props.isHelmManaged) {
+      history.replace("/install-with-helm");
+    } else {
+      history.replace("/upload-license");
+    }
+  };
+
   // loading state stuff that was in the old getApp() implementation
   useEffect(() => {
+    console.log('useEffect applist')
     if (appsIsLoading) {
       setState({
         loadingApp: true,
       });
     } else {
       if (!appsIsError) {
+        if (appsList?.length === 0 || !params.slug) {
+          console.log('redirect called')
+          redirectToFirstAppOrInstall();
+          return;
+        }
         setState({
           loadingApp: false,
           gettingAppErrMsg: "",
@@ -261,28 +292,19 @@ function AppDetailPage(props: Props) {
     }
   };
 
-  /**
-   *  Runs on mount and on update. Also handles redirect logic
-   *  if no apps are found, or the first app is found.
-   */
-  const checkForFirstApp = async () => {
-    const { rootDidInitialAppFetch } = props;
-    if (!rootDidInitialAppFetch || appsIsLoading) {
-      return;
-    }
-    state.checkForFirstAppJob?.stop?.();
-
-    if (selectedApp) {
-      history.replace(`/app/${selectedApp.slug}`);
-    } else if (props.isHelmManaged) {
-      history.replace("/install-with-helm");
-    } else {
-      history.replace("/upload-license");
-    }
-  };
-
   // Enforce initial app configuration (if exists)
   useEffect(() => {
+    console.log('useeffect selected app')
+    // Handle updating the theme state when switching apps.
+    if (selectedApp?.iconUri) {
+      const { navbarLogo, ...rest } = theme.getThemeState();
+      if (navbarLogo === null || navbarLogo !== selectedApp.iconUri) {
+        theme.setThemeState({
+          ...rest,
+          navbarLogo: selectedApp.iconUri,
+        });
+      }
+    }
     // Refetch app info when switching between apps
     if (selectedApp && !appsIsLoading && params.slug !== selectedApp.slug) {
       refetchApps();
@@ -293,7 +315,7 @@ function AppDetailPage(props: Props) {
     // Handle updating the theme state when switching apps.
     // Used for a fresh reload
     if (history.location.pathname === "/apps") {
-      checkForFirstApp();
+      // checkForFirstApp();
       // updates state but does not cause infinite loop because app navigates away from /apps
       return;
     }
@@ -313,34 +335,23 @@ function AppDetailPage(props: Props) {
   }, [selectedApp]);
 
   useEffect(() => {
+    console.log('use effect history')
+    refetchApps();
     if (history.location.pathname === "/apps") {
-      state.checkForFirstAppJob.start(checkForFirstApp, 2000);
+      // state.checkForFirstAppJob.start(checkForFirstApp, 2000);
       return;
     }
     // getApp();
-    refetchApps();
     checkIsVeleroInstalled();
     return () => {
       theme.clearThemeState();
-      state.getAppJob.stop();
-      state.checkForFirstAppJob?.stop?.();
+      // state.getAppJob.stop();
+      setAppsRefetchInterval(false);
+      //  state.checkForFirstAppJob?.stop?.();
     };
   }, [history.location.pathname]);
 
-  // Handle updating the theme state when switching apps.
-  useEffect(() => {
-    if (selectedApp?.iconUri) {
-      const { navbarLogo, ...rest } = theme.getThemeState();
-      if (navbarLogo === null || navbarLogo !== selectedApp.iconUri) {
-        theme.setThemeState({
-          ...rest,
-          navbarLogo: selectedApp.iconUri,
-        });
-      }
-    }
-  }, [selectedApp]);
-
-  const { rootDidInitialAppFetch, appName } = props;
+  const { /*rootDidInitialAppFetch*/ appName } = props;
 
   const {
     displayRequiredKotsUpdateModal,
@@ -356,7 +367,11 @@ function AppDetailPage(props: Props) {
     </div>
   );
 
-  if (!rootDidInitialAppFetch) {
+  // if (!rootDidInitialAppFetch) {
+  //   return centeredLoader;
+  // }
+
+  if (appsIsLoading) {
     return centeredLoader;
   }
 
@@ -366,9 +381,13 @@ function AppDetailPage(props: Props) {
     downstream?.currentVersion &&
     isAwaitingResults([downstream.currentVersion])
   ) {
-    state.getAppJob.start(refetchApps, 2000);
+    // state.getAppJob.start(refetchApps, 2000);
+    setAppsRefetchInterval(2000);
   } else {
-    state.getAppJob.stop();
+    if (appsRefetchInterval) {
+      setAppsRefetchInterval(false);
+    }
+    // state.getAppJob.stop();
   }
 
   return (

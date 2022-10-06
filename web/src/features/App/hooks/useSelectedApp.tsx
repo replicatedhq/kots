@@ -8,20 +8,16 @@ import { KotsParams } from "@types";
 
 function useSelectedApp(): { selectedApp: App | null } {
   let { slug } = useParams<KotsParams>();
-  let { data, isFetched } = useApps();
+  let { data } = useApps();
 
   const { apps = [] } = data || {};
 
-  const firstApp = apps && apps[0];
-
   const [selectedApp, setSelectedApp] = useState<App | null>(
-    apps?.find((app: App) => app.slug === slug) || firstApp || null
+    apps?.find((app: App) => app.slug === slug) || null
   );
 
   useEffect(() => {
-    if (apps && isFetched) {
-      setSelectedApp(apps.find((app: App) => app.slug === slug) || null);
-    }
+    setSelectedApp(apps?.find((app: App) => app.slug === slug) || null);
   }, [apps, slug]);
 
   return { selectedApp };
