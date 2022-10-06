@@ -68,7 +68,7 @@ type State = {
   airgapUpdateError: string;
   airgapUploader: AirgapUploader | null;
   airgapUploadError: string | null;
-  appLicense: AppLicense | {};
+  appLicense: AppLicense | null;
   appName: string;
   checkingForUpdateError: boolean;
   checkingForUpdates: boolean;
@@ -111,7 +111,7 @@ class Dashboard extends Component<Props, State> {
       airgapUploader: null,
       airgapUpdateError: "",
       airgapUploadError: null,
-      appLicense: {},
+      appLicense: null,
       appName: "",
       checkingForUpdateError: false,
       checkingForUpdates: false,
@@ -189,7 +189,7 @@ class Dashboard extends Component<Props, State> {
         }
 
         if (body === null) {
-          this.setState({ appLicense: {}, gettingAppLicenseErrMsg: "" });
+          this.setState({ appLicense: null, gettingAppLicenseErrMsg: "" });
         } else if (body.success) {
           this.setState({
             appLicense: body.license,
@@ -197,7 +197,7 @@ class Dashboard extends Component<Props, State> {
           });
         } else if (body.error) {
           this.setState({
-            appLicense: {},
+            appLicense: null,
             gettingAppLicenseErrMsg: body.error,
           });
         }
