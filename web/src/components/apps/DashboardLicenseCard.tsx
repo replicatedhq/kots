@@ -17,11 +17,7 @@ import "@src/scss/components/apps/AppLicense.scss";
 import { Link } from "react-router-dom";
 import LicenseFields from "./LicenseFields";
 import Icon from "../Icon";
-import {
-  App,
-  LicenseFile,
-  AppLicense,
-} from "@src/types/index";
+import { App, LicenseFile, AppLicense } from "@src/types/index";
 
 type Props = {
   app: App;
