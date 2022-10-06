@@ -230,7 +230,7 @@ jobs:
             export TF_VAR_kots_version_initial="${NEXT_TAG:1}"
           fi
           export TF_VAR_kots_addon_package_url="${{ github.event.inputs.addon_package_url || inputs.addon_package_url }}"
-          export TF_VAR_testim_branch="master"
+          export TF_VAR_testim_branch="emosbaugh/sc-60074/kots-regression-test-upgrades-should-test"
           ./${{ matrix.test.terraform_script }} apply
       - name: Wait for instance to be ready
         working-directory: automation/cluster
