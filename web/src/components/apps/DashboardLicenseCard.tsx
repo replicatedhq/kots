@@ -15,20 +15,78 @@ import "@src/scss/components/apps/AppLicense.scss";
 import { Link } from "react-router-dom";
 import LicenseFields from "./LicenseFields";
 import Icon from "../Icon";
+import {
+  App,
+  Version,
+  Downstream,
+  LicenseFile,
+  License,
+} from "@src/types/index";
+import { AirgapUploader } from "@src/utilities/airgapUploader";
 
-export default class DashboardLicenseCard extends React.Component {
-  state = {
-    syncingLicense: false,
-    message: null,
-    messageType: "",
-    entitlementsToShow: [],
-    isViewingLicenseEntitlements: false,
-  };
+type Props = {
+  airgapUploadError: boolean;
+  airgapUpLoader: AirgapUploader;
+  app: App;
+  appLicense: License | null;
+  checkingForUpdateError: boolean;
+  checkingForUpdates: boolean;
+  checkingForUpdateText: string;
+  currentVersion: Version | null;
+  downloadCallback: () => void;
+  downstream: Downstream | null;
+  getingAppLicenseErrMsg: string;
+  isBundleUploading: boolean;
+  isHelmManaged: boolean;
+  makeCurrentVersion: (version: Version) => void;
+  noUpdatesAvalable: boolean;
+  onCheckForUpdates: () => void;
+  onDropBundle: (acceptedFiles: File[]) => void;
+  onProgressError: (error: string) => void;
+  redeployVersion: (version: Version) => void;
+  refetchData: () => void;
+  showAutomaticUpdatesModal: () => void;
+  syncCallback: () => void;
+  uploadProgress: number;
+  uploadResuming: boolean;
+  uploadSize: number;
+  uploadingAirgapFile: boolean;
+  url: string;
+  viewAirgapUpdateError: () => void;
+  viewAirgapUploadError: () => void;
+};
 
-  syncLicense = (licenseData) => {
+type State = {
+  appLicense: License | null;
+  entitlementsToShow: string[];
+  isViewingLicenseEntitlements: boolean;
+  message: string;
+  messageType: string;
+  showNextStepModal: boolean;
+  syncingLicense: boolean;
+};
+
+export default class DashboardLicenseCard extends React.Component<
+  Props,
+  State
+> {
+  constructor(props: Props) {
+    super(props);
+    this.state = {
+      appLicense: null,
+      entitlementsToShow: [],
+      isViewingLicenseEntitlements: false,
+      message: "",
+      messageType: "",
+      showNextStepModal: false,
+      syncingLicense: false,
+    };
+  }
+
+  syncLicense = (licenseData: string) => {
     this.setState({
       syncingLicense: true,
-      message: null,
+      message: "",
       messageType: "info",
     });
 
@@ -91,15 +149,18 @@ export default class DashboardLicenseCard extends React.Component {
         this.setState({ syncingLicense: false });
         setTimeout(() => {
           this.setState({
-            message: null,
+            message: "",
             messageType: "",
           });
         }, 3000);
       });
   };
 
-  onDrop = async (files) => {
-    const content = await getFileContent(files[0]);
+  onDrop = async (files: LicenseFile[]) => {
+    // TODO: TextDecoder.decode() expects arg of BufferSource | undefined
+    // getFileContent returns string, ArrayBuffer, or null. Need to figure out
+    // eslint-disable-next-line
+    const content: any = await getFileContent(files[0]);
     const contentStr = new TextDecoder("utf-8").decode(content);
     const airgapLicense = await yaml.safeLoad(contentStr);
     const { appLicense } = this.state;
@@ -127,13 +188,13 @@ export default class DashboardLicenseCard extends React.Component {
     this.setState({ showNextStepModal: false });
   };
 
-  toggleShowDetails = (entitlement) => {
+  toggleShowDetails = (entitlement: string) => {
     this.setState({
       entitlementsToShow: [...this.state.entitlementsToShow, entitlement],
     });
   };
 
-  toggleHideDetails = (entitlement) => {
+  toggleHideDetails = (entitlement: string) => {
     let entitlementsToShow = [...this.state.entitlementsToShow];
     const index = this.state.entitlementsToShow?.indexOf(entitlement);
     entitlementsToShow.splice(index, 1);
@@ -264,16 +325,19 @@ export default class DashboardLicenseCard extends React.Component {
                           ? "stopwatch"
                           : appLicense?.licenseType === "prod"
                           ? "dollar-sign"
-                          : appLicense?.licenseType === "community" &&
-                            "user-outline"
+                          : appLicense?.licenseType === "community"
+                          ? "user-outline"
+                          : ""
                       }
                       size={12}
                       style={{ marginRight: "2px" }}
                       className={
-                        appLicense?.licenseType === "prod" && "success-color"
+                        appLicense?.licenseType === "prod"
+                          ? "success-color"
+                          : ""
                       }
                     />
-                    {appLicense?.licenseType !== "---"
+                    {appLicense !== null && appLicense?.licenseType !== "---"
                       ? `${Utilities.toTitleCase(
                           appLicense.licenseType
                         )} license`
@@ -319,7 +383,8 @@ export default class DashboardLicenseCard extends React.Component {
                     </span>
                   </span>
                 )}
-                {appLicense.entitlements.length > 0 &&
+                {appLicense !== null &&
+                appLicense.entitlements.length > 0 &&
                 appLicense.entitlements.length < 5 ? (
                   <div style={{ marginTop: "15px" }}>
                     <LicenseFields
@@ -330,6 +395,7 @@ export default class DashboardLicenseCard extends React.Component {
                     />
                   </div>
                 ) : (
+                  appLicense !== null &&
                   this.state.isViewingLicenseEntitlements && (
                     <LicenseFields
                       entitlements={appLicense?.entitlements}
