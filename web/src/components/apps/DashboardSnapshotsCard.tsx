@@ -6,6 +6,8 @@ import "../../scss/components/watches/DashboardCard.scss";
 import InlineDropdown from "../shared/InlineDropdown";
 import SnapshotDifferencesModal from "@src/components/modals/SnapshotDifferencesModal";
 import Icon from "../Icon";
+import { App, KotsParams } from "@types";
+import { RouteComponentProps } from "react-router-dom";
 
 const DESTINATIONS = [
   {
@@ -37,18 +39,77 @@ const DESTINATIONS = [
     label: "Host Path",
   },
 ];
-
-class DashboardSnapshotsCard extends React.Component {
-  state = {
-    snapshotSettings: null,
-    isLoadingSnapshotSettings: false,
-    snapshotSettingsErr: false,
-    snapshotSettingsErrMsg: "",
-    minimalRBACKotsadmNamespace: "",
-    locationStr: "",
+type SnapshotSettings = {
+  store: {
+    aws: {
+      region: string;
+      bucket: string;
+      accessKeyId: string;
+      secretAccessKey: string;
+    };
+    azure: { accountName: string; accountKey: string; container: string };
+    gcp: { bucket: string; projectId: string; serviceAccountKey: string };
+    other: {
+      endpoint: string;
+      bucket: string;
+      accessKeyId: string;
+      secretAccessKey: string;
+    };
+    internal: { bucket: string };
+    nfs: { server: string; path: string };
+    hostpath: { path: string };
+    bucket: string;
+    path: string;
+    fileSystem: string;
   };
+  fileSystemConfig: {nfs: {server: string; path: string}; hostPath: {path: string}};
+};
 
-  startASnapshot = (option) => {
+type Props = {
+  app: App;
+  isSnapshotAllowed: boolean;
+  ping: () => void;
+} & RouteComponentProps<KotsParams>;
+
+type State = {
+  determiningDestination: boolean;
+  isLoadingSnapshotSettings: boolean;
+  kotsadmRequiresVeleroAccess: boolean;
+  locationStr: string;
+  minimalRBACKotsadmNamespace: string;
+  readableName: string|undefined;
+  selectedDestination: { value: string; label: string } | undefined;
+  snapshotDifferencesModal: boolean;
+  snapshotSettings: SnapshotSettings | null;
+  snapshotSettingsErr: boolean;
+  snapshotSettingsErrMsg: string;
+  startingSnapshot: boolean;
+  startSnapshotErr: boolean;
+  startSnapshotErrorMsg: string;
+};
+
+class DashboardSnapshotsCard extends React.Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+    this.state = {
+      determiningDestination: false,
+      isLoadingSnapshotSettings: false,
+      kotsadmRequiresVeleroAccess: false,
+      locationStr: "",
+      minimalRBACKotsadmNamespace: "",
+      readableName: "",
+      selectedDestination: undefined,
+      snapshotDifferencesModal: false,
+      snapshotSettings: null,
+      snapshotSettingsErr: false,
+      snapshotSettingsErrMsg: "",
+      startingSnapshot: false,
+      startSnapshotErr: false,
+      startSnapshotErrorMsg: "",
+    };
+  }
+
+  startASnapshot = (option: string) => {
     const { app } = this.props;
     this.setState({
       startingSnapshot: true,
@@ -206,8 +267,8 @@ class DashboardSnapshotsCard extends React.Component {
           ? find(DESTINATIONS, ["value", "hostpath"])
           : find(DESTINATIONS, ["value", "nfs"]),
         locationStr: fileSystemConfig?.hostPath
-          ? fileSystemConfig?.hostPath
-          : fileSystemConfig?.nfs?.path,
+          ? fileSystemConfig?.hostPath.path
+          : fileSystemConfig?.nfs?.path 
       });
     }
 
@@ -225,7 +286,7 @@ class DashboardSnapshotsCard extends React.Component {
     }
   }
 
-  componentDidUpdate(lastProps, lastState) {
+  componentDidUpdate(lastProps: Props, lastState: { snapshotSettings: SnapshotSettings | null; }) {
     if (
       this.state.snapshotSettings !== lastState.snapshotSettings &&
       this.state.snapshotSettings
@@ -333,4 +394,5 @@ class DashboardSnapshotsCard extends React.Component {
   }
 }
 
-export default withRouter(DashboardSnapshotsCard);
+// eslint-disable-next-line
+export default withRouter(DashboardSnapshotsCard) as any;
