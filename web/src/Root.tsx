@@ -92,7 +92,7 @@ type State = {
   fetchingMetadata: boolean;
   initSessionId: string | null;
   isHelmManaged: boolean;
- //  rootDidInitialWatchFetch: boolean;
+  //  rootDidInitialWatchFetch: boolean;
   selectedAppName: string | null;
   snapshotInProgressApps: string[];
   themeState: ThemeState;
@@ -121,7 +121,7 @@ const Root = () => {
       initSessionId: Utilities.localStorageEnabled()
         ? localStorage.getItem(INIT_SESSION_ID_STORAGE_KEY)
         : "",
-   //   rootDidInitialWatchFetch: false,
+      //   rootDidInitialWatchFetch: false,
       selectedAppName: null,
       snapshotInProgressApps: [],
       themeState: {
