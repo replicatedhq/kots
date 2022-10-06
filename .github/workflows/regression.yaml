@@ -69,7 +69,7 @@ jobs:
           repository: replicatedhq/kots-regression-automation
           token: ${{ secrets.E2E_GH_PAT }}
           path: automation
-          ref: main
+          ref: emosbaugh/sc-60074/kots-regression-test-upgrades-should-test
       - name: Download go_api artifact
         uses: actions/download-artifact@v2
         with:
@@ -204,7 +204,7 @@ jobs:
           repository: replicatedhq/kots-regression-automation
           token: ${{ secrets.E2E_GH_PAT }}
           path: automation
-          ref: main
+          ref: emosbaugh/sc-60074/kots-regression-test-upgrades-should-test
       - name: Initialize terraform
         if: always()
         working-directory: automation/cluster
