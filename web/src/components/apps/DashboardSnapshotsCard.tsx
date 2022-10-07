@@ -62,7 +62,10 @@ type SnapshotSettings = {
     path: string;
     fileSystem: string;
   };
-  fileSystemConfig: {nfs: {server: string; path: string}; hostPath: {path: string}};
+  fileSystemConfig: {
+    nfs: { server: string; path: string };
+    hostPath: { path: string };
+  };
 };
 
 type Props = {
@@ -77,7 +80,7 @@ type State = {
   kotsadmRequiresVeleroAccess: boolean;
   locationStr: string;
   minimalRBACKotsadmNamespace: string;
-  readableName: string|undefined;
+  readableName: string | undefined;
   selectedDestination: { value: string; label: string } | undefined;
   snapshotDifferencesModal: boolean;
   snapshotSettings: SnapshotSettings | null;
@@ -268,7 +271,7 @@ class DashboardSnapshotsCard extends React.Component<Props, State> {
           : find(DESTINATIONS, ["value", "nfs"]),
         locationStr: fileSystemConfig?.hostPath
           ? fileSystemConfig?.hostPath.path
-          : fileSystemConfig?.nfs?.path 
+          : fileSystemConfig?.nfs?.path,
       });
     }
 
@@ -286,7 +289,10 @@ class DashboardSnapshotsCard extends React.Component<Props, State> {
     }
   }
 
-  componentDidUpdate(lastProps: Props, lastState: { snapshotSettings: SnapshotSettings | null; }) {
+  componentDidUpdate(
+    lastProps: Props,
+    lastState: { snapshotSettings: SnapshotSettings | null }
+  ) {
     if (
       this.state.snapshotSettings !== lastState.snapshotSettings &&
       this.state.snapshotSettings
