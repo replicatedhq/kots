@@ -95,7 +95,6 @@ type FetchOptions struct {
 	AppVersionLabel          string
 	LocalRegistry            LocalRegistry
 	ReportingInfo            *reportingtypes.ReportingInfo
-	IdentityPostgresConfig   *kotsv1beta1.IdentityPostgresConfig
 	SkipCompatibilityCheck   bool
 }
 

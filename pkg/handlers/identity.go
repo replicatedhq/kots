@@ -295,7 +295,7 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 
 	identityConfigFile := filepath.Join(archiveDir, "upstream", "userdata", "identityconfig.yaml")
 	if _, err := os.Stat(identityConfigFile); os.IsNotExist(err) {
-		f, err := kotsadmidentity.InitAppIdentityConfig(a.Slug, kotsv1beta1.Storage{})
+		f, err := kotsadmidentity.InitAppIdentityConfig(a.Slug)
 		if err != nil {
 			err = errors.Wrap(err, "failed to init identity config")
 			logger.Error(err)

@@ -194,11 +194,6 @@ func encryptConfigValues(configValues *kotsv1beta1.ConfigValues) ([]byte, error)
 
 func maybeEncryptIdentityConfig(identityConfig *kotsv1beta1.IdentityConfig) ([]byte, error) {
 	identityConfig.Spec.ClientSecret.EncryptValue()
-
-	if identityConfig.Spec.Storage.PostgresConfig != nil {
-		identityConfig.Spec.Storage.PostgresConfig.Password.EncryptValue()
-	}
-
 	identityConfig.Spec.DexConnectors.EncryptValue()
 
 	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)

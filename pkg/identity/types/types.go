@@ -2,7 +2,27 @@ package types
 
 import "fmt"
 
+func Namespace(prefix string) string {
+	return prefixName(prefix, "dex")
+}
+
+func ClusterRoleName(prefix string) string {
+	return prefixName(prefix, "dex")
+}
+
+func ServiceAccountName(prefix string) string {
+	return prefixName(prefix, "dex")
+}
+
+func ClusterRoleBindingName(prefix string) string {
+	return prefixName(prefix, "dex")
+}
+
 func DeploymentName(prefix string) string {
+	return prefixName(prefix, "dex")
+}
+
+func SecretName(prefix string) string {
 	return prefixName(prefix, "dex")
 }
 

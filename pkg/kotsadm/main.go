@@ -1102,6 +1102,22 @@ func ReadDeployOptionsFromCluster(namespace string, clientset *kubernetes.Client
 		return nil, errors.Wrap(err, "failed to get kotsadm config from configmap")
 	}
 
+	identityConfig, err := identity.GetConfig(context.TODO(), deployOptions.Namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get identity config")
+	}
+	if identityConfig != nil {
+		deployOptions.IdentityConfig = *identityConfig
+	}
+
+	ingressConfig, err := ingress.GetConfig(context.TODO(), deployOptions.Namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get ingress config")
+	}
+	if ingressConfig != nil {
+		deployOptions.IngressConfig = *ingressConfig
+	}
+
 	return &deployOptions, nil
 }
 

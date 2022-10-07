@@ -33,7 +33,6 @@ function kotsadm() {
     kotsadm_secret_authstring
     kotsadm_secret_password
     kotsadm_secret_postgres
-    kotsadm_secret_dex_postgres
     kotsadm_secret_s3           # this secret is only used for (re)configuring internal snapshots; will not be created if there is no object store 
     kotsadm_secret_session
     kotsadm_api_encryption_key
@@ -247,22 +246,6 @@ function kotsadm_secret_postgres() {
     kotsadm_scale_down
     kubernetes_scale_down default deployment kotsadm-postgres
     kubernetes_scale_down default deployment kotsadm-migrations
-}
-
-function kotsadm_secret_dex_postgres() {
-    local src="$DIR/addons/kotsadm/$KOTSADM_VERSION"
-    local dst="$DIR/kustomize/kotsadm"
-
-    local DEX_PGPASSWORD=$(kubernetes_secret_value default kotsadm-dex-postgres PGPASSWORD)
-
-    if [ -z "$DEX_PGPASSWORD" ]; then
-        DEX_PGPASSWORD=$(< /dev/urandom tr -dc A-Za-z0-9 | head -c32)
-    fi
-
-    render_yaml_file "$src/tmpl-secret-dex-postgres.yaml" > "$dst/secret-dex-postgres.yaml"
-    insert_resources "$dst/kustomization.yaml" secret-dex-postgres.yaml
-
-    kotsadm_scale_down
 }
 
 function kotsadm_secret_s3() {

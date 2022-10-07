@@ -69,7 +69,6 @@ type PullOptions struct {
 	HTTPSProxyEnvValue      string
 	NoProxyEnvValue         string
 	ReportingInfo           *reportingtypes.ReportingInfo
-	IdentityPostgresConfig  *kotsv1beta1.IdentityPostgresConfig
 	SkipCompatibilityCheck  bool
 }
 

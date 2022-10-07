@@ -8,9 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
-	identitydeploy "github.com/replicatedhq/kots/pkg/identity/deploy"
 	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"golang.org/x/crypto/bcrypt"
@@ -103,16 +101,6 @@ func ensureSecrets(deployOptions *types.DeployOptions, clientset *kubernetes.Cli
 
 	if err := ensurePostgresSecret(*deployOptions, clientset); err != nil {
 		return errors.Wrap(err, "failed to ensure postgres secret")
-	}
-
-	// this secret is used by one of kotsadm init containers to ensure dex db/user
-	postgresConfig := kotsv1beta1.IdentityPostgresConfig{
-		Host:     "kotsadm-postgres",
-		Database: "dex",
-		User:     "dex",
-	}
-	if err := identitydeploy.EnsurePostgresSecret(context.TODO(), clientset, deployOptions.Namespace, "kotsadm", postgresConfig, nil); err != nil {
-		return errors.Wrap(err, "failed to ensure postgres secret for identity")
 	}
 
 	if deployOptions.SharedPasswordBcrypt == "" {
