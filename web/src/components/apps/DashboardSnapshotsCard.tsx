@@ -292,7 +292,7 @@ class DashboardSnapshotsCard extends React.Component<Props, State> {
   }
 
   componentDidUpdate(
-    lastProps: Props,
+    _lastProps: Props,
     lastState: { snapshotSettings: SnapshotSettings | null }
   ) {
     if (
