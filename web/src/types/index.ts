@@ -27,7 +27,7 @@ export type App = {
 export type AppLicense = {
   assignee: string;
   channelName: string;
-  entitlements: string[];
+  entitlements: Entitlement[];
   expiresAt: string;
   id: string;
   isAirgapSupported: boolean;
@@ -175,3 +175,42 @@ export type VersionStatus =
   | "pending_download"
   | "pending_preflight"
   | "waiting";
+
+export type LicenseFile = {
+  preview: string;
+  lastModified: number;
+  lastModifiedDate: Date;
+  name: string;
+  size: number;
+  type: string;
+  webkitRelativePath: string;
+};
+
+export type License = {
+  assignee: string;
+  channelName: string;
+  entitlements: Entitlement[];
+  expiresAt: string;
+  id: string;
+  isAirgapSupported: boolean;
+  isGeoaxisSupported: boolean;
+  isGitOpsSupported: boolean;
+  isIdentityServiceSupported: boolean;
+  isSemverRequired: boolean;
+  isSnapshotSupported: boolean;
+  isSupportBundleUploadSupported: boolean;
+  lastSyncedAt: string;
+  licenseSequence: number;
+  licenseType: string;
+  changingLicense: boolean;
+  entitlementsToShow: string[];
+  isViewingLicenseEntitlements: boolean;
+  licenseChangeFile: LicenseFile | null;
+  licenseChangeMessage: string;
+  licenseChangeMessageType: string;
+  loading: boolean;
+  message: string;
+  messageType: string;
+  showLicenseChangeModal: boolean;
+  showNextStepModal: boolean;
+};
