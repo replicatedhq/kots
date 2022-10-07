@@ -71,7 +71,7 @@ type SnapshotSettings = {
 type Props = {
   app: App;
   isSnapshotAllowed: boolean;
-  ping: () => void;
+  ping: (clusterId?: string) => void;
 } & RouteComponentProps<KotsParams>;
 
 type State = {
@@ -149,9 +149,11 @@ class DashboardSnapshotsCard extends React.Component<Props, State> {
             startingSnapshot: false,
           });
           this.props.ping();
-          option === "full"
-            ? this.props.history.push("/snapshots")
-            : this.props.history.push(`/snapshots/partial/${app.slug}`);
+          if (option === "full") {
+            this.props.history.push("/snapshots");
+          } else {
+            this.props.history.push(`/snapshots/partial/${app.slug}`);
+          }
         } else {
           const body = await result.json();
           this.setState({
