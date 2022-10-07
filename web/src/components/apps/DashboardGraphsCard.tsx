@@ -20,16 +20,63 @@ import ConfigureGraphs from "../shared/ConfigureGraphs";
 import "../../scss/components/watches/DashboardCard.scss";
 import "@src/scss/components/apps/AppLicense.scss";
 import Icon from "../Icon";
+import { App } from "@types";
+
 dayjs.extend(localizedFormat);
 
-export default class DashboardGraphsCard extends React.Component {
-  state = {
-    showConfigureGraphs: false,
-    promValue: "",
-    savingPromValue: false,
-    savingPromError: "",
-    getAppDashboardJob: new Repeater(),
-  };
+type Series = {
+  data: any;
+  legendTemplate: any;
+  metric: {
+    name: string;
+    value: string;
+  }[];
+};
+
+type Chart = {
+  title: string | null | undefined;
+  tickTemplate: any;
+  tickFormat: any;
+  series: Series[];
+};
+
+type Props = {
+  app: App;
+  appSlug: string;
+  clusterId: string;
+  prometheusAddress: string;
+  isHelmManaged: boolean;
+  metrics: Chart[];
+};
+
+type State = {
+  activeChart: Chart | null;
+  crosshairValues: { x: number; y: number; pod: string }[];
+  dashboard: {
+    appStatus: string;
+    prometheusAddress: string;
+    metrics: Object;
+  } | null;
+  getAppDashboardJob: Repeater;
+  promValue: string;
+  savingPromError: string;
+  savingPromValue: boolean;
+  showConfigureGraphs: boolean;
+};
+export default class DashboardGraphsCard extends React.Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+    this.state = {
+      activeChart: null,
+      crosshairValues: [],
+      dashboard: null,
+      getAppDashboardJob: new Repeater(),
+      promValue: "",
+      savingPromError: "",
+      savingPromValue: false,
+      showConfigureGraphs: false,
+    };
+  }
 
   toggleConfigureGraphs = () => {
     const { showConfigureGraphs } = this.state;
@@ -39,7 +86,7 @@ export default class DashboardGraphsCard extends React.Component {
   };
 
   getAppDashboard = () => {
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       fetch(
         `${process.env.API_ENDPOINT}/app/${this.props.appSlug}/cluster/${this.props.clusterId}/dashboard`,
         {
@@ -114,16 +161,21 @@ export default class DashboardGraphsCard extends React.Component {
       });
   };
 
-  onPromValueChange = (e) => {
+  onPromValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
     this.setState({
       promValue: value,
     });
   };
 
-  getLegendItems = (chart) => {
+  getLegendItems = (chart: Chart) => {
     return chart.series.map((series) => {
-      const metrics = {};
+      const metrics: {
+        [name: string]: any;
+      } = {
+        name: "",
+        length: 0,
+      };
       series.metric.forEach((metric) => {
         metrics[metric.name] = metric.value;
       });
@@ -139,17 +191,17 @@ export default class DashboardGraphsCard extends React.Component {
     });
   };
 
-  getValue = (chart, value) => {
+  getValue = (chart: Chart, value: number) => {
     let yAxisTickFormat = null;
     if (chart.tickFormat) {
       const valueFormatter = getValueFormat(chart.tickFormat);
-      yAxisTickFormat = (v) =>
+      yAxisTickFormat = (v: string) =>
         `${Math.round(valueFormatter(v).text)} ${valueFormatter(v).suffix}`;
       return yAxisTickFormat(value);
     } else if (chart.tickTemplate) {
       try {
         const template = Handlebars.compile(chart.tickTemplate);
-        yAxisTickFormat = (v) => `${template({ values: v })}`;
+        yAxisTickFormat = (v: number) => `${template({ values: v })}`;
         return yAxisTickFormat(value);
       } catch (err) {
         console.error("Failed to compile y axis tick template", err);
@@ -159,22 +211,24 @@ export default class DashboardGraphsCard extends React.Component {
     }
   };
 
-  renderGraph = (chart) => {
+  renderGraph = (chart: Chart) => {
     const axisStyle = {
       title: { fontSize: "12px", fontWeight: 500, fill: "#4A4A4A" },
       ticks: { fontSize: "12px", fontWeight: 400, fill: "#4A4A4A" },
     };
     const legendItems = this.getLegendItems(chart);
     const series = chart.series.map((series, idx) => {
-      const data = series.data.map((valuePair) => {
-        return { x: valuePair.timestamp, y: valuePair.value };
-      });
+      const data = series.data.map(
+        (valuePair: { timestamp: any; value: any }) => {
+          return { x: valuePair.timestamp, y: valuePair.value };
+        }
+      );
 
       return (
         <LineSeries
           key={idx}
           data={data}
-          onNearestX={(value, { index }) =>
+          onNearestX={(_value, { index }) =>
             this.setState({
               crosshairValues: chart.series.map((s) => ({
                 x: s.data[index].timestamp,
@@ -325,6 +379,7 @@ export default class DashboardGraphsCard extends React.Component {
               savingPromError={savingPromError}
               onPromValueChange={this.onPromValueChange}
               placeholder={prometheusAddress}
+              toggleConfigureGraphs={{}}
             />
           </div>
         )}
