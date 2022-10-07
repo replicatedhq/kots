@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -740,15 +739,14 @@ func (h *Handler) GetAutomatedInstallStatus(w http.ResponseWriter, r *http.Reque
 }
 
 func helmReleaseToDownsreamVersion(installedRelease *helm.InstalledRelease) *downstreamtypes.DownstreamVersion {
-	now := time.Now()
 	return &downstreamtypes.DownstreamVersion{
 		VersionLabel:       installedRelease.Version,
 		Semver:             installedRelease.Semver,
 		UpdateCursor:       installedRelease.Version,
-		CreatedOn:          &now,                // TODO: implement
-		UpstreamReleasedAt: &now,                // TODO: implement
-		IsDeployable:       false,               // TODO: implement
-		NonDeployableCause: "already installed", // TODO: implement
+		CreatedOn:          &installedRelease.CreatedOn,
+		UpstreamReleasedAt: &installedRelease.CreatedOn, // TODO: implement
+		IsDeployable:       false,                       // TODO: implement
+		NonDeployableCause: "already installed",         // TODO: implement
 		ParentSequence:     int64(installedRelease.Revision),
 		Sequence:           int64(installedRelease.Revision),
 		Status:             storetypes.DownstreamVersionStatus(installedRelease.Status.String()),

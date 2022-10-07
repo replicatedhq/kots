@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/blang/semver"
 	"github.com/containers/image/v5/docker"
@@ -32,9 +33,10 @@ import (
 )
 
 type ChartUpdate struct {
-	Tag     string
-	Version semver.Version
-	Status  storetypes.DownstreamVersionStatus
+	Tag       string
+	Version   semver.Version
+	Status    storetypes.DownstreamVersionStatus
+	FetchedOn time.Time
 }
 
 type ChartUpdates []ChartUpdate
@@ -166,8 +168,9 @@ func CheckForUpdates(helmApp *apptypes.HelmApp, license *kotsv1beta1.License, cu
 		}
 
 		availableUpdates = append(availableUpdates, ChartUpdate{
-			Tag:     tag,
-			Version: v,
+			Tag:       tag,
+			Version:   v,
+			FetchedOn: time.Now(),
 		})
 	}
 

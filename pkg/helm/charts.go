@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"sync"
 	"text/template"
+	"time"
 
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
@@ -47,6 +48,7 @@ type InstalledRelease struct {
 	Version     string
 	Semver      *semver.Version
 	Status      helmrelease.Status
+	CreatedOn   time.Time
 }
 
 type InstalledReleases []InstalledRelease
@@ -185,6 +187,7 @@ func getChartVersionFromSecretData(secret *corev1.Secret) (*InstalledRelease, er
 		ReleaseName: secret.Labels["releaseName"],
 		Revision:    revision,
 		Status:      helmrelease.Status(secret.Labels["status"]),
+		CreatedOn:   secret.CreationTimestamp.Time,
 	}
 
 	if helmRelease.Chart != nil && helmRelease.Chart.Metadata != nil {
