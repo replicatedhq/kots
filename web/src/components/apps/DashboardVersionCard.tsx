@@ -230,7 +230,7 @@ class DashboardVersionCard extends React.Component<Props, State> {
             if (this.props.isHelmManaged) {
               return tab.startsWith("helm");
             }
-            return !tab.startsWith("helm");
+            return true;
           })
           .map((tab) => (
             <div
