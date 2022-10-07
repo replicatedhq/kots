@@ -9,6 +9,7 @@ import (
 	"github.com/dexidp/dex/server"
 	dexserver "github.com/dexidp/dex/server"
 	dexstorage "github.com/dexidp/dex/storage"
+	dexkubernetes "github.com/dexidp/dex/storage/kubernetes"
 	ghodssyaml "github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
@@ -43,11 +44,9 @@ func getDexConfig(ctx context.Context, issuerURL string, options Options) ([]byt
 	}
 
 	storage := dextypes.Storage{
-		Type: "postgres",
-		Config: dextypes.Postgres{
-			SSL: dextypes.SSL{
-				Mode: "disable", // TODO ssl
-			},
+		Type: "kubernetes",
+		Config: dexkubernetes.Config{
+			InCluster: true,
 		},
 	}
 	config := dextypes.Config{

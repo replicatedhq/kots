@@ -183,7 +183,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 
 	identityConfigFile := filepath.Join(archiveDir, "upstream", "userdata", "identityconfig.yaml")
 	if _, err := os.Stat(identityConfigFile); os.IsNotExist(err) {
-		file, err := identity.InitAppIdentityConfig(a.Slug, kotsv1beta1.Storage{})
+		file, err := identity.InitAppIdentityConfig(a.Slug)
 		if err != nil {
 			finalError = errors.Wrap(err, "failed to init identity config")
 			return

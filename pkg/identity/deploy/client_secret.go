@@ -15,16 +15,16 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func EnsureClientSecret(ctx context.Context, clientset kubernetes.Interface, namespace, namePrefix string, additionalLabels map[string]string) error {
-	secret := ClientSecretResource(namePrefix, "", additionalLabels)
+func ensureClientSecret(ctx context.Context, clientset kubernetes.Interface, options Options) error {
+	secret := ClientSecretResource(options.Namespace, options.NamePrefix, "", options.AdditionalLabels)
 
-	_, err := clientset.CoreV1().Secrets(namespace).Get(ctx, secret.Name, metav1.GetOptions{})
+	_, err := clientset.CoreV1().Secrets(options.Namespace).Get(ctx, secret.Name, metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing secret")
 		}
 
-		_, err = clientset.CoreV1().Secrets(namespace).Create(ctx, secret, metav1.CreateOptions{})
+		_, err = clientset.CoreV1().Secrets(options.Namespace).Create(ctx, secret, metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create secret")
 		}
@@ -37,10 +37,10 @@ func EnsureClientSecret(ctx context.Context, clientset kubernetes.Interface, nam
 	return nil
 }
 
-func RenderClientSecret(ctx context.Context, namePrefix, existingClientSecret string, additionalLabels map[string]string) ([]byte, error) {
+func renderClientSecret(ctx context.Context, namespace string, namePrefix, existingClientSecret string, additionalLabels map[string]string) ([]byte, error) {
 	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 
-	secret := ClientSecretResource(namePrefix, existingClientSecret, additionalLabels)
+	secret := ClientSecretResource(namespace, namePrefix, existingClientSecret, additionalLabels)
 	buf := bytes.NewBuffer(nil)
 	if err := s.Encode(secret, buf); err != nil {
 		return nil, errors.Wrap(err, "failed to encode secret")
@@ -57,7 +57,7 @@ func GetClientSecret(ctx context.Context, clientset kubernetes.Interface, namesp
 	return string(secret.Data["DEX_CLIENT_SECRET"]), nil
 }
 
-func ClientSecretResource(namePrefix, existingClientSecret string, additionalLabels map[string]string) *corev1.Secret {
+func ClientSecretResource(namespace string, namePrefix string, existingClientSecret string, additionalLabels map[string]string) *corev1.Secret {
 	clientSecret := existingClientSecret
 	if clientSecret == "" {
 		clientSecret = ksuid.New().String()
@@ -69,8 +69,9 @@ func ClientSecretResource(namePrefix, existingClientSecret string, additionalLab
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   prefixName(namePrefix, "dex-client"),
-			Labels: kotsadmtypes.GetKotsadmLabels(AdditionalLabels(namePrefix, additionalLabels)),
+			Name:      prefixName(namePrefix, "dex-client"),
+			Namespace: namespace,
+			Labels:    kotsadmtypes.GetKotsadmLabels(AdditionalLabels(namePrefix, additionalLabels)),
 		},
 		Data: map[string][]byte{
 			"DEX_CLIENT_SECRET": []byte(clientSecret),

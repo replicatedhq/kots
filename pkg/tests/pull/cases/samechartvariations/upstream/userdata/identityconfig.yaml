@@ -12,11 +12,4 @@ spec:
   enabled: false
   ingressConfig:
     enabled: false
-  storage:
-    postgresConfig:
-      database: default-kots-app-4-dex
-      host: kotsadm-postgres.default
-      password:
-        valueEncrypted: Wn7+eJ71hYdvXha0ujo2Zccd7SeS98f4sI1nvKqK6LG6ADXB8kZNBn4A6g==
-      user: default-kots-app-4-dex
 status: {}

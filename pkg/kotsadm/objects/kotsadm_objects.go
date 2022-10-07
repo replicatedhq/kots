@@ -1188,5 +1188,5 @@ func KotsadmService(namespace string, nodePort int32) *corev1.Service {
 }
 
 func KotsadmIngress(namespace string, ingressConfig kotsv1beta1.IngressResourceConfig) *networkingv1.Ingress {
-	return ingress.IngressFromConfig(ingressConfig, "kotsadm", "kotsadm", 3000, nil)
+	return ingress.IngressFromConfig(namespace, ingressConfig, "kotsadm", "kotsadm", 3000, nil)
 }

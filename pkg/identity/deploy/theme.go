@@ -12,19 +12,19 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func ensureDexThemeConfigMap(ctx context.Context, clientset kubernetes.Interface, namespace string, options Options) error {
+func ensureDexThemeConfigMap(ctx context.Context, clientset kubernetes.Interface, options Options) error {
 	configMap, err := dexThemeConfigMapResource(options)
 	if err != nil {
 		return err
 	}
 
-	existingConfigMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(ctx, configMap.Name, metav1.GetOptions{})
+	existingConfigMap, err := clientset.CoreV1().ConfigMaps(options.Namespace).Get(ctx, configMap.Name, metav1.GetOptions{})
 	if err != nil {
 		if !kuberneteserrors.IsNotFound(err) {
 			return errors.Wrap(err, "failed to get existing config map")
 		}
 
-		_, err = clientset.CoreV1().ConfigMaps(namespace).Create(ctx, configMap, metav1.CreateOptions{})
+		_, err = clientset.CoreV1().ConfigMaps(options.Namespace).Create(ctx, configMap, metav1.CreateOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to create config map")
 		}
@@ -34,7 +34,7 @@ func ensureDexThemeConfigMap(ctx context.Context, clientset kubernetes.Interface
 
 	existingConfigMap = updateDexThemeConfigMap(existingConfigMap, configMap)
 
-	_, err = clientset.CoreV1().ConfigMaps(namespace).Update(ctx, existingConfigMap, metav1.UpdateOptions{})
+	_, err = clientset.CoreV1().ConfigMaps(options.Namespace).Update(ctx, existingConfigMap, metav1.UpdateOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to update config map")
 	}
@@ -77,8 +77,9 @@ func dexThemeConfigMapResource(options Options) (*corev1.ConfigMap, error) {
 			Kind:       "ConfigMap",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   prefixName(options.NamePrefix, "dex-theme"),
-			Labels: kotsadmtypes.GetKotsadmLabels(AdditionalLabels(options.NamePrefix, options.AdditionalLabels)),
+			Name:      prefixName(options.NamePrefix, "dex-theme"),
+			Namespace: options.Namespace,
+			Labels:    kotsadmtypes.GetKotsadmLabels(AdditionalLabels(options.NamePrefix, options.AdditionalLabels)),
 		},
 		Data:       data,
 		BinaryData: binaryData,

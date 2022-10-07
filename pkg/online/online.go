@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	identity "github.com/replicatedhq/kots/pkg/kotsadmidentity"
@@ -130,7 +129,7 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 		configFile = tmpFile.Name()
 	}
 
-	identityConfigFile, err := identity.InitAppIdentityConfig(opts.PendingApp.Slug, kotsv1beta1.Storage{})
+	identityConfigFile, err := identity.InitAppIdentityConfig(opts.PendingApp.Slug)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to init identity config")
 	}
