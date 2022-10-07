@@ -17,7 +17,7 @@ import Loader from "../shared/Loader";
 // @ts-ignore
 import styled from "styled-components";
 
-import { App, Entitlement } from "@src/types";
+import { App, LicenseFile, License } from "@src/types";
 import "@src/scss/components/apps/AppLicense.scss";
 import LicenseFields from "./LicenseFields";
 import Icon from "../Icon";
@@ -26,45 +26,6 @@ type Props = {
   app: App;
   changeCallback: () => void;
   syncCallback: () => void;
-};
-
-type LicenseFile = {
-  preview: string;
-  lastModified: number;
-  lastModifiedDate: Date;
-  name: string;
-  size: number;
-  type: string;
-  webkitRelativePath: string;
-};
-
-type License = {
-  assignee: string;
-  channelName: string;
-  entitlements: Entitlement[];
-  expiresAt: string;
-  id: string;
-  isAirgapSupported: boolean;
-  isGeoaxisSupported: boolean;
-  isGitOpsSupported: boolean;
-  isIdentityServiceSupported: boolean;
-  isSemverRequired: boolean;
-  isSnapshotSupported: boolean;
-  isSupportBundleUploadSupported: boolean;
-  lastSyncedAt: string;
-  licenseSequence: number;
-  licenseType: string;
-  changingLicense: boolean;
-  entitlementsToShow: string[];
-  isViewingLicenseEntitlements: boolean;
-  licenseChangeFile: LicenseFile | null;
-  licenseChangeMessage: string;
-  licenseChangeMessageType: string;
-  loading: boolean;
-  message: string;
-  messageType: string;
-  showLicenseChangeModal: boolean;
-  showNextStepModal: boolean;
 };
 
 type State = {
