@@ -290,7 +290,7 @@ func checkForHelmAppUpdates(opts CheckForUpdatesOpts, finishedChan chan<- error)
 		if err := downloadHelmAppUpdates(opts, helmApp, license.Spec.LicenseID, updates); err != nil {
 			return nil, errors.Wrap(err, "failed to process updates")
 		}
-	} else {
+	} else if ucr.AvailableUpdates > 0 {
 		go func() {
 			defer close(finishedChan)
 			if err := downloadHelmAppUpdates(opts, helmApp, license.Spec.LicenseID, updates); err != nil {
@@ -408,7 +408,7 @@ func checkForKotsAppUpdates(opts CheckForUpdatesOpts, finishedChan chan<- error)
 		if err := downloadKotsAppUpdates(opts, a.ID, d.ClusterID, filteredUpdates, updates.UpdateCheckTime); err != nil {
 			return nil, errors.Wrap(err, "failed to download updates synchronously")
 		}
-	} else {
+	} else if ucr.AvailableUpdates > 0 {
 		go func() {
 			defer close(finishedChan)
 			err := downloadKotsAppUpdates(opts, a.ID, d.ClusterID, filteredUpdates, updates.UpdateCheckTime)
