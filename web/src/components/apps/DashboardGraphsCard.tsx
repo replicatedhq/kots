@@ -154,7 +154,7 @@ export default class DashboardGraphsCard extends React.Component<Props, State> {
   getLegendItems = (chart: Chart) => {
     return chart.series.map((series) => {
       const metrics: {
-        [name: string]: any;
+        [name: string]: string | number;
       } = {
         name: "",
         length: 0,
@@ -207,7 +207,7 @@ export default class DashboardGraphsCard extends React.Component<Props, State> {
     const legendItems = this.getLegendItems(chart);
     const series = chart.series.map((series, idx) => {
       const data = series.data.map(
-        (valuePair: { timestamp: any; value: any }) => {
+        (valuePair: { timestamp: number; value: number }) => {
           return { x: valuePair.timestamp, y: valuePair.value };
         }
       );

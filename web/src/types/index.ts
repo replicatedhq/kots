@@ -216,7 +216,7 @@ export type License = {
 };
 
 export type Series = {
-  data: any;
+  data: { timestamp: number; value: number }[];
   legendTemplate: any;
   metric: {
     name: string;
@@ -226,7 +226,7 @@ export type Series = {
 
 export type Chart = {
   title: string | null | undefined;
-  tickTemplate: any;
-  tickFormat: any;
+  tickTemplate: string;
+  tickFormat: string;
   series: Series[];
 };
