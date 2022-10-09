@@ -175,7 +175,6 @@ export default class DashboardGraphsCard extends React.Component<Props, State> {
   };
 
   getValue = (chart: Chart, value: number) => {
-    console.log(chart, value, "chart, value");
     let yAxisTickFormat = null;
     if (chart.tickFormat) {
       const valueFormatter = getValueFormat(chart.tickFormat);
@@ -205,8 +204,8 @@ export default class DashboardGraphsCard extends React.Component<Props, State> {
       ticks: { fontSize: "12px", fontWeight: 400, fill: "#4A4A4A" },
     };
     const legendItems = this.getLegendItems(chart);
-    const series = chart.series.map((series, idx) => {
-      const data = series.data.map(
+    const series = chart.series.map((s, idx) => {
+      const data = s.data.map(
         (valuePair: { timestamp: number; value: number }) => {
           return { x: valuePair.timestamp, y: valuePair.value };
         }

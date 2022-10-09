@@ -217,7 +217,7 @@ export type License = {
 
 export type Series = {
   data: { timestamp: number; value: number }[];
-  legendTemplate: any;
+  legendTemplate: string;
   metric: {
     name: string;
     value: string;
