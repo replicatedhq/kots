@@ -204,8 +204,8 @@ export default class DashboardGraphsCard extends React.Component<Props, State> {
       ticks: { fontSize: "12px", fontWeight: 400, fill: "#4A4A4A" },
     };
     const legendItems = this.getLegendItems(chart);
-    const series = chart.series.map((s, idx) => {
-      const data = s.data.map(
+    const series = chart.series.map((sr, idx) => {
+      const data = sr.data.map(
         (valuePair: { timestamp: number; value: number }) => {
           return { x: valuePair.timestamp, y: valuePair.value };
         }
