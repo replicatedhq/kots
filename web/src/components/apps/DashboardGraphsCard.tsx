@@ -216,7 +216,7 @@ export default class DashboardGraphsCard extends React.Component<Props, State> {
           key={idx}
           data={data}
           // TODO: Fix typing for onNearestX, not sure what the types are
-          // @ts-ignore
+          // eslint-disable-next-line
           onNearestX={(_value: any, { index }: any) =>
             this.setState({
               crosshairValues: chart.series.map((s) => ({
