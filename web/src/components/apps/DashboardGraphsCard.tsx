@@ -240,6 +240,7 @@ export default class DashboardGraphsCard extends React.Component<Props, State> {
           // Math.round expects number, but valueFormatter returns string
           // @ts-ignore
           valueFormatter(v).text
+          // @ts-ignore
         )} ${valueFormatter(v).suffix}`;
     } else if (chart.tickTemplate) {
       try {
