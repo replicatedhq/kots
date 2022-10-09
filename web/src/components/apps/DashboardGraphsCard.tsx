@@ -13,6 +13,7 @@ import {
   LineSeries,
   DiscreteColorLegend,
   Crosshair,
+  // @ts-ignore
 } from "react-vis";
 import { Utilities } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
@@ -178,12 +179,11 @@ export default class DashboardGraphsCard extends React.Component<Props, State> {
     let yAxisTickFormat = null;
     if (chart.tickFormat) {
       const valueFormatter = getValueFormat(chart.tickFormat);
-      // TODO: Fix valueFormatter typing
-      // Math.round expects number, but valueFormatter returns string
       yAxisTickFormat = (v: number) =>
-        `${Math.round(
-          valueFormatter(v as unknown as string).text as unknown as number
-        )} ${valueFormatter(v as unknown as string).suffix}`;
+        // TODO: fix typecheck
+        //  Math.round expects number, but valueFormatter returns string
+        // @ts-ignore
+        `${Math.round(valueFormatter(v).text)} ${valueFormatter(v).suffix}`;
       return yAxisTickFormat(value);
     } else if (chart.tickTemplate) {
       try {
@@ -217,7 +217,6 @@ export default class DashboardGraphsCard extends React.Component<Props, State> {
           data={data}
           // TODO: Fix typing for onNearestX, not sure what the types are
           // @ts-ignore
-          // eslint-disable-next-line
           onNearestX={(_value: any, { index }: any) =>
             this.setState({
               crosshairValues: chart.series.map((s) => ({
@@ -236,10 +235,11 @@ export default class DashboardGraphsCard extends React.Component<Props, State> {
     if (chart.tickFormat) {
       const valueFormatter = getValueFormat(chart.tickFormat);
       yAxisTickFormat = (v: string) =>
-        // TODO: Fix valueFormatter typing
-        // Math.round expects number, but valueFormatter returns string
         `${Math.round(
-          valueFormatter(v as unknown as string).text as unknown as number
+          // TODO: Fix valueFormatter typing
+          // Math.round expects number, but valueFormatter returns string
+          // @ts-ignore
+          valueFormatter(v).text
         )} ${valueFormatter(v).suffix}`;
     } else if (chart.tickTemplate) {
       try {
