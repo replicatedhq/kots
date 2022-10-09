@@ -20,30 +20,14 @@ import ConfigureGraphs from "../shared/ConfigureGraphs";
 import "../../scss/components/watches/DashboardCard.scss";
 import "@src/scss/components/apps/AppLicense.scss";
 import Icon from "../Icon";
-import { App } from "@types";
+import { Chart } from "@types";
 
 dayjs.extend(localizedFormat);
 
-type Series = {
-  data: any;
-  legendTemplate: any;
-  metric: {
-    name: string;
-    value: string;
-  }[];
-};
-
-type Chart = {
-  title: string | null | undefined;
-  tickTemplate: any;
-  tickFormat: any;
-  series: Series[];
-};
 
 type Props = {
-  app: App;
   appSlug: string;
-  clusterId: string;
+  clusterId: number | string;
   prometheusAddress: string;
   isHelmManaged: boolean;
   metrics: Chart[];
@@ -192,11 +176,14 @@ export default class DashboardGraphsCard extends React.Component<Props, State> {
   };
 
   getValue = (chart: Chart, value: number) => {
+    console.log(chart, value, 'chart, value');
     let yAxisTickFormat = null;
     if (chart.tickFormat) {
       const valueFormatter = getValueFormat(chart.tickFormat);
-      yAxisTickFormat = (v: string) =>
-        `${Math.round(valueFormatter(v).text)} ${valueFormatter(v).suffix}`;
+      // TODO: Fix valueFormatter typing
+      // Math.round expects number, but valueFormatter returns string
+      yAxisTickFormat = (v: number) =>
+        `${Math.round(valueFormatter(v as unknown as string).text as unknown as number)} ${valueFormatter(v as unknown as string).suffix}`;
       return yAxisTickFormat(value);
     } else if (chart.tickTemplate) {
       try {
@@ -228,7 +215,10 @@ export default class DashboardGraphsCard extends React.Component<Props, State> {
         <LineSeries
           key={idx}
           data={data}
-          onNearestX={(_value, { index }) =>
+          // TODO: Fix typing for onNearestX, not sure what the types are 
+          // @ts-ignore
+          // eslint-disable-next-line
+          onNearestX={(_value: any, { index }: any) =>
             this.setState({
               crosshairValues: chart.series.map((s) => ({
                 x: s.data[index].timestamp,
@@ -245,12 +235,14 @@ export default class DashboardGraphsCard extends React.Component<Props, State> {
     let yAxisTickFormat = null;
     if (chart.tickFormat) {
       const valueFormatter = getValueFormat(chart.tickFormat);
-      yAxisTickFormat = (v) =>
-        `${Math.round(valueFormatter(v).text)} ${valueFormatter(v).suffix}`;
+      yAxisTickFormat = (v:string) =>
+            // TODO: Fix valueFormatter typing
+      // Math.round expects number, but valueFormatter returns string
+        `${Math.round(valueFormatter(v as unknown as string).text as unknown as number)} ${valueFormatter(v).suffix}`;
     } else if (chart.tickTemplate) {
       try {
         const template = Handlebars.compile(chart.tickTemplate);
-        yAxisTickFormat = (v) => `${template({ values: v })}`;
+        yAxisTickFormat = (v:number) => `${template({ values: v })}`;
       } catch (err) {
         console.error("Failed to compile y axis tick template", err);
       }
@@ -270,7 +262,7 @@ export default class DashboardGraphsCard extends React.Component<Props, State> {
           <VerticalGridLines />
           <HorizontalGridLines />
           <XAxis
-            tickFormat={(v) => `${dayjs.unix(v).format("H:mm")}`}
+            tickFormat={(v:number) => `${dayjs.unix(v).format("H:mm")}`}
             style={axisStyle}
           />
           <YAxis width={60} tickFormat={yAxisTickFormat} style={axisStyle} />
