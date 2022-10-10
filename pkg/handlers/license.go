@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -737,6 +738,10 @@ func licenseResponseFromLicense(license *kotsv1beta1.License, app *apptypes.App)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get license entitlements")
 	}
+
+	sort.Slice(entitlements, func(i, j int) bool {
+		return entitlements[i].Title < entitlements[j].Title
+	})
 
 	response := LicenseResponse{
 		ID:                             license.Spec.LicenseID,
