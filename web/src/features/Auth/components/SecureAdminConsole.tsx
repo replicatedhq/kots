@@ -10,7 +10,7 @@ import { RouteComponentProps } from "react-router-dom";
 type Props = {
   appName: string | null;
   fetchingMetadata: boolean;
-  onLoginSuccess: () => Promise<App[]>;
+  onLoginSuccess: () => void;
   pendingApp: () => Promise<App>;
   checkIsHelmManaged: () => Promise<boolean>;
   logo: string | null;

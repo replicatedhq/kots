@@ -306,6 +306,9 @@ const Root = () => {
   };
 
   const ping = async (tries = 0) => {
+    if (!Utilities.isLoggedIn()) {
+      return;
+    }
     let apps = state.appsList;
     const appSlugs = apps?.map((a) => a.slug);
     const url = `${process.env.API_ENDPOINT}/ping?slugs=${appSlugs}`;
@@ -345,11 +348,12 @@ const Root = () => {
   };
 
   const onRootMounted = () => {
-    fetchKotsAppMetadata();
-    ping();
-    checkIsHelmManaged();
+    debugger;
 
     if (Utilities.isLoggedIn()) {
+      fetchKotsAppMetadata();
+      ping();
+      checkIsHelmManaged();
       getAppsList().then((appsList) => {
         if (appsList.length > 0 && window.location.pathname === "/apps") {
           const { slug } = appsList[0];
@@ -513,7 +517,7 @@ const Root = () => {
                     logo={state.appLogo}
                     appName={state.selectedAppName}
                     pendingApp={getPendingApp}
-                    onLoginSuccess={getAppsList}
+                    onLoginSuccess={onRootMounted}
                     fetchingMetadata={state.fetchingMetadata}
                     checkIsHelmManaged={checkIsHelmManaged}
                   />
