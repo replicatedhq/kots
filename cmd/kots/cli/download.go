@@ -48,8 +48,13 @@ func DownloadCmd() *cobra.Command {
 				return errors.Errorf("output format %s not supported (allowed formats are: json)", output)
 			}
 
+			namespace, err := getNamespaceOrDefault(v.GetString("namespace"))
+			if err != nil {
+				return errors.Wrap(err, "failed to get namespace")
+			}
+
 			downloadOptions := download.DownloadOptions{
-				Namespace:             v.GetString("namespace"),
+				Namespace:             namespace,
 				Overwrite:             v.GetBool("overwrite"),
 				Silent:                output != "",
 				DecryptPasswordValues: v.GetBool("decrypt-password-values"),
@@ -57,7 +62,7 @@ func DownloadCmd() *cobra.Command {
 
 			var downloadOutput DownloadOutput
 			downloadPath := filepath.Join(ExpandDir(v.GetString("dest")), appSlug)
-			err := download.Download(appSlug, downloadPath, downloadOptions)
+			err = download.Download(appSlug, downloadPath, downloadOptions)
 			if err != nil && output == "" {
 				return errors.Cause(err)
 			} else if err != nil {
@@ -65,7 +70,7 @@ func DownloadCmd() *cobra.Command {
 			} else {
 				downloadOutput.Success = true
 				downloadOutput.DownloadLocation = downloadPath
-				downloadOutput.UploadCommand = fmt.Sprintf("kubectl kots upload --namespace %s --slug %s %s", v.GetString("namespace"), appSlug, downloadPath)
+				downloadOutput.UploadCommand = fmt.Sprintf("kubectl kots upload --namespace %s --slug %s %s", namespace, appSlug, downloadPath)
 			}
 
 			log := logger.NewCLILogger(cmd.OutOrStdout())
