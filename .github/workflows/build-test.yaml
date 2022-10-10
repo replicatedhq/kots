@@ -1434,6 +1434,18 @@ jobs:
             sleep 1
           done
 
+          # try get apps without namespace (using kubeconfig)
+          # validate that output is the same as above
+          mkdir -p /tmp/.kube
+          sudo cp /tmp/output/kubeconfig-v1.24.4-k3s1.yaml /tmp/.kube/config
+          sudo chmod -R 666 /tmp/.kube
+          export KUBECONFIG=/tmp/.kube/config
+          sudo kubectl config set-context --current --namespace=$APP_SLUG
+          if [ "$(./bin/kots get apps | awk 'NR>1{print $2}')" != "ready" ]; then
+              echo "kots get apps output is not the same as above"
+              exit -1
+          fi
+
           printf "App is installed successfully and is ready\n\n"
           ./bin/kots get apps --namespace $APP_SLUG
 

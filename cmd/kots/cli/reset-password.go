@@ -29,7 +29,10 @@ func ResetPasswordCmd() *cobra.Command {
 			log := logger.NewCLILogger(cmd.OutOrStdout())
 
 			// use namespace-as-arg if provided, else use namespace from -n/--namespace
-			namespace := v.GetString("namespace")
+			namespace, err := getNamespaceOrDefault(v.GetString("namespace"))
+			if err != nil {
+				return errors.Wrap(err, "failed to get namespace")
+			}
 			if len(args) == 1 {
 				namespace = args[0]
 			} else if len(args) > 1 {
