@@ -348,8 +348,6 @@ const Root = () => {
   };
 
   const onRootMounted = () => {
-    debugger;
-
     if (Utilities.isLoggedIn()) {
       fetchKotsAppMetadata();
       ping();
@@ -517,7 +515,7 @@ const Root = () => {
                     logo={state.appLogo}
                     appName={state.selectedAppName}
                     pendingApp={getPendingApp}
-                    onLoginSuccess={onRootMounted}
+                    onLoginSuccess={getAppsList}
                     fetchingMetadata={state.fetchingMetadata}
                     checkIsHelmManaged={checkIsHelmManaged}
                   />
