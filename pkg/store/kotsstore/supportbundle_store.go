@@ -61,7 +61,12 @@ func getSupportBundleFromCache(id string) *types.SupportBundle {
 	supportBundleSecretMtx.Lock()
 	defer supportBundleSecretMtx.Unlock()
 
-	return supportBundlesByID[id]
+	bundle := supportBundlesByID[id]
+	if bundle != nil {
+		bundle.Status = getSupportBundleStatus(bundle.Status, bundle.UpdatedAt)
+	}
+
+	return bundle
 }
 
 func getSupportBundleIDsFromCache(appID string) []string {
@@ -249,12 +254,11 @@ func (s *KOTSStore) ListSupportBundles(appID string) ([]*types.SupportBundle, er
 		}
 
 		for _, secret := range secrets.Items {
-			supportBundle := types.SupportBundle{}
-			if err := json.Unmarshal(secret.Data["bundle"], &supportBundle); err != nil {
+			supportBundle, err := s.getSupportBundleFromSecretData(&secret)
+			if err != nil {
 				return nil, errors.Wrap(err, "failed to unmarshal support bundle")
 			}
-
-			supportBundles = append(supportBundles, &supportBundle)
+			supportBundles = append(supportBundles, supportBundle)
 		}
 	}
 
@@ -279,7 +283,8 @@ func (s *KOTSStore) GetSupportBundle(id string) (*types.SupportBundle, error) {
 			return nil, errors.Wrap(err, "failed to get secret")
 		}
 
-		if err := json.Unmarshal(secret.Data["bundle"], supportBundle); err != nil {
+		supportBundle, err = s.getSupportBundleFromSecretData(secret)
+		if err != nil {
 			return nil, errors.Wrap(err, "failed to unmarshal")
 		}
 	}
@@ -301,9 +306,11 @@ func (s *KOTSStore) GetSupportBundle(id string) (*types.SupportBundle, error) {
 func (s *KOTSStore) CreateInProgressSupportBundle(supportBundle *types.SupportBundle) error {
 	id := supportBundle.ID
 	appID := supportBundle.AppID
+	now := time.Now()
 
 	supportBundle.Status = types.BUNDLE_RUNNING
-	supportBundle.CreatedAt = time.Now()
+	supportBundle.CreatedAt = now
+	supportBundle.UpdatedAt = &now
 
 	if util.IsHelmManaged() {
 		addSupportBundleToCache(supportBundle)
@@ -370,13 +377,15 @@ func (s *KOTSStore) CreateSupportBundle(id string, appID string, archivePath str
 		return nil, errors.Wrap(err, "failed to write archive")
 	}
 
+	now := time.Now()
 	supportBundle := types.SupportBundle{
 		ID:        id,
 		Slug:      id,
 		AppID:     appID,
 		Size:      float64(fi.Size()),
 		Status:    types.BUNDLE_UPLOADED,
-		CreatedAt: time.Now(),
+		CreatedAt: now,
+		UpdatedAt: &now,
 	}
 
 	if util.IsHelmManaged() {
@@ -712,4 +721,34 @@ func insightsFromResults(results []byte) ([]types.SupportBundleInsight, error) {
 	}
 
 	return insights, nil
+}
+
+func (s *KOTSStore) getSupportBundleFromSecretData(secret *corev1.Secret) (*types.SupportBundle, error) {
+	supportBundle := types.SupportBundle{}
+	if err := json.Unmarshal(secret.Data["bundle"], &supportBundle); err != nil {
+		return nil, errors.Wrap(err, "failed to unmarshal support bundle")
+	}
+	newStatus := getSupportBundleStatus(supportBundle.Status, supportBundle.UpdatedAt)
+	if supportBundle.Status == newStatus {
+		return &supportBundle, nil
+	}
+
+	supportBundle.Status = newStatus
+	go s.UpdateSupportBundle(&supportBundle) // must be async to avoid recursive locking
+
+	return &supportBundle, nil
+}
+
+func getSupportBundleStatus(lastStatus types.SupportBundleStatus, updatedAt *time.Time) types.SupportBundleStatus {
+	if updatedAt == nil || lastStatus != types.BUNDLE_RUNNING {
+		return lastStatus
+	}
+
+	// If bundle is "running", there should be a loop updating this timestamp.  If not, we call this "failed" after a timeout period
+	timeoutTime := time.Now().Add(-10 * time.Second)
+	if updatedAt.Before(timeoutTime) {
+		return types.BUNDLE_FAILED
+	}
+
+	return lastStatus
 }
