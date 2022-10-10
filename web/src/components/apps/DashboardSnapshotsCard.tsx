@@ -325,7 +325,11 @@ class DashboardSnapshotsCard extends React.Component<Props, State> {
               />
               Snapshot settings
             </Link>
-            <span className="icon clickable dashboard-card-snapshot-icon u-marginRight--5" />
+            <Icon
+              icon="schedule-update"
+              size={16}
+              className="clickable u-marginRight--5"
+            />
             <InlineDropdown
               defaultDisplayText="Start snapshot"
               dropdownOptions={[
