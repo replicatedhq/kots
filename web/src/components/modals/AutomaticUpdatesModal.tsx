@@ -83,7 +83,7 @@ type Schedule = {
 type Props = {
   appSlug: string;
   autoDeploy: string;
-  gitopsIsConnected: boolean;
+  gitopsIsConnected: boolean | undefined;
   isHelmManaged: boolean;
   isOpen: boolean;
   isSemverRequired: boolean;
