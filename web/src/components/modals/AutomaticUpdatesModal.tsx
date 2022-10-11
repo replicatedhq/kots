@@ -82,26 +82,28 @@ type Schedule = {
 
 type Props = {
   appSlug: string;
-  onAutomaticUpdatesConfigured: () => void;
-  isOpen: boolean;
-  onRequestClose: () => void;
-  isSemverRequired: boolean;
+  autoDeploy: string;
   gitopsIsConnected: boolean;
   isHelmManaged: boolean;
+  isOpen: boolean;
+  isSemverRequired: boolean;
+  onAutomaticUpdatesConfigured: () => void;
+  onRequestClose: () => void;
+  updateCheckerSpec: string;
 };
 
 type State = {
-  updateCheckerSpec: string;
-  selectedAutoDeploy: Schedule | undefined;
   configureAutomaticUpdatesErr: string;
+  selectedAutoDeploy: Schedule | undefined;
   selectedSchedule: Schedule | undefined;
+  updateCheckerSpec: string;
 };
 
 export default class AutomaticUpdatesModal extends React.Component<
   Props,
   State
 > {
-  constructor(props) {
+  constructor(props: Props) {
     super(props);
     let selectedSchedule = find(SCHEDULES, { value: props.updateCheckerSpec });
     if (!selectedSchedule) {
@@ -121,10 +123,10 @@ export default class AutomaticUpdatesModal extends React.Component<
     }
 
     this.state = {
-      updateCheckerSpec: props.updateCheckerSpec,
       configureAutomaticUpdatesErr: "",
-      selectedSchedule,
       selectedAutoDeploy,
+      selectedSchedule,
+      updateCheckerSpec: props.updateCheckerSpec,
     };
   }
 
@@ -338,9 +340,9 @@ export default class AutomaticUpdatesModal extends React.Component<
                 getOptionValue={(schedule) => schedule.label}
                 value={selectedSchedule}
                 onChange={() => this.handleScheduleChange}
-                isOptionSelected={(option) => {
-                  option.value === selectedSchedule;
-                }}
+                isOptionSelected={(option) =>
+                  option.value === selectedSchedule?.value
+                }
               />
               <div className="flex-column flex2 u-marginLeft--10">
                 <input
@@ -392,9 +394,9 @@ export default class AutomaticUpdatesModal extends React.Component<
                     getOptionValue={(option) => option.label}
                     value={selectedAutoDeploy}
                     onChange={() => this.handleAutoDeployOptionChange}
-                    isOptionSelected={(option) => {
-                      option.value === selectedAutoDeploy;
-                    }}
+                    isOptionSelected={(option) =>
+                      option.value === selectedAutoDeploy?.value
+                    }
                   />
                 </>
               ) : (
