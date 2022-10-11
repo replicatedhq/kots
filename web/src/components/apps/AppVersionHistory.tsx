@@ -263,16 +263,14 @@ class AppVersionHistory extends Component<Props, State> {
     ) {
       this.fetchKotsDownstreamHistory();
     }
-    if (
-      this.props.app?.downstream &&
-      this.props.app?.downstream !== lastProps.app?.downstream
-    ) {
-      if (this.props.app.downstream.pendingVersions.length > 0) {
+      if (this.props.app.downstream.pendingVersions.length > 0 &&
+        this.state.updatesAvailable === false) {
         this.setState({ updatesAvailable: true });
-      } else {
+      }
+      if (this.props.app.downstream.pendingVersions.length === 0 &&
+        this.state.updatesAvailable === true) {
         this.setState({ updatesAvailable: false });
       }
-    }
   };
 
   componentWillUnmount() {
