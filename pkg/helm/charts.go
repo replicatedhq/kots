@@ -392,6 +392,15 @@ func GetKotsKindsFromReplicatedSecret(secret *corev1.Secret) (kotsutil.KotsKinds
 		kotsKinds.ConfigValues = configValues
 	}
 
+	appData := secret.Data["application"]
+	if len(appData) != 0 {
+		app, err := kotsutil.LoadApplicationFromBytes(appData)
+		if err != nil {
+			return kotsKinds, errors.Wrap(err, "failed to load application from data")
+		}
+		kotsKinds.KotsApplication = *app
+	}
+
 	return kotsKinds, nil
 }
 
@@ -460,6 +469,7 @@ func GetKotsKindsForRevision(releaseName string, revision int64, namespace strin
 		}
 
 		kotsKinds.Config = k.Config
+		kotsKinds.Application = k.Application
 
 		break
 	}
