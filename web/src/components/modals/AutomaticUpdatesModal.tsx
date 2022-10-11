@@ -352,12 +352,12 @@ export default class AutomaticUpdatesModal extends React.Component<
                   value={updateCheckerSpec}
                   onChange={(e) => {
                     const schedule = find(SCHEDULES, { value: e.target.value });
-                    const selectedSchedule = schedule
+                    const selected = schedule
                       ? schedule
                       : find(SCHEDULES, { value: "custom" });
                     this.setState({
                       updateCheckerSpec: e.target.value,
-                      selectedSchedule,
+                      selectedSchedule: selected,
                     });
                   }}
                 />
