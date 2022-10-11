@@ -168,15 +168,14 @@ func GetConfigValuesMap(configValues *kotsv1beta1.ConfigValues) (map[string]inte
 }
 
 func HelmUpdateToDownsreamVersion(update ChartUpdate, sequence int64) *downstreamtypes.DownstreamVersion {
-	now := time.Now()
 	return &downstreamtypes.DownstreamVersion{
 		VersionLabel:       update.Tag,
 		Semver:             &update.Version,
 		UpdateCursor:       update.Tag,
 		Sequence:           sequence,
 		ParentSequence:     sequence,
-		CreatedOn:          &now,              // TODO: implement
-		UpstreamReleasedAt: &now,              // TODO: implement
+		CreatedOn:          &update.FetchedOn,
+		UpstreamReleasedAt: &update.FetchedOn, // TODO: implement
 		IsDeployable:       false,             // TODO: implement
 		NonDeployableCause: "not implemented", // TODO: implement
 		Source:             "Upstream Update",
