@@ -15,6 +15,7 @@ import Modal from "react-modal";
 import { Repeater } from "../../utilities/repeater";
 import { Utilities, isAwaitingResults } from "../../utilities/utilities";
 import { AirgapUploader } from "../../utilities/airgapUploader";
+import axios from "axios";
 
 import "../../scss/components/watches/Dashboard.scss";
 import "../../../node_modules/react-vis/dist/style";
@@ -105,9 +106,12 @@ type State = {
   uploadingAirgapFile: boolean;
   viewAirgapUpdateError: boolean;
   viewAirgapUploadError: boolean;
+  slowLoader: boolean;
 };
 
 class Dashboard extends Component<Props, State> {
+  timerId: React.RefObject<NodeJS.Timeout>;
+
   constructor(props: Props) {
     super(props);
 
@@ -157,7 +161,9 @@ class Dashboard extends Component<Props, State> {
       uploadSize: 0,
       viewAirgapUpdateError: false,
       viewAirgapUploadError: false,
+      slowLoader: false,
     };
+    this.timerId = React.createRef();
   }
 
   setWatchState = (app: App) => {
@@ -174,47 +180,99 @@ class Dashboard extends Component<Props, State> {
     const { app } = this.props;
     if (app !== lastProps.app && app) {
       this.setWatchState(app);
-      this.getAppLicense(app);
+      // this.getAppLicense(app);
     }
   }
 
+  // sleeper to delay the response, will remove after development
+  sleep(ms = 2000): Promise<void> {
+    console.log("Kindly remember to remove `sleep`");
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
   getAppLicense = async (app: App) => {
-    await fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/license`, {
-      method: "GET",
+
+    // on request we set a timer
+    axios.interceptors.request.use((x) => {
+      // not sure if this is enough to make sure that it only happens on /license endpoint
+      if (x.url?.endsWith("/license")) {
+        // set timeout to 500ms, change it to whatever you want
+        this.timerId.current = setTimeout(
+          () => this.setState({ slowLoader: true }),
+          500
+        );
+        return x;
+      }
+    });
+
+    axios.interceptors.response.use(async (x) => {
+      if (x.config.url?.endsWith("/license")) {
+        await this.sleep();
+        this.setState({ slowLoader: false });
+        clearTimeout(this.timerId.current);
+        return x;
+      }
+    });
+
+    const config = {
       headers: {
         Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
       },
-    })
-      .then(async (res) => {
-        const body = await res.json();
-        if (!res.ok) {
-          this.setState({ gettingAppLicenseErrMsg: body.error });
-          return;
-        }
-
-        if (body === null) {
-          this.setState({ appLicense: null, gettingAppLicenseErrMsg: "" });
-        } else if (body.success) {
-          this.setState({
-            appLicense: body.license,
-            gettingAppLicenseErrMsg: "",
-          });
-        } else if (body.error) {
-          this.setState({
-            appLicense: null,
-            gettingAppLicenseErrMsg: body.error,
-          });
-        }
-      })
-      .catch((err) => {
-        console.log(err);
-        this.setState({
-          gettingAppLicenseErrMsg: err
-            ? `Error while getting the license: ${err.message}`
-            : "Something went wrong, please try again.",
-        });
+    };
+    try {
+      const res = await axios.get(
+        `${process.env.API_ENDPOINT}/app/${app.slug}/license`,
+        config
+      );
+      console.log("response incoming");
+      this.setState({
+        appLicense: res.data.license,
+        gettingAppLicenseErrMsg: "",
       });
+    } catch (err) {
+      console.log(err);
+      this.setState({
+        gettingAppLicenseErrMsg: "Error getting app license",
+      });
+      return;
+    }
+    // await fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/license`, {
+    //   method: "GET",
+    //   headers: {
+    //     Authorization: Utilities.getToken(),
+    //     "Content-Type": "application/json",
+    //   },
+    // })
+    //   .then(async (res) => {
+    //     const body = await res.json();
+    //     if (!res.ok) {
+    //       this.setState({ gettingAppLicenseErrMsg: body.error });
+    //       return;
+    //     }
+
+    //     if (body === null) {
+    //       this.setState({ appLicense: null, gettingAppLicenseErrMsg: "" });
+    //     } else if (body.success) {
+    //       this.setState({
+    //         appLicense: body.license,
+    //         gettingAppLicenseErrMsg: "",
+    //       });
+    //     } else if (body.error) {
+    //       this.setState({
+    //         appLicense: null,
+    //         gettingAppLicenseErrMsg: body.error,
+    //       });
+    //     }
+    //   })
+    //   .catch((err) => {
+    //     console.log(err);
+    //     this.setState({
+    //       gettingAppLicenseErrMsg: err
+    //         ? `Error while getting the license: ${err.message}`
+    //         : "Something went wrong, please try again.",
+    //     });
+    //   });
   };
 
   componentDidMount() {
@@ -331,7 +389,7 @@ class Dashboard extends Component<Props, State> {
       method: "POST",
     })
       .then(async (res) => {
-        this.getAppLicense(this.props.app);
+        // this.getAppLicense(this.props.app);
         if (!res.ok) {
           const text = await res.text();
           this.setState({
@@ -459,7 +517,7 @@ class Dashboard extends Component<Props, State> {
               checkingForUpdateError: response.status === "failed",
             });
 
-            this.getAppLicense(this.props.app);
+            //   this.getAppLicense(this.props.app);
             if (this.props.updateCallback) {
               this.props.updateCallback();
             }
@@ -754,11 +812,24 @@ class Dashboard extends Component<Props, State> {
 
     return (
       <>
-        {!app && (
-          <div className="flex-column flex1 alignItems--center justifyContent--center">
-            <Loader size="60" />
-          </div>
-        )}
+        {!app ||
+          (this.state.slowLoader && (
+            <div
+              className="flex-column flex1 alignItems--center justifyContent--center"
+              style={{
+                position: "absolute",
+                width: "100%",
+                left: 0,
+                right: 0,
+                top: 0,
+                bottom: 0,
+                backgroundColor: "rgba(255,255,255,0.7",
+                zIndex: 100,
+              }}
+            >
+              <Loader size="60" />
+            </div>
+          ))}
         {app && (
           <div className="flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
             <KotsPageTitle pageName="Dashboard" showAppSlug />
