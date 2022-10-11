@@ -428,7 +428,9 @@ func downloadHelmAppUpdates(opts CheckForUpdatesOpts, helmApp *apptypes.HelmApp,
 		return errors.Wrapf(err, "failed to get current config values")
 	}
 
-	for _, update := range updates {
+	// Download in reverse order, from oldest to newest
+	for i := len(updates) - 1; i >= 0; i-- {
+		update := updates[i]
 		status := fmt.Sprintf("Downloading release %s...", update.Version)
 		if err := store.SetTaskStatus("update-download", status, "running"); err != nil {
 			logger.Info("failed to set task status", zap.String("error", err.Error()))
