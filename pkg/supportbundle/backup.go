@@ -1,6 +1,7 @@
 package supportbundle
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -42,33 +43,44 @@ func CreateBundleForBackup(appID string, backupName string, backupNamespace stri
 		}
 	}()
 
+	var RBACErrors []error
+
+	var collectors []troubleshootcollect.Collector
+
 	restConfig, err := k8sutil.GetClusterConfig()
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get cluster config")
 	}
 
-	var collectors troubleshootcollect.Collectors
+	k8sClientSet, err := k8sutil.GetClientset()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get kubernetes client")
+	}
 
 	selectors := []string{
 		"component=velero",
 		"app.kubernetes.io/name=velero",
 	}
 
+	ctx := context.TODO()
+
 	for _, selector := range selectors {
-		collectors = append(collectors, &troubleshootcollect.Collector{
-			Collect: &troubleshootv1beta2.Collect{
-				Logs: &troubleshootv1beta2.Logs{
-					CollectorMeta: troubleshootv1beta2.CollectorMeta{
-						CollectorName: "velero",
-					},
-					Name:      "velero",
-					Namespace: backupNamespace,
-					Selector:  []string{selector},
-				},
+		logsCollector := &troubleshootv1beta2.Logs{
+			CollectorMeta: troubleshootv1beta2.CollectorMeta{
+				CollectorName: "velero",
 			},
-			Redact:       true,
-			ClientConfig: restConfig,
+			Name:      "velero",
+			Namespace: backupNamespace,
+			Selector:  []string{selector},
+		}
+
+		collectors = append(collectors, &troubleshootcollect.CollectLogs{
+			Collector:    logsCollector,
 			Namespace:    backupNamespace,
+			ClientConfig: restConfig,
+			Client:       k8sClientSet,
+			CTX:          ctx,
+			RBACErrors:   RBACErrors,
 		})
 	}
 
@@ -91,43 +103,44 @@ func CreateBundleForBackup(appID string, backupName string, backupNamespace stri
 		return "", errors.Wrap(err, "failed to get global redactors")
 	}
 
+	allCollectedData := make(map[string][]byte)
+
 	// Run preflights collectors synchronously
 	for _, collector := range collectors {
-		if len(collector.RBACErrors) > 0 {
+		if collector.HasRBACErrors() {
 			// don't skip clusterResources collector due to RBAC issues
-			if collector.Collect.ClusterResources == nil {
-				progressChan <- fmt.Sprintf("skipping collector %s with insufficient RBAC permissions", collector.GetDisplayName())
+			if _, ok := collector.(*troubleshootcollect.CollectClusterResources); !ok {
+				progressChan <- fmt.Sprintf("skipping collector %s with insufficient RBAC permissions", collector.Title())
 				continue
 			}
 		}
 
-		progressChan <- collector.GetDisplayName()
+		progressChan <- collector.Title()
 
-		restConfig, err := k8sutil.GetClusterConfig()
+		progressChan <- fmt.Sprintf("[%s] Running collector...", collector.Title())
+		result, err := collector.Collect(progressChan)
 		if err != nil {
-			progressChan <- errors.Wrapf(err, "failed to get kubernetes rest config for collector %q", collector.GetDisplayName())
-			continue
-		}
-
-		k8sClientSet, err := k8sutil.GetClientset()
-		if err != nil {
-			progressChan <- errors.Wrapf(err, "failed to get kubernetes client for collector %q", collector.GetDisplayName())
-			continue
-		}
-
-		result, err := collector.RunCollectorSync(restConfig, k8sClientSet, redacts)
-		if err != nil {
-			progressChan <- errors.Wrapf(err, "failed to run collector %q", collector.GetDisplayName())
+			progressChan <- errors.Wrapf(err, "failed to run collector %q", collector.Title())
 			continue
 		}
 
 		if result != nil {
+			for k, v := range result {
+				allCollectedData[k] = v
+			}
+
 			err = saveCollectorOutput(result, bundlePath)
 			if err != nil {
-				progressChan <- errors.Wrapf(err, "failed to parse collector spec %q", collector.GetDisplayName())
+				progressChan <- errors.Wrapf(err, "failed to parse collector spec %q", collector.Title())
 				continue
 			}
 		}
+	}
+
+	// Redact result before creating archive
+	err = troubleshootcollect.RedactResult(bundlePath, allCollectedData, redacts)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to redact")
 	}
 
 	// create an archive of this bundle
