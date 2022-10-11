@@ -339,10 +339,9 @@ export default class AutomaticUpdatesModal extends React.Component<
                 isSearchable={false}
                 getOptionValue={(schedule) => schedule.label}
                 value={selectedSchedule}
-                onChange={() => this.handleScheduleChange}
-                isOptionSelected={(option) =>
-                  option.value === selectedSchedule?.value
-                }
+                // TODO: upgrade react-select and fix this
+                // @ts-ignore
+                onChange={this.handleScheduleChange}
               />
               <div className="flex-column flex2 u-marginLeft--10">
                 <input
@@ -393,10 +392,9 @@ export default class AutomaticUpdatesModal extends React.Component<
                     isSearchable={false}
                     getOptionValue={(option) => option.label}
                     value={selectedAutoDeploy}
-                    onChange={() => this.handleAutoDeployOptionChange}
-                    isOptionSelected={(option) =>
-                      option.value === selectedAutoDeploy?.value
-                    }
+                    // TODO: upgrade react-select and fix this
+                    // @ts-ignore
+                    onChange={this.handleAutoDeployOptionChange}
                   />
                 </>
               ) : (
