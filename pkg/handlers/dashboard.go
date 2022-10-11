@@ -35,30 +35,28 @@ func (h *Handler) GetAppDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	store := store.GetStore()
-
-	a, err := store.GetAppFromSlug(appSlug)
+	a, err := store.GetStore().GetAppFromSlug(appSlug)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
 	}
 
-	appStatus, err = store.GetAppStatus(a.ID)
+	appStatus, err = store.GetStore().GetAppStatus(a.ID)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
 	}
 
-	parentSequence, err := store.GetCurrentParentSequence(a.ID, clusterID)
+	parentSequence, err := store.GetStore().GetCurrentParentSequence(a.ID, clusterID)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
 		return
 	}
 
-	prometheusAddress, err := store.GetPrometheusAddress()
+	prometheusAddress, err := store.GetStore().GetPrometheusAddress()
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)
@@ -70,7 +68,7 @@ func (h *Handler) GetAppDashboard(w http.ResponseWriter, r *http.Request) {
 
 	metrics := []version.MetricChart{}
 	if prometheusAddress != "" {
-		graphs, err := version.GetGraphs(a, parentSequence, store)
+		graphs, err := version.GetGraphs(a, parentSequence, store.GetStore())
 		if err != nil {
 			logger.Error(errors.Wrapf(err, "failed to get graphs for app %s sequence %d. falling back to default graphs", a.Slug, parentSequence))
 		}

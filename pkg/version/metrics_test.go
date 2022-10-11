@@ -250,7 +250,7 @@ spec:
 			wantErr: false,
 		},
 		{
-			name: "has graphs with templated queries containing invalid templates - return those graphs with queries as-is",
+			name: "has graphs with templated queries containing invalid templates - return the default graphs",
 			app: &types.App{
 				ID:       "app-id",
 				Slug:     "app-slug",
@@ -279,13 +279,8 @@ spec:
 				mockStore.EXPECT().GetRegistryDetailsForApp(app.ID).Times(1).Return(registrytypes.RegistrySettings{}, nil)
 				return mockStore
 			},
-			want: []kotsv1beta1.MetricGraph{
-				{
-					Title: "test-graph",
-					Query: "{{repl NotARealTemplate}}",
-				},
-			},
-			wantErr: false,
+			want:    DefaultMetricGraphs,
+			wantErr: true,
 		},
 		{
 			name: "has graphs with templated title, legend, and axis format/template - return those graphs with these fields rendered",
@@ -400,7 +395,7 @@ spec:
 			wantErr: true,
 		},
 		{
-			name: "fails to create new builder - return default graphs and error",
+			name: "fails to render file because of an invalid field in kots kinds - return default graphs and error",
 			app: &types.App{
 				ID:       "app-id",
 				Slug:     "app-slug",

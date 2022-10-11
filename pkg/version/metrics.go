@@ -17,7 +17,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/store"
-	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
@@ -84,7 +83,7 @@ var (
 
 // GetGraphs returns the rendered graphs for the given app.
 // If there are no graphs or an error is encountered, the default set of graphs is returned.
-func GetGraphs(app *types.App, sequence int64, store store.Store) ([]kotsv1beta1.MetricGraph, error) {
+func GetGraphs(app *types.App, sequence int64, kotsStore store.Store) ([]kotsv1beta1.MetricGraph, error) {
 	graphs := DefaultMetricGraphs
 
 	archiveDir, err := ioutil.TempDir("", "kotsadm")
@@ -93,7 +92,7 @@ func GetGraphs(app *types.App, sequence int64, store store.Store) ([]kotsv1beta1
 	}
 	defer os.RemoveAll(archiveDir)
 
-	err = store.GetAppVersionArchive(app.ID, sequence, archiveDir)
+	err = kotsStore.GetAppVersionArchive(app.ID, sequence, archiveDir)
 	if err != nil {
 		return graphs, errors.Wrap(err, "failed to get app version archive")
 	}
@@ -103,18 +102,28 @@ func GetGraphs(app *types.App, sequence int64, store store.Store) ([]kotsv1beta1
 		return graphs, errors.Wrap(err, "failed to load kots kinds from path")
 	}
 
-	registrySettings, err := store.GetRegistryDetailsForApp(app.ID)
+	registrySettings, err := kotsStore.GetRegistryDetailsForApp(app.ID)
 	if err != nil {
 		return graphs, errors.Wrap(err, "failed to get registry settings for app")
 	}
 
-	builder, err := render.NewBuilder(kotsKinds, registrySettings, app.Slug, sequence, app.IsAirgap, util.PodNamespace)
+	templatedKotsApplication, err := kotsKinds.Marshal("kots.io", "v1beta1", "Application")
 	if err != nil {
-		return graphs, errors.Wrap(err, "failed to get template builder")
+		return graphs, errors.Wrap(err, "failed to marshal kots application")
 	}
 
-	if len(kotsKinds.KotsApplication.Spec.Graphs) > 0 {
-		graphs = renderGraphs(builder, kotsKinds.KotsApplication.Spec.Graphs)
+	renderedKotsApplication, err := render.RenderFile(kotsKinds, registrySettings, app.Slug, sequence, app.IsAirgap, util.PodNamespace, []byte(templatedKotsApplication))
+	if err != nil {
+		return graphs, errors.Wrap(err, "failed to render kots application")
+	}
+
+	kotsApplication, err := kotsutil.LoadKotsAppFromContents(renderedKotsApplication)
+	if err != nil {
+		return graphs, errors.Wrap(err, "failed to load kots application from contents")
+	}
+
+	if len(kotsApplication.Spec.Graphs) > 0 {
+		graphs = kotsApplication.Spec.Graphs
 	}
 
 	return graphs, nil
@@ -191,80 +200,6 @@ func GetMetricCharts(graphs []kotsv1beta1.MetricGraph, prometheusAddress string)
 	}
 
 	return charts
-}
-
-// Renders the string fields in the graph spec with the provided template builder
-func renderGraphs(builder *template.Builder, graphs []kotsv1beta1.MetricGraph) []kotsv1beta1.MetricGraph {
-	for i, graph := range graphs {
-		if graph.Title != "" {
-			renderedTitle, err := builder.String(graph.Title)
-			if err != nil {
-				logger.Error(errors.Wrap(err, "failed to render graph title"))
-			} else if renderedTitle != "" {
-				graphs[i].Title = renderedTitle
-			}
-		}
-
-		if graph.Query != "" {
-			renderedQuery, err := builder.String(graph.Query)
-			if err != nil {
-				logger.Error(errors.Wrap(err, "failed to render graph query"))
-			} else if renderedQuery != "" {
-				graphs[i].Query = renderedQuery
-			}
-		}
-
-		if len(graph.Queries) > 0 {
-			for j, query := range graph.Queries {
-				if query.Query != "" {
-					renderedQuery, err := builder.String(query.Query)
-					if err != nil {
-						logger.Error(errors.Wrap(err, "failed to render graph query"))
-					} else if renderedQuery != "" {
-						graphs[i].Queries[j].Query = renderedQuery
-					}
-				}
-
-				if query.Legend != "" {
-					renderedLegend, err := builder.String(query.Legend)
-					if err != nil {
-						logger.Error(errors.Wrap(err, "failed to render graph legend"))
-					} else if renderedLegend != "" {
-						graphs[i].Queries[j].Legend = renderedLegend
-					}
-				}
-			}
-		}
-
-		if graph.Legend != "" {
-			renderedLegend, err := builder.String(graph.Legend)
-			if err != nil {
-				logger.Error(errors.Wrap(err, "failed to render graph legend"))
-			} else if renderedLegend != "" {
-				graphs[i].Legend = renderedLegend
-			}
-		}
-
-		if graph.YAxisFormat != "" {
-			renderedYAxisFormat, err := builder.String(graph.YAxisFormat)
-			if err != nil {
-				logger.Error(errors.Wrap(err, "failed to render graph y axis format"))
-			} else if renderedYAxisFormat != "" {
-				graphs[i].YAxisFormat = renderedYAxisFormat
-			}
-		}
-
-		if graph.YAxisTemplate != "" {
-			renderedYAxisTemplate, err := builder.String(graph.YAxisTemplate)
-			if err != nil {
-				logger.Error(errors.Wrap(err, "failed to render graph y axis template"))
-			} else if renderedYAxisTemplate != "" {
-				graphs[i].YAxisTemplate = renderedYAxisTemplate
-			}
-		}
-	}
-
-	return graphs
 }
 
 func prometheusQueryRange(address string, query string, start uint, end uint, step uint) ([]SampleStream, error) {
