@@ -86,6 +86,8 @@ type KotsKinds struct {
 
 	Backup    *velerov1.Backup
 	Installer *kurlv1beta1.Installer
+
+	LintConfig *kotsv1beta1.LintConfig
 }
 
 func (k *KotsKinds) EncryptConfigValues() error {
@@ -518,6 +520,8 @@ func LoadKotsKindsFromPath(fromDir string) (*KotsKinds, error) {
 					kotsKinds.Installation = *decoded.(*kotsv1beta1.Installation)
 				case "kots.io/v1beta1, Kind=HelmChart":
 					kotsKinds.HelmCharts = append(kotsKinds.HelmCharts, decoded.(*kotsv1beta1.HelmChart))
+				case "kots.io/v1beta1, Kind=LintConfig":
+					kotsKinds.LintConfig = decoded.(*kotsv1beta1.LintConfig)
 				case "troubleshoot.sh/v1beta2, Kind=Collector":
 					kotsKinds.Collector = decoded.(*troubleshootv1beta2.Collector)
 				case "troubleshoot.sh/v1beta2, Kind=Analyzer":
