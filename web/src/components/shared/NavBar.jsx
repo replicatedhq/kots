@@ -113,10 +113,7 @@ export class NavBar extends PureComponent {
   };
 
   redirectToDashboard = () => {
-    const { /*refetchAppsList, */ history } = this.props;
-    // refetchAppsList().then(() => {
-    //   history.push("/");
-    // });
+    const { history } = this.props;
     history.push("/");
   };
 

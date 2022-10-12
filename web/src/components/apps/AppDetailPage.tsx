@@ -16,7 +16,6 @@ import Dashboard from "./Dashboard";
 import DownstreamTree from "../../components/tree/KotsApplicationTree";
 import AppVersionHistory from "./AppVersionHistory";
 import { isAwaitingResults, Utilities } from "../../utilities/utilities";
-// import { Repeater } from "../../utilities/repeater";
 import PreflightResultPage from "../PreflightResultPage";
 import AppConfig from "../../features/AppConfig/components/AppConfig";
 import AppLicense from "./AppLicense";
@@ -43,16 +42,13 @@ type Props = {
   onActiveInitSession: (session: string) => void;
   ping: () => void;
   refetchAppMetadata: () => void;
-  //rootDidInitialAppFetch: boolean;
   snapshotInProgressApps: string[];
 };
 
 type State = {
-  // checkForFirstAppJob: Repeater;
   clusterParentSlug: string;
   displayErrorModal: boolean;
   displayRequiredKotsUpdateModal: boolean;
-  // getAppJob: Repeater;
   gettingAppErrMsg: string;
   isBundleUploading: boolean;
   isVeleroInstalled: boolean;
@@ -72,11 +68,9 @@ function AppDetailPage(props: Props) {
       ...newState,
     }),
     {
-      //     checkForFirstAppJob: new Repeater(),
       clusterParentSlug: "",
       displayErrorModal: false,
       displayRequiredKotsUpdateModal: false,
-      // getAppJob: new Repeater(),
       gettingAppErrMsg: "",
       isBundleUploading: false,
       isVeleroInstalled: false,
@@ -111,12 +105,6 @@ function AppDetailPage(props: Props) {
    *  if no apps are found, or the first app is found.
    */
   const redirectToFirstAppOrInstall = () => {
-    // const { rootDidInitialAppFetch } = props;
-    // if (/*!rootDidInitialAppFetch ||*/ appsIsLoading) {
-    //   return;
-    // }
-    // state.checkForFirstAppJob?.stop?.();
-
     // navigate to first app if available
     if (appsList && appsList?.length > 0) {
       history.replace(`/app/${appsList[0].slug}`);
@@ -313,7 +301,6 @@ function AppDetailPage(props: Props) {
     // Handle updating the theme state when switching apps.
     // Used for a fresh reload
     if (history.location.pathname === "/apps") {
-      // checkForFirstApp();
       // updates state but does not cause infinite loop because app navigates away from /apps
       return;
     }
@@ -338,20 +325,17 @@ function AppDetailPage(props: Props) {
     console.log("pathname use effect called");
     refetchApps();
     if (history.location.pathname === "/apps") {
-      // state.checkForFirstAppJob.start(checkForFirstApp, 2000);
       return;
     }
     // getApp();
     checkIsVeleroInstalled();
     return () => {
       theme.clearThemeState();
-      // state.getAppJob.stop();
       setAppsRefetchInterval(false);
-      //  state.checkForFirstAppJob?.stop?.();
     };
   }, [history.location.pathname]);
 
-  const { /*rootDidInitialAppFetch*/ appName } = props;
+  const { appName } = props;
 
   const {
     displayRequiredKotsUpdateModal,
@@ -367,10 +351,6 @@ function AppDetailPage(props: Props) {
     </div>
   );
 
-  // if (!rootDidInitialAppFetch) {
-  //   return centeredLoader;
-  // }
-
   if (appsIsLoading) {
     return centeredLoader;
   }
@@ -381,7 +361,6 @@ function AppDetailPage(props: Props) {
     downstream?.currentVersion &&
     isAwaitingResults([downstream.currentVersion])
   ) {
-    // state.getAppJob.start(refetchApps, 2000);
     if (appsRefetchInterval === false) {
       setAppsRefetchInterval(2000);
     }
@@ -389,7 +368,6 @@ function AppDetailPage(props: Props) {
     if (appsRefetchInterval) {
       setAppsRefetchInterval(false);
     }
-    // state.getAppJob.stop();
   }
 
   return (
