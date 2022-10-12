@@ -103,7 +103,7 @@ func CreateBundleForBackup(appID string, backupName string, backupNamespace stri
 		return "", errors.Wrap(err, "failed to get global redactors")
 	}
 
-	allCollectedData := make(map[string][]byte)
+	result := make(map[string][]byte)
 
 	// Run preflights collectors synchronously
 	for _, collector := range collectors {
@@ -118,17 +118,13 @@ func CreateBundleForBackup(appID string, backupName string, backupNamespace stri
 		progressChan <- collector.Title()
 
 		progressChan <- fmt.Sprintf("[%s] Running collector...", collector.Title())
-		result, err := collector.Collect(progressChan)
+		result, err = collector.Collect(progressChan)
 		if err != nil {
 			progressChan <- errors.Wrapf(err, "failed to run collector %q", collector.Title())
 			continue
 		}
 
 		if result != nil {
-			for k, v := range result {
-				allCollectedData[k] = v
-			}
-
 			err = saveCollectorOutput(result, bundlePath)
 			if err != nil {
 				progressChan <- errors.Wrapf(err, "failed to parse collector spec %q", collector.Title())
@@ -138,7 +134,7 @@ func CreateBundleForBackup(appID string, backupName string, backupNamespace stri
 	}
 
 	// Redact result before creating archive
-	err = troubleshootcollect.RedactResult(bundlePath, allCollectedData, redacts)
+	err = troubleshootcollect.RedactResult(bundlePath, result, redacts)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to redact")
 	}
