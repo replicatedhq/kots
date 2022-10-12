@@ -112,7 +112,7 @@ jobs:
     steps:
       - uses: actions/setup-go@v2
         with:
-          go-version: '^1.17.4'
+          go-version: '1.17.4'
 
       - name: setup env
         run: |
