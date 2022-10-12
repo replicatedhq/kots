@@ -1,7 +1,7 @@
 export type App = {
   allowRollback: Object | undefined;
   allowSnapshots: boolean;
-  autoDeploy: boolean | string;
+  autoDeploy: string;
   chartPath: string;
   credentials: Credentials;
   currentSequence: number;
@@ -70,7 +70,7 @@ export type Credentials = {
 
 export type DashboardResponse = {
   appStatus: AppStatus | null;
-  metrics: string[];
+  metrics: Chart[];
   prometheusAddress: string;
 };
 
@@ -85,7 +85,7 @@ export type Downstream = {
 
 export type GitOps = {
   provider: string;
-  isConnected: true;
+  isConnected: boolean;
   uri: string;
 };
 
@@ -213,4 +213,20 @@ export type License = {
   messageType: string;
   showLicenseChangeModal: boolean;
   showNextStepModal: boolean;
+};
+
+export type Series = {
+  data: { timestamp: number; value: number }[];
+  legendTemplate: string;
+  metric: {
+    name: string;
+    value: string;
+  }[];
+};
+
+export type Chart = {
+  title: string | null | undefined;
+  tickTemplate: string;
+  tickFormat: string;
+  series: Series[];
 };
