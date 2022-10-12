@@ -788,7 +788,6 @@ class Dashboard extends Component<Props, State> {
 
                 <div className="u-marginTop--30 flex flex1 u-width--full">
                   <div className="flex1 u-paddingRight--15">
-                    {currentVersion !== null && (
                       <DashboardVersionCard
                         currentVersion={currentVersion}
                         downstream={downstream}
@@ -820,7 +819,6 @@ class Dashboard extends Component<Props, State> {
                         noUpdatesAvalable={this.state.noUpdatesAvalable}
                         isHelmManaged={this.props.isHelmManaged}
                       />
-                    )}
                   </div>
                   <div className="flex1 flex-column u-paddingLeft--15">
                     {app.allowSnapshots && isVeleroInstalled ? (

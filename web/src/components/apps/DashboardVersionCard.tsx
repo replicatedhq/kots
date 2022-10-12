@@ -45,7 +45,7 @@ type Props = {
   checkingForUpdates: boolean;
   checkingForUpdateError: boolean;
   checkingUpdateText: string;
-  currentVersion: Version;
+  currentVersion: Version | null;
   downloadCallback: () => void;
   downstream: Downstream | null;
   isBundleUploading: boolean;
@@ -374,7 +374,13 @@ const DashboardVersionCard = (props: Props) => {
     );
   };
 
-  const handleViewLogs = async (version: Version, isFailing: boolean) => {
+  const handleViewLogs = async (
+    version: Version | null,
+    isFailing: boolean
+  ) => {
+    if (!version) {
+      return;
+    }
     try {
       const { app } = props;
       let clusterId = app.downstream.cluster?.id;
@@ -389,7 +395,7 @@ const DashboardVersionCard = (props: Props) => {
       });
 
       const res = await fetch(
-        `${process.env.API_ENDPOINT}/app/${app.slug}/cluster/${clusterId}/sequence/${version.sequence}/downstreamoutput`,
+        `${process.env.API_ENDPOINT}/app/${app.slug}/cluster/${clusterId}/sequence/${version?.sequence}/downstreamoutput`,
         {
           headers: {
             Authorization: Utilities.getToken(),
@@ -435,7 +441,7 @@ const DashboardVersionCard = (props: Props) => {
     }
   };
 
-  const getCurrentVersionStatus = (version: Version) => {
+  const getCurrentVersionStatus = (version: Version | null) => {
     if (
       version?.status === "deployed" ||
       version?.status === "merged" ||
@@ -522,7 +528,7 @@ const DashboardVersionCard = (props: Props) => {
     };
   };
 
-  const renderReleaseNotes = (version: Version) => {
+  const renderReleaseNotes = (version: Version | null) => {
     if (!version?.releaseNotes) {
       return null;
     }
@@ -539,7 +545,7 @@ const DashboardVersionCard = (props: Props) => {
     );
   };
 
-  const renderPreflights = (version: Version) => {
+  const renderPreflights = (version: Version | null) => {
     if (!version) {
       return null;
     }
@@ -618,7 +624,7 @@ const DashboardVersionCard = (props: Props) => {
 
   const renderEditConfigIcon = (
     app: App,
-    version: Version,
+    version: Version | null,
     isPending: boolean
   ) => {
     if (!app?.isConfigurable) {
@@ -677,7 +683,7 @@ const DashboardVersionCard = (props: Props) => {
   };
 
   const deployVersion = (
-    version: Version,
+    version: Version | null,
     force = false,
     continueWithFailedPreflights = false,
     redeploy = false
@@ -685,7 +691,7 @@ const DashboardVersionCard = (props: Props) => {
     if (props.isHelmManaged) {
       setState({
         showHelmDeployModal: true,
-        showHelmDeployModalWithVersionLabel: version.versionLabel,
+        showHelmDeployModalWithVersionLabel: version?.versionLabel,
       });
       return;
     }
@@ -696,7 +702,7 @@ const DashboardVersionCard = (props: Props) => {
     }
 
     if (!force) {
-      if (version.yamlErrors) {
+      if (version?.yamlErrors) {
         setState({
           displayShowDetailsModal: !state.displayShowDetailsModal,
           deployView: true,
@@ -705,7 +711,7 @@ const DashboardVersionCard = (props: Props) => {
         });
         return;
       }
-      if (version.status === "pending_preflight") {
+      if (version?.status === "pending_preflight") {
         setState({
           showSkipModal: true,
           versionToDeploy: version,
@@ -752,19 +758,19 @@ const DashboardVersionCard = (props: Props) => {
           <div className="flex-column">
             <div className="flex alignItems--center u-marginBottom--5">
               <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">
-                {currentVersion.versionLabel || currentVersion.title}
+                {currentVersion?.versionLabel || currentVersion?.title}
               </p>
               <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">
-                {sequenceLabel} {currentVersion.sequence}
+                {sequenceLabel} {currentVersion?.sequence}
               </p>
             </div>
             <div>{getCurrentVersionStatus(currentVersion)}</div>
             <div className="flex alignItems--center u-marginTop--10">
               <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy">
-                {currentVersion.status === "failed"
+                {currentVersion?.status === "failed"
                   ? "---"
                   : `${
-                      currentVersion.status === "deploying"
+                      currentVersion?.status === "deploying"
                         ? "Deploy started at"
                         : "Deployed"
                     } ${Utilities.dateFormat(
@@ -776,7 +782,7 @@ const DashboardVersionCard = (props: Props) => {
           </div>
           <div className="flex alignItems--center u-paddingLeft--20">
             <p className="u-fontSize--small u-fontWeight--bold u-textColor--lightAccent u-lineHeight--default u-marginRight--5">
-              {currentVersion.source}
+              {currentVersion?.source}
             </p>
           </div>
           <div className="flex flex1 alignItems--center justifyContent--flexEnd">
@@ -799,7 +805,7 @@ const DashboardVersionCard = (props: Props) => {
                 <ReactTooltip effect="solid" className="replicated-tooltip" />
               </div>
             ) : null}
-            {currentVersion.status === "deploying" ? null : (
+            {currentVersion?.status === "deploying" ? null : (
               <div className="flex-column justifyContent--center u-marginLeft--10">
                 <button
                   className="secondary blue btn"
