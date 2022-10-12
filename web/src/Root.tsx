@@ -624,6 +624,7 @@ const Root = () => {
                     onActiveInitSession={handleActiveInitSession}
                     appNameSpace={state.appNameSpace}
                     appName={state.selectedAppName}
+                    refetchAppsList={getAppsList}
                     snapshotInProgressApps={state.snapshotInProgressApps}
                     ping={ping}
                     isHelmManaged={state.isHelmManaged}

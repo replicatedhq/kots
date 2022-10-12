@@ -41,6 +41,9 @@ type Props = {
   isHelmManaged: boolean;
   onActiveInitSession: (session: string) => void;
   ping: () => void;
+  // TODO: remove this after adding app hook to Root-
+  // right now the footer needs to update when the app list is updated by the AppDetailPage
+  refetchAppsList: () => void;
   refetchAppMetadata: () => void;
   snapshotInProgressApps: string[];
 };
@@ -190,6 +193,7 @@ function AppDetailPage(props: Props) {
    */
   const refetchData = () => {
     refetchApps();
+    props.refetchAppsList();
     props.refetchAppMetadata();
     checkIsVeleroInstalled();
   };
