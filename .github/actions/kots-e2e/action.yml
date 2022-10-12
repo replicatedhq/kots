@@ -44,6 +44,21 @@ inputs:
     description: 'AWS region for uploading support bundle'
     default: 'us-east-1'
     required: false
+  script-name:
+    description: 'File name of script to execute'
+    required: false
+  script-is-async:
+    description: 'Set to true to execute the prerun script asyncronously'
+    default: 'false'
+    required: false
+  script-check-url:
+    description: 'Set to the URL that will be used to check prerun script success status'
+    required: false
+  script-check-status-code:
+    description: 'Set to http status code to test prerun script success when running asyncronously'
+    default: '0'
+    required: false
+
 runs:
   using: "composite"
   steps:
@@ -66,6 +81,10 @@ runs:
           KOTSADM_IMAGE_TAG=${{ inputs.kotsadm-image-tag }} \
           KOTS_HELM_CHART_URL=${{ inputs.kots-helm-chart-url }} \
           KOTS_HELM_CHART_VERSION=${{ inputs.kots-helm-chart-version }} \
+          SCRIPT_NAME=${{ inputs.script-name }} \
+          SCRIPT_IS_ASYNC=${{ inputs.script-is-async }} \
+          SCRIPT_CHECK_URL=${{ inputs.script-check-url }} \
+          SCRIPT_HTTP_CHECK_STATUS_CODE=${{ inputs.script-check-status-code }} \
           SKIP_TEARDOWN=1
         EXIT_CODE=$?
         if [ $EXIT_CODE -ne 0 ]; then

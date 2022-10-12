@@ -165,6 +165,10 @@ func IsHelmManaged() bool {
 	return os.Getenv("IS_HELM_MANAGED") == "true"
 }
 
+func IsInitialConfigMode() bool {
+	return os.Getenv("IS_INITIAL_CONFIG_MODE") == "true"
+}
+
 func GetValueFromMapPath(m interface{}, path []string) interface{} {
 	if len(path) == 0 {
 		return nil

@@ -163,6 +163,7 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 		}
 
 		helmApp.TempConfigValues = updateAppConfigValues(helmApp.TempConfigValues, updateAppConfigRequest.ConfigGroups)
+		helmApp.ConfigValuesSaved = true
 
 		JSON(w, http.StatusOK, UpdateAppConfigResponse{Success: true})
 		return

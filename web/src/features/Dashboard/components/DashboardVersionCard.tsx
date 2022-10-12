@@ -1804,6 +1804,7 @@ const DashboardVersionCard = (props: Props) => {
           sequence={latestDeployableVersion?.parentSequence}
           versionLabel={latestDeployableVersion?.versionLabel}
           isPending={isPending}
+          isInitialConfigMode={false}
         >
           {({
             download,
@@ -1826,6 +1827,7 @@ const DashboardVersionCard = (props: Props) => {
             return (
               <>
                 <HelmDeployModal
+                  isInitialConfigMode={false}
                   appSlug={selectedApp?.slug || ""}
                   chartPath={selectedApp?.chartPath || ""}
                   downloadClicked={download}

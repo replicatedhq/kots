@@ -1030,6 +1030,18 @@ func (mr *MockKOTSHandlerMockRecorder) IsHelmManaged(w, r interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsHelmManaged", reflect.TypeOf((*MockKOTSHandler)(nil).IsHelmManaged), w, r)
 }
 
+// IsInitialConfigMode mocks base method.
+func (m *MockKOTSHandler) IsInitialConfigMode(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "IsInitialConfigMode", w, r)
+}
+
+// IsInitialConfigMode indicates an expected call of IsInitialConfigMode.
+func (mr *MockKOTSHandlerMockRecorder) IsInitialConfigMode(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsInitialConfigMode", reflect.TypeOf((*MockKOTSHandler)(nil).IsInitialConfigMode), w, r)
+}
+
 // ListApps mocks base method.
 func (m *MockKOTSHandler) ListApps(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
@@ -1436,4 +1448,111 @@ func (m *MockKOTSHandler) ValidateAppRegistry(w http.ResponseWriter, r *http.Req
 func (mr *MockKOTSHandlerMockRecorder) ValidateAppRegistry(w, r interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateAppRegistry", reflect.TypeOf((*MockKOTSHandler)(nil).ValidateAppRegistry), w, r)
+}
+
+// MockConfigHandler is a mock of ConfigHandler interface.
+type MockConfigHandler struct {
+	ctrl     *gomock.Controller
+	recorder *MockConfigHandlerMockRecorder
+}
+
+// MockConfigHandlerMockRecorder is the mock recorder for MockConfigHandler.
+type MockConfigHandlerMockRecorder struct {
+	mock *MockConfigHandler
+}
+
+// NewMockConfigHandler creates a new mock instance.
+func NewMockConfigHandler(ctrl *gomock.Controller) *MockConfigHandler {
+	mock := &MockConfigHandler{ctrl: ctrl}
+	mock.recorder = &MockConfigHandlerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockConfigHandler) EXPECT() *MockConfigHandlerMockRecorder {
+	return m.recorder
+}
+
+// GetApp mocks base method.
+func (m *MockConfigHandler) GetApp(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetApp", w, r)
+}
+
+// GetApp indicates an expected call of GetApp.
+func (mr *MockConfigHandlerMockRecorder) GetApp(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetApp", reflect.TypeOf((*MockConfigHandler)(nil).GetApp), w, r)
+}
+
+// GetAppValuesFile mocks base method.
+func (m *MockConfigHandler) GetAppValuesFile(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetAppValuesFile", w, r)
+}
+
+// GetAppValuesFile indicates an expected call of GetAppValuesFile.
+func (mr *MockConfigHandlerMockRecorder) GetAppValuesFile(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppValuesFile", reflect.TypeOf((*MockConfigHandler)(nil).GetAppValuesFile), w, r)
+}
+
+// IsHelmManaged mocks base method.
+func (m *MockConfigHandler) IsHelmManaged(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "IsHelmManaged", w, r)
+}
+
+// IsHelmManaged indicates an expected call of IsHelmManaged.
+func (mr *MockConfigHandlerMockRecorder) IsHelmManaged(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsHelmManaged", reflect.TypeOf((*MockConfigHandler)(nil).IsHelmManaged), w, r)
+}
+
+// IsInitialConfigMode mocks base method.
+func (m *MockConfigHandler) IsInitialConfigMode(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "IsInitialConfigMode", w, r)
+}
+
+// IsInitialConfigMode indicates an expected call of IsInitialConfigMode.
+func (mr *MockConfigHandlerMockRecorder) IsInitialConfigMode(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsInitialConfigMode", reflect.TypeOf((*MockConfigHandler)(nil).IsInitialConfigMode), w, r)
+}
+
+// LiveAppConfig mocks base method.
+func (m *MockConfigHandler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "LiveAppConfig", w, r)
+}
+
+// LiveAppConfig indicates an expected call of LiveAppConfig.
+func (mr *MockConfigHandlerMockRecorder) LiveAppConfig(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LiveAppConfig", reflect.TypeOf((*MockConfigHandler)(nil).LiveAppConfig), w, r)
+}
+
+// Ping mocks base method.
+func (m *MockConfigHandler) Ping(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Ping", w, r)
+}
+
+// Ping indicates an expected call of Ping.
+func (mr *MockConfigHandlerMockRecorder) Ping(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ping", reflect.TypeOf((*MockConfigHandler)(nil).Ping), w, r)
+}
+
+// UpdateAppConfig mocks base method.
+func (m *MockConfigHandler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UpdateAppConfig", w, r)
+}
+
+// UpdateAppConfig indicates an expected call of UpdateAppConfig.
+func (mr *MockConfigHandlerMockRecorder) UpdateAppConfig(w, r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAppConfig", reflect.TypeOf((*MockConfigHandler)(nil).UpdateAppConfig), w, r)
 }

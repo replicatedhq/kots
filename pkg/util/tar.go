@@ -67,7 +67,7 @@ func ExtractTGZArchive(tgzFile string, destDir string) error {
 	return nil
 }
 
-func GetFileFromTGZArchive(archive *bytes.Buffer, fileName string) (*bytes.Buffer, error) {
+func GetFileFromTGZArchiveReader(archive io.Reader, fileName string) (*bytes.Buffer, error) {
 	gzReader, err := gzip.NewReader(archive)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create gzip reader")

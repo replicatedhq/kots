@@ -154,4 +154,15 @@ type KOTSHandler interface {
 	// Helm
 	IsHelmManaged(w http.ResponseWriter, r *http.Request)
 	GetAppValuesFile(w http.ResponseWriter, r *http.Request)
+	IsInitialConfigMode(w http.ResponseWriter, r *http.Request)
+}
+
+type ConfigHandler interface {
+	Ping(w http.ResponseWriter, r *http.Request)
+	IsHelmManaged(w http.ResponseWriter, r *http.Request)
+	IsInitialConfigMode(w http.ResponseWriter, r *http.Request)
+	GetApp(w http.ResponseWriter, r *http.Request)
+	LiveAppConfig(w http.ResponseWriter, r *http.Request)
+	GetAppValuesFile(w http.ResponseWriter, r *http.Request)
+	UpdateAppConfig(w http.ResponseWriter, r *http.Request)
 }

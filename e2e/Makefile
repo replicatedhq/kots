@@ -1,5 +1,6 @@
 include ../Makefile.build.mk
 
+SCRIPT_MOUNT_SRC := $(shell dirname $(shell pwd))/bin$(SCRIPT_NAME)
 BIN_DIR := $(shell pwd)/bin
 KOTS_BIN_DIR := $(shell dirname $(shell pwd))/bin
 
@@ -24,6 +25,9 @@ test: SKIP_TEARDOWN ?= 0
 ifneq ($(EXISTING_KUBECONFIG),)
 test: EXISTING_KUBECONFIG_VOLUME_MOUNT := "-v=$(EXISTING_KUBECONFIG):$(EXISTING_KUBECONFIG)"
 endif
+ifneq ($(SCRIPT_NAME),)
+test: RUN_SCRIPT_VOLUME_MOUNT := "-v=$(SCRIPT_MOUNT_SRC):$(SCRIPT_NAME)"
+endif
 test:
 	docker run --rm -i --net host \
 		-e TESTIM_ACCESS_TOKEN \
@@ -31,6 +35,7 @@ test:
 		-v $(KOTS_BIN_DIR)/kots:/usr/local/bin/kots \
 		-v $(KOTS_BIN_DIR)/kots:/usr/local/bin/kubectl-kots \
 		$(EXISTING_KUBECONFIG_VOLUME_MOUNT) \
+		$(RUN_SCRIPT_VOLUME_MOUNT) \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		e2e-deps \
 		e2e.test \
@@ -43,6 +48,10 @@ test:
 			--kotsadm-image-tag=$(KOTSADM_IMAGE_TAG) \
 			--kots-helm-chart-url=$(KOTS_HELM_CHART_URL) \
 			--kots-helm-chart-version=$(KOTS_HELM_CHART_VERSION) \
+			--script-name=$(SCRIPT_NAME) \
+			--script-is-async=$(SCRIPT_IS_ASYNC) \
+			--script-check-url=$(SCRIPT_CHECK_URL) \
+			--script-check-status-code=$(SCRIPT_HTTP_CHECK_STATUS_CODE) \
 			--skip-teardown=$(SKIP_TEARDOWN)
 
 .PHONY: path

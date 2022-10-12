@@ -21,5 +21,6 @@ func PluginCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(PreflightCmd())
+	cmd.AddCommand(ConfigCmd())
 	return cmd
 }

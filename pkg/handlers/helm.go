@@ -36,6 +36,23 @@ func (h *Handler) IsHelmManaged(w http.ResponseWriter, r *http.Request) {
 	JSON(w, http.StatusOK, helmManagedResponse)
 }
 
+// IsInitialConfigModeResponse - response body for the is initial config mode endpoint
+type IsInitialConfigModeResponse struct {
+	Success             bool   `json:"success"`
+	IsInitialConfigMode bool   `json:"isInitialConfigMode"`
+	VersionLabel        string `json:"versionLabel"`
+}
+
+//  IsInitialConfigMode - report whether or not kots is running in helm managed mode
+func (h *Handler) IsInitialConfigMode(w http.ResponseWriter, r *http.Request) {
+	response := IsInitialConfigModeResponse{
+		Success:             true,
+		IsInitialConfigMode: util.IsInitialConfigMode(),
+	}
+
+	JSON(w, http.StatusOK, response)
+}
+
 func (h *Handler) GetAppValuesFile(w http.ResponseWriter, r *http.Request) {
 	if !util.IsHelmManaged() {
 		logger.Errorf("values file can only be dowloaded in Helm managed mode")
@@ -54,6 +71,14 @@ func (h *Handler) GetAppValuesFile(w http.ResponseWriter, r *http.Request) {
 	helmApp := helm.GetHelmApp(appSlug)
 	if helmApp == nil {
 		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	if !helmApp.ConfigValuesSaved {
+		err := errors.New("config file cannot be downloaded because config has not been saved")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
 		return
 	}
 

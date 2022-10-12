@@ -6,6 +6,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
+	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/policy"
@@ -19,6 +20,17 @@ import (
 var _ KOTSHandler = (*Handler)(nil)
 
 type Handler struct {
+}
+
+var _ ConfigHandler = (*HelmConfigHandler)(nil)
+
+type HelmConfigHandler struct {
+	ChartName         string
+	ChartPath         string
+	ChartVersion      string
+	ChartRootDir      string
+	TempConfigValues  map[string]kotsv1beta1.ConfigValue
+	ConfigValuesSaved bool
 }
 
 func init() {
@@ -298,6 +310,8 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 	// Helm
 	r.Name("IsHelmManaged").Path("/api/v1/is-helm-managed").Methods("GET").
 		HandlerFunc(middleware.EnforceAccess(policy.IsHelmManaged, handler.IsHelmManaged))
+	r.Name("IsInitialConfigMode").Path("/api/v1/is-initial-config-mode").Methods("GET").
+		HandlerFunc(handler.IsInitialConfigMode)
 	r.Name("GetAppValuesFile").Path("/api/v1/app/{appSlug}/values/{sequence}").Methods("GET").
 		HandlerFunc(middleware.EnforceAccess(policy.GetAppValuesFile, handler.GetAppValuesFile))
 }
@@ -339,6 +353,23 @@ func RegisterUnauthenticatedRoutes(handler *Handler, kotsStore store.Store, debu
 
 	// This the handler for license API and should be called by the application only.
 	loggingRouter.Path("/license/v1/license").Methods("GET").HandlerFunc(handler.GetPlatformLicenseCompatibility)
+}
+
+func RegisterConfigRoutes(r *mux.Router, handler *HelmConfigHandler) {
+	r.Name("IsHelmManaged").Path("/api/v1/is-helm-managed").Methods("GET").
+		HandlerFunc(handler.IsHelmManaged)
+	r.Name("IsInitialConfigMode").Path("/api/v1/is-initial-config-mode").Methods("GET").
+		HandlerFunc(handler.IsInitialConfigMode)
+	r.Name("GetApp").Path("/api/v1/app").Methods("GET").
+		HandlerFunc(handler.GetApp)
+	r.Name("GetInitialAppConfig").Path("/api/v1/app/config").Methods("GET").
+		HandlerFunc(handler.GetInitialAppConfig)
+	r.Name("LiveAppConfig").Path("/api/v1/app/liveconfig").Methods("POST").
+		HandlerFunc(handler.LiveAppConfig)
+	r.Name("GetAppValuesFile").Path("/api/v1/app/values").Methods("GET").
+		HandlerFunc(handler.GetAppValuesFile)
+	r.Name("UpdateAppConfig").Path("/api/v1/app/config").Methods("PUT").
+		HandlerFunc(handler.UpdateAppConfig)
 }
 
 func StreamJSON(c *websocket.Conn, payload interface{}) {

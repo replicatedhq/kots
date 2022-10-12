@@ -16,7 +16,8 @@ type HelmApp struct {
 	ChartPath         string
 	CreationTimestamp time.Time
 	// TODO: This is values the user is editing on the Config screen. This is a temporary solution while we figure out the UX.
-	TempConfigValues map[string]kotsv1beta1.ConfigValue
+	TempConfigValues  map[string]kotsv1beta1.ConfigValue
+	ConfigValuesSaved bool
 }
 
 func (a *HelmApp) GetID() string {

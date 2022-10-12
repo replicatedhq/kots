@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"sort"
 	"strconv"
@@ -477,35 +478,55 @@ func GetKotsKindsForRevision(releaseName string, revision int64, namespace strin
 	return kotsKinds, nil
 }
 
-func GetKotsKindsFromChartArchive(archive *bytes.Buffer) (kotsutil.KotsKinds, error) {
+func GetKotsKindsFromChartReader(archive io.Reader) (kotsutil.KotsKinds, error) {
 	kotsKinds := kotsutil.EmptyKotsKinds()
 
-	templatedData, err := util.GetFileFromTGZArchive(archive, "**/templates/_replicated/secret.yaml")
+	templatedData, err := util.GetFileFromTGZArchiveReader(archive, "**/templates/_replicated/secret.yaml")
 	if err != nil {
 		return kotsKinds, errors.Wrap(err, "failed to get secret file from chart archive")
 	}
 
-	secretData, err := removeHelmTemplate(templatedData.Bytes())
+	kotsKinds, err = GetKotsKindsFromUpstreamSecretData(templatedData.Bytes())
 	if err != nil {
-		return kotsKinds, errors.Wrap(err, "failed to remove helm templates from replicated secret file")
+		return kotsKinds, errors.Wrap(err, "failed to kotskinds from secret data")
 	}
 
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, gvk, err := decode(secretData, nil, nil)
+	return kotsKinds, nil
+}
+
+func GetKotsKindsFromUpstreamSecretData(secretData []byte) (kotsutil.KotsKinds, error) {
+	kotsKinds := kotsutil.EmptyKotsKinds()
+
+	secret, err := GetKotsSecretFromUpstreamSecretData(secretData)
 	if err != nil {
-		return kotsKinds, errors.Wrap(err, "failed to decode secret data")
+		return kotsKinds, errors.Wrap(err, "failed to get secret from secret data")
 	}
 
-	if gvk.Group != "" || gvk.Version != "v1" || gvk.Kind != "Secret" {
-		return kotsKinds, errors.Errorf("unexpected secret GVK: %s", gvk.String())
-	}
-
-	kotsKinds, err = GetKotsKindsFromReplicatedSecret(obj.(*corev1.Secret))
+	kotsKinds, err = GetKotsKindsFromReplicatedSecret(secret)
 	if err != nil {
 		return kotsKinds, errors.Wrap(err, "failed to get kots kinds from secret")
 	}
 
 	return kotsKinds, nil
+}
+
+func GetKotsSecretFromUpstreamSecretData(secretData []byte) (*corev1.Secret, error) {
+	secretData, err := removeHelmTemplate(secretData)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to remove helm templates from replicated secret file")
+	}
+
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	obj, gvk, err := decode(secretData, nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode secret data")
+	}
+
+	if gvk.Group != "" || gvk.Version != "v1" || gvk.Kind != "Secret" {
+		return nil, errors.Errorf("unexpected secret GVK: %s", gvk.String())
+	}
+
+	return obj.(*corev1.Secret), nil
 }
 
 func GetReplicatedSecretForRevision(releaseName string, revision int64, namespace string) (*corev1.Secret, error) {

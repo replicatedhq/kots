@@ -356,7 +356,7 @@ var _ = Describe("Kots", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(archive).ToNot(BeNil())
 
-			b, err := util.GetFileFromTGZArchive(archive, "branding.css")
+			b, err := util.GetFileFromTGZArchiveReader(archive, "branding.css")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(b.String()).To(Equal("body { background-color: red; }"))
 
@@ -364,7 +364,7 @@ var _ = Describe("Kots", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(archive).ToNot(BeNil())
 
-			b, err = util.GetFileFromTGZArchive(archive, "font.ttf")
+			b, err = util.GetFileFromTGZArchiveReader(archive, "font.ttf")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(b.String()).To(Equal("my-font-data"))
 
@@ -372,11 +372,11 @@ var _ = Describe("Kots", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(archive).ToNot(BeNil())
 
-			b, err = util.GetFileFromTGZArchive(archive, "application.yaml")
+			b, err = util.GetFileFromTGZArchiveReader(archive, "application.yaml")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(b.String()).To(Equal("apiVersion: kots.io/v1beta1\nkind: Application\nmetadata:\n  name: app-slug\nspec:\n  icon: https://foo.com/icon.png\n  title: App Name"))
 
-			_, err = util.GetFileFromTGZArchive(archive, "random.yaml")
+			_, err = util.GetFileFromTGZArchiveReader(archive, "random.yaml")
 			Expect(err).To(HaveOccurred())
 		})
 	})

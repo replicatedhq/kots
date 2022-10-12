@@ -148,6 +148,7 @@ func helmAppFromSecret(secret *corev1.Secret) (*apptypes.HelmApp, error) {
 		CreationTimestamp: secret.CreationTimestamp.Time,
 		Namespace:         secret.Namespace,
 		TempConfigValues:  map[string]kotsv1beta1.ConfigValue{},
+		ConfigValuesSaved: false,
 	}
 
 	configSecret, err := GetChartConfigSecret(helmApp)

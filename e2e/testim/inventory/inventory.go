@@ -102,6 +102,13 @@ func NewChangeLicense() Test {
 	}
 }
 
+func NewInitialConfig() Test {
+	return Test{
+		Name:  "Initial Config Mode",
+		Suite: "initial-config-mode",
+	}
+}
+
 func NewHelmManagedMode() Test {
 	return Test{
 		Name:          "Helm Managed",

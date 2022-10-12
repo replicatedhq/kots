@@ -21,6 +21,7 @@ import (
 	"github.com/replicatedhq/kots/e2e/minio"
 	"github.com/replicatedhq/kots/e2e/prometheus"
 	"github.com/replicatedhq/kots/e2e/registry"
+	"github.com/replicatedhq/kots/e2e/script"
 	"github.com/replicatedhq/kots/e2e/testim"
 	"github.com/replicatedhq/kots/e2e/testim/inventory"
 	"github.com/replicatedhq/kots/e2e/util"
@@ -44,6 +45,10 @@ var (
 	kotsadmForwardPort    string
 	kotsHelmChartURL      string
 	kotsHelmChartVersion  string
+	scriptName            string
+	scriptIsAsync         bool
+	scriptCheckURL        string
+	scriptCheckStatusCode int
 )
 
 func init() {
@@ -57,6 +62,10 @@ func init() {
 	flag.StringVar(&kotsadmForwardPort, "kotsadm-forward-port", "", "sets the port that the admin console will be exposed on instead of generating a random one")
 	flag.StringVar(&kotsHelmChartURL, "kots-helm-chart-url", "", "kots helm chart url")
 	flag.StringVar(&kotsHelmChartVersion, "kots-helm-chart-version", "", "kots helm chart version")
+	flag.StringVar(&scriptName, "script-name", "", "script name to execute for this test")
+	flag.BoolVar(&scriptIsAsync, "script-is-async", false, "execute script asyncronously")
+	flag.StringVar(&scriptCheckURL, "script-check-url", "", "url to test script success when script-async=true")
+	flag.IntVar(&scriptCheckStatusCode, "script-check-status-code", 0, "status code to expect for http check when script-async=true")
 }
 
 func TestE2E(t *testing.T) {
@@ -92,7 +101,7 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
-	gexec.KillAndWait()
+	gexec.KillAndWait(10 * time.Second)
 })
 
 var _ = Describe("E2E", func() {
@@ -170,7 +179,10 @@ var _ = Describe("E2E", func() {
 				}
 
 				var adminConsolePort string
-				if test.IsHelmManaged {
+				if scriptName != "" {
+					script.Execute(scriptName, scriptIsAsync, scriptCheckURL, scriptCheckStatusCode)
+					adminConsolePort = "8800" // TODO: don't hardcode
+				} else if test.IsHelmManaged {
 					GinkgoWriter.Println("Installing KOTS Helm chart")
 					session, err := helmCLI.Install(c.GetKubeconfig(), "-n", test.Namespace, "admin-console", kotsHelmChartURL, "--set", fmt.Sprintf("password=%s", inventory.HelmPassword), "--version", kotsHelmChartVersion, "--create-namespace", "--wait")
 					Expect(err).WithOffset(1).Should(Succeed(), "helm install")
@@ -206,6 +218,7 @@ var _ = Describe("E2E", func() {
 			Entry(nil, inventory.NewNoRequiredConfig()),
 			Entry(nil, inventory.NewVersionHistoryPagination()),
 			Entry(nil, inventory.NewChangeLicense()),
+			Entry(nil, inventory.NewInitialConfig()),
 			Entry(nil, inventory.NewHelmManagedMode()),
 			Entry(nil, inventory.NewTagAndDigest()),
 			Entry(nil, inventory.NewMinKotsVersion()),

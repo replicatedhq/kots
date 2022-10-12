@@ -31,6 +31,7 @@ describe("useDownloadValues", () => {
         sequence: 1,
         vaersionLabel: "1.2.3",
         isPending: false,
+        isInitialConfigMode: false,
       };
 
       const { result, waitFor } = renderHook(
@@ -50,6 +51,7 @@ describe("useDownloadValues", () => {
         sequence: testConfig.sequence,
         versionLabel: testConfig.versionLabel,
         isPending: testConfig.isPending,
+        isInitialConfigMode: testConfig.isInitialConfigMode,
       };
 
       expect(result.current.variables).toEqual(undefined);
@@ -77,6 +79,7 @@ describe("useDownloadValues", () => {
       const testSequence = 1;
       const versionLabel = "1.2.3";
       const isPending = false;
+      const isInitialConfigMode = false;
       const testAPIEndpoint = "testAPIEndpoint";
       const testGetValuesConfig = {
         _fetch: _fetchValuesSpy,
@@ -86,6 +89,7 @@ describe("useDownloadValues", () => {
         sequence: testSequence,
         versionLabel: versionLabel,
         isPending: isPending,
+        isInitialConfigMode: isInitialConfigMode,
       };
 
       const expectedAPIEndpoint = `${testAPIEndpoint}/app/${testAppSlug}/values/${testSequence}?isPending=${isPending}&semver=${versionLabel}`;
@@ -120,6 +124,7 @@ describe("useDownloadValues", () => {
       const testSequence = 1;
       const testVersionLabel = "1.2.3";
       const testIsPending = false;
+      const isInitialConfigMode = false;
 
       const testToken = "testToken";
       const testAPIEndpoint = "testAPIEndpoint";
@@ -131,6 +136,7 @@ describe("useDownloadValues", () => {
         sequence: testSequence,
         versionLabel: testVersionLabel,
         isPending: testIsPending,
+        isInitialConfigMode: isInitialConfigMode,
       };
 
       await expect(getValues(testGetValuesConfig)).rejects.toThrowError(

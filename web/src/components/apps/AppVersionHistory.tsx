@@ -1615,6 +1615,7 @@ class AppVersionHistory extends Component<Props, State> {
               sequence={version.parentSequence}
               versionLabel={version.versionLabel}
               isPending={isPending}
+              isInitialConfigMode={false}
             >
               {({
                 download,
@@ -1636,6 +1637,7 @@ class AppVersionHistory extends Component<Props, State> {
                 return (
                   <>
                     <HelmDeployModal
+                      isInitialConfigMode={false}
                       appSlug={this.props?.app?.slug}
                       chartPath={this.props?.app?.chartPath || ""}
                       downloadClicked={download}

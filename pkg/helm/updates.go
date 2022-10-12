@@ -208,7 +208,7 @@ func GetKotsKindsFromUpstreamChartVersion(helmApp *apptypes.HelmApp, licenseID s
 		}
 	}
 
-	kotsKinds, err := GetKotsKindsFromChartArchive(chartData)
+	kotsKinds, err := GetKotsKindsFromChartReader(chartData)
 	if err != nil {
 		return kotsutil.KotsKinds{}, errors.Wrap(err, "failed to get kotskinds from chart archive")
 	}
@@ -229,7 +229,7 @@ func GetReplicatedSecretFromUpstreamChartVersion(helmApp *apptypes.HelmApp, lice
 		}
 	}
 
-	templatedData, err := util.GetFileFromTGZArchive(chartData, "**/templates/_replicated/secret.yaml")
+	templatedData, err := util.GetFileFromTGZArchiveReader(chartData, "**/templates/_replicated/secret.yaml")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get secret file from chart archive")
 	}

@@ -31,6 +31,7 @@ type Props = {
   app: App;
   fromLicenseFlow: boolean;
   isHelmManaged: boolean;
+  isInitialConfigMode: boolean | null;
   refreshAppData: () => void;
   refetchAppsList: () => void;
 } & RouteComponentProps<KotsParams>;
@@ -186,7 +187,13 @@ class AppConfig extends Component<Props, State> {
 
     try {
       const { slug } = this.props.match.params;
-      const res = await fetch(`${process.env.API_ENDPOINT}/app/${slug}`, {
+      let url: string;
+      if (this.props.isInitialConfigMode) {
+        url = `${process.env.API_ENDPOINT}/app`;
+      } else {
+        url = `${process.env.API_ENDPOINT}/app/${slug}`;
+      }
+      const res = await fetch(url, {
         headers: {
           Authorization: Utilities.getToken(),
           "Content-Type": "application/json",
@@ -212,16 +219,19 @@ class AppConfig extends Component<Props, State> {
       configError: false,
     });
 
-    fetch(
-      `${process.env.API_ENDPOINT}/app/${slug}/config/${sequence}${window.location.search}`,
-      {
-        method: "GET",
-        headers: {
-          Authorization: Utilities.getToken(),
-          "Content-Type": "application/json",
-        },
-      }
-    )
+    let url: string;
+    if (this.props.isInitialConfigMode) {
+      url = `${process.env.API_ENDPOINT}/app/config`;
+    } else {
+      url = `${process.env.API_ENDPOINT}/app/${slug}/config/${sequence}${window.location.search}`;
+    }
+    fetch(url, {
+      method: "GET",
+      headers: {
+        Authorization: Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+    })
       .then(async (response) => {
         if (!response.ok) {
           const res = await response.json();
@@ -326,7 +336,14 @@ class AppConfig extends Component<Props, State> {
     const createNewVersion =
       !fromLicenseFlow && match.params.sequence == undefined;
 
-    fetch(`${process.env.API_ENDPOINT}/app/${slug}/config`, {
+    let url: string;
+    if (this.props.isInitialConfigMode) {
+      url = `${process.env.API_ENDPOINT}/app/config`;
+    } else {
+      url = `${process.env.API_ENDPOINT}/app/${slug}/config`;
+    }
+
+    fetch(url, {
       method: "PUT",
       headers: {
         Authorization: Utilities.getToken(),
@@ -439,19 +456,23 @@ class AppConfig extends Component<Props, State> {
     this.fetchController = new AbortController();
     const signal = this.fetchController.signal;
 
-    fetch(
-      `${process.env.API_ENDPOINT}/app/${slug}/liveconfig${window.location.search}`,
-      {
-        signal,
-        headers: {
-          Authorization: Utilities.getToken(),
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        method: "POST",
-        body: JSON.stringify({ configGroups: groups, sequence: sequence }),
-      }
-    )
+    let url: string;
+    if (this.props.isInitialConfigMode) {
+      url = `${process.env.API_ENDPOINT}/app/liveconfig`;
+    } else {
+      url = `${process.env.API_ENDPOINT}/app/${slug}/liveconfig${window.location.search}`;
+    }
+
+    fetch(url, {
+      signal,
+      headers: {
+        Authorization: Utilities.getToken(),
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      method: "POST",
+      body: JSON.stringify({ configGroups: groups, sequence: sequence }),
+    })
       .then(async (response) => {
         if (!response.ok) {
           if (response.status == 401) {
@@ -578,6 +599,17 @@ class AppConfig extends Component<Props, State> {
       saveButtonText = "Generate Upgrade Command";
     }
 
+    let helmDialogTitle = `Upgrade ${this.props?.app?.slug}`;
+    let helmTitle = "Upgrade release";
+    let helmSubtitle =
+      "Follow the steps below to upgrade the release with your new values.yaml.";
+    if (this.props.isInitialConfigMode) {
+      helmDialogTitle = `Install ${this.state?.app?.slug}`;
+      helmTitle = "Install release";
+      helmSubtitle =
+        "Follow the steps below to install the release with your new values.yaml.";
+    }
+
     return (
       <Flex flex="1" direction="column" p="20" align="center">
         <KotsPageTitle pageName="Config" showAppSlug />
@@ -671,6 +703,7 @@ class AppConfig extends Component<Props, State> {
                     sequence: match.params.sequence,
                     versionLabel: downstreamVersionLabel,
                     isPending: isPending,
+                    isInitialConfigMode: this.props.isInitialConfigMode,
                   });
 
                 return (
@@ -728,7 +761,8 @@ class AppConfig extends Component<Props, State> {
                     {this.state.showHelmDeployModal && (
                       <>
                         <HelmDeployModal
-                          appSlug={this.props?.app?.slug}
+                          isInitialConfigMode={!!this.props.isInitialConfigMode}
+                          appSlug={this.props?.app?.slug || ""}
                           chartPath={this.props?.app?.chartPath || ""}
                           downloadClicked={download}
                           hideHelmDeployModal={() => {
@@ -744,9 +778,9 @@ class AppConfig extends Component<Props, State> {
                           saveError={saveError}
                           showHelmDeployModal={true}
                           showDownloadValues={true}
-                          subtitle="Follow the steps below to upgrade the release with your new values.yaml."
-                          title={`Upgrade ${this.props?.app?.slug}`}
-                          upgradeTitle="Upgrade release"
+                          subtitle={helmSubtitle}
+                          title={helmDialogTitle}
+                          upgradeTitle={helmTitle}
                           version={downstreamVersionLabel || ""}
                           namespace={this.props?.app?.namespace || ""}
                           downloadError={false}

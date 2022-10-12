@@ -33,8 +33,8 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func RenderValuesFromConfig(helmApp *apptypes.HelmApp, kotsKinds *kotsutil.KotsKinds, chart []byte) (map[string]interface{}, error) {
-	builder, err := render.NewBuilder(kotsKinds, registrytypes.RegistrySettings{}, helmApp.GetSlug(), helmApp.GetCurrentSequence(), helmApp.GetIsAirgap(), helmApp.Namespace)
+func RenderValuesFromConfig(helmApp apptypes.AppType, kotsKinds *kotsutil.KotsKinds, chart []byte) (map[string]interface{}, error) {
+	builder, err := render.NewBuilder(kotsKinds, registrytypes.RegistrySettings{}, helmApp.GetSlug(), helmApp.GetCurrentSequence(), helmApp.GetIsAirgap(), helmApp.GetNamespace())
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to make tempalate builder")
 	}

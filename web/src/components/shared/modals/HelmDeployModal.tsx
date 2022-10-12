@@ -6,6 +6,7 @@ import CodeSnippet from "@src/components/shared/CodeSnippet";
 import "./styles/HelmDeployModal.scss";
 
 function makeDeployCommand({
+  isInitialConfigMode,
   appSlug,
   chartPath,
   revision = null,
@@ -13,6 +14,7 @@ function makeDeployCommand({
   version,
   namespace,
 }: {
+  isInitialConfigMode: boolean;
   appSlug: string;
   chartPath: string;
   revision: number | null;
@@ -20,6 +22,10 @@ function makeDeployCommand({
   version?: string;
   namespace: string;
 }) {
+  if (isInitialConfigMode) {
+    return `helm -n <namespace> install ${appSlug} ${chartPath} --version ${version} -f <path-to-values-yaml>`;
+  }
+
   if (revision) {
     return `helm -n ${namespace} rollback ${appSlug} ${revision}`;
   }
@@ -46,6 +52,7 @@ function makeLoginCommand({
 }
 
 function HelmDeployModal({
+  isInitialConfigMode,
   appSlug,
   chartPath,
   downloadClicked = () => {},
@@ -65,6 +72,7 @@ function HelmDeployModal({
   version,
   namespace,
 }: {
+  isInitialConfigMode: boolean;
   appSlug: string;
   chartPath: string;
   downloadClicked: () => void;
@@ -83,6 +91,24 @@ function HelmDeployModal({
   version?: string;
   namespace: string;
 }) {
+  const loginBullet = 1;
+  let downloadValuesBullet = 2;
+  if (isInitialConfigMode) {
+    downloadValuesBullet -= 1;
+  }
+  let instalBullet = 3;
+  if (!showDownloadValues) {
+    instalBullet -= 1;
+  }
+  if (isInitialConfigMode) {
+    instalBullet -= 1;
+  }
+
+  let downloadText = "Download your new values.yaml file";
+  if (isInitialConfigMode) {
+    downloadText = "Download the values.yaml file";
+  }
+
   return (
     <Modal
       // TODO: figure out if this prop is even needed
@@ -100,35 +126,41 @@ function HelmDeployModal({
       </div>
       <div className="Modal-body">
         <div className="flex flex-column">
-          <div className="u-marginBottom--30 flex flex-row">
-            <span className="Title step-number u-marginRight--15">1</span>
-            <div className="flex1">
-              <span className="Title u-marginBottom--10 u-display--block">
-                Log in to the registry
+          {!isInitialConfigMode && (
+            <div className="u-marginBottom--30 flex flex-row">
+              <span className="Title step-number u-marginRight--15">
+                {loginBullet}
               </span>
-              <CodeSnippet
-                language="bash"
-                canCopy={true}
-                onCopyText={
-                  <span className="u-textColor--success">
-                    Command has been copied to your clipboard
-                  </span>
-                }
-              >
-                {makeLoginCommand({
-                  registryHostname: chartPath,
-                  registryUsername,
-                  registryPassword,
-                })}
-              </CodeSnippet>
+              <div className="flex1">
+                <span className="Title u-marginBottom--10 u-display--block">
+                  Log in to the registry
+                </span>
+                <CodeSnippet
+                  language="bash"
+                  canCopy={true}
+                  onCopyText={
+                    <span className="u-textColor--success">
+                      Command has been copied to your clipboard
+                    </span>
+                  }
+                >
+                  {makeLoginCommand({
+                    registryHostname: chartPath,
+                    registryUsername,
+                    registryPassword,
+                  })}
+                </CodeSnippet>
+              </div>
             </div>
-          </div>
+          )}
           {showDownloadValues && (
             <div className="u-marginBottom--30 flex flex-row">
-              <span className="Title step-number u-marginRight--15">2</span>
+              <span className="Title step-number u-marginRight--15">
+                {downloadValuesBullet}
+              </span>
               <div className="flex1">
                 <span className={`Title u-marginBottom--10 u-display--block `}>
-                  Download your new values.yaml file
+                  {downloadText}
                 </span>
                 <button
                   className="btn secondary blue large flex alignItems--center u-marginBottom--5"
@@ -148,7 +180,7 @@ function HelmDeployModal({
           )}
           <div className="u-marginBottom--30 flex flex-row">
             <span className="Title step-number u-marginRight--15">
-              {showDownloadValues ? "3" : "2"}
+              {instalBullet}
             </span>
             <div className="flex1">
               <span className="Title u-marginBottom--5 u-display--block">
@@ -170,6 +202,7 @@ function HelmDeployModal({
                 }
               >
                 {makeDeployCommand({
+                  isInitialConfigMode,
                   appSlug,
                   chartPath,
                   revision,

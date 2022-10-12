@@ -9,18 +9,23 @@ const getValues = async ({
   sequence,
   versionLabel,
   isPending,
+  isInitialConfigMode,
 }) => {
   try {
-    const response = await _fetch(
-      `${apiEndpoint}/app/${appSlug}/values/${sequence}?isPending=${isPending}&semver=${versionLabel}`,
-      {
-        method: "GET",
-        headers: {
-          Authorization: _token,
-          "Content-Type": "application/blob",
-        },
-      }
-    );
+    let url;
+    if (isInitialConfigMode) {
+      url = `${apiEndpoint}/app/values`;
+    } else {
+      url = `${apiEndpoint}/app/${appSlug}/values/${sequence}?isPending=${isPending}&semver=${versionLabel}`;
+    }
+
+    const response = await _fetch(url, {
+      method: "GET",
+      headers: {
+        Authorization: _token,
+        "Content-Type": "application/blob",
+      },
+    });
     if (!response.ok) {
       throw new Error("Error fetching values");
     }
@@ -41,6 +46,7 @@ const useDownloadValues = ({
   sequence,
   versionLabel,
   isPending,
+  isInitialConfigMode,
 } = {}) => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [error, setError] = useState(null);
@@ -73,6 +79,7 @@ const useDownloadValues = ({
         sequence,
         versionLabel,
         isPending,
+        isInitialConfigMode,
       });
       if (_error) {
         setError(_error);
@@ -108,6 +115,7 @@ function UseDownloadValues({
   sequence,
   versionLabel,
   isPending,
+  isInitialConfigMode,
   children,
 }) {
   const query = useDownloadValues({
@@ -116,6 +124,7 @@ function UseDownloadValues({
     sequence,
     versionLabel,
     isPending,
+    isInitialConfigMode,
   });
 
   return children(query);
