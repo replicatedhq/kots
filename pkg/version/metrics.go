@@ -1,21 +1,23 @@
 package version
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"time"
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/app/types"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
-	"github.com/replicatedhq/kots/pkg/persistence"
+	"github.com/replicatedhq/kots/pkg/render"
+	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
-	"k8s.io/client-go/kubernetes/scheme"
 )
 
 type MetricChart struct {
@@ -79,36 +81,55 @@ var (
 	}
 )
 
-func GetMetricCharts(appID string, sequence int64, prometheusAddress string) ([]MetricChart, error) {
-	if prometheusAddress == "" {
-		return []MetricChart{}, nil
-	}
-
-	db := persistence.MustGetDBSession()
-	query := `select kots_app_spec from app_version where app_id = $1 and sequence = $2`
-	row := db.QueryRow(query, appID, sequence)
-
-	var kotsAppSpecStr sql.NullString
-	if err := row.Scan(&kotsAppSpecStr); err != nil {
-		if err != sql.ErrNoRows {
-			return nil, errors.Wrap(err, "failed to scan")
-		}
-	}
-
+// GetGraphs returns the rendered graphs for the given app.
+// If there are no graphs or an error is encountered, the default set of graphs is returned.
+func GetGraphs(app *types.App, sequence int64, kotsStore store.Store) ([]kotsv1beta1.MetricGraph, error) {
 	graphs := DefaultMetricGraphs
-	if kotsAppSpecStr.Valid {
-		decode := scheme.Codecs.UniversalDeserializer().Decode
-		obj, _, err := decode([]byte(kotsAppSpecStr.String), nil, nil)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to decode kots app spec")
-		}
-		a := obj.(*kotsv1beta1.Application)
 
-		if len(a.Spec.Graphs) > 0 {
-			graphs = a.Spec.Graphs
-		}
+	archiveDir, err := ioutil.TempDir("", "kotsadm")
+	if err != nil {
+		return graphs, errors.Wrap(err, "failed to create temp dir")
+	}
+	defer os.RemoveAll(archiveDir)
+
+	err = kotsStore.GetAppVersionArchive(app.ID, sequence, archiveDir)
+	if err != nil {
+		return graphs, errors.Wrap(err, "failed to get app version archive")
 	}
 
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	if err != nil {
+		return graphs, errors.Wrap(err, "failed to load kots kinds from path")
+	}
+
+	registrySettings, err := kotsStore.GetRegistryDetailsForApp(app.ID)
+	if err != nil {
+		return graphs, errors.Wrap(err, "failed to get registry settings for app")
+	}
+
+	templatedKotsApplication, err := kotsKinds.Marshal("kots.io", "v1beta1", "Application")
+	if err != nil {
+		return graphs, errors.Wrap(err, "failed to marshal kots application")
+	}
+
+	renderedKotsApplication, err := render.RenderFile(kotsKinds, registrySettings, app.Slug, sequence, app.IsAirgap, util.PodNamespace, []byte(templatedKotsApplication))
+	if err != nil {
+		return graphs, errors.Wrap(err, "failed to render kots application")
+	}
+
+	kotsApplication, err := kotsutil.LoadKotsAppFromContents(renderedKotsApplication)
+	if err != nil {
+		return graphs, errors.Wrap(err, "failed to load kots application from contents")
+	}
+
+	if len(kotsApplication.Spec.Graphs) > 0 {
+		graphs = kotsApplication.Spec.Graphs
+	}
+
+	return graphs, nil
+}
+
+func GetMetricCharts(graphs []kotsv1beta1.MetricGraph, prometheusAddress string) []MetricChart {
 	endTime := uint(time.Now().Unix())
 	charts := []MetricChart{}
 	for _, graph := range graphs {
@@ -178,7 +199,7 @@ func GetMetricCharts(appID string, sequence int64, prometheusAddress string) ([]
 		charts = append(charts, chart)
 	}
 
-	return charts, nil
+	return charts
 }
 
 func prometheusQueryRange(address string, query string, start uint, end uint, step uint) ([]SampleStream, error) {
