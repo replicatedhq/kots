@@ -13,7 +13,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.2.2
 	github.com/ahmetalpbalkan/go-cursor v0.0.0-20131010032410-8136607ea412
 	github.com/aws/aws-sdk-go v1.43.16
-	github.com/bitnami-labs/sealed-secrets v0.14.1
+	github.com/bitnami-labs/sealed-secrets v0.7.0
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/containers/image/v5 v5.19.3
 	github.com/coreos/go-oidc v2.2.1+incompatible
@@ -52,7 +52,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/replicatedhq/kurl v0.0.0-20210414162418-8d6211901244
-	github.com/replicatedhq/troubleshoot v0.44.0
+	github.com/replicatedhq/troubleshoot v0.44.1
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/robfig/cron v1.2.0
 	github.com/robfig/cron/v3 v3.0.1
@@ -122,7 +122,7 @@ require (
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
 	github.com/acomagu/bufpipe v1.0.3 // indirect
 	github.com/agnivade/levenshtein v1.1.1 // indirect
-	github.com/andybalholm/brotli v1.0.1 // indirect
+	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/beevik/etree v1.1.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d // indirect
@@ -177,7 +177,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
-	github.com/gomodule/redigo v2.0.0+incompatible // indirect
+	github.com/gomodule/redigo v1.8.9 // indirect
 	github.com/google/btree v1.0.1 // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/google/go-cmp v0.5.8 // indirect

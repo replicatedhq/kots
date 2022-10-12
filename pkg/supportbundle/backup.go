@@ -79,7 +79,7 @@ func CreateBundleForBackup(appID string, backupName string, backupNamespace stri
 			Namespace:    backupNamespace,
 			ClientConfig: restConfig,
 			Client:       k8sClientSet,
-			CTX:          ctx,
+			Context:      ctx,
 			RBACErrors:   RBACErrors,
 		})
 	}
