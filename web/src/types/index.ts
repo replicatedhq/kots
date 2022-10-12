@@ -1,7 +1,7 @@
 export type App = {
   allowRollback: Object | undefined;
   allowSnapshots: boolean;
-  autoDeploy: boolean | string;
+  autoDeploy: string;
   chartPath: string;
   credentials: Credentials;
   currentSequence: number;
@@ -85,7 +85,7 @@ export type Downstream = {
 
 export type GitOps = {
   provider: string;
-  isConnected: true;
+  isConnected: boolean;
   uri: string;
 };
 

@@ -75,8 +75,35 @@ const SEMVER_AUTO_DEPLOY_OPTIONS = [
   SEMVER_MAJOR_MINOR_PATCH_AUTO_DEPLOY_OPTION,
 ];
 
-export default class AutomaticUpdatesModal extends React.Component {
-  constructor(props) {
+type Schedule = {
+  value: string;
+  label: string;
+};
+
+type Props = {
+  appSlug: string;
+  autoDeploy: string;
+  gitopsIsConnected: boolean | undefined;
+  isHelmManaged: boolean;
+  isOpen: boolean;
+  isSemverRequired: boolean;
+  onAutomaticUpdatesConfigured: () => void;
+  onRequestClose: () => void;
+  updateCheckerSpec: string;
+};
+
+type State = {
+  configureAutomaticUpdatesErr: string;
+  selectedAutoDeploy: Schedule | undefined;
+  selectedSchedule: Schedule | undefined;
+  updateCheckerSpec: string;
+};
+
+export default class AutomaticUpdatesModal extends React.Component<
+  Props,
+  State
+> {
+  constructor(props: Props) {
     super(props);
     let selectedSchedule = find(SCHEDULES, { value: props.updateCheckerSpec });
     if (!selectedSchedule) {
@@ -96,10 +123,10 @@ export default class AutomaticUpdatesModal extends React.Component {
     }
 
     this.state = {
-      updateCheckerSpec: props.updateCheckerSpec,
       configureAutomaticUpdatesErr: "",
-      selectedSchedule,
       selectedAutoDeploy,
+      selectedSchedule,
+      updateCheckerSpec: props.updateCheckerSpec,
     };
   }
 
@@ -123,7 +150,7 @@ export default class AutomaticUpdatesModal extends React.Component {
       method: "PUT",
       body: JSON.stringify({
         updateCheckerSpec: updateCheckerSpec,
-        autoDeploy: selectedAutoDeploy.value,
+        autoDeploy: selectedAutoDeploy?.value,
       }),
     })
       .then(async (res) => {
@@ -215,7 +242,7 @@ export default class AutomaticUpdatesModal extends React.Component {
     }
   };
 
-  handleScheduleChange = (selectedSchedule) => {
+  handleScheduleChange = (selectedSchedule: Schedule) => {
     let updateCheckerSpec;
     if (selectedSchedule.value !== "custom") {
       updateCheckerSpec = selectedSchedule.value;
@@ -228,13 +255,13 @@ export default class AutomaticUpdatesModal extends React.Component {
     });
   };
 
-  handleAutoDeployOptionChange = (selectedAutoDeploy) => {
+  handleAutoDeployOptionChange = (selectedAutoDeploy: Schedule) => {
     this.setState({
       selectedAutoDeploy: { ...selectedAutoDeploy },
     });
   };
 
-  handleSequenceAutoUpdatesChange = (sequenceAutoDeployEnabled) => {
+  handleSequenceAutoUpdatesChange = (sequenceAutoDeployEnabled: boolean) => {
     if (sequenceAutoDeployEnabled) {
       this.setState({
         selectedAutoDeploy: { ...SEQUENCE_AUTO_DEPLOY_OPTION },
@@ -260,7 +287,7 @@ export default class AutomaticUpdatesModal extends React.Component {
       selectedAutoDeploy,
       configureAutomaticUpdatesErr,
     } = this.state;
-    const humanReadableCron = this.getReadableCronExpression(updateCheckerSpec);
+    const humanReadableCron = this.getReadableCronExpression();
     let configureText = (
       <p className="u-fontSize--normal u-lineHeight--normal u-textColor--bodyCopy u-marginBottom--20">
         Configure how often you would like to automatically check for updates,
@@ -312,10 +339,9 @@ export default class AutomaticUpdatesModal extends React.Component {
                 isSearchable={false}
                 getOptionValue={(schedule) => schedule.label}
                 value={selectedSchedule}
+                // TODO: upgrade react-select and fix this
+                // @ts-ignore
                 onChange={this.handleScheduleChange}
-                isOptionSelected={(option) => {
-                  option.value === selectedSchedule;
-                }}
               />
               <div className="flex-column flex2 u-marginLeft--10">
                 <input
@@ -325,16 +351,16 @@ export default class AutomaticUpdatesModal extends React.Component {
                   value={updateCheckerSpec}
                   onChange={(e) => {
                     const schedule = find(SCHEDULES, { value: e.target.value });
-                    const selectedSchedule = schedule
+                    const selected = schedule
                       ? schedule
                       : find(SCHEDULES, { value: "custom" });
                     this.setState({
                       updateCheckerSpec: e.target.value,
-                      selectedSchedule,
+                      selectedSchedule: selected,
                     });
                   }}
                 />
-                {selectedSchedule.value === "@default" ? (
+                {selectedSchedule?.value === "@default" ? (
                   <span className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy">
                     Every 4 hours
                   </span>
@@ -366,10 +392,9 @@ export default class AutomaticUpdatesModal extends React.Component {
                     isSearchable={false}
                     getOptionValue={(option) => option.label}
                     value={selectedAutoDeploy}
+                    // TODO: upgrade react-select and fix this
+                    // @ts-ignore
                     onChange={this.handleAutoDeployOptionChange}
-                    isOptionSelected={(option) => {
-                      option.value === selectedAutoDeploy;
-                    }}
                   />
                 </>
               ) : (
@@ -382,7 +407,7 @@ export default class AutomaticUpdatesModal extends React.Component {
                   <div className="BoxedCheckbox-wrapper flex1 u-textAlign--left">
                     <div
                       className={`flex-auto flex ${
-                        "sequence" === selectedAutoDeploy.value
+                        "sequence" === selectedAutoDeploy?.value
                           ? "is-active"
                           : ""
                       }`}
@@ -391,7 +416,7 @@ export default class AutomaticUpdatesModal extends React.Component {
                         type="checkbox"
                         className="u-cursor--pointer"
                         id="sequenceAutoUpdatesEnabled"
-                        checked={"sequence" === selectedAutoDeploy.value}
+                        checked={"sequence" === selectedAutoDeploy?.value}
                         onChange={(e) => {
                           this.handleSequenceAutoUpdatesChange(
                             e.target.checked
