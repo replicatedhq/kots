@@ -1,4 +1,4 @@
-import React, { Fragment, useReducer, useEffect } from "react";
+import React, { Fragment, useReducer, useEffect, useState } from "react";
 import classNames from "classnames";
 import {
   Switch,
@@ -87,7 +87,7 @@ function AppDetailPage(props: Props) {
   const history = useHistory();
   const params = useParams<KotsParams>();
   const { selectedApp } = useSelectedApp();
-  const [appsRefetchInterval, setAppsRefetchInterval] = React.useState<
+  const [appsRefetchInterval, setAppsRefetchInterval] = useState<
     number | false
   >(false);
   const {
@@ -279,7 +279,6 @@ function AppDetailPage(props: Props) {
 
   // Enforce initial app configuration (if exists)
   useEffect(() => {
-    console.log("selected app useEffect called");
     // Handle updating the theme state when switching apps.
     if (selectedApp?.iconUri) {
       const { navbarLogo, ...rest } = theme.getThemeState();
@@ -321,7 +320,6 @@ function AppDetailPage(props: Props) {
   }, [selectedApp]);
 
   useEffect(() => {
-    console.log("pathname use effect called");
     refetchApps();
     if (history.location.pathname === "/apps") {
       return;
