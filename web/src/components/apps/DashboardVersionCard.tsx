@@ -175,67 +175,18 @@ const DashboardVersionCard = (props: Props) => {
   );
   const history = useHistory();
   const params = useParams<KotsParams>();
-  // state = {
-  //   confirmType: "",
-  //   deployView: false,
-  //   displayConfirmDeploymentModal: false,
-  //   displayKotsUpdateModal: false,
-  //   displayShowDetailsModal: false,
-  //   firstSequence: "",
-  //   isSkipPreflights: false,
-  //   isRedeploy: false,
-  //   kotsUpdateChecker: new Repeater(),
-  //   kotsUpdateError: null,
-  //   kotsUpdateMessage: null,
-  //   kotsUpdateRunning: false,
-  //   kotsUpdateStatus: null,
-  //   latestDeployableVersion: null,
-  //   latestDeployableVersionErrMsg: "",
-  //   logs: null,
-  //   logsLoading: false,
-  //   numOfRemainingVersions: 0,
-  //   numOfSkippedVersions: 0,
-  //   releaseNotes: "",
-  //   releaseWithErr: null,
-  //   releaseWithNoChanges: null,
-  //   secondSequence: "",
-  //   selectedAction: "",
-  //   selectedSequence: -1,
-  //   selectedTab: null,
-  //   showDiffErrModal: false,
-  //   showDiffModal: false,
-  //   showDeployWarningModal: false,
-  //   showHelmDeployModal: false,
-  //   showHelmDeployModalWithVersionLabel: "",
-  //   showLogsModal: false,
-  //   showNoChangesModal: false,
-  //   showReleaseNotes: false,
-  //   showSkipModal: false,
-  //   versionDownloadStatuses: {},
-  //   versionFailing: false,
-  //   versionToDeploy: null,
-  //   viewLogsErrMsg: "",
-  //   yamlErrorDetails: [],
-  // };
 
   // moving this out of the state because new repeater instances were getting created
   // and it doesn't really affect the UI
   const versionDownloadStatusJobs: {
     [key: number]: Repeater;
   } = {};
-  //}
 
   useEffect(() => {
     if (props.links && props.links.length > 0) {
       setState({ selectedAction: props.links[0] });
     }
   }, []);
-
-  // componentDidMount() {
-  //   if (props.links && props.links.length > 0) {
-  //     setState({ selectedAction: props.links[0] });
-  //   }
-  // }
 
   useEffect(() => {
     if (
@@ -306,30 +257,6 @@ const DashboardVersionCard = (props: Props) => {
   useEffect(() => {
     getLatestDeployableVersion();
   }, [props.downstream]);
-
-  // componentDidUpdate(lastProps: Props) {
-  //   if (
-  //     props.links !== lastProps.links &&
-  //     props.links &&
-  //     props.links.length > 0
-  //   ) {
-  //     setState({ selectedAction: props.links[0] });
-  //   }
-  //   if (
-  //     history.location.search !== lasthistory.location.search &&
-  //     history.location.search !== ""
-  //   ) {
-  //     const splitSearch = history.location.search.split("/");
-  //     setState({
-  //       showDiffModal: true,
-  //       firstSequence: splitSearch[1],
-  //       secondSequence: splitSearch[2],
-  //     });
-  //   }
-  //   if (lastProps.downstream !== props.downstream) {
-  //     getLatestDeployableVersion();
-  //   }
-  // }
 
   const closeViewDiffModal = () => {
     if (history.location.search) {
