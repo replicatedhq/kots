@@ -67,9 +67,15 @@ class GenerateSupportBundle extends React.Component {
           const bundle = supportBundles[0]; // safe. there's at least 1 element in this array.
           if (bundle.status !== "running") {
             this.state.listSupportBundlesJob.stop();
-            history.push(
-              `/app/${watch.slug}/troubleshoot/analyze/${bundle.id}`
-            );
+            if (bundle.status === "failed") {
+              this.props.history.push(
+                `/app/${this.props.watch.slug}/troubleshoot`
+              );
+            } else {
+              history.push(
+                `/app/${watch.slug}/troubleshoot/analyze/${bundle.id}`
+              );
+            }
           }
         }
       }
@@ -289,9 +295,15 @@ class GenerateSupportBundle extends React.Component {
         this.setState({ bundleAnalysisProgress: bundle.progress });
         if (bundle.status !== "running") {
           this.state.pollForBundleAnalysisProgress.stop();
-          this.props.history.push(
-            `/app/${this.props.watch.slug}/troubleshoot/analyze/${bundle.slug}`
-          );
+          if (bundle.status === "failed") {
+            this.props.history.push(
+              `/app/${this.props.watch.slug}/troubleshoot`
+            );
+          } else {
+            this.props.history.push(
+              `/app/${this.props.watch.slug}/troubleshoot/analyze/${bundle.slug}`
+            );
+          }
         }
       })
       .catch((err) => {

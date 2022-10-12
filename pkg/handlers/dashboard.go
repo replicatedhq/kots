@@ -66,10 +66,13 @@ func (h *Handler) GetAppDashboard(w http.ResponseWriter, r *http.Request) {
 		prometheusAddress = os.Getenv("PROMETHEUS_ADDRESS")
 	}
 
-	metrics, err := version.GetMetricCharts(a.ID, parentSequence, prometheusAddress)
-	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to get metric charts"))
-		metrics = []version.MetricChart{}
+	metrics := []version.MetricChart{}
+	if prometheusAddress != "" {
+		graphs, err := version.GetGraphs(a, parentSequence, store.GetStore())
+		if err != nil {
+			logger.Error(errors.Wrapf(err, "failed to get graphs for app %s sequence %d. falling back to default graphs", a.Slug, parentSequence))
+		}
+		metrics = version.GetMetricCharts(graphs, prometheusAddress)
 	}
 
 	getAppDashboardResponse := GetAppDashboardResponse{

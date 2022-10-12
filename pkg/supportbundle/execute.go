@@ -46,12 +46,14 @@ func executeUpdateRoutine(bundle *types.SupportBundle) chan interface{} {
 	progressChan := make(chan interface{})
 
 	timeout := time.After(60 * time.Minute)
-
 	logger.Infof("Executing Update go routine for support bundle ID: %s", bundle.ID)
 
 	go func() {
 		var collectorsComplete int
 		logger.Debugf("Waiting for %d collectors to complete", bundle.Progress.CollectorCount)
+
+		updateTicker := time.NewTicker(5 * time.Second) // without updates, bundle will be considlered failed after 10 seconds.
+		defer updateTicker.Stop()
 
 		for {
 			select {
@@ -84,7 +86,7 @@ func executeUpdateRoutine(bundle *types.SupportBundle) chan interface{} {
 						bundle.Progress.CollectorsCompleted = collectorsComplete
 						bundle.Progress.Message = val.Message
 						if err := store.GetStore().UpdateSupportBundle(bundle); err != nil {
-							logger.Error(errors.Wrap(err, "could not update progress to bundle"))
+							logger.Error(errors.Wrap(err, "could not update collector counter for bundle"))
 							return
 						}
 
@@ -106,7 +108,7 @@ func executeUpdateRoutine(bundle *types.SupportBundle) chan interface{} {
 						bundle.Progress.Message = val.Message
 
 						if err := store.GetStore().UpdateSupportBundle(bundle); err != nil {
-							logger.Error(errors.Wrap(err, "could not update progress to bundle"))
+							logger.Error(errors.Wrap(err, "could not update uploaded status for bundle"))
 							return
 						}
 
@@ -117,12 +119,16 @@ func executeUpdateRoutine(bundle *types.SupportBundle) chan interface{} {
 						bundle.Progress.Message = val.Message
 
 						if err := store.GetStore().UpdateSupportBundle(bundle); err != nil {
-							logger.Error(errors.Wrap(err, "could not update progress to bundle"))
+							logger.Error(errors.Wrap(err, "could not update progress for bundle"))
 							return
 						}
 					}
 				default:
 					logger.Errorf("Received unknown progress update, %v, of type %T, for support bundle ID: %s", val, val, bundle.ID)
+				}
+			case <-updateTicker.C:
+				if err := store.GetStore().UpdateSupportBundle(bundle); err != nil {
+					logger.Error(errors.Wrap(err, "could not update bundle"))
 				}
 			case <-timeout:
 				logger.Errorf("Timeout exceeded for support bundle ID: %s", bundle.ID)
