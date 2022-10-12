@@ -48,9 +48,14 @@ type Props = {
   isBundleUploading: boolean;
   isHelmManaged: boolean;
   isVeleroInstalled: boolean;
-  makeCurrentVersion: (version: Version) => void;
+  makeCurrentVersion: (
+    slug: string,
+    versionToDeploy: Version,
+    isSkipPreflights: boolean,
+    continueWithFailedPreflights: boolean
+  ) => void;
   ping: (clusterId?: string) => void;
-  redeployVersion: (version: Version) => void;
+  redeployVersion: (slug: string, version: Version | null) => void;
   refreshAppData: () => void;
   snapshotInProgressApps: string[];
   toggleIsBundleUploading: (isUploading: boolean) => void;
@@ -73,7 +78,7 @@ type State = {
   checkingForUpdateError: boolean;
   checkingForUpdates: boolean;
   checkingUpdateMessage: string;
-  currentVersion: Version | {};
+  currentVersion: Version | null;
   dashboard: DashboardResponse;
   displayErrorModal: boolean;
   downstream: Downstream | null;
@@ -121,7 +126,7 @@ class Dashboard extends Component<Props, State> {
         metrics: [],
         prometheusAddress: "",
       },
-      currentVersion: {},
+      currentVersion: null,
       displayErrorModal: false,
       downstream: null,
       fetchAppDownstreamJob: new Repeater(),
@@ -783,38 +788,39 @@ class Dashboard extends Component<Props, State> {
 
                 <div className="u-marginTop--30 flex flex1 u-width--full">
                   <div className="flex1 u-paddingRight--15">
-                    <DashboardVersionCard
-                      currentVersion={currentVersion}
-                      downstream={downstream}
-                      app={app}
-                      url={this.props.match.url}
-                      checkingForUpdates={checkingForUpdates}
-                      checkingUpdateText={checkingUpdateText}
-                      onDropBundle={this.onDropBundle}
-                      airgapUploader={this.state.airgapUploader}
-                      uploadingAirgapFile={uploadingAirgapFile}
-                      airgapUploadError={airgapUploadError}
-                      refetchData={this.props.updateCallback}
-                      downloadCallback={this.startFetchAppDownstreamJob}
-                      uploadProgress={this.state.uploadProgress}
-                      uploadSize={this.state.uploadSize}
-                      uploadResuming={this.state.uploadResuming}
-                      makeCurrentVersion={this.props.makeCurrentVersion}
-                      redeployVersion={this.props.redeployVersion}
-                      onProgressError={this.onProgressError}
-                      onCheckForUpdates={() => this.onCheckForUpdates()}
-                      isBundleUploading={isBundleUploading}
-                      checkingForUpdateError={this.state.checkingForUpdateError}
-                      viewAirgapUploadError={() =>
-                        this.toggleViewAirgapUploadError()
-                      }
-                      viewAirgapUpdateError={(err: string) =>
-                        this.toggleViewAirgapUpdateError(err)
-                      }
-                      showAutomaticUpdatesModal={this.showAutomaticUpdatesModal}
-                      noUpdatesAvalable={this.state.noUpdatesAvalable}
-                      isHelmManaged={this.props.isHelmManaged}
-                    />
+                    {currentVersion !== null && (
+                      <DashboardVersionCard
+                        currentVersion={currentVersion}
+                        downstream={downstream}
+                        app={app}
+                        checkingForUpdates={checkingForUpdates}
+                        checkingUpdateText={checkingUpdateText}
+                        airgapUploader={this.state.airgapUploader}
+                        uploadingAirgapFile={uploadingAirgapFile}
+                        airgapUploadError={airgapUploadError}
+                        refetchData={this.props.updateCallback}
+                        downloadCallback={this.startFetchAppDownstreamJob}
+                        uploadProgress={this.state.uploadProgress}
+                        uploadSize={this.state.uploadSize}
+                        uploadResuming={this.state.uploadResuming}
+                        makeCurrentVersion={this.props.makeCurrentVersion}
+                        redeployVersion={this.props.redeployVersion}
+                        onProgressError={this.onProgressError}
+                        onCheckForUpdates={() => this.onCheckForUpdates()}
+                        isBundleUploading={isBundleUploading}
+                        checkingForUpdateError={
+                          this.state.checkingForUpdateError
+                        }
+                        viewAirgapUploadError={() =>
+                          this.toggleViewAirgapUploadError()
+                        }
+                        showAutomaticUpdatesModal={
+                          this.showAutomaticUpdatesModal
+                        }
+                        noUpdatesAvalable={this.state.noUpdatesAvalable}
+                        isHelmManaged={this.props.isHelmManaged}
+                      />
+                    )}
                   </div>
                   <div className="flex1 flex-column u-paddingLeft--15">
                     {app.allowSnapshots && isVeleroInstalled ? (

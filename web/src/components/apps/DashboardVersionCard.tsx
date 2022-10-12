@@ -38,19 +38,19 @@ import {
 import { AirgapUploader } from "@src/utilities/airgapUploader";
 
 type Props = {
-  adminConsoleMetadata: Metadata;
-  airgapUploader: AirgapUploader;
-  airgapUploadError: boolean;
+  adminConsoleMetadata?: Metadata;
+  airgapUploader: AirgapUploader | null;
+  airgapUploadError: string | null;
   app: App;
   checkingForUpdates: boolean;
   checkingForUpdateError: boolean;
   checkingUpdateText: string;
   currentVersion: Version;
   downloadCallback: () => void;
-  downstream: Downstream;
+  downstream: Downstream | null;
   isBundleUploading: boolean;
   isHelmManaged: boolean;
-  links: string[];
+  links?: string[];
   makeCurrentVersion: (
     slug: string,
     versionToDeploy: Version,
@@ -60,7 +60,7 @@ type Props = {
   // TODO:  fix this misspelling
   noUpdatesAvalable: boolean;
   onCheckForUpdates: () => void;
-  onProgressError: () => void;
+  onProgressError: (airgapUploadError: string) => Promise<void>;
   redeployVersion: (slug: string, version: Version | null) => void;
   refetchData: () => void;
   showAutomaticUpdatesModal: () => void;
