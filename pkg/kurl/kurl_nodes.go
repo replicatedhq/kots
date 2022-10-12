@@ -43,12 +43,8 @@ func GetNodes(client kubernetes.Interface) (*types.KurlNodes, error) {
 			return nil, errors.Wrapf(err, "parse CPU capacity %q for node %s", node.Status.Capacity.Cpu().String(), node.Name)
 		}
 
-		podCapacity.Capacity, err = strconv.ParseFloat(node.Status.Capacity.Pods().String(), 64)
-		if err != nil {
-			return nil, errors.Wrapf(err, "parse pod capacity %q for node %s", node.Status.Capacity.Pods().String(), node.Name)
-		}
+		podCapacity.Capacity = float64(node.Status.Capacity.Pods().Value())
 
-		// find IP
 		nodeIP := ""
 		for _, address := range node.Status.Addresses {
 			if address.Type == v1.NodeInternalIP {
