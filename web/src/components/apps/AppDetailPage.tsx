@@ -16,7 +16,6 @@ import Dashboard from "./Dashboard";
 import DownstreamTree from "../../components/tree/KotsApplicationTree";
 import AppVersionHistory from "./AppVersionHistory";
 import { isAwaitingResults, Utilities } from "../../utilities/utilities";
-import { Repeater } from "../../utilities/repeater";
 import PreflightResultPage from "../PreflightResultPage";
 import AppConfig from "../../features/AppConfig/components/AppConfig";
 import AppLicense from "./AppLicense";
@@ -30,31 +29,29 @@ import TroubleshootContainer from "../troubleshoot/TroubleshootContainer";
 import ErrorModal from "../modals/ErrorModal";
 
 import "../../scss/components/watches/WatchDetailPage.scss";
+import { useApps, useSelectedApp } from "@features/App";
 
 // Types
 import { App, Metadata, KotsParams, Version } from "@types";
 
 type Props = {
   adminConsoleMetadata?: Metadata;
-  appsList: App[];
   appNameSpace: string | null;
   appName: string | null;
   isHelmManaged: boolean;
   onActiveInitSession: (session: string) => void;
   ping: () => void;
+  // TODO: remove this after adding app hook to Root-
+  // right now the footer needs to update when the app list is updated by the AppDetailPage
   refetchAppsList: () => void;
   refetchAppMetadata: () => void;
-  rootDidInitialAppFetch: boolean;
   snapshotInProgressApps: string[];
 };
 
 type State = {
-  app: App | null;
-  checkForFirstAppJob: Repeater;
   clusterParentSlug: string;
   displayErrorModal: boolean;
   displayRequiredKotsUpdateModal: boolean;
-  getAppJob: Repeater;
   gettingAppErrMsg: string;
   isBundleUploading: boolean;
   isVeleroInstalled: boolean;
@@ -74,12 +71,9 @@ function AppDetailPage(props: Props) {
       ...newState,
     }),
     {
-      app: null,
-      checkForFirstAppJob: new Repeater(),
       clusterParentSlug: "",
       displayErrorModal: false,
       displayRequiredKotsUpdateModal: false,
-      getAppJob: new Repeater(),
       gettingAppErrMsg: "",
       isBundleUploading: false,
       isVeleroInstalled: false,
@@ -95,9 +89,65 @@ function AppDetailPage(props: Props) {
 
   const history = useHistory();
   const params = useParams<KotsParams>();
-  const [currentApp, setCurrentApp] = useState(
-    props.appsList?.find((w) => w.slug === params.slug)
-  );
+  const { selectedApp } = useSelectedApp();
+  const [appsRefetchInterval, setAppsRefetchInterval] = useState<
+    number | false
+  >(false);
+  const {
+    data: appsData,
+    error: appsError,
+    isError: appsIsError,
+    isLoading: appsIsLoading,
+    refetch: refetchApps,
+  } = useApps({ refetchInterval: appsRefetchInterval });
+
+  const { apps: appsList } = appsData || {};
+
+  /**
+   *  Runs on mount and on update. Also handles redirect logic
+   *  if no apps are found, or the first app is found.
+   */
+  const redirectToFirstAppOrInstall = () => {
+    // navigate to first app if available
+    if (appsList && appsList?.length > 0) {
+      history.replace(`/app/${appsList[0].slug}`);
+    } else if (props.isHelmManaged) {
+      history.replace("/install-with-helm");
+    } else {
+      history.replace("/upload-license");
+    }
+  };
+
+  // loading state stuff that was in the old getApp() implementation
+  useEffect(() => {
+    if (appsIsLoading) {
+      setState({
+        loadingApp: true,
+      });
+    } else {
+      if (!appsIsError) {
+        if (appsList?.length === 0 || !params.slug) {
+          redirectToFirstAppOrInstall();
+          return;
+        }
+        setState({
+          loadingApp: false,
+          gettingAppErrMsg: "",
+          displayErrorModal: false,
+        });
+      } else {
+        setState({
+          loadingApp: false,
+          gettingAppErrMsg:
+            appsError instanceof Error
+              ? appsError.message
+              : "Unexpected error when fetching apps",
+          displayErrorModal: true,
+        });
+      }
+    }
+  }, [appsList, appsIsLoading, appsIsError]);
+
   const theme = useTheme();
 
   const toggleDisplayRequiredKotsUpdateModal = (message: string) => {
@@ -113,54 +163,6 @@ function AppDetailPage(props: Props) {
 
   const toggleErrorModal = () => {
     setState({ displayErrorModal: !state.displayErrorModal });
-  };
-
-  const getApp = async (slug = params.slug) => {
-    if (!slug) {
-      return;
-    }
-
-    try {
-      setState({ loadingApp: true });
-
-      const res = await fetch(`${process.env.API_ENDPOINT}/app/${slug}`, {
-        headers: {
-          Authorization: Utilities.getToken(),
-          "Content-Type": "application/json",
-        },
-        method: "GET",
-      });
-      if (res.ok && res.status == 200) {
-        const app = await res.json();
-        setState({
-          app,
-          loadingApp: false,
-          gettingAppErrMsg: "",
-          displayErrorModal: false,
-        });
-      } else {
-        setState({
-          loadingApp: false,
-          gettingAppErrMsg: `Unexpected status code: ${res.status}`,
-          displayErrorModal: true,
-        });
-      }
-    } catch (err) {
-      console.log(err);
-      if (err instanceof Error) {
-        setState({
-          loadingApp: false,
-          gettingAppErrMsg: err.message,
-          displayErrorModal: true,
-        });
-      } else {
-        setState({
-          loadingApp: false,
-          gettingAppErrMsg: "Something went wrong, please try again.",
-          displayErrorModal: true,
-        });
-      }
-    }
   };
 
   const checkIsVeleroInstalled = async () => {
@@ -190,7 +192,7 @@ function AppDetailPage(props: Props) {
    * @return {undefined}
    */
   const refetchData = () => {
-    getApp();
+    refetchApps();
     props.refetchAppsList();
     props.refetchAppMetadata();
     checkIsVeleroInstalled();
@@ -279,37 +281,21 @@ function AppDetailPage(props: Props) {
     }
   };
 
-  /**
-   *  Runs on mount and on update. Also handles redirect logic
-   *  if no apps are found, or the first app is found.
-   */
-  const checkForFirstApp = async () => {
-    const { rootDidInitialAppFetch, appsList } = props;
-    if (!rootDidInitialAppFetch) {
-      return;
-    }
-    state.checkForFirstAppJob?.stop?.();
-    const firstApp = appsList?.find((app) => app.name);
-
-    if (firstApp) {
-      history.replace(`/app/${firstApp.slug}`);
-      getApp(firstApp.slug);
-    } else if (props.isHelmManaged) {
-      history.replace("/install-with-helm");
-    } else {
-      history.replace("/upload-license");
-    }
-  };
-
   // Enforce initial app configuration (if exists)
   useEffect(() => {
-    const { app } = state;
-
-    setCurrentApp(props.appsList?.find((w) => w.slug === params.slug));
-
+    // Handle updating the theme state when switching apps.
+    if (selectedApp?.iconUri) {
+      const { navbarLogo, ...rest } = theme.getThemeState();
+      if (navbarLogo === null || navbarLogo !== selectedApp.iconUri) {
+        theme.setThemeState({
+          ...rest,
+          navbarLogo: selectedApp.iconUri,
+        });
+      }
+    }
     // Refetch app info when switching between apps
-    if (app && !state.loadingApp && params.slug != app.slug) {
-      getApp();
+    if (selectedApp && !appsIsLoading && params.slug !== selectedApp.slug) {
+      refetchApps();
       checkIsVeleroInstalled();
       return;
     }
@@ -317,56 +303,42 @@ function AppDetailPage(props: Props) {
     // Handle updating the theme state when switching apps.
     // Used for a fresh reload
     if (history.location.pathname === "/apps") {
-      checkForFirstApp();
       // updates state but does not cause infinite loop because app navigates away from /apps
       return;
     }
 
-    if (app) {
-      const downstream = app?.downstream;
-      if (downstream?.pendingVersions?.length) {
-        const firstVersion = downstream.pendingVersions.find(
-          (version) => version?.sequence === 0
-        );
-        if (firstVersion?.status === "pending_config") {
-          history.push(`/${app.slug}/config`);
-          return;
-        }
+    // find if any app needs configuration and redirect to its configuration flow
+    const appNeedsConfiguration = appsList?.find((app) => {
+      return app?.downstream?.pendingVersions?.length > 0;
+    });
+    if (appNeedsConfiguration) {
+      const downstream = appNeedsConfiguration.downstream;
+      const firstVersion = downstream.pendingVersions.find(
+        (version: Version) => version?.sequence === 0
+      );
+      if (firstVersion?.status === "pending_config") {
+        history.push(`/${appNeedsConfiguration.slug}/config`);
+        return;
       }
     }
-  }, [state.app]);
+  }, [selectedApp]);
 
   useEffect(() => {
+    refetchApps();
     if (history.location.pathname === "/apps") {
-      state.checkForFirstAppJob.start(checkForFirstApp, 2000);
       return;
     }
-    getApp();
+    // getApp();
     checkIsVeleroInstalled();
     return () => {
       theme.clearThemeState();
-      state.getAppJob.stop();
-      state.checkForFirstAppJob?.stop?.();
+      setAppsRefetchInterval(false);
     };
   }, [history.location.pathname]);
 
-  // Handle updating the theme state when switching apps.
-  useEffect(() => {
-    if (currentApp?.iconUri) {
-      const { navbarLogo, ...rest } = theme.getThemeState();
-      if (navbarLogo === null || navbarLogo !== currentApp.iconUri) {
-        theme.setThemeState({
-          ...rest,
-          navbarLogo: currentApp.iconUri,
-        });
-      }
-    }
-  }, [currentApp]);
-
-  const { appsList, rootDidInitialAppFetch, appName } = props;
+  const { appName } = props;
 
   const {
-    app,
     displayRequiredKotsUpdateModal,
     isBundleUploading,
     requiredKotsUpdateMessage,
@@ -380,29 +352,33 @@ function AppDetailPage(props: Props) {
     </div>
   );
 
-  if (!rootDidInitialAppFetch) {
+  if (appsIsLoading) {
     return centeredLoader;
   }
 
   // poll version status if it's awaiting results
-  const downstream = app?.downstream;
+  const downstream = selectedApp?.downstream;
   if (
     downstream?.currentVersion &&
     isAwaitingResults([downstream.currentVersion])
   ) {
-    state.getAppJob.start(getApp, 2000);
+    if (appsRefetchInterval === false) {
+      setAppsRefetchInterval(2000);
+    }
   } else {
-    state.getAppJob.stop();
+    if (appsRefetchInterval) {
+      setAppsRefetchInterval(false);
+    }
   }
 
   return (
     <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
       <SidebarLayout
         className="flex flex1 u-minHeight--full u-overflow--hidden"
-        condition={appsList?.length > 1}
+        condition={appsList && appsList?.length > 1}
         sidebar={
           <SideBar
-            items={appsList?.map((item, idx) => {
+            items={appsList?.map((item: App, idx: number) => {
               let sidebarItemNode;
               if (item.name) {
                 const slugFromRoute = params.slug;
@@ -433,14 +409,14 @@ function AppDetailPage(props: Props) {
         }
       >
         <div className="flex-column flex1 u-width--full u-height--full u-overflow--auto">
-          {!app ? (
+          {!selectedApp ? (
             centeredLoader
           ) : (
             <Fragment>
               <SubNavBar
                 className="flex"
                 activeTab={params.tab || "app"}
-                app={app}
+                app={selectedApp}
                 isVeleroInstalled={isVeleroInstalled}
                 isHelmManaged={props.isHelmManaged}
               />
@@ -450,8 +426,8 @@ function AppDetailPage(props: Props) {
                   path="/app/:slug"
                   render={() => (
                     <Dashboard
-                      app={app}
-                      cluster={app.downstream?.cluster}
+                      app={selectedApp}
+                      cluster={selectedApp.downstream?.cluster}
                       updateCallback={refetchData}
                       onActiveInitSession={props.onActiveInitSession}
                       toggleIsBundleUploading={toggleIsBundleUploading}
@@ -460,7 +436,7 @@ function AppDetailPage(props: Props) {
                       redeployVersionErrMsg={state.redeployVersionErrMsg}
                       isBundleUploading={isBundleUploading}
                       isVeleroInstalled={isVeleroInstalled}
-                      refreshAppData={getApp}
+                      refreshAppData={refetchApps}
                       snapshotInProgressApps={props.snapshotInProgressApps}
                       ping={props.ping}
                       isHelmManaged={props.isHelmManaged}
@@ -474,7 +450,7 @@ function AppDetailPage(props: Props) {
                   render={(renderProps) => (
                     <DownstreamTree
                       {...renderProps}
-                      app={app}
+                      app={selectedApp}
                       appNameSpace={props.appNameSpace}
                       isHelmManaged={props.isHelmManaged}
                     />
@@ -489,7 +465,7 @@ function AppDetailPage(props: Props) {
                   ]}
                   render={() => (
                     <AppVersionHistory
-                      app={app}
+                      app={selectedApp}
                       match={{ match: { params: params } }}
                       makeCurrentVersion={makeCurrentRelease}
                       makingCurrentVersionErrMsg={
@@ -499,7 +475,7 @@ function AppDetailPage(props: Props) {
                       toggleIsBundleUploading={toggleIsBundleUploading}
                       isBundleUploading={isBundleUploading}
                       isHelmManaged={props.isHelmManaged}
-                      refreshAppData={getApp}
+                      refreshAppData={refetchApps}
                       displayErrorModal={state.displayErrorModal}
                       toggleErrorModal={toggleErrorModal}
                       makingCurrentRelease={state.makingCurrentRelease}
@@ -514,8 +490,8 @@ function AppDetailPage(props: Props) {
                   path="/app/:slug/downstreams/:downstreamSlug/version-history/preflight/:sequence"
                   render={(renderProps) => (
                     <PreflightResultPage
-                      logo={app.iconUri}
-                      app={app}
+                      logo={selectedApp.iconUri}
+                      app={selectedApp}
                       {...renderProps}
                     />
                   )}
@@ -525,8 +501,8 @@ function AppDetailPage(props: Props) {
                   path="/app/:slug/config/:sequence?"
                   render={() => (
                     <AppConfig
-                      app={app}
-                      refreshAppData={getApp}
+                      app={selectedApp}
+                      refreshAppData={refetchApps}
                       fromLicenseFlow={false}
                       isHelmManaged={props.isHelmManaged}
                     />
@@ -535,7 +511,10 @@ function AppDetailPage(props: Props) {
                 <Route
                   path="/app/:slug/troubleshoot"
                   render={() => (
-                    <TroubleshootContainer app={app} appName={appName} />
+                    <TroubleshootContainer
+                      app={selectedApp}
+                      appName={appName}
+                    />
                   )}
                 />
                 <Route
@@ -543,7 +522,7 @@ function AppDetailPage(props: Props) {
                   path="/app/:slug/license"
                   render={() => (
                     <AppLicense
-                      app={app}
+                      app={selectedApp}
                       syncCallback={refetchData}
                       changeCallback={refetchData}
                     />
@@ -554,17 +533,20 @@ function AppDetailPage(props: Props) {
                   path="/app/:slug/registry-settings"
                   render={() => (
                     <AppRegistrySettings
-                      app={app}
+                      app={selectedApp}
                       updateCallback={refetchData}
                     />
                   )}
                 />
-                {app.isAppIdentityServiceSupported && (
+                {selectedApp.isAppIdentityServiceSupported && (
                   <Route
                     exact
                     path="/app/:slug/access"
                     render={() => (
-                      <AppIdentityServiceSettings app={app} refetch={getApp} />
+                      <AppIdentityServiceSettings
+                        app={selectedApp}
+                        refetch={refetchApps}
+                      />
                     )}
                   />
                 )}
@@ -610,8 +592,8 @@ function AppDetailPage(props: Props) {
               You must update KOTS to deploy this version
             </h2>
             <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">
-              This version of {app?.name} requires a version of KOTS that is
-              different from what you currently have installed.
+              This version of {selectedApp?.name} requires a version of KOTS
+              that is different from what you currently have installed.
             </p>
             <p className="u-fontSize--normal u-textColor--error u-fontWeight--medium u-lineHeight--normal u-marginBottom--20">
               {requiredKotsUpdateMessage}
@@ -632,7 +614,7 @@ function AppDetailPage(props: Props) {
           errorModal={state.displayErrorModal}
           toggleErrorModal={toggleErrorModal}
           errMsg={gettingAppErrMsg}
-          tryAgain={() => getApp(params.slug)}
+          tryAgain={() => refetchApps()}
           err="Failed to get application"
           loading={state.loadingApp}
         />
