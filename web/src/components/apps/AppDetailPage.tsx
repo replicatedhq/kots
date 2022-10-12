@@ -117,7 +117,6 @@ function AppDetailPage(props: Props) {
 
   // loading state stuff that was in the old getApp() implementation
   useEffect(() => {
-    console.log("use effect appsList");
     if (appsIsLoading) {
       setState({
         loadingApp: true,
