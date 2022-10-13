@@ -1,38 +1,38 @@
-import React, { Fragment, useReducer, useEffect, useState } from 'react';
-import classNames from 'classnames';
+import React, { Fragment, useReducer, useEffect, useState } from "react";
+import classNames from "classnames";
 import {
   Switch,
   Route,
   Redirect,
   useHistory,
   useParams,
-} from 'react-router-dom';
-import Modal from 'react-modal';
-import { useTheme } from '@src/components/context/withTheme';
-import { KotsSidebarItem } from '@src/components/watches/WatchSidebarItem';
-import { HelmChartSidebarItem } from '@src/components/watches/WatchSidebarItem';
-import NotFound from '../static/NotFound';
-import Dashboard from './Dashboard';
-import DownstreamTree from '../../components/tree/KotsApplicationTree';
-import AppVersionHistory from './AppVersionHistory';
-import { isAwaitingResults, Utilities } from '../../utilities/utilities';
-import PreflightResultPage from '../PreflightResultPage';
-import AppConfig from '../../features/AppConfig/components/AppConfig';
-import AppLicense from './AppLicense';
-import SubNavBar from '@src/components/shared/SubNavBar';
-import SidebarLayout from '../layout/SidebarLayout/SidebarLayout';
-import SideBar from '../shared/SideBar';
-import Loader from '../shared/Loader';
-import AppRegistrySettings from './AppRegistrySettings';
-import AppIdentityServiceSettings from './AppIdentityServiceSettings';
-import TroubleshootContainer from '../troubleshoot/TroubleshootContainer';
-import ErrorModal from '../modals/ErrorModal';
+} from "react-router-dom";
+import Modal from "react-modal";
+import { useTheme } from "@src/components/context/withTheme";
+import { KotsSidebarItem } from "@src/components/watches/WatchSidebarItem";
+import { HelmChartSidebarItem } from "@src/components/watches/WatchSidebarItem";
+import NotFound from "../static/NotFound";
+import Dashboard from "./Dashboard";
+import DownstreamTree from "../../components/tree/KotsApplicationTree";
+import AppVersionHistory from "./AppVersionHistory";
+import { isAwaitingResults, Utilities } from "../../utilities/utilities";
+import PreflightResultPage from "../PreflightResultPage";
+import AppConfig from "../../features/AppConfig/components/AppConfig";
+import AppLicense from "./AppLicense";
+import SubNavBar from "@src/components/shared/SubNavBar";
+import SidebarLayout from "../layout/SidebarLayout/SidebarLayout";
+import SideBar from "../shared/SideBar";
+import Loader from "../shared/Loader";
+import AppRegistrySettings from "./AppRegistrySettings";
+import AppIdentityServiceSettings from "./AppIdentityServiceSettings";
+import TroubleshootContainer from "../troubleshoot/TroubleshootContainer";
+import ErrorModal from "../modals/ErrorModal";
 
-import '../../scss/components/watches/WatchDetailPage.scss';
-import { useApps, useSelectedApp } from '@features/App';
+import "../../scss/components/watches/WatchDetailPage.scss";
+import { useApps, useSelectedApp } from "@features/App";
 
 // Types
-import { App, Metadata, KotsParams, Version } from '@types';
+import { App, Metadata, KotsParams, Version } from "@types";
 
 type Props = {
   adminConsoleMetadata?: Metadata;
@@ -71,20 +71,20 @@ function AppDetailPage(props: Props) {
       ...newState,
     }),
     {
-      clusterParentSlug: '',
+      clusterParentSlug: "",
       displayErrorModal: false,
       displayRequiredKotsUpdateModal: false,
-      gettingAppErrMsg: '',
+      gettingAppErrMsg: "",
       isBundleUploading: false,
       isVeleroInstalled: false,
       loadingApp: true,
       makingCurrentRelease: false,
-      makingCurrentReleaseErrMsg: '',
-      preparingUpdate: '',
-      redeployVersionErrMsg: '',
-      requiredKotsUpdateMessage: '',
-      selectedWatchName: '',
-    },
+      makingCurrentReleaseErrMsg: "",
+      preparingUpdate: "",
+      redeployVersionErrMsg: "",
+      requiredKotsUpdateMessage: "",
+      selectedWatchName: "",
+    }
   );
 
   const history = useHistory();
@@ -112,9 +112,9 @@ function AppDetailPage(props: Props) {
     if (appsList && appsList?.length > 0) {
       history.replace(`/app/${appsList[0].slug}`);
     } else if (props.isHelmManaged) {
-      history.replace('/install-with-helm');
+      history.replace("/install-with-helm");
     } else {
-      history.replace('/upload-license');
+      history.replace("/upload-license");
     }
   };
 
@@ -137,7 +137,7 @@ function AppDetailPage(props: Props) {
         ) {
           setState({
             loadingApp: false,
-            gettingAppErrMsg: '',
+            gettingAppErrMsg: "",
             displayErrorModal: false,
           });
         }
@@ -147,7 +147,7 @@ function AppDetailPage(props: Props) {
           gettingAppErrMsg:
             appsError instanceof Error
               ? appsError.message
-              : 'Unexpected error when fetching apps',
+              : "Unexpected error when fetching apps",
           displayErrorModal: true,
         });
       }
@@ -176,9 +176,9 @@ function AppDetailPage(props: Props) {
       const res = await fetch(`${process.env.API_ENDPOINT}/velero`, {
         headers: {
           Authorization: Utilities.getToken(),
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        method: 'GET',
+        method: "GET",
       });
       if (res.ok && res.status == 200) {
         const response = await res.json();
@@ -208,28 +208,28 @@ function AppDetailPage(props: Props) {
     upstreamSlug: string,
     version: Version,
     isSkipPreflights: boolean,
-    continueWithFailedPreflights = false,
+    continueWithFailedPreflights = false
   ) => {
     try {
-      setState({ makingCurrentReleaseErrMsg: '' });
+      setState({ makingCurrentReleaseErrMsg: "" });
 
       const res = await fetch(
         `${process.env.API_ENDPOINT}/app/${upstreamSlug}/sequence/${version.sequence}/deploy`,
         {
           headers: {
             Authorization: Utilities.getToken(),
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
-          method: 'POST',
+          method: "POST",
           body: JSON.stringify({
             isSkipPreflights: isSkipPreflights,
             continueWithFailedPreflights: continueWithFailedPreflights,
             isCLI: false,
           }),
-        },
+        }
       );
       if (res.ok && res.status < 300) {
-        setState({ makingCurrentReleaseErrMsg: '' });
+        setState({ makingCurrentReleaseErrMsg: "" });
         refetchData();
       } else {
         const response = await res.json();
@@ -245,7 +245,7 @@ function AppDetailPage(props: Props) {
         });
       } else {
         setState({
-          makingCurrentReleaseErrMsg: 'Something went wrong, please try again.',
+          makingCurrentReleaseErrMsg: "Something went wrong, please try again.",
         });
       }
     }
@@ -253,20 +253,20 @@ function AppDetailPage(props: Props) {
 
   const redeployVersion = async (upstreamSlug: string, version: Version) => {
     try {
-      setState({ redeployVersionErrMsg: '' });
+      setState({ redeployVersionErrMsg: "" });
 
       const res = await fetch(
         `${process.env.API_ENDPOINT}/app/${upstreamSlug}/sequence/${version.sequence}/redeploy`,
         {
           headers: {
             Authorization: Utilities.getToken(),
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
-          method: 'POST',
-        },
+          method: "POST",
+        }
       );
       if (res.ok && res.status === 204) {
-        setState({ redeployVersionErrMsg: '' });
+        setState({ redeployVersionErrMsg: "" });
         refetchData();
       } else {
         setState({
@@ -281,7 +281,7 @@ function AppDetailPage(props: Props) {
         });
       } else {
         setState({
-          redeployVersionErrMsg: 'Something went wrong, please try again.',
+          redeployVersionErrMsg: "Something went wrong, please try again.",
         });
       }
     }
@@ -308,7 +308,7 @@ function AppDetailPage(props: Props) {
 
     // Handle updating the theme state when switching apps.
     // Used for a fresh reload
-    if (history.location.pathname === '/apps') {
+    if (history.location.pathname === "/apps") {
       // updates state but does not cause infinite loop because app navigates away from /apps
       return;
     }
@@ -320,9 +320,9 @@ function AppDetailPage(props: Props) {
     if (appNeedsConfiguration) {
       const downstream = appNeedsConfiguration.downstream;
       const firstVersion = downstream.pendingVersions.find(
-        (version: Version) => version?.sequence === 0,
+        (version: Version) => version?.sequence === 0
       );
-      if (firstVersion?.status === 'pending_config') {
+      if (firstVersion?.status === "pending_config") {
         history.push(`/${appNeedsConfiguration.slug}/config`);
         return;
       }
@@ -331,7 +331,7 @@ function AppDetailPage(props: Props) {
 
   useEffect(() => {
     refetchApps();
-    if (history.location.pathname === '/apps') {
+    if (history.location.pathname === "/apps") {
       return;
     }
     // getApp();
@@ -393,7 +393,7 @@ function AppDetailPage(props: Props) {
                     key={idx}
                     className={classNames({
                       selected:
-                        item.slug === slugFromRoute && params.owner !== 'helm',
+                        item.slug === slugFromRoute && params.owner !== "helm",
                     })}
                     app={item}
                   />
@@ -421,7 +421,7 @@ function AppDetailPage(props: Props) {
             <Fragment>
               <SubNavBar
                 className="flex"
-                activeTab={params.tab || 'app'}
+                activeTab={params.tab || "app"}
                 app={selectedApp}
                 isVeleroInstalled={isVeleroInstalled}
                 isHelmManaged={props.isHelmManaged}
@@ -466,8 +466,8 @@ function AppDetailPage(props: Props) {
                 <Route
                   exact
                   path={[
-                    '/app/:slug/version-history',
-                    '/app/:slug/version-history/diff/:firstSequence/:secondSequence',
+                    "/app/:slug/version-history",
+                    "/app/:slug/version-history/diff/:firstSequence/:secondSequence",
                   ]}
                   render={() => (
                     <AppVersionHistory
@@ -587,7 +587,7 @@ function AppDetailPage(props: Props) {
       {displayRequiredKotsUpdateModal && (
         <Modal
           isOpen={displayRequiredKotsUpdateModal}
-          onRequestClose={() => toggleDisplayRequiredKotsUpdateModal('')}
+          onRequestClose={() => toggleDisplayRequiredKotsUpdateModal("")}
           shouldReturnFocusAfterClose={false}
           contentLabel="Required KOTS Update modal"
           ariaHideApp={false}
@@ -606,7 +606,7 @@ function AppDetailPage(props: Props) {
             </p>
             <div className="u-marginTop--10 flex">
               <button
-                onClick={() => toggleDisplayRequiredKotsUpdateModal('')}
+                onClick={() => toggleDisplayRequiredKotsUpdateModal("")}
                 className="btn blue primary"
               >
                 Ok, got it!
