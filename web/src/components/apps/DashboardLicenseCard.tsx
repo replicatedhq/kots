@@ -10,7 +10,7 @@ import Modal from "react-modal";
 import {
   getFileContent,
   getLicenseExpiryDate,
-  Utilities
+  Utilities,
 } from "@src/utilities/utilities";
 import "../../scss/components/watches/DashboardCard.scss";
 import "@src/scss/components/apps/AppLicense.scss";
@@ -50,7 +50,7 @@ export default class DashboardLicenseCard extends React.Component<
       message: "",
       messageType: "",
       showNextStepModal: false,
-      syncingLicense: false
+      syncingLicense: false,
     };
   }
 
@@ -58,22 +58,22 @@ export default class DashboardLicenseCard extends React.Component<
     this.setState({
       syncingLicense: true,
       message: "",
-      messageType: "info"
+      messageType: "info",
     });
 
     const { app } = this.props;
 
     const payload = {
-      licenseData
+      licenseData,
     };
 
     fetch(`${process.env.API_ENDPOINT}/app/${app?.slug}/license`, {
       method: "PUT",
       headers: {
         Authorization: Utilities.getToken(),
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     })
       .then(async (response) => {
         if (!response.ok) {
@@ -102,7 +102,7 @@ export default class DashboardLicenseCard extends React.Component<
             size(licenseResponse.license?.entitlements) < 5 ? false : true,
           message,
           messageType: "info",
-          showNextStepModal: licenseResponse.synced
+          showNextStepModal: licenseResponse.synced,
         });
 
         if (this.props.syncCallback) {
@@ -113,7 +113,7 @@ export default class DashboardLicenseCard extends React.Component<
         console.log(err);
         this.setState({
           message: err ? err.message : "Something went wrong",
-          messageType: "error"
+          messageType: "error",
         });
       })
       .finally(() => {
@@ -121,7 +121,7 @@ export default class DashboardLicenseCard extends React.Component<
         setTimeout(() => {
           this.setState({
             message: "",
-            messageType: ""
+            messageType: "",
           });
         }, 3000);
       });
@@ -139,7 +139,7 @@ export default class DashboardLicenseCard extends React.Component<
     if (airgapLicense.spec?.licenseID !== appLicense?.id) {
       this.setState({
         message: "Licenses do not match",
-        messageType: "error"
+        messageType: "error",
       });
       return;
     }
@@ -147,7 +147,7 @@ export default class DashboardLicenseCard extends React.Component<
     if (airgapLicense.spec?.licenseSequence === appLicense?.licenseSequence) {
       this.setState({
         message: "License is already up to date",
-        messageType: "info"
+        messageType: "info",
       });
       return;
     }
@@ -161,7 +161,7 @@ export default class DashboardLicenseCard extends React.Component<
 
   toggleShowDetails = (entitlement: string) => {
     this.setState({
-      entitlementsToShow: [...this.state.entitlementsToShow, entitlement]
+      entitlementsToShow: [...this.state.entitlementsToShow, entitlement],
     });
   };
 
@@ -174,7 +174,7 @@ export default class DashboardLicenseCard extends React.Component<
 
   viewLicenseEntitlements = () => {
     this.setState({
-      isViewingLicenseEntitlements: !this.state.isViewingLicenseEntitlements
+      isViewingLicenseEntitlements: !this.state.isViewingLicenseEntitlements,
     });
   };
 
@@ -241,7 +241,7 @@ export default class DashboardLicenseCard extends React.Component<
                     "u-fontWeight--bold u-fontSize--small u-marginRight--10",
                     {
                       "u-textColor--error": messageType === "error",
-                      "u-textColor--primary": messageType === "info"
+                      "u-textColor--primary": messageType === "info",
                     }
                   )}
                 >

@@ -7,11 +7,10 @@ export const getLicense = async (appSlug: string) => {
   const config = {
     headers: {
       Authorization: Utilities.getToken(),
-      "Content-Type": "application/json"
-    }
+      "Content-Type": "application/json",
+    },
   };
   try {
-    console.log("trying to get license");
     const res = await axios.get(
       `${process.env.API_ENDPOINT}/app/${appSlug}/license`,
       config
@@ -20,6 +19,7 @@ export const getLicense = async (appSlug: string) => {
     if (res.status === 200) {
       return res.data;
     } else {
+      // TODO: more error handling
       console.log("something went wrong");
       throw new Error("something went wrong");
     }
@@ -34,8 +34,7 @@ export const getLicense = async (appSlug: string) => {
 export const useLicense = (params: string) => {
   return useQuery(["license", params], () => getLicense(params), {
     /// might want to disable the fetch on window focus for this one
-    // how to handle data that previous exists in cache
-    refetchInterval: 5000
+    refetchInterval: 5000,
   });
 };
 
