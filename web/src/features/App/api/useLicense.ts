@@ -15,14 +15,13 @@ function useLicenseWithIntercept(appSlug: string) {
   };
   let { data } = useLicense(appSlug);
 
-  console.log("data in uselicense", data);
   useEffect(() => {
     axiosId = axios.interceptors.request.use(
       (x) => {
         // not sure if this is enough to make sure that it only happens on /license endpoint
         if (x.url?.endsWith("/license")) {
           // set timeout to 500ms, change it to whatever you want
-          timerId.current = setTimeout(() => setIsLoading(true), 500);
+          timerId.current = setTimeout(() => setIsLoading(true), 1000);
           return x;
         }
         return x;

@@ -10,7 +10,6 @@ const LicenseTester = ({ appSlug, setLoader }) => {
 
   useEffect(() => {
     setLoader(isLoading);
-    console.log("data", entitlements);
   }, [isLoading, data]);
 
   return (

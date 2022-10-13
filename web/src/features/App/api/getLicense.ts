@@ -35,8 +35,7 @@ export const useLicense = (params: string) => {
   return useQuery(["license", params], () => getLicense(params), {
     /// might want to disable the fetch on window focus for this one
     // how to handle data that previous exists in cache
-    refetchInterval: 60000,
-    refetchIntervalInBackground: false
+    refetchInterval: 5000
   });
 };
 
