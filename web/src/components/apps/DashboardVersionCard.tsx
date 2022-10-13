@@ -116,7 +116,6 @@ type State = {
   yamlErrorDetails: string[];
 };
 
-// class DashboardVersionCard extends React.Component<Props, State> {
 const DashboardVersionCard = (props: Props) => {
   const [state, setState] = useReducer(
     (currentState: State, newState: Partial<State>) => ({
