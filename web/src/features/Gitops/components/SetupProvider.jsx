@@ -99,7 +99,7 @@ const SetupProvider = ({ appName }) => {
         <br /> When GitOps is enabled, you cannot deploy updates directly from
         the admin console.
       </p>
-      <div className="flex-column u-textAlign--left card-item">
+      <div className="flex-column u-textAlign--left card-item u-padding--15">
         <div className="flex alignItems--center u-marginBottom--30">
           {isSingleApp && app ? (
             <div className="u-marginRight--5">{getLabel(app)}</div>
