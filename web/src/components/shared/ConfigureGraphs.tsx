@@ -1,13 +1,21 @@
 import * as React from "react";
 
 const ConfigureGraphs = ({
-  toggleConfigureGraphs = () => {},
+  toggleConfigureGraphs,
   updatePromValue,
   promValue,
   savingPromValue,
   savingPromError,
   onPromValueChange,
   placeholder,
+}: {
+  toggleConfigureGraphs?: () => void;
+  updatePromValue?: () => void;
+  promValue?: string;
+  savingPromValue?: boolean;
+  savingPromError?: string;
+  onPromValueChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  placeholder?: string;
 }) => {
   return (
     <div
