@@ -44,11 +44,11 @@ var (
 	ClusterWrite = Must(NewPolicy(ActionWrite, "cluster."))
 )
 
-// Gitops
+// GitOps
 
 var (
-	GitopsRead  = Must(NewPolicy(ActionRead, "gitops."))
-	GitopsWrite = Must(NewPolicy(ActionWrite, "gitops."))
+	GitOpsRead  = Must(NewPolicy(ActionRead, "gitops."))
+	GitOpsWrite = Must(NewPolicy(ActionWrite, "gitops."))
 )
 
 // Prometheus

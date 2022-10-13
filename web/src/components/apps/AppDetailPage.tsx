@@ -97,7 +97,7 @@ function AppDetailPage(props: Props) {
     data: appsData,
     error: appsError,
     isError: appsIsError,
-    isLoading: appsIsLoading,
+    isFetching: appIsFetching,
     refetch: refetchApps,
   } = useApps({ refetchInterval: appsRefetchInterval });
 
@@ -120,7 +120,7 @@ function AppDetailPage(props: Props) {
 
   // loading state stuff that was in the old getApp() implementation
   useEffect(() => {
-    if (appsIsLoading) {
+    if (appIsFetching && !selectedApp) {
       setState({
         loadingApp: true,
       });
@@ -130,11 +130,17 @@ function AppDetailPage(props: Props) {
           redirectToFirstAppOrInstall();
           return;
         }
-        setState({
-          loadingApp: false,
-          gettingAppErrMsg: "",
-          displayErrorModal: false,
-        });
+        if (
+          state.loadingApp ||
+          state.gettingAppErrMsg ||
+          state.displayErrorModal
+        ) {
+          setState({
+            loadingApp: false,
+            gettingAppErrMsg: "",
+            displayErrorModal: false,
+          });
+        }
       } else {
         setState({
           loadingApp: false,
@@ -146,7 +152,7 @@ function AppDetailPage(props: Props) {
         });
       }
     }
-  }, [appsList, appsIsLoading, appsIsError]);
+  }, [appsList, appIsFetching, appsIsError]);
 
   const theme = useTheme();
 
@@ -294,7 +300,7 @@ function AppDetailPage(props: Props) {
       }
     }
     // Refetch app info when switching between apps
-    if (selectedApp && !appsIsLoading && params.slug !== selectedApp.slug) {
+    if (selectedApp && !appIsFetching && params.slug !== selectedApp.slug) {
       refetchApps();
       checkIsVeleroInstalled();
       return;
@@ -352,7 +358,7 @@ function AppDetailPage(props: Props) {
     </div>
   );
 
-  if (appsIsLoading) {
+  if (appIsFetching && !selectedApp) {
     return centeredLoader;
   }
 

@@ -48,8 +48,8 @@ const (
 )
 ```
 
-## Github 
-Some of the image tags are resolved by looking at the Github release history of their associated projects.  This involves 
-interacting with the Github API.  The program uses an optional environment variable `GITHUB_AUTH_TOKEN` which is a Github API token 
+## GitHub 
+Some of the image tags are resolved by looking at the GitHub release history of their associated projects.  This involves 
+interacting with the GitHub API.  The program uses an optional environment variable `GITHUB_AUTH_TOKEN` which is a GitHub API token 
 with **public_repo** scope for the purpose of avoiding rate limiting.  The program will work without `GITHUB_AUTH_TOKEN`
 but it is not recommended. 
