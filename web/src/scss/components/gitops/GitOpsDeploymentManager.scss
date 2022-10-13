@@ -1,7 +1,7 @@
 @import "../../variables.scss";
 
 .GitOpsDeploymentManager--wrapper {
-  max-width: 650px;
+  max-width: 680px;
   width: 100%;
   margin: 0 auto;
 }
@@ -13,21 +13,12 @@
 }
 
 .GitOpsDeploy--step {
-  background-color: $really-light-accent;
   padding: 15px;
   text-align: center;
   position: relative;
 
   &:last-child::after {
     display: none;
-  }
-
-  .step-title {
-    font-size: 26px;
-    font-weight: 700;
-    color: $text-color-secondary;
-    margin-bottom: 12px;
-    line-height: 28px;
   }
 
   .step-sub {

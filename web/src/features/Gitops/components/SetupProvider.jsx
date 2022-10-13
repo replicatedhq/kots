@@ -1,13 +1,13 @@
-import React, { useContext, useCallback, useEffect, useState } from "react";
-import { Utilities } from "../../../utilities/utilities";
-import DisableModal from "./modals/DisableModal";
-import { GitOpsContext, withGitOpsConsumer } from "../context";
-import AppSelector from "./AppSelector";
-import { getLabel, addLabelsToApps } from "../utils";
-import GitOpsProviderSelector from "./GitOpsProviderSelector";
-import GitOpsRepoDetails from "./GitOpsRepoDetails";
-import { updateAppsList } from "../utils";
-import { KotsPageTitle } from "@components/Head";
+import React, { useContext, useCallback, useEffect, useState } from 'react';
+import { Utilities } from '../../../utilities/utilities';
+import DisableModal from './modals/DisableModal';
+import { GitOpsContext, withGitOpsConsumer } from '../context';
+import AppSelector from './AppSelector';
+import { getLabel, addLabelsToApps } from '../utils';
+import GitOpsProviderSelector from './GitOpsProviderSelector';
+import GitOpsRepoDetails from './GitOpsRepoDetails';
+import { updateAppsList } from '../utils';
+import { KotsPageTitle } from '@components/Head';
 
 const SetupProvider = ({ appName }) => {
   const {
@@ -37,7 +37,7 @@ const SetupProvider = ({ appName }) => {
       setApp(
         apps.find((app) => {
           return app.id === selectedApp?.id;
-        })
+        }),
       );
     }
   }, [selectedApp, appsList]);
@@ -65,10 +65,10 @@ const SetupProvider = ({ appName }) => {
         {
           headers: {
             Authorization: Utilities.getToken(),
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
-          method: "POST",
-        }
+          method: 'POST',
+        },
       );
       if (!res.ok && res.status === 401) {
         Utilities.logoutUser();
@@ -89,18 +89,17 @@ const SetupProvider = ({ appName }) => {
   return (
     <div
       key={`${step}-active`}
-      className="GitOpsDeploy--step u-textAlign--left"
+      className="GitOpsDeploy--step card-bg u-textAlign--left"
     >
-      <KotsPageTitle pageName="GitOps Configuration" />
-      <p className="step-title">GitOps Configuration</p>
+      <KotsPageTitle pageName="Gitops Configuration" />
+      <p className="step-title card-title">GitOps Configuration</p>
       <p className="step-sub">
         Connect a git version control system so all application updates are
-        committed to a git <br />
-        repository. When GitOps is enabled, you cannot deploy updates directly
-        from the <br />
-        admin console.
+        committed to a git repository.
+        <br /> When GitOps is enabled, you cannot deploy updates directly from
+        the admin console.
       </p>
-      <div className="flex-column u-textAlign--left ">
+      <div className="flex-column u-textAlign--left card-item">
         <div className="flex alignItems--center u-marginBottom--30">
           {isSingleApp && app ? (
             <div className="u-marginRight--5">{getLabel(app)}</div>
@@ -115,13 +114,13 @@ const SetupProvider = ({ appName }) => {
           <div className="flex flex1 flex-column u-fontSize--small u-marginTop--20">
             {gitopsEnabled && gitopsConnected && (
               <a
-                style={{ color: "blue", cursor: "pointer" }}
+                style={{ color: 'blue', cursor: 'pointer' }}
                 disabled={disablingGitOps}
                 onClick={promptToDisableGitOps}
               >
                 {disablingGitOps
-                  ? "Disabling GitOps"
-                  : "Disable GitOps for this app"}
+                  ? 'Disabling GitOps'
+                  : 'Disable GitOps for this app'}
               </a>
             )}
           </div>
