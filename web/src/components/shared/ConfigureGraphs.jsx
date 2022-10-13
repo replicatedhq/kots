@@ -1,7 +1,7 @@
 import * as React from "react";
 
 const ConfigureGraphs = ({
-  toggleConfigureGraphs,
+  toggleConfigureGraphs = () => {},
   updatePromValue,
   promValue,
   savingPromValue,
