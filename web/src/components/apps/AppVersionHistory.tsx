@@ -2397,7 +2397,7 @@ class AppVersionHistory extends Component<Props, State> {
                 {this.state.releaseWithNoChanges && (
                   <span className="u-fontWeight--bold">
                     Upstream {this.state.releaseWithNoChanges.versionLabel},
-                    Sequence {this.state.releaseWithNoChanges.sequence}
+                    Sequence {this.state.releaseWithNoChanges.sequence}{" "}
                   </span>
                 )}
                 release was unable to generate a diff because the changes made
