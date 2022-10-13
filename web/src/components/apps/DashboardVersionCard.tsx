@@ -118,13 +118,6 @@ type State = {
 
 // class DashboardVersionCard extends React.Component<Props, State> {
 const DashboardVersionCard = (props: Props) => {
-  // versionDownloadStatusJobs: {
-  //   [key: number]: Repeater;
-  // };
-
-  // constructor(props: Props) {
-  //   super(props);
-
   const [state, setState] = useReducer(
     (currentState: State, newState: Partial<State>) => ({
       ...currentState,
