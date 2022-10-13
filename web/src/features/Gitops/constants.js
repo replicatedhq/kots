@@ -3,28 +3,28 @@ import styled from "styled-components";
 export const SERVICES = [
   {
     value: "github",
-    label: "GitHub"
+    label: "GitHub",
   },
   {
     value: "github_enterprise",
-    label: "GitHub Enterprise"
+    label: "GitHub Enterprise",
   },
   {
     value: "gitlab",
-    label: "GitLab"
+    label: "GitLab",
   },
   {
     value: "gitlab_enterprise",
-    label: "GitLab Enterprise"
+    label: "GitLab Enterprise",
   },
   {
     value: "bitbucket",
-    label: "Bitbucket"
+    label: "Bitbucket",
   },
   {
     value: "bitbucket_server",
-    label: "Bitbucket Server"
-  }
+    label: "Bitbucket Server",
+  },
   // {
   //   value: "other",
   //   label: "Other",

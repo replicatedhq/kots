@@ -484,3 +484,10 @@ and `background-position: [value]`
   border-radius: 6px;
   background-color: #ffffff;
 }
+
+.card-item-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: $text-color-primary;
+  line-height: 1.7;
+}
