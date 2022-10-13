@@ -114,9 +114,9 @@ const SetupProvider = ({ appName }) => {
           <div className="flex flex1 flex-column u-fontSize--small u-marginTop--20">
             {gitopsEnabled && gitopsConnected && (
               <a
-                style={{ color: "blue", cursor: "pointer" }}
                 disabled={disablingGitOps}
                 onClick={promptToDisableGitOps}
+                className="replicated-link u-fontWeight--normal"
               >
                 {disablingGitOps
                   ? "Disabling GitOps"
