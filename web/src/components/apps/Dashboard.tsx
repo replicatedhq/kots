@@ -24,7 +24,7 @@ import { Paragraph } from "../../styles/common";
 const COMMON_ERRORS = {
   "HTTP 401": "Registry credentials are invalid",
   "invalid username/password": "Registry credentials are invalid",
-  "no such host": "No such host",
+  "no such host": "No such host"
 };
 
 // Types
@@ -36,9 +36,11 @@ import {
   DashboardActionLink,
   KotsParams,
   ResourceStates,
-  Version,
+  Version
 } from "@types";
 import { RouteComponentProps } from "react-router-dom";
+import { getLicense, useLicense } from "@features/App/api/getLicense";
+import LicenseTester from "./LicenseTester";
 
 type Props = {
   app: App;
@@ -128,7 +130,7 @@ class Dashboard extends Component<Props, State> {
       dashboard: {
         appStatus: null,
         metrics: [],
-        prometheusAddress: "",
+        prometheusAddress: ""
       },
       currentVersion: null,
       displayErrorModal: false,
@@ -152,7 +154,7 @@ class Dashboard extends Component<Props, State> {
       startSnapshotOptions: [
         { option: "partial", name: "Start a Partial snapshot" },
         { option: "full", name: "Start a Full snapshot" },
-        { option: "learn", name: "Learn about the difference" },
+        { option: "learn", name: "Learn about the difference" }
       ],
       updateChecker: new Repeater(),
       uploadingAirgapFile: false,
@@ -161,7 +163,7 @@ class Dashboard extends Component<Props, State> {
       uploadSize: 0,
       viewAirgapUpdateError: false,
       viewAirgapUploadError: false,
-      slowLoader: false,
+      slowLoader: false
     };
     this.timerId = React.createRef();
   }
@@ -172,7 +174,7 @@ class Dashboard extends Component<Props, State> {
       iconUri: app.iconUri,
       currentVersion: app.downstream?.currentVersion,
       downstream: app.downstream,
-      links: app.downstream?.links,
+      links: app.downstream?.links
     });
   };
 
@@ -180,63 +182,63 @@ class Dashboard extends Component<Props, State> {
     const { app } = this.props;
     if (app !== lastProps.app && app) {
       this.setWatchState(app);
-      // this.getAppLicense(app);
+      this.getAppLicense(app);
     }
   }
 
-  // sleeper to delay the response, will remove after development
+  //sleeper to delay the response, will remove after development
   sleep(ms = 2000): Promise<void> {
     console.log("Kindly remember to remove `sleep`");
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   getAppLicense = async (app: App) => {
-
     // on request we set a timer
-    axios.interceptors.request.use((x) => {
-      // not sure if this is enough to make sure that it only happens on /license endpoint
-      if (x.url?.endsWith("/license")) {
-        // set timeout to 500ms, change it to whatever you want
-        this.timerId.current = setTimeout(
-          () => this.setState({ slowLoader: true }),
-          500
-        );
-        return x;
-      }
-    });
-
-    axios.interceptors.response.use(async (x) => {
-      if (x.config.url?.endsWith("/license")) {
-        await this.sleep();
-        this.setState({ slowLoader: false });
-        clearTimeout(this.timerId.current);
-        return x;
-      }
-    });
-
-    const config = {
-      headers: {
-        Authorization: Utilities.getToken(),
-        "Content-Type": "application/json",
-      },
-    };
-    try {
-      const res = await axios.get(
-        `${process.env.API_ENDPOINT}/app/${app.slug}/license`,
-        config
-      );
-      console.log("response incoming");
-      this.setState({
-        appLicense: res.data.license,
-        gettingAppLicenseErrMsg: "",
-      });
-    } catch (err) {
-      console.log(err);
-      this.setState({
-        gettingAppLicenseErrMsg: "Error getting app license",
-      });
-      return;
-    }
+    // axios.interceptors.request.use((x) => {
+    //   // not sure if this is enough to make sure that it only happens on /license endpoint
+    //   if (x.url?.endsWith("/license")) {
+    //     // set timeout to 500ms, change it to whatever you want
+    //     this.timerId.current = setTimeout(
+    //       () => this.setState({ slowLoader: true }),
+    //       500
+    //     );
+    //     return x;
+    //   }
+    // });
+    // axios.interceptors.response.use(async (x) => {
+    //   if (x.config.url?.endsWith("/license")) {
+    //     await this.sleep();
+    //     this.setState({ slowLoader: false });
+    //     clearTimeout(this.timerId.current);
+    //     return x;
+    //   }
+    // });
+    // // with hook
+    // // with axios
+    // const config = {
+    //   headers: {
+    //     Authorization: Utilities.getToken(),
+    //     "Content-Type": "application/json"
+    //   }
+    // };
+    // try {
+    //   const res = await axios.get(
+    //     `${process.env.API_ENDPOINT}/app/${app.slug}/license`,
+    //     config
+    //   );
+    //   console.log("response incoming");
+    //   this.setState({
+    //     appLicense: res.data.license,
+    //     gettingAppLicenseErrMsg: ""
+    //   });
+    // } catch (err) {
+    //   console.log(err);
+    //   this.setState({
+    //     gettingAppLicenseErrMsg: "Error getting app license"
+    //   });
+    //   return;
+    // }
+    /// with fetch
     // await fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/license`, {
     //   method: "GET",
     //   headers: {
@@ -250,7 +252,6 @@ class Dashboard extends Component<Props, State> {
     //       this.setState({ gettingAppLicenseErrMsg: body.error });
     //       return;
     //     }
-
     //     if (body === null) {
     //       this.setState({ appLicense: null, gettingAppLicenseErrMsg: "" });
     //     } else if (body.success) {
@@ -305,8 +306,8 @@ class Dashboard extends Component<Props, State> {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          Authorization: Utilities.getToken(),
-        },
+          Authorization: Utilities.getToken()
+        }
       });
       if (res.ok) {
         const response = await res.json();
@@ -322,7 +323,7 @@ class Dashboard extends Component<Props, State> {
         app.slug,
         this.onDropBundle,
         simultaneousUploads
-      ),
+      )
     });
   };
 
@@ -346,9 +347,9 @@ class Dashboard extends Component<Props, State> {
         {
           headers: {
             Authorization: Utilities.getToken(),
-            "Content-Type": "application/json",
+            "Content-Type": "application/json"
           },
-          method: "GET",
+          method: "GET"
         }
       )
         .then(async (res) => {
@@ -361,8 +362,8 @@ class Dashboard extends Component<Props, State> {
             dashboard: {
               appStatus: response.appStatus,
               prometheusAddress: response.prometheusAddress,
-              metrics: response.metrics,
-            },
+              metrics: response.metrics
+            }
           });
           resolve();
         })
@@ -378,15 +379,15 @@ class Dashboard extends Component<Props, State> {
 
     this.setState({
       checkingForUpdates: true,
-      checkingForUpdateError: false,
+      checkingForUpdateError: false
     });
 
     fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/updatecheck`, {
       headers: {
         Authorization: Utilities.getToken(),
-        "Content-Type": "application/json",
+        "Content-Type": "application/json"
       },
-      method: "POST",
+      method: "POST"
     })
       .then(async (res) => {
         // this.getAppLicense(this.props.app);
@@ -397,7 +398,7 @@ class Dashboard extends Component<Props, State> {
             checkingForUpdates: false,
             checkingUpdateMessage: text
               ? text
-              : "There was an error checking for updates.",
+              : "There was an error checking for updates."
           });
           return;
         }
@@ -406,7 +407,7 @@ class Dashboard extends Component<Props, State> {
         if (response.availableUpdates === 0) {
           this.setState({
             checkingForUpdates: false,
-            noUpdatesAvalable: true,
+            noUpdatesAvalable: true
           });
           setTimeout(() => {
             this.setState({ noUpdatesAvalable: false });
@@ -421,20 +422,20 @@ class Dashboard extends Component<Props, State> {
           checkingForUpdates: false,
           checkingUpdateMessage: err?.message
             ? err?.message
-            : "There was an error checking for updates.",
+            : "There was an error checking for updates."
         });
       });
   };
 
   hideAutomaticUpdatesModal = () => {
     this.setState({
-      showAutomaticUpdatesModal: false,
+      showAutomaticUpdatesModal: false
     });
   };
 
   showAutomaticUpdatesModal = () => {
     this.setState({
-      showAutomaticUpdatesModal: true,
+      showAutomaticUpdatesModal: true
     });
   };
 
@@ -448,9 +449,9 @@ class Dashboard extends Component<Props, State> {
       const res = await fetch(`${process.env.API_ENDPOINT}/app/${app.slug}`, {
         headers: {
           Authorization: Utilities.getToken(),
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
-        method: "GET",
+        method: "GET"
       });
       if (res.ok && res.status == 200) {
         const appResponse = await res.json();
@@ -458,7 +459,7 @@ class Dashboard extends Component<Props, State> {
           this.state.fetchAppDownstreamJob.stop();
         }
         this.setState({
-          downstream: appResponse.downstream,
+          downstream: appResponse.downstream
         });
         // wait a couple of seconds to avoid any race condiditons with the update checker then refetch the app to ensure we have the latest everything
         // this is hacky and I hate it but it's just building up more evidence in my case for having the FE be able to listen to BE envents
@@ -470,7 +471,7 @@ class Dashboard extends Component<Props, State> {
         this.setState({
           loadingApp: false,
           gettingAppErrMsg: `Unexpected status code: ${res.status}`,
-          displayErrorModal: true,
+          displayErrorModal: true
         });
       }
     } catch (err) {
@@ -482,7 +483,7 @@ class Dashboard extends Component<Props, State> {
       this.setState({
         loadingApp: false,
         gettingAppErrMsg: errorMessage,
-        displayErrorModal: true,
+        displayErrorModal: true
       });
     }
   };
@@ -500,9 +501,9 @@ class Dashboard extends Component<Props, State> {
         {
           headers: {
             Authorization: Utilities.getToken(),
-            "Content-Type": "application/json",
+            "Content-Type": "application/json"
           },
-          method: "GET",
+          method: "GET"
         }
       )
         .then(async (res) => {
@@ -514,7 +515,7 @@ class Dashboard extends Component<Props, State> {
             this.setState({
               checkingForUpdates: false,
               checkingUpdateMessage: response.currentMessage,
-              checkingForUpdateError: response.status === "failed",
+              checkingForUpdateError: response.status === "failed"
             });
 
             //   this.getAppLicense(this.props.app);
@@ -525,7 +526,7 @@ class Dashboard extends Component<Props, State> {
           } else {
             this.setState({
               checkingForUpdates: true,
-              checkingUpdateMessage: response.currentMessage,
+              checkingUpdateMessage: response.currentMessage
             });
           }
           resolve();
@@ -544,13 +545,13 @@ class Dashboard extends Component<Props, State> {
       airgapUploadError: null,
       uploadProgress: 0,
       uploadSize: 0,
-      uploadResuming: false,
+      uploadResuming: false
     });
 
     this.props.toggleIsBundleUploading(true);
 
     const params = {
-      appId: this.props.app?.id,
+      appId: this.props.app?.id
     };
 
     // TODO: remove after adding type to airgap uploader
@@ -568,7 +569,7 @@ class Dashboard extends Component<Props, State> {
     this.setState({
       uploadProgress: progress,
       uploadSize: size,
-      uploadResuming: resuming,
+      uploadResuming: resuming
     });
   };
 
@@ -579,7 +580,7 @@ class Dashboard extends Component<Props, State> {
       uploadProgress: 0,
       uploadSize: 0,
       uploadResuming: false,
-      airgapUploadError: message || "Error uploading bundle, please try again",
+      airgapUploadError: message || "Error uploading bundle, please try again"
     });
     this.props.toggleIsBundleUploading(false);
   };
@@ -590,7 +591,7 @@ class Dashboard extends Component<Props, State> {
       uploadingAirgapFile: false,
       uploadProgress: 0,
       uploadSize: 0,
-      uploadResuming: false,
+      uploadResuming: false
     });
     this.props.toggleIsBundleUploading(false);
   };
@@ -607,7 +608,7 @@ class Dashboard extends Component<Props, State> {
       checkingForUpdates: false,
       uploadProgress: 0,
       uploadSize: 0,
-      uploadResuming: false,
+      uploadResuming: false
     });
   };
 
@@ -618,7 +619,7 @@ class Dashboard extends Component<Props, State> {
   toggleViewAirgapUpdateError = (err?: string) => {
     this.setState({
       viewAirgapUpdateError: !this.state.viewAirgapUpdateError,
-      airgapUpdateError: !this.state.viewAirgapUpdateError && err ? err : "",
+      airgapUpdateError: !this.state.viewAirgapUpdateError && err ? err : ""
     });
   };
 
@@ -627,7 +628,7 @@ class Dashboard extends Component<Props, State> {
     this.setState({
       startingSnapshot: true,
       startSnapshotErr: false,
-      startSnapshotErrorMsg: "",
+      startSnapshotErrorMsg: ""
     });
 
     let url =
@@ -639,15 +640,15 @@ class Dashboard extends Component<Props, State> {
       method: "POST",
       headers: {
         Authorization: Utilities.getToken(),
-        "Content-Type": "application/json",
-      },
+        "Content-Type": "application/json"
+      }
     })
       .then(async (result) => {
         if (!result.ok && result.status === 409) {
           const res = await result.json();
           if (res.kotsadmRequiresVeleroAccess) {
             this.setState({
-              startingSnapshot: false,
+              startingSnapshot: false
             });
             this.props.history.replace("/snapshots/settings");
             return;
@@ -656,7 +657,7 @@ class Dashboard extends Component<Props, State> {
 
         if (result.ok) {
           this.setState({
-            startingSnapshot: false,
+            startingSnapshot: false
           });
           this.props.ping();
           if (option === "full") {
@@ -669,7 +670,7 @@ class Dashboard extends Component<Props, State> {
           this.setState({
             startingSnapshot: false,
             startSnapshotErr: true,
-            startSnapshotErrorMsg: body.error,
+            startSnapshotErrorMsg: body.error
           });
         }
       })
@@ -678,7 +679,7 @@ class Dashboard extends Component<Props, State> {
         this.setState({
           startSnapshotErrorMsg: err
             ? err.message
-            : "Something went wrong, please try again.",
+            : "Something went wrong, please try again."
         });
       });
   };
@@ -693,7 +694,7 @@ class Dashboard extends Component<Props, State> {
 
   toggleSnaphotDifferencesModal = () => {
     this.setState({
-      snapshotDifferencesModal: !this.state.snapshotDifferencesModal,
+      snapshotDifferencesModal: !this.state.snapshotDifferencesModal
     });
   };
 
@@ -759,7 +760,7 @@ class Dashboard extends Component<Props, State> {
 
     return {
       statesMap,
-      sortedStates,
+      sortedStates
     };
   };
 
@@ -788,7 +789,7 @@ class Dashboard extends Component<Props, State> {
       checkingUpdateMessage,
       uploadingAirgapFile,
       airgapUploadError,
-      appLicense,
+      appLicense
     } = this.state;
 
     const { app, isBundleUploading, isVeleroInstalled } = this.props;
@@ -824,7 +825,7 @@ class Dashboard extends Component<Props, State> {
                 top: 0,
                 bottom: 0,
                 backgroundColor: "rgba(255,255,255,0.7",
-                zIndex: 100,
+                zIndex: 100
               }}
             >
               <Loader size="60" />
@@ -887,6 +888,7 @@ class Dashboard extends Component<Props, State> {
                       isHelmManaged={this.props.isHelmManaged}
                     />
                   </div>
+
                   <div className="flex1 flex-column u-paddingLeft--15">
                     {app.allowSnapshots && isVeleroInstalled ? (
                       <div className="u-marginBottom--30">
@@ -922,7 +924,14 @@ class Dashboard extends Component<Props, State> {
                       gettingAppLicenseErrMsg={
                         this.state.gettingAppLicenseErrMsg
                       }
-                    />
+                    >
+                      <LicenseTester
+                        appSlug={app.slug}
+                        setLoader={(e: boolean) =>
+                          this.setState({ slowLoader: e })
+                        }
+                      />
+                    </DashboardLicenseCard>
                   </div>
                 </div>
                 <div className="u-marginTop--30 flex flex1">

@@ -4,15 +4,15 @@ import { Utilities } from "../../../utilities/utilities";
 async function getGitops({
   accessToken = Utilities.getToken(),
   apiEndpoint = process.env.API_ENDPOINT,
-  _fetch = fetch,
+  _fetch = fetch
 } = {}) {
   try {
     const res = await _fetch(`${apiEndpoint}/gitops/get`, {
       headers: {
         Authorization: accessToken,
-        "Content-Type": "application/json",
+        "Content-Type": "application/json"
       },
-      method: "GET",
+      method: "GET"
     });
     if (!res.ok) {
       if (res.status === 401) {

@@ -1,31 +1,31 @@
-import React, { useEffect, useReducer } from "react";
-import { Link, useHistory, useParams } from "react-router-dom";
-import ReactTooltip from "react-tooltip";
-import DashboardGitOpsCard from "./DashboardGitOpsCard";
-import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
-import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
-import Modal from "react-modal";
-import AirgapUploadProgress from "../AirgapUploadProgress";
-import Loader from "../shared/Loader";
-import MountAware from "../shared/MountAware";
-import ShowDetailsModal from "@src/components/modals/ShowDetailsModal";
-import ShowLogsModal from "@src/components/modals/ShowLogsModal";
-import DeployWarningModal from "../shared/modals/DeployWarningModal";
-import SkipPreflightsModal from "../shared/modals/SkipPreflightsModal";
-import { HelmDeployModal } from "../shared/modals/HelmDeployModal";
-import classNames from "classnames";
-import { UseDownloadValues } from "../hooks";
-import { getReadableGitOpsProviderName } from "../../utilities/utilities";
+import React, { useEffect, useReducer } from 'react';
+import { Link, useHistory, useParams } from 'react-router-dom';
+import ReactTooltip from 'react-tooltip';
+import DashboardGitOpsCard from './DashboardGitOpsCard';
+import MarkdownRenderer from '@src/components/shared/MarkdownRenderer';
+import DownstreamWatchVersionDiff from '@src/components/watches/DownstreamWatchVersionDiff';
+import Modal from 'react-modal';
+import AirgapUploadProgress from '../AirgapUploadProgress';
+import Loader from '../shared/Loader';
+import MountAware from '../shared/MountAware';
+import ShowDetailsModal from '@src/components/modals/ShowDetailsModal';
+import ShowLogsModal from '@src/components/modals/ShowLogsModal';
+import DeployWarningModal from '../shared/modals/DeployWarningModal';
+import SkipPreflightsModal from '../shared/modals/SkipPreflightsModal';
+import { HelmDeployModal } from '../shared/modals/HelmDeployModal';
+import classNames from 'classnames';
+import { UseDownloadValues } from '../hooks';
+import { getReadableGitOpsProviderName } from '../../utilities/utilities';
 
 import {
   Utilities,
   getPreflightResultState,
   secondsAgo,
-} from "@src/utilities/utilities";
-import { Repeater } from "@src/utilities/repeater";
+} from '@src/utilities/utilities';
+import { Repeater } from '@src/utilities/repeater';
 
-import "../../scss/components/watches/DashboardCard.scss";
-import Icon from "../Icon";
+import '../../scss/components/watches/DashboardCard.scss';
+import Icon from '../Icon';
 
 import {
   App,
@@ -35,8 +35,8 @@ import {
   Version,
   VersionDownloadStatus,
   VersionStatus,
-} from "@types";
-import { AirgapUploader } from "@src/utilities/airgapUploader";
+} from '@types';
+import { AirgapUploader } from '@src/utilities/airgapUploader';
 
 type Props = {
   adminConsoleMetadata?: Metadata;
@@ -56,7 +56,7 @@ type Props = {
     slug: string,
     versionToDeploy: Version,
     isSkipPreflights: boolean,
-    continueWithFailedPreflights: boolean
+    continueWithFailedPreflights: boolean,
   ) => void;
   // TODO:  fix this misspelling
   noUpdatesAvalable: boolean;
@@ -124,12 +124,12 @@ const DashboardVersionCard = (props: Props) => {
       ...newState,
     }),
     {
-      confirmType: "",
+      confirmType: '',
       deployView: false,
       displayConfirmDeploymentModal: false,
       displayKotsUpdateModal: false,
       displayShowDetailsModal: false,
-      firstSequence: "",
+      firstSequence: '',
       isSkipPreflights: false,
       isRedeploy: false,
       kotsUpdateChecker: new Repeater(),
@@ -138,23 +138,23 @@ const DashboardVersionCard = (props: Props) => {
       kotsUpdateRunning: false,
       kotsUpdateStatus: null,
       latestDeployableVersion: null,
-      latestDeployableVersionErrMsg: "",
+      latestDeployableVersionErrMsg: '',
       logs: null,
       logsLoading: false,
       numOfRemainingVersions: 0,
       numOfSkippedVersions: 0,
-      releaseNotes: "",
+      releaseNotes: '',
       releaseWithErr: null,
       releaseWithNoChanges: null,
-      secondSequence: "",
-      selectedAction: "",
+      secondSequence: '',
+      selectedAction: '',
       selectedSequence: -1,
       selectedTab: null,
       showDiffErrModal: false,
       showDiffModal: false,
       showDeployWarningModal: false,
       showHelmDeployModal: false,
-      showHelmDeployModalWithVersionLabel: "",
+      showHelmDeployModalWithVersionLabel: '',
       showLogsModal: false,
       showNoChangesModal: false,
       showReleaseNotes: false,
@@ -162,9 +162,9 @@ const DashboardVersionCard = (props: Props) => {
       versionDownloadStatuses: {},
       versionFailing: false,
       versionToDeploy: null,
-      viewLogsErrMsg: "",
+      viewLogsErrMsg: '',
       yamlErrorDetails: [],
-    }
+    },
   );
   const history = useHistory();
   const params = useParams<KotsParams>();
@@ -192,8 +192,8 @@ const DashboardVersionCard = (props: Props) => {
   }, [props.links]);
 
   useEffect(() => {
-    if (state.showDiffModal === false && history.location.search !== "") {
-      const splitSearch = history.location.search.split("/");
+    if (state.showDiffModal === false && history.location.search !== '') {
+      const splitSearch = history.location.search.split('/');
       setState({
         showDiffModal: true,
         firstSequence: splitSearch[1],
@@ -211,10 +211,10 @@ const DashboardVersionCard = (props: Props) => {
         {
           headers: {
             Authorization: Utilities.getToken(),
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
-          method: "GET",
-        }
+          method: 'GET',
+        },
       );
 
       if (!res.ok) {
@@ -230,7 +230,7 @@ const DashboardVersionCard = (props: Props) => {
         latestDeployableVersion: response.latestDeployableVersion,
         numOfSkippedVersions: response.numOfSkippedVersions,
         numOfRemainingVersions: response.numOfRemainingVersions,
-        latestDeployableVersionErrMsg: "",
+        latestDeployableVersionErrMsg: '',
       });
     } catch (err) {
       console.log(err);
@@ -241,7 +241,7 @@ const DashboardVersionCard = (props: Props) => {
       } else {
         setState({
           latestDeployableVersionErrMsg:
-            "Something went wrong, please try again.",
+            'Something went wrong, please try again.',
         });
       }
     }
@@ -274,16 +274,16 @@ const DashboardVersionCard = (props: Props) => {
     return (
       <div className="flex action-tab-bar u-marginTop--10">
         {tabs
-          .filter((tab) => tab !== "renderError")
+          .filter((tab) => tab !== 'renderError')
           .filter((tab) => {
             if (props.isHelmManaged) {
-              return tab.startsWith("helm");
+              return tab.startsWith('helm');
             }
             return true;
           })
           .map((tab) => (
             <div
-              className={`tab-item blue ${tab === selectedTab && "is-active"}`}
+              className={`tab-item blue ${tab === selectedTab && 'is-active'}`}
               key={tab}
               onClick={() => setState({ selectedTab: tab })}
             >
@@ -296,7 +296,7 @@ const DashboardVersionCard = (props: Props) => {
 
   const handleViewLogs = async (
     version: Version | null,
-    isFailing: boolean
+    isFailing: boolean,
   ) => {
     if (!version) {
       return;
@@ -310,7 +310,7 @@ const DashboardVersionCard = (props: Props) => {
       setState({
         logsLoading: true,
         showLogsModal: true,
-        viewLogsErrMsg: "",
+        viewLogsErrMsg: '',
         versionFailing: false,
       });
 
@@ -319,10 +319,10 @@ const DashboardVersionCard = (props: Props) => {
         {
           headers: {
             Authorization: Utilities.getToken(),
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
-          method: "GET",
-        }
+          method: 'GET',
+        },
       );
       if (res.ok && res.status === 200) {
         const response = await res.json();
@@ -336,7 +336,7 @@ const DashboardVersionCard = (props: Props) => {
           logs: response.logs,
           selectedTab,
           logsLoading: false,
-          viewLogsErrMsg: "",
+          viewLogsErrMsg: '',
           versionFailing: isFailing,
         });
       } else {
@@ -355,7 +355,7 @@ const DashboardVersionCard = (props: Props) => {
       } else {
         setState({
           logsLoading: false,
-          viewLogsErrMsg: "Something went wrong, please try again.",
+          viewLogsErrMsg: 'Something went wrong, please try again.',
         });
       }
     }
@@ -363,16 +363,16 @@ const DashboardVersionCard = (props: Props) => {
 
   const getCurrentVersionStatus = (version: Version | null) => {
     if (
-      version?.status === "deployed" ||
-      version?.status === "merged" ||
-      version?.status === "pending"
+      version?.status === 'deployed' ||
+      version?.status === 'merged' ||
+      version?.status === 'pending'
     ) {
       return (
         <span className="status-tag success flex-auto">
-          Currently {version?.status.replace("_", " ")} version
+          Currently {version?.status.replace('_', ' ')} version
         </span>
       );
-    } else if (version?.status === "failed") {
+    } else if (version?.status === 'failed') {
       return (
         <div className="flex alignItems--center">
           <span className="status-tag failed flex-auto u-marginRight--10">
@@ -386,7 +386,7 @@ const DashboardVersionCard = (props: Props) => {
           </span>
         </div>
       );
-    } else if (version?.status === "deploying") {
+    } else if (version?.status === 'deploying') {
       return (
         <span className="flex alignItems--center u-fontSize--small u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--medium">
           <Loader
@@ -399,8 +399,8 @@ const DashboardVersionCard = (props: Props) => {
     } else {
       return (
         <span className="status-tag unknown flex-atuo">
-          {" "}
-          {Utilities.toTitleCase(version?.status).replace("_", " ")}{" "}
+          {' '}
+          {Utilities.toTitleCase(version?.status).replace('_', ' ')}{' '}
         </span>
       );
     }
@@ -423,7 +423,7 @@ const DashboardVersionCard = (props: Props) => {
 
   const toggleShowDetailsModal = (
     yamlErrorDetails: string[],
-    selectedSequence: number
+    selectedSequence: number,
   ) => {
     setState({
       displayShowDetailsModal: !state.displayShowDetailsModal,
@@ -435,11 +435,11 @@ const DashboardVersionCard = (props: Props) => {
 
   const getPreflightState = (version: Version) => {
     let preflightsFailed = false;
-    let preflightState = "";
+    let preflightState = '';
     if (version?.preflightResult) {
       const preflightResult = JSON.parse(version.preflightResult);
       preflightState = getPreflightResultState(preflightResult);
-      preflightsFailed = preflightState === "fail";
+      preflightsFailed = preflightState === 'fail';
     }
     return {
       preflightsFailed,
@@ -469,10 +469,10 @@ const DashboardVersionCard = (props: Props) => {
     if (!version) {
       return null;
     }
-    if (version.status === "pending_download") {
+    if (version.status === 'pending_download') {
       return null;
     }
-    if (version.status === "pending_config") {
+    if (version.status === 'pending_config') {
       return null;
     }
 
@@ -481,21 +481,21 @@ const DashboardVersionCard = (props: Props) => {
     const preflightState = getPreflightState(version);
     let checksStatusText;
     if (preflightState.preflightsFailed) {
-      checksStatusText = "Checks failed";
-    } else if (preflightState.preflightState === "warn") {
-      checksStatusText = "Checks passed with warnings";
+      checksStatusText = 'Checks failed';
+    } else if (preflightState.preflightState === 'warn') {
+      checksStatusText = 'Checks passed with warnings';
     }
 
     return (
       <div>
-        {version.status === "pending_preflight" ? (
+        {version.status === 'pending_preflight' ? (
           <div className="u-marginLeft--10 u-position--relative">
             <Loader size="30" />
             <p className="checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium">
               Running checks
             </p>
           </div>
-        ) : preflightState.preflightState !== "" ? (
+        ) : preflightState.preflightState !== '' ? (
           <>
             <Link
               to={`/app/${app?.slug}/downstreams/${app?.downstream.cluster?.slug}/version-history/preflight/${version?.sequence}`}
@@ -504,30 +504,30 @@ const DashboardVersionCard = (props: Props) => {
             >
               <Icon icon="preflight-checks" size={20} className="clickable" />
               {preflightState.preflightsFailed ||
-              preflightState.preflightState === "warn" ? (
+              preflightState.preflightState === 'warn' ? (
                 <>
                   {preflightState.preflightsFailed ? (
                     <Icon
-                      icon={"warning-circle-filled"}
+                      icon={'warning-circle-filled'}
                       size={12}
                       className="version-row-preflight-status-icon error-color"
                     />
-                  ) : preflightState.preflightState === "warn" ? (
+                  ) : preflightState.preflightState === 'warn' ? (
                     <Icon
-                      icon={"warning"}
+                      icon={'warning'}
                       size={12}
                       className="version-row-preflight-status-icon warning-color"
                     />
                   ) : (
-                    ""
+                    ''
                   )}
                   <p
                     className={`checks-running-text u-fontSize--small u-lineHeight--normal u-fontWeight--medium ${
                       preflightState.preflightsFailed
-                        ? "err"
-                        : preflightState.preflightState === "warn"
-                        ? "warning"
-                        : ""
+                        ? 'err'
+                        : preflightState.preflightState === 'warn'
+                        ? 'warning'
+                        : ''
                     }`}
                   >
                     {checksStatusText}
@@ -545,7 +545,7 @@ const DashboardVersionCard = (props: Props) => {
   const renderEditConfigIcon = (
     app: App,
     version: Version | null,
-    isPending: boolean
+    isPending: boolean,
   ) => {
     if (!app?.isConfigurable) {
       return null;
@@ -553,10 +553,10 @@ const DashboardVersionCard = (props: Props) => {
     if (!version) {
       return null;
     }
-    if (version.status === "pending_download") {
+    if (version.status === 'pending_download') {
       return null;
     }
-    if (version.status === "pending_config") {
+    if (version.status === 'pending_config') {
       // action button will already be set to "Configure", no need to show edit config icon as well
       return null;
     }
@@ -578,10 +578,10 @@ const DashboardVersionCard = (props: Props) => {
 
   const finalizeDeployment = async (
     continueWithFailedPreflights: boolean,
-    redeploy: boolean
+    redeploy: boolean,
   ) => {
     const { versionToDeploy, isSkipPreflights } = state;
-    setState({ displayConfirmDeploymentModal: false, confirmType: "" });
+    setState({ displayConfirmDeploymentModal: false, confirmType: '' });
     if (redeploy) {
       await props.redeployVersion(params.slug, versionToDeploy);
     }
@@ -590,7 +590,7 @@ const DashboardVersionCard = (props: Props) => {
         params.slug,
         versionToDeploy,
         isSkipPreflights,
-        continueWithFailedPreflights
+        continueWithFailedPreflights,
       );
       setState({ versionToDeploy: null, isRedeploy: false });
 
@@ -598,7 +598,7 @@ const DashboardVersionCard = (props: Props) => {
         props.refetchData();
       }
     } else {
-      throw new Error("No version to deploy");
+      throw new Error('No version to deploy');
     }
   };
 
@@ -606,7 +606,7 @@ const DashboardVersionCard = (props: Props) => {
     version: Version | null,
     force = false,
     continueWithFailedPreflights = false,
-    redeploy = false
+    redeploy = false,
   ) => {
     if (props.isHelmManaged) {
       setState({
@@ -631,7 +631,7 @@ const DashboardVersionCard = (props: Props) => {
         });
         return;
       }
-      if (version?.status === "pending_preflight") {
+      if (version?.status === 'pending_preflight') {
         setState({
           showSkipModal: true,
           versionToDeploy: version,
@@ -639,10 +639,10 @@ const DashboardVersionCard = (props: Props) => {
         });
         return;
       }
-      if (version?.preflightResult && version.status === "pending") {
+      if (version?.preflightResult && version.status === 'pending') {
         const preflightResults = JSON.parse(version.preflightResult);
         const preflightState = getPreflightResultState(preflightResults);
-        if (preflightState === "fail") {
+        if (preflightState === 'fail') {
           setState({
             showDeployWarningModal: true,
             versionToDeploy: version,
@@ -667,9 +667,9 @@ const DashboardVersionCard = (props: Props) => {
   const renderCurrentVersion = () => {
     const { currentVersion, app, isHelmManaged } = props;
 
-    let sequenceLabel = "Sequence";
+    let sequenceLabel = 'Sequence';
     if (isHelmManaged) {
-      sequenceLabel = "Revision";
+      sequenceLabel = 'Revision';
     }
 
     return (
@@ -687,15 +687,15 @@ const DashboardVersionCard = (props: Props) => {
             <div>{getCurrentVersionStatus(currentVersion)}</div>
             <div className="flex alignItems--center u-marginTop--10">
               <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy">
-                {currentVersion?.status === "failed"
-                  ? "---"
+                {currentVersion?.status === 'failed'
+                  ? '---'
                   : `${
-                      currentVersion?.status === "deploying"
-                        ? "Deploy started at"
-                        : "Deployed"
+                      currentVersion?.status === 'deploying'
+                        ? 'Deploy started at'
+                        : 'Deployed'
                     } ${Utilities.dateFormat(
                       currentVersion?.deployedAt,
-                      "MM/DD/YY @ hh:mm a z"
+                      'MM/DD/YY @ hh:mm a z',
                     )}`}
               </p>
             </div>
@@ -715,7 +715,7 @@ const DashboardVersionCard = (props: Props) => {
                   onClick={() =>
                     handleViewLogs(
                       currentVersion,
-                      currentVersion?.status === "failed"
+                      currentVersion?.status === 'failed',
                     )
                   }
                   data-tip="View deploy logs"
@@ -725,7 +725,7 @@ const DashboardVersionCard = (props: Props) => {
                 <ReactTooltip effect="solid" className="replicated-tooltip" />
               </div>
             ) : null}
-            {currentVersion?.status === "deploying" ? null : (
+            {currentVersion?.status === 'deploying' ? null : (
               <div className="flex-column justifyContent--center u-marginLeft--10">
                 <button
                   className="secondary blue btn"
@@ -744,7 +744,7 @@ const DashboardVersionCard = (props: Props) => {
   };
 
   const getVersionDiffSummary = (version: Version) => {
-    if (!version.diffSummary || version.diffSummary === "") {
+    if (!version.diffSummary || version.diffSummary === '') {
       return null;
     }
     try {
@@ -765,7 +765,7 @@ const DashboardVersionCard = (props: Props) => {
       return (
         <div className="flex flex1 alignItems--center u-marginTop--5">
           <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-textColor--bodyCopy">
-            Unable to generate diff{" "}
+            Unable to generate diff{' '}
             <span
               className="replicated-link"
               onClick={() => toggleDiffErrModal(version)}
@@ -781,7 +781,7 @@ const DashboardVersionCard = (props: Props) => {
           {!props.isHelmManaged && diffSummary.filesChanged > 0 ? (
             <div className="DiffSummary u-marginRight--10">
               <span className="files">
-                {diffSummary.filesChanged} files changed{" "}
+                {diffSummary.filesChanged} files changed{' '}
               </span>
               {!props.isHelmManaged && !downstream.gitops?.isConnected && (
                 <Link
@@ -795,7 +795,7 @@ const DashboardVersionCard = (props: Props) => {
           ) : (
             <div className="DiffSummary">
               <span className="files">
-                No changes to show.{" "}
+                No changes to show.{' '}
                 <span
                   className="replicated-link"
                   onClick={() => toggleNoChangesModal(version)}
@@ -819,7 +819,7 @@ const DashboardVersionCard = (props: Props) => {
         <Icon icon="warning-circle-filled" size={16} className="error-color" />
         <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginLeft--5 u-textColor--error">
           {version.yamlErrors?.length} Invalid file
-          {version.yamlErrors?.length !== 1 ? "s" : ""}{" "}
+          {version.yamlErrors?.length !== 1 ? 's' : ''}{' '}
         </span>
         <span
           className="replicated-link u-marginLeft--5 u-fontSize--small"
@@ -827,8 +827,8 @@ const DashboardVersionCard = (props: Props) => {
             toggleShowDetailsModal(version.yamlErrors, version.sequence)
           }
         >
-          {" "}
-          See details{" "}
+          {' '}
+          See details{' '}
         </span>
       </div>
     );
@@ -844,7 +844,7 @@ const DashboardVersionCard = (props: Props) => {
     if (versionToDeploy) {
       deployVersion(versionToDeploy, true, continueWithFailedPreflights);
     } else {
-      throw new Error("No version to deploy");
+      throw new Error('No version to deploy');
     }
   };
 
@@ -852,39 +852,39 @@ const DashboardVersionCard = (props: Props) => {
   const hideReleaseNotes = () => {
     setState({
       showReleaseNotes: false,
-      releaseNotes: "",
+      releaseNotes: '',
     });
   };
 
   const actionButtonStatus = (version: Version) => {
-    const isDeploying = version.status === "deploying";
+    const isDeploying = version.status === 'deploying';
     const isDownloading =
       state.versionDownloadStatuses?.[version.sequence]?.downloadingVersion;
-    const isPendingDownload = version.status === "pending_download";
-    const needsConfiguration = version.status === "pending_config";
+    const isPendingDownload = version.status === 'pending_download';
+    const needsConfiguration = version.status === 'pending_config';
     const canUpdateKots =
       version.needsKotsUpgrade &&
       !props.adminConsoleMetadata?.isAirgap &&
       !props.adminConsoleMetadata?.isKurl;
 
     if (isDeploying) {
-      return "Deploying";
+      return 'Deploying';
     } else if (isDownloading) {
-      return "Downloading";
+      return 'Downloading';
     } else if (isPendingDownload) {
       if (canUpdateKots) {
-        return "Upgrade";
+        return 'Upgrade';
       } else {
-        return "Download";
+        return 'Download';
       }
     }
     if (needsConfiguration) {
-      return "Configure";
+      return 'Configure';
     } else {
       if (canUpdateKots) {
-        return "Upgrade";
+        return 'Upgrade';
       } else {
-        return "Deploy";
+        return 'Deploy';
       }
     }
   };
@@ -898,15 +898,15 @@ const DashboardVersionCard = (props: Props) => {
         {
           headers: {
             Authorization: Utilities.getToken(),
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
-          method: "GET",
-        }
+          method: 'GET',
+        },
       )
         .then(async (res) => {
           const response = await res.json();
 
-          if (response.status !== "running") {
+          if (response.status !== 'running') {
             versionDownloadStatusJobs[version.sequence].stop();
 
             setState({
@@ -915,7 +915,7 @@ const DashboardVersionCard = (props: Props) => {
                 [version.sequence]: {
                   downloadingVersion: false,
                   downloadingVersionMessage: response.currentMessage,
-                  downloadingVersionError: response.status === "failed",
+                  downloadingVersionError: response.status === 'failed',
                 },
               },
             });
@@ -940,7 +940,7 @@ const DashboardVersionCard = (props: Props) => {
           resolve();
         })
         .catch((err) => {
-          console.log("failed to get version download status", err);
+          console.log('failed to get version download status', err);
           reject();
         });
     });
@@ -958,7 +958,7 @@ const DashboardVersionCard = (props: Props) => {
         ...state.versionDownloadStatuses,
         [version.sequence]: {
           downloadingVersion: true,
-          downloadingVersionMessage: "",
+          downloadingVersionMessage: '',
           downloadingVersionError: false,
         },
       },
@@ -969,10 +969,10 @@ const DashboardVersionCard = (props: Props) => {
       {
         headers: {
           Authorization: Utilities.getToken(),
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
-        method: "POST",
-      }
+        method: 'POST',
+      },
     )
       .then(async (res) => {
         if (!res.ok) {
@@ -991,7 +991,7 @@ const DashboardVersionCard = (props: Props) => {
         }
         versionDownloadStatusJobs[version.sequence].start(
           () => updateVersionDownloadStatus(version),
-          1000
+          1000,
         );
       })
       .catch((err) => {
@@ -1002,7 +1002,7 @@ const DashboardVersionCard = (props: Props) => {
             [version.sequence]: {
               downloadingVersion: false,
               downloadingVersionMessage:
-                err?.message || "Something went wrong, please try again.",
+                err?.message || 'Something went wrong, please try again.',
               downloadingVersionError: true,
             },
           },
@@ -1016,7 +1016,7 @@ const DashboardVersionCard = (props: Props) => {
     const nothingToCommit =
       downstream?.gitops?.isConnected && !version?.commitUrl;
 
-    if (version.status === "pending_download") {
+    if (version.status === 'pending_download') {
       const isDownloading =
         state.versionDownloadStatuses?.[version.sequence]?.downloadingVersion;
       return (
@@ -1027,14 +1027,14 @@ const DashboardVersionCard = (props: Props) => {
             disabled={isDownloading}
             onClick={() => downloadVersion(version)}
           >
-            {isDownloading ? "Downloading" : "Download"}
+            {isDownloading ? 'Downloading' : 'Download'}
           </button>
         </div>
       );
     }
     if (version.gitDeployable === false) {
       return (
-        <div className={nothingToCommit ? "u-opacity--half" : ""}>
+        <div className={nothingToCommit ? 'u-opacity--half' : ''}>
           Nothing to commit
         </div>
       );
@@ -1059,7 +1059,7 @@ const DashboardVersionCard = (props: Props) => {
       <div className="flex flex1 alignItems--center justifyContent--flexEnd">
         <button
           className="btn primary blue"
-          onClick={() => window.open(version.commitUrl, "_blank")}
+          onClick={() => window.open(version.commitUrl, '_blank')}
         >
           View
         </button>
@@ -1074,13 +1074,13 @@ const DashboardVersionCard = (props: Props) => {
     if (state.versionDownloadStatuses?.[version.sequence]?.downloadingVersion) {
       return true;
     }
-    if (version.status === "deploying") {
+    if (version.status === 'deploying') {
       return true;
     }
-    if (version.status === "pending_config") {
+    if (version.status === 'pending_config') {
       return false;
     }
-    if (version.status === "pending_download") {
+    if (version.status === 'pending_download') {
       return false;
     }
     return !version.isDeployable;
@@ -1096,10 +1096,10 @@ const DashboardVersionCard = (props: Props) => {
         {
           headers: {
             Authorization: Utilities.getToken(),
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
-          method: "GET",
-        }
+          method: 'GET',
+        },
       )
         .then(async (res) => {
           if (res.status === 404) {
@@ -1109,7 +1109,7 @@ const DashboardVersionCard = (props: Props) => {
           }
 
           const response = await res.json();
-          if (response.status === "successful") {
+          if (response.status === 'successful') {
             window.location.reload();
           } else {
             setState({
@@ -1122,11 +1122,11 @@ const DashboardVersionCard = (props: Props) => {
           resolve();
         })
         .catch((err) => {
-          console.log("failed to get upgrade status", err);
+          console.log('failed to get upgrade status', err);
           setState({
             kotsUpdateRunning: false,
-            kotsUpdateStatus: "waiting",
-            kotsUpdateMessage: "Waiting for pods to restart...",
+            kotsUpdateStatus: 'waiting',
+            kotsUpdateMessage: 'Waiting for pods to restart...',
             kotsUpdateError: null,
           });
           resolve();
@@ -1150,17 +1150,17 @@ const DashboardVersionCard = (props: Props) => {
       {
         headers: {
           Authorization: Utilities.getToken(),
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
-        method: "POST",
-      }
+        method: 'POST',
+      },
     )
       .then(async (res) => {
         if (!res.ok) {
           const response = await res.json();
           setState({
             kotsUpdateRunning: false,
-            kotsUpdateStatus: "failed",
+            kotsUpdateStatus: 'failed',
             kotsUpdateError: response.error,
           });
           return;
@@ -1171,9 +1171,9 @@ const DashboardVersionCard = (props: Props) => {
         console.log(err);
         setState({
           kotsUpdateRunning: false,
-          kotsUpdateStatus: "failed",
+          kotsUpdateStatus: 'failed',
           kotsUpdateError:
-            err?.message || "Something went wrong, please try again.",
+            err?.message || 'Something went wrong, please try again.',
         });
       });
   };
@@ -1186,8 +1186,8 @@ const DashboardVersionCard = (props: Props) => {
       return renderGitopsVersionAction(version);
     }
 
-    const needsConfiguration = version.status === "pending_config";
-    const isPendingDownload = version.status === "pending_download";
+    const needsConfiguration = version.status === 'pending_config';
+    const isPendingDownload = version.status === 'pending_download';
     const isSecondaryActionBtn = needsConfiguration || isPendingDownload;
 
     let url = `/app/${app?.slug}/config/${version.sequence}`;
@@ -1202,9 +1202,9 @@ const DashboardVersionCard = (props: Props) => {
         {renderEditConfigIcon(app, version, true)}
         <div className="flex-column justifyContent--center u-marginLeft--10">
           <button
-            className={classNames("btn", {
-              "secondary blue": isSecondaryActionBtn,
-              "primary blue": !isSecondaryActionBtn,
+            className={classNames('btn', {
+              'secondary blue': isSecondaryActionBtn,
+              'primary blue': !isSecondaryActionBtn,
             })}
             disabled={isActionButtonDisabled(version)}
             onClick={() => {
@@ -1248,9 +1248,9 @@ const DashboardVersionCard = (props: Props) => {
           <div className="flex alignItems--center justifyContent--flexEnd">
             <span
               className={`u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default ${
-                version.downloadStatus.status === "failed"
-                  ? "u-textColor--error"
-                  : ""
+                version.downloadStatus.status === 'failed'
+                  ? 'u-textColor--error'
+                  : ''
               }`}
             >
               {version.downloadStatus.message}
@@ -1270,14 +1270,14 @@ const DashboardVersionCard = (props: Props) => {
         )}
         <span
           className={`u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default ${
-            status.downloadingVersionError ? "u-textColor--error" : ""
+            status.downloadingVersionError ? 'u-textColor--error' : ''
           }`}
         >
           {status.downloadingVersionMessage
             ? status.downloadingVersionMessage
             : status.downloadingVersion
-            ? "Downloading"
-            : ""}
+            ? 'Downloading'
+            : ''}
         </span>
       </div>
     );
@@ -1360,7 +1360,7 @@ const DashboardVersionCard = (props: Props) => {
     } else if (checkingForUpdates) {
       let shortText = checkingUpdateText;
       if (shortText && shortText.length > 65) {
-        shortText = shortText.slice(0, 65) + "...";
+        shortText = shortText.slice(0, 65) + '...';
       }
       updateText = (
         <div className="flex-column justifyContent--center alignItems--center">
@@ -1415,8 +1415,8 @@ const DashboardVersionCard = (props: Props) => {
             <span
               className={`icon gitopsService--${downstream?.gitops?.provider} u-marginRight--10`}
             />
-            GitOps is enabled for this application. Versions are tracked{" "}
-            {app?.isAirgap ? "at" : "on"}&nbsp;
+            GitOps is enabled for this application. Versions are tracked{' '}
+            {app?.isAirgap ? 'at' : 'on'}&nbsp;
             <a
               target="_blank"
               rel="noopener noreferrer"
@@ -1430,7 +1430,7 @@ const DashboardVersionCard = (props: Props) => {
           </div>
         )}
         <div className="VersionCard-content--wrapper u-marginTop--15">
-          <div className={`flex ${isNew && !app?.isAirgap ? "is-new" : ""}`}>
+          <div className={`flex ${isNew && !app?.isAirgap ? 'is-new' : ''}`}>
             <div className="flex-column">
               <div className="flex alignItems--center">
                 <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">
@@ -1444,18 +1444,18 @@ const DashboardVersionCard = (props: Props) => {
                 )}
                 {latestDeployableVersion.isRequired && (
                   <span className="status-tag required u-marginLeft--10">
-                    {" "}
-                    Required{" "}
+                    {' '}
+                    Required{' '}
                   </span>
                 )}
               </div>
               <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5">
-                {" "}
-                Released{" "}
+                {' '}
+                Released{' '}
                 {Utilities.dateFormat(
                   latestDeployableVersion?.createdOn,
-                  "MM/DD/YY @ hh:mm a z"
-                )}{" "}
+                  'MM/DD/YY @ hh:mm a z',
+                )}{' '}
               </p>
               {renderDiff(latestDeployableVersion)}
               {renderYamlErrors(latestDeployableVersion)}
@@ -1474,14 +1474,14 @@ const DashboardVersionCard = (props: Props) => {
           <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--header u-marginTop--10">
             {state.numOfSkippedVersions > 0
               ? `${state.numOfSkippedVersions} version${
-                  state.numOfSkippedVersions > 1 ? "s" : ""
+                  state.numOfSkippedVersions > 1 ? 's' : ''
                 } will be skipped in upgrading to ${
                   latestDeployableVersion.versionLabel
                 }. `
-              : ""}
+              : ''}
             {state.numOfRemainingVersions > 0
-              ? "Additional versions are available after you deploy this required version."
-              : ""}
+              ? 'Additional versions are available after you deploy this required version.'
+              : ''}
           </p>
         )}
       </div>
@@ -1501,14 +1501,14 @@ const DashboardVersionCard = (props: Props) => {
 
   let checkingUpdateTextShort = checkingUpdateText;
   if (checkingUpdateTextShort && checkingUpdateTextShort.length > 30) {
-    checkingUpdateTextShort = checkingUpdateTextShort.slice(0, 30) + "...";
+    checkingUpdateTextShort = checkingUpdateTextShort.slice(0, 30) + '...';
   }
 
   const renderKotsUpgradeStatus =
     state.kotsUpdateStatus && !state.kotsUpdateMessage;
   let shortKotsUpdateMessage = state.kotsUpdateMessage;
   if (shortKotsUpdateMessage && shortKotsUpdateMessage.length > 60) {
-    shortKotsUpdateMessage = shortKotsUpdateMessage.substring(0, 60) + "...";
+    shortKotsUpdateMessage = shortKotsUpdateMessage.substring(0, 60) + '...';
   }
 
   if (gitopsIsConnected) {
@@ -1534,7 +1534,7 @@ const DashboardVersionCard = (props: Props) => {
   let isPending = false;
   if (
     props.isHelmManaged &&
-    state?.latestDeployableVersion?.status?.startsWith("pending")
+    state?.latestDeployableVersion?.status?.startsWith('pending')
   ) {
     isPending = true;
   }
@@ -1563,8 +1563,8 @@ const DashboardVersionCard = (props: Props) => {
                 <div className="flex alignItems--center u-marginRight--20">
                   <Loader className="u-marginRight--5" size="15" />
                   <span className="u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default">
-                    {checkingUpdateText === ""
-                      ? "Checking for updates"
+                    {checkingUpdateText === ''
+                      ? 'Checking for updates'
                       : checkingUpdateTextShort}
                   </span>
                 </div>
@@ -1611,8 +1611,8 @@ const DashboardVersionCard = (props: Props) => {
       ) : (
         <div className="no-deployed-version u-textAlign--center">
           <p className="u-fontWeight--medium u-fontSize--normal u-textColor--bodyCopy">
-            {" "}
-            No version has been deployed{" "}
+            {' '}
+            No version has been deployed{' '}
           </p>
         </div>
       )}
@@ -1640,7 +1640,7 @@ const DashboardVersionCard = (props: Props) => {
         >
           <div className="flex-column">
             <MarkdownRenderer className="is-kotsadm" id="markdown-wrapper">
-              {state.releaseNotes || "No release notes for this version"}
+              {state.releaseNotes || 'No release notes for this version'}
             </MarkdownRenderer>
           </div>
           <div className="flex u-marginTop--10 u-marginLeft--10 u-marginBottom--10">
@@ -1676,17 +1676,17 @@ const DashboardVersionCard = (props: Props) => {
               Unable to generate a file diff for release
             </p>
             <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">
-              The{" "}
+              The{' '}
               <span className="u-fontWeight--bold">
                 {/* // TODO: add better error handling */}
-                Upstream {state.releaseWithErr?.versionLabel || ""}, Sequence{" "}
-                {state.releaseWithErr?.sequence || ""}
-              </span>{" "}
+                Upstream {state.releaseWithErr?.versionLabel || ''}, Sequence{' '}
+                {state.releaseWithErr?.sequence || ''}
+              </span>{' '}
               release was unable to generate a diff because the following error:
             </p>
             <div className="error-block-wrapper u-marginBottom--30 flex flex1">
               <span className="u-textColor--error">
-                {state.releaseWithErr?.diffSummaryError || ""}
+                {state.releaseWithErr?.diffSummaryError || ''}
               </span>
             </div>
             <div className="flex u-marginBottom--10">
@@ -1713,11 +1713,11 @@ const DashboardVersionCard = (props: Props) => {
               No changes to show
             </p>
             <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">
-              The{" "}
+              The{' '}
               <span className="u-fontWeight--bold">
-                Upstream {state.releaseWithNoChanges?.versionLabel}, Sequence{" "}
+                Upstream {state.releaseWithNoChanges?.versionLabel}, Sequence{' '}
                 {state.releaseWithNoChanges?.sequence}
-              </span>{" "}
+              </span>{' '}
               release was unable to generate a diff because the changes made do
               not affect any manifests that will be deployed. Only changes
               affecting the application manifest will be included in a diff.
@@ -1749,8 +1749,8 @@ const DashboardVersionCard = (props: Props) => {
         >
           <div className="Modal-body">
             <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">
-              {state.isRedeploy ? "Redeploy" : "Deploy"}{" "}
-              {state.versionToDeploy?.versionLabel} (Sequence{" "}
+              {state.isRedeploy ? 'Redeploy' : 'Deploy'}{' '}
+              {state.versionToDeploy?.versionLabel} (Sequence{' '}
               {state.versionToDeploy?.sequence})?
             </p>
             <div className="flex u-paddingTop--10">
@@ -1770,7 +1770,7 @@ const DashboardVersionCard = (props: Props) => {
                 className="u-marginLeft--10 btn primary"
                 onClick={() => finalizeDeployment(false, state.isRedeploy)}
               >
-                Yes, {state.isRedeploy ? "Redeploy" : "Deploy"}
+                Yes, {state.isRedeploy ? 'Redeploy' : 'Deploy'}
               </button>
             </div>
           </div>
@@ -1863,7 +1863,7 @@ const DashboardVersionCard = (props: Props) => {
               <>
                 <HelmDeployModal
                   appSlug={props?.app?.slug}
-                  chartPath={props?.app?.chartPath || ""}
+                  chartPath={props?.app?.chartPath || ''}
                   downloadClicked={download}
                   downloadError={!!downloadError}
                   hideHelmDeployModal={() => {
@@ -1877,8 +1877,8 @@ const DashboardVersionCard = (props: Props) => {
                   showDownloadValues={showDownloadValues}
                   subtitle={
                     showDownloadValues
-                      ? "Follow the steps below to upgrade the release."
-                      : "Follow the steps below to redeploy the release using the currently deployed chart version and values."
+                      ? 'Follow the steps below to upgrade the release.'
+                      : 'Follow the steps below to redeploy the release using the currently deployed chart version and values.'
                   }
                   title={
                     showDownloadValues
@@ -1886,9 +1886,9 @@ const DashboardVersionCard = (props: Props) => {
                       : `Redeploy ${props?.app?.slug}`
                   }
                   upgradeTitle={
-                    showDownloadValues ? "Upgrade release" : "Redeploy release"
+                    showDownloadValues ? 'Upgrade release' : 'Redeploy release'
                   }
-                  version={state.showHelmDeployModalWithVersionLabel || ""}
+                  version={state.showHelmDeployModalWithVersionLabel || ''}
                   namespace={props?.app?.namespace}
                 />
                 <a href={url} download={name} className="hidden" ref={ref} />

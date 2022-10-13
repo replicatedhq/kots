@@ -7,15 +7,15 @@ import { App } from "@types";
 async function getApps({
   accessToken = Utilities.getToken(),
   apiEndpoint = process.env.API_ENDPOINT,
-  _fetch = fetch,
+  _fetch = fetch
 } = {}): Promise<{ apps: App[] } | null> {
   try {
     const res = await _fetch(`${apiEndpoint}/apps`, {
       headers: {
         Authorization: accessToken || "",
-        "Content-Type": "application/json",
+        "Content-Type": "application/json"
       },
-      method: "GET",
+      method: "GET"
     });
     if (!res.ok) {
       if (res.status === 401) {
@@ -36,7 +36,7 @@ async function getApps({
 
 function useApps({
   _getApps = getApps,
-  refetchInterval = false,
+  refetchInterval = false
 }: {
   _getApps?: typeof getApps;
   refetchInterval?: number | false;
@@ -47,14 +47,14 @@ function useApps({
     apps: App[] | null;
   }> = useQuery("apps", () => _getApps(), {
     staleTime: 2000,
-    refetchInterval,
+    refetchInterval
   });
 
   return query;
 }
 
 function UseApps({
-  children,
+  children
 }: {
   children: (
     props: UseQueryResult<{ apps: App[] | null }, Error>
