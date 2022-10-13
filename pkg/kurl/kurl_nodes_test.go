@@ -1,11 +1,19 @@
 package kurl
 
 import (
+	"reflect"
 	"testing"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/fake"
+	core "k8s.io/client-go/testing"
+
+	"github.com/replicatedhq/kots/pkg/kurl/types"
 )
 
 func TestIsConnected(t *testing.T) {
@@ -101,4 +109,97 @@ func TestInternalIP(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGetNodes(t *testing.T) {
+	type args struct {
+		client kubernetes.Interface
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *types.KurlNodes
+		wantErr bool
+	}{
+		{
+			name: "get nodes",
+			args: args{
+				client: newMockClientForListNodes(),
+			},
+			want: &types.KurlNodes{
+				IsKurlEnabled: true,
+				Nodes: []types.Node{
+					{
+						IsConnected: true,
+						Labels:      []string{},
+						CPU: types.CapacityAvailable{
+							Capacity: 2, Available: 0,
+						},
+						Memory: types.CapacityAvailable{
+							Capacity: 8, Available: 0,
+						},
+						Pods: types.CapacityAvailable{
+							Capacity: 1000, Available: 0,
+						},
+					},
+					{
+						IsConnected: true,
+						Labels:      []string{},
+						CPU: types.CapacityAvailable{
+							Capacity: 20, Available: 0,
+						},
+						Memory: types.CapacityAvailable{
+							Capacity: 8, Available: 0,
+						},
+						Pods: types.CapacityAvailable{
+							Capacity: 25, Available: 0,
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := GetNodes(tt.args.client)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetNodes() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetNodes() = %#v \n want %#v", got, tt.want)
+			}
+		})
+	}
+}
+
+func newMockClientForListNodes() kubernetes.Interface {
+	mockClient := fake.Clientset{}
+	mockClient.AddReactor("list", "nodes", func(action core.Action) (bool, runtime.Object, error) {
+		result := &corev1.NodeList{
+			Items: []corev1.Node{
+				{
+					Status: corev1.NodeStatus{
+						Capacity: corev1.ResourceList{
+							corev1.ResourceMemory: resource.MustParse("8Gi"),
+							corev1.ResourceCPU:    *resource.NewQuantity(2, resource.DecimalSI),
+							corev1.ResourcePods:   resource.MustParse("1k"),
+						},
+					},
+				},
+				{
+					Status: corev1.NodeStatus{
+						Capacity: corev1.ResourceList{
+							corev1.ResourceMemory: resource.MustParse("8Gi"),
+							corev1.ResourceCPU:    *resource.NewQuantity(20, resource.BinarySI),
+							corev1.ResourcePods:   resource.MustParse("25"),
+						},
+					},
+				},
+			},
+		}
+		return true, result, nil
+	})
+	return &mockClient
 }

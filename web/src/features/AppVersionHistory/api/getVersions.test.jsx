@@ -41,7 +41,7 @@ describe("getVersions", () => {
           useVersions({
             _getVersions: getVersionsSpy,
             _useParams: () => ({ slug: "testSlug" }),
-            _useCurrentApp: () => ({ currentApp: "testCurrentApp" }),
+            _useSelectedApp: () => ({ selectedApp: "testCurrentApp" }),
             _useMetadata: () => ({ data: { isAirGap: false, isKurl: false } }),
             _useIsHelmManaged: () => ({ data: { isHelmManaged: true } }),
           }),
