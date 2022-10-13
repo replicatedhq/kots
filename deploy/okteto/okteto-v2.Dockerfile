@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.3
-FROM golang:1.19 as builder
+FROM golang:1.17 as builder
 
 ENV GOCACHE "/.cache/gocache/"
 ENV GOMODCACHE "/.cache/gomodcache/"
