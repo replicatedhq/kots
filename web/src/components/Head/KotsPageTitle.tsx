@@ -21,7 +21,7 @@ function makePageTitle({
 /*
   example output:
   Troubleshoot | http-echo | Admin Console
-  Gitops | Admin Console
+  GitOps | Admin Console
 */
 function KotsPageTitle({
   pageName,

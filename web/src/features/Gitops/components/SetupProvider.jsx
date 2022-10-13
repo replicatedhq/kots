@@ -91,7 +91,7 @@ const SetupProvider = ({ appName }) => {
       key={`${step}-active`}
       className="GitOpsDeploy--step u-textAlign--left"
     >
-      <KotsPageTitle pageName="Gitops Configuration" />
+      <KotsPageTitle pageName="GitOps Configuration" />
       <p className="step-title">GitOps Configuration</p>
       <p className="step-sub">
         Connect a git version control system so all application updates are

@@ -15,6 +15,7 @@ import SkipPreflightsModal from "../shared/modals/SkipPreflightsModal";
 import { HelmDeployModal } from "../shared/modals/HelmDeployModal";
 import classNames from "classnames";
 import { UseDownloadValues } from "../hooks";
+import { getReadableGitOpsProviderName } from "../../utilities/utilities";
 
 import {
   Utilities,
@@ -923,7 +924,7 @@ class DashboardVersionCard extends React.Component<Props, State> {
             icon="info-circle-outline"
             size={16}
             className="gray-color u-marginLeft--5"
-            data-tip="This version may have been created before Gitops was enabled"
+            data-tip="This version may have been created before GitOps was enabled"
           />
           <ReactTooltip effect="solid" className="replicated-tooltip" />
         </div>
@@ -1412,7 +1413,7 @@ class DashboardVersionCard extends React.Component<Props, State> {
             <span
               className={`icon gitopsService--${downstream?.gitops?.provider} u-marginRight--10`}
             />
-            Gitops is enabled for this application. Versions are tracked{" "}
+            GitOps is enabled for this application. Versions are tracked{" "}
             {app?.isAirgap ? "at" : "on"}&nbsp;
             <a
               target="_blank"
@@ -1422,7 +1423,7 @@ class DashboardVersionCard extends React.Component<Props, State> {
             >
               {app.isAirgap
                 ? downstream?.gitops?.uri
-                : Utilities.toTitleCase(downstream?.gitops?.provider)}
+                : getReadableGitOpsProviderName(downstream?.gitops?.provider)}
             </a>
           </div>
         )}
