@@ -15,6 +15,7 @@ import SkipPreflightsModal from "../shared/modals/SkipPreflightsModal";
 import { HelmDeployModal } from "../shared/modals/HelmDeployModal";
 import classNames from "classnames";
 import { UseDownloadValues } from "../hooks";
+import { getReadableGitOpsProviderName } from "../../utilities/utilities";
 
 import {
   Utilities,
@@ -1422,7 +1423,7 @@ class DashboardVersionCard extends React.Component<Props, State> {
             >
               {app.isAirgap
                 ? downstream?.gitops?.uri
-                : Utilities.toTitleCase(downstream?.gitops?.provider)}
+                : getReadableGitOpsProviderName(downstream?.gitops?.provider)}
             </a>
           </div>
         )}
