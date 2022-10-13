@@ -48,9 +48,14 @@ type Props = {
   isBundleUploading: boolean;
   isHelmManaged: boolean;
   isVeleroInstalled: boolean;
-  makeCurrentVersion: (version: Version) => void;
+  makeCurrentVersion: (
+    slug: string,
+    versionToDeploy: Version,
+    isSkipPreflights: boolean,
+    continueWithFailedPreflights: boolean
+  ) => void;
   ping: (clusterId?: string) => void;
-  redeployVersion: (version: Version) => void;
+  redeployVersion: (slug: string, version: Version | null) => void;
   refreshAppData: () => void;
   snapshotInProgressApps: string[];
   toggleIsBundleUploading: (isUploading: boolean) => void;
@@ -73,7 +78,7 @@ type State = {
   checkingForUpdateError: boolean;
   checkingForUpdates: boolean;
   checkingUpdateMessage: string;
-  currentVersion: Version | {};
+  currentVersion: Version | null;
   dashboard: DashboardResponse;
   displayErrorModal: boolean;
   downstream: Downstream | null;
@@ -121,7 +126,7 @@ class Dashboard extends Component<Props, State> {
         metrics: [],
         prometheusAddress: "",
       },
-      currentVersion: {},
+      currentVersion: null,
       displayErrorModal: false,
       downstream: null,
       fetchAppDownstreamJob: new Repeater(),
@@ -787,10 +792,8 @@ class Dashboard extends Component<Props, State> {
                       currentVersion={currentVersion}
                       downstream={downstream}
                       app={app}
-                      url={this.props.match.url}
                       checkingForUpdates={checkingForUpdates}
                       checkingUpdateText={checkingUpdateText}
-                      onDropBundle={this.onDropBundle}
                       airgapUploader={this.state.airgapUploader}
                       uploadingAirgapFile={uploadingAirgapFile}
                       airgapUploadError={airgapUploadError}
@@ -807,9 +810,6 @@ class Dashboard extends Component<Props, State> {
                       checkingForUpdateError={this.state.checkingForUpdateError}
                       viewAirgapUploadError={() =>
                         this.toggleViewAirgapUploadError()
-                      }
-                      viewAirgapUpdateError={(err: string) =>
-                        this.toggleViewAirgapUpdateError(err)
                       }
                       showAutomaticUpdatesModal={this.showAutomaticUpdatesModal}
                       noUpdatesAvalable={this.state.noUpdatesAvalable}
