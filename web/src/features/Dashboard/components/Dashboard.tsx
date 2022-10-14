@@ -3,7 +3,7 @@ import { KotsPageTitle } from "@components/Head";
 import { withRouter } from "react-router-dom";
 import get from "lodash/get";
 import sortBy from "lodash/sortBy";
-import Loader from "../shared/Loader";
+import Loader from "@src/components/shared/Loader";
 import DashboardVersionCard from "./DashboardVersionCard";
 import AppStatus from "./AppStatus";
 import DashboardLicenseCard from "./DashboardLicenseCard";
@@ -12,13 +12,13 @@ import DashboardGraphsCard from "./DashboardGraphsCard";
 import AutomaticUpdatesModal from "@src/components/modals/AutomaticUpdatesModal";
 import SnapshotDifferencesModal from "@src/components/modals/SnapshotDifferencesModal";
 import Modal from "react-modal";
-import { Repeater } from "../../utilities/repeater";
-import { Utilities, isAwaitingResults } from "../../utilities/utilities";
-import { AirgapUploader } from "../../utilities/airgapUploader";
+import { Repeater } from "@src/utilities/repeater";
+import { Utilities, isAwaitingResults } from "@src/utilities/utilities";
+import { AirgapUploader } from "@src/utilities/airgapUploader";
 
 import "../../scss/components/watches/Dashboard.scss";
 import "../../../node_modules/react-vis/dist/style";
-import { Paragraph } from "../../styles/common";
+import { Paragraph } from "@src/styles/common";
 
 const COMMON_ERRORS = {
   "HTTP 401": "Registry credentials are invalid",

@@ -5,17 +5,17 @@ import DashboardGitOpsCard from "./DashboardGitOpsCard";
 import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
 import Modal from "react-modal";
-import AirgapUploadProgress from "../AirgapUploadProgress";
-import Loader from "../shared/Loader";
-import MountAware from "../shared/MountAware";
+import AirgapUploadProgress from "./AirgapUploadProgress";
+import Loader from "@src/components/shared/Loader";
+import MountAware from "@src/components/shared/MountAware";
 import ShowDetailsModal from "@src/components/modals/ShowDetailsModal";
 import ShowLogsModal from "@src/components/modals/ShowLogsModal";
-import DeployWarningModal from "../shared/modals/DeployWarningModal";
-import SkipPreflightsModal from "../shared/modals/SkipPreflightsModal";
-import { HelmDeployModal } from "../shared/modals/HelmDeployModal";
+import DeployWarningModal from "@src/components/shared/modals/DeployWarningModal";
+import SkipPreflightsModal from "@src/components/shared/modals/SkipPreflightsModal";
+import { HelmDeployModal } from "@src/components/shared/modals/HelmDeployModal";
 import classNames from "classnames";
-import { UseDownloadValues } from "../hooks";
-import { getReadableGitOpsProviderName } from "../../utilities/utilities";
+import { UseDownloadValues } from "@src/components//hooks";
+import { getReadableGitOpsProviderName } from "@src/utilities/utilities";
 
 import {
   Utilities,
