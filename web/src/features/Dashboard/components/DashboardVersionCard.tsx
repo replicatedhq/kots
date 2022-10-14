@@ -170,6 +170,7 @@ const DashboardVersionCard = (props: Props) => {
   const {
     data: newAppVersionWithInterceptData,
     error: latestDeployableVersionErrMsg,
+    refetch: refetchNextAppVersionWithIntercept,
   } = useNextAppVersionWithIntercept(selectedApp?.slug || "");
   const { latestDeployableVersion } = newAppVersionWithInterceptData || {};
 
@@ -222,50 +223,8 @@ const DashboardVersionCard = (props: Props) => {
     });
   }, [latestDeployableVersionErrMsg]);
 
-  const getLatestDeployableVersion = async () => {
-    try {
-      const res = await fetch(
-        `${process.env.API_ENDPOINT}/app/${selectedApp?.slug}/next-app-version`,
-        {
-          headers: {
-            Authorization: Utilities.getToken(),
-            "Content-Type": "application/json",
-          },
-          method: "GET",
-        }
-      );
-
-      if (!res.ok) {
-        const response = await res.json();
-        setState({
-          latestDeployableVersionErrMsg: response.error,
-        });
-        return;
-      }
-
-      const response = await res.json();
-      setState({
-        numOfSkippedVersions: response.numOfSkippedVersions,
-        numOfRemainingVersions: response.numOfRemainingVersions,
-        latestDeployableVersionErrMsg: "",
-      });
-    } catch (err) {
-      console.log(err);
-      if (err instanceof Error) {
-        setState({
-          latestDeployableVersionErrMsg: `Failed to get latest deployable version: ${err.message}`,
-        });
-      } else {
-        setState({
-          latestDeployableVersionErrMsg:
-            "Something went wrong, please try again.",
-        });
-      }
-    }
-  };
-
   useEffect(() => {
-    getLatestDeployableVersion();
+    refetchNextAppVersionWithIntercept();
   }, [props.downstream]);
 
   const closeViewDiffModal = () => {
