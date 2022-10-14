@@ -16,8 +16,8 @@ import { Repeater } from "@src/utilities/repeater";
 import { Utilities, isAwaitingResults } from "@src/utilities/utilities";
 import { AirgapUploader } from "@src/utilities/airgapUploader";
 
-import "../../scss/components/watches/Dashboard.scss";
-import "../../../node_modules/react-vis/dist/style";
+import "@src/scss/components/watches/Dashboard.scss";
+import "@src/../node_modules/react-vis/dist/style";
 import { Paragraph } from "@src/styles/common";
 
 const COMMON_ERRORS = {
@@ -806,7 +806,6 @@ class Dashboard extends Component<Props, State> {
                     <DashboardVersionCard
                       currentVersion={currentVersion}
                       downstream={downstream}
-                      app={app}
                       checkingForUpdates={checkingForUpdates}
                       checkingUpdateText={checkingUpdateText}
                       airgapUploader={this.state.airgapUploader}
@@ -828,7 +827,6 @@ class Dashboard extends Component<Props, State> {
                       }
                       showAutomaticUpdatesModal={this.showAutomaticUpdatesModal}
                       noUpdatesAvalable={this.state.noUpdatesAvalable}
-                      isHelmManaged={this.props.isHelmManaged}
                     />
                   </div>
 

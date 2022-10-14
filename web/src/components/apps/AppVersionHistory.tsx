@@ -12,7 +12,7 @@ import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
 import ShowDetailsModal from "@src/components/modals/ShowDetailsModal";
 import ShowLogsModal from "@src/components/modals/ShowLogsModal";
-import AirgapUploadProgress from "../../features/Dashboard/components/AirgapUploadProgress";
+import AirgapUploadProgress from "@src/features/Dashboard/components/AirgapUploadProgress";
 import ErrorModal from "../modals/ErrorModal";
 import { AppVersionHistoryRow } from "@features/AppVersionHistory/AppVersionHistoryRow";
 import DeployWarningModal from "../shared/modals/DeployWarningModal";
@@ -35,7 +35,7 @@ import { UseDownloadValues } from "../hooks";
 import { KotsPageTitle } from "@components/Head";
 
 import "@src/scss/components/apps/AppVersionHistory.scss";
-import DashboardGitOpsCard from "./DashboardGitOpsCard";
+import { DashboardGitOpsCard } from "@features/Dashboard";
 import Icon from "../Icon";
 import {
   App,

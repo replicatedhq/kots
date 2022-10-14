@@ -17,6 +17,8 @@ import classNames from "classnames";
 import { UseDownloadValues } from "@src/components//hooks";
 import { getReadableGitOpsProviderName } from "@src/utilities/utilities";
 import { useNextAppVersionWithIntercept } from "../api/useNextAppVersion";
+import { useSelectedApp } from "@features/App";
+import { useIsHelmManaged } from "@src/components//hooks";
 
 import {
   Utilities,
@@ -29,7 +31,6 @@ import "@src/scss/components/watches/DashboardCard.scss";
 import Icon from "@src/components/Icon";
 
 import {
-  App,
   Downstream,
   KotsParams,
   Metadata,
@@ -43,7 +44,6 @@ type Props = {
   adminConsoleMetadata?: Metadata;
   airgapUploader: AirgapUploader | null;
   airgapUploadError: string | null;
-  app: App;
   checkingForUpdates: boolean;
   checkingForUpdateError: boolean;
   checkingUpdateText: string;
@@ -51,7 +51,6 @@ type Props = {
   downloadCallback: () => void;
   downstream: Downstream | null;
   isBundleUploading: boolean;
-  isHelmManaged: boolean;
   links?: string[];
   makeCurrentVersion: (
     slug: string,
@@ -88,7 +87,6 @@ type State = {
   kotsUpdateMessage: string | null;
   kotsUpdateRunning: boolean;
   kotsUpdateStatus: VersionStatus | null;
-  latestDeployableVersion: Version | null;
   latestDeployableVersionErrMsg: string;
   logs: null | string;
   logsLoading: boolean;
@@ -138,7 +136,6 @@ const DashboardVersionCard = (props: Props) => {
       kotsUpdateMessage: null,
       kotsUpdateRunning: false,
       kotsUpdateStatus: null,
-      latestDeployableVersion: null,
       latestDeployableVersionErrMsg: "",
       logs: null,
       logsLoading: false,
@@ -169,11 +166,17 @@ const DashboardVersionCard = (props: Props) => {
   );
   const history = useHistory();
   const params = useParams<KotsParams>();
-  const { data: nextAppVersion, error: nextAppVersionError } = useNextAppVersionWithIntercept(app?.slug);
+  const { selectedApp } = useSelectedApp();
+  const {
+    data: newAppVersionWithInterceptData,
+    error: latestDeployableVersionErrMsg,
+  } = useNextAppVersionWithIntercept(selectedApp?.slug || "");
+  const { latestDeployableVersion } = newAppVersionWithInterceptData || {};
 
-  console.log(nextAppVersion);
-  console.log(state.latestDeployableVersion);
-  console.log(nextAppVersionError);
+  const { data: isHelmManagedResponse } = useIsHelmManaged();
+  const { isHelmManaged = false } = isHelmManagedResponse || {};
+
+  console.log(latestDeployableVersionErrMsg);
 
   // moving this out of the state because new repeater instances were getting created
   // and it doesn't really affect the UI
@@ -208,12 +211,23 @@ const DashboardVersionCard = (props: Props) => {
     }
   }, [history.location.search]);
 
+  useEffect(() => {
+    if (latestDeployableVersionErrMsg instanceof Error) {
+      setState({
+        latestDeployableVersionErrMsg: `Failed to get latest deployable version: ${latestDeployableVersionErrMsg.message}`,
+      });
+      return;
+    }
+
+    setState({
+      latestDeployableVersionErrMsg: "Something went wrong, please try again.",
+    });
+  }, [latestDeployableVersionErrMsg]);
+
   const getLatestDeployableVersion = async () => {
     try {
-      const { app } = props;
-
       const res = await fetch(
-        `${process.env.API_ENDPOINT}/app/${app?.slug}/next-app-version`,
+        `${process.env.API_ENDPOINT}/app/${selectedApp?.slug}/next-app-version`,
         {
           headers: {
             Authorization: Utilities.getToken(),
@@ -233,7 +247,6 @@ const DashboardVersionCard = (props: Props) => {
 
       const response = await res.json();
       setState({
-        latestDeployableVersion: response.latestDeployableVersion,
         numOfSkippedVersions: response.numOfSkippedVersions,
         numOfRemainingVersions: response.numOfRemainingVersions,
         latestDeployableVersionErrMsg: "",
@@ -282,7 +295,7 @@ const DashboardVersionCard = (props: Props) => {
         {tabs
           .filter((tab) => tab !== "renderError")
           .filter((tab) => {
-            if (props.isHelmManaged) {
+            if (isHelmManaged) {
               return tab.startsWith("helm");
             }
             return true;
@@ -308,9 +321,8 @@ const DashboardVersionCard = (props: Props) => {
       return;
     }
     try {
-      const { app } = props;
-      let clusterId = app.downstream.cluster?.id;
-      if (props.isHelmManaged) {
+      let clusterId = selectedApp?.downstream?.cluster?.id;
+      if (isHelmManaged) {
         clusterId = 0;
       }
       setState({
@@ -321,7 +333,7 @@ const DashboardVersionCard = (props: Props) => {
       });
 
       const res = await fetch(
-        `${process.env.API_ENDPOINT}/app/${app.slug}/cluster/${clusterId}/sequence/${version?.sequence}/downstreamoutput`,
+        `${process.env.API_ENDPOINT}/app/${selectedApp?.slug}/cluster/${clusterId}/sequence/${version?.sequence}/downstreamoutput`,
         {
           headers: {
             Authorization: Utilities.getToken(),
@@ -482,8 +494,6 @@ const DashboardVersionCard = (props: Props) => {
       return null;
     }
 
-    const { app } = props;
-
     const preflightState = getPreflightState(version);
     let checksStatusText;
     if (preflightState.preflightsFailed) {
@@ -504,7 +514,7 @@ const DashboardVersionCard = (props: Props) => {
         ) : preflightState.preflightState !== "" ? (
           <>
             <Link
-              to={`/app/${app?.slug}/downstreams/${app?.downstream.cluster?.slug}/version-history/preflight/${version?.sequence}`}
+              to={`/app/${selectedApp?.slug}/downstreams/${selectedApp?.downstream?.cluster?.slug}/version-history/preflight/${version?.sequence}`}
               className="u-position--relative"
               data-tip="View preflight checks"
             >
@@ -549,11 +559,10 @@ const DashboardVersionCard = (props: Props) => {
   };
 
   const renderEditConfigIcon = (
-    app: App,
     version: Version | null,
     isPending: boolean
   ) => {
-    if (!app?.isConfigurable) {
+    if (!selectedApp?.isConfigurable) {
       return null;
     }
     if (!version) {
@@ -567,8 +576,8 @@ const DashboardVersionCard = (props: Props) => {
       return null;
     }
 
-    let url = `/app/${app?.slug}/config/${version.sequence}`;
-    if (props.isHelmManaged) {
+    let url = `/app/${selectedApp?.slug}/config/${version.sequence}`;
+    if (isHelmManaged) {
       url = `${url}?isPending=${isPending}&semver=${version.versionLabel}`;
     }
 
@@ -614,15 +623,14 @@ const DashboardVersionCard = (props: Props) => {
     continueWithFailedPreflights = false,
     redeploy = false
   ) => {
-    if (props.isHelmManaged) {
+    if (isHelmManaged) {
       setState({
         showHelmDeployModal: true,
         showHelmDeployModalWithVersionLabel: version?.versionLabel,
       });
       return;
     }
-    const { app } = props;
-    const clusterSlug = app.downstream.cluster?.slug;
+    const clusterSlug = selectedApp?.downstream?.cluster?.slug;
     if (!clusterSlug) {
       return;
     }
@@ -671,7 +679,7 @@ const DashboardVersionCard = (props: Props) => {
   };
 
   const renderCurrentVersion = () => {
-    const { currentVersion, app, isHelmManaged } = props;
+    const { currentVersion } = props;
 
     let sequenceLabel = "Sequence";
     if (isHelmManaged) {
@@ -714,8 +722,8 @@ const DashboardVersionCard = (props: Props) => {
           <div className="flex flex1 alignItems--center justifyContent--flexEnd">
             {renderReleaseNotes(currentVersion)}
             {renderPreflights(currentVersion)}
-            {renderEditConfigIcon(app, currentVersion, false)}
-            {app ? (
+            {renderEditConfigIcon(currentVersion, false)}
+            {selectedApp ? (
               <div className="u-marginLeft--10">
                 <span
                   onClick={() =>
@@ -761,8 +769,7 @@ const DashboardVersionCard = (props: Props) => {
   };
 
   const renderDiff = (version: Version) => {
-    const { app } = props;
-    const downstream = app?.downstream;
+    const downstream = selectedApp?.downstream;
     const diffSummary = getVersionDiffSummary(version);
     const hasDiffSummaryError =
       version.diffSummaryError && version.diffSummaryError.length > 0;
@@ -784,12 +791,12 @@ const DashboardVersionCard = (props: Props) => {
     } else if (diffSummary) {
       return (
         <div className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-marginTop--5">
-          {!props.isHelmManaged && diffSummary.filesChanged > 0 ? (
+          {!isHelmManaged && diffSummary.filesChanged > 0 ? (
             <div className="DiffSummary u-marginRight--10">
               <span className="files">
                 {diffSummary.filesChanged} files changed{" "}
               </span>
-              {!props.isHelmManaged && !downstream.gitops?.isConnected && (
+              {!isHelmManaged && !downstream?.gitops?.isConnected && (
                 <Link
                   className="u-fontSize--small replicated-link u-marginLeft--5"
                   to={`${history.location.pathname}?diff/${props.currentVersion?.sequence}/${version.parentSequence}`}
@@ -896,11 +903,9 @@ const DashboardVersionCard = (props: Props) => {
   };
 
   const updateVersionDownloadStatus = (version: Version) => {
-    const { app } = props;
-
     return new Promise<void>((resolve, reject) => {
       fetch(
-        `${process.env.API_ENDPOINT}/app/${app?.slug}/sequence/${version?.parentSequence}/task/updatedownload`,
+        `${process.env.API_ENDPOINT}/app/${selectedApp?.slug}/sequence/${version?.parentSequence}/task/updatedownload`,
         {
           headers: {
             Authorization: Utilities.getToken(),
@@ -953,8 +958,6 @@ const DashboardVersionCard = (props: Props) => {
   };
 
   const downloadVersion = (version: Version) => {
-    const { app } = props;
-
     if (!versionDownloadStatusJobs?.hasOwnProperty(version.sequence)) {
       versionDownloadStatusJobs[version.sequence] = new Repeater();
     }
@@ -971,7 +974,7 @@ const DashboardVersionCard = (props: Props) => {
     });
 
     fetch(
-      `${process.env.API_ENDPOINT}/app/${app.slug}/sequence/${version.parentSequence}/download`,
+      `${process.env.API_ENDPOINT}/app/${selectedApp?.slug}/sequence/${version.parentSequence}/download`,
       {
         headers: {
           Authorization: Utilities.getToken(),
@@ -1017,8 +1020,7 @@ const DashboardVersionCard = (props: Props) => {
   };
 
   const renderGitopsVersionAction = (version: Version) => {
-    const { app } = props;
-    const downstream = app?.downstream;
+    const downstream = selectedApp?.downstream;
     const nothingToCommit =
       downstream?.gitops?.isConnected && !version?.commitUrl;
 
@@ -1074,7 +1076,7 @@ const DashboardVersionCard = (props: Props) => {
   };
 
   const isActionButtonDisabled = (version: Version) => {
-    if (props.isHelmManaged) {
+    if (isHelmManaged) {
       return false;
     }
     if (state.versionDownloadStatuses?.[version.sequence]?.downloadingVersion) {
@@ -1093,12 +1095,10 @@ const DashboardVersionCard = (props: Props) => {
   };
 
   const getKotsUpdateStatus = () => {
-    const { app } = props;
-
     // TODO: handle with both resolve and reject or use async/await
     return new Promise<void>((resolve) => {
       fetch(
-        `${process.env.API_ENDPOINT}/app/${app.slug}/task/update-admin-console`,
+        `${process.env.API_ENDPOINT}/app/${selectedApp?.slug}/task/update-admin-console`,
         {
           headers: {
             Authorization: Utilities.getToken(),
@@ -1141,8 +1141,6 @@ const DashboardVersionCard = (props: Props) => {
   };
 
   const upgradeAdminConsole = (version: Version) => {
-    const { app } = props;
-
     setState({
       displayKotsUpdateModal: true,
       kotsUpdateRunning: true,
@@ -1152,7 +1150,7 @@ const DashboardVersionCard = (props: Props) => {
     });
 
     fetch(
-      `${process.env.API_ENDPOINT}/app/${app.slug}/sequence/${version.parentSequence}/update-console`,
+      `${process.env.API_ENDPOINT}/app/${selectedApp?.slug}/sequence/${version.parentSequence}/update-console`,
       {
         headers: {
           Authorization: Utilities.getToken(),
@@ -1185,10 +1183,9 @@ const DashboardVersionCard = (props: Props) => {
   };
 
   const renderVersionAction = (version: Version) => {
-    const { app } = props;
-    const downstream = app?.downstream;
+    const downstream = selectedApp?.downstream;
 
-    if (downstream.gitops?.isConnected) {
+    if (downstream?.gitops?.isConnected) {
       return renderGitopsVersionAction(version);
     }
 
@@ -1196,8 +1193,8 @@ const DashboardVersionCard = (props: Props) => {
     const isPendingDownload = version.status === "pending_download";
     const isSecondaryActionBtn = needsConfiguration || isPendingDownload;
 
-    let url = `/app/${app?.slug}/config/${version.sequence}`;
-    if (props.isHelmManaged) {
+    let url = `/app/${selectedApp?.slug}/config/${version.sequence}`;
+    if (isHelmManaged) {
       url = `${url}?isPending=true&semver=${version.versionLabel}`;
     }
 
@@ -1205,7 +1202,7 @@ const DashboardVersionCard = (props: Props) => {
       <div className="flex flex1 alignItems--center justifyContent--flexEnd">
         {renderReleaseNotes(version)}
         {renderPreflights(version)}
-        {renderEditConfigIcon(app, version, true)}
+        {renderEditConfigIcon(version, true)}
         <div className="flex-column justifyContent--center u-marginLeft--10">
           <button
             className={classNames("btn", {
@@ -1302,7 +1299,7 @@ const DashboardVersionCard = (props: Props) => {
     if (props.airgapUploadError) {
       return true;
     }
-    if (props.app?.isAirgap && props.checkingForUpdates) {
+    if (selectedApp?.isAirgap && props.checkingForUpdates) {
       return true;
     }
     return false;
@@ -1310,7 +1307,6 @@ const DashboardVersionCard = (props: Props) => {
 
   const renderUpdateProgress = () => {
     const {
-      app,
       checkingForUpdateError,
       checkingUpdateText,
       isBundleUploading,
@@ -1346,7 +1342,7 @@ const DashboardVersionCard = (props: Props) => {
     } else if (uploadingAirgapFile) {
       updateText = (
         <AirgapUploadProgress
-          appSlug={app.slug}
+          appSlug={selectedApp?.slug}
           total={props.uploadSize}
           progress={props.uploadProgress}
           resuming={props.uploadResuming}
@@ -1357,7 +1353,7 @@ const DashboardVersionCard = (props: Props) => {
     } else if (isBundleUploading) {
       updateText = (
         <AirgapUploadProgress
-          appSlug={app.slug}
+          appSlug={selectedApp?.slug}
           unkownProgress={true}
           onProgressError={props.onProgressError}
           smallSize={true}
@@ -1400,12 +1396,10 @@ const DashboardVersionCard = (props: Props) => {
       );
     }
 
-    const latestDeployableVersion = state.latestDeployableVersion;
     if (!latestDeployableVersion) {
       return null;
     }
 
-    const app = props.app;
     const downstream = props.downstream;
     const downstreamSource = latestDeployableVersion?.source;
     const gitopsIsConnected = downstream?.gitops?.isConnected;
@@ -1422,28 +1416,32 @@ const DashboardVersionCard = (props: Props) => {
               className={`icon gitopsService--${downstream?.gitops?.provider} u-marginRight--10`}
             />
             GitOps is enabled for this application. Versions are tracked{" "}
-            {app?.isAirgap ? "at" : "on"}&nbsp;
+            {selectedApp?.isAirgap ? "at" : "on"}&nbsp;
             <a
               target="_blank"
               rel="noopener noreferrer"
               href={downstream?.gitops?.uri}
               className="replicated-link"
             >
-              {app.isAirgap
+              {selectedApp?.isAirgap
                 ? downstream?.gitops?.uri
                 : getReadableGitOpsProviderName(downstream?.gitops?.provider)}
             </a>
           </div>
         )}
         <div className="VersionCard-content--wrapper u-marginTop--15">
-          <div className={`flex ${isNew && !app?.isAirgap ? "is-new" : ""}`}>
+          <div
+            className={`flex ${
+              isNew && !selectedApp?.isAirgap ? "is-new" : ""
+            }`}
+          >
             <div className="flex-column">
               <div className="flex alignItems--center">
                 <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">
                   {latestDeployableVersion.versionLabel ||
                     latestDeployableVersion.title}
                 </p>
-                {props.isHelmManaged || (
+                {isHelmManaged || (
                   <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">
                     Sequence {latestDeployableVersion.sequence}
                   </p>
@@ -1495,7 +1493,6 @@ const DashboardVersionCard = (props: Props) => {
   };
 
   const {
-    app,
     currentVersion,
     checkingForUpdates,
     checkingUpdateText,
@@ -1521,11 +1518,11 @@ const DashboardVersionCard = (props: Props) => {
     return (
       <DashboardGitOpsCard
         gitops={props.downstream?.gitops}
-        isAirgap={app?.isAirgap}
-        appSlug={app?.slug}
+        isAirgap={selectedApp?.isAirgap}
+        appSlug={selectedApp?.slug}
         checkingForUpdates={checkingForUpdates}
         latestConfigSequence={
-          app?.downstream?.pendingVersions[0]?.parentSequence
+          selectedApp?.downstream?.pendingVersions[0]?.parentSequence
         }
         isBundleUploading={isBundleUploading}
         checkingUpdateText={checkingUpdateText}
@@ -1538,10 +1535,7 @@ const DashboardVersionCard = (props: Props) => {
   }
 
   let isPending = false;
-  if (
-    props.isHelmManaged &&
-    state?.latestDeployableVersion?.status?.startsWith("pending")
-  ) {
+  if (isHelmManaged && latestDeployableVersion?.status?.startsWith("pending")) {
     isPending = true;
   }
 
@@ -1552,7 +1546,7 @@ const DashboardVersionCard = (props: Props) => {
           Version
         </p>
         <div className="flex alignItems--center">
-          {app?.isAirgap && airgapUploader ? (
+          {selectedApp?.isAirgap && airgapUploader ? (
             <MountAware
               onMount={(el: Element) => props.airgapUploader?.assignElement(el)}
             >
@@ -1625,7 +1619,7 @@ const DashboardVersionCard = (props: Props) => {
       {renderBottomSection()}
       <div className="u-marginTop--10">
         <Link
-          to={`/app/${props.app?.slug}/version-history`}
+          to={`/app/${selectedApp?.slug}/version-history`}
           className="replicated-link u-fontSize--small"
         >
           See all versions
@@ -1662,7 +1656,7 @@ const DashboardVersionCard = (props: Props) => {
           hideLogsModal={hideLogsModal}
           viewLogsErrMsg={state.viewLogsErrMsg}
           versionFailing={state.versionFailing}
-          troubleshootUrl={`/app/${props.app?.slug}/troubleshoot`}
+          troubleshootUrl={`/app/${selectedApp?.slug}/troubleshoot`}
           logs={state.logs}
           selectedTab={state.selectedTab}
           logsLoading={state.logsLoading}
@@ -1841,10 +1835,10 @@ const DashboardVersionCard = (props: Props) => {
       )}
       {state.showHelmDeployModal && (
         <UseDownloadValues
-          appSlug={props?.app?.slug}
+          appSlug={selectedApp?.slug}
           fileName="values.yaml"
-          sequence={state?.latestDeployableVersion?.parentSequence}
-          versionLabel={state?.latestDeployableVersion?.versionLabel}
+          sequence={latestDeployableVersion?.parentSequence}
+          versionLabel={latestDeployableVersion?.versionLabel}
           isPending={isPending}
         >
           {({
@@ -1864,12 +1858,12 @@ const DashboardVersionCard = (props: Props) => {
           }) => {
             const showDownloadValues =
               state.showHelmDeployModalWithVersionLabel ===
-              state?.latestDeployableVersion?.versionLabel;
+              latestDeployableVersion?.versionLabel;
             return (
               <>
                 <HelmDeployModal
-                  appSlug={props?.app?.slug}
-                  chartPath={props?.app?.chartPath || ""}
+                  appSlug={selectedApp?.slug || ""}
+                  chartPath={selectedApp?.chartPath || ""}
                   downloadClicked={download}
                   downloadError={!!downloadError}
                   hideHelmDeployModal={() => {
@@ -1877,8 +1871,8 @@ const DashboardVersionCard = (props: Props) => {
                       showHelmDeployModal: false,
                     });
                   }}
-                  registryUsername={props?.app?.credentials?.username}
-                  registryPassword={props?.app?.credentials?.password}
+                  registryUsername={selectedApp?.credentials?.username || ""}
+                  registryPassword={selectedApp?.credentials?.password || ""}
                   showHelmDeployModal={true}
                   showDownloadValues={showDownloadValues}
                   subtitle={
@@ -1888,14 +1882,14 @@ const DashboardVersionCard = (props: Props) => {
                   }
                   title={
                     showDownloadValues
-                      ? `Deploy ${props?.app?.slug} ${state.showHelmDeployModalWithVersionLabel}`
-                      : `Redeploy ${props?.app?.slug}`
+                      ? `Deploy ${selectedApp?.slug} ${state.showHelmDeployModalWithVersionLabel}`
+                      : `Redeploy ${selectedApp?.slug}`
                   }
                   upgradeTitle={
                     showDownloadValues ? "Upgrade release" : "Redeploy release"
                   }
                   version={state.showHelmDeployModalWithVersionLabel || ""}
-                  namespace={props?.app?.namespace}
+                  namespace={selectedApp?.namespace || ""}
                 />
                 <a href={url} download={name} className="hidden" ref={ref} />
               </>
@@ -1918,7 +1912,7 @@ const DashboardVersionCard = (props: Props) => {
               secondSequence={state.secondSequence}
               hideBackButton={true}
               onBackClick={closeViewDiffModal}
-              app={props.app}
+              app={selectedApp}
             />
           </div>
           <div className="flex u-marginTop--10 u-marginLeft--10 u-marginBottom--10">
