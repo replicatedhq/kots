@@ -10,5 +10,5 @@ const (
 	Postgres14 = "postgres:14.5-alpine"
 	Dex        = "ghcr.io/dexidp/dex:v2.35.3"
 	Schemahero = "schemahero/schemahero:0.13.3"
-	Lvp        = "replicated/local-volume-provider:v0.3.8"
+	Lvp        = "replicated/local-volume-provider:v0.3.9"
 )
