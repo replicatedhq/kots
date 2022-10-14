@@ -117,7 +117,6 @@ func CreateBundleForBackup(appID string, backupName string, backupNamespace stri
 
 		progressChan <- collector.Title()
 
-		progressChan <- fmt.Sprintf("[%s] Running collector...", collector.Title())
 		result, err = collector.Collect(progressChan)
 		if err != nil {
 			progressChan <- errors.Wrapf(err, "failed to run collector %q", collector.Title())
