@@ -60,7 +60,7 @@ function useLicenseWithIntercept(appSlug: string) {
     );
   }, []);
   // return everything that comes with react query
-  return { licenseQuery, isSlowLoading };
+  return { ...licenseQuery, isSlowLoading };
 }
 
 export { useLicenseWithIntercept };
