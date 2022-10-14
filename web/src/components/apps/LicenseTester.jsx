@@ -4,15 +4,13 @@ import React, { useEffect } from "react";
 import { usePrevious } from "@src/hooks/usePrevious";
 
 const LicenseTester = ({ appSlug, setLoader }) => {
-  const { licenseQuery, isSlowLoading } = useLicenseWithIntercept(appSlug);
-  // licenseQuery includes everything that react-query returns
-  const { data } = licenseQuery;
+  const { data, isSlowLoading } = useLicenseWithIntercept(appSlug);
   const { license } = data || {};
   const { entitlements } = license || [];
 
   useEffect(() => {
     setLoader(isSlowLoading);
-  }, [isSlowLoading, licenseQuery?.data]);
+  }, [isSlowLoading, data]);
 
   return (
     <div>
