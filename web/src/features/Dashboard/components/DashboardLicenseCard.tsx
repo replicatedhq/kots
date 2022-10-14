@@ -12,7 +12,7 @@ import {
   getLicenseExpiryDate,
   Utilities,
 } from "@src/utilities/utilities";
-import "../../scss/components/watches/DashboardCard.scss";
+import "@src/scss/components/watches/DashboardCard.scss";
 import "@src/scss/components/apps/AppLicense.scss";
 import { Link } from "react-router-dom";
 import LicenseFields from "./LicenseFields";

@@ -12,7 +12,7 @@ import { useTheme } from "@src/components/context/withTheme";
 import { KotsSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import { HelmChartSidebarItem } from "@src/components/watches/WatchSidebarItem";
 import NotFound from "../static/NotFound";
-import Dashboard from "./Dashboard";
+import { Dashboard } from "@features/Dashboard";
 import DownstreamTree from "../../components/tree/KotsApplicationTree";
 import AppVersionHistory from "./AppVersionHistory";
 import { isAwaitingResults, Utilities } from "../../utilities/utilities";

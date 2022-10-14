@@ -25,8 +25,8 @@ import {
 } from "@src/utilities/utilities";
 import { Repeater } from "@src/utilities/repeater";
 
-import "../../scss/components/watches/DashboardCard.scss";
-import Icon from "../Icon";
+import "@src/scss/components/watches/DashboardCard.scss";
+import Icon from "@src/components/Icon";
 
 import {
   App,

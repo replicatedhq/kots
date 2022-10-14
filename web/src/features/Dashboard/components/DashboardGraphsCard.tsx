@@ -18,7 +18,7 @@ import {
 import { Utilities } from "@src/utilities/utilities";
 import { Repeater } from "@src/utilities/repeater";
 import ConfigureGraphs from "@src/components/shared/ConfigureGraphs";
-import "../../scss/components/watches/DashboardCard.scss";
+import "@src/scss/components/watches/DashboardCard.scss";
 import "@src/scss/components/apps/AppLicense.scss";
 import Icon from "@src/components/Icon";
 import { Chart } from "@types";
