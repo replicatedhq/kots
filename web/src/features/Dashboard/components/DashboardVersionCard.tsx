@@ -16,6 +16,7 @@ import { HelmDeployModal } from "@src/components/shared/modals/HelmDeployModal";
 import classNames from "classnames";
 import { UseDownloadValues } from "@src/components//hooks";
 import { getReadableGitOpsProviderName } from "@src/utilities/utilities";
+import { useNextAppVersionWithIntercept } from "../api/useNextAppVersion";
 
 import {
   Utilities,
@@ -168,6 +169,11 @@ const DashboardVersionCard = (props: Props) => {
   );
   const history = useHistory();
   const params = useParams<KotsParams>();
+  const { data: nextAppVersion, error: nextAppVersionError } = useNextAppVersionWithIntercept(app?.slug);
+
+  console.log(nextAppVersion);
+  console.log(state.latestDeployableVersion);
+  console.log(nextAppVersionError);
 
   // moving this out of the state because new repeater instances were getting created
   // and it doesn't really affect the UI

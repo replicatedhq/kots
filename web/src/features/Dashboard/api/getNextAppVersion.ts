@@ -30,11 +30,11 @@ export const getNextAppVersion = async (appSlug: string) => {
   }
 };
 
-export const useLicense = (appSlug: string) => {
+export const useNextAppVersion = (appSlug: string) => {
   return useQuery(["getNextAppVersion", appSlug], () => getNextAppVersion(appSlug), {
     /// might want to disable the fetch on window focus for this one
     refetchInterval: 5000,
   });
 };
 
-export default useLicense;
+export default { useNextAppVersion };
