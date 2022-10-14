@@ -516,7 +516,7 @@ class GenerateSupportBundle extends React.Component {
                   )}
                   {showRunCommand ? (
                     <div>
-                      <div className="u-marginTop--40">
+                      <div className="u-marginTop--15">
                         <h2 className="u-fontSize--larger u-fontWeight--bold u-textColor--primary">
                           Run this command in your cluster
                         </h2>
