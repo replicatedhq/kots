@@ -1,6 +1,6 @@
 module github.com/replicatedhq/kots
 
-go 1.17
+go 1.19
 
 require (
 	cloud.google.com/go/storage v1.23.0
@@ -357,7 +357,7 @@ replace (
 	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.5.5
 	github.com/jmoiron/sqlx v1.2.0 => github.com/longquanzheng/sqlx v0.0.0-20191125235044-053e6130695c
 	github.com/longhorn/longhorn-manager => github.com/replicatedhq/longhorn-manager v1.1.2-0.20210622201804-05b01947b99d
-	github.com/replicatedhq/troubleshoot v0.44.1 => github.com/replicatedhq/troubleshoot v0.44.2-0.20221013182733-3078a4f9c013
+	github.com/replicatedhq/troubleshoot v0.44.1 => github.com/replicatedhq/troubleshoot v0.44.2-0.20221014142752-3a16391bd753
 	github.com/sergi/go-diff => github.com/sergi/go-diff v1.1.0
 	golang.org/x/crypto v0.0.0-20220112180741-5e0467b6c7ce => github.com/dmacvicar/golang-x-crypto v0.0.0-20220126233154-a96af8f07497
 	gopkg.in/square/go-jose.v2 => gopkg.in/square/go-jose.v2 v2.2.2
