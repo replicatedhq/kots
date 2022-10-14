@@ -5,7 +5,7 @@ import DashboardGitOpsCard from "./DashboardGitOpsCard";
 import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
 import Modal from "react-modal";
-import AirgapUploadProgress from "./AirgapUploadProgress";
+import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
 import Loader from "@src/components/shared/Loader";
 import MountAware from "@src/components/shared/MountAware";
 import ShowDetailsModal from "@src/components/modals/ShowDetailsModal";

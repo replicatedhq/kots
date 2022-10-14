@@ -12,7 +12,7 @@ import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
 import DownstreamWatchVersionDiff from "@src/components/watches/DownstreamWatchVersionDiff";
 import ShowDetailsModal from "@src/components/modals/ShowDetailsModal";
 import ShowLogsModal from "@src/components/modals/ShowLogsModal";
-import AirgapUploadProgress from "../AirgapUploadProgress";
+import AirgapUploadProgress from "../../features/Dashboard/components/AirgapUploadProgress";
 import ErrorModal from "../modals/ErrorModal";
 import { AppVersionHistoryRow } from "@features/AppVersionHistory/AppVersionHistoryRow";
 import DeployWarningModal from "../shared/modals/DeployWarningModal";

@@ -3,9 +3,9 @@ import { Link, withRouter } from "react-router-dom";
 import { Utilities } from "@src/utilities/utilities";
 import find from "lodash/find";
 import "../../scss/components/watches/DashboardCard.scss";
-import InlineDropdown from "../shared/InlineDropdown";
+import InlineDropdown from "@src/components/shared/InlineDropdown";
 import SnapshotDifferencesModal from "@src/components/modals/SnapshotDifferencesModal";
-import Icon from "../Icon";
+import Icon from "@src/components/Icon";
 import { App, KotsParams } from "@types";
 import { RouteComponentProps } from "react-router-dom";
 

@@ -6,7 +6,7 @@ import isEmpty from "lodash/isEmpty";
 import Modal from "react-modal";
 import CodeSnippet from "@src/components/shared/CodeSnippet";
 import MountAware from "@src/components/shared/MountAware";
-import AirgapUploadProgress from "@src/components/AirgapUploadProgress";
+import AirgapUploadProgress from "@features/Dashboard/components/AirgapUploadProgress";
 import LicenseUploadProgress from "./LicenseUploadProgress";
 import AirgapRegistrySettings from "./shared/AirgapRegistrySettings";
 import { Utilities } from "../utilities/utilities";

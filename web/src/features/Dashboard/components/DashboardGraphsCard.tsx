@@ -15,12 +15,12 @@ import {
   Crosshair,
   // @ts-ignore
 } from "react-vis";
-import { Utilities } from "../../utilities/utilities";
-import { Repeater } from "../../utilities/repeater";
-import ConfigureGraphs from "../shared/ConfigureGraphs";
+import { Utilities } from "@src/utilities/utilities";
+import { Repeater } from "@src/utilities/repeater";
+import ConfigureGraphs from "@src/components/shared/ConfigureGraphs";
 import "../../scss/components/watches/DashboardCard.scss";
 import "@src/scss/components/apps/AppLicense.scss";
-import Icon from "../Icon";
+import Icon from "@src/components/Icon";
 import { Chart } from "@types";
 
 dayjs.extend(localizedFormat);
