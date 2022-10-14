@@ -176,8 +176,6 @@ const DashboardVersionCard = (props: Props) => {
   const { data: isHelmManagedResponse } = useIsHelmManaged();
   const { isHelmManaged = false } = isHelmManagedResponse || {};
 
-  console.log(latestDeployableVersionErrMsg);
-
   // moving this out of the state because new repeater instances were getting created
   // and it doesn't really affect the UI
   const versionDownloadStatusJobs: {
