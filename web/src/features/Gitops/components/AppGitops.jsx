@@ -179,110 +179,109 @@ const AppGitops = () => {
 
   const appTitle = selectedApp?.name;
   return (
-    <div className="GitOpsDeploy--step u-textAlign--left">
+    <div className="GitOpsDeploy--step card-bg u-textAlign--left">
       <KotsPageTitle pageName={`${appTitle} GitOps`} />
       <div className="flex-column flex1">
         <div className="GitopsSettings-noRepoAccess u-textAlign--left">
-          <p className="step-title">GitOps Configuration</p>
+          <p className="step-title card-title">GitOps Configuration</p>
           <p className="step-sub">
             Connect a git version control system so all application updates are
-            committed to a git <br />
-            repository. When GitOps is enabled, you cannot deploy updates
-            directly from the <br />
-            admin console.
+            committed to a git repository. <br /> When GitOps is enabled, you
+            cannot deploy updates directly from the admin console.
           </p>
         </div>
-        <div className="flex alignItems--center u-marginBottom--30">
-          {isSingleApp && selectedApp ? (
-            <div className="u-marginRight--5">{getLabel(selectedApp)}</div>
-          ) : (
-            <AppSelector
-              apps={apps}
-              selectedApp={selectedApp}
-              handleAppChange={handleAppChange}
-              isSingleApp={isSingleApp}
-            />
-          )}
-          <div className="flex flex1 flex-column u-fontSize--small u-marginTop--20">
-            {gitopsEnabled && gitopsConnected && (
-              <a
-                style={{ color: "blue", cursor: "pointer" }}
-                disabled={disablingGitOps}
-                onClick={promptToDisableGitOps}
+        <div className="card-item u-padding--15">
+          <div className="flex alignItems--center u-marginBottom--30">
+            {isSingleApp && selectedApp ? (
+              <div className="u-marginRight--5">{getLabel(selectedApp)}</div>
+            ) : (
+              <AppSelector
+                apps={apps}
+                selectedApp={selectedApp}
+                handleAppChange={handleAppChange}
+                isSingleApp={isSingleApp}
+              />
+            )}
+            <div className="flex flex1 flex-column u-fontSize--small u-marginTop--20">
+              {gitopsEnabled && gitopsConnected && (
+                <a
+                  style={{ color: "blue", cursor: "pointer" }}
+                  disabled={disablingGitOps}
+                  onClick={promptToDisableGitOps}
+                >
+                  {disablingGitOps
+                    ? "Disabling GitOps"
+                    : "Disable GitOps for this app"}
+                </a>
+              )}
+            </div>
+          </div>
+          <div
+            style={{
+              marginBottom: "30px",
+            }}
+          >
+            <Flex mb="15" align="center">
+              <Icon
+                icon="warning"
+                className="warning-color"
+                size={25}
+                style={{ width: "35px" }}
+              />
+              <p
+                className="u-fontSize--large u-fontWeight--bold u-lineHeight--normal"
+                style={{ color: "#DB9016" }}
               >
-                {disablingGitOps
-                  ? "Disabling GitOps"
-                  : "Disable GitOps for this app"}
+                Access to your repository is needed to push application updates
+              </p>
+            </Flex>
+            <p
+              className="u-fontSize--normal u-fontWeight--normal u-marginBottom--15"
+              style={{ color: "#585858" }}
+            >
+              Add this SSH key on your
+              <a
+                className="replicated-link"
+                href={addKeyUri}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {selectedApp.downstream.gitops.provider === "bitbucket_server"
+                  ? " account settings page, "
+                  : " repository settings page, "}
               </a>
+              and grant it write access.
+            </p>
+            <CodeSnippet
+              canCopy={true}
+              copyText="Copy key"
+              onCopyText={<span className="u-textColor--success">Copied</span>}
+            >
+              {deployKey}
+            </CodeSnippet>
+          </div>
+
+          <div className="flex justifyContent--spaceBetween alignItems--center">
+            <div className="flex">
+              <button
+                className="btn secondary blue"
+                onClick={() => stepFrom("action", "provider")}
+              >
+                Back to configuration
+              </button>
+            </div>
+            {testingConnection ? (
+              <Loader size="30" />
+            ) : (
+              <button
+                className="btn primary blue"
+                disabled={testingConnection}
+                onClick={handleTestConnection}
+              >
+                Test connection to repository
+              </button>
             )}
           </div>
-        </div>
-
-        <div
-          style={{
-            marginBottom: "30px",
-          }}
-        >
-          <Flex mb="15" align="center">
-            <Icon
-              icon="warning"
-              className="warning-color"
-              size={25}
-              style={{ width: "35px" }}
-            />
-            <p
-              className="u-fontSize--large u-fontWeight--bold u-lineHeight--normal"
-              style={{ color: "#DB9016" }}
-            >
-              Access to your repository is needed to push application updates
-            </p>
-          </Flex>
-          <p
-            className="u-fontSize--normal u-fontWeight--normal u-marginBottom--15"
-            style={{ color: "#585858" }}
-          >
-            Add this SSH key on your
-            <a
-              className="replicated-link"
-              href={addKeyUri}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {selectedApp.downstream.gitops.provider === "bitbucket_server"
-                ? " account settings page, "
-                : " repository settings page, "}
-            </a>
-            and grant it write access.
-          </p>
-          <CodeSnippet
-            canCopy={true}
-            copyText="Copy key"
-            onCopyText={<span className="u-textColor--success">Copied</span>}
-          >
-            {deployKey}
-          </CodeSnippet>
-        </div>
-
-        <div className="flex justifyContent--spaceBetween alignItems--center">
-          <div className="flex">
-            <button
-              className="btn secondary blue"
-              onClick={() => stepFrom("action", "provider")}
-            >
-              Back to configuration
-            </button>
-          </div>
-          {testingConnection ? (
-            <Loader size="30" />
-          ) : (
-            <button
-              className="btn primary blue"
-              disabled={testingConnection}
-              onClick={handleTestConnection}
-            >
-              Test connection to repository
-            </button>
-          )}
         </div>
       </div>
 

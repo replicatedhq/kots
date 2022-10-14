@@ -469,3 +469,25 @@ and `background-position: [value]`
 .paddingContainer {
   padding: 0 20px;
 }
+
+/// NEW CSS CLASSES
+.card-bg {
+  background: $really-light-accent;
+}
+.card-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: $text-color-primary;
+}
+.card-item {
+  padding: 8px;
+  border-radius: 6px;
+  background-color: #ffffff;
+}
+
+.card-item-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: $text-color-primary;
+  line-height: 1.7;
+}

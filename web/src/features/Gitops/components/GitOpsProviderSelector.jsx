@@ -55,9 +55,9 @@ const GitOpsProviderSelector = () => {
     if (isBitbucketServer) {
       return (
         <Flex flex="1" direction="column" width="100%">
-          <Paragraph size="16" weight="bold" className="u-lineHeight--normal">
-            HTTP Port <span>(Required)</span>
-          </Paragraph>
+          <p className="card-item-title">
+            HTTP Port <span className="card-item-title">(Required)</span>
+          </p>
           <input
             type="text"
             className="Input"
@@ -76,9 +76,9 @@ const GitOpsProviderSelector = () => {
     }
     return (
       <div className="flex flex1 flex-column">
-        <Paragraph size="16" weight="bold" className="u-lineHeight--normal">
-          SSH Port <span>(Required)</span>
-        </Paragraph>
+        <p className="card-item-title">
+          SSH Port <span className="card-item-title">(Required)</span>
+        </p>
         <input
           type="text"
           className="Input"
@@ -94,9 +94,9 @@ const GitOpsProviderSelector = () => {
     if (requiresHostname(provider)) {
       return (
         <Flex direction="column" className="flex1" width="100%">
-          <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
+          <p className="card-item-title">
             Hostname
-            <span> (Required)</span>
+            <span className="card-item-title"> (Required)</span>
           </p>
           <input
             type="text"
@@ -123,9 +123,7 @@ const GitOpsProviderSelector = () => {
         {/* left column */}
         <Flex direction="column" flex="1" mr="20">
           <div style={{ width: "100%" }}>
-            <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
-              Git provider
-            </p>
+            <p className="card-item-title">Git provider</p>
             <div className="u-position--relative  u-marginTop--5">
               <Select
                 className="replicated-select-container"
