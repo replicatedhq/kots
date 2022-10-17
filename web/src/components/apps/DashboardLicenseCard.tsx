@@ -24,6 +24,7 @@ type Props = {
   appLicense: AppLicense | null;
   gettingAppLicenseErrMsg: string | null;
   syncCallback: () => void;
+  children: React.ReactNode;
 };
 
 type State = {
@@ -267,6 +268,8 @@ export default class DashboardLicenseCard extends React.Component<
           )}
         </div>
         <div className="LicenseCard-content--wrapper u-marginTop--10">
+          {/* license tester component to try out the useLicense hook! */}
+          {this.props.children}
           {size(appLicense) > 0 ? (
             <div className="flex">
               <div className="flex-column flex1">

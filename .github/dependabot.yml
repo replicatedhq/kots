@@ -27,7 +27,7 @@ updates:
     schedule:
       interval: "daily"
 
-  ## Github Actions
+  ## GitHub Actions
 
   - package-ecosystem: "github-actions"
     directory: "/"

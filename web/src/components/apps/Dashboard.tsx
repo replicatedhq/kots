@@ -38,6 +38,7 @@ import {
   Version,
 } from "@types";
 import { RouteComponentProps } from "react-router-dom";
+//import LicenseTester from "./LicenseTester";
 
 type Props = {
   app: App;
@@ -48,9 +49,14 @@ type Props = {
   isBundleUploading: boolean;
   isHelmManaged: boolean;
   isVeleroInstalled: boolean;
-  makeCurrentVersion: (version: Version) => void;
+  makeCurrentVersion: (
+    slug: string,
+    versionToDeploy: Version,
+    isSkipPreflights: boolean,
+    continueWithFailedPreflights: boolean
+  ) => void;
   ping: (clusterId?: string) => void;
-  redeployVersion: (version: Version) => void;
+  redeployVersion: (slug: string, version: Version | null) => void;
   refreshAppData: () => void;
   snapshotInProgressApps: string[];
   toggleIsBundleUploading: (isUploading: boolean) => void;
@@ -73,7 +79,7 @@ type State = {
   checkingForUpdateError: boolean;
   checkingForUpdates: boolean;
   checkingUpdateMessage: string;
-  currentVersion: Version | {};
+  currentVersion: Version | null;
   dashboard: DashboardResponse;
   displayErrorModal: boolean;
   downstream: Downstream | null;
@@ -100,6 +106,7 @@ type State = {
   uploadingAirgapFile: boolean;
   viewAirgapUpdateError: boolean;
   viewAirgapUploadError: boolean;
+  slowLoader: boolean;
 };
 
 class Dashboard extends Component<Props, State> {
@@ -121,7 +128,7 @@ class Dashboard extends Component<Props, State> {
         metrics: [],
         prometheusAddress: "",
       },
-      currentVersion: {},
+      currentVersion: null,
       displayErrorModal: false,
       downstream: null,
       fetchAppDownstreamJob: new Repeater(),
@@ -152,6 +159,7 @@ class Dashboard extends Component<Props, State> {
       uploadSize: 0,
       viewAirgapUpdateError: false,
       viewAirgapUploadError: false,
+      slowLoader: false,
     };
   }
 
@@ -187,7 +195,6 @@ class Dashboard extends Component<Props, State> {
           this.setState({ gettingAppLicenseErrMsg: body.error });
           return;
         }
-
         if (body === null) {
           this.setState({ appLicense: null, gettingAppLicenseErrMsg: "" });
         } else if (body.success) {
@@ -749,11 +756,24 @@ class Dashboard extends Component<Props, State> {
 
     return (
       <>
-        {!app && (
-          <div className="flex-column flex1 alignItems--center justifyContent--center">
-            <Loader size="60" />
-          </div>
-        )}
+        {!app ||
+          (this.state.slowLoader && (
+            <div
+              className="flex-column flex1 alignItems--center justifyContent--center"
+              style={{
+                position: "absolute",
+                width: "100%",
+                left: 0,
+                right: 0,
+                top: 0,
+                bottom: 0,
+                backgroundColor: "rgba(255,255,255,0.7",
+                zIndex: 100,
+              }}
+            >
+              <Loader size="60" />
+            </div>
+          ))}
         {app && (
           <div className="flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
             <KotsPageTitle pageName="Dashboard" showAppSlug />
@@ -787,10 +807,8 @@ class Dashboard extends Component<Props, State> {
                       currentVersion={currentVersion}
                       downstream={downstream}
                       app={app}
-                      url={this.props.match.url}
                       checkingForUpdates={checkingForUpdates}
                       checkingUpdateText={checkingUpdateText}
-                      onDropBundle={this.onDropBundle}
                       airgapUploader={this.state.airgapUploader}
                       uploadingAirgapFile={uploadingAirgapFile}
                       airgapUploadError={airgapUploadError}
@@ -808,14 +826,12 @@ class Dashboard extends Component<Props, State> {
                       viewAirgapUploadError={() =>
                         this.toggleViewAirgapUploadError()
                       }
-                      viewAirgapUpdateError={(err: string) =>
-                        this.toggleViewAirgapUpdateError(err)
-                      }
                       showAutomaticUpdatesModal={this.showAutomaticUpdatesModal}
                       noUpdatesAvalable={this.state.noUpdatesAvalable}
                       isHelmManaged={this.props.isHelmManaged}
                     />
                   </div>
+
                   <div className="flex1 flex-column u-paddingLeft--15">
                     {app.allowSnapshots && isVeleroInstalled ? (
                       <div className="u-marginBottom--30">
@@ -851,7 +867,15 @@ class Dashboard extends Component<Props, State> {
                       gettingAppLicenseErrMsg={
                         this.state.gettingAppLicenseErrMsg
                       }
-                    />
+                    >
+                      {/* leaving this here as an example: please delete later */}
+                      {/* <LicenseTester
+                        appSlug={app.slug}
+                        setLoader={(e: boolean) =>
+                          this.setState({ slowLoader: e })
+                        }
+                      /> */}
+                    </DashboardLicenseCard>
                   </div>
                 </div>
                 <div className="u-marginTop--30 flex flex1">

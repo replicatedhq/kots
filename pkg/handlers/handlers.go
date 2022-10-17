@@ -285,11 +285,11 @@ func RegisterSessionAuthRoutes(r *mux.Router, kotsStore store.Store, handler KOT
 	r.Name("InitGitOpsConnection").Path("/api/v1/gitops/app/{appId}/cluster/{clusterId}/initconnection").Methods("POST").
 		HandlerFunc(middleware.EnforceAccess(policy.AppGitopsWrite, handler.InitGitOpsConnection))
 	r.Name("CreateGitOps").Path("/api/v1/gitops/create").Methods("POST").
-		HandlerFunc(middleware.EnforceAccess(policy.GitopsWrite, handler.CreateGitOps))
+		HandlerFunc(middleware.EnforceAccess(policy.GitOpsWrite, handler.CreateGitOps))
 	r.Name("ResetGitOps").Path("/api/v1/gitops/reset").Methods("POST").
-		HandlerFunc(middleware.EnforceAccess(policy.GitopsWrite, handler.ResetGitOps))
+		HandlerFunc(middleware.EnforceAccess(policy.GitOpsWrite, handler.ResetGitOps))
 	r.Name("GetGitOpsRepo").Path("/api/v1/gitops/get").Methods("GET").
-		HandlerFunc(middleware.EnforceAccess(policy.GitopsRead, handler.GetGitOpsRepo))
+		HandlerFunc(middleware.EnforceAccess(policy.GitOpsRead, handler.GetGitOpsRepo))
 
 	// Password change
 	r.Name("ChangePassword").Path("/api/v1/password/change").Methods("PUT").

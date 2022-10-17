@@ -5,9 +5,7 @@ import { getLabel } from "../utils";
 const AppSelector = ({ apps, selectedApp, handleAppChange, isSingleApp }) => {
   return (
     <div className="flex flex1 flex-column u-marginRight--10">
-      <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
-        Select an application to configure
-      </p>
+      <p className="card-item-title">Select an application to configure</p>
       <div className="u-position--relative u-marginTop--5 u-marginBottom--10">
         <Select
           className="replicated-select-container select-large "

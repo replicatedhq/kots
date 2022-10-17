@@ -90,9 +90,9 @@ const GitopsRepoDetails = () => {
       <Flex key={`action-active`} width="100%" direction="column">
         <Flex flex="1" mt="30" mb="20" width="100%">
           <div className="flex flex1 flex-column u-marginRight--20">
-            <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
+            <p className="card-item-title">
               {isBitbucketServer ? "Project" : "Owner"}
-              <span> (Required)</span>
+              <span className="card-item-title"> (Required)</span>
             </p>
             <input
               type="text"
@@ -113,9 +113,9 @@ const GitopsRepoDetails = () => {
             )}
           </div>
           <Flex flex="1" direction="column">
-            <Paragraph size="16" weight="bold" className="u-lineHeight--normal">
-              Repository <span>(Required)</span>
-            </Paragraph>
+            <p className="card-item-title">
+              Repository <span className="card-item-title">(Required)</span>
+            </p>
             <input
               type="text"
               className={`Input ${
@@ -136,9 +136,7 @@ const GitopsRepoDetails = () => {
 
         <Flex width="100%">
           <div className="flex flex1 flex-column u-marginRight--20">
-            <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
-              Branch
-            </p>
+            <p className="card-item-title">Branch</p>
             <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">
               Leave blank to use the default branch.
             </p>
@@ -151,9 +149,7 @@ const GitopsRepoDetails = () => {
             />
           </div>
           <div className="flex flex1 flex-column">
-            <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-lineHeight--normal">
-              Path
-            </p>
+            <p className="card-item-title">Path</p>
             <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">
               Path in repository to commit deployment file
             </p>

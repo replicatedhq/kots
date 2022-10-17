@@ -374,7 +374,6 @@ export default class DashboardGraphsCard extends React.Component<Props, State> {
               savingPromError={savingPromError}
               onPromValueChange={this.onPromValueChange}
               placeholder={prometheusAddress}
-              toggleConfigureGraphs={{}}
             />
           </div>
         )}
