@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import InlineDropdown from "../shared/InlineDropdown";
+import InlineDropdown from "@src/components/shared/InlineDropdown";
 import isEmpty from "lodash/isEmpty";
 import { Utilities } from "@src/utilities/utilities";
 

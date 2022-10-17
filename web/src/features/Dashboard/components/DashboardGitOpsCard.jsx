@@ -1,8 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import Loader from "../shared/Loader";
-import { getReadableGitOpsProviderName } from "../../utilities/utilities";
-import Icon from "../Icon";
+import Loader from "@src/components/shared/Loader";
+import { getReadableGitOpsProviderName } from "@src/utilities/utilities";
+import Icon from "@src/components/Icon";
 
 export default function DashboardGitOpsCard(props) {
   const {

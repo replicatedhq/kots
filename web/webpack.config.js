@@ -119,7 +119,7 @@ module.exports = function (env) {
               }
             }
           ]
-        }, 
+        },
         {
           test: /\.m?js/,
           resolve: {

@@ -19,7 +19,7 @@ import styled from "styled-components";
 
 import { App, LicenseFile, License } from "@src/types";
 import "@src/scss/components/apps/AppLicense.scss";
-import LicenseFields from "./LicenseFields";
+import { LicenseFields } from "@features/Dashboard";
 import Icon from "../Icon";
 
 type Props = {

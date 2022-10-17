@@ -3,7 +3,7 @@ import size from "lodash/size";
 // @ts-ignore
 import yaml from "js-yaml";
 import classNames from "classnames";
-import Loader from "../shared/Loader";
+import Loader from "@src/components/shared/Loader";
 // @ts-ignore
 import Dropzone from "react-dropzone";
 import Modal from "react-modal";
@@ -12,11 +12,11 @@ import {
   getLicenseExpiryDate,
   Utilities,
 } from "@src/utilities/utilities";
-import "../../scss/components/watches/DashboardCard.scss";
+import "@src/scss/components/watches/DashboardCard.scss";
 import "@src/scss/components/apps/AppLicense.scss";
 import { Link } from "react-router-dom";
 import LicenseFields from "./LicenseFields";
-import Icon from "../Icon";
+import Icon from "@src/components/Icon";
 import { App, LicenseFile, AppLicense } from "@src/types/index";
 
 type Props = {
