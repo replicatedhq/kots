@@ -110,7 +110,7 @@ jobs:
     needs: [ can-run-ci, build-web, generate-tag ]
 
     steps:
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v3
         with:
           go-version: '^1.19.2'
 
@@ -193,7 +193,7 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [ can-run-ci ]
     steps:
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v3
         with:
           go-version: '^1.19.2'
 
@@ -223,7 +223,7 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [ can-run-ci ]
     steps:
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v3
         with:
           go-version: '^1.19.2'
 

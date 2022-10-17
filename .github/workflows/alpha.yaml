@@ -173,7 +173,7 @@ jobs:
     needs: [build-schema-migrations, generate-tag]
     steps:
     - name: Setup Go
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v3
       with:
         go-version: '^1.19.2'
 
@@ -208,7 +208,7 @@ jobs:
     runs-on: ubuntu-20.04
     needs: [test_web, build_web, build_kurl_proxy, generate-tag]
     steps:
-    - uses: actions/setup-go@v2
+    - uses: actions/setup-go@v3
       with:
         go-version: '^1.19.2'
 
