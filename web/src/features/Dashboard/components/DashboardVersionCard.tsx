@@ -218,9 +218,16 @@ const DashboardVersionCard = (props: Props) => {
       return;
     }
 
-    setState({
-      latestDeployableVersionErrMsg: "Something went wrong, please try again.",
-    });
+    if (latestDeployableVersionErrMsg) {
+      setState({
+        latestDeployableVersionErrMsg:
+          "Something went wrong, please try again.",
+      });
+    } else {
+      setState({
+        latestDeployableVersionErrMsg: "",
+      });
+    }
   }, [latestDeployableVersionErrMsg]);
 
   useEffect(() => {
