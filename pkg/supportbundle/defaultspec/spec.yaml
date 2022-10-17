@@ -105,51 +105,7 @@ spec:
         includeValue: false
         key: .dockerconfigjson
     - logs:
-        collectorName: rook-ceph-agent
-        selector:
-          - app=rook-ceph-agent
-        namespace: rook-ceph
-        name: kots/rook
-    - logs:
-        collectorName: rook-ceph-mgr
-        selector:
-          - app=rook-ceph-mgr
-        namespace: rook-ceph
-        name: kots/rook
-    - logs:
-        collectorName: rook-ceph-mon
-        selector:
-          - app=rook-ceph-mon
-        namespace: rook-ceph
-        name: kots/rook
-    - logs:
-        collectorName: rook-ceph-operator
-        selector:
-          - app=rook-ceph-operator
-        namespace: rook-ceph
-        name: kots/rook
-    - logs:
-        collectorName: rook-ceph-osd
-        selector:
-          - app=rook-ceph-osd
-        namespace: rook-ceph
-        name: kots/rook
-    - logs:
-        collectorName: rook-ceph-osd-prepare
-        selector:
-          - app=rook-ceph-osd-prepare
-        namespace: rook-ceph
-        name: kots/rook
-    - logs:
-        collectorName: rook-ceph-rgw
-        selector:
-          - app=rook-ceph-rgw
-        namespace: rook-ceph
-        name: kots/rook
-    - logs:
-        collectorName: rook-discover
-        selector:
-          - app=rook-discover
+        collectorName: rook-ceph-logs
         namespace: rook-ceph
         name: kots/rook
     - exec:
