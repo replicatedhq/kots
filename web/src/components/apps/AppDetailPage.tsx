@@ -438,11 +438,9 @@ function AppDetailPage(props: Props) {
                       app={selectedApp}
                       cluster={selectedApp.downstream?.cluster}
                       updateCallback={refetchData}
-                      onActiveInitSession={props.onActiveInitSession}
                       toggleIsBundleUploading={toggleIsBundleUploading}
                       makeCurrentVersion={makeCurrentRelease}
                       redeployVersion={redeployVersion}
-                      redeployVersionErrMsg={state.redeployVersionErrMsg}
                       isBundleUploading={isBundleUploading}
                       isVeleroInstalled={isVeleroInstalled}
                       refreshAppData={refetchApps}
