@@ -1,6 +1,8 @@
 package kotsadm
 
 import (
+	"runtime"
+
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -8,27 +10,57 @@ import (
 )
 
 func defaultKOTSNodeAffinity() *corev1.NodeAffinity {
+	darwinSelectorTerm := corev1.NodeSelectorTerm{
+		MatchExpressions: []corev1.NodeSelectorRequirement{
+			{
+				Key:      "kubernetes.io/os",
+				Operator: corev1.NodeSelectorOpIn,
+				Values: []string{
+					"linux",
+				},
+			},
+			{
+				Key:      "kubernetes.io/arch",
+				Operator: corev1.NodeSelectorOpIn,
+				Values: []string{
+					"arm64",
+					"amd64",
+				},
+			},
+		},
+	}
+
+	nonDarwinSelectorTerm := corev1.NodeSelectorTerm{
+		MatchExpressions: []corev1.NodeSelectorRequirement{
+			{
+				Key:      "kubernetes.io/os",
+				Operator: corev1.NodeSelectorOpIn,
+				Values: []string{
+					"linux",
+				},
+			},
+			{
+				Key:      "kubernetes.io/arch",
+				Operator: corev1.NodeSelectorOpNotIn,
+				Values: []string{
+					"arm64",
+				},
+			},
+		},
+	}
+
+	var selectorTerm corev1.NodeSelectorTerm
+	switch runtime.GOOS {
+	case "darwin":
+		selectorTerm = darwinSelectorTerm
+	default:
+		selectorTerm = nonDarwinSelectorTerm
+	}
+
 	return &corev1.NodeAffinity{
 		RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
 			NodeSelectorTerms: []corev1.NodeSelectorTerm{
-				{
-					MatchExpressions: []corev1.NodeSelectorRequirement{
-						{
-							Key:      "kubernetes.io/os",
-							Operator: corev1.NodeSelectorOpIn,
-							Values: []string{
-								"linux",
-							},
-						},
-						{
-							Key:      "kubernetes.io/arch",
-							Operator: corev1.NodeSelectorOpNotIn,
-							Values: []string{
-								"arm64",
-							},
-						},
-					},
-				},
+				selectorTerm,
 			},
 		},
 	}
