@@ -94,7 +94,7 @@ func execute(appID string, sequence int64, preflightSpec *troubleshootv1beta2.Pr
 		logger.Debug("skipping analyze due to RBAC errors")
 		rbacErrors := []*troubleshootpreflight.UploadPreflightError{}
 		for _, collector := range clusterCollectResult.Collectors {
-			for _, e := range collector.RBACErrors {
+			for _, e := range collector.GetRBACErrors() {
 				rbacErrors = append(rbacErrors, &preflight.UploadPreflightError{
 					Error: e.Error(),
 				})
