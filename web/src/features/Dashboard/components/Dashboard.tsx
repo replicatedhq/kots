@@ -14,6 +14,7 @@ import Modal from "react-modal";
 import { Repeater } from "@src/utilities/repeater";
 import { Utilities, isAwaitingResults } from "@src/utilities/utilities";
 import { AirgapUploader } from "@src/utilities/airgapUploader";
+import { useHistory, useRouteMatch } from "react-router-dom";
 
 import "@src/scss/components/watches/Dashboard.scss";
 import "@src/../node_modules/react-vis/dist/style";
@@ -32,11 +33,9 @@ import {
   Downstream,
   DashboardResponse,
   DashboardActionLink,
-  KotsParams,
   ResourceStates,
   Version,
 } from "@types";
-import { RouteComponentProps } from "react-router-dom";
 //import LicenseTester from "./LicenseTester";
 
 type Props = {
@@ -55,12 +54,15 @@ type Props = {
     continueWithFailedPreflights: boolean
   ) => void;
   ping: (clusterId?: string) => void;
-  redeployVersion: (slug: string, version: Version | null) => void;
+  redeployVersion: (
+    upstreamSlug: string,
+    version: Version | null
+  ) => Promise<void>;
   refreshAppData: () => void;
   snapshotInProgressApps: string[];
   toggleIsBundleUploading: (isUploading: boolean) => void;
   updateCallback: () => void | null;
-} & RouteComponentProps<KotsParams>;
+};
 
 type SnapshotOption = {
   option: string;
@@ -164,6 +166,8 @@ const Dashboard = (props: Props) => {
     }
   );
 
+  const history = useHistory();
+  const match = useRouteMatch();
   const { app, isBundleUploading, isVeleroInstalled } = props;
 
   const fetchAppDownstream = async () => {
@@ -431,7 +435,7 @@ const Dashboard = (props: Props) => {
             setState({
               startingSnapshot: false,
             });
-            props.history.replace("/snapshots/settings");
+            history.replace("/snapshots/settings");
             return;
           }
         }
@@ -442,9 +446,9 @@ const Dashboard = (props: Props) => {
           });
           props.ping();
           if (option === "full") {
-            props.history.push("/snapshots");
+            history.push("/snapshots");
           } else {
-            props.history.push(`/snapshots/partial/${app.slug}`);
+            history.push(`/snapshots/partial/${app.slug}`);
           }
         } else {
           const body = await result.json();
@@ -489,7 +493,7 @@ const Dashboard = (props: Props) => {
   };
 
   const goToTroubleshootPage = () => {
-    props.history.push(`${props.match.url}/troubleshoot`);
+    history.push(`${match.url}/troubleshoot`);
   };
 
   const getAppResourcesByState = () => {
@@ -783,7 +787,7 @@ const Dashboard = (props: Props) => {
                   </p>
                   <AppStatus
                     appStatus={appStatus?.state}
-                    url={props.match.url}
+                    url={match.url}
                     onViewAppStatusDetails={toggleAppStatusModal}
                     links={links}
                     app={app}
@@ -823,7 +827,7 @@ const Dashboard = (props: Props) => {
                   {app.allowSnapshots && isVeleroInstalled ? (
                     <div className="u-marginBottom--30">
                       <DashboardSnapshotsCard
-                        url={props.match.url}
+                        url={match.url}
                         app={app}
                         ping={props.ping}
                         isSnapshotAllowed={
