@@ -251,12 +251,15 @@ function AppDetailPage(props: Props) {
     }
   };
 
-  const redeployVersion = async (upstreamSlug: string, version: Version) => {
+  const redeployVersion = async (
+    upstreamSlug: string,
+    version: Version | null
+  ) => {
     try {
       setState({ redeployVersionErrMsg: "" });
 
       const res = await fetch(
-        `${process.env.API_ENDPOINT}/app/${upstreamSlug}/sequence/${version.sequence}/redeploy`,
+        `${process.env.API_ENDPOINT}/app/${upstreamSlug}/sequence/${version?.sequence}/redeploy`,
         {
           headers: {
             Authorization: Utilities.getToken(),
@@ -270,14 +273,14 @@ function AppDetailPage(props: Props) {
         refetchData();
       } else {
         setState({
-          redeployVersionErrMsg: `Unable to redeploy release ${version.versionLabel}, sequence ${version.sequence}: Unexpected status code: ${res.status}`,
+          redeployVersionErrMsg: `Unable to redeploy release ${version?.versionLabel}, sequence ${version?.sequence}: Unexpected status code: ${res.status}`,
         });
       }
     } catch (err) {
       console.log(err);
       if (err instanceof Error) {
         setState({
-          redeployVersionErrMsg: `Unable to deploy release ${version.versionLabel}, sequence ${version.sequence}: ${err.message}`,
+          redeployVersionErrMsg: `Unable to deploy release ${version?.versionLabel}, sequence ${version?.sequence}: ${err.message}`,
         });
       } else {
         setState({
@@ -435,11 +438,9 @@ function AppDetailPage(props: Props) {
                       app={selectedApp}
                       cluster={selectedApp.downstream?.cluster}
                       updateCallback={refetchData}
-                      onActiveInitSession={props.onActiveInitSession}
                       toggleIsBundleUploading={toggleIsBundleUploading}
                       makeCurrentVersion={makeCurrentRelease}
                       redeployVersion={redeployVersion}
-                      redeployVersionErrMsg={state.redeployVersionErrMsg}
                       isBundleUploading={isBundleUploading}
                       isVeleroInstalled={isVeleroInstalled}
                       refreshAppData={refetchApps}

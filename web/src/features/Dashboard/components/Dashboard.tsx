@@ -1,6 +1,5 @@
-import React, { Component } from "react";
+import React, { useEffect, useReducer } from "react";
 import { KotsPageTitle } from "@components/Head";
-import { withRouter } from "react-router-dom";
 import get from "lodash/get";
 import sortBy from "lodash/sortBy";
 import Loader from "@src/components/shared/Loader";
@@ -15,6 +14,7 @@ import Modal from "react-modal";
 import { Repeater } from "@src/utilities/repeater";
 import { Utilities, isAwaitingResults } from "@src/utilities/utilities";
 import { AirgapUploader } from "@src/utilities/airgapUploader";
+import { useHistory, useRouteMatch } from "react-router-dom";
 
 import "@src/scss/components/watches/Dashboard.scss";
 import "@src/../node_modules/react-vis/dist/style";
@@ -33,11 +33,9 @@ import {
   Downstream,
   DashboardResponse,
   DashboardActionLink,
-  KotsParams,
   ResourceStates,
   Version,
 } from "@types";
-import { RouteComponentProps } from "react-router-dom";
 //import LicenseTester from "./LicenseTester";
 
 type Props = {
@@ -56,12 +54,15 @@ type Props = {
     continueWithFailedPreflights: boolean
   ) => void;
   ping: (clusterId?: string) => void;
-  redeployVersion: (slug: string, version: Version | null) => void;
+  redeployVersion: (
+    upstreamSlug: string,
+    version: Version | null
+  ) => Promise<void>;
   refreshAppData: () => void;
   snapshotInProgressApps: string[];
   toggleIsBundleUploading: (isUploading: boolean) => void;
   updateCallback: () => void | null;
-} & RouteComponentProps<KotsParams>;
+};
 
 type SnapshotOption = {
   option: string;
@@ -109,11 +110,13 @@ type State = {
   slowLoader: boolean;
 };
 
-class Dashboard extends Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
-
-    this.state = {
+const Dashboard = (props: Props) => {
+  const [state, setState] = useReducer(
+    (currentState: State, newState: Partial<State>) => ({
+      ...currentState,
+      ...newState,
+    }),
+    {
       activeChart: null,
       airgapUploader: null,
       airgapUpdateError: "",
@@ -160,230 +163,14 @@ class Dashboard extends Component<Props, State> {
       viewAirgapUpdateError: false,
       viewAirgapUploadError: false,
       slowLoader: false,
-    };
-  }
-
-  setWatchState = (app: App) => {
-    this.setState({
-      appName: app.name,
-      iconUri: app.iconUri,
-      currentVersion: app.downstream?.currentVersion,
-      downstream: app.downstream,
-      links: app.downstream?.links,
-    });
-  };
-
-  componentDidUpdate(lastProps: Props) {
-    const { app } = this.props;
-    if (app !== lastProps.app && app) {
-      this.setWatchState(app);
-      this.getAppLicense(app);
     }
-  }
+  );
 
-  getAppLicense = async (app: App) => {
-    await fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/license`, {
-      method: "GET",
-      headers: {
-        Authorization: Utilities.getToken(),
-        "Content-Type": "application/json",
-      },
-    })
-      .then(async (res) => {
-        const body = await res.json();
-        if (!res.ok) {
-          this.setState({ gettingAppLicenseErrMsg: body.error });
-          return;
-        }
-        if (body === null) {
-          this.setState({ appLicense: null, gettingAppLicenseErrMsg: "" });
-        } else if (body.success) {
-          this.setState({
-            appLicense: body.license,
-            gettingAppLicenseErrMsg: "",
-          });
-        } else if (body.error) {
-          this.setState({
-            appLicense: null,
-            gettingAppLicenseErrMsg: body.error,
-          });
-        }
-      })
-      .catch((err) => {
-        console.log(err);
-        this.setState({
-          gettingAppLicenseErrMsg: err
-            ? `Error while getting the license: ${err.message}`
-            : "Something went wrong, please try again.",
-        });
-      });
-  };
+  const history = useHistory();
+  const match = useRouteMatch();
+  const { app, isBundleUploading, isVeleroInstalled } = props;
 
-  componentDidMount() {
-    const { app } = this.props;
-
-    if (app?.isAirgap && !this.state.airgapUploader) {
-      this.getAirgapConfig();
-    }
-
-    this.state.updateChecker.start(this.updateStatus, 1000);
-    this.state.getAppDashboardJob.start(this.getAppDashboard, 2000);
-    if (app) {
-      this.setWatchState(app);
-      this.getAppLicense(app);
-    }
-  }
-
-  componentWillUnmount() {
-    this.state.updateChecker.stop();
-    this.state.getAppDashboardJob.stop();
-    this.state.fetchAppDownstreamJob.stop();
-  }
-
-  getAirgapConfig = async () => {
-    const { app } = this.props;
-    const configUrl = `${process.env.API_ENDPOINT}/app/${app.slug}/airgap/config`;
-    let simultaneousUploads = 3;
-    try {
-      let res = await fetch(configUrl, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: Utilities.getToken(),
-        },
-      });
-      if (res.ok) {
-        const response = await res.json();
-        simultaneousUploads = response.simultaneousUploads;
-      }
-    } catch {
-      // no-op
-    }
-
-    this.setState({
-      airgapUploader: new AirgapUploader(
-        true,
-        app.slug,
-        this.onDropBundle,
-        simultaneousUploads
-      ),
-    });
-  };
-
-  getAppDashboard = (): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      // this function is in a repeating callback that terminates when
-      // the promise is resolved
-
-      // TODO: use react-query to refetch this instead of the custom repeater
-      if (!this.props.app) {
-        resolve();
-      }
-
-      if (this.props.cluster?.id === "" && this.props.isHelmManaged === true) {
-        // TODO: use a callback to update the state in the parent component
-        this.props.cluster.id = 0;
-      }
-
-      fetch(
-        `${process.env.API_ENDPOINT}/app/${this.props.app?.slug}/cluster/${this.props.cluster?.id}/dashboard`,
-        {
-          headers: {
-            Authorization: Utilities.getToken(),
-            "Content-Type": "application/json",
-          },
-          method: "GET",
-        }
-      )
-        .then(async (res) => {
-          if (!res.ok && res.status === 401) {
-            Utilities.logoutUser();
-            resolve();
-          }
-          const response = await res.json();
-          this.setState({
-            dashboard: {
-              appStatus: response.appStatus,
-              prometheusAddress: response.prometheusAddress,
-              metrics: response.metrics,
-            },
-          });
-          resolve();
-        })
-        .catch((err) => {
-          console.log(err);
-          reject(err);
-        });
-    });
-  };
-
-  onCheckForUpdates = async () => {
-    const { app } = this.props;
-
-    this.setState({
-      checkingForUpdates: true,
-      checkingForUpdateError: false,
-    });
-
-    fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/updatecheck`, {
-      headers: {
-        Authorization: Utilities.getToken(),
-        "Content-Type": "application/json",
-      },
-      method: "POST",
-    })
-      .then(async (res) => {
-        this.getAppLicense(this.props.app);
-        if (!res.ok) {
-          const text = await res.text();
-          this.setState({
-            checkingForUpdateError: true,
-            checkingForUpdates: false,
-            checkingUpdateMessage: text
-              ? text
-              : "There was an error checking for updates.",
-          });
-          return;
-        }
-
-        const response = await res.json();
-        if (response.availableUpdates === 0) {
-          this.setState({
-            checkingForUpdates: false,
-            noUpdatesAvalable: true,
-          });
-          setTimeout(() => {
-            this.setState({ noUpdatesAvalable: false });
-          }, 3000);
-        } else {
-          this.state.updateChecker.start(this.updateStatus, 1000);
-        }
-      })
-      .catch((err) => {
-        this.setState({
-          checkingForUpdateError: true,
-          checkingForUpdates: false,
-          checkingUpdateMessage: err?.message
-            ? err?.message
-            : "There was an error checking for updates.",
-        });
-      });
-  };
-
-  hideAutomaticUpdatesModal = () => {
-    this.setState({
-      showAutomaticUpdatesModal: false,
-    });
-  };
-
-  showAutomaticUpdatesModal = () => {
-    this.setState({
-      showAutomaticUpdatesModal: true,
-    });
-  };
-
-  fetchAppDownstream = async () => {
-    const { app } = this.props;
+  const fetchAppDownstream = async () => {
     if (!app) {
       return;
     }
@@ -399,19 +186,19 @@ class Dashboard extends Component<Props, State> {
       if (res.ok && res.status == 200) {
         const appResponse = await res.json();
         if (!isAwaitingResults(appResponse.downstream.pendingVersions)) {
-          this.state.fetchAppDownstreamJob.stop();
+          state.fetchAppDownstreamJob.stop();
         }
-        this.setState({
+        setState({
           downstream: appResponse.downstream,
         });
         // wait a couple of seconds to avoid any race condiditons with the update checker then refetch the app to ensure we have the latest everything
         // this is hacky and I hate it but it's just building up more evidence in my case for having the FE be able to listen to BE envents
         // if that was in place we would have no need for this becuase the latest version would just be pushed down.
         setTimeout(() => {
-          this.props.refreshAppData();
+          props.refreshAppData();
         }, 2000);
       } else {
-        this.setState({
+        setState({
           loadingApp: false,
           gettingAppErrMsg: `Unexpected status code: ${res.status}`,
           displayErrorModal: true,
@@ -423,7 +210,7 @@ class Dashboard extends Component<Props, State> {
         err instanceof Error
           ? err.message
           : "Something went wrong, please try again.";
-      this.setState({
+      setState({
         loadingApp: false,
         gettingAppErrMsg: errorMessage,
         displayErrorModal: true,
@@ -431,13 +218,90 @@ class Dashboard extends Component<Props, State> {
     }
   };
 
-  startFetchAppDownstreamJob = () => {
-    this.state.fetchAppDownstreamJob.start(this.fetchAppDownstream, 2000);
+  const startFetchAppDownstreamJob = () => {
+    state.fetchAppDownstreamJob.start(fetchAppDownstream, 2000);
   };
 
-  updateStatus = (): Promise<void> => {
-    const { app } = this.props;
+  const setWatchState = (newAppState: App) => {
+    setState({
+      appName: newAppState.name,
+      iconUri: newAppState.iconUri,
+      currentVersion: newAppState.downstream?.currentVersion,
+      downstream: newAppState.downstream,
+      links: newAppState.downstream?.links,
+    });
+  };
 
+  const getAppLicense = async ({ slug }: { slug: string }) => {
+    await fetch(`${process.env.API_ENDPOINT}/app/${slug}/license`, {
+      method: "GET",
+      headers: {
+        Authorization: Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+    })
+      .then(async (res) => {
+        const body = await res.json();
+        if (!res.ok) {
+          setState({ gettingAppLicenseErrMsg: body.error });
+          return;
+        }
+        if (body === null) {
+          setState({ appLicense: null, gettingAppLicenseErrMsg: "" });
+        } else if (body.success) {
+          setState({
+            appLicense: body.license,
+            gettingAppLicenseErrMsg: "",
+          });
+        } else if (body.error) {
+          setState({
+            appLicense: null,
+            gettingAppLicenseErrMsg: body.error,
+          });
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+        setState({
+          gettingAppLicenseErrMsg: err
+            ? `Error while getting the license: ${err.message}`
+            : "Something went wrong, please try again.",
+        });
+      });
+  };
+
+  useEffect(() => {
+    if (props.app) {
+      setWatchState(props.app);
+      getAppLicense(props.app);
+    }
+  }, [props.app]);
+
+  const onUploadProgress = (
+    progress: number,
+    size: number,
+    resuming = false
+  ) => {
+    setState({
+      uploadProgress: progress,
+      uploadSize: size,
+      uploadResuming: resuming,
+    });
+  };
+
+  const onUploadError = (message: string) => {
+    setState({
+      uploadingAirgapFile: false,
+      checkingForUpdates: false,
+      uploadProgress: 0,
+      uploadSize: 0,
+      uploadResuming: false,
+      airgapUploadError: message || "Error uploading bundle, please try again",
+    });
+    props.toggleIsBundleUploading(false);
+  };
+
+  const updateStatus = (): Promise<void> => {
     return new Promise((resolve, reject) => {
       fetch(
         `${process.env.API_ENDPOINT}/app/${app?.slug}/task/updatedownload`,
@@ -452,22 +316,22 @@ class Dashboard extends Component<Props, State> {
         .then(async (res) => {
           const response = await res.json();
 
-          if (response.status !== "running" && !this.props.isBundleUploading) {
-            this.state.updateChecker.stop();
+          if (response.status !== "running" && !props.isBundleUploading) {
+            state.updateChecker.stop();
 
-            this.setState({
+            setState({
               checkingForUpdates: false,
               checkingUpdateMessage: response.currentMessage,
               checkingForUpdateError: response.status === "failed",
             });
 
-            this.getAppLicense(this.props.app);
-            if (this.props.updateCallback) {
-              this.props.updateCallback();
+            getAppLicense(props.app);
+            if (props.updateCallback) {
+              props.updateCallback();
             }
-            this.startFetchAppDownstreamJob();
+            startFetchAppDownstreamJob();
           } else {
-            this.setState({
+            setState({
               checkingForUpdates: true,
               checkingUpdateMessage: response.currentMessage,
             });
@@ -481,8 +345,18 @@ class Dashboard extends Component<Props, State> {
     });
   };
 
-  onDropBundle = async () => {
-    this.setState({
+  const onUploadComplete = () => {
+    state.updateChecker.start(updateStatus, 1000);
+    setState({
+      uploadingAirgapFile: false,
+      uploadProgress: 0,
+      uploadSize: 0,
+      uploadResuming: false,
+    });
+    props.toggleIsBundleUploading(false);
+  };
+  const onDropBundle = async () => {
+    setState({
       uploadingAirgapFile: true,
       checkingForUpdates: true,
       airgapUploadError: null,
@@ -491,61 +365,30 @@ class Dashboard extends Component<Props, State> {
       uploadResuming: false,
     });
 
-    this.props.toggleIsBundleUploading(true);
+    props.toggleIsBundleUploading(true);
 
     const params = {
-      appId: this.props.app?.id,
+      appId: props.app?.id,
     };
 
     // TODO: remove after adding type to airgap uploader
     // eslint-disable-next-line
     // @ts-ignore
-    this.state.airgapUploader?.upload(
+    state.airgapUploader?.upload(
       params,
-      this.onUploadProgress,
-      this.onUploadError,
-      this.onUploadComplete
+      onUploadProgress,
+      onUploadError,
+      onUploadComplete
     );
   };
 
-  onUploadProgress = (progress: number, size: number, resuming = false) => {
-    this.setState({
-      uploadProgress: progress,
-      uploadSize: size,
-      uploadResuming: resuming,
-    });
-  };
-
-  onUploadError = (message: string) => {
-    this.setState({
-      uploadingAirgapFile: false,
-      checkingForUpdates: false,
-      uploadProgress: 0,
-      uploadSize: 0,
-      uploadResuming: false,
-      airgapUploadError: message || "Error uploading bundle, please try again",
-    });
-    this.props.toggleIsBundleUploading(false);
-  };
-
-  onUploadComplete = () => {
-    this.state.updateChecker.start(this.updateStatus, 1000);
-    this.setState({
-      uploadingAirgapFile: false,
-      uploadProgress: 0,
-      uploadSize: 0,
-      uploadResuming: false,
-    });
-    this.props.toggleIsBundleUploading(false);
-  };
-
-  onProgressError = async (airgapUploadError: string) => {
+  const onProgressError = async (airgapUploadError: string) => {
     Object.entries(COMMON_ERRORS).forEach(([errorString, message]) => {
       if (airgapUploadError.includes(errorString)) {
         airgapUploadError = message;
       }
     });
-    this.setState({
+    setState({
       uploadingAirgapFile: false,
       airgapUploadError,
       checkingForUpdates: false,
@@ -555,20 +398,19 @@ class Dashboard extends Component<Props, State> {
     });
   };
 
-  toggleViewAirgapUploadError = () => {
-    this.setState({ viewAirgapUploadError: !this.state.viewAirgapUploadError });
+  const toggleViewAirgapUploadError = () => {
+    setState({ viewAirgapUploadError: !state.viewAirgapUploadError });
   };
 
-  toggleViewAirgapUpdateError = (err?: string) => {
-    this.setState({
-      viewAirgapUpdateError: !this.state.viewAirgapUpdateError,
-      airgapUpdateError: !this.state.viewAirgapUpdateError && err ? err : "",
+  const toggleViewAirgapUpdateError = (err?: string) => {
+    setState({
+      viewAirgapUpdateError: !state.viewAirgapUpdateError,
+      airgapUpdateError: !state.viewAirgapUpdateError && err ? err : "",
     });
   };
 
-  startASnapshot = (option: string) => {
-    const { app } = this.props;
-    this.setState({
+  const startASnapshot = (option: string) => {
+    setState({
       startingSnapshot: true,
       startSnapshotErr: false,
       startSnapshotErrorMsg: "",
@@ -590,27 +432,27 @@ class Dashboard extends Component<Props, State> {
         if (!result.ok && result.status === 409) {
           const res = await result.json();
           if (res.kotsadmRequiresVeleroAccess) {
-            this.setState({
+            setState({
               startingSnapshot: false,
             });
-            this.props.history.replace("/snapshots/settings");
+            history.replace("/snapshots/settings");
             return;
           }
         }
 
         if (result.ok) {
-          this.setState({
+          setState({
             startingSnapshot: false,
           });
-          this.props.ping();
+          props.ping();
           if (option === "full") {
-            this.props.history.push("/snapshots");
+            history.push("/snapshots");
           } else {
-            this.props.history.push(`/snapshots/partial/${app.slug}`);
+            history.push(`/snapshots/partial/${app.slug}`);
           }
         } else {
           const body = await result.json();
-          this.setState({
+          setState({
             startingSnapshot: false,
             startSnapshotErr: true,
             startSnapshotErrorMsg: body.error,
@@ -619,7 +461,7 @@ class Dashboard extends Component<Props, State> {
       })
       .catch((err) => {
         console.log(err);
-        this.setState({
+        setState({
           startSnapshotErrorMsg: err
             ? err.message
             : "Something went wrong, please try again.",
@@ -627,35 +469,35 @@ class Dashboard extends Component<Props, State> {
       });
   };
 
-  onSnapshotOptionChange = (selectedSnapshotOption: SnapshotOption) => {
+  const onSnapshotOptionChange = (selectedSnapshotOption: SnapshotOption) => {
     if (selectedSnapshotOption.option === "learn") {
-      this.setState({ snapshotDifferencesModal: true });
+      setState({ snapshotDifferencesModal: true });
     } else {
-      this.startASnapshot(selectedSnapshotOption.option);
+      startASnapshot(selectedSnapshotOption.option);
     }
   };
 
-  toggleSnaphotDifferencesModal = () => {
-    this.setState({
-      snapshotDifferencesModal: !this.state.snapshotDifferencesModal,
+  const toggleSnaphotDifferencesModal = () => {
+    setState({
+      snapshotDifferencesModal: !state.snapshotDifferencesModal,
     });
   };
 
-  onSnapshotOptionClick = () => {
-    const { selectedSnapshotOption } = this.state;
-    this.startASnapshot(selectedSnapshotOption.option);
+  const onSnapshotOptionClick = () => {
+    const { selectedSnapshotOption } = state;
+    startASnapshot(selectedSnapshotOption.option);
   };
 
-  toggleAppStatusModal = () => {
-    this.setState({ showAppStatusModal: !this.state.showAppStatusModal });
+  const toggleAppStatusModal = () => {
+    setState({ showAppStatusModal: !state.showAppStatusModal });
   };
 
-  goToTroubleshootPage = () => {
-    this.props.history.push(`${this.props.match.url}/troubleshoot`);
+  const goToTroubleshootPage = () => {
+    history.push(`${match.url}/troubleshoot`);
   };
 
-  getAppResourcesByState = () => {
-    const { appStatus } = this.state.dashboard;
+  const getAppResourcesByState = () => {
+    const { appStatus } = state.dashboard;
     if (!appStatus?.resourceStates?.length) {
       return {};
     }
@@ -674,8 +516,8 @@ class Dashboard extends Component<Props, State> {
     }
 
     // sort resources so that the order doesn't change while polling (since we show live data)
-    Object.keys(statesMap).forEach((state) => {
-      statesMap[state] = sortBy(statesMap[state], (resource) => {
+    Object.keys(statesMap).forEach((stateKey) => {
+      statesMap[stateKey] = sortBy(statesMap[stateKey], (resource) => {
         const fullResourceName = `${resource?.namespace}/${resource?.kind}/${resource?.name}`;
         return fullResourceName;
       });
@@ -707,11 +549,11 @@ class Dashboard extends Component<Props, State> {
     };
   };
 
-  checkStatusInformers = () => {
-    const appResourcesByState = this.getAppResourcesByState();
+  const checkStatusInformers = () => {
+    const appResourcesByState = getAppResourcesByState();
     const { statesMap, sortedStates } = appResourcesByState;
-    return sortedStates?.every((state) => {
-      return statesMap[state]?.every((resource) => {
+    return sortedStates?.every((sortedState) => {
+      return statesMap[sortedState]?.every((resource) => {
         const { kind, name, namespace } = resource;
         if (kind === "EMPTY" && name === "EMPTY" && namespace === "EMPTY") {
           return false;
@@ -721,311 +563,452 @@ class Dashboard extends Component<Props, State> {
     });
   };
 
-  render() {
-    const {
-      appName,
-      iconUri,
-      currentVersion,
-      downstream,
-      links,
-      checkingForUpdates,
-      checkingUpdateMessage,
-      uploadingAirgapFile,
-      airgapUploadError,
-      appLicense,
-    } = this.state;
+  const {
+    appName,
+    iconUri,
+    currentVersion,
+    downstream,
+    links,
+    checkingForUpdates,
+    checkingUpdateMessage,
+    uploadingAirgapFile,
+    airgapUploadError,
+    appLicense,
+  } = state;
 
-    const { app, isBundleUploading, isVeleroInstalled } = this.props;
+  let checkingUpdateText = checkingUpdateMessage;
+  try {
+    const jsonMessage = JSON.parse(checkingUpdateText);
+    const type = get(jsonMessage, "type");
+    if (type === "progressReport") {
+      checkingUpdateText = jsonMessage.compatibilityMessage;
+      // TODO: handle image upload progress here
+    }
+  } catch {
+    // empty
+  }
 
-    let checkingUpdateText = checkingUpdateMessage;
+  const appResourcesByState = getAppResourcesByState();
+  const hasStatusInformers = checkStatusInformers();
+
+  const { appStatus } = state.dashboard;
+
+  const getAirgapConfig = async () => {
+    const configUrl = `${process.env.API_ENDPOINT}/app/${app.slug}/airgap/config`;
+    let simultaneousUploads = 3;
     try {
-      const jsonMessage = JSON.parse(checkingUpdateText);
-      const type = get(jsonMessage, "type");
-      if (type === "progressReport") {
-        checkingUpdateText = jsonMessage.compatibilityMessage;
-        // TODO: handle image upload progress here
+      let res = await fetch(configUrl, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: Utilities.getToken(),
+        },
+      });
+      if (res.ok) {
+        const response = await res.json();
+        simultaneousUploads = response.simultaneousUploads;
       }
     } catch {
-      // empty
+      // no-op
     }
 
-    const appResourcesByState = this.getAppResourcesByState();
-    const hasStatusInformers = this.checkStatusInformers();
+    setState({
+      airgapUploader: new AirgapUploader(
+        true,
+        app.slug,
+        onDropBundle,
+        simultaneousUploads
+      ),
+    });
+  };
 
-    const { appStatus } = this.state.dashboard;
+  const getAppDashboard = (): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      // this function is in a repeating callback that terminates when
+      // the promise is resolved
 
-    return (
-      <>
-        {!app ||
-          (this.state.slowLoader && (
-            <div
-              className="flex-column flex1 alignItems--center justifyContent--center"
-              style={{
-                position: "absolute",
-                width: "100%",
-                left: 0,
-                right: 0,
-                top: 0,
-                bottom: 0,
-                backgroundColor: "rgba(255,255,255,0.7",
-                zIndex: 100,
-              }}
-            >
-              <Loader size="60" />
-            </div>
-          ))}
-        {app && (
-          <div className="flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
-            <KotsPageTitle pageName="Dashboard" showAppSlug />
-            <div className="Dashboard flex flex-auto justifyContent--center alignSelf--center alignItems--center">
-              <div className="flex1 flex-column">
-                <div className="flex flex1 alignItems--center">
-                  <div className="flex flex-auto">
-                    <div
-                      style={{ backgroundImage: `url(${iconUri})` }}
-                      className="Dashboard--appIcon u-position--relative"
-                    />
-                  </div>
-                  <div className="u-marginLeft--20">
-                    <p className="u-fontSize--30 u-textColor--primary u-fontWeight--bold">
-                      {appName}
-                    </p>
-                    <AppStatus
-                      appStatus={appStatus?.state}
-                      url={this.props.match.url}
-                      onViewAppStatusDetails={this.toggleAppStatusModal}
-                      links={links}
-                      app={app}
-                      hasStatusInformers={hasStatusInformers}
-                    />
-                  </div>
+      // TODO: use react-query to refetch this instead of the custom repeater
+      if (!props.app) {
+        resolve();
+      }
+
+      if (props.cluster?.id === "" && props.isHelmManaged === true) {
+        // TODO: use a callback to update the state in the parent component
+        props.cluster.id = 0;
+      }
+
+      fetch(
+        `${process.env.API_ENDPOINT}/app/${props.app?.slug}/cluster/${props.cluster?.id}/dashboard`,
+        {
+          headers: {
+            Authorization: Utilities.getToken(),
+            "Content-Type": "application/json",
+          },
+          method: "GET",
+        }
+      )
+        .then(async (res) => {
+          if (!res.ok && res.status === 401) {
+            Utilities.logoutUser();
+            resolve();
+          }
+          const response = await res.json();
+          setState({
+            dashboard: {
+              appStatus: response.appStatus,
+              prometheusAddress: response.prometheusAddress,
+              metrics: response.metrics,
+            },
+          });
+          resolve();
+        })
+        .catch((err) => {
+          console.log(err);
+          reject(err);
+        });
+    });
+  };
+  useEffect(() => {
+    if (app?.isAirgap && !state.airgapUploader) {
+      getAirgapConfig();
+    }
+
+    state.updateChecker.start(updateStatus, 1000);
+    state.getAppDashboardJob.start(getAppDashboard, 2000);
+    if (app) {
+      setWatchState(app);
+      getAppLicense(app);
+    }
+    return () => {
+      state.updateChecker.stop();
+      state.getAppDashboardJob.stop();
+      state.fetchAppDownstreamJob.stop();
+    };
+  }, []);
+
+  const onCheckForUpdates = async () => {
+    setState({
+      checkingForUpdates: true,
+      checkingForUpdateError: false,
+    });
+
+    fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/updatecheck`, {
+      headers: {
+        Authorization: Utilities.getToken(),
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    })
+      .then(async (res) => {
+        getAppLicense(props.app);
+        if (!res.ok) {
+          const text = await res.text();
+          setState({
+            checkingForUpdateError: true,
+            checkingForUpdates: false,
+            checkingUpdateMessage: text
+              ? text
+              : "There was an error checking for updates.",
+          });
+          return;
+        }
+
+        const response = await res.json();
+        if (response.availableUpdates === 0) {
+          setState({
+            checkingForUpdates: false,
+            noUpdatesAvalable: true,
+          });
+          setTimeout(() => {
+            setState({ noUpdatesAvalable: false });
+          }, 3000);
+        } else {
+          state.updateChecker.start(updateStatus, 1000);
+        }
+      })
+      .catch((err) => {
+        setState({
+          checkingForUpdateError: true,
+          checkingForUpdates: false,
+          checkingUpdateMessage: err?.message
+            ? err?.message
+            : "There was an error checking for updates.",
+        });
+      });
+  };
+
+  const hideAutomaticUpdatesModal = () => {
+    setState({
+      showAutomaticUpdatesModal: false,
+    });
+  };
+
+  const showAutomaticUpdatesModal = () => {
+    setState({
+      showAutomaticUpdatesModal: true,
+    });
+  };
+
+  return (
+    <>
+      {!app ||
+        (state.slowLoader && (
+          <div
+            className="flex-column flex1 alignItems--center justifyContent--center"
+            style={{
+              position: "absolute",
+              width: "100%",
+              left: 0,
+              right: 0,
+              top: 0,
+              bottom: 0,
+              backgroundColor: "rgba(255,255,255,0.7",
+              zIndex: 100,
+            }}
+          >
+            <Loader size="60" />
+          </div>
+        ))}
+      {app && (
+        <div className="flex-column flex1 u-position--relative u-overflow--auto u-padding--20">
+          <KotsPageTitle pageName="Dashboard" showAppSlug />
+          <div className="Dashboard flex flex-auto justifyContent--center alignSelf--center alignItems--center">
+            <div className="flex1 flex-column">
+              <div className="flex flex1 alignItems--center">
+                <div className="flex flex-auto">
+                  <div
+                    style={{ backgroundImage: `url(${iconUri})` }}
+                    className="Dashboard--appIcon u-position--relative"
+                  />
                 </div>
-
-                <div className="u-marginTop--30 flex flex1 u-width--full">
-                  <div className="flex1 u-paddingRight--15">
-                    <DashboardVersionCard
-                      currentVersion={currentVersion}
-                      downstream={downstream}
-                      checkingForUpdates={checkingForUpdates}
-                      checkingUpdateText={checkingUpdateText}
-                      airgapUploader={this.state.airgapUploader}
-                      uploadingAirgapFile={uploadingAirgapFile}
-                      airgapUploadError={airgapUploadError}
-                      refetchData={this.props.updateCallback}
-                      downloadCallback={this.startFetchAppDownstreamJob}
-                      uploadProgress={this.state.uploadProgress}
-                      uploadSize={this.state.uploadSize}
-                      uploadResuming={this.state.uploadResuming}
-                      makeCurrentVersion={this.props.makeCurrentVersion}
-                      redeployVersion={this.props.redeployVersion}
-                      onProgressError={this.onProgressError}
-                      onCheckForUpdates={() => this.onCheckForUpdates()}
-                      isBundleUploading={isBundleUploading}
-                      checkingForUpdateError={this.state.checkingForUpdateError}
-                      viewAirgapUploadError={() =>
-                        this.toggleViewAirgapUploadError()
-                      }
-                      showAutomaticUpdatesModal={this.showAutomaticUpdatesModal}
-                      noUpdatesAvalable={this.state.noUpdatesAvalable}
-                    />
-                  </div>
-
-                  <div className="flex1 flex-column u-paddingLeft--15">
-                    {app.allowSnapshots && isVeleroInstalled ? (
-                      <div className="u-marginBottom--30">
-                        <DashboardSnapshotsCard
-                          url={this.props.match.url}
-                          app={app}
-                          ping={this.props.ping}
-                          isSnapshotAllowed={
-                            app.allowSnapshots && isVeleroInstalled
-                          }
-                          isVeleroInstalled={isVeleroInstalled}
-                          startASnapshot={this.startASnapshot}
-                          startSnapshotOptions={this.state.startSnapshotOptions}
-                          startSnapshotErr={this.state.startSnapshotErr}
-                          startSnapshotErrorMsg={
-                            this.state.startSnapshotErrorMsg
-                          }
-                          snapshotInProgressApps={
-                            this.props.snapshotInProgressApps
-                          }
-                          selectedSnapshotOption={
-                            this.state.selectedSnapshotOption
-                          }
-                          onSnapshotOptionChange={this.onSnapshotOptionChange}
-                          onSnapshotOptionClick={this.onSnapshotOptionClick}
-                        />
-                      </div>
-                    ) : null}
-                    <DashboardLicenseCard
-                      appLicense={appLicense}
-                      app={app}
-                      syncCallback={() => this.getAppLicense(this.props.app)}
-                      gettingAppLicenseErrMsg={
-                        this.state.gettingAppLicenseErrMsg
-                      }
-                    >
-                      {/* leaving this here as an example: please delete later */}
-                      {/* <LicenseTester
-                        appSlug={app.slug}
-                        setLoader={(e: boolean) =>
-                          this.setState({ slowLoader: e })
-                        }
-                      /> */}
-                    </DashboardLicenseCard>
-                  </div>
-                </div>
-                <div className="u-marginTop--30 flex flex1">
-                  <DashboardGraphsCard
-                    prometheusAddress={this.state.dashboard?.prometheusAddress}
-                    metrics={this.state.dashboard?.metrics}
-                    appSlug={app.slug}
-                    clusterId={this.props.cluster?.id}
-                    isHelmManaged={this.props.isHelmManaged}
+                <div className="u-marginLeft--20">
+                  <p className="u-fontSize--30 u-textColor--primary u-fontWeight--bold">
+                    {appName}
+                  </p>
+                  <AppStatus
+                    appStatus={appStatus?.state}
+                    url={match.url}
+                    onViewAppStatusDetails={toggleAppStatusModal}
+                    links={links}
+                    app={app}
+                    hasStatusInformers={hasStatusInformers}
                   />
                 </div>
               </div>
+
+              <div className="u-marginTop--30 flex flex1 u-width--full">
+                <div className="flex1 u-paddingRight--15">
+                  <DashboardVersionCard
+                    currentVersion={currentVersion}
+                    downstream={downstream}
+                    checkingForUpdates={checkingForUpdates}
+                    checkingUpdateText={checkingUpdateText}
+                    airgapUploader={state.airgapUploader}
+                    uploadingAirgapFile={uploadingAirgapFile}
+                    airgapUploadError={airgapUploadError}
+                    refetchData={props.updateCallback}
+                    downloadCallback={startFetchAppDownstreamJob}
+                    uploadProgress={state.uploadProgress}
+                    uploadSize={state.uploadSize}
+                    uploadResuming={state.uploadResuming}
+                    makeCurrentVersion={props.makeCurrentVersion}
+                    redeployVersion={props.redeployVersion}
+                    onProgressError={onProgressError}
+                    onCheckForUpdates={() => onCheckForUpdates()}
+                    isBundleUploading={isBundleUploading}
+                    checkingForUpdateError={state.checkingForUpdateError}
+                    viewAirgapUploadError={() => toggleViewAirgapUploadError()}
+                    showAutomaticUpdatesModal={showAutomaticUpdatesModal}
+                    noUpdatesAvalable={state.noUpdatesAvalable}
+                  />
+                </div>
+
+                <div className="flex1 flex-column u-paddingLeft--15">
+                  {app.allowSnapshots && isVeleroInstalled ? (
+                    <div className="u-marginBottom--30">
+                      <DashboardSnapshotsCard
+                        url={match.url}
+                        app={app}
+                        ping={props.ping}
+                        isSnapshotAllowed={
+                          app.allowSnapshots && isVeleroInstalled
+                        }
+                        isVeleroInstalled={isVeleroInstalled}
+                        startASnapshot={startASnapshot}
+                        startSnapshotOptions={state.startSnapshotOptions}
+                        startSnapshotErr={state.startSnapshotErr}
+                        startSnapshotErrorMsg={state.startSnapshotErrorMsg}
+                        snapshotInProgressApps={props.snapshotInProgressApps}
+                        selectedSnapshotOption={state.selectedSnapshotOption}
+                        onSnapshotOptionChange={onSnapshotOptionChange}
+                        onSnapshotOptionClick={onSnapshotOptionClick}
+                      />
+                    </div>
+                  ) : null}
+                  <DashboardLicenseCard
+                    appLicense={appLicense}
+                    app={app}
+                    syncCallback={() => getAppLicense(props.app)}
+                    gettingAppLicenseErrMsg={state.gettingAppLicenseErrMsg}
+                  >
+                    {/* leaving this here as an example: please delete later */}
+                    {/* <LicenseTester
+                      appSlug={app.slug}
+                      setLoader={(e: boolean) =>
+                        setState({ slowLoader: e })
+                      }
+                    /> */}
+                  </DashboardLicenseCard>
+                </div>
+              </div>
+              <div className="u-marginTop--30 flex flex1">
+                <DashboardGraphsCard
+                  prometheusAddress={state.dashboard?.prometheusAddress}
+                  metrics={state.dashboard?.metrics}
+                  appSlug={app.slug}
+                  clusterId={props.cluster?.id}
+                  isHelmManaged={props.isHelmManaged}
+                />
+              </div>
             </div>
-            {this.state.viewAirgapUploadError && (
-              <Modal
-                isOpen={this.state.viewAirgapUploadError}
-                onRequestClose={this.toggleViewAirgapUploadError}
-                contentLabel="Error uploading airgap bundle"
-                ariaHideApp={false}
-                className="Modal"
-              >
-                <div className="Modal-body">
-                  <p className="u-fontSize--large u-fontWeight--bold u-textColor--primary">
-                    Error uploading airgap buundle
-                  </p>
-                  <div className="ExpandedError--wrapper u-marginTop--10 u-marginBottom--10">
-                    <p className="u-fontSize--normal u-textColor--error">
-                      {this.state.airgapUploadError}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    className="btn primary u-marginTop--15"
-                    onClick={this.toggleViewAirgapUploadError}
-                  >
-                    Ok, got it!
-                  </button>
-                </div>
-              </Modal>
-            )}
-            {this.state.viewAirgapUpdateError && (
-              <Modal
-                isOpen={this.state.viewAirgapUpdateError}
-                onRequestClose={() => this.toggleViewAirgapUpdateError()}
-                contentLabel="Error updating airgap version"
-                ariaHideApp={false}
-                className="Modal"
-              >
-                <div className="Modal-body">
-                  <p className="u-fontSize--large u-fontWeight--bold u-textColor--primary">
-                    Error updating version
-                  </p>
-                  <div className="ExpandedError--wrapper u-marginTop--10 u-marginBottom--10">
-                    <p className="u-fontSize--normal u-textColor--error">
-                      {this.state.airgapUpdateError}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    className="btn primary u-marginTop--15"
-                    onClick={() => this.toggleViewAirgapUpdateError()}
-                  >
-                    Ok, got it!
-                  </button>
-                </div>
-              </Modal>
-            )}
-            {this.state.showAppStatusModal && (
-              <Modal
-                isOpen={this.state.showAppStatusModal}
-                onRequestClose={this.toggleAppStatusModal}
-                ariaHideApp={false}
-                className="Modal DefaultSize"
-              >
-                <div className="Modal-body">
-                  <Paragraph size="16" weight="bold">
-                    Resource status
-                  </Paragraph>
-                  <div
-                    className="u-marginTop--10 u-marginBottom--10 u-overflow--auto"
-                    style={{ maxHeight: "50vh" }}
-                  >
-                    {appResourcesByState?.sortedStates?.map((state, i) => (
-                      <div key={i}>
-                        <p className="u-fontSize--normal u-color--mutedteal u-fontWeight--bold u-marginTop--20">
-                          {Utilities.toTitleCase(state)}
-                        </p>
-                        {appResourcesByState?.statesMap[state]?.map(
-                          (resource, j) => (
-                            <div key={`${resource?.name}-${j}`}>
-                              <p
-                                className={`ResourceStateText u-fontSize--normal ${resource.state}`}
-                              >
-                                {resource?.namespace}/{resource?.kind}/
-                                {resource?.name}
-                              </p>
-                            </div>
-                          )
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex alignItems--center u-marginTop--30">
-                    <button
-                      type="button"
-                      className="btn primary"
-                      onClick={this.toggleAppStatusModal}
-                    >
-                      Ok, got it!
-                    </button>
-                    <button
-                      type="button"
-                      className="btn secondary blue u-marginLeft--10"
-                      onClick={this.goToTroubleshootPage}
-                    >
-                      Troubleshoot
-                    </button>
-                  </div>
-                </div>
-              </Modal>
-            )}
-            {this.state.showAutomaticUpdatesModal && (
-              <AutomaticUpdatesModal
-                isOpen={this.state.showAutomaticUpdatesModal}
-                onRequestClose={this.hideAutomaticUpdatesModal}
-                updateCheckerSpec={app.updateCheckerSpec}
-                autoDeploy={app.autoDeploy}
-                appSlug={app.slug}
-                isSemverRequired={app?.isSemverRequired}
-                gitopsIsConnected={downstream?.gitops?.isConnected}
-                onAutomaticUpdatesConfigured={() => {
-                  this.hideAutomaticUpdatesModal();
-                  this.props.refreshAppData();
-                }}
-                isHelmManaged={this.props.isHelmManaged}
-              />
-            )}
-            {this.state.snapshotDifferencesModal && (
-              <SnapshotDifferencesModal
-                snapshotDifferencesModal={this.state.snapshotDifferencesModal}
-                toggleSnapshotDifferencesModal={
-                  this.toggleSnaphotDifferencesModal
-                }
-              />
-            )}
           </div>
-        )}
-      </>
-    );
-  }
-}
+          {state.viewAirgapUploadError && (
+            <Modal
+              isOpen={state.viewAirgapUploadError}
+              onRequestClose={toggleViewAirgapUploadError}
+              contentLabel="Error uploading airgap bundle"
+              ariaHideApp={false}
+              className="Modal"
+            >
+              <div className="Modal-body">
+                <p className="u-fontSize--large u-fontWeight--bold u-textColor--primary">
+                  Error uploading airgap buundle
+                </p>
+                <div className="ExpandedError--wrapper u-marginTop--10 u-marginBottom--10">
+                  <p className="u-fontSize--normal u-textColor--error">
+                    {state.airgapUploadError}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="btn primary u-marginTop--15"
+                  onClick={toggleViewAirgapUploadError}
+                >
+                  Ok, got it!
+                </button>
+              </div>
+            </Modal>
+          )}
+          {state.viewAirgapUpdateError && (
+            <Modal
+              isOpen={state.viewAirgapUpdateError}
+              onRequestClose={() => toggleViewAirgapUpdateError()}
+              contentLabel="Error updating airgap version"
+              ariaHideApp={false}
+              className="Modal"
+            >
+              <div className="Modal-body">
+                <p className="u-fontSize--large u-fontWeight--bold u-textColor--primary">
+                  Error updating version
+                </p>
+                <div className="ExpandedError--wrapper u-marginTop--10 u-marginBottom--10">
+                  <p className="u-fontSize--normal u-textColor--error">
+                    {state.airgapUpdateError}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="btn primary u-marginTop--15"
+                  onClick={() => toggleViewAirgapUpdateError()}
+                >
+                  Ok, got it!
+                </button>
+              </div>
+            </Modal>
+          )}
+          {state.showAppStatusModal && (
+            <Modal
+              isOpen={state.showAppStatusModal}
+              onRequestClose={toggleAppStatusModal}
+              ariaHideApp={false}
+              className="Modal DefaultSize"
+            >
+              <div className="Modal-body">
+                <Paragraph size="16" weight="bold">
+                  Resource status
+                </Paragraph>
+                <div
+                  className="u-marginTop--10 u-marginBottom--10 u-overflow--auto"
+                  style={{ maxHeight: "50vh" }}
+                >
+                  {appResourcesByState?.sortedStates?.map((sortedState, i) => (
+                    <div key={i}>
+                      <p className="u-fontSize--normal u-color--mutedteal u-fontWeight--bold u-marginTop--20">
+                        {Utilities.toTitleCase(sortedState)}
+                      </p>
+                      {appResourcesByState?.statesMap[sortedState]?.map(
+                        (resource, j) => (
+                          <div key={`${resource?.name}-${j}`}>
+                            <p
+                              className={`ResourceStateText u-fontSize--normal ${resource.state}`}
+                            >
+                              {resource?.namespace}/{resource?.kind}/
+                              {resource?.name}
+                            </p>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <div className="flex alignItems--center u-marginTop--30">
+                  <button
+                    type="button"
+                    className="btn primary"
+                    onClick={toggleAppStatusModal}
+                  >
+                    Ok, got it!
+                  </button>
+                  <button
+                    type="button"
+                    className="btn secondary blue u-marginLeft--10"
+                    onClick={goToTroubleshootPage}
+                  >
+                    Troubleshoot
+                  </button>
+                </div>
+              </div>
+            </Modal>
+          )}
+          {state.showAutomaticUpdatesModal && (
+            <AutomaticUpdatesModal
+              isOpen={state.showAutomaticUpdatesModal}
+              onRequestClose={hideAutomaticUpdatesModal}
+              updateCheckerSpec={app.updateCheckerSpec}
+              autoDeploy={app.autoDeploy}
+              appSlug={app.slug}
+              isSemverRequired={app?.isSemverRequired}
+              gitopsIsConnected={downstream?.gitops?.isConnected}
+              onAutomaticUpdatesConfigured={() => {
+                hideAutomaticUpdatesModal();
+                props.refreshAppData();
+              }}
+              isHelmManaged={props.isHelmManaged}
+            />
+          )}
+          {state.snapshotDifferencesModal && (
+            <SnapshotDifferencesModal
+              snapshotDifferencesModal={state.snapshotDifferencesModal}
+              toggleSnapshotDifferencesModal={toggleSnaphotDifferencesModal}
+            />
+          )}
+        </div>
+      )}
+    </>
+  );
+};
 
 // TODO: fix withRouter type
 // eslint-disable-next-line
-export default withRouter(Dashboard) as any;
+
+export { Dashboard };
