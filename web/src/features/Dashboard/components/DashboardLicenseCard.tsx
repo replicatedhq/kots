@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useReducer } from "react";
 import size from "lodash/size";
 // @ts-ignore
 import yaml from "js-yaml";
@@ -37,13 +37,13 @@ type State = {
   syncingLicense: boolean;
 };
 
-export default class DashboardLicenseCard extends React.Component<
-  Props,
-  State
-> {
-  constructor(props: Props) {
-    super(props);
-    this.state = {
+const DashboardLicenseCard = (props: Props) => {
+  const [state, setState] = useReducer(
+    (currentState: State, newState: Partial<State>) => ({
+      ...currentState,
+      ...newState,
+    }),
+    {
       appLicense: null,
       entitlementsToShow: [],
       isViewingLicenseEntitlements: false,
@@ -51,17 +51,17 @@ export default class DashboardLicenseCard extends React.Component<
       messageType: "",
       showNextStepModal: false,
       syncingLicense: false,
-    };
-  }
+    }
+  );
 
-  syncLicense = (licenseData: string) => {
-    this.setState({
+  const syncLicense = (licenseData: string) => {
+    setState({
       syncingLicense: true,
       message: "",
       messageType: "info",
     });
 
-    const { app } = this.props;
+    const { app } = props;
 
     const payload = {
       licenseData,
@@ -96,7 +96,7 @@ export default class DashboardLicenseCard extends React.Component<
           message = "License synced successfully";
         }
 
-        this.setState({
+        setState({
           appLicense: licenseResponse.license,
           isViewingLicenseEntitlements:
             size(licenseResponse.license?.entitlements) < 5 ? false : true,
@@ -105,21 +105,21 @@ export default class DashboardLicenseCard extends React.Component<
           showNextStepModal: licenseResponse.synced,
         });
 
-        if (this.props.syncCallback) {
-          this.props.syncCallback();
+        if (props.syncCallback) {
+          props.syncCallback();
         }
       })
       .catch((err) => {
         console.log(err);
-        this.setState({
+        setState({
           message: err ? err.message : "Something went wrong",
           messageType: "error",
         });
       })
       .finally(() => {
-        this.setState({ syncingLicense: false });
+        setState({ syncingLicense: false });
         setTimeout(() => {
-          this.setState({
+          setState({
             message: "",
             messageType: "",
           });
@@ -127,17 +127,17 @@ export default class DashboardLicenseCard extends React.Component<
       });
   };
 
-  onDrop = async (files: LicenseFile[]) => {
+  const onDrop = async (files: LicenseFile[]) => {
     // TODO: TextDecoder.decode() expects arg of BufferSource | undefined
     // getFileContent returns string, ArrayBuffer, or null. Need to figure out
     // eslint-disable-next-line
     const content: any = await getFileContent(files[0]);
     const contentStr = new TextDecoder("utf-8").decode(content);
     const airgapLicense = await yaml.safeLoad(contentStr);
-    const { appLicense } = this.state;
+    const { appLicense } = state;
 
     if (airgapLicense.spec?.licenseID !== appLicense?.id) {
-      this.setState({
+      setState({
         message: "Licenses do not match",
         messageType: "error",
       });
@@ -145,324 +145,319 @@ export default class DashboardLicenseCard extends React.Component<
     }
 
     if (airgapLicense.spec?.licenseSequence === appLicense?.licenseSequence) {
-      this.setState({
+      setState({
         message: "License is already up to date",
         messageType: "info",
       });
       return;
     }
 
-    this.syncLicense(contentStr);
+    syncLicense(contentStr);
   };
 
-  hideNextStepModal = () => {
-    this.setState({ showNextStepModal: false });
+  const hideNextStepModal = () => {
+    setState({ showNextStepModal: false });
   };
 
-  toggleShowDetails = (entitlement: string) => {
-    this.setState({
-      entitlementsToShow: [...this.state.entitlementsToShow, entitlement],
+  const toggleShowDetails = (entitlement: string) => {
+    setState({
+      entitlementsToShow: [...state.entitlementsToShow, entitlement],
     });
   };
 
-  toggleHideDetails = (entitlement: string) => {
-    let entitlementsToShow = [...this.state.entitlementsToShow];
-    const index = this.state.entitlementsToShow?.indexOf(entitlement);
+  const toggleHideDetails = (entitlement: string) => {
+    let entitlementsToShow = [...state.entitlementsToShow];
+    const index = state.entitlementsToShow?.indexOf(entitlement);
     entitlementsToShow.splice(index, 1);
-    this.setState({ entitlementsToShow });
+    setState({ entitlementsToShow });
   };
 
-  viewLicenseEntitlements = () => {
-    this.setState({
-      isViewingLicenseEntitlements: !this.state.isViewingLicenseEntitlements,
+  const viewLicenseEntitlements = () => {
+    setState({
+      isViewingLicenseEntitlements: !state.isViewingLicenseEntitlements,
     });
   };
 
-  render() {
-    const { app, appLicense, gettingAppLicenseErrMsg } = this.props;
-    const { syncingLicense, showNextStepModal, message, messageType } =
-      this.state;
-    const expiresAt = getLicenseExpiryDate(appLicense);
-    const isCommunityLicense = appLicense?.licenseType === "community";
-    const gitops = app.downstream?.gitops;
-    const appName = app?.name || "Your application";
-    const expiredLicenseClassName = Utilities.checkIsDateExpired(expiresAt)
-      ? "expired-license"
-      : "";
-    const appLicenseClassName =
-      appLicense && size(appLicense) === 0 ? "no-license" : "dashboard-card";
+  const { app, appLicense, gettingAppLicenseErrMsg } = props;
+  const { syncingLicense, showNextStepModal, message, messageType } = state;
+  const expiresAt = getLicenseExpiryDate(appLicense);
+  const isCommunityLicense = appLicense?.licenseType === "community";
+  const gitops = app.downstream?.gitops;
+  const appName = app?.name || "Your application";
+  const expiredLicenseClassName = Utilities.checkIsDateExpired(expiresAt)
+    ? "expired-license"
+    : "";
+  const appLicenseClassName =
+    appLicense && size(appLicense) === 0 ? "no-license" : "dashboard-card";
 
-    return (
-      <div
-        className={`${
-          isCommunityLicense ? "CommunityLicense--wrapper" : appLicenseClassName
-        } ${expiredLicenseClassName} flex-column`}
-      >
-        <div className="flex flex1 justifyContent--spaceBetween alignItems--center">
-          <p
-            className={`u-fontSize--large u-textColor--${
-              Utilities.checkIsDateExpired(expiresAt) ? "error" : "primary"
-            } u-fontWeight--bold`}
-          >
-            License {Utilities.checkIsDateExpired(expiresAt) && "is expired"}
-            {isCommunityLicense && (
-              <span className="CommunityEditionTag u-marginLeft--5">
-                Community Edition
-              </span>
-            )}
-          </p>
-          {app?.isAirgap ? (
-            <Dropzone
-              className="Dropzone-wrapper flex alignItems--center"
-              accept={["application/x-yaml", ".yaml", ".yml"]}
-              onDropAccepted={this.onDrop}
-              multiple={false}
-            >
-              <span className="icon clickable dashboard-card-upload-version-icon u-marginRight--5" />
-              <span
-                className="replicated-link u-fontSize--small"
-                onClick={() => this.syncLicense("")}
-              >
-                Upload license
-              </span>
-            </Dropzone>
-          ) : syncingLicense ? (
-            <div className="flex alignItems--center">
-              <Loader className="u-marginRight--5" size="15" />
-              <span className="u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default">
-                Syncing license
-              </span>
-            </div>
-          ) : (
-            <div className="flex alignItems--center">
-              {message && (
-                <p
-                  className={classNames(
-                    "u-fontWeight--bold u-fontSize--small u-marginRight--10",
-                    {
-                      "u-textColor--error": messageType === "error",
-                      "u-textColor--primary": messageType === "info",
-                    }
-                  )}
-                >
-                  {message}
-                </p>
-              )}
-              {appLicense?.lastSyncedAt && !message ? (
-                <span className="u-fontSize--small u-textColor--header u-fontWeight--medium u-lineHeight--normal u-marginRight--10">
-                  Last synced {Utilities.dateFromNow(appLicense.lastSyncedAt)}
-                </span>
-              ) : null}
-              <Icon
-                icon="sync-license"
-                className="clickable u-marginRight--5"
-                size={16}
-              />
-              <span
-                className="replicated-link u-fontSize--small"
-                onClick={() => this.syncLicense("")}
-              >
-                Sync license
-              </span>
-            </div>
+  return (
+    <div
+      className={`${
+        isCommunityLicense ? "CommunityLicense--wrapper" : appLicenseClassName
+      } ${expiredLicenseClassName} flex-column`}
+    >
+      <div className="flex flex1 justifyContent--spaceBetween alignItems--center">
+        <p
+          className={`u-fontSize--large u-textColor--${
+            Utilities.checkIsDateExpired(expiresAt) ? "error" : "primary"
+          } u-fontWeight--bold`}
+        >
+          License {Utilities.checkIsDateExpired(expiresAt) && "is expired"}
+          {isCommunityLicense && (
+            <span className="CommunityEditionTag u-marginLeft--5">
+              Community Edition
+            </span>
           )}
-        </div>
-        <div className="LicenseCard-content--wrapper u-marginTop--10">
-          {/* license tester component to try out the useLicense hook! */}
-          {this.props.children}
-          {size(appLicense) > 0 ? (
-            <div className="flex">
-              <div className="flex-column flex1">
-                <div className="flex alignItems--center">
-                  <p className="u-fontSize--large u-fontWeight--medium u-textColor--header">
+        </p>
+        {app?.isAirgap ? (
+          <Dropzone
+            className="Dropzone-wrapper flex alignItems--center"
+            accept={["application/x-yaml", ".yaml", ".yml"]}
+            onDropAccepted={onDrop}
+            multiple={false}
+          >
+            <span className="icon clickable dashboard-card-upload-version-icon u-marginRight--5" />
+            <span
+              className="replicated-link u-fontSize--small"
+              onClick={() => syncLicense("")}
+            >
+              Upload license
+            </span>
+          </Dropzone>
+        ) : syncingLicense ? (
+          <div className="flex alignItems--center">
+            <Loader className="u-marginRight--5" size="15" />
+            <span className="u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default">
+              Syncing license
+            </span>
+          </div>
+        ) : (
+          <div className="flex alignItems--center">
+            {message && (
+              <p
+                className={classNames(
+                  "u-fontWeight--bold u-fontSize--small u-marginRight--10",
+                  {
+                    "u-textColor--error": messageType === "error",
+                    "u-textColor--primary": messageType === "info",
+                  }
+                )}
+              >
+                {message}
+              </p>
+            )}
+            {appLicense?.lastSyncedAt && !message ? (
+              <span className="u-fontSize--small u-textColor--header u-fontWeight--medium u-lineHeight--normal u-marginRight--10">
+                Last synced {Utilities.dateFromNow(appLicense.lastSyncedAt)}
+              </span>
+            ) : null}
+            <Icon
+              icon="sync-license"
+              className="clickable u-marginRight--5"
+              size={16}
+            />
+            <span
+              className="replicated-link u-fontSize--small"
+              onClick={() => syncLicense("")}
+            >
+              Sync license
+            </span>
+          </div>
+        )}
+      </div>
+      <div className="LicenseCard-content--wrapper u-marginTop--10">
+        {/* license tester component to try out the useLicense hook! */}
+        {props.children}
+        {size(appLicense) > 0 ? (
+          <div className="flex">
+            <div className="flex-column flex1">
+              <div className="flex alignItems--center">
+                <p className="u-fontSize--large u-fontWeight--medium u-textColor--header">
+                  {" "}
+                  {appLicense?.assignee}
+                </p>
+                {appLicense?.channelName && (
+                  <span className="channelTag flex-auto alignItems--center u-fontWeight--medium u-marginLeft--10">
                     {" "}
-                    {appLicense?.assignee}
-                  </p>
-                  {appLicense?.channelName && (
-                    <span className="channelTag flex-auto alignItems--center u-fontWeight--medium u-marginLeft--10">
-                      {" "}
-                      {appLicense.channelName}{" "}
-                    </span>
-                  )}
-                </div>
-                <div className="flex flex1 alignItems--center u-marginTop--15">
-                  <div
-                    className={`LicenseTypeTag ${appLicense?.licenseType} flex-auto justifyContent--center alignItems--center`}
-                  >
-                    {/* TODO: refactor logic */}
-                    <Icon
-                      icon={
-                        appLicense?.licenseType === "dev"
-                          ? "code"
-                          : appLicense?.licenseType === "trial"
-                          ? "stopwatch"
-                          : appLicense?.licenseType === "prod"
-                          ? "dollar-sign"
-                          : appLicense?.licenseType === "community"
-                          ? "user-outline"
-                          : ""
-                      }
-                      size={12}
-                      style={{ marginRight: "2px" }}
-                      className={
-                        appLicense?.licenseType === "prod"
-                          ? "success-color"
-                          : ""
-                      }
-                    />
-                    {appLicense !== null && appLicense?.licenseType !== "---"
-                      ? `${Utilities.toTitleCase(
-                          appLicense.licenseType
-                        )} license`
-                      : `---`}
-                  </div>
-                  <p
-                    className={`u-fontWeight--medium u-fontSize--small u-lineHeight--default u-marginLeft--10 ${
-                      Utilities.checkIsDateExpired(expiresAt)
-                        ? "u-textColor--error"
-                        : "u-textColor--bodyCopy"
-                    }`}
-                  >
-                    {expiresAt === "Never"
-                      ? "Does not expire"
-                      : Utilities.checkIsDateExpired(expiresAt)
-                      ? `Expired ${expiresAt}`
-                      : `Expires ${expiresAt}`}
-                  </p>
-                </div>
-                {size(appLicense?.entitlements) >= 5 && (
-                  <span
-                    className="flexWrap--wrap flex u-fontSize--small u-lineHeight--normal u-color--doveGray u-fontWeight--medium u-marginRight--normal alignItems--center"
-                    style={{ margin: "10px 0" }}
-                  >
-                    <span
-                      className={`u-fontWeight--bold u-cursor--pointer`}
-                      style={{ whiteSpace: "pre" }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        this.viewLicenseEntitlements();
-                      }}
-                    >
-                      View {size(appLicense?.entitlements)} license entitlements
-                      <Icon
-                        icon={
-                          this.state.isViewingLicenseEntitlements
-                            ? "up-arrow"
-                            : "down-arrow"
-                        }
-                        size={12}
-                        className="clickable u-marginLeft--5 gray-color"
-                      />
-                    </span>
+                    {appLicense.channelName}{" "}
                   </span>
                 )}
-                {appLicense !== null &&
-                appLicense.entitlements.length > 0 &&
-                appLicense.entitlements.length < 5 ? (
-                  <div style={{ marginTop: "15px" }}>
-                    <LicenseFields
-                      entitlements={appLicense?.entitlements}
-                      entitlementsToShow={this.state.entitlementsToShow}
-                      toggleHideDetails={this.toggleHideDetails}
-                      toggleShowDetails={this.toggleShowDetails}
+              </div>
+              <div className="flex flex1 alignItems--center u-marginTop--15">
+                <div
+                  className={`LicenseTypeTag ${appLicense?.licenseType} flex-auto justifyContent--center alignItems--center`}
+                >
+                  {/* TODO: refactor logic */}
+                  <Icon
+                    icon={
+                      appLicense?.licenseType === "dev"
+                        ? "code"
+                        : appLicense?.licenseType === "trial"
+                        ? "stopwatch"
+                        : appLicense?.licenseType === "prod"
+                        ? "dollar-sign"
+                        : appLicense?.licenseType === "community"
+                        ? "user-outline"
+                        : ""
+                    }
+                    size={12}
+                    style={{ marginRight: "2px" }}
+                    className={
+                      appLicense?.licenseType === "prod" ? "success-color" : ""
+                    }
+                  />
+                  {appLicense !== null && appLicense?.licenseType !== "---"
+                    ? `${Utilities.toTitleCase(appLicense.licenseType)} license`
+                    : `---`}
+                </div>
+                <p
+                  className={`u-fontWeight--medium u-fontSize--small u-lineHeight--default u-marginLeft--10 ${
+                    Utilities.checkIsDateExpired(expiresAt)
+                      ? "u-textColor--error"
+                      : "u-textColor--bodyCopy"
+                  }`}
+                >
+                  {expiresAt === "Never"
+                    ? "Does not expire"
+                    : Utilities.checkIsDateExpired(expiresAt)
+                    ? `Expired ${expiresAt}`
+                    : `Expires ${expiresAt}`}
+                </p>
+              </div>
+              {size(appLicense?.entitlements) >= 5 && (
+                <span
+                  className="flexWrap--wrap flex u-fontSize--small u-lineHeight--normal u-color--doveGray u-fontWeight--medium u-marginRight--normal alignItems--center"
+                  style={{ margin: "10px 0" }}
+                >
+                  <span
+                    className={`u-fontWeight--bold u-cursor--pointer`}
+                    style={{ whiteSpace: "pre" }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      viewLicenseEntitlements();
+                    }}
+                  >
+                    View {size(appLicense?.entitlements)} license entitlements
+                    <Icon
+                      icon={
+                        state.isViewingLicenseEntitlements
+                          ? "up-arrow"
+                          : "down-arrow"
+                      }
+                      size={12}
+                      className="clickable u-marginLeft--5 gray-color"
                     />
-                  </div>
-                ) : (
-                  appLicense !== null &&
-                  this.state.isViewingLicenseEntitlements && (
-                    <LicenseFields
-                      entitlements={appLicense?.entitlements}
-                      entitlementsToShow={this.state.entitlementsToShow}
-                      toggleHideDetails={this.toggleHideDetails}
-                      toggleShowDetails={this.toggleShowDetails}
-                    />
-                  )
-                )}
-              </div>
+                  </span>
+                </span>
+              )}
+              {appLicense !== null &&
+              appLicense.entitlements.length > 0 &&
+              appLicense.entitlements.length < 5 ? (
+                <div style={{ marginTop: "15px" }}>
+                  <LicenseFields
+                    entitlements={appLicense?.entitlements}
+                    entitlementsToShow={state.entitlementsToShow}
+                    toggleHideDetails={toggleHideDetails}
+                    toggleShowDetails={toggleShowDetails}
+                  />
+                </div>
+              ) : (
+                appLicense !== null &&
+                state.isViewingLicenseEntitlements && (
+                  <LicenseFields
+                    entitlements={appLicense?.entitlements}
+                    entitlementsToShow={state.entitlementsToShow}
+                    toggleHideDetails={toggleHideDetails}
+                    toggleShowDetails={toggleShowDetails}
+                  />
+                )
+              )}
             </div>
-          ) : (
-            <p className="u-textColor--error u-fontSize--small u-fontWeight--medium u-lineHeight--normal flex">
-              {gettingAppLicenseErrMsg}
-            </p>
-          )}
-        </div>
-        <div className="u-marginTop--10">
-          <Link
-            to={`/app/${app?.slug}/license`}
-            className="replicated-link u-fontSize--small"
-          >
-            See license details
-            <Icon
-              icon="next-arrow"
-              size={10}
-              className="has-arrow u-marginLeft--5"
-            />
-          </Link>
-        </div>
-        <Modal
-          isOpen={showNextStepModal}
-          onRequestClose={this.hideNextStepModal}
-          shouldReturnFocusAfterClose={false}
-          contentLabel="Next step"
-          ariaHideApp={false}
-          className="Modal SmallSize"
-        >
-          {gitops?.isConnected ? (
-            <div className="Modal-body">
-              <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">
-                License synced
-              </p>
-              <p className="u-fontSize--large u-textColor--bodyCopy u-lineHeight--medium u-marginBottom--20">
-                The license for {appName} has been updated. A new commit has
-                been made to the gitops repository with these changes. Please
-                head to the{" "}
-                <a
-                  className="link"
-                  target="_blank"
-                  href={gitops?.uri}
-                  rel="noopener noreferrer"
-                >
-                  repo
-                </a>{" "}
-                to see the diff.
-              </p>
-              <div>
-                <button
-                  type="button"
-                  className="btn blue primary"
-                  onClick={this.hideNextStepModal}
-                >
-                  Ok, got it!
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="Modal-body">
-              <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">
-                License synced
-              </p>
-              <p className="u-fontSize--large u-textColor--bodyCopy u-lineHeight--medium u-marginBottom--20">
-                The license for {appName} has been updated. A new version is
-                available for deploy with these changes from the Version card on
-                the dashboard. To see a full list of versions visit the{" "}
-                <Link to={`/app/${app?.slug}/version-history`}>
-                  version history
-                </Link>{" "}
-                page.
-              </p>
-              <div>
-                <button
-                  type="button"
-                  className="btn blue primary"
-                  onClick={this.hideNextStepModal}
-                >
-                  Ok, got it!
-                </button>
-              </div>
-            </div>
-          )}
-        </Modal>
+          </div>
+        ) : (
+          <p className="u-textColor--error u-fontSize--small u-fontWeight--medium u-lineHeight--normal flex">
+            {gettingAppLicenseErrMsg}
+          </p>
+        )}
       </div>
-    );
-  }
-}
+      <div className="u-marginTop--10">
+        <Link
+          to={`/app/${app?.slug}/license`}
+          className="replicated-link u-fontSize--small"
+        >
+          See license details
+          <Icon
+            icon="next-arrow"
+            size={10}
+            className="has-arrow u-marginLeft--5"
+          />
+        </Link>
+      </div>
+      <Modal
+        isOpen={showNextStepModal}
+        onRequestClose={hideNextStepModal}
+        shouldReturnFocusAfterClose={false}
+        contentLabel="Next step"
+        ariaHideApp={false}
+        className="Modal SmallSize"
+      >
+        {gitops?.isConnected ? (
+          <div className="Modal-body">
+            <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">
+              License synced
+            </p>
+            <p className="u-fontSize--large u-textColor--bodyCopy u-lineHeight--medium u-marginBottom--20">
+              The license for {appName} has been updated. A new commit has been
+              made to the gitops repository with these changes. Please head to
+              the{" "}
+              <a
+                className="link"
+                target="_blank"
+                href={gitops?.uri}
+                rel="noopener noreferrer"
+              >
+                repo
+              </a>{" "}
+              to see the diff.
+            </p>
+            <div>
+              <button
+                type="button"
+                className="btn blue primary"
+                onClick={hideNextStepModal}
+              >
+                Ok, got it!
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="Modal-body">
+            <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">
+              License synced
+            </p>
+            <p className="u-fontSize--large u-textColor--bodyCopy u-lineHeight--medium u-marginBottom--20">
+              The license for {appName} has been updated. A new version is
+              available for deploy with these changes from the Version card on
+              the dashboard. To see a full list of versions visit the{" "}
+              <Link to={`/app/${app?.slug}/version-history`}>
+                version history
+              </Link>{" "}
+              page.
+            </p>
+            <div>
+              <button
+                type="button"
+                className="btn blue primary"
+                onClick={hideNextStepModal}
+              >
+                Ok, got it!
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+    </div>
+  );
+};
+
+export default DashboardLicenseCard;
