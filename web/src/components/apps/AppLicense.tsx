@@ -22,11 +22,14 @@ import "@src/scss/components/apps/AppLicense.scss";
 import { LicenseFields } from "@features/Dashboard";
 import { useLicenseWithIntercept } from "@features/App";
 import Icon from "../Icon";
+import { UseDownloadValues } from "../hooks";
+import { HelmDeployModal } from "../shared/modals/HelmDeployModal";
 
 type Props = {
   app: App;
   changeCallback: () => void;
   syncCallback: () => void;
+  isHelmManaged: boolean;
 };
 
 type State = {
@@ -312,6 +315,112 @@ const AppLicenseComponent = (props: Props) => {
   const expiresAt = getLicenseExpiryDate(appLicense);
   const gitops = app.downstream?.gitops;
   const appName = app?.name || "Your application";
+
+  let nextModalBody: React.ReactNode;
+  if (props.isHelmManaged) {
+    const sequence = props?.app?.downstream?.currentVersion?.sequence;
+    const versionLabel = props?.app?.downstream?.currentVersion?.versionLabel;
+
+    nextModalBody = (
+      <UseDownloadValues
+        appSlug={props?.app?.slug}
+        fileName="values.yaml"
+        sequence={sequence}
+        versionLabel={versionLabel}
+        isPending={false}
+      >
+        {({
+          download,
+          downloadError: downloadError,
+          name,
+          ref,
+          url,
+        }: {
+          download: () => void;
+          clearError: () => void;
+          downloadError: boolean;
+          name: string;
+          ref: string;
+          url: string;
+        }) => {
+          return (
+            <>
+              <HelmDeployModal
+                appSlug={props?.app?.slug}
+                chartPath={props?.app?.chartPath || ""}
+                downloadClicked={download}
+                downloadError={downloadError}
+                hideHelmDeployModal={hideNextStepModal}
+                registryUsername={props?.app?.credentials?.username}
+                registryPassword={props?.app?.credentials?.password}
+                showHelmDeployModal={true}
+                showDownloadValues={true}
+                subtitle={
+                  "Follow the steps below to redeploy the release using the new license."
+                }
+                title={` Redeploy ${props?.app?.slug}`}
+                upgradeTitle={"Redeploy release"}
+                version={versionLabel}
+                namespace={props?.app?.namespace}
+              />
+              <a href={url} download={name} className="hidden" ref={ref} />
+            </>
+          );
+        }}
+      </UseDownloadValues>
+    );
+  } else if (gitops?.isConnected) {
+    nextModalBody = (
+      <div className="Modal-body">
+        <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
+          The license for {appName} has been updated. A new commit has been made
+          to the gitops repository with these changes. Please head to the{" "}
+          <a
+            className="link"
+            target="_blank"
+            href={gitops?.uri}
+            rel="noopener noreferrer"
+          >
+            repo
+          </a>{" "}
+          to see the diff.
+        </p>
+        <div className="flex justifyContent--flexEnd">
+          <button
+            type="button"
+            className="btn blue primary"
+            onClick={hideNextStepModal}
+          >
+            Ok, got it!
+          </button>
+        </div>
+      </div>
+    );
+  } else {
+    nextModalBody = (
+      <div className="Modal-body">
+        <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
+          The license for {appName} has been updated. A new version is available
+          on the version history page with these changes.
+        </p>
+        <div className="flex justifyContent--flexEnd">
+          <button
+            type="button"
+            className="btn blue secondary u-marginRight--10"
+            onClick={hideNextStepModal}
+          >
+            Cancel
+          </button>
+          <Link to={`/app/${app?.slug}/version-history`}>
+            <button type="button" className="btn blue primary">
+              Go to new version
+            </button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-column justifyContent--center alignItems--center">
       <KotsPageTitle pageName="License" showAppSlug />
@@ -548,54 +657,7 @@ const AppLicenseComponent = (props: Props) => {
         ariaHideApp={false}
         className="Modal MediumSize"
       >
-        {gitops?.isConnected ? (
-          <div className="Modal-body">
-            <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
-              The license for {appName} has been updated. A new commit has been
-              made to the gitops repository with these changes. Please head to
-              the{" "}
-              <a
-                className="link"
-                target="_blank"
-                href={gitops?.uri}
-                rel="noopener noreferrer"
-              >
-                repo
-              </a>{" "}
-              to see the diff.
-            </p>
-            <div className="flex justifyContent--flexEnd">
-              <button
-                type="button"
-                className="btn blue primary"
-                onClick={hideNextStepModal}
-              >
-                Ok, got it!
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="Modal-body">
-            <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
-              The license for {appName} has been updated. A new version is
-              available on the version history page with these changes.
-            </p>
-            <div className="flex justifyContent--flexEnd">
-              <button
-                type="button"
-                className="btn blue secondary u-marginRight--10"
-                onClick={hideNextStepModal}
-              >
-                Cancel
-              </button>
-              <Link to={`/app/${app?.slug}/version-history`}>
-                <button type="button" className="btn blue primary">
-                  Go to new version
-                </button>
-              </Link>
-            </div>
-          </div>
-        )}
+        {nextModalBody}
       </Modal>
 
       {showLicenseChangeModalState && (
