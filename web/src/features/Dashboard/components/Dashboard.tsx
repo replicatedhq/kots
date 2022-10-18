@@ -16,6 +16,7 @@ import { Utilities, isAwaitingResults } from "@src/utilities/utilities";
 import { AirgapUploader } from "@src/utilities/airgapUploader";
 import { useSelectedAppClusterDashboardWithIntercept } from "../api/useSelectedAppClusterDashboard";
 import { useHistory, useRouteMatch } from "react-router-dom";
+import { useLicenseWithIntercept } from "@features/App";
 
 import "@src/scss/components/watches/Dashboard.scss";
 import "@src/../node_modules/react-vis/dist/style";
@@ -233,48 +234,71 @@ const Dashboard = (props: Props) => {
     });
   };
 
-  const getAppLicense = async ({ slug }: { slug: string }) => {
-    await fetch(`${process.env.API_ENDPOINT}/app/${slug}/license`, {
-      method: "GET",
-      headers: {
-        Authorization: Utilities.getToken(),
-        "Content-Type": "application/json",
-      },
-    })
-      .then(async (res) => {
-        const body = await res.json();
-        if (!res.ok) {
-          setState({ gettingAppLicenseErrMsg: body.error });
-          return;
-        }
-        if (body === null) {
-          setState({ appLicense: null, gettingAppLicenseErrMsg: "" });
-        } else if (body.success) {
-          setState({
-            appLicense: body.license,
-            gettingAppLicenseErrMsg: "",
-          });
-        } else if (body.error) {
-          setState({
-            appLicense: null,
-            gettingAppLicenseErrMsg: body.error,
-          });
-        }
-      })
-      .catch((err) => {
-        console.log(err);
-        setState({
-          gettingAppLicenseErrMsg: err
-            ? `Error while getting the license: ${err.message}`
-            : "Something went wrong, please try again.",
-        });
+  const { data: licenseWithInterceptResponse, refetch:getAppLicense } = useLicenseWithIntercept();
+  useEffect(() => {
+
+
+    // if (!res.ok) {
+    //   setState({ gettingAppLicenseErrMsg: body.error });
+    //   return;
+    // }
+    if (!licenseWithInterceptResponse) {
+      setState({ appLicense: null, gettingAppLicenseErrMsg: "" });
+    } else if (licenseWithInterceptResponse.success) {
+      setState({
+        appLicense: licenseWithInterceptResponse.license,
+        gettingAppLicenseErrMsg: "",
       });
-  };
+    } else if (licenseWithInterceptResponse.error) {
+      setState({
+        appLicense: null,
+        gettingAppLicenseErrMsg: licenseWithInterceptResponse.error,
+      });
+    }
+  }, [licenseWithInterceptResponse]);
+
+  // const getAppLicense = async ({ slug }: { slug: string }) => {
+  //   await fetch(`${process.env.API_ENDPOINT}/app/${slug}/license`, {
+  //     method: "GET",
+  //     headers: {
+  //       Authorization: Utilities.getToken(),
+  //       "Content-Type": "application/json",
+  //     },
+  //   })
+  //     .then(async (res) => {
+  //       const body = await res.json();
+  //       if (!res.ok) {
+  //         setState({ gettingAppLicenseErrMsg: body.error });
+  //         return;
+  //       }
+  //       if (body === null) {
+  //         setState({ appLicense: null, gettingAppLicenseErrMsg: "" });
+  //       } else if (body.success) {
+  //         setState({
+  //           appLicense: body.license,
+  //           gettingAppLicenseErrMsg: "",
+  //         });
+  //       } else if (body.error) {
+  //         setState({
+  //           appLicense: null,
+  //           gettingAppLicenseErrMsg: body.error,
+  //         });
+  //       }
+  //     })
+  //     .catch((err) => {
+  //       console.log(err);
+  //       setState({
+  //         gettingAppLicenseErrMsg: err
+  //           ? `Error while getting the license: ${err.message}`
+  //           : "Something went wrong, please try again.",
+  //       });
+  //     });
+  // };
 
   useEffect(() => {
     if (props.app) {
       setWatchState(props.app);
-      getAppLicense(props.app);
+     //  getAppLicense(props.app);
     }
   }, [props.app]);
 
@@ -326,7 +350,7 @@ const Dashboard = (props: Props) => {
               checkingForUpdateError: response.status === "failed",
             });
 
-            getAppLicense(props.app);
+            getAppLicense();
             if (props.updateCallback) {
               props.updateCallback();
             }
@@ -647,7 +671,7 @@ const Dashboard = (props: Props) => {
     state.updateChecker.start(updateStatus, 1000);
     if (app) {
       setWatchState(app);
-      getAppLicense(app);
+      getAppLicense();
     }
     return () => {
       state.updateChecker.stop();
@@ -669,7 +693,7 @@ const Dashboard = (props: Props) => {
       method: "POST",
     })
       .then(async (res) => {
-        getAppLicense(props.app);
+        getAppLicense();
         if (!res.ok) {
           const text = await res.text();
           setState({
@@ -817,7 +841,7 @@ const Dashboard = (props: Props) => {
                   <DashboardLicenseCard
                     appLicense={appLicense}
                     app={app}
-                    syncCallback={() => getAppLicense(props.app)}
+                    syncCallback={() => getAppLicense()}
                     gettingAppLicenseErrMsg={state.gettingAppLicenseErrMsg}
                   >
                     {/* leaving this here as an example: please delete later */}
