@@ -425,18 +425,21 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to create new config context template builder")
 	}
+	fmt.Println("successfully got builder")
 
 	newKotsKinds, err := kotsutil.LoadKotsKindsFromPath(u.GetUpstreamDir(writeUpstreamOptions))
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to load kotskinds")
 	}
+	fmt.Println("successfully got new kots kinds")
 
 	err = crypto.InitFromString(newKotsKinds.Installation.Spec.EncryptionKey)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to load encryption cipher")
 	}
+	fmt.Println("successfully initd from string")
 
 	commonWriteMidstreamOptions := midstream.WriteOptions{
 		AppSlug:            pullOptions.AppSlug,
@@ -456,6 +459,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	// for writing Common Midstream, every chart and subchart is in this map as Helm Midstreams will be processed later in the code
 	commonWriteMidstreamOptions.UseHelmInstall = map[string]bool{}
 	for _, v := range newHelmCharts {
+		fmt.Printf("iter over chart at base: %v\n", v.GetDirName())
 		chartBaseName := v.GetDirName()
 		commonWriteMidstreamOptions.UseHelmInstall[chartBaseName] = v.Spec.UseHelmInstall
 		if v.Spec.UseHelmInstall {
@@ -465,23 +469,28 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 				return "", errors.Wrapf(err, "failed to find subcharts for parent chart %s", chartBaseName)
 			}
 			for _, subchart := range subcharts.SubCharts {
+				fmt.Printf("iter over subchart: %v\n", subchart)
 				commonWriteMidstreamOptions.UseHelmInstall[subchart] = v.Spec.UseHelmInstall
 			}
 		}
 	}
+	fmt.Println("successfully iterated over charts")
 
 	writeMidstreamOptions := commonWriteMidstreamOptions
 	writeMidstreamOptions.MidstreamDir = filepath.Join(commonBase.GetOverlaysDir(writeBaseOptions), "midstream")
 	writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), commonBase.Path)
 
+	fmt.Println("attempting to write midstream 1")
 	m, err := writeMidstream(writeMidstreamOptions, pullOptions, u, commonBase, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), pushImages, log)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to write common midstream")
 	}
+	fmt.Println("successfully wrote midstream 1")
 
 	helmMidstreams := []midstream.Midstream{}
 	for _, helmBase := range helmBases {
+		fmt.Printf("iter over helmBase: %+v\n", helmBase)
 		// we must look at the current chart for private images, but must ignore subcharts
 		// to do this, we remove only the current helmBase name from the UseHelmInstall map to unblock visibility into the chart directory
 		// this ensures only the current chart resources are added to kustomization.yaml and pullsecret.yaml
@@ -498,23 +507,27 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		pullOptionsCopy := pullOptions
 		pullOptionsCopy.Namespace = helmBaseCopy.Namespace
 
+		fmt.Println("attempting to write midstream for base")
 		helmMidstream, err := writeMidstream(writeMidstreamOptions, pullOptionsCopy, u, helmBaseCopy, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), pushImages, log)
 		if err != nil {
 			log.FinishSpinnerWithError()
 			return "", errors.Wrapf(err, "failed to write helm midstream %s", helmBase.Path)
 		}
+		fmt.Println("successfully wrote midstream for base")
 
 		// add this chart back into UseHelmInstall to make sure it's not processed again
 		writeMidstreamOptions.UseHelmInstall[helmBase.Path] = previousUseHelmInstall
 
 		helmMidstreams = append(helmMidstreams, *helmMidstream)
 	}
+	fmt.Println("successfully iterated over bases")
 
 	err = removeUnusedHelmOverlays(writeMidstreamOptions.MidstreamDir, writeMidstreamOptions.BaseDir)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return "", errors.Wrapf(err, "failed to remove unused helm midstreams")
 	}
+	fmt.Println("successfully removed unused helm overalys")
 
 	log.FinishSpinner()
 
