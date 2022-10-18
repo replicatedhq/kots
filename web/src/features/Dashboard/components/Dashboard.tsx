@@ -639,52 +639,6 @@ const Dashboard = (props: Props) => {
     }
   }, [selectedAppClusterDashboardResponse]);
 
-  // const getAppDashboard = (): Promise<void> => {
-  //   return new Promise((resolve, reject) => {
-  //     // this function is in a repeating callback that terminates when
-  //     // the promise is resolved
-
-  //     // TODO: use react-query to refetch this instead of the custom repeater
-  //     if (!props.app) {
-  //       resolve();
-  //     }
-
-  //     if (props.cluster?.id === "" && props.isHelmManaged === true) {
-  //       // TODO: use a callback to update the state in the parent component
-  //       props.cluster.id = 0;
-  //     }
-
-  //     fetch(
-  //       `${process.env.API_ENDPOINT}/app/${props.app?.slug}/cluster/${props.cluster?.id}/dashboard`,
-  //       {
-  //         headers: {
-  //           Authorization: Utilities.getToken(),
-  //           "Content-Type": "application/json",
-  //         },
-  //         method: "GET",
-  //       }
-  //     )
-  //       .then(async (res) => {
-  //         if (!res.ok && res.status === 401) {
-  //           Utilities.logoutUser();
-  //           resolve();
-  //         }
-  //         const response = await res.json();
-  //         setState({
-  //           dashboard: {
-  //             appStatus: response.appStatus,
-  //             prometheusAddress: response.prometheusAddress,
-  //             metrics: response.metrics,
-  //           },
-  //         });
-  //         resolve();
-  //       })
-  //       .catch((err) => {
-  //         console.log(err);
-  //         reject(err);
-  //       });
-  //   });
-  // };
   useEffect(() => {
     if (app?.isAirgap && !state.airgapUploader) {
       getAirgapConfig();
