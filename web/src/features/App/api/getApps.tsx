@@ -46,7 +46,6 @@ function useApps({
   const query: UseQueryResult<{
     apps: App[] | null;
   }> = useQuery("apps", () => _getApps(), {
-    staleTime: 2000,
     refetchInterval,
   });
 

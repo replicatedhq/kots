@@ -14,6 +14,7 @@ import Modal from "react-modal";
 import { Repeater } from "@src/utilities/repeater";
 import { Utilities, isAwaitingResults } from "@src/utilities/utilities";
 import { AirgapUploader } from "@src/utilities/airgapUploader";
+import { useSelectedAppClusterDashboardWithIntercept } from "../api/useSelectedAppClusterDashboard";
 import { useHistory, useRouteMatch } from "react-router-dom";
 
 import "@src/scss/components/watches/Dashboard.scss";
@@ -622,66 +623,34 @@ const Dashboard = (props: Props) => {
     });
   };
 
-  const getAppDashboard = (): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      // this function is in a repeating callback that terminates when
-      // the promise is resolved
+  const { data: selectedAppClusterDashboardResponse } =
+    useSelectedAppClusterDashboardWithIntercept({ refetchInterval: 2000 });
 
-      // TODO: use react-query to refetch this instead of the custom repeater
-      if (!props.app) {
-        resolve();
-      }
+  useEffect(() => {
+    if (selectedAppClusterDashboardResponse) {
+      setState({
+        dashboard: {
+          appStatus: selectedAppClusterDashboardResponse.appStatus,
+          prometheusAddress:
+            selectedAppClusterDashboardResponse.prometheusAddress,
+          metrics: selectedAppClusterDashboardResponse.metrics,
+        },
+      });
+    }
+  }, [selectedAppClusterDashboardResponse]);
 
-      if (props.cluster?.id === "" && props.isHelmManaged === true) {
-        // TODO: use a callback to update the state in the parent component
-        props.cluster.id = 0;
-      }
-
-      fetch(
-        `${process.env.API_ENDPOINT}/app/${props.app?.slug}/cluster/${props.cluster?.id}/dashboard`,
-        {
-          headers: {
-            Authorization: Utilities.getToken(),
-            "Content-Type": "application/json",
-          },
-          method: "GET",
-        }
-      )
-        .then(async (res) => {
-          if (!res.ok && res.status === 401) {
-            Utilities.logoutUser();
-            resolve();
-          }
-          const response = await res.json();
-          setState({
-            dashboard: {
-              appStatus: response.appStatus,
-              prometheusAddress: response.prometheusAddress,
-              metrics: response.metrics,
-            },
-          });
-          resolve();
-        })
-        .catch((err) => {
-          console.log(err);
-          reject(err);
-        });
-    });
-  };
   useEffect(() => {
     if (app?.isAirgap && !state.airgapUploader) {
       getAirgapConfig();
     }
 
     state.updateChecker.start(updateStatus, 1000);
-    state.getAppDashboardJob.start(getAppDashboard, 2000);
     if (app) {
       setWatchState(app);
       getAppLicense(app);
     }
     return () => {
       state.updateChecker.stop();
-      state.getAppDashboardJob.stop();
       state.fetchAppDownstreamJob.stop();
     };
   }, []);
@@ -865,8 +834,6 @@ const Dashboard = (props: Props) => {
                 <DashboardGraphsCard
                   prometheusAddress={state.dashboard?.prometheusAddress}
                   metrics={state.dashboard?.metrics}
-                  appSlug={app.slug}
-                  clusterId={props.cluster?.id}
                   isHelmManaged={props.isHelmManaged}
                 />
               </div>
@@ -1007,8 +974,5 @@ const Dashboard = (props: Props) => {
     </>
   );
 };
-
-// TODO: fix withRouter type
-// eslint-disable-next-line
 
 export { Dashboard };
