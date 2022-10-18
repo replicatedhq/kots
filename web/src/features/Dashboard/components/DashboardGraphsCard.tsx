@@ -36,11 +36,6 @@ type Props = {
 type State = {
   activeChart: Chart | null;
   crosshairValues: { x: number; y: number; pod: string }[];
-  dashboard: {
-    appStatus: string;
-    prometheusAddress: string;
-    metrics: Object;
-  } | null;
   getAppDashboardJob: Repeater;
   promValue: string;
   savingPromError: string;
@@ -53,7 +48,6 @@ export default class DashboardGraphsCard extends React.Component<Props, State> {
     this.state = {
       activeChart: null,
       crosshairValues: [],
-      dashboard: null,
       getAppDashboardJob: new Repeater(),
       promValue: "",
       savingPromError: "",
@@ -66,40 +60,6 @@ export default class DashboardGraphsCard extends React.Component<Props, State> {
     const { showConfigureGraphs } = this.state;
     this.setState({
       showConfigureGraphs: !showConfigureGraphs,
-    });
-  };
-
-  getAppDashboard = () => {
-    return new Promise<void>((resolve, reject) => {
-      fetch(
-        `${process.env.API_ENDPOINT}/app/${this.props.appSlug}/cluster/${this.props.clusterId}/dashboard`,
-        {
-          headers: {
-            Authorization: Utilities.getToken(),
-            "Content-Type": "application/json",
-          },
-          method: "GET",
-        }
-      )
-        .then(async (res) => {
-          if (!res.ok && res.status === 401) {
-            Utilities.logoutUser();
-            return;
-          }
-          const response = await res.json();
-          this.setState({
-            dashboard: {
-              appStatus: response.appStatus,
-              prometheusAddress: response.prometheusAddress,
-              metrics: response.metrics,
-            },
-          });
-          resolve();
-        })
-        .catch((err) => {
-          console.log(err);
-          reject(err);
-        });
     });
   };
 
@@ -132,7 +92,6 @@ export default class DashboardGraphsCard extends React.Component<Props, State> {
           }
           throw new Error(`Unexpected status code ${res.status}`);
         }
-        await this.getAppDashboard();
         this.toggleConfigureGraphs();
         this.setState({ savingPromValue: false, savingPromError: "" });
       })
@@ -320,16 +279,6 @@ export default class DashboardGraphsCard extends React.Component<Props, State> {
       </div>
     );
   };
-
-  componentDidMount() {
-    if (this.props.prometheusAddress) {
-      this.state.getAppDashboardJob.start(this.getAppDashboard, 2000);
-    }
-  }
-
-  componentWillUnmount() {
-    this.state.getAppDashboardJob.stop();
-  }
 
   render() {
     if (this.props.isHelmManaged === true) {
