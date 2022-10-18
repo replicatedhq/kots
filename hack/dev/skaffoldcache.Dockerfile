@@ -1,6 +1,6 @@
-FROM golang:1.17 as deps
+FROM golang:1.19 as deps
 
-RUN go get github.com/go-delve/delve/cmd/dlv@v1.7.2
+RUN go install github.com/go-delve/delve/cmd/dlv@v1.7.2
 
 ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots
 WORKDIR $PROJECTPATH
