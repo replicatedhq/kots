@@ -2,7 +2,7 @@ import { useRef, useState, useEffect } from "react";
 import { useLicense } from "./getLicense";
 import axios from "axios";
 
-function useLicenseWithIntercept(appSlug: string) {
+function useLicenseWithIntercept() {
   const [isSlowLoading, setIsSlowLoading] = useState(false);
 
   let timerId = useRef<null | NodeJS.Timeout>(null);
@@ -15,7 +15,7 @@ function useLicenseWithIntercept(appSlug: string) {
   //   });
   // };
 
-  let licenseQuery = useLicense(appSlug);
+  let licenseQuery = useLicense();
 
   useEffect(() => {
     axios.interceptors.request.use(

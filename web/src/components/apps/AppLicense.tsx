@@ -17,9 +17,10 @@ import Loader from "../shared/Loader";
 // @ts-ignore
 import styled from "styled-components";
 
-import { App, LicenseFile, License } from "@src/types";
+import { App, AppLicense, LicenseFile } from "@src/types";
 import "@src/scss/components/apps/AppLicense.scss";
 import { LicenseFields } from "@features/Dashboard";
+import { useLicenseWithIntercept } from "@features/App";
 import Icon from "../Icon";
 
 type Props = {
@@ -29,7 +30,7 @@ type Props = {
 };
 
 type State = {
-  appLicense: License | null;
+  appLicense: AppLicense | null;
   loading: boolean;
   message: string;
   messageType: string;
@@ -43,7 +44,7 @@ type State = {
   isViewingLicenseEntitlements: boolean;
 };
 
-const AppLicense = (props: Props) => {
+const AppLicenseComponent = (props: Props) => {
   const [state, setState] = useReducer(
     (currentState: State, newState: Partial<State>) => ({
       ...currentState,
@@ -65,36 +66,20 @@ const AppLicense = (props: Props) => {
     }
   );
 
-  const getAppLicense = async () => {
-    await fetch(`${process.env.API_ENDPOINT}/app/${props.app.slug}/license`, {
-      method: "GET",
-      headers: {
-        Authorization: Utilities.getToken(),
-        "Content-Type": "application/json",
-      },
-    })
-      .then(async (res) => {
-        const body = await res.json();
-        if (body === null) {
-          setState({ appLicense: null });
-        } else if (body.success) {
-          setState({
-            appLicense: body.license,
-            isViewingLicenseEntitlements:
-              size(body.license?.entitlements) <= 5 ? false : true,
-          });
-        } else if (body.error) {
-          console.log(body.error);
-        }
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  };
-
+  const { data: licenseWithInterceptResponse } = useLicenseWithIntercept();
   useEffect(() => {
-    getAppLicense();
-  }, []);
+    if (!licenseWithInterceptResponse) {
+      setState({ appLicense: null });
+    } else {
+      setState({
+        appLicense: licenseWithInterceptResponse.license,
+        isViewingLicenseEntitlements:
+          size(licenseWithInterceptResponse.license?.entitlements) <= 5
+            ? false
+            : true,
+      });
+    }
+  }, [licenseWithInterceptResponse]);
 
   const syncAppLicense = (licenseData: string) => {
     setState({
@@ -730,7 +715,7 @@ const AppLicense = (props: Props) => {
   );
 };
 
-export default AppLicense;
+export default AppLicenseComponent;
 
 export const CustomerLicenseFields = styled.div`
   background: #f5f8f9;
