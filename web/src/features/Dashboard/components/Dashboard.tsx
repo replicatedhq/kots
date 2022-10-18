@@ -624,7 +624,7 @@ const Dashboard = (props: Props) => {
   };
 
   const { data: selectedAppClusterDashboardResponse } =
-    useSelectedAppClusterDashboardWithIntercept();
+    useSelectedAppClusterDashboardWithIntercept({ refetchInterval: 2000 });
 
   useEffect(() => {
     if (selectedAppClusterDashboardResponse) {
@@ -691,14 +691,12 @@ const Dashboard = (props: Props) => {
     }
 
     state.updateChecker.start(updateStatus, 1000);
-    // state.getAppDashboardJob.start(getAppDashboard, 2000);
     if (app) {
       setWatchState(app);
       getAppLicense(app);
     }
     return () => {
       state.updateChecker.stop();
-      //  state.getAppDashboardJob.stop();
       state.fetchAppDownstreamJob.stop();
     };
   }, []);

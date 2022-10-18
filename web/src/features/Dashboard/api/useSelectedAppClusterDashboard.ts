@@ -3,11 +3,11 @@ import { useSelectedAppClusterDashboard } from "./getSelectedAppClusterDashboard
 import { Utilities } from "@src/utilities/utilities";
 import axios from "axios";
 
-function useSelectedAppClusterDashboardWithIntercept({
-  refetchInterval = false,
-}: {
-  refetchInterval: number | false;
-}) {
+function useSelectedAppClusterDashboardWithIntercept(
+  { refetchInterval }: { refetchInterval: number | false } = {
+    refetchInterval: false,
+  }
+) {
   const [isSlowLoading, setIsSlowLoading] = useState(false);
 
   let timerId = useRef<null | NodeJS.Timeout>(null);
@@ -20,8 +20,9 @@ function useSelectedAppClusterDashboardWithIntercept({
   //   });
   // };
 
-  let appClusterDashboardQuery =
-    useSelectedAppClusterDashboard({ refetchInterval });
+  let appClusterDashboardQuery = useSelectedAppClusterDashboard({
+    refetchInterval,
+  });
 
   useEffect(() => {
     axios.interceptors.request.use(

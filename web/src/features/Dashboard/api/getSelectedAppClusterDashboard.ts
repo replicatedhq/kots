@@ -53,7 +53,6 @@ export const useSelectedAppClusterDashboard = ({
   const { selectedApp } = useSelectedApp();
   const { slug } = selectedApp || { slug: "" };
   const clusterId = selectedApp?.downstream?.cluster?.id.toString() || "";
-
   return useQuery(
     ["getAppClusterDashboared", slug, clusterId],
     () =>
