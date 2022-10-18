@@ -39,7 +39,6 @@ export const getLicense = async ({
 
 export const useLicense = () => {
   const { selectedApp } = useSelectedApp();
-  console.log("useLicense selectedApp", selectedApp?.slug);
   return useQuery(["license", selectedApp?.slug], () =>
     getLicense({ appSlug: selectedApp?.slug || "" })
   );
