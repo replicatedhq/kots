@@ -517,8 +517,9 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 
 		// add this chart back into UseHelmInstall to make sure it's not processed again
 		writeMidstreamOptions.UseHelmInstall[helmBase.Path] = previousUseHelmInstall
-
+		fmt.Println("attempting to append")
 		helmMidstreams = append(helmMidstreams, *helmMidstream)
+		fmt.Println("append completed")
 	}
 	fmt.Println("successfully iterated over bases")
 
