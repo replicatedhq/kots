@@ -488,7 +488,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 	fmt.Println("successfully wrote midstream 1")
 
-	helmMidstreams := []midstream.Midstream{}
+	helmMidstreams := make([]midstream.Midstream, 0)
 	for _, helmBase := range helmBases {
 		fmt.Printf("iter over helmBase: %+v\n", helmBase)
 		// we must look at the current chart for private images, but must ignore subcharts
