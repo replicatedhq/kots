@@ -1,9 +1,15 @@
 // This hook has not been integrated yet.
 import { useQuery } from "react-query";
 import { Utilities } from "../../../utilities/utilities";
+import { useSelectedApp } from "@features/App";
 import axios from "axios";
+import { AppLicense } from "@types";
 
-export const getLicense = async (appSlug: string) => {
+export const getLicense = async ({
+  appSlug,
+}: {
+  appSlug: string;
+}): Promise<{ license: AppLicense } | null | void> => {
   const config = {
     headers: {
       Authorization: Utilities.getToken(),
@@ -31,11 +37,12 @@ export const getLicense = async (appSlug: string) => {
   }
 };
 
-export const useLicense = (params: string) => {
-  return useQuery(["license", params], () => getLicense(params), {
-    /// might want to disable the fetch on window focus for this one
-    refetchInterval: 5000,
-  });
+export const useLicense = () => {
+  const { selectedApp } = useSelectedApp();
+  console.log("useLicense selectedApp", selectedApp?.slug);
+  return useQuery(["license", selectedApp?.slug], () =>
+    getLicense({ appSlug: selectedApp?.slug || "" })
+  );
 };
 
 export default useLicense;
