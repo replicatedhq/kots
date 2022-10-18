@@ -9,7 +9,11 @@ export const getLicense = async ({
   appSlug,
 }: {
   appSlug: string;
-}): Promise<{ license: AppLicense, success: boolean, error: string } | null | void> => {
+}): Promise<{
+  license: AppLicense;
+  success: boolean;
+  error: string;
+} | null | void> => {
   const config = {
     headers: {
       Authorization: Utilities.getToken(),

@@ -234,10 +234,9 @@ const Dashboard = (props: Props) => {
     });
   };
 
-  const { data: licenseWithInterceptResponse, refetch:getAppLicense } = useLicenseWithIntercept();
+  const { data: licenseWithInterceptResponse, refetch: getAppLicense } =
+    useLicenseWithIntercept();
   useEffect(() => {
-
-
     // if (!res.ok) {
     //   setState({ gettingAppLicenseErrMsg: body.error });
     //   return;
@@ -298,7 +297,7 @@ const Dashboard = (props: Props) => {
   useEffect(() => {
     if (props.app) {
       setWatchState(props.app);
-     //  getAppLicense(props.app);
+      //  getAppLicense(props.app);
     }
   }, [props.app]);
 
