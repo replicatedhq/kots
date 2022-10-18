@@ -842,6 +842,7 @@ const Dashboard = (props: Props) => {
                     appLicense={appLicense}
                     app={app}
                     syncCallback={() => getAppLicense()}
+                    refetchLicense={getAppLicense}
                     gettingAppLicenseErrMsg={state.gettingAppLicenseErrMsg}
                   >
                     {/* leaving this here as an example: please delete later */}

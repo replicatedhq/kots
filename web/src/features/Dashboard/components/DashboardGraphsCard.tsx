@@ -90,6 +90,7 @@ export default class DashboardGraphsCard extends React.Component<Props, State> {
           }
           throw new Error(`Unexpected status code ${res.status}`);
         }
+        this.props.refetch();
         this.toggleConfigureGraphs();
         this.setState({ savingPromValue: false, savingPromError: "" });
       })
