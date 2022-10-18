@@ -975,8 +975,4 @@ const Dashboard = (props: Props) => {
   );
 };
 
-// TODO: fix withRouter type
-// eslint-disable-next-line
-// export default withRouter(Dashboard) as any;
-
 export { Dashboard };
