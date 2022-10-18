@@ -697,6 +697,13 @@ class AppVersionHistoryRow extends Component {
       sequenceLabel = "Revision";
     }
 
+    // Old Helm charts will not have any timestamps, so don't show current time when they are missing because it's misleading.
+    let releasedTs = "";
+    const tsFormat = "MM/DD/YY @ hh:mm a z";
+    if (version.upstreamReleasedAt) {
+      releasedTs = Utilities.dateFormat(version.upstreamReleasedAt, tsFormat);
+    }
+
     return (
       <div
         key={version.sequence}
@@ -746,21 +753,13 @@ class AppVersionHistoryRow extends Component {
                 </span>
               )}
             </div>
-            <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5">
-              {" "}
-              Released{" "}
-              <span className="u-fontWeight--bold">
-                {version.upstreamReleasedAt
-                  ? Utilities.dateFormat(
-                      version.upstreamReleasedAt,
-                      "MM/DD/YY @ hh:mm a z"
-                    )
-                  : Utilities.dateFormat(
-                      version.createdOn,
-                      "MM/DD/YY @ hh:mm a z"
-                    )}
-              </span>
-            </p>
+            {releasedTs && (
+              <p className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginTop--5">
+                {" "}
+                Released{" "}
+                <span className="u-fontWeight--bold">{releasedTs}</span>
+              </p>
+            )}
             {this.renderDiff(version)}
             {version.yamlErrors && (
               <YamlErrors

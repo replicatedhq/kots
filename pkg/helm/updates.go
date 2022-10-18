@@ -25,6 +25,7 @@ import (
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"go.uber.org/zap"
+	"gopkg.in/yaml.v3"
 	helmgetter "helm.sh/helm/v3/pkg/getter"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -33,10 +34,18 @@ import (
 )
 
 type ChartUpdate struct {
-	Tag       string
-	Version   semver.Version
-	Status    storetypes.DownstreamVersionStatus
-	FetchedOn time.Time
+	Tag          string
+	Version      semver.Version
+	Status       storetypes.DownstreamVersionStatus
+	CreatedOn    *time.Time
+	IsDownloaded bool
+}
+
+type ReplicatedMeta struct {
+	LicenseID string     `yaml:"license_id"`
+	Username  string     `yaml:"username"`
+	CreatedAt *time.Time `yaml:"created_at"`
+	// TODO "app": map[string][]byte
 }
 
 type ChartUpdates []ChartUpdate
@@ -77,11 +86,37 @@ func GetCachedUpdates(chartPath string) ChartUpdates {
 	return updateCache[chartPath]
 }
 
-func SetCachedUpdateStatus(chartPath string, tag string, stauts storetypes.DownstreamVersionStatus) {
+func GetDownloadedUpdates(chartPath string) ChartUpdates {
+	updateCacheMutex.Lock()
+	defer updateCacheMutex.Unlock()
+
+	downloadedUpdates := ChartUpdates{}
+	for _, u := range updateCache[chartPath] {
+		if u.IsDownloaded {
+			downloadedUpdates = append(downloadedUpdates, u)
+		}
+	}
+	return downloadedUpdates
+}
+
+func SetCachedUpdateStatus(chartPath string, tag string, status storetypes.DownstreamVersionStatus) {
 	updates := GetCachedUpdates(chartPath)
 	for i, u := range updates {
 		if u.Tag == tag {
-			updates[i].Status = stauts
+			updates[i].Status = status
+			break
+		}
+	}
+}
+
+func SetCachedUpdateMetadata(chartPath string, tag string, meta *ReplicatedMeta) {
+	updates := GetCachedUpdates(chartPath)
+	for i, u := range updates {
+		if u.Tag == tag {
+			updates[i].IsDownloaded = true // Metadata is only known when version is downloaded
+			if meta != nil {
+				updates[i].CreatedOn = meta.CreatedAt
+			}
 			break
 		}
 	}
@@ -168,9 +203,9 @@ func CheckForUpdates(helmApp *apptypes.HelmApp, license *kotsv1beta1.License, cu
 		}
 
 		availableUpdates = append(availableUpdates, ChartUpdate{
-			Tag:       tag,
-			Version:   v,
-			FetchedOn: time.Now(),
+			Tag:          tag,
+			Version:      v,
+			IsDownloaded: false,
 		})
 	}
 
@@ -196,37 +231,23 @@ func removeDuplicates(tags []string) []string {
 }
 
 func GetKotsKindsFromUpstreamChartVersion(helmApp *apptypes.HelmApp, licenseID string, version string) (kotsutil.KotsKinds, error) {
-	chartData, err := getUpdateChartFromCache(helmApp, version)
+	secret, err := GetReplicatedSecretFromUpstreamChartVersion(helmApp, licenseID, version)
 	if err != nil {
-		logger.Info("failed to get chart release from cache", zap.String("error", err.Error()))
+		return kotsutil.KotsKinds{}, errors.Wrap(err, "failed to get secret upstream archive")
 	}
 
-	if chartData == nil {
-		chartData, err = pullChartVersion(helmApp, licenseID, version)
-		if err != nil {
-			return kotsutil.KotsKinds{}, errors.Wrap(err, "failed to pull chart data")
-		}
-	}
-
-	kotsKinds, err := GetKotsKindsFromChartArchive(chartData)
+	kotsKinds, err := GetKotsKindsFromReplicatedSecret(secret)
 	if err != nil {
-		return kotsutil.KotsKinds{}, errors.Wrap(err, "failed to get kotskinds from chart archive")
+		return kotsKinds, errors.Wrap(err, "failed to get kots kinds from secret")
 	}
 
 	return kotsKinds, nil
 }
 
 func GetReplicatedSecretFromUpstreamChartVersion(helmApp *apptypes.HelmApp, licenseID string, version string) (*corev1.Secret, error) {
-	chartData, err := getUpdateChartFromCache(helmApp, version)
+	chartData, err := downloadChartReleaseIfNeeded(helmApp, licenseID, version)
 	if err != nil {
-		logger.Info("failed to get chart release from cache", zap.String("error", err.Error()))
-	}
-
-	if chartData == nil {
-		chartData, err = pullChartVersion(helmApp, licenseID, version)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to pull chart data")
-		}
+		return nil, errors.Wrap(err, "failed to get chart data")
 	}
 
 	templatedData, err := util.GetFileFromTGZArchive(chartData, "**/templates/_replicated/secret.yaml")
@@ -252,8 +273,40 @@ func GetReplicatedSecretFromUpstreamChartVersion(helmApp *apptypes.HelmApp, lice
 	return obj.(*corev1.Secret), nil
 }
 
-func pullChartVersion(helmApp *apptypes.HelmApp, licenseID string, version string) (*bytes.Buffer, error) {
-	err := CreateHelmRegistryCreds(licenseID, licenseID, helmApp.ChartPath)
+func GetReplicatedMetadataFromUpstreamChartVersion(helmApp *apptypes.HelmApp, licenseID string, version string) (*ReplicatedMeta, error) {
+	chartData, err := downloadChartReleaseIfNeeded(helmApp, licenseID, version)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get chart data")
+	}
+
+	valuesData, err := util.GetFileFromTGZArchive(chartData, "**/values.yaml")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get values.yaml from chart archive")
+	}
+
+	b := valuesData.Bytes()
+	values := struct {
+		Replicated *ReplicatedMeta `yaml:"replicated,omitempty"`
+	}{}
+	err = yaml.Unmarshal(b, &values)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode values.yaml")
+	}
+
+	return values.Replicated, nil
+}
+
+func downloadChartReleaseIfNeeded(helmApp *apptypes.HelmApp, licenseID string, version string) (*bytes.Buffer, error) {
+	chartData, err := getUpdateChartFromCache(helmApp, version)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get release from cache")
+	}
+
+	if chartData != nil {
+		return chartData, nil
+	}
+
+	err = CreateHelmRegistryCreds(licenseID, licenseID, helmApp.ChartPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create helm credentials file")
 	}
@@ -263,7 +316,7 @@ func pullChartVersion(helmApp *apptypes.HelmApp, licenseID string, version strin
 	}
 
 	imageName := fmt.Sprintf("%s:%s", helmApp.ChartPath, version)
-	chartData, err := chartGetter.Get(imageName)
+	chartData, err = chartGetter.Get(imageName)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get chart %q", imageName)
 	}

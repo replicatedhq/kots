@@ -458,7 +458,13 @@ func downloadHelmAppUpdates(opts CheckForUpdatesOpts, helmApp *apptypes.HelmApp,
 			downstreamStatus = storetypes.VersionPendingConfig
 		}
 
+		replicatedMetadata, err := helm.GetReplicatedMetadataFromUpstreamChartVersion(helmApp, licenseID, update.Version)
+		if err != nil {
+			return errors.Wrap(err, "failed to replicated metadata")
+		}
+
 		helm.SetCachedUpdateStatus(helmApp.ChartPath, update.Version, downstreamStatus)
+		helm.SetCachedUpdateMetadata(helmApp.ChartPath, update.Version, replicatedMetadata)
 	}
 
 	return nil

@@ -29,10 +29,10 @@ type DownstreamVersion struct {
 	ChannelID          string                             `json:"channelId,omitempty"`
 	IsRequired         bool                               `json:"isRequired"`
 	Status             storetypes.DownstreamVersionStatus `json:"status"`
-	CreatedOn          *time.Time                         `json:"createdOn"`
+	CreatedOn          *time.Time                         `json:"createdOn,omitempty"`
 	ParentSequence     int64                              `json:"parentSequence"`
 	Sequence           int64                              `json:"sequence"`
-	DeployedAt         *time.Time                         `json:"deployedAt"`
+	DeployedAt         *time.Time                         `json:"deployedAt,omitempty"`
 	Source             string                             `json:"source"`
 	PreflightSkipped   bool                               `json:"preflightSkipped"`
 	CommitURL          string                             `json:"commitUrl,omitempty"`
