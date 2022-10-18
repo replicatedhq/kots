@@ -26,8 +26,6 @@ import { Chart } from "@types";
 dayjs.extend(localizedFormat);
 
 type Props = {
-  appSlug: string;
-  clusterId: number | string;
   prometheusAddress: string;
   isHelmManaged: boolean;
   metrics: Chart[];
