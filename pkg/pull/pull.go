@@ -457,9 +457,11 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "failed to write common midstream")
 	}
+	fmt.Println("wrote midstream")
 
 	helmMidstreams := []midstream.Midstream{}
 	for _, helmBase := range helmBases {
+		fmt.Println("iter helm base")
 		// we must look at the current chart for private images, but must ignore subcharts
 		// to do this, we remove only the current helmBase name from the UseHelmInstall map to unblock visibility into the chart directory
 		// this ensures only the current chart resources are added to kustomization.yaml and pullsecret.yaml
@@ -485,12 +487,14 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		writeMidstreamOptions.UseHelmInstall[helmBase.Path] = previousUseHelmInstall
 
 		helmMidstreams = append(helmMidstreams, *helmMidstream)
+		fmt.Println("append succeeded")
 	}
-
+	fmt.Println("done iter")
 	err = removeUnusedHelmOverlays(writeMidstreamOptions.MidstreamDir, writeMidstreamOptions.BaseDir)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to remove unused helm midstreams")
 	}
+	fmt.Println("removed unused")
 
 	log.FinishSpinner()
 
