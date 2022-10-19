@@ -850,7 +850,7 @@ const Dashboard = (props: Props) => {
                 </p>
                 <div className="ExpandedError--wrapper u-marginTop--10 u-marginBottom--10">
                   <p className="u-fontSize--normal u-textColor--error">
-                    {airgapUploaderror}
+                    {state.airgapUploadError}
                   </p>
                 </div>
                 <button
