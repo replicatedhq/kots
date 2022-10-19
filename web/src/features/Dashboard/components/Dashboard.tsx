@@ -612,12 +612,12 @@ const Dashboard = (props: Props) => {
       // no-op
     }
 
-      airgapUploader.current= new AirgapUploader(
-        true,
-        app.slug,
-        onDropBundle,
-        simultaneousUploads
-      );
+    airgapUploader.current = new AirgapUploader(
+      true,
+      app.slug,
+      onDropBundle,
+      simultaneousUploads
+    );
   };
 
   const { data: selectedAppClusterDashboardResponse } =

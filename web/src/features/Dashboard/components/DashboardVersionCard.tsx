@@ -1510,62 +1510,67 @@ const DashboardVersionCard = (props: Props) => {
           Version
         </p>
         <div className="flex alignItems--center">
-          {selectedApp?.isAirgap && airgapUploader ? (
-            <MountAware
-              onMount={(el: Element) => props.airgapUploader?.assignElement(el)}
-            >
+          {
+            /*selectedApp?.isAirgap && airgapUploader ? (*/
+            airgapUploader ? (
+              <MountAware
+                onMount={(el: Element) =>
+                  props.airgapUploader?.assignElement(el)
+                }
+              >
+                <div className="flex alignItems--center">
+                  <span className="icon clickable dashboard-card-upload-version-icon u-marginRight--5" />
+                  <span className="replicated-link u-fontSize--small u-lineHeight--default">
+                    Upload new version
+                  </span>
+                </div>
+              </MountAware>
+            ) : (
               <div className="flex alignItems--center">
-                <span className="icon clickable dashboard-card-upload-version-icon u-marginRight--5" />
-                <span className="replicated-link u-fontSize--small u-lineHeight--default">
-                  Upload new version
+                {checkingForUpdates && !isBundleUploading ? (
+                  <div className="flex alignItems--center u-marginRight--20">
+                    <Loader className="u-marginRight--5" size="15" />
+                    <span className="u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default">
+                      {checkingUpdateText === ""
+                        ? "Checking for updates"
+                        : checkingUpdateTextShort}
+                    </span>
+                  </div>
+                ) : props.noUpdatesAvalable ? (
+                  <div className="flex alignItems--center u-marginRight--20">
+                    <span className="u-textColor--primary u-fontWeight--medium u-fontSize--small u-lineHeight--default">
+                      Already up to date
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex alignItems--center u-marginRight--20">
+                    <Icon
+                      icon="check-update"
+                      size={18}
+                      className="clickable u-marginRight--5"
+                    />
+                    <span
+                      className="replicated-link u-fontSize--small"
+                      onClick={props.onCheckForUpdates}
+                    >
+                      Check for update
+                    </span>
+                  </div>
+                )}
+                <Icon
+                  icon="schedule-sync"
+                  size={18}
+                  className="clickable u-marginRight--5"
+                />
+                <span
+                  className="replicated-link u-fontSize--small u-lineHeight--default"
+                  onClick={props.showAutomaticUpdatesModal}
+                >
+                  Configure automatic updates
                 </span>
               </div>
-            </MountAware>
-          ) : (
-            <div className="flex alignItems--center">
-              {checkingForUpdates && !isBundleUploading ? (
-                <div className="flex alignItems--center u-marginRight--20">
-                  <Loader className="u-marginRight--5" size="15" />
-                  <span className="u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default">
-                    {checkingUpdateText === ""
-                      ? "Checking for updates"
-                      : checkingUpdateTextShort}
-                  </span>
-                </div>
-              ) : props.noUpdatesAvalable ? (
-                <div className="flex alignItems--center u-marginRight--20">
-                  <span className="u-textColor--primary u-fontWeight--medium u-fontSize--small u-lineHeight--default">
-                    Already up to date
-                  </span>
-                </div>
-              ) : (
-                <div className="flex alignItems--center u-marginRight--20">
-                  <Icon
-                    icon="check-update"
-                    size={18}
-                    className="clickable u-marginRight--5"
-                  />
-                  <span
-                    className="replicated-link u-fontSize--small"
-                    onClick={props.onCheckForUpdates}
-                  >
-                    Check for update
-                  </span>
-                </div>
-              )}
-              <Icon
-                icon="schedule-sync"
-                size={18}
-                className="clickable u-marginRight--5"
-              />
-              <span
-                className="replicated-link u-fontSize--small u-lineHeight--default"
-                onClick={props.showAutomaticUpdatesModal}
-              >
-                Configure automatic updates
-              </span>
-            </div>
-          )}
+            )
+          }
         </div>
       </div>
       {currentVersion?.deployedAt ? (
