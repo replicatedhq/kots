@@ -615,7 +615,7 @@ const Dashboard = (props: Props) => {
       airgapUploader.current= new AirgapUploader(
         true,
         app.slug,
-        () => onDropBundle(),
+        onDropBundle,
         simultaneousUploads
       );
   };
