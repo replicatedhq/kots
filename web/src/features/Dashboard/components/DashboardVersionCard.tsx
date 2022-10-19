@@ -1511,8 +1511,7 @@ const DashboardVersionCard = (props: Props) => {
         </p>
         <div className="flex alignItems--center">
           {
-            /*selectedApp?.isAirgap && airgapUploader ? (*/
-            airgapUploader ? (
+            selectedApp?.isAirgap && airgapUploader ? (
               <MountAware
                 onMount={(el: Element) =>
                   props.airgapUploader?.assignElement(el)

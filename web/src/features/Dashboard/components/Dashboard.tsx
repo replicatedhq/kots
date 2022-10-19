@@ -637,7 +637,7 @@ const Dashboard = (props: Props) => {
   }, [selectedAppClusterDashboardResponse]);
 
   useEffect(() => {
-    if (app?.isAirgap && !state.airgapUploader) {
+    if (app?.isAirgap && !airgapUploader.current) {
       getAirgapConfig();
     }
 
