@@ -345,8 +345,8 @@ const Root = () => {
   };
 
   const onRootMounted = () => {
+    fetchKotsAppMetadata();
     if (Utilities.isLoggedIn()) {
-      fetchKotsAppMetadata();
       ping();
       checkIsHelmManaged();
       getAppsList().then((appsList) => {
