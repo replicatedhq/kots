@@ -1,4 +1,4 @@
-import React, { useEffect, useReducer } from "react";
+import React, { useEffect, useReducer, useRef } from "react";
 import { KotsPageTitle } from "@components/Head";
 import get from "lodash/get";
 import sortBy from "lodash/sortBy";
@@ -74,7 +74,6 @@ type SnapshotOption = {
 type State = {
   activeChart: string | null;
   airgapUpdateError: string;
-  airgapUploader: AirgapUploader | null;
   airgapUploadError: string | null;
   appLicense: AppLicense | null;
   appName: string;
@@ -119,7 +118,6 @@ const Dashboard = (props: Props) => {
     }),
     {
       activeChart: null,
-      airgapUploader: null,
       airgapUpdateError: "",
       airgapUploadError: null,
       appLicense: null,
@@ -170,6 +168,7 @@ const Dashboard = (props: Props) => {
   const history = useHistory();
   const match = useRouteMatch();
   const { app, isBundleUploading, isVeleroInstalled } = props;
+  const airgapUploader = useRef<AirgapUploader | null>(null);
 
   const fetchAppDownstream = async () => {
     if (!app) {
@@ -375,7 +374,7 @@ const Dashboard = (props: Props) => {
     // TODO: remove after adding type to airgap uploader
     // eslint-disable-next-line
     // @ts-ignore
-    state.airgapUploader?.upload(
+    airgapUploader.current?.upload(
       params,
       onUploadProgress,
       onUploadError,
@@ -613,14 +612,12 @@ const Dashboard = (props: Props) => {
       // no-op
     }
 
-    setState({
-      airgapUploader: new AirgapUploader(
+      airgapUploader.current= new AirgapUploader(
         true,
         app.slug,
-        onDropBundle,
+        () => onDropBundle(),
         simultaneousUploads
-      ),
-    });
+      );
   };
 
   const { data: selectedAppClusterDashboardResponse } =
@@ -772,7 +769,7 @@ const Dashboard = (props: Props) => {
                     downstream={downstream}
                     checkingForUpdates={checkingForUpdates}
                     checkingUpdateText={checkingUpdateText}
-                    airgapUploader={state.airgapUploader}
+                    airgapUploader={airgapUploader.current}
                     uploadingAirgapFile={uploadingAirgapFile}
                     airgapUploadError={airgapUploadError}
                     refetchData={props.updateCallback}
