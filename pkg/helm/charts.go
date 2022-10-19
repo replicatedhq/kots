@@ -192,7 +192,7 @@ func getChartVersionFromSecretData(secret *corev1.Secret) (*InstalledRelease, er
 		DeployedOn:  &secret.CreationTimestamp.Time,
 	}
 
-	createdAt := util.GetValueFromMapPath(helmRelease.Chart.Values, []string{"replicated", "app", "created_at"})
+	createdAt := util.GetValueFromMapPath(helmRelease.Chart.Values, []string{"replicated", "created_at"})
 	if s, ok := createdAt.(string); ok {
 		t, err := time.Parse(time.RFC3339, s)
 		if err == nil {
