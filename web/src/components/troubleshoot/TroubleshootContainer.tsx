@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { withRouter, Switch, Route } from "react-router-dom";
+import { Switch, Route } from "react-router-dom";
 import NotFound from "../static/NotFound";
 import SupportBundleList from "../troubleshoot/SupportBundleList";
 import SupportBundleAnalysis from "../troubleshoot/SupportBundleAnalysis";
@@ -9,13 +9,12 @@ import EditRedactor from "../redactors/EditRedactor";
 
 // Types
 import { App } from "@types";
-import { RouteComponentProps } from "react-router-dom";
 
 type Props = {
-  app: App;
+  app: App | null;
   appName: string;
 };
-class TroubleshootContainer extends Component<Props & RouteComponentProps> {
+class TroubleshootContainer extends Component<Props> {
   render() {
     const { app, appName } = this.props;
 
@@ -40,7 +39,11 @@ class TroubleshootContainer extends Component<Props & RouteComponentProps> {
             exact
             path="/app/:slug/troubleshoot/redactors"
             render={(props) => (
-              <Redactors {...props} appSlug={app.slug} appName={appName} />
+              <Redactors
+                {...props}
+                appSlug={app?.slug || ""}
+                appName={appName}
+              />
             )}
           />
           <Route
@@ -49,7 +52,7 @@ class TroubleshootContainer extends Component<Props & RouteComponentProps> {
             render={(props) => (
               <EditRedactor
                 {...props}
-                appSlug={app.slug}
+                appSlug={app?.slug || ""}
                 appName={appName}
                 isNew={true}
               />
@@ -59,7 +62,11 @@ class TroubleshootContainer extends Component<Props & RouteComponentProps> {
             exact
             path="/app/:slug/troubleshoot/redactors/:redactorSlug"
             render={(props) => (
-              <EditRedactor {...props} appSlug={app.slug} appName={appName} />
+              <EditRedactor
+                {...props}
+                appSlug={app?.slug || ""}
+                appName={appName}
+              />
             )}
           />
           <Route component={NotFound} />

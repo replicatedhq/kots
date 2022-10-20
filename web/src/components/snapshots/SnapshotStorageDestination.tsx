@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import Select from "react-select";
-import { withRouter, RouteComponentProps } from "react-router-dom";
+import { RouteComponentProps } from "react-router-dom";
 import MonacoEditor from "@monaco-editor/react";
 import find from "lodash/find";
 import Modal from "react-modal";

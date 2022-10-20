@@ -520,7 +520,7 @@ function AppDetailPage(props: Props) {
                   render={() => (
                     <TroubleshootContainer
                       app={selectedApp}
-                      appName={appName}
+                      appName={appName || ""}
                     />
                   )}
                 />
