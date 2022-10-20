@@ -632,23 +632,31 @@ const Dashboard = (props: Props) => {
   const { isSlowLoading: isSlowLoadingNextAppVersion } =
     useNextAppVersionWithIntercept();
 
+  console.log(state.slowLoader);
   // show slow loader if any of the apis are slow loading
   useEffect(() => {
+    // since this is new and we may need to debug it, leaving these in for now
+    // console.log("isSlowLoadingLicense", isSlowLoadingLicense);
+    // console.log("isSlowLoadingNextAppVersion", isSlowLoadingNextAppVersion);
+    // console.log(
+    //   "isSlowLoadingSelectedAppClusterDashboard",
+    //   isSlowLoadingSelectedAppClusterDashboard
+    // );
     if (
       !state.slowLoader &&
       (isSlowLoadingLicense ||
         isSlowLoadingNextAppVersion ||
         isSlowLoadingSelectedAppClusterDashboard)
     ) {
-      // since this is new and we may need to debug it, leaving these in for now
-      // console.log("slowLoader set")
-      // console.log("isSlowLoadingLicense", isSlowLoadingLicense)
-      // console.log("isSlowLoadingNextAppVersion", isSlowLoadingNextAppVersion)
-      // console.log("isSlowLoadingSelectedAppClusterDashboard", isSlowLoadingSelectedAppClusterDashboard)
       setState({ slowLoader: true });
       return;
     }
-    if (state.slowLoader) {
+    if (
+      state.slowLoader &&
+      !isSlowLoadingLicense &&
+      !isSlowLoadingNextAppVersion &&
+      !isSlowLoadingSelectedAppClusterDashboard
+    ) {
       setState({ slowLoader: false });
     }
   }, [

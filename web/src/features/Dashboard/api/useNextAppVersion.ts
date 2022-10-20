@@ -4,28 +4,17 @@ import axios from "axios";
 
 function useNextAppVersionWithIntercept() {
   const [isSlowLoading, setIsSlowLoading] = useState(false);
-
   let timerId = useRef<null | NodeJS.Timeout>(null);
-
-  // DEV: sleep function to delay the return of the data
-  // use this to simulate a slow loading request
-  // const sleep = (ms = 1000): Promise<void> => {
-  //   return new Promise<void>((resolve) => {
-  //     setTimeout(() => resolve(), ms);
-  //   });
-  // };
-
   let nextAppVersionQuery = useNextAppVersion();
 
   useEffect(() => {
     axios.interceptors.request.use(
       (x) => {
-        // not sure if this check is enough to make sure that it
-        // only happens on /license endpoint
-        if (timerId.current) {
-          clearTimeout(timerId.current);
-        }
         if (x.url?.endsWith("/next-app-version")) {
+          if (timerId.current) {
+            clearTimeout(timerId.current);
+            timerId.current = null;
+          }
           // set timeout to 500ms, change it to whatever you want
           timerId.current = setTimeout(() => setIsSlowLoading(true), 500);
           return x;
@@ -47,7 +36,7 @@ function useNextAppVersionWithIntercept() {
           //await sleep();
           setIsSlowLoading(false);
           clearTimeout(timerId.current as NodeJS.Timeout);
-
+          timerId.current = null;
           return x;
         }
         return x;
