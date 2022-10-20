@@ -532,6 +532,7 @@ function AppDetailPage(props: Props) {
                       app={selectedApp}
                       syncCallback={refetchData}
                       changeCallback={refetchData}
+                      isHelmManaged={props.isHelmManaged}
                     />
                   )}
                 />

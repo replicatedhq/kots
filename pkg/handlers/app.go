@@ -391,7 +391,7 @@ func (h *Handler) GetAppVersionHistory(w http.ResponseWriter, r *http.Request) {
 		}
 
 		history.NumOfRemainingVersions = 0
-		chartUpdates := helm.GetCachedUpdates(release.ChartPath)
+		chartUpdates := helm.GetDownloadedUpdates(release.ChartPath)
 
 		installedReleases, err := helm.ListChartVersions(appSlug, release.Namespace)
 		if err != nil {
@@ -743,10 +743,11 @@ func helmReleaseToDownsreamVersion(installedRelease *helm.InstalledRelease) *dow
 		VersionLabel:       installedRelease.Version,
 		Semver:             installedRelease.Semver,
 		UpdateCursor:       installedRelease.Version,
-		CreatedOn:          &installedRelease.CreatedOn,
-		UpstreamReleasedAt: &installedRelease.CreatedOn, // TODO: implement
-		IsDeployable:       false,                       // TODO: implement
-		NonDeployableCause: "already installed",         // TODO: implement
+		CreatedOn:          nil,
+		DeployedAt:         installedRelease.DeployedOn,
+		UpstreamReleasedAt: installedRelease.ReleasedOn,
+		IsDeployable:       false,               // TODO: implement
+		NonDeployableCause: "already installed", // TODO: implement
 		ParentSequence:     int64(installedRelease.Revision),
 		Sequence:           int64(installedRelease.Revision),
 		Status:             storetypes.DownstreamVersionStatus(installedRelease.Status.String()),
