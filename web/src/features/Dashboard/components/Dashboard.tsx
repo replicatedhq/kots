@@ -640,6 +640,11 @@ const Dashboard = (props: Props) => {
         isSlowLoadingNextAppVersion ||
         isSlowLoadingSelectedAppClusterDashboard)
     ) {
+      // since this is new and we may need to debug it, leaving these in for now
+      // console.log("slowLoader set")
+      // console.log("isSlowLoadingLicense", isSlowLoadingLicense)
+      // console.log("isSlowLoadingNextAppVersion", isSlowLoadingNextAppVersion)
+      // console.log("isSlowLoadingSelectedAppClusterDashboard", isSlowLoadingSelectedAppClusterDashboard)
       setState({ slowLoader: true });
       return;
     }

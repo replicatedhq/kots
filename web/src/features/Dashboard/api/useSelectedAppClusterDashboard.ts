@@ -27,10 +27,12 @@ function useSelectedAppClusterDashboardWithIntercept(
   useEffect(() => {
     axios.interceptors.request.use(
       (x) => {
-        // not sure if this check is enough to make sure that it
-        // only happens on /license endpoint
         if (x.url?.endsWith("/dashboard")) {
           // set timeout to 500ms, change it to whatever you want
+          if (timerId.current) {
+            // console.log('timeout cleared before making new one');
+            clearTimeout(timerId.current);
+          }
           timerId.current = setTimeout(() => setIsSlowLoading(true), 500);
           return x;
         }
@@ -51,6 +53,7 @@ function useSelectedAppClusterDashboardWithIntercept(
           //await sleep();
           setIsSlowLoading(false);
           if (timerId.current) {
+            // console.log('timeout cleared after success');
             clearTimeout(timerId.current);
           }
 

@@ -22,6 +22,9 @@ function useNextAppVersionWithIntercept() {
       (x) => {
         // not sure if this check is enough to make sure that it
         // only happens on /license endpoint
+        if (timerId.current) {
+          clearTimeout(timerId.current);
+        }
         if (x.url?.endsWith("/next-app-version")) {
           // set timeout to 500ms, change it to whatever you want
           timerId.current = setTimeout(() => setIsSlowLoading(true), 500);
