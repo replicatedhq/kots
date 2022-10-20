@@ -233,8 +233,11 @@ const Dashboard = (props: Props) => {
     });
   };
 
-  const { data: licenseWithInterceptResponse, refetch: getAppLicense, error: licenseWithInterceptError } =
-    useLicenseWithIntercept();
+  const {
+    data: licenseWithInterceptResponse,
+    refetch: getAppLicense,
+    error: licenseWithInterceptError,
+  } = useLicenseWithIntercept();
   useEffect(() => {
     // if (!res.ok) {
     //   setState({ gettingAppLicenseErrMsg: body.error });
@@ -242,65 +245,36 @@ const Dashboard = (props: Props) => {
     // }
     if (!licenseWithInterceptResponse) {
       setState({ appLicense: null, gettingAppLicenseErrMsg: "" });
-    } else if (licenseWithInterceptResponse.success) {
+      return;
+    }
+
+    if (licenseWithInterceptResponse.success) {
       setState({
         appLicense: licenseWithInterceptResponse.license,
         gettingAppLicenseErrMsg: "",
       });
-    } else if (licenseWithInterceptResponse.error) {
+      return;
+    }
+    if (licenseWithInterceptResponse.error) {
       setState({
         appLicense: null,
         gettingAppLicenseErrMsg: licenseWithInterceptResponse.error,
-      }) }else if (licenseWithInterceptError) {
-
-        setState({ gettingAppLicenseErrMsg: licenseWithInterceptError?.message });
-
-      };
+      });
+      return;
     }
-  }, [licenseWithInterceptResponse]);
+    if (licenseWithInterceptError instanceof Error) {
+      setState({ gettingAppLicenseErrMsg: licenseWithInterceptError?.message });
+      return;
+    }
 
-  // const getAppLicense = async ({ slug }: { slug: string }) => {
-  //   await fetch(`${process.env.API_ENDPOINT}/app/${slug}/license`, {
-  //     method: "GET",
-  //     headers: {
-  //       Authorization: Utilities.getToken(),
-  //       "Content-Type": "application/json",
-  //     },
-  //   })
-  //     .then(async (res) => {
-  //       const body = await res.json();
-  //       if (!res.ok) {
-  //         setState({ gettingAppLicenseErrMsg: body.error });
-  //         return;
-  //       }
-  //       if (body === null) {
-  //         setState({ appLicense: null, gettingAppLicenseErrMsg: "" });
-  //       } else if (body.success) {
-  //         setState({
-  //           appLicense: body.license,
-  //           gettingAppLicenseErrMsg: "",
-  //         });
-  //       } else if (body.error) {
-  //         setState({
-  //           appLicense: null,
-  //           gettingAppLicenseErrMsg: body.error,
-  //         });
-  //       }
-  //     })
-  //     .catch((err) => {
-  //       console.log(err);
-  //       setState({
-  //         gettingAppLicenseErrMsg: err
-  //           ? `Error while getting the license: ${err.message}`
-  //           : "Something went wrong, please try again.",
-  //       });
-  //     });
-  // };
+    setState({
+      gettingAppLicenseErrMsg: "Something went wrong, please try again.",
+    });
+  }, [licenseWithInterceptResponse]);
 
   useEffect(() => {
     if (props.app) {
       setWatchState(props.app);
-      //  getAppLicense(props.app);
     }
   }, [props.app]);
 
