@@ -16,7 +16,7 @@ function useNextAppVersionWithIntercept() {
             timerId.current = null;
           }
           // set timeout to 500ms, change it to whatever you want
-          timerId.current = setTimeout(() => setIsSlowLoading(true), 500);
+          timerId.current = setTimeout(() => setIsSlowLoading(true), 1000);
           return x;
         }
         return x;

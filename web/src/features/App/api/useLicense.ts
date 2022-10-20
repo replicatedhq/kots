@@ -20,7 +20,7 @@ function useLicenseWithIntercept() {
           // set timeout to 500ms, change it to whatever you want
           timerId.current = setTimeout(() => {
             setIsSlowLoading(true);
-          }, 500);
+          }, 1000);
           return x;
         }
         return x;
