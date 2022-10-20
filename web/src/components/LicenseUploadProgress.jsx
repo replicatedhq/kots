@@ -108,4 +108,4 @@ class LicenseUploadProgress extends React.Component {
   }
 }
 
-export default withRouter(LicenseUploadProgress);
+export default LicenseUploadProgress;

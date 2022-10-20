@@ -191,4 +191,4 @@ class PreflightResultErrors extends Component {
   }
 }
 
-export default withRouter(PreflightResultErrors);
+export default PreflightResultErrors;

@@ -22,4 +22,4 @@ class AppIdentityServiceSettings extends Component {
   }
 }
 
-export default withRouter(AppIdentityServiceSettings);
+export default AppIdentityServiceSettings;

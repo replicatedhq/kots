@@ -263,4 +263,4 @@ class ConfigureIngress extends Component {
   }
 }
 
-export default withRouter(ConfigureIngress);
+export default ConfigureIngress;

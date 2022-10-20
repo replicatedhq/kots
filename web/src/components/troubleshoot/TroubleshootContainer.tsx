@@ -69,6 +69,4 @@ class TroubleshootContainer extends Component<Props & RouteComponentProps> {
   }
 }
 
-// TODO: narrow type
-// eslint-disable-next-line
-export default withRouter(TroubleshootContainer) as any;
+export default TroubleshootContainer;

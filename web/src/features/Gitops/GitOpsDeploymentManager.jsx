@@ -75,4 +75,4 @@ const GitOpsDeploymentManager = (props) => {
   );
 };
 
-export default withGitOpsConsumer(withRouter(GitOpsDeploymentManager));
+export default withGitOpsConsumer(GitOpsDeploymentManager);

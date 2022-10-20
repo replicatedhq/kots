@@ -1886,7 +1886,4 @@ class SnapshotStorageDestination extends Component<Props, State> {
   }
 }
 
-// TODO: fix this typing thing
-// @ts-ignore
-const RoutedSnapshotStorageDestination = withRouter(SnapshotStorageDestination);
-export default RoutedSnapshotStorageDestination;
+export default SnapshotStorageDestination;

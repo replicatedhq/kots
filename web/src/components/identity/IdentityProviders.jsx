@@ -1322,4 +1322,4 @@ class IdentityProviders extends Component {
   }
 }
 
-export default withRouter(IdentityProviders);
+export default IdentityProviders;

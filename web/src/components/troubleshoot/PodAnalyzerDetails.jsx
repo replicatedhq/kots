@@ -290,4 +290,4 @@ export class PodAnalyzerDetails extends React.Component {
   }
 }
 
-export default withRouter(PodAnalyzerDetails);
+export default PodAnalyzerDetails;

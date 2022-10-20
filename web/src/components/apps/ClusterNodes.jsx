@@ -542,4 +542,4 @@ export class ClusterNodes extends Component {
   }
 }
 
-export default withRouter(ClusterNodes);
+export default ClusterNodes;
