@@ -2,7 +2,7 @@ import { useRef, useState, useEffect } from "react";
 import { useNextAppVersion } from "./getNextAppVersion";
 import axios from "axios";
 
-function useNextAppVersionWithIntercept(appSlug: string) {
+function useNextAppVersionWithIntercept() {
   const [isSlowLoading, setIsSlowLoading] = useState(false);
 
   let timerId = useRef<null | NodeJS.Timeout>(null);
@@ -15,7 +15,7 @@ function useNextAppVersionWithIntercept(appSlug: string) {
   //   });
   // };
 
-  let nextAppVersionQuery = useNextAppVersion(appSlug);
+  let nextAppVersionQuery = useNextAppVersion();
 
   useEffect(() => {
     axios.interceptors.request.use(

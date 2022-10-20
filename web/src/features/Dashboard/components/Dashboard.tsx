@@ -17,6 +17,7 @@ import { AirgapUploader } from "@src/utilities/airgapUploader";
 import { useSelectedAppClusterDashboardWithIntercept } from "../api/useSelectedAppClusterDashboard";
 import { useHistory, useRouteMatch } from "react-router-dom";
 import { useLicenseWithIntercept } from "@features/App";
+import { useNextAppVersionWithIntercept } from "../api/useNextAppVersion";
 
 import "@src/scss/components/watches/Dashboard.scss";
 import "@src/../node_modules/react-vis/dist/style";
@@ -235,9 +236,11 @@ const Dashboard = (props: Props) => {
 
   const {
     data: licenseWithInterceptResponse,
-    refetch: getAppLicense,
     error: licenseWithInterceptError,
+    refetch: getAppLicense,
+    isSlowLoading: isSlowLoadingLicense,
   } = useLicenseWithIntercept();
+
   useEffect(() => {
     // if (!res.ok) {
     //   setState({ gettingAppLicenseErrMsg: body.error });
@@ -621,8 +624,33 @@ const Dashboard = (props: Props) => {
     );
   };
 
-  const { data: selectedAppClusterDashboardResponse } =
-    useSelectedAppClusterDashboardWithIntercept({ refetchInterval: 2000 });
+  const {
+    data: selectedAppClusterDashboardResponse,
+    isSlowLoading: isSlowLoadingSelectedAppClusterDashboard,
+  } = useSelectedAppClusterDashboardWithIntercept({ refetchInterval: 2000 });
+
+  const { isSlowLoading: isSlowLoadingNextAppVersion } =
+    useNextAppVersionWithIntercept();
+
+  // show slow loader if any of the apis are slow loading
+  useEffect(() => {
+    if (
+      !state.slowLoader &&
+      (isSlowLoadingLicense ||
+        isSlowLoadingNextAppVersion ||
+        isSlowLoadingSelectedAppClusterDashboard)
+    ) {
+      setState({ slowLoader: true });
+      return;
+    }
+    if (state.slowLoader) {
+      setState({ slowLoader: false });
+    }
+  }, [
+    isSlowLoadingLicense,
+    isSlowLoadingNextAppVersion,
+    isSlowLoadingSelectedAppClusterDashboard,
+  ]);
 
   useEffect(() => {
     if (selectedAppClusterDashboardResponse) {

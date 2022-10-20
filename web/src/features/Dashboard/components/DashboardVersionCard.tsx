@@ -171,7 +171,7 @@ const DashboardVersionCard = (props: Props) => {
     data: newAppVersionWithInterceptData,
     error: latestDeployableVersionErrMsg,
     refetch: refetchNextAppVersionWithIntercept,
-  } = useNextAppVersionWithIntercept(selectedApp?.slug || "");
+  } = useNextAppVersionWithIntercept();
   const { latestDeployableVersion } = newAppVersionWithInterceptData || {};
 
   const { data: isHelmManagedResponse } = useIsHelmManaged();
