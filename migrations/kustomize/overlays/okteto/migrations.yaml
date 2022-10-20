@@ -38,7 +38,10 @@ spec:
           - name: SCHEMAHERO_DDL
             value: /migrations/plan.yaml
           - name: SCHEMAHERO_URI
-            value: kotsadm:password@kotsadm-rqlite
+            valueFrom:
+              secretKeyRef:
+                key: uri
+                name: kotsadm-rqlite
       initContainers:
       - image: migrations
         name: migrations-plan
@@ -54,7 +57,10 @@ spec:
           - name: SCHEMAHERO_OUT
             value: /migrations/plan.yaml
           - name: SCHEMAHERO_URI
-            value: kotsadm:password@kotsadm-rqlite
+            valueFrom:
+              secretKeyRef:
+                key: uri
+                name: kotsadm-rqlite
       - image: migrations
         name: migrations-apply
         volumeMounts:
@@ -67,4 +73,7 @@ spec:
           - name: SCHEMAHERO_DDL
             value: /migrations/plan.yaml
           - name: SCHEMAHERO_URI
-            value: kotsadm:password@kotsadm-rqlite
+            valueFrom:
+              secretKeyRef:
+                key: uri
+                name: kotsadm-rqlite
