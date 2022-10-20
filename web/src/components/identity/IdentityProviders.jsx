@@ -1,5 +1,4 @@
 import React, { Component } from "react";
-import { withRouter } from "react-router-dom";
 import { KotsPageTitle } from "@components/Head";
 import ReactTooltip from "react-tooltip";
 import isEmpty from "lodash/isEmpty";

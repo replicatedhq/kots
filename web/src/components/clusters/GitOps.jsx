@@ -1,7 +1,5 @@
 import * as React from "react";
-import PropTypes from "prop-types";
 import { KotsPageTitle } from "@components/Head";
-import { withRouter } from "react-router-dom";
 import GitOpsDeploymentManager from "../../features/Gitops/GitOpsDeploymentManager";
 import { GitOpsProvider } from "../../features/Gitops/context";
 

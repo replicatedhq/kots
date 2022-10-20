@@ -1,5 +1,4 @@
 import React from "react";
-import { withRouter } from "react-router-dom";
 
 import { Utilities } from "../../utilities/utilities";
 import Loader from "../shared/Loader";
@@ -243,4 +242,4 @@ class DownstreamWatchVersionDiff extends React.Component {
   }
 }
 
-export default withRouter(DownstreamWatchVersionDiff);
+export default DownstreamWatchVersionDiff;

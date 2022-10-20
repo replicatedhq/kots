@@ -1,5 +1,4 @@
 import React, { Component } from "react";
-import { withRouter } from "react-router-dom";
 import IdentityProviders from "@src/components/identity/IdentityProviders";
 
 import "@src/scss/components/identity/IdentityManagement.scss";

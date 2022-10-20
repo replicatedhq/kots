@@ -1,5 +1,4 @@
 import React from "react";
-import { withRouter } from "react-router-dom";
 import Loader from "./shared/Loader";
 import {
   formatByteSize,

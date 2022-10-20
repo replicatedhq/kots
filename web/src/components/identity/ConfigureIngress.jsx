@@ -1,5 +1,4 @@
 import React, { Component } from "react";
-import { withRouter } from "react-router-dom";
 import { KotsPageTitle } from "@components/Head";
 import Dropzone from "react-dropzone";
 import isEmpty from "lodash/isEmpty";

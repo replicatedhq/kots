@@ -1,5 +1,4 @@
 import * as React from "react";
-import { withRouter } from "react-router-dom";
 import AceEditor from "react-ace";
 import Select from "react-select";
 import Loader from "../shared/Loader";
