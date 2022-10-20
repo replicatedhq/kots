@@ -242,10 +242,6 @@ const Dashboard = (props: Props) => {
   } = useLicenseWithIntercept();
 
   useEffect(() => {
-    // if (!res.ok) {
-    //   setState({ gettingAppLicenseErrMsg: body.error });
-    //   return;
-    // }
     if (!licenseWithInterceptResponse) {
       setState({ appLicense: null, gettingAppLicenseErrMsg: "" });
       return;
