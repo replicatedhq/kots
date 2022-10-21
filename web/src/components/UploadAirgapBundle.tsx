@@ -11,6 +11,7 @@ import LicenseUploadProgress from "./LicenseUploadProgress";
 import AirgapRegistrySettings from "./shared/AirgapRegistrySettings";
 import { Utilities } from "../utilities/utilities";
 import { AirgapUploader } from "../utilities/airgapUploader";
+import { useSelectedApp } from "@features/App";
 
 import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
 import "../scss/components/Login.scss";
@@ -24,9 +25,13 @@ const COMMON_ERRORS = {
 import { KotsParams } from "@types";
 
 type Props = {
-  onUploadSuccess: () => void;
+  appName: string | null;
+  appsListLength: number;
+  logo: string | null;
+  fetchingMetadata: boolean;
+  onUploadSuccess: () => Promise<void>;
   showRegistry: boolean;
-}
+};
 
 type RegistryDetails = {
   hostname: string;
@@ -34,30 +39,33 @@ type RegistryDetails = {
   namespace: string;
   password: string;
   username: string;
-}
+};
 
 type ResumeResult = {
   error?: string;
   hasPreflight: boolean;
   isConfigurable: boolean;
-}
+};
 
 type State = {
   airgapUploader: AirgapUploader | null;
-  bundleFile: {};
+  bundleFile: {
+    name: string;
+  } | null;
+  displayErrorModal?: boolean;
   errorMessage: string;
   fileUploading: boolean;
   registryDetails: RegistryDetails | null;
   preparingOnlineInstall: boolean;
-  supportBundleCommand?: string;
+  supportBundleCommand?: string | string[];
   showSupportBundleCommand: boolean;
   simultaneousUploads?: number;
   onlineInstallErrorMessage: string;
-  viewOnlineInstallErrorMessage: false;
   uploadProgress: number;
   uploadSize: number;
   uploadResuming: boolean;
-}
+  viewOnlineInstallErrorMessage: boolean;
+};
 const UploadAirgapBundle = (props: Props) => {
   const [state, setState] = useReducer(
     (currentState: State, newState: Partial<State>) => ({
@@ -66,27 +74,35 @@ const UploadAirgapBundle = (props: Props) => {
     }),
     {
       airgapUploader: null,
-      bundleFile: {},
+      bundleFile: null,
       errorMessage: "",
       fileUploading: false,
       registryDetails: null,
       preparingOnlineInstall: false,
-      supportBundleCommand: undefined,
       showSupportBundleCommand: false,
       onlineInstallErrorMessage: "",
-      viewOnlineInstallErrorMessage: false,
       uploadProgress: 0,
       uploadSize: 0,
       uploadResuming: false,
+      viewOnlineInstallErrorMessage: false,
     }
   );
 
   const emptyHostnameErrMessage = 'Please enter a value for "Hostname" field';
   const match = useRouteMatch<KotsParams>();
   const history = useHistory();
+  const { selectedApp } = useSelectedApp();
+
+  const onDropBundle = async (file: { name: string }) => {
+    setState({
+      bundleFile: file,
+      onlineInstallErrorMessage: "",
+      errorMessage: "",
+    });
+  };
 
   const getAirgapConfig = async () => {
-    const configUrl = `${process.env.API_ENDPOINT}/app/${match.params.slug}/airgap/config`;
+    const configUrl = `${process.env.API_ENDPOINT}/app/${selectedApp?.slug}/airgap/config`;
     let simultaneousUploads = 3;
     try {
       let res = await fetch(configUrl, {
@@ -107,28 +123,30 @@ const UploadAirgapBundle = (props: Props) => {
     setState({
       airgapUploader: new AirgapUploader(
         false,
-        match.params.slug,
+        selectedApp?.slug,
         onDropBundle,
         simultaneousUploads
       ),
     });
   };
 
-
   useEffect(() => {
     getAirgapConfig();
   }, []);
 
   const clearFile = () => {
-    setState({ bundleFile: {} });
+    setState({ bundleFile: null });
   };
 
   const toggleShowRun = () => {
     setState({ showSupportBundleCommand: true });
   };
 
-
-  const onUploadProgress = (progress, size, resuming = false) => {
+  const onUploadProgress = (
+    progress: number,
+    size: number,
+    resuming = false
+  ) => {
     setState({
       uploadProgress: progress,
       uploadSize: size,
@@ -136,7 +154,7 @@ const UploadAirgapBundle = (props: Props) => {
     });
   };
 
-  const onUploadError = (message) => {
+  const onUploadError = (message?: string) => {
     setState({
       fileUploading: false,
       uploadProgress: 0,
@@ -146,12 +164,11 @@ const UploadAirgapBundle = (props: Props) => {
     });
   };
 
-
   const uploadAirgapBundle = async () => {
     const { showRegistry } = props;
 
     // Reset the airgap upload state
-    const resetUrl = `${process.env.API_ENDPOINT}/app/${match.params.slug}/airgap/reset`;
+    const resetUrl = `${process.env.API_ENDPOINT}/app/${selectedApp?.slug}/airgap/reset`;
     try {
       await fetch(resetUrl, {
         method: "POST",
@@ -181,8 +198,6 @@ const UploadAirgapBundle = (props: Props) => {
     });
 
     if (showRegistry) {
-      const { slug } = match.params;
-
       // TODO: remove isEmpty
       if (isEmpty(state.registryDetails?.hostname)) {
         setState({
@@ -198,7 +213,7 @@ const UploadAirgapBundle = (props: Props) => {
       let res;
       try {
         res = await fetch(
-          `${process.env.API_ENDPOINT}/app/${slug}/registry/validate`,
+          `${process.env.API_ENDPOINT}/app/${selectedApp?.slug}/registry/validate`,
           {
             method: "POST",
             headers: {
@@ -261,14 +276,10 @@ const UploadAirgapBundle = (props: Props) => {
       isReadOnly: state.registryDetails?.isReadOnly,
       simultaneousUploads: state.simultaneousUploads,
     };
-    state?.airgapUploader?.upload(
-      params,
-      onUploadProgress,
-      onUploadError
-    );
+    state?.airgapUploader?.upload(params, onUploadProgress, onUploadError);
   };
 
-  const getRegistryDetails = (fields) => {
+  const getRegistryDetails = (fields: RegistryDetails) => {
     setState({
       ...state,
       registryDetails: {
@@ -281,15 +292,7 @@ const UploadAirgapBundle = (props: Props) => {
     });
   };
 
-  const onDropBundle = async (file) => {
-    setState({
-      bundleFile: file,
-      onlineInstallErrorMessage: "",
-      errorMessage: "",
-    });
-  };
-
-  const moveBar = (count) => {
+  const moveBar = (count: number) => {
     const elem = document.getElementById("myBar");
     const percent = count > 3 ? 96 : count * 30;
     if (elem) {
@@ -298,14 +301,12 @@ const UploadAirgapBundle = (props: Props) => {
   };
 
   const handleOnlineInstall = async () => {
-    const { slug } = props.match.params;
-
     setState({
       preparingOnlineInstall: true,
       onlineInstallErrorMessage: "",
     });
 
-    let resumeResult : ResumeResult;
+    let resumeResult: ResumeResult;
     fetch(`${process.env.API_ENDPOINT}/license/resume`, {
       method: "PUT",
       headers: {
@@ -313,7 +314,7 @@ const UploadAirgapBundle = (props: Props) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        slug,
+        slug: selectedApp?.slug,
       }),
     })
       .then(async (result) => {
@@ -360,20 +361,20 @@ const UploadAirgapBundle = (props: Props) => {
           const hasPreflight = resumeResult.hasPreflight;
           const isConfigurable = resumeResult.isConfigurable;
           if (isConfigurable) {
-            history.replace(`/${slug}/config`);
+            history.replace(`/${selectedApp?.slug}/config`);
           } else if (hasPreflight) {
-            history.replace(`/${slug}/preflight`);
+            history.replace(`/${selectedApp?.slug}/preflight`);
           } else {
-            history.replace(`/app/${slug}`);
+            history.replace(`/app/${selectedApp?.slug}`);
           }
         });
       }
     }, 1000);
   };
 
-  const getSupportBundleCommand = async (slug) => {
+  const getSupportBundleCommand = async () => {
     const res = await fetch(
-      `${process.env.API_ENDPOINT}/troubleshoot/app/${slug}/supportbundlecommand`,
+      `${process.env.API_ENDPOINT}/troubleshoot/app/${selectedApp?.slug}/supportbundlecommand`,
       {
         method: "POST",
         headers: {
@@ -392,12 +393,10 @@ const UploadAirgapBundle = (props: Props) => {
     return response.command;
   };
 
-  const onProgressError = async (errorMessage) => {
-    const { slug } = props.match.params;
-
-    let supportBundleCommand = [];
+  const onProgressError = async (errorMessage: string) => {
+    let supportBundleCommand: string[] = [];
     try {
-      supportBundleCommand = await getSupportBundleCommand(slug);
+      supportBundleCommand = await getSupportBundleCommand();
     } catch (err) {
       console.log(err);
     }
@@ -416,36 +415,23 @@ const UploadAirgapBundle = (props: Props) => {
         uploadProgress: 0,
         uploadSize: 0,
         uploadResuming: false,
-        supportBundleCommand: supportBundleCommand,
+        supportBundleCommand,
       });
     }, 0);
   };
 
-  const onProgressSuccess = async () => {
-    const { onUploadSuccess, match } = props;
-
-    await onUploadSuccess();
-
-    const app = await getApp(match.params.slug);
-
-    if (app?.isConfigurable) {
-      history.replace(`/${app.slug}/config`);
-    } else if (app?.hasPreflight) {
-      history.replace(`/${app.slug}/preflight`);
-    } else {
-      history.replace(`/app/${app.slug}`);
-    }
-  };
-
-  const getApp = async (slug) => {
+  const getApp = async () => {
     try {
-      const res = await fetch(`${process.env.API_ENDPOINT}/app/${slug}`, {
-        headers: {
-          Authorization: Utilities.getToken(),
-          "Content-Type": "application/json",
-        },
-        method: "GET",
-      });
+      const res = await fetch(
+        `${process.env.API_ENDPOINT}/app/${selectedApp?.slug}`,
+        {
+          headers: {
+            Authorization: Utilities.getToken(),
+            "Content-Type": "application/json",
+          },
+          method: "GET",
+        }
+      );
       if (res.ok && res.status == 200) {
         const app = await res.json();
         return app;
@@ -456,20 +442,33 @@ const UploadAirgapBundle = (props: Props) => {
     return null;
   };
 
+  const onProgressSuccess = async () => {
+    const { onUploadSuccess } = props;
+
+    await onUploadSuccess();
+
+    // TODO: refactor to use app hook
+    const app = await getApp();
+
+    if (app?.isConfigurable) {
+      history.replace(`/${app.slug}/config`);
+    } else if (app?.hasPreflight) {
+      history.replace(`/${app.slug}/preflight`);
+    } else {
+      history.replace(`/app/${app.slug}`);
+    }
+  };
+
   const toggleViewOnlineInstallErrorMessage = () => {
     setState({
       viewOnlineInstallErrorMessage: !state.viewOnlineInstallErrorMessage,
     });
   };
 
-  const toggleErrorModal = () => {
-    setState({ displayErrorModal: !state.displayErrorModal });
-  };
-
   const { appName, logo, fetchingMetadata, showRegistry, appsListLength } =
     props;
 
-  const { slug } = props.match.params;
+  const { slug } = match.params;
 
   const {
     bundleFile,
@@ -508,7 +507,7 @@ const UploadAirgapBundle = (props: Props) => {
     applicationName = "";
   } else {
     logoUri = logo;
-    applicationName = appName;
+    applicationName = appName || "";
   }
 
   return (
@@ -542,14 +541,12 @@ const UploadAirgapBundle = (props: Props) => {
               </p>
               <p className="u-marginTop--10 u-marginTop--5 u-fontSize--large u-textAlign--center u-fontWeight--medium u-lineHeight--normal u-textColor--bodyCopy">
                 {showRegistry
-                  ? `To install on an airgapped network, you will need to provide access to a Docker registry. The images ${applicationName?.length > 0
-                    ? `in ${applicationName}`
-                    : ""
-                  } will be retagged and pushed to the registry that you provide here.`
-                  : `To install on an airgapped network, the images ${applicationName?.length > 0
-                    ? `in ${applicationName}`
-                    : ""
-                  } will be uploaded from the bundle you provide to the cluster.`}
+                  ? `To install on an airgapped network, you will need to provide access to a Docker registry. The images ${
+                      applicationName?.length > 0 ? `in ${applicationName}` : ""
+                    } will be retagged and pushed to the registry that you provide here.`
+                  : `To install on an airgapped network, the images ${
+                      applicationName?.length > 0 ? `in ${applicationName}` : ""
+                    } will be uploaded from the bundle you provide to the cluster.`}
               </p>
               {showRegistry && (
                 <div className="u-marginTop--30">
@@ -569,8 +566,8 @@ const UploadAirgapBundle = (props: Props) => {
               <div className="u-marginTop--20 flex">
                 {state.airgapUploader ? (
                   <MountAware
-                    onMount={(el) =>
-                      state.airgapUploader.assignElement(el)
+                    onMount={(el: HTMLDivElement) =>
+                      state.airgapUploader?.assignElement(el)
                     }
                     className={classNames("FileUpload-wrapper", "flex1", {
                       "has-file": hasFile,
@@ -596,8 +593,8 @@ const UploadAirgapBundle = (props: Props) => {
                           {applicationName?.length > 0
                             ? ` ${applicationName} provided`
                             : ""}
-                          . Please contact your account rep if you are unable
-                          to locate your .airgap file.
+                          . Please contact your account rep if you are unable to
+                          locate your .airgap file.
                         </p>
                       </div>
                     )}
@@ -680,9 +677,7 @@ const UploadAirgapBundle = (props: Props) => {
           Optionally you can{" "}
           <span className="replicated-link">
             download{" "}
-            {applicationName?.length > 0
-              ? applicationName
-              : "this application"}{" "}
+            {applicationName?.length > 0 ? applicationName : "this application"}{" "}
             from the Internet
           </span>
         </span>
@@ -742,6 +737,6 @@ const UploadAirgapBundle = (props: Props) => {
       </Modal>
     </div>
   );
-}
+};
 
 export default UploadAirgapBundle;
