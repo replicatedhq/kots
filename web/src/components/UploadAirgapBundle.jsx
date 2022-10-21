@@ -21,6 +21,7 @@ const COMMON_ERRORS = {
   "no such host": "No such host",
 };
 
+// add props
 class UploadAirgapBundle extends React.Component {
   state = {
     bundleFile: {},
