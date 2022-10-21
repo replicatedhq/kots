@@ -1,6 +1,6 @@
-import * as React from "react";
+import React, { useEffect, useReducer } from "react";
+import { useHistory, useRouteMatch } from "react-router";
 import classNames from "classnames";
-import { withRouter } from "react-router-dom";
 import { KotsPageTitle } from "@components/Head";
 import isEmpty from "lodash/isEmpty";
 import Modal from "react-modal";
@@ -21,40 +21,71 @@ const COMMON_ERRORS = {
   "no such host": "No such host",
 };
 
-// add props
-class UploadAirgapBundle extends React.Component {
-  state = {
-    bundleFile: {},
-    fileUploading: false,
-    registryDetails: {},
-    preparingOnlineInstall: false,
-    supportBundleCommand: undefined,
-    showSupportBundleCommand: false,
-    onlineInstallErrorMessage: "",
-    viewOnlineInstallErrorMessage: false,
-    uploadProgress: 0,
-    uploadSize: 0,
-    uploadResuming: false,
-  };
+import { KotsParams } from "@types";
 
-  emptyHostnameErrMessage = 'Please enter a value for "Hostname" field';
+type Props = {
+  onUploadSuccess: () => void;
+  showRegistry: boolean;
+}
 
-  componentDidMount() {
-    if (!this.state.airgapUploader) {
-      this.getAirgapConfig();
+type RegistryDetails = {
+  hostname: string;
+  isReadOnly: boolean;
+  namespace: string;
+  password: string;
+  username: string;
+}
+
+type ResumeResult = {
+  error?: string;
+  hasPreflight: boolean;
+  isConfigurable: boolean;
+}
+
+type State = {
+  airgapUploader: AirgapUploader | null;
+  bundleFile: {};
+  errorMessage: string;
+  fileUploading: boolean;
+  registryDetails: RegistryDetails | null;
+  preparingOnlineInstall: boolean;
+  supportBundleCommand?: string;
+  showSupportBundleCommand: boolean;
+  simultaneousUploads?: number;
+  onlineInstallErrorMessage: string;
+  viewOnlineInstallErrorMessage: false;
+  uploadProgress: number;
+  uploadSize: number;
+  uploadResuming: boolean;
+}
+const UploadAirgapBundle = (props: Props) => {
+  const [state, setState] = useReducer(
+    (currentState: State, newState: Partial<State>) => ({
+      ...currentState,
+      ...newState,
+    }),
+    {
+      airgapUploader: null,
+      bundleFile: {},
+      errorMessage: "",
+      fileUploading: false,
+      registryDetails: null,
+      preparingOnlineInstall: false,
+      supportBundleCommand: undefined,
+      showSupportBundleCommand: false,
+      onlineInstallErrorMessage: "",
+      viewOnlineInstallErrorMessage: false,
+      uploadProgress: 0,
+      uploadSize: 0,
+      uploadResuming: false,
     }
-  }
+  );
 
-  clearFile = () => {
-    this.setState({ bundleFile: {} });
-  };
+  const emptyHostnameErrMessage = 'Please enter a value for "Hostname" field';
+  const match = useRouteMatch<KotsParams>();
+  const history = useHistory();
 
-  toggleShowRun = () => {
-    this.setState({ showSupportBundleCommand: true });
-  };
-
-  getAirgapConfig = async () => {
-    const { match } = this.props;
+  const getAirgapConfig = async () => {
     const configUrl = `${process.env.API_ENDPOINT}/app/${match.params.slug}/airgap/config`;
     let simultaneousUploads = 3;
     try {
@@ -73,18 +104,51 @@ class UploadAirgapBundle extends React.Component {
       // no-op
     }
 
-    this.setState({
+    setState({
       airgapUploader: new AirgapUploader(
         false,
         match.params.slug,
-        this.onDropBundle,
+        onDropBundle,
         simultaneousUploads
       ),
     });
   };
 
-  uploadAirgapBundle = async () => {
-    const { match, showRegistry } = this.props;
+
+  useEffect(() => {
+    getAirgapConfig();
+  }, []);
+
+  const clearFile = () => {
+    setState({ bundleFile: {} });
+  };
+
+  const toggleShowRun = () => {
+    setState({ showSupportBundleCommand: true });
+  };
+
+
+  const onUploadProgress = (progress, size, resuming = false) => {
+    setState({
+      uploadProgress: progress,
+      uploadSize: size,
+      uploadResuming: resuming,
+    });
+  };
+
+  const onUploadError = (message) => {
+    setState({
+      fileUploading: false,
+      uploadProgress: 0,
+      uploadSize: 0,
+      uploadResuming: false,
+      errorMessage: message || "Error uploading bundle, please try again",
+    });
+  };
+
+
+  const uploadAirgapBundle = async () => {
+    const { showRegistry } = props;
 
     // Reset the airgap upload state
     const resetUrl = `${process.env.API_ENDPOINT}/app/${match.params.slug}/airgap/reset`;
@@ -98,7 +162,7 @@ class UploadAirgapBundle extends React.Component {
       });
     } catch (error) {
       console.error(error);
-      this.setState({
+      setState({
         fileUploading: false,
         uploadProgress: 0,
         uploadSize: 0,
@@ -109,7 +173,7 @@ class UploadAirgapBundle extends React.Component {
       return;
     }
 
-    this.setState({
+    setState({
       fileUploading: true,
       errorMessage: "",
       showSupportBundleCommand: false,
@@ -117,15 +181,16 @@ class UploadAirgapBundle extends React.Component {
     });
 
     if (showRegistry) {
-      const { slug } = this.props.match.params;
+      const { slug } = match.params;
 
-      if (isEmpty(this.state.registryDetails.hostname)) {
-        this.setState({
+      // TODO: remove isEmpty
+      if (isEmpty(state.registryDetails?.hostname)) {
+        setState({
           fileUploading: false,
           uploadProgress: 0,
           uploadSize: 0,
           uploadResuming: false,
-          errorMessage: this.emptyHostnameErrMessage,
+          errorMessage: emptyHostnameErrMessage,
         });
         return;
       }
@@ -141,33 +206,43 @@ class UploadAirgapBundle extends React.Component {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              hostname: this.state.registryDetails.hostname,
-              namespace: this.state.registryDetails.namespace,
-              username: this.state.registryDetails.username,
-              password: this.state.registryDetails.password,
-              isReadOnly: this.state.registryDetails.isReadOnly,
+              hostname: state.registryDetails?.hostname,
+              namespace: state.registryDetails?.namespace,
+              username: state.registryDetails?.username,
+              password: state.registryDetails?.password,
+              isReadOnly: state.registryDetails?.isReadOnly,
             }),
           }
         );
       } catch (err) {
-        this.setState({
+        if (err instanceof Error) {
+          setState({
+            fileUploading: false,
+            uploadProgress: 0,
+            uploadSize: 0,
+            uploadResuming: false,
+            errorMessage: err.message,
+          });
+          return;
+        }
+
+        setState({
           fileUploading: false,
           uploadProgress: 0,
           uploadSize: 0,
           uploadResuming: false,
-          errorMessage: err,
+          errorMessage: "Something went wrong when uploading Airgap bundle.",
         });
-        return;
       }
 
-      const response = await res.json();
+      const response = await res?.json();
       if (!response.success) {
         let msg =
           "An error occurred while uploading your airgap bundle. Please try again";
         if (response.error) {
           msg = response.error;
         }
-        this.setState({
+        setState({
           fileUploading: false,
           uploadProgress: 0,
           uploadSize: 0,
@@ -179,41 +254,23 @@ class UploadAirgapBundle extends React.Component {
     }
 
     const params = {
-      registryHost: this.state.registryDetails.hostname,
-      namespace: this.state.registryDetails.namespace,
-      username: this.state.registryDetails.username,
-      password: this.state.registryDetails.password,
-      isReadOnly: this.state.registryDetails.isReadOnly,
-      simultaneousUploads: this.state.simultaneousUploads,
+      registryHost: state.registryDetails?.hostname,
+      namespace: state.registryDetails?.namespace,
+      username: state.registryDetails?.username,
+      password: state.registryDetails?.password,
+      isReadOnly: state.registryDetails?.isReadOnly,
+      simultaneousUploads: state.simultaneousUploads,
     };
-    this.state.airgapUploader.upload(
+    state?.airgapUploader?.upload(
       params,
-      this.onUploadProgress,
-      this.onUploadError
+      onUploadProgress,
+      onUploadError
     );
   };
 
-  onUploadProgress = (progress, size, resuming = false) => {
-    this.setState({
-      uploadProgress: progress,
-      uploadSize: size,
-      uploadResuming: resuming,
-    });
-  };
-
-  onUploadError = (message) => {
-    this.setState({
-      fileUploading: false,
-      uploadProgress: 0,
-      uploadSize: 0,
-      uploadResuming: false,
-      errorMessage: message || "Error uploading bundle, please try again",
-    });
-  };
-
-  getRegistryDetails = (fields) => {
-    this.setState({
-      ...this.state,
+  const getRegistryDetails = (fields) => {
+    setState({
+      ...state,
       registryDetails: {
         hostname: fields.hostname,
         username: fields.username,
@@ -224,15 +281,15 @@ class UploadAirgapBundle extends React.Component {
     });
   };
 
-  onDropBundle = async (file) => {
-    this.setState({
+  const onDropBundle = async (file) => {
+    setState({
       bundleFile: file,
       onlineInstallErrorMessage: "",
       errorMessage: "",
     });
   };
 
-  moveBar = (count) => {
+  const moveBar = (count) => {
     const elem = document.getElementById("myBar");
     const percent = count > 3 ? 96 : count * 30;
     if (elem) {
@@ -240,15 +297,15 @@ class UploadAirgapBundle extends React.Component {
     }
   };
 
-  handleOnlineInstall = async () => {
-    const { slug } = this.props.match.params;
+  const handleOnlineInstall = async () => {
+    const { slug } = props.match.params;
 
-    this.setState({
+    setState({
       preparingOnlineInstall: true,
       onlineInstallErrorMessage: "",
     });
 
-    let resumeResult;
+    let resumeResult : ResumeResult;
     fetch(`${process.env.API_ENDPOINT}/license/resume`, {
       method: "PUT",
       headers: {
@@ -263,7 +320,7 @@ class UploadAirgapBundle extends React.Component {
         resumeResult = await result.json();
       })
       .catch((err) => {
-        this.setState({
+        setState({
           // TODO: use fewer flags
           fileUploading: false,
           errorMessage: err,
@@ -275,11 +332,11 @@ class UploadAirgapBundle extends React.Component {
 
     let count = 0;
     const interval = setInterval(() => {
-      if (this.state.onlineInstallErrorMessage.length) {
+      if (state.onlineInstallErrorMessage.length) {
         clearInterval(interval);
       }
-      count++;
-      this.moveBar(count);
+      count += 1;
+      moveBar(count);
       if (count > 3) {
         if (!resumeResult) {
           return;
@@ -288,7 +345,7 @@ class UploadAirgapBundle extends React.Component {
         clearInterval(interval);
 
         if (resumeResult.error) {
-          this.setState({
+          setState({
             // TODO: use fewer flags
             fileUploading: false,
             errorMessage: resumeResult.error,
@@ -298,23 +355,23 @@ class UploadAirgapBundle extends React.Component {
           return;
         }
 
-        this.props.onUploadSuccess().then(() => {
+        props.onUploadSuccess().then(() => {
           // When successful, refetch all the user's apps with onUploadSuccess
           const hasPreflight = resumeResult.hasPreflight;
           const isConfigurable = resumeResult.isConfigurable;
           if (isConfigurable) {
-            this.props.history.replace(`/${slug}/config`);
+            history.replace(`/${slug}/config`);
           } else if (hasPreflight) {
-            this.props.history.replace(`/${slug}/preflight`);
+            history.replace(`/${slug}/preflight`);
           } else {
-            this.props.history.replace(`/app/${slug}`);
+            history.replace(`/app/${slug}`);
           }
         });
       }
     }, 1000);
   };
 
-  getSupportBundleCommand = async (slug) => {
+  const getSupportBundleCommand = async (slug) => {
     const res = await fetch(
       `${process.env.API_ENDPOINT}/troubleshoot/app/${slug}/supportbundlecommand`,
       {
@@ -335,12 +392,12 @@ class UploadAirgapBundle extends React.Component {
     return response.command;
   };
 
-  onProgressError = async (errorMessage) => {
-    const { slug } = this.props.match.params;
+  const onProgressError = async (errorMessage) => {
+    const { slug } = props.match.params;
 
     let supportBundleCommand = [];
     try {
-      supportBundleCommand = await this.getSupportBundleCommand(slug);
+      supportBundleCommand = await getSupportBundleCommand(slug);
     } catch (err) {
       console.log(err);
     }
@@ -353,7 +410,7 @@ class UploadAirgapBundle extends React.Component {
         }
       });
 
-      this.setState({
+      setState({
         errorMessage,
         fileUploading: false,
         uploadProgress: 0,
@@ -364,23 +421,23 @@ class UploadAirgapBundle extends React.Component {
     }, 0);
   };
 
-  onProgressSuccess = async () => {
-    const { onUploadSuccess, match } = this.props;
+  const onProgressSuccess = async () => {
+    const { onUploadSuccess, match } = props;
 
     await onUploadSuccess();
 
-    const app = await this.getApp(match.params.slug);
+    const app = await getApp(match.params.slug);
 
     if (app?.isConfigurable) {
-      this.props.history.replace(`/${app.slug}/config`);
+      history.replace(`/${app.slug}/config`);
     } else if (app?.hasPreflight) {
-      this.props.history.replace(`/${app.slug}/preflight`);
+      history.replace(`/${app.slug}/preflight`);
     } else {
-      this.props.history.replace(`/app/${app.slug}`);
+      history.replace(`/app/${app.slug}`);
     }
   };
 
-  getApp = async (slug) => {
+  const getApp = async (slug) => {
     try {
       const res = await fetch(`${process.env.API_ENDPOINT}/app/${slug}`, {
         headers: {
@@ -399,296 +456,292 @@ class UploadAirgapBundle extends React.Component {
     return null;
   };
 
-  toggleViewOnlineInstallErrorMessage = () => {
-    this.setState({
-      viewOnlineInstallErrorMessage: !this.state.viewOnlineInstallErrorMessage,
+  const toggleViewOnlineInstallErrorMessage = () => {
+    setState({
+      viewOnlineInstallErrorMessage: !state.viewOnlineInstallErrorMessage,
     });
   };
 
-  toggleErrorModal = () => {
-    this.setState({ displayErrorModal: !this.state.displayErrorModal });
+  const toggleErrorModal = () => {
+    setState({ displayErrorModal: !state.displayErrorModal });
   };
 
-  render() {
-    const { appName, logo, fetchingMetadata, showRegistry, appsListLength } =
-      this.props;
+  const { appName, logo, fetchingMetadata, showRegistry, appsListLength } =
+    props;
 
-    const { slug } = this.props.match.params;
+  const { slug } = props.match.params;
 
-    const {
-      bundleFile,
-      fileUploading,
-      uploadProgress,
-      uploadSize,
-      uploadResuming,
-      errorMessage,
-      registryDetails,
-      preparingOnlineInstall,
-      onlineInstallErrorMessage,
-      viewOnlineInstallErrorMessage,
-      supportBundleCommand,
-    } = this.state;
+  const {
+    bundleFile,
+    fileUploading,
+    uploadProgress,
+    uploadSize,
+    uploadResuming,
+    errorMessage,
+    registryDetails,
+    preparingOnlineInstall,
+    onlineInstallErrorMessage,
+    viewOnlineInstallErrorMessage,
+    supportBundleCommand,
+  } = state;
 
-    const hasFile = bundleFile && !isEmpty(bundleFile);
+  const hasFile = bundleFile && !isEmpty(bundleFile);
 
-    if (fileUploading) {
-      return (
-        <AirgapUploadProgress
-          appSlug={slug}
-          total={uploadSize}
-          progress={uploadProgress}
-          resuming={uploadResuming}
-          onProgressError={this.onProgressError}
-          onProgressSuccess={this.onProgressSuccess}
-        />
-      );
-    }
-
-    let logoUri;
-    let applicationName;
-    if (appsListLength && appsListLength > 1) {
-      logoUri =
-        "https://cdn2.iconfinder.com/data/icons/mixd/512/16_kubernetes-512.png";
-      applicationName = "";
-    } else {
-      logoUri = logo;
-      applicationName = appName;
-    }
-
+  if (fileUploading) {
     return (
-      <div className="UploadLicenseFile--wrapper container flex-column u-overflow--auto u-marginTop--auto u-marginBottom--auto alignItems--center">
-        <KotsPageTitle pageName="Air Gap Installation" showAppSlug />
-        <div className="LoginBox-wrapper u-flexTabletReflow flex-auto u-marginTop--20 u-marginBottom--5">
-          <div className="flex-auto flex-column login-form-wrapper secure-console justifyContent--center">
-            <div className="flex-column alignItems--center">
-              <div className="flex">
-                {logo ? (
-                  <span
-                    className="icon brand-login-icon u-marginRight--10"
-                    style={{ backgroundImage: `url(${logoUri})` }}
-                  />
-                ) : !fetchingMetadata ? (
-                  <span className="icon kots-login-icon u-marginRight--10" />
-                ) : (
-                  <span style={{ width: "60px", height: "60px" }} />
-                )}
-                <span className="icon airgapBundleIcon" />
-              </div>
-            </div>
-            {preparingOnlineInstall ? (
-              <div className="flex-column alignItems--center u-marginTop--30">
-                <LicenseUploadProgress hideProgressBar={true} />
-              </div>
-            ) : (
-              <div>
-                <p className="u-marginTop--10 u-paddingTop--5 u-fontSize--header u-textColor--primary u-fontWeight--bold">
-                  Install in airgapped environment
-                </p>
-                <p className="u-marginTop--10 u-marginTop--5 u-fontSize--large u-textAlign--center u-fontWeight--medium u-lineHeight--normal u-textColor--bodyCopy">
-                  {showRegistry
-                    ? `To install on an airgapped network, you will need to provide access to a Docker registry. The images ${
-                        applicationName?.length > 0
-                          ? `in ${applicationName}`
-                          : ""
-                      } will be retagged and pushed to the registry that you provide here.`
-                    : `To install on an airgapped network, the images ${
-                        applicationName?.length > 0
-                          ? `in ${applicationName}`
-                          : ""
-                      } will be uploaded from the bundle you provide to the cluster.`}
-                </p>
-                {showRegistry && (
-                  <div className="u-marginTop--30">
-                    <AirgapRegistrySettings
-                      app={null}
-                      hideCta={true}
-                      hideTestConnection={true}
-                      namespaceDescription="What namespace do you want the application images pushed to?"
-                      gatherDetails={this.getRegistryDetails}
-                      registryDetails={registryDetails}
-                      showHostnameAsRequired={
-                        errorMessage === this.emptyHostnameErrMessage
-                      }
-                    />
-                  </div>
-                )}
-                <div className="u-marginTop--20 flex">
-                  {this.state.airgapUploader ? (
-                    <MountAware
-                      onMount={(el) =>
-                        this.state.airgapUploader.assignElement(el)
-                      }
-                      className={classNames("FileUpload-wrapper", "flex1", {
-                        "has-file": hasFile,
-                        "has-error": errorMessage,
-                      })}
-                    >
-                      {hasFile ? (
-                        <div className="has-file-wrapper">
-                          <p className="u-fontSize--normal u-fontWeight--medium">
-                            {bundleFile.name}
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="u-textAlign--center">
-                          <p className="u-fontSize--normal u-textColor--secondary u-fontWeight--medium u-lineHeight--normal">
-                            Drag your airgap bundle here or{" "}
-                            <span className="u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover">
-                              choose a bundle to upload
-                            </span>
-                          </p>
-                          <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--normal u-lineHeight--normal u-marginTop--10">
-                            This will be a .airgap file
-                            {applicationName?.length > 0
-                              ? ` ${applicationName} provided`
-                              : ""}
-                            . Please contact your account rep if you are unable
-                            to locate your .airgap file.
-                          </p>
-                        </div>
-                      )}
-                    </MountAware>
-                  ) : null}
-                  {hasFile && (
-                    <div className="flex-auto flex-column u-marginLeft--10 justifyContent--center">
-                      <button
-                        type="button"
-                        className="btn primary large flex-auto"
-                        onClick={this.uploadAirgapBundle}
-                        disabled={fileUploading || !hasFile}
-                      >
-                        {fileUploading ? "Uploading" : "Upload airgap bundle"}
-                      </button>
-                    </div>
-                  )}
-                </div>
-                {errorMessage && (
-                  <div className="u-marginTop--10">
-                    <span className="u-textColor--error">{errorMessage}</span>
-                    {this.state.showSupportBundleCommand ? (
-                      <div className="u-marginTop--10">
-                        <h2 className="u-fontSize--larger u-fontWeight--bold u-textColor--primary">
-                          Run this command in your cluster
-                        </h2>
-                        <CodeSnippet
-                          language="bash"
-                          canCopy={true}
-                          onCopyText={
-                            <span className="u-textColor--success">
-                              Command has been copied to your clipboard
-                            </span>
-                          }
-                        >
-                          {supportBundleCommand}
-                        </CodeSnippet>
-                      </div>
-                    ) : supportBundleCommand ? (
-                      <div>
-                        <div className="u-marginTop--10">
-                          <a
-                            href="#"
-                            className="replicated-link"
-                            onClick={this.toggleShowRun}
-                          >
-                            Click here
-                          </a>{" "}
-                          to get a command to generate a support bundle.
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
-                )}
-                {hasFile && (
-                  <div className="u-marginTop--10">
-                    <span
-                      className="replicated-link u-fontSize--small"
-                      onClick={this.clearFile}
-                    >
-                      Select a different bundle
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-        <div
-          className={classNames(
-            "u-marginTop--10 u-textAlign--center",
-            { "u-marginBottom--20": !onlineInstallErrorMessage },
-            { "u-display--none": preparingOnlineInstall }
-          )}
-        >
-          <span
-            className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium"
-            onClick={this.handleOnlineInstall}
-          >
-            Optionally you can{" "}
-            <span className="replicated-link">
-              download{" "}
-              {applicationName?.length > 0
-                ? applicationName
-                : "this application"}{" "}
-              from the Internet
-            </span>
-          </span>
-        </div>
-        {onlineInstallErrorMessage && (
-          <div className="u-marginTop--10 u-marginBottom--20">
-            <span className="u-fontSize--small u-textColor--error u-marginRight--5 u-fontWeight--bold">
-              Unable to install license
-            </span>
-            <span
-              className="u-fontSize--small replicated-link"
-              onClick={this.toggleViewOnlineInstallErrorMessage}
-            >
-              view more
-            </span>
-          </div>
-        )}
-
-        <Modal
-          isOpen={viewOnlineInstallErrorMessage}
-          onRequestClose={this.toggleViewOnlineInstallErrorMessage}
-          contentLabel="Online install error message"
-          ariaHideApp={false}
-          className="Modal"
-        >
-          <div className="Modal-body">
-            <div className="ExpandedError--wrapper u-marginTop--10 u-marginBottom--10">
-              <p className="u-fontSize--small u-fontWeight--bold u-textColor--primary u-marginBottom--5">
-                Error description
-              </p>
-              <p className="u-fontSize--small u-textColor--error">
-                {onlineInstallErrorMessage}
-              </p>
-              <p className="u-fontSize--small u-fontWeight--bold u-marginTop--15 u-textColor--primary">
-                Run this command to generate a support bundle
-              </p>
-              <CodeSnippet
-                language="bash"
-                canCopy={true}
-                onCopyText={
-                  <span className="u-textColor--success">
-                    Command has been copied to your clipboard
-                  </span>
-                }
-              >
-                kubectl support-bundle https://kots.io
-              </CodeSnippet>
-            </div>
-            <button
-              type="button"
-              className="btn primary u-marginTop--15"
-              onClick={this.toggleViewOnlineInstallErrorMessage}
-            >
-              Ok, got it!
-            </button>
-          </div>
-        </Modal>
-      </div>
+      <AirgapUploadProgress
+        appSlug={slug}
+        total={uploadSize}
+        progress={uploadProgress}
+        resuming={uploadResuming}
+        onProgressError={onProgressError}
+        onProgressSuccess={onProgressSuccess}
+      />
     );
   }
+
+  let logoUri;
+  let applicationName;
+  if (appsListLength && appsListLength > 1) {
+    logoUri =
+      "https://cdn2.iconfinder.com/data/icons/mixd/512/16_kubernetes-512.png";
+    applicationName = "";
+  } else {
+    logoUri = logo;
+    applicationName = appName;
+  }
+
+  return (
+    <div className="UploadLicenseFile--wrapper container flex-column u-overflow--auto u-marginTop--auto u-marginBottom--auto alignItems--center">
+      <KotsPageTitle pageName="Air Gap Installation" showAppSlug />
+      <div className="LoginBox-wrapper u-flexTabletReflow flex-auto u-marginTop--20 u-marginBottom--5">
+        <div className="flex-auto flex-column login-form-wrapper secure-console justifyContent--center">
+          <div className="flex-column alignItems--center">
+            <div className="flex">
+              {logo ? (
+                <span
+                  className="icon brand-login-icon u-marginRight--10"
+                  style={{ backgroundImage: `url(${logoUri})` }}
+                />
+              ) : !fetchingMetadata ? (
+                <span className="icon kots-login-icon u-marginRight--10" />
+              ) : (
+                <span style={{ width: "60px", height: "60px" }} />
+              )}
+              <span className="icon airgapBundleIcon" />
+            </div>
+          </div>
+          {preparingOnlineInstall ? (
+            <div className="flex-column alignItems--center u-marginTop--30">
+              <LicenseUploadProgress hideProgressBar={true} />
+            </div>
+          ) : (
+            <div>
+              <p className="u-marginTop--10 u-paddingTop--5 u-fontSize--header u-textColor--primary u-fontWeight--bold">
+                Install in airgapped environment
+              </p>
+              <p className="u-marginTop--10 u-marginTop--5 u-fontSize--large u-textAlign--center u-fontWeight--medium u-lineHeight--normal u-textColor--bodyCopy">
+                {showRegistry
+                  ? `To install on an airgapped network, you will need to provide access to a Docker registry. The images ${applicationName?.length > 0
+                    ? `in ${applicationName}`
+                    : ""
+                  } will be retagged and pushed to the registry that you provide here.`
+                  : `To install on an airgapped network, the images ${applicationName?.length > 0
+                    ? `in ${applicationName}`
+                    : ""
+                  } will be uploaded from the bundle you provide to the cluster.`}
+              </p>
+              {showRegistry && (
+                <div className="u-marginTop--30">
+                  <AirgapRegistrySettings
+                    app={null}
+                    hideCta={true}
+                    hideTestConnection={true}
+                    namespaceDescription="What namespace do you want the application images pushed to?"
+                    gatherDetails={getRegistryDetails}
+                    registryDetails={registryDetails}
+                    showHostnameAsRequired={
+                      errorMessage === emptyHostnameErrMessage
+                    }
+                  />
+                </div>
+              )}
+              <div className="u-marginTop--20 flex">
+                {state.airgapUploader ? (
+                  <MountAware
+                    onMount={(el) =>
+                      state.airgapUploader.assignElement(el)
+                    }
+                    className={classNames("FileUpload-wrapper", "flex1", {
+                      "has-file": hasFile,
+                      "has-error": errorMessage,
+                    })}
+                  >
+                    {hasFile ? (
+                      <div className="has-file-wrapper">
+                        <p className="u-fontSize--normal u-fontWeight--medium">
+                          {bundleFile.name}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="u-textAlign--center">
+                        <p className="u-fontSize--normal u-textColor--secondary u-fontWeight--medium u-lineHeight--normal">
+                          Drag your airgap bundle here or{" "}
+                          <span className="u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover">
+                            choose a bundle to upload
+                          </span>
+                        </p>
+                        <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--normal u-lineHeight--normal u-marginTop--10">
+                          This will be a .airgap file
+                          {applicationName?.length > 0
+                            ? ` ${applicationName} provided`
+                            : ""}
+                          . Please contact your account rep if you are unable
+                          to locate your .airgap file.
+                        </p>
+                      </div>
+                    )}
+                  </MountAware>
+                ) : null}
+                {hasFile && (
+                  <div className="flex-auto flex-column u-marginLeft--10 justifyContent--center">
+                    <button
+                      type="button"
+                      className="btn primary large flex-auto"
+                      onClick={uploadAirgapBundle}
+                      disabled={fileUploading || !hasFile}
+                    >
+                      {fileUploading ? "Uploading" : "Upload airgap bundle"}
+                    </button>
+                  </div>
+                )}
+              </div>
+              {errorMessage && (
+                <div className="u-marginTop--10">
+                  <span className="u-textColor--error">{errorMessage}</span>
+                  {state.showSupportBundleCommand ? (
+                    <div className="u-marginTop--10">
+                      <h2 className="u-fontSize--larger u-fontWeight--bold u-textColor--primary">
+                        Run this command in your cluster
+                      </h2>
+                      <CodeSnippet
+                        language="bash"
+                        canCopy={true}
+                        onCopyText={
+                          <span className="u-textColor--success">
+                            Command has been copied to your clipboard
+                          </span>
+                        }
+                      >
+                        {supportBundleCommand}
+                      </CodeSnippet>
+                    </div>
+                  ) : supportBundleCommand ? (
+                    <div>
+                      <div className="u-marginTop--10">
+                        <a
+                          href="#"
+                          className="replicated-link"
+                          onClick={toggleShowRun}
+                        >
+                          Click here
+                        </a>{" "}
+                        to get a command to generate a support bundle.
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              )}
+              {hasFile && (
+                <div className="u-marginTop--10">
+                  <span
+                    className="replicated-link u-fontSize--small"
+                    onClick={clearFile}
+                  >
+                    Select a different bundle
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+      <div
+        className={classNames(
+          "u-marginTop--10 u-textAlign--center",
+          { "u-marginBottom--20": !onlineInstallErrorMessage },
+          { "u-display--none": preparingOnlineInstall }
+        )}
+      >
+        <span
+          className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium"
+          onClick={handleOnlineInstall}
+        >
+          Optionally you can{" "}
+          <span className="replicated-link">
+            download{" "}
+            {applicationName?.length > 0
+              ? applicationName
+              : "this application"}{" "}
+            from the Internet
+          </span>
+        </span>
+      </div>
+      {onlineInstallErrorMessage && (
+        <div className="u-marginTop--10 u-marginBottom--20">
+          <span className="u-fontSize--small u-textColor--error u-marginRight--5 u-fontWeight--bold">
+            Unable to install license
+          </span>
+          <span
+            className="u-fontSize--small replicated-link"
+            onClick={toggleViewOnlineInstallErrorMessage}
+          >
+            view more
+          </span>
+        </div>
+      )}
+
+      <Modal
+        isOpen={viewOnlineInstallErrorMessage}
+        onRequestClose={toggleViewOnlineInstallErrorMessage}
+        contentLabel="Online install error message"
+        ariaHideApp={false}
+        className="Modal"
+      >
+        <div className="Modal-body">
+          <div className="ExpandedError--wrapper u-marginTop--10 u-marginBottom--10">
+            <p className="u-fontSize--small u-fontWeight--bold u-textColor--primary u-marginBottom--5">
+              Error description
+            </p>
+            <p className="u-fontSize--small u-textColor--error">
+              {onlineInstallErrorMessage}
+            </p>
+            <p className="u-fontSize--small u-fontWeight--bold u-marginTop--15 u-textColor--primary">
+              Run this command to generate a support bundle
+            </p>
+            <CodeSnippet
+              language="bash"
+              canCopy={true}
+              onCopyText={
+                <span className="u-textColor--success">
+                  Command has been copied to your clipboard
+                </span>
+              }
+            >
+              kubectl support-bundle https://kots.io
+            </CodeSnippet>
+          </div>
+          <button
+            type="button"
+            className="btn primary u-marginTop--15"
+            onClick={toggleViewOnlineInstallErrorMessage}
+          >
+            Ok, got it!
+          </button>
+        </div>
+      </Modal>
+    </div>
+  );
 }
 
-export default withRouter(UploadAirgapBundle);
+export default UploadAirgapBundle;
