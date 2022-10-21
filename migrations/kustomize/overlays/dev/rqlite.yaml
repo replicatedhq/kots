@@ -59,7 +59,7 @@ spec:
     spec:
       containers:
       - name: rqlite
-        image: rqlite/rqlite
+        image: rqlite/rqlite:7.8.0
         imagePullPolicy: IfNotPresent
         args:
         - -disco-mode=dns
