@@ -1,18 +1,14 @@
+import { useSelectedApp } from "@features/App";
 import React from "react";
 import Modal from "react-modal";
 import { Link } from "react-router-dom";
 import Icon from "../Icon";
 
 export default function ErrorModal(props) {
-  const {
-    errorModal,
-    toggleErrorModal,
-    errMsg,
-    tryAgain,
-    loading,
-    err,
-    appSlug,
-  } = props;
+  const { errorModal, toggleErrorModal, errMsg, tryAgain, loading, err } =
+    props;
+
+  const { selectedApp } = useSelectedApp();
 
   return (
     <Modal
@@ -46,7 +42,7 @@ export default function ErrorModal(props) {
           </div>
           <div className="flex u-marginTop--20">
             <Link
-              to={appSlug ? `/app/${appSlug}` : "/"}
+              to={selectedApp?.slug ? `/app/${selectedApp.slug}` : "/"}
               className="btn secondary blue"
             >
               Back to the dashboard
