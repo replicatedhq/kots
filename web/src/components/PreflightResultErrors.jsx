@@ -1,5 +1,6 @@
 import get from "lodash/get";
 import React, { Component } from "react";
+import { withRouter } from "react-router-dom";
 import MonacoEditor from "@monaco-editor/react";
 import CodeSnippet from "./shared/CodeSnippet";
 import ErrorModal from "./modals/ErrorModal";
@@ -190,4 +191,4 @@ class PreflightResultErrors extends Component {
   }
 }
 
-export default PreflightResultErrors;
+export default withRouter(PreflightResultErrors);
