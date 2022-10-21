@@ -181,6 +181,12 @@ spec:
           - name=weave-net
         namespace: kube-system
         name: kots/kurl/weave
+    - logs:
+        collectorName: kube-flannel
+        selector:
+          - app=flannel
+        namespace: kube-flannel
+        name: kots/kurl/flannel
     - exec:
         args:
           - "http://goldpinger.kurl.svc.cluster.local:80/check_all"
@@ -267,6 +273,42 @@ spec:
           - pass:
               message: Weave is ready
         regex: '"Ready": true'
+    - textAnalyze:
+        checkName: "Flannel: can read net-conf.json"
+        ignoreIfNoFiles: true
+        fileName: kots/kurl/flannel/kube-flannel-ds-*/kube-flannel.log
+        outcomes:
+          - fail:
+              when: "true"
+              message: "failed to read net-conf.json"
+          - pass:
+              when: "false"
+              message: "can read net-conf.json"
+        regex: 'failed to read net conf'
+    - textAnalyze:
+        checkName: "Flannel: net-conf.json properly formatted"
+        ignoreIfNoFiles: true
+        fileName: kots/kurl/flannel/kube-flannel-ds-*/kube-flannel.log
+        outcomes:
+          - fail:
+              when: "true"
+              message: "malformed net-conf.json"
+          - pass:
+              when: "false"
+              message: "properly formatted net-conf.json"
+        regex: 'error parsing subnet config'
+    - textAnalyze:
+        checkName: "Flannel: has access"
+        ignoreIfNoFiles: true
+        fileName: kots/kurl/flannel/kube-flannel-ds-*/kube-flannel.log
+        outcomes:
+          - fail:
+              when: "true"
+              message: "RBAC error"
+          - pass:
+              when: "false"
+              message: "has access"
+        regex: 'the server does not allow access to the requested resource'
     - textAnalyze:
         checkName: Inter-pod Networking
         exclude: ""
