@@ -4,6 +4,7 @@ import MonacoEditor from "@monaco-editor/react";
 import CodeSnippet from "./shared/CodeSnippet";
 import ErrorModal from "./modals/ErrorModal";
 import { Utilities } from "../utilities/utilities";
+import { useSelectedApp } from "@features/App";
 import "../scss/components/PreflightCheckPage.scss";
 
 import { KotsParams } from "@types";
@@ -43,6 +44,7 @@ const PreflightResultErrors = (props: Props) => {
     }
   );
   const match = useRouteMatch<KotsParams>();
+  const { selectedApp } = useSelectedApp();
 
   const [previousAppSlug, setPreviousAppSlug] = React.useState<
     string | undefined
@@ -230,6 +232,7 @@ const PreflightResultErrors = (props: Props) => {
           toggleErrorModal={toggleErrorModal}
           err={errorTitle}
           errMsg={errorMsg}
+          appSlug={selectedApp?.slug || ""}
         />
       )}
     </div>
