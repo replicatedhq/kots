@@ -1,5 +1,5 @@
 import * as React from "react";
-import { withRouter, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { KotsPageTitle } from "@components/Head";
 import isEmpty from "lodash/isEmpty";
 
@@ -239,7 +239,6 @@ class BackupRestore extends React.Component {
         renderNotVeleroMessage={this.renderNotVeleroMessage}
         hideCheckVeleroButton={this.state.hideCheckVeleroButton}
         isLicenseUpload={true}
-        history={this.props.history}
       />
     );
   };
@@ -286,4 +285,4 @@ class BackupRestore extends React.Component {
   }
 }
 
-export default withRouter(BackupRestore);
+export default BackupRestore;
