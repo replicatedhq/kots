@@ -49,9 +49,9 @@ func getAppsCmd(cmd *cobra.Command, args []string) error {
 		return errors.Wrap(err, "failed to get clientset")
 	}
 
-	namespace := v.GetString("namespace")
-	if err := validateNamespace(namespace); err != nil {
-		return errors.Wrap(err, "failed to validate namespace")
+	namespace, err := getNamespaceOrDefault(v.GetString("namespace"))
+	if err != nil {
+		return errors.Wrap(err, "failed to get namespace")
 	}
 
 	getPodName := func() (string, error) {

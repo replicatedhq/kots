@@ -71,9 +71,9 @@ func VeleroEnsurePermissionsCmd() *cobra.Command {
 				return err
 			}
 
-			kotsadmNamespace := v.GetString("namespace")
-			if err := validateNamespace(kotsadmNamespace); err != nil {
-				return err
+			kotsadmNamespace, err := getNamespaceOrDefault(v.GetString("namespace"))
+			if err != nil {
+				return errors.Wrap(err, "failed to get kotsadm namespace")
 			}
 
 			clientset, err := k8sutil.GetClientset()

@@ -51,7 +51,10 @@ func AdminConsoleUpgradeCmd() *cobra.Command {
 				}
 			}
 
-			namespace := v.GetString("namespace")
+			namespace, err := getNamespaceOrDefault(v.GetString("namespace"))
+			if err != nil {
+				return errors.Wrap(err, "failed to get namespace")
+			}
 
 			clientset, err := k8sutil.GetClientset()
 			if err != nil {

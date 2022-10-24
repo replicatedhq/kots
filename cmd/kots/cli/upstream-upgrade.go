@@ -45,6 +45,11 @@ func UpstreamUpgradeCmd() *cobra.Command {
 				return errors.Errorf("output format %s not supported (allowed formats are: json)", output)
 			}
 
+			namespace, err := getNamespaceOrDefault(v.GetString("namespace"))
+			if err != nil {
+				return errors.Wrap(err, "failed to get namespace")
+			}
+
 			upgradeOptions := upstream.UpgradeOptions{
 				AirgapBundle:       v.GetString("airgap-bundle"),
 				RegistryEndpoint:   v.GetString("kotsadm-registry"),
@@ -53,7 +58,7 @@ func UpstreamUpgradeCmd() *cobra.Command {
 				RegistryPassword:   v.GetString("registry-password"),
 				IsKurl:             isKurl,
 				DisableImagePush:   v.GetBool("disable-image-push"),
-				Namespace:          v.GetString("namespace"),
+				Namespace:          namespace,
 				Debug:              v.GetBool("debug"),
 				Deploy:             v.GetBool("deploy"),
 				DeployVersionLabel: v.GetString("deploy-version-label"),
