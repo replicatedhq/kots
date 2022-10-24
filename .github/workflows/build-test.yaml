@@ -1440,7 +1440,7 @@ jobs:
           sudo cp /tmp/output/kubeconfig-v1.24.4-k3s1.yaml /tmp/.kube/config
           sudo chmod -R 666 /tmp/.kube
           export KUBECONFIG=/tmp/.kube/config
-          sudo kubectl config set-context --current --namespace=$APP_SLUG
+          kubectl config set-context --current --namespace=$APP_SLUG
           if [ "$(./bin/kots get apps | awk 'NR>1{print $2}')" != "ready" ]; then
               echo "kots get apps output is not the same as above"
               exit -1
