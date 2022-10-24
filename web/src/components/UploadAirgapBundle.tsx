@@ -91,7 +91,7 @@ const UploadAirgapBundle = (props: Props) => {
   const emptyHostnameErrMessage = 'Please enter a value for "Hostname" field';
   const match = useRouteMatch<KotsParams>();
   const history = useHistory();
-  const { selectedApp } = useSelectedApp();
+  const appSlug = match.params.slug;
 
   const onDropBundle = async (file: { name: string }) => {
     setState({
@@ -102,7 +102,7 @@ const UploadAirgapBundle = (props: Props) => {
   };
 
   const getAirgapConfig = async () => {
-    const configUrl = `${process.env.API_ENDPOINT}/app/${selectedApp?.slug}/airgap/config`;
+    const configUrl = `${process.env.API_ENDPOINT}/app/${appSlug}/airgap/config`;
     let simultaneousUploads = 3;
     try {
       let res = await fetch(configUrl, {
@@ -123,7 +123,7 @@ const UploadAirgapBundle = (props: Props) => {
     setState({
       airgapUploader: new AirgapUploader(
         false,
-        selectedApp?.slug,
+        appSlug,
         onDropBundle,
         simultaneousUploads
       ),
@@ -168,7 +168,7 @@ const UploadAirgapBundle = (props: Props) => {
     const { showRegistry } = props;
 
     // Reset the airgap upload state
-    const resetUrl = `${process.env.API_ENDPOINT}/app/${selectedApp?.slug}/airgap/reset`;
+    const resetUrl = `${process.env.API_ENDPOINT}/app/${appSlug}/airgap/reset`;
     try {
       await fetch(resetUrl, {
         method: "POST",
@@ -213,7 +213,7 @@ const UploadAirgapBundle = (props: Props) => {
       let res;
       try {
         res = await fetch(
-          `${process.env.API_ENDPOINT}/app/${selectedApp?.slug}/registry/validate`,
+          `${process.env.API_ENDPOINT}/app/${appSlug}/registry/validate`,
           {
             method: "POST",
             headers: {
@@ -314,7 +314,7 @@ const UploadAirgapBundle = (props: Props) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        slug: selectedApp?.slug,
+        slug: appSlug,
       }),
     })
       .then(async (result) => {
@@ -361,11 +361,11 @@ const UploadAirgapBundle = (props: Props) => {
           const hasPreflight = resumeResult.hasPreflight;
           const isConfigurable = resumeResult.isConfigurable;
           if (isConfigurable) {
-            history.replace(`/${selectedApp?.slug}/config`);
+            history.replace(`/${appSlug}/config`);
           } else if (hasPreflight) {
-            history.replace(`/${selectedApp?.slug}/preflight`);
+            history.replace(`/${appSlug}/preflight`);
           } else {
-            history.replace(`/app/${selectedApp?.slug}`);
+            history.replace(`/app/${appSlug}`);
           }
         });
       }
@@ -374,7 +374,7 @@ const UploadAirgapBundle = (props: Props) => {
 
   const getSupportBundleCommand = async () => {
     const res = await fetch(
-      `${process.env.API_ENDPOINT}/troubleshoot/app/${selectedApp?.slug}/supportbundlecommand`,
+      `${process.env.API_ENDPOINT}/troubleshoot/app/${appSlug}/supportbundlecommand`,
       {
         method: "POST",
         headers: {
@@ -423,7 +423,7 @@ const UploadAirgapBundle = (props: Props) => {
   const getApp = async () => {
     try {
       const res = await fetch(
-        `${process.env.API_ENDPOINT}/app/${selectedApp?.slug}`,
+        `${process.env.API_ENDPOINT}/app/${appSlug}`,
         {
           headers: {
             Authorization: Utilities.getToken(),
