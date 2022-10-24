@@ -389,6 +389,11 @@ const Root = () => {
     return !!find(apps, (app) => app.isIdentityServiceSupported);
   };
 
+  const isGeoaxisSupported = () => {
+    const apps = state.appsList;
+    return !!find(apps, (app) => app.isGeoaxisSupported);
+  };
+
   const isSnapshotsSupported = () => {
     const apps = state.appsList;
     return !!find(apps, (app) => app.allowSnapshots);
@@ -588,7 +593,15 @@ const Root = () => {
                   <GitOps {...props} appName={state.selectedAppName} />
                 )}
               />
-              <ProtectedRoute path="/access/:tab?" render={() => <Access />} />
+              <ProtectedRoute
+                path="/access/:tab?"
+                render={() => (
+                  <Access
+                    isKurlEnabled={state.adminConsoleMetadata?.isKurl || false}
+                    isGeoaxisSupported={isGeoaxisSupported()}
+                  />
+                )}
+              />
               <ProtectedRoute
                 path={["/snapshots/:tab?"]}
                 render={(props) => (

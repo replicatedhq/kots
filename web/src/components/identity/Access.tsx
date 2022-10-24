@@ -8,7 +8,12 @@ import IdentityProviders from "@src/components/identity/IdentityProviders";
 
 import "@src/scss/components/identity/IdentityManagement.scss";
 
-const Access = () => {
+type Props = {
+  isKurlEnabled: boolean;
+  isGeoaxisSupported: boolean;
+}
+
+const Access = (props: Props) => {
   const history = useHistory();
   // TODO: move this into a redirect route or update links to default to /identity-providers
   useEffect(() => {
@@ -39,8 +44,8 @@ const Access = () => {
             </Switch>
           </Fragment> */}
         <IdentityProviders
-          isKurlEnabled={this.props.isKurlEnabled}
-          isGeoaxisSupported={this.props.isGeoaxisSupported}
+          isKurlEnabled={props.isKurlEnabled}
+          isGeoaxisSupported={props.isGeoaxisSupported}
         />
       </div>
     </div>
