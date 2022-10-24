@@ -28,7 +28,6 @@ type PreflightResultData = {
   appSlug: string;
   sequence: number;
 };
-// class PreflightResultErrors extends Component {
 const PreflightResultErrors = (props: Props) => {
   const [state, setState] = useReducer(
     (currentState: State, newState: Partial<State>) => ({
