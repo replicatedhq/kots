@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import Select from "react-select";
-import { withRouter, RouteComponentProps } from "react-router-dom";
+import { RouteComponentProps } from "react-router-dom";
 import MonacoEditor from "@monaco-editor/react";
 import find from "lodash/find";
 import Modal from "react-modal";
@@ -1886,7 +1886,4 @@ class SnapshotStorageDestination extends Component<Props, State> {
   }
 }
 
-// TODO: fix this typing thing
-// @ts-ignore
-const RoutedSnapshotStorageDestination = withRouter(SnapshotStorageDestination);
-export default RoutedSnapshotStorageDestination;
+export default SnapshotStorageDestination;

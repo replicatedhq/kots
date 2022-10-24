@@ -338,4 +338,4 @@ AirgapUploadProgress.defaultProps = {
   progress: 0,
 };
 
-export default withRouter(AirgapUploadProgress);
+export default AirgapUploadProgress;
