@@ -318,6 +318,7 @@ const UploadAirgapBundle = (props: Props) => {
     })
       .then(async (result) => {
         resumeResult = await result.json();
+        console.log("resumeResult received", resumeResult);
       })
       .catch((err) => {
         setState({
@@ -355,6 +356,7 @@ const UploadAirgapBundle = (props: Props) => {
           return;
         }
 
+        console.log("onUploadSuccess called", props);
         props.onUploadSuccess().then(() => {
           // When successful, refetch all the user's apps with onUploadSuccess
           const hasPreflight = resumeResult.hasPreflight;
