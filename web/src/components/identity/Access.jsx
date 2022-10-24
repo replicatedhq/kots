@@ -18,7 +18,6 @@ const Access = () => {
     }
   }, []);
 
-
   return (
     <div className="WatchDetailPage--wrapper flex-column flex1 u-overflow--auto">
       <div className="flex-column flex1 u-width--full u-height--full u-overflow--auto">
@@ -46,6 +45,6 @@ const Access = () => {
       </div>
     </div>
   );
-}
+};
 
 export default Access;
