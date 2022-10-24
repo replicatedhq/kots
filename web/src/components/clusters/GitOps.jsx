@@ -1,7 +1,5 @@
 import * as React from "react";
-import PropTypes from "prop-types";
 import { KotsPageTitle } from "@components/Head";
-import { withRouter } from "react-router-dom";
 import GitOpsDeploymentManager from "../../features/Gitops/GitOpsDeploymentManager";
 import { GitOpsProvider } from "../../features/Gitops/context";
 
@@ -9,10 +7,6 @@ import "../../scss/components/watches/WatchedApps.scss";
 import "../../scss/components/watches/WatchCard.scss";
 
 export class GitOps extends React.Component {
-  static propTypes = {
-    history: PropTypes.object.isRequired,
-  };
-
   render() {
     return (
       <GitOpsProvider>
@@ -29,4 +23,4 @@ export class GitOps extends React.Component {
   }
 }
 
-export default withRouter(GitOps);
+export default GitOps;
