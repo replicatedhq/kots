@@ -42,7 +42,10 @@ func RemoveCmd() *cobra.Command {
 
 			log := logger.NewCLILogger(cmd.OutOrStdout())
 			appSlug := args[0]
-			namespace := v.GetString("namespace")
+			namespace, err := getNamespaceOrDefault(v.GetString("namespace"))
+			if err != nil {
+				return errors.Wrap(err, "failed to get namespace")
+			}
 
 			clientset, err := k8sutil.GetClientset()
 			if err != nil {

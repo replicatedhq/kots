@@ -48,11 +48,16 @@ func PullCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to determine app slug")
 			}
 
+			namespace, err := getNamespaceOrDefault(v.GetString("namespace"))
+			if err != nil {
+				return errors.Wrap(err, "failed to get namespace")
+			}
+
 			pullOptions := pull.PullOptions{
 				AppSlug:             appSlug,
 				HelmRepoURI:         v.GetString("repo"),
 				RootDir:             ExpandDir(v.GetString("rootdir")),
-				Namespace:           v.GetString("namespace"),
+				Namespace:           namespace,
 				Downstreams:         v.GetStringSlice("downstream"),
 				LocalPath:           ExpandDir(v.GetString("local-path")),
 				LicenseFile:         ExpandDir(v.GetString("license-file")),

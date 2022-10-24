@@ -56,7 +56,12 @@ func AdminPushImagesCmd() *cobra.Command {
 					return errors.Wrap(err, "failed get hostname from endpoint")
 				}
 
-				u, p, err := getRegistryCredentialsFromSecret(hostname, v.GetString("namespace"))
+				namespace, err := getNamespaceOrDefault(v.GetString("namespace"))
+				if err != nil {
+					return errors.Wrap(err, "failed to get namespace")
+				}
+
+				u, p, err := getRegistryCredentialsFromSecret(hostname, namespace)
 				if err != nil {
 					if !kuberneteserrors.IsNotFound(err) {
 						log.Info("Failed to find registry credentials, will try to push anonymously: %v", err)
@@ -115,10 +120,6 @@ func AdminPushImagesCmd() *cobra.Command {
 }
 
 func getRegistryCredentialsFromSecret(endpoint string, namespace string) (username string, password string, err error) {
-	if namespace == "" {
-		namespace = metav1.NamespaceDefault
-	}
-
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		err = errors.Wrap(err, "failed to get clientset")

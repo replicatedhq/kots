@@ -49,8 +49,13 @@ func UploadCmd() *cobra.Command {
 				return errors.Errorf("output format %s not supported (allowed formats are: json)", output)
 			}
 
+			namespace, err := getNamespaceOrDefault(v.GetString("namespace"))
+			if err != nil {
+				return errors.Wrap(err, "failed to get namespace")
+			}
+
 			uploadOptions := upload.UploadOptions{
-				Namespace:       v.GetString("namespace"),
+				Namespace:       namespace,
 				ExistingAppSlug: v.GetString("slug"),
 				NewAppName:      v.GetString("name"),
 				UpstreamURI:     v.GetString("upstream-uri"),

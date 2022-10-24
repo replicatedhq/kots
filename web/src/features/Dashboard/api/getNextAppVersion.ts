@@ -1,5 +1,6 @@
 import { useQuery } from "react-query";
 import { Utilities } from "../../../utilities/utilities";
+import { useSelectedApp } from "@features/App";
 import axios from "axios";
 
 export const getNextAppVersion = async (appSlug: string) => {
@@ -30,10 +31,11 @@ export const getNextAppVersion = async (appSlug: string) => {
   }
 };
 
-export const useNextAppVersion = (appSlug: string) => {
+export const useNextAppVersion = () => {
+  const { selectedApp } = useSelectedApp();
   return useQuery(
-    ["getNextAppVersion", appSlug],
-    () => getNextAppVersion(appSlug),
+    ["getNextAppVersion", selectedApp?.slug],
+    () => getNextAppVersion(selectedApp?.slug || ""),
     {
       /// might want to disable the fetch on window focus for this one
       refetchInterval: 5000,
