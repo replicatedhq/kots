@@ -11,7 +11,7 @@ import "@src/scss/components/identity/IdentityManagement.scss";
 type Props = {
   isKurlEnabled: boolean;
   isGeoaxisSupported: boolean;
-}
+};
 
 const Access = (props: Props) => {
   const history = useHistory();
