@@ -102,7 +102,7 @@ func TestMigrateFromPostgresToRqlite(t *testing.T) {
 
 	// connection strings
 	pgURI := fmt.Sprintf("postgres://kotsadm:password@localhost:%s/kotsadm?connect_timeout=10&sslmode=disable", postgres.GetPort("5432/tcp"))
-	rqliteURI := fmt.Sprintf("http://kotsadm:password@localhost:%s?level=strong&timeout=10", rqlite.GetPort("4001/tcp"))
+	rqliteURI := fmt.Sprintf("http://kotsadm:password@localhost:%s?timeout=10", rqlite.GetPort("4001/tcp"))
 
 	// wait for postgres to be ready
 	var pgDB *sql.DB
