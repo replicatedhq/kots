@@ -70,7 +70,7 @@ spec:
         livenessProbe:
           httpGet:
             scheme: HTTP
-            path: /readyz
+            path: /readyz?noleader
             port: rqlite
           initialDelaySeconds: 30
           timeoutSeconds: 5

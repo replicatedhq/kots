@@ -127,7 +127,7 @@ func RqliteStatefulset(deployOptions types.DeployOptions, size resource.Quantity
 								FailureThreshold:    3,
 								ProbeHandler: corev1.ProbeHandler{
 									HTTPGet: &corev1.HTTPGetAction{
-										Path:   "/readyz",
+										Path:   "/readyz?noleader",
 										Port:   intstr.FromString("rqlite"),
 										Scheme: corev1.URISchemeHTTP,
 									},
