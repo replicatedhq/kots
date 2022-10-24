@@ -25,6 +25,7 @@ type Props = {
   gettingAppLicenseErrMsg: string | null;
   syncCallback: () => void;
   children: React.ReactNode;
+  refetchLicense: () => void;
 };
 
 type State = {
@@ -96,6 +97,7 @@ const DashboardLicenseCard = (props: Props) => {
           message = "License synced successfully";
         }
 
+        props.refetchLicense();
         setState({
           appLicense: licenseResponse.license,
           isViewingLicenseEntitlements:
