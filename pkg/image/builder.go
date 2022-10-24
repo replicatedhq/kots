@@ -85,6 +85,9 @@ func GetPrivateImages(upstreamDir string, kotsKindsImages []string, checkedImage
 	objectsWithImages := make([]k8sdoc.K8sDoc, 0) // all objects where images are referenced from
 
 	for _, image := range kotsKindsImages {
+		if _, ok := checkedImages[image]; ok {
+			continue
+		}
 		if allPrivate {
 			checkedImages[image] = types.ImageInfo{
 				IsPrivate: true,
