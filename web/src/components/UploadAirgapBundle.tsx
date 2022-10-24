@@ -11,7 +11,6 @@ import LicenseUploadProgress from "./LicenseUploadProgress";
 import AirgapRegistrySettings from "./shared/AirgapRegistrySettings";
 import { Utilities } from "../utilities/utilities";
 import { AirgapUploader } from "../utilities/airgapUploader";
-import { useSelectedApp } from "@features/App";
 
 import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
 import "../scss/components/Login.scss";
@@ -422,16 +421,13 @@ const UploadAirgapBundle = (props: Props) => {
 
   const getApp = async () => {
     try {
-      const res = await fetch(
-        `${process.env.API_ENDPOINT}/app/${appSlug}`,
-        {
-          headers: {
-            Authorization: Utilities.getToken(),
-            "Content-Type": "application/json",
-          },
-          method: "GET",
-        }
-      );
+      const res = await fetch(`${process.env.API_ENDPOINT}/app/${appSlug}`, {
+        headers: {
+          Authorization: Utilities.getToken(),
+          "Content-Type": "application/json",
+        },
+        method: "GET",
+      });
       if (res.ok && res.status == 200) {
         const app = await res.json();
         return app;
