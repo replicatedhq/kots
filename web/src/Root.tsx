@@ -595,11 +595,9 @@ const Root = () => {
               />
               <ProtectedRoute
                 path="/access/:tab?"
-                render={(props) => (
+                render={() => (
                   <Access
-                    {...props}
-                    appName={state.selectedAppName}
-                    isKurlEnabled={state.adminConsoleMetadata?.isKurl}
+                    isKurlEnabled={state.adminConsoleMetadata?.isKurl || false}
                     isGeoaxisSupported={isGeoaxisSupported()}
                   />
                 )}
