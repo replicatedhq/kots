@@ -305,6 +305,8 @@ const UploadAirgapBundle = (props: Props) => {
       onlineInstallErrorMessage: "",
     });
 
+    console.log("current error state", state.onlineInstallErrorMessage);
+
     let resumeResult: ResumeResult;
     fetch(`${process.env.API_ENDPOINT}/license/resume`, {
       method: "PUT",
