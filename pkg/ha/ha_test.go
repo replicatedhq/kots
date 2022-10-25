@@ -37,6 +37,10 @@ func TestCanRunHA(t *testing.T) {
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name: "node1",
+								Labels: map[string]string{
+									"kubernetes.io/os":   "linux",
+									"kubernetes.io/arch": "amd64",
+								},
 							},
 						},
 					},
@@ -55,6 +59,19 @@ func TestCanRunHA(t *testing.T) {
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name: "node1",
+								Labels: map[string]string{
+									"kubernetes.io/os":   "linux",
+									"kubernetes.io/arch": "amd64",
+								},
+							},
+						},
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "node2",
+								Labels: map[string]string{
+									"kubernetes.io/os":   "linux",
+									"kubernetes.io/arch": "amd64",
+								},
 							},
 						},
 					},
@@ -73,16 +90,28 @@ func TestCanRunHA(t *testing.T) {
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name: "node1",
+								Labels: map[string]string{
+									"kubernetes.io/os":   "linux",
+									"kubernetes.io/arch": "amd64",
+								},
 							},
 						},
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name: "node2",
+								Labels: map[string]string{
+									"kubernetes.io/os":   "linux",
+									"kubernetes.io/arch": "amd64",
+								},
 							},
 						},
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name: "node3",
+								Labels: map[string]string{
+									"kubernetes.io/os":   "linux",
+									"kubernetes.io/arch": "amd64",
+								},
 							},
 						},
 					},
@@ -101,21 +130,37 @@ func TestCanRunHA(t *testing.T) {
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name: "node1",
+								Labels: map[string]string{
+									"kubernetes.io/os":   "linux",
+									"kubernetes.io/arch": "amd64",
+								},
 							},
 						},
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name: "node2",
+								Labels: map[string]string{
+									"kubernetes.io/os":   "linux",
+									"kubernetes.io/arch": "amd64",
+								},
 							},
 						},
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name: "node3",
+								Labels: map[string]string{
+									"kubernetes.io/os":   "linux",
+									"kubernetes.io/arch": "amd64",
+								},
 							},
 						},
 						{
 							ObjectMeta: metav1.ObjectMeta{
 								Name: "node4",
+								Labels: map[string]string{
+									"kubernetes.io/os":   "linux",
+									"kubernetes.io/arch": "amd64",
+								},
 							},
 						},
 					},
@@ -125,19 +170,68 @@ func TestCanRunHA(t *testing.T) {
 			wantReason: "",
 			wantErr:    false,
 		},
+		{
+			name: "4 nodes available but 2 nodes don't match the label selector",
+			args: args{
+				ctx: context.Background(),
+				clientset: fake.NewSimpleClientset(&corev1.NodeList{
+					Items: []corev1.Node{
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "node1",
+								Labels: map[string]string{
+									"kubernetes.io/os":   "linux",
+									"kubernetes.io/arch": "amd64",
+								},
+							},
+						},
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "node2",
+								Labels: map[string]string{
+									"kubernetes.io/os":   "linux",
+									"kubernetes.io/arch": "amd64",
+								},
+							},
+						},
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "node3",
+								Labels: map[string]string{
+									"kubernetes.io/os":   "linux",
+									"kubernetes.io/arch": "arm64",
+								},
+							},
+						},
+						{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: "node4",
+								Labels: map[string]string{
+									"kubernetes.io/os":   "linux",
+									"kubernetes.io/arch": "arm64",
+								},
+							},
+						},
+					},
+				}),
+			},
+			want:       false,
+			wantReason: REASON_NOT_ENOUGH_NODES,
+			wantErr:    false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, gotReason, err := CanRunHA(tt.args.ctx, tt.args.clientset)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("CanRunHA() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("CanRunHA() error = %v, wantErr: %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("CanRunHA() got = %v, want %v", got, tt.want)
+				t.Errorf("CanRunHA() got = %v, want: %v", got, tt.want)
 			}
 			if gotReason != tt.wantReason {
-				t.Errorf("CanRunHA() gotReason = %v, want %v", gotReason, tt.wantReason)
+				t.Errorf("CanRunHA() gotReason = %v, want: %v", gotReason, tt.wantReason)
 			}
 		})
 	}
@@ -276,7 +370,7 @@ func TestEnableHA(t *testing.T) {
 
 			err := EnableHA(tt.args.ctx, tt.args.clientset, tt.args.namespace, tt.args.timeout)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("EnableHA() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("EnableHA() error = %v, wantErr: %v", err, tt.wantErr)
 				return
 			}
 			if tt.wantTimeoutErr {
@@ -290,10 +384,10 @@ func TestEnableHA(t *testing.T) {
 				t.Errorf("failed to get statefulset: %v", err)
 			}
 			if *sts.Spec.Replicas != tt.wantReplicas {
-				t.Errorf("replicas = %v, want %v", *sts.Spec.Replicas, tt.wantReplicas)
+				t.Errorf("replicas = %v, want: %v", *sts.Spec.Replicas, tt.wantReplicas)
 			}
 			if !reflect.DeepEqual(sts.Spec.Template.Spec.Containers[0].Args, tt.wantArgs) {
-				t.Errorf("args = %v, want %v", sts.Spec.Template.Spec.Containers[0].Args, tt.wantArgs)
+				t.Errorf("args = %v, want: %v", sts.Spec.Template.Spec.Containers[0].Args, tt.wantArgs)
 			}
 		})
 	}

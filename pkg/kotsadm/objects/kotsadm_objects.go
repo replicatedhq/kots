@@ -373,7 +373,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 				},
 				Spec: corev1.PodSpec{
 					Affinity: &corev1.Affinity{
-						NodeAffinity: defaultKotsNodeAffinity(),
+						NodeAffinity: defaultKOTSNodeAffinity(),
 					},
 					SecurityContext: securityContext,
 					Volumes: []corev1.Volume{
@@ -866,7 +866,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 				},
 				Spec: corev1.PodSpec{
 					Affinity: &corev1.Affinity{
-						NodeAffinity: defaultKotsNodeAffinity(),
+						NodeAffinity: defaultKOTSNodeAffinity(),
 					},
 					SecurityContext: securityContext,
 					Volumes: []corev1.Volume{

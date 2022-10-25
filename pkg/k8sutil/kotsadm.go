@@ -210,14 +210,14 @@ func WaitForKotsadm(clientset kubernetes.Interface, namespace string, timeoutWai
 }
 
 func RestartKotsadm(ctx context.Context, clientset *kubernetes.Clientset, namespace string, timeout time.Duration) error {
-	pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "app=kotsadm"})
+	pods, err := clientset.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{LabelSelector: "app=kotsadm"})
 	if err != nil {
 		return errors.Wrap(err, "failed to list pods for termination")
 	}
 
 	deletedPods := make(map[string]bool)
 	for _, pod := range pods.Items {
-		err := clientset.CoreV1().Pods(namespace).Delete(context.TODO(), pod.Name, metav1.DeleteOptions{})
+		err := clientset.CoreV1().Pods(namespace).Delete(ctx, pod.Name, metav1.DeleteOptions{})
 		if err != nil {
 			return errors.Wrap(err, "failed to delete admin console")
 		}
@@ -227,7 +227,7 @@ func RestartKotsadm(ctx context.Context, clientset *kubernetes.Clientset, namesp
 	// wait for pods to stop running, or waiting for new pods will trip up.
 	start := time.Now()
 	for {
-		pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: "app=kotsadm"})
+		pods, err := clientset.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{LabelSelector: "app=kotsadm"})
 		if err != nil {
 			return errors.Wrap(err, "failed to list pods")
 		}
@@ -250,7 +250,7 @@ func RestartKotsadm(ctx context.Context, clientset *kubernetes.Clientset, namesp
 
 		time.Sleep(time.Second)
 
-		if time.Now().Sub(start) > timeout {
+		if time.Since(start) > timeout {
 			return &types.ErrorTimeout{Message: "timeout waiting for kotsadm pod to stop"}
 		}
 	}

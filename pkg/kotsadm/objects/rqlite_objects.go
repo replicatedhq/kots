@@ -33,8 +33,8 @@ func RqliteStatefulset(deployOptions types.DeployOptions, size resource.Quantity
 		securityContext = psc
 	}
 
-	volumes := getRqliteVolumes(deployOptions)
-	volumeMounts := getRqliteVolumeMounts(deployOptions)
+	volumes := getRqliteVolumes()
+	volumeMounts := getRqliteVolumeMounts()
 
 	statefulset := &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
@@ -226,7 +226,7 @@ func RqliteHeadlessService(namespace string) *corev1.Service {
 	return service
 }
 
-func getRqliteVolumes(deployOptions types.DeployOptions) []corev1.Volume {
+func getRqliteVolumes() []corev1.Volume {
 	scriptsFileMode := int32(0755)
 
 	volumes := []corev1.Volume{
@@ -256,7 +256,7 @@ func getRqliteVolumes(deployOptions types.DeployOptions) []corev1.Volume {
 	return volumes
 }
 
-func getRqliteVolumeMounts(deployOptions types.DeployOptions) []corev1.VolumeMount {
+func getRqliteVolumeMounts() []corev1.VolumeMount {
 	volumeMounts := []corev1.VolumeMount{
 		{
 			Name:      "kotsadm-rqlite",
