@@ -89,7 +89,7 @@ func GetPrivateImages(upstreamDir string, kotsKindsImages []string, checkedImage
 			checkedImages[image] = types.ImageInfo{
 				IsPrivate: true,
 			}
-		} else {
+		} else if _, ok := checkedImages[image]; !ok {
 			isPrivate, err := IsPrivateImage(image, dockerHubRegistry)
 			if err != nil {
 				return nil, nil, errors.Wrapf(err, "failed to check if kotskinds image %s is private", image)
