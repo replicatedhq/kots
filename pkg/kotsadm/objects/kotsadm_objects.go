@@ -158,10 +158,10 @@ func UpdateKotsadmDeployment(existingDeployment *appsv1.Deployment, desiredDeplo
 	}
 
 	existingDeployment.Spec.Template.Spec.Volumes = desiredVolumes
-	existingDeployment.Spec.Template.Spec.InitContainers = k8sutil.MergeInitContainers(desiredDeployment.Spec.Template.Spec.InitContainers, existingDeployment.Spec.Template.Spec.InitContainers)
+	existingDeployment.Spec.Template.Spec.InitContainers = desiredDeployment.Spec.Template.Spec.InitContainers
 	existingDeployment.Spec.Template.Spec.Containers[containerIdx].Image = desiredDeployment.Spec.Template.Spec.Containers[0].Image
 	existingDeployment.Spec.Template.Spec.Containers[containerIdx].VolumeMounts = desiredVolumeMounts
-	existingDeployment.Spec.Template.Spec.Containers[containerIdx].Env = k8sutil.MergeEnvVars(desiredDeployment.Spec.Template.Spec.Containers[0].Env, existingDeployment.Spec.Template.Spec.Containers[containerIdx].Env)
+	existingDeployment.Spec.Template.Spec.Containers[containerIdx].Env = desiredDeployment.Spec.Template.Spec.Containers[0].Env
 
 	return nil
 }
@@ -676,10 +676,10 @@ func UpdateKotsadmStatefulSet(existingStatefulset *appsv1.StatefulSet, desiredSt
 	}
 
 	existingStatefulset.Spec.Template.Spec.Volumes = desiredVolumes
-	existingStatefulset.Spec.Template.Spec.InitContainers = k8sutil.MergeInitContainers(desiredStatefulSet.Spec.Template.Spec.InitContainers, existingStatefulset.Spec.Template.Spec.InitContainers)
+	existingStatefulset.Spec.Template.Spec.InitContainers = desiredStatefulSet.Spec.Template.Spec.InitContainers
 	existingStatefulset.Spec.Template.Spec.Containers[containerIdx].Image = desiredStatefulSet.Spec.Template.Spec.Containers[0].Image
 	existingStatefulset.Spec.Template.Spec.Containers[containerIdx].VolumeMounts = desiredVolumeMounts
-	existingStatefulset.Spec.Template.Spec.Containers[containerIdx].Env = k8sutil.MergeEnvVars(desiredStatefulSet.Spec.Template.Spec.Containers[0].Env, existingStatefulset.Spec.Template.Spec.Containers[containerIdx].Env)
+	existingStatefulset.Spec.Template.Spec.Containers[containerIdx].Env = desiredStatefulSet.Spec.Template.Spec.Containers[0].Env
 
 	return nil
 }

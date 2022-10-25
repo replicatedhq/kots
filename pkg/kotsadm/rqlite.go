@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	corev1 "k8s.io/api/core/v1"
@@ -116,10 +115,10 @@ func ensureRqliteStatefulset(deployOptions types.DeployOptions, clientset *kuber
 	}
 
 	existingRqlite.Spec.Template.Spec.Volumes = desiredVolumes
-	existingRqlite.Spec.Template.Spec.InitContainers = k8sutil.MergeInitContainers(desiredRqlite.Spec.Template.Spec.InitContainers, existingRqlite.Spec.Template.Spec.InitContainers)
+	existingRqlite.Spec.Template.Spec.InitContainers = desiredRqlite.Spec.Template.Spec.InitContainers
 	existingRqlite.Spec.Template.Spec.Containers[0].Image = desiredRqlite.Spec.Template.Spec.Containers[0].Image
 	existingRqlite.Spec.Template.Spec.Containers[0].VolumeMounts = desiredVolumeMounts
-	existingRqlite.Spec.Template.Spec.Containers[0].Env = k8sutil.MergeEnvVars(desiredRqlite.Spec.Template.Spec.Containers[0].Env, existingRqlite.Spec.Template.Spec.Containers[0].Env)
+	existingRqlite.Spec.Template.Spec.Containers[0].Env = desiredRqlite.Spec.Template.Spec.Containers[0].Env
 
 	_, err = clientset.AppsV1().StatefulSets(deployOptions.Namespace).Update(ctx, existingRqlite, metav1.UpdateOptions{})
 	if err != nil {
