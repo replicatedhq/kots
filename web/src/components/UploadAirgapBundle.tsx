@@ -89,6 +89,7 @@ const UploadAirgapBundle = (props: Props) => {
   const match = useRouteMatch<KotsParams>();
   const history = useHistory();
   const appSlug = match.params.slug;
+  // TODO: refactor the /resume fetching so this isn't necessary
   const onlineInstallErrorMessage = useRef<string>("");
 
   const onDropBundle = async (file: { name: string }) => {
@@ -317,7 +318,6 @@ const UploadAirgapBundle = (props: Props) => {
     })
       .then(async (result) => {
         resumeResult = await result.json();
-        console.log("resumeResult received", resumeResult);
       })
       .catch((err) => {
         setState({
@@ -332,9 +332,7 @@ const UploadAirgapBundle = (props: Props) => {
 
     let count = 0;
     const interval = setInterval(() => {
-      console.log("interval called", count);
       if (onlineInstallErrorMessage.current.length) {
-        console.log("interval cleared");
         clearInterval(interval);
       }
       count += 1;
@@ -343,7 +341,6 @@ const UploadAirgapBundle = (props: Props) => {
         if (!resumeResult) {
           return;
         }
-        console.log("resumeResult error", resumeResult.error);
 
         clearInterval(interval);
 
@@ -359,7 +356,6 @@ const UploadAirgapBundle = (props: Props) => {
           return;
         }
 
-        console.log("onUploadSuccess called", props);
         props.onUploadSuccess().then(() => {
           // When successful, refetch all the user's apps with onUploadSuccess
           const hasPreflight = resumeResult.hasPreflight;
