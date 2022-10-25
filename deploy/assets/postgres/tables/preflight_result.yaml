@@ -1,0 +1,35 @@
+# DO NOT MODIFY.
+# THIS FILE IS ONLY USED FOR THE MIGRATION FROM POSTGRES TO RQLITE,
+# AND DOES NOT REFLECT THE DATABASE SCHEMA USED FOR THE ADMIN CONSOLE.
+apiVersion: schemas.schemahero.io/v1alpha4
+kind: Table
+metadata:
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: preflight-result
+spec:
+  database: kotsadm-postgres
+  name: preflight_result
+  requires: []
+  schema:
+    postgres:
+      primaryKey:
+      - id
+      columns:
+      - name: id
+        type: text
+        constraints:
+          notNull: true
+      - name: watch_id
+        type: text
+        constraints:
+          notNull: true
+      - name: result
+        type: text
+        constraints:
+          notNull: true
+      - name: created_at
+        type: timestamp without time zone
+        constraints:
+          notNull: true
+

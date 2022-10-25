@@ -17,7 +17,8 @@ func GetProxyEnv(deployOptions types.DeployOptions) []corev1.EnvVar {
 		},
 	}
 
-	kotsadmNoProxy := "kotsadm-postgres,kotsadm-minio,kotsadm-api-node"
+	// kotsadm-postgres is still needed for the migration
+	kotsadmNoProxy := "kotsadm-rqlite,kotsadm-postgres,kotsadm-minio,kotsadm-api-node"
 	if deployOptions.NoProxyEnvValue == "" {
 		result = append(result, corev1.EnvVar{
 			Name:  "NO_PROXY",

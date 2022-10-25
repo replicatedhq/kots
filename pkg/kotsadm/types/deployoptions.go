@@ -16,7 +16,7 @@ type DeployOptions struct {
 	S3AccessKey            string
 	S3SecretKey            string
 	JWT                    string
-	PostgresPassword       string
+	RqlitePassword         string
 	APIEncryptionKey       string
 	AutoCreateClusterToken string
 	ServiceType            string

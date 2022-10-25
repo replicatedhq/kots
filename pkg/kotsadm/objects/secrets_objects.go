@@ -33,7 +33,7 @@ func JwtSecret(namespace string, jwt string) *corev1.Secret {
 	return secret
 }
 
-func PgSecret(namespace string, password string) *corev1.Secret {
+func RqliteSecret(namespace string, password string) *corev1.Secret {
 	if password == "" {
 		password = uuid.New().String()
 	}
@@ -44,13 +44,14 @@ func PgSecret(namespace string, password string) *corev1.Secret {
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kotsadm-postgres",
+			Name:      "kotsadm-rqlite",
 			Namespace: namespace,
 			Labels:    types.GetKotsadmLabels(),
 		},
 		Data: map[string][]byte{
-			"uri":      []byte(fmt.Sprintf("postgresql://kotsadm:%s@kotsadm-postgres/kotsadm?connect_timeout=10&sslmode=disable", password)),
-			"password": []byte(password),
+			"uri":             []byte(fmt.Sprintf("http://kotsadm:%s@kotsadm-rqlite:4001?timeout=10", password)),
+			"password":        []byte(password),
+			"authconfig.json": []byte(fmt.Sprintf(`[{"username": "kotsadm", "password": "%s", "perms": ["all"]}, {"username": "*", "perms": ["status", "ready"]}]`, password)),
 		},
 	}
 

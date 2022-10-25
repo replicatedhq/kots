@@ -61,10 +61,8 @@ func TestFunctional(t *testing.T) {
 				withRepoGetTags(
 					func(_ string) ([]string, error) {
 						return []string{
-							"10.16", "10.17", "10.18",
-							"10.19-zippy", "10.18-alpine", "10.16-alpine",
-							"14.4", "14", "alpine3.16",
-							"14.4-alpine3.16", "14.4-alpine", "14-alpine",
+							"0.13.2", "0.13.1",
+							"0.12.7", "0.12.2",
 						}, nil
 					},
 				),
@@ -80,15 +78,13 @@ func TestFunctional(t *testing.T) {
 			},
 		},
 		{
-			name: "postgres",
+			name: "rqlite",
 			fn: getTagFinder(
 				withRepoGetTags(
 					func(_ string) ([]string, error) {
 						return []string{
-							"10.16", "10.17", "10.18",
-							"10.19-zippy", "10.18-alpine", "10.16-alpine",
-							"14.4", "14", "alpine3.16",
-							"14.4-alpine3.16", "14.4-alpine", "14-alpine",
+							"7.7.0", "7.6.1", "7.6.0",
+							"6.10.2", "6.10.1", "6.8.2",
 						}, nil
 					},
 				),

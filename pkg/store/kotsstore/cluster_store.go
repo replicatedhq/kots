@@ -1,7 +1,6 @@
 package kotsstore
 
 import (
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/rand"
+	"github.com/rqlite/gorqlite"
 	"go.uber.org/zap"
 )
 
@@ -18,18 +18,17 @@ func (s *KOTSStore) ListClusters() ([]*downstreamtypes.Downstream, error) {
 	db := persistence.MustGetDBSession()
 
 	query := `select id, slug, title, snapshot_schedule, snapshot_ttl from cluster` // TODO the current sequence
-	rows, err := db.Query(query)
+	rows, err := db.QueryOne(query)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to query clusters")
+		return nil, fmt.Errorf("failed to query: %v: %v", err, rows.Err)
 	}
-	defer rows.Close()
 
 	clusters := []*downstreamtypes.Downstream{}
 	for rows.Next() {
 		cluster := downstreamtypes.Downstream{}
 
-		var snapshotSchedule sql.NullString
-		var snapshotTTL sql.NullString
+		var snapshotSchedule gorqlite.NullString
+		var snapshotTTL gorqlite.NullString
 
 		if err := rows.Scan(&cluster.ClusterID, &cluster.ClusterSlug, &cluster.Name, &snapshotSchedule, &snapshotTTL); err != nil {
 			return nil, errors.Wrap(err, "failed to scan row")
@@ -46,11 +45,21 @@ func (s *KOTSStore) ListClusters() ([]*downstreamtypes.Downstream, error) {
 
 func (s *KOTSStore) GetClusterIDFromSlug(slug string) (string, error) {
 	db := persistence.MustGetDBSession()
-	query := `select id from cluster where slug = $1`
-	row := db.QueryRow(query, slug)
+	query := `select id from cluster where slug = ?`
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{slug},
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+	}
+
+	if !rows.Next() {
+		return "", ErrNotFound
+	}
 
 	var clusterID string
-	if err := row.Scan(&clusterID); err != nil {
+	if err := rows.Scan(&clusterID); err != nil {
 		return "", errors.Wrap(err, "failed to scan")
 	}
 
@@ -59,11 +68,21 @@ func (s *KOTSStore) GetClusterIDFromSlug(slug string) (string, error) {
 
 func (s *KOTSStore) GetClusterIDFromDeployToken(deployToken string) (string, error) {
 	db := persistence.MustGetDBSession()
-	query := `select id from cluster where token = $1`
-	row := db.QueryRow(query, deployToken)
+	query := `select id from cluster where token = ?`
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{deployToken},
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+	}
+
+	if !rows.Next() {
+		return "", ErrNotFound
+	}
 
 	var clusterID string
-	if err := row.Scan(&clusterID); err != nil {
+	if err := rows.Scan(&clusterID); err != nil {
 		return "", errors.Wrap(err, "failed to scan")
 	}
 
@@ -82,11 +101,21 @@ func (s *KOTSStore) CreateNewCluster(userID string, isAllUsers bool, title strin
 		if i > 0 {
 			slugProposal = fmt.Sprintf("%s-%d", clusterSlug, i)
 		}
-		query := `select count(1) as count from cluster where slug = $1`
-		row := db.QueryRow(query, slugProposal)
+
+		query := `select count(1) as count from cluster where slug = ?`
+		rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+			Query:     query,
+			Arguments: []interface{}{slugProposal},
+		})
+		if err != nil {
+			return "", fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+		}
+		if !rows.Next() {
+			return "", ErrNotFound
+		}
 
 		var count int
-		if err := row.Scan(&count); err != nil {
+		if err := rows.Scan(&count); err != nil {
 			return "", errors.Wrap(err, "failed to scan")
 		}
 
@@ -101,28 +130,25 @@ func (s *KOTSStore) CreateNewCluster(userID string, isAllUsers bool, title strin
 		token = rand.StringWithCharset(32, rand.LOWER_CASE)
 	}
 
-	tx, err := db.Begin()
-	if err != nil {
-		return "", errors.Wrap(err, "failed to begin transaction")
-	}
-	defer tx.Rollback()
-
-	query := `insert into cluster (id, title, slug, created_at, updated_at, cluster_type, is_all_users, token) values ($1, $2, $3, $4, $5, $6, $7, $8)`
-	_, err = db.Exec(query, clusterID, title, clusterSlug, time.Now(), nil, "ship", isAllUsers, token)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to insert cluster row")
-	}
+	statements := []gorqlite.ParameterizedStatement{}
+	statements = append(statements, gorqlite.ParameterizedStatement{
+		Query:     `insert into cluster (id, title, slug, created_at, cluster_type, is_all_users, token) values (?, ?, ?, ?, ?, ?, ?)`,
+		Arguments: []interface{}{clusterID, title, clusterSlug, time.Now().Unix(), "ship", isAllUsers, token},
+	})
 
 	if userID != "" {
-		query := `insert into user_cluster (user_id, cluster_id) values ($1, $2)`
-		_, err := db.Exec(query, userID, clusterID)
-		if err != nil {
-			return "", errors.Wrap(err, "failed to insert user_cluster row")
-		}
+		statements = append(statements, gorqlite.ParameterizedStatement{
+			Query:     `insert into user_cluster (user_id, cluster_id) values (?, ?)`,
+			Arguments: []interface{}{userID, clusterID},
+		})
 	}
 
-	if err := tx.Commit(); err != nil {
-		return "", errors.Wrap(err, "failed to commit transaction")
+	if wrs, err := db.WriteParameterized(statements); err != nil {
+		wrErrs := []error{}
+		for _, wr := range wrs {
+			wrErrs = append(wrErrs, wr.Err)
+		}
+		return "", fmt.Errorf("failed to write: %v: %v", err, wrErrs)
 	}
 
 	return clusterID, nil
@@ -131,11 +157,15 @@ func (s *KOTSStore) CreateNewCluster(userID string, isAllUsers bool, title strin
 func (s *KOTSStore) SetInstanceSnapshotTTL(clusterID string, snapshotTTL string) error {
 	logger.Debug("Setting instance snapshot TTL",
 		zap.String("clusterID", clusterID))
+
 	db := persistence.MustGetDBSession()
-	query := `update cluster set snapshot_ttl = $1 where id = $2`
-	_, err := db.Exec(query, snapshotTTL, clusterID)
+	query := `update cluster set snapshot_ttl = ? where id = ?`
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{snapshotTTL, clusterID},
+	})
 	if err != nil {
-		return errors.Wrap(err, "failed to exec db query")
+		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
 	}
 
 	return nil
@@ -144,11 +174,15 @@ func (s *KOTSStore) SetInstanceSnapshotTTL(clusterID string, snapshotTTL string)
 func (s *KOTSStore) SetInstanceSnapshotSchedule(clusterID string, snapshotSchedule string) error {
 	logger.Debug("Setting instance snapshot Schedule",
 		zap.String("clusterID", clusterID))
+
 	db := persistence.MustGetDBSession()
-	query := `update cluster set snapshot_schedule = $1 where id = $2`
-	_, err := db.Exec(query, snapshotSchedule, clusterID)
+	query := `update cluster set snapshot_schedule = ? where id = ?`
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{snapshotSchedule, clusterID},
+	})
 	if err != nil {
-		return errors.Wrap(err, "failed to exec db query")
+		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
 	}
 
 	return nil

@@ -1,14 +1,12 @@
 package kotsstore
 
 import (
-	"database/sql"
 	"encoding/base64"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/blang/semver"
-	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
@@ -17,15 +15,25 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/store/types"
+	"github.com/rqlite/gorqlite"
 )
 
 func (s *KOTSStore) GetCurrentDownstreamSequence(appID string, clusterID string) (int64, error) {
 	db := persistence.MustGetDBSession()
-	query := `select current_sequence from app_downstream where app_id = $1 and cluster_id = $2`
-	row := db.QueryRow(query, appID, clusterID)
+	query := `select current_sequence from app_downstream where app_id = ? and cluster_id = ?`
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{appID, clusterID},
+	})
+	if err != nil {
+		return -1, fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+	}
+	if !rows.Next() {
+		return -1, ErrNotFound
+	}
 
-	var currentSequence sql.NullInt64
-	if err := row.Scan(&currentSequence); err != nil {
+	var currentSequence gorqlite.NullInt64
+	if err := rows.Scan(&currentSequence); err != nil {
 		return -1, errors.Wrap(err, "failed to scan")
 	}
 
@@ -46,11 +54,20 @@ func (s *KOTSStore) GetCurrentParentSequence(appID string, clusterID string) (in
 	}
 
 	db := persistence.MustGetDBSession()
-	query := `select parent_sequence from app_downstream_version where app_id = $1 and cluster_id = $2 and sequence = $3`
-	row := db.QueryRow(query, appID, clusterID, currentSequence)
+	query := `select parent_sequence from app_downstream_version where app_id = ? and cluster_id = ? and sequence = ?`
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{appID, clusterID, currentSequence},
+	})
+	if err != nil {
+		return -1, fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+	}
+	if !rows.Next() {
+		return -1, ErrNotFound
+	}
 
-	var parentSequence sql.NullInt64
-	if err := row.Scan(&parentSequence); err != nil {
+	var parentSequence gorqlite.NullInt64
+	if err := rows.Scan(&parentSequence); err != nil {
 		return -1, errors.Wrap(err, "failed to scan")
 	}
 
@@ -63,11 +80,20 @@ func (s *KOTSStore) GetCurrentParentSequence(appID string, clusterID string) (in
 
 func (s *KOTSStore) GetParentSequenceForSequence(appID string, clusterID string, sequence int64) (int64, error) {
 	db := persistence.MustGetDBSession()
-	query := `select parent_sequence from app_downstream_version where app_id = $1 and cluster_id = $2 and sequence = $3`
-	row := db.QueryRow(query, appID, clusterID, sequence)
+	query := `select parent_sequence from app_downstream_version where app_id = ? and cluster_id = ? and sequence = ?`
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{appID, clusterID, sequence},
+	})
+	if err != nil {
+		return -1, fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+	}
+	if !rows.Next() {
+		return -1, ErrNotFound
+	}
 
-	var parentSequence sql.NullInt64
-	if err := row.Scan(&parentSequence); err != nil {
+	var parentSequence gorqlite.NullInt64
+	if err := rows.Scan(&parentSequence); err != nil {
 		return -1, errors.Wrap(err, "failed to scan")
 	}
 
@@ -80,12 +106,14 @@ func (s *KOTSStore) GetParentSequenceForSequence(appID string, clusterID string,
 
 func (s *KOTSStore) GetPreviouslyDeployedSequence(appID string, clusterID string) (int64, error) {
 	db := persistence.MustGetDBSession()
-	query := `select sequence from app_downstream_version where app_id = $1 and cluster_id = $2 and applied_at is not null order by applied_at desc limit 2`
-	rows, err := db.Query(query, appID, clusterID)
+	query := `select sequence from app_downstream_version where app_id = ? and cluster_id = ? and applied_at is not null order by applied_at desc limit 2`
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{appID, clusterID},
+	})
 	if err != nil {
-		return -1, errors.Wrap(err, "failed to query")
+		return -1, fmt.Errorf("failed to query: %v: %v", err, rows.Err)
 	}
-	defer rows.Close()
 
 	for rowNumber := 1; rows.Next(); rowNumber++ {
 		if rowNumber != 2 {
@@ -103,27 +131,24 @@ func (s *KOTSStore) GetPreviouslyDeployedSequence(appID string, clusterID string
 
 func (s *KOTSStore) MarkAsCurrentDownstreamVersion(appID string, sequence int64) error {
 	db := persistence.MustGetDBSession()
+	statements := []gorqlite.ParameterizedStatement{}
 
-	tx, err := db.Begin()
-	if err != nil {
-		return errors.Wrap(err, "failed to begin")
-	}
-	defer tx.Rollback()
+	statements = append(statements, gorqlite.ParameterizedStatement{
+		Query:     `update app_downstream set current_sequence = ? where app_id = ?`,
+		Arguments: []interface{}{sequence, appID},
+	})
 
-	query := `update app_downstream set current_sequence = $1 where app_id = $2`
-	_, err = tx.Exec(query, sequence, appID)
-	if err != nil {
-		return errors.Wrap(err, "failed to update app downstream current sequence")
-	}
+	statements = append(statements, gorqlite.ParameterizedStatement{
+		Query:     `update app_downstream_version set applied_at = ? where sequence = ? and app_id = ?`,
+		Arguments: []interface{}{time.Now().Unix(), sequence, appID},
+	})
 
-	query = `update app_downstream_version set applied_at = $3 where sequence = $1 and app_id = $2`
-	_, err = tx.Exec(query, sequence, appID, time.Now())
-	if err != nil {
-		return errors.Wrap(err, "failed to update app downstream version status")
-	}
-
-	if err := tx.Commit(); err != nil {
-		return errors.Wrap(err, "failed to commit")
+	if wrs, err := db.WriteParameterized(statements); err != nil {
+		wrErrs := []error{}
+		for _, wr := range wrs {
+			wrErrs = append(wrErrs, wr.Err)
+		}
+		return fmt.Errorf("failed to write: %v: %v", err, wrErrs)
 	}
 
 	return nil
@@ -132,10 +157,13 @@ func (s *KOTSStore) MarkAsCurrentDownstreamVersion(appID string, sequence int64)
 // SetDownstreamVersionStatus updates the status and status info for the downstream version with the given sequence and app id
 func (s *KOTSStore) SetDownstreamVersionStatus(appID string, sequence int64, status types.DownstreamVersionStatus, statusInfo string) error {
 	db := persistence.MustGetDBSession()
-	query := `update app_downstream_version set status = $1, status_info = $2 where app_id = $3 and sequence = $4`
-	_, err := db.Exec(query, status, statusInfo, appID, sequence)
+	query := `update app_downstream_version set status = ?, status_info = ? where app_id = ? and sequence = ?`
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{status, statusInfo, appID, sequence},
+	})
 	if err != nil {
-		return errors.Wrap(err, "failed to exec")
+		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
 	}
 
 	return nil
@@ -144,14 +172,20 @@ func (s *KOTSStore) SetDownstreamVersionStatus(appID string, sequence int64, sta
 // GetDownstreamVersionStatus gets the status for the downstream version with the given sequence and app id
 func (s *KOTSStore) GetDownstreamVersionStatus(appID string, sequence int64) (types.DownstreamVersionStatus, error) {
 	db := persistence.MustGetDBSession()
-	query := `select status from app_downstream_version where app_id = $1 and sequence = $2`
-	row := db.QueryRow(query, appID, sequence)
-	var status sql.NullString
-	err := row.Scan(&status)
+	query := `select status from app_downstream_version where app_id = ? and sequence = ?`
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{appID, sequence},
+	})
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return "", nil
-		}
+		return "", fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+	}
+	if !rows.Next() {
+		return "", nil
+	}
+
+	var status gorqlite.NullString
+	if err := rows.Scan(&status); err != nil {
 		return "", errors.Wrap(err, "failed to get downstream version")
 	}
 
@@ -161,14 +195,20 @@ func (s *KOTSStore) GetDownstreamVersionStatus(appID string, sequence int64) (ty
 // GetDownstreamVersionSource gets the source for the downstream version with the given sequence and app id
 func (s *KOTSStore) GetDownstreamVersionSource(appID string, sequence int64) (string, error) {
 	db := persistence.MustGetDBSession()
-	query := `select source from app_downstream_version where app_id = $1 and sequence = $2`
-	row := db.QueryRow(query, appID, sequence)
-	var source sql.NullString
-	err := row.Scan(&source)
+	query := `select source from app_downstream_version where app_id = ? and sequence = ?`
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{appID, sequence},
+	})
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return "", nil
-		}
+		return "", fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+	}
+	if !rows.Next() {
+		return "", nil
+	}
+
+	var source gorqlite.NullString
+	if err := rows.Scan(&source); err != nil {
 		return "", errors.Wrap(err, "failed to get downstream version")
 	}
 
@@ -177,12 +217,20 @@ func (s *KOTSStore) GetDownstreamVersionSource(appID string, sequence int64) (st
 
 func (s *KOTSStore) GetIgnoreRBACErrors(appID string, sequence int64) (bool, error) {
 	db := persistence.MustGetDBSession()
-	query := `SELECT preflight_ignore_permissions FROM app_downstream_version
-	WHERE app_id = $1 and sequence = $2 LIMIT 1`
-	row := db.QueryRow(query, appID, sequence)
+	query := `SELECT preflight_ignore_permissions FROM app_downstream_version WHERE app_id = ? and sequence = ? LIMIT 1`
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{appID, sequence},
+	})
+	if err != nil {
+		return false, fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+	}
+	if !rows.Next() {
+		return false, ErrNotFound
+	}
 
-	var shouldIgnore sql.NullBool
-	if err := row.Scan(&shouldIgnore); err != nil {
+	var shouldIgnore gorqlite.NullBool
+	if err := rows.Scan(&shouldIgnore); err != nil {
 		return false, errors.Wrap(err, "failed to select downstream")
 	}
 
@@ -230,12 +278,21 @@ func (s *KOTSStore) GetCurrentDownstreamVersion(appID string, clusterID string) 
  ON
 	 adv.app_id = ado.app_id AND adv.cluster_id = ado.cluster_id AND adv.sequence = ado.downstream_sequence
  WHERE
-	 adv.app_id = $1 AND
-	 adv.cluster_id = $2 AND
-	 adv.sequence = $3`
-	row := db.QueryRow(query, appID, clusterID, currentSequence)
+	 adv.app_id = ? AND
+	 adv.cluster_id = ? AND
+	 adv.sequence = ?`
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{appID, clusterID, currentSequence},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+	}
+	if !rows.Next() {
+		return nil, ErrNotFound
+	}
 
-	v, err := s.downstreamVersionFromRow(appID, row)
+	v, err := s.downstreamVersionFromRow(appID, rows)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get version from row")
 	}
@@ -261,12 +318,21 @@ func (s *KOTSStore) GetStatusForVersion(appID string, clusterID string, sequence
 	ON
 		adv.app_id = ado.app_id AND adv.cluster_id = ado.cluster_id AND adv.sequence = ado.downstream_sequence
  WHERE
- 	adv.app_id = $1 AND adv.cluster_id = $2 AND adv.sequence = $3`
-	row := db.QueryRow(query, appID, clusterID, sequence)
+ 	adv.app_id = ? AND adv.cluster_id = ? AND adv.sequence = ?`
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{appID, clusterID, sequence},
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+	}
+	if !rows.Next() {
+		return "", ErrNotFound
+	}
 
-	var status sql.NullString
-	var hasError sql.NullBool
-	if err := row.Scan(&status, &hasError); err != nil {
+	var status gorqlite.NullString
+	var hasError gorqlite.NullBool
+	if err := rows.Scan(&status, &hasError); err != nil {
 		return "", errors.Wrap(err, "failed to scan")
 	}
 
@@ -307,8 +373,8 @@ func (s *KOTSStore) GetDownstreamVersions(appID string, clusterID string, downlo
  ON
 	 adv.app_id = ado.app_id AND adv.cluster_id = ado.cluster_id AND adv.sequence = ado.downstream_sequence
  WHERE
-	 adv.app_id = $1 AND
-	 adv.cluster_id = $2`
+	 adv.app_id = ? AND
+	 adv.cluster_id = ?`
 
 	if downloadedOnly {
 		query += fmt.Sprintf(` AND adv.status != '%s'`, types.VersionPendingDownload)
@@ -316,11 +382,13 @@ func (s *KOTSStore) GetDownstreamVersions(appID string, clusterID string, downlo
 
 	query += ` ORDER BY adv.sequence DESC`
 
-	rows, err := db.Query(query, appID, clusterID)
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{appID, clusterID},
+	})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to query")
+		return nil, fmt.Errorf("failed to query: %v: %v", err, rows.Err)
 	}
-	defer rows.Close()
 
 	result := &downstreamtypes.DownstreamVersions{
 		CurrentVersion: currentVersion,
@@ -334,13 +402,6 @@ func (s *KOTSStore) GetDownstreamVersions(appID string, clusterID string, downlo
 		if v != nil {
 			result.AllVersions = append(result.AllVersions, v)
 		}
-	}
-
-	if err := rows.Err(); err != nil {
-		if err == sql.ErrNoRows {
-			return result, nil
-		}
-		return nil, errors.Wrap(err, "failed to iterate over rows")
 	}
 
 	license, err := s.GetLatestLicenseForApp(appID)
@@ -458,12 +519,12 @@ func (s *KOTSStore) AddDownstreamVersionDetails(appID string, clusterID string, 
 }
 
 func (s *KOTSStore) AddDownstreamVersionsDetails(appID string, clusterID string, versions []*downstreamtypes.DownstreamVersion, checkIfDeployable bool) error {
-	sequencesToQuery := []int64{}
+	sequencesToQuery := []string{}
 	for _, v := range versions {
 		if v == nil {
 			continue
 		}
-		sequencesToQuery = append(sequencesToQuery, v.Sequence)
+		sequencesToQuery = append(sequencesToQuery, fmt.Sprintf("%d", v.Sequence))
 	}
 
 	if len(sequencesToQuery) == 0 {
@@ -471,7 +532,7 @@ func (s *KOTSStore) AddDownstreamVersionsDetails(appID string, clusterID string,
 	}
 
 	db := persistence.MustGetDBSession()
-	query := `SELECT
+	query := fmt.Sprintf(`SELECT
 	adv.sequence,
 	adv.diff_summary,
 	adv.diff_summary_error,
@@ -487,27 +548,29 @@ func (s *KOTSStore) AddDownstreamVersionsDetails(appID string, clusterID string,
  ON
 	 adv.app_id = av.app_id AND adv.parent_sequence = av.sequence
  WHERE
-	 adv.app_id = $1 AND
-	 adv.cluster_id = $2 AND
-	 adv.sequence = ANY($3)
+	 adv.app_id = ? AND
+	 adv.cluster_id = ? AND
+	 adv.sequence IN (%s)
  ORDER BY
- 	 adv.sequence DESC`
+ 	 adv.sequence DESC`, strings.Join(sequencesToQuery, ","))
 
-	rows, err := db.Query(query, appID, clusterID, pq.Array(sequencesToQuery))
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{appID, clusterID},
+	})
 	if err != nil {
-		return errors.Wrap(err, "failed to query")
+		return fmt.Errorf("failed to query: %v: %v", err, rows.Err)
 	}
-	defer rows.Close()
 
 	for rows.Next() {
 		var sequence int64
-		var diffSummary sql.NullString
-		var diffSummaryError sql.NullString
-		var preflightResult sql.NullString
-		var preflightResultCreatedAt persistence.NullStringTime
-		var kotsInstallationSpecStr sql.NullString
-		var kotsAppSpecStr sql.NullString
-		var preflightSpecStr sql.NullString
+		var diffSummary gorqlite.NullString
+		var diffSummaryError gorqlite.NullString
+		var preflightResult gorqlite.NullString
+		var preflightResultCreatedAt gorqlite.NullTime
+		var kotsInstallationSpecStr gorqlite.NullString
+		var kotsAppSpecStr gorqlite.NullString
+		var preflightSpecStr gorqlite.NullString
 
 		if err := rows.Scan(
 			&sequence,
@@ -583,10 +646,6 @@ func (s *KOTSStore) AddDownstreamVersionsDetails(appID string, clusterID string,
 			return errors.Wrap(err, "failed to get strict preflight results")
 		}
 		version.HasFailingStrictPreflights = p
-	}
-
-	if err := rows.Err(); err != nil {
-		return errors.Wrap(err, "failed to iterate over rows")
 	}
 
 	if checkIfDeployable {
@@ -678,22 +737,22 @@ func (s *KOTSStore) getLatestDeployableDownstreamVersion(appID string, clusterID
 	return
 }
 
-func (s *KOTSStore) downstreamVersionFromRow(appID string, row scannable) (*downstreamtypes.DownstreamVersion, error) {
+func (s *KOTSStore) downstreamVersionFromRow(appID string, row gorqlite.QueryResult) (*downstreamtypes.DownstreamVersion, error) {
 	v := &downstreamtypes.DownstreamVersion{}
 
-	var createdOn persistence.NullStringTime
-	var versionLabel sql.NullString
-	var channelID sql.NullString
-	var updateCursor sql.NullString
-	var status sql.NullString
-	var parentSequence sql.NullInt64
-	var deployedAt persistence.NullStringTime
-	var source sql.NullString
-	var preflightSkipped sql.NullBool
-	var commitURL sql.NullString
-	var gitDeployable sql.NullBool
-	var hasError sql.NullBool
-	var upstreamReleasedAt persistence.NullStringTime
+	var createdOn gorqlite.NullTime
+	var versionLabel gorqlite.NullString
+	var channelID gorqlite.NullString
+	var updateCursor gorqlite.NullString
+	var status gorqlite.NullString
+	var parentSequence gorqlite.NullInt64
+	var deployedAt gorqlite.NullTime
+	var source gorqlite.NullString
+	var preflightSkipped gorqlite.NullBool
+	var commitURL gorqlite.NullString
+	var gitDeployable gorqlite.NullBool
+	var hasError gorqlite.NullBool
+	var upstreamReleasedAt gorqlite.NullTime
 
 	if err := row.Scan(
 		&createdOn,
@@ -930,14 +989,20 @@ ALL_VERSIONS_LOOP:
 
 func getReleaseNotes(appID string, parentSequence int64) (string, error) {
 	db := persistence.MustGetDBSession()
-	query := `SELECT release_notes FROM app_version WHERE app_id = $1 AND sequence = $2`
-	row := db.QueryRow(query, appID, parentSequence)
+	query := `SELECT release_notes FROM app_version WHERE app_id = ? AND sequence = ?`
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{appID, parentSequence},
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+	}
+	if !rows.Next() {
+		return "", nil
+	}
 
-	var releaseNotes sql.NullString
-	if err := row.Scan(&releaseNotes); err != nil {
-		if err == sql.ErrNoRows {
-			return "", nil
-		}
+	var releaseNotes gorqlite.NullString
+	if err := rows.Scan(&releaseNotes); err != nil {
 		return "", errors.Wrap(err, "failed to scan")
 	}
 
@@ -974,24 +1039,31 @@ LEFT JOIN
 ON
 	adv.app_id = ado.app_id AND adv.cluster_id = ado.cluster_id AND adv.sequence = ado.downstream_sequence
 WHERE
-	adv.app_id = $1 AND
-	adv.cluster_id = $2 AND
-	adv.sequence = $3`
-	row := db.QueryRow(query, appID, clusterID, sequence)
+	adv.app_id = ? AND
+	adv.cluster_id = ? AND
+	adv.sequence = ?`
 
-	var status sql.NullString
-	var statusInfo sql.NullString
-	var dryrunStdout sql.NullString
-	var dryrunStderr sql.NullString
-	var applyStdout sql.NullString
-	var applyStderr sql.NullString
-	var helmStdout sql.NullString
-	var helmStderr sql.NullString
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{appID, clusterID, sequence},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+	}
+	if !rows.Next() {
+		return &downstreamtypes.DownstreamOutput{}, nil
+	}
 
-	if err := row.Scan(&status, &statusInfo, &dryrunStdout, &dryrunStderr, &applyStdout, &applyStderr, &helmStdout, &helmStderr); err != nil {
-		if err == sql.ErrNoRows {
-			return &downstreamtypes.DownstreamOutput{}, nil
-		}
+	var status gorqlite.NullString
+	var statusInfo gorqlite.NullString
+	var dryrunStdout gorqlite.NullString
+	var dryrunStderr gorqlite.NullString
+	var applyStdout gorqlite.NullString
+	var applyStderr gorqlite.NullString
+	var helmStdout gorqlite.NullString
+	var helmStderr gorqlite.NullString
+
+	if err := rows.Scan(&status, &statusInfo, &dryrunStdout, &dryrunStderr, &applyStdout, &applyStderr, &helmStdout, &helmStderr); err != nil {
 		return nil, errors.Wrap(err, "failed to select downstream")
 	}
 
@@ -1054,15 +1126,21 @@ func (s *KOTSStore) IsDownstreamDeploySuccessful(appID string, clusterID string,
 
 	query := `SELECT is_error
 	FROM app_downstream_output
-	WHERE app_id = $1 AND cluster_id = $2 AND downstream_sequence = $3`
+	WHERE app_id = ? AND cluster_id = ? AND downstream_sequence = ?`
 
-	row := db.QueryRow(query, appID, clusterID, sequence)
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{appID, clusterID, sequence},
+	})
+	if err != nil {
+		return false, fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+	}
+	if !rows.Next() {
+		return false, nil
+	}
 
 	var isError bool
-	if err := row.Scan(&isError); err != nil {
-		if err == sql.ErrNoRows {
-			return false, nil
-		}
+	if err := rows.Scan(&isError); err != nil {
 		return false, errors.Wrap(err, "failed to select downstream")
 	}
 
@@ -1073,13 +1151,16 @@ func (s *KOTSStore) UpdateDownstreamDeployStatus(appID string, clusterID string,
 	db := persistence.MustGetDBSession()
 
 	query := `insert into app_downstream_output (app_id, cluster_id, downstream_sequence, is_error, dryrun_stdout, dryrun_stderr, apply_stdout, apply_stderr, helm_stdout, helm_stderr)
-	values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) on conflict (app_id, cluster_id, downstream_sequence) do update set is_error = EXCLUDED.is_error,
+	values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) on conflict (app_id, cluster_id, downstream_sequence) do update set is_error = EXCLUDED.is_error,
 	dryrun_stdout = EXCLUDED.dryrun_stdout, dryrun_stderr = EXCLUDED.dryrun_stderr, apply_stdout = EXCLUDED.apply_stdout, apply_stderr = EXCLUDED.apply_stderr,
 	helm_stdout = EXCLUDED.helm_stdout, helm_stderr = EXCLUDED.helm_stderr`
 
-	_, err := db.Exec(query, appID, clusterID, sequence, isError, output.DryrunStdout, output.DryrunStderr, output.ApplyStdout, output.ApplyStderr, output.HelmStdout, output.HelmStderr)
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{appID, clusterID, sequence, isError, output.DryrunStdout, output.DryrunStderr, output.ApplyStdout, output.ApplyStderr, output.HelmStdout, output.HelmStderr},
+	})
 	if err != nil {
-		return errors.Wrap(err, "failed to exec")
+		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
 	}
 
 	return nil
@@ -1088,11 +1169,14 @@ func (s *KOTSStore) UpdateDownstreamDeployStatus(appID string, clusterID string,
 func (s *KOTSStore) DeleteDownstreamDeployStatus(appID string, clusterID string, sequence int64) error {
 	db := persistence.MustGetDBSession()
 
-	query := `delete from app_downstream_output where app_id = $1 and cluster_id = $2 and downstream_sequence = $3`
+	query := `delete from app_downstream_output where app_id = ? and cluster_id = ? and downstream_sequence = ?`
 
-	_, err := db.Exec(query, appID, clusterID, sequence)
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{appID, clusterID, sequence},
+	})
 	if err != nil {
-		return errors.Wrap(err, "failed to exec")
+		return fmt.Errorf("failed to write: %v: %v", err, wr.Err)
 	}
 
 	return nil

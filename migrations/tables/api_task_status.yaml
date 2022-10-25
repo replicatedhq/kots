@@ -6,10 +6,10 @@ metadata:
     controller-tools.k8s.io: "1.0"
   name: api-task-status
 spec:
-  database: kotsadm-postgres
   name: api_task_status
   schema:
-    postgres:
+    rqlite:
+      strict: true
       primaryKey:
       - id
       columns:
@@ -18,7 +18,7 @@ spec:
         constraints:
           notNull: true
       - name: updated_at
-        type: timestamp without time zone
+        type: integer
       - name: current_message
         type: text
       - name: status

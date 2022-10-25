@@ -84,7 +84,7 @@ portForward:
     port: 40000
     localPort: 40000
   - resourceType: service
-    resourceName: kotsadm-postgres
+    resourceName: kotsadm-rqlite
     port: 5432
     localPort: 30432
   - resourceType: service

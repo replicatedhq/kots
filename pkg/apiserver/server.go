@@ -35,28 +35,17 @@ import (
 
 type APIServerParams struct {
 	Version                string
-	PostgresURI            string
+	RqliteURI              string
 	AutocreateClusterToken string
 	SharedPassword         string
-	KubeconfigPath         string
-	KotsDataDir            string
 }
 
 func Start(params *APIServerParams) {
 	log.Printf("kotsadm version %s\n", params.Version)
 
-	if params.KubeconfigPath != "" {
-		// it's only possible to set this in the kots run workflow
-		os.Setenv("KUBECONFIG", params.KubeconfigPath)
-	}
-	if params.KotsDataDir != "" {
-		// it's only possible to set this in the kots run workflow
-		os.Setenv("KOTS_DATA_DIR", params.KotsDataDir)
-	}
-
 	if !util.IsHelmManaged() {
 		// set some persistence variables
-		persistence.InitDB(params.PostgresURI)
+		persistence.InitDB(params.RqliteURI)
 
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		if err := store.GetStore().WaitForReady(ctx); err != nil {
@@ -64,6 +53,14 @@ func Start(params *APIServerParams) {
 			panic(err)
 		}
 		cancel()
+	}
+
+	// check if we need to migrate from postgres before doing anything else
+	if !util.IsHelmManaged() {
+		if err := persistence.MigrateFromPostgresToRqlite(); err != nil {
+			log.Println("error migrating from postgres to rqlite")
+			panic(err)
+		}
 	}
 
 	if err := bootstrap(BootstrapParams{
@@ -133,7 +130,6 @@ func Start(params *APIServerParams) {
 		if err := updatechecker.Start(); err != nil {
 			log.Println("Failed to start update checker:", err)
 		}
-
 		if err := snapshotscheduler.Start(); err != nil {
 			log.Println("Failed to start snapshot scheduler:", err)
 		}

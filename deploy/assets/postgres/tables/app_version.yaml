@@ -1,0 +1,72 @@
+# DO NOT MODIFY.
+# THIS FILE IS ONLY USED FOR THE MIGRATION FROM POSTGRES TO RQLITE,
+# AND DOES NOT REFLECT THE DATABASE SCHEMA USED FOR THE ADMIN CONSOLE.
+apiVersion: schemas.schemahero.io/v1alpha4
+kind: Table
+metadata:
+  name: app-version
+spec:
+  database: kotsadm-postgres
+  name: app_version
+  requires: []
+  schema:
+    postgres:
+      primaryKey:
+        - app_id
+        - sequence
+      columns:
+      - name: app_id
+        type: text
+      - name: sequence
+        type: integer
+      - name: update_cursor
+        type: text
+      - name: channel_id
+        type: text
+      - name: channel_name
+        type: text
+      - name: upstream_released_at
+        type: timestamp without time zone
+      - name: created_at
+        type: timestamp without time zone
+      - name: version_label
+        type: text
+        constraints:
+          notNull: true
+      - name: is_required
+        type: boolean
+        constraints:
+          notNull: true
+        default: "false"
+      - name: release_notes
+        type: text
+      - name: supportbundle_spec
+        type: text
+      - name: preflight_spec
+        type: text
+      - name: analyzer_spec
+        type: text
+      - name: app_spec
+        type: text
+      - name: kots_app_spec
+        type: text
+      - name: kots_installation_spec
+        type: text
+      - name: kots_license
+        type: text
+      - name: config_spec
+        type: text
+      - name: config_values
+        type: text
+      - name: applied_at
+        type: timestamp without time zone
+      - name: status
+        type: text
+      - name: encryption_key
+        type: text
+      - name: backup_spec
+        type: text
+      - name: identity_spec
+        type: text
+      - name: branding_archive
+        type: bytea

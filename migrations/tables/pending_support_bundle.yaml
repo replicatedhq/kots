@@ -3,16 +3,18 @@ kind: Table
 metadata:
   name: pending-supportbundle
 spec:
-  database: kotsadm-postgres
   name: pending_supportbundle
   requires: []
   schema:
-    postgres:
+    rqlite:
+      strict: true
       primaryKey:
         - id
       columns:
       - name: id
         type: text
+        constraints:
+          notNull: true
       - name: app_id
         type: text
         constraints:
@@ -22,4 +24,4 @@ spec:
         constraints:
           notNull: true
       - name: created_at
-        type: timestamp without time zone
+        type: integer

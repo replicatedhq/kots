@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/pointer"
 )
 
 func KotsadmClusterRole() *rbacv1.ClusterRole {
@@ -183,6 +184,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 			},
 		}
 	}
+
 	env := []corev1.EnvVar{
 		{
 			Name: "SHARED_PASSWORD_BCRYPT",
@@ -218,26 +220,42 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 			},
 		},
 		{
-			Name: "POSTGRES_PASSWORD",
+			Name: "RQLITE_PASSWORD",
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: "kotsadm-postgres",
+						Name: "kotsadm-rqlite",
 					},
 					Key: "password",
 				},
 			},
 		},
 		{
-			Name: "POSTGRES_URI",
+			Name: "RQLITE_URI",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "kotsadm-rqlite",
+					},
+					Key: "uri",
+				},
+			},
+		},
+		{
+			Name: "POSTGRES_URI", // this is still needed for the migration
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: "kotsadm-postgres",
 					},
-					Key: "uri",
+					Key:      "uri",
+					Optional: pointer.BoolPtr(true),
 				},
 			},
+		},
+		{
+			Name:  "POSTGRES_SCHEMA_DIR", // this is needed for the migration
+			Value: "/postgres/tables",
 		},
 		{
 			Name: "POD_NAMESPACE",
@@ -355,7 +373,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 				},
 				Spec: corev1.PodSpec{
 					Affinity: &corev1.Affinity{
-						NodeAffinity: defaultKotsNodeAffinity(),
+						NodeAffinity: defaultKOTSNodeAffinity(),
 					},
 					SecurityContext: securityContext,
 					Volumes: []corev1.Volume{
@@ -398,7 +416,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 							Env: []corev1.EnvVar{
 								{
 									Name:  "SCHEMAHERO_DRIVER",
-									Value: "postgres",
+									Value: "rqlite",
 								},
 								{
 									Name:  "SCHEMAHERO_SPEC_FILE",
@@ -413,7 +431,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 									ValueFrom: &corev1.EnvVarSource{
 										SecretKeyRef: &corev1.SecretKeySelector{
 											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "kotsadm-postgres",
+												Name: "kotsadm-rqlite",
 											},
 											Key: "uri",
 										},
@@ -446,7 +464,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 							Env: []corev1.EnvVar{
 								{
 									Name:  "SCHEMAHERO_DRIVER",
-									Value: "postgres",
+									Value: "rqlite",
 								},
 								{
 									Name:  "SCHEMAHERO_DDL",
@@ -457,7 +475,7 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 									ValueFrom: &corev1.EnvVarSource{
 										SecretKeyRef: &corev1.SecretKeySelector{
 											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "kotsadm-postgres",
+												Name: "kotsadm-rqlite",
 											},
 											Key: "uri",
 										},
@@ -495,11 +513,11 @@ func KotsadmDeployment(deployOptions types.DeployOptions) (*appsv1.Deployment, e
 							},
 							Env: []corev1.EnvVar{
 								{
-									Name: "POSTGRES_PASSWORD",
+									Name: "RQLITE_PASSWORD",
 									ValueFrom: &corev1.EnvVarSource{
 										SecretKeyRef: &corev1.SecretKeySelector{
 											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "kotsadm-postgres",
+												Name: "kotsadm-rqlite",
 											},
 											Key: "password",
 										},
@@ -729,26 +747,42 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 			},
 		},
 		{
-			Name: "POSTGRES_PASSWORD",
+			Name: "RQLITE_PASSWORD",
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: "kotsadm-postgres",
+						Name: "kotsadm-rqlite",
 					},
 					Key: "password",
 				},
 			},
 		},
 		{
-			Name: "POSTGRES_URI",
+			Name: "RQLITE_URI",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "kotsadm-rqlite",
+					},
+					Key: "uri",
+				},
+			},
+		},
+		{
+			Name: "POSTGRES_URI", // this is still needed for the migration
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: "kotsadm-postgres",
 					},
-					Key: "uri",
+					Key:      "uri",
+					Optional: pointer.BoolPtr(true),
 				},
 			},
+		},
+		{
+			Name:  "POSTGRES_SCHEMA_DIR", // this is needed for the migration
+			Value: "/postgres/tables",
 		},
 		{
 			Name: "POD_NAMESPACE",
@@ -802,8 +836,6 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 		})
 	}
 
-	trueVal := true
-
 	statefulset := &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -834,7 +866,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 				},
 				Spec: corev1.PodSpec{
 					Affinity: &corev1.Affinity{
-						NodeAffinity: defaultKotsNodeAffinity(),
+						NodeAffinity: defaultKOTSNodeAffinity(),
 					},
 					SecurityContext: securityContext,
 					Volumes: []corev1.Volume{
@@ -885,7 +917,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 							Env: []corev1.EnvVar{
 								{
 									Name:  "SCHEMAHERO_DRIVER",
-									Value: "postgres",
+									Value: "rqlite",
 								},
 								{
 									Name:  "SCHEMAHERO_SPEC_FILE",
@@ -900,7 +932,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 									ValueFrom: &corev1.EnvVarSource{
 										SecretKeyRef: &corev1.SecretKeySelector{
 											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "kotsadm-postgres",
+												Name: "kotsadm-rqlite",
 											},
 											Key: "uri",
 										},
@@ -933,7 +965,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 							Env: []corev1.EnvVar{
 								{
 									Name:  "SCHEMAHERO_DRIVER",
-									Value: "postgres",
+									Value: "rqlite",
 								},
 								{
 									Name:  "SCHEMAHERO_DDL",
@@ -944,7 +976,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 									ValueFrom: &corev1.EnvVarSource{
 										SecretKeyRef: &corev1.SecretKeySelector{
 											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "kotsadm-postgres",
+												Name: "kotsadm-rqlite",
 											},
 											Key: "uri",
 										},
@@ -986,11 +1018,11 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 							},
 							Env: []corev1.EnvVar{
 								{
-									Name: "POSTGRES_PASSWORD",
+									Name: "RQLITE_PASSWORD",
 									ValueFrom: &corev1.EnvVarSource{
 										SecretKeyRef: &corev1.SecretKeySelector{
 											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "kotsadm-postgres",
+												Name: "kotsadm-rqlite",
 											},
 											Key: "password",
 										},
@@ -1039,7 +1071,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 												Name: "kotsadm-minio",
 											},
 											Key:      "accesskey",
-											Optional: &trueVal,
+											Optional: pointer.BoolPtr(true),
 										},
 									},
 								},
@@ -1051,7 +1083,7 @@ func KotsadmStatefulSet(deployOptions types.DeployOptions, size resource.Quantit
 												Name: "kotsadm-minio",
 											},
 											Key:      "secretkey",
-											Optional: &trueVal,
+											Optional: pointer.BoolPtr(true),
 										},
 									},
 								},

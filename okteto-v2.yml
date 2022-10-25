@@ -41,29 +41,3 @@ dev:
       limits:
         cpu: "1"
         memory: 1Gi
-
-# These shouldn't be needed anymore
-#  kotsadm:
-#    command: bash
-#    securityContext:
-#      capabilities:
-#        add:
-#          - SYS_PTRACE
-#    sync:
-#      - .:/go/src/github.com/replicatedhq/kots
-#    workdir: /go/src/github.com/replicatedhq/kots
-#    forward:
-#      - 2353:2345
-#    resources:
-#      limits:
-#        cpu: "2"
-#        memory: 4Gi
-#  kotsadm-migrations:
-#    command: bash
-#    sync:
-#      - migrations/tables/:/go/src/github.com/replicatedhq/kots/tables
-#    workdir: /go/src/github.com/replicatedhq/kots/tables
-#    resources:
-#      limits:
-#        cpu: "1"
-#        memory: 1Gi

@@ -23,7 +23,7 @@ type UpstreamSettings struct {
 	S3AccessKey            string
 	S3SecretKey            string
 	JWT                    string
-	PostgresPassword       string
+	RqlitePassword         string
 	APIEncryptionKey       string
 	HTTPProxyEnvValue      string
 	HTTPSProxyEnvValue     string
@@ -120,8 +120,8 @@ func loadUpstreamSettingsFromSecret(settings *UpstreamSettings, secret *corev1.S
 		settings.S3SecretKey = string(secret.Data["secretkey"])
 	case "kotsadm-session":
 		settings.JWT = string(secret.Data["key"])
-	case "kotsadm-postgres":
-		settings.PostgresPassword = string(secret.Data["password"])
+	case "kotsadm-rqlite":
+		settings.RqlitePassword = string(secret.Data["password"])
 	case "kotsadm-encryption":
 		settings.APIEncryptionKey = string(secret.Data["encryptionKey"])
 	}
@@ -159,7 +159,7 @@ func generateNewAdminConsoleFiles(settings *UpstreamSettings) ([]types.UpstreamF
 		S3AccessKey:            settings.S3AccessKey,
 		S3SecretKey:            settings.S3SecretKey,
 		JWT:                    settings.JWT,
-		PostgresPassword:       settings.PostgresPassword,
+		RqlitePassword:         settings.RqlitePassword,
 		APIEncryptionKey:       settings.APIEncryptionKey,
 		AutoCreateClusterToken: settings.AutoCreateClusterToken,
 		HTTPProxyEnvValue:      settings.HTTPProxyEnvValue,
