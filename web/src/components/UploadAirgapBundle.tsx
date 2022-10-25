@@ -1,4 +1,4 @@
-import React, { useEffect, useReducer } from "react";
+import React, { useEffect, useReducer, useRef } from "react";
 import { useHistory, useRouteMatch } from "react-router";
 import classNames from "classnames";
 import { KotsPageTitle } from "@components/Head";
@@ -59,7 +59,6 @@ type State = {
   supportBundleCommand?: string | string[];
   showSupportBundleCommand: boolean;
   simultaneousUploads?: number;
-  onlineInstallErrorMessage: string;
   uploadProgress: number;
   uploadSize: number;
   uploadResuming: boolean;
@@ -79,7 +78,6 @@ const UploadAirgapBundle = (props: Props) => {
       registryDetails: null,
       preparingOnlineInstall: false,
       showSupportBundleCommand: false,
-      onlineInstallErrorMessage: "",
       uploadProgress: 0,
       uploadSize: 0,
       uploadResuming: false,
@@ -91,13 +89,14 @@ const UploadAirgapBundle = (props: Props) => {
   const match = useRouteMatch<KotsParams>();
   const history = useHistory();
   const appSlug = match.params.slug;
+  const onlineInstallErrorMessage = useRef<string>("");
 
   const onDropBundle = async (file: { name: string }) => {
     setState({
       bundleFile: file,
-      onlineInstallErrorMessage: "",
       errorMessage: "",
     });
+    onlineInstallErrorMessage.current = "";
   };
 
   const getAirgapConfig = async () => {
@@ -193,8 +192,8 @@ const UploadAirgapBundle = (props: Props) => {
       fileUploading: true,
       errorMessage: "",
       showSupportBundleCommand: false,
-      onlineInstallErrorMessage: "",
     });
+    onlineInstallErrorMessage.current = "";
 
     if (showRegistry) {
       // TODO: remove isEmpty
@@ -299,12 +298,11 @@ const UploadAirgapBundle = (props: Props) => {
     }
   };
 
-  console.log("current error state", state.onlineInstallErrorMessage);
   const handleOnlineInstall = async () => {
     setState({
       preparingOnlineInstall: true,
-      onlineInstallErrorMessage: "",
     });
+    onlineInstallErrorMessage.current = "";
 
     let resumeResult: ResumeResult;
     fetch(`${process.env.API_ENDPOINT}/license/resume`, {
@@ -327,18 +325,15 @@ const UploadAirgapBundle = (props: Props) => {
           fileUploading: false,
           errorMessage: err,
           preparingOnlineInstall: false,
-          onlineInstallErrorMessage: err,
         });
+        onlineInstallErrorMessage.current = err;
         return;
       });
 
     let count = 0;
     const interval = setInterval(() => {
       console.log("interval called", count);
-      console.log(state.onlineInstallErrorMessage);
-      const { onlineInstallErrorMessage } = state;
-      console.log(onlineInstallErrorMessage);
-      if (state.onlineInstallErrorMessage.length) {
+      if (onlineInstallErrorMessage.current.length) {
         console.log("interval cleared");
         clearInterval(interval);
       }
@@ -358,8 +353,9 @@ const UploadAirgapBundle = (props: Props) => {
             fileUploading: false,
             errorMessage: resumeResult.error,
             preparingOnlineInstall: false,
-            onlineInstallErrorMessage: resumeResult.error,
           });
+
+          onlineInstallErrorMessage.current = resumeResult.error;
           return;
         }
 
@@ -484,7 +480,6 @@ const UploadAirgapBundle = (props: Props) => {
     errorMessage,
     registryDetails,
     preparingOnlineInstall,
-    onlineInstallErrorMessage,
     viewOnlineInstallErrorMessage,
     supportBundleCommand,
   } = state;
@@ -671,7 +666,7 @@ const UploadAirgapBundle = (props: Props) => {
       <div
         className={classNames(
           "u-marginTop--10 u-textAlign--center",
-          { "u-marginBottom--20": !onlineInstallErrorMessage },
+          { "u-marginBottom--20": !onlineInstallErrorMessage.current },
           { "u-display--none": preparingOnlineInstall }
         )}
       >
@@ -687,7 +682,7 @@ const UploadAirgapBundle = (props: Props) => {
           </span>
         </span>
       </div>
-      {onlineInstallErrorMessage && (
+      {onlineInstallErrorMessage.current && (
         <div className="u-marginTop--10 u-marginBottom--20">
           <span className="u-fontSize--small u-textColor--error u-marginRight--5 u-fontWeight--bold">
             Unable to install license
@@ -714,7 +709,7 @@ const UploadAirgapBundle = (props: Props) => {
               Error description
             </p>
             <p className="u-fontSize--small u-textColor--error">
-              {onlineInstallErrorMessage}
+              {onlineInstallErrorMessage.current}
             </p>
             <p className="u-fontSize--small u-fontWeight--bold u-marginTop--15 u-textColor--primary">
               Run this command to generate a support bundle
