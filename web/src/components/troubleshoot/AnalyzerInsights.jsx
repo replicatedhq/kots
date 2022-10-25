@@ -1,9 +1,9 @@
-import * as React from "react";
-import Loader from "../shared/Loader";
-import isEmpty from "lodash/isEmpty";
-import filter from "lodash/filter";
-import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
-import { sortAnalyzers, parseIconUri } from "../../utilities/utilities";
+import * as React from 'react';
+import Loader from '../shared/Loader';
+import isEmpty from 'lodash/isEmpty';
+import filter from 'lodash/filter';
+import MarkdownRenderer from '@src/components/shared/MarkdownRenderer';
+import { sortAnalyzers, parseIconUri } from '../../utilities/utilities';
 
 export class AnalyzerInsights extends React.Component {
   constructor(props) {
@@ -18,7 +18,7 @@ export class AnalyzerInsights extends React.Component {
   componentDidUpdate(lastProps) {
     if (this.props.insights !== lastProps.insights && this.props.insights) {
       const hasProblems = this.props.insights.some(
-        (i) => i.severity === "warn" || i.severity === "error"
+        (i) => i.severity === 'warn' || i.severity === 'error',
       );
       this.handleFilterTiles(hasProblems);
     }
@@ -31,7 +31,7 @@ export class AnalyzerInsights extends React.Component {
   componentDidMount() {
     if (this.props.insights) {
       const hasProblems = this.props.insights.some(
-        (i) => i.severity === "warn" || i.severity === "error"
+        (i) => i.severity === 'warn' || i.severity === 'error',
       );
       this.handleFilterTiles(hasProblems);
     }
@@ -41,7 +41,7 @@ export class AnalyzerInsights extends React.Component {
 
   checkBundleStatus = () => {
     const { status, refetchSupportBundle, insights } = this.props;
-    if (status === "uploaded" || status === "analyzing") {
+    if (status === 'uploaded' || status === 'analyzing') {
       // Check if the bundle is ready only if the user is on the page
       if (!insights) {
         this.interval = setInterval(refetchSupportBundle, 2000);
@@ -60,7 +60,7 @@ export class AnalyzerInsights extends React.Component {
     if (checked) {
       insights = filter(
         insights,
-        (i) => i.severity === "error" || i.severity === "warn"
+        (i) => i.severity === 'error' || i.severity === 'warn',
       );
     }
     this.setState({
@@ -76,7 +76,7 @@ export class AnalyzerInsights extends React.Component {
 
     let noInsightsNode;
     if (isEmpty(insights)) {
-      if (status === "uploaded" || status === "analyzing") {
+      if (status === 'uploaded' || status === 'analyzing') {
         noInsightsNode = (
           <div className="flex-column flex1 justifyContent--center alignItems--center u-textAlign--center u-lineHeight--normal u-textColor--bodyCopy">
             <Loader size="40" />
@@ -112,13 +112,17 @@ export class AnalyzerInsights extends React.Component {
     }
 
     return (
-      <div className="flex flex1">
+      <div className="flex u-width--full">
         {isEmpty(insights) ? (
           noInsightsNode
         ) : (
-          <div className="flex-column flex1">
-            <div className="flex-auto">
-              <div className="u-position--relative flex u-marginBottom--20 u-paddingLeft--10 u-paddingRight--10">
+          <div className="flex-column u-width--full card-bg">
+            <div className="u-marginBottom--20 u-paddingLeft--10 u-paddingRight--10">
+              <label
+                htmlFor="filterTiles"
+                for="filterTiles"
+                className="flex alignItems--center u-fontWeight--medium u-textColor--primary u-fontSize--normal u-lineHeight--normal u-userSelect--none"
+              >
                 <input
                   type="checkbox"
                   className="filter-tiles-checkbox"
@@ -128,18 +132,14 @@ export class AnalyzerInsights extends React.Component {
                     this.handleFilterTiles(e.target.checked);
                   }}
                 />
-                <label
-                  htmlFor="filterTiles"
-                  className="flex1 u-width--full u-position--relative u-marginLeft--5 u-cursor--pointer"
-                >
-                  <div className="flex-column">
-                    <span className="u-fontWeight--medium u-textColor--primary u-fontSize--normal u-marginBottom--5 u-lineHeight--normal u-userSelect--none">
-                      Only show errors and warnings
-                    </span>
-                  </div>
-                </label>
-              </div>
+                Only show errors and warnings
+              </label>
+              <span className="u-fontSize--small u-fontWeight--medium u-marginLeft--20">
+                By default we show you everything that was analyzed but you can
+                choose to see only errors and warnings.
+              </span>
             </div>
+
             {isEmpty(filteredInsights) ? (
               <div className="flex-column flex1 justifyContent--center alignItems--center u-textAlign--center u-lineHeight--normal u-textColor--bodyCopy">
                 <p className="u-textColor--primary u-fontSize--normal u-fontWeight--bold">
@@ -189,9 +189,9 @@ export class AnalyzerInsights extends React.Component {
                             </div>
                             <p
                               className={
-                                tile.severity === "debug"
-                                  ? "u-textColor--bodyCopy u-fontSize--normal u-fontWeight--bold"
-                                  : "u-textColor--primary u-fontSize--normal u-fontWeight--bold"
+                                tile.severity === 'debug'
+                                  ? 'u-textColor--bodyCopy u-fontSize--normal u-fontWeight--bold'
+                                  : 'u-textColor--primary u-fontSize--normal u-fontWeight--bold'
                               }
                             >
                               {tile.primary}
@@ -199,20 +199,20 @@ export class AnalyzerInsights extends React.Component {
                             <MarkdownRenderer
                               id={`markdown-wrapper-${i}`}
                               className={
-                                tile.severity === "debug"
-                                  ? "u-textColor--bodyCopy u-fontSize--smaller u-fontWeight--medium u-marginTop--5"
-                                  : "u-textColor--accent u-fontSize--smaller u-fontWeight--medium u-marginTop--5"
+                                tile.severity === 'debug'
+                                  ? 'u-textColor--bodyCopy u-fontSize--smaller u-fontWeight--medium u-marginTop--5'
+                                  : 'u-textColor--accent u-fontSize--smaller u-fontWeight--medium u-marginTop--5'
                               }
                             >
                               {tile.detail}
                             </MarkdownRenderer>
-                            {tile?.involvedObject?.kind === "Pod" && (
+                            {tile?.involvedObject?.kind === 'Pod' && (
                               <div>
                                 <span
                                   className="replicated-link u-fontSize--small u-marginTop--5"
                                   onClick={() =>
                                     this.props.openPodDetailsModal(
-                                      tile?.involvedObject
+                                      tile?.involvedObject,
                                     )
                                   }
                                 >

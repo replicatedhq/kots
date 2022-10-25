@@ -1,18 +1,18 @@
-import * as React from "react";
-import { withRouter } from "react-router-dom";
-import Loader from "../shared/Loader";
-import dayjs from "dayjs";
-import filter from "lodash/filter";
-import isEmpty from "lodash/isEmpty";
-import { Utilities } from "../../utilities/utilities";
-import download from "downloadjs";
-import Icon from "../Icon";
+import * as React from 'react';
+import { withRouter } from 'react-router-dom';
+import Loader from '../shared/Loader';
+import dayjs from 'dayjs';
+import filter from 'lodash/filter';
+import isEmpty from 'lodash/isEmpty';
+import { Utilities } from '../../utilities/utilities';
+import download from 'downloadjs';
+import Icon from '../Icon';
 // import { VendorUtilities } from "../../utilities/VendorUtilities";
 
 class SupportBundleRow extends React.Component {
   state = {
     downloadingBundle: false,
-    downloadBundleErrMsg: "",
+    downloadBundleErrMsg: '',
     errorInsights: [],
     warningInsights: [],
     otherInsights: [],
@@ -46,20 +46,20 @@ class SupportBundleRow extends React.Component {
   handleBundleClick = (bundle) => {
     const { watchSlug } = this.props;
     this.props.history.push(
-      `/app/${watchSlug}/troubleshoot/analyze/${bundle.slug}`
+      `/app/${watchSlug}/troubleshoot/analyze/${bundle.slug}`,
     );
   };
 
   downloadBundle = async (bundle) => {
-    this.setState({ downloadingBundle: true, downloadBundleErrMsg: "" });
+    this.setState({ downloadingBundle: true, downloadBundleErrMsg: '' });
     fetch(
       `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/${bundle.id}/download`,
       {
-        method: "GET",
+        method: 'GET',
         headers: {
           Authorization: Utilities.getToken(),
         },
-      }
+      },
     )
       .then(async (result) => {
         if (!result.ok) {
@@ -70,21 +70,21 @@ class SupportBundleRow extends React.Component {
           return;
         }
 
-        let filename = "";
-        const disposition = result.headers.get("Content-Disposition");
+        let filename = '';
+        const disposition = result.headers.get('Content-Disposition');
         if (disposition) {
-          filename = disposition.split("filename=")[1];
+          filename = disposition.split('filename=')[1];
         } else {
           const createdAt = dayjs(bundle.createdAt).format(
-            "YYYY-MM-DDTHH_mm_ss"
+            'YYYY-MM-DDTHH_mm_ss',
           );
           filename = `supportbundle-${createdAt}.tar.gz`;
         }
 
         const blob = await result.blob();
-        download(blob, filename, "application/gzip");
+        download(blob, filename, 'application/gzip');
 
-        this.setState({ downloadingBundle: false, downloadBundleErrMsg: "" });
+        this.setState({ downloadingBundle: false, downloadBundleErrMsg: '' });
       })
       .catch((err) => {
         console.log(err);
@@ -92,7 +92,7 @@ class SupportBundleRow extends React.Component {
           downloadingBundle: false,
           downloadBundleErrMsg: err
             ? `Unable to download bundle: ${err.message}`
-            : "Something went wrong, please try again.",
+            : 'Something went wrong, please try again.',
         });
       });
   };
@@ -100,17 +100,17 @@ class SupportBundleRow extends React.Component {
   sendBundleToVendor = async (bundleSlug) => {
     this.setState({
       sendingBundle: true,
-      sendingBundleErrMsg: "",
-      downloadBundleErrMsg: "",
+      sendingBundleErrMsg: '',
+      downloadBundleErrMsg: '',
     });
     fetch(
       `${process.env.API_ENDPOINT}/troubleshoot/app/${this.props.match.params.slug}/supportbundle/${bundleSlug}/share`,
       {
-        method: "POST",
+        method: 'POST',
         headers: {
           Authorization: Utilities.getToken(),
         },
-      }
+      },
     )
       .then(async (result) => {
         if (!result.ok) {
@@ -121,7 +121,7 @@ class SupportBundleRow extends React.Component {
           return;
         }
         await this.props.refetchBundleList();
-        this.setState({ sendingBundle: false, sendingBundleErrMsg: "" });
+        this.setState({ sendingBundle: false, sendingBundleErrMsg: '' });
       })
       .catch((err) => {
         console.log(err);
@@ -129,7 +129,7 @@ class SupportBundleRow extends React.Component {
           sendingBundle: false,
           sendingBundleErrMsg: err
             ? `Unable to send bundle to vendor: ${err.message}`
-            : "Something went wrong, please try again.",
+            : 'Something went wrong, please try again.',
         });
       });
   };
@@ -140,18 +140,18 @@ class SupportBundleRow extends React.Component {
       return;
     }
     const errorInsights = filter(bundle.analysis.insights, [
-      "severity",
-      "error",
+      'severity',
+      'error',
     ]);
     const warningInsights = filter(bundle.analysis.insights, [
-      "severity",
-      "warn",
+      'severity',
+      'warn',
     ]);
     const otherInsights = filter(bundle.analysis.insights, (item) => {
       return (
         item.severity === null ||
-        item.severity === "info" ||
-        item.severity === "debug"
+        item.severity === 'info' ||
+        item.severity === 'debug'
       );
     });
     this.setState({
@@ -174,7 +174,7 @@ class SupportBundleRow extends React.Component {
 
     let noInsightsMessage;
     if (bundle && isEmpty(bundle?.analysis?.insights?.length)) {
-      if (bundle.status === "uploaded" || bundle.status === "analyzing") {
+      if (bundle.status === 'uploaded' || bundle.status === 'analyzing') {
         noInsightsMessage = (
           <div className="flex">
             <Loader size="14" />
@@ -194,43 +194,41 @@ class SupportBundleRow extends React.Component {
     return (
       <div className="SupportBundle--Row u-position--relative">
         <div>
-          <div className="bundle-row-wrapper">
+          <div className="bundle-row-wrapper card-item">
             <div className="bundle-row flex flex1">
               <div
                 className="flex flex1 flex-column"
                 onClick={() => this.handleBundleClick(bundle)}
               >
                 <div className="flex">
-                  <div className="flex">
-                    {!this.props.isCustomer && bundle.customer ? (
-                      <div className="flex-column flex1 flex-verticalCenter">
-                        <span className="u-fontSize--large u-textColor--primary u-fontWeight--medium u-cursor--pointer">
-                          <span>
-                            Collected on{" "}
-                            <span className="u-fontWeight--bold">
-                              {dayjs(bundle.createdAt).format(
-                                "MMMM D, YYYY @ h:mm a"
-                              )}
-                            </span>
-                          </span>
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="flex-column flex1 flex-verticalCenter">
+                  {!this.props.isCustomer && bundle.customer ? (
+                    <div className="flex-column flex1 flex-verticalCenter">
+                      <span className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-cursor--pointer">
                         <span>
-                          <span className="u-fontSize--large u-cursor--pointer u-textColor--primary u-fontWeight--medium">
-                            Collected on{" "}
-                            <span className="u-fontWeight--medium">
-                              {dayjs(bundle.createdAt).format(
-                                "MMMM D, YYYY @ h:mm a"
-                              )}
-                            </span>
+                          Collected on{' '}
+                          <span>
+                            {dayjs(bundle.createdAt).format(
+                              'MMMM D, YYYY @ h:mm a',
+                            )}
                           </span>
-                          {this.renderSharedContext()}
                         </span>
-                      </div>
-                    )}
-                  </div>
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex-column flex1 flex-verticalCenter">
+                      <span>
+                        <span className="u-fontSize--large u-cursor--pointer u-textColor--primary u-fontWeight--bold">
+                          Collected on{' '}
+                          <span>
+                            {dayjs(bundle.createdAt).format(
+                              'MMMM D, YYYY @ h:mm a',
+                            )}
+                          </span>
+                        </span>
+                        {this.renderSharedContext()}
+                      </span>
+                    </div>
+                  )}
                 </div>
                 <div className="flex u-marginTop--15">
                   {bundle?.analysis?.insights?.length ? (
@@ -238,12 +236,12 @@ class SupportBundleRow extends React.Component {
                       {errorInsights.length > 0 && (
                         <span className="flex alignItems--center u-marginRight--30 u-fontSize--small u-fontWeight--medium u-textColor--error">
                           <Icon
-                            icon={"warning-circle-filled"}
+                            icon={'warning-circle-filled'}
                             size={15}
                             className="error-color u-marginRight--5"
                           />
                           {errorInsights.length} error
-                          {errorInsights.length > 1 ? "s" : ""} found
+                          {errorInsights.length > 1 ? 's' : ''} found
                         </span>
                       )}
                       {warningInsights.length > 0 && (
@@ -254,14 +252,14 @@ class SupportBundleRow extends React.Component {
                             size={16}
                           />
                           {warningInsights.length} warning
-                          {warningInsights.length > 1 ? "s" : ""} found
+                          {warningInsights.length > 1 ? 's' : ''} found
                         </span>
                       )}
                       {otherInsights.length > 0 && (
                         <span className="flex alignItems--center u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy">
                           <span className="icon u-bundleInsightOtherIcon u-marginRight--5" />
                           {otherInsights.length} informational and debugging
-                          insight{otherInsights.length > 1 ? "s" : ""} found
+                          insight{otherInsights.length > 1 ? 's' : ''} found
                         </span>
                       )}
                     </div>
@@ -284,20 +282,24 @@ class SupportBundleRow extends React.Component {
                       className="u-marginRight--5"
                     />
                     <span className="u-fontWeight--bold u-fontSize--small u-color--mutedteal">
-                      Sent to vendor on{" "}
-                      {Utilities.dateFormat(bundle.sharedAt, "MM/DD/YYYY")}
+                      Sent to vendor on{' '}
+                      {Utilities.dateFormat(bundle.sharedAt, 'MM/DD/YYYY')}
                     </span>
                   </div>
                 ) : this.state.sendingBundle ? (
                   <Loader size="30" className="u-marginRight--10" />
                 ) : showSendSupportBundleLink ? (
                   <span
-                    className="u-fontSize--small u-marginRight--10 u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover u-paddingRight--10 u-borderRight--gray"
+                    className="u-paddingRight--10"
                     onClick={() =>
                       this.sendBundleToVendor(this.props.bundle.slug)
                     }
                   >
-                    Send bundle to vendor
+                    <Icon
+                      icon="paper-airplane"
+                      size={16}
+                      className="clickable"
+                    />
                   </span>
                 ) : null}
                 {this.state.downloadBundleErrMsg && (
@@ -312,7 +314,7 @@ class SupportBundleRow extends React.Component {
                     className="u-fontSize--small u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover"
                     onClick={() => this.downloadBundle(bundle)}
                   >
-                    Download bundle
+                    <Icon icon="download" size={18} className="clickable" />
                   </span>
                 )}
               </div>

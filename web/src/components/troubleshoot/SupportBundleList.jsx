@@ -1,23 +1,23 @@
-import * as React from "react";
-import { KotsPageTitle } from "@components/Head";
-import { withRouter, Link } from "react-router-dom";
+import * as React from 'react';
+import { KotsPageTitle } from '@components/Head';
+import { withRouter, Link } from 'react-router-dom';
 
-import Toggle from "../shared/Toggle";
-import Loader from "../shared/Loader";
-import SupportBundleRow from "./SupportBundleRow";
-import GenerateSupportBundle from "./GenerateSupportBundle";
-import ConfigureRedactorsModal from "./ConfigureRedactorsModal";
-import ErrorModal from "../modals/ErrorModal";
-import { Utilities } from "../../utilities/utilities";
+import Toggle from '../shared/Toggle';
+import Loader from '../shared/Loader';
+import SupportBundleRow from './SupportBundleRow';
+import GenerateSupportBundle from './GenerateSupportBundle';
+import ConfigureRedactorsModal from './ConfigureRedactorsModal';
+import ErrorModal from '../modals/ErrorModal';
+import { Utilities } from '../../utilities/utilities';
 
-import "../../scss/components/troubleshoot/SupportBundleList.scss";
-import Icon from "../Icon";
+import '../../scss/components/troubleshoot/SupportBundleList.scss';
+import Icon from '../Icon';
 
 class SupportBundleList extends React.Component {
   state = {
     supportBundles: [],
     loading: false,
-    errorMsg: "",
+    errorMsg: '',
     displayRedactorModal: false,
     displayErrorModal: false,
   };
@@ -27,17 +27,17 @@ class SupportBundleList extends React.Component {
   }
 
   listSupportBundles = () => {
-    this.setState({ loading: true, errorMsg: "", displayErrorModal: false });
+    this.setState({ loading: true, errorMsg: '', displayErrorModal: false });
 
     fetch(
       `${process.env.API_ENDPOINT}/troubleshoot/app/${this.props.watch?.slug}/supportbundles`,
       {
         headers: {
           Authorization: Utilities.getToken(),
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
-        method: "GET",
-      }
+        method: 'GET',
+      },
     )
       .then(async (res) => {
         if (!res.ok) {
@@ -52,7 +52,7 @@ class SupportBundleList extends React.Component {
         this.setState({
           supportBundles: response.supportBundles,
           loading: false,
-          errorMsg: "",
+          errorMsg: '',
           displayErrorModal: false,
         });
       })
@@ -62,7 +62,7 @@ class SupportBundleList extends React.Component {
           loading: false,
           errorMsg: err
             ? err.message
-            : "Something went wrong, please try again.",
+            : 'Something went wrong, please try again.',
           displayErrorModal: true,
         });
       });
@@ -123,61 +123,62 @@ class SupportBundleList extends React.Component {
             <Toggle
               items={[
                 {
-                  title: "Support bundles",
+                  title: 'Support bundles',
                   onClick: () =>
                     this.props.history.push(
-                      `/app/${this.props.watch.slug}/troubleshoot`
+                      `/app/${this.props.watch.slug}/troubleshoot`,
                     ),
                   isActive: true,
                 },
                 {
-                  title: "Redactors",
+                  title: 'Redactors',
                   onClick: () =>
                     this.props.history.push(
-                      `/app/${this.props.watch.slug}/troubleshoot/redactors`
+                      `/app/${this.props.watch.slug}/troubleshoot/redactors`,
                     ),
                   isActive: false,
                 },
               ]}
             />
           </div>
-          <div className="flex flex1">
-            <div className="flex1 flex-column">
+          <div className="card-bg">
+            <div className="flex flex1 flex-column">
               <div className="u-position--relative flex-auto u-paddingBottom--10 flex">
-                <div className="flex flex1">
-                  <div className="flex1 u-flexTabletReflow">
-                    <div className="flex flex1">
-                      <div className="flex-auto alignSelf--center">
-                        <h2 className="u-fontSize--larger u-fontWeight--bold u-textColor--primary flex alignContent--center">
-                          Support bundles
-                        </h2>
-                      </div>
+                <div className="flex flex1 u-flexTabletReflow">
+                  <div className="flex flex1">
+                    <div className="flex-auto alignSelf--center">
+                      <p className="card-title">Support bundles</p>
                     </div>
-                    <div className="RightNode flex-auto flex alignItems--center u-position--relative">
-                      <Link
-                        to={`${this.props.match.url}/generate`}
-                        className="btn secondary"
-                      >
-                        Generate a support bundle
-                      </Link>
-                      <span
-                        className="replicated-link flex alignItems--center u-fontSize--small u-marginLeft--20"
-                        onClick={this.toggleRedactorModal}
-                      >
-                        <Icon
-                          icon="marker-tip-outline"
-                          size={18}
-                          className="clickable u-marginRight--5"
-                        />
-                        Configure redaction
-                      </span>
-                    </div>
+                  </div>
+                  <div className="RightNode flex-auto flex alignItems--center u-position--relative">
+                    <Link
+                      to={`${this.props.match.url}/generate`}
+                      className="replicated-link flex alignItems--center u-fontSize--small"
+                    >
+                      <Icon
+                        icon="tools"
+                        size={18}
+                        className="clickable u-marginRight--5"
+                      />
+                      Generate a support bundle
+                    </Link>
+                    <span
+                      className="replicated-link flex alignItems--center u-fontSize--small u-marginLeft--20"
+                      onClick={this.toggleRedactorModal}
+                    >
+                      <Icon
+                        icon="marker-tip-outline"
+                        size={18}
+                        className="clickable u-marginRight--5"
+                      />
+                      Configure redaction
+                    </span>
                   </div>
                 </div>
               </div>
               <div
                 className={`${
-                  watch.downstream ? "flex1 flex-column u-overflow--auto" : ""
+                  watch.downstream ? 'flex1 flex-column u-overflow--auto' : ''
                 }`}
               >
                 {bundlesNode}

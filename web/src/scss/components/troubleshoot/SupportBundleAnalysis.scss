@@ -1,4 +1,4 @@
-@import "../../variables.scss";
+@import '../../variables.scss';
 
 .empty-bundles-illustration {
   /*background-image: url("../../../images/global/empty_bundles_illustration@2x.png");*/
@@ -10,8 +10,8 @@
 
 .filter-tiles-checkbox {
   position: relative;
-  margin: 0 2px 0 0;
-  top: 6px;
+  margin: 0 5px 0 0;
+  // top: 6px;
 }
 
 .magifying-glass-animate {
@@ -151,7 +151,7 @@
     }
 
     &:after {
-      content: "";
+      content: '';
       width: 12px;
       height: 12px;
       top: 50%;
@@ -241,7 +241,7 @@
 
 .action-content {
   background-color: #ffffff;
-  padding: 16px 14px;
+  // padding: 16px 14px;
   border-top: 1px solid #dfdfdf;
   border-radius: 0 0 4px 4px;
 
@@ -270,7 +270,7 @@
     font-weight: 600;
 
     &::after {
-      content: "";
+      content: '';
       position: absolute;
       bottom: -16px;
       display: block;
@@ -314,7 +314,7 @@
       font-weight: 600;
 
       &::after {
-        content: "";
+        content: '';
         width: 100%;
         height: 2px;
         position: absolute;
@@ -358,7 +358,7 @@
   padding-left: 15px;
 
   &::before {
-    content: "";
+    content: '';
     position: absolute;
     top: -2px;
     left: -2px;
@@ -368,7 +368,7 @@
   }
 
   &::after {
-    content: "";
+    content: '';
     position: absolute;
     left: -2px;
     width: 2px;
@@ -382,7 +382,7 @@
   }
 
   .section:before {
-    content: "";
+    content: '';
     display: block;
     height: 20px;
     border-left: 2px solid #c4c4c4;
@@ -395,7 +395,7 @@
   }
 
   .section:after {
-    content: "";
+    content: '';
     position: absolute;
     top: 25px;
     left: -6px;

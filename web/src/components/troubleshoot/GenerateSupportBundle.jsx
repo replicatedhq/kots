@@ -496,7 +496,7 @@ class GenerateSupportBundle extends React.Component {
                   </div>
                 )}
               </div>
-              <div className="flex1 flex-column u-paddingRight--30">
+              <div className="flex1 flex-column u-margin--auto">
                 <div>
                   {generateBundleErrMsg && (
                     <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">
