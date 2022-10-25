@@ -336,6 +336,8 @@ const UploadAirgapBundle = (props: Props) => {
     const interval = setInterval(() => {
       console.log("interval called", count);
       console.log(state.onlineInstallErrorMessage);
+      const { onlineInstallErrorMessage } = state;
+      console.log(onlineInstallErrorMessage);
       if (state.onlineInstallErrorMessage.length) {
         console.log("interval cleared");
         clearInterval(interval);
