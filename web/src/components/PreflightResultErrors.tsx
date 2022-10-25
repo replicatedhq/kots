@@ -13,7 +13,7 @@ type Props = {
   ignorePermissionErrors: () => void;
   logo: string;
   preflightResultData: PreflightResultData | null;
-  valueFromAPI: string;
+  errors: PreflightError[];
 };
 
 type State = {
@@ -27,6 +27,10 @@ type State = {
 type PreflightResultData = {
   appSlug: string;
   sequence: number;
+};
+type PreflightError = {
+  error: string;
+  isRbac: boolean;
 };
 const PreflightResultErrors = (props: Props) => {
   const [state, setState] = useReducer(
@@ -138,8 +142,15 @@ const PreflightResultErrors = (props: Props) => {
     setState({ displayErrorModal: !state.displayErrorModal });
   };
 
-  const { valueFromAPI, logo } = props;
+  const { errors, logo } = props;
   const { errorTitle, errorMsg, displayErrorModal, command } = state;
+  const isRbacError = errors?.find((error) => error.isRbac) || false;
+
+  const displayErrorString = errors
+    .map((error) => {
+      return error.error;
+    })
+    .join("\n");
 
   return (
     <div className="flex flex1 flex-column">
@@ -163,11 +174,20 @@ const PreflightResultErrors = (props: Props) => {
                 Unable to automatically run preflight checks
               </h2>
             </div>
-            <p className="u-marginTop--10 u-marginBottom--10 u-fontSize--normal u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--normal">
-              The Kubernetes RBAC policy that the Admin Console is running with
-              does not have access to complete the Preflight Checks. It’s
-              recommended that you run these manually before proceeding.
-            </p>
+            {isRbacError && (
+              <p className="u-marginTop--10 u-marginBottom--10 u-fontSize--normal u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--normal">
+                The Kubernetes RBAC policy that the Admin Console is running
+                with does not have access to complete the Preflight Checks. It’s
+                recommended that you run these manually before proceeding.
+              </p>
+            )}
+            {!isRbacError && (
+              <p className="u-marginTop--10 u-marginBottom--10 u-fontSize--normal u-lineHeight--normal u-textColor--bodyCopy u-fontWeight--normal">
+                There were errors running preflight checks in Admin Console.
+                Preflight checks can be ran manually as an alternative. It’s
+                recommended that you run these before proceeding.
+              </p>
+            )}
             <p
               className="replicated-link u-fontSize--normal u-marginBottom--10"
               onClick={toggleShowErrorDetails}
@@ -178,7 +198,7 @@ const PreflightResultErrors = (props: Props) => {
               <div className="flex-column flex flex1 monaco-editor-wrapper u-border--gray">
                 <MonacoEditor
                   language="bash"
-                  value={valueFromAPI}
+                  value={displayErrorString}
                   height="300px"
                   options={{
                     readOnly: true,
