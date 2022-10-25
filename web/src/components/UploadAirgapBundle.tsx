@@ -299,13 +299,12 @@ const UploadAirgapBundle = (props: Props) => {
     }
   };
 
+  console.log("current error state", state.onlineInstallErrorMessage);
   const handleOnlineInstall = async () => {
     setState({
       preparingOnlineInstall: true,
       onlineInstallErrorMessage: "",
     });
-
-    console.log("current error state", state.onlineInstallErrorMessage);
 
     let resumeResult: ResumeResult;
     fetch(`${process.env.API_ENDPOINT}/license/resume`, {
