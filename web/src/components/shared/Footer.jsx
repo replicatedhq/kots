@@ -1,5 +1,4 @@
 import * as React from "react";
-import { withRouter } from "react-router-dom";
 import semverjs from "semver";
 import { getBuildVersion } from "@src/utilities/utilities";
 import "@src/scss/components/shared/Footer.scss";
@@ -97,4 +96,4 @@ export class Footer extends React.Component {
   }
 }
 
-export default withRouter(Footer);
+export default Footer;

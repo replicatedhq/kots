@@ -38,8 +38,13 @@ func AdminConsoleCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to parse timeout value")
 			}
 
+			namespace, err := getNamespaceOrDefault(v.GetString("namespace"))
+			if err != nil {
+				return errors.Wrap(err, "failed to get namespace")
+			}
+
 			getPodName := func() (string, error) {
-				podName, err := k8sutil.WaitForKotsadm(clientset, v.GetString("namespace"), timeout)
+				podName, err := k8sutil.WaitForKotsadm(clientset, namespace, timeout)
 				if err != nil {
 					if _, ok := errors.Cause(err).(*k8sutiltypes.ErrorTimeout); ok {
 						return podName, errors.Errorf("kotsadm failed to start: %s. Use the --wait-duration flag to increase timeout.", err)
@@ -58,7 +63,7 @@ func AdminConsoleCmd() *cobra.Command {
 				pollForAdditionalPorts = false
 			}
 
-			adminConsolePort, errChan, err := k8sutil.PortForward(localPort, 3000, v.GetString("namespace"), getPodName, pollForAdditionalPorts, stopCh, log)
+			adminConsolePort, errChan, err := k8sutil.PortForward(localPort, 3000, namespace, getPodName, pollForAdditionalPorts, stopCh, log)
 			if err != nil {
 				return errors.Wrap(err, "failed to port forward")
 			}

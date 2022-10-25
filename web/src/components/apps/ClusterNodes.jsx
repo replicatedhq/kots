@@ -1,7 +1,6 @@
 import React, { Component, Fragment } from "react";
 import classNames from "classnames";
 import dayjs from "dayjs";
-import { withRouter } from "react-router-dom";
 import { KotsPageTitle } from "@components/Head";
 import CodeSnippet from "../shared/CodeSnippet";
 import NodeRow from "./NodeRow";
@@ -542,4 +541,4 @@ export class ClusterNodes extends Component {
   }
 }
 
-export default withRouter(ClusterNodes);
+export default ClusterNodes;

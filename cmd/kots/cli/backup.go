@@ -25,7 +25,10 @@ func BackupCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
 
-			namespace := v.GetString("namespace")
+			namespace, err := getNamespaceOrDefault(v.GetString("namespace"))
+			if err != nil {
+				return errors.Wrap(err, "failed to get namespace")
+			}
 
 			output := v.GetString("output")
 			if output != "json" && output != "" {
@@ -81,8 +84,13 @@ func BackupListCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
 
+			namespace, err := getNamespaceOrDefault(v.GetString("namespace"))
+			if err != nil {
+				return errors.Wrap(err, "failed to get namespace")
+			}
+
 			options := snapshot.ListInstanceBackupsOptions{
-				Namespace: v.GetString("namespace"),
+				Namespace: namespace,
 			}
 			backups, err := snapshot.ListInstanceBackups(cmd.Context(), options)
 			if err != nil {

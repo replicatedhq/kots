@@ -16,6 +16,8 @@ import { Utilities, isAwaitingResults } from "@src/utilities/utilities";
 import { AirgapUploader } from "@src/utilities/airgapUploader";
 import { useSelectedAppClusterDashboardWithIntercept } from "../api/useSelectedAppClusterDashboard";
 import { useHistory, useRouteMatch } from "react-router-dom";
+import { useLicenseWithIntercept } from "@features/App";
+import { useNextAppVersionWithIntercept } from "../api/useNextAppVersion";
 
 import "@src/scss/components/watches/Dashboard.scss";
 import "@src/../node_modules/react-vis/dist/style";
@@ -232,48 +234,46 @@ const Dashboard = (props: Props) => {
     });
   };
 
-  const getAppLicense = async ({ slug }: { slug: string }) => {
-    await fetch(`${process.env.API_ENDPOINT}/app/${slug}/license`, {
-      method: "GET",
-      headers: {
-        Authorization: Utilities.getToken(),
-        "Content-Type": "application/json",
-      },
-    })
-      .then(async (res) => {
-        const body = await res.json();
-        if (!res.ok) {
-          setState({ gettingAppLicenseErrMsg: body.error });
-          return;
-        }
-        if (body === null) {
-          setState({ appLicense: null, gettingAppLicenseErrMsg: "" });
-        } else if (body.success) {
-          setState({
-            appLicense: body.license,
-            gettingAppLicenseErrMsg: "",
-          });
-        } else if (body.error) {
-          setState({
-            appLicense: null,
-            gettingAppLicenseErrMsg: body.error,
-          });
-        }
-      })
-      .catch((err) => {
-        console.log(err);
-        setState({
-          gettingAppLicenseErrMsg: err
-            ? `Error while getting the license: ${err.message}`
-            : "Something went wrong, please try again.",
-        });
+  const {
+    data: licenseWithInterceptResponse,
+    error: licenseWithInterceptError,
+    refetch: getAppLicense,
+    isSlowLoading: isSlowLoadingLicense,
+  } = useLicenseWithIntercept();
+
+  useEffect(() => {
+    if (!licenseWithInterceptResponse) {
+      setState({ appLicense: null, gettingAppLicenseErrMsg: "" });
+      return;
+    }
+
+    if (licenseWithInterceptResponse.success) {
+      setState({
+        appLicense: licenseWithInterceptResponse.license,
+        gettingAppLicenseErrMsg: "",
       });
-  };
+      return;
+    }
+    if (licenseWithInterceptResponse.error) {
+      setState({
+        appLicense: null,
+        gettingAppLicenseErrMsg: licenseWithInterceptResponse.error,
+      });
+      return;
+    }
+    if (licenseWithInterceptError instanceof Error) {
+      setState({ gettingAppLicenseErrMsg: licenseWithInterceptError?.message });
+      return;
+    }
+
+    setState({
+      gettingAppLicenseErrMsg: "Something went wrong, please try again.",
+    });
+  }, [licenseWithInterceptResponse]);
 
   useEffect(() => {
     if (props.app) {
       setWatchState(props.app);
-      getAppLicense(props.app);
     }
   }, [props.app]);
 
@@ -325,7 +325,7 @@ const Dashboard = (props: Props) => {
               checkingForUpdateError: response.status === "failed",
             });
 
-            getAppLicense(props.app);
+            getAppLicense();
             if (props.updateCallback) {
               props.updateCallback();
             }
@@ -620,8 +620,46 @@ const Dashboard = (props: Props) => {
     );
   };
 
-  const { data: selectedAppClusterDashboardResponse } =
-    useSelectedAppClusterDashboardWithIntercept({ refetchInterval: 2000 });
+  const {
+    data: selectedAppClusterDashboardResponse,
+    isSlowLoading: isSlowLoadingSelectedAppClusterDashboard,
+  } = useSelectedAppClusterDashboardWithIntercept({ refetchInterval: 2000 });
+
+  const { isSlowLoading: isSlowLoadingNextAppVersion } =
+    useNextAppVersionWithIntercept();
+
+  console.log(state.slowLoader);
+  // show slow loader if any of the apis are slow loading
+  useEffect(() => {
+    // since this is new and we may need to debug it, leaving these in for now
+    // console.log("isSlowLoadingLicense", isSlowLoadingLicense);
+    // console.log("isSlowLoadingNextAppVersion", isSlowLoadingNextAppVersion);
+    // console.log(
+    //   "isSlowLoadingSelectedAppClusterDashboard",
+    //   isSlowLoadingSelectedAppClusterDashboard
+    // );
+    if (
+      !state.slowLoader &&
+      (isSlowLoadingLicense ||
+        isSlowLoadingNextAppVersion ||
+        isSlowLoadingSelectedAppClusterDashboard)
+    ) {
+      setState({ slowLoader: true });
+      return;
+    }
+    if (
+      state.slowLoader &&
+      !isSlowLoadingLicense &&
+      !isSlowLoadingNextAppVersion &&
+      !isSlowLoadingSelectedAppClusterDashboard
+    ) {
+      setState({ slowLoader: false });
+    }
+  }, [
+    isSlowLoadingLicense,
+    isSlowLoadingNextAppVersion,
+    isSlowLoadingSelectedAppClusterDashboard,
+  ]);
 
   useEffect(() => {
     if (selectedAppClusterDashboardResponse) {
@@ -644,7 +682,7 @@ const Dashboard = (props: Props) => {
     state.updateChecker.start(updateStatus, 1000);
     if (app) {
       setWatchState(app);
-      getAppLicense(app);
+      getAppLicense();
     }
     return () => {
       state.updateChecker.stop();
@@ -666,7 +704,7 @@ const Dashboard = (props: Props) => {
       method: "POST",
     })
       .then(async (res) => {
-        getAppLicense(props.app);
+        getAppLicense();
         if (!res.ok) {
           const text = await res.text();
           setState({
@@ -814,7 +852,8 @@ const Dashboard = (props: Props) => {
                   <DashboardLicenseCard
                     appLicense={appLicense}
                     app={app}
-                    syncCallback={() => getAppLicense(props.app)}
+                    syncCallback={() => getAppLicense()}
+                    refetchLicense={getAppLicense}
                     gettingAppLicenseErrMsg={state.gettingAppLicenseErrMsg}
                   >
                     {/* leaving this here as an example: please delete later */}

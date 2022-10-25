@@ -63,9 +63,9 @@ func DockerEnsureSecretCmd() *cobra.Command {
 			}
 
 			// create the image pull secret
-			namespace := v.GetString("namespace")
-			if err := validateNamespace(namespace); err != nil {
-				return err
+			namespace, err := getNamespaceOrDefault(v.GetString("namespace"))
+			if err != nil {
+				return errors.Wrap(err, "failed to get namespace")
 			}
 
 			clientset, err := k8sutil.GetClientset()

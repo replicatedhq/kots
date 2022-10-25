@@ -49,11 +49,16 @@ func AppStatusCmd() *cobra.Command {
 				return errors.Wrap(err, "failed to get clientset")
 			}
 
-			getPodName := func() (string, error) {
-				return k8sutil.FindKotsadm(clientset, v.GetString("namespace"))
+			namespace, err := getNamespaceOrDefault(v.GetString("namespace"))
+			if err != nil {
+				return errors.Wrap(err, "failed to get namespace")
 			}
 
-			localPort, errChan, err := k8sutil.PortForward(0, 3000, v.GetString("namespace"), getPodName, false, stopCh, log)
+			getPodName := func() (string, error) {
+				return k8sutil.FindKotsadm(clientset, namespace)
+			}
+
+			localPort, errChan, err := k8sutil.PortForward(0, 3000, namespace, getPodName, false, stopCh, log)
 			if err != nil {
 				log.FinishSpinnerWithError()
 				return errors.Wrap(err, "failed to start port forwarding")
