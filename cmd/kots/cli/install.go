@@ -26,8 +26,8 @@ import (
 	"github.com/replicatedhq/kots/pkg/handlers"
 	"github.com/replicatedhq/kots/pkg/identity"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	k8sutiltypes "github.com/replicatedhq/kots/pkg/k8sutil/types"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
-	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
@@ -311,7 +311,7 @@ func InstallCmd() *cobra.Command {
 
 			log.ActionWithoutSpinner("Deploying Admin Console")
 			if err := kotsadm.Deploy(deployOptions, log); err != nil {
-				if _, ok := errors.Cause(err).(*types.ErrorTimeout); ok {
+				if _, ok := errors.Cause(err).(*k8sutiltypes.ErrorTimeout); ok {
 					return errors.Errorf("Failed to deploy: %s. Use the --wait-duration flag to increase timeout.", err)
 				}
 				return errors.Wrap(err, "failed to deploy")
@@ -327,7 +327,7 @@ func InstallCmd() *cobra.Command {
 			getPodName := func() (string, error) {
 				podName, err := k8sutil.WaitForKotsadm(clientset, namespace, timeout)
 				if err != nil {
-					if _, ok := errors.Cause(err).(*types.ErrorTimeout); ok {
+					if _, ok := errors.Cause(err).(*k8sutiltypes.ErrorTimeout); ok {
 						return podName, errors.Errorf("kotsadm failed to start: %s. Use the --wait-duration flag to increase timeout.", err)
 					}
 					return podName, errors.Wrap(err, "failed to wait for web")

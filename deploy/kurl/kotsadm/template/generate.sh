@@ -28,8 +28,7 @@ function generate() {
     sed -i -e "s|__KOTSADM_BINARY__|$kotsadm_binary|g" "${dir}/Manifest"
 
     # The following environment variables will be exported by the .image.env file
-    find "$dir" -type f -exec sed -i -e "s|__POSTGRES_10_TAG__|$POSTGRES_10_TAG|g" {} \;
-    find "$dir" -type f -exec sed -i -e "s|__POSTGRES_14_TAG__|$POSTGRES_14_TAG|g" {} \;
+    find "$dir" -type f -exec sed -i -e "s|__RQLITE_TAG__|$RQLITE_TAG|g" {} \;
     local dex_image="$kotsadm_image_registry/$kotsadm_image_namespace/dex:$DEX_TAG"
     find "$dir" -type f -exec sed -i -e "s|__DEX_IMAGE__|$dex_image|g" {} \;
 }

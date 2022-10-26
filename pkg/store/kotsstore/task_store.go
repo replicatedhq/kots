@@ -1,13 +1,14 @@
 package kotsstore
 
 import (
-	"database/sql"
 	"encoding/json"
+	"fmt"
 	"sync"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/persistence"
+	"github.com/rqlite/gorqlite"
 )
 
 const (
@@ -27,13 +28,13 @@ type TaskStatus struct {
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
-func (s *KOTSStore) migrationTasksFromPostgres() error {
+func (s *KOTSStore) migrateTasksFromRqlite() error {
 	db := persistence.MustGetDBSession()
 
 	query := `select updated_at, current_message, status from api_task_status`
-	rows, err := db.Query(query)
+	rows, err := db.QueryOne(query)
 	if err != nil {
-		return errors.Wrap(err, "failed to select tasks for migration")
+		return fmt.Errorf("failed to select tasks for migration: %v: %v", err, rows.Err)
 	}
 
 	taskCm, err := s.getConfigmap(TaskStatusConfigMapName)
@@ -47,8 +48,8 @@ func (s *KOTSStore) migrationTasksFromPostgres() error {
 
 	for rows.Next() {
 		var id string
-		var status sql.NullString
-		var message sql.NullString
+		var status gorqlite.NullString
+		var message gorqlite.NullString
 
 		ts := TaskStatus{}
 		if err := rows.Scan(&id, &ts.UpdatedAt, &message, &status); err != nil {
@@ -75,8 +76,8 @@ func (s *KOTSStore) migrationTasksFromPostgres() error {
 	}
 
 	query = `delete from api_task_status`
-	if _, err := db.Exec(query); err != nil {
-		return errors.Wrap(err, "failed to delete tasks from postgres")
+	if wr, err := db.WriteOne(query); err != nil {
+		return fmt.Errorf("failed to delete tasks from db: %v: %v", err, wr.Err)
 	}
 
 	return nil

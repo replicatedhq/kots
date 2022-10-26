@@ -33,8 +33,7 @@ kurl:
 
 .PHONY: generate
 generate:
-	@POSTGRES_10_TAG=$(shell source ../../../../.image.env && echo "$$POSTGRES_10_TAG") \
-	POSTGRES_14_TAG=$(shell source ../../../../.image.env && echo "$$POSTGRES_14_TAG") \
+	@RQLITE_TAG=$(shell source ../../../../.image.env && echo "$$RQLITE_TAG") \
 	DEX_TAG=$(shell source ../../../../.image.env && echo "$$DEX_TAG") \
 		${MAKE} _generate
 	

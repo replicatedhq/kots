@@ -3,10 +3,10 @@ kind: Table
 metadata:
   name: scheduled-instance-snapshots
 spec:
-  database: kotsadm-postgres
   name: scheduled_instance_snapshots
   schema:
-    postgres:
+    rqlite:
+      strict: true
       primaryKey:
       - id
       columns:
@@ -19,7 +19,7 @@ spec:
         constraints:
           notNull: true
       - name: scheduled_timestamp
-        type: timestamp without time zone
+        type: integer
         constraints:
           notNull: true
       - name: backup_name

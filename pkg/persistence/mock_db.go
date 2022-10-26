@@ -3,10 +3,8 @@
 
 package persistence
 
-import (
-	"database/sql"
-)
+import "github.com/rqlite/gorqlite"
 
-func MustGetDBSession() *sql.DB {
+func MustGetDBSession() *gorqlite.Connection {
 	return db
 }

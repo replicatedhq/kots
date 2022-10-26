@@ -3,19 +3,21 @@ kind: Table
 metadata:
   name: app-status
 spec:
-  database: kotsadm-postgres
   name: app_status
   requires: []
   schema:
-    postgres:
+    rqlite:
+      strict: true
       primaryKey:
         - app_id
       columns:
       - name: app_id
         type: text
+        constraints:
+          notNull: true
       - name: resource_states
         type: text
       - name: updated_at
-        type: timestamp without time zone
+        type: integer
       - name: sequence
         type: integer

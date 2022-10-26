@@ -3,11 +3,11 @@ kind: Table
 metadata:
   name: initial_branding
 spec:
-  database: kotsadm-postgres
   name: initial_branding
   requires: []
   schema:
-    postgres:
+    rqlite:
+      strict: true
       primaryKey:
         - id
       columns:
@@ -16,10 +16,10 @@ spec:
         constraints:
           notNull: true
       - name: contents
-        type: bytea
+        type: text
         constraints:
           notNull: true
       - name: created_at
-        type: timestamp without time zone
+        type: integer
         constraints:
           notNull: true

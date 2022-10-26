@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"database/sql"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -33,7 +32,7 @@ func (h *Handler) DownloadApp(w http.ResponseWriter, r *http.Request) {
 	a, err := store.GetStore().GetAppFromSlug(r.URL.Query().Get("slug"))
 	if err != nil {
 		logger.Error(err)
-		if errors.Is(err, sql.ErrNoRows) {
+		if store.GetStore().IsNotFound(err) {
 			w.WriteHeader(404)
 		} else {
 			w.WriteHeader(500)

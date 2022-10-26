@@ -5,11 +5,11 @@ metadata:
     controller-tools.k8s.io: "1.0"
   name: ship-user
 spec:
-  database: kotsadm-postgres
   name: ship_user
   requires: []
   schema:
-    postgres:
+    rqlite:
+      strict: true
       primaryKey:
       - id
       columns:
@@ -18,9 +18,9 @@ spec:
         constraints:
           notNull: true
       - name: created_at
-        type: timestamp without time zone
+        type: integer
       - name: github_id
         type: integer
       - name: last_login
-        type: timestamp without time zone
+        type: integer
       

@@ -76,33 +76,6 @@ func updateConfigMap(existingConfigMap, desiredConfigMap *corev1.ConfigMap) *cor
 	return existingConfigMap
 }
 
-func ensurePostgresConfigMap(deployOptions types.DeployOptions, clientset *kubernetes.Clientset) error {
-	desiredConfigMap := kotsadmobjects.PostgresConfigMap(deployOptions)
-
-	existingConfigMap, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Get(context.TODO(), "kotsadm-postgres", metav1.GetOptions{})
-	if err != nil {
-		if !kuberneteserrors.IsNotFound(err) {
-			return errors.Wrap(err, "failed to get existing postgres config map")
-		}
-
-		_, err := clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Create(context.TODO(), desiredConfigMap, metav1.CreateOptions{})
-		if err != nil {
-			return errors.Wrap(err, "failed to create postgres config map")
-		}
-
-		return nil
-	}
-
-	existingConfigMap = updateConfigMap(existingConfigMap, desiredConfigMap)
-
-	_, err = clientset.CoreV1().ConfigMaps(deployOptions.Namespace).Update(context.TODO(), existingConfigMap, metav1.UpdateOptions{})
-	if err != nil {
-		return errors.Wrap(err, "failed to update postgres config map")
-	}
-
-	return nil
-}
-
 func ensureWaitForAirgapConfig(deployOptions types.DeployOptions, clientset *kubernetes.Clientset, configMapName string) error {
 	additionalLabels := map[string]string{
 		"kots.io/automation": "airgap",

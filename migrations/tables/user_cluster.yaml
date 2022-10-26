@@ -5,11 +5,11 @@ metadata:
     controller-tools.k8s.io: "1.0"
   name: user-cluster
 spec:
-  database: kotsadm-postgres
   name: user_cluster
   requires: []
   schema:
-    postgres:
+    rqlite:
+      strict: true
       primaryKey: []
       columns:
       - name: user_id

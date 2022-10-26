@@ -2,7 +2,6 @@ package kotsstore
 
 import (
 	"context"
-	"database/sql"
 	"log"
 	"os"
 	"strings"
@@ -59,7 +58,7 @@ func (s *KOTSStore) WaitForReady(ctx context.Context) error {
 	errCh := make(chan error, 2)
 
 	go func() {
-		errCh <- waitForPostgres(ctx)
+		errCh <- waitForRqlite(ctx)
 	}()
 
 	go func() {
@@ -83,28 +82,32 @@ func (s *KOTSStore) WaitForReady(ctx context.Context) error {
 	return nil
 }
 
-func waitForPostgres(ctx context.Context) error {
+func waitForRqlite(ctx context.Context) error {
 	logger.Debug("waiting for database to be ready")
 
-	period := 1 * time.Second // TOOD: backoff
+	period := 1 * time.Second // TODO: backoff
 	for {
 		db := persistence.MustGetDBSession()
 
-		// any SQL will do.  just need tables to be created.
+		// any SQL will do. just need tables to be created.
 		query := `select count(1) from app`
-		row := db.QueryRow(query)
-
-		var count int
-		err := row.Scan(&count)
-		if err == nil {
-			logger.Debug("database is ready")
-			return nil
+		rows, err := db.QueryOne(query)
+		if err == nil && rows.Next() {
+			var count int
+			err := rows.Scan(&count)
+			if err == nil {
+				logger.Debug("database is ready")
+				return nil
+			}
 		}
 
 		select {
 		case <-time.After(period):
 			continue
 		case <-ctx.Done():
+			if rows.Err != nil {
+				return errors.Wrap(rows.Err, "failed to query database")
+			}
 			return errors.Wrap(err, "failed to find valid database")
 		}
 	}
@@ -116,10 +119,6 @@ func (s *KOTSStore) IsNotFound(err error) bool {
 	}
 
 	cause := errors.Cause(err)
-	if cause == sql.ErrNoRows {
-		return true
-	}
-
 	if cause == ErrNotFound {
 		return true
 	}

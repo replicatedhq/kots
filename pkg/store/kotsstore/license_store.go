@@ -2,7 +2,7 @@ package kotsstore
 
 import (
 	"bytes"
-	"database/sql"
+	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"time"
@@ -14,16 +14,26 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
+	"github.com/rqlite/gorqlite"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 )
 
 func (s *KOTSStore) GetLatestLicenseForApp(appID string) (*kotsv1beta1.License, error) {
 	db := persistence.MustGetDBSession()
-	query := `select license from app where id = $1`
-	row := db.QueryRow(query, appID)
+	query := `select license from app where id = ?`
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{appID},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+	}
+	if !rows.Next() {
+		return nil, ErrNotFound
+	}
 
-	var licenseStr sql.NullString
-	if err := row.Scan(&licenseStr); err != nil {
+	var licenseStr gorqlite.NullString
+	if err := rows.Scan(&licenseStr); err != nil {
 		return nil, errors.Wrap(err, "failed to scan")
 	}
 
@@ -38,11 +48,20 @@ func (s *KOTSStore) GetLatestLicenseForApp(appID string) (*kotsv1beta1.License, 
 
 func (s *KOTSStore) GetLicenseForAppVersion(appID string, sequence int64) (*kotsv1beta1.License, error) {
 	db := persistence.MustGetDBSession()
-	query := `select kots_license from app_version where app_id = $1 and sequence = $2`
-	row := db.QueryRow(query, appID, sequence)
+	query := `select kots_license from app_version where app_id = ? and sequence = ?`
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{appID, sequence},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+	}
+	if !rows.Next() {
+		return nil, ErrNotFound
+	}
 
-	var licenseStr sql.NullString
-	if err := row.Scan(&licenseStr); err != nil {
+	var licenseStr gorqlite.NullString
+	if err := rows.Scan(&licenseStr); err != nil {
 		return nil, errors.Wrap(err, "failed to scan")
 	}
 
@@ -62,13 +81,12 @@ func (s *KOTSStore) GetLicenseForAppVersion(appID string, sequence int64) (*kots
 func (s *KOTSStore) GetAllAppLicenses() ([]*kotsv1beta1.License, error) {
 	db := persistence.MustGetDBSession()
 	query := `select license from app`
-	rows, err := db.Query(query)
+	rows, err := db.QueryOne(query)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to query")
+		return nil, fmt.Errorf("failed to query: %v: %v", err, rows.Err)
 	}
-	defer rows.Close()
 
-	var licenseStr sql.NullString
+	var licenseStr gorqlite.NullString
 	licenses := []*kotsv1beta1.License{}
 	for rows.Next() {
 		if err := rows.Scan(&licenseStr); err != nil {
@@ -91,11 +109,7 @@ func (s *KOTSStore) GetAllAppLicenses() ([]*kotsv1beta1.License, error) {
 func (s *KOTSStore) UpdateAppLicense(appID string, baseSequence int64, archiveDir string, newLicense *kotsv1beta1.License, originalLicenseData string, channelChanged bool, failOnVersionCreate bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error) {
 	db := persistence.MustGetDBSession()
 
-	tx, err := db.Begin()
-	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to begin")
-	}
-	defer tx.Rollback()
+	statements := []gorqlite.ParameterizedStatement{}
 
 	ser := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 	var b bytes.Buffer
@@ -108,24 +122,29 @@ func (s *KOTSStore) UpdateAppLicense(appID string, baseSequence int64, archiveDi
 	}
 
 	//  app has the original license data received from the server
-	updateQuery := `update app set license= $1, last_license_sync= $2, channel_changed= $3 where id = $4`
-	_, err = tx.Exec(updateQuery, originalLicenseData, time.Now(), channelChanged, appID)
-	if err != nil {
-		return int64(0), errors.Wrapf(err, "update app %q license", appID)
-	}
+	statements = append(statements, gorqlite.ParameterizedStatement{
+		Query:     `update app set license = ?, last_license_sync = ?, channel_changed = ? where id = ?`,
+		Arguments: []interface{}{originalLicenseData, time.Now().Unix(), channelChanged, appID},
+	})
 
-	newSeq, err := s.createNewVersionForLicenseChange(tx, appID, baseSequence, archiveDir, gitops, renderer)
+	appVersionStatements, newSeq, err := s.createNewVersionForLicenseChangeStatements(appID, baseSequence, archiveDir, gitops, renderer)
 	if err != nil {
 		// ignore error here to prevent a failure to render the current version
 		// preventing the end-user from updating the application
 		if failOnVersionCreate {
-			return int64(0), errors.Wrap(err, "failed to create new version")
+			return int64(0), errors.Wrap(err, "failed to construct app version statements for license sync")
 		}
-		logger.Errorf("Failed to create new version from license sync: %v", err)
+		logger.Errorf("Failed to construct app version statements for license sync: %v", err)
+	} else {
+		statements = append(statements, appVersionStatements...)
 	}
 
-	if err := tx.Commit(); err != nil {
-		return int64(0), errors.Wrap(err, "failed to commit transaction")
+	if wrs, err := db.WriteParameterized(statements); err != nil {
+		wrErrs := []error{}
+		for _, wr := range wrs {
+			wrErrs = append(wrErrs, wr.Err)
+		}
+		return int64(0), fmt.Errorf("failed to write: %v: %v", err, wrErrs)
 	}
 
 	return newSeq, nil
@@ -133,44 +152,47 @@ func (s *KOTSStore) UpdateAppLicense(appID string, baseSequence int64, archiveDi
 
 func (s *KOTSStore) UpdateAppLicenseSyncNow(appID string) error {
 	db := persistence.MustGetDBSession()
-	query := `update app set last_license_sync= $1 where id = $2`
-	_, err := db.Exec(query, time.Now(), appID)
+	query := `update app set last_license_sync = ? where id = ?`
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{time.Now().Unix(), appID},
+	})
 	if err != nil {
-		return errors.Wrapf(err, "update app %q license sync time", appID)
+		return fmt.Errorf("update app %q license sync time: %v: %v", appID, err, wr.Err)
 	}
 
 	return nil
 }
 
-func (s *KOTSStore) createNewVersionForLicenseChange(tx *sql.Tx, appID string, baseSequence int64, archiveDir string, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error) {
+func (s *KOTSStore) createNewVersionForLicenseChangeStatements(appID string, baseSequence int64, archiveDir string, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) ([]gorqlite.ParameterizedStatement, int64, error) {
 	registrySettings, err := s.GetRegistryDetailsForApp(appID)
 	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to get registry settings for app")
+		return nil, int64(0), errors.Wrap(err, "failed to get registry settings for app")
 	}
 
 	app, err := s.GetApp(appID)
 	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to get app")
+		return nil, int64(0), errors.Wrap(err, "failed to get app")
 	}
 
 	downstreams, err := s.ListDownstreamsForApp(appID)
 	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to list downstreams")
+		return nil, int64(0), errors.Wrap(err, "failed to list downstreams")
 	}
 
 	nextAppSequence, err := s.GetNextAppSequence(appID)
 	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to get next app sequence")
+		return nil, int64(0), errors.Wrap(err, "failed to get next app sequence")
 	}
 
 	if err := renderer.RenderDir(archiveDir, app, downstreams, registrySettings, nextAppSequence); err != nil {
-		return int64(0), errors.Wrap(err, "failed to render new version")
+		return nil, int64(0), errors.Wrap(err, "failed to render new version")
 	}
 
-	newSequence, err := s.createAppVersion(tx, appID, &baseSequence, archiveDir, "License Change", false, gitops, renderer)
+	appVersionStatements, newSequence, err := s.createAppVersionStatements(appID, &baseSequence, archiveDir, "License Change", false, gitops, renderer)
 	if err != nil {
-		return int64(0), errors.Wrap(err, "failed to create new version")
+		return nil, int64(0), errors.Wrap(err, "failed to construct app version statements")
 	}
 
-	return newSequence, nil
+	return appVersionStatements, newSequence, nil
 }

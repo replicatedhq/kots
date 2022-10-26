@@ -2,7 +2,6 @@ package kotsstore
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"os"
 	"strconv"
@@ -12,6 +11,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/util"
+	"github.com/rqlite/gorqlite"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -59,11 +59,18 @@ func (s *KOTSStore) getSharedPaswordBcryptFromDatabase() ([]byte, error) {
 	db := persistence.MustGetDBSession()
 
 	// check for too many attempts / locked out
-	query := `select value from kotsadm_params where key = $1`
-	row := db.QueryRow(query, "failed.login.count")
+	query := `select value from kotsadm_params where key = ?`
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{"failed.login.count"},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to query login count: %v: %v", err, rows.Err)
+	}
+
 	failedLoginCount := "0"
-	if err := row.Scan(&failedLoginCount); err != nil {
-		if err != sql.ErrNoRows {
+	if rows.Next() {
+		if err := rows.Scan(&failedLoginCount); err != nil {
 			return nil, errors.Wrap(err, "failed to scan invalid attempt count")
 		}
 	}
@@ -78,12 +85,21 @@ func (s *KOTSStore) getSharedPaswordBcryptFromDatabase() ([]byte, error) {
 	}
 
 	// get the pasword now
-	row = db.QueryRow(query, "password.bcrypt")
-	var hash []byte
-
-	// if it doesn't exist, return the one from the environment
-	if err := row.Scan(&hash); err != nil {
+	rows, err = db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{"password.bcrypt"},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to query password: %v: %v", err, rows.Err)
+	}
+	if !rows.Next() {
+		// doesn't exist, return the one from the environment
 		return []byte(os.Getenv("SHARED_PASSWORD_BCRYPT")), nil
+	}
+
+	var hash []byte
+	if err := rows.Scan(&hash); err != nil {
+		return nil, errors.Wrap(err, "failed to scan password")
 	}
 
 	return hash, nil
@@ -129,20 +145,30 @@ func (s *KOTSStore) FlagInvalidPassword() error {
 func (s *KOTSStore) flagInvalidPasswordInDatabase() error {
 	db := persistence.MustGetDBSession()
 
-	query := `select value from kotsadm_params where key = $1`
-	row := db.QueryRow(query, "failed.login.count")
-	failedLoginCount := "0"
-	if err := row.Scan(&failedLoginCount); err != nil {
-		if err == sql.ErrNoRows {
-			query = `insert into kotsadm_params (key, value) values ($1, $2)`
-			if _, err := db.Exec(query, "failed.login.count", "1"); err != nil {
-				return errors.Wrap(err, "failed to insert failed login count")
-			}
+	query := `select value from kotsadm_params where key = ?`
+	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     query,
+		Arguments: []interface{}{"failed.login.count"},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to query: %v: %v", err, rows.Err)
+	}
 
-			return nil
-		} else {
-			return errors.Wrap(err, "failed to scan invalid attempt count")
+	if !rows.Next() {
+		query = `insert into kotsadm_params (key, value) values (?, ?)`
+		wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+			Query:     query,
+			Arguments: []interface{}{"failed.login.count", "1"},
+		})
+		if err != nil {
+			return fmt.Errorf("failed to insert failed login count: %v: %v", err, wr.Err)
 		}
+		return nil
+	}
+
+	failedLoginCount := "0"
+	if err := rows.Scan(&failedLoginCount); err != nil {
+		return errors.Wrap(err, "failed to scan invalid attempt count")
 	}
 
 	i, err := strconv.Atoi(failedLoginCount)
@@ -151,9 +177,12 @@ func (s *KOTSStore) flagInvalidPasswordInDatabase() error {
 	}
 	i++
 
-	query = `update kotsadm_params set value = $1 where key = $2`
-	if _, err := db.Exec(query, strconv.Itoa(i), "failed.login.count"); err != nil {
-		return errors.Wrap(err, "failed to update failed login count")
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     `update kotsadm_params set value = ? where key = ?`,
+		Arguments: []interface{}{strconv.Itoa(i), "failed.login.count"},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to update failed login count: %v: %v", err, wr.Err)
 	}
 
 	return nil
@@ -197,14 +226,20 @@ func (s *KOTSStore) FlagSuccessfulLogin() error {
 func (s *KOTSStore) flagSuccessfulLoginInDatabase() error {
 	db := persistence.MustGetDBSession()
 
-	query := `delete from kotsadm_params where key = $1`
-	if _, err := db.Exec(query, "failed.login.count"); err != nil {
-		return errors.Wrap(err, "failed to delete failed login count")
+	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     `delete from kotsadm_params where key = ?`,
+		Arguments: []interface{}{"failed.login.count"},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to delete failed login count: %v: %v", err, wr.Err)
 	}
 
-	query = `insert into kotsadm_params (key, value) values ($1, $2)`
-	if _, err := db.Exec(query, "failed.login.count", "0"); err != nil {
-		return errors.Wrap(err, "failed to reset failed login count")
+	wr, err = db.WriteOneParameterized(gorqlite.ParameterizedStatement{
+		Query:     `insert into kotsadm_params (key, value) values (?, ?)`,
+		Arguments: []interface{}{"failed.login.count", "0"},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to reset failed login count: %v: %v", err, wr.Err)
 	}
 
 	return nil

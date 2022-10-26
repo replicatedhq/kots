@@ -3,11 +3,11 @@ kind: Table
 metadata:
   name: app-downstream-output
 spec:
-  database: kotsadm-postgres
   name: app_downstream_output
   requires: []
   schema:
-    postgres:
+    rqlite:
+      strict: true
       primaryKey:
         - app_id
         - cluster_id
@@ -38,4 +38,4 @@ spec:
       - name: helm_stderr
         type: text
       - name: is_error
-        type: boolean
+        type: integer

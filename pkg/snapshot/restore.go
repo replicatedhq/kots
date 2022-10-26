@@ -21,6 +21,7 @@ import (
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	veleroclientv1 "github.com/vmware-tanzu/velero/pkg/generated/clientset/versioned/typed/velero/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 )
 
 type RestoreInstanceBackupOptions struct {
@@ -119,7 +120,6 @@ func RestoreInstanceBackup(ctx context.Context, options RestoreInstanceBackupOpt
 		log.ActionWithSpinner("Restoring Admin Console")
 
 		// create a restore for kotsadm objects
-		trueVal := true
 		restore := &velerov1.Restore{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: veleroNamespace,
@@ -137,8 +137,8 @@ func RestoreInstanceBackup(ctx context.Context, options RestoreInstanceBackupOpt
 						kotsadmtypes.KotsadmKey: kotsadmtypes.KotsadmLabelValue, // restoring applications is in a separate step after kotsadm spins up
 					},
 				},
-				RestorePVs:              &trueVal,
-				IncludeClusterResources: &trueVal,
+				RestorePVs:              pointer.BoolPtr(true),
+				IncludeClusterResources: pointer.BoolPtr(true),
 			},
 		}
 
