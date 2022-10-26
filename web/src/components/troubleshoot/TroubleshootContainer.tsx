@@ -49,25 +49,12 @@ class TroubleshootContainer extends Component<Props> {
           <Route
             exact
             path="/app/:slug/troubleshoot/redactors/new"
-            render={(props) => (
-              <EditRedactor
-                {...props}
-                appSlug={app?.slug || ""}
-                appName={appName}
-                isNew={true}
-              />
-            )}
+            render={() => <EditRedactor />}
           />
           <Route
             exact
             path="/app/:slug/troubleshoot/redactors/:redactorSlug"
-            render={(props) => (
-              <EditRedactor
-                {...props}
-                appSlug={app?.slug || ""}
-                appName={appName}
-              />
-            )}
+            render={() => <EditRedactor />}
           />
           <Route component={NotFound} />
         </Switch>

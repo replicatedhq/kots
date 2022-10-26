@@ -1,7 +1,7 @@
-import React, { Component } from "react";
-import { withRouter, Link } from "react-router-dom";
+import React, { useEffect, useReducer } from "react";
+import { Link, useHistory, useRouteMatch } from "react-router-dom";
 import { KotsPageTitle } from "@components/Head";
-import AceEditor from "react-ace";
+import AceEditor, { Marker } from "react-ace";
 import "brace/mode/text";
 import "brace/mode/yaml";
 import "brace/theme/chrome";
@@ -12,28 +12,59 @@ import { Utilities } from "../../utilities/utilities";
 import "../../scss/components/redactors/EditRedactor.scss";
 import Icon from "../Icon";
 
-class EditRedactor extends Component {
-  state = {
-    redactorEnabled: false,
-    redactorYaml: "",
-    redactorName: "",
-    creatingRedactor: false,
-    createErrMsg: "",
-    createConfirm: false,
-    editingRedactor: false,
-    editingErrMsg: "",
-    editConfirm: false,
-    isLoadingRedactor: false,
-    redactorErrMsg: "",
-  };
+import { KotsParams } from "@types";
+import { useSelectedApp } from "@features/App";
 
-  getRedactor = (slug) => {
-    this.setState({
+type State = {
+  activeMarkers?: Marker[];
+  createConfirm: boolean;
+  createErrMsg: string;
+  creatingRedactor: boolean;
+  editConfirm: boolean;
+  editingErrMsg: string;
+  editingRedactor: boolean;
+  isLoadingRedactor: boolean;
+  redactorEnabled: boolean;
+  redactorErrMsg: string;
+  redactorName: string;
+  redactorYaml: string;
+};
+
+// TODO: upgrade AceEditor so we can use the type definitions
+let aceEditor: AceEditor | null;
+
+const EditRedactor = () => {
+  const [state, setState] = useReducer(
+    (currentState: State, newState: Partial<State>) => ({
+      ...currentState,
+      ...newState,
+    }),
+    {
+      createConfirm: false,
+      createErrMsg: "",
+      creatingRedactor: false,
+      editConfirm: false,
+      editingErrMsg: "",
+      editingRedactor: false,
+      isLoadingRedactor: false,
+      redactorEnabled: false,
+      redactorErrMsg: "",
+      redactorName: "",
+      redactorYaml: "",
+    }
+  );
+
+  const history = useHistory();
+  const match = useRouteMatch<KotsParams>();
+  const slug = useSelectedApp()?.selectedApp?.slug || "";
+
+  const getRedactor = (redactorSlug: string) => {
+    setState({
       isLoadingRedactor: true,
       redactorErrMsg: "",
     });
 
-    fetch(`${process.env.API_ENDPOINT}/redact/spec/${slug}`, {
+    fetch(`${process.env.API_ENDPOINT}/redact/spec/${redactorSlug}`, {
       method: "GET",
       headers: {
         Authorization: Utilities.getToken(),
@@ -43,44 +74,41 @@ class EditRedactor extends Component {
       .then((res) => res.json())
       .then((result) => {
         if (result.success) {
-          this.setState(
-            {
-              redactorYaml: result.redactor,
-              redactorName: result.redactorMetadata.name,
-              redactorEnabled: result.redactorMetadata.enabled,
-              isLoadingRedactor: false,
-              redactorErrMsg: "",
-            },
-            () => {
-              if (this.state.selectedOption) {
-                this.sortRedactors(this.state.selectedOption.value);
-              }
-            }
-          );
+          setState({
+            redactorYaml: result.redactor,
+            redactorName: result.redactorMetadata.name,
+            redactorEnabled: result.redactorMetadata.enabled,
+            isLoadingRedactor: false,
+            redactorErrMsg: "",
+          });
         } else {
-          this.setState({
+          setState({
             isLoadingRedactor: false,
             redactorErrMsg: result.error,
           });
         }
       })
       .catch((err) => {
-        this.setState({
+        setState({
           isLoadingRedactor: false,
           redactorErrMsg: err,
         });
       });
   };
 
-  editRedactor = (slug, enabled, yaml) => {
-    this.setState({ editingRedactor: true, editingErrMsg: "" });
+  const editRedactor = (
+    redactorSlug: string,
+    enabled: boolean,
+    yaml: string
+  ) => {
+    setState({ editingRedactor: true, editingErrMsg: "" });
 
     const payload = {
       enabled: enabled,
       redactor: yaml,
     };
 
-    fetch(`${process.env.API_ENDPOINT}/redact/spec/${slug}`, {
+    fetch(`${process.env.API_ENDPOINT}/redact/spec/${redactorSlug}`, {
       method: "POST",
       headers: {
         Authorization: Utilities.getToken(),
@@ -91,7 +119,7 @@ class EditRedactor extends Component {
       .then(async (res) => {
         const editResponse = await res.json();
         if (!res.ok) {
-          this.setState({
+          setState({
             editingRedactor: false,
             editingErrMsg: editResponse.error,
           });
@@ -99,7 +127,7 @@ class EditRedactor extends Component {
         }
 
         if (editResponse.success) {
-          this.setState({
+          setState({
             redactorYaml: editResponse.redactor,
             redactorName: editResponse.redactorMetadata.name,
             redactorEnabled: editResponse.redactorMetadata.enabled,
@@ -108,20 +136,18 @@ class EditRedactor extends Component {
             createErrMsg: "",
           });
           setTimeout(() => {
-            this.setState({ editConfirm: false });
+            setState({ editConfirm: false });
           }, 3000);
-          this.props.history.replace(
-            `/app/${this.props.appSlug}/troubleshoot/redactors`
-          );
+          history.replace(`/app/${redactorSlug}/troubleshoot/redactors`);
         } else {
-          this.setState({
+          setState({
             editingRedactor: false,
             editingErrMsg: editResponse.error,
           });
         }
       })
       .catch((err) => {
-        this.setState({
+        setState({
           editingRedactor: false,
           editingErrMsg: err.message
             ? err.message
@@ -130,7 +156,7 @@ class EditRedactor extends Component {
       });
   };
 
-  getEmptyNameLine = (redactorYaml) => {
+  const getEmptyNameLine = (redactorYaml: string) => {
     const splittedYaml = redactorYaml.split("\n");
     let metadataFound = false;
     let namePosition;
@@ -146,8 +172,12 @@ class EditRedactor extends Component {
     return namePosition;
   };
 
-  createRedactor = (enabled, newRedactor, yaml) => {
-    this.setState({ creatingRedactor: true, createErrMsg: "" });
+  const createRedactor = (
+    enabled: boolean,
+    newRedactor: boolean,
+    yaml: string
+  ) => {
+    setState({ creatingRedactor: true, createErrMsg: "" });
 
     const payload = {
       enabled: enabled,
@@ -166,25 +196,21 @@ class EditRedactor extends Component {
       .then(async (res) => {
         const createResponse = await res.json();
         if (!res.ok) {
-          this.setState({
+          setState({
             creatingRedactor: false,
             createErrMsg: createResponse.error,
           });
-          const editor = this.aceEditor.editor;
-          editor.scrollToLine(
-            this.getEmptyNameLine(this.state.redactorYaml),
-            true,
-            true
-          );
-          editor.gotoLine(
-            this.getEmptyNameLine(this.state.redactorYaml),
-            1,
-            true
-          );
+          // TODO: fix after upgradig AceEditor
+          // eslint-disable-next-line
+          // @ts-ignore
+          const editor = aceEditor.editor;
+
+          editor.scrollToLine(getEmptyNameLine(state.redactorYaml), true, true);
+          editor.gotoLine(getEmptyNameLine(state.redactorYaml), 1, true);
         }
 
         if (createResponse.success) {
-          this.setState({
+          setState({
             redactorYaml: createResponse.redactor,
             redactorName: createResponse.redactorMetadata.name,
             redactorEnabled: createResponse.redactorMetadata.enabled,
@@ -193,20 +219,18 @@ class EditRedactor extends Component {
             createErrMsg: "",
           });
           setTimeout(() => {
-            this.setState({ createConfirm: false });
+            setState({ createConfirm: false });
           }, 3000);
-          this.props.history.replace(
-            `/app/${this.props.appSlug}/troubleshoot/redactors`
-          );
+          history.replace(`/app/${slug}/troubleshoot/redactors`);
         } else {
-          this.setState({
+          setState({
             creatingRedactor: false,
             createErrMsg: createResponse.error,
           });
         }
       })
       .catch((err) => {
-        this.setState({
+        setState({
           creatingRedactor: false,
           createErrMsg: err.message
             ? err.message
@@ -215,15 +239,15 @@ class EditRedactor extends Component {
       });
   };
 
-  handleEnableRedactor = () => {
-    this.setState({
-      redactorEnabled: !this.state.redactorEnabled,
+  const handleEnableRedactor = () => {
+    setState({
+      redactorEnabled: !state.redactorEnabled,
     });
   };
 
-  componentDidMount() {
-    if (this.props.match.params.redactorSlug) {
-      this.getRedactor(this.props.match.params.redactorSlug);
+  useEffect(() => {
+    if (match.params.redactorSlug) {
+      getRedactor(match.params.redactorSlug);
     } else {
       const defaultYaml = `kind: Redactor
 apiVersion: troubleshoot.sh/v1beta2
@@ -238,182 +262,172 @@ spec:
     removals:
       values:
       - "removethis"`;
-      this.setState({
+      setState({
         redactorEnabled: true,
         redactorYaml: defaultYaml,
         redactorName: "New redactor",
       });
     }
-  }
+  }, []);
 
-  onYamlChange = (value) => {
-    this.setState({ redactorYaml: value });
+  const onYamlChange = (value: string) => {
+    setState({ redactorYaml: value });
   };
 
-  onSaveRedactor = () => {
-    if (this.props.match.params.redactorSlug) {
-      this.editRedactor(
-        this.props.match.params.redactorSlug,
-        this.state.redactorEnabled,
-        this.state.redactorYaml
+  const onSaveRedactor = () => {
+    if (match.params.redactorSlug) {
+      editRedactor(
+        match.params.redactorSlug,
+        state.redactorEnabled,
+        state.redactorYaml
       );
     } else {
-      this.createRedactor(
-        this.state.redactorEnabled,
-        true,
-        this.state.redactorYaml
-      );
+      createRedactor(state.redactorEnabled, true, state.redactorYaml);
     }
   };
 
-  render() {
-    const {
-      isLoadingRedactor,
-      createConfirm,
-      editConfirm,
-      creatingRedactor,
-      editingRedactor,
-      createErrMsg,
-      editingErrMsg,
-    } = this.state;
+  const {
+    isLoadingRedactor,
+    createConfirm,
+    editConfirm,
+    creatingRedactor,
+    editingRedactor,
+    createErrMsg,
+    editingErrMsg,
+  } = state;
 
-    if (isLoadingRedactor) {
-      return (
-        <div className="flex-column flex1 alignItems--center justifyContent--center">
-          <Loader size="60" />
-        </div>
-      );
-    }
-
+  if (isLoadingRedactor) {
     return (
-      <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 justifyContent--center alignItems--center">
-        <KotsPageTitle pageName="New Redactor" showAppSlug />
-        <div className="Redactors--wrapper flex1 flex-column u-width--full">
-          {(createErrMsg || editingErrMsg) && (
-            <p className="ErrorToast flex justifyContent--center alignItems--center">
-              {createErrMsg ? createErrMsg : editingErrMsg}
-            </p>
-          )}
-          <div className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginBottom--20">
-            <Link
-              to={`/app/${this.props.appSlug}/troubleshoot/redactors`}
-              className="replicated-link u-marginRight--5"
-            >
-              Redactors
-            </Link>{" "}
-            &gt;{" "}
-            <span className="u-marginLeft--5">{this.state.redactorName}</span>
-          </div>
-          <div className="flex flex-auto alignItems--flexStart justifyContent--spaceBetween">
-            <div className="flex flex1 alignItems--center">
-              <p className="u-fontWeight--bold u-textColor--primary u-fontSize--jumbo u-lineHeight--normal u-marginRight--10">
-                {this.state.redactorName}
-              </p>
-            </div>
-            <div className="flex justifyContent--flexEnd">
-              <div className="toggle flex flex1">
-                <div className="flex flex1">
-                  <div
-                    className={`Checkbox--switch ${
-                      this.state.redactorEnabled
-                        ? "is-checked"
-                        : "is-notChecked"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      className="Checkbox-toggle"
-                      name="isRedactorEnabled"
-                      checked={this.state.redactorEnabled}
-                      onChange={(e) => {
-                        this.handleEnableRedactor(e);
-                      }}
-                    />
-                  </div>
-                </div>
-                <div className="flex flex1 u-marginLeft--5">
-                  <p className="u-fontWeight--medium u-textColor--secondary u-fontSize--large alignSelf--center">
-                    {this.state.redactorEnabled ? "Enabled" : "Disabled"}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginTop--10">
-            For more information about creating redactors,
-            <a
-              href="https://troubleshoot.sh/reference/redactors/overview/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="replicated-link"
-            >
-              {" "}
-              check out our docs
-            </a>
-            .
-          </p>
-          <div className="flex1 u-marginTop--30 u-border--gray">
-            <AceEditor
-              ref={(el) => (this.aceEditor = el)}
-              mode="yaml"
-              theme="chrome"
-              className="flex1 flex"
-              value={this.state.redactorYaml}
-              height="100%"
-              width="100%"
-              markers={this.state.activeMarkers}
-              editorProps={{
-                $blockScrolling: Infinity,
-                useSoftTabs: true,
-                tabSize: 2,
-              }}
-              onChange={(value) => this.onYamlChange(value)}
-              setOptions={{
-                scrollPastEnd: false,
-                showGutter: true,
-              }}
-            />
-          </div>
-          <div className="flex u-marginTop--20 justifyContent--spaceBetween">
-            <div className="flex">
-              <Link
-                to={`/app/${this.props.appSlug}/troubleshoot/redactors`}
-                className="btn secondary"
-              >
-                {" "}
-                Cancel{" "}
-              </Link>
-            </div>
-            <div className="flex alignItems--center">
-              {createConfirm ||
-                (editConfirm && (
-                  <div className="u-marginRight--10 flex alignItems--center">
-                    <Icon
-                      icon="check-circle-filled"
-                      size={16}
-                      className="success-color"
-                    />
-                    <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-textColor--success">
-                      {createConfirm ? "Redactor created" : "Redactor updated"}
-                    </span>
-                  </div>
-                ))}
-              <button
-                type="button"
-                className="btn primary blue"
-                onClick={this.onSaveRedactor}
-                disabled={creatingRedactor || editingRedactor}
-              >
-                {creatingRedactor || editingRedactor
-                  ? "Saving"
-                  : "Save redactor"}{" "}
-              </button>
-            </div>
-          </div>
-        </div>
+      <div className="flex-column flex1 alignItems--center justifyContent--center">
+        <Loader size="60" />
       </div>
     );
   }
-}
 
-export default withRouter(EditRedactor);
+  return (
+    <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 justifyContent--center alignItems--center">
+      <KotsPageTitle pageName="New Redactor" showAppSlug />
+      <div className="Redactors--wrapper flex1 flex-column u-width--full">
+        {(createErrMsg || editingErrMsg) && (
+          <p className="ErrorToast flex justifyContent--center alignItems--center">
+            {createErrMsg ? createErrMsg : editingErrMsg}
+          </p>
+        )}
+        <div className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginBottom--20">
+          <Link
+            to={`/app/${slug}/troubleshoot/redactors`}
+            className="replicated-link u-marginRight--5"
+          >
+            Redactors
+          </Link>{" "}
+          &gt; <span className="u-marginLeft--5">{state.redactorName}</span>
+        </div>
+        <div className="flex flex-auto alignItems--flexStart justifyContent--spaceBetween">
+          <div className="flex flex1 alignItems--center">
+            <p className="u-fontWeight--bold u-textColor--primary u-fontSize--jumbo u-lineHeight--normal u-marginRight--10">
+              {state.redactorName}
+            </p>
+          </div>
+          <div className="flex justifyContent--flexEnd">
+            <div className="toggle flex flex1">
+              <div className="flex flex1">
+                <div
+                  className={`Checkbox--switch ${
+                    state.redactorEnabled ? "is-checked" : "is-notChecked"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    className="Checkbox-toggle"
+                    name="isRedactorEnabled"
+                    checked={state.redactorEnabled}
+                    onChange={() => {
+                      handleEnableRedactor();
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="flex flex1 u-marginLeft--5">
+                <p className="u-fontWeight--medium u-textColor--secondary u-fontSize--large alignSelf--center">
+                  {state.redactorEnabled ? "Enabled" : "Disabled"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginTop--10">
+          For more information about creating redactors,
+          <a
+            href="https://troubleshoot.sh/reference/redactors/overview/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="replicated-link"
+          >
+            {" "}
+            check out our docs
+          </a>
+          .
+        </p>
+        <div className="flex1 u-marginTop--30 u-border--gray">
+          <AceEditor
+            ref={(el) => (aceEditor = el)}
+            mode="yaml"
+            theme="chrome"
+            className="flex1 flex"
+            value={state.redactorYaml}
+            height="100%"
+            width="100%"
+            markers={state.activeMarkers}
+            editorProps={{
+              $blockScrolling: Infinity,
+              // @ts-ignore
+              useSoftTabs: true,
+              tabSize: 2,
+            }}
+            onChange={(value) => onYamlChange(value)}
+            setOptions={{
+              scrollPastEnd: false,
+              showGutter: true,
+            }}
+          />
+        </div>
+        <div className="flex u-marginTop--20 justifyContent--spaceBetween">
+          <div className="flex">
+            <Link
+              to={`/app/${slug}/troubleshoot/redactors`}
+              className="btn secondary"
+            >
+              {" "}
+              Cancel{" "}
+            </Link>
+          </div>
+          <div className="flex alignItems--center">
+            {createConfirm ||
+              (editConfirm && (
+                <div className="u-marginRight--10 flex alignItems--center">
+                  <Icon
+                    icon="check-circle-filled"
+                    size={16}
+                    className="success-color"
+                  />
+                  <span className="u-marginLeft--5 u-fontSize--small u-fontWeight--medium u-textColor--success">
+                    {createConfirm ? "Redactor created" : "Redactor updated"}
+                  </span>
+                </div>
+              ))}
+            <button
+              type="button"
+              className="btn primary blue"
+              onClick={onSaveRedactor}
+              disabled={creatingRedactor || editingRedactor}
+            >
+              {creatingRedactor || editingRedactor ? "Saving" : "Save redactor"}{" "}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default EditRedactor;
