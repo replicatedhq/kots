@@ -198,19 +198,7 @@ var _ = Describe("E2E", func() {
 			func(test inventory.Test) string {
 				return test.Name
 			},
-			Entry(nil, inventory.NewRegressionTest()),
-			Entry(nil, inventory.NewSmokeTest()),
-			Entry(nil, inventory.NewStrictPreflightChecks()),
-			Entry(nil, inventory.NewMinimalRBACTest()),
-			Entry(nil, inventory.NewBackupAndRestore()),
-			Entry(nil, inventory.NewNoRequiredConfig()),
-			Entry(nil, inventory.NewVersionHistoryPagination()),
-			Entry(nil, inventory.NewChangeLicense()),
-			Entry(nil, inventory.NewHelmManagedMode()),
-			Entry(nil, inventory.NewTagAndDigest()),
-			Entry(nil, inventory.NewMinKotsVersion()),
-			Entry(nil, inventory.NewTargetKotsVersion()),
-			Entry(nil, inventory.NewRangeKotsVersion()),
+			Entry(nil, inventory.MultiAppTest()),
 		)
 
 	})

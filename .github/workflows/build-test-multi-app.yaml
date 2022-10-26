@@ -1,0 +1,403 @@
+name: build-test
+
+on:
+  pull_request:
+  # pull_request_target:
+  #   # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
+  #   # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+  #   types: [ opened, synchronize, reopened, labeled ]
+
+concurrency:
+  group: ${{ github.head_ref }}
+  cancel-in-progress: true
+
+jobs:
+  can-run-ci:
+    runs-on: ubuntu-20.04
+    # if the event is pull_request:
+    #   - this is not a fork
+    #   - and not dependabot
+    # if the event is pull_request_target:
+    #   - this is dependabot
+    #   - or this is a fork and has label '@actions/safe-to-test'
+    #
+    # The 'pull_request_target' workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
+    # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+    if: >
+      ( github.event_name == 'pull_request' &&
+        ( github.event.pull_request.head.repo.full_name == github.repository &&
+          github.event.pull_request.user.login != 'dependabot[bot]'
+        )
+      )
+      ||
+      ( github.event_name == 'pull_request_target' &&
+        ( github.event.pull_request.user.login == 'dependabot[bot]' ||
+          ( github.event.pull_request.head.repo.full_name != github.repository &&
+            contains(github.event.pull_request.labels.*.name, '@actions/safe-to-test')
+          )
+        )
+      )
+    steps:
+      - name: ok
+        run: echo "yes"
+
+  # Use this to disable tests when iteratig on a specific test to save time
+  enable-tests:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: ok
+        # change 0 to a positive interger to prevent all tests from running
+        run: exit 0
+
+
+  generate-tag:
+    runs-on: ubuntu-20.04
+    outputs:
+      tag: ${{ steps.get_tag.outputs.GIT_TAG }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Get tags
+        id: get_tag
+        uses: ./.github/actions/version-tag
+
+
+  test-okteto-env:
+    runs-on: ubuntu-latest
+    needs: [ can-run-ci ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Test Okteto development environment
+        uses: replicatedhq/action-okteto-test@main
+        with:
+          token: ${{ secrets.OKTETO_TOKEN }}
+          branch: ${{ github.head_ref }}
+
+
+  build-web:
+    runs-on: ubuntu-20.04
+    needs: [ can-run-ci, generate-tag ]
+    steps:
+      # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
+      # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+      # this action checks out the remote branch and runs CI
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v2
+        with:
+          node-version: '17.x'
+
+      - name: Build web
+        env:
+          GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
+        run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C web deps run-prettier-eslint run-typecheck run-unit-tests build-kotsadm
+
+      - name: Upload web artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: web
+          path: ./web/dist
+
+
+  build-kots:
+    runs-on: ubuntu-20.04
+    needs: [ can-run-ci, build-web, generate-tag ]
+
+    steps:
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '^1.19.2'
+
+      - name: setup env
+        run: |
+          echo "GOPATH=$(go env GOPATH)" >> $GITHUB_ENV
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+        shell: bash
+
+      # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
+      # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+      # this action checks out the remote branch and runs CI
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-kots-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-kots-
+
+      - name: Download web artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: web
+          path: ./web/dist
+      - name: Build kots
+        env:
+          GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
+        run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make vet ci-test kots build
+      - uses: actions/upload-artifact@v2
+        with:
+          name: kots
+          path: bin/kots
+      - name: build and push kotsadm for e2e
+        uses: docker/build-push-action@v2
+        with:
+          tags: ttl.sh/automated-${{ github.run_id }}/kotsadm:12h
+          context: ./
+          file: ./deploy/Dockerfile
+          push: true
+
+
+  build-kots-helm:
+    runs-on: ubuntu-20.04
+    needs: [ can-run-ci ]
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: main
+          repository: replicatedhq/kots-helm
+
+      - name: Build KOTS Helm chart
+        env:
+          GIT_COMMIT: ${{ github.sha }}
+        run: |
+          curl -O -L https://raw.githubusercontent.com/replicatedhq/kots/${GIT_COMMIT}/.image.env
+          export $(cat .image.env | sed 's/#.*//g' | xargs)
+
+          export CHART_VERSION=0.0.${{ github.run_id }}-automated
+          export KOTS_VERSION=12h
+          export KOTS_TAG=12h
+          export KOTSADM_REGISTRY=ttl.sh/automated-${{ github.run_id }}
+
+          envsubst < Chart.yaml.tmpl > Chart.yaml
+          envsubst < values.yaml.tmpl > values.yaml
+
+          export CHART_NAME=`helm package . | rev | cut -d/ -f1 | rev`
+          helm push $CHART_NAME oci://ttl.sh/automated-${{ github.run_id }}
+
+
+  build-e2e:
+    runs-on: ubuntu-20.04
+    needs: [ can-run-ci ]
+    steps:
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '^1.19.2'
+
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-e2e-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-e2e-
+      - run: make -C e2e build deps
+      - run: docker save e2e-deps -o e2e/bin/e2e-deps.tar
+      - uses: actions/upload-artifact@v2
+        with:
+          name: e2e
+          path: e2e/bin/
+
+
+  build-kurl-proxy:
+    runs-on: ubuntu-20.04
+    needs: [ can-run-ci ]
+    steps:
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '^1.19.2'
+
+      - name: setup env
+        run: |
+          echo "GOPATH=$(go env GOPATH)" >> $GITHUB_ENV
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+        shell: bash
+
+      # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
+      # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+      # this action creates a branch based on remote branch and runs the tests
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-kurlproxy-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-kurlproxy-
+
+      - run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C kurl_proxy test build
+
+      - name: build and push kurl_proxy for e2e
+        uses: docker/build-push-action@v2
+        with:
+          tags: ttl.sh/automated-${{ github.run_id }}/kurl-proxy:12h
+          context: ./kurl_proxy
+          file: ./kurl_proxy/deploy/Dockerfile
+          push: true
+
+
+  build-migrations:
+    runs-on: ubuntu-20.04
+    needs: [ can-run-ci ]
+    steps:
+      - name: setup env
+        run: |
+          echo "GOPATH=$(go env GOPATH)" >> $GITHUB_ENV
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+        shell: bash
+
+      # This workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
+      # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+      # this action creates a branch based on remote branch and runs the tests
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+
+      - name: load environment variables from .image.env
+        uses: falti/dotenv-action@v0.2
+        id: dotenv
+        with:
+          path: .image.env
+
+      - name: build and push migrations for e2e
+        uses: docker/build-push-action@v2
+        with:
+          tags: ttl.sh/automated-${{ github.run_id }}/kotsadm-migrations:12h
+          context: ./migrations
+          file: ./migrations/deploy/Dockerfile
+          push: true
+          build-args: SCHEMAHERO_TAG=${{ steps.dotenv.outputs.schemahero_tag }}
+
+
+  push-minio:
+    runs-on: ubuntu-20.04
+    needs: [ can-run-ci ]
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: load environment variables from .image.env
+        uses: falti/dotenv-action@v0.2
+        id: dotenv
+        with:
+          path: .image.env
+
+      - name: push minio for e2e
+        run: |
+          docker pull minio/minio:${{ steps.dotenv.outputs.minio_tag }}
+          docker tag minio/minio:${{ steps.dotenv.outputs.minio_tag }} ttl.sh/automated-${{ github.run_id }}/minio:${{ steps.dotenv.outputs.minio_tag }}
+          docker push ttl.sh/automated-${{ github.run_id }}/minio:${{ steps.dotenv.outputs.minio_tag }}
+
+
+  push-rqlite:
+    runs-on: ubuntu-20.04
+    needs: [ can-run-ci ]
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: load environment variables from .image.env
+        uses: falti/dotenv-action@v0.2
+        id: dotenv
+        with:
+          path: .image.env
+
+      - name: push rqlite for CI
+        run: |
+          docker pull rqlite/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
+          docker tag rqlite/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }} ttl.sh/automated-${{ github.run_id }}/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
+          docker push ttl.sh/automated-${{ github.run_id }}/rqlite:${{ steps.dotenv.outputs.RQLITE_TAG }}
+
+
+  push-dex:
+    runs-on: ubuntu-20.04
+    needs: [ can-run-ci ]
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: load environment variables from .image.env
+        uses: falti/dotenv-action@v0.2
+        id: dotenv
+        with:
+          path: .image.env
+
+      - name: push dex for CI
+        run: |
+          docker build --pull -f deploy/dex.Dockerfile -t ttl.sh/automated-${{ github.run_id }}/dex:${{ steps.dotenv.outputs.DEX_TAG }} --build-arg TAG=${{ steps.dotenv.outputs.DEX_TAG }} .
+          docker push ttl.sh/automated-${{ github.run_id }}/dex:${{ steps.dotenv.outputs.DEX_TAG }}
+
+
+  # only run validate-kurl-addon if changes to "deploy/kurl/kotsadm/template/**"
+  kurl-addon-changes-filter:
+    runs-on: ubuntu-20.04
+    needs: [ can-run-ci, enable-tests ]
+    outputs:
+      ok-to-test: ${{ steps.filter.outputs.kurl-addon }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            kurl-addon:
+              - 'deploy/kurl/kotsadm/template/**'
+              - 'deploy/kurl/kotsadm/testgrid-os-spec.yaml'
+
+
+  validate-multi-app-install:
+    runs-on: ubuntu-20.04
+    needs: [ enable-tests, can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_version: [ v1.24.4-k3s1 ] # there's no need to run this test on multiple k3s versions
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: download e2e deps
+        uses: actions/download-artifact@v2
+        with:
+          name: e2e
+          path: e2e/bin/
+      - run: docker load -i e2e/bin/e2e-deps.tar
+      - run: chmod +x e2e/bin/*
+      - name: download kots binary
+        uses: actions/download-artifact@v2
+        with:
+          name: kots
+          path: bin/
+      - run: chmod +x bin/*
+      - uses: ./.github/actions/kots-e2e
+        with:
+          test-focus: 'Multi app install'
+          kots-namespace: 'multi-app-install'
+          k8s-version: '${{ matrix.k8s_version }}'
+          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
+          testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
+          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
+          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'

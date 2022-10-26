@@ -113,6 +113,17 @@ func NewHelmManagedMode() Test {
 	}
 }
 
+func MultiAppTest() Test {
+	return Test{
+		Name:          "Multi App Install",
+		Suite:         "multi-app-install",
+		Namespace:     "multi-app-install",
+		UpstreamURI:   "multi-app-install/automated",
+		IsHelmManaged: true,
+		Setup:         SetupHelmManagedMode,
+	}
+}
+
 func NewTagAndDigest() Test {
 	return Test{
 		Name:        "Tag and Digest",
