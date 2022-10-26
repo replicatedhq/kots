@@ -314,17 +314,6 @@ class Redactors extends Component {
             <div className="flex-column card-bg u-padding--15">
               <div className="flex justifyContent--spaceBetween u-paddingBottom--15">
                 <p className="card-title">Redactors</p>
-                {/* <span
-                  className="replicated-link flex alignItems--center u-fontSize--small u-marginLeft--20"
-                  //   onClick={this.toggleRedactorModal}
-                >
-                  <Icon
-                    icon="plus"
-                    size={10}
-                    className="clickable u-marginRight--5"
-                  />
-                  Configure redactors
-                </span> */}
               </div>
               <div className="card-item ConfigureRedactorDetails u-padding--50 flex-column justifyContent--center alignItems--center u-textAlign--center">
                 <p className="u-fontSize--jumbo2 u-fontWeight--bold u-textColor--primary u-textAlign--center u-paddingBottom--15">

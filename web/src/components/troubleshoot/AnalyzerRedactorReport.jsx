@@ -88,10 +88,7 @@ export class AnalyzerRedactorReport extends Component {
           <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginTop--10 u-marginBottom--20">
             Below is a list of the redactor specs that were applied when
             collecting this support bundle. You can see how many files each spec
-            affected and how many values were redacted. To re-generate a support
-            bundle with more or fewer rules applied, go to{" "}
-            <a href="">your redactor specs</a>, enable/disable any of the specs,
-            and generate a new support bundle.
+            affected and how many values were redacted.
           </p>
         ) : (
           <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginTop--10 u-marginBottom--20">
