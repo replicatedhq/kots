@@ -1,4 +1,4 @@
-name: build-test-multi-app
+name: build-test
 
 on:
   pull_request:
