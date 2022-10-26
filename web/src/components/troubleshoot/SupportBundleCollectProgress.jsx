@@ -1,16 +1,16 @@
-import React from 'react';
-import Loader from '../shared/Loader';
-import '@src/scss/components/AirgapUploadProgress.scss';
+import React from "react";
+import Loader from "../shared/Loader";
+import "@src/scss/components/AirgapUploadProgress.scss";
 
 let percentage;
 
 function moveBar(progressData) {
-  const elem = document.getElementById('supportBundleStatusBar');
+  const elem = document.getElementById("supportBundleStatusBar");
   const calcPercent =
     (progressData.collectorsCompleted / progressData.collectorCount) * 100;
   percentage = calcPercent > 98 ? 98 : calcPercent.toFixed();
   if (elem) {
-    elem.style.width = percentage + '%';
+    elem.style.width = percentage + "%";
   }
 }
 
@@ -26,18 +26,18 @@ export default function SupportBundleCollectProgress(props) {
         <div
           className="progressbar-meter"
           id="supportBundleStatusBar"
-          style={{ width: '0px' }}
+          style={{ width: "0px" }}
         />
       </div>
     );
   } else {
-    percentage = '0';
+    percentage = "0";
     progressBar = (
       <div className="progressbar">
         <div
           className="progressbar-meter"
           id="supportBundleStatusBar"
-          style={{ width: '0px' }}
+          style={{ width: "0px" }}
         />
       </div>
     );
@@ -67,7 +67,7 @@ export default function SupportBundleCollectProgress(props) {
           </h1>
           <div className="flex alignItems--center u-marginTop--20">
             <span className="u-fontWeight--bold u-fontSize--normal u-textColor--secondary u-marginRight--10">
-              {percentage + '%'}
+              {percentage + "%"}
             </span>
             {progressBar}
             <span className="u-fontWeight--bold u-fontSize--normal u-textColor--secondary u-marginRight--10">

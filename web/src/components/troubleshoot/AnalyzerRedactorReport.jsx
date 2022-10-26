@@ -1,11 +1,11 @@
-import React, { Component } from 'react';
-import { withRouter } from 'react-router-dom';
-import isEmpty from 'lodash/isEmpty';
+import React, { Component } from "react";
+import { withRouter } from "react-router-dom";
+import isEmpty from "lodash/isEmpty";
 
-import AnalyzerRedactorReportRow from './AnalyzerRedactorReportRow';
-import Loader from '../shared/Loader';
-import ErrorModal from '../modals/ErrorModal';
-import { Utilities } from '../../utilities/utilities';
+import AnalyzerRedactorReportRow from "./AnalyzerRedactorReportRow";
+import Loader from "../shared/Loader";
+import ErrorModal from "../modals/ErrorModal";
+import { Utilities } from "../../utilities/utilities";
 
 export class AnalyzerRedactorReport extends Component {
   constructor(props) {
@@ -19,19 +19,19 @@ export class AnalyzerRedactorReport extends Component {
   getSupportBundleRedactions = () => {
     this.setState({
       isLoadingRedactions: true,
-      redactionsErrMsg: '',
+      redactionsErrMsg: "",
       displayErrorModal: false,
     });
 
     fetch(
       `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/${this.props.bundle?.id}/redactions`,
       {
-        method: 'GET',
+        method: "GET",
         headers: {
           Authorization: Utilities.getToken(),
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-      },
+      }
     )
       .then((res) => res.json())
       .then((result) => {
@@ -39,7 +39,7 @@ export class AnalyzerRedactorReport extends Component {
           this.setState({
             redactions: result.redactions,
             isLoadingRedactions: false,
-            redactionsErrMsg: '',
+            redactionsErrMsg: "",
             displayErrorModal: false,
           });
         } else {
@@ -55,7 +55,7 @@ export class AnalyzerRedactorReport extends Component {
           isLoadingRedactions: false,
           redactionsErrMsg: err.message
             ? err.message
-            : 'There was an error while showing the redactor report. Please try again',
+            : "There was an error while showing the redactor report. Please try again",
           displayErrorModal: true,
         });
       });
@@ -89,7 +89,7 @@ export class AnalyzerRedactorReport extends Component {
             Below is a list of the redactor specs that were applied when
             collecting this support bundle. You can see how many files each spec
             affected and how many values were redacted. To re-generate a support
-            bundle with more or fewer rules applied, go to{' '}
+            bundle with more or fewer rules applied, go to{" "}
             <a href="">your redactor specs</a>, enable/disable any of the specs,
             and generate a new support bundle.
           </p>

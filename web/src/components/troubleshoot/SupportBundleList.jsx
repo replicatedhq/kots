@@ -1,30 +1,30 @@
-import * as React from 'react';
-import { KotsPageTitle } from '@components/Head';
-import { withRouter, Link } from 'react-router-dom';
+import * as React from "react";
+import { KotsPageTitle } from "@components/Head";
+import { withRouter, Link } from "react-router-dom";
 
-import Toggle from '../shared/Toggle';
-import Loader from '../shared/Loader';
-import SupportBundleRow from './SupportBundleRow';
-import GenerateSupportBundle from './GenerateSupportBundle';
-import ConfigureRedactorsModal from './ConfigureRedactorsModal';
-import ErrorModal from '../modals/ErrorModal';
-import { Utilities } from '../../utilities/utilities';
-import { Repeater } from '@src/utilities/repeater';
+import Toggle from "../shared/Toggle";
+import Loader from "../shared/Loader";
+import SupportBundleRow from "./SupportBundleRow";
+import GenerateSupportBundle from "./GenerateSupportBundle";
+import ConfigureRedactorsModal from "./ConfigureRedactorsModal";
+import ErrorModal from "../modals/ErrorModal";
+import { Utilities } from "../../utilities/utilities";
+import { Repeater } from "@src/utilities/repeater";
 
-import '../../scss/components/troubleshoot/SupportBundleList.scss';
-import Icon from '../Icon';
+import "../../scss/components/troubleshoot/SupportBundleList.scss";
+import Icon from "../Icon";
 
 class SupportBundleList extends React.Component {
   state = {
     supportBundles: [],
     loading: false,
-    errorMsg: '',
+    errorMsg: "",
     displayRedactorModal: false,
     displayErrorModal: false,
     pollForBundleAnalysisProgress: new Repeater(),
     bundleAnalysisProgress: {},
     loadingSupportBundles: false,
-    loadingBundleId: '',
+    loadingBundleId: "",
   };
 
   componentDidMount() {
@@ -37,7 +37,7 @@ class SupportBundleList extends React.Component {
   listSupportBundles = () => {
     this.setState({
       loading: true,
-      errorMsg: '',
+      errorMsg: "",
       displayErrorModal: false,
       loadingBundle: false,
     });
@@ -47,10 +47,10 @@ class SupportBundleList extends React.Component {
       {
         headers: {
           Authorization: Utilities.getToken(),
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        method: 'GET',
-      },
+        method: "GET",
+      }
     )
       .then(async (res) => {
         if (!res.ok) {
@@ -66,19 +66,19 @@ class SupportBundleList extends React.Component {
         let bundleRunning = false;
         if (response.supportBundles) {
           bundleRunning = response.supportBundles.find(
-            (bundle) => bundle.status === 'running',
+            (bundle) => bundle.status === "running"
           );
         }
         if (bundleRunning) {
           this.state.pollForBundleAnalysisProgress.start(
             this.pollForBundleAnalysisProgress,
-            1000,
+            1000
           );
         }
         this.setState({
           supportBundles: response.supportBundles,
           loading: false,
-          errorMsg: '',
+          errorMsg: "",
           displayErrorModal: false,
         });
       })
@@ -88,7 +88,7 @@ class SupportBundleList extends React.Component {
           loading: false,
           errorMsg: err
             ? err.message
-            : 'Something went wrong, please try again.',
+            : "Something went wrong, please try again.",
           displayErrorModal: true,
         });
       });
@@ -104,11 +104,11 @@ class SupportBundleList extends React.Component {
       `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/${newBundleSlug}`,
       {
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: Utilities.getToken(),
         },
-        method: 'GET',
-      },
+        method: "GET",
+      }
     )
       .then(async (res) => {
         if (!res.ok) {
@@ -126,16 +126,16 @@ class SupportBundleList extends React.Component {
           loadingBundle: true,
         });
 
-        if (bundle.status !== 'running') {
+        if (bundle.status !== "running") {
           this.state.pollForBundleAnalysisProgress.stop();
-          this.setState({ loadingBundleId: '', loadingBundle: false });
-          if (bundle.status === 'failed') {
+          this.setState({ loadingBundleId: "", loadingBundle: false });
+          if (bundle.status === "failed") {
             this.props.history.push(
-              `/app/${this.props.watch.slug}/troubleshoot`,
+              `/app/${this.props.watch.slug}/troubleshoot`
             );
           } else {
             this.props.history.push(
-              `/app/${this.props.watch.slug}/troubleshoot/analyze/${bundle.slug}`,
+              `/app/${this.props.watch.slug}/troubleshoot/analyze/${bundle.slug}`
             );
           }
         }
@@ -145,7 +145,7 @@ class SupportBundleList extends React.Component {
           loading: false,
           getSupportBundleErrMsg: err
             ? err.message
-            : 'Something went wrong, please try again.',
+            : "Something went wrong, please try again.",
           displayErrorModal: true,
         });
       });
@@ -219,18 +219,18 @@ class SupportBundleList extends React.Component {
             <Toggle
               items={[
                 {
-                  title: 'Support bundles',
+                  title: "Support bundles",
                   onClick: () =>
                     this.props.history.push(
-                      `/app/${this.props.watch.slug}/troubleshoot`,
+                      `/app/${this.props.watch.slug}/troubleshoot`
                     ),
                   isActive: true,
                 },
                 {
-                  title: 'Redactors',
+                  title: "Redactors",
                   onClick: () =>
                     this.props.history.push(
-                      `/app/${this.props.watch.slug}/troubleshoot/redactors`,
+                      `/app/${this.props.watch.slug}/troubleshoot/redactors`
                     ),
                   isActive: false,
                 },
@@ -274,7 +274,7 @@ class SupportBundleList extends React.Component {
               </div>
               <div
                 className={`${
-                  watch.downstream ? 'flex1 flex-column u-overflow--auto' : ''
+                  watch.downstream ? "flex1 flex-column u-overflow--auto" : ""
                 }`}
               >
                 {bundlesNode}

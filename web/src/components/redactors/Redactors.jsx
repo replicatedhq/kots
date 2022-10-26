@@ -1,45 +1,45 @@
-import React, { Component } from 'react';
-import { withRouter, Link } from 'react-router-dom';
-import { KotsPageTitle } from '@components/Head';
-import dayjs from 'dayjs';
-import Select from 'react-select';
-import Toggle from '../shared/Toggle';
-import RedactorRow from './RedactorRow';
-import DeleteRedactorModal from '../modals/DeleteRedactorModal';
-import Loader from '../shared/Loader';
+import React, { Component } from "react";
+import { withRouter, Link } from "react-router-dom";
+import { KotsPageTitle } from "@components/Head";
+import dayjs from "dayjs";
+import Select from "react-select";
+import Toggle from "../shared/Toggle";
+import RedactorRow from "./RedactorRow";
+import DeleteRedactorModal from "../modals/DeleteRedactorModal";
+import Loader from "../shared/Loader";
 
-import { Utilities } from '../../utilities/utilities';
-import Icon from '@components/Icon';
-import '../../scss/components/redactors/Redactor.scss';
+import { Utilities } from "../../utilities/utilities";
+import Icon from "@components/Icon";
+import "../../scss/components/redactors/Redactor.scss";
 
 class Redactors extends Component {
   state = {
     redactors: [],
     sortedRedactors: [],
     selectedOption: {
-      value: 'enabled',
-      label: 'Sort by: Status',
+      value: "enabled",
+      label: "Sort by: Status",
     },
     deleteRedactorModal: false,
     redactorToDelete: {},
     isLoadingRedactors: false,
-    redactorsErrMsg: '',
+    redactorsErrMsg: "",
     deletingRedactor: false,
-    deleteErrMsg: '',
-    enablingRedactorMsg: '',
+    deleteErrMsg: "",
+    enablingRedactorMsg: "",
   };
 
   getRedactors = () => {
     this.setState({
       isLoadingRedactors: true,
-      redactorsErrMsg: '',
+      redactorsErrMsg: "",
     });
 
     fetch(`${process.env.API_ENDPOINT}/redacts`, {
-      method: 'GET',
+      method: "GET",
       headers: {
         Authorization: Utilities.getToken(),
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     })
       .then((res) => res.json())
@@ -49,13 +49,13 @@ class Redactors extends Component {
             {
               redactors: result.redactors,
               isLoadingRedactors: false,
-              redactorsErrMsg: '',
+              redactorsErrMsg: "",
             },
             () => {
               if (this.state.selectedOption) {
                 this.sortRedactors(this.state.selectedOption.value);
               }
-            },
+            }
           );
         } else {
           this.setState({
@@ -83,22 +83,22 @@ class Redactors extends Component {
   }
 
   sortRedactors = (value) => {
-    if (value === 'createdAt') {
+    if (value === "createdAt") {
       this.setState({
         sortedRedactors: this.state.redactors.sort(
-          (a, b) => dayjs(b.createdAt) - dayjs(a.createdAt),
+          (a, b) => dayjs(b.createdAt) - dayjs(a.createdAt)
         ),
       });
-    } else if (value === 'updatedAt') {
+    } else if (value === "updatedAt") {
       this.setState({
         sortedRedactors: this.state.redactors.sort(
-          (a, b) => dayjs(b.updatedAt) - dayjs(a.updatedAt),
+          (a, b) => dayjs(b.updatedAt) - dayjs(a.updatedAt)
         ),
       });
     } else {
       this.setState({
         sortedRedactors: this.state.redactors.sort((a, b) =>
-          a.enabled === b.enabled ? 0 : a.enabled ? -1 : 1,
+          a.enabled === b.enabled ? 0 : a.enabled ? -1 : 1
         ),
       });
     }
@@ -108,40 +108,40 @@ class Redactors extends Component {
     if (this.state.deleteRedactorModal) {
       this.setState({
         deleteRedactorModal: false,
-        redactorToDelete: '',
+        redactorToDelete: "",
         deleteErr: false,
-        deleteErrorMsg: '',
+        deleteErrorMsg: "",
       });
     } else {
       this.setState({
         deleteRedactorModal: true,
         redactorToDelete: redactor,
         deleteErr: false,
-        deleteErrorMsg: '',
+        deleteErrorMsg: "",
       });
     }
   };
 
   handleDeleteRedactor = (redactor) => {
-    this.setState({ deletingRedactor: true, deleteErrMsg: '' });
+    this.setState({ deletingRedactor: true, deleteErrMsg: "" });
 
     fetch(`${process.env.API_ENDPOINT}/redact/spec/${redactor.slug}`, {
-      method: 'DELETE',
+      method: "DELETE",
       headers: {
         Authorization: Utilities.getToken(),
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     })
       .then(() => {
         this.setState(
           {
             deletingRedactor: false,
-            deleteErrMsg: '',
+            deleteErrMsg: "",
             deleteRedactorModal: false,
           },
           () => {
             this.getRedactors();
-          },
+          }
         );
       })
       .catch((err) => {
@@ -149,7 +149,7 @@ class Redactors extends Component {
           deletingRedactor: false,
           deleteErrMsg: err.message
             ? err.message
-            : 'Something went wrong, please try again.',
+            : "Something went wrong, please try again.",
         });
       });
   };
@@ -158,12 +158,12 @@ class Redactors extends Component {
     const payload = {
       enabled: redactorEnabled,
     };
-    this.setState({ enablingRedactorMsg: '' });
+    this.setState({ enablingRedactorMsg: "" });
     fetch(`${process.env.API_ENDPOINT}/redact/enabled/${redactor.slug}`, {
-      method: 'POST',
+      method: "POST",
       headers: {
         Authorization: Utilities.getToken(),
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
     })
@@ -174,7 +174,7 @@ class Redactors extends Component {
           return;
         }
         if (response.success) {
-          this.setState({ enablingRedactorMsg: '' });
+          this.setState({ enablingRedactorMsg: "" });
         } else {
           this.setState({ enablingRedactorMsg: response.error });
         }
@@ -183,7 +183,7 @@ class Redactors extends Component {
         this.setState({
           enablingRedactorMsg: err.message
             ? err.message
-            : 'Something went wrong, please try again.',
+            : "Something went wrong, please try again.",
         });
       });
   };
@@ -207,16 +207,16 @@ class Redactors extends Component {
 
     const selectOptions = [
       {
-        value: 'enabled',
-        label: 'Sort by: Status',
+        value: "enabled",
+        label: "Sort by: Status",
       },
       {
-        value: 'createdAt',
-        label: 'Sort by: Created At',
+        value: "createdAt",
+        label: "Sort by: Created At",
       },
       {
-        value: 'updatedAt',
-        label: 'Sort by: Updated on',
+        value: "updatedAt",
+        label: "Sort by: Updated on",
       },
     ];
 
@@ -228,18 +228,18 @@ class Redactors extends Component {
             <Toggle
               items={[
                 {
-                  title: 'Support bundles',
+                  title: "Support bundles",
                   onClick: () =>
                     this.props.history.push(
-                      `/app/${this.props.appSlug}/troubleshoot`,
+                      `/app/${this.props.appSlug}/troubleshoot`
                     ),
                   isActive: false,
                 },
                 {
-                  title: 'Redactors',
+                  title: "Redactors",
                   onClick: () =>
                     this.props.history.push(
-                      `/app/${this.props.appSlug}/troubleshoot/redactors`,
+                      `/app/${this.props.appSlug}/troubleshoot/redactors`
                     ),
                   isActive: true,
                 },
@@ -251,7 +251,7 @@ class Redactors extends Component {
               <div className="flex flex-auto alignItems--center justifyContent--spaceBetween">
                 <div className="flex flex1 alignItems--center">
                   <p className="card-title u-marginRight--10">Redactors</p>
-                  <div style={{ width: '220px' }}>
+                  <div style={{ width: "220px" }}>
                     <Select
                       className="replicated-select-container"
                       classNamePrefix="replicated-select"
@@ -290,7 +290,7 @@ class Redactors extends Component {
                   rel="noopener noreferrer"
                   className="replicated-link"
                 >
-                  {' '}
+                  {" "}
                   check out our docs
                 </a>
                 .
@@ -341,7 +341,7 @@ class Redactors extends Component {
                     rel="noopener noreferrer"
                     className="replicated-link"
                   >
-                    {' '}
+                    {" "}
                     check out our docs
                   </a>
                   .

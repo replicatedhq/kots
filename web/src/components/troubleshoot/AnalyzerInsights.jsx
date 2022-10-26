@@ -1,9 +1,9 @@
-import * as React from 'react';
-import Loader from '../shared/Loader';
-import isEmpty from 'lodash/isEmpty';
-import filter from 'lodash/filter';
-import MarkdownRenderer from '@src/components/shared/MarkdownRenderer';
-import { sortAnalyzers, parseIconUri } from '../../utilities/utilities';
+import * as React from "react";
+import Loader from "../shared/Loader";
+import isEmpty from "lodash/isEmpty";
+import filter from "lodash/filter";
+import MarkdownRenderer from "@src/components/shared/MarkdownRenderer";
+import { sortAnalyzers, parseIconUri } from "../../utilities/utilities";
 
 export class AnalyzerInsights extends React.Component {
   constructor(props) {
@@ -18,7 +18,7 @@ export class AnalyzerInsights extends React.Component {
   componentDidUpdate(lastProps) {
     if (this.props.insights !== lastProps.insights && this.props.insights) {
       const hasProblems = this.props.insights.some(
-        (i) => i.severity === 'warn' || i.severity === 'error',
+        (i) => i.severity === "warn" || i.severity === "error"
       );
       this.handleFilterTiles(hasProblems);
     }
@@ -31,7 +31,7 @@ export class AnalyzerInsights extends React.Component {
   componentDidMount() {
     if (this.props.insights) {
       const hasProblems = this.props.insights.some(
-        (i) => i.severity === 'warn' || i.severity === 'error',
+        (i) => i.severity === "warn" || i.severity === "error"
       );
       this.handleFilterTiles(hasProblems);
     }
@@ -41,7 +41,7 @@ export class AnalyzerInsights extends React.Component {
 
   checkBundleStatus = () => {
     const { status, refetchSupportBundle, insights } = this.props;
-    if (status === 'uploaded' || status === 'analyzing') {
+    if (status === "uploaded" || status === "analyzing") {
       // Check if the bundle is ready only if the user is on the page
       if (!insights) {
         this.interval = setInterval(refetchSupportBundle, 2000);
@@ -60,7 +60,7 @@ export class AnalyzerInsights extends React.Component {
     if (checked) {
       insights = filter(
         insights,
-        (i) => i.severity === 'error' || i.severity === 'warn',
+        (i) => i.severity === "error" || i.severity === "warn"
       );
     }
     this.setState({
@@ -76,7 +76,7 @@ export class AnalyzerInsights extends React.Component {
 
     let noInsightsNode;
     if (isEmpty(insights)) {
-      if (status === 'uploaded' || status === 'analyzing') {
+      if (status === "uploaded" || status === "analyzing") {
         noInsightsNode = (
           <div className="flex-column flex1 justifyContent--center alignItems--center u-textAlign--center u-lineHeight--normal u-textColor--bodyCopy">
             <Loader size="40" />
@@ -189,9 +189,9 @@ export class AnalyzerInsights extends React.Component {
                             </div>
                             <p
                               className={
-                                tile.severity === 'debug'
-                                  ? 'u-textColor--bodyCopy u-fontSize--normal u-fontWeight--bold'
-                                  : 'u-textColor--primary u-fontSize--normal u-fontWeight--bold'
+                                tile.severity === "debug"
+                                  ? "u-textColor--bodyCopy u-fontSize--normal u-fontWeight--bold"
+                                  : "u-textColor--primary u-fontSize--normal u-fontWeight--bold"
                               }
                             >
                               {tile.primary}
@@ -199,20 +199,20 @@ export class AnalyzerInsights extends React.Component {
                             <MarkdownRenderer
                               id={`markdown-wrapper-${i}`}
                               className={
-                                tile.severity === 'debug'
-                                  ? 'u-textColor--bodyCopy u-fontSize--smaller u-fontWeight--medium u-marginTop--5'
-                                  : 'u-textColor--accent u-fontSize--smaller u-fontWeight--medium u-marginTop--5'
+                                tile.severity === "debug"
+                                  ? "u-textColor--bodyCopy u-fontSize--smaller u-fontWeight--medium u-marginTop--5"
+                                  : "u-textColor--accent u-fontSize--smaller u-fontWeight--medium u-marginTop--5"
                               }
                             >
                               {tile.detail}
                             </MarkdownRenderer>
-                            {tile?.involvedObject?.kind === 'Pod' && (
+                            {tile?.involvedObject?.kind === "Pod" && (
                               <div>
                                 <span
                                   className="replicated-link u-fontSize--small u-marginTop--5"
                                   onClick={() =>
                                     this.props.openPodDetailsModal(
-                                      tile?.involvedObject,
+                                      tile?.involvedObject
                                     )
                                   }
                                 >

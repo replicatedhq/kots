@@ -1,39 +1,39 @@
-import * as React from 'react';
-import { withRouter, Switch, Route, Link } from 'react-router-dom';
-import dayjs from 'dayjs';
-import Modal from 'react-modal';
+import * as React from "react";
+import { withRouter, Switch, Route, Link } from "react-router-dom";
+import dayjs from "dayjs";
+import Modal from "react-modal";
 
-import Loader from '../shared/Loader';
-import AnalyzerInsights from './AnalyzerInsights';
-import AnalyzerFileTree from './AnalyzerFileTree';
-import AnalyzerRedactorReport from './AnalyzerRedactorReport';
-import PodAnalyzerDetails from './PodAnalyzerDetails';
-import ErrorModal from '../modals/ErrorModal';
-import { Utilities } from '../../utilities/utilities';
-import '../../scss/components/troubleshoot/SupportBundleAnalysis.scss';
-import download from 'downloadjs';
-import Icon from '../Icon';
+import Loader from "../shared/Loader";
+import AnalyzerInsights from "./AnalyzerInsights";
+import AnalyzerFileTree from "./AnalyzerFileTree";
+import AnalyzerRedactorReport from "./AnalyzerRedactorReport";
+import PodAnalyzerDetails from "./PodAnalyzerDetails";
+import ErrorModal from "../modals/ErrorModal";
+import { Utilities } from "../../utilities/utilities";
+import "../../scss/components/troubleshoot/SupportBundleAnalysis.scss";
+import download from "downloadjs";
+import Icon from "../Icon";
 
-import { KotsPageTitle } from '@components/Head';
+import { KotsPageTitle } from "@components/Head";
 
 export class SupportBundleAnalysis extends React.Component {
   constructor(props) {
     super();
     this.state = {
       activeTab:
-        props.location.pathname.indexOf('/contents') !== -1
-          ? 'fileTree'
-          : location.pathname.indexOf('/redactor') !== -1
-          ? 'redactorReport'
-          : 'bundleAnalysis',
-      filterTiles: '0',
+        props.location.pathname.indexOf("/contents") !== -1
+          ? "fileTree"
+          : location.pathname.indexOf("/redactor") !== -1
+          ? "redactorReport"
+          : "bundleAnalysis",
+      filterTiles: "0",
       downloadingBundle: false,
       bundle: null,
       loading: false,
-      downloadBundleErrMsg: '',
-      getSupportBundleErrMsg: '',
+      downloadBundleErrMsg: "",
+      getSupportBundleErrMsg: "",
       sendingBundle: false,
-      sendingBundleErrMsg: '',
+      sendingBundleErrMsg: "",
       displayErrorModal: false,
       showPodAnalyzerDetailsModal: false,
     };
@@ -49,17 +49,17 @@ export class SupportBundleAnalysis extends React.Component {
   sendBundleToVendor = async () => {
     this.setState({
       sendingBundle: true,
-      sendingBundleErrMsg: '',
-      downloadBundleErrMsg: '',
+      sendingBundleErrMsg: "",
+      downloadBundleErrMsg: "",
     });
     fetch(
       `${process.env.API_ENDPOINT}/troubleshoot/app/${this.props.match.params.slug}/supportbundle/${this.props.match.params.bundleSlug}/share`,
       {
-        method: 'POST',
+        method: "POST",
         headers: {
           Authorization: Utilities.getToken(),
         },
-      },
+      }
     )
       .then(async (result) => {
         if (!result.ok) {
@@ -72,7 +72,7 @@ export class SupportBundleAnalysis extends React.Component {
           return;
         }
         await this.getSupportBundle();
-        this.setState({ sendingBundle: false, sendingBundleErrMsg: '' });
+        this.setState({ sendingBundle: false, sendingBundleErrMsg: "" });
       })
       .catch((err) => {
         console.log(err);
@@ -80,7 +80,7 @@ export class SupportBundleAnalysis extends React.Component {
           sendingBundle: false,
           sendingBundleErrMsg: err
             ? `Unable to send bundle to vendor: ${err.message}`
-            : 'Something went wrong, please try again.',
+            : "Something went wrong, please try again.",
         });
       });
   };
@@ -88,17 +88,17 @@ export class SupportBundleAnalysis extends React.Component {
   downloadBundle = async (bundle) => {
     this.setState({
       downloadingBundle: true,
-      downloadBundleErrMsg: '',
-      sendingBundleErrMsg: '',
+      downloadBundleErrMsg: "",
+      sendingBundleErrMsg: "",
     });
     fetch(
       `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/${bundle.id}/download`,
       {
-        method: 'GET',
+        method: "GET",
         headers: {
           Authorization: Utilities.getToken(),
         },
-      },
+      }
     )
       .then(async (result) => {
         if (!result.ok) {
@@ -109,21 +109,21 @@ export class SupportBundleAnalysis extends React.Component {
           return;
         }
 
-        let filename = '';
-        const disposition = result.headers.get('Content-Disposition');
+        let filename = "";
+        const disposition = result.headers.get("Content-Disposition");
         if (disposition) {
-          filename = disposition.split('filename=')[1];
+          filename = disposition.split("filename=")[1];
         } else {
           const createdAt = dayjs(bundle.createdAt).format(
-            'YYYY-MM-DDTHH_mm_ss',
+            "YYYY-MM-DDTHH_mm_ss"
           );
           filename = `supportbundle-${createdAt}.tar.gz`;
         }
 
         const blob = await result.blob();
-        download(blob, filename, 'application/gzip');
+        download(blob, filename, "application/gzip");
 
-        this.setState({ downloadingBundle: false, downloadBundleErrMsg: '' });
+        this.setState({ downloadingBundle: false, downloadBundleErrMsg: "" });
       })
       .catch((err) => {
         console.log(err);
@@ -131,7 +131,7 @@ export class SupportBundleAnalysis extends React.Component {
           downloadingBundle: false,
           downloadBundleErrMsg: err
             ? `Unable to download bundle: ${err.message}`
-            : 'Something went wrong, please try again.',
+            : "Something went wrong, please try again.",
         });
       });
   };
@@ -139,7 +139,7 @@ export class SupportBundleAnalysis extends React.Component {
   getSupportBundle = async () => {
     this.setState({
       loading: true,
-      getSupportBundleErrMsg: '',
+      getSupportBundleErrMsg: "",
       displayErrorModal: false,
     });
 
@@ -147,11 +147,11 @@ export class SupportBundleAnalysis extends React.Component {
       `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/${this.props.match.params.bundleSlug}`,
       {
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: Utilities.getToken(),
         },
-        method: 'GET',
-      },
+        method: "GET",
+      }
     )
       .then(async (res) => {
         if (!res.ok) {
@@ -166,7 +166,7 @@ export class SupportBundleAnalysis extends React.Component {
         this.setState({
           bundle: bundle,
           loading: false,
-          getSupportBundleErrMsg: '',
+          getSupportBundleErrMsg: "",
           displayErrorModal: false,
         });
       })
@@ -176,7 +176,7 @@ export class SupportBundleAnalysis extends React.Component {
           loading: false,
           getSupportBundleErrMsg: err
             ? err.message
-            : 'Something went wrong, please try again.',
+            : "Something went wrong, please try again.",
           displayErrorModal: true,
         });
       });
@@ -201,11 +201,11 @@ export class SupportBundleAnalysis extends React.Component {
     if (location !== lastProps.location) {
       this.setState({
         activeTab:
-          location.pathname.indexOf('/contents') !== -1
-            ? 'fileTree'
-            : location.pathname.indexOf('/redactor') !== -1
-            ? 'redactorReport'
-            : 'bundleAnalysis',
+          location.pathname.indexOf("/contents") !== -1
+            ? "fileTree"
+            : location.pathname.indexOf("/redactor") !== -1
+            ? "redactorReport"
+            : "bundleAnalysis",
       });
     }
   };
@@ -244,10 +244,10 @@ export class SupportBundleAnalysis extends React.Component {
                         className="replicated-link u-marginRight--5"
                       >
                         Support bundles
-                      </Link>{' '}
-                      &gt;{' '}
+                      </Link>{" "}
+                      &gt;{" "}
                       <span className="u-marginLeft--5">
-                        {dayjs(bundle.createdAt).format('MMMM D, YYYY')}
+                        {dayjs(bundle.createdAt).format("MMMM D, YYYY")}
                       </span>
                     </div>
                     <div className="flex flex1 justifyContent--spaceBetween">
@@ -260,10 +260,10 @@ export class SupportBundleAnalysis extends React.Component {
                     <div className="upload-date-container flex u-marginTop--5 alignItems--center">
                       <div className="flex alignSelf--center">
                         <p className="flex u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium">
-                          Collected on{' '}
+                          Collected on{" "}
                           <span className="u-fontWeight--bold u-marginLeft--5">
                             {dayjs(bundle.createdAt).format(
-                              'MMMM D, YYYY @ h:mm a',
+                              "MMMM D, YYYY @ h:mm a"
                             )}
                           </span>
                         </p>
@@ -292,10 +292,10 @@ export class SupportBundleAnalysis extends React.Component {
                             style={{ marginRight: 7 }}
                           />
                           <span className="u-fontWeight--bold u-fontSize--small u-color--mutedteal">
-                            Sent to vendor on{' '}
+                            Sent to vendor on{" "}
                             {Utilities.dateFormat(
                               bundle.sharedAt,
-                              'MM/DD/YYYY',
+                              "MM/DD/YYYY"
                             )}
                           </span>
                         </div>
@@ -313,19 +313,19 @@ export class SupportBundleAnalysis extends React.Component {
                       <button
                         className={`btn ${
                           showSendSupportBundleBtn
-                            ? 'secondary blue'
-                            : 'primary lightBlue'
+                            ? "secondary blue"
+                            : "primary lightBlue"
                         }`}
                         onClick={() => this.downloadBundle(bundle)}
                       >
-                        {' '}
-                        Download bundle{' '}
+                        {" "}
+                        Download bundle{" "}
                       </button>
                     )}
                   </div>
                 </div>
               </div>
-              {watch.licenseType === 'community' && (
+              {watch.licenseType === "community" && (
                 <div className="flex">
                   <div className="CommunityLicenseBundle--wrapper flex flex1 alignItems--center">
                     <div className="flex flex-auto">
@@ -333,14 +333,14 @@ export class SupportBundleAnalysis extends React.Component {
                     </div>
                     <div className="flex1 flex-column u-marginLeft--10">
                       <p className="u-textColor--accent u-fontSize--large u-fontWeight--bold u-lineHeight--medium u-marginBottom--5">
-                        {' '}
+                        {" "}
                         This bundle was uploaded by a customer under a Community
-                        license type.{' '}
+                        license type.{" "}
                       </p>
                       <p className="u-textColor--info u-fontSize--normal u-lineHeight--medium">
-                        {' '}
+                        {" "}
                         Customers with Community licenses are using the free,
-                        Community-Supported version of Nomad Enterprise.{' '}
+                        Community-Supported version of Nomad Enterprise.{" "}
                       </p>
                     </div>
                   </div>
@@ -352,12 +352,12 @@ export class SupportBundleAnalysis extends React.Component {
                     <Link
                       to={`/app/${watch.slug}/troubleshoot/analyze/${bundle.slug}`}
                       className={`${
-                        this.state.activeTab === 'bundleAnalysis'
-                          ? 'is-active'
-                          : ''
+                        this.state.activeTab === "bundleAnalysis"
+                          ? "is-active"
+                          : ""
                       } tab-item blue`}
                       onClick={() =>
-                        this.toggleAnalysisAction('bundleAnalysis')
+                        this.toggleAnalysisAction("bundleAnalysis")
                       }
                     >
                       Analysis insights
@@ -365,21 +365,21 @@ export class SupportBundleAnalysis extends React.Component {
                     <Link
                       to={`/app/${watch.slug}/troubleshoot/analyze/${bundle.slug}/contents/`}
                       className={`${
-                        this.state.activeTab === 'fileTree' ? 'is-active' : ''
+                        this.state.activeTab === "fileTree" ? "is-active" : ""
                       } tab-item blue`}
-                      onClick={() => this.toggleAnalysisAction('fileTree')}
+                      onClick={() => this.toggleAnalysisAction("fileTree")}
                     >
                       File inspector
                     </Link>
                     <Link
                       to={`/app/${watch.slug}/troubleshoot/analyze/${bundle.slug}/redactor/report`}
                       className={`${
-                        this.state.activeTab === 'redactorReport'
-                          ? 'is-active'
-                          : ''
+                        this.state.activeTab === "redactorReport"
+                          ? "is-active"
+                          : ""
                       } tab-item blue`}
                       onClick={() =>
-                        this.toggleAnalysisAction('redactorReport')
+                        this.toggleAnalysisAction("redactorReport")
                       }
                     >
                       Redactor report

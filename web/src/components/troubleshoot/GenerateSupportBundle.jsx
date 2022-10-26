@@ -1,19 +1,19 @@
-import * as React from 'react';
-import { KotsPageTitle } from '@components/Head';
-import { withRouter, Link } from 'react-router-dom';
-import Modal from 'react-modal';
+import * as React from "react";
+import { KotsPageTitle } from "@components/Head";
+import { withRouter, Link } from "react-router-dom";
+import Modal from "react-modal";
 
-import Toggle from '../shared/Toggle';
-import SupportBundleCollectProgress from '../troubleshoot/SupportBundleCollectProgress';
-import CodeSnippet from '@src/components/shared/CodeSnippet';
-import UploadSupportBundleModal from '../troubleshoot/UploadSupportBundleModal';
-import ConfigureRedactorsModal from './ConfigureRedactorsModal';
-import ErrorModal from '../modals/ErrorModal';
-import { Utilities } from '../../utilities/utilities';
-import { Repeater } from '../../utilities/repeater';
+import Toggle from "../shared/Toggle";
+import SupportBundleCollectProgress from "../troubleshoot/SupportBundleCollectProgress";
+import CodeSnippet from "@src/components/shared/CodeSnippet";
+import UploadSupportBundleModal from "../troubleshoot/UploadSupportBundleModal";
+import ConfigureRedactorsModal from "./ConfigureRedactorsModal";
+import ErrorModal from "../modals/ErrorModal";
+import { Utilities } from "../../utilities/utilities";
+import { Repeater } from "../../utilities/repeater";
 
-import '../../scss/components/troubleshoot/GenerateSupportBundle.scss';
-import Icon from '../Icon';
+import "../../scss/components/troubleshoot/GenerateSupportBundle.scss";
+import Icon from "../Icon";
 
 class GenerateSupportBundle extends React.Component {
   constructor(props) {
@@ -30,9 +30,9 @@ class GenerateSupportBundle extends React.Component {
       supportBundles: [],
       listSupportBundlesJob: new Repeater(),
       pollForBundleAnalysisProgress: new Repeater(),
-      newBundleSlug: '',
+      newBundleSlug: "",
       bundleAnalysisProgress: {},
-      errorMsg: '',
+      errorMsg: "",
       displayErrorModal: false,
       networkErr: false,
     };
@@ -66,15 +66,15 @@ class GenerateSupportBundle extends React.Component {
       if (this.state.listSupportBundlesJob.isRunning()) {
         if (supportBundles?.length > totalBundles) {
           const bundle = supportBundles[0]; // safe. there's at least 1 element in this array.
-          if (bundle.status !== 'running') {
+          if (bundle.status !== "running") {
             this.state.listSupportBundlesJob.stop();
-            if (bundle.status === 'failed') {
+            if (bundle.status === "failed") {
               this.props.history.push(
-                `/app/${this.props.watch.slug}/troubleshoot`,
+                `/app/${this.props.watch.slug}/troubleshoot`
               );
             } else {
               history.push(
-                `/app/${watch.slug}/troubleshoot/analyze/${bundle.id}`,
+                `/app/${watch.slug}/troubleshoot/analyze/${bundle.id}`
               );
             }
           }
@@ -95,7 +95,7 @@ class GenerateSupportBundle extends React.Component {
   checkIfSupportBundleIsBeingGenerated() {
     this.setState({
       loadingSupportBundles: true,
-      errorMsg: '',
+      errorMsg: "",
       displayErrorModal: false,
       networkErr: false,
     });
@@ -105,10 +105,10 @@ class GenerateSupportBundle extends React.Component {
       {
         headers: {
           Authorization: Utilities.getToken(),
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        method: 'GET',
-      },
+        method: "GET",
+      }
     )
       .then(async (res) => {
         if (!res.ok) {
@@ -124,7 +124,7 @@ class GenerateSupportBundle extends React.Component {
         let bundleRunning = false;
         if (response.supportBundles) {
           bundleRunning = response.supportBundles.find(
-            (bundle) => bundle.status === 'running',
+            (bundle) => bundle.status === "running"
           );
         }
         if (bundleRunning) {
@@ -132,10 +132,10 @@ class GenerateSupportBundle extends React.Component {
           this.setState({
             newBundleSlug: bundleRunning.slug,
             isGeneratingBundle: true,
-            generateBundleErrMsg: '',
+            generateBundleErrMsg: "",
             supportBundles: response.supportBundles,
             loadingSupportBundles: false,
-            errorMsg: '',
+            errorMsg: "",
             displayErrorModal: false,
             networkErr: false,
             initialLoading: false,
@@ -143,14 +143,14 @@ class GenerateSupportBundle extends React.Component {
 
           this.state.pollForBundleAnalysisProgress.start(
             this.pollForBundleAnalysisProgress,
-            1000,
+            1000
           );
         } else {
           this.setState({
             initialLoading: false,
             supportBundles: response.supportBundles,
             loadingSupportBundles: false,
-            errorMsg: '',
+            errorMsg: "",
             displayErrorModal: false,
             networkErr: false,
           });
@@ -162,7 +162,7 @@ class GenerateSupportBundle extends React.Component {
           loadingSupportBundles: false,
           errorMsg: err
             ? err.message
-            : 'Something went wrong, please try again.',
+            : "Something went wrong, please try again.",
           displayErrorModal: true,
           networkErr: true,
         });
@@ -173,7 +173,7 @@ class GenerateSupportBundle extends React.Component {
     return new Promise((resolve, reject) => {
       this.setState({
         loadingSupportBundles: true,
-        errorMsg: '',
+        errorMsg: "",
         displayErrorModal: false,
         networkErr: false,
       });
@@ -183,10 +183,10 @@ class GenerateSupportBundle extends React.Component {
         {
           headers: {
             Authorization: Utilities.getToken(),
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
-          method: 'GET',
-        },
+          method: "GET",
+        }
       )
         .then(async (res) => {
           if (!res.ok) {
@@ -202,7 +202,7 @@ class GenerateSupportBundle extends React.Component {
           this.setState({
             supportBundles: response.supportBundles,
             loadingSupportBundles: false,
-            errorMsg: '',
+            errorMsg: "",
             displayErrorModal: false,
             networkErr: false,
           });
@@ -215,7 +215,7 @@ class GenerateSupportBundle extends React.Component {
             loadingSupportBundles: false,
             errorMsg: err
               ? err.message
-              : 'Something went wrong, please try again.',
+              : "Something went wrong, please try again.",
             displayErrorModal: true,
             networkErr: true,
           });
@@ -234,7 +234,7 @@ class GenerateSupportBundle extends React.Component {
       this.setState({
         showToast: false,
         copySuccess: false,
-        copyMessage: '',
+        copyMessage: "",
       });
     }, 3000);
   }
@@ -258,8 +258,8 @@ class GenerateSupportBundle extends React.Component {
 
   getLabel = ({ shipOpsRef, gitOpsRef, title }) => {
     return (
-      <div style={{ alignItems: 'center', display: 'flex' }}>
-        <span style={{ fontSize: 18, marginRight: '0.5em' }}>
+      <div style={{ alignItems: "center", display: "flex" }}>
+        <span style={{ fontSize: 18, marginRight: "0.5em" }}>
           {this.renderIcons(shipOpsRef, gitOpsRef)}
         </span>
         <span style={{ fontSize: 14 }}>{title}</span>
@@ -278,11 +278,11 @@ class GenerateSupportBundle extends React.Component {
       `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/${newBundleSlug}`,
       {
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: Utilities.getToken(),
         },
-        method: 'GET',
-      },
+        method: "GET",
+      }
     )
       .then(async (res) => {
         if (!res.ok) {
@@ -295,15 +295,15 @@ class GenerateSupportBundle extends React.Component {
         }
         const bundle = await res.json();
         this.setState({ bundleAnalysisProgress: bundle.progress });
-        if (bundle.status !== 'running') {
+        if (bundle.status !== "running") {
           this.state.pollForBundleAnalysisProgress.stop();
-          if (bundle.status === 'failed') {
+          if (bundle.status === "failed") {
             this.props.history.push(
-              `/app/${this.props.watch.slug}/troubleshoot`,
+              `/app/${this.props.watch.slug}/troubleshoot`
             );
           } else {
             this.props.history.push(
-              `/app/${this.props.watch.slug}/troubleshoot/analyze/${bundle.slug}`,
+              `/app/${this.props.watch.slug}/troubleshoot/analyze/${bundle.slug}`
             );
           }
         }
@@ -313,7 +313,7 @@ class GenerateSupportBundle extends React.Component {
           loading: false,
           getSupportBundleErrMsg: err
             ? err.message
-            : 'Something went wrong, please try again.',
+            : "Something went wrong, please try again.",
           displayErrorModal: true,
         });
       });
@@ -331,9 +331,9 @@ class GenerateSupportBundle extends React.Component {
     fetch(url, {
       headers: {
         Authorization: Utilities.getToken(),
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
-      method: 'POST',
+      method: "POST",
     })
       .then(async (res) => {
         if (!res.ok) {
@@ -348,13 +348,13 @@ class GenerateSupportBundle extends React.Component {
         this.setState({ newBundleSlug: response.slug });
         this.state.pollForBundleAnalysisProgress.start(
           this.pollForBundleAnalysisProgress,
-          1000,
+          1000
         );
         this.props.history.push(`/app/${this.props.watch.slug}/troubleshoot`);
 
         this.setState({
           isGeneratingBundle: true,
-          generateBundleErrMsg: '',
+          generateBundleErrMsg: "",
         });
       })
       .catch((err) => {
@@ -363,7 +363,7 @@ class GenerateSupportBundle extends React.Component {
           isGeneratingBundle: false,
           generateBundleErrMsg: err
             ? err.message
-            : 'Something went wrong, please try again.',
+            : "Something went wrong, please try again.",
         });
       });
   };
@@ -374,15 +374,15 @@ class GenerateSupportBundle extends React.Component {
     const res = await fetch(
       `${process.env.API_ENDPOINT}/troubleshoot/app/${watch.slug}/supportbundlecommand`,
       {
-        method: 'POST',
+        method: "POST",
         headers: {
           Authorization: Utilities.getToken(),
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           origin: window.location.origin,
         }),
-      },
+      }
     );
     if (!res.ok) {
       throw new Error(`Unexpected status code: ${res.status}`);
@@ -431,8 +431,8 @@ class GenerateSupportBundle extends React.Component {
               to={`/watch/${watch.slug}/troubleshoot`}
               className="replicated-link u-marginRight--5"
             >
-              {' '}
-              &lt; Support Bundle List{' '}
+              {" "}
+              &lt; Support Bundle List{" "}
             </Link>
           ) : null}
           <div className="u-marginTop--15">
@@ -440,18 +440,18 @@ class GenerateSupportBundle extends React.Component {
               <Toggle
                 items={[
                   {
-                    title: 'Support bundles',
+                    title: "Support bundles",
                     onClick: () =>
                       this.props.history.push(
-                        `/app/${this.props.watch.slug}/troubleshoot`,
+                        `/app/${this.props.watch.slug}/troubleshoot`
                       ),
                     isActive: true,
                   },
                   {
-                    title: 'Redactors',
+                    title: "Redactors",
                     onClick: () =>
                       this.props.history.push(
-                        `/app/${this.props.watch.slug}/troubleshoot/redactors`,
+                        `/app/${this.props.watch.slug}/troubleshoot/redactors`
                       ),
                     isActive: false,
                   },
@@ -491,7 +491,7 @@ class GenerateSupportBundle extends React.Component {
                       type="button"
                       onClick={this.collectBundle.bind(
                         this,
-                        watch.downstream?.cluster?.id,
+                        watch.downstream?.cluster?.id
                       )}
                     >
                       Analyze {appTitle}
@@ -541,21 +541,21 @@ class GenerateSupportBundle extends React.Component {
                           type="button"
                           onClick={this.toggleModal}
                         >
-                          {' '}
-                          Upload a support bundle{' '}
+                          {" "}
+                          Upload a support bundle{" "}
                         </button>
                       </div>
                     </div>
                   ) : (
                     <div className="u-marginTop--15 u-fontSize--normal">
-                      If you'd prefer,{' '}
+                      If you'd prefer,{" "}
                       <a
                         href="#"
                         className="replicated-link"
                         onClick={(e) => this.fetchSupportBundleCommand()}
                       >
                         click here
-                      </a>{' '}
+                      </a>{" "}
                       to get a command to manually generate a support bundle.
                     </div>
                   )}
