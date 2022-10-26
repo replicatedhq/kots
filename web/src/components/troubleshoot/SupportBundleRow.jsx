@@ -8,6 +8,10 @@ import { Utilities } from '../../utilities/utilities';
 import download from 'downloadjs';
 import Icon from '../Icon';
 // import { VendorUtilities } from "../../utilities/VendorUtilities";
+import { Repeater } from '../../utilities/repeater';
+import '@src/scss/components/AirgapUploadProgress.scss';
+
+let percentage;
 
 class SupportBundleRow extends React.Component {
   state = {
@@ -161,6 +165,16 @@ class SupportBundleRow extends React.Component {
     });
   };
 
+  moveBar(progressData) {
+    const elem = document.getElementById('supportBundleStatusBar');
+    const calcPercent =
+      (progressData.collectorsCompleted / progressData.collectorCount) * 100;
+    percentage = calcPercent > 98 ? 98 : calcPercent.toFixed();
+    if (elem) {
+      elem.style.width = percentage + '%';
+    }
+  }
+
   render() {
     const { bundle, isSupportBundleUploadSupported, isAirgap } = this.props;
     const { errorInsights, warningInsights, otherInsights } = this.state;
@@ -191,6 +205,34 @@ class SupportBundleRow extends React.Component {
         );
       }
     }
+
+    let progressBar;
+    const { progressData } = this.props;
+
+    if (progressData.collectorsCompleted > 0) {
+      this.moveBar(progressData);
+      progressBar = (
+        <div className="progressbar">
+          <div
+            className="progressbar-meter"
+            id="supportBundleStatusBar"
+            style={{ width: '0px' }}
+          />
+        </div>
+      );
+    } else {
+      percentage = '0';
+      progressBar = (
+        <div className="progressbar">
+          <div
+            className="progressbar-meter"
+            id="supportBundleStatusBar"
+            style={{ width: '0px' }}
+          />
+        </div>
+      );
+    }
+
     return (
       <div className="SupportBundle--Row u-position--relative">
         <div>
@@ -203,10 +245,10 @@ class SupportBundleRow extends React.Component {
                 <div className="flex">
                   {!this.props.isCustomer && bundle.customer ? (
                     <div className="flex-column flex1 flex-verticalCenter">
-                      <span className="u-fontSize--large u-textColor--primary u-fontWeight--bold u-cursor--pointer">
+                      <span className="u-fontSize--large u-textColor--primary u-fontWeight--medium u-cursor--pointer">
                         <span>
                           Collected on{' '}
-                          <span>
+                          <span className="u-fontWeight--bold">
                             {dayjs(bundle.createdAt).format(
                               'MMMM D, YYYY @ h:mm a',
                             )}
@@ -217,9 +259,9 @@ class SupportBundleRow extends React.Component {
                   ) : (
                     <div className="flex-column flex1 flex-verticalCenter">
                       <span>
-                        <span className="u-fontSize--large u-cursor--pointer u-textColor--primary u-fontWeight--bold">
+                        <span className="u-fontSize--large u-cursor--pointer u-textColor--primary u-fontWeight--medium">
                           Collected on{' '}
-                          <span>
+                          <span className="u-fontWeight--medium">
                             {dayjs(bundle.createdAt).format(
                               'MMMM D, YYYY @ h:mm a',
                             )}
@@ -268,7 +310,7 @@ class SupportBundleRow extends React.Component {
                   )}
                 </div>
               </div>
-              <div className="flex flex-auto alignItems--center justifyContent--flexEnd">
+              <div className="SupportBundleRow-Progress flex flex-auto alignItems--center justifyContent--flexEnd">
                 {this.state.sendingBundleErrMsg && (
                   <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginRight--10">
                     {this.state.sendingBundleErrMsg}
@@ -290,16 +332,12 @@ class SupportBundleRow extends React.Component {
                   <Loader size="30" className="u-marginRight--10" />
                 ) : showSendSupportBundleLink ? (
                   <span
-                    className="u-paddingRight--10"
+                    className="u-fontSize--small u-marginRight--10 u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover u-paddingRight--10 u-borderRight--gray"
                     onClick={() =>
                       this.sendBundleToVendor(this.props.bundle.slug)
                     }
                   >
-                    <Icon
-                      icon="paper-airplane"
-                      size={16}
-                      className="clickable"
-                    />
+                    Send bundle to vendor
                   </span>
                 ) : null}
                 {this.state.downloadBundleErrMsg && (
@@ -309,12 +347,26 @@ class SupportBundleRow extends React.Component {
                 )}
                 {this.state.downloadingBundle ? (
                   <Loader size="30" />
+                ) : this.props.loadingBundle ||
+                  this.props.progressData?.collectorsCompleted > 0 ? (
+                  <div
+                    className="flex alignItems--center u-marginTop--20"
+                    style={{ width: '350px' }}
+                  >
+                    <span className="u-fontWeight--bold u-fontSize--normal u-textColor--secondary u-marginRight--10">
+                      {percentage + '%'}
+                    </span>
+                    {progressBar}
+                    <span className="u-fontWeight--bold u-fontSize--normal u-textColor--secondary u-marginRight--10">
+                      100%
+                    </span>
+                  </div>
                 ) : (
                   <span
                     className="u-fontSize--small u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover"
                     onClick={() => this.downloadBundle(bundle)}
                   >
-                    <Icon icon="download" size={18} className="clickable" />
+                    Download bundle
                   </span>
                 )}
               </div>

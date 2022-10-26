@@ -128,6 +128,7 @@ class GenerateSupportBundle extends React.Component {
           );
         }
         if (bundleRunning) {
+          this.props.updateBundleSlug(bundleRunning.slug);
           this.setState({
             newBundleSlug: bundleRunning.slug,
             isGeneratingBundle: true,
@@ -321,11 +322,6 @@ class GenerateSupportBundle extends React.Component {
   collectBundle = (clusterId) => {
     const { watch } = this.props;
 
-    this.setState({
-      isGeneratingBundle: true,
-      generateBundleErrMsg: '',
-    });
-
     let url = `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/app/${watch?.id}/cluster/${clusterId}/collect`;
     if (!watch.id) {
       // TODO: check if helm managed, not if id is missing
@@ -348,11 +344,18 @@ class GenerateSupportBundle extends React.Component {
           return;
         }
         const response = await res.json();
+        this.props.updateBundleSlug(response.slug);
         this.setState({ newBundleSlug: response.slug });
         this.state.pollForBundleAnalysisProgress.start(
           this.pollForBundleAnalysisProgress,
           1000,
         );
+        this.props.history.push(`/app/${this.props.watch.slug}/troubleshoot`);
+
+        this.setState({
+          isGeneratingBundle: true,
+          generateBundleErrMsg: '',
+        });
       })
       .catch((err) => {
         console.log(err);

@@ -9,6 +9,7 @@ import GenerateSupportBundle from './GenerateSupportBundle';
 import ConfigureRedactorsModal from './ConfigureRedactorsModal';
 import ErrorModal from '../modals/ErrorModal';
 import { Utilities } from '../../utilities/utilities';
+import { Repeater } from '@src/utilities/repeater';
 
 import '../../scss/components/troubleshoot/SupportBundleList.scss';
 import Icon from '../Icon';
@@ -20,14 +21,26 @@ class SupportBundleList extends React.Component {
     errorMsg: '',
     displayRedactorModal: false,
     displayErrorModal: false,
+    pollForBundleAnalysisProgress: new Repeater(),
+    bundleAnalysisProgress: {},
+    loadingSupportBundles: false,
+    loadingBundleId: '',
   };
 
   componentDidMount() {
     this.listSupportBundles();
   }
+  componentWillUnmount() {
+    this.state.pollForBundleAnalysisProgress.stop();
+  }
 
   listSupportBundles = () => {
-    this.setState({ loading: true, errorMsg: '', displayErrorModal: false });
+    this.setState({
+      loading: true,
+      errorMsg: '',
+      displayErrorModal: false,
+      loadingBundle: false,
+    });
 
     fetch(
       `${process.env.API_ENDPOINT}/troubleshoot/app/${this.props.watch?.slug}/supportbundles`,
@@ -49,6 +62,19 @@ class SupportBundleList extends React.Component {
           return;
         }
         const response = await res.json();
+
+        let bundleRunning = false;
+        if (response.supportBundles) {
+          bundleRunning = response.supportBundles.find(
+            (bundle) => bundle.status === 'running',
+          );
+        }
+        if (bundleRunning) {
+          this.state.pollForBundleAnalysisProgress.start(
+            this.pollForBundleAnalysisProgress,
+            1000,
+          );
+        }
         this.setState({
           supportBundles: response.supportBundles,
           loading: false,
@@ -61,6 +87,63 @@ class SupportBundleList extends React.Component {
         this.setState({
           loading: false,
           errorMsg: err
+            ? err.message
+            : 'Something went wrong, please try again.',
+          displayErrorModal: true,
+        });
+      });
+  };
+  pollForBundleAnalysisProgress = async () => {
+    const { newBundleSlug } = this.props;
+    if (!newBundleSlug) {
+      // component may start polling before bundle slug is set
+      // this is to prevent an api call if the slug is not set
+      return;
+    }
+    fetch(
+      `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/${newBundleSlug}`,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: Utilities.getToken(),
+        },
+        method: 'GET',
+      },
+    )
+      .then(async (res) => {
+        if (!res.ok) {
+          this.setState({
+            loading: false,
+            getSupportBundleErrMsg: `Unexpected status code: ${res.status}`,
+            displayErrorModal: true,
+          });
+          return;
+        }
+        const bundle = await res.json();
+        this.setState({
+          bundleAnalysisProgress: bundle.progress,
+          loadingBundleId: bundle.id,
+          loadingBundle: true,
+        });
+
+        if (bundle.status !== 'running') {
+          this.state.pollForBundleAnalysisProgress.stop();
+          this.setState({ loadingBundleId: '', loadingBundle: false });
+          if (bundle.status === 'failed') {
+            this.props.history.push(
+              `/app/${this.props.watch.slug}/troubleshoot`,
+            );
+          } else {
+            this.props.history.push(
+              `/app/${this.props.watch.slug}/troubleshoot/analyze/${bundle.slug}`,
+            );
+          }
+        }
+      })
+      .catch((err) => {
+        this.setState({
+          loading: false,
+          getSupportBundleErrMsg: err
             ? err.message
             : 'Something went wrong, please try again.',
           displayErrorModal: true,
@@ -108,10 +191,23 @@ class SupportBundleList extends React.Component {
                 watch.isSupportBundleUploadSupported
               }
               refetchBundleList={this.listSupportBundles}
+              progressData={
+                this.state.loadingBundleId === bundle.id &&
+                this.state.bundleAnalysisProgress
+              }
+              loadingBundle={
+                this.state.loadingBundleId === bundle.id &&
+                this.state.loadingBundle
+              }
             />
           ));
       } else {
-        return <GenerateSupportBundle watch={watch} />;
+        return (
+          <GenerateSupportBundle
+            watch={watch}
+            updateBundleSlug={this.props.updateBundleSlug}
+          />
+        );
       }
     }
 
@@ -141,7 +237,7 @@ class SupportBundleList extends React.Component {
               ]}
             />
           </div>
-          <div className="card-bg">
+          <div className="card-bg support-bundle-list-wrapper">
             <div className="flex flex1 flex-column">
               <div className="u-position--relative flex-auto u-paddingBottom--10 flex">
                 <div className="flex flex1 u-flexTabletReflow">
