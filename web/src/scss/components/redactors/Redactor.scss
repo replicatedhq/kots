@@ -1,0 +1,37 @@
+@import '../../variables.scss';
+.Redactors--wrapper {
+  width: 800px;
+  max-width: 800px;
+}
+.ConfigureRedactorDetails {
+  border: 1px dashed #c4c7ca66;
+}
+
+.ConfigureRedactorText {
+  width: 550px;
+  margin: 0 auto;
+}
+.RedactorRowDetails {
+  padding: 12px;
+  margin-bottom: 15px;
+  &.is-expired {
+    background-color: $sub-nav-color;
+  }
+
+  &.is-deleting {
+    background-color: $sub-nav-color;
+  }
+
+  .nodeTag {
+    background-color: lighten($primary-color, 43.5%);
+    font-size: 12px;
+    line-height: 12px;
+    color: #73a3cd;
+    justify-content: center;
+    border-radius: 3px;
+    padding: 2px 4px 2px 4px;
+  }
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
