@@ -112,7 +112,7 @@ export class AnalyzerInsights extends React.Component {
     }
 
     return (
-      <div className="flex u-width--full">
+      <div className="flex flex1 u-width--full">
         {isEmpty(insights) ? (
           noInsightsNode
         ) : (
