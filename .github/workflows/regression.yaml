@@ -109,7 +109,7 @@ jobs:
             {
               attachments: [{
                 color: '${{ job.status }}' === 'success' ? 'good' : '${{ job.status }}' === 'failure' ? 'danger' : 'warning',
-                text: `Create jumpbox: ${{ job.status }}. Workflow: ${process.env.AS_WORKFLOW}. Repo: ${process.env.AS_REPO}.\nRef: ${process.env.AS_REF}`,
+                text: `Create jumpbox: ${{ job.status }}. Workflow: ${process.env.AS_WORKFLOW}. Repo: ${process.env.AS_REPO}.\nRef: ${process.env.AS_REF}.\nCommit: ${process.env.AS_COMMIT}.slice(0, 7)`,
               }]
             }
         env:
@@ -257,7 +257,7 @@ jobs:
             {
               attachments: [{
                 color: '${{ job.status }}' === 'success' ? 'good' : '${{ job.status }}' === 'failure' ? 'danger' : 'warning',
-                text: `Setting up: ${{ matrix.test.name }}.\nStatus: ${{ job.status }}. Workflow: ${process.env.AS_WORKFLOW}. Repo: ${process.env.AS_REPO}.\nRef: ${process.env.AS_REF}`,
+                text: `Setting up: ${{ matrix.test.name }}.\nStatus: ${{ job.status }}. Workflow: ${process.env.AS_WORKFLOW}. Repo: ${process.env.AS_REPO}.\nRef: ${process.env.AS_REF}.\nCommit: ${process.env.AS_COMMIT}.slice(0, 7)`,
               }]
             }
         env:
