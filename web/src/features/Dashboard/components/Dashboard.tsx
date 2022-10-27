@@ -628,7 +628,6 @@ const Dashboard = (props: Props) => {
   const { isSlowLoading: isSlowLoadingNextAppVersion } =
     useNextAppVersionWithIntercept();
 
-  console.log(state.slowLoader);
   // show slow loader if any of the apis are slow loading
   useEffect(() => {
     // since this is new and we may need to debug it, leaving these in for now
