@@ -1,14 +1,14 @@
-import React, { Component } from 'react';
-import { Switch, Route } from 'react-router-dom';
-import NotFound from '../static/NotFound';
-import SupportBundleList from '../troubleshoot/SupportBundleList';
-import SupportBundleAnalysis from '../troubleshoot/SupportBundleAnalysis';
-import GenerateSupportBundle from '../troubleshoot/GenerateSupportBundle';
-import Redactors from '../redactors/Redactors';
-import EditRedactor from '../redactors/EditRedactor';
+import React, { Component } from "react";
+import { Switch, Route } from "react-router-dom";
+import NotFound from "../static/NotFound";
+import SupportBundleList from "../troubleshoot/SupportBundleList";
+import SupportBundleAnalysis from "../troubleshoot/SupportBundleAnalysis";
+import GenerateSupportBundle from "../troubleshoot/GenerateSupportBundle";
+import Redactors from "../redactors/Redactors";
+import EditRedactor from "../redactors/EditRedactor";
 
 // Types
-import { App } from '@types';
+import { App } from "@types";
 
 type Props = {
   app: App | null;
@@ -22,7 +22,7 @@ class TroubleshootContainer extends Component<Props, State> {
     super(props);
 
     this.state = {
-      newBundleSlug: '',
+      newBundleSlug: "",
     };
   }
 
@@ -68,7 +68,7 @@ class TroubleshootContainer extends Component<Props, State> {
             render={(props) => (
               <Redactors
                 {...props}
-                appSlug={app?.slug || ''}
+                appSlug={app?.slug || ""}
                 appName={appName}
               />
             )}
