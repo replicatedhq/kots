@@ -101,6 +101,9 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 		return nil, errors.New("store not found")
 	}
 
+	oldBucket := store.Bucket
+	needsVeleroRestart := true
+
 	store.Provider = options.Provider
 	store.Bucket = options.Bucket
 	store.Path = options.Path
@@ -322,10 +325,17 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 		store.Other = nil
 		store.Internal = nil
 
-		store.Bucket, err = GetLvpBucket(options.FileSystem)
+		newBucket, err := GetLvpBucket(options.FileSystem)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to generate bucket name")
 		}
+
+		if oldBucket != newBucket {
+			// bucket has changed, so the plugin will handle the restart
+			needsVeleroRestart = false
+		}
+
+		store.Bucket = newBucket
 		store.Provider = GetLvpProvider(options.FileSystem)
 
 		clientset, err := k8sutil.GetClientset()
@@ -337,11 +347,7 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 			store.Path = "/velero"
 		}
 
-		storeFileSystem, err := BuildLvpStoreFileSystem(ctx, clientset, options.KotsadmNamespace, options.FileSystem)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to build file system store")
-		}
-		store.FileSystem = storeFileSystem
+		store.FileSystem = BuildLvpStoreFileSystem(ctx, clientset, options.KotsadmNamespace, options.FileSystem)
 	}
 
 	if !options.SkipValidation {
@@ -365,9 +371,11 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 		return nil, errors.Wrap(err, "failed to try to reset restic repositories")
 	}
 
-	// most plugins (all?) require that velero be restared after updating
-	if err := restartVelero(ctx, options.KotsadmNamespace); err != nil {
-		return nil, errors.Wrap(err, "failed to try to restart velero")
+	if needsVeleroRestart {
+		// most plugins (except for local-volume-provider) require that velero be restared after updating
+		if err := restartVelero(ctx, options.KotsadmNamespace); err != nil {
+			return nil, errors.Wrap(err, "failed to try to restart velero")
+		}
 	}
 
 	updatedStore, err := GetGlobalStore(ctx, options.KotsadmNamespace, updatedBackupStorageLocation)
@@ -1063,7 +1071,7 @@ func BuildMinioStoreFileSystem(ctx context.Context, clientset kubernetes.Interfa
 	return &storeFileSystem, nil
 }
 
-func BuildLvpStoreFileSystem(ctx context.Context, clientset kubernetes.Interface, kotsadmNamespace string, config *types.FileSystemConfig) (*types.StoreFileSystem, error) {
+func BuildLvpStoreFileSystem(ctx context.Context, clientset kubernetes.Interface, kotsadmNamespace string, config *types.FileSystemConfig) *types.StoreFileSystem {
 	storeFileSystem := types.StoreFileSystem{}
 
 	if config.NFS != nil && config.NFS.Path == "" {
@@ -1071,7 +1079,7 @@ func BuildLvpStoreFileSystem(ctx context.Context, clientset kubernetes.Interface
 	}
 	storeFileSystem.Config = config
 
-	return &storeFileSystem, nil
+	return &storeFileSystem
 }
 
 func validateStore(ctx context.Context, store *types.Store, options ValidateStoreOptions) error {

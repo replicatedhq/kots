@@ -1076,6 +1076,11 @@ func EnsureLocalVolumeProviderConfigMap(deployOptions FileSystemDeployOptions, v
 
 	fsConfig := deployOptions.FileSystemConfig
 
+	bucket, err := GetLvpBucket(&fsConfig)
+	if err != nil {
+		return errors.Wrap(err, "failed to get lvp bucket")
+	}
+
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return errors.Wrap(err, "failed to get kubernetes clientset")
@@ -1113,6 +1118,7 @@ func EnsureLocalVolumeProviderConfigMap(deployOptions FileSystemDeployOptions, v
 			Data: map[string]string{
 				"securityContextRunAsUser": "1001",
 				"securityContextFsGroup":   "1001",
+				"preserveVolumes":          bucket,
 			},
 		}
 
@@ -1127,6 +1133,7 @@ func EnsureLocalVolumeProviderConfigMap(deployOptions FileSystemDeployOptions, v
 	configmap := &configmaps.Items[0]
 	configmap.Data["securityContextRunAsUser"] = "1001"
 	configmap.Data["securityContextFsGroup"] = "1001"
+	configmap.Data["preserveVolumes"] = bucket
 
 	_, err = clientset.CoreV1().ConfigMaps(veleroNamespace).Update(context.TODO(), configmap, metav1.UpdateOptions{})
 	if err != nil {
