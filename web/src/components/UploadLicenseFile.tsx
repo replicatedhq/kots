@@ -1,5 +1,6 @@
-import * as React from "react";
-import { withRouter, Link } from "react-router-dom";
+import React, { useEffect, useReducer } from "react";
+import { useHistory } from "react-router";
+import { Link } from "react-router-dom";
 import { KotsPageTitle } from "@components/Head";
 import Dropzone from "react-dropzone";
 import yaml from "js-yaml";
@@ -16,27 +17,83 @@ import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
 import "../scss/components/UploadLicenseFile.scss";
 import Icon from "./Icon";
 
-class UploadLicenseFile extends React.Component {
-  state = {
-    licenseFile: {},
-    licenseFileContent: null,
-    fileUploading: false,
-    errorMessage: "",
-    viewErrorMessage: false,
-    licenseExistErrData: {},
-    selectedAppToInstall: {},
-  };
+import { LicenseFile } from "@types";
 
-  clearFile = () => {
-    this.setState({
-      licenseFile: {},
+type LicenseYaml = {
+  spec: {
+    appSlug: string;
+    channelName: string;
+  }
+}
+
+type Props = {
+  appsListLength: number;
+  appName: string;
+  appSlugFromMetadata: string;
+  fetchingMetadata: boolean;
+  isBackupRestore: boolean;
+  onUploadSuccess: () => Promise<void>;
+  logo: string;
+  snapshot: string;
+};
+
+type SelectedAppToInstall = {
+  label: string;
+  value: string;
+};
+
+type State = {
+  availableAppOptions?: SelectedAppToInstall[];
+  errorMessage: string;
+  fileUploading: boolean;
+  hasMultiApp?: boolean;
+  licenseExistErrData: UploadLicenseResponse | null | string;
+  licenseFile: LicenseFile | null;
+  licenseFileContent: {
+    [key: string]: string } | null;
+  selectedAppToInstall: SelectedAppToInstall | null;
+  viewErrorMessage: boolean;
+};
+
+type UploadLicenseResponse = {
+  deleteAppCommand?: string;
+  error?: string;
+  hasPreflight?: boolean;
+  isAirgap: boolean;
+  isConfigurable: boolean;
+  needsRegistry: boolean;
+  slug: string;
+  success?: boolean;
+}
+const UploadLicenseFile = (props: Props) => {
+  const [state, setState] = useReducer(
+    (currentState: State, newState: Partial<State>) => ({
+      ...currentState,
+      ...newState,
+    }),
+    {
+      errorMessage: "",
+      fileUploading: false,
+      licenseExistErrData: null,
+      licenseFile: null,
+      licenseFileContent: null,
+      selectedAppToInstall: null,
+      viewErrorMessage: false,
+    }
+  );
+
+  const history = useHistory();
+
+  const clearFile = () => {
+    setState({
+      licenseFile: null,
       licenseFileContent: null,
       errorMessage: "",
       viewErrorMessage: false,
     });
   };
 
-  moveBar = (count) => {
+  const moveBar = (count: number) => {
     const elem = document.getElementById("myBar");
     const percent = count > 3 ? 96 : count * 30;
     if (elem) {
@@ -44,8 +101,8 @@ class UploadLicenseFile extends React.Component {
     }
   };
 
-  componentDidMount() {
-    const { appSlugFromMetadata } = this.props;
+  useEffect(() => {
+    const { appSlugFromMetadata } = props;
 
     if (appSlugFromMetadata) {
       const hasChannelAsPartOfASlug = appSlugFromMetadata.includes("/");
@@ -56,50 +113,94 @@ class UploadLicenseFile extends React.Component {
       } else {
         appSlug = appSlugFromMetadata;
       }
-      this.setState({
+      setState({
         selectedAppToInstall: {
-          ...this.state.selectedAppToInstall,
+          ...state.selectedAppToInstall,
           value: appSlug,
           label: appSlugFromMetadata,
         },
       });
     }
-  }
+  }, []);
 
-  uploadLicenseFile = async () => {
-    const { onUploadSuccess, history } = this.props;
-    const { licenseFile, licenseFileContent, hasMultiApp } = this.state;
+  const exchangeRliFileForLicense = async (content: string) => {
+    return new Promise((resolve, reject) => {
+      const payload = {
+        licenseData: content,
+      };
+
+      fetch(`${process.env.API_ENDPOINT}/license/platform`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: Utilities.getToken(),
+        },
+        body: JSON.stringify(payload),
+      })
+        .then(async (res) => {
+          if (!res.ok) {
+            reject(
+              res.status === 401
+                ? "Invalid license. Please try again"
+                : "There was an error uploading your license. Please try again"
+            );
+            return;
+          }
+          resolve((await res.json()).licenseData);
+        })
+        .catch((err) => {
+          console.log(err);
+          reject("There was an error uploading your license. Please try again");
+        });
+    });
+  };
+
+  const uploadLicenseFile = async () => {
+    const { onUploadSuccess } = props;
+    const { licenseFile, licenseFileContent, hasMultiApp } = state;
     const isRliFile =
-      licenseFile.name.substr(licenseFile.name.lastIndexOf(".")) === ".rli";
+      licenseFile?.name.substr(licenseFile.name.lastIndexOf(".")) === ".rli";
     let licenseText;
 
     let serializedLicense;
     if (isRliFile) {
       try {
         const base64String = btoa(
+          // TODO: this is probably a bug
+          // https://stackoverflow.com/questions/67057689/typscript-type-uint8array-is-missing-the-following-properties-from-type-numb
+          // @ts-ignore
           String.fromCharCode.apply(null, new Uint8Array(licenseFileContent))
         );
-        licenseText = await this.exchangeRliFileForLicense(base64String);
+        licenseText = await exchangeRliFileForLicense(base64String);
       } catch (err) {
-        this.setState({
+        if (err instanceof Error) {
+          setState({
+            fileUploading: false,
+            errorMessage: err.message,
+          });
+          return;
+        }
+        setState({
           fileUploading: false,
-          errorMessage: err,
+          errorMessage:
+            "Something went wrong while uploading your license. Please try again",
         });
-        return;
       }
     } else {
-      licenseText = hasMultiApp
-        ? licenseFileContent[this.state.selectedAppToInstall.value]
-        : licenseFileContent;
+      licenseText =
+        hasMultiApp && licenseFileContent && state.selectedAppToInstall?.value
+          ? licenseFileContent[state.selectedAppToInstall.value]
+          : licenseFileContent;
       serializedLicense = yaml.dump(licenseText);
     }
 
-    this.setState({
+    setState({
       fileUploading: true,
       errorMessage: "",
     });
 
-    let data;
+    let data: UploadLicenseResponse;
     fetch(`${process.env.API_ENDPOINT}/license`, {
       method: "POST",
       headers: {
@@ -114,7 +215,7 @@ class UploadLicenseFile extends React.Component {
         data = await result.json();
       })
       .catch((err) => {
-        this.setState({
+        setState({
           fileUploading: false,
           errorMessage: err,
         });
@@ -123,11 +224,11 @@ class UploadLicenseFile extends React.Component {
 
     let count = 0;
     const interval = setInterval(() => {
-      if (this.state.errorMessage.length) {
+      if (state.errorMessage.length) {
         clearInterval(interval);
       }
-      count++;
-      this.moveBar(count);
+      count += 1;
+      moveBar(count);
       if (count > 3) {
         if (data) {
           clearInterval(interval);
@@ -136,7 +237,7 @@ class UploadLicenseFile extends React.Component {
             const licenseExistErr = data?.error?.includes(
               "License already exist"
             );
-            this.setState({
+            setState({
               fileUploading: false,
               errorMessage: data.error,
               licenseExistErrData: licenseExistErr ? data : "",
@@ -175,8 +276,8 @@ class UploadLicenseFile extends React.Component {
     }, 1000);
   };
 
-  setAvailableAppOptions = (arr) => {
-    let availableAppOptions = [];
+  const setAvailableAppOptions = (arr: LicenseYaml[]) => {
+    let availableAppOptions: SelectedAppToInstall[] = [];
     arr.map((option) => {
       const label =
         option.spec.channelName !== "Stable"
@@ -187,13 +288,13 @@ class UploadLicenseFile extends React.Component {
         label: label,
       });
     });
-    this.setState({
+    setState({
       selectedAppToInstall: availableAppOptions[0],
       availableAppOptions: availableAppOptions,
     });
   };
 
-  onDrop = async (files) => {
+  const onDrop = async (files: string[]) => {
     const content = await getFileContent(files[0]);
     const parsedLicenseYaml = new TextDecoder("utf-8").decode(content);
     let licenseYamls;
@@ -201,14 +302,14 @@ class UploadLicenseFile extends React.Component {
       licenseYamls = yaml.loadAll(parsedLicenseYaml);
     } catch (e) {
       console.log(e);
-      this.setState({ errorMessage: "Faild to parse license file" });
+      setState({ errorMessage: "Faild to parse license file" });
       return;
     }
     const hasMultiApp = licenseYamls.length > 1;
     if (hasMultiApp) {
-      this.setAvailableAppOptions(licenseYamls);
+      setAvailableAppOptions(licenseYamls);
     }
-    this.setState({
+    setState({
       licenseFile: files[0],
       licenseFileContent: hasMultiApp
         ? keyBy(licenseYamls, (option) => {
@@ -220,50 +321,17 @@ class UploadLicenseFile extends React.Component {
     });
   };
 
-  exchangeRliFileForLicense = async (content) => {
-    return new Promise((resolve, reject) => {
-      const payload = {
-        licenseData: content,
-      };
-
-      fetch(`${process.env.API_ENDPOINT}/license/platform`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: Utilities.getToken(),
-        },
-        body: JSON.stringify(payload),
-      })
-        .then(async (res) => {
-          if (!res.ok) {
-            reject(
-              res.status === 401
-                ? "Invalid license. Please try again"
-                : "There was an error uploading your license. Please try again"
-            );
-            return;
-          }
-          resolve((await res.json()).licenseData);
-        })
-        .catch((err) => {
-          console.log(err);
-          reject("There was an error uploading your license. Please try again");
-        });
+  const toggleViewErrorMessage = () => {
+    setState({
+      viewErrorMessage: !state.viewErrorMessage,
     });
   };
 
-  toggleViewErrorMessage = () => {
-    this.setState({
-      viewErrorMessage: !this.state.viewErrorMessage,
-    });
-  };
-
-  startRestore = (snapshot) => {
-    this.setState({ startingRestore: true, startingRestoreMsg: "" });
+  const startRestore = (snapshot) => {
+    setState({ startingRestore: true, startingRestoreMsg: "" });
 
     const payload = {
-      license: this.state.licenseFile,
+      license: state.licenseFile,
     };
 
     fetch(`${process.env.API_ENDPOINT}/snapshot/${snapshot.name}/restore`, {
@@ -277,7 +345,7 @@ class UploadLicenseFile extends React.Component {
       .then(async (res) => {
         const startRestoreResponse = await res.json();
         if (!res.ok) {
-          this.setState({
+          setState({
             startingRestore: false,
             startingRestoreMsg: startRestoreResponse.error,
           });
@@ -285,18 +353,18 @@ class UploadLicenseFile extends React.Component {
         }
 
         if (startRestoreResponse.success) {
-          this.setState({
+          setState({
             startingRestore: false,
           });
         } else {
-          this.setState({
+          setState({
             startingRestore: false,
             startingRestoreMsg: startRestoreResponse.error,
           });
         }
       })
       .catch((err) => {
-        this.setState({
+        setState({
           startingRestore: false,
           startingRestoreMsg: err.message
             ? err.message
@@ -305,14 +373,14 @@ class UploadLicenseFile extends React.Component {
       });
   };
 
-  handleUploadStatusErr = (errMessage) => {
-    this.setState({
+  const handleUploadStatusErr = (errMessage) => {
+    setState({
       fileUploading: false,
       errorMessage: errMessage,
     });
   };
 
-  getLabel = (label) => {
+  const getLabel = (label) => {
     return (
       <div style={{ alignItems: "center", display: "flex" }}>
         <span style={{ fontSize: 18, marginRight: "10px" }}>
@@ -323,286 +391,282 @@ class UploadLicenseFile extends React.Component {
     );
   };
 
-  onAppToInstallChange = (selectedAppToInstall) => {
-    this.setState({ selectedAppToInstall });
+  const onAppToInstallChange = (selectedAppToInstall) => {
+    setState({ selectedAppToInstall });
   };
 
-  render() {
-    const {
-      appName,
-      logo,
-      fetchingMetadata,
-      appsListLength,
-      isBackupRestore,
-      snapshot,
-      appSlugFromMetadata,
-    } = this.props;
-    const {
-      licenseFile,
-      fileUploading,
-      errorMessage,
-      viewErrorMessage,
-      licenseExistErrData,
-      selectedAppToInstall,
-      hasMultiApp,
-    } = this.state;
-    const hasFile = licenseFile && !isEmpty(licenseFile);
+  const {
+    appName,
+    logo,
+    fetchingMetadata,
+    appsListLength,
+    isBackupRestore,
+    snapshot,
+    appSlugFromMetadata,
+  } = props;
+  const {
+    licenseFile,
+    fileUploading,
+    errorMessage,
+    viewErrorMessage,
+    licenseExistErrData,
+    selectedAppToInstall,
+    hasMultiApp,
+  } = state;
+  const hasFile = licenseFile && !isEmpty(licenseFile);
 
-    let logoUri;
-    let applicationName;
-    if (appsListLength && appsListLength > 1) {
-      logoUri =
-        "https://cdn2.iconfinder.com/data/icons/mixd/512/16_kubernetes-512.png";
-      applicationName = "";
-    } else {
-      logoUri = logo;
-      applicationName = appSlugFromMetadata ? appSlugFromMetadata : appName;
-    }
+  let logoUri;
+  let applicationName;
+  if (appsListLength && appsListLength > 1) {
+    logoUri =
+      "https://cdn2.iconfinder.com/data/icons/mixd/512/16_kubernetes-512.png";
+    applicationName = "";
+  } else {
+    logoUri = logo;
+    applicationName = appSlugFromMetadata ? appSlugFromMetadata : appName;
+  }
 
-    // TODO remove when restore is enabled
-    const isRestoreEnabled = false;
+  // TODO remove when restore is enabled
+  const isRestoreEnabled = false;
 
-    return (
-      <div
-        className={`UploadLicenseFile--wrapper ${
-          isBackupRestore ? "" : "container"
-        } flex-column flex1 u-overflow--auto Login-wrapper justifyContent--center alignItems--center`}
-      >
-        <KotsPageTitle pageName="Upload License" />
-        <div className="LoginBox-wrapper u-flexTabletReflow  u-flexTabletReflow flex-auto">
-          <div className="flex-auto flex-column login-form-wrapper secure-console justifyContent--center">
-            <div className="flex-column alignItems--center">
-              {logo ? (
-                <span
-                  className="icon brand-login-icon"
-                  style={{ backgroundImage: `url(${logoUri})` }}
-                />
-              ) : !fetchingMetadata ? (
-                <span className="icon kots-login-icon" />
-              ) : (
-                <span style={{ width: "60px", height: "60px" }} />
-              )}
-            </div>
-            {!fileUploading ? (
-              <div className="flex flex-column">
-                <p className="u-fontSize--header u-textColor--primary u-fontWeight--bold u-textAlign--center u-marginTop--10 u-paddingTop--5">
-                  {" "}
-                  {`${
-                    isBackupRestore
-                      ? "Verify your license"
-                      : "Upload your license file"
-                  }`}{" "}
-                </p>
-                <div className="u-marginTop--30">
-                  <div
-                    className={`FileUpload-wrapper flex1 ${
-                      hasFile ? "has-file" : ""
-                    }`}
-                  >
-                    {hasFile ? (
-                      <div className="has-file-wrapper">
-                        <div className="flex">
-                          <Icon
-                            icon="yaml-icon"
-                            size={24}
-                            className="u-marginRight--10 gray-color"
-                          />
+  return (
+    <div
+      className={`UploadLicenseFile--wrapper ${
+        isBackupRestore ? "" : "container"
+      } flex-column flex1 u-overflow--auto Login-wrapper justifyContent--center alignItems--center`}
+    >
+      <KotsPageTitle pageName="Upload License" />
+      <div className="LoginBox-wrapper u-flexTabletReflow  u-flexTabletReflow flex-auto">
+        <div className="flex-auto flex-column login-form-wrapper secure-console justifyContent--center">
+          <div className="flex-column alignItems--center">
+            {logo ? (
+              <span
+                className="icon brand-login-icon"
+                style={{ backgroundImage: `url(${logoUri})` }}
+              />
+            ) : !fetchingMetadata ? (
+              <span className="icon kots-login-icon" />
+            ) : (
+              <span style={{ width: "60px", height: "60px" }} />
+            )}
+          </div>
+          {!fileUploading ? (
+            <div className="flex flex-column">
+              <p className="u-fontSize--header u-textColor--primary u-fontWeight--bold u-textAlign--center u-marginTop--10 u-paddingTop--5">
+                {" "}
+                {`${
+                  isBackupRestore
+                    ? "Verify your license"
+                    : "Upload your license file"
+                }`}{" "}
+              </p>
+              <div className="u-marginTop--30">
+                <div
+                  className={`FileUpload-wrapper flex1 ${
+                    hasFile ? "has-file" : ""
+                  }`}
+                >
+                  {hasFile ? (
+                    <div className="has-file-wrapper">
+                      <div className="flex">
+                        <Icon
+                          icon="yaml-icon"
+                          size={24}
+                          className="u-marginRight--10 gray-color"
+                        />
+                        <div>
+                          <p className="u-fontSize--normal u-textColor--primary u-fontWeight--medium">
+                            {licenseFile.name}
+                          </p>
+                          <span
+                            className="replicated-link u-fontSize--small"
+                            onClick={clearFile}
+                          >
+                            Select a different file
+                          </span>
+                        </div>
+                      </div>
+                      {hasMultiApp && (
+                        <div className="u-marginTop--15 u-paddingTop--15 u-borderTop--gray">
                           <div>
-                            <p className="u-fontSize--normal u-textColor--primary u-fontWeight--medium">
-                              {licenseFile.name}
+                            <p className="u-fontSize--small u-fontWeight--medium u-textColor--primary u-lineHeight--normal">
+                              Your license has access to{" "}
+                              {state.availableAppOptions.length} applications
                             </p>
-                            <span
-                              className="replicated-link u-fontSize--small"
-                              onClick={this.clearFile}
-                            >
-                              Select a different file
-                            </span>
+                            <p className="u-fontSize--small u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--10">
+                              Select the application that you want to install.
+                            </p>
+                            <Select
+                              className="replicated-select-container"
+                              classNamePrefix="replicated-select"
+                              options={state.availableAppOptions}
+                              getOptionLabel={(option) =>
+                                getLabel(option.label)
+                              }
+                              getOptionValue={(option) => option.value}
+                              value={selectedAppToInstall}
+                              onChange={onAppToInstallChange}
+                              isOptionSelected={(option) => {
+                                option.value === selectedAppToInstall.value;
+                              }}
+                            />
                           </div>
                         </div>
-                        {hasMultiApp && (
-                          <div className="u-marginTop--15 u-paddingTop--15 u-borderTop--gray">
-                            <div>
-                              <p className="u-fontSize--small u-fontWeight--medium u-textColor--primary u-lineHeight--normal">
-                                Your license has access to{" "}
-                                {this.state.availableAppOptions.length}{" "}
-                                applications
-                              </p>
-                              <p className="u-fontSize--small u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--10">
-                                Select the application that you want to install.
-                              </p>
-                              <Select
-                                className="replicated-select-container"
-                                classNamePrefix="replicated-select"
-                                options={this.state.availableAppOptions}
-                                getOptionLabel={(option) =>
-                                  this.getLabel(option.label)
-                                }
-                                getOptionValue={(option) => option.value}
-                                value={selectedAppToInstall}
-                                onChange={this.onAppToInstallChange}
-                                isOptionSelected={(option) => {
-                                  option.value === selectedAppToInstall.value;
-                                }}
-                              />
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <Dropzone
-                        className="Dropzone-wrapper"
-                        accept={["application/x-yaml", ".yaml", ".yml", ".rli"]}
-                        onDropAccepted={this.onDrop}
-                        multiple={false}
-                      >
-                        <div className="u-textAlign--center">
-                          <Icon
-                            icon="yaml-icon"
-                            size={40}
-                            className="u-marginBottom--10 gray-color"
-                          />
-                          <p className="u-fontSize--normal u-textColor--secondary u-fontWeight--medium u-lineHeight--normal">
-                            Drag your license here or{" "}
-                            <span className="u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover">
-                              choose a file
-                            </span>
-                          </p>
-                          <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--normal u-lineHeight--normal u-marginTop--10">
-                            This will be a .yaml file. Please contact your
-                            account rep if you are unable to locate your license
-                            file.
-                          </p>
-                        </div>
-                      </Dropzone>
-                    )}
-                  </div>
-                  {hasFile && !isBackupRestore && (
-                    <div className="flex-auto flex-column">
-                      <div>
-                        <button
-                          type="button"
-                          className="btn primary large flex-auto"
-                          onClick={this.uploadLicenseFile}
-                          disabled={fileUploading || !hasFile}
-                        >
-                          {fileUploading ? "Uploading" : "Upload license"}
-                        </button>
-                      </div>
+                      )}
                     </div>
+                  ) : (
+                    <Dropzone
+                      className="Dropzone-wrapper"
+                      accept={["application/x-yaml", ".yaml", ".yml", ".rli"]}
+                      onDropAccepted={onDrop}
+                      multiple={false}
+                    >
+                      <div className="u-textAlign--center">
+                        <Icon
+                          icon="yaml-icon"
+                          size={40}
+                          className="u-marginBottom--10 gray-color"
+                        />
+                        <p className="u-fontSize--normal u-textColor--secondary u-fontWeight--medium u-lineHeight--normal">
+                          Drag your license here or{" "}
+                          <span className="u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover">
+                            choose a file
+                          </span>
+                        </p>
+                        <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--normal u-lineHeight--normal u-marginTop--10">
+                          This will be a .yaml file. Please contact your account
+                          rep if you are unable to locate your license file.
+                        </p>
+                      </div>
+                    </Dropzone>
                   )}
                 </div>
-                {errorMessage && (
-                  <div className="u-marginTop--10">
-                    <span className="u-fontSize--small u-textColor--error u-marginRight--5 u-fontWeight--bold">
-                      Unable to install license
-                    </span>
-                    <span
-                      className="u-fontSize--small replicated-link"
-                      onClick={this.toggleViewErrorMessage}
-                    >
-                      view more
-                    </span>
+                {hasFile && !isBackupRestore && (
+                  <div className="flex-auto flex-column">
+                    <div>
+                      <button
+                        type="button"
+                        className="btn primary large flex-auto"
+                        onClick={uploadLicenseFile}
+                        disabled={fileUploading || !hasFile}
+                      >
+                        {fileUploading ? "Uploading" : "Upload license"}
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
-            ) : (
-              <div>
-                <LicenseUploadProgress onError={this.handleUploadStatusErr} />
-              </div>
-            )}
-          </div>
-        </div>
-
-        {!isBackupRestore && isRestoreEnabled && (
-          <div className="flex u-marginTop--15 alignItems--center">
-            <span className="icon restore-icon" />
-            <Link
-              className="u-fontSize--normal u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover u-marginRight--5"
-              to="/restore"
-            >
-              {`Restore ${
-                applicationName ? `${applicationName}` : "app"
-              } from a snapshot`}{" "}
-            </Link>
-            <Icon icon="next-arrow" style={{ marginTop: "2px" }} size={9} />
-          </div>
-        )}
-        {isBackupRestore ? (
-          <button
-            className="btn primary u-marginTop--20"
-            onClick={() => this.startRestore(snapshot)}
-            disabled={!hasFile}
-          >
-            {" "}
-            Start restore{" "}
-          </button>
-        ) : null}
-
-        <Modal
-          isOpen={viewErrorMessage}
-          onRequestClose={this.toggleViewErrorMessage}
-          contentLabel="Online install error message"
-          ariaHideApp={false}
-          className="Modal"
-        >
-          <div className="Modal-body">
-            <div className="ExpandedError--wrapper u-marginTop--10 u-marginBottom--10">
-              <p className="u-fontSize--small u-fontWeight--bold u-textColor--primary u-marginBottom--5">
-                Error description
-              </p>
-              <p className="u-fontSize--small u-textColor--error">
-                {typeof errorMessage === "object"
-                  ? "An unknown error orrcured while trying to upload your license. Please try again."
-                  : errorMessage}
-              </p>
-              {!size(licenseExistErrData) ? (
-                <div className="flex flex-column">
-                  <p className="u-fontSize--small u-fontWeight--bold u-marginTop--15 u-textColor--primary">
-                    Run this command to generate a support bundle
-                  </p>
-                  <CodeSnippet
-                    language="bash"
-                    canCopy={true}
-                    onCopyText={
-                      <span className="u-textColor--success">
-                        Command has been copied to your clipboard
-                      </span>
-                    }
+              {errorMessage && (
+                <div className="u-marginTop--10">
+                  <span className="u-fontSize--small u-textColor--error u-marginRight--5 u-fontWeight--bold">
+                    Unable to install license
+                  </span>
+                  <span
+                    className="u-fontSize--small replicated-link"
+                    onClick={toggleViewErrorMessage}
                   >
-                    kubectl support-bundle https://kots.io
-                  </CodeSnippet>
-                </div>
-              ) : (
-                <div className="flex flex-column">
-                  <p className="u-fontSize--small u-fontWeight--bold u-marginTop--15 u-textColor--primary">
-                    Run this command to remove the app
-                  </p>
-                  <CodeSnippet
-                    language="bash"
-                    canCopy={true}
-                    onCopyText={
-                      <span className="u-textColor--success">
-                        Command has been copied to your clipboard
-                      </span>
-                    }
-                  >
-                    {licenseExistErrData?.deleteAppCommand}
-                  </CodeSnippet>
+                    view more
+                  </span>
                 </div>
               )}
             </div>
-            <button
-              type="button"
-              className="btn primary u-marginTop--15"
-              onClick={this.toggleViewErrorMessage}
-            >
-              Ok, got it!
-            </button>
-          </div>
-        </Modal>
+          ) : (
+            <div>
+              <LicenseUploadProgress onError={handleUploadStatusErr} />
+            </div>
+          )}
+        </div>
       </div>
-    );
-  }
-}
 
-export default withRouter(UploadLicenseFile);
+      {!isBackupRestore && isRestoreEnabled && (
+        <div className="flex u-marginTop--15 alignItems--center">
+          <span className="icon restore-icon" />
+          <Link
+            className="u-fontSize--normal u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover u-marginRight--5"
+            to="/restore"
+          >
+            {`Restore ${
+              applicationName ? `${applicationName}` : "app"
+            } from a snapshot`}{" "}
+          </Link>
+          <Icon icon="next-arrow" style={{ marginTop: "2px" }} size={9} />
+        </div>
+      )}
+      {isBackupRestore ? (
+        <button
+          className="btn primary u-marginTop--20"
+          onClick={() => startRestore(snapshot)}
+          disabled={!hasFile}
+        >
+          {" "}
+          Start restore{" "}
+        </button>
+      ) : null}
+
+      <Modal
+        isOpen={viewErrorMessage}
+        onRequestClose={toggleViewErrorMessage}
+        contentLabel="Online install error message"
+        ariaHideApp={false}
+        className="Modal"
+      >
+        <div className="Modal-body">
+          <div className="ExpandedError--wrapper u-marginTop--10 u-marginBottom--10">
+            <p className="u-fontSize--small u-fontWeight--bold u-textColor--primary u-marginBottom--5">
+              Error description
+            </p>
+            <p className="u-fontSize--small u-textColor--error">
+              {typeof errorMessage === "object"
+                ? "An unknown error orrcured while trying to upload your license. Please try again."
+                : errorMessage}
+            </p>
+            {!size(licenseExistErrData) ? (
+              <div className="flex flex-column">
+                <p className="u-fontSize--small u-fontWeight--bold u-marginTop--15 u-textColor--primary">
+                  Run this command to generate a support bundle
+                </p>
+                <CodeSnippet
+                  language="bash"
+                  canCopy={true}
+                  onCopyText={
+                    <span className="u-textColor--success">
+                      Command has been copied to your clipboard
+                    </span>
+                  }
+                >
+                  kubectl support-bundle https://kots.io
+                </CodeSnippet>
+              </div>
+            ) : (
+              <div className="flex flex-column">
+                <p className="u-fontSize--small u-fontWeight--bold u-marginTop--15 u-textColor--primary">
+                  Run this command to remove the app
+                </p>
+                <CodeSnippet
+                  language="bash"
+                  canCopy={true}
+                  onCopyText={
+                    <span className="u-textColor--success">
+                      Command has been copied to your clipboard
+                    </span>
+                  }
+                >
+                  {licenseExistErrData?.deleteAppCommand}
+                </CodeSnippet>
+              </div>
+            )}
+          </div>
+          <button
+            type="button"
+            className="btn primary u-marginTop--15"
+            onClick={toggleViewErrorMessage}
+          >
+            Ok, got it!
+          </button>
+        </div>
+      </Modal>
+    </div>
+  );
+};
+
+export default UploadLicenseFile;
