@@ -4,6 +4,7 @@ import get from "lodash/get";
 
 import Loader from "../shared/Loader";
 import ErrorModal from "../modals/ErrorModal";
+import Modal from "react-modal";
 import "../../scss/components/watches/WatchDetailPage.scss";
 import { Utilities } from "../../utilities/utilities";
 import { Repeater } from "../../utilities/repeater";
@@ -51,6 +52,7 @@ type State = {
   isReadOnly: boolean;
   originalRegistry: RegistryDetails | null;
   pingedEndpoint: string;
+  showStopUsingWarning: boolean;
 };
 
 class AirgapRegistrySettings extends Component<Props, State> {
@@ -83,6 +85,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
       isReadOnly: false,
       originalRegistry: null,
       pingedEndpoint: "",
+      showStopUsingWarning: false,
     };
   }
 
@@ -95,9 +98,17 @@ class AirgapRegistrySettings extends Component<Props, State> {
     this.triggerStatusUpdates();
   };
 
-  onSubmit = async () => {
-    const { hostname, username, password, namespace, isReadOnly } = this.state;
+  onSaveRegistrySettings = async (stopUsingRegistry: boolean) => {
+    let { hostname, username, password, namespace, isReadOnly } = this.state;
     const { slug } = this.props.match.params;
+
+    if (stopUsingRegistry) {
+      hostname = "";
+      username = "";
+      password = "";
+      namespace = "";
+      isReadOnly = false;
+    }
 
     fetch(`${process.env.API_ENDPOINT}/app/${slug}/registry`, {
       method: "PUT",
@@ -121,6 +132,19 @@ class AirgapRegistrySettings extends Component<Props, State> {
             rewriteMessage: registryDetails.error,
           });
         } else {
+          this.setState({
+            originalRegistry: {
+              hostname: hostname,
+              username: username,
+              password: password,
+              namespace: namespace,
+            },
+            hostname: hostname,
+            username: username,
+            password: password,
+            namespace: namespace,
+            isReadOnly: isReadOnly,
+          });
           this.state.updateChecker.start(this.updateStatus, 1000);
         }
       })
@@ -381,6 +405,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
       testInProgress,
       testFailed,
       testMessage,
+      originalRegistry,
     } = this.state;
     const { rewriteMessage, rewriteStatus } = this.state;
 
@@ -425,6 +450,8 @@ class AirgapRegistrySettings extends Component<Props, State> {
     }
 
     const disableSubmitButton = rewriteStatus === "running";
+    const disableStopUsingButton =
+      rewriteStatus === "running" || originalRegistry?.hostname === "";
     const showProgress = rewriteStatus === "running";
     const showStatusError = rewriteStatus === "failed";
 
@@ -493,6 +520,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
                 <div>
                   <button
                     type="button"
+                    disabled={this.state.hostname === ""}
                     className="btn secondary"
                     onClick={this.testRegistryConnection}
                   >
@@ -599,12 +627,25 @@ class AirgapRegistrySettings extends Component<Props, State> {
             ) : null}
             <div className="u-marginTop--20">
               <button
-                className="btn primary blue"
+                className="btn primary blue u-marginRight--10"
                 disabled={disableSubmitButton}
-                onClick={this.onSubmit}
+                onClick={() => {
+                  this.onSaveRegistrySettings(false);
+                }}
               >
                 Save changes
               </button>
+              {!this.props.app?.isAirgap && (
+                <button
+                  className="btn secondary blue"
+                  disabled={disableStopUsingButton}
+                  onClick={() => {
+                    this.setState({ showStopUsingWarning: true });
+                  }}
+                >
+                  Stop using registry
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -618,6 +659,44 @@ class AirgapRegistrySettings extends Component<Props, State> {
             loading={this.state.loading}
           />
         )}
+
+        <Modal
+          isOpen={this.state.showStopUsingWarning}
+          onRequestClose={() => {
+            this.setState({ showStopUsingWarning: false });
+          }}
+          shouldReturnFocusAfterClose={false}
+          ariaHideApp={false}
+          className="Modal MediumSize"
+        >
+          <div className="Modal-body">
+            <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
+              This will create a version of {this.props.app?.name} without
+              registry settings. Do you want to proceed?
+            </p>
+            <div className="flex justifyContent--flexEnd">
+              <button
+                type="button"
+                className="btn blue primary u-marginRight--10"
+                onClick={() => {
+                  this.setState({ showStopUsingWarning: false });
+                  this.onSaveRegistrySettings(true);
+                }}
+              >
+                OK
+              </button>
+              <button
+                type="button"
+                className="btn blue secondary u-marginRight--10"
+                onClick={() => {
+                  this.setState({ showStopUsingWarning: false });
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </Modal>
       </div>
     );
   }
