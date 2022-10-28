@@ -93,263 +93,26 @@ func (e *InvalidStoreDataError) Error() string {
 }
 
 func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.Store, error) {
-	store, err := GetGlobalStore(ctx, options.KotsadmNamespace, nil)
+	existingStore, err := GetGlobalStore(ctx, options.KotsadmNamespace, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get store")
 	}
-	if store == nil {
+	if existingStore == nil {
 		return nil, errors.New("store not found")
 	}
 
-	oldBucket := store.Bucket
-	needsVeleroRestart := true
-
-	store.Provider = options.Provider
-	store.Bucket = options.Bucket
-	store.Path = options.Path
-	store.CACertData = options.CACertData
-
-	if options.AWS != nil {
-		if store.AWS == nil {
-			store.AWS = &types.StoreAWS{}
-		}
-		store.Azure = nil
-		store.Google = nil
-		store.Other = nil
-		store.Internal = nil
-		store.FileSystem = nil
-
-		store.AWS.Region = options.AWS.Region
-		store.AWS.UseInstanceRole = options.AWS.UseInstanceRole
-		if store.AWS.UseInstanceRole {
-			store.AWS.AccessKeyID = ""
-			store.AWS.SecretAccessKey = ""
-		} else {
-			if options.AWS.AccessKeyID != "" {
-				store.AWS.AccessKeyID = options.AWS.AccessKeyID
-			}
-			if options.AWS.SecretAccessKey != "" {
-				if strings.Contains(options.AWS.SecretAccessKey, "REDACTED") {
-					return nil, &InvalidStoreDataError{Message: "invalid aws secret access key"}
-				}
-				store.AWS.SecretAccessKey = options.AWS.SecretAccessKey
-			}
-			if store.AWS.AccessKeyID == "" || store.AWS.SecretAccessKey == "" || store.AWS.Region == "" {
-				return nil, &InvalidStoreDataError{Message: "missing access key id and/or secret access key and/or region"}
-			}
-		}
-
-	} else if options.Google != nil {
-		if store.Google == nil {
-			store.Google = &types.StoreGoogle{}
-		}
-		store.AWS = nil
-		store.Azure = nil
-		store.Other = nil
-		store.Internal = nil
-		store.FileSystem = nil
-
-		store.Google.UseInstanceRole = options.Google.UseInstanceRole
-		if store.Google.UseInstanceRole {
-			store.Google.JSONFile = ""
-			if options.Google.ServiceAccount != "" {
-				store.Google.ServiceAccount = options.Google.ServiceAccount
-			}
-		} else {
-			if options.Google.JSONFile != "" {
-				if strings.Contains(options.Google.JSONFile, "REDACTED") {
-					return nil, &InvalidStoreDataError{Message: "invalid JSON file"}
-				}
-				store.Google.JSONFile = options.Google.JSONFile
-			}
-		}
-
-		if store.Google.UseInstanceRole {
-			if store.Google.ServiceAccount == "" {
-				return nil, &InvalidStoreDataError{Message: "missing service account"}
-			}
-		} else {
-			if store.Google.JSONFile == "" {
-				return nil, &InvalidStoreDataError{Message: "missing JSON file"}
-			}
-		}
-
-	} else if options.Azure != nil {
-		if store.Azure == nil {
-			store.Azure = &types.StoreAzure{}
-		}
-		store.AWS = nil
-		store.Google = nil
-		store.Other = nil
-		store.Internal = nil
-		store.FileSystem = nil
-
-		if options.Azure.ResourceGroup != "" {
-			store.Azure.ResourceGroup = options.Azure.ResourceGroup
-		}
-		if options.Azure.SubscriptionID != "" {
-			store.Azure.SubscriptionID = options.Azure.SubscriptionID
-		}
-		if options.Azure.TenantID != "" {
-			store.Azure.TenantID = options.Azure.TenantID
-		}
-		if options.Azure.ClientID != "" {
-			store.Azure.ClientID = options.Azure.ClientID
-		}
-		if options.Azure.ClientSecret != "" {
-			if strings.Contains(options.Azure.ClientSecret, "REDACTED") {
-				return nil, &InvalidStoreDataError{Message: "invalid client secret"}
-			}
-			store.Azure.ClientSecret = options.Azure.ClientSecret
-		}
-		if options.Azure.CloudName != "" {
-			store.Azure.CloudName = options.Azure.CloudName
-		}
-		if options.Azure.StorageAccount != "" {
-			store.Azure.StorageAccount = options.Azure.StorageAccount
-		}
-
-	} else if options.Other != nil {
-		if store.Other == nil {
-			store.Other = &types.StoreOther{}
-		}
-		store.AWS = nil
-		store.Google = nil
-		store.Azure = nil
-		store.Internal = nil
-		store.FileSystem = nil
-
-		store.Provider = "aws"
-		if options.Other.AccessKeyID != "" {
-			store.Other.AccessKeyID = options.Other.AccessKeyID
-		}
-		if options.Other.SecretAccessKey != "" {
-			if strings.Contains(options.Other.SecretAccessKey, "REDACTED") {
-				return nil, &InvalidStoreDataError{Message: "invalid secret access key"}
-			}
-			store.Other.SecretAccessKey = options.Other.SecretAccessKey
-		}
-		if options.Other.Region != "" {
-			store.Other.Region = options.Other.Region
-		}
-		if options.Other.Endpoint != "" {
-			store.Other.Endpoint = options.Other.Endpoint
-		}
-		if store.Other.AccessKeyID == "" || store.Other.SecretAccessKey == "" || store.Other.Endpoint == "" || store.Other.Region == "" {
-			return nil, &InvalidStoreDataError{Message: "access key, secret key, endpoint and region are required"}
-		}
-	} else if options.Internal && !options.IsMinioDisabled {
-		isKurl, err := kurl.IsKurl()
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to check if cluster is kurl")
-		}
-
-		if !isKurl {
-			return nil, &InvalidStoreDataError{Message: "cannot use internal storage on a non-kurl cluster"}
-		}
-
-		if store.Internal == nil {
-			store.Internal = &types.StoreInternal{}
-		}
-		store.AWS = nil
-		store.Google = nil
-		store.Azure = nil
-		store.Other = nil
-		store.FileSystem = nil
-
-		secret, err := kotsutil.GetKurlS3Secret()
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get s3 secret")
-		}
-		if secret == nil {
-			return nil, errors.New("s3 secret does not exist")
-		}
-
-		store.Provider = "aws"
-		store.Bucket = string(secret.Data["velero-local-bucket"])
-		store.Path = ""
-
-		store.Internal.AccessKeyID = string(secret.Data["access-key-id"])
-		store.Internal.SecretAccessKey = string(secret.Data["secret-access-key"])
-		store.Internal.Endpoint = string(secret.Data["endpoint"])
-		store.Internal.ObjectStoreClusterIP = string(secret.Data["object-store-cluster-ip"])
-		store.Internal.Region = "us-east-1"
-	} else if options.Internal && options.IsMinioDisabled {
-		isKurl, err := kurl.IsKurl()
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to check if cluster is kurl")
-		}
-
-		if !isKurl {
-			return nil, &InvalidStoreDataError{Message: "cannot use internal storage on a non-kurl cluster"}
-		}
-
-		if store.Internal == nil {
-			store.Internal = &types.StoreInternal{}
-		}
-		store.AWS = nil
-		store.Google = nil
-		store.Azure = nil
-		store.Other = nil
-		store.FileSystem = nil
-
-		store.Provider = SnapshotStorePVCProvider
-		store.Bucket = SnapshotStorePVCBucket
-	} else if options.FileSystem != nil && !options.IsMinioDisabled {
-		// Legacy Minio Provider
-
-		store.AWS = nil
-		store.Google = nil
-		store.Azure = nil
-		store.Other = nil
-		store.Internal = nil
-
-		store.Provider = FileSystemMinioProvider
-		store.Bucket = FileSystemMinioBucketName
-		store.Path = ""
-
-		clientset, err := k8sutil.GetClientset()
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get k8s clientset")
-		}
-
-		storeFileSystem, err := BuildMinioStoreFileSystem(ctx, clientset, options.KotsadmNamespace)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to build file system store")
-		}
-		store.FileSystem = storeFileSystem
-	} else if options.FileSystem != nil && options.IsMinioDisabled {
-		store.AWS = nil
-		store.Google = nil
-		store.Azure = nil
-		store.Other = nil
-		store.Internal = nil
-
-		newBucket, err := GetLvpBucket(options.FileSystem)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to generate bucket name")
-		}
-
-		if oldBucket != newBucket {
-			// bucket has changed, so the plugin will handle the restart
-			needsVeleroRestart = false
-		}
-
-		store.Bucket = newBucket
-		store.Provider = GetLvpProvider(options.FileSystem)
-
-		clientset, err := k8sutil.GetClientset()
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get k8s clientset")
-		}
-
-		if isMinioMigration(clientset, options.KotsadmNamespace) {
-			store.Path = "/velero"
-		}
-
-		store.FileSystem = BuildLvpStoreFileSystem(ctx, clientset, options.KotsadmNamespace, options.FileSystem)
+	clientset, err := k8sutil.GetClientset()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get k8s clientset")
 	}
 
+	// update the existing store with the new configuration
+	newStore, needsVeleroRestart, err := updateExistingStore(ctx, clientset, existingStore, options)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to update existing store")
+	}
+
+	// validate the new store
 	if !options.SkipValidation {
 		validateStoreOptions := ValidateStoreOptions{
 			KotsadmNamespace:  options.KotsadmNamespace,
@@ -357,12 +120,13 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 			ValidateUsingAPod: options.ValidateUsingAPod,
 			CACertData:        options.CACertData,
 		}
-		if err := validateStore(ctx, store, validateStoreOptions); err != nil {
+		if err := validateStore(ctx, newStore, validateStoreOptions); err != nil {
 			return nil, &InvalidStoreDataError{Message: errors.Cause(err).Error()}
 		}
 	}
 
-	updatedBackupStorageLocation, err := updateGlobalStore(ctx, store, options.KotsadmNamespace)
+	// update the store in the cluster
+	updatedBackupStorageLocation, err := updateGlobalStore(ctx, newStore, options.KotsadmNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to update global store")
 	}
@@ -392,6 +156,250 @@ func ConfigureStore(ctx context.Context, options ConfigureStoreOptions) (*types.
 	}
 
 	return updatedStore, nil
+}
+
+func updateExistingStore(ctx context.Context, clientset kubernetes.Interface, store *types.Store, options ConfigureStoreOptions) (*types.Store, bool, error) {
+	oldBucket := store.Bucket
+	needsVeleroRestart := true
+
+	store.Provider = options.Provider
+	store.Bucket = options.Bucket
+	store.Path = options.Path
+	store.CACertData = options.CACertData
+
+	if options.AWS != nil {
+		if store.AWS == nil {
+			store.AWS = &types.StoreAWS{}
+		}
+		store.Azure = nil
+		store.Google = nil
+		store.Other = nil
+		store.Internal = nil
+		store.FileSystem = nil
+
+		store.AWS.Region = options.AWS.Region
+		store.AWS.UseInstanceRole = options.AWS.UseInstanceRole
+		if store.AWS.UseInstanceRole {
+			store.AWS.AccessKeyID = ""
+			store.AWS.SecretAccessKey = ""
+		} else {
+			if options.AWS.AccessKeyID != "" {
+				store.AWS.AccessKeyID = options.AWS.AccessKeyID
+			}
+			if options.AWS.SecretAccessKey != "" {
+				if strings.Contains(options.AWS.SecretAccessKey, "REDACTED") {
+					return nil, false, &InvalidStoreDataError{Message: "invalid aws secret access key"}
+				}
+				store.AWS.SecretAccessKey = options.AWS.SecretAccessKey
+			}
+			if store.AWS.AccessKeyID == "" || store.AWS.SecretAccessKey == "" || store.AWS.Region == "" {
+				return nil, false, &InvalidStoreDataError{Message: "missing access key id and/or secret access key and/or region"}
+			}
+		}
+
+	} else if options.Google != nil {
+		if store.Google == nil {
+			store.Google = &types.StoreGoogle{}
+		}
+		store.AWS = nil
+		store.Azure = nil
+		store.Other = nil
+		store.Internal = nil
+		store.FileSystem = nil
+
+		store.Google.UseInstanceRole = options.Google.UseInstanceRole
+		if store.Google.UseInstanceRole {
+			store.Google.JSONFile = ""
+			if options.Google.ServiceAccount != "" {
+				store.Google.ServiceAccount = options.Google.ServiceAccount
+			}
+		} else {
+			if options.Google.JSONFile != "" {
+				if strings.Contains(options.Google.JSONFile, "REDACTED") {
+					return nil, false, &InvalidStoreDataError{Message: "invalid JSON file"}
+				}
+				store.Google.JSONFile = options.Google.JSONFile
+			}
+		}
+
+		if store.Google.UseInstanceRole {
+			if store.Google.ServiceAccount == "" {
+				return nil, false, &InvalidStoreDataError{Message: "missing service account"}
+			}
+		} else {
+			if store.Google.JSONFile == "" {
+				return nil, false, &InvalidStoreDataError{Message: "missing JSON file"}
+			}
+		}
+
+	} else if options.Azure != nil {
+		if store.Azure == nil {
+			store.Azure = &types.StoreAzure{}
+		}
+		store.AWS = nil
+		store.Google = nil
+		store.Other = nil
+		store.Internal = nil
+		store.FileSystem = nil
+
+		if options.Azure.ResourceGroup != "" {
+			store.Azure.ResourceGroup = options.Azure.ResourceGroup
+		}
+		if options.Azure.SubscriptionID != "" {
+			store.Azure.SubscriptionID = options.Azure.SubscriptionID
+		}
+		if options.Azure.TenantID != "" {
+			store.Azure.TenantID = options.Azure.TenantID
+		}
+		if options.Azure.ClientID != "" {
+			store.Azure.ClientID = options.Azure.ClientID
+		}
+		if options.Azure.ClientSecret != "" {
+			if strings.Contains(options.Azure.ClientSecret, "REDACTED") {
+				return nil, false, &InvalidStoreDataError{Message: "invalid client secret"}
+			}
+			store.Azure.ClientSecret = options.Azure.ClientSecret
+		}
+		if options.Azure.CloudName != "" {
+			store.Azure.CloudName = options.Azure.CloudName
+		}
+		if options.Azure.StorageAccount != "" {
+			store.Azure.StorageAccount = options.Azure.StorageAccount
+		}
+
+	} else if options.Other != nil {
+		if store.Other == nil {
+			store.Other = &types.StoreOther{}
+		}
+		store.AWS = nil
+		store.Google = nil
+		store.Azure = nil
+		store.Internal = nil
+		store.FileSystem = nil
+
+		store.Provider = "aws"
+		if options.Other.AccessKeyID != "" {
+			store.Other.AccessKeyID = options.Other.AccessKeyID
+		}
+		if options.Other.SecretAccessKey != "" {
+			if strings.Contains(options.Other.SecretAccessKey, "REDACTED") {
+				return nil, false, &InvalidStoreDataError{Message: "invalid secret access key"}
+			}
+			store.Other.SecretAccessKey = options.Other.SecretAccessKey
+		}
+		if options.Other.Region != "" {
+			store.Other.Region = options.Other.Region
+		}
+		if options.Other.Endpoint != "" {
+			store.Other.Endpoint = options.Other.Endpoint
+		}
+		if store.Other.AccessKeyID == "" || store.Other.SecretAccessKey == "" || store.Other.Endpoint == "" || store.Other.Region == "" {
+			return nil, false, &InvalidStoreDataError{Message: "access key, secret key, endpoint and region are required"}
+		}
+	} else if options.Internal && !options.IsMinioDisabled {
+		isKurl, err := kurl.IsKurl()
+		if err != nil {
+			return nil, false, errors.Wrap(err, "failed to check if cluster is kurl")
+		}
+
+		if !isKurl {
+			return nil, false, &InvalidStoreDataError{Message: "cannot use internal storage on a non-kurl cluster"}
+		}
+
+		if store.Internal == nil {
+			store.Internal = &types.StoreInternal{}
+		}
+		store.AWS = nil
+		store.Google = nil
+		store.Azure = nil
+		store.Other = nil
+		store.FileSystem = nil
+
+		secret, err := kotsutil.GetKurlS3Secret()
+		if err != nil {
+			return nil, false, errors.Wrap(err, "failed to get s3 secret")
+		}
+		if secret == nil {
+			return nil, false, errors.New("s3 secret does not exist")
+		}
+
+		store.Provider = "aws"
+		store.Bucket = string(secret.Data["velero-local-bucket"])
+		store.Path = ""
+
+		store.Internal.AccessKeyID = string(secret.Data["access-key-id"])
+		store.Internal.SecretAccessKey = string(secret.Data["secret-access-key"])
+		store.Internal.Endpoint = string(secret.Data["endpoint"])
+		store.Internal.ObjectStoreClusterIP = string(secret.Data["object-store-cluster-ip"])
+		store.Internal.Region = "us-east-1"
+	} else if options.Internal && options.IsMinioDisabled {
+		// TODO: remove the need for cluster context so this code path can be unit tested
+		isKurl, err := kurl.IsKurl()
+		if err != nil {
+			return nil, false, errors.Wrap(err, "failed to check if cluster is kurl")
+		}
+
+		if !isKurl {
+			return nil, false, &InvalidStoreDataError{Message: "cannot use internal storage on a non-kurl cluster"}
+		}
+
+		if store.Internal == nil {
+			store.Internal = &types.StoreInternal{}
+		}
+		store.AWS = nil
+		store.Google = nil
+		store.Azure = nil
+		store.Other = nil
+		store.FileSystem = nil
+
+		store.Provider = SnapshotStorePVCProvider
+		store.Bucket = SnapshotStorePVCBucket
+	} else if options.FileSystem != nil && !options.IsMinioDisabled {
+		// Legacy Minio Provider
+
+		store.AWS = nil
+		store.Google = nil
+		store.Azure = nil
+		store.Other = nil
+		store.Internal = nil
+
+		store.Provider = FileSystemMinioProvider
+		store.Bucket = FileSystemMinioBucketName
+		store.Path = ""
+
+		storeFileSystem, err := BuildMinioStoreFileSystem(ctx, clientset, options.KotsadmNamespace)
+		if err != nil {
+			return nil, false, errors.Wrap(err, "failed to build file system store")
+		}
+		store.FileSystem = storeFileSystem
+	} else if options.FileSystem != nil && options.IsMinioDisabled {
+		store.AWS = nil
+		store.Google = nil
+		store.Azure = nil
+		store.Other = nil
+		store.Internal = nil
+
+		newBucket, err := GetLvpBucket(options.FileSystem)
+		if err != nil {
+			return nil, false, errors.Wrap(err, "failed to generate bucket name")
+		}
+
+		if oldBucket != newBucket {
+			// bucket has changed, so the plugin will handle the restart
+			needsVeleroRestart = false
+		}
+
+		store.Bucket = newBucket
+		store.Provider = GetLvpProvider(options.FileSystem)
+
+		if isMinioMigration(clientset, options.KotsadmNamespace) {
+			store.Path = "/velero"
+		}
+
+		store.FileSystem = BuildLvpStoreFileSystem(options.FileSystem)
+	}
+
+	return store, needsVeleroRestart, nil
 }
 
 // updateGlobalStore will update the in-cluster storage with exactly what's in the store param
@@ -1071,7 +1079,7 @@ func BuildMinioStoreFileSystem(ctx context.Context, clientset kubernetes.Interfa
 	return &storeFileSystem, nil
 }
 
-func BuildLvpStoreFileSystem(ctx context.Context, clientset kubernetes.Interface, kotsadmNamespace string, config *types.FileSystemConfig) *types.StoreFileSystem {
+func BuildLvpStoreFileSystem(config *types.FileSystemConfig) *types.StoreFileSystem {
 	storeFileSystem := types.StoreFileSystem{}
 
 	if config.NFS != nil && config.NFS.Path == "" {

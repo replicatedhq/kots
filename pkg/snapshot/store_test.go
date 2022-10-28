@@ -8,8 +8,128 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	testclient "k8s.io/client-go/kubernetes/fake"
+	"k8s.io/utils/pointer"
 )
+
+func Test_updateExistingStore(t *testing.T) {
+	type updateExistingStoreArgs struct {
+		context       context.Context
+		clientset     kubernetes.Interface
+		existingStore *types.Store
+		options       ConfigureStoreOptions
+	}
+
+	hostPathConfig := &types.FileSystemConfig{
+		HostPath: pointer.String("/my/host/path"),
+	}
+
+	hostPathBucket, err := GetLvpBucket(hostPathConfig)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name        string
+		args        updateExistingStoreArgs
+		wantStore   *types.Store
+		wantRestart bool
+		wantErr     bool
+	}{
+		{
+			name: "update existing filesystem store with lvp -- the bucket changes, so we should not restart velero since the plugin will handle it",
+			args: updateExistingStoreArgs{
+				context:   context.TODO(),
+				clientset: testclient.NewSimpleClientset(),
+				existingStore: &types.Store{
+					Bucket: "old-bucket",
+				},
+				options: ConfigureStoreOptions{
+					FileSystem:      hostPathConfig,
+					IsMinioDisabled: true,
+				},
+			},
+			wantStore: &types.Store{
+				Bucket:   hostPathBucket,
+				Provider: SnapshotStoreHostPathProvider,
+				FileSystem: &types.StoreFileSystem{
+					Config: hostPathConfig,
+				},
+			},
+			wantRestart: false,
+			wantErr:     false,
+		},
+		{
+			name: "update existing filesystem store with lvp -- the bucket is the same, so we should restart velero",
+			args: updateExistingStoreArgs{
+				context:   context.TODO(),
+				clientset: testclient.NewSimpleClientset(),
+				existingStore: &types.Store{
+					Bucket: hostPathBucket,
+				},
+				options: ConfigureStoreOptions{
+					FileSystem:      hostPathConfig,
+					IsMinioDisabled: true,
+				},
+			},
+			wantStore: &types.Store{
+				Bucket:   hostPathBucket,
+				Provider: SnapshotStoreHostPathProvider,
+				FileSystem: &types.StoreFileSystem{
+					Config: hostPathConfig,
+				},
+			},
+			wantRestart: true,
+			wantErr:     false,
+		},
+		{
+			name: "update existing filesystem store with lvp -- it's a minio migrated store, so it should add the /velero path",
+			args: updateExistingStoreArgs{
+				context: context.TODO(),
+				clientset: testclient.NewSimpleClientset(&corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      SnapshotMigrationArtifactName,
+						Namespace: "default",
+					},
+				}),
+				existingStore: &types.Store{
+					Bucket: "old-bucket",
+				},
+				options: ConfigureStoreOptions{
+					FileSystem:       hostPathConfig,
+					IsMinioDisabled:  true,
+					KotsadmNamespace: "default",
+				},
+			},
+			wantStore: &types.Store{
+				Bucket:   hostPathBucket,
+				Provider: SnapshotStoreHostPathProvider,
+				Path:     "/velero",
+				FileSystem: &types.StoreFileSystem{
+					Config: hostPathConfig,
+				},
+			},
+			wantRestart: false,
+			wantErr:     false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			req := require.New(t)
+
+			newStore, needsVeleroRestart, err := updateExistingStore(test.args.context, test.args.clientset, test.args.existingStore, test.args.options)
+			if test.wantErr {
+				req.Error(err)
+			} else {
+				req.NoError(err)
+			}
+			req.Equal(test.wantStore, newStore)
+			req.Equal(test.wantRestart, needsVeleroRestart)
+		})
+	}
+}
 
 func Test_validateInternalStore(t *testing.T) {
 	req := require.New(t)
