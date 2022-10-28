@@ -56,7 +56,7 @@ require (
 	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/robfig/cron v1.2.0
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/rqlite/gorqlite v0.0.0-20221017190308-4d79253e5cf3
+	github.com/rqlite/gorqlite v0.0.0-20221028154453-256f31831ff3
 	github.com/schemahero/schemahero v0.13.6
 	github.com/segmentio/ksuid v1.0.4
 	github.com/sergi/go-diff v1.2.0
