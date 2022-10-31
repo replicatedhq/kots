@@ -115,7 +115,7 @@ func NewHelmManagedMode() Test {
 
 func MultiAppTest() Test {
 	return Test{
-		Name:        "Multi App Install",
+		Name:        "multi-app-install",
 		Suite:       "multi-app-install",
 		Namespace:   "multi-app-install",
 		UpstreamURI: "multi-app-install/automated",
