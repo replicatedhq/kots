@@ -127,9 +127,9 @@ var _ = Describe("E2E", func() {
 
 	BeforeEach(func() {
 		w = workspace.New()
-		if !skipTeardown {
-			DeferCleanup(w.Teardown)
-		}
+		// if !skipTeardown {
+		DeferCleanup(w.Teardown)
+		// }
 	})
 
 	Context("with an online cluster", func() {
