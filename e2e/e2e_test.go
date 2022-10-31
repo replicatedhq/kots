@@ -245,6 +245,22 @@ var _ = Describe("E2E", func() {
 			}),
 		)
 
+		Describe("my test", func() {
+			It("should run", func() {
+
+				var test = inventory.MultiAppTest()
+				GinkgoWriter.Println("Installing KOTS for my test")
+				var adminConsolePort = kotsInstaller.Install(c.GetKubeconfig(), test, kotsadmForwardPort)
+
+				GinkgoWriter.Println("Running E2E tests for my test")
+				testimRun = testimClient.NewRun(c.GetKubeconfig(), test, testim.RunOptions{
+					TunnelPort: adminConsolePort,
+					BaseUrl:    testimBaseUrl,
+				})
+				testimRun.ShouldSucceed()
+			})
+		})
+
 	})
 
 })
