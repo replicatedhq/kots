@@ -1619,46 +1619,41 @@ class SnapshotStorageDestination extends Component<Props, State> {
 
     return (
       <div className="flex1 flex-column u-marginTop--40">
-        <p className="u-fontSize--normal u-marginBottom--15 u-fontWeight--bold u-textColor--secondary">
-          Snapshot settings
-        </p>
-        <div className="flex">
-          <div className="flex flex-column">
-            <div className="Info--wrapper flex flex-auto u-marginBottom--15">
-              <span className="icon info-icon flex-auto u-marginTop--5" />
-              <div className="flex flex-column u-marginLeft--5">
-                <p className="u-fontSize--normal u-fontWeight--bold u-lineHeight--normal u-textColor--primary">
-                  Configuration is shared
-                </p>
+        <div className="flex" style={{ gap: "30px" }}>
+          <div
+            className="flex flex-column card-bg u-padding--15"
+            style={{ maxWidth: "400px" }}
+          >
+            <div className="flex justifyContent--spaceBetween">
+              <p className="card-title u-paddingBottom--15">
+                Snapshot settings
+              </p>
+              <span
+                className="replicated-link u-fontSize--small flex justifyContent--flexEnd u-cursor--pointer"
+                onClick={this.props.toggleConfigureSnapshotsModal}
+              >
+                + Add a new destination
+              </span>
+            </div>
+            <div className="flex flex-auto u-marginBottom--15">
+              <div className="flex flex-column">
                 <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy">
                   Full (Instance) and Partial (Application) snapshots share
-                  Velero configuration. Your storage destination will be used
-                  for both.
+                  share the same Velero configuration and storage destination.
                 </span>
               </div>
             </div>
-            <div className="flex flex-column u-marginRight--50">
-              <form className="flex flex-column snapshot-form-wrapper">
-                <p className="u-fontSize--normal u-marginBottom--20 u-fontWeight--bold u-textColor--secondary">
-                  Storage
-                </p>
+            <div className="flex flex-column card-item u-padding--15">
+              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                Destination
+              </p>
+              <form className="flex flex-column">
                 {updateErrorMsg && (
                   <div className="flex-auto u-fontWeight--bold u-fontSize--small u-textColor--error u-marginBottom--10">
                     {updateErrorMsg}
                   </div>
                 )}
                 <div className="flex flex-column u-marginBottom--20">
-                  <div className="flex flex1 justifyContent--spaceBetween alignItems--center">
-                    <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
-                      Destination
-                    </p>
-                    <span
-                      className="replicated-link u-fontSize--normal flex justifyContent--flexEnd u-cursor--pointer"
-                      onClick={this.props.toggleConfigureSnapshotsModal}
-                    >
-                      + Add a new storage destination
-                    </span>
-                  </div>
                   {!snapshotSettings?.isVeleroRunning &&
                     !checkForVeleroAndRestic &&
                     isKurlEnabled && (
@@ -1753,9 +1748,11 @@ class SnapshotStorageDestination extends Component<Props, State> {
                   </>
                 )}
                 <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--15">
-                  All data in your snapshots will be deduplicated. Snapshots
-                  makes use of Restic, a fast and secure backup technology with
-                  native deduplication.
+                  All data in your snapshots will be deduplicated. To learn more
+                  about how,{" "}
+                  <a href="/" target="_blank" className="replicated-link">
+                    check out our docs.
+                  </a>
                 </span>
               </form>
             </div>
