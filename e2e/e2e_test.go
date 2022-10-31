@@ -46,6 +46,8 @@ var (
 	kotsHelmChartVersion  string
 )
 
+type TestimParams map[string]interface{}
+
 type Test struct {
 	Name                   string
 	Suite                  string
