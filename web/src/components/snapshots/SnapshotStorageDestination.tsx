@@ -889,7 +889,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
       case "aws":
         return (
           <>
-            <div className="flex u-marginBottom--30">
+            <div className="flex u-marginBottom--15">
               <div className="flex1 u-paddingRight--5">
                 <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Bucket
@@ -915,8 +915,8 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 />
               </div>
             </div>
-            <div className="flex u-marginBottom--30">
-              <div className="flex1 u-paddingRight--5">
+            <div className="flex flex-column u-marginBottom--30">
+              <div className="u-marginBottom--5">
                 <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Path
                 </p>
@@ -926,42 +926,38 @@ class SnapshotStorageDestination extends Component<Props, State> {
                   placeholder="/path/to/destination"
                   value={this.state.s3Path}
                   onChange={(e) => this.handleFormChange("s3Path", e)}
+                  style={{ width: "49%" }}
                 />
               </div>
-              <div className="flex1 u-paddingLeft--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
-                  &nbsp;
-                </p>
-                <div className="BoxedCheckbox-wrapper flex1 u-textAlign--left">
-                  <div
-                    className={`BoxedCheckbox flex-auto flex alignItems--center ${
-                      this.state.useIamAws ? "is-active" : ""
-                    }`}
+              <div>
+                <div
+                  className={`flex-auto flex alignItems--center ${
+                    this.state.useIamAws ? "is-active" : ""
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    className="u-cursor--pointer"
+                    id="useIamAws"
+                    checked={this.state.useIamAws}
+                    onChange={(e) => this.handleFormChange("useIamAws", e)}
+                  />
+                  <label
+                    htmlFor="useIamAws"
+                    className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none"
                   >
-                    <input
-                      type="checkbox"
-                      className="u-cursor--pointer u-marginLeft--10"
-                      id="useIamAws"
-                      checked={this.state.useIamAws}
-                      onChange={(e) => this.handleFormChange("useIamAws", e)}
-                    />
-                    <label
-                      htmlFor="useIamAws"
-                      className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none"
-                    >
-                      <div className="flex1">
-                        <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium">
-                          Use IAM Instance Role
-                        </p>
-                      </div>
-                    </label>
-                  </div>
+                    <div className="flex1">
+                      <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium">
+                        Use IAM Role
+                      </p>
+                    </div>
+                  </label>
                 </div>
               </div>
             </div>
 
             {!useIamAws && (
-              <div className="flex u-marginBottom--30">
+              <div className="flex u-marginBottom--5">
                 <div className="flex1 u-paddingRight--5">
                   <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                     Access Key ID
@@ -1717,7 +1713,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                     )}
                     {!this.state.showCACertificateField && (
                       <button
-                        className="AddCAButton replicated-link u-fontSize--normal"
+                        className="AddCAButton replicated-link u-fontSize--small"
                         onClick={this.handleCACertificateFieldClick}
                       >
                         + Add a CA Certificate
