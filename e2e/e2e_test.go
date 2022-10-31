@@ -224,19 +224,19 @@ var _ = Describe("E2E", func() {
 			func(test inventory.Test) string {
 				return test.Name
 			},
-			Entry(nil, MultiAppTest()),
-			Entry(nil, Test{
-				Name:        "breaks",
-				Suite:       "multi-app-install",
-				Namespace:   "multi-app-install",
-				UpstreamURI: "multi-app-install/automated",
-			}),
-			Entry(nil, Test{
-				Name:        "breaks",
-				Suite:       "breaks",
-				Namespace:   "breaks",
-				UpstreamURI: "breaks",
-			}),
+			// Entry(nil, MultiAppTest()),
+			// Entry(nil, Test{
+			// 	Name:        "breaks",
+			// 	Suite:       "multi-app-install",
+			// 	Namespace:   "multi-app-install",
+			// 	UpstreamURI: "multi-app-install/automated",
+			// }),
+			// Entry(nil, Test{
+			// 	Name:        "breaks",
+			// 	Suite:       "breaks",
+			// 	Namespace:   "breaks",
+			// 	UpstreamURI: "breaks",
+			// }),
 			Entry(nil, Test{
 				Name:        "Change License",
 				Suite:       "change-license",
