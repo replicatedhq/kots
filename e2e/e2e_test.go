@@ -127,9 +127,9 @@ var _ = Describe("E2E", func() {
 
 	BeforeEach(func() {
 		w = workspace.New()
-		// if !skipTeardown {
-		DeferCleanup(w.Teardown)
-		// }
+		if !skipTeardown {
+			DeferCleanup(w.Teardown)
+		}
 	})
 
 	Context("with an online cluster", func() {
@@ -225,6 +225,18 @@ var _ = Describe("E2E", func() {
 				return test.Name
 			},
 			Entry(nil, MultiAppTest()),
+			Entry(nil, Test{
+				Name:        "breaks",
+				Suite:       "multi-app-install",
+				Namespace:   "multi-app-install",
+				UpstreamURI: "multi-app-install/automated",
+			}),
+			Entry(nil, Test{
+				Name:        "breaks",
+				Suite:       "breaks",
+				Namespace:   "breaks",
+				UpstreamURI: "breaks",
+			}),
 		)
 
 	})
