@@ -885,7 +885,10 @@ class SnapshotStorageDestination extends Component<Props, State> {
     const selectedAzureCloudName = AZURE_CLOUD_NAMES.find((cn) => {
       return cn.value === this.state?.selectedAzureCloudName?.value;
     });
-    switch (selectedDestination?.value) {
+    switch (
+      //selectedDestination?.value
+      "azure"
+    ) {
       case "aws":
         return (
           <>
@@ -990,7 +993,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
       case "azure":
         return (
           <>
-            <div className="flex1 u-paddingRight--5">
+            <div className="flex1 u-paddingRight--5 u-marginBottom--15">
               <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Bucket
               </p>
@@ -1002,7 +1005,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 onChange={(e) => this.handleFormChange("azureBucket", e)}
               />
             </div>
-            <div className="flex u-marginBottom--30">
+            <div className="flex u-marginBottom--15">
               <div className="flex1 u-paddingRight--5">
                 <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Path
@@ -1016,7 +1019,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 />
               </div>
             </div>
-            <div className="flex u-marginBottom--30">
+            <div className="flex u-marginBottom--15">
               <div className="flex1 u-paddingRight--5">
                 <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Subscription ID
@@ -1044,7 +1047,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 />
               </div>
             </div>
-            <div className="flex u-marginBottom--30">
+            <div className="flex u-marginBottom--15">
               <div className="flex1 u-paddingRight--5">
                 <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Client ID
@@ -1073,7 +1076,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
               </div>
             </div>
 
-            <div className="flex-column u-marginBottom--30">
+            <div className="flex-column u-marginBottom--15">
               <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Cloud Name
               </p>
@@ -1097,7 +1100,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 />
               </div>
             </div>
-            <div className="flex u-marginBottom--30">
+            <div className="flex u-marginBottom--5">
               <div className="flex1 u-paddingRight--5">
                 <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Resource Group Name
@@ -1649,7 +1652,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                     {updateErrorMsg}
                   </div>
                 )}
-                <div className="flex flex-column u-marginBottom--20">
+                <div className="flex flex-column u-marginBottom--15">
                   {!snapshotSettings?.isVeleroRunning &&
                     !checkForVeleroAndRestic &&
                     isKurlEnabled && (
@@ -1702,7 +1705,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                     ) : null}
                   </div>
                 </div>
-                {!this.state.determiningDestination && (
+                {true && (
                   <>
                     {this.renderDestinationFields()}
                     {this.state.showCACertificateField && (
@@ -1711,7 +1714,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                         handleSetCACert={this.handleSetCACert}
                       />
                     )}
-                    {!this.state.showCACertificateField && (
+                    {true && (
                       <button
                         className="AddCAButton replicated-link u-fontSize--small"
                         onClick={this.handleCACertificateFieldClick}
