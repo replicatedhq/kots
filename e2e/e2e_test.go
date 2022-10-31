@@ -237,6 +237,12 @@ var _ = Describe("E2E", func() {
 				Namespace:   "breaks",
 				UpstreamURI: "breaks",
 			}),
+			Entry(nil, Test{
+				Name:        "Change License",
+				Suite:       "change-license",
+				Namespace:   "change-license",
+				UpstreamURI: "change-license/automated",
+			}),
 		)
 
 	})
