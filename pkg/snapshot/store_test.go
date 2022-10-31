@@ -31,12 +31,295 @@ func Test_updateExistingStore(t *testing.T) {
 	}
 
 	tests := []struct {
-		name        string
-		args        updateExistingStoreArgs
-		wantStore   *types.Store
-		wantRestart bool
-		wantErr     bool
+		name              string
+		args              updateExistingStoreArgs
+		wantStore         *types.Store
+		wantRestart       bool
+		wantErr           bool
+		wantValidationErr error
 	}{
+		{
+			name: "update existing store to aws -- should succeed",
+			args: updateExistingStoreArgs{
+				context:       context.TODO(),
+				clientset:     testclient.NewSimpleClientset(),
+				existingStore: &types.Store{},
+				options: ConfigureStoreOptions{
+					Provider: "aws",
+					Bucket:   "my-bucket",
+					Path:     "my-path",
+					AWS: &types.StoreAWS{
+						Region:          "us-east-1",
+						UseInstanceRole: false,
+						AccessKeyID:     "access-key",
+						SecretAccessKey: "secret-key",
+					},
+				},
+			},
+			wantStore: &types.Store{
+				Provider: "aws",
+				Bucket:   "my-bucket",
+				Path:     "my-path",
+				AWS: &types.StoreAWS{
+					Region:          "us-east-1",
+					UseInstanceRole: false,
+					AccessKeyID:     "access-key",
+					SecretAccessKey: "secret-key",
+				},
+			},
+			wantRestart: true,
+			wantErr:     false,
+		},
+		{
+			name: "update existing store to aws -- using instance role, so credentials are not required and will be set to empty strings",
+			args: updateExistingStoreArgs{
+				context:       context.TODO(),
+				clientset:     testclient.NewSimpleClientset(),
+				existingStore: &types.Store{},
+				options: ConfigureStoreOptions{
+					Provider: "aws",
+					Bucket:   "my-bucket",
+					Path:     "my-path",
+					AWS: &types.StoreAWS{
+						Region:          "us-east-1",
+						UseInstanceRole: true,
+					},
+				},
+			},
+			wantStore: &types.Store{
+				Provider: "aws",
+				Bucket:   "my-bucket",
+				Path:     "my-path",
+				AWS: &types.StoreAWS{
+					Region:          "us-east-1",
+					UseInstanceRole: true,
+					AccessKeyID:     "",
+					SecretAccessKey: "",
+				},
+			},
+			wantRestart: true,
+			wantErr:     false,
+		},
+		{
+			name: "update existing store to aws -- no credentials and not using instance role, should fail with validation error",
+			args: updateExistingStoreArgs{
+				context:       context.TODO(),
+				clientset:     testclient.NewSimpleClientset(),
+				existingStore: &types.Store{},
+				options: ConfigureStoreOptions{
+					Provider: "aws",
+					Bucket:   "my-bucket",
+					Path:     "my-path",
+					AWS: &types.StoreAWS{
+						Region:          "us-east-1",
+						UseInstanceRole: false,
+					},
+				},
+			},
+			wantStore:         nil,
+			wantRestart:       false,
+			wantErr:           true,
+			wantValidationErr: &InvalidStoreDataError{Message: "missing access key id and/or secret access key and/or region"},
+		},
+		{
+			name: "update existing store to aws -- redacted secret key, should fail with validation error",
+			args: updateExistingStoreArgs{
+				context:       context.TODO(),
+				clientset:     testclient.NewSimpleClientset(),
+				existingStore: &types.Store{},
+				options: ConfigureStoreOptions{
+					Provider: "aws",
+					Bucket:   "my-bucket",
+					Path:     "my-path",
+					AWS: &types.StoreAWS{
+						Region:          "us-east-1",
+						UseInstanceRole: false,
+						AccessKeyID:     "access-key",
+						SecretAccessKey: "****REDACTED****",
+					},
+				},
+			},
+			wantStore:         nil,
+			wantRestart:       false,
+			wantErr:           true,
+			wantValidationErr: &InvalidStoreDataError{Message: "invalid aws secret access key"},
+		},
+		{
+			name: "update existing store to google -- use json file, should succeed",
+			args: updateExistingStoreArgs{
+				context:       context.TODO(),
+				clientset:     testclient.NewSimpleClientset(),
+				existingStore: &types.Store{},
+				options: ConfigureStoreOptions{
+					Provider: "gcp",
+					Bucket:   "my-bucket",
+					Path:     "my-path",
+					Google: &types.StoreGoogle{
+						JSONFile: "my-json-file",
+					},
+				},
+			},
+			wantStore: &types.Store{
+				Provider: "gcp",
+				Bucket:   "my-bucket",
+				Path:     "my-path",
+				Google: &types.StoreGoogle{
+					JSONFile: "my-json-file",
+				},
+			},
+			wantRestart: true,
+			wantErr:     false,
+		},
+		{
+			name: "update existing store to google -- use instance role and service account, should succeed",
+			args: updateExistingStoreArgs{
+				context:       context.TODO(),
+				clientset:     testclient.NewSimpleClientset(),
+				existingStore: &types.Store{},
+				options: ConfigureStoreOptions{
+					Provider: "gcp",
+					Bucket:   "my-bucket",
+					Path:     "my-path",
+					Google: &types.StoreGoogle{
+						UseInstanceRole: true,
+						ServiceAccount:  "my-service-account",
+					},
+				},
+			},
+			wantStore: &types.Store{
+				Provider: "gcp",
+				Bucket:   "my-bucket",
+				Path:     "my-path",
+				Google: &types.StoreGoogle{
+					UseInstanceRole: true,
+					ServiceAccount:  "my-service-account",
+				},
+			},
+			wantRestart: true,
+			wantErr:     false,
+		},
+		{
+			name: "update existing store to google -- no json file, should fail with validation error",
+			args: updateExistingStoreArgs{
+				context:       context.TODO(),
+				clientset:     testclient.NewSimpleClientset(),
+				existingStore: &types.Store{},
+				options: ConfigureStoreOptions{
+					Provider: "gcp",
+					Bucket:   "my-bucket",
+					Path:     "my-path",
+					Google:   &types.StoreGoogle{},
+				},
+			},
+			wantStore:         nil,
+			wantRestart:       false,
+			wantErr:           true,
+			wantValidationErr: &InvalidStoreDataError{Message: "missing JSON file"},
+		},
+		{
+			name: "update existing store to google -- instance role without service account, should fail with validation error",
+			args: updateExistingStoreArgs{
+				context:       context.TODO(),
+				clientset:     testclient.NewSimpleClientset(),
+				existingStore: &types.Store{},
+				options: ConfigureStoreOptions{
+					Provider: "gcp",
+					Bucket:   "my-bucket",
+					Path:     "my-path",
+					Google: &types.StoreGoogle{
+						UseInstanceRole: true,
+					},
+				},
+			},
+			wantStore:         nil,
+			wantRestart:       false,
+			wantErr:           true,
+			wantValidationErr: &InvalidStoreDataError{Message: "missing service account"},
+		},
+		{
+			name: "update existing store to google -- redacted json file, should fail with validation error",
+			args: updateExistingStoreArgs{
+				context:       context.TODO(),
+				clientset:     testclient.NewSimpleClientset(),
+				existingStore: &types.Store{},
+				options: ConfigureStoreOptions{
+					Provider: "gcp",
+					Bucket:   "my-bucket",
+					Path:     "my-path",
+					Google: &types.StoreGoogle{
+						JSONFile: "****REDACTED****",
+					},
+				},
+			},
+			wantStore:         nil,
+			wantRestart:       false,
+			wantErr:           true,
+			wantValidationErr: &InvalidStoreDataError{Message: "invalid JSON file"},
+		},
+		{
+			name: "update existing store to azure -- should succeed",
+			args: updateExistingStoreArgs{
+				context:       context.TODO(),
+				clientset:     testclient.NewSimpleClientset(),
+				existingStore: &types.Store{},
+				options: ConfigureStoreOptions{
+					Provider: "azure",
+					Bucket:   "my-bucket",
+					Path:     "my-path",
+					Azure: &types.StoreAzure{
+						ResourceGroup:  "my-resource-group",
+						StorageAccount: "my-storage-account",
+						SubscriptionID: "my-subscription-id",
+						TenantID:       "my-tenant-id",
+						ClientID:       "my-client-id",
+						ClientSecret:   "my-client-secret",
+						CloudName:      "my-cloud-name",
+					},
+				},
+			},
+			wantStore: &types.Store{
+				Provider: "azure",
+				Bucket:   "my-bucket",
+				Path:     "my-path",
+				Azure: &types.StoreAzure{
+					ResourceGroup:  "my-resource-group",
+					StorageAccount: "my-storage-account",
+					SubscriptionID: "my-subscription-id",
+					TenantID:       "my-tenant-id",
+					ClientID:       "my-client-id",
+					ClientSecret:   "my-client-secret",
+					CloudName:      "my-cloud-name",
+				},
+			},
+			wantRestart: true,
+			wantErr:     false,
+		},
+		{
+			name: "update existing store to azure -- client secret redacted, should fail with validation error",
+			args: updateExistingStoreArgs{
+				context:       context.TODO(),
+				clientset:     testclient.NewSimpleClientset(),
+				existingStore: &types.Store{},
+				options: ConfigureStoreOptions{
+					Provider: "azure",
+					Bucket:   "my-bucket",
+					Path:     "my-path",
+					Azure: &types.StoreAzure{
+						ResourceGroup:  "my-resource-group",
+						StorageAccount: "my-storage-account",
+						SubscriptionID: "my-subscription-id",
+						TenantID:       "my-tenant-id",
+						ClientID:       "my-client-id",
+						ClientSecret:   "****REDACTED****",
+						CloudName:      "my-cloud-name",
+					},
+				},
+			},
+			wantStore:         nil,
+			wantRestart:       false,
+			wantErr:           true,
+			wantValidationErr: &InvalidStoreDataError{Message: "invalid client secret"},
+		},
 		{
 			name: "update existing filesystem store with lvp -- the bucket changes, so we should not restart velero since the plugin will handle it",
 			args: updateExistingStoreArgs{
@@ -122,6 +405,9 @@ func Test_updateExistingStore(t *testing.T) {
 			newStore, needsVeleroRestart, err := updateExistingStore(test.args.context, test.args.clientset, test.args.existingStore, test.args.options)
 			if test.wantErr {
 				req.Error(err)
+				if test.wantValidationErr != nil {
+					req.Equal(test.wantValidationErr, err)
+				}
 			} else {
 				req.NoError(err)
 			}
