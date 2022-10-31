@@ -101,12 +101,13 @@ export type GitOps = {
 };
 
 export type KotsParams = {
+  firstSequence: string | undefined;
   owner: string;
+  redactorSlug: string;
+  secondSequence: string | undefined;
   sequence: string;
   slug: string;
   tab: string;
-  firstSequence: string | undefined;
-  secondSequence: string | undefined;
 };
 
 export type DashboardActionLink = {

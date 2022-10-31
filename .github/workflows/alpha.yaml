@@ -203,21 +203,6 @@ jobs:
         export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C kurl_proxy build-alpha
 
 
-  build_kurl_addon_alpha:
-    runs-on: ubuntu-20.04
-    needs: [release_go_api_alpha, build_kurl_proxy_alpha]
-    steps:
-      - name: Build kURL addon alpha package
-        env:
-          GH_PAT: ${{ secrets.GH_PAT }}
-        run: |
-          package=kotsadm-alpha.tar.gz
-          curl -H "Authorization: token $GH_PAT" \
-            -H 'Accept: application/json' \
-            -d "{\"event_type\": \"build-package-staging\", \"client_payload\": {\"package\": \"${package}\"}}" \
-            "https://api.github.com/repos/replicatedhq/kurl/dispatches"
-
-
   scan_rqlite:
     runs-on: ubuntu-20.04
     steps:
