@@ -56,11 +56,11 @@ var (
 			Title: "Disk Usage",
 			Queries: []kotsv1beta1.MetricQuery{
 				{
-					Query:  `node_filesystem_size_bytes{fstype=~"ext4|xfs",instance!="",job=~"node-exporter|kubernetes-service-endpoints"} - node_filesystem_avail_bytes{fstype=~"ext4|xfs",instance!="",job=~"node-exporter|kubernetes-service-endpoints"}`,
+					Query:  `node_filesystem_size_bytes{fstype=~"ext4|xfs|btrfs|zfs",instance!="",job=~"node-exporter|kubernetes-service-endpoints"} - node_filesystem_avail_bytes{fstype=~"ext4|xfs|btrfs|zfs",instance!="",job=~"node-exporter|kubernetes-service-endpoints"}`,
 					Legend: "Used: {{ instance }}-{{ device }}",
 				},
 				{
-					Query:  `node_filesystem_avail_bytes{fstype=~"ext4|xfs",instance!="",job=~"node-exporter|kubernetes-service-endpoints"}`,
+					Query:  `node_filesystem_avail_bytes{fstype=~"ext4|xfs|btrfs|zfs",instance!="",job=~"node-exporter|kubernetes-service-endpoints"}`,
 					Legend: "Available: {{ instance }}-{{ device }}",
 				},
 			},
