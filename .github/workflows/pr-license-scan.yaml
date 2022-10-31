@@ -11,9 +11,9 @@ jobs:
       - name: "Run FOSSA Analyze" 
         uses: fossas/fossa-action@main
         with:
-          api-key: 1d5511d63d5a4ccda6d3cef2a7ef08c1 # push-only token, safe to expose
+          api-key: 1d5511d63d5a4ccda6d3cef2a7ef08c1 # push-only token, safe to expose. See: https://docs.fossa.com/docs/api-reference#push-only-api-token
       - name: "Run FOSSA Test"
         uses: fossas/fossa-action@main
         with:
-          api-key: 1d5511d63d5a4ccda6d3cef2a7ef08c1 # push-only token, safe to expose
+          api-key: 1d5511d63d5a4ccda6d3cef2a7ef08c1 # push-only token, safe to expose. See: https://docs.fossa.com/docs/api-reference#push-only-api-token
           run-tests: true
