@@ -1702,7 +1702,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                     ) : null}
                   </div>
                 </div>
-                {true && (
+                {!this.state.determiningDestination && (
                   <>
                     {this.renderDestinationFields()}
                     {this.state.showCACertificateField && (
@@ -1711,7 +1711,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                         handleSetCACert={this.handleSetCACert}
                       />
                     )}
-                    {true && (
+                    {!this.state.showCACertificateField && (
                       <button
                         className="AddCAButton replicated-link u-fontSize--small"
                         onClick={this.handleCACertificateFieldClick}
