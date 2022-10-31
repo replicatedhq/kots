@@ -224,7 +224,7 @@ var _ = Describe("E2E", func() {
 			func(test inventory.Test) string {
 				return test.Name
 			},
-			// Entry(nil, MultiAppTest()),
+			Entry(nil, inventory.MultiAppTest()),
 			// Entry(nil, Test{
 			// 	Name:        "breaks",
 			// 	Suite:       "multi-app-install",
