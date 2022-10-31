@@ -1,4 +1,4 @@
-@import '../variables.scss';
+@import "../variables.scss";
 
 body,
 html {
@@ -9,7 +9,7 @@ html {
 }
 
 body {
-  font-family: 'Helvetica Neue', 'Helvetica', sans-serif;
+  font-family: "Helvetica Neue", "Helvetica", sans-serif;
   font-weight: 400;
   color: $text-color-body-copy;
   display: flex;
@@ -25,7 +25,7 @@ body a {
 }
 
 :target:before {
-  content: '';
+  content: "";
   display: block;
   height: 100px;
   margin: -100px 0 0;
@@ -48,7 +48,7 @@ body a {
     position: relative;
 
     &::after {
-      content: '';
+      content: "";
       display: inline-block;
       position: absolute;
       // width: 12px;
@@ -75,7 +75,7 @@ body a {
 .replicated-link > .has-arrow {
   position: relative;
   &::after {
-    content: '';
+    content: "";
     display: inline-block;
     position: absolute;
     // width: 12px;
@@ -195,7 +195,7 @@ body a {
 
   &::before {
     position: absolute;
-    content: '';
+    content: "";
     display: block;
     width: 7px;
     height: 7px;
@@ -235,14 +235,14 @@ code {
   padding: 2px 4px;
   font-size: 90%;
   color: #326de6;
-  font-family: 'Monaco', 'Helvetica Neue', 'Helvetica', sans-serif;
+  font-family: "Monaco", "Helvetica Neue", "Helvetica", sans-serif;
   background-color: #e3f5e8;
   border-radius: 4px;
 }
 
 .inline-code {
   font-size: 10px;
-  font-family: 'Monaco', 'Helvetica Neue', 'Helvetica', sans-serif;
+  font-family: "Monaco", "Helvetica Neue", "Helvetica", sans-serif;
   border-radius: 2px;
   background-color: #e5eaec;
   color: #073551;
@@ -397,7 +397,7 @@ all you need to do is supply a `width: [value]` `height: [value]`
 and `background-position: [value]`
 */
 .icon {
-  background-image: url('@src/images/main_spritesheet.svg');
+  background-image: url("@src/images/main_spritesheet.svg");
   background-repeat: no-repeat;
   background-size: initial;
   display: inline-block;

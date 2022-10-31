@@ -1633,7 +1633,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
             </div>
             <div className="flex flex-auto u-marginBottom--15">
               <div className="flex flex-column">
-                <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy">
+                <span className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy">
                   Full (Instance) and Partial (Application) snapshots share
                   share the same Velero configuration and storage destination.
                 </span>
