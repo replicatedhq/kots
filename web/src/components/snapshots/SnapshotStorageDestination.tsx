@@ -887,7 +887,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
     });
     switch (
       //selectedDestination?.value
-      "azure"
+      "gcp"
     ) {
       case "aws":
         return (
@@ -1136,7 +1136,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
       case "gcp":
         return (
           <div>
-            <div className="flex1 u-paddingRight--5">
+            <div className="flex1 u-paddingRight--5 u-marginBottom--15">
               <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Bucket
               </p>
@@ -1148,7 +1148,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 onChange={(e) => this.handleFormChange("gcsBucket", e)}
               />
             </div>
-            <div className="flex u-marginBottom--30">
+            <div className="flex u-marginBottom--5">
               <div className="flex1 u-paddingRight--5">
                 <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Path
@@ -1162,15 +1162,15 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 />
               </div>
             </div>
-            <div className="BoxedCheckbox-wrapper u-textAlign--left u-marginBottom--20">
+            <div className="BoxedCheckbox-wrapper u-textAlign--left u-marginBottom--15">
               <div
-                className={`BoxedCheckbox flex-auto flex alignItems--center u-width--half ${
+                className={`flex-auto flex alignItems--center u-width--half ${
                   this.state.gcsUseIam ? "is-active" : ""
                 }`}
               >
                 <input
                   type="checkbox"
-                  className="u-cursor--pointer u-marginLeft--10"
+                  className="u-cursor--pointer"
                   id="gcsUseIam"
                   checked={this.state.gcsUseIam}
                   onChange={(e) => this.handleFormChange("gcsUseIam", e)}
@@ -1189,7 +1189,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
             </div>
 
             {gcsUseIam && (
-              <div className="flex u-marginBottom--30">
+              <div className="flex u-marginBottom--5">
                 <div className="flex1 u-paddingRight--5">
                   <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                     Service Account
@@ -1208,7 +1208,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
             )}
 
             {!gcsUseIam && (
-              <div className="flex u-marginBottom--30">
+              <div className="flex u-marginBottom--5">
                 <div className="flex1">
                   <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                     JSON File
