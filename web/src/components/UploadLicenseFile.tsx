@@ -52,6 +52,8 @@ type State = {
   licenseFileContent: {
     [key: string]: string } | null;
   selectedAppToInstall: SelectedAppToInstall | null;
+  startingRestore?: boolean;
+  startingRestoreMsg?: string;
   viewErrorMessage: boolean;
 };
 
