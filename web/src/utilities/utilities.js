@@ -796,13 +796,10 @@ export const Utilities = {
   },
 
   checkIsDateExpired(date) {
-    const currentDate = dayjs();
-    const diff = currentDate.diff(dayjs(date), "days");
+    const currentDate = dayjs.utc();
+    const expirationDate = dayjs.utc(date);
 
-    if (diff > 0) {
-      return true;
-    }
-    return false;
+    return currentDate.isAfter(expirationDate);
   },
 
   checkIsDeployedConfigLatest(app) {
