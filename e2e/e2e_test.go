@@ -46,32 +46,6 @@ var (
 	kotsHelmChartVersion  string
 )
 
-type TestimParams map[string]interface{}
-
-type Test struct {
-	Name                   string
-	Suite                  string
-	Label                  string
-	Namespace              string
-	UpstreamURI            string
-	UseMinimalRBAC         bool
-	SkipCompatibilityCheck bool
-	NeedsSnapshots         bool
-	NeedsMonitoring        bool
-	NeedsRegistry          bool
-	IsHelmManaged          bool
-	Setup                  func(kubectlCLI *kubectl.CLI) TestimParams
-}
-
-func MultiAppTest() Test {
-	return Test{
-		Name:        "multi-app-install",
-		Suite:       "multi-app-install",
-		Namespace:   "multi-app-install",
-		UpstreamURI: "multi-app-install/automated",
-	}
-}
-
 func init() {
 	flag.StringVar(&testimBranch, "testim-branch", "master", "testim branch to use")
 	flag.StringVar(&testimBaseUrl, "testim-base-url", "", "override the base url that testim will use")
@@ -225,41 +199,7 @@ var _ = Describe("E2E", func() {
 				return test.Name
 			},
 			Entry(nil, inventory.MultiAppTest()),
-			// Entry(nil, Test{
-			// 	Name:        "breaks",
-			// 	Suite:       "multi-app-install",
-			// 	Namespace:   "multi-app-install",
-			// 	UpstreamURI: "multi-app-install/automated",
-			// }),
-			// Entry(nil, Test{
-			// 	Name:        "breaks",
-			// 	Suite:       "breaks",
-			// 	Namespace:   "breaks",
-			// 	UpstreamURI: "breaks",
-			// }),
-			Entry(nil, Test{
-				Name:        "Change License",
-				Suite:       "change-license",
-				Namespace:   "change-license",
-				UpstreamURI: "change-license/automated",
-			}),
 		)
-
-		Describe("my test", func() {
-			It("should run", func() {
-
-				var test = inventory.MultiAppTest()
-				GinkgoWriter.Println("Installing KOTS for my test")
-				var adminConsolePort = kotsInstaller.Install(c.GetKubeconfig(), test, kotsadmForwardPort)
-
-				GinkgoWriter.Println("Running E2E tests for my test")
-				testimRun = testimClient.NewRun(c.GetKubeconfig(), test, testim.RunOptions{
-					TunnelPort: adminConsolePort,
-					BaseUrl:    testimBaseUrl,
-				})
-				testimRun.ShouldSucceed()
-			})
-		})
 
 	})
 
