@@ -579,17 +579,17 @@ class AppConfig extends Component<Props, State> {
     }
 
     return (
-      <Flex flex="1" direction="column" p="20" align="center">
+      <div className="flex flex-column u-padding--20 alignItems--center">
         <KotsPageTitle pageName="Config" showAppSlug />
         {fromLicenseFlow && app && (
           <Span size="18" weight="bold" mt="30" ml="38">
             Configure {app.name}
           </Span>
         )}
-        <Flex gap="20px">
+        <div className="flex" style={{ gap: "20px" }}>
           <div
             id="configSidebarWrapper"
-            className="config-sidebar-wrapper clickable"
+            className="config-sidebar-wrapper card-bg clickable"
           >
             {configGroups?.map((group, i) => {
               if (
@@ -609,16 +609,13 @@ class AppConfig extends Component<Props, State> {
                       : ""
                   }`}
                 >
-                  <Flex
-                    align="center"
+                  <div
+                    className="flex alignItems--center"
                     onClick={() => this.toggleActiveGroups(group.name)}
                   >
-                    <GroupTitle
-                      fontSize="16"
-                      className="u-lineHeight--normal group-title"
-                    >
+                    <div className="u-lineHeight--normal group-title u-fontSize--normal">
                       {group.title}
-                    </GroupTitle>
+                    </div>
                     {/* adding the arrow-down classes, will rotate the icon when clicked */}
                     <Icon
                       icon="down-arrow"
@@ -629,9 +626,9 @@ class AppConfig extends Component<Props, State> {
                       disableFill={false}
                       removeInlineStyle={false}
                     />
-                  </Flex>
+                  </div>
                   {group.items ? (
-                    <SideNavItems className="side-nav-items">
+                    <div className="side-nav-items">
                       {group.items?.map((item, j) => {
                         const hash = this.props.location.hash.slice(1);
                         if (item.hidden || item.when === "false") {
@@ -649,7 +646,7 @@ class AppConfig extends Component<Props, State> {
                           </a>
                         );
                       })}
-                    </SideNavItems>
+                    </div>
                   ) : null}
                 </div>
               );
@@ -684,10 +681,9 @@ class AppConfig extends Component<Props, State> {
                     )}
                     <div
                       className={classNames(
-                        "ConfigOuterWrapper u-paddingTop--30",
+                        "ConfigOuterWrapper card-bg u-padding--15 u-marginTop--15",
                         { "u-marginTop--20": fromLicenseFlow }
                       )}
-                      style={{ width: "100%" }}
                     >
                       <div className="ConfigInnerWrapper">
                         <AppConfigRenderer
@@ -698,32 +694,32 @@ class AppConfig extends Component<Props, State> {
                           appSlug={app.slug}
                         />
                       </div>
-                    </div>
-                    <div className="flex alignItems--flexStart">
-                      {savingConfig && (
-                        <div className="u-paddingBottom--30">
-                          <Loader size="30" />
-                        </div>
-                      )}
-                      {!savingConfig && (
-                        <div className="ConfigError--wrapper flex-column u-paddingBottom--30 alignItems--flexStart">
-                          {configError && (
-                            <span className="u-textColor--error u-marginBottom--20 u-fontWeight--bold">
-                              {configError}
-                            </span>
-                          )}
-                          <button
-                            className="btn primary blue"
-                            disabled={
-                              (!changed && !fromLicenseFlow) ||
-                              this.isConfigReadOnly(app)
-                            }
-                            onClick={this.handleSave}
-                          >
-                            {saveButtonText}
-                          </button>
-                        </div>
-                      )}
+                      <div className="flex alignItems--flexStart">
+                        {savingConfig && (
+                          <div className="u-paddingBottom--30">
+                            <Loader size="30" />
+                          </div>
+                        )}
+                        {!savingConfig && (
+                          <div className="ConfigError--wrapper flex-column alignItems--flexStart">
+                            {configError && (
+                              <span className="u-textColor--error u-marginBottom--20 u-fontWeight--bold">
+                                {configError}
+                              </span>
+                            )}
+                            <button
+                              className="btn primary blue"
+                              disabled={
+                                (!changed && !fromLicenseFlow) ||
+                                this.isConfigReadOnly(app)
+                              }
+                              onClick={this.handleSave}
+                            >
+                              {saveButtonText}
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     {this.state.showHelmDeployModal && (
                       <>
@@ -759,7 +755,7 @@ class AppConfig extends Component<Props, State> {
               }}
             </UseIsHelmManaged>
           </div>
-        </Flex>
+        </div>
 
         <Modal
           isOpen={showNextStepModal}
@@ -837,7 +833,7 @@ class AppConfig extends Component<Props, State> {
             tryAgain={this.getConfig}
           />
         )}
-      </Flex>
+      </div>
     );
   }
 }
