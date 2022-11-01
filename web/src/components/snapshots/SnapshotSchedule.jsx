@@ -238,7 +238,7 @@ class SnapshotSchedule extends Component {
     if (this.state.activeTab !== lastState.activeTab && this.state.activeTab) {
       if (this.state.activeTab === "full") {
         this.settingSnapshotConfig();
-        this.props.history.replace("/snapshots/settings");
+        // this.props.history.replace("/snapshots/settings");
       } else {
         if (!isEmpty(this.props.apps) && this.props.location.search) {
           const currentApp = this.props.apps.find(
@@ -247,14 +247,14 @@ class SnapshotSchedule extends Component {
           this.setState({ selectedApp: currentApp }, () => {
             this.settingSnapshotConfig(currentApp);
           });
-          this.props.history.replace(`/snapshots/settings?${currentApp.slug}`);
+          // this.props.history.replace(`/snapshots/settings?${currentApp.slug}`);
         } else if (!isEmpty(this.props.apps)) {
           this.setState({ selectedApp: this.props.apps[0] }, () => {
             this.settingSnapshotConfig(this.props.apps[0]);
           });
-          this.props.history.replace(
-            `/snapshots/settings?${this.props.apps[0].slug}`
-          );
+          // this.props.history.replace(
+          //   `/snapshots/settings?${this.props.apps[0].slug}`
+          // );
         }
       }
     }
@@ -264,9 +264,9 @@ class SnapshotSchedule extends Component {
       this.state.selectedApp
     ) {
       this.settingSnapshotConfig(this.state.selectedApp);
-      this.props.history.replace(
-        `/snapshots/settings?${this.state.selectedApp.slug}`
-      );
+      // this.props.history.replace(
+      //   `/snapshots/settings?${this.state.selectedApp.slug}`
+      // );
     }
   };
 
@@ -294,16 +294,18 @@ class SnapshotSchedule extends Component {
       };
       url = `${process.env.API_ENDPOINT}/snapshot/config`;
     }
+    console.log("url:", url);
     fetch(url, {
       headers: {
         Authorization: Utilities.getToken(),
         "Content-Type": "application/json",
-        Accept: "application/json",
+        // Accept: "application/json",
       },
       method: "PUT",
       body: JSON.stringify(body),
     })
       .then(async (res) => {
+        console.log("hello world");
         if (!res.ok && res.status === 409) {
           const result = await res.json();
           if (result.kotsadmRequiresVeleroAccess) {
@@ -317,6 +319,7 @@ class SnapshotSchedule extends Component {
             return;
           }
         }
+        console.log("hello world 2");
 
         const data = await res.json();
         if (!res.ok || !data.success) {
@@ -332,15 +335,20 @@ class SnapshotSchedule extends Component {
           });
           return;
         }
+        console.log("hello world 3");
+
         this.setState({
           updatingSchedule: false,
           updateConfirm: true,
           updateScheduleErrMsg: " ",
         });
 
+        console.log("hello world 4");
         if (this.confirmTimeout) {
           clearTimeout(this.confirmTimeout);
         }
+        console.log("hello world 5");
+
         this.confirmTimeout = setTimeout(() => {
           this.setState({ updateConfirm: false });
         }, 5000);

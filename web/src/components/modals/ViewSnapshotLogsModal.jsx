@@ -1,6 +1,6 @@
 import React from "react";
 import Modal from "react-modal";
-import AceEditor from "react-ace";
+import MonacoEditor from "@monaco-editor/react";
 
 import Loader from "../shared/Loader";
 
@@ -15,6 +15,7 @@ export default function ViewSnapshotLogsModal(props) {
     snapshotLogsErrMsg,
   } = props;
 
+  console.log("hello world");
   return (
     <Modal
       isOpen={displayShowSnapshotLogsModal}
@@ -41,17 +42,21 @@ export default function ViewSnapshotLogsModal(props) {
               </p>
             </div>
           ) : (
-            <AceEditor
+            <MonacoEditor
+              // mode="yaml"
               value={logs}
-              theme="chrome"
-              className="flex1 flex"
+              // theme="chrome"
+              // className="flex1 flex"
               height="100%"
               width="100%"
-              readOnly={true}
-              editorProps={{
-                $blockScrolling: true,
-                useSoftTabs: true,
-                tabSize: 2,
+              language="bash"
+              options={{
+                readOnly: true,
+                contextmenu: false,
+                minimap: {
+                  enabled: false,
+                },
+                scrollBeyondLastLine: false,
               }}
             />
           )}

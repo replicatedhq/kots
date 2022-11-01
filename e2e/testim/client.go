@@ -66,6 +66,16 @@ func (t *Client) NewRun(kubeconfig string, test inventory.Test, runOptions RunOp
 			fmt.Sprintf("--label=%s", test.Label),
 		)
 	}
+	// if test.Browser != "" {
+	// 	args = append(
+	// 		args,
+	// 		[]string{
+	// 			fmt.Sprintf("--browser=%s", test.Browser),
+	// 			fmt.Sprintf("--test-config=%s", test.Browser),
+	// 		}...,
+	// 	)
+	// }
+	args = append(args, "--mode=selenium")
 	if runOptions.BaseUrl != "" {
 		args = append(
 			args,

@@ -10,6 +10,7 @@ type Test struct {
 	Label                  string
 	Namespace              string
 	UpstreamURI            string
+	Browser                string
 	UseMinimalRBAC         bool
 	SkipCompatibilityCheck bool
 	NeedsSnapshots         bool
