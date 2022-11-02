@@ -41,6 +41,12 @@ func initMonitor(clientset kubernetes.Interface, targetNamespace string) {
 	go runAppStateMonitor(nsMon)
 }
 
+func getMonitor(namespace string) *appstate.Monitor {
+	monitorMux.Lock()
+	defer monitorMux.Unlock()
+	return monitorMap[namespace]
+}
+
 func resumeHelmStatusInformers(appName string) {
 	helmApp := GetHelmApp(appName)
 	app := &apptypes.App{
@@ -119,7 +125,6 @@ func applyStatusInformers(a *apptypes.App, sequence int64, kotsKinds *kotsutil.K
 		}
 		release.Status = appStatus
 		release.Status.State = appstatetypes.GetState(defaultReadyState)
-		AddHelmApp(release.Release.Name, release)
 	}
 
 	return nil
@@ -138,7 +143,7 @@ func applyAppInformers(appID string, sequence int64, informerStrings []appstatet
 		informers = append(informers, informer)
 	}
 	if len(informers) > 0 {
-		if mon, ok := monitorMap[namespace]; ok {
+		if mon := getMonitor(namespace); mon != nil {
 			mon.Apply(appID, sequence, informers)
 		}
 	}
@@ -169,8 +174,6 @@ func runAppStateMonitor(monitor *appstate.Monitor) error {
 			app := GetHelmApp(appStatus.AppID)
 			app.Status = appStatus
 			app.Status.State = appstatetypes.GetState(appStatus.ResourceStates)
-			AddHelmApp(app.Release.Name, app)
-
 		})
 	}
 
