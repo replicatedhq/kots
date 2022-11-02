@@ -310,7 +310,7 @@ class SupportBundleRow extends React.Component {
                   )}
                 </div>
               </div>
-              <div className="SupportBundleRow-Progress flex flex-auto alignItems--center justifyContent--flexEnd">
+              <div className="SupportBundleRow--Progress flex flex-auto alignItems--center justifyContent--flexEnd">
                 {this.state.sendingBundleErrMsg && (
                   <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginRight--10">
                     {this.state.sendingBundleErrMsg}

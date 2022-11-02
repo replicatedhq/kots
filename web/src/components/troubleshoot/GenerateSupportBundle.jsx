@@ -48,7 +48,7 @@ class GenerateSupportBundle extends React.Component {
   }
 
   componentDidUpdate(lastProps, lastState) {
-    const { watch, history } = this.props;
+    const { watch, history, bundle } = this.props;
     const { totalBundles, loadingSupportBundles, supportBundles, networkErr } =
       this.state;
 
@@ -88,6 +88,17 @@ class GenerateSupportBundle extends React.Component {
       } else {
         this.state.listSupportBundlesJob.start(this.listSupportBundles, 2000);
         return;
+      }
+    }
+
+    // once bundle is ready we stop polling for progressbar
+    if (
+      bundle?.status !== "running" &&
+      bundle?.status !== lastProps.bundle.status
+    ) {
+      this.state.pollForBundleAnalysisProgress.stop();
+      if (bundle.status === "failed") {
+        this.props.history.push(`/app/${this.props.watch.slug}/troubleshoot`);
       }
     }
   }
@@ -142,7 +153,7 @@ class GenerateSupportBundle extends React.Component {
           });
 
           this.state.pollForBundleAnalysisProgress.start(
-            this.pollForBundleAnalysisProgress,
+            this.props.pollForBundleAnalysisProgress,
             1000
           );
         } else {
@@ -267,58 +278,6 @@ class GenerateSupportBundle extends React.Component {
     );
   };
 
-  pollForBundleAnalysisProgress = async () => {
-    const { newBundleSlug } = this.state;
-    if (!newBundleSlug) {
-      // component may start polling before bundle slug is set
-      // this is to prevent an api call if the slug is not set
-      return;
-    }
-    fetch(
-      `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/${newBundleSlug}`,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: Utilities.getToken(),
-        },
-        method: "GET",
-      }
-    )
-      .then(async (res) => {
-        if (!res.ok) {
-          this.setState({
-            loading: false,
-            getSupportBundleErrMsg: `Unexpected status code: ${res.status}`,
-            displayErrorModal: true,
-          });
-          return;
-        }
-        const bundle = await res.json();
-        this.setState({ bundleAnalysisProgress: bundle.progress });
-        if (bundle.status !== "running") {
-          this.state.pollForBundleAnalysisProgress.stop();
-          if (bundle.status === "failed") {
-            this.props.history.push(
-              `/app/${this.props.watch.slug}/troubleshoot`
-            );
-          } else {
-            this.props.history.push(
-              `/app/${this.props.watch.slug}/troubleshoot/analyze/${bundle.slug}`
-            );
-          }
-        }
-      })
-      .catch((err) => {
-        this.setState({
-          loading: false,
-          getSupportBundleErrMsg: err
-            ? err.message
-            : "Something went wrong, please try again.",
-          displayErrorModal: true,
-        });
-      });
-  };
-
   collectBundle = (clusterId) => {
     const { watch } = this.props;
 
@@ -350,8 +309,10 @@ class GenerateSupportBundle extends React.Component {
           this.pollForBundleAnalysisProgress,
           1000
         );
-        this.props.history.push(`/app/${this.props.watch.slug}/troubleshoot`);
 
+        this.props.history.push(
+          `/app/${watch.slug}/troubleshoot/analyze/${response.slug}`
+        );
         this.setState({
           isGeneratingBundle: true,
           generateBundleErrMsg: "",
@@ -500,66 +461,48 @@ class GenerateSupportBundle extends React.Component {
                 )}
               </div>
               <div className="flex1 flex-column u-margin--auto">
-                <div>
-                  {generateBundleErrMsg && (
-                    <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10">
-                      {generateBundleErrMsg}
-                    </p>
-                  )}
-                  {isGeneratingBundle && (
-                    <div className="u-marginTop--20 flex-column justifyContent--center alignItems--center flex1 u-minWidth--full">
-                      <SupportBundleCollectProgress
-                        appTitle={appTitle}
-                        progressData={this.state.bundleAnalysisProgress}
-                        analysisResultCheckCount={
-                          this.state.analysisResultCheckCount
+                {showRunCommand ? (
+                  <div>
+                    <div className="u-marginTop--15">
+                      <h2 className="u-fontSize--larger u-fontWeight--bold u-textColor--primary">
+                        Run this command in your cluster
+                      </h2>
+                      <CodeSnippet
+                        language="bash"
+                        canCopy={true}
+                        onCopyText={
+                          <span className="u-textColor--success">
+                            Command has been copied to your clipboard
+                          </span>
                         }
-                      />
-                    </div>
-                  )}
-                  {showRunCommand ? (
-                    <div>
-                      <div className="u-marginTop--15">
-                        <h2 className="u-fontSize--larger u-fontWeight--bold u-textColor--primary">
-                          Run this command in your cluster
-                        </h2>
-                        <CodeSnippet
-                          language="bash"
-                          canCopy={true}
-                          onCopyText={
-                            <span className="u-textColor--success">
-                              Command has been copied to your clipboard
-                            </span>
-                          }
-                        >
-                          {this.state.bundleCommand}
-                        </CodeSnippet>
-                      </div>
-                      <div className="u-marginTop--15">
-                        <button
-                          className="btn secondary"
-                          type="button"
-                          onClick={this.toggleModal}
-                        >
-                          {" "}
-                          Upload a support bundle{" "}
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="u-marginTop--15 u-fontSize--normal">
-                      If you'd prefer,{" "}
-                      <a
-                        href="#"
-                        className="replicated-link"
-                        onClick={(e) => this.fetchSupportBundleCommand()}
                       >
-                        click here
-                      </a>{" "}
-                      to get a command to manually generate a support bundle.
+                        {this.state.bundleCommand}
+                      </CodeSnippet>
                     </div>
-                  )}
-                </div>
+                    <div className="u-marginTop--15">
+                      <button
+                        className="btn secondary"
+                        type="button"
+                        onClick={this.toggleModal}
+                      >
+                        {" "}
+                        Upload a support bundle{" "}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="u-marginTop--15 u-fontSize--normal">
+                    If you'd prefer,{" "}
+                    <a
+                      href="#"
+                      className="replicated-link"
+                      onClick={(e) => this.fetchSupportBundleCommand()}
+                    >
+                      click here
+                    </a>{" "}
+                    to get a command to manually generate a support bundle.
+                  </div>
+                )}
               </div>
             </div>
           </div>

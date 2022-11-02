@@ -20,7 +20,7 @@ class SupportBundleList extends React.Component {
     loading: false,
     errorMsg: "",
     displayRedactorModal: false,
-    displayErrorModal: false,
+    //displayErrorModal: false,
     pollForBundleAnalysisProgress: new Repeater(),
     bundleAnalysisProgress: {},
     loadingSupportBundles: false,
@@ -33,14 +33,28 @@ class SupportBundleList extends React.Component {
   componentWillUnmount() {
     this.state.pollForBundleAnalysisProgress.stop();
   }
+  componentDidUpdate(lastProps) {
+    const { bundle } = this.props;
+    if (
+      bundle?.status !== "running" &&
+      bundle?.status !== lastProps.bundle.status
+    ) {
+      this.state.pollForBundleAnalysisProgress.stop();
+      if (bundle.status === "failed") {
+        this.props.history.push(`/app/${this.props.watch.slug}/troubleshoot`);
+      }
+    }
+  }
 
   listSupportBundles = () => {
     this.setState({
       loading: true,
       errorMsg: "",
-      displayErrorModal: false,
+      // displayErrorModal: false,
       loadingBundle: false,
     });
+
+    this.props.updateState({ displayErrorModal: false });
 
     fetch(
       `${process.env.API_ENDPOINT}/troubleshoot/app/${this.props.watch?.slug}/supportbundles`,
@@ -71,7 +85,7 @@ class SupportBundleList extends React.Component {
         }
         if (bundleRunning) {
           this.state.pollForBundleAnalysisProgress.start(
-            this.pollForBundleAnalysisProgress,
+            this.props.pollForBundleAnalysisProgress,
             1000
           );
         }
@@ -87,63 +101,6 @@ class SupportBundleList extends React.Component {
         this.setState({
           loading: false,
           errorMsg: err
-            ? err.message
-            : "Something went wrong, please try again.",
-          displayErrorModal: true,
-        });
-      });
-  };
-  pollForBundleAnalysisProgress = async () => {
-    const { newBundleSlug } = this.props;
-    if (!newBundleSlug) {
-      // component may start polling before bundle slug is set
-      // this is to prevent an api call if the slug is not set
-      return;
-    }
-    fetch(
-      `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/${newBundleSlug}`,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: Utilities.getToken(),
-        },
-        method: "GET",
-      }
-    )
-      .then(async (res) => {
-        if (!res.ok) {
-          this.setState({
-            loading: false,
-            getSupportBundleErrMsg: `Unexpected status code: ${res.status}`,
-            displayErrorModal: true,
-          });
-          return;
-        }
-        const bundle = await res.json();
-        this.setState({
-          bundleAnalysisProgress: bundle.progress,
-          loadingBundleId: bundle.id,
-          loadingBundle: true,
-        });
-
-        if (bundle.status !== "running") {
-          this.state.pollForBundleAnalysisProgress.stop();
-          this.setState({ loadingBundleId: "", loadingBundle: false });
-          if (bundle.status === "failed") {
-            this.props.history.push(
-              `/app/${this.props.watch.slug}/troubleshoot`
-            );
-          } else {
-            this.props.history.push(
-              `/app/${this.props.watch.slug}/troubleshoot/analyze/${bundle.slug}`
-            );
-          }
-        }
-      })
-      .catch((err) => {
-        this.setState({
-          loading: false,
-          getSupportBundleErrMsg: err
             ? err.message
             : "Something went wrong, please try again.",
           displayErrorModal: true,
@@ -192,11 +149,11 @@ class SupportBundleList extends React.Component {
               }
               refetchBundleList={this.listSupportBundles}
               progressData={
-                this.state.loadingBundleId === bundle.id &&
-                this.state.bundleAnalysisProgress
+                this.props.loadingBundleId === bundle.id &&
+                this.props.bundleProgress
               }
               loadingBundle={
-                this.state.loadingBundleId === bundle.id &&
+                this.props.loadingBundleId === bundle.id &&
                 this.state.loadingBundle
               }
             />
