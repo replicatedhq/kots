@@ -175,11 +175,20 @@ func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		registryPassword = registrySettings.Password
 	}
 
-	err = dockerregistry.CheckAccess(updateAppRegistryRequest.Hostname, updateAppRegistryRequest.Username, registryPassword)
-	if err != nil {
-		logger.Infof("Failed to test access to %q with user %q: %v", updateAppRegistryRequest.Hostname, updateAppRegistryRequest.Username, err)
-		JSON(w, 400, NewErrorResponse(err))
-		return
+	if updateAppRegistryRequest.Hostname == "" {
+		if foundApp.IsAirgap {
+			JSON(w, http.StatusBadRequest, NewErrorResponse(errors.New("registry cannot be removed in airgap installs")))
+			return
+		}
+		// lazy way to clear out all fields
+		updateAppRegistryRequest = UpdateAppRegistryRequest{}
+	} else {
+		err = dockerregistry.CheckAccess(updateAppRegistryRequest.Hostname, updateAppRegistryRequest.Username, registryPassword)
+		if err != nil {
+			logger.Infof("Failed to test access to %q with user %q: %v", updateAppRegistryRequest.Hostname, updateAppRegistryRequest.Username, err)
+			JSON(w, http.StatusBadRequest, NewErrorResponse(err))
+			return
+		}
 	}
 
 	updateAppRegistryResponse.Hostname = updateAppRegistryRequest.Hostname
