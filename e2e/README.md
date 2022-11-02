@@ -2,6 +2,10 @@
 
 E2E tests are run in build-test workflow on pull_request event.
 
+e2e_test.go uses Ginkgo to build a test suite from inventory.go and runs each test using testim/client.go.
+
+Tests are parallelized using Gingko's test focus. Each workflow definition in .github/workflows/build-test.yaml must define a `test-focus` parameter that matches the `Test Name` property defined in inventory.go. Each e2e test workflow skips all tests but what is defined in `test-focus`.
+
 ## Development environment
 
 To install dependencies run:
