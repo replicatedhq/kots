@@ -1,6 +1,17 @@
+import { useApps } from "@features/App";
 import React from "react";
+import { useHistory } from "react-router";
 
 function InstallWithHelm() {
+  // TODO: // move this into a routes component
+  // poll for apps data and redirect if app is installed
+  const { apps } = useApps({ refetchInterval: 2000 }).data || {};
+  const history = useHistory();
+
+  if (apps && apps?.length > 0) {
+    history.push("/apps");
+  }
+
   return (
     <div
       className={`UploadLicenseFile--wrapper flex-column flex1 u-overflow--auto Login-wrapper justifyContent--center alignItems--center u-textAlign--center`}

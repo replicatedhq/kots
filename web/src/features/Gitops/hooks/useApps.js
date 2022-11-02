@@ -1,6 +1,7 @@
 import { useQuery } from "react-query";
 import { Utilities } from "../../../utilities/utilities";
 
+// TODO: replace with fetatures/App/api
 async function getApps({
   accessToken = Utilities.getToken(),
   apiEndpoint = process.env.API_ENDPOINT,

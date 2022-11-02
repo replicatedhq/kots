@@ -26,7 +26,7 @@ function useLicenseWithIntercept() {
         return x;
       },
       (error) => {
-        if (error.response.status === 401) {
+        if (error?.response?.status=== 401) {
           // TODO: handle unauthorized
           console.log("an error occurred");
         }
@@ -36,7 +36,7 @@ function useLicenseWithIntercept() {
     );
     axios.interceptors.response.use(
       async (x) => {
-        if (x.config.url?.endsWith("/license")) {
+        if (x?.config?.url?.endsWith("/license")) {
           //await sleep();
           setIsSlowLoading(false);
           clearTimeout(timerId.current as NodeJS.Timeout);
@@ -46,7 +46,7 @@ function useLicenseWithIntercept() {
         return x;
       },
       (error) => {
-        if (error.response.status === 401) {
+        if (error?.response?.status === 401) {
           // TODO: handle unauthorized
           console.log("an error occurred");
         }
