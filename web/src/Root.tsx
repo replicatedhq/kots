@@ -525,8 +525,8 @@ const Root = () => {
                     {...props}
                     logo={state.appLogo}
                     appsListLength={state.appsList?.length}
-                    appName={state.selectedAppName}
-                    appSlugFromMetadata={state.appSlugFromMetadata}
+                    appName={state.selectedAppName || ""}
+                    appSlugFromMetadata={state.appSlugFromMetadata || ""}
                     fetchingMetadata={state.fetchingMetadata}
                     onUploadSuccess={getAppsList}
                   />

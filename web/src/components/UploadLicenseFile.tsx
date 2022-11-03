@@ -31,7 +31,7 @@ type Props = {
   fetchingMetadata: boolean;
   isBackupRestore: boolean;
   onUploadSuccess: () => Promise<void>;
-  logo: string;
+  logo: string | null;
   snapshot: { name: string };
 };
 
