@@ -192,7 +192,6 @@ const UploadAirgapBundle = (props: Props) => {
 
     setState({
       fileUploading: true,
-      errorMessage: "",
       showSupportBundleCommand: false,
     });
     errorMessage.current = "";
