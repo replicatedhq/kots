@@ -38,7 +38,7 @@ metadata:
 type: Opaque
 data:
   password: "cGFzc3dvcmQ="
-  uri: aHR0cDovL2tvdHNhZG06cGFzc3dvcmRAa290c2FkbS1ycWxpdGU6NDAwMT90aW1lb3V0PTEwJmRpc2FibGVDbHVzdGVyRGlzY292ZXJ5PXRydWU=
+  uri: aHR0cDovL2tvdHNhZG06cGFzc3dvcmRAa290c2FkbS1ycWxpdGU6NDAwMT90aW1lb3V0PTYwJmRpc2FibGVDbHVzdGVyRGlzY292ZXJ5PXRydWU=
   authconfig.json: WwogIHsKICAgICJ1c2VybmFtZSI6ICJrb3RzYWRtIiwKICAgICJwYXNzd29yZCI6ICJwYXNzd29yZCIsCiAgICAicGVybXMiOiBbImFsbCJdCiAgfSwKICB7CiAgICAidXNlcm5hbWUiOiAiKiIsCiAgICAicGVybXMiOiBbInN0YXR1cyIsICJyZWFkeSJdCiAgfQpdCg==
 ---
 apiVersion: apps/v1
