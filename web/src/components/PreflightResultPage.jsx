@@ -202,15 +202,9 @@ class PreflightResultPage extends Component {
     // TODO: why start polling here?
     // this.state.getKotsPreflightResultJob.start(this.getKotsPreflightResult, 2000);
 
-    const valueFromAPI = errors
-      .map((error) => {
-        return error.error;
-      })
-      .join("\n");
-
     return (
       <PreflightResultErrors
-        valueFromAPI={valueFromAPI}
+        errors={errors}
         ignorePermissionErrors={this.ignorePermissionErrors}
         logo={this.props.logo}
         preflightResultData={preflightResultData}
@@ -435,7 +429,7 @@ class PreflightResultPage extends Component {
                   </div>
                   <div className="flex-column">
                     <PreflightRenderer
-                      results={preflightResultData.result}
+                      results={preflightResultData?.result}
                       skipped={preflightSkipped}
                     />
                   </div>

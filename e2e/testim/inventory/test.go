@@ -5,7 +5,7 @@ import "github.com/replicatedhq/kots/e2e/kubectl"
 type TestimParams map[string]interface{}
 
 type Test struct {
-	Name                   string
+	Name                   string // must match test-focus in .github/workflows/build-test.yaml
 	Suite                  string
 	Label                  string
 	Namespace              string
