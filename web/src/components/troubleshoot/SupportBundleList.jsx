@@ -13,6 +13,7 @@ import { Repeater } from "@src/utilities/repeater";
 
 import "../../scss/components/troubleshoot/SupportBundleList.scss";
 import Icon from "../Icon";
+import ReactTooltip from "react-tooltip";
 
 class SupportBundleList extends React.Component {
   state = {
@@ -47,10 +48,13 @@ class SupportBundleList extends React.Component {
   listSupportBundles = () => {
     this.setState({
       errorMsg: "",
-      loadingBundle: false,
     });
 
-    this.props.updateState({ loading: true, displayErrorModal: true });
+    this.props.updateState({
+      loading: true,
+      displayErrorModal: true,
+      loadingBundle: false,
+    });
 
     fetch(
       `${process.env.API_ENDPOINT}/troubleshoot/app/${this.props.watch?.slug}/supportbundles`,
@@ -115,7 +119,7 @@ class SupportBundleList extends React.Component {
   };
 
   render() {
-    const { watch, loading } = this.props;
+    const { watch, loading, loadingBundle } = this.props;
     const { errorMsg, supportBundles } = this.state;
 
     const appTitle = watch.watchName || watch.name;
@@ -150,7 +154,7 @@ class SupportBundleList extends React.Component {
               }
               loadingBundle={
                 this.props.loadingBundleId === bundle.id &&
-                this.state.loadingBundle
+                this.props.loadingBundle
               }
             />
           ));
@@ -159,6 +163,10 @@ class SupportBundleList extends React.Component {
           <GenerateSupportBundle
             watch={watch}
             updateBundleSlug={this.props.updateBundleSlug}
+            bundle={this.props.bundle}
+            pollForBundleAnalysisProgress={
+              this.props.pollForBundleAnalysisProgress
+            }
           />
         );
       }
@@ -200,17 +208,41 @@ class SupportBundleList extends React.Component {
                     </div>
                   </div>
                   <div className="RightNode flex-auto flex alignItems--center u-position--relative">
-                    <Link
-                      to={`${this.props.match.url}/generate`}
-                      className="replicated-link flex alignItems--center u-fontSize--small"
-                    >
-                      <Icon
-                        icon="tools"
-                        size={18}
-                        className="clickable u-marginRight--5"
-                      />
-                      Generate a support bundle
-                    </Link>
+                    {loadingBundle ? (
+                      <p
+                        className="replicated-link flex alignItems--center u-fontSize--small"
+                        style={{
+                          color: "gray",
+                        }}
+                        data-tip={
+                          "Please wait for the previous bundle to finish before generating a new one"
+                        }
+                      >
+                        <Icon
+                          icon="tools"
+                          size={18}
+                          className="clickable u-marginRight--5"
+                          style={{ color: "gray" }}
+                        />
+                        Generate a support bundle
+                        <ReactTooltip
+                          effect="solid"
+                          className="replicated-tooltip"
+                        />
+                      </p>
+                    ) : (
+                      <Link
+                        to={`${this.props.match.url}/generate`}
+                        className="replicated-link flex alignItems--center u-fontSize--small"
+                      >
+                        <Icon
+                          icon="tools"
+                          size={18}
+                          className="clickable u-marginRight--5"
+                        />
+                        Generate a support bundle
+                      </Link>
+                    )}
                     <span
                       className="replicated-link flex alignItems--center u-fontSize--small u-marginLeft--20"
                       onClick={this.toggleRedactorModal}

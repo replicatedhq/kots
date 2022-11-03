@@ -49,8 +49,7 @@ class TroubleshootContainer extends Component<Props, State> {
     this.setState({ newBundleSlug: value });
   };
 
-  updateState = (value) => {
-    console.log("val", value);
+  updateState = (value: State) => {
     this.setState(value);
   };
 

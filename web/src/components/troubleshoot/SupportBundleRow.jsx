@@ -209,6 +209,21 @@ class SupportBundleRow extends React.Component {
     let progressBar;
     const { progressData } = this.props;
 
+    let statusDiv = (
+      <div className="u-fontWeight--bold u-fontSize--small .u-textColor--bodyCopy u-lineHeight--medium u-textAlign--center">
+        <div className="flex flex1 u-marginBottom--10 justifyContent--center alignItems--center ">
+          {progressData?.message && (
+            <Loader className="flex u-marginRight--5" size="24" />
+          )}
+          {percentage >= 98 ? (
+            <p>Almost done, finalizing your bundle...</p>
+          ) : (
+            <p>Analyzing {progressData?.message}</p>
+          )}
+        </div>
+      </div>
+    );
+
     if (progressData.collectorsCompleted > 0) {
       this.moveBar(progressData);
       progressBar = (
@@ -273,7 +288,9 @@ class SupportBundleRow extends React.Component {
                   )}
                 </div>
                 <div className="flex u-marginTop--15">
-                  {bundle?.analysis?.insights?.length ? (
+                  {this.props.loadingBundle ? (
+                    statusDiv
+                  ) : bundle?.analysis?.insights?.length ? (
                     <div className="flex flex1 alignItems--center">
                       {errorInsights.length > 0 && (
                         <span className="flex alignItems--center u-marginRight--30 u-fontSize--small u-fontWeight--medium u-textColor--error">
