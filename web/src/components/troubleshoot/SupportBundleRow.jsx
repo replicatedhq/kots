@@ -349,12 +349,16 @@ class SupportBundleRow extends React.Component {
                   <Loader size="30" className="u-marginRight--10" />
                 ) : showSendSupportBundleLink ? (
                   <span
-                    className="u-fontSize--small u-marginRight--10 u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover u-paddingRight--10 u-borderRight--gray"
+                    className="u-fontSize--small u-marginRight--10 u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover u-paddingRight--10"
                     onClick={() =>
                       this.sendBundleToVendor(this.props.bundle.slug)
                     }
                   >
-                    Send bundle to vendor
+                    <Icon
+                      icon="paper-airplane"
+                      size={16}
+                      className="clickable"
+                    />
                   </span>
                 ) : null}
                 {this.state.downloadBundleErrMsg && (
@@ -383,7 +387,7 @@ class SupportBundleRow extends React.Component {
                     className="u-fontSize--small u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover"
                     onClick={() => this.downloadBundle(bundle)}
                   >
-                    Download bundle
+                    <Icon icon="download" size={16} className="clickable" />
                   </span>
                 )}
               </div>
