@@ -211,6 +211,7 @@ var _ = Describe("E2E", func() {
 			Entry(nil, inventory.NewMinKotsVersion()),
 			Entry(nil, inventory.NewTargetKotsVersion()),
 			Entry(nil, inventory.NewRangeKotsVersion()),
+			Entry(nil, inventory.MultiAppTest()),
 		)
 
 	})
