@@ -17,10 +17,8 @@ import Icon from "../Icon";
 class SupportBundleList extends React.Component {
   state = {
     supportBundles: [],
-    loading: false,
     errorMsg: "",
     displayRedactorModal: false,
-    //displayErrorModal: false,
     pollForBundleAnalysisProgress: new Repeater(),
     bundleAnalysisProgress: {},
     loadingSupportBundles: false,
@@ -48,13 +46,11 @@ class SupportBundleList extends React.Component {
 
   listSupportBundles = () => {
     this.setState({
-      loading: true,
       errorMsg: "",
-      // displayErrorModal: false,
       loadingBundle: false,
     });
 
-    this.props.updateState({ displayErrorModal: false });
+    this.props.updateState({ loading: true, displayErrorModal: true });
 
     fetch(
       `${process.env.API_ENDPOINT}/troubleshoot/app/${this.props.watch?.slug}/supportbundles`,
@@ -69,10 +65,9 @@ class SupportBundleList extends React.Component {
       .then(async (res) => {
         if (!res.ok) {
           this.setState({
-            loading: false,
             errorMsg: `Unexpected status code: ${res.status}`,
-            displayErrorModal: true,
           });
+          this.props.updateState({ loading: false, displayErrorModal: true });
           return;
         }
         const response = await res.json();
@@ -91,25 +86,26 @@ class SupportBundleList extends React.Component {
         }
         this.setState({
           supportBundles: response.supportBundles,
-          loading: false,
+
           errorMsg: "",
-          displayErrorModal: false,
         });
+        this.props.updateState({ loading: false, displayErrorModal: false });
       })
       .catch((err) => {
         console.log(err);
         this.setState({
-          loading: false,
           errorMsg: err
             ? err.message
             : "Something went wrong, please try again.",
-          displayErrorModal: true,
         });
+        this.props.updateState({ displayErrorModal: true, loading: false });
       });
   };
 
   toggleErrorModal = () => {
-    this.setState({ displayErrorModal: !this.state.displayErrorModal });
+    this.props.updateState({
+      displayErrorModal: !this.props.displayErrorModal,
+    });
   };
 
   toggleRedactorModal = () => {
@@ -119,8 +115,8 @@ class SupportBundleList extends React.Component {
   };
 
   render() {
-    const { watch } = this.props;
-    const { loading, errorMsg, supportBundles } = this.state;
+    const { watch, loading } = this.props;
+    const { errorMsg, supportBundles } = this.state;
 
     const appTitle = watch.watchName || watch.name;
     const downstream = watch.downstream;
@@ -244,12 +240,12 @@ class SupportBundleList extends React.Component {
         )}
         {errorMsg && (
           <ErrorModal
-            errorModal={this.state.displayErrorModal}
+            errorModal={this.props.displayErrorModal}
             toggleErrorModal={this.toggleErrorModal}
             errMsg={errorMsg}
             tryAgain={this.listSupportBundles}
             err="Failed to get bundles"
-            loading={this.state.loading}
+            loading={this.props.loading}
             appSlug={this.props.match.params.slug}
           />
         )}

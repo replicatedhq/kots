@@ -32,13 +32,9 @@ export class SupportBundleAnalysis extends React.Component {
           : "bundleAnalysis",
       filterTiles: "0",
       downloadingBundle: false,
-      bundle: null,
-      loading: false,
       downloadBundleErrMsg: "",
-      getSupportBundleErrMsg: "",
       sendingBundle: false,
       sendingBundleErrMsg: "",
-      displayErrorModal: false,
       showPodAnalyzerDetailsModal: false,
       pollForBundleAnalysisProgress: new Repeater(),
       bundleAnalysisProgress: {},
@@ -143,10 +139,10 @@ export class SupportBundleAnalysis extends React.Component {
   };
 
   getSupportBundle = async () => {
-    this.setState({
-      loading: true,
-      getSupportBundleErrMsg: "",
+    this.props.updateState({
       displayErrorModal: false,
+      getSupportBundleErrMsg: "",
+      loading: true,
     });
 
     fetch(
@@ -161,21 +157,20 @@ export class SupportBundleAnalysis extends React.Component {
     )
       .then(async (res) => {
         if (!res.ok) {
-          this.setState({
-            loading: false,
-            getSupportBundleErrMsg: `Unexpected status code: ${res.status}`,
+          this.props.updateState({
             displayErrorModal: true,
+            getSupportBundleErrMsg: `Unexpected status code: ${res.status}`,
+            loading: false,
           });
           return;
         }
         const bundle = await res.json();
-        this.setState({
-          bundle: bundle,
-          loading: false,
-          getSupportBundleErrMsg: "",
+        this.props.updateState({
           displayErrorModal: false,
+          getSupportBundleErrMsg: "",
+          loading: false,
+          bundle: bundle,
         });
-        console.log("bundle", bundle);
 
         if (bundle.status === "running") {
           this.state.pollForBundleAnalysisProgress.start(
@@ -186,18 +181,20 @@ export class SupportBundleAnalysis extends React.Component {
       })
       .catch((err) => {
         console.log(err);
-        this.setState({
+        this.props.updateState({
+          displayErrorModal: false,
           loading: false,
           getSupportBundleErrMsg: err
             ? err.message
             : "Something went wrong, please try again.",
-          displayErrorModal: true,
         });
       });
   };
 
   toggleErrorModal = () => {
-    this.setState({ displayErrorModal: !this.state.displayErrorModal });
+    this.props.updateState({
+      displayErrorModal: !this.props.displayErrorModal,
+    });
   };
 
   toggleAnalysisAction = (active) => {
@@ -245,9 +242,10 @@ export class SupportBundleAnalysis extends React.Component {
 
   render() {
     const { watch } = this.props;
-    const { bundle, loading, getSupportBundleErrMsg, bundleAnalysisProgress } =
-      this.state;
-    const { bundleProgress } = this.props;
+    const { bundleAnalysisProgress } = this.state;
+    const { bundleProgress, getSupportBundleErrMsg, loading, bundle } =
+      this.props;
+
     if (loading) {
       return (
         <div className="flex-column flex1 justifyContent--center alignItems--center">
@@ -345,7 +343,7 @@ export class SupportBundleAnalysis extends React.Component {
                       </div>
                     </div>
                   </div>
-                  {this.state.bundle.status !== "running" && (
+                  {this.props.bundle.status !== "running" && (
                     <div className="flex flex-auto alignItems--center justifyContent--flexEnd">
                       {this.state.downloadBundleErrMsg && (
                         <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginRight--10">
@@ -522,12 +520,12 @@ export class SupportBundleAnalysis extends React.Component {
         </div>
         {getSupportBundleErrMsg && (
           <ErrorModal
-            errorModal={this.state.displayErrorModal}
+            errorModal={this.props.displayErrorModal}
             toggleErrorModal={this.toggleErrorModal}
             errMsg={getSupportBundleErrMsg}
             tryAgain={this.getSupportBundle}
             err="Failed to get bundle"
-            loading={this.state.loading}
+            loading={this.props.loading}
             appSlug={this.props.match.params.slug}
           />
         )}

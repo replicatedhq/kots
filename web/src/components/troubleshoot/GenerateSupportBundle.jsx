@@ -306,7 +306,8 @@ class GenerateSupportBundle extends React.Component {
         this.props.updateBundleSlug(response.slug);
         this.setState({ newBundleSlug: response.slug });
         this.state.pollForBundleAnalysisProgress.start(
-          this.pollForBundleAnalysisProgress,
+          // add polling back or give them the prop
+          this.props.pollForBundleAnalysisProgress,
           1000
         );
 

@@ -107,7 +107,6 @@ class TroubleshootContainer extends Component<Props, State> {
 
   render() {
     const { app, appName } = this.props;
-    console.log("display", this.state.displayErrorModal);
 
     return (
       <div className="flex-column flex1">
@@ -128,6 +127,8 @@ class TroubleshootContainer extends Component<Props, State> {
                 loadingBundleId={this.state.loadingBundleId}
                 loadingBundle={this.state.loadingBundle}
                 updateState={this.updateState}
+                displayErrorModal={this.state.displayErrorModal}
+                loading={this.state.loading}
               />
             )}
           />
@@ -140,6 +141,9 @@ class TroubleshootContainer extends Component<Props, State> {
                 newBundleSlug={this.state.newBundleSlug}
                 updateBundleSlug={this.updateBundleSlug}
                 bundle={this.state.bundle}
+                pollForBundleAnalysisProgress={
+                  this.pollForBundleAnalysisProgress
+                }
               />
             )}
           />
@@ -153,6 +157,10 @@ class TroubleshootContainer extends Component<Props, State> {
                 }
                 bundle={this.state.bundle}
                 bundleProgress={this.state.bundleAnalysisProgress}
+                updateState={this.updateState}
+                displayErrorModal={this.state.displayErrorModal}
+                getSupportBundleErrMsg={this.state.getSupportBundleErrMsg}
+                loading={this.state.loading}
               />
             )}
           />
