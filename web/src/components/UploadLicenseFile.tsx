@@ -17,14 +17,12 @@ import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
 import "../scss/components/UploadLicenseFile.scss";
 import Icon from "./Icon";
 
-import { LicenseFile } from "@types";
-
 type LicenseYaml = {
   spec: {
     appSlug: string;
     channelName: string;
-  }
-}
+  };
+};
 
 type Props = {
   appsListLength: number;
@@ -34,7 +32,7 @@ type Props = {
   isBackupRestore: boolean;
   onUploadSuccess: () => Promise<void>;
   logo: string;
-  snapshot: string;
+  snapshot: { name: string };
 };
 
 type SelectedAppToInstall = {
@@ -48,9 +46,10 @@ type State = {
   fileUploading: boolean;
   hasMultiApp?: boolean;
   licenseExistErrData: UploadLicenseResponse | null | string;
-  licenseFile: LicenseFile | null;
+  licenseFile: { name: string } | null;
   licenseFileContent: {
-    [key: string]: string } | null;
+    [key: string]: string;
+  } | null;
   selectedAppToInstall: SelectedAppToInstall | null;
   startingRestore?: boolean;
   startingRestoreMsg?: string;
@@ -66,7 +65,7 @@ type UploadLicenseResponse = {
   needsRegistry: boolean;
   slug: string;
   success?: boolean;
-}
+};
 const UploadLicenseFile = (props: Props) => {
   const [state, setState] = useReducer(
     (currentState: State, newState: Partial<State>) => ({
@@ -296,8 +295,10 @@ const UploadLicenseFile = (props: Props) => {
     });
   };
 
-  const onDrop = async (files: string[]) => {
+  const onDrop = async (files: { name: string }[]) => {
     const content = await getFileContent(files[0]);
+    // TODO: this is probably a bug
+    // @ts-ignore
     const parsedLicenseYaml = new TextDecoder("utf-8").decode(content);
     let licenseYamls;
     try {
@@ -329,7 +330,7 @@ const UploadLicenseFile = (props: Props) => {
     });
   };
 
-  const startRestore = (snapshot) => {
+  const startRestore = (snapshot: { name: string }) => {
     setState({ startingRestore: true, startingRestoreMsg: "" });
 
     const payload = {
@@ -375,14 +376,14 @@ const UploadLicenseFile = (props: Props) => {
       });
   };
 
-  const handleUploadStatusErr = (errMessage) => {
+  const handleUploadStatusErr = (errMessage: string) => {
     setState({
       fileUploading: false,
       errorMessage: errMessage,
     });
   };
 
-  const getLabel = (label) => {
+  const getLabel = (label: string) => {
     return (
       <div style={{ alignItems: "center", display: "flex" }}>
         <span style={{ fontSize: 18, marginRight: "10px" }}>
@@ -393,7 +394,7 @@ const UploadLicenseFile = (props: Props) => {
     );
   };
 
-  const onAppToInstallChange = (selectedAppToInstall) => {
+  const onAppToInstallChange = (selectedAppToInstall: SelectedAppToInstall) => {
     setState({ selectedAppToInstall });
   };
 
@@ -437,7 +438,7 @@ const UploadLicenseFile = (props: Props) => {
         isBackupRestore ? "" : "container"
       } flex-column flex1 u-overflow--auto Login-wrapper justifyContent--center alignItems--center`}
     >
-      <KotsPageTitle pageName="Upload License" />
+      <KotsPageTitle pageName="Upload License" showAppSlug={false} />
       <div className="LoginBox-wrapper u-flexTabletReflow  u-flexTabletReflow flex-auto">
         <div className="flex-auto flex-column login-form-wrapper secure-console justifyContent--center">
           <div className="flex-column alignItems--center">
@@ -493,11 +494,13 @@ const UploadLicenseFile = (props: Props) => {
                           <div>
                             <p className="u-fontSize--small u-fontWeight--medium u-textColor--primary u-lineHeight--normal">
                               Your license has access to{" "}
-                              {state.availableAppOptions.length} applications
+                              {state?.availableAppOptions?.length} applications
                             </p>
                             <p className="u-fontSize--small u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--10">
                               Select the application that you want to install.
                             </p>
+                            {/* TODO: there's probably a bug here*/}
+                            {/*@ts-ignore*/}
                             <Select
                               className="replicated-select-container"
                               classNamePrefix="replicated-select"
@@ -509,7 +512,9 @@ const UploadLicenseFile = (props: Props) => {
                               value={selectedAppToInstall}
                               onChange={onAppToInstallChange}
                               isOptionSelected={(option) => {
-                                option.value === selectedAppToInstall.value;
+                                return (
+                                  option.value === selectedAppToInstall?.value
+                                );
                               }}
                             />
                           </div>
@@ -653,7 +658,9 @@ const UploadLicenseFile = (props: Props) => {
                     </span>
                   }
                 >
-                  {licenseExistErrData?.deleteAppCommand}
+                  {typeof licenseExistErrData === "string"
+                    ? licenseExistErrData
+                    : licenseExistErrData?.deleteAppCommand}
                 </CodeSnippet>
               </div>
             )}
