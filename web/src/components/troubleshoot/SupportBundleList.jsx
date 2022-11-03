@@ -209,27 +209,29 @@ class SupportBundleList extends React.Component {
                   </div>
                   <div className="RightNode flex-auto flex alignItems--center u-position--relative">
                     {loadingBundle ? (
-                      <p
-                        className="replicated-link flex alignItems--center u-fontSize--small"
-                        style={{
-                          color: "gray",
-                        }}
-                        data-tip={
-                          "Please wait for the previous bundle to finish before generating a new one"
-                        }
-                      >
-                        <Icon
-                          icon="tools"
-                          size={18}
-                          className="clickable u-marginRight--5"
-                          style={{ color: "gray" }}
-                        />
-                        Generate a support bundle
+                      <>
+                        <p
+                          className="replicated-link flex alignItems--center u-fontSize--small"
+                          style={{
+                            color: "gray",
+                          }}
+                          data-tip={
+                            "Only one support bundle can be generated at a time."
+                          }
+                        >
+                          <Icon
+                            icon="tools"
+                            size={18}
+                            className="clickable u-marginRight--5"
+                            style={{ color: "gray" }}
+                          />
+                          Generate a support bundle
+                        </p>
                         <ReactTooltip
                           effect="solid"
                           className="replicated-tooltip"
                         />
-                      </p>
+                      </>
                     ) : (
                       <Link
                         to={`${this.props.match.url}/generate`}

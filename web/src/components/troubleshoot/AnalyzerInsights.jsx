@@ -120,7 +120,6 @@ export class AnalyzerInsights extends React.Component {
             <div className="u-marginBottom--20 u-paddingLeft--10 u-paddingRight--10">
               <label
                 htmlFor="filterTiles"
-                for="filterTiles"
                 className="flex alignItems--center u-fontWeight--medium u-textColor--primary u-fontSize--normal u-lineHeight--normal u-userSelect--none"
               >
                 <input

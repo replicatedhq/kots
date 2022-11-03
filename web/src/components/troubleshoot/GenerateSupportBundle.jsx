@@ -24,12 +24,10 @@ class GenerateSupportBundle extends React.Component {
       totalBundles: null,
       showRunCommand: false,
       isGeneratingBundle: false,
-      initialLoading: true,
       displayRedactorModal: false,
       loadingSupportBundles: false,
       supportBundles: [],
       listSupportBundlesJob: new Repeater(),
-      pollForBundleAnalysisProgress: new Repeater(),
       newBundleSlug: "",
       bundleAnalysisProgress: {},
       errorMsg: "",
@@ -44,7 +42,6 @@ class GenerateSupportBundle extends React.Component {
 
   componentWillUnmount() {
     this.state.listSupportBundlesJob.stop();
-    this.state.pollForBundleAnalysisProgress.stop();
   }
 
   componentDidUpdate(lastProps, lastState) {
@@ -88,17 +85,6 @@ class GenerateSupportBundle extends React.Component {
       } else {
         this.state.listSupportBundlesJob.start(this.listSupportBundles, 2000);
         return;
-      }
-    }
-
-    // once bundle is ready we stop polling for progressbar
-    if (
-      bundle?.status !== "running" &&
-      bundle?.status !== lastProps.bundle.status
-    ) {
-      this.state.pollForBundleAnalysisProgress.stop();
-      if (bundle.status === "failed") {
-        this.props.history.push(`/app/${this.props.watch.slug}/troubleshoot`);
       }
     }
   }
@@ -149,16 +135,9 @@ class GenerateSupportBundle extends React.Component {
             errorMsg: "",
             displayErrorModal: false,
             networkErr: false,
-            initialLoading: false,
           });
-
-          this.state.pollForBundleAnalysisProgress.start(
-            this.props.pollForBundleAnalysisProgress,
-            1000
-          );
         } else {
           this.setState({
-            initialLoading: false,
             supportBundles: response.supportBundles,
             loadingSupportBundles: false,
             errorMsg: "",
@@ -305,11 +284,6 @@ class GenerateSupportBundle extends React.Component {
         const response = await res.json();
         this.props.updateBundleSlug(response.slug);
         this.setState({ newBundleSlug: response.slug });
-        this.state.pollForBundleAnalysisProgress.start(
-          // add polling back or give them the prop
-          this.props.pollForBundleAnalysisProgress,
-          1000
-        );
 
         this.props.history.push(
           `/app/${watch.slug}/troubleshoot/analyze/${response.slug}`
@@ -377,7 +351,6 @@ class GenerateSupportBundle extends React.Component {
       displayUploadModal,
       showRunCommand,
       isGeneratingBundle,
-      initialLoading,
       generateBundleErrMsg,
       errorMsg,
     } = this.state;
@@ -446,7 +419,7 @@ class GenerateSupportBundle extends React.Component {
                   against a set of known problems in {appTitle}. Logs, cluster
                   info and other data will not leave your cluster.
                 </p>
-                {!initialLoading && !isGeneratingBundle && (
+                {!isGeneratingBundle && (
                   <div className="flex alignItems--center justifyContent--center u-marginTop--30">
                     <button
                       className="btn primary blue"

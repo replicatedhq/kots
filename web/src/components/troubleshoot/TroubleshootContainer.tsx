@@ -54,6 +54,7 @@ class TroubleshootContainer extends Component<Props, State> {
   };
 
   pollForBundleAnalysisProgress = async () => {
+    this.setState({ loadingBundle: true });
     const { newBundleSlug } = this.state;
     if (!newBundleSlug) {
       // component may start polling before bundle slug is set
@@ -140,9 +141,6 @@ class TroubleshootContainer extends Component<Props, State> {
                 newBundleSlug={this.state.newBundleSlug}
                 updateBundleSlug={this.updateBundleSlug}
                 bundle={this.state.bundle}
-                pollForBundleAnalysisProgress={
-                  this.pollForBundleAnalysisProgress
-                }
               />
             )}
           />
