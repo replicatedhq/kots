@@ -354,18 +354,18 @@ func LoadInstallationFromPath(installationFilePath string) (*kotsv1beta1.Install
 	return LoadInstallationFromContents(installationData)
 }
 
-func LoadSupportBundleFromContents(data []byte) (*troubleshootv1beta2.SupportBundle, error) {
+func LoadInstallationFromContents(installationData []byte) (*kotsv1beta1.Installation, error) {
 	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, gvk, err := decode([]byte(data), nil, nil)
+	obj, gvk, err := decode([]byte(installationData), nil, nil)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to decode support bundle data of length %d", len(data))
+		return nil, errors.Wrapf(err, "failed to decode installation data of length %d", len(installationData))
 	}
 
-	if gvk.Group != "troubleshoot.sh" || gvk.Version != "v1beta2" || gvk.Kind != "SupportBundle" {
+	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "Installation" {
 		return nil, errors.Errorf("unexpected GVK: %s", gvk.String())
 	}
 
-	return obj.(*troubleshootv1beta2.SupportBundle), nil
+	return obj.(*kotsv1beta1.Installation), nil
 }
 
 func LoadKotsAppFromContents(data []byte) (*kotsv1beta1.Application, error) {
@@ -380,20 +380,6 @@ func LoadKotsAppFromContents(data []byte) (*kotsv1beta1.Application, error) {
 	}
 
 	return obj.(*kotsv1beta1.Application), nil
-}
-
-func LoadInstallationFromContents(installationData []byte) (*kotsv1beta1.Installation, error) {
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, gvk, err := decode([]byte(installationData), nil, nil)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to decode installation data of length %d", len(installationData))
-	}
-
-	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "Installation" {
-		return nil, errors.Errorf("unexpected GVK: %s", gvk.String())
-	}
-
-	return obj.(*kotsv1beta1.Installation), nil
 }
 
 func LoadLicenseFromPath(licenseFilePath string) (*kotsv1beta1.License, error) {
@@ -556,21 +542,6 @@ func LoadIngressConfigFromContents(content []byte) (*kotsv1beta1.IngressConfig, 
 
 	if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "IngressConfig" {
 		return obj.(*kotsv1beta1.IngressConfig), nil
-	}
-
-	return nil, errors.Errorf("unexpected gvk: %s", gvk.String())
-}
-
-func LoadIdentityFromContents(content []byte) (*kotsv1beta1.Identity, error) {
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-
-	obj, gvk, err := decode(content, nil, nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode content")
-	}
-
-	if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "Identity" {
-		return obj.(*kotsv1beta1.Identity), nil
 	}
 
 	return nil, errors.Errorf("unexpected gvk: %s", gvk.String())
