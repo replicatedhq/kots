@@ -287,7 +287,7 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+	kotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 		FromDir:          archiveDir,
 		RegistrySettings: registrySettings,
 		AppSlug:          a.Slug,
@@ -665,7 +665,7 @@ func (h *Handler) GetAppIdentityServiceConfig(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+	kotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 		FromDir:          archiveDir,
 		RegistrySettings: registrySettings,
 		AppSlug:          a.Slug,

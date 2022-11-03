@@ -234,7 +234,7 @@ func (h *Handler) InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+			kotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 				FromDir:          currentVersionArchive,
 				RegistrySettings: registrySettings,
 				AppSlug:          a.Slug,
@@ -277,7 +277,7 @@ func (h *Handler) InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+			kotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 				FromDir:          pendingVersionArchive,
 				RegistrySettings: registrySettings,
 				AppSlug:          a.Slug,

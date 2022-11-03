@@ -150,7 +150,7 @@ func (s *KOTSStore) IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int
 		return false, errors.Wrap(err, "failed to get registry settings")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+	kotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 		FromDir:          archiveDir,
 		RegistrySettings: registrySettings,
 		AppSlug:          a.Slug,
@@ -501,7 +501,7 @@ func (s *KOTSStore) upsertAppVersionStatements(appID string, sequence int64, bas
 		return nil, errors.Wrap(err, "failed to get app registry info")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+	kotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 		FromDir:          filesInDir,
 		RegistrySettings: registrySettings,
 		AppSlug:          a.Slug,
@@ -901,7 +901,7 @@ func (s *KOTSStore) UpdateNextAppVersionDiffSummary(appID string, baseSequence i
 		return errors.Wrap(err, "failed to get next archive dir")
 	}
 
-	nextKotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+	nextKotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 		FromDir:          nextArchiveDir,
 		RegistrySettings: registrySettings,
 		AppSlug:          a.Slug,

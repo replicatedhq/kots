@@ -59,8 +59,8 @@ var (
 	}
 )
 
-// LoadKotsKindsFromPath finds and renders (when applicable) all kots kinds from a path
-func LoadKotsKindsFromPath(opts types.LoadKotsKindsFromPathOptions) (*types.KotsKinds, error) {
+// LoadKotsKinds finds and renders (when applicable) all kots kinds from a path
+func LoadKotsKinds(opts types.LoadKotsKindsOptions) (*types.KotsKinds, error) {
 	kotsKinds := types.EmptyKotsKinds()
 
 	if opts.FromDir == "" {

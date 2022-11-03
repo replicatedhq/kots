@@ -195,7 +195,7 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutiltypes.KotsKinds, 
 		return nil, errors.Wrap(err, "failed to create rendered support bundle spec")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+	kotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 		FromDir:          tmpRoot,
 		RegistrySettings: registrySettings,
 		AppSlug:          app.Slug,

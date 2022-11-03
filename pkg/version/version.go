@@ -47,7 +47,7 @@ func (d *DownstreamGitOps) CreateGitOpsDownstreamCommit(appID string, clusterID 
 		return "", errors.Wrap(err, "failed to get app registry info")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+	kotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 		FromDir:          filesInDir,
 		RegistrySettings: registrySettings,
 		AppSlug:          a.Slug,

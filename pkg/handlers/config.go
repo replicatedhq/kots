@@ -327,7 +327,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		kotsKinds, err = kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+		kotsKinds, err = kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 			FromDir:          archiveDir,
 			RegistrySettings: registryInfo,
 			AppSlug:          appSlug,
@@ -580,7 +580,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		kotsKinds, err = kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+		kotsKinds, err = kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 			FromDir:          archiveDir,
 			RegistrySettings: registryInfo,
 			AppSlug:          foundApp.Slug,
@@ -723,7 +723,7 @@ func getAppConfigValueForFile(downloadApp *apptypes.App, sequence int64, filenam
 		return "", errors.Wrap(err, "failed to get registry details")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+	kotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 		FromDir:          archiveDir,
 		RegistrySettings: registryInfo,
 		AppSlug:          downloadApp.Slug,
@@ -770,7 +770,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 		return updateAppConfigResponse, err
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+	kotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 		FromDir:          archiveDir,
 		RegistrySettings: registrySettings,
 		AppSlug:          updateApp.Slug,
@@ -1073,7 +1073,7 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+	kotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 		FromDir:          archiveDir,
 		RegistrySettings: registryInfo,
 		AppSlug:          foundApp.Slug,

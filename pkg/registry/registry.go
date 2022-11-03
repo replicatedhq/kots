@@ -83,7 +83,7 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 		return "", errors.Wrap(err, "failed to get app version archive")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+	kotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 		FromDir: appDir,
 		RegistrySettings: types.RegistrySettings{
 			Hostname:   hostname,

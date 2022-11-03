@@ -142,7 +142,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 	}
 	defer os.RemoveAll(archiveDir)
 
-	beforeKotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+	beforeKotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 		FromDir:          archiveDir,
 		RegistrySettings: registrySettings,
 		AppSlug:          a.Slug,
@@ -242,7 +242,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 	}
 
 	if update.AppSequence == nil {
-		afterKotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+		afterKotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 			FromDir:          archiveDir,
 			RegistrySettings: registrySettings,
 			AppSlug:          a.Slug,

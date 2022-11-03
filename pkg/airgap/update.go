@@ -85,7 +85,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 	}
 	defer os.RemoveAll(archiveDir)
 
-	beforeKotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+	beforeKotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 		FromDir:          archiveDir,
 		RegistrySettings: registrySettings,
 		AppSlug:          a.Slug,
@@ -176,7 +176,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		return errors.Wrap(err, "failed to pull")
 	}
 
-	afterKotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+	afterKotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 		FromDir:          archiveDir,
 		RegistrySettings: registrySettings,
 		AppSlug:          a.Slug,

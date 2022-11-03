@@ -29,7 +29,7 @@ type OverlySimpleGVK struct {
 	Kind       string `yaml:"kind"`
 }
 
-type LoadKotsKindsFromPathOptions struct {
+type LoadKotsKindsOptions struct {
 	FromDir          string
 	RegistrySettings registrytypes.RegistrySettings
 	AppSlug          string

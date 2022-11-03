@@ -264,7 +264,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		return errors.Wrap(err, "failed to create support bundle dependencies")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+	kotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 		FromDir: filepath.Join(tmpRoot),
 		RegistrySettings: registrytypes.RegistrySettings{
 			Hostname:   opts.RegistryHost,

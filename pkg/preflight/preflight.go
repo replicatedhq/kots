@@ -45,7 +45,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 		return errors.Wrap(err, "failed to get registry settings for app")
 	}
 
-	renderedKotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+	renderedKotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 		FromDir:          archiveDir,
 		RegistrySettings: registrySettings,
 		AppSlug:          appSlug,

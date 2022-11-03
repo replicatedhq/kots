@@ -123,7 +123,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	log.FinishSpinner()
 
 	upstreamDir := u.GetUpstreamDir(writeUpstreamOptions)
-	newKotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+	newKotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 		FromDir: upstreamDir,
 		RegistrySettings: kotsregistrytypes.RegistrySettings{
 			Hostname:   rewriteOptions.RegistryEndpoint,

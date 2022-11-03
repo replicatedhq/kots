@@ -101,7 +101,7 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// encrypt any plain text values
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+	kotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 		FromDir:          archiveDir,
 		RegistrySettings: registrySettings,
 		AppSlug:          a.Slug,

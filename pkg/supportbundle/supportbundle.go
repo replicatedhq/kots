@@ -200,7 +200,7 @@ func getKotsKindsForApp(app *apptypes.App, sequence int64) (*kotsutiltypes.KotsK
 		return nil, errors.Wrap(err, "failed to get app registry info")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+	kotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 		FromDir:          archivePath,
 		RegistrySettings: registrySettings,
 		AppSlug:          app.Slug,
@@ -344,7 +344,7 @@ func CreateSupportBundleAnalysis(appID string, archivePath string, bundle *types
 		return err
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+	kotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 		FromDir:          archiveDir,
 		RegistrySettings: registrySettings,
 		AppSlug:          foundApp.Slug,

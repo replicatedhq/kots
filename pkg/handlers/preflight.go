@@ -282,7 +282,7 @@ func (h *Handler) GetPreflightCommand(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+	kotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 		FromDir:          archivePath,
 		RegistrySettings: registrySettings,
 		AppSlug:          foundApp.Slug,

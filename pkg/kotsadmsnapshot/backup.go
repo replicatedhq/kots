@@ -77,7 +77,7 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 		return nil, errors.Wrap(err, "failed to find backupstoragelocations")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+	kotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 		FromDir:          archiveDir,
 		RegistrySettings: registrySettings,
 		AppSlug:          a.Slug,
@@ -225,7 +225,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 			return nil, errors.Wrapf(err, "failed to get registry settings for app %s", a.Slug)
 		}
 
-		kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+		kotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 			FromDir:          archiveDir,
 			RegistrySettings: registrySettings,
 			AppSlug:          a.Slug,

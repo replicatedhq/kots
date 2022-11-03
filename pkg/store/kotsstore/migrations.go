@@ -108,7 +108,7 @@ func (s *KOTSStore) migrateKotsAppSpec() error {
 				return errors.Wrap(err, "failed to get app version archive")
 			}
 
-			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+			kotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 				FromDir:          archiveDir,
 				RegistrySettings: registrySettings,
 				AppSlug:          a.Slug,
@@ -197,7 +197,7 @@ func (s *KOTSStore) migrateKotsInstallationSpec() error {
 				return errors.Wrap(err, "failed to get app version archive")
 			}
 
-			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+			kotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 				FromDir:          archiveDir,
 				RegistrySettings: registrySettings,
 				AppSlug:          a.Slug,
@@ -286,7 +286,7 @@ func (s *KOTSStore) migrateSupportBundleSpec() error {
 				return errors.Wrap(err, "failed to get app version archive")
 			}
 
-			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+			kotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 				FromDir:          archiveDir,
 				RegistrySettings: registrySettings,
 				AppSlug:          a.Slug,
@@ -375,7 +375,7 @@ func (s *KOTSStore) migratePreflightSpec() error {
 				return errors.Wrap(err, "failed to get app version archive")
 			}
 
-			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+			kotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 				FromDir:          archiveDir,
 				RegistrySettings: registrySettings,
 				AppSlug:          a.Slug,
@@ -464,7 +464,7 @@ func (s *KOTSStore) migrateAnalyzerSpec() error {
 				return errors.Wrap(err, "failed to get app version archive")
 			}
 
-			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+			kotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 				FromDir:          archiveDir,
 				RegistrySettings: registrySettings,
 				AppSlug:          a.Slug,
@@ -553,7 +553,7 @@ func (s *KOTSStore) migrateAppSpec() error {
 				return errors.Wrap(err, "failed to get app version archive")
 			}
 
-			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+			kotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 				FromDir:          archiveDir,
 				RegistrySettings: registrySettings,
 				AppSlug:          a.Slug,

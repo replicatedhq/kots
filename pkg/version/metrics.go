@@ -102,7 +102,7 @@ func GetGraphs(app *types.App, sequence int64, kotsStore store.Store) ([]kotsv1b
 		return nil, errors.Wrap(err, "failed to get app registry info")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+	kotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 		FromDir:          archiveDir,
 		RegistrySettings: registrySettings,
 		AppSlug:          app.Slug,

@@ -217,7 +217,7 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 		return false, errors.Wrap(err, "failed to ensure disaster recovery label transformer")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+	kotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 		FromDir:          deployedVersionArchive,
 		RegistrySettings: registrySettings,
 		AppSlug:          app.Slug,
@@ -307,7 +307,7 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 				return false, errors.Wrap(err, "failed to get previously deployed app version archive")
 			}
 
-			previousKotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+			previousKotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 				FromDir:          previouslyDeployedVersionArchive,
 				RegistrySettings: registrySettings,
 				AppSlug:          app.Slug,
@@ -447,7 +447,7 @@ func (o *Operator) resumeStatusInformersForApp(app *apptypes.App) error {
 		return errors.Wrap(err, "failed to get registry settings for app")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+	kotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 		FromDir:          deployedVersionArchive,
 		RegistrySettings: registrySettings,
 		AppSlug:          app.Slug,
@@ -660,7 +660,7 @@ func (o *Operator) undeployApp(a *apptypes.App, d *downstreamtypes.Downstream, i
 		return errors.Wrap(err, "failed to get registry settings for app")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+	kotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 		FromDir:          deployedVersionArchive,
 		RegistrySettings: registrySettings,
 		AppSlug:          a.Slug,

@@ -72,7 +72,7 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 		return nil, false, errors.Wrap(err, "failed to get registry settings")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+	kotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 		FromDir:          archiveDir,
 		RegistrySettings: registrySettings,
 		AppSlug:          a.Slug,

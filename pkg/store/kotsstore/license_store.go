@@ -183,7 +183,7 @@ func (s *KOTSStore) createNewVersionForLicenseChangeStatements(appID string, bas
 		return nil, int64(0), errors.Wrap(err, "failed to get next app sequence")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+	kotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 		FromDir:          archiveDir,
 		RegistrySettings: registrySettings,
 		AppSlug:          app.Slug,

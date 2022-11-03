@@ -337,7 +337,7 @@ func getDownstreamInfo(appID string) (*types.DownstreamInfo, error) {
 			return nil, errors.Wrap(err, "failed to get registry settings for app")
 		}
 
-		deployedKotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+		deployedKotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 			FromDir:          deployedArchiveDir,
 			RegistrySettings: registrySettings,
 			AppSlug:          a.Slug,

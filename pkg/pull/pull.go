@@ -267,7 +267,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	// previous helm charts need to be detected before fetching the upstream.
 	var prevHelmCharts []*kotsv1beta1.HelmChart
 	if !pullOptions.SkipHelmChartCheck {
-		prevKotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+		prevKotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 			FromDir: pullOptions.RootDir,
 			RegistrySettings: kotsregistrytypes.RegistrySettings{
 				Hostname:   pullOptions.RewriteImageOptions.Host,
@@ -322,7 +322,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	log.FinishSpinner()
 
 	upstreamDir := u.GetUpstreamDir(writeUpstreamOptions)
-	newKotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+	newKotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 		FromDir: upstreamDir,
 		RegistrySettings: kotsregistrytypes.RegistrySettings{
 			Hostname:   pullOptions.RewriteImageOptions.Host,
@@ -893,7 +893,7 @@ func GetAppMetadataFromAirgap(airgapArchive string, appSlug string, sequence int
 		return nil, errors.Wrap(err, "failed to extract app archive")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+	kotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
 		FromDir:          tempDir,
 		RegistrySettings: registrySettings,
 		AppSlug:          appSlug,
