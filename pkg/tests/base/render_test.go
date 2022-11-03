@@ -257,16 +257,17 @@ func baseFromDir(t *testing.T, root string, isHelm bool) base.Base {
 		return b
 	}
 
-	chartFile := filepath.Join(root, "Chart.yaml")
-	if _, err := os.Stat(chartFile); err == nil {
-		data, err := ioutil.ReadFile(chartFile)
-		require.NoError(t, err, chartFile)
+	additionalFiles := []string{"values.yaml", "Chart.yaml"}
+	for _, path := range additionalFiles {
+		additionalFile := filepath.Join(root, path)
+		if _, err := os.Stat(additionalFile); err == nil {
+			data, err := ioutil.ReadFile(additionalFile)
+			require.NoError(t, err, additionalFile)
 
-		b.AdditionalFiles = []base.BaseFile{
-			{
-				Path:    "Chart.yaml",
+			b.AdditionalFiles = append(b.AdditionalFiles, base.BaseFile{
+				Path:    path,
 				Content: data,
-			},
+			})
 		}
 	}
 
@@ -282,8 +283,8 @@ func baseFilesFromDir(t *testing.T, root string, isHelm bool) []base.BaseFile {
 			return nil
 		}
 
-		if isHelm && info.Name() == "Chart.yaml" {
-			// This file goes into AdditonalFiles
+		if isHelm && (info.Name() == "Chart.yaml" || info.Name() == "values.yaml") {
+			// These files go into AdditonalFiles
 			return nil
 		}
 
