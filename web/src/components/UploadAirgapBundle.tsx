@@ -61,8 +61,8 @@ type State = {
   viewOnlineInstallErrorMessage: boolean;
 };
 type BundleFile = {
-    name: string;
-  } | null;
+  name: string;
+} | null;
 const UploadAirgapBundle = (props: Props) => {
   // TODO: remove refs and use state instead
   const bundleFile = useRef<BundleFile>(null);
@@ -160,7 +160,8 @@ const UploadAirgapBundle = (props: Props) => {
       uploadSize: 0,
       uploadResuming: false,
     });
-      errorMessage.current =  message || "Error uploading bundle, please try again";
+    errorMessage.current =
+      message || "Error uploading bundle, please try again";
   };
 
   const uploadAirgapBundle = async () => {
@@ -184,8 +185,8 @@ const UploadAirgapBundle = (props: Props) => {
         uploadSize: 0,
         uploadResuming: false,
       });
-        errorMessage.current =
-          "An error occurred while uploading your airgap bundle. Please try again";
+      errorMessage.current =
+        "An error occurred while uploading your airgap bundle. Please try again";
       return;
     }
 
@@ -247,7 +248,8 @@ const UploadAirgapBundle = (props: Props) => {
           uploadSize: 0,
           uploadResuming: false,
         });
-        errorMessage.current = "Something went wrong when uploading Airgap bundle.";
+        errorMessage.current =
+          "Something went wrong when uploading Airgap bundle.";
       }
 
       const response = await res?.json();
@@ -417,7 +419,7 @@ const UploadAirgapBundle = (props: Props) => {
         uploadResuming: false,
         supportBundleCommand,
       });
-      errorMessage.current = onProgressErrorMessage;;
+      errorMessage.current = onProgressErrorMessage;
     }, 0);
   };
 
@@ -610,7 +612,9 @@ const UploadAirgapBundle = (props: Props) => {
               </div>
               {errorMessage.current && (
                 <div className="u-marginTop--10">
-                  <span className="u-textColor--error">{errorMessage.current}</span>
+                  <span className="u-textColor--error">
+                    {errorMessage.current}
+                  </span>
                   {state.showSupportBundleCommand ? (
                     <div className="u-marginTop--10">
                       <h2 className="u-fontSize--larger u-fontWeight--bold u-textColor--primary">
