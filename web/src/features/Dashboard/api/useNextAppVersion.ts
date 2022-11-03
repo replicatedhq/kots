@@ -22,7 +22,7 @@ function useNextAppVersionWithIntercept() {
         return x;
       },
       (error) => {
-        if (error.response.status === 401) {
+        if (error?.response?.status === 401) {
           // TODO: handle unauthorized
           console.log("an error occurred");
         }
@@ -32,7 +32,7 @@ function useNextAppVersionWithIntercept() {
     );
     axios.interceptors.response.use(
       async (x) => {
-        if (x.config.url?.endsWith("/next-app-version")) {
+        if (x?.config?.url?.endsWith("/next-app-version")) {
           //await sleep();
           setIsSlowLoading(false);
           clearTimeout(timerId.current as NodeJS.Timeout);
@@ -42,7 +42,7 @@ function useNextAppVersionWithIntercept() {
         return x;
       },
       (error) => {
-        if (error.response.status === 401) {
+        if (error?.response?.status === 401) {
           // TODO: handle unauthorized
           console.log("an error occurred");
         }

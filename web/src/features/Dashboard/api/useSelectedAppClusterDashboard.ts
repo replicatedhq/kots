@@ -30,7 +30,7 @@ function useSelectedAppClusterDashboardWithIntercept(
         return x;
       },
       (error) => {
-        if (error.response.status === 401) {
+        if (error?.response?.status === 401) {
           Utilities.logoutUser();
           return;
         }
@@ -40,7 +40,7 @@ function useSelectedAppClusterDashboardWithIntercept(
     );
     axios.interceptors.response.use(
       async (x) => {
-        if (x.config.url?.endsWith("/dashboard")) {
+        if (x?.config?.url?.endsWith("/dashboard")) {
           //await sleep();
           setIsSlowLoading(false);
           if (timerId.current) {
@@ -53,7 +53,7 @@ function useSelectedAppClusterDashboardWithIntercept(
         return x;
       },
       (error) => {
-        if (error.response.status === 401) {
+        if (error?.response?.status === 401) {
           Utilities.logoutUser();
           return;
         }
