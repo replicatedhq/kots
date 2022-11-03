@@ -295,21 +295,6 @@ func upstreamFileToBaseFile(upstreamFile upstreamtypes.UpstreamFile, builder tem
 	}, nil
 }
 
-func tryGetConfigFromFileContent(content []byte, log *logger.CLILogger) *kotsv1beta1.Config {
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, gvk, err := decode(content, nil, nil)
-	if err != nil {
-		log.Debug("Failed to parse file while looking for config: %v", err)
-		return nil
-	}
-
-	if gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "Config" {
-		return obj.(*kotsv1beta1.Config)
-	}
-
-	return nil
-}
-
 // findHelmChartArchiveInRelease iterates through all files in the release (upstreamFiles), looking for a helm chart archive
 // that matches the chart name and version specified in the kotsHelmChart parameter
 func findHelmChartArchiveInRelease(upstreamFiles []upstreamtypes.UpstreamFile, kotsHelmChart *kotsv1beta1.HelmChart) ([]byte, error) {

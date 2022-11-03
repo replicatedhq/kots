@@ -8,7 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/util"
 )
 
@@ -76,15 +76,14 @@ func getLicenseFromAPI(url string, licenseID string) (*LicenseData, error) {
 		return nil, errors.Errorf("unexpected result from get request: %d, data: %s", resp.StatusCode, body)
 	}
 
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode(body, nil, nil)
+	license, err := kotsutil.LoadLicenseFromBytes(body)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode latest license data")
+		return nil, errors.Wrap(err, "failed to load license from bytes")
 	}
 
 	data := &LicenseData{
 		LicenseBytes: body,
-		License:      obj.(*kotsv1beta1.License),
+		License:      license,
 	}
 	return data, nil
 }

@@ -5,10 +5,10 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/scheme"
 )
 
 func getWebConfig(ctx context.Context, clientset kubernetes.Interface, namespace string, singleApp bool) (*kotsv1beta1.IdentityWebConfig, error) {
@@ -39,17 +39,11 @@ func getWebConfig(ctx context.Context, clientset kubernetes.Interface, namespace
 	}
 
 	// parse data as a kotskind
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, gvk, err := decode([]byte(data), nil, nil)
+	application, err := kotsutil.LoadKotsAppFromContents([]byte(data))
 	if err != nil {
-		return webConfig, errors.Wrap(err, "failed to decode application gvk")
+		return webConfig, errors.Wrap(err, "failed to decode application.yaml")
 	}
 
-	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "Application" {
-		return webConfig, errors.New("unexpected gvk found in metadata")
-	}
-
-	application := obj.(*kotsv1beta1.Application)
 	if application.Spec.Icon != "" {
 		// NOTE: this will not work for base64 icons
 		// something to do with the dex templating

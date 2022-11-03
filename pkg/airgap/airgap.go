@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/airgap/types"
 	"github.com/replicatedhq/kots/pkg/archives"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -32,7 +31,6 @@ import (
 	supportbundletypes "github.com/replicatedhq/kots/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
-	"k8s.io/client-go/kubernetes/scheme"
 )
 
 type CreateAirgapAppOpts struct {
@@ -136,12 +134,10 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		return errors.Wrap(err, "failed to set task status")
 	}
 
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode([]byte(opts.PendingApp.LicenseData), nil, nil)
+	license, err := kotsutil.LoadLicenseFromBytes([]byte(opts.PendingApp.LicenseData))
 	if err != nil {
-		return errors.Wrap(err, "failed to read pending license data")
+		return errors.Wrap(err, "failed to load license")
 	}
-	license := obj.(*kotsv1beta1.License)
 
 	licenseFile, err := ioutil.TempFile("", "kotsadm")
 	if err != nil {

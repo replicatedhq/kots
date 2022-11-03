@@ -9,7 +9,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/airgap"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/api/handlers/types"
@@ -26,7 +25,6 @@ import (
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
-	"k8s.io/client-go/kubernetes/scheme"
 )
 
 func (h *Handler) GetPendingApp(w http.ResponseWriter, r *http.Request) {
@@ -601,23 +599,15 @@ func (h *Handler) CanInstallAppVersion(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		decode := scheme.Codecs.UniversalDeserializer().Decode
-		decoded, gvk, err := decode([]byte(request.AirgapSpec), nil, nil)
+		decodedSpec, err := kotsutil.LoadAirgapFromBytes([]byte(request.AirgapSpec))
 		if err != nil {
-			response.Error = "failed to decode airgap spec"
+			response.Error = "failed to load airgap from bytes"
 			logger.Error(errors.Wrap(err, response.Error))
 			JSON(w, http.StatusInternalServerError, response)
 			return
 		}
 
-		if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "Airgap" {
-			response.Error = fmt.Sprintf("invalid airgap spec gvk: %s", gvk.String())
-			logger.Error(errors.Wrap(err, response.Error))
-			JSON(w, http.StatusInternalServerError, response)
-			return
-		}
-
-		missingPrereqs, err := airgap.GetMissingRequiredVersions(a, decoded.(*kotsv1beta1.Airgap))
+		missingPrereqs, err := airgap.GetMissingRequiredVersions(a, decodedSpec)
 		if err != nil {
 			response.Error = "failed to get release prerequisites"
 			logger.Error(errors.Wrap(err, response.Error))

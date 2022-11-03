@@ -5,7 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
 )
@@ -18,16 +18,13 @@ func ResolveExistingLicense(newLicense *kotsv1beta1.License) (bool, error) {
 	}
 
 	for _, app := range notInstalledApps {
-		decode := scheme.Codecs.UniversalDeserializer().Decode
-		obj, _, err := decode([]byte(app.License), nil, nil)
+		license, err := kotsutil.LoadLicenseFromBytes([]byte(app.License))
 		if err != nil {
 			continue
 		}
-		license := obj.(*kotsv1beta1.License)
 		if license.Spec.LicenseID != newLicense.Spec.LicenseID {
 			continue
 		}
-
 		if err := store.GetStore().RemoveApp(app.ID); err != nil {
 			return false, errors.Wrap(err, "failed to remove existing app record")
 		}

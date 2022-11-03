@@ -36,7 +36,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/scheme"
 )
 
 type UpdateAppConfigRequest struct {
@@ -1025,22 +1024,13 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	decoded, gvk, err := decode(setAppConfigValuesRequest.ConfigValues, nil, nil)
+	newConfigValues, err := kotsutil.LoadConfigValuesFromBytes(setAppConfigValuesRequest.ConfigValues)
 	if err != nil {
 		setAppConfigValuesResponse.Error = "failed to decode config values"
 		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
 		JSON(w, http.StatusBadRequest, setAppConfigValuesResponse)
 		return
 	}
-
-	if gvk.String() != "kots.io/v1beta1, Kind=ConfigValues" {
-		setAppConfigValuesResponse.Error = fmt.Sprintf("%q is not a valid ConfigValues GVK", gvk.String())
-		logger.Errorf(setAppConfigValuesResponse.Error)
-		JSON(w, http.StatusInternalServerError, setAppConfigValuesResponse)
-		return
-	}
-	newConfigValues := decoded.(*kotsv1beta1.ConfigValues)
 
 	foundApp, err := store.GetStore().GetAppFromSlug(mux.Vars(r)["appSlug"])
 	if err != nil {

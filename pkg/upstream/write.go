@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/upstream/types"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
@@ -54,13 +55,11 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 
 	var prevInstallation *kotsv1beta1.Installation
 	if previousInstallationContent != nil {
-		decode := scheme.Codecs.UniversalDeserializer().Decode
-
-		prevObj, _, err := decode(previousInstallationContent, nil, nil)
+		pi, err := kotsutil.LoadInstallationFromContents(previousInstallationContent)
 		if err != nil {
-			return errors.Wrap(err, "failed to decode previous installation")
+			return errors.Wrap(err, "failed to load previous installation from contents")
 		}
-		prevInstallation = prevObj.(*kotsv1beta1.Installation)
+		prevInstallation = pi
 	}
 
 	encryptionKey, err := getEncryptionKey(prevInstallation)

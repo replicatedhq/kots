@@ -6,10 +6,10 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	kotsadmresources "github.com/replicatedhq/kots/pkg/kotsadm/resources"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -179,16 +179,11 @@ func ensureKotsadmRBAC(deployOptions types.DeployOptions, clientset *kubernetes.
 		return errors.Wrap(err, "failed to ensure kotsadm role binding")
 	}
 
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, gvk, err := decode(deployOptions.ApplicationMetadata, nil, nil)
+	application, err := kotsutil.LoadKotsAppFromContents(deployOptions.ApplicationMetadata)
 	if err != nil {
-		return errors.Wrap(err, "failed to decode application metadata")
-	}
-	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "Application" {
-		return errors.New("application metadata contained unepxected gvk")
+		return errors.Wrap(err, "failed to load kots app")
 	}
 
-	application := obj.(*kotsv1beta1.Application)
 	for _, additionalNamespace := range application.Spec.AdditionalNamespaces {
 		if err = kotsadmresources.EnsureKotsadmRole(additionalNamespace, clientset); err != nil {
 			return errors.Wrap(err, "failed to ensure kotsadm additional namespace role")
@@ -384,17 +379,10 @@ func isKotsadmClusterScoped(deployOptions *types.DeployOptions) (bool, error) {
 		return true, nil
 	}
 
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, gvk, err := decode(deployOptions.ApplicationMetadata, nil, nil)
+	application, err := kotsutil.LoadKotsAppFromContents(deployOptions.ApplicationMetadata)
 	if err != nil {
-		return false, errors.Wrap(err, "failed to decode application metadata")
+		return false, errors.Wrap(err, "failed to load kots app from contents")
 	}
-
-	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "Application" {
-		return false, errors.New("application metadata contained unepxected gvk")
-	}
-
-	application := obj.(*kotsv1beta1.Application)
 
 	if deployOptions.UseMinimalRBAC && application.Spec.SupportMinimalRBACPrivileges {
 		return false, nil

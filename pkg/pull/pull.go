@@ -308,7 +308,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		CreateAppDir:        pullOptions.CreateAppDir,
 		IncludeAdminConsole: includeAdminConsole,
 		SharedPassword:      pullOptions.SharedPassword,
-		EncryptConfig:       encryptConfigValues,
+		EncryptConfigValues: encryptConfigValues,
 		HTTPProxyEnvValue:   pullOptions.HTTPProxyEnvValue,
 		HTTPSProxyEnvValue:  pullOptions.HTTPSProxyEnvValue,
 		NoProxyEnvValue:     pullOptions.NoProxyEnvValue,

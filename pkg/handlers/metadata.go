@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -21,7 +20,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/scheme"
 )
 
 const (
@@ -91,19 +89,13 @@ func GetMetadataHandler(getK8sInfoFn MetadataK8sFn, kotsStore store.Store) http.
 		}
 
 		// parse data as a kotskind
-		obj, gvk, err := scheme.Codecs.UniversalDeserializer().Decode([]byte(data), nil, nil)
+		application, err := kotsutil.LoadKotsAppFromContents([]byte(data))
 		if err != nil {
-			logger.Error(fmt.Errorf("failed to decode application yaml %w", err))
+			logger.Error(errors.Wrap(err, "failed to load kots app from contents"))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "Application" {
-			logger.Error(fmt.Errorf("expected Application crd but get %#v", gvk))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		application := obj.(*kotsv1beta1.Application)
 		metadataResponse.IconURI = application.Spec.Icon
 		metadataResponse.Branding = getBrandingResponse(kotsStore, appID)
 		metadataResponse.Name = application.Spec.Title

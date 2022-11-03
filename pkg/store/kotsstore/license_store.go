@@ -40,12 +40,11 @@ func (s *KOTSStore) GetLatestLicenseForApp(appID string) (*kotsv1beta1.License, 
 		return nil, errors.Wrap(err, "failed to scan")
 	}
 
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode([]byte(licenseStr.String), nil, nil)
+	license, err := kotsutil.LoadLicenseFromBytes([]byte(licenseStr.String))
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode license yaml")
+		return nil, errors.Wrap(err, "failed to load license from bytes")
 	}
-	license := obj.(*kotsv1beta1.License)
+
 	return license, nil
 }
 
@@ -69,12 +68,10 @@ func (s *KOTSStore) GetLicenseForAppVersion(appID string, sequence int64) (*kots
 	}
 
 	if licenseStr.Valid {
-		decode := scheme.Codecs.UniversalDeserializer().Decode
-		obj, _, err := decode([]byte(licenseStr.String), nil, nil)
+		license, err := kotsutil.LoadLicenseFromBytes([]byte(licenseStr.String))
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to decode license yaml")
+			return nil, errors.Wrap(err, "failed to load license from bytes")
 		}
-		license := obj.(*kotsv1beta1.License)
 		return license, nil
 	}
 
@@ -96,12 +93,10 @@ func (s *KOTSStore) GetAllAppLicenses() ([]*kotsv1beta1.License, error) {
 			return nil, errors.Wrap(err, "failed to scan")
 		}
 		if licenseStr.Valid {
-			decode := scheme.Codecs.UniversalDeserializer().Decode
-			obj, _, err := decode([]byte(licenseStr.String), nil, nil)
+			license, err := kotsutil.LoadLicenseFromBytes([]byte(licenseStr.String))
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to decode license yaml")
+				return nil, errors.Wrap(err, "failed to load license from bytes")
 			}
-			license := obj.(*kotsv1beta1.License)
 			licenses = append(licenses, license)
 		}
 	}

@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/api/version/types"
 	"github.com/replicatedhq/kots/pkg/gitops"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
@@ -24,8 +23,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/kubernetes/scheme"
-	applicationv1beta1 "sigs.k8s.io/application/api/v1beta1"
 )
 
 type DownstreamGitOps struct {
@@ -129,18 +126,15 @@ func GetRealizedLinksFromAppSpec(appID string, sequence int64) ([]types.Realized
 		return []types.RealizedLink{}, nil
 	}
 
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode([]byte(appSpecStr.String), nil, nil)
+	appSpec, err := kotsutil.LoadK8sAppFromContents([]byte(appSpecStr.String))
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode app spec yaml")
+		return nil, errors.Wrap(err, "failed to load k8s app from contents")
 	}
-	appSpec := obj.(*applicationv1beta1.Application)
 
-	obj, _, err = decode([]byte(kotsAppSpecStr.String), nil, nil)
+	kotsAppSpec, err := kotsutil.LoadKotsAppFromContents([]byte(kotsAppSpecStr.String))
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode kots app spec yaml")
+		return nil, errors.Wrap(err, "failed to load kots app from contents")
 	}
-	kotsAppSpec := obj.(*kotsv1beta1.Application)
 
 	realizedLinks := []types.RealizedLink{}
 	for _, link := range appSpec.Spec.Descriptor.Links {

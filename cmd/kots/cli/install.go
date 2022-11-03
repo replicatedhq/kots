@@ -34,6 +34,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/metrics"
 	"github.com/replicatedhq/kots/pkg/pull"
+	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/store/kotsstore"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
@@ -145,7 +146,13 @@ func InstallCmd() *cobra.Command {
 
 			applicationMetadata := &replicatedapp.ApplicationMetadata{}
 			if airgapBundle := v.GetString("airgap-bundle"); airgapBundle != "" {
-				applicationMetadata, err = pull.GetAppMetadataFromAirgap(airgapBundle)
+				applicationMetadata, err = pull.GetAppMetadataFromAirgap(airgapBundle, license.Spec.AppSlug, 0, namespace, registrytypes.RegistrySettings{
+					Hostname:   registryConfig.OverrideRegistry,
+					Namespace:  registryConfig.OverrideNamespace,
+					Username:   registryConfig.Username,
+					Password:   registryConfig.Password,
+					IsReadOnly: registryConfig.IsReadOnly,
+				})
 				if err != nil {
 					return errors.Wrapf(err, "failed to get metadata from %s", airgapBundle)
 				}

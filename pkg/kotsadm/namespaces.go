@@ -4,9 +4,8 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -20,17 +19,11 @@ func ensureAdditionalNamespaces(deployOptions *types.DeployOptions, clientset *k
 		return nil
 	}
 
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, gvk, err := decode(deployOptions.ApplicationMetadata, nil, nil)
+	application, err := kotsutil.LoadKotsAppFromContents(deployOptions.ApplicationMetadata)
 	if err != nil {
-		return nil // no error here
+		return errors.Wrap(err, "failed to load kots app from contents")
 	}
 
-	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "Application" {
-		return nil
-	}
-
-	application := obj.(*kotsv1beta1.Application)
 	for _, additionalNamespace := range application.Spec.AdditionalNamespaces {
 		// We support "*" for additional namespaces to handle pullsecret propagation
 		if additionalNamespace == "*" {

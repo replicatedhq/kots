@@ -1,15 +1,13 @@
 package cli
 
 import (
-	"io/ioutil"
 	"os"
 	"path"
 	"strings"
 
 	"github.com/pkg/errors"
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/spf13/cobra"
@@ -156,22 +154,10 @@ func getAppSlugForPull(uri string, licenseFile string) (string, error) {
 		return appSlug, nil
 	}
 
-	licenseData, err := ioutil.ReadFile(licenseFile)
+	license, err := kotsutil.LoadLicenseFromPath(licenseFile)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to read license file")
+		return "", errors.Wrap(err, "failed to load license")
 	}
-
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	decoded, gvk, err := decode(licenseData, nil, nil)
-	if err != nil {
-		return "", errors.Wrap(err, "unable to decode license file")
-	}
-
-	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "License" {
-		return "", errors.New("not an application license")
-	}
-
-	license := decoded.(*kotsv1beta1.License)
 
 	return license.Spec.AppSlug, nil
 }

@@ -17,7 +17,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
-	"k8s.io/client-go/kubernetes/scheme"
 )
 
 func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kotsv1beta1.License, bool, error) {
@@ -33,18 +32,14 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 
 	var updatedLicense *kotsv1beta1.License
 	if licenseString != "" {
-		decode := scheme.Codecs.UniversalDeserializer().Decode
-		obj, _, err := decode([]byte(licenseString), nil, nil)
+		unverifiedLicense, err := kotsutil.LoadLicenseFromBytes([]byte(licenseString))
 		if err != nil {
-			return nil, false, errors.Wrap(err, "failed to parse license")
+			return nil, false, errors.Wrap(err, "failed to load license from bytes")
 		}
-
-		unverifiedLicense := obj.(*kotsv1beta1.License)
 		verifiedLicense, err := kotslicense.VerifySignature(unverifiedLicense)
 		if err != nil {
 			return nil, false, errors.Wrap(err, "failed to verify license")
 		}
-
 		updatedLicense = verifiedLicense
 	} else {
 		// get from the api
@@ -216,12 +211,10 @@ func Change(a *apptypes.App, newLicenseString string) (*kotsv1beta1.License, err
 }
 
 func CheckIfLicenseExists(license []byte) (*kotsv1beta1.License, error) {
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode(license, nil, nil)
+	decodedLicense, err := kotsutil.LoadLicenseFromBytes(license)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode license yaml")
+		return nil, errors.Wrap(err, "failed to load license from bytes")
 	}
-	decodedLicense := obj.(*kotsv1beta1.License)
 
 	allLicenses, err := store.GetStore().GetAllAppLicenses()
 	if err != nil {

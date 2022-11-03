@@ -3,14 +3,16 @@ package base
 import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/template"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 )
 
 func NewConfigContextTemplateBuilder(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (*template.Builder, map[string]template.ItemValue, error) {
-	kotsKinds, err := getKotsKinds(u, renderOptions.Log)
-	if err != nil {
-		return nil, nil, err
+	kotsKinds := renderOptions.KotsKinds
+	if kotsKinds == nil {
+		emptyKotsKinds := kotsutiltypes.EmptyKotsKinds()
+		kotsKinds = &emptyKotsKinds
 	}
 
 	var templateContext map[string]template.ItemValue

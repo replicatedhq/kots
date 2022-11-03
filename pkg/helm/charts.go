@@ -17,7 +17,6 @@ import (
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
@@ -266,17 +265,11 @@ func GetChartLicenseFromSecretOrDownload(helmApp *apptypes.HelmApp) (*kotsv1beta
 	}
 
 	if licenseData := configSecret.Data["license"]; len(licenseData) > 0 {
-		decode := kotsscheme.Codecs.UniversalDeserializer().Decode
-		obj, gvk, err := decode(licenseData, nil, nil)
+		license, err := kotsutil.LoadLicenseFromBytes(licenseData)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to decode license data")
+			return nil, errors.Wrap(err, "failed to load license from bytes")
 		}
-
-		if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "License" {
-			return nil, errors.Errorf("unexpected GVK: %s", gvk.String())
-		}
-
-		return obj.(*kotsv1beta1.License), nil
+		return license, nil
 	}
 
 	license, err := downloadAppLicense(helmApp)

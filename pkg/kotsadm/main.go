@@ -20,6 +20,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/ingress"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"golang.org/x/sync/errgroup"
@@ -346,10 +347,8 @@ func removeKotsadmOperator(deployOptions types.DeployOptions, clientset *kuberne
 
 	// remove roles/rolebindings from the additional namespaces (if applicable)
 	if len(deployOptions.ApplicationMetadata) > 0 {
-		decode := scheme.Codecs.UniversalDeserializer().Decode
-		obj, gvk, err := decode(deployOptions.ApplicationMetadata, nil, nil)
-		if err == nil && gvk.Group == "kots.io" && gvk.Version == "v1beta1" && gvk.Kind == "Application" {
-			application := obj.(*kotsv1beta1.Application)
+		application, _ := kotsutil.LoadKotsAppFromContents(deployOptions.ApplicationMetadata)
+		if application != nil {
 			for _, additionalNamespace := range application.Spec.AdditionalNamespaces {
 				err := clientset.RbacV1().RoleBindings(additionalNamespace).Delete(context.TODO(), "kotsadm-operator-rolebinding", metav1.DeleteOptions{})
 				if err != nil && !kuberneteserrors.IsNotFound(err) {

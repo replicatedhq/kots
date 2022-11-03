@@ -255,7 +255,7 @@ func downloadReplicated(
 		}
 	}
 
-	config, _, _, _, _, err := findTemplateContextDataInRelease(release)
+	config, err := findConfig(release)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find config in release")
 	}
@@ -706,12 +706,8 @@ func contentToIdentityConfig(content []byte) *kotsv1beta1.IdentityConfig {
 	return nil
 }
 
-func findTemplateContextDataInRelease(release *Release) (*kotsv1beta1.Config, *kotsv1beta1.ConfigValues, *kotsv1beta1.License, *kotsv1beta1.Installation, *kotsv1beta1.IdentityConfig, error) {
+func findConfig(release *Release) (*kotsv1beta1.Config, error) {
 	var config *kotsv1beta1.Config
-	var values *kotsv1beta1.ConfigValues
-	var license *kotsv1beta1.License
-	var installation *kotsv1beta1.Installation
-	var identityConfig *kotsv1beta1.IdentityConfig
 
 	for _, content := range release.Manifests {
 		decode := scheme.Codecs.UniversalDeserializer().Decode
@@ -724,20 +720,13 @@ func findTemplateContextDataInRelease(release *Release) (*kotsv1beta1.Config, *k
 			if gvk.Version == "v1beta1" {
 				if gvk.Kind == "Config" {
 					config = obj.(*kotsv1beta1.Config)
-				} else if gvk.Kind == "ConfigValues" {
-					values = obj.(*kotsv1beta1.ConfigValues)
-				} else if gvk.Kind == "License" {
-					license = obj.(*kotsv1beta1.License)
-				} else if gvk.Kind == "Installation" {
-					installation = obj.(*kotsv1beta1.Installation)
-				} else if gvk.Kind == "IdentityConfig" {
-					identityConfig = obj.(*kotsv1beta1.IdentityConfig)
+					break
 				}
 			}
 		}
 	}
 
-	return config, values, license, installation, identityConfig, nil
+	return config, nil
 }
 
 func findAppInRelease(release *Release) *kotsv1beta1.Application {

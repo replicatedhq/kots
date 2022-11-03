@@ -8,8 +8,7 @@ import (
 
 	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"k8s.io/client-go/kubernetes/scheme"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 )
 
 func createUploadableArchive(rootPath string) (string, error) {
@@ -57,18 +56,10 @@ func findUpdateCursor(rootPath string) (string, error) {
 		return "", errors.Wrap(err, "failed to open file")
 	}
 
-	installationData, err := ioutil.ReadFile(installationFilePath)
+	installation, err := kotsutil.LoadInstallationFromPath(installationFilePath)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to read update installation file")
+		return "", errors.Wrap(err, "failed to load installation from path")
 	}
-
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode([]byte(installationData), nil, nil)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to decode installation data")
-	}
-
-	installation := obj.(*kotsv1beta1.Installation)
 
 	return installation.Spec.UpdateCursor, nil
 }
