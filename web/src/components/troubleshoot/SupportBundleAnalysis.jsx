@@ -37,7 +37,6 @@ export class SupportBundleAnalysis extends React.Component {
       sendingBundleErrMsg: "",
       showPodAnalyzerDetailsModal: false,
       pollForBundleAnalysisProgress: new Repeater(),
-      bundleAnalysisProgress: {},
     };
   }
 
@@ -242,7 +241,6 @@ export class SupportBundleAnalysis extends React.Component {
 
   render() {
     const { watch } = this.props;
-    const { bundleAnalysisProgress } = this.state;
     const { bundleProgress, getSupportBundleErrMsg, loading, bundle } =
       this.props;
 
@@ -254,6 +252,7 @@ export class SupportBundleAnalysis extends React.Component {
       );
     }
 
+    // TODO: make this into a reusable component
     let progressBar;
 
     if (bundleProgress.collectorsCompleted > 0) {
