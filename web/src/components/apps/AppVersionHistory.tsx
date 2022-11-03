@@ -224,36 +224,36 @@ const AppVersionHistory = (props: Props) => {
   _mounted: boolean | undefined;
 
   componentDidMount() {
-    this.getPreflightState(this.props.app.downstream.currentVersion);
+    getPreflightState(props.app.downstream.currentVersion);
     const urlParams = new URLSearchParams(window.location.search);
     const pageNumber = urlParams.get("page");
     if (pageNumber) {
-      this.setState({ currentPage: parseInt(pageNumber) });
+      setState({ currentPage: parseInt(pageNumber) });
     } else {
-      this.props.history.push(`${this.props.location.pathname}?page=0`);
+      props.history.push(`${props.location.pathname}?page=0`);
     }
 
-    this.fetchKotsDownstreamHistory();
-    this.props.refreshAppData();
-    if (this.props.app?.isAirgap && !this.state.airgapUploader) {
-      this.getAirgapConfig();
+    fetchKotsDownstreamHistory();
+    props.refreshAppData();
+    if (props.app?.isAirgap && !state.airgapUploader) {
+      getAirgapConfig();
     }
 
     // check if there are any updates in progress
-    this.state.appUpdateChecker.start(this.getAppUpdateStatus, 1000);
+    state.appUpdateChecker.start(getAppUpdateStatus, 1000);
 
     const url = window.location.pathname;
-    const { params } = this.props.match;
+    const { params } = props.match;
     if (url.includes("/diff")) {
       const firstSequence = params.firstSequence;
       const secondSequence = params.secondSequence;
       if (firstSequence !== undefined && secondSequence !== undefined) {
         // undefined because a sequence can be zero!
-        this.setState({ showDiffOverlay: true, firstSequence, secondSequence });
+        setState({ showDiffOverlay: true, firstSequence, secondSequence });
       }
     }
 
-    this._mounted = true;
+    _mounted = true;
   }
 
   componentDidUpdate = async (lastProps: {
@@ -261,39 +261,39 @@ const AppVersionHistory = (props: Props) => {
     app: { id: string; downstream: Downstream };
   }) => {
     if (
-      lastProps.match.params.slug !== this.props.match.params.slug ||
-      lastProps.app.id !== this.props.app.id
+      lastProps.match.params.slug !== props.match.params.slug ||
+      lastProps.app.id !== props.app.id
     ) {
-      this.fetchKotsDownstreamHistory();
+      fetchKotsDownstreamHistory();
     }
     if (
-      this.props.app.downstream.pendingVersions.length > 0 &&
-      this.state.updatesAvailable === false
+      props.app.downstream.pendingVersions.length > 0 &&
+      state.updatesAvailable === false
     ) {
-      this.setState({ updatesAvailable: true });
+      setState({ updatesAvailable: true });
     }
     if (
-      this.props.app.downstream.pendingVersions.length === 0 &&
-      this.state.updatesAvailable === true
+      props.app.downstream.pendingVersions.length === 0 &&
+      state.updatesAvailable === true
     ) {
-      this.setState({ updatesAvailable: false });
+      setState({ updatesAvailable: false });
     }
   };
 
   componentWillUnmount() {
-    this.state.appUpdateChecker.stop();
-    this.state.versionHistoryJob.stop();
-    for (const j in this.versionDownloadStatusJobs) {
-      this.versionDownloadStatusJobs[j].stop();
+    state.appUpdateChecker.stop();
+    state.versionHistoryJob.stop();
+    for (const j in versionDownloadStatusJobs) {
+      versionDownloadStatusJobs[j].stop();
     }
-    this._mounted = false;
+    _mounted = false;
   }
 
-  fetchKotsDownstreamHistory = async () => {
-    const { match } = this.props;
+  const fetchKotsDownstreamHistory = async () => {
+    const { match } = props;
     const appSlug = match.params.slug;
 
-    this.setState({
+    setState({
       loadingVersionHistory: true,
       errorTitle: "",
       errorMsg: "",
@@ -301,7 +301,7 @@ const AppVersionHistory = (props: Props) => {
     });
 
     try {
-      const { currentPage, pageSize } = this.state;
+      const { currentPage, pageSize } = state;
       const res = await fetch(
         `${process.env.API_ENDPOINT}/app/${appSlug}/versions?currentPage=${currentPage}&pageSize=${pageSize}&pinLatestDeployable=true`,
         {
@@ -317,7 +317,7 @@ const AppVersionHistory = (props: Props) => {
           Utilities.logoutUser();
           return;
         }
-        this.setState({
+        setState({
           loadingVersionHistory: false,
           errorTitle: "Failed to get version history",
           errorMsg: `Unexpected status code: ${res.status}`,
@@ -328,16 +328,16 @@ const AppVersionHistory = (props: Props) => {
       const response = await res.json();
       const versionHistory = response.versionHistory;
 
-      if (isAwaitingResults(versionHistory) && this._mounted) {
-        this.state.versionHistoryJob.start(
-          this.fetchKotsDownstreamHistory,
+      if (isAwaitingResults(versionHistory) && _mounted) {
+        state.versionHistoryJob.start(
+          fetchKotsDownstreamHistory,
           2000
         );
       } else {
-        this.state.versionHistoryJob.stop();
+        state.versionHistoryJob.stop();
       }
 
-      this.setState({
+      setState({
         loadingVersionHistory: false,
         versionHistory: versionHistory,
         numOfSkippedVersions: response.numOfSkippedVersions,
@@ -345,7 +345,7 @@ const AppVersionHistory = (props: Props) => {
         totalCount: response.totalCount,
       });
     } catch (err) {
-      this.setState({
+      setState({
         loadingVersionHistory: false,
         errorTitle: "Failed to get version history",
         errorMsg: err
@@ -356,18 +356,18 @@ const AppVersionHistory = (props: Props) => {
     }
   };
 
-  setPageSize = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    this.setState(
+  const setPageSize = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setState(
       { pageSize: parseInt(e.target.value), currentPage: 0 },
       () => {
-        this.fetchKotsDownstreamHistory();
-        this.props.history.push(`${this.props.location.pathname}?page=0`);
+        fetchKotsDownstreamHistory();
+        props.history.push(`${props.location.pathname}?page=0`);
       }
     );
   };
 
-  getAirgapConfig = async () => {
-    const { app } = this.props;
+  const getAirgapConfig = async () => {
+    const { app } = props;
     const configUrl = `${process.env.API_ENDPOINT}/app/${app.slug}/airgap/config`;
     let simultaneousUploads = 3;
     try {
@@ -386,18 +386,18 @@ const AppVersionHistory = (props: Props) => {
       // no-op
     }
 
-    this.setState({
+    setState({
       airgapUploader: new AirgapUploader(
         true,
         app.slug,
-        this.onDropBundle,
+        onDropBundle,
         simultaneousUploads
       ),
     });
   };
 
-  onDropBundle = async () => {
-    this.setState({
+  const onDropBundle = async () => {
+    setState({
       uploadingAirgapFile: true,
       checkingForUpdates: true,
       airgapUploadError: "",
@@ -406,29 +406,29 @@ const AppVersionHistory = (props: Props) => {
       uploadResuming: false,
     });
 
-    this.props.toggleIsBundleUploading(true);
+    props.toggleIsBundleUploading(true);
 
     const params = {
-      appId: this.props.app?.id,
+      appId: props.app?.id,
     };
-    this.state.airgapUploader?.upload(
+    state.airgapUploader?.upload(
       params,
-      this.onUploadProgress,
-      this.onUploadError,
-      this.onUploadComplete
+      onUploadProgress,
+      onUploadError,
+      onUploadComplete
     );
   };
 
-  onUploadProgress = (progress: number, size: number, resuming = false) => {
-    this.setState({
+  const onUploadProgress = (progress: number, size: number, resuming = false) => {
+    setState({
       uploadProgress: progress,
       uploadSize: size,
       uploadResuming: resuming,
     });
   };
 
-  onUploadError = (message: String) => {
-    this.setState({
+  const onUploadError = (message: String) => {
+    setState({
       uploadingAirgapFile: false,
       checkingForUpdates: false,
       uploadProgress: 0,
@@ -437,57 +437,57 @@ const AppVersionHistory = (props: Props) => {
       airgapUploadError:
         (message as string) || "Error uploading bundle, please try again",
     });
-    this.props.toggleIsBundleUploading(false);
+    props.toggleIsBundleUploading(false);
   };
 
-  onUploadComplete = () => {
-    this.state.appUpdateChecker.start(this.getAppUpdateStatus, 1000);
-    this.setState({
+  const onUploadComplete = () => {
+    state.appUpdateChecker.start(getAppUpdateStatus, 1000);
+    setState({
       uploadingAirgapFile: false,
       uploadProgress: 0,
       uploadSize: 0,
       uploadResuming: false,
     });
-    this.props.toggleIsBundleUploading(false);
+    props.toggleIsBundleUploading(false);
   };
 
-  toggleErrorModal = () => {
-    this.setState({ displayErrorModal: !this.state.displayErrorModal });
+  const toggleErrorModal = () => {
+    setState({ displayErrorModal: !state.displayErrorModal });
   };
 
-  showReleaseNotes = (notes: string) => {
-    this.setState({
+  const showReleaseNotes = (notes: string) => {
+    setState({
       releaseNotes: notes,
     });
   };
 
-  hideReleaseNotes = () => {
-    this.setState({
+  const hideReleaseNotes = () => {
+    setState({
       releaseNotes: null,
     });
   };
 
-  toggleDiffErrModal = (release?: ReleaseWithError) => {
-    this.setState({
-      showDiffErrModal: !this.state.showDiffErrModal,
-      releaseWithErr: !this.state.showDiffErrModal ? release : null,
+  const toggleDiffErrModal = (release?: ReleaseWithError) => {
+    setState({
+      showDiffErrModal: !state.showDiffErrModal,
+      releaseWithErr: !state.showDiffErrModal ? release : null,
     });
   };
 
-  toggleAutomaticUpdatesModal = () => {
-    this.setState({
-      showAutomaticUpdatesModal: !this.state.showAutomaticUpdatesModal,
+  const toggleAutomaticUpdatesModal = () => {
+    setState({
+      showAutomaticUpdatesModal: !state.showAutomaticUpdatesModal,
     });
   };
 
-  toggleNoChangesModal = (version?: Version) => {
-    this.setState({
-      showNoChangesModal: !this.state.showNoChangesModal,
-      releaseWithNoChanges: !this.state.showNoChangesModal ? version : {},
+  const toggleNoChangesModal = (version?: Version) => {
+    setState({
+      showNoChangesModal: !state.showNoChangesModal,
+      releaseWithNoChanges: !state.showNoChangesModal ? version : {},
     });
   };
 
-  getVersionDiffSummary = (version: Version) => {
+  const getVersionDiffSummary = (version: Version) => {
     if (!version.diffSummary || version.diffSummary === "") {
       return null;
     }
@@ -498,14 +498,14 @@ const AppVersionHistory = (props: Props) => {
     }
   };
 
-  renderDiff = (version: Version) => {
-    const { app } = this.props;
+  const renderDiff = (version: Version) => {
+    const { app } = props;
     const downstream = app?.downstream;
-    const diffSummary = this.getVersionDiffSummary(version);
+    const diffSummary = getVersionDiffSummary(version);
     const hasDiffSummaryError =
       version.diffSummaryError && version.diffSummaryError.length > 0;
     let previousSequence = 0;
-    for (const v of this.state.versionHistory as Version[]) {
+    for (const v of state.versionHistory as Version[]) {
       if (v.status === "pending_download") {
         continue;
       }
@@ -522,7 +522,7 @@ const AppVersionHistory = (props: Props) => {
             Unable to generate diff{" "}
             <span
               className="replicated-link"
-              onClick={() => this.toggleDiffErrModal(version)}
+              onClick={() => toggleDiffErrModal(version)}
             >
               Why?
             </span>
@@ -537,11 +537,11 @@ const AppVersionHistory = (props: Props) => {
               <span className="files">
                 {diffSummary.filesChanged} files changed{" "}
               </span>
-              {!this.props.isHelmManaged && !downstream.gitops?.isConnected && (
+              {!props.isHelmManaged && !downstream.gitops?.isConnected && (
                 <span
                   className="u-fontSize--small replicated-link u-marginLeft--5"
                   onClick={() =>
-                    this.setState({
+                    setState({
                       showDiffOverlay: true,
                       firstSequence: previousSequence,
                       secondSequence: version.parentSequence,
@@ -558,7 +558,7 @@ const AppVersionHistory = (props: Props) => {
                 No changes to show.{" "}
                 <span
                   className="replicated-link"
-                  onClick={() => this.toggleNoChangesModal(version)}
+                  onClick={() => toggleNoChangesModal(version)}
                 >
                   Why?
                 </span>
@@ -570,8 +570,8 @@ const AppVersionHistory = (props: Props) => {
     }
   };
 
-  renderLogsTabs = () => {
-    const { logs, selectedTab } = this.state;
+  const renderLogsTabs = () => {
+    const { logs, selectedTab } = state;
     if (!logs) {
       return null;
     }
@@ -581,7 +581,7 @@ const AppVersionHistory = (props: Props) => {
         {tabs
           .filter((tab) => tab !== "renderError")
           .filter((tab) => {
-            if (this.props.isHelmManaged) {
+            if (props.isHelmManaged) {
               return tab.startsWith("helm");
             }
             return true;
@@ -590,7 +590,7 @@ const AppVersionHistory = (props: Props) => {
             <div
               className={`tab-item blue ${tab === selectedTab && "is-active"}`}
               key={tab}
-              onClick={() => this.setState({ selectedTab: tab })}
+              onClick={() => setState({ selectedTab: tab })}
             >
               {tab}
             </div>
@@ -599,16 +599,16 @@ const AppVersionHistory = (props: Props) => {
     );
   };
 
-  downloadVersion = (version: Version) => {
-    const { app } = this.props;
+  const downloadVersion = (version: Version) => {
+    const { app } = props;
 
-    if (!this.versionDownloadStatusJobs.hasOwnProperty(version.sequence)) {
-      this.versionDownloadStatusJobs[version.sequence] = new Repeater();
+    if (!versionDownloadStatusJobs.hasOwnProperty(version.sequence)) {
+      versionDownloadStatusJobs[version.sequence] = new Repeater();
     }
 
-    this.setState({
+    setState({
       versionDownloadStatuses: {
-        ...this.state.versionDownloadStatuses,
+        ...state.versionDownloadStatuses,
         [version.sequence]: {
           downloadingVersion: true,
           downloadingVersionMessage: "",
@@ -630,9 +630,9 @@ const AppVersionHistory = (props: Props) => {
       .then(async (res) => {
         if (!res.ok) {
           const response = await res.json();
-          this.setState({
+          setState({
             versionDownloadStatuses: {
-              ...this.state.versionDownloadStatuses,
+              ...state.versionDownloadStatuses,
               [version.sequence]: {
                 downloadingVersion: false,
                 downloadingVersionMessage: response.error,
@@ -642,16 +642,16 @@ const AppVersionHistory = (props: Props) => {
           });
           return;
         }
-        this.versionDownloadStatusJobs[version.sequence].start(
-          () => this.updateVersionDownloadStatus(version),
+        versionDownloadStatusJobs[version.sequence].start(
+          () => updateVersionDownloadStatus(version),
           1000
         );
       })
       .catch((err) => {
         console.log(err);
-        this.setState({
+        setState({
           versionDownloadStatuses: {
-            ...this.state.versionDownloadStatuses,
+            ...state.versionDownloadStatuses,
             [version.sequence]: {
               downloadingVersion: false,
               downloadingVersionMessage:
@@ -663,10 +663,10 @@ const AppVersionHistory = (props: Props) => {
       });
   };
 
-  upgradeAdminConsole = (version: Version) => {
-    const { app } = this.props;
+  const upgradeAdminConsole = (version: Version) => {
+    const { app } = props;
 
-    this.setState({
+    setState({
       displayKotsUpdateModal: true,
       kotsUpdateRunning: true,
       kotsUpdateStatus: "",
@@ -687,18 +687,18 @@ const AppVersionHistory = (props: Props) => {
       .then(async (res) => {
         if (!res.ok) {
           const response = await res.json();
-          this.setState({
+          setState({
             kotsUpdateRunning: false,
             kotsUpdateStatus: "failed",
             kotsUpdateError: response.error,
           });
           return;
         }
-        this.state.kotsUpdateChecker.start(this.getKotsUpdateStatus, 1000);
+        state.kotsUpdateChecker.start(getKotsUpdateStatus, 1000);
       })
       .catch((err) => {
         console.log(err);
-        this.setState({
+        setState({
           kotsUpdateRunning: false,
           kotsUpdateStatus: "failed",
           kotsUpdateError:
@@ -707,8 +707,8 @@ const AppVersionHistory = (props: Props) => {
       });
   };
 
-  getKotsUpdateStatus = () => {
-    const { app } = this.props;
+ const getKotsUpdateStatus = () => {
+    const { app } = props;
 
     return new Promise<void>((resolve) => {
       fetch(
@@ -724,7 +724,7 @@ const AppVersionHistory = (props: Props) => {
         .then(async (res) => {
           if (res.status === 404) {
             // TODO: remove... this is for testing with older kots releases
-            this.state.kotsUpdateChecker.stop();
+            state.kotsUpdateChecker.stop();
             window.location.reload();
           }
 
@@ -732,7 +732,7 @@ const AppVersionHistory = (props: Props) => {
           if (response.status === "successful") {
             window.location.reload();
           } else {
-            this.setState({
+            setState({
               kotsUpdateRunning: true,
               kotsUpdateStatus: response.status,
               kotsUpdateMessage: response.message,
@@ -743,7 +743,7 @@ const AppVersionHistory = (props: Props) => {
         })
         .catch((err) => {
           console.log("failed to get upgrade status", err);
-          this.setState({
+          setState({
             kotsUpdateRunning: false,
             kotsUpdateStatus: "waiting",
             kotsUpdateMessage: "Waiting for pods to restart...",
@@ -754,8 +754,8 @@ const AppVersionHistory = (props: Props) => {
     });
   };
 
-  updateVersionDownloadStatus = (version: Version) => {
-    const { app } = this.props;
+  const updateVersionDownloadStatus = (version: Version) => {
+    const { app } = props;
 
     return new Promise<void>((resolve, reject) => {
       fetch(
@@ -772,11 +772,11 @@ const AppVersionHistory = (props: Props) => {
           const response = await res.json();
 
           if (response.status !== "running") {
-            this.versionDownloadStatusJobs[version.sequence].stop();
+            versionDownloadStatusJobs[version.sequence].stop();
 
-            this.setState({
+            setState({
               versionDownloadStatuses: {
-                ...this.state.versionDownloadStatuses,
+                ...state.versionDownloadStatuses,
                 [version.sequence]: {
                   downloadingVersion: false,
                   downloadingVersionMessage: response.currentMessage,
@@ -785,14 +785,14 @@ const AppVersionHistory = (props: Props) => {
               },
             });
 
-            if (this.props.updateCallback) {
-              this.props.updateCallback();
+            if (props.updateCallback) {
+              props.updateCallback();
             }
-            this.fetchKotsDownstreamHistory();
+            fetchKotsDownstreamHistory();
           } else {
-            this.setState({
+            setState({
               versionDownloadStatuses: {
-                ...this.state.versionDownloadStatuses,
+                ...state.versionDownloadStatuses,
                 [version.sequence]: {
                   downloadingVersion: true,
                   downloadingVersionMessage: response.currentMessage,
@@ -809,8 +809,8 @@ const AppVersionHistory = (props: Props) => {
     });
   };
 
-  renderVersionDownloadStatus = (version: Version) => {
-    const { versionDownloadStatuses } = this.state;
+ const  renderVersionDownloadStatus = (version: Version) => {
+    const { versionDownloadStatuses } = state;
     if (!versionDownloadStatuses.hasOwnProperty(version.sequence)) {
       // user hasn't tried to re-download the version yet, show last known download status if exists
       if (version.downloadStatus) {
@@ -852,20 +852,20 @@ const AppVersionHistory = (props: Props) => {
     }
   };
 
-  deployVersion = (
+ const  deployVersion = (
     version: Version | null,
     force = false,
     continueWithFailedPreflights = false
   ) => {
-    const { app } = this.props;
+    const { app } = props;
     const clusterSlug = app.downstream.cluster?.slug;
     if (!clusterSlug) {
       return;
     }
     if (!force && version !== null) {
       if (version.yamlErrors) {
-        this.setState({
-          displayShowDetailsModal: !this.state.displayShowDetailsModal,
+        setState({
+          displayShowDetailsModal: !state.displayShowDetailsModal,
           deployView: true,
           versionToDeploy: version,
           yamlErrorDetails: version.yamlErrors,
@@ -873,7 +873,7 @@ const AppVersionHistory = (props: Props) => {
         return;
       }
       if (version.status === "pending_preflight") {
-        this.setState({
+        setState({
           showSkipModal: true,
           versionToDeploy: version,
           isSkipPreflights: true,
@@ -884,7 +884,7 @@ const AppVersionHistory = (props: Props) => {
         const preflightResults = JSON.parse(version.preflightResult as string);
         const preflightState = getPreflightResultState(preflightResults);
         if (preflightState === "fail") {
-          this.setState({
+          setState({
             showDeployWarningModal: true,
             versionToDeploy: version,
           });
@@ -892,7 +892,7 @@ const AppVersionHistory = (props: Props) => {
         }
       }
       // prompt to make sure user wants to deploy
-      this.setState({
+      setState({
         displayConfirmDeploymentModal: true,
         versionToDeploy: version,
         confirmType: "deploy",
@@ -900,30 +900,30 @@ const AppVersionHistory = (props: Props) => {
       return;
     } else {
       // force deploy is set to true so finalize the deployment
-      this.finalizeDeployment(continueWithFailedPreflights);
+      finalizeDeployment(continueWithFailedPreflights);
     }
   };
 
-  finalizeDeployment = async (continueWithFailedPreflights: boolean) => {
-    const { match, updateCallback } = this.props;
-    const { versionToDeploy, isSkipPreflights } = this.state;
-    this.setState({ displayConfirmDeploymentModal: false, confirmType: "" });
-    await this.props.makeCurrentVersion(
+ const finalizeDeployment = async (continueWithFailedPreflights: boolean) => {
+    const { match, updateCallback } = props;
+    const { versionToDeploy, isSkipPreflights } = state;
+    setState({ displayConfirmDeploymentModal: false, confirmType: "" });
+    await props.makeCurrentVersion(
       match.params.slug,
       versionToDeploy,
       isSkipPreflights,
       continueWithFailedPreflights
     );
-    await this.fetchKotsDownstreamHistory();
-    this.setState({ versionToDeploy: null });
+    await fetchKotsDownstreamHistory();
+    setState({ versionToDeploy: null });
 
     if (updateCallback && typeof updateCallback === "function") {
       updateCallback();
     }
   };
 
-  redeployVersion = (version: Version, isRollback = false) => {
-    const { app } = this.props;
+ const  redeployVersion = (version: Version, isRollback = false) => {
+    const { app } = props;
     const clusterSlug = app.downstream.cluster?.slug;
     if (!clusterSlug) {
       return;
@@ -931,13 +931,13 @@ const AppVersionHistory = (props: Props) => {
 
     // prompt to make sure user wants to redeploy
     if (isRollback) {
-      this.setState({
+      setState({
         displayConfirmDeploymentModal: true,
         confirmType: "rollback",
         versionToDeploy: version,
       });
     } else {
-      this.setState({
+      setState({
         displayConfirmDeploymentModal: true,
         confirmType: "redeploy",
         versionToDeploy: version,
@@ -945,65 +945,65 @@ const AppVersionHistory = (props: Props) => {
     }
   };
 
-  finalizeRedeployment = async () => {
-    const { match, updateCallback } = this.props;
-    const { versionToDeploy } = this.state;
-    this.setState({ displayConfirmDeploymentModal: false, confirmType: "" });
-    await this.props.redeployVersion(match.params.slug, versionToDeploy);
-    await this.fetchKotsDownstreamHistory();
-    this.setState({ versionToDeploy: null });
+ const finalizeRedeployment = async () => {
+    const { match, updateCallback } = props;
+    const { versionToDeploy } = state;
+    setState({ displayConfirmDeploymentModal: false, confirmType: "" });
+    await props.redeployVersion(match.params.slug, versionToDeploy);
+    await fetchKotsDownstreamHistory();
+    setState({ versionToDeploy: null });
 
     if (updateCallback && typeof updateCallback === "function") {
       updateCallback();
     }
   };
 
-  onForceDeployClick = (continueWithFailedPreflights = false) => {
-    this.setState({
+  const onForceDeployClick = (continueWithFailedPreflights = false) => {
+    setState({
       showSkipModal: false,
       showDeployWarningModal: false,
       displayShowDetailsModal: false,
     });
-    const versionToDeploy = this.state.versionToDeploy;
-    this.deployVersion(versionToDeploy, true, continueWithFailedPreflights);
+    const versionToDeploy = state.versionToDeploy;
+    deployVersion(versionToDeploy, true, continueWithFailedPreflights);
   };
 
-  hideLogsModal = () => {
-    this.setState({
+ const  hideLogsModal = () => {
+    setState({
       showLogsModal: false,
     });
   };
 
-  hideDeployWarningModal = () => {
-    this.setState({
+ const hideDeployWarningModal = () => {
+    setState({
       showDeployWarningModal: false,
     });
   };
 
-  hideSkipModal = () => {
-    this.setState({
+ const hideSkipModal = () => {
+    setState({
       showSkipModal: false,
     });
   };
 
-  hideDiffOverlay = (closeReleaseSelect: boolean) => {
-    this.setState({
+  const hideDiffOverlay = (closeReleaseSelect: boolean) => {
+    setState({
       showDiffOverlay: false,
     });
     if (closeReleaseSelect) {
-      this.onCloseReleasesToDiff();
+      onCloseReleasesToDiff();
     }
   };
 
-  onSelectReleasesToDiff = () => {
-    this.setState({
+  const onSelectReleasesToDiff = () => {
+    setState({
       selectedDiffReleases: true,
       diffHovered: false,
     });
   };
 
-  onCloseReleasesToDiff = () => {
-    this.setState({
+  const onCloseReleasesToDiff = () => {
+    setState({
       selectedDiffReleases: false,
       checkedReleasesToDiff: [],
       diffHovered: false,
@@ -1011,10 +1011,10 @@ const AppVersionHistory = (props: Props) => {
     });
   };
 
-  onCheckForUpdates = async () => {
-    const { app } = this.props;
+const  onCheckForUpdates = async () => {
+    const { app } = props;
 
-    this.setState({
+    setState({
       checkingForUpdates: true,
       checkingForUpdateError: false,
       checkingUpdateMessage: "",
@@ -1030,42 +1030,42 @@ const AppVersionHistory = (props: Props) => {
       .then(async (res) => {
         if (!res.ok) {
           const text = await res.text();
-          this.setState({
+          setState({
             checkingForUpdateError: true,
             checkingForUpdates: false,
             checkingUpdateMessage: text,
           });
           return;
         }
-        this.props.refreshAppData();
+        props.refreshAppData();
         const response = await res.json();
 
         if (response.availableUpdates === 0) {
           if (
-            !find(this.state.versionHistory, {
+            !find(state.versionHistory, {
               parentSequence: response.currentAppSequence,
             })
           ) {
             // version history list is out of sync - most probably because of automatic updates happening in the background - refetch list
-            this.fetchKotsDownstreamHistory();
-            this.setState({ checkingForUpdates: false });
+            fetchKotsDownstreamHistory();
+            setState({ checkingForUpdates: false });
           } else {
-            this.setState({
+            setState({
               checkingForUpdates: false,
               noUpdateAvailiableText: "There are no updates available",
             });
             setTimeout(() => {
-              this.setState({
+              setState({
                 noUpdateAvailiableText: "",
               });
             }, 3000);
           }
         } else {
-          this.state.appUpdateChecker.start(this.getAppUpdateStatus, 1000);
+          state.appUpdateChecker.start(getAppUpdateStatus, 1000);
         }
       })
       .catch((err) => {
-        this.setState({
+        setState({
           checkingForUpdateError: true,
           checkingForUpdates: false,
           checkingUpdateMessage: String(err),
@@ -1073,8 +1073,8 @@ const AppVersionHistory = (props: Props) => {
       });
   };
 
-  getAppUpdateStatus = () => {
-    const { app } = this.props;
+  const getAppUpdateStatus = () => {
+    const { app } = props;
 
     return new Promise<void>((resolve, reject) => {
       fetch(
@@ -1090,21 +1090,21 @@ const AppVersionHistory = (props: Props) => {
         .then(async (res) => {
           const response = await res.json();
 
-          if (response.status !== "running" && !this.props.isBundleUploading) {
-            this.state.appUpdateChecker.stop();
+          if (response.status !== "running" && !props.isBundleUploading) {
+            state.appUpdateChecker.stop();
 
-            this.setState({
+            setState({
               checkingForUpdates: false,
               checkingUpdateMessage: response.currentMessage,
               checkingForUpdateError: response.status === "failed",
             });
 
-            if (this.props.updateCallback) {
-              this.props.updateCallback();
+            if (props.updateCallback) {
+              props.updateCallback();
             }
-            this.fetchKotsDownstreamHistory();
+            fetchKotsDownstreamHistory();
           } else {
-            this.setState({
+            setState({
               checkingForUpdates: true,
               checkingUpdateMessage: response.currentMessage,
             });
@@ -1118,14 +1118,14 @@ const AppVersionHistory = (props: Props) => {
     });
   };
 
-  handleViewLogs = async (version: Version | null, isFailing: boolean) => {
+ const handleViewLogs = async (version: Version | null, isFailing: boolean) => {
     try {
-      const { app } = this.props;
+      const { app } = props;
       let clusterId = app.downstream.cluster?.id;
-      if (this.props.isHelmManaged) {
+      if (props.isHelmManaged) {
         clusterId = 0;
       }
-      this.setState({
+      setState({
         logsLoading: true,
         showLogsModal: true,
         viewLogsErrMsg: "",
@@ -1149,21 +1149,21 @@ const AppVersionHistory = (props: Props) => {
         } else {
           selectedTab = Object.keys(response.logs)[0];
         }
-        this.setState({
+        setState({
           logs: response.logs,
           selectedTab,
           logsLoading: false,
           viewLogsErrMsg: "",
         });
       } else {
-        this.setState({
+        setState({
           logsLoading: false,
           viewLogsErrMsg: `Failed to view logs, unexpected status code, ${res.status}`,
         });
       }
     } catch (err) {
       console.log(err);
-      this.setState({
+      setState({
         logsLoading: false,
         viewLogsErrMsg: err
           ? `Failed to view logs: ${(err as Error).message}`
@@ -1172,20 +1172,20 @@ const AppVersionHistory = (props: Props) => {
     }
   };
 
-  renderDiffBtn = () => {
-    const { app } = this.props;
+  const renderDiffBtn = () => {
+    const { app } = props;
     const { showDiffOverlay, selectedDiffReleases, checkedReleasesToDiff } =
-      this.state;
+      state;
     const downstream = app?.downstream;
     const gitopsIsConnected = downstream.gitops?.isConnected;
-    const versionHistory = this.state.versionHistory?.length
-      ? this.state.versionHistory
+    const versionHistory = state.versionHistory?.length
+      ? state.versionHistory
       : [];
     return versionHistory.length && selectedDiffReleases ? (
       <div className="flex u-marginLeft--20">
         <button
           className="btn secondary small u-marginRight--10"
-          onClick={this.onCloseReleasesToDiff}
+          onClick={onCloseReleasesToDiff}
         >
           Cancel
         </button>
@@ -1194,7 +1194,7 @@ const AppVersionHistory = (props: Props) => {
           disabled={checkedReleasesToDiff.length !== 2 || showDiffOverlay}
           onClick={() => {
             if (gitopsIsConnected) {
-              const { firstHash, secondHash } = this.getDiffCommitHashes();
+              const { firstHash, secondHash } = getDiffCommitHashes();
               if (firstHash && secondHash) {
                 const diffUrl = getGitProviderDiffUrl(
                   downstream.gitops?.uri,
@@ -1205,8 +1205,8 @@ const AppVersionHistory = (props: Props) => {
                 window.open(diffUrl, "_blank");
               }
             } else {
-              const { firstSequence, secondSequence } = this.getDiffSequences();
-              this.setState({
+              const { firstSequence, secondSequence } = getDiffSequences();
+              setState({
                 showDiffOverlay: true,
                 firstSequence,
                 secondSequence,
@@ -1220,7 +1220,7 @@ const AppVersionHistory = (props: Props) => {
     ) : (
       <div
         className="flex-auto flex alignItems--center u-marginLeft--20"
-        onClick={this.onSelectReleasesToDiff}
+        onClick={onSelectReleasesToDiff}
       >
         <Icon
           icon="diff-icon"
@@ -1238,21 +1238,21 @@ const AppVersionHistory = (props: Props) => {
     );
   };
 
-  handleSelectReleasesToDiff = (
+ const handleSelectReleasesToDiff = (
     selectedRelease: Version,
     isChecked: boolean
   ) => {
     if (isChecked) {
-      this.setState({
+      setState({
         checkedReleasesToDiff: (
           [{ ...selectedRelease, isChecked }] as Version[]
         )
-          .concat(this.state.checkedReleasesToDiff)
+          .concat(state.checkedReleasesToDiff)
           .slice(0, 2),
       });
     } else {
-      this.setState({
-        checkedReleasesToDiff: this.state.checkedReleasesToDiff.filter(
+      setState({
+        checkedReleasesToDiff: state.checkedReleasesToDiff.filter(
           (release: Version) =>
             release.parentSequence !== selectedRelease.parentSequence
         ),
@@ -1260,11 +1260,11 @@ const AppVersionHistory = (props: Props) => {
     }
   };
 
-  getDiffSequences = () => {
+  const getDiffSequences = () => {
     let firstSequence = 0,
       secondSequence = 0;
 
-    const { checkedReleasesToDiff } = this.state;
+    const { checkedReleasesToDiff } = state;
     if (checkedReleasesToDiff.length === 2) {
       checkedReleasesToDiff.sort(
         (r1: Version, r2: Version) => r1.parentSequence - r2.parentSequence
@@ -1279,11 +1279,11 @@ const AppVersionHistory = (props: Props) => {
     };
   };
 
-  getDiffCommitHashes = () => {
+  const getDiffCommitHashes = () => {
     let firstCommitUrl = "",
       secondCommitUrl = "";
 
-    const { checkedReleasesToDiff } = this.state;
+    const { checkedReleasesToDiff } = state;
     if (checkedReleasesToDiff.length === 2) {
       checkedReleasesToDiff.sort(
         (r1, r2) => r1.parentSequence - r2.parentSequence
@@ -1298,74 +1298,74 @@ const AppVersionHistory = (props: Props) => {
     };
   };
 
-  toggleShowDetailsModal = (
+  const toggleShowDetailsModal = (
     yamlErrorDetails: string[],
     selectedSequence: number
   ) => {
-    this.setState({
-      displayShowDetailsModal: !this.state.displayShowDetailsModal,
+    setState({
+      displayShowDetailsModal: !state.displayShowDetailsModal,
       deployView: false,
       yamlErrorDetails,
       selectedSequence,
     });
   };
 
-  shouldRenderUpdateProgress = () => {
-    if (this.state.uploadingAirgapFile) {
+ const shouldRenderUpdateProgress = () => {
+    if (state.uploadingAirgapFile) {
       return true;
     }
-    if (this.props.isBundleUploading) {
+    if (props.isBundleUploading) {
       return true;
     }
-    if (this.state.checkingForUpdateError) {
+    if (state.checkingForUpdateError) {
       return true;
     }
-    if (this.state.airgapUploadError) {
+    if (state.airgapUploadError) {
       return true;
     }
-    if (this.props.app?.isAirgap && this.state.checkingForUpdates) {
+    if (props.app?.isAirgap && state.checkingForUpdates) {
       return true;
     }
     return false;
   };
 
-  renderUpdateProgress = () => {
-    const { app } = this.props;
+  const renderUpdateProgress = () => {
+    const { app } = props;
 
-    if (!this.shouldRenderUpdateProgress()) {
+    if (!shouldRenderUpdateProgress()) {
       return null;
     }
 
     let updateText;
-    if (this.state.airgapUploadError) {
+    if (state.airgapUploadError) {
       updateText = (
         <p className="u-marginTop--10 u-fontSize--small u-textColor--error u-fontWeight--medium">
-          {this.state.airgapUploadError}
+          {state.airgapUploadError}
         </p>
       );
-    } else if (this.state.checkingForUpdateError) {
+    } else if (state.checkingForUpdateError) {
       updateText = (
         <div className="flex-column flex-auto u-marginTop--10">
           <p className="u-fontSize--normal u-marginBottom--5 u-textColor--error u-fontWeight--medium">
             Error updating version:
           </p>
           <p className="u-fontSize--small u-textColor--error u-lineHeight--normal u-fontWeight--medium">
-            {this.state.checkingUpdateMessage}
+            {state.checkingUpdateMessage}
           </p>
         </div>
       );
-    } else if (this.state.uploadingAirgapFile) {
+    } else if (state.uploadingAirgapFile) {
       updateText = (
         <AirgapUploadProgress
           appSlug={app.slug}
-          total={this.state.uploadSize}
-          progress={this.state.uploadProgress}
-          resuming={this.state.uploadResuming}
+          total={state.uploadSize}
+          progress={state.uploadProgress}
+          resuming={state.uploadResuming}
           onProgressError={undefined}
           smallSize={true}
         />
       );
-    } else if (this.props.isBundleUploading) {
+    } else if (props.isBundleUploading) {
       updateText = (
         <AirgapUploadProgress
           appSlug={app.slug}
@@ -1374,8 +1374,8 @@ const AppVersionHistory = (props: Props) => {
           smallSize={true}
         />
       );
-    } else if (app?.isAirgap && this.state.checkingForUpdates) {
-      let checkingUpdateText = this.state.checkingUpdateMessage;
+    } else if (app?.isAirgap && state.checkingForUpdates) {
+      let checkingUpdateText = state.checkingUpdateMessage;
       try {
         const jsonMessage = JSON.parse(checkingUpdateText);
         const type = get(jsonMessage, "type");
@@ -1404,22 +1404,22 @@ const AppVersionHistory = (props: Props) => {
     );
   };
 
-  renderAllVersions = () => {
+ const renderAllVersions = () => {
     // This is kinda hacky. This finds the equivalent downstream version because the midstream
     // version type does not contain metadata like version label or release notes.
-    let allVersions = this.state.versionHistory;
+    let allVersions = state.versionHistory;
 
     // exclude pinned version
-    if (this.props.isHelmManaged) {
+    if (props.isHelmManaged) {
       // Only show pending versions in the "New version available" card. Helm, unlike kots, always adds a new version, even when we rollback.
-      if (this.state.updatesAvailable && allVersions?.length > 0) {
+      if (state.updatesAvailable && allVersions?.length > 0) {
         if (allVersions[0].status.startsWith("pending")) {
           allVersions = allVersions?.slice(1);
         }
       }
     } else {
-      if (this.state.updatesAvailable) {
-        allVersions = this.state.versionHistory?.slice(1);
+      if (state.updatesAvailable) {
+        allVersions = state.versionHistory?.slice(1);
       }
     }
 
@@ -1427,7 +1427,7 @@ const AppVersionHistory = (props: Props) => {
       return null;
     }
 
-    const { currentPage, pageSize, totalCount, loadingPage } = this.state;
+    const { currentPage, pageSize, totalCount, loadingPage } = state;
 
     return (
       <div className="TableDiff--Wrapper">
@@ -1439,7 +1439,7 @@ const AppVersionHistory = (props: Props) => {
             <span className="flex-auto u-marginRight--5 u-fontSize--small u-textColor--secondary u-lineHeight--normal u-fontWeight--medium">
               Results per page:
             </span>
-            <select className="Select" onChange={(e) => this.setPageSize(e)}>
+            <select className="Select" onChange={(e) => setPageSize(e)}>
               <option value="20">20</option>
               <option value="50">50</option>
               <option value="100">100</option>
@@ -1447,7 +1447,7 @@ const AppVersionHistory = (props: Props) => {
           </div>
         </div>
         {allVersions?.map((version, index) =>
-          this.renderAppVersionHistoryRow(version, index)
+          renderAppVersionHistoryRow(version, index)
         )}
         <Pager
           pagerType="releases"
@@ -1456,37 +1456,37 @@ const AppVersionHistory = (props: Props) => {
           totalCount={totalCount}
           loading={loadingPage}
           currentPageLength={allVersions.length}
-          goToPage={this.onGotoPage}
+          goToPage={onGotoPage}
         />
       </div>
     );
   };
 
-  onGotoPage = (page: Number, ev: { preventDefault: () => void }) => {
+  const onGotoPage = (page: Number, ev: { preventDefault: () => void }) => {
     ev.preventDefault();
-    this.setState({ currentPage: page, loadingPage: true }, async () => {
-      this.props.history.push(`${this.props.location.pathname}?page=${page}`);
-      await this.fetchKotsDownstreamHistory();
-      this.setState({ loadingPage: false });
+    setState({ currentPage: page, loadingPage: true }, async () => {
+      props.history.push(`${props.location.pathname}?page=${page}`);
+      await fetchKotsDownstreamHistory();
+      setState({ loadingPage: false });
     });
   };
 
-  handleActionButtonClicked = (
+  const handleActionButtonClicked = (
     versionLabel: string | null | undefined,
     sequence: number
   ) => {
-    if (this.props.isHelmManaged && versionLabel) {
-      this.setState({
+    if (props.isHelmManaged && versionLabel) {
+      setState({
         showHelmDeployModalForVersionLabel: versionLabel,
         showHelmDeployModalForSequence: sequence,
       });
     }
   };
 
-  deployButtonStatus = (version: Version) => {
-    if (this.props.isHelmManaged) {
+  const deployButtonStatus = (version: Version) => {
+    if (props.isHelmManaged) {
       const deployedSequence =
-        this.props.app?.downstream?.currentVersion?.sequence;
+        props.app?.downstream?.currentVersion?.sequence;
 
       if (version.sequence > deployedSequence) {
         return "Deploy";
@@ -1499,7 +1499,7 @@ const AppVersionHistory = (props: Props) => {
       return "Redeploy";
     }
 
-    const app = this.props.app;
+    const app = props.app;
     const downstream = app?.downstream;
 
     const isCurrentVersion =
@@ -1516,8 +1516,8 @@ const AppVersionHistory = (props: Props) => {
       (version.status === "failed" || version.status === "deployed");
     const canUpdateKots =
       version.needsKotsUpgrade &&
-      !this.props.adminConsoleMetadata?.isAirgap &&
-      !this.props.adminConsoleMetadata?.isKurl;
+      !props.adminConsoleMetadata?.isAirgap &&
+      !props.adminConsoleMetadata?.isKurl;
 
     if (needsConfiguration) {
       return "Configure";
@@ -1544,20 +1544,20 @@ const AppVersionHistory = (props: Props) => {
     }
   };
 
-  renderAppVersionHistoryRow = (version: Version, index?: number) => {
+  const renderAppVersionHistoryRow = (version: Version, index?: number) => {
     if (
       !version ||
       isEmpty(version) ||
-      (this.state.selectedDiffReleases && version.status === "pending_download")
+      (state.selectedDiffReleases && version.status === "pending_download")
     ) {
       // non-downloaded versions can't be diffed
       return null;
     }
 
-    const downstream = this.props.app.downstream;
+    const downstream = props.app.downstream;
     const gitopsIsConnected = downstream?.gitops?.isConnected;
     const nothingToCommit = gitopsIsConnected && !version.commitUrl;
-    const isChecked = !!this.state.checkedReleasesToDiff.find(
+    const isChecked = !!state.checkedReleasesToDiff.find(
       (diffRelease) => diffRelease.parentSequence === version.parentSequence
     );
     const isNew = secondsAgo(version.createdOn) < 10;
@@ -1566,7 +1566,7 @@ const AppVersionHistory = (props: Props) => {
       newPreflightResults = secondsAgo(version.preflightResultCreatedAt) < 12;
     }
     let isPending = false;
-    if (this.props.isHelmManaged && version.status.startsWith("pending")) {
+    if (props.isHelmManaged && version.status.startsWith("pending")) {
       isPending = true;
     }
 
@@ -1574,44 +1574,44 @@ const AppVersionHistory = (props: Props) => {
       <React.Fragment key={index}>
         <AppVersionHistoryRow
           handleActionButtonClicked={() =>
-            this.handleActionButtonClicked(
+            handleActionButtonClicked(
               version.versionLabel,
               version.sequence
             )
           }
-          isHelmManaged={this.props.isHelmManaged}
+          isHelmManaged={props.isHelmManaged}
           key={version.sequence}
-          app={this.props.app}
-          match={this.props.match}
-          history={this.props.history}
+          app={props.app}
+          match={props.match}
+          history={props.history}
           version={version}
-          selectedDiffReleases={this.state.selectedDiffReleases}
+          selectedDiffReleases={state.selectedDiffReleases}
           nothingToCommit={nothingToCommit}
           isChecked={isChecked}
           isNew={isNew}
           newPreflightResults={newPreflightResults}
-          showReleaseNotes={this.showReleaseNotes}
-          renderDiff={this.renderDiff}
-          toggleShowDetailsModal={this.toggleShowDetailsModal}
+          showReleaseNotes={showReleaseNotes}
+          renderDiff={renderDiff}
+          toggleShowDetailsModal={toggleShowDetailsModal}
           gitopsEnabled={gitopsIsConnected}
-          deployVersion={this.deployVersion}
-          redeployVersion={this.redeployVersion}
-          downloadVersion={this.downloadVersion}
-          upgradeAdminConsole={this.upgradeAdminConsole}
-          handleViewLogs={this.handleViewLogs}
-          handleSelectReleasesToDiff={this.handleSelectReleasesToDiff}
-          renderVersionDownloadStatus={this.renderVersionDownloadStatus}
+          deployVersion={deployVersion}
+          redeployVersion={redeployVersion}
+          downloadVersion={downloadVersion}
+          upgradeAdminConsole={upgradeAdminConsole}
+          handleViewLogs={handleViewLogs}
+          handleSelectReleasesToDiff={handleSelectReleasesToDiff}
+          renderVersionDownloadStatus={renderVersionDownloadStatus}
           isDownloading={
-            this.state.versionDownloadStatuses?.[version.sequence]
+            state.versionDownloadStatuses?.[version.sequence]
               ?.downloadingVersion
           }
-          adminConsoleMetadata={this.props.adminConsoleMetadata}
+          adminConsoleMetadata={props.adminConsoleMetadata}
         />
-        {this.state.showHelmDeployModalForVersionLabel ===
+        {state.showHelmDeployModalForVersionLabel ===
           version.versionLabel &&
-          this.state.showHelmDeployModalForSequence === version.sequence && (
+          state.showHelmDeployModalForSequence === version.sequence && (
             <UseDownloadValues
-              appSlug={this.props?.app?.slug}
+              appSlug={props?.app?.slug}
               fileName="values.yaml"
               sequence={version.parentSequence}
               versionLabel={version.versionLabel}
@@ -1637,49 +1637,49 @@ const AppVersionHistory = (props: Props) => {
                 return (
                   <>
                     <HelmDeployModal
-                      appSlug={this.props?.app?.slug}
-                      chartPath={this.props?.app?.chartPath || ""}
+                      appSlug={props?.app?.slug}
+                      chartPath={props?.app?.chartPath || ""}
                       downloadClicked={download}
                       downloadError={downloadError}
                       //isDownloading={isDownloading}
                       hideHelmDeployModal={() => {
-                        this.setState({
+                        setState({
                           showHelmDeployModalForVersionLabel: "",
                         });
                         clearDownloadError();
                       }}
-                      registryUsername={this.props?.app?.credentials?.username}
-                      registryPassword={this.props?.app?.credentials?.password}
+                      registryUsername={props?.app?.credentials?.username}
+                      registryPassword={props?.app?.credentials?.password}
                       revision={
-                        this.deployButtonStatus(version) === "Rollback"
+                        deployButtonStatus(version) === "Rollback"
                           ? version.sequence
                           : null
                       }
                       showHelmDeployModal={true}
                       showDownloadValues={
-                        this.deployButtonStatus(version) === "Deploy"
+                        deployButtonStatus(version) === "Deploy"
                       }
                       subtitle={
-                        this.deployButtonStatus(version) === "Rollback"
+                        deployButtonStatus(version) === "Rollback"
                           ? `Follow the steps below to rollback to revision ${version.sequence}.`
-                          : this.deployButtonStatus(version) === "Redeploy"
+                          : deployButtonStatus(version) === "Redeploy"
                             ? "Follow the steps below to redeploy the release using the currently deployed chart version and values."
                             : "Follow the steps below to upgrade the release."
                       }
-                      title={` ${this.deployButtonStatus(version)} ${this.props?.app.slug
-                        } ${this.deployButtonStatus(version) === "Deploy"
+                      title={` ${deployButtonStatus(version)} ${props?.app.slug
+                        } ${deployButtonStatus(version) === "Deploy"
                           ? version.versionLabel
                           : ""
                         }`}
                       upgradeTitle={
-                        this.deployButtonStatus(version) === "Rollback"
+                        deployButtonStatus(version) === "Rollback"
                           ? "Rollback release"
-                          : this.deployButtonStatus(version) === "Redeploy"
+                          : deployButtonStatus(version) === "Redeploy"
                             ? "Redeploy release"
                             : "Upgrade release"
                       }
                       version={version.versionLabel}
-                      namespace={this.props?.app?.namespace}
+                      namespace={props?.app?.namespace}
                     />
                     <a
                       href={url}
@@ -1696,20 +1696,19 @@ const AppVersionHistory = (props: Props) => {
     );
   };
 
-  getPreflightState = (version: Version) => {
+ const  getPreflightState = (version: Version) => {
     let preflightState = "";
     if (version?.preflightResult) {
       const preflightResult = JSON.parse(version.preflightResult);
       preflightState = getPreflightResultState(preflightResult);
     }
     if (preflightState === "") {
-      this.setState({ hasPreflightChecks: false });
+      setState({ hasPreflightChecks: false });
     }
   };
 
-  render() {
     const { app, match, makingCurrentVersionErrMsg, redeployVersionErrMsg } =
-      this.props;
+      props;
 
     const {
       showLogsModal,
@@ -1730,7 +1729,7 @@ const AppVersionHistory = (props: Props) => {
       airgapUploader,
       checkingForUpdates,
       checkingUpdateMessage,
-    } = this.state;
+    } = state;
 
     if (!app) {
       return null;
@@ -1749,7 +1748,7 @@ const AppVersionHistory = (props: Props) => {
     const gitopsIsConnected = downstream.gitops?.isConnected;
     const currentDownstreamVersion = downstream?.currentVersion;
     const isPastVersion = find(downstream?.pastVersions, {
-      sequence: this.state.versionToDeploy?.sequence,
+      sequence: state.versionToDeploy?.sequence,
     });
 
     let checkingUpdateTextShort = checkingUpdateMessage;
@@ -1758,28 +1757,28 @@ const AppVersionHistory = (props: Props) => {
     }
 
     const renderKotsUpgradeStatus =
-      this.state.kotsUpdateStatus && !this.state.kotsUpdateMessage;
-    let shortKotsUpdateMessage = this.state.kotsUpdateMessage;
+      state.kotsUpdateStatus && !state.kotsUpdateMessage;
+    let shortKotsUpdateMessage = state.kotsUpdateMessage;
     if (shortKotsUpdateMessage && shortKotsUpdateMessage.length > 60) {
       shortKotsUpdateMessage = shortKotsUpdateMessage.substring(0, 60) + "...";
     }
 
     let sequenceLabel = "Sequence";
-    if (this.props.isHelmManaged) {
+    if (props.isHelmManaged) {
       sequenceLabel = "Revision";
     }
 
     // In Helm, only pending versions are updates.  In kots native, a deployed version can be an update after a rollback.
     let pendingVersion;
-    if (this.props.isHelmManaged) {
+    if (props.isHelmManaged) {
       if (
-        this.state.updatesAvailable &&
+        state.updatesAvailable &&
         versionHistory[0].status.startsWith("pending")
       ) {
         pendingVersion = versionHistory[0];
       }
     } else {
-      if (this.state.updatesAvailable) {
+      if (state.updatesAvailable) {
         pendingVersion = versionHistory[0];
       }
     }
@@ -1867,7 +1866,7 @@ const AppVersionHistory = (props: Props) => {
                                     className="clickable"
                                     size={24}
                                     onClick={() =>
-                                      this.showReleaseNotes(
+                                      showReleaseNotes(
                                         currentDownstreamVersion?.releaseNotes
                                       )
                                     }
@@ -1883,7 +1882,7 @@ const AppVersionHistory = (props: Props) => {
                                   />
                                 </div>
                               )}
-                              {this.state.hasPreflightChecks ? (
+                              {state.hasPreflightChecks ? (
                                 <div className="u-marginRight--5">
                                   <Link
                                     to={`/app/${app?.slug}/downstreams/${app.downstream.cluster?.slug}/version-history/preflight/${currentDownstreamVersion?.sequence}`}
@@ -1909,7 +1908,7 @@ const AppVersionHistory = (props: Props) => {
                                 <div>
                                   <span
                                     onClick={() =>
-                                      this.handleViewLogs(
+                                      handleViewLogs(
                                         currentDownstreamVersion,
                                         currentDownstreamVersion?.status ===
                                         "failed"
@@ -2010,12 +2009,12 @@ const AppVersionHistory = (props: Props) => {
                             latestConfigSequence={
                               versionHistory[0]?.parentSequence
                             }
-                            isBundleUploading={this.props.isBundleUploading}
+                            isBundleUploading={props.isBundleUploading}
                             checkingUpdateText={checkingUpdateMessage}
                             checkingUpdateTextShort={checkingUpdateTextShort}
-                            onCheckForUpdates={this.onCheckForUpdates}
+                            onCheckForUpdates={onCheckForUpdates}
                             showAutomaticUpdatesModal={
-                              this.toggleAutomaticUpdatesModal
+                              toggleAutomaticUpdatesModal
                             }
                           />
                         </div>
@@ -2023,7 +2022,7 @@ const AppVersionHistory = (props: Props) => {
                         <div className="TableDiff--Wrapper u-marginBottom--30">
                           <div className="flex justifyContent--spaceBetween">
                             <p className="u-fontSize--normal u-fontWeight--medium u-textColor--header u-marginBottom--15">
-                              {this.state.updatesAvailable
+                              {state.updatesAvailable
                                 ? "New version available"
                                 : ""}
                             </p>
@@ -2045,7 +2044,7 @@ const AppVersionHistory = (props: Props) => {
                                 ) : (
                                   <div className="flex alignItems--center">
                                     {checkingForUpdates &&
-                                      !this.props.isBundleUploading ? (
+                                      !props.isBundleUploading ? (
                                       <div className="flex alignItems--center u-marginRight--20">
                                         <Loader
                                           className="u-marginRight--5"
@@ -2061,7 +2060,7 @@ const AppVersionHistory = (props: Props) => {
                                       <div className="flex alignItems--center u-marginRight--20">
                                         <span
                                           className="replicated-link u-fontSize--small"
-                                          onClick={this.onCheckForUpdates}
+                                          onClick={onCheckForUpdates}
                                         >
                                           <Icon
                                             icon="check-update"
@@ -2078,7 +2077,7 @@ const AppVersionHistory = (props: Props) => {
                                     )}
                                     <span
                                       className="flex-auto flex alignItems--center replicated-link u-fontSize--small"
-                                      onClick={this.toggleAutomaticUpdatesModal}
+                                      onClick={toggleAutomaticUpdatesModal}
                                     >
                                       <Icon
                                         icon="schedule-sync"
@@ -2096,13 +2095,13 @@ const AppVersionHistory = (props: Props) => {
                               </div>
                               {versionHistory.length > 1 &&
                                 !gitopsIsConnected &&
-                                !this.props.isHelmManaged
-                                ? this.renderDiffBtn()
+                                !props.isHelmManaged
+                                ? renderDiffBtn()
                                 : null}
                             </div>
                           </div>
                           {pendingVersion ? (
-                            this.renderAppVersionHistoryRow(pendingVersion)
+                            renderAppVersionHistoryRow(pendingVersion)
                           ) : (
                             <div className="flex-column flex1 u-marginTop--20 u-marginBottom--10 alignItems--center justifyContent--center u-backgroundColor--white u-borderRadius--rounded">
                               <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-padding--10">
@@ -2110,17 +2109,17 @@ const AppVersionHistory = (props: Props) => {
                               </p>
                             </div>
                           )}
-                          {(this.state.numOfSkippedVersions > 0 ||
-                            this.state.numOfRemainingVersions > 0) && (
+                          {(state.numOfSkippedVersions > 0 ||
+                            state.numOfRemainingVersions > 0) && (
                               <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--header u-marginTop--10">
-                                {this.state.numOfSkippedVersions > 0
-                                  ? `${this.state.numOfSkippedVersions} version${this.state.numOfSkippedVersions > 1
+                                {state.numOfSkippedVersions > 0
+                                  ? `${state.numOfSkippedVersions} version${state.numOfSkippedVersions > 1
                                     ? "s"
                                     : ""
                                   } will be skipped in upgrading to ${versionHistory[0].versionLabel
                                   }. `
                                   : ""}
-                                {this.state.numOfRemainingVersions > 0
+                                {state.numOfRemainingVersions > 0
                                   ? "Additional versions are available after you deploy this required version."
                                   : ""}
                               </p>
@@ -2129,8 +2128,8 @@ const AppVersionHistory = (props: Props) => {
                       )}
                       {versionHistory?.length > 0 ? (
                         <>
-                          {this.renderUpdateProgress()}
-                          {this.renderAllVersions()}
+                          {renderUpdateProgress()}
+                          {renderAllVersions()}
                         </>
                       ) : null}
                     </>
@@ -2150,8 +2149,8 @@ const AppVersionHistory = (props: Props) => {
                       slug={match.params.slug}
                       firstSequence={firstSequence}
                       secondSequence={secondSequence}
-                      onBackClick={this.hideDiffOverlay}
-                      app={this.props.app}
+                      onBackClick={hideDiffOverlay}
+                      app={props.app}
                     />
                   </div>
                 )}
@@ -2163,38 +2162,38 @@ const AppVersionHistory = (props: Props) => {
         {showLogsModal && (
           <ShowLogsModal
             showLogsModal={showLogsModal}
-            hideLogsModal={this.hideLogsModal}
-            viewLogsErrMsg={this.state.viewLogsErrMsg}
+            hideLogsModal={hideLogsModal}
+            viewLogsErrMsg={state.viewLogsErrMsg}
             logs={logs}
             selectedTab={selectedTab}
             logsLoading={logsLoading}
-            renderLogsTabs={this.renderLogsTabs()}
+            renderLogsTabs={renderLogsTabs()}
           />
         )}
 
         {showDeployWarningModal && (
           <DeployWarningModal
             showDeployWarningModal={showDeployWarningModal}
-            hideDeployWarningModal={this.hideDeployWarningModal}
-            onForceDeployClick={this.onForceDeployClick}
+            hideDeployWarningModal={hideDeployWarningModal}
+            onForceDeployClick={onForceDeployClick}
             showAutoDeployWarning={
-              isPastVersion && this.props.app?.autoDeploy !== "disabled"
+              isPastVersion && props.app?.autoDeploy !== "disabled"
             }
-            confirmType={this.state.confirmType}
+            confirmType={state.confirmType}
           />
         )}
 
         {showSkipModal && (
           <SkipPreflightsModal
             showSkipModal={showSkipModal}
-            hideSkipModal={this.hideSkipModal}
-            onForceDeployClick={this.onForceDeployClick}
+            hideSkipModal={hideSkipModal}
+            onForceDeployClick={onForceDeployClick}
           />
         )}
 
         <Modal
           isOpen={!!releaseNotes}
-          onRequestClose={this.hideReleaseNotes}
+          onRequestClose={hideReleaseNotes}
           contentLabel="Release Notes"
           ariaHideApp={false}
           className="Modal MediumSize"
@@ -2205,15 +2204,15 @@ const AppVersionHistory = (props: Props) => {
             </MarkdownRenderer>
           </div>
           <div className="flex u-marginTop--10 u-marginLeft--10 u-marginBottom--10">
-            <button className="btn primary" onClick={this.hideReleaseNotes}>
+            <button className="btn primary" onClick={hideReleaseNotes}>
               Close
             </button>
           </div>
         </Modal>
 
         <Modal
-          isOpen={this.state.showDiffErrModal}
-          onRequestClose={() => this.toggleDiffErrModal()}
+          isOpen={state.showDiffErrModal}
+          onRequestClose={() => toggleDiffErrModal()}
           contentLabel="Unable to Get Diff"
           ariaHideApp={false}
           className="Modal MediumSize"
@@ -2222,20 +2221,20 @@ const AppVersionHistory = (props: Props) => {
             <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">
               Unable to generate a file diff for release
             </p>
-            {this.state.releaseWithErr && (
+            {state.releaseWithErr && (
               <>
                 <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">
                   The release with the{" "}
                   <span className="u-fontWeight--bold">
-                    Upstream {this.state.releaseWithErr.title}, Sequence{" "}
-                    {this.state.releaseWithErr.sequence}
+                    Upstream {state.releaseWithErr.title}, Sequence{" "}
+                    {state.releaseWithErr.sequence}
                   </span>{" "}
                   was unable to generate a files diff because the following
                   error:
                 </p>
                 <div className="error-block-wrapper u-marginBottom--30 flex flex1">
                   <span className="u-textColor--error">
-                    {this.state.releaseWithErr.diffSummaryError}
+                    {state.releaseWithErr.diffSummaryError}
                   </span>
                 </div>
               </>
@@ -2243,7 +2242,7 @@ const AppVersionHistory = (props: Props) => {
             <div className="flex u-marginBottom--10">
               <button
                 className="btn primary"
-                onClick={() => this.toggleDiffErrModal()}
+                onClick={() => toggleDiffErrModal()}
               >
                 Ok, got it!
               </button>
@@ -2251,11 +2250,11 @@ const AppVersionHistory = (props: Props) => {
           </div>
         </Modal>
 
-        {this.state.displayConfirmDeploymentModal && (
+        {state.displayConfirmDeploymentModal && (
           <Modal
             isOpen={true}
             onRequestClose={() =>
-              this.setState({
+              setState({
                 displayConfirmDeploymentModal: false,
                 confirmType: "",
                 versionToDeploy: null,
@@ -2267,21 +2266,21 @@ const AppVersionHistory = (props: Props) => {
           >
             <div className="Modal-body">
               <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-lineHeight--normal u-marginBottom--10">
-                {this.state.confirmType === "rollback"
+                {state.confirmType === "rollback"
                   ? "Rollback to"
-                  : this.state.confirmType === "redeploy"
+                  : state.confirmType === "redeploy"
                     ? "Redeploy"
                     : "Deploy"}{" "}
-                {this.state.versionToDeploy?.versionLabel} (Sequence{" "}
-                {this.state.versionToDeploy?.sequence})?
+                {state.versionToDeploy?.versionLabel} (Sequence{" "}
+                {state.versionToDeploy?.sequence})?
               </p>
-              {isPastVersion && this.props.app?.autoDeploy !== "disabled" ? (
+              {isPastVersion && props.app?.autoDeploy !== "disabled" ? (
                 <div className="info-box">
                   <span className="u-fontSize--small u-textColor--header u-lineHeight--normal u-fontWeight--medium">
                     You have automatic deploys enabled.{" "}
-                    {this.state.confirmType === "rollback"
+                    {state.confirmType === "rollback"
                       ? "Rolling back to"
-                      : this.state.confirmType === "redeploy"
+                      : state.confirmType === "redeploy"
                         ? "Redeploying"
                         : "Deploying"}{" "}
                     this version will disable automatic deploys. You can turn it
@@ -2293,7 +2292,7 @@ const AppVersionHistory = (props: Props) => {
                 <button
                   className="btn secondary blue"
                   onClick={() =>
-                    this.setState({
+                    setState({
                       displayConfirmDeploymentModal: false,
                       confirmType: "",
                       versionToDeploy: null,
@@ -2305,15 +2304,15 @@ const AppVersionHistory = (props: Props) => {
                 <button
                   className="u-marginLeft--10 btn primary"
                   onClick={
-                    this.state.confirmType === "redeploy"
-                      ? this.finalizeRedeployment
-                      : () => this.finalizeDeployment(false)
+                    state.confirmType === "redeploy"
+                      ? finalizeRedeployment
+                      : () => finalizeDeployment(false)
                   }
                 >
                   Yes,{" "}
-                  {this.state.confirmType === "rollback"
+                  {state.confirmType === "rollback"
                     ? "rollback"
-                    : this.state.confirmType === "redeploy"
+                    : state.confirmType === "redeploy"
                       ? "redeploy"
                       : "deploy"}
                 </button>
@@ -2322,11 +2321,11 @@ const AppVersionHistory = (props: Props) => {
           </Modal>
         )}
 
-        {this.state.displayKotsUpdateModal && (
+        {state.displayKotsUpdateModal && (
           <Modal
             isOpen={true}
             onRequestClose={() =>
-              this.setState({ displayKotsUpdateModal: false })
+              setState({ displayKotsUpdateModal: false })
             }
             contentLabel="Upgrade is in progress"
             ariaHideApp={false}
@@ -2340,10 +2339,10 @@ const AppVersionHistory = (props: Props) => {
                 <Loader className="flex alignItems--center" size="32" />
                 {renderKotsUpgradeStatus ? (
                   <p className="u-fontSize--normal u-textColor--primary u-lineHeight--normal u-marginBottom--10">
-                    {this.state.kotsUpdateStatus}
+                    {state.kotsUpdateStatus}
                   </p>
                 ) : null}
-                {this.state.kotsUpdateMessage ? (
+                {state.kotsUpdateMessage ? (
                   <p className="u-fontSize--normal u-textColor--primary u-lineHeight--normal u-marginBottom--10">
                     {shortKotsUpdateMessage}
                   </p>
@@ -2353,32 +2352,32 @@ const AppVersionHistory = (props: Props) => {
           </Modal>
         )}
 
-        {this.state.displayShowDetailsModal && (
+        {state.displayShowDetailsModal && (
           <ShowDetailsModal
-            displayShowDetailsModal={this.state.displayShowDetailsModal}
-            toggleShowDetailsModal={this.toggleShowDetailsModal}
-            yamlErrorDetails={this.state.yamlErrorDetails}
-            deployView={this.state.deployView}
-            forceDeploy={this.onForceDeployClick}
-            showDeployWarningModal={this.state.showDeployWarningModal}
-            showSkipModal={this.state.showSkipModal}
-            slug={this.props.match.params.slug}
-            sequence={this.state.selectedSequence}
+            displayShowDetailsModal={state.displayShowDetailsModal}
+            toggleShowDetailsModal={toggleShowDetailsModal}
+            yamlErrorDetails={state.yamlErrorDetails}
+            deployView={state.deployView}
+            forceDeploy={onForceDeployClick}
+            showDeployWarningModal={state.showDeployWarningModal}
+            showSkipModal={state.showSkipModal}
+            slug={props.match.params.slug}
+            sequence={state.selectedSequence}
           />
         )}
         {errorMsg && (
           <ErrorModal
             errorModal={displayErrorModal}
-            toggleErrorModal={this.toggleErrorModal}
+            toggleErrorModal={toggleErrorModal}
             err={errorTitle}
             errMsg={errorMsg}
-            appSlug={this.props.match.params.slug}
+            appSlug={props.match.params.slug}
           />
         )}
-        {this.state.showNoChangesModal && (
+        {state.showNoChangesModal && (
           <Modal
             isOpen={true}
-            onRequestClose={() => this.toggleNoChangesModal()}
+            onRequestClose={() => toggleNoChangesModal()}
             contentLabel="No Changes"
             ariaHideApp={false}
             className="Modal DefaultSize"
@@ -2389,10 +2388,10 @@ const AppVersionHistory = (props: Props) => {
               </p>
               <p className="u-fontSize--normal u-textColor--bodyCopy u-lineHeight--normal u-marginBottom--20">
                 The{" "}
-                {this.state.releaseWithNoChanges && (
+                {state.releaseWithNoChanges && (
                   <span className="u-fontWeight--bold">
-                    Upstream {this.state.releaseWithNoChanges.versionLabel},
-                    Sequence {this.state.releaseWithNoChanges.sequence}{" "}
+                    Upstream {state.releaseWithNoChanges.versionLabel},
+                    Sequence {state.releaseWithNoChanges.sequence}{" "}
                   </span>
                 )}
                 release was unable to generate a diff because the changes made
@@ -2402,7 +2401,7 @@ const AppVersionHistory = (props: Props) => {
               <div className="flex u-paddingTop--10">
                 <button
                   className="btn primary"
-                  onClick={() => this.toggleNoChangesModal()}
+                  onClick={() => toggleNoChangesModal()}
                 >
                   Ok, got it!
                 </button>
@@ -2410,25 +2409,24 @@ const AppVersionHistory = (props: Props) => {
             </div>
           </Modal>
         )}
-        {this.state.showAutomaticUpdatesModal && (
+        {state.showAutomaticUpdatesModal && (
           <AutomaticUpdatesModal
-            isOpen={this.state.showAutomaticUpdatesModal}
-            onRequestClose={this.toggleAutomaticUpdatesModal}
+            isOpen={state.showAutomaticUpdatesModal}
+            onRequestClose={toggleAutomaticUpdatesModal}
             updateCheckerSpec={app?.updateCheckerSpec}
             autoDeploy={app?.autoDeploy}
             appSlug={app?.slug}
             isSemverRequired={app?.isSemverRequired}
             gitopsIsConnected={downstream?.gitops?.isConnected}
             onAutomaticUpdatesConfigured={() => {
-              this.toggleAutomaticUpdatesModal();
-              this.props.updateCallback();
+              toggleAutomaticUpdatesModal();
+              props.updateCallback();
             }}
-            isHelmManaged={this.props.isHelmManaged}
+            isHelmManaged={props.isHelmManaged}
           />
         )}
       </div>
     );
-  }
 }
 
 // @ts-ignore
