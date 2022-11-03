@@ -2,6 +2,8 @@ import React, { useEffect, useReducer } from "react";
 import { useHistory } from "react-router";
 import { Link } from "react-router-dom";
 import { KotsPageTitle } from "@components/Head";
+// TODO: upgrade this dependency
+// @ts-ignore
 import Dropzone from "react-dropzone";
 import yaml from "js-yaml";
 import size from "lodash/size";
@@ -29,10 +31,10 @@ type Props = {
   appName: string;
   appSlugFromMetadata: string;
   fetchingMetadata: boolean;
-  isBackupRestore: boolean;
+  isBackupRestore?: boolean;
   onUploadSuccess: () => Promise<void>;
   logo: string | null;
-  snapshot: { name: string };
+  snapshot?: { name: string };
 };
 
 type SelectedAppToInstall = {
@@ -599,7 +601,7 @@ const UploadLicenseFile = (props: Props) => {
           <Icon icon="next-arrow" style={{ marginTop: "2px" }} size={9} />
         </div>
       )}
-      {isBackupRestore ? (
+      {isBackupRestore && snapshot ? (
         <button
           className="btn primary u-marginTop--20"
           onClick={() => startRestore(snapshot)}

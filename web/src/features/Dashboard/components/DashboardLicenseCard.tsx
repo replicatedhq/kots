@@ -138,6 +138,8 @@ const DashboardLicenseCard = (props: Props) => {
     const airgapLicense = await yaml.safeLoad(contentStr);
     const { appLicense } = state;
 
+    // @ts-ignore
+    // TODO: fix this
     if (airgapLicense.spec?.licenseID !== appLicense?.id) {
       setState({
         message: "Licenses do not match",
@@ -146,6 +148,8 @@ const DashboardLicenseCard = (props: Props) => {
       return;
     }
 
+    // @ts-ignore
+    // TODO: fix this
     if (airgapLicense.spec?.licenseSequence === appLicense?.licenseSequence) {
       setState({
         message: "License is already up to date",
