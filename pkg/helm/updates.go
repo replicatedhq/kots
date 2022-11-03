@@ -20,7 +20,7 @@ import (
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -230,10 +230,10 @@ func removeDuplicates(tags []string) []string {
 	return u
 }
 
-func GetKotsKindsFromUpstreamChartVersion(helmApp *apptypes.HelmApp, licenseID string, version string) (kotsutil.KotsKinds, error) {
+func GetKotsKindsFromUpstreamChartVersion(helmApp *apptypes.HelmApp, licenseID string, version string) (kotsutiltypes.KotsKinds, error) {
 	secret, err := GetReplicatedSecretFromUpstreamChartVersion(helmApp, licenseID, version)
 	if err != nil {
-		return kotsutil.KotsKinds{}, errors.Wrap(err, "failed to get secret upstream archive")
+		return kotsutiltypes.KotsKinds{}, errors.Wrap(err, "failed to get secret upstream archive")
 	}
 
 	kotsKinds, err := GetKotsKindsFromReplicatedSecret(secret)

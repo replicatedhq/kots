@@ -13,10 +13,10 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/reporting"
@@ -31,7 +31,7 @@ import (
 // RewriteImages will use the app (a) and send the images to the registry specified. It will create patches for these
 // and create a new version of the application
 // the caller is responsible for deleting the appDir returned
-func RewriteImages(appID string, sequence int64, hostname string, username string, password string, namespace string, isReadOnly bool, configValues *kotsv1beta1.ConfigValues) (appDir string, finalError error) {
+func RewriteImages(appID string, sequence int64, hostname string, username string, password string, namespace string, isReadOnly bool) (appDir string, finalError error) {
 	if err := store.GetStore().SetTaskStatus("image-rewrite", "Updating registry settings", "running"); err != nil {
 		return "", errors.Wrap(err, "failed to set task status")
 	}
@@ -65,35 +65,40 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 		}
 	}()
 
+	appNamespace := util.PodNamespace
+
+	a, err := store.GetStore().GetApp(appID)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get app")
+	}
+
 	// get the archive and store it in a temporary location
-	appDir, err := ioutil.TempDir("", "kotsadm")
+	appDir, err = ioutil.TempDir("", "kotsadm")
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create temp dir")
 	}
 	// appDir is returned
 
-	err = store.GetStore().GetAppVersionArchive(appID, sequence, appDir)
-	if err != nil {
+	if err := store.GetStore().GetAppVersionArchive(appID, sequence, appDir); err != nil {
 		return "", errors.Wrap(err, "failed to get app version archive")
 	}
 
-	installation, err := kotsutil.LoadInstallationFromPath(filepath.Join(appDir, "upstream", "userdata", "installation.yaml"))
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+		FromDir: appDir,
+		RegistrySettings: types.RegistrySettings{
+			Hostname:   hostname,
+			Username:   username,
+			Password:   password,
+			Namespace:  namespace,
+			IsReadOnly: isReadOnly,
+		},
+		AppSlug:   a.Slug,
+		Sequence:  sequence,
+		IsAirgap:  a.IsAirgap,
+		Namespace: appNamespace,
+	})
 	if err != nil {
-		return "", errors.Wrap(err, "failed to load installation from path")
-	}
-
-	license, err := kotsutil.LoadLicenseFromPath(filepath.Join(appDir, "upstream", "userdata", "license.yaml"))
-	if err != nil {
-		return "", errors.Wrap(err, "failed to load license from path")
-	}
-
-	if configValues == nil {
-		previousConfigValues, err := kotsutil.LoadConfigValuesFromFile(filepath.Join(appDir, "upstream", "userdata", "config.yaml"))
-		if err != nil && !os.IsNotExist(errors.Cause(err)) {
-			return "", errors.Wrap(err, "failed to load config values from path")
-		}
-
-		configValues = previousConfigValues
+		return "", errors.Wrap(err, "failed to load kotskinds from path")
 	}
 
 	// get the downstream names only
@@ -105,17 +110,6 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 	downstreamNames := []string{}
 	for _, d := range downstreams {
 		downstreamNames = append(downstreamNames, d.Name)
-	}
-
-	a, err := store.GetStore().GetApp(appID)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get app")
-	}
-
-	// dev_namespace makes the dev env work
-	appNamespace := util.PodNamespace
-	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
-		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
 	}
 
 	pipeReader, pipeWriter := io.Pipe()
@@ -136,14 +130,14 @@ func RewriteImages(appID string, sequence int64, hostname string, username strin
 
 	options := rewrite.RewriteOptions{
 		RootDir:            appDir,
-		UpstreamURI:        fmt.Sprintf("replicated://%s", license.Spec.AppSlug),
+		UpstreamURI:        fmt.Sprintf("replicated://%s", kotsKinds.License.Spec.AppSlug),
 		UpstreamPath:       filepath.Join(appDir, "upstream"),
-		Installation:       installation,
 		Downstreams:        downstreamNames,
 		CreateAppDir:       false,
-		ExcludeKotsKinds:   true,
-		License:            license,
-		ConfigValues:       configValues,
+		Installation:       &kotsKinds.Installation,
+		License:            kotsKinds.License,
+		ConfigValues:       kotsKinds.ConfigValues,
+		IdentityConfig:     kotsKinds.IdentityConfig,
 		K8sNamespace:       appNamespace,
 		ReportWriter:       pipeWriter,
 		IsAirgap:           a.IsAirgap,

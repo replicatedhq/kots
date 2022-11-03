@@ -181,15 +181,15 @@ type SnapshotStore interface {
 type VersionStore interface {
 	IsIdentityServiceSupportedForVersion(appID string, sequence int64) (bool, error)
 	IsRollbackSupportedForVersion(appID string, sequence int64) (bool, error)
-	IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int64, renderer rendertypes.Renderer) (bool, error)
+	IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int64) (bool, error)
 	GetTargetKotsVersionForVersion(appID string, sequence int64) (string, error)
 	CreateAppVersionArchive(appID string, sequence int64, archivePath string) error
 	GetAppVersionArchive(appID string, sequence int64, dstPath string) error
 	GetAppVersionBaseSequence(appID string, versionLabel string) (int64, error)
 	GetAppVersionBaseArchive(appID string, versionLabel string) (string, int64, error)
 	CreatePendingDownloadAppVersion(appID string, update upstreamtypes.Update, kotsApplication *kotsv1beta1.Application, license *kotsv1beta1.License) (int64, error)
-	UpdateAppVersion(appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) error
-	CreateAppVersion(appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error)
+	UpdateAppVersion(appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) error
+	CreateAppVersion(appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) (int64, error)
 	GetAppVersion(appID string, sequence int64) (*versiontypes.AppVersion, error)
 	GetLatestAppSequence(appID string, downloadedOnly bool) (int64, error)
 	UpdateNextAppVersionDiffSummary(appID string, baseSequence int64) error

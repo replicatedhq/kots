@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/kots/kotskinds/multitype"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/app"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
@@ -25,18 +24,17 @@ import (
 	identitytypes "github.com/replicatedhq/kots/pkg/identity/types"
 	snapshot "github.com/replicatedhq/kots/pkg/kotsadmsnapshot"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/kustomize"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
 	"github.com/replicatedhq/kots/pkg/operator/client"
 	operatortypes "github.com/replicatedhq/kots/pkg/operator/types"
-	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
 	supportbundletypes "github.com/replicatedhq/kots/pkg/supportbundle/types"
-	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/util"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -206,6 +204,11 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 		return false, errors.Wrap(err, "failed to get app version archive")
 	}
 
+	registrySettings, err := o.store.GetRegistryDetailsForApp(app.ID)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get registry settings for app")
+	}
+
 	// ensure disaster recovery label transformer in midstream
 	additionalLabels := map[string]string{
 		"kots.io/app-slug": app.Slug,
@@ -214,31 +217,25 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 		return false, errors.Wrap(err, "failed to ensure disaster recovery label transformer")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(deployedVersionArchive)
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+		FromDir:          deployedVersionArchive,
+		RegistrySettings: registrySettings,
+		AppSlug:          app.Slug,
+		Sequence:         sequence,
+		IsAirgap:         app.IsAirgap,
+		Namespace:        util.AppNamespace(),
+	})
 	if err != nil {
 		return false, errors.Wrap(err, "failed to load kotskinds")
 	}
 
-	registrySettings, err := o.store.GetRegistryDetailsForApp(app.ID)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to get registry settings for app")
-	}
-
-	builder, err := render.NewBuilder(kotsKinds, registrySettings, app.Slug, sequence, app.IsAirgap, util.PodNamespace)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to get template builder")
-	}
-
 	requireIdentityProvider := false
 	if kotsKinds.Identity != nil {
-		if kotsKinds.Identity.Spec.RequireIdentityProvider.Type == multitype.String {
-			requireIdentityProvider, err = builder.Bool(kotsKinds.Identity.Spec.RequireIdentityProvider.StrVal, false)
-			if err != nil {
-				return false, errors.Wrap(err, "failed to build kotsv1beta1.Identity.spec.requireIdentityProvider")
-			}
-		} else {
-			requireIdentityProvider = kotsKinds.Identity.Spec.RequireIdentityProvider.BoolVal
+		rip, err := kotsKinds.Identity.Spec.RequireIdentityProvider.Boolean()
+		if err != nil {
+			return false, errors.Wrap(err, "failed to parse require identity provider field")
 		}
+		requireIdentityProvider = rip
 	}
 
 	if requireIdentityProvider && !identitydeploy.IsEnabled(kotsKinds.Identity, kotsKinds.IdentityConfig) {
@@ -285,7 +282,7 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 	imagePullSecrets = deduplicateSecrets(imagePullSecrets)
 
 	// get previous manifests (if any)
-	var previousKotsKinds *kotsutil.KotsKinds
+	var previousKotsKinds *kotsutiltypes.KotsKinds
 	base64EncodedPreviousManifests := ""
 	previouslyDeployedChartArchive := []byte{}
 	previouslyDeployedSequence, err := o.store.GetPreviouslyDeployedSequence(app.ID, o.clusterID)
@@ -310,7 +307,14 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 				return false, errors.Wrap(err, "failed to get previously deployed app version archive")
 			}
 
-			previousKotsKinds, err = kotsutil.LoadKotsKindsFromPath(previouslyDeployedVersionArchive)
+			previousKotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+				FromDir:          previouslyDeployedVersionArchive,
+				RegistrySettings: registrySettings,
+				AppSlug:          app.Slug,
+				Sequence:         previouslyDeployedParentSequence,
+				IsAirgap:         app.IsAirgap,
+				Namespace:        util.AppNamespace(),
+			})
 			if err != nil {
 				return false, errors.Wrap(err, "failed to load kotskinds for previously deployed app version")
 			}
@@ -358,40 +362,27 @@ func (o *Operator) DeployApp(appID string, sequence int64) (deployed bool, deplo
 		return false, errors.Wrap(err, "failed to deploy app")
 	}
 
-	if err := o.applyStatusInformers(app, sequence, kotsKinds, builder); err != nil {
+	if err := o.applyStatusInformers(app, sequence, kotsKinds); err != nil {
 		return false, errors.Wrap(err, "failed to apply status informers")
 	}
 
 	return deployed, nil
 }
 
-func (o *Operator) applyStatusInformers(a *apptypes.App, sequence int64, kotsKinds *kotsutil.KotsKinds, builder *template.Builder) error {
-	renderedInformers := []appstatetypes.StatusInformerString{}
+func (o *Operator) applyStatusInformers(a *apptypes.App, sequence int64, kotsKinds *kotsutiltypes.KotsKinds) error {
+	statusInformers := []appstatetypes.StatusInformerString{}
 
-	// deploy status informers
-	if len(kotsKinds.KotsApplication.Spec.StatusInformers) > 0 {
-		// render status informers
-		for _, informer := range kotsKinds.KotsApplication.Spec.StatusInformers {
-			renderedInformer, err := builder.String(informer)
-			if err != nil {
-				logger.Error(errors.Wrap(err, "failed to render status informer"))
-				continue
-			}
-			if renderedInformer == "" {
-				continue
-			}
-			renderedInformers = append(renderedInformers, appstatetypes.StatusInformerString(renderedInformer))
-		}
+	for _, si := range kotsKinds.KotsApplication.Spec.StatusInformers {
+		statusInformers = append(statusInformers, appstatetypes.StatusInformerString(si))
 	}
-
 	if identitydeploy.IsEnabled(kotsKinds.Identity, kotsKinds.IdentityConfig) {
-		renderedInformers = append(renderedInformers, appstatetypes.StatusInformerString(fmt.Sprintf("deployment/%s", identitytypes.DeploymentName(a.Slug))))
+		statusInformers = append(statusInformers, appstatetypes.StatusInformerString(fmt.Sprintf("deployment/%s", identitytypes.DeploymentName(a.Slug))))
 	}
 
-	if len(renderedInformers) > 0 {
+	if len(statusInformers) > 0 {
 		informersArgs := operatortypes.AppInformersArgs{
 			AppID:     a.ID,
-			Informers: renderedInformers,
+			Informers: statusInformers,
 			Sequence:  sequence,
 		}
 		o.client.ApplyAppInformers(informersArgs)
@@ -451,22 +442,24 @@ func (o *Operator) resumeStatusInformersForApp(app *apptypes.App) error {
 		return errors.Wrap(err, "failed to get app version archive")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(deployedVersionArchive)
-	if err != nil {
-		return errors.Wrap(err, "failed to load kotskinds")
-	}
-
 	registrySettings, err := o.store.GetRegistryDetailsForApp(app.ID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get registry settings for app")
 	}
 
-	builder, err := render.NewBuilder(kotsKinds, registrySettings, app.Slug, sequence, app.IsAirgap, util.PodNamespace)
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+		FromDir:          deployedVersionArchive,
+		RegistrySettings: registrySettings,
+		AppSlug:          app.Slug,
+		Sequence:         sequence,
+		IsAirgap:         app.IsAirgap,
+		Namespace:        util.AppNamespace(),
+	})
 	if err != nil {
-		return errors.Wrap(err, "failed to get template builder")
+		return errors.Wrap(err, "failed to load kotskinds")
 	}
 
-	if err := o.applyStatusInformers(app, sequence, kotsKinds, builder); err != nil {
+	if err := o.applyStatusInformers(app, sequence, kotsKinds); err != nil {
 		return errors.Wrapf(err, "failed to apply status informers for app %s", app.ID)
 	}
 
@@ -662,7 +655,19 @@ func (o *Operator) undeployApp(a *apptypes.App, d *downstreamtypes.Downstream, i
 		return errors.Wrap(err, "failed to get app version archive")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(deployedVersionArchive)
+	registrySettings, err := o.store.GetRegistryDetailsForApp(a.ID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get registry settings for app")
+	}
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+		FromDir:          deployedVersionArchive,
+		RegistrySettings: registrySettings,
+		AppSlug:          a.Slug,
+		Sequence:         deployedVersion.ParentSequence,
+		IsAirgap:         a.IsAirgap,
+		Namespace:        util.AppNamespace(),
+	})
 	if err != nil {
 		return errors.Wrap(err, "failed to load kotskinds")
 	}

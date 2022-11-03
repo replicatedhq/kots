@@ -8,12 +8,14 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight"
 	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/replicatedhq/kots/pkg/version"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -66,12 +68,23 @@ func Sync(a *apptypes.App, licenseString string, failOnVersionCreate bool) (*kot
 
 	// Because an older version can be edited, it is possible to have latest version with an outdated license.
 	// So even if global license sequence is already latest, we still need to create a new app version in this case.
-	err = store.GetStore().GetAppVersionArchive(a.ID, latestSequence, archiveDir)
-	if err != nil {
+	if err := store.GetStore().GetAppVersionArchive(a.ID, latestSequence, archiveDir); err != nil {
 		return nil, false, errors.Wrap(err, "failed to get latest app sequence")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(a.ID)
+	if err != nil {
+		return nil, false, errors.Wrap(err, "failed to get registry settings")
+	}
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+		FromDir:          archiveDir,
+		RegistrySettings: registrySettings,
+		AppSlug:          a.Slug,
+		Sequence:         latestSequence,
+		IsAirgap:         a.IsAirgap,
+		Namespace:        util.AppNamespace(),
+	})
 	if err != nil {
 		return nil, false, errors.Wrap(err, "failed to load kotskinds from path")
 	}

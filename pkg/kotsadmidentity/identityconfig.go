@@ -13,7 +13,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func InitAppIdentityConfig(appSlug string) (string, error) {
+func InitAppIdentityConfig(appSlug string) *kotsv1beta1.IdentityConfig {
 	identityConfig := &kotsv1beta1.IdentityConfig{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "kots.io/v1beta1",
@@ -27,6 +27,12 @@ func InitAppIdentityConfig(appSlug string) (string, error) {
 			ClientSecret: &kotsv1beta1.StringValueOrEncrypted{Value: ksuid.New().String()},
 		},
 	}
+
+	return identityConfig
+}
+
+func InitAppIdentityConfigFile(appSlug string) (string, error) {
+	identityConfig := InitAppIdentityConfig(appSlug)
 
 	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
 

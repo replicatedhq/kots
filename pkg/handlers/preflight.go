@@ -10,12 +10,14 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight"
 	preflighttypes "github.com/replicatedhq/kots/pkg/preflight/types"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 type GetPreflightResultResponse struct {
@@ -273,7 +275,21 @@ func (h *Handler) GetPreflightCommand(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archivePath)
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(foundApp.ID)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get registry settings"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+		FromDir:          archivePath,
+		RegistrySettings: registrySettings,
+		AppSlug:          foundApp.Slug,
+		Sequence:         sequence,
+		IsAirgap:         foundApp.IsAirgap,
+		Namespace:        util.AppNamespace(),
+	})
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to load kots kinds"))
 		w.WriteHeader(http.StatusInternalServerError)

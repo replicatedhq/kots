@@ -11,6 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight"
 	"github.com/replicatedhq/kots/pkg/render"
@@ -78,8 +79,36 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 	}
 	defer os.RemoveAll(archiveDir)
 
+	a, err := store.GetStore().GetAppFromSlug(uploadExistingAppRequest.Slug)
+	if err != nil {
+		logger.Error(errors.Wrapf(err, "failed to get app for slug %q", uploadExistingAppRequest.Slug))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(a.ID)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get registry settings"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	nextAppSequence, err := store.GetStore().GetNextAppSequence(a.ID)
+	if err != nil {
+		logger.Error(errors.Wrap(err, "failed to get next app sequence"))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	// encrypt any plain text values
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+		FromDir:          archiveDir,
+		RegistrySettings: registrySettings,
+		AppSlug:          a.Slug,
+		Sequence:         nextAppSequence,
+		IsAirgap:         a.IsAirgap,
+		Namespace:        util.AppNamespace(),
+	})
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to load kotskinds"))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -106,20 +135,6 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	a, err := store.GetStore().GetAppFromSlug(uploadExistingAppRequest.Slug)
-	if err != nil {
-		logger.Error(errors.Wrapf(err, "failed to get app for slug %q", uploadExistingAppRequest.Slug))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(a.ID)
-	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to get registry settings"))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
 	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to list downstreams"))
@@ -133,14 +148,7 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	nextAppSequence, err := store.GetStore().GetNextAppSequence(a.ID)
-	if err != nil {
-		logger.Error(errors.Wrap(err, "failed to get next app sequence"))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	err = render.RenderDir(archiveDir, a, downstreams, registrySettings, nextAppSequence)
+	err = render.RenderDir(archiveDir, kotsKinds, a, downstreams, registrySettings, nextAppSequence)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to render app version"))
 		w.WriteHeader(http.StatusInternalServerError)
@@ -154,7 +162,7 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "KOTS Upload", uploadExistingAppRequest.SkipPreflights, &version.DownstreamGitOps{}, render.Renderer{})
+	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "KOTS Upload", uploadExistingAppRequest.SkipPreflights, &version.DownstreamGitOps{})
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to create app version"))
 		w.WriteHeader(http.StatusInternalServerError)

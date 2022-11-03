@@ -2,6 +2,7 @@ package base
 
 import (
 	"github.com/pkg/errors"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 )
@@ -17,6 +18,7 @@ type RenderOptions struct {
 	LocalRegistryUsername   string
 	LocalRegistryPassword   string
 	LocalRegistryIsReadOnly bool
+	KotsKinds               *kotsutiltypes.KotsKinds
 	ExcludeKotsKinds        bool
 	AppSlug                 string
 	Sequence                int64

@@ -7,7 +7,7 @@ import (
 	"github.com/blang/semver"
 	v1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/cursor"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	kotssemver "github.com/replicatedhq/kots/pkg/semver"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 )
@@ -51,7 +51,7 @@ type DownstreamVersion struct {
 	DiffSummaryError           string                          `json:"diffSummaryError,omitempty"`
 	YamlErrors                 []v1beta1.InstallationYAMLError `json:"yamlErrors,omitempty"`
 	NeedsKotsUpgrade           bool                            `json:"needsKotsUpgrade,omitempty"`
-	KOTSKinds                  *kotsutil.KotsKinds             `json:"-"`
+	KOTSKinds                  *kotsutiltypes.KotsKinds        `json:"-"`
 	DownloadStatus             DownloadStatus                  `json:"downloadStatus,omitempty"`
 }
 

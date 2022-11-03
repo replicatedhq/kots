@@ -15,9 +15,9 @@ import (
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/redact"
-	"github.com/replicatedhq/kots/pkg/render/helper"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/supportbundle/types"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -136,7 +136,7 @@ func GetBundleCommand(appSlug string) []string {
 // CreateSupportBundleDependencies generates k8s secrets and configmaps for the support bundle spec and redactors.
 // These resources will be used when executing a support bundle collection
 func CreateSupportBundleDependencies(app apptypes.AppType, sequence int64, opts types.TroubleshootOptions) (*types.SupportBundle, error) {
-	var kotsKinds *kotsutil.KotsKinds
+	var kotsKinds *kotsutiltypes.KotsKinds
 	switch a := app.(type) {
 	case *apptypes.App:
 		k, err := getKotsKindsForApp(a, sequence)
@@ -183,7 +183,7 @@ func CreateSupportBundleDependencies(app apptypes.AppType, sequence int64, opts 
 	return &supportBundleObj, nil
 }
 
-func getKotsKindsForApp(app *apptypes.App, sequence int64) (*kotsutil.KotsKinds, error) {
+func getKotsKindsForApp(app *apptypes.App, sequence int64) (*kotsutiltypes.KotsKinds, error) {
 	archivePath, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temp dir")
@@ -195,7 +195,19 @@ func getKotsKindsForApp(app *apptypes.App, sequence int64) (*kotsutil.KotsKinds,
 		return nil, errors.Wrap(err, "failed to get current archive")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archivePath)
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(app.GetID())
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get app registry info")
+	}
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+		FromDir:          archivePath,
+		RegistrySettings: registrySettings,
+		AppSlug:          app.Slug,
+		Sequence:         sequence,
+		IsAirgap:         app.IsAirgap,
+		Namespace:        util.AppNamespace(),
+	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load current kotskinds")
 	}
@@ -203,7 +215,7 @@ func getKotsKindsForApp(app *apptypes.App, sequence int64) (*kotsutil.KotsKinds,
 	return kotsKinds, nil
 }
 
-func getKotsKindsForHelmApp(app *apptypes.HelmApp) (*kotsutil.KotsKinds, error) {
+func getKotsKindsForHelmApp(app *apptypes.HelmApp) (*kotsutiltypes.KotsKinds, error) {
 	license, err := helm.GetChartLicenseFromSecretOrDownload(app)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get license from secret")
@@ -216,7 +228,7 @@ func getKotsKindsForHelmApp(app *apptypes.HelmApp) (*kotsutil.KotsKinds, error) 
 		logger.Infof("failed to download support bundle spec from %s: %v", specURL, err)
 	}
 
-	kotsKinds := kotsutil.EmptyKotsKinds()
+	kotsKinds := kotsutiltypes.EmptyKotsKinds()
 	kotsKinds.License = license
 
 	if upstreamSupportBundle != nil {
@@ -325,7 +337,21 @@ func CreateSupportBundleAnalysis(appID string, archivePath string, bundle *types
 		return err
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(foundApp.ID)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get app registry info")
+		logger.Error(err)
+		return err
+	}
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+		FromDir:          archiveDir,
+		RegistrySettings: registrySettings,
+		AppSlug:          foundApp.Slug,
+		Sequence:         latestSequence,
+		IsAirgap:         foundApp.IsAirgap,
+		Namespace:        util.AppNamespace(),
+	})
 	if err != nil {
 		err = errors.Wrap(err, "failed to load kots kinds from archive")
 		logger.Error(err)
@@ -335,7 +361,7 @@ func CreateSupportBundleAnalysis(appID string, archivePath string, bundle *types
 	analyzer := kotsKinds.Analyzer
 	// SupportBundle overwrites Analyzer if defined
 	if kotsKinds.SupportBundle != nil {
-		analyzer = kotsutil.SupportBundleToAnalyzer(kotsKinds.SupportBundle)
+		analyzer = kotsutiltypes.SupportBundleToAnalyzer(kotsKinds.SupportBundle)
 	}
 	if analyzer == nil {
 		analyzer = &troubleshootv1beta2.Analyzer{
@@ -363,13 +389,7 @@ func CreateSupportBundleAnalysis(appID string, archivePath string, bundle *types
 		logger.Error(err)
 		return err
 	}
-
-	renderedAnalyzers, err := helper.RenderAppFile(foundApp, nil, b.Bytes(), kotsKinds, util.PodNamespace)
-	if err != nil {
-		err = errors.Wrap(err, "failed to render analyzers")
-		logger.Error(err)
-		return err
-	}
+	renderedAnalyzers := b.Bytes()
 
 	analyzeResult, err := troubleshootanalyze.DownloadAndAnalyze(archivePath, string(renderedAnalyzers))
 	if err != nil {

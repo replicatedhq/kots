@@ -19,7 +19,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/preflight"
 	"github.com/replicatedhq/kots/pkg/registry"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
-	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/version"
 	corev1 "k8s.io/api/core/v1"
@@ -218,7 +217,7 @@ func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		appDir, err := registry.RewriteImages(
 			foundApp.ID, latestSequence, updateAppRegistryRequest.Hostname,
 			updateAppRegistryRequest.Username, registryPassword,
-			updateAppRegistryRequest.Namespace, skipImagePush, nil)
+			updateAppRegistryRequest.Namespace, skipImagePush)
 		if err != nil {
 			// log credential errors at info level
 			causeErr := errors.Cause(err)
@@ -237,7 +236,7 @@ func (h *Handler) UpdateAppRegistry(w http.ResponseWriter, r *http.Request) {
 		}
 		defer os.RemoveAll(appDir)
 
-		newSequence, err := store.GetStore().CreateAppVersion(foundApp.ID, &latestSequence, appDir, "Registry Change", false, &version.DownstreamGitOps{}, render.Renderer{})
+		newSequence, err := store.GetStore().CreateAppVersion(foundApp.ID, &latestSequence, appDir, "Registry Change", false, &version.DownstreamGitOps{})
 		if err != nil {
 			logger.Error(errors.Wrap(err, "failed to create app version"))
 			return

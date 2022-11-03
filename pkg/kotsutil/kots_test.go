@@ -11,6 +11,7 @@ import (
 	kotsv1beta "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 )
@@ -18,7 +19,7 @@ import (
 var _ = Describe("Kots", func() {
 	Describe("EncryptConfigValues()", func() {
 		It("does not error when the config field is missing", func() {
-			kotsKind := &kotsutil.KotsKinds{
+			kotsKind := &kotsutiltypes.KotsKinds{
 				ConfigValues: &kotsv1beta.ConfigValues{},
 			}
 			err := kotsKind.EncryptConfigValues()
@@ -26,7 +27,7 @@ var _ = Describe("Kots", func() {
 		})
 
 		It("does not error when the configValues field is missing", func() {
-			kotsKind := &kotsutil.KotsKinds{
+			kotsKind := &kotsutiltypes.KotsKinds{
 				Config: &kotsv1beta.Config{},
 			}
 			err := kotsKind.EncryptConfigValues()
@@ -39,7 +40,7 @@ var _ = Describe("Kots", func() {
 				ValuePlaintext: "valuePlaintext",
 			}
 
-			kotsKind := &kotsutil.KotsKinds{
+			kotsKind := &kotsutiltypes.KotsKinds{
 				Config: &kotsv1beta.Config{
 					Spec: kotsv1beta.ConfigSpec{
 						Groups: []kotsv1beta.ConfigGroup{
@@ -73,7 +74,7 @@ var _ = Describe("Kots", func() {
 				ValuePlaintext: "valuePlainText",
 			}
 
-			kotsKind := &kotsutil.KotsKinds{
+			kotsKind := &kotsutiltypes.KotsKinds{
 				Config: &kotsv1beta.Config{
 					Spec: kotsv1beta.ConfigSpec{
 						Groups: []kotsv1beta.ConfigGroup{
@@ -109,7 +110,7 @@ var _ = Describe("Kots", func() {
 				ValuePlaintext: "some-nonEncryptedValue-in-plain-text",
 			}
 
-			kotsKind := &kotsutil.KotsKinds{
+			kotsKind := &kotsutiltypes.KotsKinds{
 				Config: &kotsv1beta.Config{
 					Spec: kotsv1beta.ConfigSpec{
 						Groups: []kotsv1beta.ConfigGroup{
@@ -138,7 +139,7 @@ var _ = Describe("Kots", func() {
 
 	Describe("DecryptConfigValues()", func() {
 		It("does not error when config values are empty", func() {
-			kotsKind := &kotsutil.KotsKinds{
+			kotsKind := &kotsutiltypes.KotsKinds{
 				Config: &kotsv1beta.Config{},
 			}
 			err := kotsKind.DecryptConfigValues()
@@ -153,7 +154,7 @@ var _ = Describe("Kots", func() {
 				ValuePlaintext: "some-nonEncryptedValue-in-plain-text",
 			}
 
-			kotsKind := &kotsutil.KotsKinds{
+			kotsKind := &kotsutiltypes.KotsKinds{
 				ConfigValues: &kotsv1beta.ConfigValues{
 					Spec: kotsv1beta.ConfigValuesSpec{
 						Values: configValues,
@@ -176,7 +177,7 @@ var _ = Describe("Kots", func() {
 				ValuePlaintext: "",
 			}
 
-			kotsKind := &kotsutil.KotsKinds{
+			kotsKind := &kotsutiltypes.KotsKinds{
 				ConfigValues: &kotsv1beta.ConfigValues{
 					Spec: kotsv1beta.ConfigValuesSpec{
 						Values: configValues,
@@ -197,7 +198,7 @@ var _ = Describe("Kots", func() {
 				ValuePlaintext: "",
 			}
 
-			kotsKind := &kotsutil.KotsKinds{
+			kotsKind := &kotsutiltypes.KotsKinds{
 				ConfigValues: &kotsv1beta.ConfigValues{
 					Spec: kotsv1beta.ConfigValuesSpec{
 						Values: configValues,
@@ -218,7 +219,7 @@ var _ = Describe("Kots", func() {
 				ValuePlaintext: "",
 			}
 
-			kotsKind := &kotsutil.KotsKinds{
+			kotsKind := &kotsutiltypes.KotsKinds{
 				ConfigValues: &kotsv1beta.ConfigValues{
 					Spec: kotsv1beta.ConfigValuesSpec{
 						Values: configValues,
@@ -233,19 +234,19 @@ var _ = Describe("Kots", func() {
 
 	Describe("IsConfigurable()", func() {
 		It("returns false when the client-side object is not set", func() {
-			var kotsKind *kotsutil.KotsKinds = nil
+			var kotsKind *kotsutiltypes.KotsKinds = nil
 			preflightResult := kotsKind.IsConfigurable()
 			Expect(preflightResult).To(BeFalse())
 		})
 
 		It("returns false when the client-side object does not have config set", func() {
-			kotsKind := &kotsutil.KotsKinds{}
+			kotsKind := &kotsutiltypes.KotsKinds{}
 			preflightResult := kotsKind.IsConfigurable()
 			Expect(preflightResult).To(BeFalse())
 		})
 
 		It("returns false when the length of groups is zero", func() {
-			kotsKind := &kotsutil.KotsKinds{
+			kotsKind := &kotsutiltypes.KotsKinds{
 				Config: &kotsv1beta.Config{
 					Spec: kotsv1beta.ConfigSpec{
 						Groups: []kotsv1beta.ConfigGroup{},
@@ -257,7 +258,7 @@ var _ = Describe("Kots", func() {
 		})
 
 		It("returns true when the length of the groups is greater than zero", func() {
-			kotsKind := &kotsutil.KotsKinds{
+			kotsKind := &kotsutiltypes.KotsKinds{
 				Config: &kotsv1beta.Config{
 					Spec: kotsv1beta.ConfigSpec{
 						Groups: []kotsv1beta.ConfigGroup{
@@ -275,19 +276,19 @@ var _ = Describe("Kots", func() {
 
 	Describe("HasPreflights()", func() {
 		It("returns false when the client-side object is not set", func() {
-			var kotsKind *kotsutil.KotsKinds = nil
+			var kotsKind *kotsutiltypes.KotsKinds = nil
 			preflightResult := kotsKind.HasPreflights()
 			Expect(preflightResult).To(BeFalse())
 		})
 
 		It("returns false when the client-side object does not have preflights set", func() {
-			kotsKind := &kotsutil.KotsKinds{}
+			kotsKind := &kotsutiltypes.KotsKinds{}
 			preflightResult := kotsKind.HasPreflights()
 			Expect(preflightResult).To(BeFalse())
 		})
 
 		It("returns true when there are more than one analyzers defined in the preflight spec", func() {
-			kotsKind := &kotsutil.KotsKinds{
+			kotsKind := &kotsutiltypes.KotsKinds{
 				Preflight: &troubleshootv1beta2.Preflight{
 					Spec: troubleshootv1beta2.PreflightSpec{
 						Analyzers: []*troubleshootv1beta2.Analyze{
@@ -303,7 +304,7 @@ var _ = Describe("Kots", func() {
 
 	Describe("GetKustomizeBinaryPath()", func() {
 		It("returns unusable path 'kustomize' if the Kustomize Version cannot be found", func() {
-			kotsKind := &kotsutil.KotsKinds{}
+			kotsKind := &kotsutiltypes.KotsKinds{}
 
 			binaryPath := kotsKind.GetKustomizeBinaryPath()
 			Expect(binaryPath).To(Equal("kustomize"))

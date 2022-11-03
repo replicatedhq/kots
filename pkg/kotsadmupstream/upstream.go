@@ -12,10 +12,10 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	identity "github.com/replicatedhq/kots/pkg/kotsadmidentity"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight"
 	kotspull "github.com/replicatedhq/kots/pkg/pull"
-	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/upstream"
@@ -121,6 +121,20 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		}
 	}()
 
+	appNamespace := util.AppNamespace()
+
+	a, err := store.GetStore().GetApp(appID)
+	if err != nil {
+		finalError = errors.Wrap(err, "failed to get app")
+		return
+	}
+
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(appID)
+	if err != nil {
+		finalError = errors.Wrap(err, "failed to get registry settings")
+		return
+	}
+
 	archiveDir, baseSequence, err := store.GetStore().GetAppVersionBaseArchive(appID, update.VersionLabel)
 	if err != nil {
 		finalError = errors.Wrapf(err, "failed to get base archive dir for version %s", update.VersionLabel)
@@ -128,7 +142,14 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 	}
 	defer os.RemoveAll(archiveDir)
 
-	beforeKotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	beforeKotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+		FromDir:          archiveDir,
+		RegistrySettings: registrySettings,
+		AppSlug:          a.Slug,
+		Sequence:         baseSequence,
+		IsAirgap:         a.IsAirgap,
+		Namespace:        appNamespace,
+	})
 	if err != nil {
 		finalError = errors.Wrap(err, "failed to read kots kinds before update")
 		return
@@ -147,12 +168,6 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		pipeReader.CloseWithError(scanner.Err())
 	}()
 
-	a, err := store.GetStore().GetApp(appID)
-	if err != nil {
-		finalError = errors.Wrap(err, "failed to get app")
-		return
-	}
-
 	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
 	if err != nil {
 		finalError = errors.Wrap(err, "failed to list downstreams for app")
@@ -163,8 +178,6 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 	for _, d := range downstreams {
 		downstreamNames = append(downstreamNames, d.Name)
 	}
-
-	appNamespace := util.AppNamespace()
 
 	appSequence, err := store.GetStore().GetNextAppSequence(a.ID)
 	if err != nil {
@@ -183,7 +196,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 
 	identityConfigFile := filepath.Join(archiveDir, "upstream", "userdata", "identityconfig.yaml")
 	if _, err := os.Stat(identityConfigFile); os.IsNotExist(err) {
-		file, err := identity.InitAppIdentityConfig(a.Slug)
+		file, err := identity.InitAppIdentityConfigFile(a.Slug)
 		if err != nil {
 			finalError = errors.Wrap(err, "failed to init identity config")
 			return
@@ -195,16 +208,10 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		return
 	}
 
-	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(appID)
-	if err != nil {
-		finalError = errors.Wrap(err, "failed to get registry settings")
-		return
-	}
-
 	pullOptions := kotspull.PullOptions{
 		LicenseObj:          latestLicense,
 		Namespace:           appNamespace,
-		ConfigFile:          filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"),
+		ConfigValuesFile:    filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"),
 		IdentityConfigFile:  identityConfigFile,
 		InstallationFile:    filepath.Join(archiveDir, "upstream", "userdata", "installation.yaml"),
 		UpdateCursor:        update.Cursor,
@@ -235,7 +242,14 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 	}
 
 	if update.AppSequence == nil {
-		afterKotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+		afterKotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+			FromDir:          archiveDir,
+			RegistrySettings: registrySettings,
+			AppSlug:          a.Slug,
+			Sequence:         appSequence,
+			IsAirgap:         a.IsAirgap,
+			Namespace:        appNamespace,
+		})
 		if err != nil {
 			finalError = errors.Wrap(err, "failed to read kots kinds after update")
 			return
@@ -243,14 +257,14 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		if afterKotsKinds.Installation.Spec.UpdateCursor == beforeCursor {
 			return
 		}
-		newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "Upstream Update", skipPreflights, &version.DownstreamGitOps{}, render.Renderer{})
+		newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "Upstream Update", skipPreflights, &version.DownstreamGitOps{})
 		if err != nil {
 			finalError = errors.Wrap(err, "failed to create version")
 			return
 		}
 		finalSequence = &newSequence
 	} else {
-		err := store.GetStore().UpdateAppVersion(a.ID, *update.AppSequence, &baseSequence, archiveDir, "Upstream Update", skipPreflights, &version.DownstreamGitOps{}, render.Renderer{})
+		err := store.GetStore().UpdateAppVersion(a.ID, *update.AppSequence, &baseSequence, archiveDir, "Upstream Update", skipPreflights, &version.DownstreamGitOps{})
 		if err != nil {
 			finalError = errors.Wrap(err, "failed to create version")
 			return

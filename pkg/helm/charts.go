@@ -21,6 +21,7 @@ import (
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -334,8 +335,8 @@ func SaveChartLicenseInSecret(helmApp *apptypes.HelmApp, licenseData []byte) err
 	return nil
 }
 
-func GetKotsKindsFromHelmApp(helmApp *apptypes.HelmApp) (kotsutil.KotsKinds, error) {
-	kotsKinds := kotsutil.EmptyKotsKinds()
+func GetKotsKindsFromHelmApp(helmApp *apptypes.HelmApp) (kotsutiltypes.KotsKinds, error) {
+	kotsKinds := kotsutiltypes.EmptyKotsKinds()
 
 	secret, err := GetChartConfigSecret(helmApp)
 	if err != nil {
@@ -362,8 +363,8 @@ func GetKotsKindsFromHelmApp(helmApp *apptypes.HelmApp) (kotsutil.KotsKinds, err
 	return kotsKinds, nil
 }
 
-func GetKotsKindsFromReplicatedSecret(secret *corev1.Secret) (kotsutil.KotsKinds, error) {
-	kotsKinds := kotsutil.EmptyKotsKinds()
+func GetKotsKindsFromReplicatedSecret(secret *corev1.Secret) (kotsutiltypes.KotsKinds, error) {
+	kotsKinds := kotsutiltypes.EmptyKotsKinds()
 
 	licenseData := secret.Data["license"]
 	if len(licenseData) != 0 {
@@ -395,8 +396,8 @@ func GetKotsKindsFromReplicatedSecret(secret *corev1.Secret) (kotsutil.KotsKinds
 	return kotsKinds, nil
 }
 
-func GetKotsKindsForRevision(releaseName string, revision int64, namespace string) (kotsutil.KotsKinds, error) {
-	kotsKinds := kotsutil.EmptyKotsKinds()
+func GetKotsKindsForRevision(releaseName string, revision int64, namespace string) (kotsutiltypes.KotsKinds, error) {
+	kotsKinds := kotsutiltypes.EmptyKotsKinds()
 
 	clientSet, err := k8sutil.GetClientset()
 	if err != nil {

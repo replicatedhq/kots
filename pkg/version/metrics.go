@@ -14,8 +14,8 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	"github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/logger"
-	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
 )
@@ -97,33 +97,25 @@ func GetGraphs(app *types.App, sequence int64, kotsStore store.Store) ([]kotsv1b
 		return graphs, errors.Wrap(err, "failed to get app version archive")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(app.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get app registry info")
+	}
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+		FromDir:          archiveDir,
+		RegistrySettings: registrySettings,
+		AppSlug:          app.Slug,
+		Sequence:         sequence,
+		IsAirgap:         app.IsAirgap,
+		Namespace:        util.AppNamespace(),
+	})
 	if err != nil {
 		return graphs, errors.Wrap(err, "failed to load kots kinds from path")
 	}
 
-	registrySettings, err := kotsStore.GetRegistryDetailsForApp(app.ID)
-	if err != nil {
-		return graphs, errors.Wrap(err, "failed to get registry settings for app")
-	}
-
-	templatedKotsApplication, err := kotsKinds.Marshal("kots.io", "v1beta1", "Application")
-	if err != nil {
-		return graphs, errors.Wrap(err, "failed to marshal kots application")
-	}
-
-	renderedKotsApplication, err := render.RenderFile(kotsKinds, registrySettings, app.Slug, sequence, app.IsAirgap, util.PodNamespace, []byte(templatedKotsApplication))
-	if err != nil {
-		return graphs, errors.Wrap(err, "failed to render kots application")
-	}
-
-	kotsApplication, err := kotsutil.LoadKotsAppFromContents(renderedKotsApplication)
-	if err != nil {
-		return graphs, errors.Wrap(err, "failed to load kots application from contents")
-	}
-
-	if len(kotsApplication.Spec.Graphs) > 0 {
-		graphs = kotsApplication.Spec.Graphs
+	if len(kotsKinds.KotsApplication.Spec.Graphs) > 0 {
+		graphs = kotsKinds.KotsApplication.Spec.Graphs
 	}
 
 	return graphs, nil

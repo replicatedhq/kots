@@ -18,9 +18,9 @@ import (
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsadmsnapshot/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
-	"github.com/replicatedhq/kots/pkg/render/helper"
 	kotssnapshot "github.com/replicatedhq/kots/pkg/snapshot"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -64,39 +64,31 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 		return nil, errors.Wrap(err, "failed to get app version archive")
 	}
 
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(a.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get registry settings")
+	}
+
 	kotsadmNamespace := util.PodNamespace
+	appNamespace := util.AppNamespace()
+
 	kotsadmVeleroBackendStorageLocation, err := kotssnapshot.FindBackupStoreLocation(ctx, kotsadmNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find backupstoragelocations")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+		FromDir:          archiveDir,
+		RegistrySettings: registrySettings,
+		AppSlug:          a.Slug,
+		Sequence:         parentSequence,
+		IsAirgap:         a.IsAirgap,
+		Namespace:        appNamespace,
+	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load kots kinds from path")
 	}
-
-	backupSpec, err := kotsKinds.Marshal("velero.io", "v1", "Backup")
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get backup spec from kotskinds")
-	}
-
-	if backupSpec == "" {
-		return nil, errors.Errorf("application %s does not have a backup spec", a.Slug)
-	}
-
-	renderedBackup, err := helper.RenderAppFile(a, nil, []byte(backupSpec), kotsKinds, kotsadmNamespace)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to render backup")
-	}
-	veleroBackup, err := kotsutil.LoadBackupFromContents(renderedBackup)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to load backup from contents")
-	}
-
-	appNamespace := kotsadmNamespace
-	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
-		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
-	}
+	veleroBackup := kotsKinds.Backup
 
 	includedNamespaces := []string{}
 	includedNamespaces = append(includedNamespaces, appNamespace)
@@ -173,6 +165,8 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 	logger.Debug("creating instance backup")
 
 	kotsadmNamespace := util.PodNamespace
+	appNamespace := util.AppNamespace()
+
 	appsSequences := map[string]int64{}
 	includedNamespaces := []string{kotsadmNamespace}
 	excludedNamespaces := []string{}
@@ -185,11 +179,6 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 	// - includedResources
 	// - excludedResources
 	// - labelSelector
-
-	appNamespace := kotsadmNamespace
-	if os.Getenv("KOTSADM_TARGET_NAMESPACE") != "" {
-		appNamespace = os.Getenv("KOTSADM_TARGET_NAMESPACE")
-	}
 	if appNamespace != kotsadmNamespace {
 		includedNamespaces = append(includedNamespaces, appNamespace)
 	}
@@ -218,6 +207,7 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 			// no version is deployed for this app yet
 			continue
 		}
+		appsSequences[a.Slug] = parentSequence
 
 		archiveDir, err := ioutil.TempDir("", "kotsadm")
 		if err != nil {
@@ -230,30 +220,23 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 			return nil, errors.Wrapf(err, "failed to get app version archive for app %s", a.Slug)
 		}
 
-		kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+		registrySettings, err := store.GetStore().GetRegistryDetailsForApp(a.ID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to get registry settings for app %s", a.Slug)
+		}
+
+		kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+			FromDir:          archiveDir,
+			RegistrySettings: registrySettings,
+			AppSlug:          a.Slug,
+			Sequence:         parentSequence,
+			IsAirgap:         a.IsAirgap,
+			Namespace:        appNamespace,
+		})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to load kots kinds from path")
 		}
-
-		backupSpec, err := kotsKinds.Marshal("velero.io", "v1", "Backup")
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get backup spec from kotskinds")
-		}
-
-		if backupSpec == "" {
-			continue
-		}
-
-		appsSequences[a.Slug] = parentSequence
-
-		renderedBackup, err := helper.RenderAppFile(a, nil, []byte(backupSpec), kotsKinds, kotsadmNamespace)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to render backup")
-		}
-		veleroBackup, err := kotsutil.LoadBackupFromContents(renderedBackup)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to load backup from contents")
-		}
+		veleroBackup := kotsKinds.Backup
 
 		// ** merge app backup info ** //
 

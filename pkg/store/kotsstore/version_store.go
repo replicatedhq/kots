@@ -26,22 +26,19 @@ import (
 	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/kustomize"
 	"github.com/replicatedhq/kots/pkg/persistence"
-	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
 	"github.com/replicatedhq/kots/pkg/secrets"
 	"github.com/replicatedhq/kots/pkg/store/types"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
-	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"github.com/rqlite/gorqlite"
-	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/application/api/v1beta1"
 )
 
 func (s *KOTSStore) ensureApplicationMetadata(applicationMetadata string, namespace string, upstreamURI string) error {
@@ -132,26 +129,8 @@ func (s *KOTSStore) IsIdentityServiceSupportedForVersion(appID string, sequence 
 	return identitySpecStr.String != "", nil
 }
 
-func (s *KOTSStore) IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int64, renderer rendertypes.Renderer) (bool, error) {
-	db := persistence.MustGetDBSession()
-	query := `select backup_spec from app_version where app_id = ? and sequence = ?`
-	rows, err := db.QueryOneParameterized(gorqlite.ParameterizedStatement{
-		Query:     query,
-		Arguments: []interface{}{a.ID, sequence},
-	})
-	if err != nil {
-		return false, fmt.Errorf("failed to query: %v: %v", err, rows.Err)
-	}
-	if !rows.Next() {
-		return false, nil
-	}
-
-	var backupSpecStr gorqlite.NullString
-	if err := rows.Scan(&backupSpecStr); err != nil {
-		return false, errors.Wrap(err, "failed to scan")
-	}
-
-	if backupSpecStr.String == "" {
+func (s *KOTSStore) IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int64) (bool, error) {
+	if sequence == -1 {
 		return false, nil
 	}
 
@@ -166,28 +145,27 @@ func (s *KOTSStore) IsSnapshotsSupportedForVersion(a *apptypes.App, sequence int
 		return false, errors.Wrap(err, "failed to get app version archive")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	registrySettings, err := s.GetRegistryDetailsForApp(a.ID)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to get registry settings")
+	}
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+		FromDir:          archiveDir,
+		RegistrySettings: registrySettings,
+		AppSlug:          a.Slug,
+		Sequence:         sequence,
+		IsAirgap:         a.IsAirgap,
+		Namespace:        util.AppNamespace(),
+	})
 	if err != nil {
 		return false, errors.Wrap(err, "failed to load kots kinds from path")
 	}
 
-	registrySettings, err := s.GetRegistryDetailsForApp(a.ID)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to get registry settings for app")
+	backupSpec := kotsKinds.Backup
+	if backupSpec == nil {
+		return false, nil
 	}
-
-	// as far as I can tell, this is the only place within pkg/store that uses templating
-	rendered, err := renderer.RenderFile(kotsKinds, registrySettings, a.Slug, sequence, a.IsAirgap, util.PodNamespace, []byte(backupSpecStr.String))
-	if err != nil {
-		return false, errors.Wrap(err, "failed to render backup spec")
-	}
-
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode(rendered, nil, nil)
-	if err != nil {
-		return false, errors.Wrap(err, "failed to decode rendered backup spec yaml")
-	}
-	backupSpec := obj.(*velerov1.Backup)
 
 	annotations := backupSpec.ObjectMeta.Annotations
 	if annotations == nil {
@@ -390,7 +368,7 @@ func (s *KOTSStore) CreatePendingDownloadAppVersion(appID string, update upstrea
 		return 0, errors.Wrap(err, "failed to get app")
 	}
 
-	kotsKinds := kotsutil.EmptyKotsKinds()
+	kotsKinds := kotsutiltypes.EmptyKotsKinds()
 	if kotsApplication != nil {
 		kotsKinds.KotsApplication = *kotsApplication
 	}
@@ -451,7 +429,7 @@ func (s *KOTSStore) CreatePendingDownloadAppVersion(appID string, update upstrea
 	return newSequence, nil
 }
 
-func (s *KOTSStore) UpdateAppVersion(appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) error {
+func (s *KOTSStore) UpdateAppVersion(appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) error {
 	// make sure version exists first
 	if v, err := s.GetAppVersion(appID, sequence); err != nil {
 		return errors.Wrap(err, "failed to get app version")
@@ -461,7 +439,7 @@ func (s *KOTSStore) UpdateAppVersion(appID string, sequence int64, baseSequence 
 
 	db := persistence.MustGetDBSession()
 
-	appVersionStatements, err := s.upsertAppVersionStatements(appID, sequence, baseSequence, filesInDir, source, skipPreflights, gitops, renderer)
+	appVersionStatements, err := s.upsertAppVersionStatements(appID, sequence, baseSequence, filesInDir, source, skipPreflights, gitops)
 	if err != nil {
 		return errors.Wrap(err, "failed to construct app version statements")
 	}
@@ -477,10 +455,10 @@ func (s *KOTSStore) UpdateAppVersion(appID string, sequence int64, baseSequence 
 	return nil
 }
 
-func (s *KOTSStore) CreateAppVersion(appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) (int64, error) {
+func (s *KOTSStore) CreateAppVersion(appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) (int64, error) {
 	db := persistence.MustGetDBSession()
 
-	appVersionStatements, newSequence, err := s.createAppVersionStatements(appID, baseSequence, filesInDir, source, skipPreflights, gitops, renderer)
+	appVersionStatements, newSequence, err := s.createAppVersionStatements(appID, baseSequence, filesInDir, source, skipPreflights, gitops)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to construct app version statements")
 	}
@@ -496,13 +474,13 @@ func (s *KOTSStore) CreateAppVersion(appID string, baseSequence *int64, filesInD
 	return newSequence, nil
 }
 
-func (s *KOTSStore) createAppVersionStatements(appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) ([]gorqlite.ParameterizedStatement, int64, error) {
+func (s *KOTSStore) createAppVersionStatements(appID string, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) ([]gorqlite.ParameterizedStatement, int64, error) {
 	newSequence, err := s.GetNextAppSequence(appID)
 	if err != nil {
 		return nil, 0, errors.Wrap(err, "failed to get next sequence number")
 	}
 
-	appVersionStatements, err := s.upsertAppVersionStatements(appID, newSequence, baseSequence, filesInDir, source, skipPreflights, gitops, renderer)
+	appVersionStatements, err := s.upsertAppVersionStatements(appID, newSequence, baseSequence, filesInDir, source, skipPreflights, gitops)
 	if err != nil {
 		return nil, 0, errors.Wrap(err, "failed to construct app version statements")
 	}
@@ -510,36 +488,37 @@ func (s *KOTSStore) createAppVersionStatements(appID string, baseSequence *int64
 	return appVersionStatements, newSequence, nil
 }
 
-func (s *KOTSStore) upsertAppVersionStatements(appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps, renderer rendertypes.Renderer) ([]gorqlite.ParameterizedStatement, error) {
+func (s *KOTSStore) upsertAppVersionStatements(appID string, sequence int64, baseSequence *int64, filesInDir string, source string, skipPreflights bool, gitops gitopstypes.DownstreamGitOps) ([]gorqlite.ParameterizedStatement, error) {
 	statements := []gorqlite.ParameterizedStatement{}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filesInDir)
+	a, err := s.GetApp(appID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get app")
+	}
+
+	registrySettings, err := s.GetRegistryDetailsForApp(a.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get app registry info")
+	}
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+		FromDir:          filesInDir,
+		RegistrySettings: registrySettings,
+		AppSlug:          a.Slug,
+		Sequence:         sequence,
+		IsAirgap:         a.IsAirgap,
+		Namespace:        util.AppNamespace(),
+	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read kots kinds")
 	}
 
 	appName := kotsKinds.KotsApplication.Spec.Title
-	a, err := s.GetApp(appID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get app")
-	}
 	if appName == "" {
 		appName = a.Name
 	}
 
 	appIcon := kotsKinds.KotsApplication.Spec.Icon
-
-	renderedPreflight, err := s.renderPreflightSpec(appID, a.Slug, sequence, a.IsAirgap, kotsKinds, renderer)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to render app preflight spec")
-	}
-	kotsKinds.Preflight = renderedPreflight
-
-	renderedApplication, err := s.renderApplicationSpec(appID, a.Slug, sequence, a.IsAirgap, kotsKinds, renderer)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to render app application spec")
-	}
-	kotsKinds.Application = renderedApplication
 
 	brandingArchive, err := kotsutil.LoadBrandingArchiveFromPath(filepath.Join(filesInDir, "upstream"))
 	if err != nil {
@@ -581,11 +560,6 @@ func (s *KOTSStore) upsertAppVersionStatements(appID string, sequence int64, bas
 		previousArchiveDir = previousDir
 	}
 
-	registrySettings, err := s.GetRegistryDetailsForApp(appID)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get app registry info")
-	}
-
 	downstreams, err := s.ListDownstreamsForApp(appID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list downstreams")
@@ -596,7 +570,7 @@ func (s *KOTSStore) upsertAppVersionStatements(appID string, sequence int64, bas
 	for _, d := range downstreams {
 		// there's a small chance this is not optimal, but no current code path
 		// will support multiple downstreams, so this is cleaner here for now
-		hasStrictPreflights, err := troubleshootpreflight.HasStrictAnalyzers(renderedPreflight)
+		hasStrictPreflights, err := troubleshootpreflight.HasStrictAnalyzers(kotsKinds.Preflight)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to check strict preflights from spec")
 		}
@@ -632,7 +606,7 @@ func (s *KOTSStore) upsertAppVersionStatements(appID string, sequence int64, bas
 			}
 		}
 
-		commitURL, err := gitops.CreateGitOpsDownstreamCommit(appID, d.ClusterID, int(sequence), filesInDir, d.Name)
+		commitURL, err := gitops.CreateGitOpsDownstreamCommit(appID, d.ClusterID, sequence, filesInDir, d.Name)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create gitops commit")
 		}
@@ -659,7 +633,7 @@ func (s *KOTSStore) upsertAppVersionStatements(appID string, sequence int64, bas
 	return statements, nil
 }
 
-func (s *KOTSStore) createAppVersionRecordStatements(appID string, appName string, appIcon string, kotsKinds *kotsutil.KotsKinds, brandingArchive []byte) ([]gorqlite.ParameterizedStatement, int64, error) {
+func (s *KOTSStore) createAppVersionRecordStatements(appID string, appName string, appIcon string, kotsKinds *kotsutiltypes.KotsKinds, brandingArchive []byte) ([]gorqlite.ParameterizedStatement, int64, error) {
 	newSequence, err := s.GetNextAppSequence(appID)
 	if err != nil {
 		return nil, 0, errors.Wrap(err, "failed to get next sequence number")
@@ -673,7 +647,7 @@ func (s *KOTSStore) createAppVersionRecordStatements(appID string, appName strin
 	return appVersionRecordStatements, newSequence, nil
 }
 
-func (s *KOTSStore) upsertAppVersionRecordStatements(appID string, sequence int64, appName string, appIcon string, kotsKinds *kotsutil.KotsKinds, brandingArchive []byte) ([]gorqlite.ParameterizedStatement, error) {
+func (s *KOTSStore) upsertAppVersionRecordStatements(appID string, sequence int64, appName string, appIcon string, kotsKinds *kotsutiltypes.KotsKinds, brandingArchive []byte) ([]gorqlite.ParameterizedStatement, error) {
 	statements := []gorqlite.ParameterizedStatement{}
 
 	// we marshal these here because it's a decision of the store to cache them in the app version table
@@ -876,6 +850,11 @@ func (s *KOTSStore) UpdateNextAppVersionDiffSummary(appID string, baseSequence i
 		return errors.Wrap(err, "failed to get app")
 	}
 
+	registrySettings, err := s.GetRegistryDetailsForApp(a.ID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get app registry info")
+	}
+
 	appVersions, err := s.FindDownstreamVersions(a.ID, true)
 	if err != nil {
 		return errors.Wrapf(err, "failed to find app downstream versions for app %s", appID)
@@ -922,7 +901,14 @@ func (s *KOTSStore) UpdateNextAppVersionDiffSummary(appID string, baseSequence i
 		return errors.Wrap(err, "failed to get next archive dir")
 	}
 
-	nextKotsKinds, err := kotsutil.LoadKotsKindsFromPath(nextArchiveDir)
+	nextKotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+		FromDir:          nextArchiveDir,
+		RegistrySettings: registrySettings,
+		AppSlug:          a.Slug,
+		Sequence:         nextSequence,
+		IsAirgap:         a.IsAirgap,
+		Namespace:        util.AppNamespace(),
+	})
 	if err != nil {
 		return errors.Wrap(err, "failed to read kots kinds")
 	}
@@ -1046,62 +1032,6 @@ func (s *KOTSStore) HasStrictPreflights(appID string, sequence int64) (bool, err
 	return s.hasStrictPreflights(preflightSpecStr)
 }
 
-func (s *KOTSStore) renderPreflightSpec(appID string, appSlug string, sequence int64, isAirgap bool, kotsKinds *kotsutil.KotsKinds, renderer rendertypes.Renderer) (*troubleshootv1beta2.Preflight, error) {
-	if kotsKinds.HasPreflights() {
-		// render the preflight file
-		// we need to convert to bytes first, so that we can reuse the renderfile function
-		renderedMarshalledPreflights, err := kotsKinds.Marshal("troubleshoot.replicated.com", "v1beta1", "Preflight")
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to marshal preflight")
-		}
-
-		registrySettings, err := s.GetRegistryDetailsForApp(appID)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get registry settings for app")
-		}
-
-		renderedPreflight, err := renderer.RenderFile(kotsKinds, registrySettings, appSlug, sequence, isAirgap, util.PodNamespace, []byte(renderedMarshalledPreflights))
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to render preflights")
-		}
-		preflight, err := kotsutil.LoadPreflightFromContents(renderedPreflight)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to load rendered preflight")
-		}
-		return preflight, nil
-	}
-
-	return nil, nil
-}
-
-func (s *KOTSStore) renderApplicationSpec(appID string, appSlug string, sequence int64, isAirgap bool, kotsKinds *kotsutil.KotsKinds, renderer rendertypes.Renderer) (*v1beta1.Application, error) {
-	if kotsKinds.Application != nil {
-		// render the application file
-		// we need to convert to bytes first, so that we can reuse the renderfile function
-		renderedMarshalledPreflights, err := kotsKinds.Marshal("app.k8s.io", "v1beta1", "Application")
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to marshal application")
-		}
-
-		registrySettings, err := s.GetRegistryDetailsForApp(appID)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get registry settings for app")
-		}
-
-		renderedApplication, err := renderer.RenderFile(kotsKinds, registrySettings, appSlug, sequence, isAirgap, util.PodNamespace, []byte(renderedMarshalledPreflights))
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to render application")
-		}
-		application, err := kotsutil.LoadApplicationFromContents(renderedApplication)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to load rendered application")
-		}
-		return application, nil
-	}
-
-	return nil, nil
-}
-
 func (s *KOTSStore) appVersionFromRow(row gorqlite.QueryResult) (*versiontypes.AppVersion, error) {
 	v := &versiontypes.AppVersion{}
 
@@ -1119,7 +1049,7 @@ func (s *KOTSStore) appVersionFromRow(row gorqlite.QueryResult) (*versiontypes.A
 		return nil, errors.Wrap(err, "failed to scan")
 	}
 
-	v.KOTSKinds = &kotsutil.KotsKinds{}
+	v.KOTSKinds = &kotsutiltypes.KotsKinds{}
 
 	v.UpdateCursor = updateCursor.String
 	v.ChannelID = channelID.String

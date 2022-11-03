@@ -20,7 +20,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/rbac"
 	"github.com/replicatedhq/kots/pkg/registry"
-	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/session"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/store/kotsstore"
@@ -270,7 +269,7 @@ func responseAppFromApp(a *apptypes.App) (*types.ResponseApp, error) {
 	}
 
 	// check snapshots for the parent sequence of the deployed version
-	s, err := store.GetStore().IsSnapshotsSupportedForVersion(a, parentSequence, &render.Renderer{})
+	s, err := store.GetStore().IsSnapshotsSupportedForVersion(a, parentSequence)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to check if snapshots is allowed")
 	}

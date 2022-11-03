@@ -4,28 +4,28 @@ import (
 	"testing"
 
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/stretchr/testify/require"
 )
 
 func Test_getKotsUpgradeVersion(t *testing.T) {
 	tests := []struct {
 		name          string
-		kotsKinds     *kotsutil.KotsKinds
+		kotsKinds     *kotsutiltypes.KotsKinds
 		latestVersion string
 		isError       bool
 		want          string
 	}{
 		{
 			name:          "feature not enabled",
-			kotsKinds:     &kotsutil.KotsKinds{},
+			kotsKinds:     &kotsutiltypes.KotsKinds{},
 			latestVersion: "v3.0.0",
 			isError:       true,
 			want:          "",
 		},
 		{
 			name: "no target version",
-			kotsKinds: &kotsutil.KotsKinds{
+			kotsKinds: &kotsutiltypes.KotsKinds{
 				KotsApplication: kotsv1beta1.Application{
 					Spec: kotsv1beta1.ApplicationSpec{
 						ConsoleFeatureFlags: []string{"admin-console-auto-updates"},
@@ -38,7 +38,7 @@ func Test_getKotsUpgradeVersion(t *testing.T) {
 		},
 		{
 			name: "min version only",
-			kotsKinds: &kotsutil.KotsKinds{
+			kotsKinds: &kotsutiltypes.KotsKinds{
 				KotsApplication: kotsv1beta1.Application{
 					Spec: kotsv1beta1.ApplicationSpec{
 						ConsoleFeatureFlags: []string{"admin-console-auto-updates"},
@@ -52,7 +52,7 @@ func Test_getKotsUpgradeVersion(t *testing.T) {
 		},
 		{
 			name: "min version only with latest",
-			kotsKinds: &kotsutil.KotsKinds{
+			kotsKinds: &kotsutiltypes.KotsKinds{
 				KotsApplication: kotsv1beta1.Application{
 					Spec: kotsv1beta1.ApplicationSpec{
 						ConsoleFeatureFlags: []string{"admin-console-auto-updates"},
@@ -66,7 +66,7 @@ func Test_getKotsUpgradeVersion(t *testing.T) {
 		},
 		{
 			name: "target version only",
-			kotsKinds: &kotsutil.KotsKinds{
+			kotsKinds: &kotsutiltypes.KotsKinds{
 				KotsApplication: kotsv1beta1.Application{
 					Spec: kotsv1beta1.ApplicationSpec{
 						ConsoleFeatureFlags: []string{"admin-console-auto-updates"},
@@ -80,7 +80,7 @@ func Test_getKotsUpgradeVersion(t *testing.T) {
 		},
 		{
 			name: "min and target version with latest",
-			kotsKinds: &kotsutil.KotsKinds{
+			kotsKinds: &kotsutiltypes.KotsKinds{
 				KotsApplication: kotsv1beta1.Application{
 					Spec: kotsv1beta1.ApplicationSpec{
 						ConsoleFeatureFlags: []string{"admin-console-auto-updates"},

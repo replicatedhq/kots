@@ -16,10 +16,10 @@ import (
 	"github.com/replicatedhq/kots/pkg/cursor"
 	identity "github.com/replicatedhq/kots/pkg/kotsadmidentity"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight"
 	"github.com/replicatedhq/kots/pkg/pull"
-	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/tasks"
@@ -77,13 +77,22 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		}
 	}
 
+	appNamespace := util.AppNamespace()
+
 	archiveDir, baseSequence, err := store.GetStore().GetAppVersionBaseArchive(a.ID, airgap.Spec.VersionLabel)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get base archive dir for version %s", airgap.Spec.VersionLabel)
 	}
 	defer os.RemoveAll(archiveDir)
 
-	beforeKotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	beforeKotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+		FromDir:          archiveDir,
+		RegistrySettings: registrySettings,
+		AppSlug:          a.Slug,
+		Sequence:         baseSequence,
+		IsAirgap:         true,
+		Namespace:        appNamespace,
+	})
 	if err != nil {
 		return errors.Wrap(err, "failed to load current kotskinds")
 	}
@@ -96,8 +105,6 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 	if err := store.GetStore().SetTaskStatus("update-download", "Processing app package...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set task status")
 	}
-
-	appNamespace := util.AppNamespace()
 
 	if err := store.GetStore().SetTaskStatus("update-download", "Creating app version...", "running"); err != nil {
 		return errors.Wrap(err, "failed to set task status")
@@ -127,7 +134,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 
 	identityConfigFile := filepath.Join(archiveDir, "upstream", "userdata", "identityconfig.yaml")
 	if _, err := os.Stat(identityConfigFile); os.IsNotExist(err) {
-		file, err := identity.InitAppIdentityConfig(a.Slug)
+		file, err := identity.InitAppIdentityConfigFile(a.Slug)
 		if err != nil {
 			return errors.Wrap(err, "failed to init identity config")
 		}
@@ -140,7 +147,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 	pullOptions := pull.PullOptions{
 		LicenseObj:          license,
 		Namespace:           appNamespace,
-		ConfigFile:          filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"),
+		ConfigValuesFile:    filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"),
 		IdentityConfigFile:  identityConfigFile,
 		AirgapRoot:          airgapRoot,
 		AirgapBundle:        airgapBundlePath,
@@ -169,9 +176,16 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		return errors.Wrap(err, "failed to pull")
 	}
 
-	afterKotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	afterKotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+		FromDir:          archiveDir,
+		RegistrySettings: registrySettings,
+		AppSlug:          a.Slug,
+		Sequence:         appSequence,
+		IsAirgap:         true,
+		Namespace:        appNamespace,
+	})
 	if err != nil {
-		return errors.Wrap(err, "failed to read after kotskinds")
+		return errors.Wrap(err, "failed to load after kotskinds")
 	}
 
 	if err := canInstall(beforeKotsKinds, afterKotsKinds); err != nil {
@@ -179,7 +193,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 	}
 
 	// Create the app in the db
-	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "Airgap Update", skipPreflights, &version.DownstreamGitOps{}, render.Renderer{})
+	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &baseSequence, archiveDir, "Airgap Update", skipPreflights, &version.DownstreamGitOps{})
 	if err != nil {
 		return errors.Wrap(err, "failed to create new version")
 	}
@@ -226,7 +240,7 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 	return nil
 }
 
-func canInstall(beforeKotsKinds *kotsutil.KotsKinds, afterKotsKinds *kotsutil.KotsKinds) error {
+func canInstall(beforeKotsKinds *kotsutiltypes.KotsKinds, afterKotsKinds *kotsutiltypes.KotsKinds) error {
 	var beforeSemver, afterSemver *semver.Version
 	if v, err := semver.ParseTolerant(beforeKotsKinds.Installation.Spec.VersionLabel); err == nil {
 		beforeSemver = &v

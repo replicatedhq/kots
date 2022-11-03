@@ -17,6 +17,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/api/reporting/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	kurltypes "github.com/replicatedhq/kots/pkg/kurl/types"
 	"github.com/replicatedhq/kots/pkg/logger"
@@ -300,7 +301,12 @@ func cachedKurlGetNodes(ctx context.Context, clientset kubernetes.Interface) (*k
 func getDownstreamInfo(appID string) (*types.DownstreamInfo, error) {
 	di := types.DownstreamInfo{}
 
-	downstreams, err := store.GetStore().ListDownstreamsForApp(appID)
+	a, err := store.GetStore().GetApp(appID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get app")
+	}
+
+	downstreams, err := store.GetStore().ListDownstreamsForApp(a.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list downstreams for app")
 	}
@@ -308,7 +314,7 @@ func getDownstreamInfo(appID string) (*types.DownstreamInfo, error) {
 		return nil, errors.New("no downstreams found for app")
 	}
 
-	deployedAppSequence, err := store.GetStore().GetCurrentParentSequence(appID, downstreams[0].ClusterID)
+	deployedAppSequence, err := store.GetStore().GetCurrentParentSequence(a.ID, downstreams[0].ClusterID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get current downstream parent sequence")
 	}
@@ -321,12 +327,24 @@ func getDownstreamInfo(appID string) (*types.DownstreamInfo, error) {
 		}
 		defer os.RemoveAll(deployedArchiveDir)
 
-		err = store.GetStore().GetAppVersionArchive(appID, deployedAppSequence, deployedArchiveDir)
+		err = store.GetStore().GetAppVersionArchive(a.ID, deployedAppSequence, deployedArchiveDir)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get app version archive")
 		}
 
-		deployedKotsKinds, err := kotsutil.LoadKotsKindsFromPath(deployedArchiveDir)
+		registrySettings, err := store.GetStore().GetRegistryDetailsForApp(a.ID)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get registry settings for app")
+		}
+
+		deployedKotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+			FromDir:          deployedArchiveDir,
+			RegistrySettings: registrySettings,
+			AppSlug:          a.Slug,
+			Sequence:         deployedAppSequence,
+			IsAirgap:         a.IsAirgap,
+			Namespace:        util.AppNamespace(),
+		})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to load kotskinds from path")
 		}

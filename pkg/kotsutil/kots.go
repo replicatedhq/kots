@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -19,20 +18,21 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	"github.com/replicatedhq/kots/pkg/archives"
-	"github.com/replicatedhq/kots/pkg/binaries"
 	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	types "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/util"
 	kurlscheme "github.com/replicatedhq/kurl/kurlkinds/client/kurlclientset/scheme"
 	kurlv1beta1 "github.com/replicatedhq/kurl/kurlkinds/pkg/apis/cluster/v1beta1"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
-	"github.com/replicatedhq/troubleshoot/pkg/collect"
 	"github.com/replicatedhq/troubleshoot/pkg/docrewrite"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
+	"gopkg.in/yaml.v2"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
@@ -59,415 +59,16 @@ var (
 	}
 )
 
-// KotsKinds are all of the special "client-side" kinds that are packaged in
-// an application. These should be pointers because they are all optional.
-// But a few are still expected in the code later, so we make them not pointers,
-// because other codepaths expect them to be present
-type KotsKinds struct {
-	KotsApplication kotsv1beta1.Application
-	Application     *applicationv1beta1.Application
-	HelmCharts      []*kotsv1beta1.HelmChart
+// LoadKotsKindsFromPath finds and renders (when applicable) all kots kinds from a path
+func LoadKotsKindsFromPath(opts types.LoadKotsKindsFromPathOptions) (*types.KotsKinds, error) {
+	kotsKinds := types.EmptyKotsKinds()
 
-	Collector     *troubleshootv1beta2.Collector
-	Preflight     *troubleshootv1beta2.Preflight
-	Analyzer      *troubleshootv1beta2.Analyzer
-	SupportBundle *troubleshootv1beta2.SupportBundle
-	Redactor      *troubleshootv1beta2.Redactor
-	HostPreflight *troubleshootv1beta2.HostPreflight
-
-	Config       *kotsv1beta1.Config
-	ConfigValues *kotsv1beta1.ConfigValues
-
-	Installation kotsv1beta1.Installation
-	License      *kotsv1beta1.License
-
-	Identity       *kotsv1beta1.Identity
-	IdentityConfig *kotsv1beta1.IdentityConfig
-
-	Backup    *velerov1.Backup
-	Installer *kurlv1beta1.Installer
-
-	LintConfig *kotsv1beta1.LintConfig
-}
-
-func (k *KotsKinds) EncryptConfigValues() error {
-	if k.ConfigValues == nil || k.Config == nil {
-		return nil
-	}
-
-	updated := map[string]kotsv1beta1.ConfigValue{}
-
-	for name, configValue := range k.ConfigValues.Spec.Values {
-		updated[name] = configValue
-
-		if configValue.ValuePlaintext != "" {
-			// ensure it's a password type
-			configItemType := ""
-
-			for _, group := range k.Config.Spec.Groups {
-				for _, item := range group.Items {
-					if item.Name == name {
-						configItemType = item.Type
-						goto Found
-					}
-				}
-			}
-		Found:
-
-			if configItemType == "" {
-				return errors.Errorf("Cannot encrypt item %q because item type was not found", name)
-			}
-			if configItemType != "password" {
-				return errors.Errorf("Cannot encrypt item %q because item type was %q (not password)", name, configItemType)
-			}
-
-			encrypted := crypto.Encrypt([]byte(configValue.ValuePlaintext))
-			encoded := base64.StdEncoding.EncodeToString(encrypted)
-
-			configValue.Value = encoded
-			configValue.ValuePlaintext = ""
-
-			updated[name] = configValue
-		}
-	}
-
-	k.ConfigValues.Spec.Values = updated
-
-	return nil
-}
-
-func (k *KotsKinds) DecryptConfigValues() error {
-	if k.ConfigValues == nil {
-		return nil
-	}
-
-	updated := map[string]kotsv1beta1.ConfigValue{}
-
-	for name, configValue := range k.ConfigValues.Spec.Values {
-		// config values doesn't know the type..
-		// we could look it up in the config
-		// or we can just try to decode and decrypt it
-
-		updated[name] = configValue // will be overwritten if we decrypt anything
-
-		if configValue.Value != "" {
-			decoded, err := base64.StdEncoding.DecodeString(configValue.Value)
-			if err != nil {
-				continue
-			}
-			decrypted, err := crypto.Decrypt(decoded)
-			if err != nil {
-				continue
-			}
-
-			configValue.Value = ""
-			configValue.ValuePlaintext = string(decrypted)
-
-			updated[name] = configValue
-		}
-	}
-
-	k.ConfigValues.Spec.Values = updated
-
-	return nil
-}
-
-func (k *KotsKinds) IsConfigurable() bool {
-	if k == nil || k.Config == nil {
-		return false
-	}
-	return len(k.Config.Spec.Groups) > 0
-}
-
-func (k *KotsKinds) HasPreflights() bool {
-	if k == nil || k.Preflight == nil {
-		return false
-	}
-	return len(k.Preflight.Spec.Analyzers) > 0
-}
-
-// GetKustomizeBinaryPath will return the kustomize binary version to use for this application
-// applying the default, if there is one, for the current version of kots
-func (k KotsKinds) GetKustomizeBinaryPath() string {
-	path, err := binaries.GetKustomizePathForVersion(k.KotsApplication.Spec.KustomizeVersion)
-	if err != nil {
-		logger.Infof("Failed to get kustomize path: %v", err)
-		return "kustomize"
-	}
-	return path
-}
-
-func (o KotsKinds) Marshal(g string, v string, k string) (string, error) {
-	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
-
-	if g == "kots.io" {
-		if v == "v1beta1" {
-			switch k {
-			case "Application":
-				var b bytes.Buffer
-				if err := s.Encode(&o.KotsApplication, &b); err != nil {
-					return "", errors.Wrap(err, "failed to encode kots application")
-				}
-				return string(b.Bytes()), nil
-			case "Installation":
-				var b bytes.Buffer
-				if err := s.Encode(&o.Installation, &b); err != nil {
-					return "", errors.Wrap(err, "failed to encode installation")
-				}
-				return string(b.Bytes()), nil
-			case "License":
-				if o.License == nil {
-					return "", nil
-				}
-				var b bytes.Buffer
-				if err := s.Encode(o.License, &b); err != nil {
-					return "", errors.Wrap(err, "failed to encode license")
-				}
-				return string(b.Bytes()), nil
-			case "Config":
-				if o.Config == nil {
-					return "", nil
-				}
-				var b bytes.Buffer
-				if err := s.Encode(o.Config, &b); err != nil {
-					return "", errors.Wrap(err, "failed to encode config")
-				}
-				return string(b.Bytes()), nil
-			case "ConfigValues":
-				if o.ConfigValues == nil {
-					return "", nil
-				}
-				var b bytes.Buffer
-				if err := s.Encode(o.ConfigValues, &b); err != nil {
-					return "", errors.Wrap(err, "failed to encode configvalues")
-				}
-				return string(b.Bytes()), nil
-			case "Identity":
-				if o.Identity == nil {
-					return "", nil
-				}
-				var b bytes.Buffer
-				if err := s.Encode(o.Identity, &b); err != nil {
-					return "", errors.Wrap(err, "failed to encode identity")
-				}
-				return string(b.Bytes()), nil
-			case "IdentityConfig":
-				if o.IdentityConfig == nil {
-					return "", nil
-				}
-				var b bytes.Buffer
-				if err := s.Encode(o.IdentityConfig, &b); err != nil {
-					return "", errors.Wrap(err, "failed to encode identityconfig")
-				}
-				return string(b.Bytes()), nil
-			}
-		}
-	}
-
-	if g == "troubleshoot.replicated.com" || g == "troubleshoot.sh" {
-		if v == "v1beta1" || v == "v1beta2" {
-			switch k {
-			case "Collector":
-				collector := o.Collector
-				// SupportBundle overwrites Collector if defined
-				if o.SupportBundle != nil {
-					collector = SupportBundleToCollector(o.SupportBundle)
-				}
-				if collector == nil {
-					return "", nil
-				}
-				var b bytes.Buffer
-				if err := s.Encode(collector, &b); err != nil {
-					return "", errors.Wrap(err, "failed to encode collector")
-				}
-				return string(b.Bytes()), nil
-			case "Analyzer":
-				analyzer := o.Analyzer
-				// SupportBundle overwrites Analyzer if defined
-				if o.SupportBundle != nil {
-					analyzer = SupportBundleToAnalyzer(o.SupportBundle)
-				}
-				if analyzer == nil {
-					return "", nil
-				}
-				var b bytes.Buffer
-				if err := s.Encode(analyzer, &b); err != nil {
-					return "", errors.Wrap(err, "failed to encode analyzer")
-				}
-				return string(b.Bytes()), nil
-			case "Preflight":
-				if o.Preflight == nil {
-					return "", nil
-				}
-				var b bytes.Buffer
-				if err := s.Encode(o.Preflight, &b); err != nil {
-					return "", errors.Wrap(err, "failed to encode preflight")
-				}
-				return string(b.Bytes()), nil
-			case "HostPreflight":
-				if o.HostPreflight == nil {
-					return "", nil
-				}
-
-				var b bytes.Buffer
-				if err := s.Encode(o.HostPreflight, &b); err != nil {
-					return "", errors.Wrap(err, "failed to encode hostpreflight")
-				}
-				return string(b.Bytes()), nil
-			case "SupportBundle":
-				if o.SupportBundle == nil {
-					return "", nil
-				}
-				var b bytes.Buffer
-				if err := s.Encode(o.SupportBundle, &b); err != nil {
-					return "", errors.Wrap(err, "failed to encode support bundle")
-				}
-				return string(b.Bytes()), nil
-			case "Redactor":
-				if o.Redactor == nil {
-					return "", nil
-				}
-				var b bytes.Buffer
-				if err := s.Encode(o.Redactor, &b); err != nil {
-					return "", errors.Wrap(err, "failed to encode redactor")
-				}
-				return string(b.Bytes()), nil
-			}
-		}
-	}
-
-	if g == "app.k8s.io" {
-		if v == "v1beta1" {
-			if k == "Application" {
-				if o.Application == nil {
-					return "", nil
-				}
-				var b bytes.Buffer
-				if err := s.Encode(o.Application, &b); err != nil {
-					return "", errors.Wrap(err, "failed to encode application")
-				}
-				return string(b.Bytes()), nil
-			}
-		}
-	}
-
-	if g == "velero.io" {
-		if v == "v1" {
-			if k == "Backup" {
-				if o.Backup == nil {
-					return "", nil
-				}
-				var b bytes.Buffer
-				if err := s.Encode(o.Backup, &b); err != nil {
-					return "", errors.Wrap(err, "failed to encode backup")
-				}
-				return string(b.Bytes()), nil
-			}
-		}
-	}
-
-	if g == "kurl.sh" || g == "cluster.kurl.sh" {
-		if v == "v1beta1" {
-			if k == "Installer" {
-				if o.Installer == nil {
-					return "", nil
-				}
-				var b bytes.Buffer
-				if err := s.Encode(o.Installer, &b); err != nil {
-					return "", errors.Wrap(err, "failed to encode installer")
-				}
-				return string(b.Bytes()), nil
-			}
-		}
-	}
-
-	return "", errors.Errorf("unknown gvk %s/%s, Kind=%s", g, v, k)
-}
-
-func GetImagesFromKotsKinds(kotsKinds *KotsKinds) []string {
-	if kotsKinds == nil {
-		return nil
-	}
-
-	allImages := []string{}
-
-	allImages = append(allImages, kotsKinds.KotsApplication.Spec.AdditionalImages...)
-
-	collectors := make([]*troubleshootv1beta2.Collect, 0)
-	if kotsKinds.SupportBundle != nil {
-		collectors = append(collectors, kotsKinds.SupportBundle.Spec.Collectors...)
-	}
-	if kotsKinds.Collector != nil {
-		collectors = append(collectors, kotsKinds.Collector.Spec.Collectors...)
-	}
-	if kotsKinds.Preflight != nil {
-		collectors = append(collectors, kotsKinds.Preflight.Spec.Collectors...)
-	}
-
-	for _, c := range collectors {
-		collector := troubleshootv1beta2.GetCollector(c)
-		if collector == nil {
-			continue
-		}
-
-		collectorImages := []string{}
-		if imageRunner, ok := collector.(collect.ImageRunner); ok {
-			collectorImages = append(collectorImages, imageRunner.GetImage())
-		} else if podSpecRunner, ok := collector.(collect.PodSpecRunner); ok {
-			podSpec := podSpecRunner.GetPodSpec()
-			for _, container := range podSpec.InitContainers {
-				collectorImages = append(collectorImages, container.Image)
-			}
-			for _, container := range podSpec.Containers {
-				collectorImages = append(collectorImages, container.Image)
-			}
-		}
-
-		for _, image := range collectorImages {
-			if image == "" {
-				continue
-			}
-			if strings.Contains(image, "repl{{") || strings.Contains(image, "{{repl") {
-				// Images that use templates like LocalImageName should be included in application's additionalImages list.
-				// We want the original image names here only, not the templated ones.
-				continue
-			}
-			allImages = append(allImages, image)
-		}
-	}
-
-	return allImages
-}
-
-// create a new kots kinds, ensuring that the require objets exist as empty defaults
-func EmptyKotsKinds() KotsKinds {
-	kotsKinds := KotsKinds{
-		Installation: kotsv1beta1.Installation{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "kots.io/v1beta1",
-				Kind:       "Installation",
-			},
-		},
-		KotsApplication: kotsv1beta1.Application{
-			TypeMeta: metav1.TypeMeta{
-				APIVersion: "kots.io/v1beta1",
-				Kind:       "Application",
-			},
-		},
-	}
-
-	return kotsKinds
-}
-
-func LoadKotsKindsFromPath(fromDir string) (*KotsKinds, error) {
-	kotsKinds := EmptyKotsKinds()
-
-	if fromDir == "" {
+	if opts.FromDir == "" {
 		return &kotsKinds, nil
 	}
 
 	decode := scheme.Codecs.UniversalDeserializer().Decode
-	err := filepath.Walk(fromDir,
+	err := filepath.Walk(opts.FromDir,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
@@ -477,19 +78,127 @@ func LoadKotsKindsFromPath(fromDir string) (*KotsKinds, error) {
 				return nil
 			}
 
+			if ext := filepath.Ext(path); ext != ".yaml" && ext != ".yml" {
+				return nil
+			}
+
 			contents, err := ioutil.ReadFile(path)
 			if err != nil {
 				return err
 			}
 
 			// kots kinds could be part of a multi-yaml doc
-			docs := util.ConvertToSingleDocs(contents)
+			allDocs := util.ConvertToSingleDocs(contents)
 
-			for _, doc := range docs {
-				decoded, gvk, err := decode(doc, nil, nil)
+			// filter out non-kots kinds and create a map[gvk]doc for kots kinds
+			kotsKindsMap := map[string][]byte{}
+			for _, doc := range allDocs {
+				gvk := types.OverlySimpleGVK{}
+				if err := yaml.Unmarshal(doc, &gvk); err != nil {
+					return errors.Wrap(err, "failed to unmarshal")
+				}
+				if IsKotsKind(gvk.APIVersion, gvk.Kind) {
+					gvkString := fmt.Sprintf("%s, Kind=%s", gvk.APIVersion, gvk.Kind)
+					kotsKindsMap[gvkString] = doc
+				}
+			}
+
+			// we first need to detect the kots kinds that do not support templating and are needed for templating (config is a special case)
+			for gvkString, doc := range kotsKindsMap {
+				switch gvkString {
+				case "kots.io/v1beta1, Kind=Config":
+					decoded, _, err := decode(doc, nil, nil)
+					if err != nil {
+						return errors.Wrap(err, "failed to decode config")
+					}
+					kotsKinds.Config = decoded.(*kotsv1beta1.Config)
+				case "kots.io/v1beta1, Kind=ConfigValues":
+					decoded, _, err := decode(doc, nil, nil)
+					if err != nil {
+						return errors.Wrap(err, "failed to decode config values")
+					}
+					kotsKinds.ConfigValues = decoded.(*kotsv1beta1.ConfigValues)
+				case "kots.io/v1beta1, Kind=Installation":
+					decoded, _, err := decode(doc, nil, nil)
+					if err != nil {
+						return errors.Wrap(err, "failed to decode installation")
+					}
+					kotsKinds.Installation = *decoded.(*kotsv1beta1.Installation)
+				case "kots.io/v1beta1, Kind=License":
+					decoded, _, err := decode(doc, nil, nil)
+					if err != nil {
+						return errors.Wrap(err, "failed to decode license")
+					}
+					kotsKinds.License = decoded.(*kotsv1beta1.License)
+				case "kots.io/v1beta1, Kind=IdentityConfig":
+					decoded, _, err := decode(doc, nil, nil)
+					if err != nil {
+						return errors.Wrap(err, "failed to decode identity config")
+					}
+					kotsKinds.IdentityConfig = decoded.(*kotsv1beta1.IdentityConfig)
+				}
+			}
+
+			builderOptions := types.BuilderOptions{
+				Config:           kotsKinds.Config,
+				ConfigValues:     kotsKinds.ConfigValues,
+				Installation:     kotsKinds.Installation,
+				License:          kotsKinds.License,
+				IdentityConfig:   kotsKinds.IdentityConfig,
+				RegistrySettings: opts.RegistrySettings,
+				AppSlug:          opts.AppSlug,
+				Sequence:         opts.Sequence,
+				IsAirgap:         opts.IsAirgap,
+				Namespace:        opts.Namespace,
+			}
+			builder, err := NewBuilder(builderOptions)
+			if err != nil {
+				return errors.Wrap(err, "failed to get template builder")
+			}
+
+			// the kots application kind can contain information that is needed for templating (e.g. proxyPublicImages),
+			// but it also needs to be templated / rendered, so we first render it, then add it to the template context, then update the template builder
+			if kotsAppDoc, ok := kotsKindsMap["kots.io/v1beta1, Kind=Application"]; ok {
+				fixedUpContent, err := FixUpYAML(kotsAppDoc)
 				if err != nil {
-					// TODO: log something on yaml errors (based on file extention)
-					return nil // not an error because the file might not be yaml
+					return errors.Wrap(err, "failed to fix up yaml")
+				}
+
+				rendered, err := builder.RenderTemplate("kotskind", string(fixedUpContent))
+				if err != nil {
+					return errors.Wrap(err, "failed to render doc")
+				}
+
+				decoded, _, err := decode([]byte(rendered), nil, nil)
+				if err != nil {
+					return errors.Wrap(err, "failed to decode rendered kots application doc")
+				}
+
+				kotsKinds.KotsApplication = *decoded.(*kotsv1beta1.Application)
+
+				// now that we have the kots application, we can update the template builder
+				builderOptions.KotsApplication = kotsKinds.KotsApplication
+				builder, err = NewBuilder(builderOptions)
+				if err != nil {
+					return errors.Wrap(err, "failed to update template builder")
+				}
+			}
+
+			// now that we have a builder, render the doc before decoding it and parsing it as a kots kind
+			for _, doc := range kotsKindsMap {
+				fixedUpContent, err := FixUpYAML(doc)
+				if err != nil {
+					return errors.Wrap(err, "failed to fix up yaml")
+				}
+
+				rendered, err := builder.RenderTemplate("kotskind", string(fixedUpContent))
+				if err != nil {
+					return errors.Wrap(err, "failed to render doc")
+				}
+
+				decoded, gvk, err := decode([]byte(rendered), nil, nil)
+				if err != nil {
+					return errors.Wrap(err, "failed to decode rendered doc")
 				}
 
 				if strings.HasPrefix(gvk.String(), "troubleshoot.replicated.com/v1beta1,") {
@@ -504,20 +213,8 @@ func LoadKotsKindsFromPath(fromDir string) (*KotsKinds, error) {
 				}
 
 				switch gvk.String() {
-				case "kots.io/v1beta1, Kind=Config":
-					kotsKinds.Config = decoded.(*kotsv1beta1.Config)
-				case "kots.io/v1beta1, Kind=ConfigValues":
-					kotsKinds.ConfigValues = decoded.(*kotsv1beta1.ConfigValues)
-				case "kots.io/v1beta1, Kind=Application":
-					kotsKinds.KotsApplication = *decoded.(*kotsv1beta1.Application)
-				case "kots.io/v1beta1, Kind=License":
-					kotsKinds.License = decoded.(*kotsv1beta1.License)
 				case "kots.io/v1beta1, Kind=Identity":
 					kotsKinds.Identity = decoded.(*kotsv1beta1.Identity)
-				case "kots.io/v1beta1, Kind=IdentityConfig":
-					kotsKinds.IdentityConfig = decoded.(*kotsv1beta1.IdentityConfig)
-				case "kots.io/v1beta1, Kind=Installation":
-					kotsKinds.Installation = *decoded.(*kotsv1beta1.Installation)
 				case "kots.io/v1beta1, Kind=HelmChart":
 					kotsKinds.HelmCharts = append(kotsKinds.HelmCharts, decoded.(*kotsv1beta1.HelmChart))
 				case "kots.io/v1beta1, Kind=LintConfig":
@@ -552,42 +249,100 @@ func LoadKotsKindsFromPath(fromDir string) (*KotsKinds, error) {
 	return &kotsKinds, nil
 }
 
-func LoadHelmChartsFromPath(fromDir string) ([]*kotsv1beta1.HelmChart, error) {
-	charts := []*kotsv1beta1.HelmChart{}
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	err := filepath.Walk(fromDir,
-		func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
+func IsKotsKind(apiVersion string, kind string) bool {
+	if apiVersion == "velero.io/v1" && kind == "Backup" {
+		return true
+	}
+	if apiVersion == "kots.io/v1beta1" {
+		return true
+	}
+	if apiVersion == "troubleshoot.sh/v1beta2" {
+		return true
+	}
+	if apiVersion == "troubleshoot.replicated.com/v1beta1" {
+		return true
+	}
+	if apiVersion == "cluster.kurl.sh/v1beta1" {
+		return true
+	}
+	if apiVersion == "kurl.sh/v1beta1" {
+		return true
+	}
+	// In addition to kotskinds, we exclude the application crd for now
+	if apiVersion == "app.k8s.io/v1beta1" {
+		return true
+	}
+	return false
+}
 
-			if info.IsDir() {
-				return nil
-			}
+// NewBuilder is a convenience function to create a new template builder from kots kinds and app metadata
+func NewBuilder(opts types.BuilderOptions) (*template.Builder, error) {
+	localRegistry := template.LocalRegistry{
+		Host:      opts.RegistrySettings.Hostname,
+		Namespace: opts.RegistrySettings.Namespace,
+		Username:  opts.RegistrySettings.Username,
+		Password:  opts.RegistrySettings.Password,
+		ReadOnly:  opts.RegistrySettings.IsReadOnly,
+	}
 
-			contents, err := ioutil.ReadFile(path)
-			if err != nil {
-				return errors.Wrap(err, "failed to read file")
+	templateContextValues := make(map[string]template.ItemValue)
+	if opts.ConfigValues != nil {
+		for k, v := range opts.ConfigValues.Spec.Values {
+			templateContextValues[k] = template.ItemValue{
+				Value:   v.Value,
+				Default: v.Default,
 			}
-
-			decoded, gvk, err := decode(contents, nil, nil)
-			if err != nil {
-				return nil
-			}
-
-			if gvk.String() == "kots.io/v1beta1, Kind=HelmChart" {
-				charts = append(charts, decoded.(*kotsv1beta1.HelmChart))
-			}
-
-			return nil
-		})
-	if err != nil {
-		if !strings.Contains(err.Error(), "no such file or directory") {
-			return nil, errors.Wrap(err, "failed to walk upstream dir")
 		}
 	}
 
-	return charts, nil
+	err := crypto.InitFromString(opts.Installation.Spec.EncryptionKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to load encryption cipher")
+	}
+
+	configGroups := []kotsv1beta1.ConfigGroup{}
+	if opts.Config != nil && opts.Config.Spec.Groups != nil {
+		configGroups = opts.Config.Spec.Groups
+	}
+
+	appInfo := template.ApplicationInfo{
+		Slug: opts.AppSlug,
+	}
+
+	versionInfo := template.VersionInfoFromInstallation(opts.Sequence, opts.IsAirgap, opts.Installation.Spec)
+
+	builderOptions := template.BuilderOptions{
+		ConfigGroups:    configGroups,
+		ExistingValues:  templateContextValues,
+		LocalRegistry:   localRegistry,
+		License:         opts.License,
+		Application:     &opts.KotsApplication,
+		ApplicationInfo: &appInfo,
+		VersionInfo:     &versionInfo,
+		IdentityConfig:  opts.IdentityConfig,
+		Namespace:       opts.Namespace,
+		DecryptValues:   true,
+	}
+	builder, _, err := template.NewBuilder(builderOptions)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create template builder")
+	}
+
+	return &builder, nil
+}
+
+func LoadHelmChartFromContents(data []byte) (*kotsv1beta1.HelmChart, error) {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	decoded, gvk, err := decode(data, nil, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode helm chart")
+	}
+
+	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "HelmChart" {
+		return nil, errors.Errorf("unexpected GVK: %s", gvk.String())
+	}
+
+	return decoded.(*kotsv1beta1.HelmChart), nil
 }
 
 func LoadInstallationFromPath(installationFilePath string) (*kotsv1beta1.Installation, error) {
@@ -664,7 +419,7 @@ func LoadLicenseFromBytes(data []byte) (*kotsv1beta1.License, error) {
 	return obj.(*kotsv1beta1.License), nil
 }
 
-func LoadConfigValuesFromFile(configValuesFilePath string) (*kotsv1beta1.ConfigValues, error) {
+func LoadConfigValuesFromPath(configValuesFilePath string) (*kotsv1beta1.ConfigValues, error) {
 	configValuesData, err := ioutil.ReadFile(configValuesFilePath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read configvalues file")
@@ -734,66 +489,6 @@ func LoadPreflightFromContents(content []byte) (*troubleshootv1beta2.Preflight, 
 
 	return nil, errors.Errorf("not a preflight: %s", gvk.String())
 
-}
-
-func LoadBackupFromContents(content []byte) (*velerov1.Backup, error) {
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-
-	obj, gvk, err := decode(content, nil, nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode content")
-	}
-
-	if gvk.String() != "velero.io/v1, Kind=Backup" {
-		return nil, errors.Errorf("unexpected gvk: %s", gvk.String())
-	}
-
-	return obj.(*velerov1.Backup), nil
-}
-
-func LoadApplicationFromContents(content []byte) (*applicationv1beta1.Application, error) {
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-
-	obj, gvk, err := decode(content, nil, nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode content")
-	}
-
-	if gvk.String() != "app.k8s.io/v1beta1, Kind=Application" {
-		return nil, errors.Errorf("unexpected gvk: %s", gvk.String())
-	}
-
-	return obj.(*applicationv1beta1.Application), nil
-}
-
-func SupportBundleToCollector(sb *troubleshootv1beta2.SupportBundle) *troubleshootv1beta2.Collector {
-	return &troubleshootv1beta2.Collector{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "troubleshoot.sh/v1beta2",
-			Kind:       "Collector",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("%s-collector", sb.Name),
-		},
-		Spec: troubleshootv1beta2.CollectorSpec{
-			Collectors: sb.Spec.Collectors,
-		},
-	}
-}
-
-func SupportBundleToAnalyzer(sb *troubleshootv1beta2.SupportBundle) *troubleshootv1beta2.Analyzer {
-	return &troubleshootv1beta2.Analyzer{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "troubleshoot.sh/v1beta2",
-			Kind:       "Analyzer",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("%s-analyzer", sb.Name),
-		},
-		Spec: troubleshootv1beta2.AnalyzerSpec{
-			Analyzers: sb.Spec.Analyzers,
-		},
-	}
 }
 
 type InstallationParams struct {
@@ -879,6 +574,15 @@ func LoadIdentityFromContents(content []byte) (*kotsv1beta1.Identity, error) {
 	}
 
 	return nil, errors.Errorf("unexpected gvk: %s", gvk.String())
+}
+
+func LoadIdentityConfigFromPath(identityConfigFilePath string) (*kotsv1beta1.IdentityConfig, error) {
+	identityConfigData, err := ioutil.ReadFile(identityConfigFilePath)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read identityConfig file")
+	}
+
+	return LoadIdentityConfigFromContents(identityConfigData)
 }
 
 func LoadIdentityConfigFromContents(content []byte) (*kotsv1beta1.IdentityConfig, error) {
@@ -1054,16 +758,6 @@ func LoadAirgapFromBytes(data []byte) (*kotsv1beta1.Airgap, error) {
 	}
 
 	return obj.(*kotsv1beta1.Airgap), nil
-}
-
-func GetKOTSBinPath() string {
-	if util.PodNamespace != "" {
-		// we're inside the kotsadm pod, the kots binary exists at /kots
-		return "/kots"
-	} else {
-		// we're not inside the kotsadm pod, return the command used to run kots
-		return os.Args[0]
-	}
 }
 
 func LoadBrandingArchiveFromPath(archivePath string) (*bytes.Buffer, error) {

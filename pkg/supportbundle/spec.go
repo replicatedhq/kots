@@ -19,12 +19,11 @@ import (
 	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotstypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/registry"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
-	"github.com/replicatedhq/kots/pkg/render/helper"
 	"github.com/replicatedhq/kots/pkg/snapshot"
 	kotssnapshot "github.com/replicatedhq/kots/pkg/snapshot"
 	"github.com/replicatedhq/kots/pkg/store"
@@ -44,10 +43,10 @@ import (
 )
 
 // CreateRenderedSpec creates the support bundle specification from defaults and the kots app
-func CreateRenderedSpec(app apptypes.AppType, sequence int64, kotsKinds *kotsutil.KotsKinds, opts types.TroubleshootOptions) (*troubleshootv1beta2.SupportBundle, error) {
-	builtBundle := kotsKinds.SupportBundle.DeepCopy()
-	if builtBundle == nil {
-		builtBundle = &troubleshootv1beta2.SupportBundle{
+func CreateRenderedSpec(app apptypes.AppType, sequence int64, kotsKinds *kotsutiltypes.KotsKinds, opts types.TroubleshootOptions) (*troubleshootv1beta2.SupportBundle, error) {
+	supportBundle := kotsKinds.SupportBundle.DeepCopy()
+	if supportBundle == nil {
+		supportBundle = &troubleshootv1beta2.SupportBundle{
 			TypeMeta: v1.TypeMeta{
 				Kind:       "SupportBundle",
 				APIVersion: "troubleshoot.sh/v1beta2",
@@ -58,10 +57,10 @@ func CreateRenderedSpec(app apptypes.AppType, sequence int64, kotsKinds *kotsuti
 		}
 
 		if kotsKinds.Collector != nil {
-			builtBundle.Spec.Collectors = kotsKinds.Collector.DeepCopy().Spec.Collectors
+			supportBundle.Spec.Collectors = kotsKinds.Collector.DeepCopy().Spec.Collectors
 		}
 		if kotsKinds.Analyzer != nil {
-			builtBundle.Spec.Analyzers = kotsKinds.Analyzer.DeepCopy().Spec.Analyzers
+			supportBundle.Spec.Analyzers = kotsKinds.Analyzer.DeepCopy().Spec.Analyzers
 		}
 	}
 
@@ -96,30 +95,12 @@ func CreateRenderedSpec(app apptypes.AppType, sequence int64, kotsKinds *kotsuti
 		}
 	}
 
-	builtBundle, err = injectDefaults(app, builtBundle, opts, namespacesToCollect, namespacesToAnalyze)
+	supportBundle, err = injectDefaults(app, supportBundle, opts, namespacesToCollect, namespacesToAnalyze)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to inject defaults")
 	}
 
-	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
-	var b bytes.Buffer
-	if err := s.Encode(builtBundle, &b); err != nil {
-		return nil, errors.Wrap(err, "failed to encode support bundle")
-	}
-
-	templatedSpec := b.Bytes()
-
-	renderedSpec, err := helper.RenderAppFile(app, &sequence, templatedSpec, kotsKinds, util.PodNamespace)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed render support bundle spec")
-	}
-
-	// unmarshal the spec, look for image replacements in collectors and then remarshal
-	// we do this after template rendering to support templating and then replacement
-	supportBundle, err := kotsutil.LoadSupportBundleFromContents(renderedSpec)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to unmarshal rendered support bundle spec")
-	}
+	// look for image replacements in collectors and then marshal
 
 	var registrySettings registrytypes.RegistrySettings
 	if !util.IsHelmManaged() {
@@ -135,11 +116,13 @@ func CreateRenderedSpec(app apptypes.AppType, sequence int64, kotsKinds *kotsuti
 		return nil, errors.Wrap(err, "failed to update collectors")
 	}
 	supportBundle.Spec.Collectors = collectors
-	b.Reset()
+
+	s := serializer.NewYAMLSerializer(serializer.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
+	var b bytes.Buffer
 	if err := s.Encode(supportBundle, &b); err != nil {
 		return nil, errors.Wrap(err, "failed to encode support bundle")
 	}
-	renderedSpec = b.Bytes()
+	renderedSpec := b.Bytes()
 
 	secretName := GetSpecSecretName(app.GetSlug())
 	existingSecret, err := clientset.CoreV1().Secrets(util.PodNamespace).Get(context.TODO(), secretName, metav1.GetOptions{})
@@ -745,11 +728,6 @@ func makeAppVersionArchiveCollector(app *apptypes.App, dirPrefix string) (*troub
 		}
 
 		trimmedPath := strings.TrimPrefix(path, archivePath)
-
-		// do not include userdata in archive
-		if filepath.HasPrefix(trimmedPath, "/userdata") {
-			return nil
-		}
 
 		tarHeader, err := tar.FileInfoHeader(fi, "")
 		if err != nil {

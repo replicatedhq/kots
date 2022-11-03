@@ -12,6 +12,7 @@ import (
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/buildversion"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
@@ -176,7 +177,7 @@ func (e AdminConsoleUpgradeError) Error() string {
 	return e.Message
 }
 
-func getKotsUpgradeVersion(kotsKinds *kotsutil.KotsKinds, latestVersion string) (string, error) {
+func getKotsUpgradeVersion(kotsKinds *kotsutiltypes.KotsKinds, latestVersion string) (string, error) {
 	if !kotsutil.IsKotsAutoUpgradeSupported(&kotsKinds.KotsApplication) {
 		return "", AdminConsoleUpgradeError{
 			Message: "admin console auto updates feature flag not enabled",

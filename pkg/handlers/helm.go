@@ -9,10 +9,10 @@ import (
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
-	kotsbase "github.com/replicatedhq/kots/pkg/base"
 	"github.com/replicatedhq/kots/pkg/helm"
 	kotshelm "github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/util"
@@ -26,7 +26,7 @@ type IsHelmManagedResponse struct {
 	IsHelmManaged bool `json:"isHelmManaged"`
 }
 
-//  IsHelmManaged - report whether or not kots is running in helm managed mode
+// IsHelmManaged - report whether or not kots is running in helm managed mode
 func (h *Handler) IsHelmManaged(w http.ResponseWriter, r *http.Request) {
 	helmManagedResponse := IsHelmManagedResponse{
 		Success:       true,
@@ -57,7 +57,7 @@ func (h *Handler) GetAppValuesFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var kotsKinds *kotsutil.KotsKinds
+	var kotsKinds *kotsutiltypes.KotsKinds
 	var tmplVals map[string]interface{}
 	var helmChartFile []byte
 
@@ -115,7 +115,7 @@ func (h *Handler) GetAppValuesFile(w http.ResponseWriter, r *http.Request) {
 		kotsKinds = &k
 	}
 
-	helmChart, err := kotsbase.ParseHelmChart(helmChartFile)
+	helmChart, err := kotsutil.LoadHelmChartFromContents(helmChartFile)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to parse HelmChart file"))
 		w.WriteHeader(http.StatusInternalServerError)

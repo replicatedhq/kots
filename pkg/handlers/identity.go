@@ -21,6 +21,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmidentity "github.com/replicatedhq/kots/pkg/kotsadmidentity"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight"
 	"github.com/replicatedhq/kots/pkg/rbac"
@@ -278,7 +279,22 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(a.ID)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get registry settings")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+		FromDir:          archiveDir,
+		RegistrySettings: registrySettings,
+		AppSlug:          a.Slug,
+		Sequence:         latestSequence,
+		IsAirgap:         a.IsAirgap,
+		Namespace:        util.AppNamespace(),
+	})
 	if err != nil {
 		err = errors.Wrap(err, "failed to load kots kinds from path")
 		logger.Error(err)
@@ -293,40 +309,10 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	identityConfigFile := filepath.Join(archiveDir, "upstream", "userdata", "identityconfig.yaml")
-	if _, err := os.Stat(identityConfigFile); os.IsNotExist(err) {
-		f, err := kotsadmidentity.InitAppIdentityConfig(a.Slug)
-		if err != nil {
-			err = errors.Wrap(err, "failed to init identity config")
-			logger.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		defer os.RemoveAll(f)
-		identityConfigFile = f
-	} else if err != nil {
-		err = errors.Wrap(err, "failed to stat identity config file")
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+	identityConfig := kotsKinds.IdentityConfig
+	if identityConfig == nil {
+		identityConfig = kotsadmidentity.InitAppIdentityConfig(a.Slug)
 	}
-
-	b, err := ioutil.ReadFile(identityConfigFile)
-	if err != nil {
-		err = errors.Wrap(err, "failed to read identityconfig file")
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	s, err := kotsutil.LoadIdentityConfigFromContents(b)
-	if err != nil {
-		err = errors.Wrap(err, "failed to decode identity service config")
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	identityConfig := *s
 
 	dexConnectors, err := identityConfig.Spec.DexConnectors.GetValue()
 	if err != nil {
@@ -400,7 +386,7 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 	// TODO: handle configuring ingress for the app?
 	// TODO: validate dex issuer
 	ingressConfig := kotsv1beta1.IngressConfig{}
-	if err := identity.ValidateConnection(r.Context(), namespace, identityConfig, ingressConfig); err != nil {
+	if err := identity.ValidateConnection(r.Context(), namespace, *identityConfig, ingressConfig); err != nil {
 		if _, ok := errors.Cause(err).(*identity.ErrorConnection); ok {
 			err = errors.Wrap(err, "invalid connection")
 			logger.Error(err)
@@ -413,7 +399,7 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	kotsKinds.IdentityConfig = &identityConfig
+	kotsKinds.IdentityConfig = identityConfig
 
 	identityConfigSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "IdentityConfig")
 	if err != nil {
@@ -438,14 +424,6 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(a.ID)
-	if err != nil {
-		err = errors.Wrap(err, "failed to get registry settings")
-		logger.Error(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
 	nextAppSequence, err := store.GetStore().GetNextAppSequence(a.ID)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get next app sequence")
@@ -454,7 +432,7 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	err = render.RenderDir(archiveDir, a, downstreams, registrySettings, nextAppSequence)
+	err = render.RenderDir(archiveDir, kotsKinds, a, downstreams, registrySettings, nextAppSequence)
 	if err != nil {
 		err = errors.Wrap(err, "failed to render archive directory")
 		logger.Error(err)
@@ -462,7 +440,7 @@ func (h *Handler) ConfigureAppIdentityService(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &latestSequence, archiveDir, "Identity Service", false, &version.DownstreamGitOps{}, render.Renderer{})
+	newSequence, err := store.GetStore().CreateAppVersion(a.ID, &latestSequence, archiveDir, "Identity Service", false, &version.DownstreamGitOps{})
 	if err != nil {
 		err = errors.Wrap(err, "failed to create an app version")
 		logger.Error(err)
@@ -679,7 +657,22 @@ func (h *Handler) GetAppIdentityServiceConfig(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(a.ID)
+	if err != nil {
+		err = errors.Wrap(err, "failed to get registry settings")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+		FromDir:          archiveDir,
+		RegistrySettings: registrySettings,
+		AppSlug:          a.Slug,
+		Sequence:         latestSequence,
+		IsAirgap:         a.IsAirgap,
+		Namespace:        util.AppNamespace(),
+	})
 	if err != nil {
 		err = errors.Wrap(err, "failed to load kotskinds from path")
 		logger.Error(err)

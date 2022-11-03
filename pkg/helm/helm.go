@@ -20,11 +20,9 @@ import (
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/api/handlers/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
-	kotsbase "github.com/replicatedhq/kots/pkg/base"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
-	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
-	"github.com/replicatedhq/kots/pkg/render"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	helmval "helm.sh/helm/v3/pkg/cli/values"
 	"helm.sh/helm/v3/pkg/helmpath"
@@ -33,8 +31,20 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func RenderValuesFromConfig(helmApp *apptypes.HelmApp, kotsKinds *kotsutil.KotsKinds, chart []byte) (map[string]interface{}, error) {
-	builder, err := render.NewBuilder(kotsKinds, registrytypes.RegistrySettings{}, helmApp.GetSlug(), helmApp.GetCurrentSequence(), helmApp.GetIsAirgap(), helmApp.Namespace)
+func RenderValuesFromConfig(helmApp *apptypes.HelmApp, kotsKinds *kotsutiltypes.KotsKinds, chart []byte) (map[string]interface{}, error) {
+	builderOptions := kotsutiltypes.BuilderOptions{
+		Config:          kotsKinds.Config,
+		ConfigValues:    kotsKinds.ConfigValues,
+		Installation:    kotsKinds.Installation,
+		KotsApplication: kotsKinds.KotsApplication,
+		License:         kotsKinds.License,
+		IdentityConfig:  kotsKinds.IdentityConfig,
+		AppSlug:         helmApp.GetSlug(),
+		Sequence:        helmApp.GetCurrentSequence(),
+		IsAirgap:        helmApp.GetIsAirgap(),
+		Namespace:       helmApp.Namespace,
+	}
+	builder, err := kotsutil.NewBuilder(builderOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to make tempalate builder")
 	}
@@ -44,18 +54,14 @@ func RenderValuesFromConfig(helmApp *apptypes.HelmApp, kotsKinds *kotsutil.KotsK
 		return nil, err
 	}
 
-	kotsHelmChart, err := kotsbase.ParseHelmChart([]byte(renderedHelmManifest))
+	kotsHelmChart, err := kotsutil.LoadHelmChartFromContents([]byte(renderedHelmManifest))
 	if err != nil {
 		return nil, err
 	}
 
 	mergedValues := kotsHelmChart.Spec.Values
 	for _, optionalValues := range kotsHelmChart.Spec.OptionalValues {
-		include, err := strconv.ParseBool(optionalValues.When)
-		if err != nil {
-			return nil, err
-		}
-		if !include {
+		if optionalValues.When == "false" {
 			continue
 		}
 		if optionalValues.RecursiveMerge {

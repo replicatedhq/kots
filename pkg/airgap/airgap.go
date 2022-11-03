@@ -20,12 +20,12 @@ import (
 	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	identity "github.com/replicatedhq/kots/pkg/kotsadmidentity"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/registry"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
-	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/replicatedhq/kots/pkg/supportbundle"
@@ -169,7 +169,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 	if err != nil {
 		return errors.Wrap(err, "failed to read config values from in cluster")
 	}
-	configFile := ""
+	configValuesFile := ""
 	if configValues != "" {
 		tmpFile, err := ioutil.TempFile("", "kots")
 		if err != nil {
@@ -180,10 +180,10 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 			return errors.Wrap(err, "failed to write config values to temp file")
 		}
 
-		configFile = tmpFile.Name()
+		configValuesFile = tmpFile.Name()
 	}
 
-	identityConfigFile, err := identity.InitAppIdentityConfig(opts.PendingApp.Slug)
+	identityConfigFile, err := identity.InitAppIdentityConfigFile(opts.PendingApp.Slug)
 	if err != nil {
 		return errors.Wrap(err, "failed to init identity config")
 	}
@@ -210,7 +210,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		LocalPath:           releaseDir,
 		Namespace:           appNamespace,
 		LicenseFile:         licenseFile.Name(),
-		ConfigFile:          configFile,
+		ConfigValuesFile:    configValuesFile,
 		IdentityConfigFile:  identityConfigFile,
 		AirgapRoot:          archiveDir,
 		AirgapBundle:        airgapBundle,
@@ -255,7 +255,7 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		return errors.Wrap(err, "failed to set app is airgap the second time")
 	}
 
-	newSequence, err := store.GetStore().CreateAppVersion(a.ID, nil, tmpRoot, "Airgap Install", opts.SkipPreflights, &version.DownstreamGitOps{}, render.Renderer{})
+	newSequence, err := store.GetStore().CreateAppVersion(a.ID, nil, tmpRoot, "Airgap Install", opts.SkipPreflights, &version.DownstreamGitOps{})
 	if err != nil {
 		return errors.Wrap(err, "failed to create new version")
 	}
@@ -268,7 +268,20 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 		return errors.Wrap(err, "failed to create support bundle dependencies")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(tmpRoot)
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+		FromDir: filepath.Join(tmpRoot),
+		RegistrySettings: registrytypes.RegistrySettings{
+			Hostname:   opts.RegistryHost,
+			Username:   opts.RegistryUsername,
+			Password:   opts.RegistryPassword,
+			Namespace:  opts.RegistryNamespace,
+			IsReadOnly: opts.RegistryIsReadOnly,
+		},
+		AppSlug:   opts.PendingApp.Slug,
+		Sequence:  newSequence,
+		IsAirgap:  true,
+		Namespace: appNamespace,
+	})
 	if err != nil {
 		return errors.Wrap(err, "failed to load kotskinds from path")
 	}

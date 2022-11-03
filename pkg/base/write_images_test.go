@@ -10,6 +10,7 @@ import (
 	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -40,7 +41,7 @@ func Test_RewriteImages(t *testing.T) {
 			processOptions: RewriteImageOptions{
 				BaseDir:        testBaseDir,
 				SourceRegistry: replicatedRegistry,
-				KotsKinds: &kotsutil.KotsKinds{
+				KotsKinds: &kotsutiltypes.KotsKinds{
 					KotsApplication: kotsv1beta1.Application{
 						Spec: kotsv1beta1.ApplicationSpec{
 							AdditionalImages: []string{

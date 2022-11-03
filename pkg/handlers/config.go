@@ -23,6 +23,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/helm"
 	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
 	"github.com/replicatedhq/kots/pkg/preflight"
@@ -231,7 +232,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var kotsKinds *kotsutil.KotsKinds
+	var kotsKinds *kotsutiltypes.KotsKinds
 	var appLicense *kotsv1beta1.License
 	var app apptypes.AppType
 	var localRegistry template.LocalRegistry
@@ -319,17 +320,24 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		kotsKinds, err = kotsutil.LoadKotsKindsFromPath(archiveDir)
+		registryInfo, err := store.GetStore().GetRegistryDetailsForApp(foundApp.ID)
 		if err != nil {
-			liveAppConfigResponse.Error = "failed to load kots kinds from path"
+			liveAppConfigResponse.Error = "failed to get app registry info"
 			logger.Error(errors.Wrap(err, liveAppConfigResponse.Error))
 			JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
 			return
 		}
 
-		registryInfo, err := store.GetStore().GetRegistryDetailsForApp(foundApp.ID)
+		kotsKinds, err = kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+			FromDir:          archiveDir,
+			RegistrySettings: registryInfo,
+			AppSlug:          appSlug,
+			Sequence:         liveAppConfigRequest.Sequence,
+			IsAirgap:         foundApp.IsAirgap,
+			Namespace:        util.AppNamespace(),
+		})
 		if err != nil {
-			liveAppConfigResponse.Error = "failed to get app registry info"
+			liveAppConfigResponse.Error = "failed to load kots kinds from path"
 			logger.Error(errors.Wrap(err, liveAppConfigResponse.Error))
 			JSON(w, http.StatusInternalServerError, liveAppConfigResponse)
 			return
@@ -438,7 +446,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var kotsKinds *kotsutil.KotsKinds
+	var kotsKinds *kotsutiltypes.KotsKinds
 	var license *kotsv1beta1.License
 	var localRegistry template.LocalRegistry
 	var app apptypes.AppType
@@ -565,17 +573,24 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		kotsKinds, err = kotsutil.LoadKotsKindsFromPath(archiveDir)
+		registryInfo, err := store.GetStore().GetRegistryDetailsForApp(foundApp.ID)
 		if err != nil {
-			currentAppConfigResponse.Error = "failed to load kots kinds from path"
+			currentAppConfigResponse.Error = "failed to get app registry info"
 			logger.Error(errors.Wrap(err, currentAppConfigResponse.Error))
 			JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
 			return
 		}
 
-		registryInfo, err := store.GetStore().GetRegistryDetailsForApp(foundApp.ID)
+		kotsKinds, err = kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+			FromDir:          archiveDir,
+			RegistrySettings: registryInfo,
+			AppSlug:          foundApp.Slug,
+			Sequence:         sequence,
+			IsAirgap:         foundApp.IsAirgap,
+			Namespace:        util.AppNamespace(),
+		})
 		if err != nil {
-			currentAppConfigResponse.Error = "failed to get app registry info"
+			currentAppConfigResponse.Error = "failed to load kots kinds from path"
 			logger.Error(errors.Wrap(err, currentAppConfigResponse.Error))
 			JSON(w, http.StatusInternalServerError, currentAppConfigResponse)
 			return
@@ -704,7 +719,19 @@ func getAppConfigValueForFile(downloadApp *apptypes.App, sequence int64, filenam
 		return "", errors.Wrap(err, "failed to get app version archive")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	registryInfo, err := store.GetStore().GetRegistryDetailsForApp(downloadApp.ID)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get registry details")
+	}
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+		FromDir:          archiveDir,
+		RegistrySettings: registryInfo,
+		AppSlug:          downloadApp.Slug,
+		Sequence:         sequence,
+		IsAirgap:         downloadApp.IsAirgap,
+		Namespace:        util.AppNamespace(),
+	})
 	if err != nil {
 		return "", errors.Wrap(err, "failed to load kots kinds from archive")
 	}
@@ -738,7 +765,20 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 		return updateAppConfigResponse, err
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(updateApp.ID)
+	if err != nil {
+		updateAppConfigResponse.Error = "failed to get registry settings"
+		return updateAppConfigResponse, err
+	}
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+		FromDir:          archiveDir,
+		RegistrySettings: registrySettings,
+		AppSlug:          updateApp.Slug,
+		Sequence:         sequence,
+		IsAirgap:         updateApp.IsAirgap,
+		Namespace:        util.AppNamespace(),
+	})
 	if err != nil {
 		updateAppConfigResponse.Error = "failed to load kots kinds from path"
 		return updateAppConfigResponse, err
@@ -766,15 +806,9 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 		}
 
 		if err := ioutil.WriteFile(filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"), []byte(configValuesSpec), 0644); err != nil {
-			updateAppConfigResponse.Error = "failed to write config.yaml to upstream/userdata"
+			updateAppConfigResponse.Error = "failed to write config.yaml"
 			return updateAppConfigResponse, err
 		}
-	}
-
-	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(updateApp.ID)
-	if err != nil {
-		updateAppConfigResponse.Error = "failed to get registry settings"
-		return updateAppConfigResponse, err
 	}
 
 	app, err := store.GetStore().GetApp(updateApp.ID)
@@ -824,14 +858,14 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 		renderSequence = nextAppSequence
 	}
 
-	err = render.RenderDir(archiveDir, app, downstreams, registrySettings, renderSequence)
+	err = render.RenderDir(archiveDir, kotsKinds, app, downstreams, registrySettings, renderSequence)
 	if err != nil {
 		updateAppConfigResponse.Error = "failed to render archive directory"
 		return updateAppConfigResponse, err
 	}
 
 	if createNewVersion {
-		newSequence, err := store.GetStore().CreateAppVersion(updateApp.ID, &sequence, archiveDir, "Config Change", skipPreflights, &version.DownstreamGitOps{}, render.Renderer{})
+		newSequence, err := store.GetStore().CreateAppVersion(updateApp.ID, &sequence, archiveDir, "Config Change", skipPreflights, &version.DownstreamGitOps{})
 		if err != nil {
 			updateAppConfigResponse.Error = "failed to create an app version"
 			return updateAppConfigResponse, err
@@ -843,7 +877,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 			updateAppConfigResponse.Error = "failed to get existing downstream version source"
 			return updateAppConfigResponse, err
 		}
-		if err := store.GetStore().UpdateAppVersion(updateApp.ID, sequence, nil, archiveDir, source, skipPreflights, &version.DownstreamGitOps{}, render.Renderer{}); err != nil {
+		if err := store.GetStore().UpdateAppVersion(updateApp.ID, sequence, nil, archiveDir, source, skipPreflights, &version.DownstreamGitOps{}); err != nil {
 			updateAppConfigResponse.Error = "failed to update app version"
 			return updateAppConfigResponse, err
 		}
@@ -1041,7 +1075,22 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	registryInfo, err := store.GetStore().GetRegistryDetailsForApp(foundApp.ID)
+	if err != nil {
+		setAppConfigValuesResponse.Error = "failed to get app registry info"
+		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
+		JSON(w, http.StatusInternalServerError, setAppConfigValuesResponse)
+		return
+	}
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+		FromDir:          archiveDir,
+		RegistrySettings: registryInfo,
+		AppSlug:          foundApp.Slug,
+		Sequence:         latestSequence,
+		IsAirgap:         foundApp.IsAirgap,
+		Namespace:        util.AppNamespace(),
+	})
 	if err != nil {
 		setAppConfigValuesResponse.Error = "failed to load kots kinds from path"
 		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
@@ -1093,14 +1142,6 @@ func (h *Handler) SetAppConfigValues(w http.ResponseWriter, r *http.Request) {
 			generatedValue.Value = value.ValuePlaintext
 		}
 		configValueMap[key] = generatedValue
-	}
-
-	registryInfo, err := store.GetStore().GetRegistryDetailsForApp(foundApp.ID)
-	if err != nil {
-		setAppConfigValuesResponse.Error = "failed to get app registry info"
-		logger.Error(errors.Wrap(err, setAppConfigValuesResponse.Error))
-		JSON(w, http.StatusInternalServerError, setAppConfigValuesResponse)
-		return
 	}
 
 	localRegistry := template.LocalRegistry{

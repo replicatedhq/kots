@@ -78,7 +78,7 @@ func WriteUpstream(u *types.Upstream, options types.WriteOptions) error {
 			}
 		}
 
-		if options.EncryptConfig {
+		if options.EncryptConfigValues {
 			configValues := contentToConfigValues(file.Content)
 			if configValues != nil {
 				content, err := encryptConfigValues(configValues)

@@ -12,6 +12,7 @@ import (
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/cursor"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	"github.com/replicatedhq/kots/pkg/store/types"
@@ -621,7 +622,7 @@ func (s *KOTSStore) AddDownstreamVersionsDetails(appID string, clusterID string,
 			}
 		}
 
-		version.KOTSKinds = &kotsutil.KotsKinds{}
+		version.KOTSKinds = &kotsutiltypes.KotsKinds{}
 
 		if kotsInstallationSpecStr.String != "" {
 			installation, err := kotsutil.LoadInstallationFromContents([]byte(kotsInstallationSpecStr.String))

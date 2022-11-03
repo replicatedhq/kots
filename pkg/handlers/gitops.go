@@ -9,8 +9,11 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/gitops"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 type UpdateAppGitOpsRequest struct {
@@ -204,6 +207,14 @@ func (h *Handler) InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		registrySettings, err := store.GetStore().GetRegistryDetailsForApp(a.ID)
+		if err != nil {
+			err = errors.Wrapf(err, "failed to get app registry info")
+			logger.Error(err)
+			finalError = err
+			return
+		}
+
 		// Create git commit for current version (if exists)
 		if appVersions.CurrentVersion != nil {
 			currentVersionArchive, err := ioutil.TempDir("", "kotsadm")
@@ -223,7 +234,22 @@ func (h *Handler) InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			_, err = gitops.CreateGitOpsCommit(downstreamGitOps, a.Slug, a.Name, int(appVersions.CurrentVersion.ParentSequence), currentVersionArchive, d.Name)
+			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+				FromDir:          currentVersionArchive,
+				RegistrySettings: registrySettings,
+				AppSlug:          a.Slug,
+				Sequence:         appVersions.CurrentVersion.ParentSequence,
+				IsAirgap:         a.IsAirgap,
+				Namespace:        util.AppNamespace(),
+			})
+			if err != nil {
+				err = errors.Wrapf(err, "failed to load kots kinds for current version %d", appVersions.CurrentVersion.ParentSequence)
+				logger.Error(err)
+				finalError = err
+				return
+			}
+
+			_, err = gitops.CreateGitOpsCommit(downstreamGitOps, kotsKinds, a.Slug, a.Name, int(appVersions.CurrentVersion.ParentSequence), currentVersionArchive, d.Name)
 			if err != nil {
 				err = errors.Wrapf(err, "failed to create gitops commit for current version %d", appVersions.CurrentVersion.ParentSequence)
 				logger.Error(err)
@@ -251,7 +277,22 @@ func (h *Handler) InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			_, err = gitops.CreateGitOpsCommit(downstreamGitOps, a.Slug, a.Name, int(pendingVersion.ParentSequence), pendingVersionArchive, d.Name)
+			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+				FromDir:          pendingVersionArchive,
+				RegistrySettings: registrySettings,
+				AppSlug:          a.Slug,
+				Sequence:         pendingVersion.ParentSequence,
+				IsAirgap:         a.IsAirgap,
+				Namespace:        util.AppNamespace(),
+			})
+			if err != nil {
+				err = errors.Wrapf(err, "failed to load kots kinds for pending version %d", appVersions.CurrentVersion.ParentSequence)
+				logger.Error(err)
+				finalError = err
+				return
+			}
+
+			_, err = gitops.CreateGitOpsCommit(downstreamGitOps, kotsKinds, a.Slug, a.Name, int(pendingVersion.ParentSequence), pendingVersionArchive, d.Name)
 			if err != nil {
 				err = errors.Wrapf(err, "failed to create gitops commit for pending version %d", pendingVersion.ParentSequence)
 				logger.Error(err)

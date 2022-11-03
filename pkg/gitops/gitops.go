@@ -26,7 +26,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	"golang.org/x/crypto/ssh"
 	v1 "k8s.io/api/core/v1"
@@ -635,12 +635,7 @@ func getAuth(privateKey string) (transport.AuthMethod, error) {
 	return auth, nil
 }
 
-func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, appSlug string, appName string, newSequence int, archiveDir string, downstreamName string) (string, error) {
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to load kots kinds")
-	}
-
+func CreateGitOpsCommit(gitOpsConfig *GitOpsConfig, kotsKinds *kotsutiltypes.KotsKinds, appSlug string, appName string, newSequence int, archiveDir string, downstreamName string) (string, error) {
 	// we use the kustomize binary here...
 	cmd := exec.Command(kotsKinds.GetKustomizeBinaryPath(), "build", filepath.Join(archiveDir, "overlays", "downstreams", downstreamName))
 	out, err := cmd.Output()

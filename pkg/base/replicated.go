@@ -4,27 +4,23 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"path"
-	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsscheme "github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	kotsconfig "github.com/replicatedhq/kots/pkg/config"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/template"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
-	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
-	stdyaml "gopkg.in/yaml.v2"
 	"helm.sh/helm/v3/pkg/chart"
 	"k8s.io/client-go/kubernetes/scheme"
 	applicationv1beta1 "sigs.k8s.io/application/api/v1beta1"
@@ -54,9 +50,10 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 		return nil, nil, errors.Wrap(err, "failed to create new config context template builder")
 	}
 
-	kotsKinds, err := getKotsKinds(u, renderOptions.Log)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to find config file")
+	kotsKinds := renderOptions.KotsKinds
+	if kotsKinds == nil {
+		emptyKotsKinds := kotsutiltypes.EmptyKotsKinds()
+		kotsKinds = &emptyKotsKinds
 	}
 
 	registry := template.LocalRegistry{
@@ -125,14 +122,8 @@ func renderReplicated(u *upstreamtypes.Upstream, renderOptions *RenderOptions) (
 	}
 
 	// render helm charts that were specified
-	// we just inject them into u.Files
-	kotsHelmCharts, err := findAllKotsHelmCharts(u.Files, *builder, renderOptions.Log)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to find helm charts")
-	}
-
 	helmBases := []Base{}
-	for _, kotsHelmChart := range kotsHelmCharts {
+	for _, kotsHelmChart := range kotsKinds.HelmCharts {
 		helmBase, err := renderReplicatedHelmChart(kotsHelmChart, u.Files, renderOptions, builder)
 		if err != nil {
 			return nil, nil, errors.Wrapf(err, "failed to render helm chart %s", kotsHelmChart.Name)
@@ -207,11 +198,7 @@ func renderReplicatedHelmChart(kotsHelmChart *kotsv1beta1.HelmChart, upstreamFil
 		mergedValues = map[string]kotsv1beta1.MappedChartValue{}
 	}
 	for _, optionalValues := range kotsHelmChart.Spec.OptionalValues {
-		parsedBool, err := strconv.ParseBool(optionalValues.When)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to parse when conditional on optional values")
-		}
-		if !parsedBool {
+		if optionalValues.When == "false" {
 			continue
 		}
 		if optionalValues.RecursiveMerge {
@@ -308,61 +295,6 @@ func upstreamFileToBaseFile(upstreamFile upstreamtypes.UpstreamFile, builder tem
 	}, nil
 }
 
-func findAllKotsHelmCharts(upstreamFiles []upstreamtypes.UpstreamFile, builder template.Builder, log *logger.CLILogger) ([]*kotsv1beta1.HelmChart, error) {
-	kotsHelmCharts := []*kotsv1beta1.HelmChart{}
-	for _, upstreamFile := range upstreamFiles {
-		if !isHelmChartKind(upstreamFile.Content) {
-			continue
-		}
-
-		baseFile, err := upstreamFileToBaseFile(upstreamFile, builder, log)
-		if err != nil {
-			continue
-		}
-
-		helmChart, err := ParseHelmChart(baseFile.Content)
-		if err != nil {
-			fmt.Printf("Failed HelmChart contents:\n%s\n", string(baseFile.Content))
-			return nil, errors.Wrapf(err, "failed to parse rendered HelmChart %s", baseFile.Path)
-		}
-
-		kotsHelmCharts = append(kotsHelmCharts, helmChart)
-	}
-
-	return kotsHelmCharts, nil
-}
-
-func ParseHelmChart(content []byte) (*kotsv1beta1.HelmChart, error) {
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, gvk, err := decode(content, nil, nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode chart")
-	}
-
-	if gvk.Group == "kots.io" {
-		if gvk.Version == "v1beta1" {
-			if gvk.Kind == "HelmChart" {
-				return obj.(*kotsv1beta1.HelmChart), nil
-			}
-		}
-	}
-
-	return nil, errors.Errorf("not a HelmChart GVK: %s", gvk.String())
-}
-
-func isHelmChartKind(content []byte) bool {
-	gvk := OverlySimpleGVK{}
-
-	if err := stdyaml.Unmarshal(content, &gvk); err != nil {
-		return false
-	}
-
-	if gvk.APIVersion == "kots.io/v1beta1" && gvk.Kind == "HelmChart" {
-		return true
-	}
-	return false
-}
-
 func tryGetConfigFromFileContent(content []byte, log *logger.CLILogger) *kotsv1beta1.Config {
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode(content, nil, nil)
@@ -376,60 +308,6 @@ func tryGetConfigFromFileContent(content []byte, log *logger.CLILogger) *kotsv1b
 	}
 
 	return nil
-}
-
-func getKotsKinds(u *upstreamtypes.Upstream, log *logger.CLILogger) (*kotsutil.KotsKinds, error) {
-	kotsKinds := &kotsutil.KotsKinds{}
-
-	for _, file := range u.Files {
-		document := &Document{}
-		if err := yaml.Unmarshal(file.Content, document); err != nil {
-			continue
-		}
-
-		decode := scheme.Codecs.UniversalDeserializer().Decode
-		decoded, gvk, err := decode(file.Content, nil, nil)
-		if err != nil {
-			if document.APIVersion == "kots.io/v1beta1" && (document.Kind == "Config" || document.Kind == "License") {
-				errMessage := fmt.Sprintf("Failed to decode %s", file.Path)
-				return nil, errors.Wrap(err, errMessage)
-			}
-			continue
-		}
-
-		switch gvk.String() {
-		case "kots.io/v1beta1, Kind=Config":
-			kotsKinds.Config = decoded.(*kotsv1beta1.Config)
-		case "kots.io/v1beta1, Kind=ConfigValues":
-			kotsKinds.ConfigValues = decoded.(*kotsv1beta1.ConfigValues)
-		case "kots.io/v1beta1, Kind=Application":
-			kotsKinds.KotsApplication = *decoded.(*kotsv1beta1.Application)
-		case "kots.io/v1beta1, Kind=License":
-			kotsKinds.License = decoded.(*kotsv1beta1.License)
-		case "kots.io/v1beta1, Kind=Identity":
-			kotsKinds.Identity = decoded.(*kotsv1beta1.Identity)
-		case "kots.io/v1beta1, Kind=IdentityConfig":
-			kotsKinds.IdentityConfig = decoded.(*kotsv1beta1.IdentityConfig)
-		case "kots.io/v1beta1, Kind=Installation":
-			kotsKinds.Installation = *decoded.(*kotsv1beta1.Installation)
-		case "troubleshoot.sh/v1beta2, Kind=Collector":
-			kotsKinds.Collector = decoded.(*troubleshootv1beta2.Collector)
-		case "troubleshoot.sh/v1beta2, Kind=Analyzer":
-			kotsKinds.Analyzer = decoded.(*troubleshootv1beta2.Analyzer)
-		case "troubleshoot.sh/v1beta2, Kind=SupportBundle":
-			kotsKinds.SupportBundle = decoded.(*troubleshootv1beta2.SupportBundle)
-		case "troubleshoot.sh/v1beta2, Kind=Redactor":
-			kotsKinds.Redactor = decoded.(*troubleshootv1beta2.Redactor)
-		case "troubleshoot.sh/v1beta2, Kind=Preflight":
-			kotsKinds.Preflight = decoded.(*troubleshootv1beta2.Preflight)
-		case "velero.io/v1, Kind=Backup":
-			kotsKinds.Backup = decoded.(*velerov1.Backup)
-		case "app.k8s.io/v1beta1, Kind=Application":
-			kotsKinds.Application = decoded.(*applicationv1beta1.Application)
-		}
-	}
-
-	return kotsKinds, nil
 }
 
 // findHelmChartArchiveInRelease iterates through all files in the release (upstreamFiles), looking for a helm chart archive

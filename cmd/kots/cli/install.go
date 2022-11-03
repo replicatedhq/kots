@@ -173,7 +173,7 @@ func InstallCmd() *cobra.Command {
 
 			var configValues *kotsv1beta1.ConfigValues
 			if filepath := v.GetString("config-values"); filepath != "" {
-				parsedConfigValues, err := pull.ParseConfigValuesFromFile(ExpandDir(filepath))
+				parsedConfigValues, err := kotsutil.LoadConfigValuesFromPath(ExpandDir(filepath))
 				if err != nil {
 					return errors.Wrap(err, "failed to parse config values")
 				}

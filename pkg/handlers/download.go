@@ -15,6 +15,7 @@ import (
 	versiontypes "github.com/replicatedhq/kots/pkg/api/version/types"
 	upstream "github.com/replicatedhq/kots/pkg/kotsadmupstream"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
@@ -73,7 +74,21 @@ func (h *Handler) DownloadApp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if decryptPasswordValues {
-		kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archivePath)
+		registrySettings, err := store.GetStore().GetRegistryDetailsForApp(a.ID)
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(500)
+			return
+		}
+
+		kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+			FromDir:          archivePath,
+			RegistrySettings: registrySettings,
+			AppSlug:          a.Slug,
+			Sequence:         latestSequence,
+			IsAirgap:         a.IsAirgap,
+			Namespace:        util.AppNamespace(),
+		})
 		if err != nil {
 			logger.Error(err)
 			w.WriteHeader(500)

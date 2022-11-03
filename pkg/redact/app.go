@@ -9,8 +9,7 @@ import (
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
-	"github.com/replicatedhq/kots/pkg/render/helper"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/util"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	corev1 "k8s.io/api/core/v1"
@@ -29,7 +28,7 @@ func GetAppRedactSpecURI(appSlug string) string {
 }
 
 // CreateRenderedAppRedactSpec creates a configmap that contains the redaction yaml spec included in the application release
-func CreateRenderedAppRedactSpec(app apptypes.AppType, sequence int64, kotsKinds *kotsutil.KotsKinds) error {
+func CreateRenderedAppRedactSpec(app apptypes.AppType, sequence int64, kotsKinds *kotsutiltypes.KotsKinds) error {
 	builtRedactor := kotsKinds.Redactor.DeepCopy()
 	if builtRedactor == nil {
 		builtRedactor = &troubleshootv1beta2.Redactor{
@@ -48,13 +47,7 @@ func CreateRenderedAppRedactSpec(app apptypes.AppType, sequence int64, kotsKinds
 	if err := s.Encode(builtRedactor, &b); err != nil {
 		return errors.Wrap(err, "failed to encode redactor")
 	}
-	templatedSpec := b.Bytes()
-
-	rs, err := helper.RenderAppFile(app, &sequence, templatedSpec, kotsKinds, util.PodNamespace)
-	if err != nil {
-		return errors.Wrap(err, "failed render redactor spec")
-	}
-	renderedSpec := string(rs)
+	renderedSpec := b.Bytes()
 
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
@@ -78,7 +71,7 @@ func CreateRenderedAppRedactSpec(app apptypes.AppType, sequence int64, kotsKinds
 				Labels:    kotsadmtypes.GetKotsadmLabels(),
 			},
 			Data: map[string]string{
-				redactSpecDataKey: renderedSpec,
+				redactSpecDataKey: string(renderedSpec),
 			},
 		}
 
@@ -93,7 +86,7 @@ func CreateRenderedAppRedactSpec(app apptypes.AppType, sequence int64, kotsKinds
 	if existingConfigMap.Data == nil {
 		existingConfigMap.Data = map[string]string{}
 	}
-	existingConfigMap.Data[redactSpecDataKey] = renderedSpec
+	existingConfigMap.Data[redactSpecDataKey] = string(renderedSpec)
 	existingConfigMap.ObjectMeta.Labels = kotsadmtypes.GetKotsadmLabels()
 
 	_, err = clientset.CoreV1().ConfigMaps(util.PodNamespace).Update(context.TODO(), existingConfigMap, metav1.UpdateOptions{})

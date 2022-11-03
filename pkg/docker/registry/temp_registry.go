@@ -17,8 +17,8 @@ import (
 	"github.com/phayes/freeport"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/docker/types"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/util"
 )
 
 //go:embed assets/temp-registry-config.yml
@@ -65,7 +65,7 @@ func (r *TempRegistry) Start(rootDir string) (finalError error) {
 	// - We can't directly run the official docker registry binary because it doesn't necessarily exist when pushing images from the host.
 	// - We need to be able to control stdout and stderr and stop the process later, but the registry go module doesn't give control over that.
 	// - The KOTS CLI binary exists inside the kotsadm pod and/or will be used to push images from the host.
-	cmd := exec.Command(kotsutil.GetKOTSBinPath(), "docker-registry", "serve", configFile.Name())
+	cmd := exec.Command(getKOTSBinPath(), "docker-registry", "serve", configFile.Name())
 	if err := cmd.Start(); err != nil {
 		return errors.Wrap(err, "failed to start")
 	}
@@ -78,6 +78,17 @@ func (r *TempRegistry) Start(rootDir string) (finalError error) {
 	}
 
 	return nil
+}
+
+// TODO NOW: find a better place for this?
+func getKOTSBinPath() string {
+	if util.PodNamespace != "" {
+		// we're inside the kotsadm pod, the kots binary exists at /kots
+		return "/kots"
+	} else {
+		// we're not inside the kotsadm pod, return the command used to run kots
+		return os.Args[0]
+	}
 }
 
 func (r *TempRegistry) Stop() {

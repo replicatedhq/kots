@@ -12,11 +12,11 @@ import (
 	kotsadmconfig "github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	identity "github.com/replicatedhq/kots/pkg/kotsadmidentity"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/online/types"
 	"github.com/replicatedhq/kots/pkg/preflight"
 	"github.com/replicatedhq/kots/pkg/pull"
-	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
@@ -36,7 +36,7 @@ type CreateOnlineAppOpts struct {
 	SkipCompatibilityCheck bool
 }
 
-func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, finalError error) {
+func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutiltypes.KotsKinds, finalError error) {
 	logger.Debug("creating app from online",
 		zap.String("upstreamURI", opts.UpstreamURI))
 
@@ -115,7 +115,7 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read config values from in cluster")
 	}
-	configFile := ""
+	configValuesFile := ""
 	if configValues != "" {
 		tmpFile, err := ioutil.TempFile("", "kots")
 		if err != nil {
@@ -126,10 +126,10 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 			return nil, errors.Wrap(err, "failed to write config values to temp file")
 		}
 
-		configFile = tmpFile.Name()
+		configValuesFile = tmpFile.Name()
 	}
 
-	identityConfigFile, err := identity.InitAppIdentityConfig(opts.PendingApp.Slug)
+	identityConfigFile, err := identity.InitAppIdentityConfigFile(opts.PendingApp.Slug)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to init identity config")
 	}
@@ -147,7 +147,7 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 		RootDir:                tmpRoot,
 		ExcludeAdminConsole:    true,
 		CreateAppDir:           false,
-		ConfigFile:             configFile,
+		ConfigValuesFile:       configValuesFile,
 		IdentityConfigFile:     identityConfigFile,
 		ReportWriter:           pipeWriter,
 		AppSlug:                opts.PendingApp.Slug,
@@ -172,7 +172,7 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 		return nil, errors.Wrap(err, "failed to set app is not airgap")
 	}
 
-	newSequence, err := store.GetStore().CreateAppVersion(opts.PendingApp.ID, nil, tmpRoot, "Online Install", opts.SkipPreflights, &version.DownstreamGitOps{}, render.Renderer{})
+	newSequence, err := store.GetStore().CreateAppVersion(opts.PendingApp.ID, nil, tmpRoot, "Online Install", opts.SkipPreflights, &version.DownstreamGitOps{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create new version")
 	}
@@ -180,6 +180,11 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 	app, err = store.GetStore().GetApp(opts.PendingApp.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get app %s", opts.PendingApp.ID)
+	}
+
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(opts.PendingApp.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get registry settings for app")
 	}
 
 	troubleshootOpts := supportbundletypes.TroubleshootOptions{
@@ -190,7 +195,14 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 		return nil, errors.Wrap(err, "failed to create rendered support bundle spec")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(tmpRoot)
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+		FromDir:          tmpRoot,
+		RegistrySettings: registrySettings,
+		AppSlug:          app.Slug,
+		Sequence:         newSequence,
+		IsAirgap:         app.IsAirgap,
+		Namespace:        appNamespace,
+	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load kotskinds from path")
 	}
@@ -206,10 +218,6 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 
 	if opts.IsAutomated && kotsKinds.IsConfigurable() {
 		// bypass the config screen if no configuration is required and it's an automated install
-		registrySettings, err := store.GetStore().GetRegistryDetailsForApp(opts.PendingApp.ID)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get registry settings for app")
-		}
 		needsConfig, err := kotsadmconfig.NeedsConfiguration(opts.PendingApp.Slug, newSequence, false, kotsKinds, registrySettings)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to check if app needs configuration")

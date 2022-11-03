@@ -10,6 +10,8 @@ import (
 	"github.com/replicatedhq/kots/pkg/api/version/types"
 	"github.com/replicatedhq/kots/pkg/gitops"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/operator"
 	"github.com/replicatedhq/kots/pkg/persistence"
@@ -29,7 +31,7 @@ import (
 type DownstreamGitOps struct {
 }
 
-func (d *DownstreamGitOps) CreateGitOpsDownstreamCommit(appID string, clusterID string, newSequence int, filesInDir string, downstreamName string) (string, error) {
+func (d *DownstreamGitOps) CreateGitOpsDownstreamCommit(appID string, clusterID string, newSequence int64, filesInDir string, downstreamName string) (string, error) {
 	downstreamGitOps, err := gitops.GetDownstreamGitOps(appID, clusterID)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get downstream gitops")
@@ -42,7 +44,25 @@ func (d *DownstreamGitOps) CreateGitOpsDownstreamCommit(appID string, clusterID 
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get app")
 	}
-	createdCommitURL, err := gitops.CreateGitOpsCommit(downstreamGitOps, a.Slug, a.Name, int(newSequence), filesInDir, downstreamName)
+
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(a.ID)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get app registry info")
+	}
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+		FromDir:          filesInDir,
+		RegistrySettings: registrySettings,
+		AppSlug:          a.Slug,
+		Sequence:         newSequence,
+		IsAirgap:         a.IsAirgap,
+		Namespace:        util.AppNamespace(),
+	})
+	if err != nil {
+		return "", errors.Wrap(err, "failed to load kotskinds")
+	}
+
+	createdCommitURL, err := gitops.CreateGitOpsCommit(downstreamGitOps, kotsKinds, a.Slug, a.Name, int(newSequence), filesInDir, downstreamName)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create gitops commit")
 	}

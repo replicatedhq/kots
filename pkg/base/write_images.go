@@ -8,7 +8,7 @@ import (
 	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/image"
 	imagetypes "github.com/replicatedhq/kots/pkg/image/types"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	kustomizeimage "sigs.k8s.io/kustomize/api/types"
 )
@@ -23,7 +23,7 @@ type RewriteImageOptions struct {
 	IsAirgap          bool
 	Log               *logger.CLILogger
 	ReportWriter      io.Writer
-	KotsKinds         *kotsutil.KotsKinds
+	KotsKinds         *kotsutiltypes.KotsKinds
 }
 
 type RewriteImagesResult struct {
@@ -37,7 +37,7 @@ func RewriteImages(options RewriteImageOptions) (*RewriteImagesResult, error) {
 	checkedImages := make(map[string]imagetypes.ImageInfo)
 
 	if options.KotsKinds != nil {
-		additionalImages = kotsutil.GetImagesFromKotsKinds(options.KotsKinds)
+		additionalImages = options.KotsKinds.GetImages()
 		checkedImages = makeImageInfoMap(options.KotsKinds.Installation.Spec.KnownImages)
 		if options.KotsKinds.KotsApplication.Spec.ProxyPublicImages {
 			allImagesPrivate = true

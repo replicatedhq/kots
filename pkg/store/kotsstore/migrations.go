@@ -7,8 +7,10 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/rqlite/gorqlite"
 )
 
@@ -85,18 +87,35 @@ func (s *KOTSStore) migrateKotsAppSpec() error {
 	for _, version := range versions {
 		logger.Info(fmt.Sprintf("Migrating kots_app_spec for app %s sequence %d", version.appID, version.sequence))
 		err := func() error {
+			a, err := s.GetApp(version.appID)
+			if err != nil {
+				return errors.Wrap(err, "failed to get app")
+			}
+
+			registrySettings, err := s.GetRegistryDetailsForApp(a.ID)
+			if err != nil {
+				return errors.Wrap(err, "failed to get registry settings")
+			}
+
 			archiveDir, err := ioutil.TempDir("", "kotsadm")
 			if err != nil {
 				return errors.Wrap(err, "failed to create temp dir")
 			}
 			defer os.RemoveAll(archiveDir)
 
-			err = s.GetAppVersionArchive(version.appID, version.sequence, archiveDir)
+			err = s.GetAppVersionArchive(a.ID, version.sequence, archiveDir)
 			if err != nil {
 				return errors.Wrap(err, "failed to get app version archive")
 			}
 
-			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+				FromDir:          archiveDir,
+				RegistrySettings: registrySettings,
+				AppSlug:          a.Slug,
+				Sequence:         version.sequence,
+				IsAirgap:         a.IsAirgap,
+				Namespace:        util.AppNamespace(),
+			})
 			if err != nil {
 				return errors.Wrap(err, "failed to load kots kinds from path")
 			}
@@ -109,7 +128,7 @@ func (s *KOTSStore) migrateKotsAppSpec() error {
 			query := `update app_version set kots_app_spec = ? where app_id = ? and sequence = ?`
 			wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
 				Query:     query,
-				Arguments: []interface{}{spec, version.appID, version.sequence},
+				Arguments: []interface{}{spec, a.ID, version.sequence},
 			})
 			if err != nil {
 				return fmt.Errorf("failed to set kots_app_spec: %v: %v", err, wr.Err)
@@ -157,6 +176,16 @@ func (s *KOTSStore) migrateKotsInstallationSpec() error {
 	for _, version := range versions {
 		logger.Info(fmt.Sprintf("Migrating kots_installation_spec for app %s sequence %d", version.appID, version.sequence))
 		err := func() error {
+			a, err := s.GetApp(version.appID)
+			if err != nil {
+				return errors.Wrap(err, "failed to get app")
+			}
+
+			registrySettings, err := s.GetRegistryDetailsForApp(a.ID)
+			if err != nil {
+				return errors.Wrap(err, "failed to get registry settings")
+			}
+
 			archiveDir, err := ioutil.TempDir("", "kotsadm")
 			if err != nil {
 				return errors.Wrap(err, "failed to create temp dir")
@@ -168,7 +197,14 @@ func (s *KOTSStore) migrateKotsInstallationSpec() error {
 				return errors.Wrap(err, "failed to get app version archive")
 			}
 
-			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+				FromDir:          archiveDir,
+				RegistrySettings: registrySettings,
+				AppSlug:          a.Slug,
+				Sequence:         version.sequence,
+				IsAirgap:         a.IsAirgap,
+				Namespace:        util.AppNamespace(),
+			})
 			if err != nil {
 				return errors.Wrap(err, "failed to load kots kinds from path")
 			}
@@ -227,8 +263,18 @@ func (s *KOTSStore) migrateSupportBundleSpec() error {
 	}
 
 	for _, version := range versions {
-		logger.Info(fmt.Sprintf("Migrating kots_installation_spec for app %s sequence %d", version.appID, version.sequence))
+		logger.Info(fmt.Sprintf("Migrating supportbundle_spec for app %s sequence %d", version.appID, version.sequence))
 		err := func() error {
+			a, err := s.GetApp(version.appID)
+			if err != nil {
+				return errors.Wrap(err, "failed to get app")
+			}
+
+			registrySettings, err := s.GetRegistryDetailsForApp(a.ID)
+			if err != nil {
+				return errors.Wrap(err, "failed to get registry settings")
+			}
+
 			archiveDir, err := ioutil.TempDir("", "kotsadm")
 			if err != nil {
 				return errors.Wrap(err, "failed to create temp dir")
@@ -240,7 +286,14 @@ func (s *KOTSStore) migrateSupportBundleSpec() error {
 				return errors.Wrap(err, "failed to get app version archive")
 			}
 
-			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+				FromDir:          archiveDir,
+				RegistrySettings: registrySettings,
+				AppSlug:          a.Slug,
+				Sequence:         version.sequence,
+				IsAirgap:         a.IsAirgap,
+				Namespace:        util.AppNamespace(),
+			})
 			if err != nil {
 				return errors.Wrap(err, "failed to load kots kinds from path")
 			}
@@ -301,6 +354,16 @@ func (s *KOTSStore) migratePreflightSpec() error {
 	for _, version := range versions {
 		logger.Info(fmt.Sprintf("Migrating preflight_spec for app %s sequence %d", version.appID, version.sequence))
 		err := func() error {
+			a, err := s.GetApp(version.appID)
+			if err != nil {
+				return errors.Wrap(err, "failed to get app")
+			}
+
+			registrySettings, err := s.GetRegistryDetailsForApp(a.ID)
+			if err != nil {
+				return errors.Wrap(err, "failed to get registry settings")
+			}
+
 			archiveDir, err := ioutil.TempDir("", "kotsadm")
 			if err != nil {
 				return errors.Wrap(err, "failed to create temp dir")
@@ -312,7 +375,14 @@ func (s *KOTSStore) migratePreflightSpec() error {
 				return errors.Wrap(err, "failed to get app version archive")
 			}
 
-			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+				FromDir:          archiveDir,
+				RegistrySettings: registrySettings,
+				AppSlug:          a.Slug,
+				Sequence:         version.sequence,
+				IsAirgap:         a.IsAirgap,
+				Namespace:        util.AppNamespace(),
+			})
 			if err != nil {
 				return errors.Wrap(err, "failed to load kots kinds from path")
 			}
@@ -373,6 +443,16 @@ func (s *KOTSStore) migrateAnalyzerSpec() error {
 	for _, version := range versions {
 		logger.Info(fmt.Sprintf("Migrating analyzer_spec for app %s sequence %d", version.appID, version.sequence))
 		err := func() error {
+			a, err := s.GetApp(version.appID)
+			if err != nil {
+				return errors.Wrap(err, "failed to get app")
+			}
+
+			registrySettings, err := s.GetRegistryDetailsForApp(a.ID)
+			if err != nil {
+				return errors.Wrap(err, "failed to get registry settings")
+			}
+
 			archiveDir, err := ioutil.TempDir("", "kotsadm")
 			if err != nil {
 				return errors.Wrap(err, "failed to create temp dir")
@@ -384,7 +464,14 @@ func (s *KOTSStore) migrateAnalyzerSpec() error {
 				return errors.Wrap(err, "failed to get app version archive")
 			}
 
-			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+				FromDir:          archiveDir,
+				RegistrySettings: registrySettings,
+				AppSlug:          a.Slug,
+				Sequence:         version.sequence,
+				IsAirgap:         a.IsAirgap,
+				Namespace:        util.AppNamespace(),
+			})
 			if err != nil {
 				return errors.Wrap(err, "failed to load kots kinds from path")
 			}
@@ -445,6 +532,16 @@ func (s *KOTSStore) migrateAppSpec() error {
 	for _, version := range versions {
 		logger.Info(fmt.Sprintf("Migrating app_spec for app %s sequence %d", version.appID, version.sequence))
 		err := func() error {
+			a, err := s.GetApp(version.appID)
+			if err != nil {
+				return errors.Wrap(err, "failed to get app")
+			}
+
+			registrySettings, err := s.GetRegistryDetailsForApp(a.ID)
+			if err != nil {
+				return errors.Wrap(err, "failed to get registry settings")
+			}
+
 			archiveDir, err := ioutil.TempDir("", "kotsadm")
 			if err != nil {
 				return errors.Wrap(err, "failed to create temp dir")
@@ -456,7 +553,14 @@ func (s *KOTSStore) migrateAppSpec() error {
 				return errors.Wrap(err, "failed to get app version archive")
 			}
 
-			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+			kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+				FromDir:          archiveDir,
+				RegistrySettings: registrySettings,
+				AppSlug:          a.Slug,
+				Sequence:         version.sequence,
+				IsAirgap:         a.IsAirgap,
+				Namespace:        util.AppNamespace(),
+			})
 			if err != nil {
 				return errors.Wrap(err, "failed to load kots kinds from path")
 			}

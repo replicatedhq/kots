@@ -7,7 +7,7 @@ import (
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	"github.com/replicatedhq/kots/pkg/cursor"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/store/types"
 	"github.com/stretchr/testify/assert"
 )
@@ -313,7 +313,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					},
 					{
 						Sequence: 2,
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -889,7 +889,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						Sequence:     1,
 						ChannelID:    "channel-id-1",
 						UpdateCursor: "1",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -907,7 +907,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					Sequence:     1,
 					ChannelID:    "channel-id-1",
 					UpdateCursor: "1",
-					KOTSKinds: &kotsutil.KotsKinds{
+					KOTSKinds: &kotsutiltypes.KotsKinds{
 						KotsApplication: kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -932,7 +932,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						Sequence:     1,
 						ChannelID:    "channel-id-1",
 						UpdateCursor: "2",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -950,7 +950,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					Sequence:     1,
 					ChannelID:    "channel-id-1",
 					UpdateCursor: "2",
-					KOTSKinds: &kotsutil.KotsKinds{
+					KOTSKinds: &kotsutiltypes.KotsKinds{
 						KotsApplication: kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -1007,7 +1007,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						ChannelID:    "channel-id-2",
 						IsRequired:   true,
 						UpdateCursor: "2",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -1026,7 +1026,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					ChannelID:    "channel-id-2",
 					IsRequired:   true,
 					UpdateCursor: "2",
-					KOTSKinds: &kotsutil.KotsKinds{
+					KOTSKinds: &kotsutiltypes.KotsKinds{
 						KotsApplication: kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -1051,7 +1051,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						Sequence:     3,
 						ChannelID:    "channel-id-1",
 						UpdateCursor: "2",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -1101,7 +1101,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						Sequence:     3,
 						ChannelID:    "channel-id-2",
 						UpdateCursor: "1",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -1132,7 +1132,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					Sequence:     3,
 					ChannelID:    "channel-id-2",
 					UpdateCursor: "1",
-					KOTSKinds: &kotsutil.KotsKinds{
+					KOTSKinds: &kotsutiltypes.KotsKinds{
 						KotsApplication: kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -1158,7 +1158,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						Sequence:     3,
 						ChannelID:    "channel-id-2",
 						UpdateCursor: "1",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -1189,7 +1189,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					Sequence:     3,
 					ChannelID:    "channel-id-2",
 					UpdateCursor: "1",
-					KOTSKinds: &kotsutil.KotsKinds{
+					KOTSKinds: &kotsutiltypes.KotsKinds{
 						KotsApplication: kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -1215,7 +1215,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
 						UpdateCursor: "2",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -1234,7 +1234,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					ChannelID:    "channel-id-1",
 					IsRequired:   true,
 					UpdateCursor: "2",
-					KOTSKinds: &kotsutil.KotsKinds{
+					KOTSKinds: &kotsutiltypes.KotsKinds{
 						KotsApplication: kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -1259,7 +1259,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						Sequence:     3,
 						ChannelID:    "channel-id-1",
 						UpdateCursor: "2",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -1308,7 +1308,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						Sequence:     3,
 						ChannelID:    "channel-id-1",
 						UpdateCursor: "2",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -1356,7 +1356,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						Sequence:     3,
 						ChannelID:    "channel-id-1",
 						UpdateCursor: "4",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -1387,7 +1387,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					Sequence:     3,
 					ChannelID:    "channel-id-1",
 					UpdateCursor: "4",
-					KOTSKinds: &kotsutil.KotsKinds{
+					KOTSKinds: &kotsutiltypes.KotsKinds{
 						KotsApplication: kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -1413,7 +1413,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
 						UpdateCursor: "4",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -1426,7 +1426,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
 						UpdateCursor: "4",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -1439,7 +1439,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						ChannelID:    "channel-id-1",
 						IsRequired:   true,
 						UpdateCursor: "4",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -1458,7 +1458,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					ChannelID:    "channel-id-1",
 					IsRequired:   true,
 					UpdateCursor: "4",
-					KOTSKinds: &kotsutil.KotsKinds{
+					KOTSKinds: &kotsutiltypes.KotsKinds{
 						KotsApplication: kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -1477,7 +1477,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 				ChannelID:    "channel-id-1",
 				UpdateCursor: "4",
 				VersionLabel: "4.0",
-				KOTSKinds: &kotsutil.KotsKinds{
+				KOTSKinds: &kotsutiltypes.KotsKinds{
 					KotsApplication: kotsv1beta1.Application{
 						Spec: kotsv1beta1.ApplicationSpec{
 							AllowRollback: true,
@@ -1492,7 +1492,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						ChannelID:    "channel-id-1",
 						UpdateCursor: "4",
 						VersionLabel: "4.0",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -1526,7 +1526,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						ChannelID:    "channel-id-1",
 						UpdateCursor: "4",
 						VersionLabel: "4.0",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -1540,7 +1540,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					ChannelID:    "channel-id-1",
 					UpdateCursor: "4",
 					VersionLabel: "4.0",
-					KOTSKinds: &kotsutil.KotsKinds{
+					KOTSKinds: &kotsutiltypes.KotsKinds{
 						KotsApplication: kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -1567,7 +1567,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						ChannelID:    "channel-id-1",
 						UpdateCursor: "5",
 						VersionLabel: "5.0",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -1608,7 +1608,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					ChannelID:    "channel-id-1",
 					UpdateCursor: "5",
 					VersionLabel: "5.0",
-					KOTSKinds: &kotsutil.KotsKinds{
+					KOTSKinds: &kotsutiltypes.KotsKinds{
 						KotsApplication: kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -1627,7 +1627,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 				ChannelID:    "channel-id-1",
 				UpdateCursor: "4",
 				VersionLabel: "4.0",
-				KOTSKinds: &kotsutil.KotsKinds{
+				KOTSKinds: &kotsutiltypes.KotsKinds{
 					KotsApplication: kotsv1beta1.Application{
 						Spec: kotsv1beta1.ApplicationSpec{
 							AllowRollback: true,
@@ -1642,7 +1642,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						ChannelID:    "channel-id-1",
 						UpdateCursor: "4",
 						VersionLabel: "4.0",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -1676,7 +1676,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						ChannelID:    "channel-id-1",
 						UpdateCursor: "4",
 						VersionLabel: "4.0",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -1690,7 +1690,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					ChannelID:    "channel-id-1",
 					UpdateCursor: "4",
 					VersionLabel: "4.0",
-					KOTSKinds: &kotsutil.KotsKinds{
+					KOTSKinds: &kotsutiltypes.KotsKinds{
 						KotsApplication: kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -1717,7 +1717,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						ChannelID:    "channel-id-1",
 						UpdateCursor: "5",
 						VersionLabel: "5.0",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -1758,7 +1758,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					ChannelID:    "channel-id-1",
 					UpdateCursor: "5",
 					VersionLabel: "5.0",
-					KOTSKinds: &kotsutil.KotsKinds{
+					KOTSKinds: &kotsutiltypes.KotsKinds{
 						KotsApplication: kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -1785,7 +1785,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						ChannelID:    "channel-id-1",
 						UpdateCursor: "5",
 						VersionLabel: "5.0",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -1826,7 +1826,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					ChannelID:    "channel-id-1",
 					UpdateCursor: "5",
 					VersionLabel: "5.0",
-					KOTSKinds: &kotsutil.KotsKinds{
+					KOTSKinds: &kotsutiltypes.KotsKinds{
 						KotsApplication: kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -1853,7 +1853,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						ChannelID:    "channel-id-1",
 						UpdateCursor: "6",
 						VersionLabel: "6.0",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -1900,7 +1900,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					ChannelID:    "channel-id-1",
 					UpdateCursor: "6",
 					VersionLabel: "6.0",
-					KOTSKinds: &kotsutil.KotsKinds{
+					KOTSKinds: &kotsutiltypes.KotsKinds{
 						KotsApplication: kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -1927,7 +1927,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						ChannelID:    "channel-id-1",
 						UpdateCursor: "6",
 						VersionLabel: "4.0",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -1975,7 +1975,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					ChannelID:    "channel-id-1",
 					UpdateCursor: "6",
 					VersionLabel: "4.0",
-					KOTSKinds: &kotsutil.KotsKinds{
+					KOTSKinds: &kotsutiltypes.KotsKinds{
 						KotsApplication: kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -2615,7 +2615,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						ChannelID:    "channel-id-1",
 						UpdateCursor: "1",
 						VersionLabel: "2.0",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -2635,7 +2635,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					ChannelID:    "channel-id-1",
 					UpdateCursor: "1",
 					VersionLabel: "2.0",
-					KOTSKinds: &kotsutil.KotsKinds{
+					KOTSKinds: &kotsutiltypes.KotsKinds{
 						KotsApplication: kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -2663,7 +2663,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						ChannelID:    "channel-id-1",
 						UpdateCursor: "2",
 						VersionLabel: "2.0",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -2683,7 +2683,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					ChannelID:    "channel-id-1",
 					UpdateCursor: "2",
 					VersionLabel: "2.0",
-					KOTSKinds: &kotsutil.KotsKinds{
+					KOTSKinds: &kotsutiltypes.KotsKinds{
 						KotsApplication: kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -2748,7 +2748,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						IsRequired:   true,
 						UpdateCursor: "2",
 						VersionLabel: "2.0",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -2769,7 +2769,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					IsRequired:   true,
 					UpdateCursor: "2",
 					VersionLabel: "2.0",
-					KOTSKinds: &kotsutil.KotsKinds{
+					KOTSKinds: &kotsutiltypes.KotsKinds{
 						KotsApplication: kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -2797,7 +2797,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						ChannelID:    "channel-id-1",
 						UpdateCursor: "2",
 						VersionLabel: "4.0",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -2854,7 +2854,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						ChannelID:    "channel-id-2",
 						UpdateCursor: "1",
 						VersionLabel: "4.0",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -2889,7 +2889,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					ChannelID:    "channel-id-2",
 					UpdateCursor: "1",
 					VersionLabel: "4.0",
-					KOTSKinds: &kotsutil.KotsKinds{
+					KOTSKinds: &kotsutiltypes.KotsKinds{
 						KotsApplication: kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -2918,7 +2918,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						ChannelID:    "channel-id-2",
 						UpdateCursor: "1",
 						VersionLabel: "4.0",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -2953,7 +2953,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					ChannelID:    "channel-id-2",
 					UpdateCursor: "1",
 					VersionLabel: "4.0",
-					KOTSKinds: &kotsutil.KotsKinds{
+					KOTSKinds: &kotsutiltypes.KotsKinds{
 						KotsApplication: kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -2982,7 +2982,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						IsRequired:   true,
 						UpdateCursor: "2",
 						VersionLabel: "2.0",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -3003,7 +3003,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					IsRequired:   true,
 					UpdateCursor: "2",
 					VersionLabel: "2.0",
-					KOTSKinds: &kotsutil.KotsKinds{
+					KOTSKinds: &kotsutiltypes.KotsKinds{
 						KotsApplication: kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -3031,7 +3031,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						ChannelID:    "channel-id-1",
 						UpdateCursor: "2",
 						VersionLabel: "4.0",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -3087,7 +3087,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						ChannelID:    "channel-id-1",
 						UpdateCursor: "2",
 						VersionLabel: "4.0",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -3142,7 +3142,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						ChannelID:    "channel-id-1",
 						UpdateCursor: "4",
 						VersionLabel: "4.0",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -3177,7 +3177,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					ChannelID:    "channel-id-1",
 					UpdateCursor: "4",
 					VersionLabel: "4.0",
-					KOTSKinds: &kotsutil.KotsKinds{
+					KOTSKinds: &kotsutiltypes.KotsKinds{
 						KotsApplication: kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -3206,7 +3206,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						IsRequired:   true,
 						UpdateCursor: "4",
 						VersionLabel: "4.0",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -3220,7 +3220,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						IsRequired:   true,
 						UpdateCursor: "4",
 						VersionLabel: "4.0",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -3234,7 +3234,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						IsRequired:   true,
 						UpdateCursor: "4",
 						VersionLabel: "4.0",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -3255,7 +3255,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					IsRequired:   true,
 					UpdateCursor: "4",
 					VersionLabel: "4.0",
-					KOTSKinds: &kotsutil.KotsKinds{
+					KOTSKinds: &kotsutiltypes.KotsKinds{
 						KotsApplication: kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -3283,7 +3283,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						ChannelID:    "channel-id-1",
 						UpdateCursor: "4",
 						VersionLabel: "4.0",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -3317,7 +3317,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					ChannelID:    "channel-id-1",
 					UpdateCursor: "4",
 					VersionLabel: "4.0",
-					KOTSKinds: &kotsutil.KotsKinds{
+					KOTSKinds: &kotsutiltypes.KotsKinds{
 						KotsApplication: kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -3345,7 +3345,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						ChannelID:    "channel-id-1",
 						UpdateCursor: "5",
 						VersionLabel: "5.0",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -3386,7 +3386,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					ChannelID:    "channel-id-1",
 					UpdateCursor: "5",
 					VersionLabel: "5.0",
-					KOTSKinds: &kotsutil.KotsKinds{
+					KOTSKinds: &kotsutiltypes.KotsKinds{
 						KotsApplication: kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -3414,7 +3414,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						ChannelID:    "channel-id-1",
 						UpdateCursor: "5",
 						VersionLabel: "5.0",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -3455,7 +3455,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					ChannelID:    "channel-id-1",
 					UpdateCursor: "5",
 					VersionLabel: "5.0",
-					KOTSKinds: &kotsutil.KotsKinds{
+					KOTSKinds: &kotsutiltypes.KotsKinds{
 						KotsApplication: kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -3483,7 +3483,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						ChannelID:    "channel-id-1",
 						UpdateCursor: "6",
 						VersionLabel: "6.0",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -3530,7 +3530,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					ChannelID:    "channel-id-1",
 					UpdateCursor: "6",
 					VersionLabel: "6.0",
-					KOTSKinds: &kotsutil.KotsKinds{
+					KOTSKinds: &kotsutiltypes.KotsKinds{
 						KotsApplication: kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,
@@ -3558,7 +3558,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 						ChannelID:    "channel-id-1",
 						UpdateCursor: "6",
 						VersionLabel: "4.0",
-						KOTSKinds: &kotsutil.KotsKinds{
+						KOTSKinds: &kotsutiltypes.KotsKinds{
 							KotsApplication: kotsv1beta1.Application{
 								Spec: kotsv1beta1.ApplicationSpec{
 									AllowRollback: true,
@@ -3606,7 +3606,7 @@ func Test_isAppVersionDeployable(t *testing.T) {
 					ChannelID:    "channel-id-1",
 					UpdateCursor: "6",
 					VersionLabel: "4.0",
-					KOTSKinds: &kotsutil.KotsKinds{
+					KOTSKinds: &kotsutiltypes.KotsKinds{
 						KotsApplication: kotsv1beta1.Application{
 							Spec: kotsv1beta1.ApplicationSpec{
 								AllowRollback: true,

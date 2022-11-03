@@ -22,9 +22,11 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
+	kotsregistrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
@@ -46,7 +48,7 @@ type PullOptions struct {
 	InstallationFile        string
 	AirgapRoot              string
 	AirgapBundle            string
-	ConfigFile              string
+	ConfigValuesFile        string
 	IdentityConfigFile      string
 	UpdateCursor            string
 	ExcludeKotsKinds        bool
@@ -176,21 +178,21 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		fetchOptions.License.Spec.Endpoint = pullOptions.LicenseEndpointOverride
 	}
 
-	encryptConfig := false
-	if pullOptions.ConfigFile != "" {
-		config, err := ParseConfigValuesFromFile(pullOptions.ConfigFile)
+	encryptConfigValues := false
+	if pullOptions.ConfigValuesFile != "" {
+		config, err := kotsutil.LoadConfigValuesFromPath(pullOptions.ConfigValuesFile)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to parse config values from file")
 		}
 		fetchOptions.ConfigValues = config
-		encryptConfig = true
+		encryptConfigValues = true
 	} else {
 		fetchOptions.ConfigValues = localConfigValues
 	}
 
 	var identityConfig *kotsv1beta1.IdentityConfig
 	if pullOptions.IdentityConfigFile != "" {
-		identityConfig, err = ParseIdentityConfigFromFile(pullOptions.IdentityConfigFile)
+		identityConfig, err = kotsutil.LoadIdentityConfigFromPath(pullOptions.IdentityConfigFile)
 		if err != nil {
 			return "", errors.Wrap(err, "failed to parse identity config from file")
 		}
@@ -200,9 +202,9 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	fetchOptions.IdentityConfig = identityConfig
 
 	if pullOptions.InstallationFile != "" {
-		i, err := parseInstallationFromFile(pullOptions.InstallationFile)
+		i, err := kotsutil.LoadInstallationFromPath(pullOptions.InstallationFile)
 		if err != nil {
-			return "", errors.Wrap(err, "failed to parse installation from file")
+			return "", errors.Wrap(err, "failed to parse installation from path")
 		}
 		installation = i
 	} else {
@@ -261,6 +263,30 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		fetchOptions.LocalPath = airgapAppFiles
 	}
 
+	// since the same root directory gets updated and rendered when fetching the upstream,
+	// previous helm charts need to be detected before fetching the upstream.
+	var prevHelmCharts []*kotsv1beta1.HelmChart
+	if !pullOptions.SkipHelmChartCheck {
+		prevKotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+			FromDir: pullOptions.RootDir,
+			RegistrySettings: kotsregistrytypes.RegistrySettings{
+				Hostname:   pullOptions.RewriteImageOptions.Host,
+				Namespace:  pullOptions.RewriteImageOptions.Namespace,
+				Username:   pullOptions.RewriteImageOptions.Username,
+				Password:   pullOptions.RewriteImageOptions.Password,
+				IsReadOnly: pullOptions.RewriteImageOptions.IsReadOnly,
+			},
+			AppSlug:   pullOptions.AppSlug,
+			Sequence:  pullOptions.AppSequence, // TODO NOW: get base sequence?
+			IsAirgap:  pullOptions.AirgapRoot != "",
+			Namespace: pullOptions.Namespace,
+		})
+		if err != nil {
+			return "", errors.Wrap(err, "failed to load previous kotskinds")
+		}
+		prevHelmCharts = prevKotsKinds.HelmCharts
+	}
+
 	log.ActionWithSpinner("Pulling upstream")
 	io.WriteString(pullOptions.ReportWriter, "Pulling upstream\n")
 	u, err := upstream.FetchUpstream(upstreamURI, &fetchOptions)
@@ -282,7 +308,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		CreateAppDir:        pullOptions.CreateAppDir,
 		IncludeAdminConsole: includeAdminConsole,
 		SharedPassword:      pullOptions.SharedPassword,
-		EncryptConfig:       encryptConfig,
+		EncryptConfig:       encryptConfigValues,
 		HTTPProxyEnvValue:   pullOptions.HTTPProxyEnvValue,
 		HTTPSProxyEnvValue:  pullOptions.HTTPSProxyEnvValue,
 		NoProxyEnvValue:     pullOptions.NoProxyEnvValue,
@@ -295,22 +321,26 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 	log.FinishSpinner()
 
-	renderDir := pullOptions.RootDir
-	if pullOptions.CreateAppDir {
-		renderDir = filepath.Join(pullOptions.RootDir, u.Name)
-	}
-
-	newHelmCharts, err := kotsutil.LoadHelmChartsFromPath(renderDir)
+	upstreamDir := u.GetUpstreamDir(writeUpstreamOptions)
+	newKotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+		FromDir: upstreamDir,
+		RegistrySettings: kotsregistrytypes.RegistrySettings{
+			Hostname:   pullOptions.RewriteImageOptions.Host,
+			Namespace:  pullOptions.RewriteImageOptions.Namespace,
+			Username:   pullOptions.RewriteImageOptions.Username,
+			Password:   pullOptions.RewriteImageOptions.Password,
+			IsReadOnly: pullOptions.RewriteImageOptions.IsReadOnly,
+		},
+		AppSlug:   pullOptions.AppSlug,
+		Sequence:  pullOptions.AppSequence,
+		IsAirgap:  pullOptions.AirgapRoot != "",
+		Namespace: pullOptions.Namespace,
+	})
 	if err != nil {
-		return "", errors.Wrap(err, "failed to load new helm charts")
+		return "", errors.Wrap(err, "failed to load new kotskinds")
 	}
 
 	if !pullOptions.SkipHelmChartCheck {
-		prevHelmCharts, err := kotsutil.LoadHelmChartsFromPath(pullOptions.RootDir)
-		if err != nil {
-			return "", errors.Wrap(err, "failed to load previous helm charts")
-		}
-
 		for _, prevChart := range prevHelmCharts {
 			if !prevChart.Spec.Exclude.IsEmpty() {
 				isExcluded, err := prevChart.Spec.Exclude.Boolean()
@@ -318,8 +348,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 					continue // this chart was excluded, so any changes to UseHelmInstall are irrelevant
 				}
 			}
-
-			for _, newChart := range newHelmCharts {
+			for _, newChart := range newKotsKinds.HelmCharts {
 				if prevChart.Spec.Chart.Name != newChart.Spec.Chart.Name {
 					continue
 				}
@@ -340,6 +369,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		LocalRegistryUsername:   pullOptions.RewriteImageOptions.Username,
 		LocalRegistryPassword:   pullOptions.RewriteImageOptions.Password,
 		LocalRegistryIsReadOnly: pullOptions.RewriteImageOptions.IsReadOnly,
+		KotsKinds:               newKotsKinds,
 		ExcludeKotsKinds:        pullOptions.ExcludeKotsKinds,
 		Log:                     log,
 		AppSlug:                 pullOptions.AppSlug,
@@ -373,10 +403,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 			files = append(files, file)
 		}
 
-		newKotsKinds, err := kotsutil.LoadKotsKindsFromPath(u.GetUpstreamDir(writeUpstreamOptions))
-		if err != nil {
-			return "", errors.Wrap(err, "failed to load kotskinds")
-		}
 		newKotsKinds.Installation.Spec.YAMLErrors = files
 
 		err = upstream.SaveInstallation(&newKotsKinds.Installation, u.GetUpstreamDir(writeUpstreamOptions))
@@ -426,12 +452,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		return "", errors.Wrap(err, "failed to create new config context template builder")
 	}
 
-	newKotsKinds, err := kotsutil.LoadKotsKindsFromPath(u.GetUpstreamDir(writeUpstreamOptions))
-	if err != nil {
-		log.FinishSpinnerWithError()
-		return "", errors.Wrap(err, "failed to load kotskinds")
-	}
-
 	err = crypto.InitFromString(newKotsKinds.Installation.Spec.EncryptionKey)
 	if err != nil {
 		log.FinishSpinnerWithError()
@@ -446,7 +466,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		HTTPProxyEnvValue:  pullOptions.HTTPProxyEnvValue,
 		HTTPSProxyEnvValue: pullOptions.HTTPSProxyEnvValue,
 		NoProxyEnvValue:    pullOptions.NoProxyEnvValue,
-		NewHelmCharts:      newHelmCharts,
+		NewHelmCharts:      newKotsKinds.HelmCharts,
 	}
 	pushImages := pullOptions.RewriteImageOptions.Host != ""
 
@@ -455,7 +475,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	// when using Helm Install, each chart gets it's own kustomization and pullsecret yaml and MUST be skipped when processing higher level directories!
 	// for writing Common Midstream, every chart and subchart is in this map as Helm Midstreams will be processed later in the code
 	commonWriteMidstreamOptions.UseHelmInstall = map[string]bool{}
-	for _, v := range newHelmCharts {
+	for _, v := range newKotsKinds.HelmCharts {
 		chartBaseName := v.GetDirName()
 		commonWriteMidstreamOptions.UseHelmInstall[chartBaseName] = v.Spec.UseHelmInstall
 		if v.Spec.UseHelmInstall {
@@ -474,7 +494,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	writeMidstreamOptions.MidstreamDir = filepath.Join(commonBase.GetOverlaysDir(writeBaseOptions), "midstream")
 	writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), commonBase.Path)
 
-	m, err := writeMidstream(writeMidstreamOptions, pullOptions, u, commonBase, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), pushImages, log)
+	m, err := writeMidstream(writeMidstreamOptions, pullOptions, u, commonBase, upstreamDir, newKotsKinds, fetchOptions.License, identityConfig, pushImages, log)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return "", errors.Wrap(err, "failed to write common midstream")
@@ -498,7 +518,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		pullOptionsCopy := pullOptions
 		pullOptionsCopy.Namespace = helmBaseCopy.Namespace
 
-		helmMidstream, err := writeMidstream(writeMidstreamOptions, pullOptionsCopy, u, helmBaseCopy, fetchOptions.License, identityConfig, u.GetUpstreamDir(writeUpstreamOptions), pushImages, log)
+		helmMidstream, err := writeMidstream(writeMidstreamOptions, pullOptionsCopy, u, helmBaseCopy, upstreamDir, newKotsKinds, fetchOptions.License, identityConfig, pushImages, log)
 		if err != nil {
 			log.FinishSpinnerWithError()
 			return "", errors.Wrapf(err, "failed to write helm midstream %s", helmBase.Path)
@@ -531,7 +551,7 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	return filepath.Join(pullOptions.RootDir, u.Name), nil
 }
 
-func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOptions, u *upstreamtypes.Upstream, b *base.Base, license *kotsv1beta1.License, identityConfig *kotsv1beta1.IdentityConfig, upstreamDir string, pushImages bool, log *logger.CLILogger) (*midstream.Midstream, error) {
+func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOptions, u *upstreamtypes.Upstream, b *base.Base, upstreamDir string, newKotsKinds *kotsutiltypes.KotsKinds, license *kotsv1beta1.License, identityConfig *kotsv1beta1.IdentityConfig, pushImages bool, log *logger.CLILogger) (*midstream.Midstream, error) {
 	var images []kustomizetypes.Image
 	var objects []k8sdoc.K8sDoc
 	var pullSecretRegistries []string
@@ -541,16 +561,6 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOp
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get k8s clientset")
-	}
-
-	newKotsKinds, err := kotsutil.LoadKotsKindsFromPath(upstreamDir)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to load kotskinds from new upstream")
-	}
-
-	identitySpec, err := upstream.LoadIdentity(upstreamDir)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to load identity")
 	}
 
 	// do not fail on being unable to get dockerhub credentials, since they're just used to increase the rate limit
@@ -641,7 +651,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOp
 		return nil, errors.Wrap(err, "failed to save installation")
 	}
 
-	m, err := midstream.CreateMidstream(b, images, objects, &pullSecrets, identitySpec, identityConfig)
+	m, err := midstream.CreateMidstream(b, images, objects, &pullSecrets, newKotsKinds.Identity, identityConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create midstream")
 	}
@@ -654,7 +664,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOp
 }
 
 // rewriteBaseImages Will rewrite images found in base and copy them (if necessary) to the configured registry.
-func rewriteBaseImages(pullOptions PullOptions, baseDir string, kotsKinds *kotsutil.KotsKinds, license *kotsv1beta1.License, dockerHubRegistryCreds registry.Credentials, log *logger.CLILogger) (*base.RewriteImagesResult, error) {
+func rewriteBaseImages(pullOptions PullOptions, baseDir string, kotsKinds *kotsutiltypes.KotsKinds, license *kotsv1beta1.License, dockerHubRegistryCreds registry.Credentials, log *logger.CLILogger) (*base.RewriteImagesResult, error) {
 	replicatedRegistryInfo := registry.ProxyEndpointFromLicense(license)
 
 	rewriteImageOptions := base.RewriteImageOptions{
@@ -743,7 +753,7 @@ func processAirgapImages(pullOptions PullOptions, pushImages bool, license *kots
 }
 
 // findPrivateImages Finds and rewrites private images to be proxied through proxy.replicated.com
-func findPrivateImages(writeMidstreamOptions midstream.WriteOptions, b *base.Base, kotsKinds *kotsutil.KotsKinds, license *kotsv1beta1.License, dockerHubRegistryCreds registry.Credentials) (*base.FindPrivateImagesResult, error) {
+func findPrivateImages(writeMidstreamOptions midstream.WriteOptions, b *base.Base, kotsKinds *kotsutiltypes.KotsKinds, license *kotsv1beta1.License, dockerHubRegistryCreds registry.Credentials) (*base.FindPrivateImagesResult, error) {
 	replicatedRegistryInfo := registry.ProxyEndpointFromLicense(license)
 	allPrivate := kotsKinds.KotsApplication.Spec.ProxyPublicImages
 
@@ -762,7 +772,7 @@ func findPrivateImages(writeMidstreamOptions midstream.WriteOptions, b *base.Bas
 		AllImagesPrivate: allPrivate,
 		HelmChartPath:    b.Path,
 		UseHelmInstall:   writeMidstreamOptions.UseHelmInstall,
-		KotsKindsImages:  kotsutil.GetImagesFromKotsKinds(kotsKinds),
+		KotsKindsImages:  kotsKinds.GetImages(),
 	}
 	findResult, err := base.FindPrivateImages(findPrivateImagesOptions)
 	if err != nil {
@@ -866,76 +876,7 @@ func writeDownstreams(options PullOptions, overlaysDir string, m *midstream.Mids
 	return nil
 }
 
-func writeCombinedDownstreamBase(downstreamName string, bases []string, renderDir string) error {
-	if _, err := os.Stat(renderDir); os.IsNotExist(err) {
-		if err := os.MkdirAll(renderDir, 0744); err != nil {
-			return errors.Wrap(err, "failed to mkdir")
-		}
-	}
-
-	kustomization := kustomizetypes.Kustomization{
-		TypeMeta: kustomizetypes.TypeMeta{
-			APIVersion: "kustomize.config.k8s.io/v1beta1",
-			Kind:       "Kustomization",
-		},
-		Bases: bases,
-	}
-	if err := k8sutil.WriteKustomizationToFile(kustomization, filepath.Join(renderDir, "kustomization.yaml")); err != nil {
-		return errors.Wrap(err, "failed to write kustomization to file")
-	}
-
-	return nil
-}
-
-func ParseConfigValuesFromFile(filename string) (*kotsv1beta1.ConfigValues, error) {
-	contents, err := ioutil.ReadFile(filename)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil
-		}
-		return nil, errors.Wrap(err, "failed to read config values file")
-	}
-
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	decoded, gvk, err := decode(contents, nil, nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to decode config values file")
-	}
-
-	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "ConfigValues" {
-		return nil, errors.New("not config values")
-	}
-
-	config := decoded.(*kotsv1beta1.ConfigValues)
-
-	return config, nil
-}
-
-func ParseIdentityConfigFromFile(filename string) (*kotsv1beta1.IdentityConfig, error) {
-	contents, err := ioutil.ReadFile(filename)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil
-		}
-		return nil, errors.Wrap(err, "failed to read identity config file")
-	}
-
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	decoded, gvk, err := decode(contents, nil, nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to decode identity config file")
-	}
-
-	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "IdentityConfig" {
-		return nil, errors.New("not identity config")
-	}
-
-	identityConfig := decoded.(*kotsv1beta1.IdentityConfig)
-
-	return identityConfig, nil
-}
-
-func GetAppMetadataFromAirgap(airgapArchive string) (*replicatedapp.ApplicationMetadata, error) {
+func GetAppMetadataFromAirgap(airgapArchive string, appSlug string, sequence int64, namespace string, registrySettings kotsregistrytypes.RegistrySettings) (*replicatedapp.ApplicationMetadata, error) {
 	appArchive, err := archives.GetFileFromAirgap("app.tar.gz", airgapArchive)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to extract app archive")
@@ -952,7 +893,14 @@ func GetAppMetadataFromAirgap(airgapArchive string) (*replicatedapp.ApplicationM
 		return nil, errors.Wrap(err, "failed to extract app archive")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(tempDir)
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+		FromDir:          tempDir,
+		RegistrySettings: registrySettings,
+		AppSlug:          appSlug,
+		Sequence:         sequence,
+		IsAirgap:         true,
+		Namespace:        namespace,
+	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read kots kinds")
 	}
@@ -964,6 +912,7 @@ func GetAppMetadataFromAirgap(airgapArchive string) (*replicatedapp.ApplicationM
 		return nil, errors.Wrap(err, "failed to encode metadata")
 	}
 
+	// TODO NOW: fix this
 	branding, err := kotsutil.LoadBrandingArchiveFromPath(tempDir)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load branding archive")
@@ -973,30 +922,6 @@ func GetAppMetadataFromAirgap(airgapArchive string) (*replicatedapp.ApplicationM
 		Manifest: b.Bytes(),
 		Branding: branding.Bytes(),
 	}, nil
-}
-
-func parseInstallationFromFile(filename string) (*kotsv1beta1.Installation, error) {
-	contents, err := ioutil.ReadFile(filename)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil
-		}
-		return nil, errors.Wrap(err, "failed to read installation file")
-	}
-
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	decoded, gvk, err := decode(contents, nil, nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to decode installation file")
-	}
-
-	if gvk.Group != "kots.io" || gvk.Version != "v1beta1" || gvk.Kind != "Installation" {
-		return nil, errors.New("not installation file")
-	}
-
-	installation := decoded.(*kotsv1beta1.Installation)
-
-	return installation, nil
 }
 
 func publicKeysMatch(log *logger.CLILogger, license *kotsv1beta1.License, airgap *kotsv1beta1.Airgap) error {

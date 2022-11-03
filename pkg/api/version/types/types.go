@@ -5,19 +5,19 @@ import (
 
 	"github.com/blang/semver"
 	"github.com/replicatedhq/kots/pkg/cursor"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 )
 
 type AppVersion struct {
-	KOTSKinds    *kotsutil.KotsKinds `json:"kotsKinds"`
-	AppID        string              `json:"appId"`
-	Sequence     int64               `json:"sequence"`
-	UpdateCursor string              `json:"updateCursor"`
-	ChannelID    string              `json:"channelId"`
-	VersionLabel string              `json:"versionLabel"`
-	Status       string              `json:"status"`
-	CreatedOn    time.Time           `json:"createdOn"`
-	DeployedAt   *time.Time          `json:"deployedAt"`
+	KOTSKinds    *kotsutiltypes.KotsKinds `json:"kotsKinds"`
+	AppID        string                   `json:"appId"`
+	Sequence     int64                    `json:"sequence"`
+	UpdateCursor string                   `json:"updateCursor"`
+	ChannelID    string                   `json:"channelId"`
+	VersionLabel string                   `json:"versionLabel"`
+	Status       string                   `json:"status"`
+	CreatedOn    time.Time                `json:"createdOn"`
+	DeployedAt   *time.Time               `json:"deployedAt"`
 
 	Semver *semver.Version `json:"-"`
 	Cursor *cursor.Cursor  `json:"-"`

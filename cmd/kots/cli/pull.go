@@ -61,7 +61,7 @@ func PullCmd() *cobra.Command {
 				Downstreams:         v.GetStringSlice("downstream"),
 				LocalPath:           ExpandDir(v.GetString("local-path")),
 				LicenseFile:         ExpandDir(v.GetString("license-file")),
-				ConfigFile:          ExpandDir(v.GetString("config-values")),
+				ConfigValuesFile:    ExpandDir(v.GetString("config-values")),
 				IdentityConfigFile:  ExpandDir(v.GetString("identity-config")),
 				ExcludeKotsKinds:    v.GetBool("exclude-kots-kinds"),
 				ExcludeAdminConsole: v.GetBool("exclude-admin-console"),

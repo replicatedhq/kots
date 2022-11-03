@@ -344,8 +344,8 @@ func (h *HelmChart) GetReleaseName() string {
 }
 
 type OptionalValue struct {
-	When           string `json:"when"`
-	RecursiveMerge bool   `json:"recursiveMerge"`
+	When           multitype.QuotedBool `json:"when"`
+	RecursiveMerge bool                 `json:"recursiveMerge"`
 
 	Values map[string]MappedChartValue `json:"values,omitempty"`
 }

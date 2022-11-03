@@ -18,8 +18,10 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
+	kotsregistrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
@@ -39,6 +41,7 @@ type RewriteOptions struct {
 	Installation       *kotsv1beta1.Installation
 	License            *kotsv1beta1.License
 	ConfigValues       *kotsv1beta1.ConfigValues
+	IdentityConfig     *kotsv1beta1.IdentityConfig
 	ReportWriter       io.Writer
 	CopyImages         bool // can be false even if registry is not read-only
 	IsAirgap           bool
@@ -78,6 +81,8 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		CurrentVersionIsRequired: rewriteOptions.Installation.Spec.IsRequired,
 		EncryptionKey:            rewriteOptions.Installation.Spec.EncryptionKey,
 		License:                  rewriteOptions.License,
+		ConfigValues:             rewriteOptions.ConfigValues,
+		IdentityConfig:           rewriteOptions.IdentityConfig,
 		AppSequence:              rewriteOptions.AppSequence,
 		AppSlug:                  rewriteOptions.AppSlug,
 		LocalRegistry: upstreamtypes.LocalRegistry{
@@ -117,6 +122,25 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	}
 	log.FinishSpinner()
 
+	upstreamDir := u.GetUpstreamDir(writeUpstreamOptions)
+	newKotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+		FromDir: upstreamDir,
+		RegistrySettings: kotsregistrytypes.RegistrySettings{
+			Hostname:   rewriteOptions.RegistryEndpoint,
+			Namespace:  rewriteOptions.RegistryNamespace,
+			Username:   rewriteOptions.RegistryUsername,
+			Password:   rewriteOptions.RegistryPassword,
+			IsReadOnly: rewriteOptions.RegistryIsReadOnly,
+		},
+		AppSlug:   rewriteOptions.AppSlug,
+		Sequence:  rewriteOptions.AppSequence,
+		IsAirgap:  rewriteOptions.IsAirgap,
+		Namespace: rewriteOptions.K8sNamespace,
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to load kotskinds")
+	}
+
 	renderOptions := base.RenderOptions{
 		SplitMultiDocYAML:       true,
 		Namespace:               rewriteOptions.K8sNamespace,
@@ -125,6 +149,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		LocalRegistryUsername:   rewriteOptions.RegistryUsername,
 		LocalRegistryPassword:   rewriteOptions.RegistryPassword,
 		LocalRegistryIsReadOnly: rewriteOptions.RegistryIsReadOnly,
+		KotsKinds:               newKotsKinds,
 		ExcludeKotsKinds:        rewriteOptions.ExcludeKotsKinds,
 		Log:                     log,
 		AppSlug:                 rewriteOptions.AppSlug,
@@ -157,10 +182,6 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 			files = append(files, file)
 		}
 
-		newKotsKinds, err := kotsutil.LoadKotsKindsFromPath(u.GetUpstreamDir(writeUpstreamOptions))
-		if err != nil {
-			return errors.Wrap(err, "failed to load installation")
-		}
 		newKotsKinds.Installation.Spec.YAMLErrors = files
 
 		err = upstream.SaveInstallation(&newKotsKinds.Installation, u.GetUpstreamDir(writeUpstreamOptions))
@@ -211,11 +232,6 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		return errors.Wrap(err, "failed to create cipher from installation spec")
 	}
 
-	newHelmCharts, err := kotsutil.LoadHelmChartsFromPath(rewriteOptions.UpstreamPath)
-	if err != nil {
-		return errors.Wrap(err, "failed to load new helm charts")
-	}
-
 	commonWriteMidstreamOptions := midstream.WriteOptions{
 		AppSlug:            rewriteOptions.AppSlug,
 		IsGitOps:           rewriteOptions.IsGitOps,
@@ -224,7 +240,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		HTTPProxyEnvValue:  rewriteOptions.HTTPProxyEnvValue,
 		HTTPSProxyEnvValue: rewriteOptions.HTTPSProxyEnvValue,
 		NoProxyEnvValue:    rewriteOptions.NoProxyEnvValue,
-		NewHelmCharts:      newHelmCharts,
+		NewHelmCharts:      newKotsKinds.HelmCharts,
 	}
 
 	// the UseHelmInstall map blocks visibility into charts and subcharts when searching for private images
@@ -232,7 +248,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	// when using Helm Install, each chart gets it's own kustomization and pullsecret yaml and MUST be skipped when processing higher level directories!
 	// for writing Common Midstream, every chart and subchart is in this map as Helm Midstreams will be processed later in the code
 	commonWriteMidstreamOptions.UseHelmInstall = map[string]bool{}
-	for _, v := range newHelmCharts {
+	for _, v := range newKotsKinds.HelmCharts {
 		chartBaseName := v.GetDirName()
 		commonWriteMidstreamOptions.UseHelmInstall[chartBaseName] = v.Spec.UseHelmInstall
 		if v.Spec.UseHelmInstall {
@@ -250,7 +266,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	writeMidstreamOptions.MidstreamDir = filepath.Join(commonBase.GetOverlaysDir(writeBaseOptions), "midstream")
 	writeMidstreamOptions.BaseDir = filepath.Join(u.GetBaseDir(writeUpstreamOptions), commonBase.Path)
 
-	m, err := writeMidstream(writeMidstreamOptions, rewriteOptions, commonBase, u.GetUpstreamDir(writeUpstreamOptions), log)
+	m, err := writeMidstream(writeMidstreamOptions, rewriteOptions, commonBase, upstreamDir, newKotsKinds, log)
 	if err != nil {
 		return errors.Wrap(err, "failed to write common midstream")
 	}
@@ -274,7 +290,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		rewriteOptionsCopy.K8sNamespace = helmBaseCopy.Namespace
 		rewriteOptionsCopy.CopyImages = false // don't copy images more than once
 
-		helmMidstream, err := writeMidstream(writeMidstreamOptions, rewriteOptionsCopy, helmBaseCopy, u.GetUpstreamDir(writeUpstreamOptions), log)
+		helmMidstream, err := writeMidstream(writeMidstreamOptions, rewriteOptionsCopy, helmBaseCopy, upstreamDir, newKotsKinds, log)
 		if err != nil {
 			return errors.Wrapf(err, "failed to write helm midstream %s", helmBase.Path)
 		}
@@ -289,12 +305,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 		return errors.Wrap(err, "failed to write downstreams")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(rewriteOptions.RootDir)
-	if err != nil {
-		return errors.Wrap(err, "failed to load kotskinds")
-	}
-
-	err = store.GetStore().UpdateAppVersionInstallationSpec(rewriteOptions.AppID, rewriteOptions.AppSequence, kotsKinds.Installation)
+	err = store.GetStore().UpdateAppVersionInstallationSpec(rewriteOptions.AppID, rewriteOptions.AppSequence, newKotsKinds.Installation)
 	if err != nil {
 		return errors.Wrap(err, "failed to update installation spec")
 	}
@@ -304,7 +315,7 @@ func Rewrite(rewriteOptions RewriteOptions) error {
 	return nil
 }
 
-func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options RewriteOptions, b *base.Base, upstreamDir string, log *logger.CLILogger) (*midstream.Midstream, error) {
+func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options RewriteOptions, b *base.Base, upstreamDir string, newKotsKinds *kotsutiltypes.KotsKinds, log *logger.CLILogger) (*midstream.Midstream, error) {
 	var images []kustomizetypes.Image
 	var objects []k8sdoc.K8sDoc
 	var pullSecretRegistries []string
@@ -314,21 +325,6 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options Rewrit
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get k8s clientset")
-	}
-
-	newKotsKinds, err := kotsutil.LoadKotsKindsFromPath(upstreamDir)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to load kotskinds from new upstream")
-	}
-
-	identitySpec, err := upstream.LoadIdentity(upstreamDir)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to load identity")
-	}
-
-	identityConfig, err := upstream.LoadIdentityConfig(upstreamDir)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to load identity config")
 	}
 
 	// do not fail on being unable to get dockerhub credentials, since they're just used to increase the rate limit
@@ -400,7 +396,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options Rewrit
 		return nil, errors.Wrap(err, "failed to save installation")
 	}
 
-	m, err := midstream.CreateMidstream(b, images, objects, &pullSecrets, identitySpec, identityConfig)
+	m, err := midstream.CreateMidstream(b, images, objects, &pullSecrets, newKotsKinds.Identity, newKotsKinds.IdentityConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create midstream")
 	}
@@ -413,7 +409,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options Rewrit
 }
 
 // rewriteBaseImages Will rewrite images found in base and copy them (if necessary) to the configured registry.
-func rewriteBaseImages(rewriteOptions RewriteOptions, baseDir string, kotsKinds *kotsutil.KotsKinds, dockerHubRegistryCreds registry.Credentials, log *logger.CLILogger) (*base.RewriteImagesResult, error) {
+func rewriteBaseImages(rewriteOptions RewriteOptions, baseDir string, kotsKinds *kotsutiltypes.KotsKinds, dockerHubRegistryCreds registry.Credentials, log *logger.CLILogger) (*base.RewriteImagesResult, error) {
 	replicatedRegistryInfo := registry.ProxyEndpointFromLicense(rewriteOptions.License)
 
 	rewriteImageOptions := base.RewriteImageOptions{
@@ -454,7 +450,7 @@ func rewriteBaseImages(rewriteOptions RewriteOptions, baseDir string, kotsKinds 
 }
 
 // findPrivateImages Finds and rewrites private images to be proxied through proxy.replicated.com
-func findPrivateImages(writeMidstreamOptions midstream.WriteOptions, rewriteOptions RewriteOptions, b *base.Base, kotsKinds *kotsutil.KotsKinds, dockerHubRegistryCreds registry.Credentials) (*base.FindPrivateImagesResult, error) {
+func findPrivateImages(writeMidstreamOptions midstream.WriteOptions, rewriteOptions RewriteOptions, b *base.Base, kotsKinds *kotsutiltypes.KotsKinds, dockerHubRegistryCreds registry.Credentials) (*base.FindPrivateImagesResult, error) {
 	replicatedRegistryInfo := registry.ProxyEndpointFromLicense(rewriteOptions.License)
 	allPrivate := kotsKinds.KotsApplication.Spec.ProxyPublicImages
 
@@ -473,7 +469,7 @@ func findPrivateImages(writeMidstreamOptions midstream.WriteOptions, rewriteOpti
 		AllImagesPrivate: allPrivate,
 		HelmChartPath:    b.Path,
 		UseHelmInstall:   writeMidstreamOptions.UseHelmInstall,
-		KotsKindsImages:  kotsutil.GetImagesFromKotsKinds(kotsKinds),
+		KotsKindsImages:  kotsKinds.GetImages(),
 	}
 	findResult, err := base.FindPrivateImages(findPrivateImagesOptions)
 	if err != nil {
@@ -519,27 +515,6 @@ func writeDownstreams(options RewriteOptions, overlaysDir string, m *midstream.M
 		}
 
 		log.FinishSpinner()
-	}
-
-	return nil
-}
-
-func writeCombinedDownstreamBase(downstreamName string, bases []string, renderDir string) error {
-	if _, err := os.Stat(renderDir); os.IsNotExist(err) {
-		if err := os.MkdirAll(renderDir, 0744); err != nil {
-			return errors.Wrap(err, "failed to mkdir")
-		}
-	}
-
-	kustomization := kustomizetypes.Kustomization{
-		TypeMeta: kustomizetypes.TypeMeta{
-			APIVersion: "kustomize.config.k8s.io/v1beta1",
-			Kind:       "Kustomization",
-		},
-		Bases: bases,
-	}
-	if err := k8sutil.WriteKustomizationToFile(kustomization, filepath.Join(renderDir, "kustomization.yaml")); err != nil {
-		return errors.Wrap(err, "failed to write kustomization to file")
 	}
 
 	return nil

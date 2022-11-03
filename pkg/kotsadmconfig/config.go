@@ -2,20 +2,17 @@ package kotsadmconfig
 
 import (
 	"context"
-	"fmt"
 	"os"
 
 	"github.com/pkg/errors"
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 	kotsconfig "github.com/replicatedhq/kots/pkg/config"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
-	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/logger"
-	"github.com/replicatedhq/kots/pkg/persistence"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/template"
 	"github.com/replicatedhq/kots/pkg/util"
-	"github.com/rqlite/gorqlite"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -46,7 +43,7 @@ func IsUnsetItem(item kotsv1beta1.ConfigItem) bool {
 	return true
 }
 
-func NeedsConfiguration(appSlug string, sequence int64, isAirgap bool, kotsKinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings) (bool, error) {
+func NeedsConfiguration(appSlug string, sequence int64, isAirgap bool, kotsKinds *kotsutiltypes.KotsKinds, registrySettings registrytypes.RegistrySettings) (bool, error) {
 	log := logger.NewCLILogger(os.Stdout)
 
 	configSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Config")
@@ -100,32 +97,6 @@ func NeedsConfiguration(appSlug string, sequence int64, isAirgap bool, kotsKinds
 		}
 	}
 	return false, nil
-}
-
-// UpdateConfigValuesInDB it gets the config values from filesInDir and
-// updates the app version config values in the db for the given sequence and app id
-func UpdateConfigValuesInDB(filesInDir string, appID string, sequence int64) error {
-	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(filesInDir)
-	if err != nil {
-		return errors.Wrap(err, "failed to read kots kinds")
-	}
-
-	configValues, err := kotsKinds.Marshal("kots.io", "v1beta1", "ConfigValues")
-	if err != nil {
-		return errors.Wrap(err, "failed to marshal configvalues spec")
-	}
-
-	db := persistence.MustGetDBSession()
-	query := `update app_version set config_values = ? where app_id = ? and sequence = ?`
-	wr, err := db.WriteOneParameterized(gorqlite.ParameterizedStatement{
-		Query:     query,
-		Arguments: []interface{}{configValues, appID, sequence},
-	})
-	if err != nil {
-		return fmt.Errorf("failed to update config values in db: %v: %v", err, wr.Err)
-	}
-
-	return nil
 }
 
 func ReadConfigValuesFromInClusterSecret() (string, error) {

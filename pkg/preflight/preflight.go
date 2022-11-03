@@ -13,12 +13,11 @@ import (
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	kotstypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight/types"
 	"github.com/replicatedhq/kots/pkg/registry"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
-	"github.com/replicatedhq/kots/pkg/render"
-	"github.com/replicatedhq/kots/pkg/render/helper"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
@@ -41,7 +40,19 @@ const (
 )
 
 func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir string) error {
-	renderedKotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
+	registrySettings, err := store.GetStore().GetRegistryDetailsForApp(appID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get registry settings for app")
+	}
+
+	renderedKotsKinds, err := kotsutil.LoadKotsKindsFromPath(kotsutiltypes.LoadKotsKindsFromPathOptions{
+		FromDir:          archiveDir,
+		RegistrySettings: registrySettings,
+		AppSlug:          appSlug,
+		Sequence:         sequence,
+		IsAirgap:         isAirgap,
+		Namespace:        util.AppNamespace(),
+	})
 	if err != nil {
 		return errors.Wrap(err, "failed to load rendered kots kinds")
 	}
@@ -60,7 +71,6 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 	}
 
 	var ignoreRBAC bool
-	var registrySettings registrytypes.RegistrySettings
 	var preflight *troubleshootv1beta2.Preflight
 
 	runPreflights := false
@@ -70,27 +80,7 @@ func Run(appID string, appSlug string, sequence int64, isAirgap bool, archiveDir
 			return errors.Wrap(err, "failed to get ignore rbac flag")
 		}
 
-		// render the preflight file
-		// we need to convert to bytes first, so that we can reuse the renderfile function
-		renderedMarshalledPreflights, err := renderedKotsKinds.Marshal("troubleshoot.replicated.com", "v1beta1", "Preflight")
-		if err != nil {
-			return errors.Wrap(err, "failed to marshal rendered preflight")
-		}
-
-		registrySettings, err = store.GetStore().GetRegistryDetailsForApp(appID)
-		if err != nil {
-			return errors.Wrap(err, "failed to get registry settings for app")
-		}
-
-		renderedPreflight, err := render.RenderFile(renderedKotsKinds, registrySettings, appSlug, sequence, isAirgap, util.PodNamespace, []byte(renderedMarshalledPreflights))
-		if err != nil {
-			return errors.Wrap(err, "failed to render preflights")
-		}
-		preflight, err = kotsutil.LoadPreflightFromContents(renderedPreflight)
-		if err != nil {
-			return errors.Wrap(err, "failed to load rendered preflight")
-		}
-
+		preflight = renderedKotsKinds.Preflight
 		injectDefaultPreflights(preflight, renderedKotsKinds, registrySettings)
 
 		numAnalyzers := 0
@@ -254,7 +244,7 @@ func GetPreflightCommand(appSlug string) []string {
 	return comamnd
 }
 
-func CreateRenderedSpec(app *apptypes.App, sequence int64, origin string, inCluster bool, kotsKinds *kotsutil.KotsKinds) error {
+func CreateRenderedSpec(app *apptypes.App, sequence int64, origin string, inCluster bool, kotsKinds *kotsutiltypes.KotsKinds) error {
 	builtPreflight := kotsKinds.Preflight.DeepCopy()
 	if builtPreflight == nil {
 		builtPreflight = &troubleshootv1beta2.Preflight{
@@ -294,13 +284,7 @@ func CreateRenderedSpec(app *apptypes.App, sequence int64, origin string, inClus
 	if err := s.Encode(builtPreflight, &b); err != nil {
 		return errors.Wrap(err, "failed to encode preflight")
 	}
-
-	templatedSpec := b.Bytes()
-
-	renderedSpec, err := helper.RenderAppFile(app, &sequence, templatedSpec, kotsKinds, util.PodNamespace)
-	if err != nil {
-		return errors.Wrap(err, "failed render preflight spec")
-	}
+	renderedSpec := b.Bytes()
 
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
@@ -350,7 +334,7 @@ func CreateRenderedSpec(app *apptypes.App, sequence int64, origin string, inClus
 	return nil
 }
 
-func injectDefaultPreflights(preflight *troubleshootv1beta2.Preflight, kotskinds *kotsutil.KotsKinds, registrySettings registrytypes.RegistrySettings) {
+func injectDefaultPreflights(preflight *troubleshootv1beta2.Preflight, kotskinds *kotsutiltypes.KotsKinds, registrySettings registrytypes.RegistrySettings) {
 	if registrySettings.IsValid() && registrySettings.IsReadOnly {
 		// Get images from Installation.KnownImages, see UpdateCollectorSpecsWithRegistryData
 		images := []string{}
