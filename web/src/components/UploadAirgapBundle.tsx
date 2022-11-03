@@ -48,11 +48,7 @@ type ResumeResult = {
 
 type State = {
   airgapUploader: AirgapUploader | null;
-  bundleFile: {
-    name: string;
-  } | null;
   displayErrorModal?: boolean;
-  errorMessage: string;
   fileUploading: boolean;
   registryDetails: RegistryDetails | null;
   preparingOnlineInstall: boolean;
@@ -64,7 +60,14 @@ type State = {
   uploadResuming: boolean;
   viewOnlineInstallErrorMessage: boolean;
 };
+type BundleFile = {
+    name: string;
+  } | null;
 const UploadAirgapBundle = (props: Props) => {
+  // TODO: remove refs and use state instead
+  const bundleFile = useRef<BundleFile>(null);
+  const errorMessage = useRef<string>("");
+
   const [state, setState] = useReducer(
     (currentState: State, newState: Partial<State>) => ({
       ...currentState,
@@ -72,8 +75,6 @@ const UploadAirgapBundle = (props: Props) => {
     }),
     {
       airgapUploader: null,
-      bundleFile: null,
-      errorMessage: "",
       fileUploading: false,
       registryDetails: null,
       preparingOnlineInstall: false,
@@ -92,11 +93,10 @@ const UploadAirgapBundle = (props: Props) => {
   // TODO: refactor the /resume fetching so this isn't necessary
   const onlineInstallErrorMessage = useRef<string>("");
 
+  // TODO: refactor this callback- it's passed into another component but causes stale state issues
   const onDropBundle = async (file: { name: string }) => {
-    setState({
-      bundleFile: file,
-      errorMessage: "",
-    });
+    bundleFile.current = file;
+    errorMessage.current = "";
     onlineInstallErrorMessage.current = "";
   };
 
@@ -134,7 +134,7 @@ const UploadAirgapBundle = (props: Props) => {
   }, []);
 
   const clearFile = () => {
-    setState({ bundleFile: null });
+    bundleFile.current = null;
   };
 
   const toggleShowRun = () => {
@@ -159,8 +159,8 @@ const UploadAirgapBundle = (props: Props) => {
       uploadProgress: 0,
       uploadSize: 0,
       uploadResuming: false,
-      errorMessage: message || "Error uploading bundle, please try again",
     });
+      errorMessage.current =  message || "Error uploading bundle, please try again";
   };
 
   const uploadAirgapBundle = async () => {
@@ -183,9 +183,9 @@ const UploadAirgapBundle = (props: Props) => {
         uploadProgress: 0,
         uploadSize: 0,
         uploadResuming: false,
-        errorMessage:
-          "An error occurred while uploading your airgap bundle. Please try again",
       });
+        errorMessage.current =
+          "An error occurred while uploading your airgap bundle. Please try again";
       return;
     }
 
@@ -194,6 +194,7 @@ const UploadAirgapBundle = (props: Props) => {
       errorMessage: "",
       showSupportBundleCommand: false,
     });
+    errorMessage.current = "";
     onlineInstallErrorMessage.current = "";
 
     if (showRegistry) {
@@ -204,8 +205,8 @@ const UploadAirgapBundle = (props: Props) => {
           uploadProgress: 0,
           uploadSize: 0,
           uploadResuming: false,
-          errorMessage: emptyHostnameErrMessage,
         });
+        errorMessage.current = emptyHostnameErrMessage;
         return;
       }
 
@@ -235,8 +236,8 @@ const UploadAirgapBundle = (props: Props) => {
             uploadProgress: 0,
             uploadSize: 0,
             uploadResuming: false,
-            errorMessage: err.message,
           });
+          errorMessage.current = err.message;
           return;
         }
 
@@ -245,8 +246,8 @@ const UploadAirgapBundle = (props: Props) => {
           uploadProgress: 0,
           uploadSize: 0,
           uploadResuming: false,
-          errorMessage: "Something went wrong when uploading Airgap bundle.",
         });
+        errorMessage.current = "Something went wrong when uploading Airgap bundle.";
       }
 
       const response = await res?.json();
@@ -261,8 +262,8 @@ const UploadAirgapBundle = (props: Props) => {
           uploadProgress: 0,
           uploadSize: 0,
           uploadResuming: false,
-          errorMessage: msg,
         });
+        errorMessage.current = msg;
         return;
       }
     }
@@ -323,9 +324,9 @@ const UploadAirgapBundle = (props: Props) => {
         setState({
           // TODO: use fewer flags
           fileUploading: false,
-          errorMessage: err,
           preparingOnlineInstall: false,
         });
+        errorMessage.current = err;
         onlineInstallErrorMessage.current = err;
         return;
       });
@@ -348,9 +349,9 @@ const UploadAirgapBundle = (props: Props) => {
           setState({
             // TODO: use fewer flags
             fileUploading: false,
-            errorMessage: resumeResult.error,
             preparingOnlineInstall: false,
           });
+          errorMessage.current = resumeResult.error;
 
           onlineInstallErrorMessage.current = resumeResult.error;
           return;
@@ -393,7 +394,7 @@ const UploadAirgapBundle = (props: Props) => {
     return response.command;
   };
 
-  const onProgressError = async (errorMessage: string) => {
+  const onProgressError = async (onProgressErrorMessage: string) => {
     let supportBundleCommand: string[] = [];
     try {
       supportBundleCommand = await getSupportBundleCommand();
@@ -404,19 +405,19 @@ const UploadAirgapBundle = (props: Props) => {
     // Push this setState call to the end of the call stack
     setTimeout(() => {
       Object.entries(COMMON_ERRORS).forEach(([errorString, message]) => {
-        if (errorMessage.includes(errorString)) {
-          errorMessage = message;
+        if (onProgressErrorMessage.includes(errorString)) {
+          onProgressErrorMessage = message;
         }
       });
 
       setState({
-        errorMessage,
         fileUploading: false,
         uploadProgress: 0,
         uploadSize: 0,
         uploadResuming: false,
         supportBundleCommand,
       });
+      errorMessage.current = onProgressErrorMessage;;
     }, 0);
   };
 
@@ -468,19 +469,17 @@ const UploadAirgapBundle = (props: Props) => {
   const { slug } = match.params;
 
   const {
-    bundleFile,
     fileUploading,
     uploadProgress,
     uploadSize,
     uploadResuming,
-    errorMessage,
     registryDetails,
     preparingOnlineInstall,
     viewOnlineInstallErrorMessage,
     supportBundleCommand,
   } = state;
 
-  const hasFile = bundleFile && !isEmpty(bundleFile);
+  const hasFile = bundleFile.current && !isEmpty(bundleFile.current);
 
   if (fileUploading) {
     return (
@@ -554,7 +553,7 @@ const UploadAirgapBundle = (props: Props) => {
                     gatherDetails={getRegistryDetails}
                     registryDetails={registryDetails}
                     showHostnameAsRequired={
-                      errorMessage === emptyHostnameErrMessage
+                      errorMessage.current === emptyHostnameErrMessage
                     }
                   />
                 </div>
@@ -567,13 +566,13 @@ const UploadAirgapBundle = (props: Props) => {
                     }
                     className={classNames("FileUpload-wrapper", "flex1", {
                       "has-file": hasFile,
-                      "has-error": errorMessage,
+                      "has-error": errorMessage.current,
                     })}
                   >
                     {hasFile ? (
                       <div className="has-file-wrapper">
                         <p className="u-fontSize--normal u-fontWeight--medium">
-                          {bundleFile.name}
+                          {bundleFile?.current?.name}
                         </p>
                       </div>
                     ) : (
@@ -609,9 +608,9 @@ const UploadAirgapBundle = (props: Props) => {
                   </div>
                 )}
               </div>
-              {errorMessage && (
+              {errorMessage.current && (
                 <div className="u-marginTop--10">
-                  <span className="u-textColor--error">{errorMessage}</span>
+                  <span className="u-textColor--error">{errorMessage.current}</span>
                   {state.showSupportBundleCommand ? (
                     <div className="u-marginTop--10">
                       <h2 className="u-fontSize--larger u-fontWeight--bold u-textColor--primary">
