@@ -68,6 +68,7 @@ func Init(ctx context.Context) error {
 			continue
 		}
 
+		initMonitor(clientSet, namespace)
 		for _, s := range secrets.Items {
 			if s.Labels == nil || s.Labels["status"] != helmrelease.StatusDeployed.String() {
 				continue
@@ -86,6 +87,7 @@ func Init(ctx context.Context) error {
 			}
 
 			AddHelmApp(releaseInfo.Release.Name, releaseInfo)
+			resumeHelmStatusInformers(releaseInfo.Release.Name)
 		}
 
 		go func(namespace string) {
@@ -237,13 +239,13 @@ func watchSecrets(ctx context.Context, namespace string, labelSelector string) e
 				}
 
 				if err := recalculateCachedUpdates(helmApp); err != nil {
-					logger.Errorf("failed to recalculate updates for helm release info from secret %s in namespace %s: %s", secret.Name, namespace)
+					logger.Errorf("failed to recalculate updates for helm release info from secret %s in namespace %s: %s", secret.Name, namespace, err)
 					// Continue here.  Release has been installed and should show up up in Admin Console.
 				}
 
 				logger.Debugf("adding secret %s to cache", secret.Name)
 				AddHelmApp(helmApp.Release.Name, helmApp)
-
+				resumeHelmStatusInformers(helmApp.Release.Name)
 			case watch.Deleted:
 				secret, ok := e.Object.(*corev1.Secret)
 				if !ok {
@@ -265,7 +267,6 @@ func watchSecrets(ctx context.Context, namespace string, labelSelector string) e
 				deleteUpdateCacheForChart(helmApp.ChartPath)
 
 				RemoveHelmApp(helmApp.Release.Name)
-
 			default:
 				secret, ok := e.Object.(*corev1.Secret)
 				if !ok {
