@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { useReducer } from "react";
 import { withRouter, Link } from "react-router-dom";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -146,77 +146,80 @@ type State = {
   showHelmDeployModalForSequence: number | null;
 };
 
-class AppVersionHistory extends Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
-    this.state = {
-      logsLoading: false,
-      logs: null,
-      selectedTab: null,
-      showDeployWarningModal: false,
-      showSkipModal: false,
-      versionToDeploy: null,
-      releaseNotes: null,
-      selectedDiffReleases: false,
+const AppVersionHistory = (props: Props) => {
+  const [state, setState] = useReducer(
+    (currentState: State, newState: Partial<State>) => ({
+      ...currentState,
+      ...newState,
+    }),
+    {
+      airgapUploader: null,
+      airgapUploadError: "",
+      appUpdateChecker: new Repeater(),
       checkedReleasesToDiff: [],
-      diffHovered: false,
-      uploadingAirgapFile: false,
+      checkingForUpdateError: false,
       checkingForUpdates: false,
       checkingUpdateMessage: "Checking for updates",
-      checkingForUpdateError: false,
-      airgapUploadError: "",
-      versionDownloadStatuses: {},
-      showDiffOverlay: false,
-      firstSequence: 0,
-      secondSequence: 0,
-      appUpdateChecker: new Repeater(),
-      uploadProgress: 0,
-      uploadSize: 0,
-      uploadResuming: false,
-      displayShowDetailsModal: false,
-      yamlErrorDetails: [],
-      deployView: false,
-      selectedSequence: -1,
-      releaseWithErr: { title: "", sequence: 0, diffSummaryError: "" },
-      versionHistoryJob: new Repeater(),
-      loadingVersionHistory: true,
-      versionHistory: [],
-      errorTitle: "",
-      errorMsg: "",
-      displayErrorModal: false,
-      displayConfirmDeploymentModal: false,
       confirmType: "",
-      isSkipPreflights: false,
+      currentPage: 0,
+      deployView: false,
+      diffHovered: false,
+      displayConfirmDeploymentModal: false,
+      displayErrorModal: false,
       displayKotsUpdateModal: false,
+      displayShowDetailsModal: false,
+      errorMsg: "",
+      errorTitle: "",
+      firstSequence: 0,
+      hasPreflightChecks: true,
+      isSkipPreflights: false,
       kotsUpdateChecker: new Repeater(),
+      kotsUpdateError: undefined,
+      kotsUpdateMessage: "",
       kotsUpdateRunning: false,
       kotsUpdateStatus: "",
-      kotsUpdateMessage: "",
-      kotsUpdateError: undefined,
-      numOfSkippedVersions: 0,
-      numOfRemainingVersions: 0,
-      totalCount: 0,
-      currentPage: 0,
-      pageSize: 20,
       loadingPage: false,
-      hasPreflightChecks: true,
-      airgapUploader: null,
-      updatesAvailable: false,
-      showNoChangesModal: false,
-      showAutomaticUpdatesModal: false,
-      releaseWithNoChanges: { versionLabel: "", sequence: 0 },
-      showDiffErrModal: false,
-      showLogsModal: false,
+      loadingVersionHistory: true,
+      logs: null,
+      logsLoading: false,
       noUpdateAvailiableText: "",
-      viewLogsErrMsg: "",
-      showHelmDeployModalForVersionLabel: "",
+      numOfRemainingVersions: 0,
+      numOfSkippedVersions: 0,
+      pageSize: 20,
+      releaseNotes: null,
+      releaseWithErr: { title: "", sequence: 0, diffSummaryError: "" },
+      releaseWithNoChanges: { versionLabel: "", sequence: 0 },
+      secondSequence: 0,
+      selectedDiffReleases: false,
+      selectedSequence: -1,
+      selectedTab: null,
+      showAutomaticUpdatesModal: false,
+      showDeployWarningModal: false,
+      showDiffErrModal: false,
+      showDiffOverlay: false,
       showHelmDeployModalForSequence: null,
-    };
-  }
+      showHelmDeployModalForVersionLabel: "",
+      showLogsModal: false,
+      showNoChangesModal: false,
+      showSkipModal: false,
+      totalCount: 0,
+      updatesAvailable: false,
+      uploadingAirgapFile: false,
+      uploadProgress: 0,
+      uploadResuming: false,
+      uploadSize: 0,
+      versionDownloadStatuses: {},
+      versionHistory: [],
+      versionHistoryJob: new Repeater(),
+      versionToDeploy: null,
+      viewLogsErrMsg: "",
+      yamlErrorDetails: [],
+    }
+  );
 
   // moving this out of the state because new repeater instances were getting created
   // and it doesn't really affect the UI
-  versionDownloadStatusJobs: { [key: number]: Repeater } = {};
+  const versionDownloadStatusJobs: { [key: number]: Repeater } = { };
 
   _mounted: boolean | undefined;
 
@@ -814,11 +817,10 @@ class AppVersionHistory extends Component<Props, State> {
         return (
           <div className="flex alignItems--center justifyContent--flexEnd">
             <span
-              className={`u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default ${
-                version.downloadStatus.status === "failed"
+              className={`u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default ${version.downloadStatus.status === "failed"
                   ? "u-textColor--error"
                   : ""
-              }`}
+                }`}
             >
               {version.downloadStatus.message}
             </span>
@@ -836,15 +838,14 @@ class AppVersionHistory extends Component<Props, State> {
             <Loader className="u-marginRight--5" size="15" />
           )}
           <span
-            className={`u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default ${
-              status.downloadingVersionError ? "u-textColor--error" : ""
-            }`}
+            className={`u-textColor--bodyCopy u-fontWeight--medium u-fontSize--small u-lineHeight--default ${status.downloadingVersionError ? "u-textColor--error" : ""
+              }`}
           >
             {status?.downloadingVersionMessage
               ? status?.downloadingVersionMessage
               : status?.downloadingVersion
-              ? "Downloading"
-              : ""}
+                ? "Downloading"
+                : ""}
           </span>
         </div>
       );
@@ -1662,22 +1663,20 @@ class AppVersionHistory extends Component<Props, State> {
                         this.deployButtonStatus(version) === "Rollback"
                           ? `Follow the steps below to rollback to revision ${version.sequence}.`
                           : this.deployButtonStatus(version) === "Redeploy"
-                          ? "Follow the steps below to redeploy the release using the currently deployed chart version and values."
-                          : "Follow the steps below to upgrade the release."
+                            ? "Follow the steps below to redeploy the release using the currently deployed chart version and values."
+                            : "Follow the steps below to upgrade the release."
                       }
-                      title={` ${this.deployButtonStatus(version)} ${
-                        this.props?.app.slug
-                      } ${
-                        this.deployButtonStatus(version) === "Deploy"
+                      title={` ${this.deployButtonStatus(version)} ${this.props?.app.slug
+                        } ${this.deployButtonStatus(version) === "Deploy"
                           ? version.versionLabel
                           : ""
-                      }`}
+                        }`}
                       upgradeTitle={
                         this.deployButtonStatus(version) === "Rollback"
                           ? "Rollback release"
                           : this.deployButtonStatus(version) === "Redeploy"
-                          ? "Redeploy release"
-                          : "Upgrade release"
+                            ? "Redeploy release"
+                            : "Upgrade release"
                       }
                       version={version.versionLabel}
                       namespace={this.props?.app?.namespace}
@@ -1913,7 +1912,7 @@ class AppVersionHistory extends Component<Props, State> {
                                       this.handleViewLogs(
                                         currentDownstreamVersion,
                                         currentDownstreamVersion?.status ===
-                                          "failed"
+                                        "failed"
                                       )
                                     }
                                     data-tip="View deploy logs"
@@ -1988,17 +1987,15 @@ class AppVersionHistory extends Component<Props, State> {
               )}
 
               <div
-                className={`flex-column flex1 alignSelf--start ${
-                  gitopsIsConnected ? "gitops-enabled" : ""
-                }`}
+                className={`flex-column flex1 alignSelf--start ${gitopsIsConnected ? "gitops-enabled" : ""
+                  }`}
               >
                 <div
-                  className={`flex-column flex1 version ${
-                    showDiffOverlay ? "u-visibility--hidden" : ""
-                  }`}
+                  className={`flex-column flex1 version ${showDiffOverlay ? "u-visibility--hidden" : ""
+                    }`}
                 >
                   {(versionHistory.length === 0 && gitopsIsConnected) ||
-                  versionHistory?.length > 0 ? (
+                    versionHistory?.length > 0 ? (
                     <>
                       {gitopsIsConnected ? (
                         <div
@@ -2048,7 +2045,7 @@ class AppVersionHistory extends Component<Props, State> {
                                 ) : (
                                   <div className="flex alignItems--center">
                                     {checkingForUpdates &&
-                                    !this.props.isBundleUploading ? (
+                                      !this.props.isBundleUploading ? (
                                       <div className="flex alignItems--center u-marginRight--20">
                                         <Loader
                                           className="u-marginRight--5"
@@ -2098,8 +2095,8 @@ class AppVersionHistory extends Component<Props, State> {
                                 )}
                               </div>
                               {versionHistory.length > 1 &&
-                              !gitopsIsConnected &&
-                              !this.props.isHelmManaged
+                                !gitopsIsConnected &&
+                                !this.props.isHelmManaged
                                 ? this.renderDiffBtn()
                                 : null}
                             </div>
@@ -2115,21 +2112,19 @@ class AppVersionHistory extends Component<Props, State> {
                           )}
                           {(this.state.numOfSkippedVersions > 0 ||
                             this.state.numOfRemainingVersions > 0) && (
-                            <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--header u-marginTop--10">
-                              {this.state.numOfSkippedVersions > 0
-                                ? `${this.state.numOfSkippedVersions} version${
-                                    this.state.numOfSkippedVersions > 1
-                                      ? "s"
-                                      : ""
-                                  } will be skipped in upgrading to ${
-                                    versionHistory[0].versionLabel
+                              <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--header u-marginTop--10">
+                                {this.state.numOfSkippedVersions > 0
+                                  ? `${this.state.numOfSkippedVersions} version${this.state.numOfSkippedVersions > 1
+                                    ? "s"
+                                    : ""
+                                  } will be skipped in upgrading to ${versionHistory[0].versionLabel
                                   }. `
-                                : ""}
-                              {this.state.numOfRemainingVersions > 0
-                                ? "Additional versions are available after you deploy this required version."
-                                : ""}
-                            </p>
-                          )}
+                                  : ""}
+                                {this.state.numOfRemainingVersions > 0
+                                  ? "Additional versions are available after you deploy this required version."
+                                  : ""}
+                              </p>
+                            )}
                         </div>
                       )}
                       {versionHistory?.length > 0 ? (
@@ -2275,8 +2270,8 @@ class AppVersionHistory extends Component<Props, State> {
                 {this.state.confirmType === "rollback"
                   ? "Rollback to"
                   : this.state.confirmType === "redeploy"
-                  ? "Redeploy"
-                  : "Deploy"}{" "}
+                    ? "Redeploy"
+                    : "Deploy"}{" "}
                 {this.state.versionToDeploy?.versionLabel} (Sequence{" "}
                 {this.state.versionToDeploy?.sequence})?
               </p>
@@ -2287,8 +2282,8 @@ class AppVersionHistory extends Component<Props, State> {
                     {this.state.confirmType === "rollback"
                       ? "Rolling back to"
                       : this.state.confirmType === "redeploy"
-                      ? "Redeploying"
-                      : "Deploying"}{" "}
+                        ? "Redeploying"
+                        : "Deploying"}{" "}
                     this version will disable automatic deploys. You can turn it
                     back on after this version finishes deployment.
                   </span>
@@ -2319,8 +2314,8 @@ class AppVersionHistory extends Component<Props, State> {
                   {this.state.confirmType === "rollback"
                     ? "rollback"
                     : this.state.confirmType === "redeploy"
-                    ? "redeploy"
-                    : "deploy"}
+                      ? "redeploy"
+                      : "deploy"}
                 </button>
               </div>
             </div>
