@@ -102,13 +102,6 @@ class SnapshotRestore extends Component {
     }
   };
 
-  logOutUser = () => {
-    const token = Utilities.getToken();
-    if (token) {
-      window.localStorage.removeItem("token");
-    }
-  };
-
   onCancelRestore = async () => {
     this.setState({
       cancelingRestore: true,
@@ -350,9 +343,9 @@ class SnapshotRestore extends Component {
     }
 
     if (restoreCompleted && hasNoErrorsOrWarnings) {
-      this.logOutUser();
-      this.props.history.push("/restore-completed");
+      Utilities.logOutUser(null, {snapshotRestore: true});
     }
+
 
     return (
       <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">
