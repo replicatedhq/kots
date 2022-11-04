@@ -343,9 +343,8 @@ class SnapshotRestore extends Component {
     }
 
     if (restoreCompleted && hasNoErrorsOrWarnings) {
-      Utilities.logOutUser(null, {snapshotRestore: true});
+      Utilities.logOutUser(null, { snapshotRestore: true });
     }
-
 
     return (
       <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20 alignItems--center">

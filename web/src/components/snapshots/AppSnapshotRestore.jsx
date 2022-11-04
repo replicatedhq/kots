@@ -326,7 +326,7 @@ class AppSnapshotRestore extends Component {
     }
 
     if (restoreCompleted && hasNoErrorsOrWarnings) {
-      Utilities.logOutUser(null, {snapshotRestore: true});
+      Utilities.logOutUser(null, { snapshotRestore: true });
     }
 
     return (

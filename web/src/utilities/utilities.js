@@ -700,7 +700,9 @@ export const Utilities = {
       window.localStorage.removeItem("session_roles");
     }
 
-    const redirectPath = options.snapshotRestore ? "/restore-complete" : "/secure-console";
+    const redirectPath = options.snapshotRestore
+      ? "/restore-complete"
+      : "/secure-console";
     if (window.location.pathname !== redirectPath) {
       window.location = redirectPath;
     }
