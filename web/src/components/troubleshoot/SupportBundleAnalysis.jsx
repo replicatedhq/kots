@@ -325,7 +325,7 @@ export class SupportBundleAnalysis extends React.Component {
                     </div>
                     <div className="flex flex1 justifyContent--spaceBetween">
                       <div className="flex flex-column">
-                        <h2 className="u-fontSize--header2 u-fontWeight--bold u-textColor--primary flex alignContent--center alignItems--center">
+                        <h2 className="u-fontSize--header2 u-fontWeight--bold u-textColor--primary card-item-title flex alignContent--center alignItems--center">
                           Support bundle analysis
                         </h2>
                       </div>

@@ -708,7 +708,7 @@ class AppVersionHistoryRow extends Component {
       <div
         key={version.sequence}
         className={classNames(
-          `VersionHistoryRowWrapper ${version.status} flex-column justifyContent--center`,
+          `card-item VersionHistoryRowWrapper ${version.status} flex-column justifyContent--center`,
           {
             overlay: selectedDiffReleases,
             disabled: nothingToCommit,
@@ -735,7 +735,7 @@ class AppVersionHistoryRow extends Component {
             } flex-column flex1 u-paddingRight--20`}
           >
             <div className="flex alignItems--center">
-              <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">
+              <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary card-item-title">
                 {version.versionLabel || version.title}
               </p>
               {showSequence && (

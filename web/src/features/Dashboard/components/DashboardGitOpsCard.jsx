@@ -26,7 +26,7 @@ export default function DashboardGitOpsCard(props) {
   return (
     <div className="dashboard-card gitops">
       <div className="flex flex1 justifyContent--spaceBetween alignItems--center u-marginBottom--10">
-        <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold flex alignItems--center">
+        <p className="card-title flex alignItems--center">
           <span
             className={`icon gitopsService--${gitops.provider} u-marginRight--10`}
           />
@@ -76,7 +76,7 @@ export default function DashboardGitOpsCard(props) {
           </span>
         </div>
       </div>
-      <div className="VersionCard-content--wrapper">
+      <div className="card-item">
         <p className="u-fontSize--normal u-fontWeight--medium u-textColor--header u-lineHeight--normal">
           GitOps is enabled for this application. Visit{" "}
           <a

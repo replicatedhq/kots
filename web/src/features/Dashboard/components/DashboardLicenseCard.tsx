@@ -194,7 +194,9 @@ const DashboardLicenseCard = (props: Props) => {
     ? "expired-license"
     : "";
   const appLicenseClassName =
-    appLicense && size(appLicense) === 0 ? "no-license" : "dashboard-card";
+    appLicense && size(appLicense) === 0
+      ? "no-license"
+      : "dashboard-card card-bg";
 
   return (
     <div
@@ -204,9 +206,9 @@ const DashboardLicenseCard = (props: Props) => {
     >
       <div className="flex flex1 justifyContent--spaceBetween alignItems--center">
         <p
-          className={`u-fontSize--large u-textColor--${
+          className={`card-title u-textColor--${
             Utilities.checkIsDateExpired(expiresAt) ? "error" : "primary"
-          } u-fontWeight--bold`}
+          }`}
         >
           License {Utilities.checkIsDateExpired(expiresAt) && "is expired"}
           {isCommunityLicense && (
@@ -271,7 +273,7 @@ const DashboardLicenseCard = (props: Props) => {
           </div>
         )}
       </div>
-      <div className="LicenseCard-content--wrapper u-marginTop--10">
+      <div className="card-item u-marginTop--10">
         {/* license tester component to try out the useLicense hook! */}
         {props.children}
         {size(appLicense) > 0 ? (

@@ -673,7 +673,7 @@ const DashboardVersionCard = (props: Props) => {
         <div className="flex">
           <div className="flex-column">
             <div className="flex alignItems--center u-marginBottom--5">
-              <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">
+              <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary card-item-title">
                 {currentVersion?.versionLabel || currentVersion?.title}
               </p>
               <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">
@@ -1349,7 +1349,7 @@ const DashboardVersionCard = (props: Props) => {
     }
 
     return (
-      <div className="VersionCard-content--wrapper u-marginTop--15">
+      <div className="VersionCard-content--wrapper card-item u-marginTop--15">
         {updateText}
       </div>
     );
@@ -1403,7 +1403,7 @@ const DashboardVersionCard = (props: Props) => {
             </a>
           </div>
         )}
-        <div className="VersionCard-content--wrapper u-marginTop--15">
+        <div className="VersionCard-content--wrapper card-item u-marginTop--15">
           <div
             className={`flex ${
               isNew && !selectedApp?.isAirgap ? "is-new" : ""
@@ -1411,7 +1411,7 @@ const DashboardVersionCard = (props: Props) => {
           >
             <div className="flex-column">
               <div className="flex alignItems--center">
-                <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">
+                <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary card-item-title">
                   {latestDeployableVersion.versionLabel ||
                     latestDeployableVersion.title}
                 </p>
@@ -1514,11 +1514,9 @@ const DashboardVersionCard = (props: Props) => {
   }
 
   return (
-    <div className="flex-column flex1 dashboard-card">
+    <div className="flex-column flex1 dashboard-card card-bg">
       <div className="flex flex1 justifyContent--spaceBetween alignItems--center u-marginBottom--10">
-        <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold">
-          Version
-        </p>
+        <p className="card-title">Version</p>
         <div className="flex alignItems--center">
           {selectedApp?.isAirgap && airgapUploader ? (
             <MountAware
@@ -1579,7 +1577,7 @@ const DashboardVersionCard = (props: Props) => {
         </div>
       </div>
       {currentVersion?.deployedAt ? (
-        <div className="VersionCard-content--wrapper">
+        <div className="VersionCard-content--wrapper card-item">
           {renderCurrentVersion()}
         </div>
       ) : (

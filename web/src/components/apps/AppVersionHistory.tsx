@@ -1432,7 +1432,7 @@ class AppVersionHistory extends Component<Props, State> {
     const { currentPage, pageSize, totalCount, loadingPage } = this.state;
 
     return (
-      <div className="TableDiff--Wrapper">
+      <div className="TableDiff--Wrapper card-bg">
         <div className="flex u-marginBottom--15 justifyContent--spaceBetween">
           <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy">
             All versions
@@ -1822,13 +1822,13 @@ class AppVersionHistory extends Component<Props, State> {
                   className="flex-column flex1"
                   style={{ maxWidth: "370px", marginRight: "20px" }}
                 >
-                  <div className="TableDiff--Wrapper currentVersionCard--wrapper">
+                  <div className="card-bg TableDiff--Wrapper currentVersionCard--wrapper">
                     <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold">
                       {currentDownstreamVersion?.versionLabel
                         ? "Currently deployed version"
                         : "No current version deployed"}
                     </p>
-                    <div className="currentVersion--wrapper u-marginTop--10">
+                    <div className="currentVersion--wrapper card-item u-marginTop--10">
                       <div className="flex flex1">
                         {app?.iconUri && (
                           <div className="flex-auto u-marginRight--10">
@@ -1842,7 +1842,7 @@ class AppVersionHistory extends Component<Props, State> {
                         )}
                         <div className="flex1 flex-column">
                           <div className="flex alignItems--center u-marginTop--5">
-                            <p className="u-fontSize--header2 u-fontWeight--bold u-textColor--primary">
+                            <p className="u-fontSize--header2 u-fontWeight--bold u-textColor--primary card-item-title">
                               {" "}
                               {currentDownstreamVersion
                                 ? currentDownstreamVersion.versionLabel
@@ -2030,7 +2030,7 @@ class AppVersionHistory extends Component<Props, State> {
                           />
                         </div>
                       ) : (
-                        <div className="TableDiff--Wrapper u-marginBottom--30">
+                        <div className="TableDiff--Wrapper card-bg u-marginBottom--30">
                           <div className="flex justifyContent--spaceBetween">
                             <p className="u-fontSize--normal u-fontWeight--medium u-textColor--header u-marginBottom--15">
                               {this.state.updatesAvailable
@@ -2114,7 +2114,7 @@ class AppVersionHistory extends Component<Props, State> {
                           {pendingVersion ? (
                             this.renderAppVersionHistoryRow(pendingVersion)
                           ) : (
-                            <div className="flex-column flex1 u-marginTop--20 u-marginBottom--10 alignItems--center justifyContent--center u-backgroundColor--white u-borderRadius--rounded">
+                            <div className="card-item flex-column flex1 u-marginTop--20 u-marginBottom--10 alignItems--center justifyContent--center">
                               <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-padding--10">
                                 Application up to date.
                               </p>

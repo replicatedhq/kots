@@ -429,7 +429,7 @@ const AppLicenseComponent = (props: Props) => {
     <div className="flex flex-column justifyContent--center alignItems--center">
       <KotsPageTitle pageName="License" showAppSlug />
       {size(appLicense) > 0 ? (
-        <div className="License--wrapper flex-column">
+        <div className="License--wrapper flex-column card-bg">
           <div className="flex flex-auto alignItems--center">
             <span className="u-fontSize--large u-fontWeight--bold u-lineHeight--normal u-textColor--primary">
               {" "}
@@ -452,11 +452,11 @@ const AppLicenseComponent = (props: Props) => {
               </div>
             )}
           </div>
-          <div className="LicenseDetails flex-row">
+          <div className="LicenseDetails flex-row card-item">
             <div className=" flex flex1 justifyContent--spaceBetween">
               <div className="flex1 flex-column u-paddingRight--20">
                 <div className="flex flex-auto alignItems--center">
-                  <span className="u-fontSize--larger u-fontWeight--bold u-lineHeight--normal u-textColor--secondary">
+                  <span className="u-fontSize--larger u-fontWeight--bold u-lineHeight--normal u-textColor--secondary card-item-title">
                     {" "}
                     {appLicense.assignee}{" "}
                   </span>

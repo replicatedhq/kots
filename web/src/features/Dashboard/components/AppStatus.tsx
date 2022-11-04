@@ -111,7 +111,7 @@ export default class AppStatus extends React.Component<Props, State> {
             {this.props.hasStatusInformers && (
               <span
                 onClick={this.props.onViewAppStatusDetails}
-                className="card-link u-marginLeft--10"
+                className="replicated-link u-marginLeft--10"
               >
                 {" "}
                 Details{" "}
@@ -119,7 +119,7 @@ export default class AppStatus extends React.Component<Props, State> {
             )}
             <Link
               to={`${url}/config/${app?.downstream?.currentVersion?.sequence}`}
-              className="card-link u-marginLeft--10 u-borderLeft--gray u-paddingLeft--10"
+              className="replicated-link u-marginLeft--10 u-borderLeft--gray u-paddingLeft--10"
             >
               Edit config
             </Link>
@@ -144,7 +144,7 @@ export default class AppStatus extends React.Component<Props, State> {
                 href={this.createDashboardActionLink(links[0].uri)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="card-link"
+                className="replicated-link"
               >
                 {" "}
                 {links[0].title}{" "}

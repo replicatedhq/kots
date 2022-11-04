@@ -210,7 +210,7 @@ export default class DashboardGraphsCard extends React.Component<Props, State> {
 
     return (
       <div
-        className="dashboard-card graph GraphCard-content--wrapper flex-column"
+        className="dashboard-card card-bg graph GraphCard-content--wrapper flex-column"
         key={chart.title}
       >
         <XYPlot
