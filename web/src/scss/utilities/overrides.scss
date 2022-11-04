@@ -24,9 +24,6 @@ a.u-textColor--error {
   color: #daab18;
 }
 
-// .u-linkColor,
-// .card-link,
-// .link,
 .replicated-link,
 a:visited {
   color: #9b6a6c;
@@ -46,15 +43,6 @@ a:visited {
 .btn.primary:hover {
   background-color: #3e5935;
 }
-
-// .btn.primary.is-disabled,
-// .btn.primary.is-disabled:hover,
-// .btn.primary:disabled,
-// .btn.primary[disabled]
-
-// this is an option, where we dynamically add this class
-// to the button if it's disabled or not
-// will need to go through the codebase and add it to all buttons
 .btn.primary.disabled {
   background-color: #3e5935;
   opacity: 0.75;
@@ -67,11 +55,6 @@ a:visited {
   background-color: #62151d;
 }
 
-// same idea as the one from .btn.primary.disabled
-// .btn.primary.red.is-disabled,
-// .btn.primary.red.is-disabled:hover,
-// .btn.primary.red:disabled,
-// .btn.primary.red[disabled]
 .btn.primary.red.disabled {
   background-color: #8f1e2a;
   opacity: 0.75;
@@ -91,14 +74,6 @@ a:visited {
   color: #3e5935;
 }
 
-// .btn.secondary.is-disabled,
-// .btn.secondary.blue.is-disabled,
-// .btn.secondary.is-disabled:hover,
-// .btn.secondary.blue.is-disabled:hover,
-// .btn.secondary:disabled,
-// .btn.secondary.blue:disabled,
-// .btn.secondary[disabled],
-// .btn.secondary.blue[disabled]
 .btn.secondary.blue.disabled,
 .btn.secondary.disabled {
   color: #3e5935;
@@ -118,10 +93,6 @@ a:visited {
   color: #62151d;
 }
 
-// .btn.secondary.red.is-disabled,
-// .btn.secondary.red.is-disabled:hover,
-// .btn.secondary.red:disabled,
-// .btn.secondary.red[disabled]
 .btn.secondary.red.disabled {
   color: #62151d;
   border-color: #62151d;
@@ -153,23 +124,13 @@ a:visited {
   border-color: #9b6a6c;
 }
 
-/* Major element classes */
+// Major Elements
 
-// .dashboard-card,
-// .AirgapSettings--wrapper,
-// .License--wrapper,
-// .TableDiff--Wrapper:not(.classic),
-// .config-sidebar-wrapper,
-// .config-items
-
-// to simplify this, we are adding this class: (background wrapper color)
-.card-bg,
-.bg-wrapper-color {
+.card-bg {
   background-color: #faf3dd;
 }
 
-.card-item,
-.GraphCard-content--wrapper {
+.card-item {
   background-color: #ffffff;
 }
 
@@ -190,9 +151,6 @@ a:visited {
   background-color: #faf3dd;
 }
 
-/* Additional custom classes */
-// .status-tag.success,
-// .ResourceStateText.ready
 .success-status {
   background-color: #c8d5b9;
   color: #5b7553;
@@ -210,7 +168,7 @@ a:visited {
   color: #8f1e2a;
 }
 
-.WatchDetailPage--wrapper .details-subnav {
+.subnav {
   background-color: #faf3dd;
 }
 
