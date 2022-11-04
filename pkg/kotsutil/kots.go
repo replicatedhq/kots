@@ -96,7 +96,7 @@ func LoadKotsKinds(opts types.LoadKotsKindsOptions) (*types.KotsKinds, error) {
 			for _, doc := range docs {
 				gvk := types.OverlySimpleGVK{}
 				if err := yaml.Unmarshal(doc, &gvk); err != nil {
-					return errors.Wrap(err, "failed to unmarshal")
+					return errors.Wrapf(err, "failed to unmarshal doc in %s", path)
 				}
 				if IsKotsKind(gvk.APIVersion, gvk.Kind) {
 					gvkString := fmt.Sprintf("%s, Kind=%s", gvk.APIVersion, gvk.Kind)
@@ -108,6 +108,10 @@ func LoadKotsKinds(opts types.LoadKotsKindsOptions) (*types.KotsKinds, error) {
 		})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to walk upstream dir")
+	}
+
+	if len(kotsKindsMap) == 0 {
+		return &kotsKinds, nil
 	}
 
 	// we first need to detect the kots kinds that do not support templating and are needed for templating (config is a special case)
@@ -348,6 +352,7 @@ func NewBuilder(opts types.BuilderOptions) (*template.Builder, error) {
 	return &builder, nil
 }
 
+// LoadHelmChartFromContents should only be used to parse a *rendered* helm chart spec
 func LoadHelmChartFromContents(data []byte) (*kotsv1beta1.HelmChart, error) {
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	decoded, gvk, err := decode(data, nil, nil)
@@ -385,6 +390,7 @@ func LoadInstallationFromContents(installationData []byte) (*kotsv1beta1.Install
 	return obj.(*kotsv1beta1.Installation), nil
 }
 
+// LoadK8sAppFromContents should only be used to parse a *rendered* k8s application spec
 func LoadK8sAppFromContents(data []byte) (*applicationv1beta1.Application, error) {
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode([]byte(data), nil, nil)
@@ -399,6 +405,7 @@ func LoadK8sAppFromContents(data []byte) (*applicationv1beta1.Application, error
 	return obj.(*applicationv1beta1.Application), nil
 }
 
+// LoadKotsAppFromContents should only be used to parse a *rendered* kots application spec
 func LoadKotsAppFromContents(data []byte) (*kotsv1beta1.Application, error) {
 	decode := scheme.Codecs.UniversalDeserializer().Decode
 	obj, gvk, err := decode([]byte(data), nil, nil)
@@ -483,6 +490,7 @@ func LoadConfigValuesFromBytes(data []byte) (*kotsv1beta1.ConfigValues, error) {
 	return obj.(*kotsv1beta1.ConfigValues), nil
 }
 
+// LoadPreflightFromContents should only be used to parse a *rendered* preflight spec
 func LoadPreflightFromContents(content []byte) (*troubleshootv1beta2.Preflight, error) {
 	content, err := docrewrite.ConvertToV1Beta2(content)
 	if err != nil {
@@ -762,13 +770,13 @@ func LoadAirgapFromBytes(data []byte) (*kotsv1beta1.Airgap, error) {
 	return obj.(*kotsv1beta1.Airgap), nil
 }
 
-func LoadBrandingArchiveFromPath(archivePath string) (*bytes.Buffer, error) {
-	fileInfo, err := os.Stat(archivePath)
+func BuildBrandingArchive(fromPath string, renderedKotsAppSpec []byte) (*bytes.Buffer, error) {
+	fileInfo, err := os.Stat(fromPath)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to stat branding archive path")
+		return nil, errors.Wrapf(err, "failed to stat '%s'", fromPath)
 	}
 	if !fileInfo.IsDir() {
-		return nil, errors.New("branding archive path is not a directory")
+		return nil, errors.Errorf("'%s' is not a directory", fromPath)
 	}
 
 	buf := bytes.NewBuffer(nil)
@@ -779,7 +787,7 @@ func LoadBrandingArchiveFromPath(archivePath string) (*bytes.Buffer, error) {
 
 	hasFiles := false
 
-	err = filepath.Walk(archivePath,
+	err = filepath.Walk(fromPath,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
@@ -791,7 +799,7 @@ func LoadBrandingArchiveFromPath(archivePath string) (*bytes.Buffer, error) {
 
 			ext := filepath.Ext(path)
 			_, isFontFile := BrandingFontFileExtensions[ext]
-			if ext != ".yaml" && ext != ".css" && !isFontFile {
+			if ext != ".css" && !isFontFile {
 				return nil
 			}
 
@@ -800,20 +808,7 @@ func LoadBrandingArchiveFromPath(archivePath string) (*bytes.Buffer, error) {
 				return errors.Wrap(err, "failed to read file")
 			}
 
-			name := strings.TrimPrefix(path, archivePath+string(os.PathSeparator))
-
-			if ext == ".yaml" {
-				_, gvk, err := scheme.Codecs.UniversalDeserializer().Decode(contents, nil, nil)
-				if err != nil {
-					return nil
-				}
-
-				if gvk.String() != "kots.io/v1beta1, Kind=Application" {
-					return nil
-				}
-
-				name = "application.yaml"
-			}
+			name := strings.TrimPrefix(path, fromPath+string(os.PathSeparator))
 
 			hdr := &tar.Header{
 				Name:    name,
@@ -836,6 +831,22 @@ func LoadBrandingArchiveFromPath(archivePath string) (*bytes.Buffer, error) {
 		})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to walk archive path")
+	}
+
+	if len(renderedKotsAppSpec) > 0 {
+		hdr := &tar.Header{
+			Name:    "application.yaml",
+			Mode:    0644,
+			Size:    int64(len(renderedKotsAppSpec)),
+			ModTime: time.Now(),
+		}
+		if err := tw.WriteHeader(hdr); err != nil {
+			return nil, errors.Wrap(err, "failed to write tar header")
+		}
+		if _, err := tw.Write(renderedKotsAppSpec); err != nil {
+			return nil, errors.Wrap(err, "failed to write tar contents")
+		}
+		hasFiles = true
 	}
 
 	if !hasFiles {

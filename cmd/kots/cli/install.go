@@ -34,10 +34,10 @@ import (
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/metrics"
 	"github.com/replicatedhq/kots/pkg/pull"
-	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/store/kotsstore"
 	storetypes "github.com/replicatedhq/kots/pkg/store/types"
+	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -128,12 +128,11 @@ func InstallCmd() *cobra.Command {
 				}
 			}()
 
-			upstream := pull.RewriteUpstream(args[0])
-
+			upstreamURI := pull.RewriteUpstream(args[0])
 			namespace := v.GetString("namespace")
 
 			if namespace == "" {
-				enteredNamespace, err := promptForNamespace(upstream)
+				enteredNamespace, err := promptForNamespace(upstreamURI)
 				if err != nil {
 					return errors.Wrap(err, "failed to prompt for namespace")
 				}
@@ -144,27 +143,60 @@ func InstallCmd() *cobra.Command {
 				return err
 			}
 
-			applicationMetadata := &replicatedapp.ApplicationMetadata{}
-			if airgapBundle := v.GetString("airgap-bundle"); airgapBundle != "" {
-				applicationMetadata, err = pull.GetAppMetadataFromAirgap(airgapBundle, license.Spec.AppSlug, 0, namespace, registrytypes.RegistrySettings{
-					Hostname:   registryConfig.OverrideRegistry,
-					Namespace:  registryConfig.OverrideNamespace,
-					Username:   registryConfig.Username,
-					Password:   registryConfig.Password,
-					IsReadOnly: registryConfig.IsReadOnly,
-				})
+			var configValues *kotsv1beta1.ConfigValues
+			if filepath := v.GetString("config-values"); filepath != "" {
+				parsedConfigValues, err := kotsutil.LoadConfigValuesFromPath(ExpandDir(filepath))
 				if err != nil {
-					return errors.Wrapf(err, "failed to get metadata from %s", airgapBundle)
+					return errors.Wrap(err, "failed to parse config values")
 				}
-			} else if !v.GetBool("airgap") {
-				applicationMetadata, err = pull.PullApplicationMetadata(upstream, v.GetString("app-version-label"))
-				if err != nil {
-					log.Info("Unable to pull application metadata. This can be ignored, but custom branding will not be available in the Admin Console until a license is installed. This may also cause the Admin Console to run without minimal role-based-access-control (RBAC) privileges, which may be required by the application.")
-					applicationMetadata = &replicatedapp.ApplicationMetadata{}
+				configValues = parsedConfigValues
+			}
+
+			ingressConfig, err := getIngressConfig(v)
+			if err != nil {
+				return errors.Wrap(err, "failed to get ingress spec")
+			}
+
+			identityConfig, err := getIdentityConfig(v)
+			if err != nil {
+				return errors.Wrap(err, "failed to get identity spec")
+			}
+
+			if identityConfig.Spec.Enabled {
+				if err := identity.ValidateConfig(cmd.Context(), namespace, *identityConfig, *ingressConfig); err != nil {
+					return errors.Wrap(err, "failed to validate identity config")
 				}
 			}
 
-			// checks kots version compatibility with the app
+			log.ActionWithSpinner("Getting application metadata")
+
+			applicationMetadata, err := pull.GetAppMetadata(pull.GetAppMetadataOptions{
+				UpstreamURI:     upstreamURI,
+				AirgapBundle:    v.GetString("airgap-bundle"),
+				AppVersionLabel: v.GetString("app-version-label"),
+				AppSequence:     0,
+				IsAirgap:        isAirgap,
+				Namespace:       namespace,
+				License:         license,
+				ConfigValues:    configValues,
+				IdentityConfig:  identityConfig,
+				LocalRegistry: upstreamtypes.LocalRegistry{
+					Host:      registryConfig.OverrideRegistry,
+					Namespace: registryConfig.OverrideNamespace,
+					Username:  registryConfig.Username,
+					Password:  registryConfig.Password,
+					ReadOnly:  registryConfig.IsReadOnly,
+				},
+			})
+			if err != nil {
+				log.FinishSpinnerWithError()
+				log.Info("Unable to pull application metadata. This can be ignored, but custom branding will not be available in the Admin Console until a license is installed. This may also cause the Admin Console to run without minimal role-based-access-control (RBAC) privileges, which may be required by the application.")
+				applicationMetadata = &replicatedapp.ApplicationMetadata{}
+			} else {
+				log.FinishSpinner()
+			}
+
+			// check kots version compatibility with the app
 			if len(applicationMetadata.Manifest) > 0 && !v.GetBool("skip-compatibility-check") {
 				kotsApp, err := kotsutil.LoadKotsAppFromContents(applicationMetadata.Manifest)
 				if err != nil {
@@ -176,16 +208,6 @@ func InstallCmd() *cobra.Command {
 						return errors.New(kotsutil.GetIncompatbileKotsVersionMessage(*kotsApp, true))
 					}
 				}
-			}
-
-			var configValues *kotsv1beta1.ConfigValues
-			if filepath := v.GetString("config-values"); filepath != "" {
-				parsedConfigValues, err := kotsutil.LoadConfigValuesFromPath(ExpandDir(filepath))
-				if err != nil {
-					return errors.Wrap(err, "failed to parse config values")
-				}
-
-				configValues = parsedConfigValues
 			}
 
 			// alpha enablement here
@@ -204,23 +226,6 @@ func InstallCmd() *cobra.Command {
 			}
 
 			sharedPassword := v.GetString("shared-password")
-
-			ingressConfig, err := getIngressConfig(v)
-			if err != nil {
-				return errors.Wrap(err, "failed to get ingress spec")
-			}
-
-			identityConfig, err := getIdentityConfig(v)
-			if err != nil {
-				return errors.Wrap(err, "failed to get identity spec")
-			}
-
-			if identityConfig.Spec.Enabled {
-				if err := identity.ValidateConfig(cmd.Context(), namespace, *identityConfig, *ingressConfig); err != nil {
-					return errors.Wrap(err, "failed to validate identity config")
-				}
-			}
-
 			simultaneousUploads, _ := strconv.Atoi(v.GetString("airgap-upload-parallelism"))
 
 			deployOptions := kotsadmtypes.DeployOptions{
@@ -228,7 +233,7 @@ func InstallCmd() *cobra.Command {
 				Context:                v.GetString("context"),
 				SharedPassword:         sharedPassword,
 				ApplicationMetadata:    applicationMetadata.Manifest,
-				UpstreamURI:            upstream,
+				UpstreamURI:            upstreamURI,
 				License:                license,
 				ConfigValues:           configValues,
 				Airgap:                 isAirgap,

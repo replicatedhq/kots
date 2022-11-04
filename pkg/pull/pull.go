@@ -31,7 +31,6 @@ import (
 	"github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
 	"github.com/replicatedhq/kots/pkg/util"
-	k8sjson "k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/client-go/kubernetes/scheme"
 	kustomizetypes "sigs.k8s.io/kustomize/api/types"
 )
@@ -80,6 +79,19 @@ type RewriteImageOptions struct {
 	Username   string
 	Password   string
 	IsReadOnly bool
+}
+
+type GetAppMetadataOptions struct {
+	UpstreamURI     string
+	AirgapBundle    string
+	AppVersionLabel string
+	AppSequence     int64
+	IsAirgap        bool
+	Namespace       string
+	License         *kotsv1beta1.License
+	ConfigValues    *kotsv1beta1.ConfigValues
+	IdentityConfig  *kotsv1beta1.IdentityConfig
+	LocalRegistry   upstreamtypes.LocalRegistry
 }
 
 // PullApplicationMetadata will return the application metadata yaml, if one is
@@ -876,51 +888,164 @@ func writeDownstreams(options PullOptions, overlaysDir string, m *midstream.Mids
 	return nil
 }
 
-func GetAppMetadataFromAirgap(airgapArchive string, appSlug string, sequence int64, namespace string, registrySettings kotsregistrytypes.RegistrySettings) (*replicatedapp.ApplicationMetadata, error) {
-	appArchive, err := archives.GetFileFromAirgap("app.tar.gz", airgapArchive)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to extract app archive")
+// TODO NOW: write integration test for this
+func GetAppMetadata(opts GetAppMetadataOptions) (*replicatedapp.ApplicationMetadata, error) {
+	if opts.IsAirgap && opts.AirgapBundle == "" {
+		// this is an airgapped install but no airgap bundle is provided, so there's no app metadata.
+		return &replicatedapp.ApplicationMetadata{}, nil
 	}
 
-	tempDir, err := ioutil.TempDir("", "kotsadm")
+	if !opts.IsAirgap && opts.License == nil {
+		// this is an online install without a license, so we can't get the app release from the api.
+		// instead, we'll only get the metadata from the api and render it with the default context
+
+		applicationMetadata, err := PullApplicationMetadata(opts.UpstreamURI, opts.AppVersionLabel)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to pull application metadata")
+		}
+
+		// parse app slug from upstream uri
+		u, err := url.ParseRequestURI(opts.UpstreamURI)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to parse uri")
+		}
+		parsedU, err := replicatedapp.ParseReplicatedURL(u)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to parse replicated upstream")
+		}
+		appSlug := parsedU.AppSlug
+
+		builderOptions := kotsutiltypes.BuilderOptions{
+			IdentityConfig: opts.IdentityConfig,
+			RegistrySettings: kotsregistrytypes.RegistrySettings{
+				Hostname:   opts.LocalRegistry.Host,
+				Namespace:  opts.LocalRegistry.Namespace,
+				Username:   opts.LocalRegistry.Username,
+				Password:   opts.LocalRegistry.Password,
+				IsReadOnly: opts.LocalRegistry.ReadOnly,
+			},
+			AppSlug:   appSlug,
+			Sequence:  opts.AppSequence,
+			IsAirgap:  opts.IsAirgap,
+			Namespace: opts.Namespace,
+		}
+		builder, err := kotsutil.NewBuilder(builderOptions)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get template builder")
+		}
+
+		fixedUpContent, err := kotsutil.FixUpYAML(applicationMetadata.Manifest)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to fix up yaml")
+		}
+
+		renderedKotsAppSpec, err := builder.RenderTemplate("kotsapp", string(fixedUpContent))
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to render kots app spec")
+		}
+
+		// replace the application spec in the branding archive with the rendered version of the spec
+		brandingArchive, err := util.ReplaceFileInTGZArchive(bytes.NewBuffer(applicationMetadata.Branding), "application.yaml", []byte(renderedKotsAppSpec))
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to replace application spec in branding archive")
+		}
+
+		return &replicatedapp.ApplicationMetadata{
+			Manifest: []byte(renderedKotsAppSpec),
+			Branding: brandingArchive.Bytes(),
+		}, nil
+	}
+
+	// if we got here, we're either airgapped with a bundle or we have a license
+	// in either case, we can get the app release and have a full context for rendering
+
+	appSlug := ""
+	if opts.License != nil {
+		appSlug = opts.License.Spec.AppSlug
+	}
+
+	fetchOptions := upstreamtypes.FetchOptions{
+		AppSlug:         appSlug,
+		AppSequence:     opts.AppSequence,
+		AppVersionLabel: opts.AppVersionLabel,
+		License:         opts.License,
+		ConfigValues:    opts.ConfigValues,
+		IdentityConfig:  opts.IdentityConfig,
+		LocalRegistry:   opts.LocalRegistry,
+	}
+
+	if opts.IsAirgap {
+		airgapMeta, err := kotsutil.FindAirgapMetaInBundle(opts.AirgapBundle)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to find airgap meta")
+		}
+
+		appArchive, err := archives.GetFileFromAirgap("app.tar.gz", opts.AirgapBundle)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to extract app archive")
+		}
+
+		tempDir, err := ioutil.TempDir("", "kotsadm")
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create temp dir")
+		}
+		defer os.RemoveAll(tempDir)
+
+		if err := archives.ExtractTGZArchiveFromReader(bytes.NewReader(appArchive), tempDir); err != nil {
+			return nil, errors.Wrap(err, "failed to extract app archive")
+		}
+
+		fetchOptions.LocalPath = tempDir
+		fetchOptions.Airgap = airgapMeta
+	}
+
+	u, err := upstream.FetchUpstream(opts.UpstreamURI, &fetchOptions)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to fetch upstream")
+	}
+
+	appReleaseDir, err := ioutil.TempDir("", "kotsadm")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temp dir")
 	}
-	defer os.RemoveAll(tempDir)
+	defer os.RemoveAll(appReleaseDir)
 
-	err = archives.ExtractTGZArchiveFromReader(bytes.NewReader(appArchive), tempDir)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to extract app archive")
+	writeUpstreamOptions := upstreamtypes.WriteOptions{
+		RootDir:             appReleaseDir,
+		EncryptConfigValues: true,
+	}
+	if err := upstream.WriteUpstream(u, writeUpstreamOptions); err != nil {
+		return nil, errors.Wrap(err, "failed to write upstream")
 	}
 
 	kotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
-		FromDir:          tempDir,
-		RegistrySettings: registrySettings,
-		AppSlug:          appSlug,
-		Sequence:         sequence,
-		IsAirgap:         true,
-		Namespace:        namespace,
+		FromDir: appReleaseDir,
+		RegistrySettings: kotsregistrytypes.RegistrySettings{
+			Hostname:   opts.LocalRegistry.Host,
+			Namespace:  opts.LocalRegistry.Namespace,
+			Username:   opts.LocalRegistry.Username,
+			Password:   opts.LocalRegistry.Password,
+			IsReadOnly: opts.LocalRegistry.ReadOnly,
+		},
+		AppSlug:   appSlug,
+		Sequence:  opts.AppSequence,
+		IsAirgap:  opts.IsAirgap,
+		Namespace: opts.Namespace,
 	})
+
+	renderedKotsAppSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Application")
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to read kots kinds")
+		return nil, errors.Wrap(err, "failed to marshal kots app spec")
 	}
 
-	s := k8sjson.NewYAMLSerializer(k8sjson.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
-
-	var b bytes.Buffer
-	if err := s.Encode(&kotsKinds.KotsApplication, &b); err != nil {
-		return nil, errors.Wrap(err, "failed to encode metadata")
-	}
-
-	// TODO NOW: fix this
-	branding, err := kotsutil.LoadBrandingArchiveFromPath(tempDir)
+	brandingArchive, err := kotsutil.BuildBrandingArchive(appReleaseDir, []byte(renderedKotsAppSpec))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load branding archive")
 	}
 
 	return &replicatedapp.ApplicationMetadata{
-		Manifest: b.Bytes(),
-		Branding: branding.Bytes(),
+		Manifest: []byte(renderedKotsAppSpec),
+		Branding: brandingArchive.Bytes(),
 	}, nil
 }
 

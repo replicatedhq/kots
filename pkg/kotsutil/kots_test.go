@@ -311,9 +311,9 @@ var _ = Describe("Kots", func() {
 		})
 	})
 
-	Describe("LoadBrandingArchiveFromPath()", func() {
+	Describe("BuildBrandingArchive()", func() {
 		It("returns an error when the path does not exist", func() {
-			_, err := kotsutil.LoadBrandingArchiveFromPath("/does/not/exist")
+			_, err := kotsutil.BuildBrandingArchive("/does/not/exist", []byte(""))
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -322,7 +322,7 @@ var _ = Describe("Kots", func() {
 			Expect(err).ToNot(HaveOccurred())
 			defer os.Remove(tmpFile.Name())
 
-			_, err = kotsutil.LoadBrandingArchiveFromPath(tmpFile.Name())
+			_, err = kotsutil.BuildBrandingArchive(tmpFile.Name(), []byte(""))
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -331,7 +331,7 @@ var _ = Describe("Kots", func() {
 			Expect(err).ToNot(HaveOccurred())
 			defer os.RemoveAll(tmpDir)
 
-			archive, err := kotsutil.LoadBrandingArchiveFromPath(tmpDir)
+			archive, err := kotsutil.BuildBrandingArchive(tmpDir, []byte(""))
 			Expect(err).ToNot(HaveOccurred())
 			Expect(archive.Len()).To(Equal(0))
 		})
@@ -347,13 +347,13 @@ var _ = Describe("Kots", func() {
 			err = ioutil.WriteFile(filepath.Join(tmpDir, "font.ttf"), []byte("my-font-data"), 0644)
 			Expect(err).ToNot(HaveOccurred())
 
-			err = ioutil.WriteFile(filepath.Join(tmpDir, "application.yaml"), []byte("apiVersion: kots.io/v1beta1\nkind: Application\nmetadata:\n  name: app-slug\nspec:\n  icon: https://foo.com/icon.png\n  title: App Name"), 0644)
+			err = ioutil.WriteFile(filepath.Join(tmpDir, "application.yaml"), []byte(`apiVersion: kots.io/v1beta1\nkind: Application\nmetadata:\n  name: app-slug\nspec:\n  icon: repl{{ConfigOption "app_icon"}}\n  title: repl{{ConfigOption "app_name"}}`), 0644)
 			Expect(err).ToNot(HaveOccurred())
 
 			err = ioutil.WriteFile(filepath.Join(tmpDir, "random.yaml"), []byte("some: yaml"), 0644)
 			Expect(err).ToNot(HaveOccurred())
 
-			archive, err := kotsutil.LoadBrandingArchiveFromPath(tmpDir)
+			archive, err := kotsutil.BuildBrandingArchive(tmpDir, []byte(""))
 			Expect(err).ToNot(HaveOccurred())
 			Expect(archive).ToNot(BeNil())
 
@@ -361,21 +361,52 @@ var _ = Describe("Kots", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(b.String()).To(Equal("body { background-color: red; }"))
 
-			archive, err = kotsutil.LoadBrandingArchiveFromPath(tmpDir)
+			b, err = util.GetFileFromTGZArchive(archive, "font.ttf")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(b.String()).To(Equal("my-font-data"))
+
+			b, err = util.GetFileFromTGZArchive(archive, "application.yaml")
+			Expect(err).To(HaveOccurred())
+
+			_, err = util.GetFileFromTGZArchive(archive, "random.yaml")
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("returns a branding archive with the provided rendered kots application spec", func() {
+			tmpDir, err := ioutil.TempDir("", "kotsutil-test")
+			Expect(err).ToNot(HaveOccurred())
+			defer os.RemoveAll(tmpDir)
+
+			nonrenderedKotsAppSpec := []byte(`apiVersion: kots.io/v1beta1\nkind: Application\nmetadata:\n  name: app-slug\nspec:\n  icon: repl{{ConfigOption "app_icon"}}\n  title: repl{{ConfigOption "app_name"}}`)
+			renderedKotsAppSpec := []byte("apiVersion: kots.io/v1beta1\nkind: Application\nmetadata:\n  name: app-slug\nspec:\n  icon: https://foo.com/icon.png\n  title: App Name")
+
+			err = ioutil.WriteFile(filepath.Join(tmpDir, "branding.css"), []byte("body { background-color: red; }"), 0644)
+			Expect(err).ToNot(HaveOccurred())
+
+			err = ioutil.WriteFile(filepath.Join(tmpDir, "font.ttf"), []byte("my-font-data"), 0644)
+			Expect(err).ToNot(HaveOccurred())
+
+			err = ioutil.WriteFile(filepath.Join(tmpDir, "application.yaml"), nonrenderedKotsAppSpec, 0644)
+			Expect(err).ToNot(HaveOccurred())
+
+			err = ioutil.WriteFile(filepath.Join(tmpDir, "random.yaml"), []byte("some: yaml"), 0644)
+			Expect(err).ToNot(HaveOccurred())
+
+			archive, err := kotsutil.BuildBrandingArchive(tmpDir, renderedKotsAppSpec)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(archive).ToNot(BeNil())
+
+			b, err := util.GetFileFromTGZArchive(archive, "branding.css")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(b.String()).To(Equal("body { background-color: red; }"))
 
 			b, err = util.GetFileFromTGZArchive(archive, "font.ttf")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(b.String()).To(Equal("my-font-data"))
 
-			archive, err = kotsutil.LoadBrandingArchiveFromPath(tmpDir)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(archive).ToNot(BeNil())
-
 			b, err = util.GetFileFromTGZArchive(archive, "application.yaml")
 			Expect(err).ToNot(HaveOccurred())
-			Expect(b.String()).To(Equal("apiVersion: kots.io/v1beta1\nkind: Application\nmetadata:\n  name: app-slug\nspec:\n  icon: https://foo.com/icon.png\n  title: App Name"))
+			Expect(b.String()).To(Equal(string(renderedKotsAppSpec)))
 
 			_, err = util.GetFileFromTGZArchive(archive, "random.yaml")
 			Expect(err).To(HaveOccurred())

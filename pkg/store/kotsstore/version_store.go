@@ -520,7 +520,11 @@ func (s *KOTSStore) upsertAppVersionStatements(appID string, sequence int64, bas
 
 	appIcon := kotsKinds.KotsApplication.Spec.Icon
 
-	brandingArchive, err := kotsutil.LoadBrandingArchiveFromPath(filepath.Join(filesInDir, "upstream"))
+	kotsAppSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Application")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to marshal kots app spec")
+	}
+	brandingArchive, err := kotsutil.BuildBrandingArchive(filepath.Join(filesInDir, "upstream"), []byte(kotsAppSpec))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load branding archive")
 	}
@@ -620,13 +624,8 @@ func (s *KOTSStore) upsertAppVersionStatements(appID string, sequence int64, bas
 		statements = append(statements, downstreamVersionStatements...)
 
 		// update metadata configmap
-		applicationSpec, err := kotsKinds.Marshal("kots.io", "v1beta1", "Application")
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to marshal application spec")
-		}
-
-		if err := s.ensureApplicationMetadata(applicationSpec, util.PodNamespace, a.UpstreamURI); err != nil {
-			return nil, errors.Wrap(err, "failed to get metadata config map")
+		if err := s.ensureApplicationMetadata(kotsAppSpec, util.PodNamespace, a.UpstreamURI); err != nil {
+			return nil, errors.Wrap(err, "failed to update metadata config map")
 		}
 	}
 

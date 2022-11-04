@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/pkg/errors"
 )
@@ -108,4 +109,80 @@ func GetFileFromTGZArchive(archive *bytes.Buffer, fileName string) (*bytes.Buffe
 	}
 
 	return nil, errors.Errorf("file %s not found in archive", fileName)
+}
+
+// TODO NOW: write a unit test
+func ReplaceFileInTGZArchive(archive *bytes.Buffer, fileName string, newContents []byte) (*bytes.Buffer, error) {
+	if len(archive.Bytes()) == 0 {
+		return bytes.NewBuffer(nil), nil
+	}
+
+	gzReader, err := gzip.NewReader(archive)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create gzip reader")
+	}
+	tarReader := tar.NewReader(gzReader)
+
+	buf := bytes.NewBuffer(nil)
+	gzWriter := gzip.NewWriter(buf)
+	defer gzWriter.Close()
+	tarWriter := tar.NewWriter(gzWriter)
+	defer tarWriter.Close()
+
+	for {
+		hdr, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to read tar data")
+		}
+
+		if hdr.Typeflag != tar.TypeReg {
+			continue
+		}
+
+		match, err := filepath.Match(fileName, hdr.Name)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to check filename match")
+		}
+
+		var contents []byte
+		var size int64
+		var modTime time.Time
+
+		if match {
+			_, err = io.Copy(io.Discard, tarReader)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to discard file %q", hdr.Name)
+			}
+			contents = newContents
+			size = int64(len(newContents))
+			modTime = time.Now()
+		} else {
+			buf := bytes.NewBuffer(nil)
+			_, err = io.Copy(buf, tarReader)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to copy file %q", hdr.Name)
+			}
+			contents = buf.Bytes()
+			size = hdr.Size
+			modTime = hdr.ModTime
+		}
+
+		newHdr := &tar.Header{
+			Name:    hdr.Name,
+			Mode:    hdr.Mode,
+			Size:    size,
+			ModTime: modTime,
+		}
+		if err := tarWriter.WriteHeader(newHdr); err != nil {
+			return nil, errors.Wrap(err, "failed to write tar header")
+		}
+		if _, err := tarWriter.Write(contents); err != nil {
+			return nil, errors.Wrap(err, "failed to write tar contents")
+		}
+	}
+
+	return buf, nil
 }
