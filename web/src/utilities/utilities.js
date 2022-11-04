@@ -685,7 +685,7 @@ export const Utilities = {
     return str;
   },
 
-  logoutUser(client, options) {
+  logoutUser(client, options = {}) {
     const token = this.getToken();
     // TODO: for now we just remove the token,
     if (token) {
@@ -700,7 +700,7 @@ export const Utilities = {
       window.localStorage.removeItem("session_roles");
     }
 
-    const redirectPath = options.snapshotRestore
+    const redirectPath = options?.snapshotRestore
       ? "/restore-complete"
       : "/secure-console";
     if (window.location.pathname !== redirectPath) {
