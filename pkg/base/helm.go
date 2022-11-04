@@ -302,6 +302,15 @@ func helmChartBaseAppendAdditionalFiles(base Base, fullBasePath string, upstream
 		for _, additionalFile := range additionalFiles {
 			additionalFilePath := path.Join(upstreamPath, additionalFile)
 			if content, ok := upstreamFiles[additionalFilePath]; ok {
+				if additionalFile == "Chart.yaml" {
+					baseContent, err := getBaseChartYamlFromUpstream(base.Path, content)
+					if err != nil {
+						logger.Errorf("failed to get base Chart.yaml from upstream: %v", err)
+						continue
+					}
+					content = baseContent
+				}
+
 				base.AdditionalFiles = append(base.AdditionalFiles, BaseFile{
 					Path:    additionalFile,
 					Content: content,
@@ -410,12 +419,19 @@ func helmChartBaseAppendMissingDependencies(base Base, upstreamFiles []upstreamt
 			if basePath == "" {
 				continue // empty sub-base path is not allowed
 			}
+
+			content, err := getBaseChartYamlFromUpstream(basePath, upstreamFile.Content)
+			if err != nil {
+				logger.Errorf("failed to get base Chart.yaml from upstream: %v", err)
+				continue
+			}
+
 			b := Base{
 				Path: basePath,
 				AdditionalFiles: []BaseFile{
 					{
 						Path:    "Chart.yaml",
-						Content: upstreamFile.Content,
+						Content: content,
 					},
 				},
 			}
@@ -432,6 +448,30 @@ func getAllBasePaths(prefix string, base Base) []string {
 		basePaths = append(basePaths, getAllBasePaths(path.Join(prefix, base.Path), b)...)
 	}
 	return basePaths
+}
+
+func getBaseChartYamlFromUpstream(basePath string, upstreamChartYamlBytes []byte) ([]byte, error) {
+	var upstreamChartYaml map[string]interface{}
+	err := yaml.Unmarshal(upstreamChartYamlBytes, &upstreamChartYaml)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to unmarshal upstream Chart.yaml")
+	}
+
+	// remove dependencies from the upstream Chart.yaml since they have already been rendered as bases
+	delete(upstreamChartYaml, "dependencies")
+
+	// subchart names should reflect the base path to account for any aliases
+	if basePath != "" {
+		parts := strings.Split(basePath, string(os.PathSeparator))
+		upstreamChartYaml["name"] = parts[len(parts)-1]
+	}
+
+	baseChartYamlBytes, err := yaml.Marshal(upstreamChartYaml)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to marshal base Chart.yaml")
+	}
+
+	return baseChartYamlBytes, nil
 }
 
 // insert namespace if it's defined in the spec and not already present in the manifests
