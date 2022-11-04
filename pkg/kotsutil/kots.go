@@ -68,6 +68,8 @@ func LoadKotsKinds(opts types.LoadKotsKindsOptions) (*types.KotsKinds, error) {
 	}
 
 	decode := scheme.Codecs.UniversalDeserializer().Decode
+	kotsKindsMap := map[string][]byte{}
+
 	err := filepath.Walk(opts.FromDir,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
@@ -84,15 +86,14 @@ func LoadKotsKinds(opts types.LoadKotsKindsOptions) (*types.KotsKinds, error) {
 
 			contents, err := ioutil.ReadFile(path)
 			if err != nil {
-				return err
+				return errors.Wrap(err, "failed to read file")
 			}
 
 			// kots kinds could be part of a multi-yaml doc
-			allDocs := util.ConvertToSingleDocs(contents)
+			docs := util.ConvertToSingleDocs(contents)
 
 			// filter out non-kots kinds and create a map[gvk]doc for kots kinds
-			kotsKindsMap := map[string][]byte{}
-			for _, doc := range allDocs {
+			for _, doc := range docs {
 				gvk := types.OverlySimpleGVK{}
 				if err := yaml.Unmarshal(doc, &gvk); err != nil {
 					return errors.Wrap(err, "failed to unmarshal")
@@ -103,147 +104,163 @@ func LoadKotsKinds(opts types.LoadKotsKindsOptions) (*types.KotsKinds, error) {
 				}
 			}
 
-			// we first need to detect the kots kinds that do not support templating and are needed for templating (config is a special case)
-			for gvkString, doc := range kotsKindsMap {
-				switch gvkString {
-				case "kots.io/v1beta1, Kind=Config":
-					decoded, _, err := decode(doc, nil, nil)
-					if err != nil {
-						return errors.Wrap(err, "failed to decode config")
-					}
-					kotsKinds.Config = decoded.(*kotsv1beta1.Config)
-				case "kots.io/v1beta1, Kind=ConfigValues":
-					decoded, _, err := decode(doc, nil, nil)
-					if err != nil {
-						return errors.Wrap(err, "failed to decode config values")
-					}
-					kotsKinds.ConfigValues = decoded.(*kotsv1beta1.ConfigValues)
-				case "kots.io/v1beta1, Kind=Installation":
-					decoded, _, err := decode(doc, nil, nil)
-					if err != nil {
-						return errors.Wrap(err, "failed to decode installation")
-					}
-					kotsKinds.Installation = *decoded.(*kotsv1beta1.Installation)
-				case "kots.io/v1beta1, Kind=License":
-					decoded, _, err := decode(doc, nil, nil)
-					if err != nil {
-						return errors.Wrap(err, "failed to decode license")
-					}
-					kotsKinds.License = decoded.(*kotsv1beta1.License)
-				case "kots.io/v1beta1, Kind=IdentityConfig":
-					decoded, _, err := decode(doc, nil, nil)
-					if err != nil {
-						return errors.Wrap(err, "failed to decode identity config")
-					}
-					kotsKinds.IdentityConfig = decoded.(*kotsv1beta1.IdentityConfig)
-				}
-			}
-
-			builderOptions := types.BuilderOptions{
-				Config:           kotsKinds.Config,
-				ConfigValues:     kotsKinds.ConfigValues,
-				Installation:     kotsKinds.Installation,
-				License:          kotsKinds.License,
-				IdentityConfig:   kotsKinds.IdentityConfig,
-				RegistrySettings: opts.RegistrySettings,
-				AppSlug:          opts.AppSlug,
-				Sequence:         opts.Sequence,
-				IsAirgap:         opts.IsAirgap,
-				Namespace:        opts.Namespace,
-			}
-			builder, err := NewBuilder(builderOptions)
-			if err != nil {
-				return errors.Wrap(err, "failed to get template builder")
-			}
-
-			// the kots application kind can contain information that is needed for templating (e.g. proxyPublicImages),
-			// but it also needs to be templated / rendered, so we first render it, then add it to the template context, then update the template builder
-			if kotsAppDoc, ok := kotsKindsMap["kots.io/v1beta1, Kind=Application"]; ok {
-				fixedUpContent, err := FixUpYAML(kotsAppDoc)
-				if err != nil {
-					return errors.Wrap(err, "failed to fix up yaml")
-				}
-
-				rendered, err := builder.RenderTemplate("kotskind", string(fixedUpContent))
-				if err != nil {
-					return errors.Wrap(err, "failed to render doc")
-				}
-
-				decoded, _, err := decode([]byte(rendered), nil, nil)
-				if err != nil {
-					return errors.Wrap(err, "failed to decode rendered kots application doc")
-				}
-
-				kotsKinds.KotsApplication = *decoded.(*kotsv1beta1.Application)
-
-				// now that we have the kots application, we can update the template builder
-				builderOptions.KotsApplication = kotsKinds.KotsApplication
-				builder, err = NewBuilder(builderOptions)
-				if err != nil {
-					return errors.Wrap(err, "failed to update template builder")
-				}
-			}
-
-			// now that we have a builder, render the doc before decoding it and parsing it as a kots kind
-			for _, doc := range kotsKindsMap {
-				fixedUpContent, err := FixUpYAML(doc)
-				if err != nil {
-					return errors.Wrap(err, "failed to fix up yaml")
-				}
-
-				rendered, err := builder.RenderTemplate("kotskind", string(fixedUpContent))
-				if err != nil {
-					return errors.Wrap(err, "failed to render doc")
-				}
-
-				decoded, gvk, err := decode([]byte(rendered), nil, nil)
-				if err != nil {
-					return errors.Wrap(err, "failed to decode rendered doc")
-				}
-
-				if strings.HasPrefix(gvk.String(), "troubleshoot.replicated.com/v1beta1,") {
-					doc, err = docrewrite.ConvertToV1Beta2(doc)
-					if err != nil {
-						return errors.Wrap(err, "failed to convert to v1beta2")
-					}
-					decoded, gvk, err = decode(doc, nil, nil)
-					if err != nil {
-						return err
-					}
-				}
-
-				switch gvk.String() {
-				case "kots.io/v1beta1, Kind=Identity":
-					kotsKinds.Identity = decoded.(*kotsv1beta1.Identity)
-				case "kots.io/v1beta1, Kind=HelmChart":
-					kotsKinds.HelmCharts = append(kotsKinds.HelmCharts, decoded.(*kotsv1beta1.HelmChart))
-				case "kots.io/v1beta1, Kind=LintConfig":
-					kotsKinds.LintConfig = decoded.(*kotsv1beta1.LintConfig)
-				case "troubleshoot.sh/v1beta2, Kind=Collector":
-					kotsKinds.Collector = decoded.(*troubleshootv1beta2.Collector)
-				case "troubleshoot.sh/v1beta2, Kind=Analyzer":
-					kotsKinds.Analyzer = decoded.(*troubleshootv1beta2.Analyzer)
-				case "troubleshoot.sh/v1beta2, Kind=SupportBundle":
-					kotsKinds.SupportBundle = decoded.(*troubleshootv1beta2.SupportBundle)
-				case "troubleshoot.sh/v1beta2, Kind=Redactor":
-					kotsKinds.Redactor = decoded.(*troubleshootv1beta2.Redactor)
-				case "troubleshoot.sh/v1beta2, Kind=Preflight":
-					kotsKinds.Preflight = decoded.(*troubleshootv1beta2.Preflight)
-				case "troubleshoot.sh/v1beta2, Kind=HostPreflight":
-					kotsKinds.HostPreflight = decoded.(*troubleshootv1beta2.HostPreflight)
-				case "velero.io/v1, Kind=Backup":
-					kotsKinds.Backup = decoded.(*velerov1.Backup)
-				case "kurl.sh/v1beta1, Kind=Installer", "cluster.kurl.sh/v1beta1, Kind=Installer":
-					kotsKinds.Installer = decoded.(*kurlv1beta1.Installer)
-				case "app.k8s.io/v1beta1, Kind=Application":
-					kotsKinds.Application = decoded.(*applicationv1beta1.Application)
-				}
-			}
-
 			return nil
 		})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to walk upstream dir")
+	}
+
+	// we first need to detect the kots kinds that do not support templating and are needed for templating (config is a special case)
+	for gvkString, doc := range kotsKindsMap {
+		switch gvkString {
+		case "kots.io/v1beta1, Kind=Config":
+			decoded, _, err := decode(doc, nil, nil)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to decode config")
+			}
+			kotsKinds.Config = decoded.(*kotsv1beta1.Config)
+		case "kots.io/v1beta1, Kind=ConfigValues":
+			decoded, _, err := decode(doc, nil, nil)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to decode config values")
+			}
+			kotsKinds.ConfigValues = decoded.(*kotsv1beta1.ConfigValues)
+		case "kots.io/v1beta1, Kind=Installation":
+			decoded, _, err := decode(doc, nil, nil)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to decode installation")
+			}
+			kotsKinds.Installation = *decoded.(*kotsv1beta1.Installation)
+		case "kots.io/v1beta1, Kind=License":
+			decoded, _, err := decode(doc, nil, nil)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to decode license")
+			}
+			kotsKinds.License = decoded.(*kotsv1beta1.License)
+		case "kots.io/v1beta1, Kind=IdentityConfig":
+			decoded, _, err := decode(doc, nil, nil)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to decode identity config")
+			}
+			kotsKinds.IdentityConfig = decoded.(*kotsv1beta1.IdentityConfig)
+		}
+	}
+
+	builderOptions := types.BuilderOptions{
+		Config:           kotsKinds.Config,
+		ConfigValues:     kotsKinds.ConfigValues,
+		Installation:     kotsKinds.Installation,
+		License:          kotsKinds.License,
+		IdentityConfig:   kotsKinds.IdentityConfig,
+		RegistrySettings: opts.RegistrySettings,
+		AppSlug:          opts.AppSlug,
+		Sequence:         opts.Sequence,
+		IsAirgap:         opts.IsAirgap,
+		Namespace:        opts.Namespace,
+	}
+	builder, err := NewBuilder(builderOptions)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get template builder")
+	}
+
+	// the kots application kind can contain information that is needed for templating (e.g. proxyPublicImages),
+	// but it also needs to be templated / rendered, so we first render it, then add it to the template context, then update the template builder
+	if kotsAppDoc, ok := kotsKindsMap["kots.io/v1beta1, Kind=Application"]; ok {
+		fixedUpContent, err := FixUpYAML(kotsAppDoc)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to fix up yaml")
+		}
+
+		rendered, err := builder.RenderTemplate("kotskind", string(fixedUpContent))
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to render doc")
+		}
+
+		decoded, _, err := decode([]byte(rendered), nil, nil)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to decode rendered kots application doc")
+		}
+
+		kotsKinds.KotsApplication = *decoded.(*kotsv1beta1.Application)
+
+		// now that we have the kots application, we can update the template builder
+		builderOptions.KotsApplication = kotsKinds.KotsApplication
+		builder, err = NewBuilder(builderOptions)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to update template builder")
+		}
+	}
+
+	// now that we have a builder, render the doc before decoding it and parsing it as a kots kind
+	for gvkString, doc := range kotsKindsMap {
+		// skip kots kinds that we already processed to build the template context
+		switch gvkString {
+		case "kots.io/v1beta1, Kind=Config":
+			continue
+		case "kots.io/v1beta1, Kind=ConfigValues":
+			continue
+		case "kots.io/v1beta1, Kind=Installation":
+			continue
+		case "kots.io/v1beta1, Kind=License":
+			continue
+		case "kots.io/v1beta1, Kind=IdentityConfig":
+			continue
+		case "kots.io/v1beta1, Kind=Application":
+			continue
+		}
+
+		fixedUpContent, err := FixUpYAML(doc)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to fix up yaml")
+		}
+
+		rendered, err := builder.RenderTemplate("kotskind", string(fixedUpContent))
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to render doc")
+		}
+
+		decoded, gvk, err := decode([]byte(rendered), nil, nil)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to decode rendered doc %s", gvkString)
+		}
+
+		if strings.HasPrefix(gvk.String(), "troubleshoot.replicated.com/v1beta1,") {
+			doc, err = docrewrite.ConvertToV1Beta2(doc)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to convert to v1beta2")
+			}
+			decoded, gvk, err = decode(doc, nil, nil)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		switch gvk.String() {
+		case "kots.io/v1beta1, Kind=Identity":
+			kotsKinds.Identity = decoded.(*kotsv1beta1.Identity)
+		case "kots.io/v1beta1, Kind=HelmChart":
+			kotsKinds.HelmCharts = append(kotsKinds.HelmCharts, decoded.(*kotsv1beta1.HelmChart))
+		case "kots.io/v1beta1, Kind=LintConfig":
+			kotsKinds.LintConfig = decoded.(*kotsv1beta1.LintConfig)
+		case "troubleshoot.sh/v1beta2, Kind=Collector":
+			kotsKinds.Collector = decoded.(*troubleshootv1beta2.Collector)
+		case "troubleshoot.sh/v1beta2, Kind=Analyzer":
+			kotsKinds.Analyzer = decoded.(*troubleshootv1beta2.Analyzer)
+		case "troubleshoot.sh/v1beta2, Kind=SupportBundle":
+			kotsKinds.SupportBundle = decoded.(*troubleshootv1beta2.SupportBundle)
+		case "troubleshoot.sh/v1beta2, Kind=Redactor":
+			kotsKinds.Redactor = decoded.(*troubleshootv1beta2.Redactor)
+		case "troubleshoot.sh/v1beta2, Kind=Preflight":
+			kotsKinds.Preflight = decoded.(*troubleshootv1beta2.Preflight)
+		case "troubleshoot.sh/v1beta2, Kind=HostPreflight":
+			kotsKinds.HostPreflight = decoded.(*troubleshootv1beta2.HostPreflight)
+		case "velero.io/v1, Kind=Backup":
+			kotsKinds.Backup = decoded.(*velerov1.Backup)
+		case "kurl.sh/v1beta1, Kind=Installer", "cluster.kurl.sh/v1beta1, Kind=Installer":
+			kotsKinds.Installer = decoded.(*kurlv1beta1.Installer)
+		case "app.k8s.io/v1beta1, Kind=Application":
+			kotsKinds.Application = decoded.(*applicationv1beta1.Application)
+		}
 	}
 
 	return &kotsKinds, nil
