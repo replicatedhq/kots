@@ -1,30 +1,30 @@
-import React, { Component } from 'react';
-import { AppConfigRenderer } from '../../../components/AppConfigRenderer';
-import { withRouter, Link } from 'react-router-dom';
-import classNames from 'classnames';
-import { KotsPageTitle } from '@components/Head';
-import debounce from 'lodash/debounce';
-import find from 'lodash/find';
-import map from 'lodash/map';
-import Modal from 'react-modal';
-import Loader from '../../../components/shared/Loader';
-import ErrorModal from '../../../components/modals/ErrorModal';
-import { HelmDeployModal } from '../../../components/shared/modals/HelmDeployModal';
+import React, { Component } from "react";
+import { AppConfigRenderer } from "../../../components/AppConfigRenderer";
+import { withRouter, Link } from "react-router-dom";
+import classNames from "classnames";
+import { KotsPageTitle } from "@components/Head";
+import debounce from "lodash/debounce";
+import find from "lodash/find";
+import map from "lodash/map";
+import Modal from "react-modal";
+import Loader from "../../../components/shared/Loader";
+import ErrorModal from "../../../components/modals/ErrorModal";
+import { HelmDeployModal } from "../../../components/shared/modals/HelmDeployModal";
 import {
   UseIsHelmManaged,
   useDownloadValues,
   useSaveConfig,
-} from '../../../components/hooks';
-import ConfigInfo from './ConfigInfo';
+} from "../../../components/hooks";
+import ConfigInfo from "./ConfigInfo";
 
-import '../../../scss/components/watches/WatchConfig.scss';
-import { Utilities } from '../../../utilities/utilities';
-import { Span } from '../../../styles/common';
-import Icon from '@src/components/Icon';
+import "../../../scss/components/watches/WatchConfig.scss";
+import { Utilities } from "../../../utilities/utilities";
+import { Span } from "../../../styles/common";
+import Icon from "@src/components/Icon";
 
 // Types
-import { App, KotsParams, Version } from '@types';
-import { RouteComponentProps } from 'react-router-dom';
+import { App, KotsParams, Version } from "@types";
+import { RouteComponentProps } from "react-router-dom";
 
 type Props = {
   app: App;
@@ -40,7 +40,7 @@ type ConfigGroup = {
   items: ConfigGroupItem[];
   name: string;
   title: string;
-  when: 'true' | 'false';
+  when: "true" | "false";
 };
 
 type ConfigGroupItem = {
@@ -51,7 +51,7 @@ type ConfigGroupItem = {
   title: string;
   type: string;
   // TODO: refactor backend to return a boolean not a string
-  when: 'true' | 'false';
+  when: "true" | "false";
 };
 
 type RequiredItems = string[];
@@ -90,8 +90,8 @@ class AppConfig extends Component<Props, State> {
       configLoading: false,
       displayErrorModal: false,
       downstreamVersion: null,
-      errorTitle: '',
-      gettingConfigErrMsg: '',
+      errorTitle: "",
+      gettingConfigErrMsg: "",
       initialConfigGroups: [],
       savingConfig: false,
       showHelmDeployModal: false,
@@ -100,12 +100,12 @@ class AppConfig extends Component<Props, State> {
 
     this.handleConfigChange = debounce(this.handleConfigChange, 250);
     this.determineSidebarHeight = debounce(this.determineSidebarHeight, 250);
-    this.sidebarWrapper = document.createElement('div');
+    this.sidebarWrapper = document.createElement("div");
     this.fetchController = null;
   }
 
   componentWillUnmount() {
-    window.removeEventListener('resize', this.determineSidebarHeight);
+    window.removeEventListener("resize", this.determineSidebarHeight);
   }
 
   componentDidMount() {
@@ -114,7 +114,7 @@ class AppConfig extends Component<Props, State> {
       // app not configurable - redirect
       history.replace(`/app/${app.slug}`);
     }
-    window.addEventListener('resize', this.determineSidebarHeight);
+    window.addEventListener("resize", this.determineSidebarHeight);
 
     if (!this.props.app) {
       this.getApp();
@@ -165,7 +165,7 @@ class AppConfig extends Component<Props, State> {
     const slicedHash = hash.slice(0, -6);
     let activeGroupName = null;
     this.state.configGroups.map((group) => {
-      const activeItem = find(group.items, ['name', slicedHash]);
+      const activeItem = find(group.items, ["name", slicedHash]);
       if (activeItem) {
         activeGroupName = group.name;
       }
@@ -188,9 +188,9 @@ class AppConfig extends Component<Props, State> {
       const res = await fetch(`${process.env.API_ENDPOINT}/app/${slug}`, {
         headers: {
           Authorization: Utilities.getToken(),
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        method: 'GET',
+        method: "GET",
       });
       if (res.ok && res.status == 200) {
         const app = await res.json();
@@ -207,19 +207,19 @@ class AppConfig extends Component<Props, State> {
 
     this.setState({
       configLoading: true,
-      gettingConfigErrMsg: '',
+      gettingConfigErrMsg: "",
       configError: false,
     });
 
     fetch(
       `${process.env.API_ENDPOINT}/app/${slug}/config/${sequence}${window.location.search}`,
       {
-        method: 'GET',
+        method: "GET",
         headers: {
           Authorization: Utilities.getToken(),
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-      },
+      }
     )
       .then(async (response) => {
         if (!response.ok) {
@@ -239,7 +239,7 @@ class AppConfig extends Component<Props, State> {
           this.setState({
             activeGroups: [data.configGroups[0].name],
             configLoading: false,
-            gettingConfigErrMsg: '',
+            gettingConfigErrMsg: "",
           });
         }
       })
@@ -250,7 +250,7 @@ class AppConfig extends Component<Props, State> {
           displayErrorModal: true,
           gettingConfigErrMsg: err
             ? err.message
-            : 'Something went wrong, please try again.',
+            : "Something went wrong, please try again.",
         });
       });
   };
@@ -288,15 +288,15 @@ class AppConfig extends Component<Props, State> {
 
     if (fromLicenseFlow) {
       this.props.history.push(
-        `/${slug}/config${window.location.search}#${requiredItems[0]}-group`,
+        `/${slug}/config${window.location.search}#${requiredItems[0]}-group`
       );
     } else if (match.params.sequence) {
       this.props.history.push(
-        `/app/${slug}/config/${match.params.sequence}${window.location.search}#${requiredItems[0]}-group`,
+        `/app/${slug}/config/${match.params.sequence}${window.location.search}#${requiredItems[0]}-group`
       );
     } else {
       this.props.history.push(
-        `/app/${slug}/config${window.location.search}#${requiredItems[0]}-group`,
+        `/app/${slug}/config${window.location.search}#${requiredItems[0]}-group`
       );
     }
   };
@@ -307,7 +307,7 @@ class AppConfig extends Component<Props, State> {
       configGroups.forEach((configGroup) => {
         const item = configGroup.items.find((i) => i.name === requiredItem);
         if (item) {
-          item.error = 'This item is required';
+          item.error = "This item is required";
         }
       });
     });
@@ -326,10 +326,10 @@ class AppConfig extends Component<Props, State> {
       !fromLicenseFlow && match.params.sequence == undefined;
 
     fetch(`${process.env.API_ENDPOINT}/app/${slug}/config`, {
-      method: 'PUT',
+      method: "PUT",
       headers: {
         Authorization: Utilities.getToken(),
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         configGroups: this.state.configGroups,
@@ -385,7 +385,7 @@ class AppConfig extends Component<Props, State> {
           savingConfig: false,
           configError: err
             ? err.message
-            : 'Something went wrong, please try again.',
+            : "Something went wrong, please try again.",
         });
       });
   };
@@ -401,7 +401,7 @@ class AppConfig extends Component<Props, State> {
         const newItem = group.items[i];
         const oldItem = this.getItemInConfigGroups(
           initialConfigGroups,
-          newItem.name,
+          newItem.name
         );
         if (!oldItem || oldItem.value !== newItem.value) {
           return true;
@@ -413,7 +413,7 @@ class AppConfig extends Component<Props, State> {
 
   getItemInConfigGroups = (
     configGroups: ConfigGroup[],
-    itemName: string,
+    itemName: string
   ): ConfigGroupItem | undefined => {
     let foundItem;
     map(configGroups, (group) => {
@@ -444,12 +444,12 @@ class AppConfig extends Component<Props, State> {
         signal,
         headers: {
           Authorization: Utilities.getToken(),
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
+          "Content-Type": "application/json",
+          Accept: "application/json",
         },
-        method: 'POST',
+        method: "POST",
         body: JSON.stringify({ configGroups: groups, sequence: sequence }),
-      },
+      }
     )
       .then(async (response) => {
         if (!response.ok) {
@@ -470,10 +470,10 @@ class AppConfig extends Component<Props, State> {
             return;
           }
           group.items.forEach((newItem: ConfigGroupItem) => {
-            if (newItem.type === 'password') {
+            if (newItem.type === "password") {
               const oldItem = this.getItemInConfigGroups(
                 oldGroups,
-                newItem.name,
+                newItem.name
               );
               if (oldItem) {
                 newItem.value = oldItem.value;
@@ -485,7 +485,7 @@ class AppConfig extends Component<Props, State> {
         this.setState({ configGroups: newGroups, changed });
       })
       .catch((error) => {
-        if (error.name !== 'AbortError') {
+        if (error.name !== "AbortError") {
           console.log(error);
           this.setState({ configError: error?.message });
         }
@@ -531,7 +531,7 @@ class AppConfig extends Component<Props, State> {
 
     const pendingVersions = app?.downstream?.pendingVersions;
     this.props.history.push(
-      `/app/${app?.slug}/config/${pendingVersions[0].parentSequence}`,
+      `/app/${app?.slug}/config/${pendingVersions[0].parentSequence}`
     );
   };
 
@@ -567,14 +567,14 @@ class AppConfig extends Component<Props, State> {
     let downstreamVersionLabel = downstreamVersion?.versionLabel;
     if (!downstreamVersionLabel) {
       // TODO: add error handling for this. empty string is not valid
-      downstreamVersionLabel = urlParams.get('semver') || '';
+      downstreamVersionLabel = urlParams.get("semver") || "";
     }
 
-    const isPending = urlParams.get('isPending') === 'true';
+    const isPending = urlParams.get("isPending") === "true";
 
-    let saveButtonText = fromLicenseFlow ? 'Continue' : 'Save config';
+    let saveButtonText = fromLicenseFlow ? "Continue" : "Save config";
     if (isHelmManaged) {
-      saveButtonText = 'Generate Upgrade Command';
+      saveButtonText = "Generate Upgrade Command";
     }
 
     return (
@@ -585,17 +585,17 @@ class AppConfig extends Component<Props, State> {
             Configure {app.name}
           </Span>
         )}
-        <div className="flex" style={{ gap: '20px' }}>
+        <div className="flex" style={{ gap: "20px" }}>
           <div
             id="configSidebarWrapper"
             className="config-sidebar-wrapper card-bg clickable"
           >
             {configGroups?.map((group, i) => {
               if (
-                group.title === '' ||
+                group.title === "" ||
                 group.title.length === 0 ||
                 group.hidden ||
-                group.when === 'false'
+                group.when === "false"
               ) {
                 return;
               }
@@ -604,8 +604,8 @@ class AppConfig extends Component<Props, State> {
                   key={`${i}-${group.name}-${group.title}`}
                   className={`side-nav-group ${
                     this.state.activeGroups.includes(group.name)
-                      ? 'group-open'
-                      : ''
+                      ? "group-open"
+                      : ""
                   }`}
                 >
                   <div
@@ -621,7 +621,7 @@ class AppConfig extends Component<Props, State> {
                       className="darkGray-color clickable flex-auto u-marginLeft--5 arrow-down"
                       size={12}
                       style={{}}
-                      color={''}
+                      color={""}
                       disableFill={false}
                       removeInlineStyle={false}
                     />
@@ -630,13 +630,13 @@ class AppConfig extends Component<Props, State> {
                     <div className="side-nav-items">
                       {group.items?.map((item, j) => {
                         const hash = this.props.location.hash.slice(1);
-                        if (item.hidden || item.when === 'false') {
+                        if (item.hidden || item.when === "false") {
                           return;
                         }
                         return (
                           <a
                             className={`u-fontSize--normal u-lineHeight--normal ${
-                              hash === `${item.name}-group` ? 'active-item' : ''
+                              hash === `${item.name}-group` ? "active-item" : ""
                             }`}
                             href={`#${item.name}-group`}
                             key={`${j}-${item.name}-${item.title}`}
@@ -663,7 +663,7 @@ class AppConfig extends Component<Props, State> {
                 const { download, clearError: clearDownloadError } =
                   useDownloadValues({
                     appSlug: this.getSlug(),
-                    fileName: 'values.yaml',
+                    fileName: "values.yaml",
                     sequence: match.params.sequence,
                     versionLabel: downstreamVersionLabel,
                     isPending: isPending,
@@ -680,8 +680,8 @@ class AppConfig extends Component<Props, State> {
                     )}
                     <div
                       className={classNames(
-                        'ConfigOuterWrapper card-bg u-padding--15 u-marginTop--15',
-                        { 'u-marginTop--20': fromLicenseFlow },
+                        "ConfigOuterWrapper card-bg u-padding--15 u-marginTop--15",
+                        { "u-marginTop--20": fromLicenseFlow }
                       )}
                     >
                       <div className="ConfigInnerWrapper">
@@ -724,17 +724,17 @@ class AppConfig extends Component<Props, State> {
                       <>
                         <HelmDeployModal
                           appSlug={this.props?.app?.slug}
-                          chartPath={this.props?.app?.chartPath || ''}
+                          chartPath={this.props?.app?.chartPath || ""}
                           downloadClicked={download}
                           hideHelmDeployModal={() => {
                             this.setState({ showHelmDeployModal: false });
                             clearDownloadError();
                           }}
                           registryUsername={
-                            this.props?.app?.credentials?.username || ''
+                            this.props?.app?.credentials?.username || ""
                           }
                           registryPassword={
-                            this.props?.app?.credentials?.password || ''
+                            this.props?.app?.credentials?.password || ""
                           }
                           saveError={saveError}
                           showHelmDeployModal={true}
@@ -742,8 +742,8 @@ class AppConfig extends Component<Props, State> {
                           subtitle="Follow the steps below to upgrade the release with your new values.yaml."
                           title={`Upgrade ${this.props?.app?.slug}`}
                           upgradeTitle="Upgrade release"
-                          version={downstreamVersionLabel || ''}
-                          namespace={this.props?.app?.namespace || ''}
+                          version={downstreamVersionLabel || ""}
+                          namespace={this.props?.app?.namespace || ""}
                           downloadError={false}
                           revision={null}
                         />
@@ -770,7 +770,7 @@ class AppConfig extends Component<Props, State> {
                 <p className="u-fontSize--large u-textColor--primary u-lineHeight--medium u-marginBottom--20">
                   The config for {app.name} has been updated. A new commit has
                   been made to the gitops repository with these changes. Please
-                  head to the{' '}
+                  head to the{" "}
                   <a
                     className="link"
                     target="_blank"
@@ -778,7 +778,7 @@ class AppConfig extends Component<Props, State> {
                     rel="noopener noreferrer"
                   >
                     repo
-                  </a>{' '}
+                  </a>{" "}
                   to see the diff.
                 </p>
               }
@@ -815,8 +815,8 @@ class AppConfig extends Component<Props, State> {
                 <Link to={`/app/${app?.slug}/version-history`}>
                   <button type="button" className="btn blue primary">
                     {isNewVersion
-                      ? 'Go to new version'
-                      : 'Go to updated version'}
+                      ? "Go to new version"
+                      : "Go to updated version"}
                   </button>
                 </Link>
               </div>
