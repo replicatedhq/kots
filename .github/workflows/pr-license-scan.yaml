@@ -1,19 +1,16 @@
 name: PR license scan
 
 on:
-  pull_request:
+  pull_request_target: # this is safe as these scans do not execute provided code
 
 jobs:
   fossa-scan:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: "Run FOSSA Analyze" 
-        uses: fossas/fossa-action@main
+      - name: "Install FOSSA" 
+        uses: replicatedhq/action-fossa/install@main
+      - name: "Run FOSSA Scan"
+        uses: replicatedhq/action-fossa/scan@main
         with:
-          api-key: 1d5511d63d5a4ccda6d3cef2a7ef08c1 # push-only token, safe to expose
-      - name: "Run FOSSA Test"
-        uses: fossas/fossa-action@main
-        with:
-          api-key: 1d5511d63d5a4ccda6d3cef2a7ef08c1 # push-only token, safe to expose
-          run-tests: true
+          api-key: ${{ secrets.FOSSA_API_KEY }}
