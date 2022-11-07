@@ -1,5 +1,7 @@
 .AirgapUploadProgress--wrapper,
-.PreflightProgress--wrapper {
+.PreflightProgress--wrapper,
+.SupportBundleRow--Progress,
+.SupportBundleDetails--Progress {
   .progressbar {
     height: 8px;
     width: 600px;

@@ -112,13 +112,16 @@ export class AnalyzerInsights extends React.Component {
     }
 
     return (
-      <div className="flex flex1">
+      <div className="flex flex1 u-width--full">
         {isEmpty(insights) ? (
           noInsightsNode
         ) : (
-          <div className="flex-column flex1">
-            <div className="flex-auto">
-              <div className="u-position--relative flex u-marginBottom--20 u-paddingLeft--10 u-paddingRight--10">
+          <div className="flex-column u-width--full card-bg">
+            <div className="u-marginBottom--20 u-paddingLeft--10 u-paddingRight--10">
+              <label
+                htmlFor="filterTiles"
+                className="flex alignItems--center u-fontWeight--medium u-textColor--primary u-fontSize--normal u-lineHeight--normal u-userSelect--none"
+              >
                 <input
                   type="checkbox"
                   className="filter-tiles-checkbox"
@@ -128,18 +131,14 @@ export class AnalyzerInsights extends React.Component {
                     this.handleFilterTiles(e.target.checked);
                   }}
                 />
-                <label
-                  htmlFor="filterTiles"
-                  className="flex1 u-width--full u-position--relative u-marginLeft--5 u-cursor--pointer"
-                >
-                  <div className="flex-column">
-                    <span className="u-fontWeight--medium u-textColor--primary u-fontSize--normal u-marginBottom--5 u-lineHeight--normal u-userSelect--none">
-                      Only show errors and warnings
-                    </span>
-                  </div>
-                </label>
-              </div>
+                Only show errors and warnings
+              </label>
+              <span className="u-fontSize--small u-fontWeight--medium u-marginLeft--20">
+                By default we show you everything that was analyzed but you can
+                choose to see only errors and warnings.
+              </span>
             </div>
+
             {isEmpty(filteredInsights) ? (
               <div className="flex-column flex1 justifyContent--center alignItems--center u-textAlign--center u-lineHeight--normal u-textColor--bodyCopy">
                 <p className="u-textColor--primary u-fontSize--normal u-fontWeight--bold">

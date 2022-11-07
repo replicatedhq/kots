@@ -6,7 +6,7 @@ import "@src/css/icon.css";
 
 type IconProps = {
   icon: string;
-  size: number | string;
+  size: number;
   color?: string;
   style?: object;
   className?: string;
