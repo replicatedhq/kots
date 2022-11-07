@@ -110,7 +110,6 @@ a:visited {
   padding: 10px;
   border-radius: 4px;
   margin-top: 15px;
-  //display: ${(props) => (props.display ? props.display : "block")};
   grid-template-columns: 1fr 1fr;
   grid-gap: 15px 0;
 }
