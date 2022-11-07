@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, withRouter } from "react-router-dom";
 import ReactTooltip from "react-tooltip";
 import dayjs from "dayjs";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
@@ -17,17 +17,32 @@ class SnapshotRow extends React.Component {
     this.props.toggleRestoreModal(snapshot);
   };
 
+  handleSnapshotClick = () => {
+    const { app, snapshot } = this.props;
+    const isExpired = dayjs(new Date()).isSameOrAfter(snapshot?.expiresAt);
+    if (!isExpired && snapshot?.status !== "Deleting") {
+      if (app) {
+        this.props.history.push(
+          `/snapshots/partial/${this.props.app.slug}/${snapshot?.name}`
+        );
+      } else {
+        this.props.history.push(`/snapshots/details/${snapshot?.name}`);
+      }
+    }
+  };
+
   render() {
     const { snapshot, app } = this.props;
     const isExpired = dayjs(new Date()).isSameOrAfter(snapshot?.expiresAt);
 
     return (
       <div
-        className={`flex flex-auto SnapshotRow--wrapper alignItems--center u-marginTop--10 ${
+        className={`flex flex-auto SnapshotRow--wrapper card-item alignItems--center u-padding--15 u-marginTop--10 ${
           snapshot?.status === "Deleting" && "is-deleting"
         } ${snapshot?.status === "InProgress" && "in-progress"} ${
           isExpired && "is-expired"
         }`}
+        onClick={() => this.handleSnapshotClick()}
       >
         <div className="flex-column flex1" style={{ maxWidth: "700px" }}>
           <p
@@ -48,45 +63,50 @@ class SnapshotRow extends React.Component {
                   )
                 : "n/a"}
             </p>
-            {snapshot?.status === "Completed" ? (
-              <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginRight--20">
+          </div>
+        </div>
+        <div className="flex flex1">
+          <div className="flex flex-auto alignItems--center u-marginTop--5">
+            <div className="flex flex1 flex-column">
+              <div
+                className="flex justifyContent--flexStart"
+                style={{ gap: "60px" }}
+              >
+                {snapshot?.volumeSizeHuman && (
+                  <p className="u-fontSize--normal u-textColor--accent u-fontWeight--bold u-lineHeight--normal justifyContent--center flex alignItems--center">
+                    <span className="icon snapshot-volume-size-icon" />{" "}
+                    {snapshot?.volumeSizeHuman}{" "}
+                  </p>
+                )}
+                <p className="u-fontSize--normal u-textColor--accent u-fontWeight--bold u-lineHeight--normal justifyContent--center flex alignItems--center">
+                  <span className="icon snapshot-volume-icon" />{" "}
+                  {snapshot?.volumeSuccessCount}/{snapshot?.volumeCount}
+                </p>
+              </div>
+              {snapshot?.status === "Completed" ? (
+                <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginTop--10 u-marginRight--20">
+                  <span
+                    className={`status-indicator u-marginRight--5 ${snapshot?.status.toLowerCase()}`}
+                  >
+                    {Utilities.snapshotStatusToDisplayName(snapshot?.status)}
+                  </span>
+                  on{" "}
+                  {snapshot?.finishedAt
+                    ? snapshot?.finishedAt
+                      ? Utilities.dateFormat(
+                          snapshot?.finishedAt,
+                          "MMM D YYYY @ hh:mm a z"
+                        )
+                      : "TBD"
+                    : "n/a"}
+                </p>
+              ) : (
                 <span
                   className={`status-indicator u-marginRight--5 ${snapshot?.status.toLowerCase()}`}
                 >
                   {Utilities.snapshotStatusToDisplayName(snapshot?.status)}
                 </span>
-                on{" "}
-                {snapshot?.finishedAt
-                  ? snapshot?.finishedAt
-                    ? Utilities.dateFormat(
-                        snapshot?.finishedAt,
-                        "MMM D YYYY @ hh:mm a z"
-                      )
-                    : "TBD"
-                  : "n/a"}
-              </p>
-            ) : (
-              <span
-                className={`status-indicator u-marginRight--5 ${snapshot?.status.toLowerCase()}`}
-              >
-                {Utilities.snapshotStatusToDisplayName(snapshot?.status)}
-              </span>
-            )}
-          </div>
-        </div>
-        <div className="flex flex1">
-          <div className="flex flex-auto alignItems--center u-marginTop--5">
-            <div className="flex flex1 alignItems--center">
-              {snapshot?.volumeSizeHuman && (
-                <p className="u-fontSize--normal u-textColor--accent u-fontWeight--bold u-lineHeight--normal u-marginRight--30 justifyContent--center flex alignItems--center">
-                  <span className="icon snapshot-volume-size-icon" />{" "}
-                  {snapshot?.volumeSizeHuman}{" "}
-                </p>
               )}
-              <p className="u-fontSize--normal u-textColor--accent u-fontWeight--bold u-lineHeight--normal justifyContent--center flex alignItems--center">
-                <span className="icon snapshot-volume-icon" />{" "}
-                {snapshot?.volumeSuccessCount}/{snapshot?.volumeCount}
-              </p>
             </div>
           </div>
         </div>
@@ -112,7 +132,7 @@ class SnapshotRow extends React.Component {
                 onClick={() => this.handleDeleteClick(snapshot)}
               />
             )}
-            {!isExpired && snapshot?.status !== "Deleting" && (
+            {/* {!isExpired && snapshot?.status !== "Deleting" && (
               <Link
                 to={
                   app
@@ -123,7 +143,7 @@ class SnapshotRow extends React.Component {
               >
                 <Icon icon="more-circle-outline" size={13} />
               </Link>
-            )}
+            )} */}
           </div>
         )}
       </div>
@@ -131,4 +151,4 @@ class SnapshotRow extends React.Component {
   }
 }
 
-export default SnapshotRow;
+export default withRouter(SnapshotRow);
