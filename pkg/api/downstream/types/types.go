@@ -22,6 +22,7 @@ type Downstream struct {
 }
 
 type DownstreamVersion struct {
+	//TEST
 	VersionLabel       string                             `json:"versionLabel"`
 	Semver             *semver.Version                    `json:"semver,omitempty"`
 	UpdateCursor       string                             `json:"updateCursor"`
