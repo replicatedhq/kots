@@ -523,32 +523,19 @@ class Snapshots extends Component {
             </p>
           </div>
         ) : null}
-        <div className="centered-container flex-column flex1 u-paddingTop--30 u-paddingBottom--20 alignItems--center">
-          <div className="AppSnapshots--wrapper flex1 flex-column u-width--full u-marginTop--20">
+        <div className="centered-container flex-column flex1 u-paddingTop--30 u-paddingBottom--20 alignItems--center" style={{maxWidth: '770px'}}>
+          <div className="AppSnapshots--wrapper card-bg flex-column u-width--full u-marginTop--20">
             <div className="flex flex-auto u-marginBottom--15 alignItems--center justifyContent--spaceBetween">
               <div
                 className="flex1 flex-column"
-                style={{ marginRight: "60px" }}
+               // style={{ marginRight: "60px" }}
               >
+                <div className="flex justifyContent--spaceBetween">
                 <p className="u-fontWeight--bold u-textColor--primary u-fontSize--larger u-lineHeight--normal">
                   Full Snapshots (Instance){" "}
                 </p>
-                <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-textColor--bodyCopy">
-                  {" "}
-                  Full snapshots (Instance) back up the Admin Console and all
-                  application data. They can be used for full Disaster Recovery;
-                  by restoring over top of this instance, or into a new cluster.
-                  <span
-                    className="replicated-link"
-                    onClick={this.toggleSnaphotDifferencesModal}
-                  >
-                    {" "}
-                    Learn more
-                  </span>
-                  .
-                </p>
-              </div>
-              <div className="flex alignSelf--flexEnd">
+               
+                <div className="flex alignSelf--flexEnd">
                 <Link
                   to={`/snapshots/settings`}
                   className="replicated-link u-fontSize--small u-fontWeight--bold u-marginRight--20 flex alignItems--center"
@@ -592,6 +579,22 @@ class Snapshots extends Component {
                     </span>
                   </ReactTooltip>
                 )}
+                </div>
+                </div>
+                <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-textColor--bodyCopy">
+                  {" "}
+                  Full snapshots (Instance) back up the Admin Console and all
+                  application data. They can be used for full Disaster Recovery;
+                  by restoring over top of this instance, or into a new cluster.
+                  <span
+                    className="replicated-link"
+                    onClick={this.toggleSnaphotDifferencesModal}
+                  >
+                    {" "}
+                    Learn more
+                  </span>
+                  .
+                </p>
               </div>
             </div>
             {startSnapshotErr ? (
