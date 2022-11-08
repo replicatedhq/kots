@@ -9,11 +9,13 @@ import { Utilities } from "../../utilities/utilities";
 import Icon from "../Icon";
 
 class SnapshotRow extends React.Component {
-  handleDeleteClick = (snapshot) => {
+  handleDeleteClick = (e, snapshot) => {
+    e.stopPropagation();
     this.props.toggleConfirmDeleteModal(snapshot);
   };
 
-  handleRestoreClick = (snapshot) => {
+  handleRestoreClick = (e,snapshot) => {
+    e.stopPropagation();
     this.props.toggleRestoreModal(snapshot);
   };
 
@@ -37,7 +39,7 @@ class SnapshotRow extends React.Component {
 
     return (
       <div
-        className={`flex flex-auto SnapshotRow--wrapper card-item alignItems--center u-padding--15 u-marginTop--10 ${
+        className={`flex flex-auto SnapshotRow--wrapper card-item alignItems--center u-padding--15 u-marginTop--10 clickable ${
           snapshot?.status === "Deleting" && "is-deleting"
         } ${snapshot?.status === "InProgress" && "in-progress"} ${
           isExpired && "is-expired"
@@ -118,7 +120,7 @@ class SnapshotRow extends React.Component {
                   icon="sync"
                   size={20}
                   className="clickable"
-                  onClick={() => this.handleRestoreClick(snapshot)}
+                  onClick={(e) => this.handleRestoreClick(e,snapshot)}
                   data-tip="Restore from this backup"
                 />
                 <ReactTooltip effect="solid" className="replicated-tooltip" />
@@ -129,21 +131,9 @@ class SnapshotRow extends React.Component {
                 icon="trash"
                 size={20}
                 className="clickable u-marginLeft--20 error-color"
-                onClick={() => this.handleDeleteClick(snapshot)}
+                onClick={(e) => this.handleDeleteClick(e,snapshot)}
               />
             )}
-            {/* {!isExpired && snapshot?.status !== "Deleting" && (
-              <Link
-                to={
-                  app
-                    ? `/snapshots/partial/${this.props.app.slug}/${snapshot?.name}`
-                    : `/snapshots/details/${snapshot?.name}`
-                }
-                className="u-marginLeft--20"
-              >
-                <Icon icon="more-circle-outline" size={13} />
-              </Link>
-            )} */}
           </div>
         )}
       </div>
