@@ -12,10 +12,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  debug:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: github.event_name
+        run: echo ${{ github.event_name }}
+      - name: github.event.pull_request.head.repo.full_name != github.repository
+        run: echo ${{ github.event.pull_request.head.repo.full_name != github.repository }}
+      - name: contains(github.event.pull_request.labels.*.name, '@actions/safe-to-test')
+        run: echo ${{ contains(github.event.pull_request.labels.*.name, '@actions/safe-to-test') }}
+
   can-run-ci:
     runs-on: ubuntu-20.04
     # if the event is pull_request:
-    #   - this is not a fork
+    #   - this is not a forkgit a
     #   - and not dependabot
     # if the event is pull_request_target:
     #   - this is dependabot
