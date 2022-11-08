@@ -14,27 +14,23 @@ concurrency:
 jobs:
   can-run-ci:
     runs-on: ubuntu-20.04
-    # if the event is pull_request:
-    #   - this is not a fork
+    # if the event:
+    #   - is not from a fork
     #   - and not dependabot
-    # if the event is pull_request_target:
-    #   - this is dependabot
-    #   - or this is a fork and has label '@actions/safe-to-test'
+    # OR:
+    #   - if from the dependabot
+    #   - OR from a fork but has label '@actions/safe-to-test'
     #
     # The 'pull_request_target' workflow trigger may lead to malicious PR authors being able to obtain repository write permissions or stealing repository secrets.
     # Please read https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
     if: >
-      ( github.event_name == 'pull_request' &&
-        ( github.event.pull_request.head.repo.full_name == github.repository &&
-          github.event.pull_request.user.login != 'dependabot[bot]'
-        )
+      ( github.event.pull_request.head.repo.full_name == github.repository &&
+        github.event.pull_request.user.login != 'dependabot[bot]'
       )
       ||
-      ( github.event_name == 'pull_request_target' &&
-        ( github.event.pull_request.user.login == 'dependabot[bot]' ||
-          ( github.event.pull_request.head.repo.full_name != github.repository &&
-            contains(github.event.pull_request.labels.*.name, '@actions/safe-to-test')
-          )
+      ( github.event.pull_request.user.login == 'dependabot[bot]' ||
+        ( github.event.pull_request.head.repo.full_name != github.repository &&
+          contains(github.event.pull_request.labels.*.name, '@actions/safe-to-test')
         )
       )
     steps:
