@@ -680,7 +680,7 @@ class AppConfig extends Component<Props, State> {
                     )}
                     <div
                       className={classNames(
-                        "ConfigOuterWrapper card-bg u-padding--15 u-marginTop--15",
+                        "ConfigOuterWrapper card-bg u-padding--15",
                         { "u-marginTop--20": fromLicenseFlow }
                       )}
                     >

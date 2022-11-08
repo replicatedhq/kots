@@ -227,7 +227,7 @@ export default class ConfigGroup extends React.Component {
           <div
             id={item.name}
             className={`flex-auto config-item-wrapper card-item u-padding--15 ${
-              this.isAtLeastOneItemVisible() ? "u-marginBottom--30" : ""
+              this.isAtLeastOneItemVisible() ? "u-marginBottom--20" : ""
             }`}
           >
             <h3 className="card-title">{item.title}</h3>
