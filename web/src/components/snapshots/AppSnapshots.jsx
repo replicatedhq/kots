@@ -637,7 +637,7 @@ class AppSnapshots extends Component {
               .
             </p>
           </div>
-          <div className="AppSnapshots--wrapper card-bg flex1 flex-column u-marginTop--20">
+          <div className="AppSnapshots--wrapper card-bg flex-column u-marginTop--20">
             <div className="flex flex-column u-marginBottom--15">
               <div className="flex justifyContent--spaceBetween">
                 <p className="u-fontWeight--bold u-textColor--primary u-fontSize--larger u-lineHeight--normal">
@@ -732,10 +732,7 @@ class AppSnapshots extends Component {
                 ))}
               </div>
             ) : !isStartButtonClicked ? (
-              <div className="flex flex-column u-position--relative">
-                {[0, 1, 2, 3, 4, 5].map((el) => (
-                  <DummySnapshotRow key={el} />
-                ))}
+              <div className="flex flex-column justifyContent--center alignItems--center">
                 <GettingStartedSnapshots
                   isApp={true}
                   app={selectedApp}
