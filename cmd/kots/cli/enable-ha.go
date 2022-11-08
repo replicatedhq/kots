@@ -16,8 +16,7 @@ func EnableHACmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           "enable-ha",
 		Short:         "Enables HA mode for the admin console",
-		Long:          ``,
-		Deprecated:    "This command is deprecated and will be removed in a future release.",
+		Long:          `This command is deprecated and will be removed in a future release.`,
 		SilenceUsage:  true,
 		SilenceErrors: false,
 		PreRun: func(cmd *cobra.Command, args []string) {
