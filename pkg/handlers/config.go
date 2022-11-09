@@ -857,7 +857,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 		renderSequence = nextAppSequence
 	}
 
-	err = render.RenderDir(archiveDir, kotsKinds, app, downstreams, registrySettings, renderSequence)
+	err = render.RenderDir(archiveDir, app, downstreams, registrySettings, renderSequence)
 	if err != nil {
 		updateAppConfigResponse.Error = "failed to render archive directory"
 		return updateAppConfigResponse, err

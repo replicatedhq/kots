@@ -12,11 +12,9 @@ import (
 	"github.com/replicatedhq/kots/kotskinds/client/kotsclientset/scheme"
 	gitopstypes "github.com/replicatedhq/kots/pkg/gitops/types"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
-	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/persistence"
 	rendertypes "github.com/replicatedhq/kots/pkg/render/types"
-	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/rqlite/gorqlite"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer/json"
 )
@@ -183,19 +181,7 @@ func (s *KOTSStore) createNewVersionForLicenseChangeStatements(appID string, bas
 		return nil, int64(0), errors.Wrap(err, "failed to get next app sequence")
 	}
 
-	kotsKinds, err := kotsutil.LoadKotsKinds(kotsutiltypes.LoadKotsKindsOptions{
-		FromDir:          archiveDir,
-		RegistrySettings: registrySettings,
-		AppSlug:          app.Slug,
-		Sequence:         nextAppSequence,
-		IsAirgap:         app.IsAirgap,
-		Namespace:        util.AppNamespace(),
-	})
-	if err != nil {
-		return nil, int64(0), errors.Wrap(err, "failed to load kotskinds")
-	}
-
-	if err := renderer.RenderDir(archiveDir, kotsKinds, app, downstreams, registrySettings, nextAppSequence); err != nil {
+	if err := renderer.RenderDir(archiveDir, app, downstreams, registrySettings, nextAppSequence); err != nil {
 		return nil, int64(0), errors.Wrap(err, "failed to render new version")
 	}
 

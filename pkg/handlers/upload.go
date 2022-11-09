@@ -148,7 +148,7 @@ func (h *Handler) UploadExistingApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = render.RenderDir(archiveDir, kotsKinds, a, downstreams, registrySettings, nextAppSequence)
+	err = render.RenderDir(archiveDir, a, downstreams, registrySettings, nextAppSequence)
 	if err != nil {
 		logger.Error(errors.Wrap(err, "failed to render app version"))
 		w.WriteHeader(http.StatusInternalServerError)

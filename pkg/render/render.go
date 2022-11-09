@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	downstreamtypes "github.com/replicatedhq/kots/pkg/api/downstream/types"
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
-	kotsutiltypes "github.com/replicatedhq/kots/pkg/kotsutil/types"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/rewrite"
@@ -20,11 +20,31 @@ type Renderer struct {
 
 // RenderDir renders an app archive dir
 // this is useful for when the license/config have updated, and template functions need to be evaluated again
-func (r Renderer) RenderDir(archiveDir string, kotsKinds *kotsutiltypes.KotsKinds, a *apptypes.App, downstreams []downstreamtypes.Downstream, registrySettings registrytypes.RegistrySettings, sequence int64) error {
-	return RenderDir(archiveDir, kotsKinds, a, downstreams, registrySettings, sequence)
+func (r Renderer) RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes.Downstream, registrySettings registrytypes.RegistrySettings, sequence int64) error {
+	return RenderDir(archiveDir, a, downstreams, registrySettings, sequence)
 }
 
-func RenderDir(archiveDir string, kotsKinds *kotsutiltypes.KotsKinds, a *apptypes.App, downstreams []downstreamtypes.Downstream, registrySettings registrytypes.RegistrySettings, sequence int64) error {
+func RenderDir(archiveDir string, a *apptypes.App, downstreams []downstreamtypes.Downstream, registrySettings registrytypes.RegistrySettings, sequence int64) error {
+	installation, err := kotsutil.LoadInstallationFromPath(filepath.Join(archiveDir, "upstream", "userdata", "installation.yaml"))
+	if err != nil {
+		return errors.Wrap(err, "failed to load installation from path")
+	}
+
+	license, err := kotsutil.LoadLicenseFromPath(filepath.Join(archiveDir, "upstream", "userdata", "license.yaml"))
+	if err != nil {
+		return errors.Wrap(err, "failed to load license from path")
+	}
+
+	configValues, err := kotsutil.LoadConfigValuesFromPath(filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"))
+	if err != nil && !os.IsNotExist(errors.Cause(err)) {
+		return errors.Wrap(err, "failed to load config values from path")
+	}
+
+	identityConfig, err := kotsutil.LoadIdentityConfigFromPath(filepath.Join(archiveDir, "upstream", "userdata", "identityconfig.yaml"))
+	if err != nil && !os.IsNotExist(errors.Cause(err)) {
+		return errors.Wrap(err, "failed to load identity config from path")
+	}
+
 	downstreamNames := []string{}
 	for _, d := range downstreams {
 		downstreamNames = append(downstreamNames, d.Name)
@@ -37,15 +57,15 @@ func RenderDir(archiveDir string, kotsKinds *kotsutiltypes.KotsKinds, a *apptype
 
 	reOptions := rewrite.RewriteOptions{
 		RootDir:            archiveDir,
-		UpstreamURI:        fmt.Sprintf("replicated://%s", kotsKinds.License.Spec.AppSlug),
+		UpstreamURI:        fmt.Sprintf("replicated://%s", license.Spec.AppSlug),
 		UpstreamPath:       filepath.Join(archiveDir, "upstream"),
 		Downstreams:        downstreamNames,
 		Silent:             true,
 		CreateAppDir:       false,
-		Installation:       &kotsKinds.Installation,
-		License:            kotsKinds.License,
-		ConfigValues:       kotsKinds.ConfigValues,
-		IdentityConfig:     kotsKinds.IdentityConfig,
+		Installation:       installation,
+		License:            license,
+		ConfigValues:       configValues,
+		IdentityConfig:     identityConfig,
 		K8sNamespace:       appNamespace,
 		CopyImages:         false,
 		IsAirgap:           a.IsAirgap,

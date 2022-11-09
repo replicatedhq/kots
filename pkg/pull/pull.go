@@ -917,6 +917,11 @@ func GetAppMetadata(opts GetAppMetadataOptions) (*replicatedapp.ApplicationMetad
 
 		builderOptions := kotsutiltypes.BuilderOptions{
 			IdentityConfig: opts.IdentityConfig,
+			Installation: kotsv1beta1.Installation{
+				Spec: kotsv1beta1.InstallationSpec{
+					VersionLabel: opts.AppVersionLabel,
+				},
+			},
 			RegistrySettings: kotsregistrytypes.RegistrySettings{
 				Hostname:   opts.LocalRegistry.Host,
 				Namespace:  opts.LocalRegistry.Namespace,
