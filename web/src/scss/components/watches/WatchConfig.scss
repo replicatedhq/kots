@@ -46,6 +46,7 @@ a:visited {
 .config-sidebar-wrapper {
   background: $sub-nav-color;
   width: 250px;
+  height: fit-content;
   padding: 10px;
   border-radius: 4px;
   overflow: auto;
@@ -55,6 +56,15 @@ a:visited {
       margin-left: 6px;
       top: 6px;
       transition: transform 0.1s ease-in-out;
+    }
+    &.group-title {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: $text-color-secondary;
+      &:hover {
+        color: $text-color-primary;
+      }
     }
 
     &.group-open {
@@ -71,12 +81,35 @@ a:visited {
     }
   }
 }
+.side-nav-items {
+  display: none;
+  padding-left: 15px;
+  a {
+    display: block;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    color: $sub-nav-text-color;
+    cursor: pointer;
+    font-weight: 400;
+
+    &.active-item {
+      font-weight: 500;
+      color: $text-color-secondary;
+    }
+
+    &:hover {
+      color: $text-color-secondary;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+}
 .config-items {
   padding: 10px;
-  background-color: #f5f8f9;
   border-radius: 4px;
   margin-top: 15px;
-  //display: ${(props) => (props.display ? props.display : "block")};
   grid-template-columns: 1fr 1fr;
   grid-gap: 15px 0;
 }

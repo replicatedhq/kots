@@ -1,26 +1,17 @@
 package upstream
 
 import (
-	"archive/tar"
-	"bytes"
-	"compress/gzip"
-	"fmt"
-	"io"
 	"io/ioutil"
 	"net/url"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/Masterminds/semver"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/upstream/types"
-	"github.com/replicatedhq/kots/pkg/util"
 	"helm.sh/helm/v3/cmd/helm/search"
 	"helm.sh/helm/v3/pkg/cli"
-	"helm.sh/helm/v3/pkg/downloader"
 	"helm.sh/helm/v3/pkg/getter"
 	"helm.sh/helm/v3/pkg/repo"
 )
@@ -54,109 +45,6 @@ func getUpdatesHelm(u *url.URL, repoURI string) (*types.UpdateCheckResult, error
 		Updates:         updates,
 		UpdateCheckTime: time.Now(),
 	}, nil
-}
-
-func downloadHelm(u *url.URL, repoURI string) (*types.Upstream, error) {
-	repoName, chartName, chartVersion, err := parseHelmURL(u)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse helm uri")
-	}
-
-	if repoURI == "" {
-		repoURI = getKnownHelmRepoURI(repoName)
-	}
-
-	helmHome, err := ioutil.TempDir("", "kots")
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create temporary helm home")
-	}
-	defer os.RemoveAll(helmHome)
-
-	i, err := helmLoadRepositoriesIndex(helmHome, repoName, repoURI)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to load helm repositories")
-	}
-
-	if chartVersion == "" {
-		highestChartVersion := semver.MustParse("0.0.0")
-		for _, result := range i.All() {
-			if result.Chart.Name != chartName {
-				continue
-			}
-
-			v, err := semver.NewVersion(result.Chart.Version)
-			if err != nil {
-				return nil, errors.Wrap(err, "unable to parse chart version")
-			}
-
-			if v.GreaterThan(highestChartVersion) {
-				highestChartVersion = v
-			}
-		}
-
-		chartVersion = highestChartVersion.String()
-	}
-
-	for _, result := range i.All() {
-		if result.Chart.Name != chartName {
-			continue
-		}
-
-		if result.Chart.Version != chartVersion {
-			continue
-		}
-
-		dl := downloader.ChartDownloader{
-			Out:              os.Stdout,
-			Getters:          getter.All(&cli.EnvSettings{}),
-			RepositoryConfig: getReposFile(helmHome),
-			RepositoryCache:  getCachePath(helmHome),
-		}
-
-		archiveDir, err := ioutil.TempDir("", "archive")
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to create archive directory for chart")
-		}
-		defer os.RemoveAll(archiveDir)
-
-		chartRef, err := repo.FindChartInRepoURL(repoURI, result.Chart.Name, chartVersion, "", "", "", getter.All(&cli.EnvSettings{}))
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to find chart in repo url")
-		}
-
-		_, _, err = dl.DownloadTo(chartRef, result.Chart.Version, archiveDir)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to download chart")
-		}
-
-		upstream, err := chartArchiveToSparseUpstream(path.Join(archiveDir, fmt.Sprintf("%s-%s.tgz", chartName, chartVersion)))
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to parse chart archive as upstream")
-		}
-
-		upstream.URI = u.RequestURI()
-		upstream.Name = chartName
-		upstream.UpdateCursor = chartVersion
-		upstream.VersionLabel = chartVersion
-
-		return upstream, nil
-	}
-
-	return nil, errors.New("chart version not found")
-}
-
-func chartArchiveToSparseUpstream(chartArchivePath string) (*types.Upstream, error) {
-	files, err := readTarGz(chartArchivePath)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to read chart archive")
-	}
-
-	upstream := &types.Upstream{
-		Type:  "helm",
-		Files: files,
-	}
-
-	return upstream, nil
 }
 
 func helmLoadRepositoriesIndex(helmHome, repoName, repoURI string) (*search.Index, error) {
@@ -235,82 +123,6 @@ func getKnownHelmRepoURI(repoName string) string {
 	}
 
 	return val
-}
-
-func readTarGz(source string) ([]types.UpstreamFile, error) {
-	f, err := os.Open(source)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to open archive")
-	}
-	defer f.Close()
-
-	gzf, err := gzip.NewReader(f)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create gzip reader")
-	}
-
-	tarReader := tar.NewReader(gzf)
-
-	upstreamFiles := []types.UpstreamFile{}
-	for {
-		header, err := tarReader.Next()
-
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to advance in tar archive")
-		}
-
-		name := header.Name
-
-		switch header.Typeflag {
-		case tar.TypeReg:
-			buf := new(bytes.Buffer)
-			_, err = buf.ReadFrom(tarReader)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to read file from tar archive")
-			}
-			upstreamFile := types.UpstreamFile{
-				Path:    name,
-				Content: buf.Bytes(),
-			}
-
-			upstreamFiles = append(upstreamFiles, upstreamFile)
-		default:
-			continue
-		}
-	}
-
-	// remove any common prefix from all files
-	if len(upstreamFiles) > 0 {
-		firstFileDir, _ := path.Split(upstreamFiles[0].Path)
-		commonPrefix := strings.Split(firstFileDir, string(os.PathSeparator))
-
-		for _, file := range upstreamFiles {
-			d, _ := path.Split(file.Path)
-			dirs := strings.Split(d, string(os.PathSeparator))
-
-			commonPrefix = util.CommonSlicePrefix(commonPrefix, dirs)
-
-		}
-
-		cleanedUpstreamFiles := []types.UpstreamFile{}
-		for _, file := range upstreamFiles {
-			d, f := path.Split(file.Path)
-			d2 := strings.Split(d, string(os.PathSeparator))
-
-			cleanedUpstreamFile := file
-			d2 = d2[len(commonPrefix):]
-			cleanedUpstreamFile.Path = path.Join(path.Join(d2...), f)
-
-			cleanedUpstreamFiles = append(cleanedUpstreamFiles, cleanedUpstreamFile)
-		}
-
-		upstreamFiles = cleanedUpstreamFiles
-	}
-
-	return upstreamFiles, nil
 }
 
 func getReposFile(helmHome string) string {

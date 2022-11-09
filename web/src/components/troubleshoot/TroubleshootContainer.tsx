@@ -6,6 +6,7 @@ import SupportBundleAnalysis from "../troubleshoot/SupportBundleAnalysis";
 import GenerateSupportBundle from "../troubleshoot/GenerateSupportBundle";
 import Redactors from "../redactors/Redactors";
 import EditRedactor from "../redactors/EditRedactor";
+import { Utilities } from "@src/utilities/utilities";
 
 // Types
 import { App } from "@types";
@@ -14,7 +15,96 @@ type Props = {
   app: App | null;
   appName: string;
 };
-class TroubleshootContainer extends Component<Props> {
+type State = {
+  newBundleSlug: string;
+  isGeneratingBundle: false;
+  generateBundleErrMsg: string;
+  loading: boolean;
+  bundleAnalysisProgress: Object;
+  getSupportBundleErrMsg: string;
+  displayErrorModal: boolean;
+  bundle: object;
+  loadingBundleId: string;
+  loadingBundle: boolean;
+};
+class TroubleshootContainer extends Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+
+    this.state = {
+      newBundleSlug: "",
+      isGeneratingBundle: false,
+      generateBundleErrMsg: "",
+      loading: false,
+      bundleAnalysisProgress: {},
+      getSupportBundleErrMsg: "",
+      displayErrorModal: false,
+      bundle: {},
+      loadingBundleId: "",
+      loadingBundle: false,
+    };
+  }
+
+  updateBundleSlug = (value: string) => {
+    this.setState({ newBundleSlug: value });
+  };
+
+  updateState = (value: State) => {
+    this.setState(value);
+  };
+
+  pollForBundleAnalysisProgress = async () => {
+    this.setState({ loadingBundle: true });
+    const { newBundleSlug } = this.state;
+    if (!newBundleSlug) {
+      // component may start polling before bundle slug is set
+      // this is to prevent an api call if the slug is not set
+      return;
+    }
+    fetch(
+      `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/${newBundleSlug}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: Utilities.getToken(),
+        },
+        method: "GET",
+      }
+    )
+      .then(async (res) => {
+        if (!res.ok) {
+          this.setState({
+            loading: false,
+            getSupportBundleErrMsg: `Unexpected status code: ${res.status}`,
+            displayErrorModal: true,
+          });
+          return;
+        }
+        const bundle = await res.json();
+        this.setState({
+          bundleAnalysisProgress: bundle.progress,
+          bundle,
+          loadingBundleId: bundle.id,
+          loadingBundle: true,
+        });
+
+        if (bundle.status !== "running") {
+          this.setState({ loadingBundleId: "", loadingBundle: false });
+        }
+      })
+
+      .catch((err) => {
+        this.setState({
+          loading: false,
+          getSupportBundleErrMsg: err
+            ? err.message
+            : "Something went wrong, please try again.",
+          displayErrorModal: true,
+          loadingBundle: false,
+        });
+      });
+  };
+
   render() {
     const { app, appName } = this.props;
 
@@ -24,16 +114,52 @@ class TroubleshootContainer extends Component<Props> {
           <Route
             exact
             path="/app/:slug/troubleshoot"
-            render={() => <SupportBundleList watch={app} />}
+            render={() => (
+              <SupportBundleList
+                watch={app}
+                newBundleSlug={this.state.newBundleSlug}
+                updateBundleSlug={this.updateBundleSlug}
+                pollForBundleAnalysisProgress={
+                  this.pollForBundleAnalysisProgress
+                }
+                bundle={this.state.bundle}
+                bundleProgress={this.state.bundleAnalysisProgress}
+                loadingBundleId={this.state.loadingBundleId}
+                loadingBundle={this.state.loadingBundle}
+                updateState={this.updateState}
+                displayErrorModal={this.state.displayErrorModal}
+                loading={this.state.loading}
+              />
+            )}
           />
           <Route
             exact
             path="/app/:slug/troubleshoot/generate"
-            render={() => <GenerateSupportBundle watch={app} />}
+            render={() => (
+              <GenerateSupportBundle
+                watch={app}
+                newBundleSlug={this.state.newBundleSlug}
+                updateBundleSlug={this.updateBundleSlug}
+                bundle={this.state.bundle}
+              />
+            )}
           />
           <Route
             path="/app/:slug/troubleshoot/analyze/:bundleSlug"
-            render={() => <SupportBundleAnalysis watch={app} />}
+            render={() => (
+              <SupportBundleAnalysis
+                watch={app}
+                pollForBundleAnalysisProgress={
+                  this.pollForBundleAnalysisProgress
+                }
+                bundle={this.state.bundle}
+                bundleProgress={this.state.bundleAnalysisProgress}
+                updateState={this.updateState}
+                displayErrorModal={this.state.displayErrorModal}
+                getSupportBundleErrMsg={this.state.getSupportBundleErrMsg}
+                loading={this.state.loading}
+              />
+            )}
           />
           <Route
             exact

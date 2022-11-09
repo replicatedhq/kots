@@ -74,9 +74,7 @@ type WriteOptions struct {
 type FetchOptions struct {
 	RootDir                  string
 	UseAppDir                bool
-	HelmRepoName             string
 	HelmRepoURI              string
-	HelmOptions              []string
 	LocalPath                string
 	License                  *kotsv1beta1.License
 	ConfigValues             *kotsv1beta1.ConfigValues
