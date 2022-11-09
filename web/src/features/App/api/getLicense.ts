@@ -27,6 +27,7 @@ export const getLicense = async ({
     );
 
     if (res.status === 200) {
+      console.log('getLicense data', res.data);
       return res.data;
     } else {
       // TODO: more error handling
