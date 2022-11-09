@@ -143,7 +143,7 @@ RUN cd /tmp && curl -fsSL -o helm.tar.gz "${HELM3_URL}" \
 
 RUN --mount=target=$GOMODCACHE,id=gomodcache,type=cache \
     --mount=target=$GOCACHE,id=gocache,type=cache \
-    go install github.com/go-delve/delve/cmd/dlv@v1.8.0
+    go install github.com/go-delve/delve/cmd/dlv@v1.9.1
 
 ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots
 WORKDIR $PROJECTPATH
