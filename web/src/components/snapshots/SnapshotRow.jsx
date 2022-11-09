@@ -104,7 +104,7 @@ class SnapshotRow extends React.Component {
                 </p>
               ) : (
                 <span
-                  className={`status-indicator u-marginRight--5 ${snapshot?.status.toLowerCase()}`}
+                  className={`status-indicator u-marginTop--10 u-marginRight--5 ${snapshot?.status.toLowerCase()}`}
                 >
                   {Utilities.snapshotStatusToDisplayName(snapshot?.status)}
                 </span>

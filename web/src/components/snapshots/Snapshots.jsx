@@ -8,7 +8,6 @@ import Loader from "../shared/Loader";
 import SnapshotRow from "./SnapshotRow";
 import BackupRestoreModal from "../modals/BackupRestoreModal";
 import DeleteSnapshotModal from "../modals/DeleteSnapshotModal";
-import DummySnapshotRow from "./DummySnapshotRow";
 import GettingStartedSnapshots from "./GettingStartedSnapshots";
 import ErrorModal from "../modals/ErrorModal";
 import SnapshotDifferencesModal from "../modals/SnapshotDifferencesModal";
@@ -616,9 +615,6 @@ class Snapshots extends Component {
               </div>
             ) : !isStartButtonClicked ? (
               <div className="flex flex-column u-position--relative">
-                {[0, 1, 2, 3, 4, 5].map((el) => (
-                  <DummySnapshotRow key={el} />
-                ))}
                 <GettingStartedSnapshots
                   isVeleroInstalled={!!snapshotSettings?.veleroVersion}
                   history={this.props.history}

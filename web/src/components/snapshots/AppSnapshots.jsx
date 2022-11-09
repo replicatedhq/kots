@@ -8,7 +8,6 @@ import Select from "react-select";
 import isEmpty from "lodash/isEmpty";
 
 import SnapshotRow from "./SnapshotRow";
-import DummySnapshotRow from "./DummySnapshotRow";
 import GettingStartedSnapshots from "./GettingStartedSnapshots";
 import ScheduleSnapshotForm from "../shared/ScheduleSnapshotForm";
 import Loader from "../shared/Loader";
