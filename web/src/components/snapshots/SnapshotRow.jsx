@@ -14,7 +14,7 @@ class SnapshotRow extends React.Component {
     this.props.toggleConfirmDeleteModal(snapshot);
   };
 
-  handleRestoreClick = (e,snapshot) => {
+  handleRestoreClick = (e, snapshot) => {
     e.stopPropagation();
     this.props.toggleRestoreModal(snapshot);
   };
@@ -120,7 +120,7 @@ class SnapshotRow extends React.Component {
                   icon="sync"
                   size={20}
                   className="clickable"
-                  onClick={(e) => this.handleRestoreClick(e,snapshot)}
+                  onClick={(e) => this.handleRestoreClick(e, snapshot)}
                   data-tip="Restore from this backup"
                 />
                 <ReactTooltip effect="solid" className="replicated-tooltip" />
@@ -131,7 +131,7 @@ class SnapshotRow extends React.Component {
                 icon="trash"
                 size={20}
                 className="clickable u-marginLeft--20 error-color"
-                onClick={(e) => this.handleDeleteClick(e,snapshot)}
+                onClick={(e) => this.handleDeleteClick(e, snapshot)}
               />
             )}
           </div>
