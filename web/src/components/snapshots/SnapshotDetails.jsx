@@ -672,7 +672,7 @@ class SnapshotDetails extends Component {
     }
 
     return (
-      <div className="container flex-column flex1 u-overflow--auto u-paddingTop--30 u-paddingBottom--20">
+      <div className="container flex-column u-overflow--auto u-paddingTop--30 u-paddingBottom--20">
         <p className="u-marginBottom--30 u-fontSize--small u-textColor--accent u-fontWeight--medium">
           <span
             className="replicated-link"
@@ -683,7 +683,9 @@ class SnapshotDetails extends Component {
           <span className="u-textColor--bodyCopy"> &gt; </span>
           {snapshotDetails?.name}
         </p>
-        <div className="flex justifyContent--spaceBetween alignItems--center u-paddingBottom--30 u-borderBottom--gray">
+        <div className="card-bg">
+
+        <div className="flex justifyContent--spaceBetween alignItems--center u-paddingBottom--15">
           <div className="flex-column u-lineHeight--normal">
             <p className="u-fontSize--larger u-fontWeight--bold u-textColor--primary u-marginBottom--5">
               {snapshotDetails?.name}
@@ -730,7 +732,7 @@ class SnapshotDetails extends Component {
             {!isEmpty(snapshotDetails?.volumes) ||
             !isEmpty(this.preSnapshotScripts()) ||
             !isEmpty(this.postSnapshotScripts()) ? (
-              <div className="flex-column flex-auto u-marginTop--30 u-marginBottom--40">
+              <div className="flex-column flex-auto card-item u-padding--15 u-marginBottom--30">
                 <p className="u-fontSize--larger u-fontWeight--bold u-textColor--primary u-marginBottom--10">
                   Snapshot timeline
                 </p>
@@ -747,8 +749,8 @@ class SnapshotDetails extends Component {
             ) : null}
 
             <div className="flex flex-auto u-marginBottom--30">
-              <div className="flex-column flex1 u-marginRight--20">
-                <div className="dashboard-card-wrapper flex1">
+              <div className="flex flex1" style={{gap: '15px'}}>
+                <div className="card-item u-padding--15 flex1">
                   <div className="flex flex1 alignItems--center u-paddingBottom--10 u-borderBottom--gray">
                     <p className="u-fontSize--larger u-textColor--primary u-fontWeight--bold u-lineHeight--bold">
                       Volumes
@@ -777,12 +779,7 @@ class SnapshotDetails extends Component {
                     </div>
                   )}
                 </div>
-              </div>
-            </div>
-
-            <div className="flex flex-auto u-marginBottom--30">
-              <div className="flex-column flex1 u-marginRight--20">
-                <div className="dashboard-card-wrapper flex1">
+                <div className="card-item u-padding--15 flex1">
                   <div className="flex flex-column u-paddingBottom--10 u-borderBottom--gray">
                     <div className="flex flex1">
                       <p className="u-fontSize--larger u-textColor--primary u-fontWeight--bold u-lineHeight--bold u-paddingBottom--10 flex flex1">
@@ -852,8 +849,8 @@ class SnapshotDetails extends Component {
             {(!isEmpty(snapshotDetails?.errors) ||
               !isEmpty(snapshotDetails?.warnings)) && (
               <div className="flex flex-auto u-marginBottom--30">
-                <div className="flex-column flex1 u-marginRight--20">
-                  <div className="dashboard-card-wrapper flex1">
+                <div className="flex-column flex1">
+                  <div className="card-item u-padding--15 flex1">
                     <div className="flex flex-column u-paddingBottom--10 u-borderBottom--gray">
                       <div className="flex flex1">
                         <p className="u-fontSize--larger u-textColor--primary u-fontWeight--bold u-lineHeight--bold u-paddingBottom--10 flex flex1">
@@ -921,7 +918,7 @@ class SnapshotDetails extends Component {
             )}
           </div>
         )}
-
+</div>
         {showScriptsOutput && scriptOutput && (
           <Modal
             isOpen={showScriptsOutput}
