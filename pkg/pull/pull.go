@@ -35,7 +35,6 @@ import (
 )
 
 type PullOptions struct {
-	HelmRepoURI             string
 	RootDir                 string
 	Namespace               string
 	Downstreams             []string
@@ -57,8 +56,6 @@ type PullOptions struct {
 	Silent                  bool
 	RewriteImages           bool
 	RewriteImageOptions     RewriteImageOptions
-	HelmVersion             string
-	HelmOptions             []string
 	SkipHelmChartCheck      bool
 	ReportWriter            io.Writer
 	AppSlug                 string
@@ -122,7 +119,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	}
 
 	fetchOptions := upstreamtypes.FetchOptions{
-		HelmRepoURI:     pullOptions.HelmRepoURI,
 		RootDir:         pullOptions.RootDir,
 		UseAppDir:       pullOptions.CreateAppDir,
 		LocalPath:       pullOptions.LocalPath,
@@ -333,8 +329,6 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 	renderOptions := base.RenderOptions{
 		SplitMultiDocYAML:       true,
 		Namespace:               pullOptions.Namespace,
-		HelmVersion:             pullOptions.HelmVersion,
-		HelmOptions:             pullOptions.HelmOptions,
 		LocalRegistryHost:       pullOptions.RewriteImageOptions.Host,
 		LocalRegistryNamespace:  pullOptions.RewriteImageOptions.Namespace,
 		LocalRegistryUsername:   pullOptions.RewriteImageOptions.Username,

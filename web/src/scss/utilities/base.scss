@@ -473,6 +473,8 @@ and `background-position: [value]`
 /// NEW CSS CLASSES
 .card-bg {
   background: $really-light-accent;
+  border-radius: 6px;
+  padding: 15px;
 }
 .card-title {
   font-size: 16px;

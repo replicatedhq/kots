@@ -4,6 +4,7 @@ import (
 	"time"
 
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	appstatetypes "github.com/replicatedhq/kots/pkg/appstate/types"
 	helmrelease "helm.sh/helm/v3/pkg/release"
 )
 
@@ -15,6 +16,7 @@ type HelmApp struct {
 	IsConfigurable    bool
 	ChartPath         string
 	CreationTimestamp time.Time
+	Status            appstatetypes.AppStatus
 	// TODO: This is values the user is editing on the Config screen. This is a temporary solution while we figure out the UX.
 	TempConfigValues map[string]kotsv1beta1.ConfigValue
 }

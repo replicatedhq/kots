@@ -9,25 +9,52 @@ import GenerateSupportBundle from "./GenerateSupportBundle";
 import ConfigureRedactorsModal from "./ConfigureRedactorsModal";
 import ErrorModal from "../modals/ErrorModal";
 import { Utilities } from "../../utilities/utilities";
+import { Repeater } from "@src/utilities/repeater";
 
 import "../../scss/components/troubleshoot/SupportBundleList.scss";
 import Icon from "../Icon";
+import ReactTooltip from "react-tooltip";
 
 class SupportBundleList extends React.Component {
   state = {
     supportBundles: [],
-    loading: false,
     errorMsg: "",
     displayRedactorModal: false,
-    displayErrorModal: false,
+    pollForBundleAnalysisProgress: new Repeater(),
+    bundleAnalysisProgress: {},
+    loadingSupportBundles: false,
+    loadingBundleId: "",
   };
 
   componentDidMount() {
     this.listSupportBundles();
   }
+  componentWillUnmount() {
+    this.state.pollForBundleAnalysisProgress.stop();
+  }
+  componentDidUpdate(lastProps) {
+    const { bundle } = this.props;
+    if (
+      bundle?.status !== "running" &&
+      bundle?.status !== lastProps.bundle.status
+    ) {
+      this.state.pollForBundleAnalysisProgress.stop();
+      if (bundle.status === "failed") {
+        this.props.history.push(`/app/${this.props.watch.slug}/troubleshoot`);
+      }
+    }
+  }
 
   listSupportBundles = () => {
-    this.setState({ loading: true, errorMsg: "", displayErrorModal: false });
+    this.setState({
+      errorMsg: "",
+    });
+
+    this.props.updateState({
+      loading: true,
+      displayErrorModal: true,
+      loadingBundle: false,
+    });
 
     fetch(
       `${process.env.API_ENDPOINT}/troubleshoot/app/${this.props.watch?.slug}/supportbundles`,
@@ -42,34 +69,47 @@ class SupportBundleList extends React.Component {
       .then(async (res) => {
         if (!res.ok) {
           this.setState({
-            loading: false,
             errorMsg: `Unexpected status code: ${res.status}`,
-            displayErrorModal: true,
           });
+          this.props.updateState({ loading: false, displayErrorModal: true });
           return;
         }
         const response = await res.json();
+
+        let bundleRunning = false;
+        if (response.supportBundles) {
+          bundleRunning = response.supportBundles.find(
+            (bundle) => bundle.status === "running"
+          );
+        }
+        if (bundleRunning) {
+          this.state.pollForBundleAnalysisProgress.start(
+            this.props.pollForBundleAnalysisProgress,
+            1000
+          );
+        }
         this.setState({
           supportBundles: response.supportBundles,
-          loading: false,
+
           errorMsg: "",
-          displayErrorModal: false,
         });
+        this.props.updateState({ loading: false, displayErrorModal: false });
       })
       .catch((err) => {
         console.log(err);
         this.setState({
-          loading: false,
           errorMsg: err
             ? err.message
             : "Something went wrong, please try again.",
-          displayErrorModal: true,
         });
+        this.props.updateState({ displayErrorModal: true, loading: false });
       });
   };
 
   toggleErrorModal = () => {
-    this.setState({ displayErrorModal: !this.state.displayErrorModal });
+    this.props.updateState({
+      displayErrorModal: !this.props.displayErrorModal,
+    });
   };
 
   toggleRedactorModal = () => {
@@ -79,8 +119,8 @@ class SupportBundleList extends React.Component {
   };
 
   render() {
-    const { watch } = this.props;
-    const { loading, errorMsg, supportBundles } = this.state;
+    const { watch, loading, loadingBundle } = this.props;
+    const { errorMsg, supportBundles } = this.state;
 
     const appTitle = watch.watchName || watch.name;
     const downstream = watch.downstream;
@@ -108,10 +148,27 @@ class SupportBundleList extends React.Component {
                 watch.isSupportBundleUploadSupported
               }
               refetchBundleList={this.listSupportBundles}
+              progressData={
+                this.props.loadingBundleId === bundle.id &&
+                this.props.bundleProgress
+              }
+              loadingBundle={
+                this.props.loadingBundleId === bundle.id &&
+                this.props.loadingBundle
+              }
             />
           ));
       } else {
-        return <GenerateSupportBundle watch={watch} />;
+        return (
+          <GenerateSupportBundle
+            watch={watch}
+            updateBundleSlug={this.props.updateBundleSlug}
+            bundle={this.props.bundle}
+            pollForBundleAnalysisProgress={
+              this.props.pollForBundleAnalysisProgress
+            }
+          />
+        );
       }
     }
 
@@ -141,37 +198,64 @@ class SupportBundleList extends React.Component {
               ]}
             />
           </div>
-          <div className="flex flex1">
-            <div className="flex1 flex-column">
+          <div className="card-bg support-bundle-list-wrapper">
+            <div className="flex flex1 flex-column">
               <div className="u-position--relative flex-auto u-paddingBottom--10 flex">
-                <div className="flex flex1">
-                  <div className="flex1 u-flexTabletReflow">
-                    <div className="flex flex1">
-                      <div className="flex-auto alignSelf--center">
-                        <h2 className="u-fontSize--larger u-fontWeight--bold u-textColor--primary flex alignContent--center">
-                          Support bundles
-                        </h2>
-                      </div>
+                <div className="flex flex1 u-flexTabletReflow">
+                  <div className="flex flex1">
+                    <div className="flex-auto alignSelf--center">
+                      <p className="card-title">Support bundles</p>
                     </div>
-                    <div className="RightNode flex-auto flex alignItems--center u-position--relative">
+                  </div>
+                  <div className="RightNode flex-auto flex alignItems--center u-position--relative">
+                    {loadingBundle ? (
+                      <>
+                        <p
+                          className="replicated-link flex alignItems--center u-fontSize--small"
+                          style={{
+                            color: "gray",
+                          }}
+                          data-tip={
+                            "Only one support bundle can be generated at a time."
+                          }
+                        >
+                          <Icon
+                            icon="tools"
+                            size={18}
+                            className="clickable u-marginRight--5"
+                            style={{ color: "gray" }}
+                          />
+                          Generate a support bundle
+                        </p>
+                        <ReactTooltip
+                          effect="solid"
+                          className="replicated-tooltip"
+                        />
+                      </>
+                    ) : (
                       <Link
                         to={`${this.props.match.url}/generate`}
-                        className="btn secondary"
-                      >
-                        Generate a support bundle
-                      </Link>
-                      <span
-                        className="replicated-link flex alignItems--center u-fontSize--small u-marginLeft--20"
-                        onClick={this.toggleRedactorModal}
+                        className="replicated-link flex alignItems--center u-fontSize--small"
                       >
                         <Icon
-                          icon="marker-tip-outline"
+                          icon="tools"
                           size={18}
                           className="clickable u-marginRight--5"
                         />
-                        Configure redaction
-                      </span>
-                    </div>
+                        Generate a support bundle
+                      </Link>
+                    )}
+                    <span
+                      className="replicated-link flex alignItems--center u-fontSize--small u-marginLeft--20"
+                      onClick={this.toggleRedactorModal}
+                    >
+                      <Icon
+                        icon="marker-tip-outline"
+                        size={18}
+                        className="clickable u-marginRight--5"
+                      />
+                      Configure redaction
+                    </span>
                   </div>
                 </div>
               </div>
@@ -190,12 +274,12 @@ class SupportBundleList extends React.Component {
         )}
         {errorMsg && (
           <ErrorModal
-            errorModal={this.state.displayErrorModal}
+            errorModal={this.props.displayErrorModal}
             toggleErrorModal={this.toggleErrorModal}
             errMsg={errorMsg}
             tryAgain={this.listSupportBundles}
             err="Failed to get bundles"
-            loading={this.state.loading}
+            loading={this.props.loading}
             appSlug={this.props.match.params.slug}
           />
         )}
