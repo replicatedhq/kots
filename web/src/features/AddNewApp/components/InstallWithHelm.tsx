@@ -1,5 +1,5 @@
 import { useApps } from "@features/App";
-import React from "react";
+import React, { useEffect } from "react";
 import { useHistory } from "react-router";
 
 function InstallWithHelm() {
@@ -8,9 +8,11 @@ function InstallWithHelm() {
   const { apps } = useApps({ refetchInterval: 2000 }).data || {};
   const history = useHistory();
 
-  if (apps && apps?.length > 0) {
-    history.push("/apps");
-  }
+  useEffect(() => {
+    if (apps && apps?.length > 0) {
+      history.push("/apps");
+    }
+  }, [apps?.length]);
 
   return (
     <div
