@@ -343,7 +343,7 @@ class SnapshotRestore extends Component {
     }
 
     if (restoreCompleted && hasNoErrorsOrWarnings) {
-      Utilities.logOutUser(null, { snapshotRestore: true });
+      Utilities.logoutUser(null, { snapshotRestore: true });
     }
 
     return (
