@@ -42,8 +42,8 @@ kubectl kots admin-console --namespace sentry-pro
 
 ## Supportability
 
-Currently, Kots CLI tool supports OSX (indeed Apple Silicon arm64) and Linux platforms. However, its operations
-can **only** be performed and support on clusters with the `linux/amd64` platform.
+Currently, the KOTS CLI supports OSX (including Apple Silicon arm64) and Linux platforms. However, the Kubernetes resources
+that it creates can **only** be scheduled on nodes with the `linux/amd64` platform.
 
 # Community
 
