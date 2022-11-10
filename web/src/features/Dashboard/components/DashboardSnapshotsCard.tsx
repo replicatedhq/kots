@@ -68,10 +68,25 @@ type SnapshotSettings = {
   };
 };
 
+type SnapshotOption = {
+  option: string;
+  name: string;
+};
+
 type Props = {
   app: App;
   isSnapshotAllowed: boolean;
+  isVeleroInstalled: boolean;
   ping: (clusterId?: string) => void;
+  startASnapshot: (option: string) => void;
+  startSnapshotOptions: SnapshotOption[];
+  startSnapshotErr: boolean;
+  startSnapshotErrorMsg: string;
+  snapshotInProgressApps: string[];
+  selectedSnapshotOption: SnapshotOption;
+  onSnapshotOptionChange: (option: SnapshotOption) => void;
+  onSnapshotOptionClick: () => void;
+
   url: string;
 };
 
