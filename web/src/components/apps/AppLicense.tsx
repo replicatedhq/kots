@@ -71,10 +71,6 @@ const AppLicenseComponent = (props: Props) => {
 
   const { data: licenseWithInterceptResponse } = useLicenseWithIntercept();
   useEffect(() => {
-    console.log(
-      "App License updated",
-      JSON.stringify(licenseWithInterceptResponse)
-    );
     if (!licenseWithInterceptResponse) {
       setState({ appLicense: null });
     } else {
