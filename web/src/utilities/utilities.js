@@ -701,7 +701,7 @@ export const Utilities = {
     }
 
     const redirectPath = options?.snapshotRestore
-      ? "/restore-complete"
+      ? "/restore-completed"
       : "/secure-console";
     if (window.location.pathname !== redirectPath) {
       window.location = redirectPath;
