@@ -1,5 +1,5 @@
 import React, { useEffect, useReducer } from "react";
-import { withRouter, Link } from "react-router-dom";
+import { Link, useHistory, useLocation, useRouteMatch } from "react-router-dom";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Modal from "react-modal";
@@ -38,7 +38,6 @@ import "@src/scss/components/apps/AppVersionHistory.scss";
 import { DashboardGitOpsCard } from "@features/Dashboard";
 import Icon from "../Icon";
 import { App, KotsParams, Version, VersionDownloadStatus } from "@types";
-import { RouteComponentProps } from "react-router-dom";
 dayjs.extend(relativeTime);
 
 type Release = {
@@ -51,6 +50,8 @@ type ReleaseWithError = {
   sequence: number;
   diffSummaryError?: string;
 };
+
+let mounted: boolean = false;
 
 type Props = {
   adminConsoleMetadata: { isAirgap: boolean; isKurl: boolean };
@@ -72,7 +73,7 @@ type Props = {
   toggleErrorModal: () => void;
   toggleIsBundleUploading: (isUploading: boolean) => void;
   updateCallback: () => void;
-} & RouteComponentProps<KotsParams>;
+};
 
 type State = {
   logsLoading: boolean;
@@ -211,8 +212,10 @@ const AppVersionHistory = (props: Props) => {
     }
   );
 
-  // moving this out of the state because new repeater instances were getting created
-  // and it doesn't really affect the UI
+  const match = useRouteMatch<KotsParams>();
+  const history = useHistory();
+  const location = useLocation();
+
   const versionDownloadStatusJobs: { [key: number]: Repeater } = {};
   const getPreflightState = (version: Version) => {
     let preflightState = "";
@@ -229,7 +232,6 @@ const AppVersionHistory = (props: Props) => {
     currentPage,
     pageSize,
   }: { currentPage?: Number; pageSize?: Number } = {}) => {
-    const { match } = props;
     const appSlug = match.params.slug;
 
     setState({
@@ -268,10 +270,7 @@ const AppVersionHistory = (props: Props) => {
       const response = await res.json();
       const versionHistory = response.versionHistory;
 
-      if (
-        isAwaitingResults(versionHistory) &&
-        !state.versionHistoryJob.isRunning
-      ) {
+      if (isAwaitingResults(versionHistory) && mounted) {
         state.versionHistoryJob.start(fetchKotsDownstreamHistory, 2000);
       } else {
         state.versionHistoryJob.stop();
@@ -432,13 +431,14 @@ const AppVersionHistory = (props: Props) => {
   };
 
   useEffect(() => {
+    mounted = true;
     getPreflightState(props.app.downstream.currentVersion);
     const urlParams = new URLSearchParams(window.location.search);
     const pageNumber = urlParams.get("page");
     if (pageNumber) {
       setState({ currentPage: parseInt(pageNumber) });
     } else {
-      props.history.push(`${props.location.pathname}?page=0`);
+      history.push(`${location.pathname}?page=0`);
     }
 
     fetchKotsDownstreamHistory();
@@ -451,7 +451,7 @@ const AppVersionHistory = (props: Props) => {
     state.appUpdateChecker.start(getAppUpdateStatus, 1000);
 
     const url = window.location.pathname;
-    const { params } = props.match;
+    const { params } = match;
     if (url.includes("/diff")) {
       const firstSequence = params.firstSequence;
       const secondSequence = params.secondSequence;
@@ -462,6 +462,7 @@ const AppVersionHistory = (props: Props) => {
     }
 
     return () => {
+      mounted = false;
       state.appUpdateChecker.stop();
       state.versionHistoryJob.stop();
       for (const j in versionDownloadStatusJobs) {
@@ -485,7 +486,7 @@ const AppVersionHistory = (props: Props) => {
       setState({ updatesAvailable: false });
     }
   }, [
-    props.match.params.slug,
+    match.params.slug,
     props.app.id,
     props.app.downstream.pendingVersions.length,
     state.updatesAvailable,
@@ -496,7 +497,7 @@ const AppVersionHistory = (props: Props) => {
     setState({ pageSize: newPageSize, currentPage: 0 });
     // TODO: refactor this to use the query params to trigger refetch. track the page size in the query params
     fetchKotsDownstreamHistory({ currentPage: 0, pageSize: newPageSize });
-    props.history.push(`${props.location.pathname}?page=0`);
+    history.push(`${location.pathname}?page=0`);
   };
 
   const toggleErrorModal = () => {
@@ -903,7 +904,7 @@ const AppVersionHistory = (props: Props) => {
   };
 
   const finalizeDeployment = async (continueWithFailedPreflights: boolean) => {
-    const { match, updateCallback } = props;
+    const { updateCallback } = props;
     const { versionToDeploy, isSkipPreflights } = state;
     setState({ displayConfirmDeploymentModal: false, confirmType: "" });
     await props.makeCurrentVersion(
@@ -996,7 +997,7 @@ const AppVersionHistory = (props: Props) => {
   };
 
   const finalizeRedeployment = async () => {
-    const { match, updateCallback } = props;
+    const { updateCallback } = props;
     const { versionToDeploy } = state;
     setState({ displayConfirmDeploymentModal: false, confirmType: "" });
     await props.redeployVersion(match.params.slug, versionToDeploy);
@@ -1519,8 +1520,8 @@ const AppVersionHistory = (props: Props) => {
           isHelmManaged={props.isHelmManaged}
           key={version.sequence}
           app={props.app}
-          match={props.match}
-          history={props.history}
+          match={match}
+          history={history}
           version={version}
           selectedDiffReleases={state.selectedDiffReleases}
           nothingToCommit={nothingToCommit}
@@ -1637,7 +1638,7 @@ const AppVersionHistory = (props: Props) => {
   const onGotoPage = (page: Number, ev: { preventDefault: () => void }) => {
     ev.preventDefault();
     setState({ currentPage: page, loadingPage: true });
-    props.history.push(`${props.location.pathname}?page=${page}`);
+    history.push(`${location.pathname}?page=${page}`);
     fetchKotsDownstreamHistory({ currentPage: page });
   };
 
@@ -1699,8 +1700,7 @@ const AppVersionHistory = (props: Props) => {
     );
   };
 
-  const { app, match, makingCurrentVersionErrMsg, redeployVersionErrMsg } =
-    props;
+  const { app, makingCurrentVersionErrMsg, redeployVersionErrMsg } = props;
 
   const {
     showLogsModal,
@@ -2352,7 +2352,7 @@ const AppVersionHistory = (props: Props) => {
           forceDeploy={onForceDeployClick}
           showDeployWarningModal={state.showDeployWarningModal}
           showSkipModal={state.showSkipModal}
-          slug={props.match.params.slug}
+          slug={match.params.slug}
           sequence={state.selectedSequence}
         />
       )}
@@ -2362,7 +2362,7 @@ const AppVersionHistory = (props: Props) => {
           toggleErrorModal={toggleErrorModal}
           err={errorTitle}
           errMsg={errorMsg}
-          appSlug={props.match.params.slug}
+          appSlug={match.params.slug}
         />
       )}
       {state.showNoChangesModal && (
@@ -2422,4 +2422,4 @@ const AppVersionHistory = (props: Props) => {
 
 // @ts-ignore
 // eslint-disable-next-line
-export default withRouter(AppVersionHistory) as any;
+export default AppVersionHistory as any;
