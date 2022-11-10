@@ -72,6 +72,7 @@ type Props = {
   app: App;
   isSnapshotAllowed: boolean;
   ping: (clusterId?: string) => void;
+  url: string;
 };
 
 type State = {
