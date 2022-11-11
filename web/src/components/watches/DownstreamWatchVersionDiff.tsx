@@ -26,13 +26,13 @@ type State = {
   hasErrSettingDiff: boolean;
   errSettingDiff?: string;
   failedSequence?: number;
-}
+};
 
 type ApplicationTree = {
   files: {
-    [key: string]: string
-  }
-}
+    [key: string]: string;
+  };
+};
 class DownstreamWatchVersionDiff extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
