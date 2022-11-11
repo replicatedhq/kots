@@ -139,6 +139,39 @@ export type ResourceStates = {
   state: AppStatusState;
 };
 
+export type SupportBundle = {
+  analysis: SupportBundleAnalysis;
+  createdAt: string;
+  id: string;
+  isArchived: boolean;
+  name: string;
+  sharedAt: string;
+  size: number;
+  slug: string;
+  status: string;
+  uploadedAt: string;
+};
+
+type SupportBundleAnalysis = {
+  createdAt: string;
+  insights: SupportBundleInsight[];
+};
+
+export type SupportBundleInsight = {
+  detail: string;
+  icon: string;
+  iconKey: string;
+  key: string;
+  primary: string;
+  severity: string;
+};
+
+export type SupportBundleProgress = {
+  collectorCount: number;
+  collectorsCompleted: number;
+  message: string;
+};
+
 export type Version = {
   channelId: string;
   commitUrl: string;
