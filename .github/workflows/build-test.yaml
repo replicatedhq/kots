@@ -85,7 +85,7 @@ jobs:
       - name: Build web
         env:
           GIT_TAG: ${{ needs.generate-tag.outputs.tag }}
-        run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C web deps run-prettier-eslint run-typecheck run-unit-tests build-kotsadm
+        run: export $(cat .image.env | sed 's/#.*//g' | xargs) && make -C web deps lint test-unit build-kotsadm
 
       - name: Upload web artifact
         uses: actions/upload-artifact@v2
