@@ -1,5 +1,5 @@
 import React from "react";
-import { withRouter } from "react-router-dom";
+import { RouteComponentProps, withRouter } from "react-router-dom";
 
 import { Utilities } from "../../utilities/utilities";
 import Loader from "../shared/Loader";
@@ -8,23 +8,43 @@ import DiffEditor from "../shared/DiffEditor";
 import "../../scss/components/watches/DownstreamWatchVersionDiff.scss";
 import Icon from "../Icon";
 
-class DownstreamWatchVersionDiff extends React.Component {
-  constructor() {
-    super();
+type Props = {
+  firstSequence: number;
+  hideBackButton?: boolean;
+  onBackClick: (goBack: boolean) => void;
+  secondSequence: number;
+  slug: string;
+} & RouteComponentProps;
+
+type State = {
+  loadingFileTrees: boolean;
+  firstApplicationTree?: ApplicationTree;
+  secondApplicationTree?: ApplicationTree;
+  fileLoading: boolean;
+  fileLoadErr: boolean;
+  fileLoadErrMessage?: string;
+  hasErrSettingDiff: boolean;
+  errSettingDiff?: string;
+  failedSequence?: number;
+}
+
+type ApplicationTree = {
+  files: {
+    [key: string]: string
+  }
+}
+class DownstreamWatchVersionDiff extends React.Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
     this.state = {
       loadingFileTrees: false,
-      firstApplicationTree: {},
-      secondApplicationTree: {},
       fileLoading: false,
       fileLoadErr: false,
-      fileLoadErrMessage: "",
       hasErrSettingDiff: false,
-      errSettingDiff: "",
-      failedSequence: undefined,
     };
   }
 
-  fetchRenderedApplicationTree = (sequence, isFirst) => {
+  fetchRenderedApplicationTree = (sequence: number, isFirst: boolean) => {
     this.setState({ loadingFileTrees: true });
     const url = `${process.env.API_ENDPOINT}/app/${this.props.slug}/sequence/${sequence}/renderedcontents`;
     return fetch(url, {
@@ -55,7 +75,7 @@ class DownstreamWatchVersionDiff extends React.Component {
       });
   };
 
-  componentDidUpdate(lastProps, lastState) {
+  componentDidUpdate(lastProps: Props) {
     const { slug, firstSequence, secondSequence } = this.props;
 
     if (slug !== lastProps.slug) {
@@ -146,10 +166,10 @@ class DownstreamWatchVersionDiff extends React.Component {
     }
 
     const filesToInclude = [];
-    for (const filename in firstApplicationTree.files) {
+    for (const filename in firstApplicationTree?.files) {
       if (
-        firstApplicationTree.files[filename] ===
-        secondApplicationTree.files[filename]
+        firstApplicationTree?.files[filename] ===
+        secondApplicationTree?.files[filename]
       ) {
         continue;
       }
@@ -157,10 +177,10 @@ class DownstreamWatchVersionDiff extends React.Component {
       filesToInclude.push(filename);
     }
 
-    for (const filename in secondApplicationTree.files) {
+    for (const filename in secondApplicationTree?.files) {
       if (
-        firstApplicationTree.files[filename] ===
-        secondApplicationTree.files[filename]
+        firstApplicationTree?.files[filename] ===
+        secondApplicationTree?.files[filename]
       ) {
         continue;
       }
@@ -172,11 +192,11 @@ class DownstreamWatchVersionDiff extends React.Component {
 
     const diffEditors = [];
     for (const filename of filesToInclude) {
-      const firstNumOfLines = firstApplicationTree.files[filename]
-        ? firstApplicationTree.files[filename].split("\n").length
+      const firstNumOfLines = firstApplicationTree?.files[filename]
+        ? firstApplicationTree?.files[filename].split("\n").length
         : 0;
-      const secondNumOfLines = secondApplicationTree.files[filename]
-        ? secondApplicationTree.files[filename].split("\n").length
+      const secondNumOfLines = secondApplicationTree?.files[filename]
+        ? secondApplicationTree?.files[filename].split("\n").length
         : 0;
       const maxNumOfLines = Math.max(firstNumOfLines, secondNumOfLines) + 1;
 
@@ -187,8 +207,8 @@ class DownstreamWatchVersionDiff extends React.Component {
           style={{ height: maxNumOfLines * 23 }}
         >
           <DiffEditor
-            original={firstApplicationTree.files[filename]}
-            value={secondApplicationTree.files[filename]}
+            original={firstApplicationTree?.files[filename]}
+            value={secondApplicationTree?.files[filename]}
             key={filename}
             specKey={filename}
             options={{
@@ -243,4 +263,5 @@ class DownstreamWatchVersionDiff extends React.Component {
   }
 }
 
-export default withRouter(DownstreamWatchVersionDiff);
+// eslint-disable-next-line
+export default withRouter(DownstreamWatchVersionDiff) as any;
