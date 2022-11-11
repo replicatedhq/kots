@@ -391,7 +391,7 @@ class SupportBundleRow extends React.Component<Props, State> {
                     style={{ width: "350px" }}
                   >
                     <span className="u-fontWeight--bold u-fontSize--normal u-textColor--secondary u-marginRight--10">
-                      {percentage + "%"}
+                      {percentage.toString() + "%"}
                     </span>
                     {progressBar}
                     <span className="u-fontWeight--bold u-fontSize--normal u-textColor--secondary u-marginRight--10">
