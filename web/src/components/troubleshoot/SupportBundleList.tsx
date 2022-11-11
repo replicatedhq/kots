@@ -1,6 +1,6 @@
 import * as React from "react";
 import { KotsPageTitle } from "@components/Head";
-import { withRouter, Link } from "react-router-dom";
+import { RouteComponentProps, withRouter, Link } from "react-router-dom";
 
 import Toggle from "../shared/Toggle";
 import Loader from "../shared/Loader";
@@ -15,24 +15,58 @@ import "../../scss/components/troubleshoot/SupportBundleList.scss";
 import Icon from "../Icon";
 import ReactTooltip from "react-tooltip";
 
-class SupportBundleList extends React.Component {
-  state = {
-    supportBundles: [],
-    errorMsg: "",
-    displayRedactorModal: false,
-    pollForBundleAnalysisProgress: new Repeater(),
-    bundleAnalysisProgress: {},
-    loadingSupportBundles: false,
-    loadingBundleId: "",
-  };
+import { App, KotsParams, SupportBundle, SupportBundleProgress } from "@types";
+
+type Props = {
+  bundle: SupportBundle;
+  bundleProgress: SupportBundleProgress;
+  displayErrorModal: boolean;
+  loading: boolean;
+  loadingBundle: boolean;
+  loadingBundleId: string;
+  pollForBundleAnalysisProgress: () => void;
+  updateBundleSlug: (slug: string) => void;
+  updateState: ({
+    displayErrorModal,
+    loading,
+    loadingBundle,
+  }: {
+    displayErrorModal: boolean;
+    loading?: boolean;
+    loadingBundle?: boolean;
+  }) => void;
+  watch: App | null;
+} & RouteComponentProps<KotsParams>;
+
+type State = {
+  bundleAnalysisProgress?: SupportBundleProgress;
+  displayRedactorModal: boolean;
+  errorMsg?: string;
+  loadingBundleId?: string;
+  loadingSupportBundles: boolean;
+  pollForBundleAnalysisProgress: Repeater;
+  supportBundles?: SupportBundle[];
+};
+
+class SupportBundleList extends React.Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+    this.state = {
+      displayRedactorModal: false,
+      loadingSupportBundles: false,
+      pollForBundleAnalysisProgress: new Repeater(),
+    };
+  }
 
   componentDidMount() {
     this.listSupportBundles();
   }
+
   componentWillUnmount() {
     this.state.pollForBundleAnalysisProgress.stop();
   }
-  componentDidUpdate(lastProps) {
+
+  componentDidUpdate(lastProps: Props) {
     const { bundle } = this.props;
     if (
       bundle?.status !== "running" &&
@@ -40,7 +74,7 @@ class SupportBundleList extends React.Component {
     ) {
       this.state.pollForBundleAnalysisProgress.stop();
       if (bundle.status === "failed") {
-        this.props.history.push(`/app/${this.props.watch.slug}/troubleshoot`);
+        this.props.history.push(`/app/${this.props.watch?.slug}/troubleshoot`);
       }
     }
   }
@@ -79,7 +113,7 @@ class SupportBundleList extends React.Component {
         let bundleRunning = false;
         if (response.supportBundles) {
           bundleRunning = response.supportBundles.find(
-            (bundle) => bundle.status === "running"
+            (bundle: SupportBundle) => bundle.status === "running"
           );
         }
         if (bundleRunning) {
@@ -122,8 +156,7 @@ class SupportBundleList extends React.Component {
     const { watch, loading, loadingBundle } = this.props;
     const { errorMsg, supportBundles } = this.state;
 
-    const appTitle = watch.watchName || watch.name;
-    const downstream = watch.downstream;
+    const downstream = watch?.downstream;
 
     if (loading) {
       return (
@@ -137,15 +170,18 @@ class SupportBundleList extends React.Component {
     if (downstream) {
       if (supportBundles?.length) {
         bundlesNode = supportBundles
-          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+          .sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          )
           .map((bundle) => (
             <SupportBundleRow
               key={bundle.id}
               bundle={bundle}
-              watchSlug={watch.slug}
-              isAirgap={watch.isAirgap}
+              watchSlug={watch?.slug}
+              isAirgap={watch?.isAirgap}
               isSupportBundleUploadSupported={
-                watch.isSupportBundleUploadSupported
+                watch?.isSupportBundleUploadSupported
               }
               refetchBundleList={this.listSupportBundles}
               progressData={
@@ -183,7 +219,7 @@ class SupportBundleList extends React.Component {
                   title: "Support bundles",
                   onClick: () =>
                     this.props.history.push(
-                      `/app/${this.props.watch.slug}/troubleshoot`
+                      `/app/${this.props.watch?.slug}/troubleshoot`
                     ),
                   isActive: true,
                 },
@@ -191,7 +227,7 @@ class SupportBundleList extends React.Component {
                   title: "Redactors",
                   onClick: () =>
                     this.props.history.push(
-                      `/app/${this.props.watch.slug}/troubleshoot/redactors`
+                      `/app/${this.props.watch?.slug}/troubleshoot/redactors`
                     ),
                   isActive: false,
                 },
@@ -261,7 +297,7 @@ class SupportBundleList extends React.Component {
               </div>
               <div
                 className={`${
-                  watch.downstream ? "flex1 flex-column u-overflow--auto" : ""
+                  watch?.downstream ? "flex1 flex-column u-overflow--auto" : ""
                 }`}
               >
                 {bundlesNode}
@@ -288,4 +324,5 @@ class SupportBundleList extends React.Component {
   }
 }
 
-export default withRouter(SupportBundleList);
+// eslint-disable-next-line
+export default withRouter(SupportBundleList) as any;
