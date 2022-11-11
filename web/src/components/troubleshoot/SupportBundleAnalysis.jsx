@@ -255,7 +255,7 @@ export class SupportBundleAnalysis extends React.Component {
     // TODO: make this into a reusable component
     let progressBar;
 
-    if (bundleProgress.collectorsCompleted > 0) {
+    if (bundleProgress?.collectorsCompleted > 0) {
       this.moveBar(bundleProgress);
       progressBar = (
         <div className="progressbar">

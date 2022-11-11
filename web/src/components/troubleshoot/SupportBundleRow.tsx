@@ -187,7 +187,7 @@ class SupportBundleRow extends React.Component<Props, State> {
     );
     percentage = calcPercent > 98 ? 98 : calcPercent;
     if (elem) {
-      elem.style.width = percentage + "%";
+      elem.style.width = percentage.toString() + "%";
     }
   }
 
