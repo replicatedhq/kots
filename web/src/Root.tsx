@@ -25,6 +25,8 @@ import { QueryClient, QueryClientProvider } from "react-query";
 import { InstallWithHelm } from "@features/AddNewApp";
 import { RouteProps } from "react-router";
 
+import { RouterWrapper, getHistory } from "./utilities/react-utilities";
+
 import Footer from "./components/shared/Footer";
 import NavBar from "./components/shared/NavBar";
 
@@ -41,6 +43,9 @@ const INIT_SESSION_ID_STORAGE_KEY = "initSessionId";
 
 let browserHistory = createBrowserHistory();
 let history = connectHistory(browserHistory);
+
+
+
 
 // TODO:  pull in the react router hook
 const ProtectedRoute = ({
@@ -405,6 +410,8 @@ const Root = () => {
     });
   };
 
+  console.log("root history", getHistory());
+
   return (
     <QueryClientProvider client={queryClient}>
       <Helmet>
@@ -446,6 +453,7 @@ const Root = () => {
         }}
       >
         <Router history={history}>
+          <RouterWrapper />
           <NavBar
             logo={state.themeState.navbarLogo || state.appLogo}
             refetchAppsList={getAppsList}
