@@ -14,6 +14,9 @@ let historyRef: RouterProps["history"];
 
 let matchRef: match<KotsParams>;
 
+/**
+ * @deprecated The method should not be used
+ */
 const RouterWrapper = () => {
   const history = useHistory();
   const routeMatch = useRouteMatch<KotsParams>();
@@ -24,8 +27,14 @@ const RouterWrapper = () => {
   return <></>;
 };
 
-// const getHistory = () => matchRef?.path;
+/**
+ * @deprecated The method should not be used
+ */
 const getHistory = () => historyRef;
+
+/**
+ * @deprecated The method should not be used
+ */
 const getMatch = () => matchRef;
 
 export { getHistory, getMatch, RouterWrapper };
