@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -7,12 +9,10 @@
   <meta name="description" content="Form to upload TLS certificate and key">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>TLS Certificate and Key Upload</title>
-  <!-- <link rel="stylesheet" href="/tls/assets/tls-custom.css" /> -->
   <link rel="stylesheet" href="tls-custom.css" />
   <!-- {{if .AppIcon }}
     <link rel="icon" type="image/png" href="{{ .AppIcon }}" />
   {{end}} -->
-  <!-- <script src="/tls/assets/tls.js"></script> -->
   <script src="tls.js"></script>
 </head>
 
@@ -36,13 +36,19 @@
             <p class="tls-section-sub">Files will be uploaded directly to the mangement server & will never leave.</p>
           </div>
           <form id="upload-form" class="flex-column" action="" method="post" enctype="multipart/form-data">
+            <select name="type" id="type">
+                <option value="self-signed">self signed</option>
+                <option value="custom">custom cert</option>
+              </select>
+
             <div>
               <p class="tls-section-header2">Hostname</p>
+              <p id="hostname-hint" class="hostname-hint"></p>
               <p class="tls-section-sub-sub">Ensure this domain is routable on your network.</p>
               <input id="hostname" class="form-input larger" type="text" name="hostname" placeholder="app.yourdomain.com"
                 style="width: 250px; margin-bottom: 20px;" />
             </div>
-            <div class="flex upload-form">
+            <div class="flex upload-form" id="upload-files">
               <div class="u-position--relative flex-column flex-auto upload">
                 <div>
                   <label class="tls-section-header2">Upload private key</label>
@@ -67,10 +73,10 @@
 
             <div class="button-wrapper flex alignItems--center">
               <button class="btn primary" type="submit">Upload &amp; continue</button>
-              <div class="flex-column justifyContent--center">
+              <!-- <div class="flex-column justifyContent--center">
                 <button id="skip-button" class="text-button" type="submit" formaction="/tls/skip">Skip &amp;
                   continue</button>
-              </div>
+              </div> -->
             </div>
           </form>
         </div>

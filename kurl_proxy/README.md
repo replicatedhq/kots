@@ -11,6 +11,16 @@ Manually add the flag back to the secret to re-enable uploads.
 
 ## Developing
 
+### Preprequisites
+
+- Docker installed and running
+- [Skaffold](https://skaffold.dev) installed (`brew install skaffold`)
+
+### Start dev server
+
+1. Run `make up`
+1.
+
 Run `make up` to start the proxy on port 8800 while watching for changes to `assets/` and `main.go`.
 
 `assets/` is a static directory that also has some html templates. From the insecure page link to files with `/assets/styles.css` and from the `/tls` page with `/tls/assets/styles.css`.
