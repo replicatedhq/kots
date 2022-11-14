@@ -45,7 +45,7 @@ import {
   VersionDownloadStatus,
 } from "@types";
 import { RouteComponentProps } from "react-router-dom";
-import { getHistory } from "@src/utilities/react-utilities";
+import { getHistory } from "@src/utilities/react-router-utilities";
 
 dayjs.extend(relativeTime);
 
@@ -1714,7 +1714,7 @@ class AppVersionHistory extends Component<Props, State> {
     const { app, match, makingCurrentVersionErrMsg, redeployVersionErrMsg } =
       this.props;
 
-    console.log('app version history', getHistory());
+    console.log("app version history", getHistory());
 
     const {
       showLogsModal,

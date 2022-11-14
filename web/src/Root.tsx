@@ -25,7 +25,7 @@ import { QueryClient, QueryClientProvider } from "react-query";
 import { InstallWithHelm } from "@features/AddNewApp";
 import { RouteProps } from "react-router";
 
-import { RouterWrapper, getHistory } from "./utilities/react-utilities";
+import { RouterWrapper } from "@src/utilities/react-router-utilities";
 
 import Footer from "./components/shared/Footer";
 import NavBar from "./components/shared/NavBar";
@@ -43,9 +43,6 @@ const INIT_SESSION_ID_STORAGE_KEY = "initSessionId";
 
 let browserHistory = createBrowserHistory();
 let history = connectHistory(browserHistory);
-
-
-
 
 // TODO:  pull in the react router hook
 const ProtectedRoute = ({
@@ -409,8 +406,6 @@ const Root = () => {
       errLoggingOut: message,
     });
   };
-
-  console.log("root history", getHistory());
 
   return (
     <QueryClientProvider client={queryClient}>
