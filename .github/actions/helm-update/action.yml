@@ -1,0 +1,5 @@
+name: 'Generate Helm Update PR'
+description: 'Generates a Helm version update PR if a newer version is available'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
