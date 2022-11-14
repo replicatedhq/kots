@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.3
-FROM golang:1.19-buster as builder
+FROM golang:1.19-bullseye as builder
 
 EXPOSE 2345
 
@@ -7,8 +7,7 @@ ENV GOCACHE "/.cache/gocache/"
 ENV GOMODCACHE "/.cache/gomodcache/"
 ENV DEBUG_KOTSADM=1
 
-RUN apt-get update && apt-get install -y --no-install-recommends gnupg2 python-pip ca-certificates \
-  && pip install s3cmd \
+RUN apt-get update && apt-get install -y --no-install-recommends gnupg2 s3cmd ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
 ENV PATH="/usr/local/bin:$PATH"
