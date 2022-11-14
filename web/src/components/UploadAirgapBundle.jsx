@@ -119,7 +119,7 @@ class UploadAirgapBundle extends React.Component {
     });
 
     if (showRegistry) {
-      const { slug } = getMatch?.params;
+      const { slug } = getMatch()?.params;
 
       if (isEmpty(this.state.registryDetails.hostname)) {
         this.setState({
@@ -243,7 +243,7 @@ class UploadAirgapBundle extends React.Component {
   };
 
   handleOnlineInstall = async () => {
-    const { slug } = getMatch?.params;
+    const { slug } = getMatch()?.params;
 
     this.setState({
       preparingOnlineInstall: true,
@@ -338,7 +338,7 @@ class UploadAirgapBundle extends React.Component {
   };
 
   onProgressError = async (errorMessage) => {
-    const { slug } = getMatch?.params;
+    const { slug } = getMatch()?.params;
 
     let supportBundleCommand = [];
     try {
@@ -415,7 +415,7 @@ class UploadAirgapBundle extends React.Component {
     const { appName, logo, fetchingMetadata, showRegistry, appsListLength } =
       this.props;
 
-    const { slug } = getMatch?.params;
+    const { slug } = getMatch()?.params;
 
     const {
       bundleFile,
