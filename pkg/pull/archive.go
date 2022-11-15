@@ -9,7 +9,7 @@ import (
 	"path"
 	"strconv"
 
-	"github.com/mholt/archiver"
+	"github.com/mholt/archiver/v3"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/base"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
