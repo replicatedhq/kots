@@ -247,5 +247,7 @@ class KotsApplicationTree extends React.Component<Props, State> {
   }
 }
 
-// eslint-disable-next-line
+/* eslint-disable */
+// @ts-ignore
 export default withRouter(KotsApplicationTree) as any;
+/* eslint-enable */

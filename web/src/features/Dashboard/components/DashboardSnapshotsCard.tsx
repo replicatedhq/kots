@@ -407,5 +407,7 @@ class DashboardSnapshotsCard extends React.Component<Props, State> {
   }
 }
 
-// eslint-disable-next-line
+/* eslint-disable */
+// @ts-ignore
 export default withRouter(DashboardSnapshotsCard) as any;
+/* eslint-enable */

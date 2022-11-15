@@ -702,6 +702,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
   }
 }
 
-// TODO: fix withRouter type
-// eslint-disable-next-line
+/* eslint-disable */
+// @ts-ignore
 export default withRouter(AirgapRegistrySettings) as any;
+/* eslint-enable */

@@ -838,8 +838,9 @@ class AppConfig extends Component<Props, State> {
   }
 }
 
-// TODO: fix this type
-// eslint-disable-next-line
+/* eslint-disable */
+// @ts-ignore
 const AppConfigWithRouter: any = withRouter(AppConfig);
 
 export default AppConfigWithRouter;
+/* eslint-enable */
