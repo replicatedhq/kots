@@ -1826,6 +1826,7 @@ jobs:
   # this job will validate that all pr-tests succeed and is used for the github branch protection rule
   validate-success:
     runs-on: ubuntu-20.04
+    needs: [ validate-pr-tests ]
     if: always()
     steps:
     # if the validate-pr-tests job was not successful, this job will fail
