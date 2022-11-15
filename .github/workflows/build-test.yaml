@@ -1788,8 +1788,7 @@ jobs:
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
 
-  # this job will validate that all validate-* jobs succeed and is used for the github branch protection rule
-  validate-success:
+  validate-pr-tests:
     runs-on: ubuntu-20.04
     needs:
       # kurl add-on
@@ -1822,4 +1821,18 @@ jobs:
       # cli-only tests
       - validate-kots-push-images-anonymous
     steps:
-      - run: echo "Validate success"
+      - run: echo "All PR tests passed"
+
+  # this job will validate that all pr-tests succeed and is used for the github branch protection rule
+  validate-success:
+    runs-on: ubuntu-20.04
+    if: always()
+    steps:
+    # if the validate-pr-tests job was not successful, this job will fail
+    - name: fail if validate-pr-tests job failed
+      if: steps.validate-pr-tests.outcome != 'success'
+      run: exit 1
+    # if the validate-pr-tests job was successful, this job will succeed
+    - name: succeed if validate-pr-tests job succeeded
+      if: steps.validate-pr-tests.outcome == 'success'
+      run: echo "Validation succeeded"
