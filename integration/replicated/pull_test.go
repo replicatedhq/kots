@@ -5,7 +5,7 @@ import (
 	"path"
 	"testing"
 
-	"github.com/mholt/archiver"
+	"github.com/mholt/archiver/v3"
 	"github.com/replicatedhq/kots/integration/util"
 	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/stretchr/testify/assert"

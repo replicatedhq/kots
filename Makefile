@@ -169,7 +169,7 @@ scan:
 	trivy fs \
 		--security-checks vuln \
 		--exit-code=1 \
-		--severity="HIGH,CRITICAL" \
+		--severity="CRITICAL,HIGH,MEDIUM" \
 		--ignore-unfixed \
 		--skip-files actions/version-tag/package-lock.json \
 		--skip-files web/yarn.lock \

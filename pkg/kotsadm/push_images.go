@@ -18,7 +18,7 @@ import (
 	"github.com/containers/image/v5/copy"
 	"github.com/containers/image/v5/transports/alltransports"
 	containerstypes "github.com/containers/image/v5/types"
-	"github.com/mholt/archiver"
+	"github.com/mholt/archiver/v3"
 	"github.com/pkg/errors"
 	dockerarchive "github.com/replicatedhq/kots/pkg/docker/archive"
 	dockerregistry "github.com/replicatedhq/kots/pkg/docker/registry"
