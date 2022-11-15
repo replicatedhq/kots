@@ -482,7 +482,7 @@ class SnapshotSchedule extends Component {
               </div>
             </div>
           )}
-          <form className="flex flex-column snapshot-form-wrapper u-marginTop--20">
+          <div className="flex flex-column snapshot-form-wrapper u-marginTop--20">
             <div
               className={`flex-column ${
                 !isAppConfig ? "u-marginTop--12" : "u-marginBottom--20"
@@ -642,7 +642,7 @@ class SnapshotSchedule extends Component {
                 )}
               </div>
             </div>
-          </form>
+          </div>
         </div>
         <ErrorModal
           errorModal={this.state.displayErrorModal}
