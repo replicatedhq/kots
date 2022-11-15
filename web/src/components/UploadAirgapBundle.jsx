@@ -10,10 +10,10 @@ import LicenseUploadProgress from "./LicenseUploadProgress";
 import AirgapRegistrySettings from "./shared/AirgapRegistrySettings";
 import { Utilities } from "../utilities/utilities";
 import { AirgapUploader } from "../utilities/airgapUploader";
+import { withRouter } from "@src/utilities/react-router-utilities";
 
 import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
 import "../scss/components/Login.scss";
-import { getHistory, getMatch } from "@src/utilities/react-router-utilities";
 
 const COMMON_ERRORS = {
   "HTTP 401": "Registry credentials are invalid",
@@ -53,9 +53,8 @@ class UploadAirgapBundle extends React.Component {
   };
 
   getAirgapConfig = async () => {
-    const configUrl = `${process.env.API_ENDPOINT}/app/${
-      getMatch()?.params.slug
-    }/airgap/config`;
+    const { match } = this.props;
+    const configUrl = `${process.env.API_ENDPOINT}/app/${match.params.slug}/airgap/config`;
     let simultaneousUploads = 3;
     try {
       let res = await fetch(configUrl, {
@@ -76,7 +75,7 @@ class UploadAirgapBundle extends React.Component {
     this.setState({
       airgapUploader: new AirgapUploader(
         false,
-        getMatch()?.params.slug,
+        match.params.slug,
         this.onDropBundle,
         simultaneousUploads
       ),
@@ -84,12 +83,10 @@ class UploadAirgapBundle extends React.Component {
   };
 
   uploadAirgapBundle = async () => {
-    const { showRegistry } = this.props;
+    const { match, showRegistry } = this.props;
 
     // Reset the airgap upload state
-    const resetUrl = `${process.env.API_ENDPOINT}/app/${
-      getMatch().params.slug
-    }/airgap/reset`;
+    const resetUrl = `${process.env.API_ENDPOINT}/app/${match.params.slug}/airgap/reset`;
     try {
       await fetch(resetUrl, {
         method: "POST",
@@ -119,7 +116,7 @@ class UploadAirgapBundle extends React.Component {
     });
 
     if (showRegistry) {
-      const { slug } = getMatch()?.params;
+      const { slug } = this.props.match.params;
 
       if (isEmpty(this.state.registryDetails.hostname)) {
         this.setState({
@@ -243,7 +240,7 @@ class UploadAirgapBundle extends React.Component {
   };
 
   handleOnlineInstall = async () => {
-    const { slug } = getMatch()?.params;
+    const { slug } = this.props.match.params;
 
     this.setState({
       preparingOnlineInstall: true,
@@ -280,7 +277,7 @@ class UploadAirgapBundle extends React.Component {
       if (this.state.onlineInstallErrorMessage.length) {
         clearInterval(interval);
       }
-      count += 1;
+      count++;
       this.moveBar(count);
       if (count > 3) {
         if (!resumeResult) {
@@ -305,11 +302,11 @@ class UploadAirgapBundle extends React.Component {
           const hasPreflight = resumeResult.hasPreflight;
           const isConfigurable = resumeResult.isConfigurable;
           if (isConfigurable) {
-            getHistory()?.replace(`/${slug}/config`);
+            this.props.history.replace(`/${slug}/config`);
           } else if (hasPreflight) {
-            getHistory()?.replace(`/${slug}/preflight`);
+            this.props.history.replace(`/${slug}/preflight`);
           } else {
-            getHistory()?.replace(`/app/${slug}`);
+            this.props.history.replace(`/app/${slug}`);
           }
         });
       }
@@ -338,7 +335,7 @@ class UploadAirgapBundle extends React.Component {
   };
 
   onProgressError = async (errorMessage) => {
-    const { slug } = getMatch()?.params;
+    const { slug } = this.props.match.params;
 
     let supportBundleCommand = [];
     try {
@@ -367,18 +364,18 @@ class UploadAirgapBundle extends React.Component {
   };
 
   onProgressSuccess = async () => {
-    const { onUploadSuccess } = this.props;
+    const { onUploadSuccess, match } = this.props;
 
     await onUploadSuccess();
 
-    const app = await this.getApp(getMatch()?.params.slug);
+    const app = await this.getApp(match.params.slug);
 
     if (app?.isConfigurable) {
-      getHistory()?.replace(`/${app.slug}/config`);
+      this.props.history.replace(`/${app.slug}/config`);
     } else if (app?.hasPreflight) {
-      getHistory()?.replace(`/${app.slug}/preflight`);
+      this.props.history.replace(`/${app.slug}/preflight`);
     } else {
-      getHistory()?.replace(`/app/${app.slug}`);
+      this.props.history.replace(`/app/${app.slug}`);
     }
   };
 
@@ -415,7 +412,7 @@ class UploadAirgapBundle extends React.Component {
     const { appName, logo, fetchingMetadata, showRegistry, appsListLength } =
       this.props;
 
-    const { slug } = getMatch()?.params;
+    const { slug } = this.props.match.params;
 
     const {
       bundleFile,
@@ -693,4 +690,4 @@ class UploadAirgapBundle extends React.Component {
   }
 }
 
-export default UploadAirgapBundle;
+export default withRouter(UploadAirgapBundle);

@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { withRouter, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Modal from "react-modal";
@@ -45,7 +45,7 @@ import {
   VersionDownloadStatus,
 } from "@types";
 import { RouteComponentProps } from "react-router-dom";
-import { getHistory } from "@src/utilities/react-router-utilities";
+import { withRouter } from "@src/utilities/react-router-utilities";
 
 dayjs.extend(relativeTime);
 
@@ -242,7 +242,7 @@ class AppVersionHistory extends Component<Props, State> {
     this.state.appUpdateChecker.start(this.getAppUpdateStatus, 1000);
 
     const url = window.location.pathname;
-    const { params } = this.props.match;
+    const { params } = this.props.wrappedMatch;
     if (url.includes("/diff")) {
       const firstSequence = params.firstSequence;
       const secondSequence = params.secondSequence;
@@ -256,11 +256,12 @@ class AppVersionHistory extends Component<Props, State> {
   }
 
   componentDidUpdate = async (lastProps: {
-    match: { params: { slug: string } };
+    wrappedMatch: { params: { slug: string } };
     app: { id: string; downstream: Downstream };
   }) => {
     if (
-      lastProps.match.params.slug !== this.props.match.params.slug ||
+      lastProps.wrappedMatch.params.slug !==
+        this.props.wrappedMatch.params.slug ||
       lastProps.app.id !== this.props.app.id
     ) {
       this.fetchKotsDownstreamHistory();
@@ -289,8 +290,8 @@ class AppVersionHistory extends Component<Props, State> {
   }
 
   fetchKotsDownstreamHistory = async () => {
-    const { match } = this.props;
-    const appSlug = match.params.slug;
+    const { wrappedMatch } = this.props;
+    const appSlug = wrappedMatch.params.slug;
 
     this.setState({
       loadingVersionHistory: true,
@@ -906,11 +907,11 @@ class AppVersionHistory extends Component<Props, State> {
   };
 
   finalizeDeployment = async (continueWithFailedPreflights: boolean) => {
-    const { match, updateCallback } = this.props;
+    const { wrappedMatch, updateCallback } = this.props;
     const { versionToDeploy, isSkipPreflights } = this.state;
     this.setState({ displayConfirmDeploymentModal: false, confirmType: "" });
     await this.props.makeCurrentVersion(
-      match.params.slug,
+      wrappedMatch.params.slug,
       versionToDeploy,
       isSkipPreflights,
       continueWithFailedPreflights
@@ -947,10 +948,10 @@ class AppVersionHistory extends Component<Props, State> {
   };
 
   finalizeRedeployment = async () => {
-    const { match, updateCallback } = this.props;
+    const { wrappedMatch, updateCallback } = this.props;
     const { versionToDeploy } = this.state;
     this.setState({ displayConfirmDeploymentModal: false, confirmType: "" });
-    await this.props.redeployVersion(match.params.slug, versionToDeploy);
+    await this.props.redeployVersion(wrappedMatch.params.slug, versionToDeploy);
     await this.fetchKotsDownstreamHistory();
     this.setState({ versionToDeploy: null });
 
@@ -1583,7 +1584,7 @@ class AppVersionHistory extends Component<Props, State> {
           isHelmManaged={this.props.isHelmManaged}
           key={version.sequence}
           app={this.props.app}
-          match={this.props.match}
+          wrappedMatch={this.props.wrappedMatch}
           history={this.props.history}
           version={version}
           selectedDiffReleases={this.state.selectedDiffReleases}
@@ -1711,10 +1712,12 @@ class AppVersionHistory extends Component<Props, State> {
   };
 
   render() {
-    const { app, match, makingCurrentVersionErrMsg, redeployVersionErrMsg } =
-      this.props;
-
-    console.log("app version history", getHistory());
+    const {
+      app,
+      wrappedMatch,
+      makingCurrentVersionErrMsg,
+      redeployVersionErrMsg,
+    } = this.props;
 
     const {
       showLogsModal,
@@ -2156,7 +2159,7 @@ class AppVersionHistory extends Component<Props, State> {
                 {showDiffOverlay && (
                   <div className="DiffOverlay">
                     <DownstreamWatchVersionDiff
-                      slug={match.params.slug}
+                      slug={wrappedMatch.params.slug}
                       firstSequence={firstSequence}
                       secondSequence={secondSequence}
                       onBackClick={this.hideDiffOverlay}
@@ -2371,7 +2374,7 @@ class AppVersionHistory extends Component<Props, State> {
             forceDeploy={this.onForceDeployClick}
             showDeployWarningModal={this.state.showDeployWarningModal}
             showSkipModal={this.state.showSkipModal}
-            slug={this.props.match.params.slug}
+            slug={this.props.wrappedMatch.params.slug}
             sequence={this.state.selectedSequence}
           />
         )}
@@ -2381,7 +2384,7 @@ class AppVersionHistory extends Component<Props, State> {
             toggleErrorModal={this.toggleErrorModal}
             err={errorTitle}
             errMsg={errorMsg}
-            appSlug={this.props.match.params.slug}
+            appSlug={this.props.wrappedMatch.params.slug}
           />
         )}
         {this.state.showNoChangesModal && (

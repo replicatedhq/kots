@@ -25,8 +25,6 @@ import { QueryClient, QueryClientProvider } from "react-query";
 import { InstallWithHelm } from "@features/AddNewApp";
 import { RouteProps } from "react-router";
 
-import { RouterWrapper } from "@src/utilities/react-router-utilities";
-
 import Footer from "./components/shared/Footer";
 import NavBar from "./components/shared/NavBar";
 
@@ -448,7 +446,6 @@ const Root = () => {
         }}
       >
         <Router history={history}>
-          <RouterWrapper />
           <NavBar
             logo={state.themeState.navbarLogo || state.appLogo}
             refetchAppsList={getAppsList}

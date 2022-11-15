@@ -1,40 +1,49 @@
-import React, { useEffect } from "react";
-import { match, RouterProps, useHistory, useRouteMatch } from "react-router";
-import { KotsParams } from "@types";
-// eslint-disable-next-line
-// let historyRef: {
-//   location: {
-//     pathname: string
-//   }
-// };
+import React from "react";
+import {
+  match,
+  RouteComponentProps,
+  useHistory,
+  useLocation,
+  useRouteMatch,
+} from "react-router";
 
-// This is a hack
-// TODO: remove once refactored all class compnoents
-let historyRef: RouterProps["history"];
-
-let matchRef: match<KotsParams>;
-
-/**
- * @deprecated The method should not be used
- */
-const RouterWrapper = () => {
+// @ts-ignore
+const RouterWrapper = ({ children }) => {
   const history = useHistory();
-  const routeMatch = useRouteMatch<KotsParams>();
-  useEffect(() => {
-    historyRef = history;
-    matchRef = routeMatch;
-  }, [routeMatch, history]);
-  return <></>;
+  const location = useLocation();
+  const wrappedMatch = useRouteMatch();
+
+  return children({ history, location, wrappedMatch });
 };
 
 /**
- * @deprecated The method should not be used
+ * @deprecated The method should not be used on new components
  */
-const getHistory = () => historyRef;
+function withRouter(
+  WrappedComponent: React.ComponentType<
+    RouteComponentProps | { wrappedMatch: match }
+  >
+) {
+  return class extends React.Component {
+    render() {
+      return (
+        <RouterWrapper
+          // @ts-ignore
+          children={({ history, location, wrappedMatch }) => {
+            return (
+              <WrappedComponent
+                history={history}
+                location={location}
+                match={wrappedMatch}
+                wrappedMatch={wrappedMatch}
+                {...this.props}
+              />
+            );
+          }}
+        />
+      );
+    }
+  };
+}
 
-/**
- * @deprecated The method should not be used
- */
-const getMatch = () => matchRef;
-
-export { getHistory, getMatch, RouterWrapper };
+export { withRouter };
