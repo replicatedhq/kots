@@ -40,12 +40,10 @@ import Icon from "../Icon";
 import {
   App,
   Downstream,
-  KotsParams,
   Version,
   VersionDownloadStatus,
 } from "@types";
-import { RouteComponentProps } from "react-router-dom";
-import { withRouter } from "@src/utilities/react-router-utilities";
+import { withRouter, withRouterType } from "@src/utilities/react-router-utilities";
 
 dayjs.extend(relativeTime);
 
@@ -80,7 +78,7 @@ type Props = {
   toggleErrorModal: () => void;
   toggleIsBundleUploading: (isUploading: boolean) => void;
   updateCallback: () => void;
-} & RouteComponentProps<KotsParams>;
+} & withRouterType;
 
 type State = {
   logsLoading: boolean;

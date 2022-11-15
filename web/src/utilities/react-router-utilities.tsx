@@ -1,3 +1,4 @@
+import { KotsParams } from "@types";
 import React from "react";
 import {
   match,
@@ -11,7 +12,7 @@ import {
 const RouterWrapper = ({ children }) => {
   const history = useHistory();
   const location = useLocation();
-  const wrappedMatch = useRouteMatch();
+  const wrappedMatch = useRouteMatch<KotsParams>();
 
   return children({ history, location, wrappedMatch });
 };
@@ -19,12 +20,12 @@ const RouterWrapper = ({ children }) => {
 /**
  * @deprecated The method should not be used on new components
  */
-function withRouter(
+const withRouter = <P extends object>(
   WrappedComponent: React.ComponentType<
-    RouteComponentProps | { wrappedMatch: match }
+    RouteComponentProps | { wrappedMatch: match } | P
   >
-) {
-  return class extends React.Component {
+) => {
+  return class extends React.Component<P> {
     render() {
       return (
         <RouterWrapper
@@ -45,5 +46,7 @@ function withRouter(
     }
   };
 }
+
+export type withRouterType = RouteComponentProps & { wrappedMatch: match<KotsParams> };
 
 export { withRouter };
