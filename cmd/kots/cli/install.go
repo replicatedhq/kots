@@ -256,6 +256,8 @@ func InstallCmd() *cobra.Command {
 			}
 			deployOptions.IsOpenShift = k8sutil.IsOpenShift(clientset)
 
+			deployOptions.IsGKEAutopilot = k8sutil.IsGKEAutopilot(clientset)
+
 			timeout, err := time.ParseDuration(v.GetString("wait-duration"))
 			if err != nil {
 				return errors.Wrap(err, "failed to parse timeout value")
