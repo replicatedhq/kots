@@ -169,7 +169,6 @@ const Dashboard = (props: Props) => {
 
   const history = useHistory();
   const match = useRouteMatch();
-
   const { app, isBundleUploading, isVeleroInstalled } = props;
   const airgapUploader = useRef<AirgapUploader | null>(null);
 
