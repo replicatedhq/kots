@@ -45,8 +45,10 @@ const withRouter = <P extends object>(
       );
     }
   };
-}
+};
 
-export type withRouterType = RouteComponentProps & { wrappedMatch: match<KotsParams> };
+export type withRouterType = RouteComponentProps & {
+  wrappedMatch: match<KotsParams>;
+};
 
 export { withRouter };

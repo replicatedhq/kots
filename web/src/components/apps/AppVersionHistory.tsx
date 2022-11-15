@@ -37,13 +37,11 @@ import { KotsPageTitle } from "@components/Head";
 import "@src/scss/components/apps/AppVersionHistory.scss";
 import { DashboardGitOpsCard } from "@features/Dashboard";
 import Icon from "../Icon";
+import { App, Downstream, Version, VersionDownloadStatus } from "@types";
 import {
-  App,
-  Downstream,
-  Version,
-  VersionDownloadStatus,
-} from "@types";
-import { withRouter, withRouterType } from "@src/utilities/react-router-utilities";
+  withRouter,
+  withRouterType,
+} from "@src/utilities/react-router-utilities";
 
 dayjs.extend(relativeTime);
 
