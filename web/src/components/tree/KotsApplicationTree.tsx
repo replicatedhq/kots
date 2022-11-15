@@ -1,5 +1,5 @@
 import * as React from "react";
-import { withRouter } from "react-router-dom";
+import { withRouter } from "@src/utilities/react-router-utilities";
 import { Utilities } from "../../utilities/utilities";
 import { KotsPageTitle } from "@components/Head";
 import isEmpty from "lodash/isEmpty";

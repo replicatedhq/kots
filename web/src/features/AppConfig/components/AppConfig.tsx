@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import { AppConfigRenderer } from "../../../components/AppConfigRenderer";
-import { withRouter, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { withRouter } from "@src/utilities/react-router-utilities";
 import classNames from "classnames";
 import { KotsPageTitle } from "@components/Head";
 import debounce from "lodash/debounce";

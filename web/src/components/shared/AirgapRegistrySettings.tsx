@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { withRouter } from "react-router-dom";
+import { withRouter } from "@src/utilities/react-router-utilities";
 import get from "lodash/get";
 
 import Loader from "../shared/Loader";
