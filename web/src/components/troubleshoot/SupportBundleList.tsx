@@ -1,7 +1,7 @@
 import * as React from "react";
 import { KotsPageTitle } from "@components/Head";
 import { Link } from "react-router-dom";
-import { withRouter } from "@src/utilities/react-router-utilities";
+import { withRouter, withRouterType } from "@src/utilities/react-router-utilities";
 
 import Toggle from "../shared/Toggle";
 import Loader from "../shared/Loader";
@@ -16,7 +16,7 @@ import "../../scss/components/troubleshoot/SupportBundleList.scss";
 import Icon from "../Icon";
 import ReactTooltip from "react-tooltip";
 
-import { App, KotsParams, SupportBundle, SupportBundleProgress } from "@types";
+import { App, SupportBundle, SupportBundleProgress } from "@types";
 
 type Props = {
   bundle: SupportBundle;
@@ -37,7 +37,7 @@ type Props = {
     loadingBundle?: boolean;
   }) => void;
   watch: App | null;
-} & RouteComponentProps<KotsParams>;
+} & withRouterType;
 
 type State = {
   bundleAnalysisProgress?: SupportBundleProgress;
@@ -325,5 +325,9 @@ class SupportBundleList extends React.Component<Props, State> {
   }
 }
 
-// eslint-disable-next-line
+/* eslint-disable */
+// @ts-ignore
 export default withRouter(SupportBundleList) as any;
+/* eslint-enable */
+
+
