@@ -3,7 +3,7 @@ CURRENT_USER := $(shell id -u -n)
 MINIO_TAG ?= RELEASE.2022-10-24T18-35-07Z
 RQLITE_TAG ?= 7.10.0
 DEX_TAG ?= v2.35.3
-LVP_TAG ?= v0.4.0
+LVP_TAG ?= v0.4.1
 
 define sendMetrics
 @if [ -z "${PROJECT_NAME}" ]; then \
@@ -169,7 +169,7 @@ scan:
 	trivy fs \
 		--security-checks vuln \
 		--exit-code=1 \
-		--severity="HIGH,CRITICAL" \
+		--severity="CRITICAL,HIGH,MEDIUM" \
 		--ignore-unfixed \
 		--skip-files actions/version-tag/package-lock.json \
 		--skip-files web/yarn.lock \

@@ -1,5 +1,5 @@
 import React from "react";
-import { RouteComponentProps, withRouter } from "react-router-dom";
+import { withRouter } from "@src/utilities/react-router-utilities";
 
 import { Utilities } from "../../utilities/utilities";
 import Loader from "../shared/Loader";
@@ -14,7 +14,7 @@ type Props = {
   onBackClick: (goBack: boolean) => void;
   secondSequence: number;
   slug: string;
-} & RouteComponentProps;
+};
 
 type State = {
   loadingFileTrees: boolean;
