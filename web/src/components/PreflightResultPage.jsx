@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import { Link } from "react-router-dom";
 import { KotsPageTitle } from "@components/Head";
-import { withRouter } from "react-router-dom";
+import { withRouter } from "@src/utilities/react-router-utilities";
 import Modal from "react-modal";
 import size from "lodash/size";
 import ReactTooltip from "react-tooltip";

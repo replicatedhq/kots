@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { withRouter } from "react-router-dom";
+import { withRouter } from "@src/utilities/react-router-utilities";
 import { KotsPageTitle } from "@components/Head";
 import { Line } from "rc-progress";
 import Loader from "../shared/Loader";
