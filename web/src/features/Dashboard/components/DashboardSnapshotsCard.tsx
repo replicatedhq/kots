@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useReducer, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Utilities } from "@src/utilities/utilities";
 import find from "lodash/find";
@@ -8,6 +8,7 @@ import SnapshotDifferencesModal from "@src/components/modals/SnapshotDifferences
 import Icon from "@src/components/Icon";
 import { App } from "@types";
 import { usePrevious } from "@src/hooks/usePrevious";
+import { useHistory } from "react-router-dom";
 
 const DESTINATIONS = [
   {
