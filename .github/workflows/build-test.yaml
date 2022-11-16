@@ -407,6 +407,8 @@ jobs:
           allow-repeats: false
 
   pr-tests:
+    # only if dependabot or a PR from a fork
+    if: github.actor == 'dependabot[bot]' || github.event.pull_request.head.repo.fork == true
     needs: [ enable-tests, can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     uses: ./.github/workflows/pr-tests.yaml
     with:
