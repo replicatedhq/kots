@@ -406,6 +406,9 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           allow-repeats: false
 
+  pr-tests:
+    needs: [ enable-tests, can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    uses: ./.github/workflows/pr-tests.yaml
 
   validate-existing-online-install-minimal:
     runs-on: ubuntu-20.04
@@ -1478,8 +1481,6 @@ jobs:
   validate-kots-push-images-anonymous:
     runs-on: ubuntu-20.04
     needs: [ enable-tests, can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
-    strategy:
-      fail-fast: false
     steps:
       - name: Checkout
         uses: actions/checkout@v2
