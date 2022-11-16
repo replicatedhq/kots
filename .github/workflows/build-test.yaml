@@ -12,6 +12,22 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+
+  debug:
+    environment: pr-tests-environment
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Check if the TEST_SECRET secret is equal to environment-secret
+        run: |
+          echo TEST_SECRET is $TEST_SECRET
+          if [[ $TEST_SECRET == *"environment-secret"* ]]; then
+            echo "This is the environment secret!"
+          else
+            echo "This is NOT the environment secret!"
+          fi
+        env:
+          TEST_SECRET: ${{ secrets.TEST_SECRET }}
+
   can-run-ci:
     runs-on: ubuntu-20.04
     # if the event is pull_request and:
