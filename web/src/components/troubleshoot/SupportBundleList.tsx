@@ -1,6 +1,7 @@
 import * as React from "react";
 import { KotsPageTitle } from "@components/Head";
-import { RouteComponentProps, withRouter, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { withRouter } from "@src/utilities/react-router-utilities";
 
 import Toggle from "../shared/Toggle";
 import Loader from "../shared/Loader";
