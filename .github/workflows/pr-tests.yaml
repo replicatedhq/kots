@@ -27,6 +27,11 @@ jobs:
           echo environment: ${{ inputs.environment }}
       - name: Dump Test Secret
         run: |
+          if [[ $TEST_SECRET == *"environment"* ]]; then
+            echo "This is the environment secret!"
+          else
+            echo "This is NOT the environment password!"
+          fi
           echo TEST_SECRET: $TEST_SECRET
         env:
           TEST_SECRET: ${{ secrets.TEST_SECRET }}
