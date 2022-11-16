@@ -1,5 +1,8 @@
 import * as React from "react";
-import { withRouter } from "@src/utilities/react-router-utilities";
+import {
+  withRouter,
+  withRouterType,
+} from "@src/utilities/react-router-utilities";
 import Loader from "../shared/Loader";
 import dayjs from "dayjs";
 import filter from "lodash/filter";
@@ -10,7 +13,6 @@ import Icon from "../Icon";
 import "@src/scss/components/AirgapUploadProgress.scss";
 
 import {
-  KotsParams,
   SupportBundle,
   SupportBundleInsight,
   SupportBundleProgress,
@@ -27,7 +29,7 @@ type Props = {
   progressData: SupportBundleProgress;
   refetchBundleList: () => void;
   watchSlug: string;
-} & RouteComponentProps<KotsParams>;
+} & withRouterType;
 
 type State = {
   downloadBundleErrMsg?: string;
@@ -415,5 +417,7 @@ class SupportBundleRow extends React.Component<Props, State> {
   }
 }
 
-// eslint-disable-next-line
+/* eslint-disable */
+// @ts-ignore
 export default withRouter(SupportBundleRow) as any;
+/* eslint-enable*/
