@@ -990,6 +990,10 @@ func FindBackupStoreLocation(ctx context.Context, kotsadmNamespace string) (*vel
 		return nil, errors.Wrap(err, "failed to detect velero namespace")
 	}
 
+	if veleroNamespace == "" {
+		return nil, nil
+	}
+
 	veleroClient, err := veleroclientv1.NewForConfig(cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create velero clientset")
@@ -997,6 +1001,9 @@ func FindBackupStoreLocation(ctx context.Context, kotsadmNamespace string) (*vel
 
 	backupStorageLocations, err := veleroClient.BackupStorageLocations(veleroNamespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
+		if kuberneteserrors.IsNotFound(err) {
+			return nil, nil
+		}
 		return nil, errors.Wrap(err, "failed to list backupstoragelocations")
 	}
 
@@ -1006,7 +1013,7 @@ func FindBackupStoreLocation(ctx context.Context, kotsadmNamespace string) (*vel
 		}
 	}
 
-	return nil, errors.New("global config not found")
+	return nil, nil
 }
 
 // UpdateBackupStorageLocation applies an updated Velero backup storage location resource to the cluster
