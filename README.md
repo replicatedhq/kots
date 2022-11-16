@@ -18,6 +18,7 @@ curl https://kots.io/install | bash
 ```
 
 ### Run `kots install`
+
 The `install` command is the recommended way to learn KOTS. Executing the `install` command will install an application and the [kotsadm](https://github.com/replicatedhq/kotsadm) Admin Console to an existing Kubernetes cluster. This command supports installing Helm charts (without Tiller), standard Kubernetes applications and also Replicated KOTS apps.
 
 Continue with the demo by running the following command:
@@ -26,6 +27,8 @@ kubectl kots install sentry-pro
 ```
 
 Set a namespace for the admin console and the application components to be installed, and provide a password for the admin console. After this command completes, the kotsadm Admin Console will be running in your cluster, listening on port :8800 on a ClusterIP service in the namespace you deployed the application to. By default this is exposed to your workstation using kubectl port-forward, but you could set up an ingress/load balancer of your own.
+
+**NOTE** Currently, the kotsadm pod can **only** be scheduled on nodes with the `linux/amd64` platform.  
 
 ### Access the Admin Console
 Visit http://localhost:8800 to access the Admin Console, enter the password.
@@ -36,6 +39,11 @@ If you terminate your terminal session, the port-forward will also terminate. To
 ```
 kubectl kots admin-console --namespace sentry-pro
 ```
+
+## Supportability
+
+Currently, the KOTS CLI supports OSX (including Apple Silicon arm64) and Linux platforms. However, the Kubernetes resources
+that it creates can **only** be scheduled on nodes with the `linux/amd64` platform.
 
 # Community
 

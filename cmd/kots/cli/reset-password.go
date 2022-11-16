@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/password"
+	"github.com/replicatedhq/kots/pkg/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -46,7 +46,7 @@ func ResetPasswordCmd() *cobra.Command {
 			}
 
 			log.ActionWithoutSpinner("Reset the admin console password for %s", namespace)
-			newPassword, err := promptForNewPassword()
+			newPassword, err := util.PromptForNewPassword()
 			if err != nil {
 				os.Exit(1)
 			}
@@ -61,40 +61,6 @@ func ResetPasswordCmd() *cobra.Command {
 	}
 
 	return cmd
-}
-
-func promptForNewPassword() (string, error) {
-	templates := &promptui.PromptTemplates{
-		Prompt:  "{{ . | bold }} ",
-		Valid:   "{{ . | green }} ",
-		Invalid: "{{ . | red }} ",
-		Success: "{{ . | bold }} ",
-	}
-
-	prompt := promptui.Prompt{
-		Label:     "Enter a new password to be used for the Admin Console:",
-		Templates: templates,
-		Mask:      rune('•'),
-		Validate: func(input string) error {
-			if len(input) < 6 {
-				return errors.New("please enter a longer password")
-			}
-
-			return nil
-		},
-	}
-
-	for {
-		result, err := prompt.Run()
-		if err != nil {
-			if err == promptui.ErrInterrupt {
-				os.Exit(-1)
-			}
-			continue
-		}
-
-		return result, nil
-	}
 }
 
 func setKotsadmPassword(newPassword string, namespace string) error {

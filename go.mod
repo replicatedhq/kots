@@ -14,7 +14,7 @@ require (
 	github.com/aws/aws-sdk-go v1.44.102
 	github.com/bitnami-labs/sealed-secrets v0.14.1
 	github.com/blang/semver v3.5.1+incompatible
-	github.com/containers/image/v5 v5.23.0
+	github.com/containers/image/v5 v5.23.1
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/dexidp/dex v0.0.0-20220607113954-3836196af2e7
 	github.com/distribution/distribution/v3 v3.0.0-20220526142353-ffbd94cbe269
@@ -39,7 +39,7 @@ require (
 	github.com/manifoldco/promptui v0.9.0
 	github.com/marccampbell/yaml-toolbox v0.0.0-20200805160637-950ceb36c770
 	github.com/mattn/go-isatty v0.0.16
-	github.com/mholt/archiver v3.1.1+incompatible
+	github.com/mholt/archiver/v3 v3.5.1
 	github.com/mikesmitty/edkey v0.0.0-20170222072505-3356ea4e686a
 	github.com/mitchellh/hashstructure v1.1.0
 	github.com/onsi/ginkgo/v2 v2.1.4
@@ -47,7 +47,7 @@ require (
 	github.com/open-policy-agent/opa v0.44.0
 	github.com/openshift/client-go v0.0.0-20210503124028-ac0910aac9fa
 	github.com/ory/dockertest/v3 v3.9.1
-	github.com/otiai10/copy v1.0.2
+	github.com/otiai10/copy v1.9.0
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
 	github.com/pkg/errors v0.9.1
 	github.com/pmezard/go-difflib v1.0.0
@@ -241,7 +241,6 @@ require (
 	github.com/mattn/go-shellwords v1.0.12 // indirect
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
-	github.com/mholt/archiver/v3 v3.5.1 // indirect
 	github.com/miekg/pkcs11 v1.1.1 // indirect
 	github.com/mistifyio/go-zfs/v3 v3.0.0 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
@@ -272,7 +271,6 @@ require (
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.5 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
-	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
 	github.com/pierrec/lz4/v4 v4.1.2 // indirect
 	github.com/proglottis/gpgme v0.1.3 // indirect
 	github.com/prometheus/client_golang v1.13.0 // indirect

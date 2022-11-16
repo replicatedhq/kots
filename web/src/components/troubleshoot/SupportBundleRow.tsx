@@ -1,5 +1,5 @@
 import * as React from "react";
-import { RouteComponentProps, withRouter } from "react-router-dom";
+import { withRouter } from "@src/utilities/react-router-utilities";
 import Loader from "../shared/Loader";
 import dayjs from "dayjs";
 import filter from "lodash/filter";

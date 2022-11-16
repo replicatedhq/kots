@@ -1,7 +1,8 @@
 import React, { PureComponent } from "react";
 import PropTypes from "prop-types";
 import classNames from "classnames";
-import { Link, withRouter } from "react-router-dom";
+import { withRouter } from "@src/utilities/react-router-utilities";
+import { Link } from "react-router-dom";
 import { Utilities } from "@src/utilities/utilities";
 import ErrorModal from "../modals/ErrorModal";
 import NavBarDropdown from "./NavBarDropdown";

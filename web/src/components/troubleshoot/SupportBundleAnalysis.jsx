@@ -1,5 +1,6 @@
 import * as React from "react";
-import { withRouter, Switch, Route, Link } from "react-router-dom";
+import { Switch, Route, Link } from "react-router-dom";
+import { withRouter } from "@src/utilities/react-router-utilities";
 import dayjs from "dayjs";
 import Modal from "react-modal";
 
