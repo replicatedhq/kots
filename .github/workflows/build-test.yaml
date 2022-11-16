@@ -415,6 +415,7 @@ jobs:
       TESTIM_ACCESS_TOKEN: ''
       E2E_TESTIM_AWS_ACCESS_KEY_ID: ''
       E2E_TESTIM_AWS_SECRET_ACCESS_KEY: ''
+      TEST_SECRET: 'test-secret-from-caller'
 
   validate-existing-online-install-minimal:
     runs-on: ubuntu-20.04
