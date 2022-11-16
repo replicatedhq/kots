@@ -1830,19 +1830,16 @@ jobs:
       - validate-pr-tests
     if: always()
     steps:
-      # https://docs.github.com/en/actions/learn-github-actions/contexts#steps-context
+      # https://docs.github.com/en/actions/learn-github-actions/contexts#jobs-context
       # if the validate-kurl-addon job failed or was cancelled, this job will fail. it's ok if this job was skipped
       - name: fail if validate-kurl-addon job failed
-        if: steps.validate-kurl-addon.outcome == 'failed' || steps.validate-kurl-addon.outcome == 'cancelled'
+        if: jobs.validate-kurl-addon.result == 'failure' || jobs.validate-kurl-addon.result == 'cancelled'
         run: exit 1
       # if the validate-pr-tests job was not successful, this job will fail
-      - name: fail if validate-pr-tests job was skipped or failed
-        if: steps.validate-pr-tests.outcome != 'success'
-        run: |
-          echo '${{ toJSON(steps) }}'
-          echo '${{ toJSON(steps.validate-pr-tests) }}'
-          exit 1
+      - name: fail if validate-pr-tests job was not successful
+        if: jobs.validate-pr-tests.result != 'success'
+        run: exit 1
       # if the validate-pr-tests job was successful, this job will succeed
       - name: succeed if validate-pr-tests job succeeded
-        if: steps.validate-pr-tests.outcome == 'success'
+        if: jobs.validate-pr-tests.result == 'success'
         run: echo "Validation succeeded"
