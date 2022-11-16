@@ -1,7 +1,10 @@
 import * as React from "react";
 import { KotsPageTitle } from "@components/Head";
 import { Link } from "react-router-dom";
-import { withRouter, withRouterType } from "@src/utilities/react-router-utilities";
+import {
+  withRouter,
+  withRouterType,
+} from "@src/utilities/react-router-utilities";
 
 import Toggle from "../shared/Toggle";
 import Loader from "../shared/Loader";
@@ -329,5 +332,3 @@ class SupportBundleList extends React.Component<Props, State> {
 // @ts-ignore
 export default withRouter(SupportBundleList) as any;
 /* eslint-enable */
-
-
