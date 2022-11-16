@@ -18,7 +18,7 @@ const RouterWrapper = ({ children }) => {
 };
 
 /**
- * @deprecated The method should not be used on new components
+ * @deprecated The method should not be used on new components. New components should use the hooks directly.
  */
 const withRouter = <P extends object>(
   WrappedComponent: React.ComponentType<
