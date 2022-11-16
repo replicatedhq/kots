@@ -2,6 +2,13 @@ name: pr-tests
 
 on:
   workflow_call:
+    secrets: # have to define these here for a reusable workflow, but they do not need to be passed in by the caller
+      TESTIM_ACCESS_TOKEN:
+        # required: true
+      E2E_TESTIM_AWS_ACCESS_KEY_ID:
+        # required: true
+      E2E_TESTIM_AWS_SECRET_ACCESS_KEY:
+        # required: true
         
 jobs:
   validate-smoke-test:
