@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { withRouter } from "react-router-dom";
+import { withRouter } from "@src/utilities/react-router-utilities";
 import { KotsPageTitle } from "@components/Head";
 import { Line } from "rc-progress";
 import Loader from "../shared/Loader";
@@ -91,13 +91,6 @@ class AppSnapshotRestore extends Component {
           : "Something went wrong, please try again.",
         errorTitle: "Failed to fetch restore details",
       });
-    }
-  };
-
-  logOutUser = () => {
-    const token = Utilities.getToken();
-    if (token) {
-      window.localStorage.removeItem("token");
     }
   };
 
@@ -333,8 +326,7 @@ class AppSnapshotRestore extends Component {
     }
 
     if (restoreCompleted && hasNoErrorsOrWarnings) {
-      this.logOutUser();
-      this.props.history.push("/restore-completed");
+      Utilities.logoutUser(null, { snapshotRestore: true });
     }
 
     return (

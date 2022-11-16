@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import Select from "react-select";
-import { withRouter } from "react-router-dom";
+import { withRouter } from "@src/utilities/react-router-utilities";
 import {
   Utilities,
   getCronFrequency,
@@ -482,7 +482,7 @@ class SnapshotSchedule extends Component {
               </div>
             </div>
           )}
-          <form className="flex flex-column snapshot-form-wrapper u-marginTop--20">
+          <div className="flex flex-column snapshot-form-wrapper u-marginTop--20">
             <div
               className={`flex-column ${
                 !isAppConfig ? "u-marginTop--12" : "u-marginBottom--20"
@@ -642,7 +642,7 @@ class SnapshotSchedule extends Component {
                 )}
               </div>
             </div>
-          </form>
+          </div>
         </div>
         <ErrorModal
           errorModal={this.state.displayErrorModal}

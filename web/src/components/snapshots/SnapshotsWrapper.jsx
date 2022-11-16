@@ -1,5 +1,6 @@
 import React, { Component, Fragment } from "react";
-import { withRouter, Switch, Route, Redirect } from "react-router-dom";
+import { Switch, Route, Redirect } from "react-router-dom";
+import { withRouter } from "@src/utilities/react-router-utilities";
 import { KotsPageTitle } from "@components/Head";
 
 import withTheme from "@src/components/context/withTheme";
