@@ -1,5 +1,5 @@
-import React, { useEffect, useReducer } from "react";
-import { Link, useHistory } from "react-router-dom";
+import React from "react";
+import { Link } from "react-router-dom";
 import { Utilities } from "@src/utilities/utilities";
 import find from "lodash/find";
 import "@src/scss/components/watches/DashboardCard.scss";

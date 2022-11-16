@@ -1,6 +1,6 @@
 import * as React from "react";
 import AceEditor from "react-ace";
-import { withRouter } from "react-router-dom";
+import { withRouter } from "@src/utilities/react-router-utilities";
 import { getFileFormat, rootPath, Utilities } from "../../utilities/utilities";
 import sortBy from "lodash/sortBy";
 import find from "lodash/find";

@@ -1,6 +1,5 @@
 import * as React from "react";
 import classNames from "classnames";
-import { withRouter } from "react-router-dom";
 import { KotsPageTitle } from "@components/Head";
 import isEmpty from "lodash/isEmpty";
 import Modal from "react-modal";
@@ -11,6 +10,7 @@ import LicenseUploadProgress from "./LicenseUploadProgress";
 import AirgapRegistrySettings from "./shared/AirgapRegistrySettings";
 import { Utilities } from "../utilities/utilities";
 import { AirgapUploader } from "../utilities/airgapUploader";
+import { withRouter } from "@src/utilities/react-router-utilities";
 
 import "../scss/components/troubleshoot/UploadSupportBundleModal.scss";
 import "../scss/components/Login.scss";
@@ -690,4 +690,5 @@ class UploadAirgapBundle extends React.Component {
   }
 }
 
+// eslint-disable-next-line
 export default withRouter(UploadAirgapBundle);
