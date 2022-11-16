@@ -1,5 +1,8 @@
 import React from "react";
-import { withRouter } from "@src/utilities/react-router-utilities";
+import {
+  withRouter,
+  withRouterType,
+} from "@src/utilities/react-router-utilities";
 
 import { Utilities } from "../../utilities/utilities";
 import Loader from "../shared/Loader";
@@ -14,7 +17,7 @@ type Props = {
   onBackClick: (goBack: boolean) => void;
   secondSequence: number;
   slug: string;
-};
+} & withRouterType;
 
 type State = {
   loadingFileTrees: boolean;
@@ -263,5 +266,7 @@ class DownstreamWatchVersionDiff extends React.Component<Props, State> {
   }
 }
 
-// eslint-disable-next-line
+/* eslint-disable */
+// @ts-ignore
 export default withRouter(DownstreamWatchVersionDiff) as any;
+/* eslint-enable */
