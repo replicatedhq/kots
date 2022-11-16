@@ -1,0 +1,83 @@
+name: pr-tests
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        type: string
+        description: environment to run tests in
+        required: true
+    secrets: # have to define these here for a reusable workflow, but they do not need to be passed in by the caller
+      TESTIM_ACCESS_TOKEN:
+        required: true
+      E2E_TESTIM_AWS_ACCESS_KEY_ID:
+        required: true
+      E2E_TESTIM_AWS_SECRET_ACCESS_KEY:
+        required: true
+        
+jobs:
+  validate-smoke-test:
+    runs-on: ubuntu-20.04
+    environment: ${{ inputs.environment }}
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_version: [ v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1,v1.24.4-k3s1 ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: download e2e deps
+        uses: actions/download-artifact@v2
+        with:
+          name: e2e
+          path: e2e/bin/
+      - run: docker load -i e2e/bin/e2e-deps.tar
+      - run: chmod +x e2e/bin/*
+      - name: download kots binary
+        uses: actions/download-artifact@v2
+        with:
+          name: kots
+          path: bin/
+      - run: chmod +x bin/*
+      - uses: ./.github/actions/kots-e2e
+        with:
+          test-focus: 'Smoke Test'
+          kots-namespace: 'smoke-test'
+          k8s-version: '${{ matrix.k8s_version }}'
+          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
+          testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
+          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
+          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
+
+  validate-minimal-rbac:
+    runs-on: ubuntu-20.04
+    environment: ${{ inputs.environment }}
+    strategy:
+      fail-fast: false
+      matrix:
+        k8s_version: [ v1.21.8-k3s2,v1.22.5-k3s2,v1.23.3-k3s1,v1.24.4-k3s1 ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: download e2e deps
+        uses: actions/download-artifact@v2
+        with:
+          name: e2e
+          path: e2e/bin/
+      - run: docker load -i e2e/bin/e2e-deps.tar
+      - run: chmod +x e2e/bin/*
+      - name: download kots binary
+        uses: actions/download-artifact@v2
+        with:
+          name: kots
+          path: bin/
+      - run: chmod +x bin/*
+      - uses: ./.github/actions/kots-e2e
+        with:
+          test-focus: 'Minimal RBAC'
+          kots-namespace: 'minimal-rbac'
+          k8s-version: '${{ matrix.k8s_version }}'
+          testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
+          testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
+          aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
+          aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'

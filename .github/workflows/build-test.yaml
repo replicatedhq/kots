@@ -406,6 +406,17 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           allow-repeats: false
 
+  pr-tests:
+    # only if dependabot or a PR from a fork
+    if: github.actor == 'dependabot[bot]' || github.event.pull_request.head.repo.fork == true
+    needs: [ enable-tests, can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
+    uses: ./.github/workflows/pr-tests.yaml
+    with:
+      environment: pr-tests-environment
+    secrets: # have to pass the secrets from the caller to the called workflow
+      TESTIM_ACCESS_TOKEN: ${{ secrets.TESTIM_ACCESS_TOKEN }}
+      E2E_TESTIM_AWS_ACCESS_KEY_ID: ${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}
+      E2E_TESTIM_AWS_SECRET_ACCESS_KEY: ${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}
 
   validate-existing-online-install-minimal:
     runs-on: ubuntu-20.04
@@ -1478,8 +1489,6 @@ jobs:
   validate-kots-push-images-anonymous:
     runs-on: ubuntu-20.04
     needs: [ enable-tests, can-run-ci, build-kots, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
-    strategy:
-      fail-fast: false
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -1788,9 +1797,12 @@ jobs:
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
 
-  validate-pr-tests:
+  # this job will validate that all validate-* jobs succeed and is used for the github branch protection rule
+  validate-success:
     runs-on: ubuntu-20.04
     needs:
+      # kurl add-on
+      - validate-kurl-addon
       # testim tests
       - validate-existing-online-install-minimal
       - validate-smoke-test
@@ -1819,27 +1831,4 @@ jobs:
       # cli-only tests
       - validate-kots-push-images-anonymous
     steps:
-      - run: echo "All PR tests passed"
-
-  # this job will validate that the kurl add-on validation did not fail and that all pr-tests succeed
-  # it is used for the github branch protection rule
-  validate-success:
-    runs-on: ubuntu-20.04
-    needs:
-      - validate-kurl-addon
-      - validate-pr-tests
-    if: always()
-    steps:
-      # https://docs.github.com/en/actions/learn-github-actions/contexts#needs-context
-      # if the validate-kurl-addon job failed or was cancelled, this job will fail. it's ok if this job was skipped
-      - name: fail if validate-kurl-addon job failed
-        if: needs.validate-kurl-addon.result == 'failure' || needs.validate-kurl-addon.result == 'cancelled'
-        run: exit 1
-      # if the validate-pr-tests job was not successful, this job will fail
-      - name: fail if validate-pr-tests job was not successful
-        if: needs.validate-pr-tests.result != 'success'
-        run: exit 1
-      # if the validate-pr-tests job was successful, this job will succeed
-      - name: succeed if validate-pr-tests job succeeded
-        if: needs.validate-pr-tests.result == 'success'
-        run: echo "Validation succeeded"
+      - run: echo "Validate success"
