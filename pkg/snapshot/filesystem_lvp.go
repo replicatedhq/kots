@@ -66,6 +66,7 @@ func GetCurrentLvpFileSystemConfig(ctx context.Context, namespace string) (*type
 			}
 			return fileSystemConfig, nil
 		}
+		return nil, nil
 	}
 
 	// backup storage location does not exist, get file system config from the config map
