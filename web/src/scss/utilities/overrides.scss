@@ -24,13 +24,13 @@ a.u-textColor--error {
   color: #daab18;
 }
 
-.replicated-link,
-a:visited {
+// a:visited
+.replicated-link {
   color: #9b6a6c;
 }
 
-.replicated-link:hover,
-a:visited {
+//a:visited
+.replicated-link:hover {
   color: #8d4d50;
   text-decoration: none;
 }
@@ -145,8 +145,8 @@ a:visited {
   background-color: #5b7553;
 }
 
-.NavBarWrapper .dropdown-nav-menu li:hover,
-.NavBarWrapper .dropdown-nav-menu li a:hover {
+.dropdown-nav-menu li:hover,
+.dropdown-nav-menu li a:hover {
   color: #9b6a6c;
   background-color: #faf3dd;
 }
@@ -156,26 +156,29 @@ a:visited {
   color: #5b7553;
 }
 
-// talking to Grayson about the two below.
-// wip
-.status-tag.failed,
-.ResourceStateText.missing {
+.status-tag.missing {
   background-color: #3d0c11;
   color: #ffffff;
 }
-.status-tag.failed,
-.ResourceStateText.unavailable {
+.status-tag.unavailable {
+  background: orange;
   color: #8f1e2a;
 }
+.status-tag.success {
+  background: green;
+  color: #faf3dd;
+}
+//degraded, updating, failed, skipped, unknown, required
 
 .subnav {
   background-color: #faf3dd;
 }
 
-.NavBarWrapper .NavItem.is-active {
+.NavItem.is-active {
   border-bottom-color: #9b6a6c;
 }
 
-.WatchDetailPage--wrapper .details-subnav ul li.is-active a:after {
-  background-color: #9b6a6c;
+//for the line underneath the subnav link
+.subnav-item.is-active a:after {
+  background-color: red;
 }

@@ -1,5 +1,49 @@
 @import "../../variables.scss";
 
+.subnav-item {
+  display: inline-block;
+  margin: 0 20px;
+  position: relative;
+  &:first-child {
+    margin-left: 0;
+  }
+  &:last-child {
+    margin-right: 0;
+  }
+
+  a {
+    position: relative;
+    padding: 12px 10px 11px;
+    font-size: 14px;
+    font-weight: 500;
+    color: $sub-nav-text-color;
+    display: inline-block;
+    transition: color 0.2s;
+
+    &:hover {
+      color: darken($sub-nav-text-color, 8%);
+    }
+  }
+
+  &.is-active a {
+    color: darken($sub-nav-text-color, 20%);
+
+    &:hover {
+      color: darken($sub-nav-text-color, 28%);
+    }
+    &:after {
+      content: "";
+      width: 100%;
+      height: 2px;
+      position: absolute;
+      display: block;
+      background-color: $accent-color;
+      bottom: -1px;
+      left: 0;
+    }
+  }
+}
+
 .WatchDetailPage--wrapper {
   .watch-detail-header {
     padding: 30px 20px;
@@ -39,49 +83,6 @@
     border-bottom: 1px solid $border-color;
     ul {
       margin: 0 auto;
-    }
-    ul li {
-      display: inline-block;
-      margin: 0 20px;
-      position: relative;
-      &:first-child {
-        margin-left: 0;
-      }
-      &:last-child {
-        margin-right: 0;
-      }
-
-      a {
-        position: relative;
-        padding: 12px 10px 11px;
-        font-size: 14px;
-        font-weight: 500;
-        color: $sub-nav-text-color;
-        display: inline-block;
-        transition: color 0.2s;
-
-        &:hover {
-          color: darken($sub-nav-text-color, 8%);
-        }
-      }
-
-      &.is-active a {
-        color: darken($sub-nav-text-color, 20%);
-
-        &:hover {
-          color: darken($sub-nav-text-color, 28%);
-        }
-        &:after {
-          content: "";
-          width: 100%;
-          height: 2px;
-          position: absolute;
-          display: block;
-          background-color: $accent-color;
-          bottom: -1px;
-          left: 0;
-        }
-      }
     }
 
     .subnav-badge {

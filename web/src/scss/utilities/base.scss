@@ -163,6 +163,18 @@ body a {
   font-weight: 500;
   white-space: nowrap;
 
+  &.degraded {
+    color: #ebb55c;
+    background-color: #fffdf6;
+  }
+  &.updating {
+    color: #ebb55c;
+    background-color: #fffdf6;
+  }
+  &.unavailable {
+    color: #ec8f39;
+    background-color: #fbe9d7;
+  }
   &.success {
     background-color: $success-color;
     color: #ffffff;
