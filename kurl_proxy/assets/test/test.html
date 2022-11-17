@@ -38,11 +38,11 @@
               </select> -->
 
             <div>
-              <p class="tls-section-header2">Certificate Type</p>
+              <p class="tls-section-header2">Certificate type</p>
               <input type="radio" name="type" id="self-signed" value="self-signed" checked>
-              <label for="self-signed">Self-signed</label>
+              <label for="self-signed">Use self-signed</label>
               <input type="radio" name="type" id="custom-cert" value="custom-cert">
-              <label for="custom-cert">Custom</label>
+              <label for="custom-cert">Upload CA-signed</label>
             </div>
             <p class="tls-header-sub self-signed-visible">
               A self-signed TLS certificate is currently used to secure communication
@@ -50,14 +50,13 @@
               every time you access the admin console unless you upload your own TLS certificate.
             </p>
             <p class="tls-header-sub custom-cert-visible hidden">
-              More secure option. You need to provide a certificate and key file. This can be added
-              later by following the instructions here:
+              A CA-signed TLS certificate will be used to secure communication between your browser
+              and the admin console.
             </p>
             <div>
               <p class="tls-section-header2">
                 Hostname
                 <span class="self-signed-visible">(optional)</span>
-                <span class="custom-cert-visible hidden">(required)</span>
               </p>
               <p id="hostname-hint" class="hostname-hint"></p>
               <p class="tls-section-sub-sub">Ensure this domain is routable on your network.</p>
