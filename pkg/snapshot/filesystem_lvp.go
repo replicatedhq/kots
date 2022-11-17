@@ -107,6 +107,9 @@ func RevertToMinioFS(ctx context.Context, kotsadmNamespace, veleroNamespace stri
 	if err != nil {
 		return errors.Wrap(err, "failed to find backupstoragelocations")
 	}
+	if bsl == nil {
+		return errors.New("backup storage location not found")
+	}
 
 	bsl.Spec = previousBsl.Spec
 

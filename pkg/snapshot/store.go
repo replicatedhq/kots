@@ -423,6 +423,9 @@ func updateGlobalStore(ctx context.Context, store *types.Store, kotsadmNamespace
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find backupstoragelocations")
 	}
+	if kotsadmVeleroBackendStorageLocation == nil {
+		return nil, errors.New("no backup store location found")
+	}
 
 	kotsadmVeleroBackendStorageLocation.Spec.Provider = store.Provider
 
@@ -797,6 +800,9 @@ func GetGlobalStore(ctx context.Context, kotsadmNamespace string, kotsadmVeleroB
 		kotsadmVeleroBackendStorageLocation, err = FindBackupStoreLocation(ctx, kotsadmNamespace)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to find backupstoragelocations")
+		}
+		if kotsadmVeleroBackendStorageLocation == nil {
+			return nil, errors.New("no backup store location found")
 		}
 	}
 
@@ -1541,6 +1547,9 @@ func resetResticRepositories(ctx context.Context, kotsadmNamespace string) error
 	storageLocation, err := FindBackupStoreLocation(ctx, kotsadmNamespace)
 	if err != nil {
 		return errors.Wrap(err, "failed to find backupstoragelocations")
+	}
+	if storageLocation == nil {
+		return errors.New("no backup store location found")
 	}
 
 	veleroClient, err := veleroclientv1.NewForConfig(cfg)
