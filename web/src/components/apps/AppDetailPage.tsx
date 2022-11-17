@@ -559,25 +559,23 @@ function AppDetailPage(props: Props) {
                   />
                 )}
                 {/* snapshots redirects */}
-                <Redirect
-                  exact
-                  from="/app/:slug/snapshots"
-                  to="/snapshots/partial/:slug"
+                <Route
+                  path="/app/:slug/snapshots"
+                  render={() => <Redirect to="/snapshots/partial/:slug" />}
                 />
-                <Redirect
-                  exact
-                  from="/app/:slug/snapshots/schedule"
-                  to="/snapshots/settings?:slug"
+                <Route
+                  path="/app/:slug/snapshots/schedule"
+                  render={() => <Redirect to="/snapshots/settings?:slug" />}
                 />
-                <Redirect
-                  exact
-                  from="/app/:slug/snapshots/:id"
-                  to="/snapshots/partial/:slug/:id"
+                <Route
+                  path="/app/:slug/snapshots/:id"
+                  render={() => <Redirect to="/snapshots/partial/:slug/:id" />}
                 />
-                <Redirect
-                  exact
-                  from="/app/:slug/snapshots/:id/restore"
-                  to="/snapshots/partial/:slug/:id/restore"
+                <Route
+                  path="/app/:slug/snapshots/:id/restore"
+                  render={() => (
+                    <Redirect to="/snapshots/partial/:slug/:id/restore" />
+                  )}
                 />
 
                 <Route component={NotFound} />

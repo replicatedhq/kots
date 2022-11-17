@@ -22,6 +22,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
 	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
+	"github.com/replicatedhq/kots/pkg/util"
 	"golang.org/x/sync/errgroup"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -983,9 +984,10 @@ func ensureDisasterRecoveryLabels(deployOptions *types.DeployOptions, clientset 
 
 func ReadDeployOptionsFromCluster(namespace string, clientset *kubernetes.Clientset) (*types.DeployOptions, error) {
 	deployOptions := types.DeployOptions{
-		Namespace:   namespace,
-		ServiceType: "ClusterIP",
-		IsOpenShift: k8sutil.IsOpenShift(clientset),
+		Namespace:      namespace,
+		ServiceType:    "ClusterIP",
+		IsOpenShift:    k8sutil.IsOpenShift(clientset),
+		IsGKEAutopilot: k8sutil.IsGKEAutopilot(clientset),
 	}
 
 	// Shared password, we can't read the original, but we can check if there's a bcrypted value
@@ -1001,7 +1003,7 @@ func ReadDeployOptionsFromCluster(namespace string, clientset *kubernetes.Client
 		}
 	}
 	if deployOptions.SharedPasswordBcrypt == "" {
-		sharedPassword, err := promptForSharedPassword()
+		sharedPassword, err := util.PromptForNewPassword()
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to prompt for shared password")
 		}

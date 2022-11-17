@@ -27,6 +27,9 @@ func GetRestore(ctx context.Context, kotsadmNamespace string, snapshotName strin
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get velero namespace")
 	}
+	if bsl == nil {
+		return nil, errors.New("no backup store location found")
+	}
 
 	veleroNamespace := bsl.Namespace
 
@@ -60,6 +63,9 @@ func CreateApplicationRestore(ctx context.Context, kotsadmNamespace string, snap
 	bsl, err := kotssnapshot.FindBackupStoreLocation(ctx, kotsadmNamespace)
 	if err != nil {
 		return errors.Wrap(err, "failed to get velero namespace")
+	}
+	if bsl == nil {
+		return errors.New("no backup store location found")
 	}
 
 	veleroNamespace := bsl.Namespace
@@ -153,6 +159,9 @@ func GetRestoreDetails(ctx context.Context, kotsadmNamespace string, restoreName
 	backendStorageLocation, err := kotssnapshot.FindBackupStoreLocation(ctx, kotsadmNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find backupstoragelocations")
+	}
+	if backendStorageLocation == nil {
+		return nil, errors.New("no backup store location found")
 	}
 
 	veleroNamespace := backendStorageLocation.Namespace

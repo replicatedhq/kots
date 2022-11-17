@@ -10,7 +10,7 @@ import (
 	"regexp"
 
 	"github.com/marccampbell/yaml-toolbox/pkg/splitter"
-	"github.com/mholt/archiver"
+	"github.com/mholt/archiver/v3"
 	"github.com/pkg/errors"
 )
 

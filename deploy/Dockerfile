@@ -1,8 +1,7 @@
-FROM debian:buster-slim
+FROM debian:bullseye-slim
 
-## python-dateutil pkg is needed for s3cmd to work
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl ca-certificates git gnupg2 python-dateutil \
+    curl ca-certificates git gnupg2 s3cmd \
   && for i in 1 2 3 4 5 6 7 8; do mkdir -p "/usr/share/man/man$i"; done \
   && rm -rf /var/lib/apt/lists/* \
   && rm -rf /usr/share/man/man*
@@ -121,19 +120,6 @@ RUN cd /tmp && curl -fsSL -o helm.tar.gz "${HELM3_URL}" \
   && ln -s "${KOTS_HELM_BIN_DIR}/helm${HELM3_VERSION}" "${KOTS_HELM_BIN_DIR}/helm3" \
   && ln -s "${KOTS_HELM_BIN_DIR}/helm3" "${KOTS_HELM_BIN_DIR}/helm" \
   && rm -rf helm.tar.gz linux-amd64
-
-# Install s3cmd
-ENV S3CMD_VERSION=2.1.0
-ENV S3CMD_URL=https://github.com/s3tools/s3cmd/releases/download/v${S3CMD_VERSION}/s3cmd-${S3CMD_VERSION}.tar.gz
-RUN cd /tmp && curl -fsSL -o s3cmd.tar.gz "${S3CMD_URL}" \
-  && curl -fsSL -o s3cmd.tar.gz.asc "${S3CMD_URL}.asc" \
-  && gpg --keyserver keyserver.ubuntu.com --recv-keys 0x0d37a8f4a5d183d5541d85d9241769189ac3d00b \
-  && cat s3cmd.tar.gz.asc \
-  && gpg --verify s3cmd.tar.gz.asc s3cmd.tar.gz \
-  && tar -xzvf s3cmd.tar.gz \
-  && mv s3cmd-${S3CMD_VERSION}/s3cmd /usr/local/bin/s3cmd \
-  && mv s3cmd-${S3CMD_VERSION}/S3 /usr/local/bin/S3 \
-  && rm -rf s3cmd.tar.gz s3cmd.tar.gz.asc s3cmd-${S3CMD_VERSION}
 
 # Setup user
 RUN useradd -c 'kotsadm user' -m -d /home/kotsadm -s /bin/bash -u 1001 kotsadm
