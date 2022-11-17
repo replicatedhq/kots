@@ -42,6 +42,7 @@ export default function ViewSnapshotLogsModal(props) {
             </div>
           ) : (
             <AceEditor
+              mode="yaml"
               value={logs}
               theme="chrome"
               className="flex1 flex"
