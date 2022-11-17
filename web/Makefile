@@ -46,11 +46,10 @@ build-kotsadm: deps
 		--config webpack.config.js \
 		--env enterprise
 
-run-unit-tests:
+.PHONY: test-unit
+test-unit:
 	yarn test:unit
 
-run-prettier-eslint:
-	yarn format
-
-run-typecheck:
-	yarn test:typecheck
+.PHONY: lint
+lint:
+	yarn prettier && yarn lint && yarn test:typecheck
