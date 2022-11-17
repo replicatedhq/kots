@@ -1,6 +1,9 @@
-let selfSignedLabels;
-let customCertLabels;
-if (document.readyState !== "loading") {
+function startTLS() {
+  let useSelfSigned = true;
+
+  let selfSignedLabels;
+  let customCertLabels;
+  if (document.readyState !== "loading") {
     ready();
   } else {
     document.addEventListener('DOMContentLoaded', ready);
@@ -12,9 +15,19 @@ if (document.readyState !== "loading") {
     selfSignedLabels = document.getElementsByClassName("self-signed-visible");
     customCertLabels = document.getElementsByClassName("custom-cert-visible");
 
+    function handleSubmit(e) {
+
+      if (useSelfSigned) {
+        skipAndWait(e);
+        return;
+      }
+
+      uploadAndWait(e);
+    }
+
     var form = document.getElementById("upload-form");
     if (form) {
-      form.addEventListener("submit", uploadAndWait);
+      form.addEventListener("submit", handleSubmit);
     }
 
     var skip = document.getElementById("skip-button");
@@ -43,7 +56,7 @@ if (document.readyState !== "loading") {
           uploadDiv.style.display = 'none'
         } else {
           hostHint.innerText = ''
-         uploadDiv.style.display = 'block'
+          uploadDiv.style.display = 'block'
         }
       })
     }
@@ -65,12 +78,12 @@ if (document.readyState !== "loading") {
     var xhr = new XMLHttpRequest();
 
 
-    xhr.onerror = function() {
+    xhr.onerror = function () {
       showError();
       enableForm();
     }
 
-    xhr.onloadend = function() {
+    xhr.onloadend = function () {
       if (xhr.status === 200) {
         redirectAfterRestart(hostnameInput.value, 10);
         return;
@@ -100,7 +113,7 @@ if (document.readyState !== "loading") {
 
     var xhr = new XMLHttpRequest();
 
-    xhr.onloadend = function() {
+    xhr.onloadend = function () {
       if (xhr.status === 200) {
         redirectAfterRestart(hostnameInput.value, 10);
         return;
@@ -129,22 +142,22 @@ if (document.readyState !== "loading") {
       return;
     }
 
-    setTimeout(function() {
+    setTimeout(function () {
       var xhr = new XMLHttpRequest();
 
       xhr.open("GET", "/tls/meta");
       xhr.send();
 
-      xhr.onloadend = function() {
+      xhr.onloadend = function () {
         if (xhr.status !== 200) {
-          redirectAfterRestart(hostname, n-1);
+          redirectAfterRestart(hostname, n - 1);
           return;
         }
 
         var resp = JSON.parse(xhr.response);
 
         if (resp.acceptAnonymousUploads) {
-          redirectAfterRestart(hostname, n-1);
+          redirectAfterRestart(hostname, n - 1);
           return;
         }
 
@@ -154,7 +167,7 @@ if (document.readyState !== "loading") {
   }
 
   function setErrorMsg(errorMsg) {
-      document.getElementById("tls-error-msg").innerHTML = errorMsg;
+    document.getElementById("tls-error-msg").innerHTML = errorMsg;
   }
 
   function hideError() {
@@ -166,22 +179,23 @@ if (document.readyState !== "loading") {
   }
 
   function disableForm() {
-    document.querySelectorAll("#upload-form input,#upload-form button").forEach(function(el) {
+    document.querySelectorAll("#upload-form input,#upload-form button").forEach(function (el) {
       el.disabled = true;
     });
   }
 
   function enableForm() {
-    document.querySelectorAll("#upload-form input,#upload-form button").forEach(function(el) {
+    document.querySelectorAll("#upload-form input,#upload-form button").forEach(function (el) {
       el.disabled = false;
     });
   }
 
   function toggleLabels() {
-    Array.from(selfSignedLabels).forEach(function(el) {
+    useSelfSigned = !useSelfSigned;
+    Array.from(selfSignedLabels).forEach(function (el) {
       el.classList.toggle("hidden");
     });
-    Array.from(customCertLabels).forEach(function(el) {
+    Array.from(customCertLabels).forEach(function (el) {
       el.classList.toggle("hidden");
     });
   }
@@ -193,9 +207,5 @@ if (document.readyState !== "loading") {
       }
     }
   }
-
-
-
-
-
-
+};
+startTLS();
