@@ -61,7 +61,7 @@ jobs:
       shell: bash
 
     - name: Upload web artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: web
         path: ./web/dist
@@ -97,7 +97,7 @@ jobs:
       shell: bash
 
     - name: Upload kurl_proxy artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: kurl_proxy
         path: ./kurl_proxy/bin
@@ -138,7 +138,7 @@ jobs:
       shell: bash
 
     - name: Upload Go API artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: go_api
         path: ./bin
