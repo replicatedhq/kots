@@ -1,12 +1,9 @@
-FROM debian:buster-slim
+FROM debian:bullseye-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# gzip and liblzma5 are installed to patch cves
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl ca-certificates git \
-  && apt-get install --no-install-recommends -y \
-    gzip liblzma5\
   && apt-get clean \
   && apt-get autoremove -y \
   && rm -rf /var/lib/apt/lists/*

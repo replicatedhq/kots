@@ -20,7 +20,14 @@ func (h *Handler) DownloadSnapshotLogs(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		err = errors.Wrap(err, "failed to find backup store location")
 		logger.Error(err)
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if bsl == nil {
+		err = errors.New("no backup store location found")
+		logger.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -29,7 +36,7 @@ func (h *Handler) DownloadSnapshotLogs(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		err = errors.Wrap(err, "failed to download backup log")
 		logger.Error(err)
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	defer gzipReader.Close()
@@ -37,7 +44,7 @@ func (h *Handler) DownloadSnapshotLogs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Disposition", "attachment; filename=snapshot.log")
 	w.Header().Set("Content-Type", "text/plain")
 
-	w.WriteHeader(200)
+	w.WriteHeader(http.StatusOK)
 
 	_, err = io.Copy(w, gzipReader)
 	if err != nil {

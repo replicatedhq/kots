@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { withRouter } from "react-router-dom";
+import { withRouter } from "@src/utilities/react-router-utilities";
 import MonacoEditor from "@monaco-editor/react";
 import Modal from "react-modal";
 import filter from "lodash/filter";

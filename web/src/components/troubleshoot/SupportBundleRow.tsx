@@ -1,5 +1,8 @@
 import * as React from "react";
-import { withRouter } from "react-router-dom";
+import {
+  withRouter,
+  withRouterType,
+} from "@src/utilities/react-router-utilities";
 import Loader from "../shared/Loader";
 import dayjs from "dayjs";
 import filter from "lodash/filter";
@@ -7,38 +10,52 @@ import isEmpty from "lodash/isEmpty";
 import { Utilities } from "../../utilities/utilities";
 import download from "downloadjs";
 import Icon from "../Icon";
-// import { VendorUtilities } from "../../utilities/VendorUtilities";
-import { Repeater } from "../../utilities/repeater";
 import "@src/scss/components/AirgapUploadProgress.scss";
 
-let percentage;
+import {
+  SupportBundle,
+  SupportBundleInsight,
+  SupportBundleProgress,
+} from "@types";
 
-class SupportBundleRow extends React.Component {
-  state = {
-    downloadingBundle: false,
-    downloadBundleErrMsg: "",
-    errorInsights: [],
-    warningInsights: [],
-    otherInsights: [],
-  };
+let percentage: number;
+
+type Props = {
+  bundle: SupportBundle;
+  isAirgap: boolean;
+  isCustomer: boolean;
+  isSupportBundleUploadSupported: boolean;
+  loadingBundle: boolean;
+  progressData: SupportBundleProgress;
+  refetchBundleList: () => void;
+  watchSlug: string;
+} & withRouterType;
+
+type State = {
+  downloadBundleErrMsg?: string;
+  downloadingBundle: boolean;
+  errorInsights?: SupportBundleInsight[];
+  otherInsights?: SupportBundleInsight[];
+  sendingBundle: boolean;
+  sendingBundleErrMsg?: string;
+  warningInsights?: SupportBundleInsight[];
+};
+
+class SupportBundleRow extends React.Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+
+    this.state = {
+      downloadingBundle: false,
+      sendingBundle: false,
+    };
+  }
 
   renderSharedContext = () => {
     const { bundle } = this.props;
     if (!bundle) {
       return null;
     }
-    // const notSameTeam = bundle.teamId !== VendorUtilities.getTeamId();
-    // const isSameTeam = bundle.teamId === VendorUtilities.getTeamId();
-    // const sharedIds = bundle.teamShareIds || [];
-    // const isShared = sharedIds.length;
-    // let shareContext;
-
-    // if (notSameTeam) {
-    //   shareContext = <span className="u-marginLeft--normal u-fontSize--normal u-textColor--success">Shared by <span className="u-fontWeight--bold">{bundle.teamName}</span></span>
-    // } else if (isSameTeam && isShared) {
-    //   shareContext = <span className="u-marginLeft--normal u-fontSize--normal u-fontWeight--medium u-textColor--secondary">Shared with Replicated</span>
-    // }
-    // return shareContext;
   };
 
   componentDidMount() {
@@ -47,14 +64,14 @@ class SupportBundleRow extends React.Component {
     }
   }
 
-  handleBundleClick = (bundle) => {
+  handleBundleClick = (bundle: SupportBundle) => {
     const { watchSlug } = this.props;
     this.props.history.push(
       `/app/${watchSlug}/troubleshoot/analyze/${bundle.slug}`
     );
   };
 
-  downloadBundle = async (bundle) => {
+  downloadBundle = async (bundle: SupportBundle) => {
     this.setState({ downloadingBundle: true, downloadBundleErrMsg: "" });
     fetch(
       `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/${bundle.id}/download`,
@@ -101,7 +118,7 @@ class SupportBundleRow extends React.Component {
       });
   };
 
-  sendBundleToVendor = async (bundleSlug) => {
+  sendBundleToVendor = async (bundleSlug: string) => {
     this.setState({
       sendingBundle: true,
       sendingBundleErrMsg: "",
@@ -165,13 +182,14 @@ class SupportBundleRow extends React.Component {
     });
   };
 
-  moveBar(progressData) {
+  moveBar(progressData: SupportBundleProgress) {
     const elem = document.getElementById("supportBundleStatusBar");
-    const calcPercent =
-      (progressData.collectorsCompleted / progressData.collectorCount) * 100;
-    percentage = calcPercent > 98 ? 98 : calcPercent.toFixed();
+    const calcPercent = Math.round(
+      (progressData.collectorsCompleted / progressData.collectorCount) * 100
+    );
+    percentage = calcPercent > 98 ? 98 : calcPercent;
     if (elem) {
-      elem.style.width = percentage + "%";
+      elem.style.width = percentage.toString() + "%";
     }
   }
 
@@ -236,7 +254,7 @@ class SupportBundleRow extends React.Component {
         </div>
       );
     } else {
-      percentage = "0";
+      percentage = 0;
       progressBar = (
         <div className="progressbar">
           <div
@@ -258,7 +276,7 @@ class SupportBundleRow extends React.Component {
                 onClick={() => this.handleBundleClick(bundle)}
               >
                 <div className="flex">
-                  {!this.props.isCustomer && bundle.customer ? (
+                  {!this.props.isCustomer ? (
                     <div className="flex-column flex1 flex-verticalCenter">
                       <span className="u-fontSize--large u-textColor--primary u-fontWeight--medium u-cursor--pointer">
                         <span>
@@ -292,7 +310,7 @@ class SupportBundleRow extends React.Component {
                     statusDiv
                   ) : bundle?.analysis?.insights?.length ? (
                     <div className="flex flex1 alignItems--center">
-                      {errorInsights.length > 0 && (
+                      {errorInsights && errorInsights.length > 0 && (
                         <span className="flex alignItems--center u-marginRight--30 u-fontSize--small u-fontWeight--medium u-textColor--error">
                           <Icon
                             icon={"warning-circle-filled"}
@@ -303,7 +321,7 @@ class SupportBundleRow extends React.Component {
                           {errorInsights.length > 1 ? "s" : ""} found
                         </span>
                       )}
-                      {warningInsights.length > 0 && (
+                      {warningInsights && warningInsights.length > 0 && (
                         <span className="flex alignItems--center u-marginRight--30 u-fontSize--small u-fontWeight--medium u-textColor--warning">
                           <Icon
                             icon="warning"
@@ -314,7 +332,7 @@ class SupportBundleRow extends React.Component {
                           {warningInsights.length > 1 ? "s" : ""} found
                         </span>
                       )}
-                      {otherInsights.length > 0 && (
+                      {otherInsights && otherInsights.length > 0 && (
                         <span className="flex alignItems--center u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy">
                           <span className="icon u-bundleInsightOtherIcon u-marginRight--5" />
                           {otherInsights.length} informational and debugging
@@ -375,7 +393,7 @@ class SupportBundleRow extends React.Component {
                     style={{ width: "350px" }}
                   >
                     <span className="u-fontWeight--bold u-fontSize--normal u-textColor--secondary u-marginRight--10">
-                      {percentage + "%"}
+                      {percentage.toString() + "%"}
                     </span>
                     {progressBar}
                     <span className="u-fontWeight--bold u-fontSize--normal u-textColor--secondary u-marginRight--10">
@@ -399,4 +417,7 @@ class SupportBundleRow extends React.Component {
   }
 }
 
-export default withRouter(SupportBundleRow);
+/* eslint-disable */
+// @ts-ignore
+export default withRouter(SupportBundleRow) as any;
+/* eslint-enable*/

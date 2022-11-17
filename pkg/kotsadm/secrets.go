@@ -3,14 +3,13 @@ package kotsadm
 import (
 	"bytes"
 	"context"
-	"os"
 
 	"github.com/google/uuid"
-	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	kotsadmobjects "github.com/replicatedhq/kots/pkg/kotsadm/objects"
 	"github.com/replicatedhq/kots/pkg/kotsadm/types"
+	"github.com/replicatedhq/kots/pkg/util"
 	"golang.org/x/crypto/bcrypt"
 	corev1 "k8s.io/api/core/v1"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -227,7 +226,7 @@ func getSharedPasswordSecret(namespace string, clientset *kubernetes.Clientset) 
 
 func ensureSharedPasswordSecret(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {
 	if deployOptions.SharedPassword == "" {
-		sharedPassword, err := promptForSharedPassword()
+		sharedPassword, err := util.PromptForNewPassword()
 		if err != nil {
 			return errors.Wrap(err, "failed to prompt for shared password")
 		}
@@ -254,41 +253,6 @@ func ensureSharedPasswordSecret(deployOptions *types.DeployOptions, clientset *k
 	// TODO handle update
 
 	return nil
-}
-
-func promptForSharedPassword() (string, error) {
-	templates := &promptui.PromptTemplates{
-		Prompt:  "{{ . | bold }} ",
-		Valid:   "{{ . | green }} ",
-		Invalid: "{{ . | red }} ",
-		Success: "{{ . | bold }} ",
-	}
-
-	prompt := promptui.Prompt{
-		Label:     "Enter a new password to be used for the Admin Console:",
-		Templates: templates,
-		Mask:      rune('•'),
-		Validate: func(input string) error {
-			if len(input) < 6 {
-				return errors.New("please enter a longer password")
-			}
-
-			return nil
-		},
-	}
-
-	for {
-		result, err := prompt.Run()
-		if err != nil {
-			if err == promptui.ErrInterrupt {
-				os.Exit(-1)
-			}
-			continue
-		}
-
-		return result, nil
-	}
-
 }
 
 func ensureAPIEncryptionSecret(deployOptions *types.DeployOptions, clientset *kubernetes.Clientset) error {

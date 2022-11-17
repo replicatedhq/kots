@@ -206,7 +206,7 @@ func MigrateExistingMinioFilesystemDeployments(log *logger.CLILogger, deployOpti
 		ForceReset:       false,
 		FileSystemConfig: *prevFsConfig,
 	}
-	err = snapshot.EnsureLocalVolumeProviderConfigMap(*fsDeployOptions, veleroNamespace)
+	err = snapshot.EnsureLocalVolumeProviderConfigMaps(*fsDeployOptions, veleroNamespace)
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure velero local-volume-provider config map")
 	}

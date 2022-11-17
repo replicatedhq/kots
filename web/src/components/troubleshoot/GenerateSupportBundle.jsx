@@ -1,6 +1,7 @@
 import * as React from "react";
 import { KotsPageTitle } from "@components/Head";
-import { withRouter, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { withRouter } from "@src/utilities/react-router-utilities";
 import Modal from "react-modal";
 
 import Toggle from "../shared/Toggle";

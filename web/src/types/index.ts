@@ -1,3 +1,4 @@
+// This is ReponseApp in the go types
 export type App = {
   allowRollback: Object | undefined;
   allowSnapshots: boolean;
@@ -17,6 +18,7 @@ export type App = {
   isGitOpsSupported: boolean;
   isIdentityServiceSupported: boolean;
   isSemverRequired: boolean;
+  isSupportBundleUploadSupported: boolean;
   name: string;
   namespace: string;
   needsRegistry?: boolean;
@@ -137,6 +139,39 @@ export type ResourceStates = {
   namespace: string;
   // from https://github.com/replicatedhq/kots/blob/84b7e4e0e9275bb200a36be69691c4944eb8cf8f/pkg/appstate/types/types.go#L10-L14
   state: AppStatusState;
+};
+
+export type SupportBundle = {
+  analysis: SupportBundleAnalysis;
+  createdAt: string;
+  id: string;
+  isArchived: boolean;
+  name: string;
+  sharedAt: string;
+  size: number;
+  slug: string;
+  status: string;
+  uploadedAt: string;
+};
+
+type SupportBundleAnalysis = {
+  createdAt: string;
+  insights: SupportBundleInsight[];
+};
+
+export type SupportBundleInsight = {
+  detail: string;
+  icon: string;
+  iconKey: string;
+  key: string;
+  primary: string;
+  severity: string;
+};
+
+export type SupportBundleProgress = {
+  collectorCount: number;
+  collectorsCompleted: number;
+  message: string;
 };
 
 export type Version = {

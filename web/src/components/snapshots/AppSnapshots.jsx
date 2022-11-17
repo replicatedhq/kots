@@ -1,5 +1,6 @@
 import React, { Component } from "react";
-import { Link, withRouter } from "react-router-dom";
+import { withRouter } from "@src/utilities/react-router-utilities";
+import { Link } from "react-router-dom";
 import { KotsPageTitle } from "@components/Head";
 import Modal from "react-modal";
 import ReactTooltip from "react-tooltip";

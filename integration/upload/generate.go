@@ -4,7 +4,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/mholt/archiver"
+	"github.com/mholt/archiver/v3"
 	"github.com/otiai10/copy"
 	"github.com/pkg/errors"
 )
