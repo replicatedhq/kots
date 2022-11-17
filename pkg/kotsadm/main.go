@@ -984,9 +984,10 @@ func ensureDisasterRecoveryLabels(deployOptions *types.DeployOptions, clientset 
 
 func ReadDeployOptionsFromCluster(namespace string, clientset *kubernetes.Clientset) (*types.DeployOptions, error) {
 	deployOptions := types.DeployOptions{
-		Namespace:   namespace,
-		ServiceType: "ClusterIP",
-		IsOpenShift: k8sutil.IsOpenShift(clientset),
+		Namespace:      namespace,
+		ServiceType:    "ClusterIP",
+		IsOpenShift:    k8sutil.IsOpenShift(clientset),
+		IsGKEAutopilot: k8sutil.IsGKEAutopilot(clientset),
 	}
 
 	// Shared password, we can't read the original, but we can check if there's a bcrypted value
