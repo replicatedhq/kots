@@ -1,3 +1,4 @@
+// This is ReponseApp in the go types
 export type App = {
   allowRollback: Object | undefined;
   allowSnapshots: boolean;
@@ -17,6 +18,7 @@ export type App = {
   isGitOpsSupported: boolean;
   isIdentityServiceSupported: boolean;
   isSemverRequired: boolean;
+  isSupportBundleUploadSupported: boolean;
   name: string;
   namespace: string;
   needsRegistry?: boolean;
