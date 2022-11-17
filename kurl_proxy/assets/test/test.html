@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -24,31 +22,54 @@
           <div class="flex u-marginBottom--8">
             <!-- {{if .AppIcon }}<span class="appIcon flex flex-auto" style="background-image: url('{{ .AppIcon }}')"></span>{{end}} -->
             <div class="flex-column flex1 justifyContent--center">
-              <p class="tls-header">HTTPS for {{ .AppTitle }} admin console</p>
+              <p class="tls-header">HTTPS for {{ .AppTitle }} the admin console</p>
             </div>
           </div>
-          <p class="tls-header-sub">We're currently using a self-signed TLS certificate to secure the
-            communication between your browser & the management console. If you don't upload your own
-            TLS cert, you'll see a warning about this in your browser every time you access the
-            management console.</p>
-          <div>
-            <p class="tls-section-header">Private key & certificate</p>
-            <p class="tls-section-sub">Files will be uploaded directly to the mangement server & will never leave.</p>
-          </div>
+          <!-- <p class="tls-header-sub">
+            A self-signed TLS certificate is currently used to secure communication
+            between your browser and the admin console. You will see a warning in your browser
+            every time you access the admin console unless you upload your own TLS certificate.
+          </p> -->
+
           <form id="upload-form" class="flex-column" action="" method="post" enctype="multipart/form-data">
-            <select name="type" id="type">
+            <!-- <select name="type" id="type">
                 <option value="self-signed">self signed</option>
                 <option value="custom">custom cert</option>
-              </select>
+              </select> -->
 
             <div>
-              <p class="tls-section-header2">Hostname</p>
+              <p class="tls-section-header2">Certificate Type</p>
+              <input type="radio" name="type" id="self-signed" value="self-signed" checked>
+              <label for="self-signed">Self-signed</label>
+              <input type="radio" name="type" id="custom-cert" value="custom-cert">
+              <label for="custom-cert">Custom</label>
+            </div>
+            <p class="tls-header-sub self-signed-visible">
+              A self-signed TLS certificate is currently used to secure communication
+              between your browser and the admin console. You will see a warning in your browser
+              every time you access the admin console unless you upload your own TLS certificate.
+            </p>
+            <p class="tls-header-sub custom-cert-visible hidden">
+              More secure option. You need to provide a certificate and key file. This can be added
+              later by following the instructions here:
+            </p>
+            <div>
+              <p class="tls-section-header2">
+                Hostname
+                <span class="self-signed-visible">(optional)</span>
+                <span class="custom-cert-visible hidden">(required)</span>
+              </p>
               <p id="hostname-hint" class="hostname-hint"></p>
               <p class="tls-section-sub-sub">Ensure this domain is routable on your network.</p>
-              <input id="hostname" class="form-input larger" type="text" name="hostname" placeholder="app.yourdomain.com"
-                style="width: 250px; margin-bottom: 20px;" />
+              <input id="hostname" class="form-input larger" type="text" name="hostname"
+                placeholder="app.yourdomain.com" style="width: 250px; margin-bottom: 20px;" />
             </div>
-            <div class="flex upload-form" id="upload-files">
+            <div class="custom-cert-visible hidden">
+              <p class="tls-section-header">Private key & certificate</p>
+              <p class="tls-section-sub">Files will be uploaded directly to the mangement server and will never leave.
+              </p>
+            </div>
+            <div class="flex upload-form hidden custom-cert-visible" id="upload-files">
               <div class="u-position--relative flex-column flex-auto upload">
                 <div>
                   <label class="tls-section-header2">Upload private key</label>
@@ -72,7 +93,10 @@
             </div>
 
             <div class="button-wrapper flex alignItems--center">
-              <button class="btn primary" type="submit">Upload &amp; continue</button>
+              <button class="btn primary" type="submit">
+                <span class="self-signed-visible">Continue</span>
+                <span class="custom-cert-visible hidden">Upload &amp; continue</span>
+              </button>
               <!-- <div class="flex-column justifyContent--center">
                 <button id="skip-button" class="text-button" type="submit" formaction="/tls/skip">Skip &amp;
                   continue</button>
