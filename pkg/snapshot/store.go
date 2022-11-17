@@ -423,6 +423,9 @@ func updateGlobalStore(ctx context.Context, store *types.Store, kotsadmNamespace
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find backupstoragelocations")
 	}
+	if kotsadmVeleroBackendStorageLocation == nil {
+		return nil, errors.New("no backup store location found")
+	}
 
 	kotsadmVeleroBackendStorageLocation.Spec.Provider = store.Provider
 
@@ -798,6 +801,9 @@ func GetGlobalStore(ctx context.Context, kotsadmNamespace string, kotsadmVeleroB
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to find backupstoragelocations")
 		}
+		if kotsadmVeleroBackendStorageLocation == nil {
+			return nil, errors.New("no backup store location found")
+		}
 	}
 
 	if kotsadmVeleroBackendStorageLocation.Spec.ObjectStorage == nil {
@@ -990,6 +996,10 @@ func FindBackupStoreLocation(ctx context.Context, kotsadmNamespace string) (*vel
 		return nil, errors.Wrap(err, "failed to detect velero namespace")
 	}
 
+	if veleroNamespace == "" {
+		return nil, nil
+	}
+
 	veleroClient, err := veleroclientv1.NewForConfig(cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create velero clientset")
@@ -997,6 +1007,9 @@ func FindBackupStoreLocation(ctx context.Context, kotsadmNamespace string) (*vel
 
 	backupStorageLocations, err := veleroClient.BackupStorageLocations(veleroNamespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
+		if kuberneteserrors.IsNotFound(err) {
+			return nil, nil
+		}
 		return nil, errors.Wrap(err, "failed to list backupstoragelocations")
 	}
 
@@ -1006,7 +1019,7 @@ func FindBackupStoreLocation(ctx context.Context, kotsadmNamespace string) (*vel
 		}
 	}
 
-	return nil, errors.New("global config not found")
+	return nil, nil
 }
 
 // UpdateBackupStorageLocation applies an updated Velero backup storage location resource to the cluster
@@ -1534,6 +1547,9 @@ func resetResticRepositories(ctx context.Context, kotsadmNamespace string) error
 	storageLocation, err := FindBackupStoreLocation(ctx, kotsadmNamespace)
 	if err != nil {
 		return errors.Wrap(err, "failed to find backupstoragelocations")
+	}
+	if storageLocation == nil {
+		return errors.New("no backup store location found")
 	}
 
 	veleroClient, err := veleroclientv1.NewForConfig(cfg)

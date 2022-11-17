@@ -70,6 +70,10 @@ func CreateApplicationBackup(ctx context.Context, a *apptypes.App, isScheduled b
 		return nil, errors.Wrap(err, "failed to find backupstoragelocations")
 	}
 
+	if kotsadmVeleroBackendStorageLocation == nil {
+		return nil, errors.New("no backup store location found")
+	}
+
 	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load kots kinds from path")
@@ -292,6 +296,10 @@ func CreateInstanceBackup(ctx context.Context, cluster *downstreamtypes.Downstre
 		return nil, errors.Wrap(err, "failed to find backupstoragelocations")
 	}
 
+	if kotsadmVeleroBackendStorageLocation == nil {
+		return nil, errors.New("no backup store location found")
+	}
+
 	clientset, err := k8sutil.GetClientset()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create k8s clientset")
@@ -403,6 +411,10 @@ func ListBackupsForApp(ctx context.Context, kotsadmNamespace string, appID strin
 	backendStorageLocation, err := kotssnapshot.FindBackupStoreLocation(ctx, kotsadmNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find backupstoragelocations")
+	}
+
+	if backendStorageLocation == nil {
+		return nil, errors.New("no backup store location found")
 	}
 
 	veleroBackups, err := veleroClient.Backups(backendStorageLocation.Namespace).List(ctx, metav1.ListOptions{})
@@ -527,6 +539,10 @@ func ListInstanceBackups(ctx context.Context, kotsadmNamespace string) ([]*types
 	backendStorageLocation, err := kotssnapshot.FindBackupStoreLocation(ctx, kotsadmNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to find backupstoragelocations")
+	}
+
+	if backendStorageLocation == nil {
+		return nil, errors.New("no backup store location found")
 	}
 
 	veleroBackups, err := veleroClient.Backups(backendStorageLocation.Namespace).List(ctx, metav1.ListOptions{})
@@ -686,6 +702,9 @@ func GetBackup(ctx context.Context, kotsadmNamespace string, snapshotName string
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get velero namespace")
 	}
+	if bsl == nil {
+		return nil, errors.New("no backup store location found")
+	}
 
 	veleroNamespace := bsl.Namespace
 
@@ -712,6 +731,9 @@ func DeleteBackup(ctx context.Context, kotsadmNamespace string, snapshotName str
 	bsl, err := kotssnapshot.FindBackupStoreLocation(ctx, kotsadmNamespace)
 	if err != nil {
 		return errors.Wrap(err, "failed to get velero namespace")
+	}
+	if bsl == nil {
+		return errors.New("no backup store location found")
 	}
 
 	veleroNamespace := bsl.Namespace
