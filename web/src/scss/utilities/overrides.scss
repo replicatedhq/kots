@@ -13,8 +13,7 @@
 .u-textColor--bodyCopy {
   color: #9c9c9c;
 }
-.u-textColor--error,
-a.u-textColor--error {
+.u-textColor--error {
   color: #8f1e2a;
 }
 .u-textColor--success {
@@ -62,24 +61,34 @@ a.u-textColor--error {
   opacity: 0.75;
 }
 
-.btn.secondary,
-.btn.secondary.blue {
+.btn.secondary {
   background-color: #ffffff;
-  border-color: #5b7553;
+  border-color: #3c3c3c;
   color: #5b7553;
 }
 
-.btn.secondary:hover,
+.btn.secondary:hover {
+  background-color: #ffffff;
+  border-color: #3c3c3c;
+  color: #e8e8e8;
+}
+
+.btn.secondary.blue {
+  background-color: #ffffff;
+  border-color: #3e83fb;
+  color: #da2525;
+}
+
 .btn.secondary.blue:hover {
   background-color: #ffffff;
-  border-color: #3e5935;
-  color: #3e5935;
+  border-color: #9cbcff;
+  color: #da2525;
 }
 
 .btn.secondary.blue:disabled,
 .btn.secondary.disabled {
-  color: #3e5935;
-  border-color: #3e5935;
+  color: #4e8de6;
+  border-color: #6a9eec;
   opacity: 0.75;
 }
 

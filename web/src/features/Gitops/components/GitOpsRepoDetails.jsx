@@ -102,7 +102,6 @@ const GitopsRepoDetails = () => {
               placeholder={isBitbucketServer ? "project" : "owner"}
               value={owner}
               onChange={(e) => setOwner(e.target.value)}
-              autoFocus
             />
             {providerError?.field === "owner" && (
               <p className="u-fontSize--small u-marginTop--5 u-color--chestnut u-fontWeight--medium u-lineHeight--normal">
@@ -124,7 +123,6 @@ const GitopsRepoDetails = () => {
               placeholder={"Repository"}
               value={repo}
               onChange={(e) => setRepo(e.target.value)}
-              autoFocus
             />
             {providerError?.field === "owner" && (
               <p className="u-fontSize--small u-marginTop--5 u-color--chestnut u-fontWeight--medium u-lineHeight--normal">
