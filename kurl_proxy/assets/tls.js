@@ -10,8 +10,6 @@ function startTLS() {
   }
 
   function ready() {
-    let type = ''
-
     selfSignedLabels = document.getElementsByClassName("self-signed-visible");
     customCertLabels = document.getElementsByClassName("custom-cert-visible");
 
