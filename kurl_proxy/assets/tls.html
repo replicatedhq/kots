@@ -32,7 +32,7 @@
               <input type="radio" name="type" id="self-signed" value="self-signed" checked autocomplete="off">
               <label for="self-signed">Self-signed</label>
               <input type="radio" name="type" id="custom-cert" value="custom-cert" autocomplete="off">
-              <label for="custom-cert">CA-signed</label>
+              <label for="custom-cert">Upload your own</label>
             </div>
             <p class="tls-header-sub self-signed-visible">
               A self-signed TLS certificate is currently used to secure communication
@@ -40,8 +40,8 @@
               every time you access the admin console unless you upload your own TLS certificate.
             </p>
             <p class="tls-header-sub custom-cert-visible hidden">
-              A CA-signed TLS certificate will be used to secure communication between your browser
-              and the admin console.
+              A trusted certificate that you upload will be used to secure communication between
+              your browser and the admin console.
             </p>
             <div>
               <p class="tls-section-header2">
@@ -54,8 +54,8 @@
                 placeholder="app.yourdomain.com" style="width: 250px; margin-bottom: 20px;" />
             </div>
             <div class="custom-cert-visible hidden">
-              <p class="tls-section-header">Private key & certificate</p>
-              <p class="tls-section-sub">Files will be uploaded directly to the mangement server and will never leave.
+              <p class="tls-section-header">Private key and certificate</p>
+              <p class="tls-section-sub">Files will be stored in the cluster.
               </p>
             </div>
             <div class="flex upload-form hidden custom-cert-visible" id="upload-files">
