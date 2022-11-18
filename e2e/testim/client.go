@@ -70,7 +70,6 @@ func (t *Client) NewRun(kubeconfig string, test inventory.Test, runOptions RunOp
 		args = append(
 			args,
 			fmt.Sprintf("--browser=%s", test.Browser),
-			fmt.Sprintf("--test-config=%s", test.Browser),
 		)
 	}
 	if runOptions.BaseUrl != "" {
