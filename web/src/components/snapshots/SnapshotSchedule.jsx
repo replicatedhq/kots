@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import Select from "react-select";
-import { withRouter } from "react-router-dom";
+import { withRouter } from "@src/utilities/react-router-utilities";
 import {
   Utilities,
   getCronFrequency,
@@ -419,7 +419,7 @@ class SnapshotSchedule extends Component {
       <div className="flex-auto">
         <div className="flex flex-column">
           {!isAppConfig && !this.props.isVeleroRunning && !updatingSettings && (
-            <div className="Info--wrapper flex flex1 u-marginBottom--15">
+            <div className="Info--wrapper card-bg flex flex1 u-marginBottom--15">
               <span className="icon info-icon flex-auto u-marginTop--5" />
               <div className="flex flex-column u-marginLeft--5">
                 <p className="u-fontSize--normal u-fontWeight--bold u-lineHeight--normal u-textColor--primary">
@@ -434,40 +434,36 @@ class SnapshotSchedule extends Component {
               </div>
             </div>
           )}
-          <div className="SnapshotScheduleTabs--wrapper flex1 flex-column">
-            <div className="tab-items flex justifyContent--spaceBetween">
-              <span
-                className={`${
-                  this.state.activeTab === "full" ? "is-active" : ""
-                } tab-item blue`}
-                onClick={() => this.toggleScheduleAction("full")}
-              >
-                Full snapshots (Instance)
-              </span>
-              <span
-                className={`${
-                  this.state.activeTab === "partial" ? "is-active" : ""
-                } tab-item blue`}
-                onClick={() => this.toggleScheduleAction("partial")}
-              >
-                Partial snapshots (Application)
-              </span>
-            </div>
-          </div>
-          {this.state.activeTab === "full" ? (
-            <p className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--12 schedule">
-              {" "}
-              Set up a custom schedule with a retention policy to take automatic
-              snapshots of the admin console and all application data.{" "}
-            </p>
-          ) : (
-            <div className="flex flex-column schedule">
-              <p className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--12">
-                {" "}
-                Set up a custom schedule with a retention policy to take
-                automatic snapshots of your application and its data.{" "}
+          <div className="flex flex-column snapshot-form-wrapper card-bg u-padding--15">
+            <p className="card-title">Automatic snapshots</p>
+            <div className="u-marginBottom--10">
+              <p className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--12 schedule">
+                Set up a custom schedule and retention policy for automatic
+                snapshots of the Admin Console and all application data.
               </p>
-              <div className="flex u-marginTop--12">
+            </div>
+            <div className="SnapshotScheduleTabs--wrapper flex1 flex-column">
+              <div className="tab-items flex justifyContent--spaceBetween">
+                <span
+                  className={`${
+                    this.state.activeTab === "full" ? "is-active" : ""
+                  } tab-item blue`}
+                  onClick={() => this.toggleScheduleAction("full")}
+                >
+                  Full snapshots (Instance)
+                </span>
+                <span
+                  className={`${
+                    this.state.activeTab === "partial" ? "is-active" : ""
+                  } tab-item blue`}
+                  onClick={() => this.toggleScheduleAction("partial")}
+                >
+                  Partial snapshots (Application)
+                </span>
+              </div>
+            </div>
+            {this.state.activeTab === "partial" && (
+              <div className="flex u-marginTop--12 u-marginBottom--15">
                 <Select
                   className="replicated-select-container u-width--full"
                   classNamePrefix="replicated-select"
@@ -481,18 +477,15 @@ class SnapshotSchedule extends Component {
                   }}
                 />
               </div>
-            </div>
-          )}
-          <form className="flex flex-column snapshot-form-wrapper u-marginTop--20">
+            )}
+          </div>
+          <div className="flex flex-column snapshot-form-wrapper u-marginTop--20">
             <div
-              className={`flex-column ${
+              className={`flex-column card-item u-padding--15 ${
                 !isAppConfig ? "u-marginTop--12" : "u-marginBottom--20"
               }`}
             >
-              <div className="flex1 u-marginBottom--20">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
-                  Automatic snapshots
-                </p>
+              <div className=" flex1 u-marginBottom--15">
                 <div className="BoxedCheckbox-wrapper flex1 u-textAlign--left">
                   <div
                     className={`flex-auto flex alignItems--center ${
@@ -643,7 +636,7 @@ class SnapshotSchedule extends Component {
                 )}
               </div>
             </div>
-          </form>
+          </div>
         </div>
         <ErrorModal
           errorModal={this.state.displayErrorModal}

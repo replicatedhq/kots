@@ -61,18 +61,18 @@ func printLvpFileSystemVeleroInstructions(c *LvpFileSystemVeleroConfig, log *log
 	--use-restic`, c.Provider, image.Lvp, c.Bucket, prefix, backupConfig)
 
 	lvpConfigMap := `
-	apiVersion: v1
-	kind: ConfigMap
-	metadata:
-	name: local-volume-provider-config
-	namespace: velero
-	labels:
-	  velero.io/plugin-config: ""
-	  replicated.com/nfs: ObjectStore
-	  replicated.com/hostpath: ObjectStore
-	data:
-	  securityContextRunAsUser: "1001"
-	  securityContextFsGroup: "1001"
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: local-volume-provider-config
+  namespace: velero
+  labels:
+    velero.io/plugin-config: ""
+    replicated.com/nfs: ObjectStore
+    replicated.com/hostpath: ObjectStore
+data:
+  securityContextRunAsUser: "1001"
+  securityContextFsGroup: "1001"
 	`
 
 	veleroAirgapCommand := fmt.Sprintf(`velero install \
@@ -85,34 +85,36 @@ func printLvpFileSystemVeleroInstructions(c *LvpFileSystemVeleroConfig, log *log
 	--use-restic`, c.Provider, red("<private.registry.host>"), red("<velero-version>"), red("<private.registry.host>"), lvpTag, c.Bucket, prefix, backupConfig)
 
 	airgapLvpConfigMap := fmt.Sprintf(`
-	apiVersion: v1
-	kind: ConfigMap
-	metadata:
-	name: local-volume-provider-config
-	namespace: velero
-	labels:
-	  velero.io/plugin-config: ""
-	  replicated.com/nfs: ObjectStore
-	  replicated.com/hostpath: ObjectStore
-	data:
-	  fileserverImage: %s/local-volume-provider:%s
-	  securityContextRunAsUser: "1001"
-	  securityContextFsGroup: "1001"
-	`, red("<private.registry.host>"), lvpTag)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: local-volume-provider-config
+  namespace: velero
+  labels:
+    velero.io/plugin-config: ""
+    replicated.com/nfs: ObjectStore
+    replicated.com/hostpath: ObjectStore
+data:
+  fileserverImage: %s/local-volume-provider:%s
+  securityContextRunAsUser: "1001"
+  securityContextFsGroup: "1001"
+`, red("<private.registry.host>"), lvpTag)
 
 	log.ActionWithoutSpinner("Follow these instructions to set up Velero:\n")
 	log.Info("[1] Install the latest Velero CLI by following these instructions: %s", blue("https://velero.io/docs/v1.6/basic-install/#install-the-cli"))
 	log.Info("[2] Install Velero")
 	log.Info("- For %s, follow these steps:", bold("online installations"))
-	log.Info("	* Run the this Velero install command: \n\n%s", veleroOnlineCommand)
-	log.Info("	* For all clusters EXCEPT Openshift, create the following ConfigMap: \n%s", lvpConfigMap)
+	log.Info("	* Create the 'velero' namespace by running the following command:\n\nkubectl create namespace velero")
+	log.Info("	* Create the following ConfigMap. If you are installing into OpenShift, remove the 'securityContext*' lines:: \n%s", lvpConfigMap)
+	log.Info("	* Run the Velero install command: \n\n%s", veleroOnlineCommand)
 	log.Info("- For %s, follow these steps:", bold("airgapped installations"))
 	log.Info("	* Prepare velero images (you will need %s for plugins): %s",
 		red(image.Lvp),
 		blue("https://velero.io/docs/v1.6/on-premises/#air-gapped-deployments"))
+	log.Info("	* Create the 'velero' namespace by running the following command:\n\nkubectl create namespace velero")
+	log.Info("	* Create the following ConfigMap. If you are installing into OpenShift, remove the 'securityContext*' lines:: \n%s", airgapLvpConfigMap)
 	log.Info("	* Install velero (replace with actual values): \n\n%s", veleroAirgapCommand)
 	log.Info("	* Configure restic restore helper to use the prepared image: %s", blue("https://velero.io/docs/v1.6/restic/#customize-restore-helper-container"))
-	log.Info("	* Create the following ConfigMap. If you are installing into OpenShift, remove the 'securityContext*' lines:: \n%s", airgapLvpConfigMap)
 	log.Info("[4] If you're using RancherOS, OpenShift, Microsoft Azure, or VMware Tanzu Kubernetes Grid Integrated Edition (formerly VMware Enterprise PKS), please refer to the following Velero doc to complete restic configuration: %s", blue("https://velero.io/docs/v1.6/restic/#configure-restic-daemonset-spec"))
 	log.ActionWithoutSpinner("")
 }

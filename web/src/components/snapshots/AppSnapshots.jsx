@@ -1,5 +1,6 @@
 import React, { Component } from "react";
-import { Link, withRouter } from "react-router-dom";
+import { withRouter } from "@src/utilities/react-router-utilities";
+import { Link } from "react-router-dom";
 import { KotsPageTitle } from "@components/Head";
 import Modal from "react-modal";
 import ReactTooltip from "react-tooltip";
@@ -7,7 +8,6 @@ import Select from "react-select";
 import isEmpty from "lodash/isEmpty";
 
 import SnapshotRow from "./SnapshotRow";
-import DummySnapshotRow from "./DummySnapshotRow";
 import GettingStartedSnapshots from "./GettingStartedSnapshots";
 import ScheduleSnapshotForm from "../shared/ScheduleSnapshotForm";
 import Loader from "../shared/Loader";
@@ -611,7 +611,10 @@ class AppSnapshots extends Component {
             </p>
           </div>
         ) : null}
-        <div className="centered-container flex-column flex1 u-paddingTop--30 u-paddingBottom--20 alignItems--center">
+        <div
+          className="centered-container flex-column flex1 u-paddingTop--30 u-paddingBottom--20 alignItems--center"
+          style={{ maxWidth: "770px" }}
+        >
           <div className="InfoSnapshots--wrapper flex flex-auto u-marginBottom--20">
             <span className="icon info-icon flex-auto u-marginRight--5" />
             <p className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--accent">
@@ -633,12 +636,57 @@ class AppSnapshots extends Component {
               .
             </p>
           </div>
-          <div className="AppSnapshots--wrapper flex1 flex-column u-width--full u-marginTop--20">
+          <div className="AppSnapshots--wrapper card-bg flex-column u-marginTop--20">
             <div className="flex flex-column u-marginBottom--15">
-              <p className="u-fontWeight--bold u-textColor--primary u-fontSize--larger u-lineHeight--normal">
-                {" "}
-                Partial snapshots (Application){" "}
-              </p>
+              <div className="flex justifyContent--spaceBetween">
+                <p className="u-fontWeight--bold u-textColor--primary u-fontSize--larger u-lineHeight--normal">
+                  {" "}
+                  Partial snapshots (Application){" "}
+                </p>
+                <div className="flex alignSelf--center">
+                  <Link
+                    to={`/snapshots/settings?${selectedApp.slug}`}
+                    className="replicated-link u-fontSize--small u-fontWeight--bold flex alignItems--center"
+                  >
+                    <Icon
+                      icon="settings-gear-outline"
+                      size={18}
+                      className="u-marginRight--5"
+                    />
+                    Settings
+                  </Link>
+                  {snapshots?.length > 0 &&
+                    snapshotSettings?.veleroVersion !== "" && (
+                      <span
+                        data-for="startSnapshotBtn"
+                        data-tip="startSnapshotBtn"
+                        data-tip-disable={false}
+                      >
+                        <button
+                          className="btn primary blue u-marginLeft--20"
+                          disabled={startingSnapshot || inProgressSnapshotExist}
+                          onClick={this.startManualSnapshot}
+                        >
+                          {startingSnapshot
+                            ? "Starting a snapshot..."
+                            : "Start a snapshot"}
+                        </button>
+                      </span>
+                    )}
+                  {inProgressSnapshotExist && (
+                    <ReactTooltip
+                      id="startSnapshotBtn"
+                      effect="solid"
+                      className="replicated-tooltip"
+                    >
+                      <span>
+                        You can't start a snapshot while another one is In
+                        Progress
+                      </span>
+                    </ReactTooltip>
+                  )}
+                </div>
+              </div>
               <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-textColor--bodyCopy">
                 {" "}
                 Partial snapshots (Application) only back up application volumes
@@ -660,49 +708,6 @@ class AppSnapshots extends Component {
                     app.name === selectedApp.name;
                   }}
                 />
-              </div>
-              <div className="flex alignSelf--center">
-                <Link
-                  to={`/snapshots/settings?${selectedApp.slug}`}
-                  className="replicated-link u-fontSize--small u-fontWeight--bold flex alignItems--center"
-                >
-                  <Icon
-                    icon="settings-gear-outline"
-                    size={18}
-                    className="u-marginRight--5"
-                  />
-                  Settings
-                </Link>
-                {snapshots?.length > 0 &&
-                  snapshotSettings?.veleroVersion !== "" && (
-                    <span
-                      data-for="startSnapshotBtn"
-                      data-tip="startSnapshotBtn"
-                      data-tip-disable={false}
-                    >
-                      <button
-                        className="btn primary blue u-marginLeft--20"
-                        disabled={startingSnapshot || inProgressSnapshotExist}
-                        onClick={this.startManualSnapshot}
-                      >
-                        {startingSnapshot
-                          ? "Starting a snapshot..."
-                          : "Start a snapshot"}
-                      </button>
-                    </span>
-                  )}
-                {inProgressSnapshotExist && (
-                  <ReactTooltip
-                    id="startSnapshotBtn"
-                    effect="solid"
-                    className="replicated-tooltip"
-                  >
-                    <span>
-                      You can't start a snapshot while another one is In
-                      Progress
-                    </span>
-                  </ReactTooltip>
-                )}
               </div>
             </div>
             {startSnapshotErr ? (
@@ -726,10 +731,7 @@ class AppSnapshots extends Component {
                 ))}
               </div>
             ) : !isStartButtonClicked ? (
-              <div className="flex flex-column u-position--relative">
-                {[0, 1, 2, 3, 4, 5].map((el) => (
-                  <DummySnapshotRow key={el} />
-                ))}
+              <div className="flex flex-column justifyContent--center alignItems--center">
                 <GettingStartedSnapshots
                   isApp={true}
                   app={selectedApp}
