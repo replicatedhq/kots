@@ -136,12 +136,6 @@ jobs:
             terraform_script: "embedded-airgapped-install.sh"
           },
           {
-            name: "type=embedded cluster, env=airgapped, phase=new install, rbac=cluster admin",
-            backend_config: "embedded-airgapped-install-backend-config-k3s.tfvars",
-            terraform_script: "embedded-airgapped-install-k3s.sh",
-            kubernetes_distro: "k3s"
-          },
-          {
             name: "type=embedded cluster, env=online, phase=new install, rbac=cluster admin",
             backend_config: "embedded-online-install-backend-config.tfvars",
             terraform_script: "embedded-online-install.sh"
