@@ -1183,7 +1183,7 @@ const DashboardVersionCard = (props: Props) => {
               "secondary blue": isSecondaryActionBtn,
               "primary blue": !isSecondaryActionBtn,
             })}
-            disabled={true}
+            disabled={isActionButtonDisabled(version)}
             onClick={() => {
               if (needsConfiguration) {
                 history.push(url);
