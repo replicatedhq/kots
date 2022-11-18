@@ -566,4 +566,4 @@ class PreflightResultPage extends Component<Props, State> {
 
 // @ts-ignore
 // eslint-disable-next-line
-export default withRouter<Props>(PreflightResultPage) as any;
+export default withRouter(PreflightResultPage) as any;
