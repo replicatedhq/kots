@@ -41,9 +41,10 @@ a.u-textColor--error {
 }
 
 .btn.primary:hover {
-  background-color: #3e5935;
+  background-color: #7fa274;
 }
-.btn.primary.disabled {
+.btn.primary:disabled,
+.btn.primary:disabled:hover {
   background-color: #3e5935;
   opacity: 0.75;
 }
@@ -55,7 +56,8 @@ a.u-textColor--error {
   background-color: #62151d;
 }
 
-.btn.primary.red.disabled {
+.btn.primary.red:disabled,
+.btn.primary.red:disabled:hover {
   background-color: #8f1e2a;
   opacity: 0.75;
 }
@@ -74,7 +76,7 @@ a.u-textColor--error {
   color: #3e5935;
 }
 
-.btn.secondary.blue.disabled,
+.btn.secondary.blue:disabled,
 .btn.secondary.disabled {
   color: #3e5935;
   border-color: #3e5935;
@@ -93,7 +95,7 @@ a.u-textColor--error {
   color: #62151d;
 }
 
-.btn.secondary.red.disabled {
+.btn.secondary.red:disabled {
   color: #62151d;
   border-color: #62151d;
   opacity: 0.75;
@@ -111,7 +113,7 @@ a.u-textColor--error {
   color: #253022;
 }
 
-.btn.secondary.dark.disabled {
+.btn.secondary.dark:disabled {
   color: #3a4b35;
   border-color: #3a4b35;
   opacity: 0.75;
@@ -130,10 +132,6 @@ a.u-textColor--error {
   background-color: #faf3dd;
 }
 
-.card-item {
-  background-color: #ffffff;
-}
-
 .Loader path {
   fill: #5b7553;
 }
@@ -145,15 +143,9 @@ a.u-textColor--error {
   background-color: #5b7553;
 }
 
-.dropdown-nav-menu li:hover,
-.dropdown-nav-menu li a:hover {
+.dropdown-nav-menu li:hover {
   color: #9b6a6c;
   background-color: #faf3dd;
-}
-
-.success-status {
-  background-color: #c8d5b9;
-  color: #5b7553;
 }
 
 .status-tag.missing {
@@ -181,4 +173,36 @@ a.u-textColor--error {
 //for the line underneath the subnav link
 .subnav-item.is-active a:after {
   background-color: red;
+}
+
+// icon classes
+.icomoon {
+  color: #326de6;
+}
+.clickable {
+  cursor: pointer;
+}
+.warning-color {
+  color: #f7b500;
+}
+
+.success-color {
+  color: #38cc97;
+}
+.no-activity-circle-filled--icon {
+  color: #c4c8ca;
+}
+
+.error-color {
+  color: #f65c5c;
+}
+.gray-color {
+  color: #9b9b9b;
+}
+.darkGray-color {
+  color: #717171;
+}
+
+.close-icon:hover {
+  color: #717171;
 }
