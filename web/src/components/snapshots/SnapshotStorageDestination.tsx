@@ -889,7 +889,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
       case "aws":
         return (
           <>
-            <div className="flex u-marginBottom--30">
+            <div className="flex u-marginBottom--15">
               <div className="flex1 u-paddingRight--5">
                 <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Bucket
@@ -915,8 +915,8 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 />
               </div>
             </div>
-            <div className="flex u-marginBottom--30">
-              <div className="flex1 u-paddingRight--5">
+            <div className="flex flex-column u-marginBottom--30">
+              <div className="u-marginBottom--5">
                 <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Path
                 </p>
@@ -926,42 +926,38 @@ class SnapshotStorageDestination extends Component<Props, State> {
                   placeholder="/path/to/destination"
                   value={this.state.s3Path}
                   onChange={(e) => this.handleFormChange("s3Path", e)}
+                  style={{ width: "49%" }}
                 />
               </div>
-              <div className="flex1 u-paddingLeft--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
-                  &nbsp;
-                </p>
-                <div className="BoxedCheckbox-wrapper flex1 u-textAlign--left">
-                  <div
-                    className={`BoxedCheckbox flex-auto flex alignItems--center ${
-                      this.state.useIamAws ? "is-active" : ""
-                    }`}
+              <div>
+                <div
+                  className={`flex-auto flex alignItems--center ${
+                    this.state.useIamAws ? "is-active" : ""
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    className="u-cursor--pointer"
+                    id="useIamAws"
+                    checked={this.state.useIamAws}
+                    onChange={(e) => this.handleFormChange("useIamAws", e)}
+                  />
+                  <label
+                    htmlFor="useIamAws"
+                    className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none"
                   >
-                    <input
-                      type="checkbox"
-                      className="u-cursor--pointer u-marginLeft--10"
-                      id="useIamAws"
-                      checked={this.state.useIamAws}
-                      onChange={(e) => this.handleFormChange("useIamAws", e)}
-                    />
-                    <label
-                      htmlFor="useIamAws"
-                      className="flex1 flex u-width--full u-position--relative u-cursor--pointer u-userSelect--none"
-                    >
-                      <div className="flex1">
-                        <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium">
-                          Use IAM Instance Role
-                        </p>
-                      </div>
-                    </label>
-                  </div>
+                    <div className="flex1">
+                      <p className="u-textColor--primary u-fontSize--normal u-fontWeight--medium">
+                        Use IAM Role
+                      </p>
+                    </div>
+                  </label>
                 </div>
               </div>
             </div>
 
             {!useIamAws && (
-              <div className="flex u-marginBottom--30">
+              <div className="flex u-marginBottom--5">
                 <div className="flex1 u-paddingRight--5">
                   <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                     Access Key ID
@@ -994,7 +990,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
       case "azure":
         return (
           <>
-            <div className="flex1 u-paddingRight--5">
+            <div className="flex1 u-paddingRight--5 u-marginBottom--15">
               <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Bucket
               </p>
@@ -1006,7 +1002,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 onChange={(e) => this.handleFormChange("azureBucket", e)}
               />
             </div>
-            <div className="flex u-marginBottom--30">
+            <div className="flex u-marginBottom--15">
               <div className="flex1 u-paddingRight--5">
                 <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Path
@@ -1020,7 +1016,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 />
               </div>
             </div>
-            <div className="flex u-marginBottom--30">
+            <div className="flex u-marginBottom--15">
               <div className="flex1 u-paddingRight--5">
                 <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Subscription ID
@@ -1048,7 +1044,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 />
               </div>
             </div>
-            <div className="flex u-marginBottom--30">
+            <div className="flex u-marginBottom--15">
               <div className="flex1 u-paddingRight--5">
                 <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Client ID
@@ -1077,7 +1073,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
               </div>
             </div>
 
-            <div className="flex-column u-marginBottom--30">
+            <div className="flex-column u-marginBottom--15">
               <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Cloud Name
               </p>
@@ -1101,7 +1097,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 />
               </div>
             </div>
-            <div className="flex u-marginBottom--30">
+            <div className="flex u-marginBottom--5">
               <div className="flex1 u-paddingRight--5">
                 <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Resource Group Name
@@ -1137,7 +1133,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
       case "gcp":
         return (
           <div>
-            <div className="flex1 u-paddingRight--5">
+            <div className="flex1 u-paddingRight--5 u-marginBottom--15">
               <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Bucket
               </p>
@@ -1149,7 +1145,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 onChange={(e) => this.handleFormChange("gcsBucket", e)}
               />
             </div>
-            <div className="flex u-marginBottom--30">
+            <div className="flex u-marginBottom--5">
               <div className="flex1 u-paddingRight--5">
                 <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Path
@@ -1163,15 +1159,15 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 />
               </div>
             </div>
-            <div className="BoxedCheckbox-wrapper u-textAlign--left u-marginBottom--20">
+            <div className="BoxedCheckbox-wrapper u-textAlign--left u-marginBottom--15">
               <div
-                className={`BoxedCheckbox flex-auto flex alignItems--center u-width--half ${
+                className={`flex-auto flex alignItems--center u-width--half ${
                   this.state.gcsUseIam ? "is-active" : ""
                 }`}
               >
                 <input
                   type="checkbox"
-                  className="u-cursor--pointer u-marginLeft--10"
+                  className="u-cursor--pointer"
                   id="gcsUseIam"
                   checked={this.state.gcsUseIam}
                   onChange={(e) => this.handleFormChange("gcsUseIam", e)}
@@ -1190,7 +1186,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
             </div>
 
             {gcsUseIam && (
-              <div className="flex u-marginBottom--30">
+              <div className="flex u-marginBottom--5">
                 <div className="flex1 u-paddingRight--5">
                   <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                     Service Account
@@ -1209,7 +1205,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
             )}
 
             {!gcsUseIam && (
-              <div className="flex u-marginBottom--30">
+              <div className="flex u-marginBottom--5">
                 <div className="flex1">
                   <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                     JSON File
@@ -1238,7 +1234,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
       case "other":
         return (
           <div>
-            <div className="flex1 u-paddingRight--5">
+            <div className="flex1 u-paddingRight--5 u-marginBottom--15">
               <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Bucket
               </p>
@@ -1250,7 +1246,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 onChange={(e) => this.handleFormChange("s3CompatibleBucket", e)}
               />
             </div>
-            <div className="flex u-marginBottom--30">
+            <div className="flex u-marginBottom--15">
               <div className="flex1 u-paddingRight--5">
                 <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Path
@@ -1264,7 +1260,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 />
               </div>
             </div>
-            <div className="flex u-marginBottom--30">
+            <div className="flex u-marginBottom--15">
               <div className="flex1 u-paddingRight--5">
                 <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Access Key ID
@@ -1294,7 +1290,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 />
               </div>
             </div>
-            <div className="u-marginBottom--30">
+            <div className="u-marginBottom--5">
               <div className="flex">
                 <div className="flex1 u-paddingRight--5">
                   <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
@@ -1339,7 +1335,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
 
       case "nfs":
         return (
-          <div className="flex u-marginBottom--30">
+          <div className="flex u-marginBottom--5">
             <div className="flex1 u-paddingRight--5">
               <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Server
@@ -1373,7 +1369,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
 
       case "hostpath":
         return (
-          <div className="flex u-marginBottom--30">
+          <div className="flex u-marginBottom--5">
             <div className="flex1 u-paddingRight--5">
               <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Host Path
@@ -1619,46 +1615,41 @@ class SnapshotStorageDestination extends Component<Props, State> {
 
     return (
       <div className="flex1 flex-column u-marginTop--40">
-        <p className="u-fontSize--normal u-marginBottom--15 u-fontWeight--bold u-textColor--secondary">
-          Snapshot settings
-        </p>
-        <div className="flex">
-          <div className="flex flex-column">
-            <div className="Info--wrapper flex flex-auto u-marginBottom--15">
-              <span className="icon info-icon flex-auto u-marginTop--5" />
-              <div className="flex flex-column u-marginLeft--5">
-                <p className="u-fontSize--normal u-fontWeight--bold u-lineHeight--normal u-textColor--primary">
-                  Configuration is shared
-                </p>
-                <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy">
+        <div className="flex" style={{ gap: "30px" }}>
+          <div
+            className="flex flex-column card-bg u-padding--15"
+            style={{ maxWidth: "400px" }}
+          >
+            <div className="flex justifyContent--spaceBetween">
+              <p className="card-title u-paddingBottom--15">
+                Snapshot settings
+              </p>
+              <span
+                className="replicated-link u-fontSize--small flex justifyContent--flexEnd u-cursor--pointer"
+                onClick={this.props.toggleConfigureSnapshotsModal}
+              >
+                + Add a new destination
+              </span>
+            </div>
+            <div className="flex flex-auto u-marginBottom--15">
+              <div className="flex flex-column">
+                <span className="u-fontSize--normal u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy">
                   Full (Instance) and Partial (Application) snapshots share
-                  Velero configuration. Your storage destination will be used
-                  for both.
+                  share the same Velero configuration and storage destination.
                 </span>
               </div>
             </div>
-            <div className="flex flex-column u-marginRight--50">
-              <form className="flex flex-column snapshot-form-wrapper">
-                <p className="u-fontSize--normal u-marginBottom--20 u-fontWeight--bold u-textColor--secondary">
-                  Storage
-                </p>
+            <div className="flex flex-column card-item u-padding--15">
+              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                Destination
+              </p>
+              <form className="flex flex-column">
                 {updateErrorMsg && (
                   <div className="flex-auto u-fontWeight--bold u-fontSize--small u-textColor--error u-marginBottom--10">
                     {updateErrorMsg}
                   </div>
                 )}
-                <div className="flex flex-column u-marginBottom--20">
-                  <div className="flex flex1 justifyContent--spaceBetween alignItems--center">
-                    <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
-                      Destination
-                    </p>
-                    <span
-                      className="replicated-link u-fontSize--normal flex justifyContent--flexEnd u-cursor--pointer"
-                      onClick={this.props.toggleConfigureSnapshotsModal}
-                    >
-                      + Add a new storage destination
-                    </span>
-                  </div>
+                <div className="flex flex-column u-marginBottom--15">
                   {!snapshotSettings?.isVeleroRunning &&
                     !checkForVeleroAndRestic &&
                     isKurlEnabled && (
@@ -1722,7 +1713,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                     )}
                     {!this.state.showCACertificateField && (
                       <button
-                        className="AddCAButton replicated-link u-fontSize--normal"
+                        className="AddCAButton replicated-link u-fontSize--small"
                         onClick={this.handleCACertificateFieldClick}
                       >
                         + Add a CA Certificate
@@ -1753,9 +1744,11 @@ class SnapshotStorageDestination extends Component<Props, State> {
                   </>
                 )}
                 <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--15">
-                  All data in your snapshots will be deduplicated. Snapshots
-                  makes use of Restic, a fast and secure backup technology with
-                  native deduplication.
+                  All data in your snapshots will be deduplicated. To learn more
+                  about how,{" "}
+                  <a href="/" target="_blank" className="replicated-link">
+                    check out our docs.
+                  </a>
                 </span>
               </form>
             </div>

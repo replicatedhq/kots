@@ -15,7 +15,7 @@ export default function GettingStartedSnapshots(props) {
   } = props;
 
   return (
-    <div className="flex flex-column GettingStartedSnapshots--wrapper alignItems--center">
+    <div className="flex flex-column card-item GettingStartedSnapshots--wrapper  alignItems--center">
       <span className="icon snapshot-getstarted-icon" />
       <p className="u-fontSize--jumbo2 u-fontWeight--bold u-lineHeight--more u-textColor--secondary u-marginTop--20">
         {" "}

@@ -8,7 +8,6 @@ import Loader from "../shared/Loader";
 import SnapshotRow from "./SnapshotRow";
 import BackupRestoreModal from "../modals/BackupRestoreModal";
 import DeleteSnapshotModal from "../modals/DeleteSnapshotModal";
-import DummySnapshotRow from "./DummySnapshotRow";
 import GettingStartedSnapshots from "./GettingStartedSnapshots";
 import ErrorModal from "../modals/ErrorModal";
 import SnapshotDifferencesModal from "../modals/SnapshotDifferencesModal";
@@ -523,16 +522,64 @@ class Snapshots extends Component {
             </p>
           </div>
         ) : null}
-        <div className="centered-container flex-column flex1 u-paddingTop--30 u-paddingBottom--20 alignItems--center">
-          <div className="AppSnapshots--wrapper flex1 flex-column u-width--full u-marginTop--20">
+        <div
+          className="centered-container flex-column flex1 u-paddingTop--30 u-paddingBottom--20 alignItems--center"
+          style={{ maxWidth: "770px" }}
+        >
+          <div className="AppSnapshots--wrapper card-bg flex-column u-width--full u-marginTop--20">
             <div className="flex flex-auto u-marginBottom--15 alignItems--center justifyContent--spaceBetween">
-              <div
-                className="flex1 flex-column"
-                style={{ marginRight: "60px" }}
-              >
-                <p className="u-fontWeight--bold u-textColor--primary u-fontSize--larger u-lineHeight--normal">
-                  Full Snapshots (Instance){" "}
-                </p>
+              <div className="flex1 flex-column">
+                <div className="flex justifyContent--spaceBetween">
+                  <p className="u-fontWeight--bold u-textColor--primary u-fontSize--larger u-lineHeight--normal">
+                    Full Snapshots (Instance){" "}
+                  </p>
+
+                  <div className="flex alignSelf--flexEnd">
+                    <Link
+                      to={`/snapshots/settings`}
+                      className="replicated-link u-fontSize--small u-fontWeight--bold u-marginRight--20 flex alignItems--center"
+                    >
+                      <Icon
+                        icon="settings-gear-outline"
+                        size={18}
+                        className="u-marginRight--5"
+                      />
+                      Settings
+                    </Link>
+                    {snapshots?.length > 0 && snapshotSettings?.veleroVersion && (
+                      <span
+                        data-for="startSnapshotBtn"
+                        data-tip="startSnapshotBtn"
+                        data-tip-disable={false}
+                      >
+                        <button
+                          className="btn primary blue"
+                          disabled={
+                            startingSnapshot ||
+                            (inProgressSnapshotExist && !startSnapshotErr)
+                          }
+                          onClick={this.startInstanceSnapshot}
+                        >
+                          {startingSnapshot
+                            ? "Starting a snapshot..."
+                            : "Start a snapshot"}
+                        </button>
+                      </span>
+                    )}
+                    {inProgressSnapshotExist && !startSnapshotErr && (
+                      <ReactTooltip
+                        id="startSnapshotBtn"
+                        effect="solid"
+                        className="replicated-tooltip"
+                      >
+                        <span>
+                          You can't start a snapshot while another one is In
+                          Progress
+                        </span>
+                      </ReactTooltip>
+                    )}
+                  </div>
+                </div>
                 <p className="u-marginTop--10 u-fontSize--normal u-lineHeight--more u-fontWeight--medium u-textColor--bodyCopy">
                   {" "}
                   Full snapshots (Instance) back up the Admin Console and all
@@ -547,51 +594,6 @@ class Snapshots extends Component {
                   </span>
                   .
                 </p>
-              </div>
-              <div className="flex alignSelf--flexEnd">
-                <Link
-                  to={`/snapshots/settings`}
-                  className="replicated-link u-fontSize--small u-fontWeight--bold u-marginRight--20 flex alignItems--center"
-                >
-                  <Icon
-                    icon="settings-gear-outline"
-                    size={18}
-                    className="u-marginRight--5"
-                  />
-                  Settings
-                </Link>
-                {snapshots?.length > 0 && snapshotSettings?.veleroVersion && (
-                  <span
-                    data-for="startSnapshotBtn"
-                    data-tip="startSnapshotBtn"
-                    data-tip-disable={false}
-                  >
-                    <button
-                      className="btn primary blue"
-                      disabled={
-                        startingSnapshot ||
-                        (inProgressSnapshotExist && !startSnapshotErr)
-                      }
-                      onClick={this.startInstanceSnapshot}
-                    >
-                      {startingSnapshot
-                        ? "Starting a snapshot..."
-                        : "Start a snapshot"}
-                    </button>
-                  </span>
-                )}
-                {inProgressSnapshotExist && !startSnapshotErr && (
-                  <ReactTooltip
-                    id="startSnapshotBtn"
-                    effect="solid"
-                    className="replicated-tooltip"
-                  >
-                    <span>
-                      You can't start a snapshot while another one is In
-                      Progress
-                    </span>
-                  </ReactTooltip>
-                )}
               </div>
             </div>
             {startSnapshotErr ? (
@@ -614,9 +616,6 @@ class Snapshots extends Component {
               </div>
             ) : !isStartButtonClicked ? (
               <div className="flex flex-column u-position--relative">
-                {[0, 1, 2, 3, 4, 5].map((el) => (
-                  <DummySnapshotRow key={el} />
-                ))}
                 <GettingStartedSnapshots
                   isVeleroInstalled={!!snapshotSettings?.veleroVersion}
                   history={this.props.history}
