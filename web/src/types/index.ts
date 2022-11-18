@@ -145,6 +145,14 @@ export type PreflightResult = {
   skipped: boolean;
 };
 
+export type PreflightProgress = {
+  completedCount: number;
+  currentName: string;
+  currentStatus: string;
+  totalCount: number;
+  updatedAt: string;
+};
+
 export type PreflightResultResponse = {
   errors?: PreflightError[];
   results?: PreflightResult[];

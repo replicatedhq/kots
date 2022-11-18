@@ -21,6 +21,7 @@ import Icon from "./Icon";
 
 import {
   PreflightError,
+  PreflightProgress,
   PreflightResult,
   PreflightResultResponse,
 } from "@types";
@@ -32,7 +33,7 @@ type Props = {
 } & withRouterType;
 
 type State = {
-  preflightCurrentStatus?: string;
+  preflightCurrentStatus?: PreflightProgress | null;
   errorMessage?: string;
   getKotsPreflightResultJob: Repeater;
   preflightResultCheckCount: number;
@@ -284,8 +285,9 @@ class PreflightResultPage extends Component<Props, State> {
         this.state.getKotsPreflightResultJob.stop();
         this.setState({ preflightResultCheckCount: 0 });
       }
-      let parsedStatusResults = "";
+      let parsedStatusResults: PreflightProgress | null = null;
       try {
+        // TODO: this is a nested JSON in JSON- should refactor backend
         parsedStatusResults = JSON.parse(response.preflightProgress);
       } catch {
         // empty
@@ -337,8 +339,9 @@ class PreflightResultPage extends Component<Props, State> {
         this.state.getKotsPreflightResultJob.stop();
         this.setState({ preflightResultCheckCount: 0 });
       }
-      let parsedStatusResults = "";
+      let parsedStatusResults: PreflightProgress | null = null;
       try {
+        // TODO: this is a nested JSON in JSON- should refactor backend
         parsedStatusResults = JSON.parse(response.preflightProgress);
       } catch {
         // empty
