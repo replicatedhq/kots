@@ -464,6 +464,6 @@ p.hidden {
   display: none;
 }
 #key-label, #cert-label {
-  max-width: 130px;
+  max-width: 240px;
   word-wrap: break-word;
 }
