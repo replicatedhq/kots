@@ -15,7 +15,6 @@ export default function ViewSnapshotLogsModal(props) {
     snapshotLogsErrMsg,
   } = props;
 
-  console.log("hello world");
   return (
     <Modal
       isOpen={displayShowSnapshotLogsModal}
@@ -43,10 +42,7 @@ export default function ViewSnapshotLogsModal(props) {
             </div>
           ) : (
             <MonacoEditor
-              // mode="yaml"
               value={logs}
-              // theme="chrome"
-              // className="flex1 flex"
               height="100%"
               width="100%"
               language="bash"
