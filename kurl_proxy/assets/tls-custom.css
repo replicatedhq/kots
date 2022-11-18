@@ -399,6 +399,7 @@ button.text-button:hover {
   overflow: hidden;
   position: absolute;
   z-index: -1;
+  opacity: 0;
 }
 
 .inputkey:focus {
@@ -415,6 +416,7 @@ button.text-button:hover {
   overflow: hidden;
   position: absolute;
   z-index: -1;
+  opacity: 0;
 }
 
 .inputcert:focus {
@@ -460,4 +462,8 @@ div.hidden {
 
 p.hidden {
   display: none;
+}
+#key-label, #cert-label {
+  max-width: 130px;
+  word-wrap: break-word;
 }

@@ -29,9 +29,9 @@
 
             <div>
               <p class="tls-section-header2">Certificate type</p>
-              <input type="radio" name="type" id="self-signed" value="self-signed" checked>
+              <input type="radio" name="type" id="self-signed" value="self-signed" checked autocomplete="off">
               <label for="self-signed">Self-signed</label>
-              <input type="radio" name="type" id="custom-cert" value="custom-cert">
+              <input type="radio" name="type" id="custom-cert" value="custom-cert" autocomplete="off">
               <label for="custom-cert">CA-signed</label>
             </div>
             <p class="tls-header-sub self-signed-visible">
@@ -64,6 +64,7 @@
                   <label class="tls-section-header2">Upload private key</label>
                   <input type="file" name="key" id="key" class="inputkey" />
                   <label for="key" class="btn secondary u-marginTop--8">Choose private key</label>
+                  <p id="key-label" class="tls-header-sub">No file chosen.</p>
                 </div>
               </div>
               <div class="u-position--relative flex-column flex-auto u-marginRight--15 upload">
@@ -71,6 +72,7 @@
                   <label class="tls-section-header2">Upload SSL certificate</label>
                   <input type="file" name="cert" id="cert" class="inputcert" />
                   <label for="cert" class="btn secondary u-marginTop--8">Choose SSL certificate</label>
+                  <p id="cert-label" class="tls-header-sub">No file chosen.</p>
                 </div>
               </div>
             </div>

@@ -3,6 +3,9 @@ function startTLS() {
 
   let selfSignedLabels;
   let customCertLabels;
+  let certInput;
+  let keyInput;
+
   if (document.readyState !== "loading") {
     ready();
   } else {
@@ -39,6 +42,19 @@ function startTLS() {
       el.addEventListener('change', handleTypeToggle);
     });
 
+    keyInput = document.getElementById("key");
+    keyLabel = document.getElementById("key-label");
+
+    keyInput.onchange = (e) => {
+      keyLabel.innerHTML = e.target.files[0].name;
+    }
+
+    certInput = document.getElementById("cert");
+    certLabel = document.getElementById("cert-label");
+
+    certInput.onchange = (e) => {
+      certLabel.innerHTML = e.target.files[0].name;
+    }
   }
 
   function uploadAndWait(e) {
@@ -46,14 +62,11 @@ function startTLS() {
 
     var formData = new FormData();
 
-    var certInput = document.getElementById("cert");
-    var keyInput = document.getElementById("key");
     var hostnameInput = document.getElementById("hostname");
 
     formData.append("cert", certInput.files[0]);
     formData.append("key", keyInput.files[0]);
     formData.append("hostname", hostnameInput.value);
-
     var xhr = new XMLHttpRequest();
 
 
