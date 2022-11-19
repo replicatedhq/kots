@@ -296,18 +296,9 @@ class AppSnapshots extends Component {
       trigger: "manual",
       appID: this.state.selectedApp.id,
       sequence: snapshot.sequence,
-      startedAt: Utilities.dateFormat(
-        snapshot.startedAt,
-        "MM/DD/YY @ hh:mm a z"
-      ),
-      finishedAt: Utilities.dateFormat(
-        snapshot.finishedAt,
-        "MM/DD/YY @ hh:mm a z"
-      ),
-      expiresAt: Utilities.dateFormat(
-        snapshot.expiresAt,
-        "MM/DD/YY @ hh:mm a z"
-      ),
+      startedAt: snapshot.startedAt,
+      finishedAt: snapshot.finishedAt,
+      expiresAt: snapshot.expiresAt,
       volumeCount: snapshot.volumeCount,
       volumeSuccessCount: snapshot.volumeSuccessCount,
       volumeBytes: 0,
