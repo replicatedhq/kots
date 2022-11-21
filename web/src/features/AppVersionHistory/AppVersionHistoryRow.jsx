@@ -736,7 +736,7 @@ class AppVersionHistoryRow extends Component {
             } flex-column flex1 u-paddingRight--20`}
           >
             <div className="flex alignItems--center">
-              <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary card-item-title">
+              <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium card-item-title">
                 {version.versionLabel || version.title}
               </p>
               {showSequence && (

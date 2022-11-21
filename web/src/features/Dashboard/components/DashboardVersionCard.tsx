@@ -673,7 +673,7 @@ const DashboardVersionCard = (props: Props) => {
         <div className="flex">
           <div className="flex-column">
             <div className="flex alignItems--center u-marginBottom--5">
-              <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary card-item-title">
+              <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium card-item-title">
                 {currentVersion?.versionLabel || currentVersion?.title}
               </p>
               <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">
@@ -1408,7 +1408,7 @@ const DashboardVersionCard = (props: Props) => {
           >
             <div className="flex-column">
               <div className="flex alignItems--center">
-                <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary card-item-title">
+                <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium card-item-title">
                   {latestDeployableVersion.versionLabel ||
                     latestDeployableVersion.title}
                 </p>

@@ -45,7 +45,7 @@ class RedactorRow extends React.Component {
                 this.state.redactorEnabled ? "enabled" : "disabled"
               }`}
             />
-            <p className="u-fontSize--large u-lineHeight--normal u-fontWeight--bold u-textColor--primary">
+            <p className="u-fontSize--large u-lineHeight--normal u-fontWeight--bold card-item-title">
               {redactor?.name}
             </p>
           </div>

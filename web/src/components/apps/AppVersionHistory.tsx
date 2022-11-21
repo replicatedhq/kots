@@ -1438,7 +1438,7 @@ class AppVersionHistory extends Component<Props, State> {
             All versions
           </p>
           <div className="flex flex-auto alignItems--center">
-            <span className="flex-auto u-marginRight--5 u-fontSize--small u-textColor--secondary u-lineHeight--normal u-fontWeight--medium">
+            <span className="flex-auto u-marginRight--5 u-fontSize--small card-title u-lineHeight--normal u-fontWeight--medium">
               Results per page:
             </span>
             <select className="Select" onChange={(e) => this.setPageSize(e)}>
@@ -1842,7 +1842,7 @@ class AppVersionHistory extends Component<Props, State> {
                         )}
                         <div className="flex1 flex-column">
                           <div className="flex alignItems--center u-marginTop--5">
-                            <p className="u-fontSize--header2 u-fontWeight--bold u-textColor--primary card-item-title">
+                            <p className="u-fontSize--header2 u-fontWeight--bold card-item-title">
                               {" "}
                               {currentDownstreamVersion
                                 ? currentDownstreamVersion.versionLabel
