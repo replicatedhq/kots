@@ -1434,7 +1434,7 @@ class AppVersionHistory extends Component<Props, State> {
     return (
       <div className="TableDiff--Wrapper card-bg">
         <div className="flex u-marginBottom--15 justifyContent--spaceBetween">
-          <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy">
+          <p className="u-fontSize--normal u-fontWeight--medium card-title">
             All versions
           </p>
           <div className="flex flex-auto alignItems--center">
@@ -2031,8 +2031,8 @@ class AppVersionHistory extends Component<Props, State> {
                         </div>
                       ) : (
                         <div className="TableDiff--Wrapper card-bg u-marginBottom--30">
-                          <div className="flex justifyContent--spaceBetween">
-                            <p className="u-fontSize--normal u-fontWeight--medium u-textColor--header u-marginBottom--15">
+                          <div className="flex justifyContent--spaceBetween alignItems--center u-marginBottom--15">
+                            <p className="u-fontSize--normal u-fontWeight--medium u-textColor--info ">
                               {this.state.updatesAvailable
                                 ? "New version available"
                                 : ""}
@@ -2070,12 +2070,12 @@ class AppVersionHistory extends Component<Props, State> {
                                     ) : (
                                       <div className="flex alignItems--center u-marginRight--20">
                                         <span
-                                          className="replicated-link u-fontSize--small"
+                                          className="flex-auto flex alignItems--center replicated-link u-fontSize--small"
                                           onClick={this.onCheckForUpdates}
                                         >
                                           <Icon
                                             icon="check-update"
-                                            size={18}
+                                            size={16}
                                             className="clickable u-marginRight--5"
                                             color={""}
                                             style={{}}
@@ -2122,7 +2122,7 @@ class AppVersionHistory extends Component<Props, State> {
                           )}
                           {(this.state.numOfSkippedVersions > 0 ||
                             this.state.numOfRemainingVersions > 0) && (
-                            <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--header u-marginTop--10">
+                            <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--info u-marginTop--10">
                               {this.state.numOfSkippedVersions > 0
                                 ? `${this.state.numOfSkippedVersions} version${
                                     this.state.numOfSkippedVersions > 1
@@ -2289,7 +2289,7 @@ class AppVersionHistory extends Component<Props, State> {
               </p>
               {isPastVersion && this.props.app?.autoDeploy !== "disabled" ? (
                 <div className="info-box">
-                  <span className="u-fontSize--small u-textColor--header u-lineHeight--normal u-fontWeight--medium">
+                  <span className="u-fontSize--small u-textColor--info u-lineHeight--normal u-fontWeight--medium">
                     You have automatic deploys enabled.{" "}
                     {this.state.confirmType === "rollback"
                       ? "Rolling back to"

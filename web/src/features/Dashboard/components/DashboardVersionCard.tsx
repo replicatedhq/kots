@@ -1381,7 +1381,7 @@ const DashboardVersionCard = (props: Props) => {
 
     return (
       <div className="u-marginTop--20">
-        <p className="u-fontSize--normal u-lineHeight--normal u-textColor--header u-fontWeight--medium">
+        <p className="u-fontSize--normal u-lineHeight--normal u-textColor--info u-fontWeight--medium">
           New version available
         </p>
         {gitopsIsConnected && (
@@ -1449,7 +1449,7 @@ const DashboardVersionCard = (props: Props) => {
         </div>
         {(state.numOfSkippedVersions > 0 ||
           state.numOfRemainingVersions > 0) && (
-          <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--header u-marginTop--10">
+          <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--info u-marginTop--10">
             {state.numOfSkippedVersions > 0
               ? `${state.numOfSkippedVersions} version${
                   state.numOfSkippedVersions > 1 ? "s" : ""
@@ -1542,7 +1542,7 @@ const DashboardVersionCard = (props: Props) => {
                 </div>
               ) : props.noUpdatesAvalable ? (
                 <div className="flex alignItems--center u-marginRight--20">
-                  <span className="u-textColor--primary u-fontWeight--medium u-fontSize--small u-lineHeight--default">
+                  <span className="u-textColor--info u-fontWeight--medium u-fontSize--small u-lineHeight--default">
                     Already up to date
                   </span>
                 </div>

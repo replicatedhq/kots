@@ -368,7 +368,7 @@ class DashboardSnapshotsCard extends React.Component<Props, State> {
               <span
                 className={`icon snapshotDestination--${selectedDestination?.value} u-marginRight--5`}
               />
-              <p className="u-fontSize--normal u-fontWeight--medium u-textColor--header">
+              <p className="u-fontSize--normal u-fontWeight--medium card-item-title">
                 {selectedDestination?.label}
               </p>
             </div>

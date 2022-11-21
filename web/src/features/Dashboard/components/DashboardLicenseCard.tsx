@@ -247,7 +247,7 @@ const DashboardLicenseCard = (props: Props) => {
                   "u-fontWeight--bold u-fontSize--small u-marginRight--10",
                   {
                     "u-textColor--error": messageType === "error",
-                    "u-textColor--primary": messageType === "info",
+                    "u-textColor--info": messageType === "info",
                   }
                 )}
               >
@@ -255,7 +255,7 @@ const DashboardLicenseCard = (props: Props) => {
               </p>
             )}
             {appLicense?.lastSyncedAt && !message ? (
-              <span className="u-fontSize--small u-textColor--header u-fontWeight--medium u-lineHeight--normal u-marginRight--10">
+              <span className="u-fontSize--small u-textColor--info u-fontWeight--medium u-lineHeight--normal u-marginRight--10">
                 Last synced {Utilities.dateFromNow(appLicense.lastSyncedAt)}
               </span>
             ) : null}

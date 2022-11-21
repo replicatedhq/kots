@@ -111,7 +111,7 @@ export default class AppStatus extends React.Component<Props, State> {
             {this.props.hasStatusInformers && (
               <span
                 onClick={this.props.onViewAppStatusDetails}
-                className="replicated-link u-marginLeft--10"
+                className="replicated-link u-marginLeft--10 u-fontSize--small"
               >
                 {" "}
                 Details{" "}
@@ -119,7 +119,7 @@ export default class AppStatus extends React.Component<Props, State> {
             )}
             <Link
               to={`${url}/config/${app?.downstream?.currentVersion?.sequence}`}
-              className="replicated-link u-marginLeft--10 u-borderLeft--gray u-paddingLeft--10"
+              className="replicated-link u-marginLeft--10 u-borderLeft--gray u-paddingLeft--10 u-fontSize--small"
             >
               Edit config
             </Link>

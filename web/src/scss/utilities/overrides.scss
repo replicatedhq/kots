@@ -7,6 +7,9 @@
 .u-textColor--secondary {
   color: #4a4a4a;
 }
+.u-textColor--info {
+  color: blue;
+}
 .u-textColor--header {
   color: #577981;
 }
@@ -23,8 +26,12 @@
   color: #daab18;
 }
 
-// a:visited
 .replicated-link {
+  color: #9b6a6c;
+}
+
+a:visited,
+.link {
   color: #9b6a6c;
 }
 

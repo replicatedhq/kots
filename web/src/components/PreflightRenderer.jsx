@@ -32,11 +32,11 @@ export default function PreflightRenderer(props) {
           if (row.isWarn) {
             icon = "warning";
             iconClass = "warning-color";
-            rowClass = "warn";
+            rowClass = "u-textColor--warning";
           } else if (row.isFail) {
             icon = "warning-circle-filled";
             iconClass = "error-color";
-            rowClass = "fail";
+            rowClass = "u-textColor--error";
           } else {
             icon = "check-circle-filled";
             iconClass = "success-color";

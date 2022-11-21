@@ -708,7 +708,7 @@ class AppVersionHistoryRow extends Component {
       <div
         key={version.sequence}
         className={classNames(
-          `card-item VersionHistoryRowWrapper ${version.status} flex-column justifyContent--center`,
+          `card-item VersionHistoryRowWrapper ${version.status} flex-column justifyContent--center u-padding--15`,
           {
             overlay: selectedDiffReleases,
             disabled: nothingToCommit,
@@ -717,6 +717,7 @@ class AppVersionHistoryRow extends Component {
             "show-preflight-passed-text": newPreflightResults,
           }
         )}
+        style={{ minHeight: "60px" }}
         onClick={this.handleSelectReleasesToDiff}
       >
         <div className="VersionHistoryRow flex flex-auto">
