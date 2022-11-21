@@ -206,8 +206,8 @@ const DashboardLicenseCard = (props: Props) => {
     >
       <div className="flex flex1 justifyContent--spaceBetween alignItems--center">
         <p
-          className={`card-title u-textColor--${
-            Utilities.checkIsDateExpired(expiresAt) ? "error" : "primary"
+          className={`card-title ${
+            Utilities.checkIsDateExpired(expiresAt) ? "u-textColor--error" : ""
           }`}
         >
           License {Utilities.checkIsDateExpired(expiresAt) && "is expired"}
@@ -280,7 +280,7 @@ const DashboardLicenseCard = (props: Props) => {
           <div className="flex">
             <div className="flex-column flex1">
               <div className="flex alignItems--center">
-                <p className="u-fontSize--large u-fontWeight--medium u-textColor--header">
+                <p className="u-fontSize--large u-fontWeight--medium card-item-title">
                   {" "}
                   {appLicense?.assignee}
                 </p>

@@ -456,11 +456,11 @@ class AirgapRegistrySettings extends Component<Props, State> {
     const showStatusError = rewriteStatus === "failed";
 
     return (
-      <div className="registry-settings-content">
+      <div className="card-item u-padding--15">
         <form>
           <div className="flex u-marginBottom--20">
             <div className="flex1">
-              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">
+              <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">
                 Hostname{" "}
                 {showHostnameAsRequired && (
                   <span className="u-textColor--error">(Required)</span>
@@ -484,7 +484,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
           </div>
           <div className="flex u-marginBottom--20">
             <div className="flex1 u-paddingRight--5">
-              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+              <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Username
               </p>
               <input
@@ -499,7 +499,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
               />
             </div>
             <div className="flex1 u-paddingLeft--5">
-              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+              <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Password
               </p>
               <input
@@ -558,7 +558,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
           <div className="flex u-marginBottom--30">
             <div className="flex1">
               <div className="flex flex1 alignItems--center u-marginBottom--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">
+                <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--5">
                   Registry Namespace
                 </p>
               </div>
@@ -598,7 +598,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
                   style={{ marginTop: "2px" }}
                 >
                   <div className="flex flex-column u-marginLeft--5 justifyContent--center">
-                    <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-marginBottom--5">
+                    <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-marginBottom--5">
                       Disable Pushing Images to Registry
                     </p>
                     <p className="u-lineHeight--normal u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium">

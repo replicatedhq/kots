@@ -75,7 +75,7 @@ export default class ConfigCheckbox extends React.Component<Props> {
           />
           <label
             htmlFor={this.props.name}
-            className={`u-marginLeft--5 header-color field-section-sub-header u-userSelect--none ${
+            className={`u-marginLeft--5 field-section-sub-header card-item-title u-userSelect--none ${
               this.props.readonly ? "u-cursor--default" : "u-cursor--pointer"
             }`}
           >

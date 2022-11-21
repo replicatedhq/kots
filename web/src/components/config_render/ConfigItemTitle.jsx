@@ -23,7 +23,7 @@ export default class ConfigItemTitle extends React.Component {
 
     return (
       <h4
-        className="sub-header-color field-section-sub-header"
+        className="card-item-title field-section-sub-header"
         style={title ? { marginBottom: -18 } : {}}
       >
         {title && (

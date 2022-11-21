@@ -1823,7 +1823,7 @@ class AppVersionHistory extends Component<Props, State> {
                   style={{ maxWidth: "370px", marginRight: "20px" }}
                 >
                   <div className="card-bg TableDiff--Wrapper currentVersionCard--wrapper">
-                    <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold">
+                    <p className="u-fontSize--large card-item-title u-fontWeight--bold">
                       {currentDownstreamVersion?.versionLabel
                         ? "Currently deployed version"
                         : "No current version deployed"}

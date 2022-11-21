@@ -38,7 +38,7 @@ export default class ConfigRadio extends React.Component {
         />
         <label
           htmlFor={`${this.props.group}-${this.props.name}`}
-          className={`u-marginLeft--5 header-color field-section-sub-header u-userSelect--none ${
+          className={`u-marginLeft--5 card-item-title field-section-sub-header u-userSelect--none ${
             this.props.readOnly ? "u-cursor--default" : "u-cursor--pointer"
           }`}
         >

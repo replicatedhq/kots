@@ -105,7 +105,7 @@ export default class FileInput extends React.Component {
             this.props.disabled ? "disabled" : ""
           }`}
         >
-          <p className="sub-header-color field-section-sub-header u-marginTop--10 u-marginBottom--5">
+          <p className="card-item-title field-section-sub-header u-marginTop--10 u-marginBottom--5">
             {label}
           </p>
           <div className="flex flex-row">

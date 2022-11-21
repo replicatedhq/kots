@@ -130,9 +130,12 @@
 
 /* Form component classes */
 
-.Input:active,
+.Input:active {
+  border-color: green;
+}
+
 .Input:focus {
-  border-color: #9b6a6c;
+  border-color: #c5474b;
 }
 
 // Major Elements

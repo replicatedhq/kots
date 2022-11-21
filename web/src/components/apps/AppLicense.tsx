@@ -431,7 +431,7 @@ const AppLicenseComponent = (props: Props) => {
       {size(appLicense) > 0 ? (
         <div className="License--wrapper flex-column card-bg">
           <div className="flex flex-auto alignItems--center">
-            <span className="u-fontSize--large u-fontWeight--bold u-lineHeight--normal u-textColor--primary">
+            <span className="u-fontSize--large u-fontWeight--bold u-lineHeight--normal card-title">
               {" "}
               License{" "}
             </span>
@@ -456,7 +456,7 @@ const AppLicenseComponent = (props: Props) => {
             <div className=" flex flex1 justifyContent--spaceBetween">
               <div className="flex1 flex-column u-paddingRight--20">
                 <div className="flex flex-auto alignItems--center">
-                  <span className="u-fontSize--larger u-fontWeight--bold u-lineHeight--normal u-textColor--secondary card-item-title">
+                  <span className="u-fontSize--larger u-fontWeight--bold u-lineHeight--normal card-item-title">
                     {" "}
                     {appLicense.assignee}{" "}
                   </span>
