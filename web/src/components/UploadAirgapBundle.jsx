@@ -586,7 +586,7 @@ class UploadAirgapBundle extends React.Component {
                         <div className="u-marginTop--10">
                           <a
                             href="#"
-                            className="replicated-link"
+                            className="link"
                             onClick={this.toggleShowRun}
                           >
                             Click here
@@ -600,7 +600,7 @@ class UploadAirgapBundle extends React.Component {
                 {hasFile && (
                   <div className="u-marginTop--10">
                     <span
-                      className="replicated-link u-fontSize--small"
+                      className="link u-fontSize--small"
                       onClick={this.clearFile}
                     >
                       Select a different bundle
@@ -623,7 +623,7 @@ class UploadAirgapBundle extends React.Component {
             onClick={this.handleOnlineInstall}
           >
             Optionally you can{" "}
-            <span className="replicated-link">
+            <span className="link">
               download{" "}
               {applicationName?.length > 0
                 ? applicationName
@@ -638,7 +638,7 @@ class UploadAirgapBundle extends React.Component {
               Unable to install license
             </span>
             <span
-              className="u-fontSize--small replicated-link"
+              className="u-fontSize--small link"
               onClick={this.toggleViewOnlineInstallErrorMessage}
             >
               view more

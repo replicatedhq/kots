@@ -1625,7 +1625,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 Snapshot settings
               </p>
               <span
-                className="replicated-link u-fontSize--small flex justifyContent--flexEnd u-cursor--pointer"
+                className="link u-fontSize--small flex justifyContent--flexEnd u-cursor--pointer"
                 onClick={this.props.toggleConfigureSnapshotsModal}
               >
                 + Add a new destination
@@ -1660,7 +1660,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                           href="https://velero.io/docs/main/troubleshooting/"
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="replicated-link u-marginLeft--5"
+                          className="link u-marginLeft--5"
                         >
                           https://velero.io/docs/main/troubleshooting/
                         </a>
@@ -1713,7 +1713,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                     )}
                     {!this.state.showCACertificateField && (
                       <button
-                        className="AddCAButton replicated-link u-fontSize--small"
+                        className="AddCAButton link u-fontSize--small"
                         onClick={this.handleCACertificateFieldClick}
                       >
                         + Add a CA Certificate
@@ -1746,7 +1746,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 <span className="u-fontSize--small u-fontWeight--normal u-lineHeight--normal u-textColor--bodyCopy u-marginTop--15">
                   All data in your snapshots will be deduplicated. To learn more
                   about how,{" "}
-                  <a href="/" target="_blank" className="replicated-link">
+                  <a href="/" target="_blank" className="link">
                     check out our docs.
                   </a>
                 </span>

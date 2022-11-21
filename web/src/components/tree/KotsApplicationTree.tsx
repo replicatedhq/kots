@@ -115,10 +115,7 @@ class KotsApplicationTree extends React.Component<Props, State> {
         {!this.props.isHelmManaged && (
           <div className="edit-files-banner u-fontSize--small u-fontWeight--medium">
             Need to edit these files?{" "}
-            <span
-              onClick={this.toggleInstructionsModal}
-              className="replicated-link"
-            >
+            <span onClick={this.toggleInstructionsModal} className="link">
               Click here
             </span>{" "}
             to learn how

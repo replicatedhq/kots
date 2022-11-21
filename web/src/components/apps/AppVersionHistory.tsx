@@ -524,7 +524,7 @@ class AppVersionHistory extends Component<Props, State> {
           <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-textColor--bodyCopy">
             Unable to generate diff{" "}
             <span
-              className="replicated-link"
+              className="link"
               onClick={() => this.toggleDiffErrModal(version)}
             >
               Why?
@@ -542,7 +542,7 @@ class AppVersionHistory extends Component<Props, State> {
               </span>
               {!this.props.isHelmManaged && !downstream.gitops?.isConnected && (
                 <span
-                  className="u-fontSize--small replicated-link u-marginLeft--5"
+                  className="u-fontSize--small link u-marginLeft--5"
                   onClick={() =>
                     this.setState({
                       showDiffOverlay: true,
@@ -560,7 +560,7 @@ class AppVersionHistory extends Component<Props, State> {
               <span className="files">
                 No changes to show.{" "}
                 <span
-                  className="replicated-link"
+                  className="link"
                   onClick={() => this.toggleNoChangesModal(version)}
                 >
                   Why?
@@ -2047,7 +2047,7 @@ class AppVersionHistory extends Component<Props, State> {
                                   >
                                     <div className="flex alignItems--center">
                                       <span className="icon clickable dashboard-card-upload-version-icon u-marginRight--5" />
-                                      <span className="replicated-link u-fontSize--small u-lineHeight--default">
+                                      <span className="link u-fontSize--small u-lineHeight--default">
                                         Upload new version
                                       </span>
                                     </div>
@@ -2070,7 +2070,7 @@ class AppVersionHistory extends Component<Props, State> {
                                     ) : (
                                       <div className="flex alignItems--center u-marginRight--20">
                                         <span
-                                          className="flex-auto flex alignItems--center replicated-link u-fontSize--small"
+                                          className="flex-auto flex alignItems--center link u-fontSize--small"
                                           onClick={this.onCheckForUpdates}
                                         >
                                           <Icon
@@ -2087,7 +2087,7 @@ class AppVersionHistory extends Component<Props, State> {
                                       </div>
                                     )}
                                     <span
-                                      className="flex-auto flex alignItems--center replicated-link u-fontSize--small"
+                                      className="flex-auto flex alignItems--center link u-fontSize--small"
                                       onClick={this.toggleAutomaticUpdatesModal}
                                     >
                                       <Icon

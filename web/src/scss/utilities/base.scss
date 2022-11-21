@@ -38,7 +38,7 @@ body a {
   overflow: hidden;
 }
 
-.replicated-link {
+.link {
   color: $link-color;
   cursor: pointer;
   font-weight: 500;
@@ -72,7 +72,7 @@ body a {
     }
   }
 }
-.replicated-link > .has-arrow {
+.link > .has-arrow {
   position: relative;
   &::after {
     content: "";

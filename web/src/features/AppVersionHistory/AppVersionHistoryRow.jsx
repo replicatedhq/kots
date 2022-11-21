@@ -575,7 +575,7 @@ class AppVersionHistoryRow extends Component {
               Deploy Failed
             </span>
             <span
-              className="replicated-link u-fontSize--small"
+              className="link u-fontSize--small"
               onClick={() => this.props.handleViewLogs(version, true)}
             >
               View deploy logs
@@ -639,7 +639,7 @@ class AppVersionHistoryRow extends Component {
               Deploy Failed
             </span>
             <span
-              className="replicated-link u-fontSize--small"
+              className="link u-fontSize--small"
               onClick={() => this.props.handleViewLogs(version, true)}
             >
               View deploy logs

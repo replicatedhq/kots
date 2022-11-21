@@ -703,7 +703,7 @@ const AppLicenseComponent = (props: Props) => {
                         {licenseChangeFile.name}
                       </p>
                       <span
-                        className="replicated-link u-fontSize--small"
+                        className="link u-fontSize--small"
                         onClick={clearLicenseChangeFile}
                       >
                         Select a different file

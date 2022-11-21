@@ -226,7 +226,7 @@ const DashboardLicenseCard = (props: Props) => {
           >
             <span className="icon clickable dashboard-card-upload-version-icon u-marginRight--5" />
             <span
-              className="replicated-link u-fontSize--small"
+              className="link u-fontSize--small"
               onClick={() => syncLicense("")}
             >
               Upload license
@@ -265,7 +265,7 @@ const DashboardLicenseCard = (props: Props) => {
               size={16}
             />
             <span
-              className="replicated-link u-fontSize--small"
+              className="link u-fontSize--small"
               onClick={() => syncLicense("")}
             >
               Sync license
@@ -391,7 +391,7 @@ const DashboardLicenseCard = (props: Props) => {
       <div className="u-marginTop--10">
         <Link
           to={`/app/${app?.slug}/license`}
-          className="replicated-link u-fontSize--small"
+          className="link u-fontSize--small"
         >
           See license details
           <Icon

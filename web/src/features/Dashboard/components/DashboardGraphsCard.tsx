@@ -303,7 +303,7 @@ export default class DashboardGraphsCard extends React.Component<Props, State> {
               className="clickable u-marginRight--5"
             />
             <span
-              className="replicated-link u-fontSize--small"
+              className="link u-fontSize--small"
               onClick={this.toggleConfigureGraphs}
             >
               Configure Prometheus Address

@@ -314,7 +314,7 @@ export class SupportBundleAnalysis extends React.Component {
                     <div className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginBottom--20">
                       <Link
                         to={`/app/${this.props.watch.slug}/troubleshoot`}
-                        className="replicated-link u-marginRight--5"
+                        className="link u-marginRight--5"
                       >
                         Support bundles
                       </Link>{" "}

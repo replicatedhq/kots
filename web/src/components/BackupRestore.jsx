@@ -140,7 +140,7 @@ class BackupRestore extends React.Component {
           {!isEmpty(this.state.backups) && (
             <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal u-marginTop--5">
               Not seeing the the snapshots you want?{" "}
-              <Link to="/snapshots?=license-upload" className="replicated-link">
+              <Link to="/snapshots?=license-upload" className="link">
                 Pull from a different bucket
               </Link>
               .
@@ -169,7 +169,7 @@ class BackupRestore extends React.Component {
               Not seeing the the snapshots you want?{" "}
               <Link
                 to="/snapshots?=license-upload"
-                className="replicated-link u-fontSize--normal"
+                className="link u-fontSize--normal"
               >
                 Check a different bucket
               </Link>

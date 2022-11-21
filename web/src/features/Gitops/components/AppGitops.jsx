@@ -241,7 +241,7 @@ const AppGitops = () => {
             >
               Add this SSH key on your
               <a
-                className="replicated-link"
+                className="link"
                 href={addKeyUri}
                 target="_blank"
                 rel="noopener noreferrer"

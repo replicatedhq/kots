@@ -314,7 +314,7 @@ class DashboardSnapshotsCard extends React.Component<Props, State> {
           <p className="card-title">Snapshots</p>
           <div className="u-fontSize--small u-fontWeight--medium flex flex-auto alignItems--center">
             <Link
-              className="replicated-link u-marginRight--20 flex alignItems--center"
+              className="link u-marginRight--20 flex alignItems--center"
               to="/snapshots/settings"
             >
               <Icon
@@ -385,7 +385,7 @@ class DashboardSnapshotsCard extends React.Component<Props, State> {
           </div>
         </div>
         <div className="u-marginTop--10">
-          <Link to={`/snapshots`} className="replicated-link u-fontSize--small">
+          <Link to={`/snapshots`} className="link u-fontSize--small">
             See all snapshots
             <Icon
               icon="next-arrow"

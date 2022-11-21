@@ -208,7 +208,7 @@ export class AnalyzerInsights extends React.Component {
                             {tile?.involvedObject?.kind === "Pod" && (
                               <div>
                                 <span
-                                  className="replicated-link u-fontSize--small u-marginTop--5"
+                                  className="link u-fontSize--small u-marginTop--5"
                                   onClick={() =>
                                     this.props.openPodDetailsModal(
                                       tile?.involvedObject

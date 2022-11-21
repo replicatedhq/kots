@@ -27,21 +27,20 @@
 .u-textColor--warning {
   color: #daab18;
 }
-.replicated-link {
-  color: #9b6a6c;
-}
 .help-text-color {
-  color: pink;
+  color: rgb(128, 46, 60);
 }
-
-a:visited,
 .link {
   color: #9b6a6c;
 }
-
-//a:visited
-.replicated-link:hover {
-  color: #8d4d50;
+// not everything is a link however, subnav links are <a>,
+// do u care about styling visited links
+a:visited,
+.link:visited {
+  color: #4c2e2f;
+}
+.link:hover {
+  color: #4e0307;
   text-decoration: none;
 }
 
@@ -50,11 +49,13 @@ a:visited,
   background-color: #5b7553;
 }
 
-.btn.primary:hover {
+.btn.primary:not(:disabled):hover {
   background-color: #7fa274;
 }
-.btn.primary:disabled,
-.btn.primary:disabled:hover {
+
+// either you put not(:disabled):hover in the hover proerty or this in disabled
+//.btn.primary:disabled:hover
+.btn.primary:disabled {
   background-color: #3e5935;
   opacity: 0.75;
 }
@@ -62,12 +63,11 @@ a:visited,
 .btn.primary.red {
   background-color: #8f1e2a;
 }
-.btn.primary.red:hover {
+.btn.primary.red:not(:disabled):hover {
   background-color: #62151d;
 }
 
-.btn.primary.red:disabled,
-.btn.primary.red:disabled:hover {
+.btn.primary.red:disabled {
   background-color: #8f1e2a;
   opacity: 0.75;
 }

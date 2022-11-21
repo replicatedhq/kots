@@ -556,7 +556,7 @@ class SnapshotSchedule extends Component {
                     <p className="cron-expression-text">
                       Enter a valid Cron Expression{" "}
                       <a
-                        className="replicated-link"
+                        className="link"
                         href=""
                         target="_blank"
                         rel="noopener noreferrer"

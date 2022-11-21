@@ -365,7 +365,7 @@ const DashboardVersionCard = (props: Props) => {
             Deploy Failed
           </span>
           <span
-            className="replicated-link u-fontSize--small"
+            className="link u-fontSize--small"
             onClick={() => handleViewLogs(version, true)}
           >
             View deploy logs
@@ -761,10 +761,7 @@ const DashboardVersionCard = (props: Props) => {
         <div className="flex flex1 alignItems--center u-marginTop--5">
           <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-textColor--bodyCopy">
             Unable to generate diff{" "}
-            <span
-              className="replicated-link"
-              onClick={() => toggleDiffErrModal(version)}
-            >
+            <span className="link" onClick={() => toggleDiffErrModal(version)}>
               Why?
             </span>
           </span>
@@ -780,7 +777,7 @@ const DashboardVersionCard = (props: Props) => {
               </span>
               {!isHelmManaged && !downstream?.gitops?.isConnected && (
                 <Link
-                  className="u-fontSize--small replicated-link u-marginLeft--5"
+                  className="u-fontSize--small link u-marginLeft--5"
                   to={`${history.location.pathname}?diff/${props.currentVersion?.sequence}/${version.parentSequence}`}
                 >
                   View diff
@@ -792,7 +789,7 @@ const DashboardVersionCard = (props: Props) => {
               <span className="files">
                 No changes to show.{" "}
                 <span
-                  className="replicated-link"
+                  className="link"
                   onClick={() => toggleNoChangesModal(version)}
                 >
                   Why?
@@ -817,7 +814,7 @@ const DashboardVersionCard = (props: Props) => {
           {version.yamlErrors?.length !== 1 ? "s" : ""}{" "}
         </span>
         <span
-          className="replicated-link u-marginLeft--5 u-fontSize--small"
+          className="link u-marginLeft--5 u-fontSize--small"
           onClick={() =>
             toggleShowDetailsModal(version.yamlErrors, version.sequence)
           }
@@ -1395,7 +1392,7 @@ const DashboardVersionCard = (props: Props) => {
               target="_blank"
               rel="noopener noreferrer"
               href={downstream?.gitops?.uri}
-              className="replicated-link"
+              className="link"
             >
               {selectedApp?.isAirgap
                 ? downstream?.gitops?.uri
@@ -1524,7 +1521,7 @@ const DashboardVersionCard = (props: Props) => {
             >
               <div className="flex alignItems--center">
                 <span className="icon clickable dashboard-card-upload-version-icon u-marginRight--5" />
-                <span className="replicated-link u-fontSize--small u-lineHeight--default">
+                <span className="link u-fontSize--small u-lineHeight--default">
                   Upload new version
                 </span>
               </div>
@@ -1554,7 +1551,7 @@ const DashboardVersionCard = (props: Props) => {
                     className="clickable u-marginRight--5"
                   />
                   <span
-                    className="replicated-link u-fontSize--small"
+                    className="link u-fontSize--small"
                     onClick={props.onCheckForUpdates}
                   >
                     Check for update
@@ -1567,7 +1564,7 @@ const DashboardVersionCard = (props: Props) => {
                 className="clickable u-marginRight--5"
               />
               <span
-                className="replicated-link u-fontSize--small u-lineHeight--default"
+                className="link u-fontSize--small u-lineHeight--default"
                 onClick={props.showAutomaticUpdatesModal}
               >
                 Configure automatic updates
@@ -1592,7 +1589,7 @@ const DashboardVersionCard = (props: Props) => {
       <div className="u-marginTop--10">
         <Link
           to={`/app/${selectedApp?.slug}/version-history`}
-          className="replicated-link u-fontSize--small"
+          className="link u-fontSize--small"
         >
           See all versions
           <Icon

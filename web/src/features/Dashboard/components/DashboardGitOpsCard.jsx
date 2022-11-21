@@ -56,7 +56,7 @@ export default function DashboardGitOpsCard(props) {
                 className="clickable u-marginRight--5"
               />
               <span
-                className="replicated-link u-fontSize--small"
+                className="link u-fontSize--small"
                 onClick={onCheckForUpdates}
               >
                 Check for update
@@ -69,7 +69,7 @@ export default function DashboardGitOpsCard(props) {
             className="clickable u-marginRight--5"
           />
           <span
-            className="replicated-link u-fontSize--small u-lineHeight--default"
+            className="link u-fontSize--small u-lineHeight--default"
             onClick={showAutomaticUpdatesModal}
           >
             Configure automatic updates
@@ -83,7 +83,7 @@ export default function DashboardGitOpsCard(props) {
             target="_blank"
             rel="noopener noreferrer"
             href={gitops.uri}
-            className="replicated-link"
+            className="link"
           >
             {isAirgap
               ? gitops.uri
@@ -93,7 +93,7 @@ export default function DashboardGitOpsCard(props) {
           deployed version. Config for the latest version can be edited from the{" "}
           <Link
             to={`/app/${appSlug}/config/${latestConfigSequence}`}
-            className="replicated-link"
+            className="link"
           >
             Config
           </Link>{" "}
@@ -101,7 +101,7 @@ export default function DashboardGitOpsCard(props) {
         </p>
       </div>
       <div className="u-marginTop--10">
-        <Link to="/gitops" className="replicated-link  u-fontSize--small">
+        <Link to="/gitops" className="link  u-fontSize--small">
           Manage GitOps settings
           <Icon
             icon="next-arrow"

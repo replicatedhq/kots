@@ -68,7 +68,7 @@ export default function PreflightRenderer(props) {
                         href={row.uri}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="replicated-link u-fontSize--small u-fontWeight--medium u-position--relative"
+                        className="link u-fontSize--small u-fontWeight--medium u-position--relative"
                       >
                         {" "}
                         Learn more{" "}

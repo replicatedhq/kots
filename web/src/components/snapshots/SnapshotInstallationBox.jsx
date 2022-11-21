@@ -22,7 +22,7 @@ export default class SnapshotInstallationBox extends Component {
                 href="https://velero.io/docs/main/troubleshooting/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="replicated-link u-marginLeft--5"
+                className="link u-marginLeft--5"
               >
                 Get help
               </a>
@@ -53,7 +53,7 @@ export default class SnapshotInstallationBox extends Component {
                 href="https://velero.io/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="replicated-link u-marginLeft--5"
+                className="link u-marginLeft--5"
               >
                 Get help
               </a>
@@ -84,7 +84,7 @@ export default class SnapshotInstallationBox extends Component {
                 href="https://velero.io/docs/main/restic/#troubleshooting"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="replicated-link u-marginLeft--5"
+                className="link u-marginLeft--5"
               >
                 Get help
               </a>

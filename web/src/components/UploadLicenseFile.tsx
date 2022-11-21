@@ -484,7 +484,7 @@ const UploadLicenseFile = (props: Props) => {
                             {licenseFile.name}
                           </p>
                           <span
-                            className="replicated-link u-fontSize--small"
+                            className="link u-fontSize--small"
                             onClick={clearFile}
                           >
                             Select a different file
@@ -571,7 +571,7 @@ const UploadLicenseFile = (props: Props) => {
                     Unable to install license
                   </span>
                   <span
-                    className="u-fontSize--small replicated-link"
+                    className="u-fontSize--small link"
                     onClick={toggleViewErrorMessage}
                   >
                     view more

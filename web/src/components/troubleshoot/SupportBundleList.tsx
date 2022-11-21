@@ -2,7 +2,7 @@ import * as React from "react";
 import { KotsPageTitle } from "@components/Head";
 import {
   withRouter,
-  withRouterType,
+  withRouterType
 } from "@src/utilities/react-router-utilities";
 
 import Toggle from "../shared/Toggle";
@@ -32,7 +32,7 @@ type Props = {
   updateState: ({
     displayErrorModal,
     loading,
-    loadingBundle,
+    loadingBundle
   }: {
     displayErrorModal: boolean;
     loading?: boolean;
@@ -59,7 +59,7 @@ class SupportBundleList extends React.Component<Props, State> {
       displayRedactorModal: false,
       loadingSupportBundles: false,
       pollForBundleAnalysisProgress: new Repeater(),
-      isGeneratingBundleOpen: false,
+      isGeneratingBundleOpen: false
     };
   }
 
@@ -87,19 +87,19 @@ class SupportBundleList extends React.Component<Props, State> {
 
   toggleGenerateBundleModal = () => {
     this.setState({
-      isGeneratingBundleOpen: !this.state.isGeneratingBundleOpen,
+      isGeneratingBundleOpen: !this.state.isGeneratingBundleOpen
     });
   };
 
   listSupportBundles = () => {
     this.setState({
-      errorMsg: "",
+      errorMsg: ""
     });
 
     this.props.updateState({
       loading: true,
       displayErrorModal: true,
-      loadingBundle: false,
+      loadingBundle: false
     });
 
     fetch(
@@ -107,15 +107,15 @@ class SupportBundleList extends React.Component<Props, State> {
       {
         headers: {
           Authorization: Utilities.getToken(),
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
-        method: "GET",
+        method: "GET"
       }
     )
       .then(async (res) => {
         if (!res.ok) {
           this.setState({
-            errorMsg: `Unexpected status code: ${res.status}`,
+            errorMsg: `Unexpected status code: ${res.status}`
           });
           this.props.updateState({ loading: false, displayErrorModal: true });
           return;
@@ -136,7 +136,7 @@ class SupportBundleList extends React.Component<Props, State> {
         }
         this.setState({
           supportBundles: response.supportBundles,
-          errorMsg: "",
+          errorMsg: ""
         });
         this.props.updateState({ loading: false, displayErrorModal: false });
       })
@@ -145,7 +145,7 @@ class SupportBundleList extends React.Component<Props, State> {
         this.setState({
           errorMsg: err
             ? err.message
-            : "Something went wrong, please try again.",
+            : "Something went wrong, please try again."
         });
         this.props.updateState({ displayErrorModal: true, loading: false });
       });
@@ -153,13 +153,13 @@ class SupportBundleList extends React.Component<Props, State> {
 
   toggleErrorModal = () => {
     this.props.updateState({
-      displayErrorModal: !this.props.displayErrorModal,
+      displayErrorModal: !this.props.displayErrorModal
     });
   };
 
   toggleRedactorModal = () => {
     this.setState({
-      displayRedactorModal: !this.state.displayRedactorModal,
+      displayRedactorModal: !this.state.displayRedactorModal
     });
   };
 
@@ -232,7 +232,7 @@ class SupportBundleList extends React.Component<Props, State> {
                     this.props.history.push(
                       `/app/${this.props.watch?.slug}/troubleshoot`
                     ),
-                  isActive: true,
+                  isActive: true
                 },
                 {
                   title: "Redactors",
@@ -240,8 +240,8 @@ class SupportBundleList extends React.Component<Props, State> {
                     this.props.history.push(
                       `/app/${this.props.watch?.slug}/troubleshoot/redactors`
                     ),
-                  isActive: false,
-                },
+                  isActive: false
+                }
               ]}
             />
           </div>
@@ -271,7 +271,7 @@ class SupportBundleList extends React.Component<Props, State> {
                       Generate a support bundle
                     </a>
                     <span
-                      className="replicated-link flex alignItems--center u-fontSize--small u-marginLeft--20"
+                      className="link flex alignItems--center u-fontSize--small u-marginLeft--20"
                       onClick={this.toggleRedactorModal}
                     >
                       <Icon
