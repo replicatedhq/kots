@@ -31,9 +31,6 @@
 .u-textColor--secondary {
   color: $text-color-secondary;
 }
-.u-textColor--info {
-  color: $text-color-header;
-}
 .u-textColor--header {
   color: $text-color-header;
 }
@@ -76,4 +73,8 @@
 }
 .u-color--lightteal {
   color: #e1f0f1;
+}
+
+.help-text-color {
+  color: $text-color-body-copy;
 }

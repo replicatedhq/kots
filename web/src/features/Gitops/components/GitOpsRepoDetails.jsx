@@ -135,7 +135,7 @@ const GitopsRepoDetails = () => {
         <Flex width="100%">
           <div className="flex flex1 flex-column u-marginRight--20">
             <p className="card-item-title">Branch</p>
-            <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">
+            <p className="u-fontSize--normal help-text-color u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">
               Leave blank to use the default branch.
             </p>
             <input
@@ -148,7 +148,7 @@ const GitopsRepoDetails = () => {
           </div>
           <div className="flex flex1 flex-column">
             <p className="card-item-title">Path</p>
-            <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">
+            <p className="u-fontSize--normal help-text-color u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">
               Path in repository to commit deployment file
             </p>
             <input

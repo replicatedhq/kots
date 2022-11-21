@@ -466,7 +466,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
                   <span className="u-textColor--error">(Required)</span>
                 )}
               </p>
-              <p className="u-lineHeight--normal u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginBottom--10">
+              <p className="u-lineHeight--normal u-fontSize--small help-text-color u-fontWeight--medium u-marginBottom--10">
                 Ensure this domain supports the Docker V2 protocol.
               </p>
               <input
@@ -562,7 +562,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
                   Registry Namespace
                 </p>
               </div>
-              <p className="u-lineHeight--normal u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginBottom--10">
+              <p className="u-lineHeight--normal u-fontSize--small help-text-color u-fontWeight--medium u-marginBottom--10">
                 {namespaceSubtext}
               </p>
               <input
@@ -601,7 +601,7 @@ class AirgapRegistrySettings extends Component<Props, State> {
                     <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-marginBottom--5">
                       Disable Pushing Images to Registry
                     </p>
-                    <p className="u-lineHeight--normal u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium">
+                    <p className="u-lineHeight--normal u-fontSize--small help-text-color u-fontWeight--medium">
                       {imagePushSubtext}
                     </p>
                   </div>

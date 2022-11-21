@@ -232,7 +232,7 @@ export default class ConfigGroup extends React.Component {
           >
             <h3 className="card-item-title">{item.title}</h3>
             {item.description !== "" ? (
-              <div className="field-section-help-text u-marginTop--10">
+              <div className="field-section-help-text help-text-color u-marginTop--10">
                 <Markdown
                   ref={this.markdownNode}
                   options={{
