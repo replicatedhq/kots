@@ -65,7 +65,7 @@
     -moz-box-shadow: inset 0px -2px 0px 0px rgba(0, 0, 0, 0.25);
     box-shadow: inset 0px -2px 0px 0px rgba(0, 0, 0, 0.25);
 
-    &:hover {
+    &:not(:disabled):hover {
       background-color: darken($primary-color, 8%);
     }
   }
@@ -91,7 +91,7 @@
     -moz-box-shadow: inset 0px -2px 0px 0px rgba(0, 0, 0, 0.25);
     box-shadow: inset 0px -2px 0px 0px rgba(0, 0, 0, 0.25);
 
-    &:hover {
+    &:not(:disabled):hover {
       background: darken($error-color, 8%);
     }
   }

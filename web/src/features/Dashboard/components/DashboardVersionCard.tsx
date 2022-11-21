@@ -1601,7 +1601,6 @@ const DashboardVersionCard = (props: Props) => {
             className="has-arrow u-marginLeft--5"
           />
         </Link>
-        <button className="btn secondary red">secondary</button>
       </div>
       {state.showReleaseNotes && (
         <Modal
