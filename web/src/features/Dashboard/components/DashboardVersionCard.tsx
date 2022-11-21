@@ -1544,31 +1544,33 @@ const DashboardVersionCard = (props: Props) => {
                   </span>
                 </div>
               ) : (
-                <div className="flex alignItems--center u-marginRight--20">
+                <div className="flex alignItems--center u-marginRight--20 link">
                   <Icon
                     icon="check-update"
                     size={18}
                     className="clickable u-marginRight--5"
                   />
                   <span
-                    className="link u-fontSize--small"
+                    className="u-fontSize--small"
                     onClick={props.onCheckForUpdates}
                   >
                     Check for update
                   </span>
                 </div>
               )}
-              <Icon
-                icon="schedule-sync"
-                size={18}
-                className="clickable u-marginRight--5"
-              />
-              <span
-                className="link u-fontSize--small u-lineHeight--default"
-                onClick={props.showAutomaticUpdatesModal}
-              >
-                Configure automatic updates
-              </span>
+              <div className="flex alignItems--center u-marginRight--20 link">
+                <Icon
+                  icon="schedule-sync"
+                  size={18}
+                  className=" clickable u-marginRight--5"
+                />
+                <span
+                  className="u-fontSize--small u-lineHeight--default"
+                  onClick={props.showAutomaticUpdatesModal}
+                >
+                  Configure automatic updates
+                </span>
+              </div>
             </div>
           )}
         </div>

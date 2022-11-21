@@ -259,17 +259,19 @@ const DashboardLicenseCard = (props: Props) => {
                 Last synced {Utilities.dateFromNow(appLicense.lastSyncedAt)}
               </span>
             ) : null}
-            <Icon
-              icon="sync-license"
-              className="clickable u-marginRight--5"
-              size={16}
-            />
-            <span
-              className="link u-fontSize--small"
-              onClick={() => syncLicense("")}
-            >
-              Sync license
-            </span>
+            <div className="flex alignItems--center u-marginRight--20 link">
+              <Icon
+                icon="sync-license"
+                className="clickable u-marginRight--5"
+                size={16}
+              />
+              <span
+                className="u-fontSize--small"
+                onClick={() => syncLicense("")}
+              >
+                Sync license
+              </span>
+            </div>
           </div>
         )}
       </div>
