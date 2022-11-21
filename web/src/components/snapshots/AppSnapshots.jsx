@@ -630,7 +630,7 @@ class AppSnapshots extends Component {
           <div className="AppSnapshots--wrapper card-bg flex-column u-marginTop--20">
             <div className="flex flex-column u-marginBottom--15">
               <div className="flex justifyContent--spaceBetween">
-                <p className="u-fontWeight--bold u-textColor--primary u-fontSize--larger u-lineHeight--normal">
+                <p className="u-fontWeight--bold card-title u-fontSize--larger u-lineHeight--normal">
                   {" "}
                   Partial snapshots (Application){" "}
                 </p>

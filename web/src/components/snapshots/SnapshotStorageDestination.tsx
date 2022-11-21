@@ -891,7 +891,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
           <>
             <div className="flex u-marginBottom--15">
               <div className="flex1 u-paddingRight--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Bucket
                 </p>
                 <input
@@ -903,7 +903,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 />
               </div>
               <div className="flex1 u-paddingLeft--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Region
                 </p>
                 <input
@@ -917,7 +917,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
             </div>
             <div className="flex flex-column u-marginBottom--30">
               <div className="u-marginBottom--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Path
                 </p>
                 <input
@@ -959,7 +959,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
             {!useIamAws && (
               <div className="flex u-marginBottom--5">
                 <div className="flex1 u-paddingRight--5">
-                  <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                  <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                     Access Key ID
                   </p>
                   <input
@@ -971,7 +971,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                   />
                 </div>
                 <div className="flex1 u-paddingLeft--5">
-                  <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                  <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                     Access Key Secret
                   </p>
                   <input
@@ -991,7 +991,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
         return (
           <>
             <div className="flex1 u-paddingRight--5 u-marginBottom--15">
-              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+              <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Bucket
               </p>
               <input
@@ -1004,7 +1004,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
             </div>
             <div className="flex u-marginBottom--15">
               <div className="flex1 u-paddingRight--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Path
                 </p>
                 <input
@@ -1018,7 +1018,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
             </div>
             <div className="flex u-marginBottom--15">
               <div className="flex1 u-paddingRight--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Subscription ID
                 </p>
                 <input
@@ -1032,7 +1032,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 />
               </div>
               <div className="flex1 u-paddingLeft--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Tenant ID
                 </p>
                 <input
@@ -1046,7 +1046,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
             </div>
             <div className="flex u-marginBottom--15">
               <div className="flex1 u-paddingRight--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Client ID
                 </p>
                 <input
@@ -1058,7 +1058,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 />
               </div>
               <div className="flex1 u-paddingLeft--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Client Secret
                 </p>
                 <input
@@ -1074,7 +1074,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
             </div>
 
             <div className="flex-column u-marginBottom--15">
-              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+              <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Cloud Name
               </p>
               <div className="flex1">
@@ -1099,7 +1099,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
             </div>
             <div className="flex u-marginBottom--5">
               <div className="flex1 u-paddingRight--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Resource Group Name
                 </p>
                 <input
@@ -1113,7 +1113,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 />
               </div>
               <div className="flex1 u-paddingLeft--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Storage Account ID
                 </p>
                 <input
@@ -1134,7 +1134,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
         return (
           <div>
             <div className="flex1 u-paddingRight--5 u-marginBottom--15">
-              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+              <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Bucket
               </p>
               <input
@@ -1147,7 +1147,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
             </div>
             <div className="flex u-marginBottom--5">
               <div className="flex1 u-paddingRight--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Path
                 </p>
                 <input
@@ -1188,7 +1188,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
             {gcsUseIam && (
               <div className="flex u-marginBottom--5">
                 <div className="flex1 u-paddingRight--5">
-                  <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                  <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                     Service Account
                   </p>
                   <input
@@ -1207,7 +1207,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
             {!gcsUseIam && (
               <div className="flex u-marginBottom--5">
                 <div className="flex1">
-                  <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                  <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                     JSON File
                   </p>
                   <div className="gcs-editor">
@@ -1235,7 +1235,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
         return (
           <div>
             <div className="flex1 u-paddingRight--5 u-marginBottom--15">
-              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+              <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Bucket
               </p>
               <input
@@ -1248,7 +1248,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
             </div>
             <div className="flex u-marginBottom--15">
               <div className="flex1 u-paddingRight--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Path
                 </p>
                 <input
@@ -1262,7 +1262,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
             </div>
             <div className="flex u-marginBottom--15">
               <div className="flex1 u-paddingRight--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Access Key ID
                 </p>
                 <input
@@ -1276,7 +1276,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                 />
               </div>
               <div className="flex1 u-paddingLeft--5">
-                <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                   Access Key Secret
                 </p>
                 <input
@@ -1293,7 +1293,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
             <div className="u-marginBottom--5">
               <div className="flex">
                 <div className="flex1 u-paddingRight--5">
-                  <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                  <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                     Endpoint
                   </p>
                   <input
@@ -1307,7 +1307,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
                   />
                 </div>
                 <div className="flex1 u-paddingLeft--5">
-                  <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+                  <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                     Region
                   </p>
                   <input
@@ -1337,7 +1337,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
         return (
           <div className="flex u-marginBottom--5">
             <div className="flex1 u-paddingRight--5">
-              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+              <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Server
               </p>
               <input
@@ -1352,7 +1352,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
               />
             </div>
             <div className="flex1 u-paddingLeft--5">
-              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+              <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Path
               </p>
               <input
@@ -1371,7 +1371,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
         return (
           <div className="flex u-marginBottom--5">
             <div className="flex1 u-paddingRight--5">
-              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+              <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Host Path
               </p>
               <input
@@ -1404,7 +1404,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
           </p>
           <div className="flex u-marginBottom--30">
             <div className="flex1 u-paddingRight--5">
-              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+              <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Host Path
               </p>
               <input
@@ -1464,7 +1464,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
           </p>
           <div className="flex u-marginBottom--30">
             <div className="flex1 u-paddingRight--5">
-              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+              <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Server
               </p>
               <input
@@ -1478,7 +1478,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
               />
             </div>
             <div className="flex1 u-paddingLeft--5">
-              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+              <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Path
               </p>
               <input
@@ -1640,7 +1640,7 @@ class SnapshotStorageDestination extends Component<Props, State> {
               </div>
             </div>
             <div className="flex flex-column card-item u-padding--15">
-              <p className="u-fontSize--normal u-textColor--primary u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
+              <p className="u-fontSize--normal card-item-title u-fontWeight--bold u-lineHeight--normal u-marginBottom--10">
                 Destination
               </p>
               <form className="flex flex-column">

@@ -521,7 +521,7 @@ class Snapshots extends Component {
             <div className="flex flex-auto u-marginBottom--15 alignItems--center justifyContent--spaceBetween">
               <div className="flex1 flex-column">
                 <div className="flex justifyContent--spaceBetween">
-                  <p className="u-fontWeight--bold u-textColor--primary u-fontSize--larger u-lineHeight--normal">
+                  <p className="u-fontWeight--bold card-title u-fontSize--larger u-lineHeight--normal">
                     Full Snapshots (Instance){" "}
                   </p>
 
