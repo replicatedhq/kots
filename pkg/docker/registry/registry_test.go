@@ -53,7 +53,7 @@ func Test_ProxyEndpointFromLicense(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var res *RegistryProxyInfo
-			res = ProxyEndpointFromLicense(tt.license)
+			res = getRegistryProxyInfoFromLicense(tt.license)
 			if res.Registry != tt.want.Registry || res.Proxy != tt.want.Proxy {
 				t.Errorf("ProxyEndpointFromLicense() = %v, want %v", res, tt.want)
 			}

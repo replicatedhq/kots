@@ -574,7 +574,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOp
 			newKotsKinds.Installation.Spec.KnownImages = rewriteResult.CheckedImages
 		} else {
 			// This is an airgapped installation. Copy and rewrite images from the airgap bundle to the configured registry.
-			result, err := processAirgapImages(options, pushImages, license, log)
+			result, err := processAirgapImages(options, pushImages, newKotsKinds, license, log)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to process airgap images")
 			}
@@ -605,7 +605,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOp
 		objects = findResult.Docs
 
 		// Use license to create image pull secrets for all objects that have private images.
-		pullSecretRegistries = registry.ProxyEndpointFromLicense(license).ToSlice()
+		pullSecretRegistries = registry.GetRegistryProxyInfo(license, &newKotsKinds.KotsApplication).ToSlice()
 		pullSecretUsername = license.Spec.LicenseID
 		pullSecretPassword = license.Spec.LicenseID
 	}
@@ -649,7 +649,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options PullOp
 
 // rewriteBaseImages Will rewrite images found in base and copy them (if necessary) to the configured registry.
 func rewriteBaseImages(pullOptions PullOptions, baseDir string, kotsKinds *kotsutil.KotsKinds, license *kotsv1beta1.License, dockerHubRegistryCreds registry.Credentials, log *logger.CLILogger) (*base.RewriteImagesResult, error) {
-	replicatedRegistryInfo := registry.ProxyEndpointFromLicense(license)
+	replicatedRegistryInfo := registry.GetRegistryProxyInfo(license, &kotsKinds.KotsApplication)
 
 	rewriteImageOptions := base.RewriteImageOptions{
 		BaseDir: baseDir,
@@ -687,8 +687,8 @@ func rewriteBaseImages(pullOptions PullOptions, baseDir string, kotsKinds *kotsu
 }
 
 // processAirgapImages Will rewrite images found in the airgap bundle/airgap root and copy them (if necessary) to the configured registry.
-func processAirgapImages(pullOptions PullOptions, pushImages bool, license *kotsv1beta1.License, log *logger.CLILogger) (*upstream.ProcessAirgapImagesResult, error) {
-	replicatedRegistryInfo := registry.ProxyEndpointFromLicense(license)
+func processAirgapImages(pullOptions PullOptions, pushImages bool, kotsKinds *kotsutil.KotsKinds, license *kotsv1beta1.License, log *logger.CLILogger) (*upstream.ProcessAirgapImagesResult, error) {
+	replicatedRegistryInfo := registry.GetRegistryProxyInfo(license, &kotsKinds.KotsApplication)
 
 	processAirgapImageOptions := upstream.ProcessAirgapImagesOptions{
 		RootDir:      pullOptions.RootDir,
@@ -738,7 +738,7 @@ func processAirgapImages(pullOptions PullOptions, pushImages bool, license *kots
 
 // findPrivateImages Finds and rewrites private images to be proxied through proxy.replicated.com
 func findPrivateImages(writeMidstreamOptions midstream.WriteOptions, b *base.Base, kotsKinds *kotsutil.KotsKinds, license *kotsv1beta1.License, dockerHubRegistryCreds registry.Credentials) (*base.FindPrivateImagesResult, error) {
-	replicatedRegistryInfo := registry.ProxyEndpointFromLicense(license)
+	replicatedRegistryInfo := registry.GetRegistryProxyInfo(license, &kotsKinds.KotsApplication)
 	allPrivate := kotsKinds.KotsApplication.Spec.ProxyPublicImages
 
 	findPrivateImagesOptions := base.FindPrivateImagesOptions{

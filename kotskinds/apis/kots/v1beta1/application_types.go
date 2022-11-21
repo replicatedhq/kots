@@ -66,6 +66,19 @@ type ApplicationSpec struct {
 	ProxyRegistryDomain          string              `json:"proxyRegistryDomain,omitempty"`
 }
 
+// type ApplicationSpec struct {
+// 	ReplicatedRegistryDomain               string              `json:"replicatedRegistryDomain,omitempty"`
+// 	ProxyRegistryDomain                  string              `json:"proxyRegistryDomain,omitempty"`
+// }
+// type ApplicationSpec struct {
+// 	RegistryOptions 						 RegistryOptions      `json:"registryOptions,omitempty"`
+// }
+//
+// type RegistryOptions struct{
+// 	ProxyDomain string `json:"proxyDomain,omitempty"`
+// 	ReplicatedDomain string `json:"registryDomain,omitempty"`
+// }
+
 type ApplicationBranding struct {
 	Css   []string                      `json:"css,omitempty"`
 	Fonts []ApplicationBrandingFontFile `json:"fonts,omitempty"`
