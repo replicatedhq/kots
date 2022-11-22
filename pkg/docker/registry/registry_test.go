@@ -40,7 +40,7 @@ func TestGetRegistryProxyInfo(t *testing.T) {
 				},
 			},
 			want: &RegistryProxyInfo{
-				Registry: customRegistry,
+				Registry: "registry.replicated.com",
 				Proxy:    customProxy,
 			},
 		},
