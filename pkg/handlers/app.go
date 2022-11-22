@@ -38,6 +38,11 @@ func (h *Handler) GetPendingApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if util.IsHelmManaged() {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
 	papp, err := store.GetStore().GetPendingAirgapUploadApp()
 	if err != nil {
 		if store.GetStore().IsNotFound(err) {
