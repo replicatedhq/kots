@@ -55,14 +55,10 @@ var secretAnnotations = map[string]string{
 
 func GetRegistryProxyInfo(license *kotsv1beta1.License, app *kotsv1beta1.Application) *RegistryProxyInfo {
 	registryProxyInfo := getRegistryProxyInfoFromLicense(license)
-	proxyEndpoint, registryEndpoint := getRegistryProxyEndpointFromKotsApplication(app)
+	proxyEndpoint, _ := getRegistryProxyEndpointFromKotsApplication(app)
 
 	if proxyEndpoint != "" {
 		registryProxyInfo.Proxy = proxyEndpoint
-	}
-
-	if registryEndpoint != "" {
-		registryProxyInfo.Registry = registryEndpoint
 	}
 
 	return registryProxyInfo
