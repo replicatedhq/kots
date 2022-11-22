@@ -1,6 +1,6 @@
 include Makefile.build.mk
 CURRENT_USER := $(shell id -u -n)
-MINIO_TAG ?= RELEASE.2022-10-24T18-35-07Z
+MINIO_TAG ?= RELEASE.2022-11-17T23-20-09Z
 RQLITE_TAG ?= 7.10.0
 DEX_TAG ?= v2.35.3
 LVP_TAG ?= v0.4.1
