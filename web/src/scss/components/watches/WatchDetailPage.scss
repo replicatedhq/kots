@@ -72,30 +72,6 @@
     }
   }
 
-  .details-subnav {
-    position: -webkit-sticky;
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    padding: 0 20px;
-    background-color: $sub-nav-color;
-    border-top: 1px solid $border-color;
-    border-bottom: 1px solid $border-color;
-    ul {
-      margin: 0 auto;
-    }
-
-    .subnav-badge {
-      width: 6px;
-      height: 6px;
-      position: absolute;
-      border-radius: 100%;
-      background-color: #bc4752;
-      top: 17px;
-      right: 0;
-    }
-  }
-
   .DetailPageApplication--wrapper {
     .full-width-container {
       max-width: 90%;
@@ -178,5 +154,28 @@
     border-radius: 4px;
     background-color: lighten($primary-color, 43.5%);
     border: 1px solid $border-color;
+  }
+}
+.details-subnav {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 0 20px;
+  background-color: $sub-nav-color;
+  border-top: 1px solid $border-color;
+  border-bottom: 1px solid $border-color;
+  ul {
+    margin: 0 auto;
+  }
+
+  .subnav-badge {
+    width: 6px;
+    height: 6px;
+    position: absolute;
+    border-radius: 100%;
+    background-color: #bc4752;
+    top: 17px;
+    right: 0;
   }
 }
