@@ -76,6 +76,7 @@ class SupportBundleList extends React.Component<Props, State> {
       bundle?.status !== "running" &&
       bundle?.status !== lastProps.bundle.status
     ) {
+      this.listSupportBundles();
       this.state.pollForBundleAnalysisProgress.stop();
       if (bundle.status === "failed") {
         this.props.history.push(`/app/${this.props.watch?.slug}/troubleshoot`);
@@ -128,7 +129,6 @@ class SupportBundleList extends React.Component<Props, State> {
         }
         this.setState({
           supportBundles: response.supportBundles,
-
           errorMsg: "",
         });
         this.props.updateState({ loading: false, displayErrorModal: false });
