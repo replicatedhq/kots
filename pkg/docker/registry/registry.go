@@ -57,28 +57,28 @@ func GetRegistryProxyInfo(license *kotsv1beta1.License, app *kotsv1beta1.Applica
 	registryProxyInfo := getRegistryProxyInfoFromLicense(license)
 	proxyEndpoint, registryEndpoint := getRegistryProxyEndpointFromKotsApplication(app)
 
-	if proxyEndpoint != nil {
-		registryProxyInfo.Proxy = *proxyEndpoint
+	if proxyEndpoint != "" {
+		registryProxyInfo.Proxy = proxyEndpoint
 	}
 
-	if registryEndpoint != nil {
-		registryProxyInfo.Registry = *registryEndpoint
+	if registryEndpoint != "" {
+		registryProxyInfo.Registry = registryEndpoint
 	}
 
 	return registryProxyInfo
 }
 
-func getRegistryProxyEndpointFromKotsApplication(appSpec *kotsv1beta1.Application) (proxyEndpoint *string, registryEndpoint *string) {
-	if appSpec == nil {
-		return nil, nil
+func getRegistryProxyEndpointFromKotsApplication(kotsApplication *kotsv1beta1.Application) (proxyEndpoint string, registryEndpoint string) {
+	if kotsApplication == nil {
+		return "", ""
 	}
 
-	if appSpec.Spec.ProxyRegistryDomain != "" {
-		proxyEndpoint = &appSpec.Spec.ProxyRegistryDomain
+	if kotsApplication.Spec.ProxyRegistryDomain != "" {
+		proxyEndpoint = kotsApplication.Spec.ProxyRegistryDomain
 	}
 
-	if appSpec.Spec.ReplicatedRegistryDomain != "" {
-		registryEndpoint = &appSpec.Spec.ReplicatedRegistryDomain
+	if kotsApplication.Spec.ReplicatedRegistryDomain != "" {
+		registryEndpoint = kotsApplication.Spec.ReplicatedRegistryDomain
 	}
 
 	return proxyEndpoint, registryEndpoint
