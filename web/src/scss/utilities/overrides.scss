@@ -32,18 +32,12 @@
 .help-text-color {
   color: rgb(128, 46, 60);
 }
-.link {
-  color: #9b6a6c;
-}
-
-// not everything is a link however, subnav links are <a>,
-// do u care about styling visited links
-a:visited,
+.link,
 .link:visited {
-  color: #4c2e2f;
+  color: #0a7304;
 }
 .link:hover {
-  color: #4e0307;
+  color: #2c422b;
   text-decoration: none;
 }
 

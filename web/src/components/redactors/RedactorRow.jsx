@@ -65,7 +65,7 @@ class RedactorRow extends React.Component {
         <div className="flex alignItems--center">
           <Link
             to={`/app/${this.props.appSlug}/troubleshoot/redactors/${redactor?.slug}`}
-            className="u-fontSize--normal u-fontWeight--medium u-linkColor u-textDecoration--underlineOnHover u-marginRight--20"
+            className="u-fontSize--normal link u-textDecoration--underlineOnHover u-marginRight--20"
           >
             <Icon icon="edit" size={18} className="clickable" />
           </Link>

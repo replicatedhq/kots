@@ -1233,7 +1233,7 @@ class AppVersionHistory extends Component<Props, State> {
           disableFill={false}
           removeInlineStyle={false}
         />
-        <span className="u-fontSize--small u-fontWeight--medium u-linkColor u-cursor--pointer u-marginLeft--5">
+        <span className="u-fontSize--small link u-marginLeft--5">
           Diff versions
         </span>
       </div>

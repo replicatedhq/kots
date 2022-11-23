@@ -22,6 +22,12 @@ body {
 body a {
   text-decoration: none;
   outline: none;
+  cursor: pointer;
+  font-weight: 500;
+  color: $link-color;
+  &:hover {
+    color: $link-hover-color;
+  }
 }
 
 :target:before {
@@ -66,14 +72,11 @@ body a {
 
   &:hover {
     text-decoration: underline;
+    color: $link-hover-color;
 
     &.has-arrow::after {
       right: -18px;
     }
-  }
-
-  .icomoon {
-    color: inherit;
   }
 }
 .link > .has-arrow {

@@ -154,7 +154,7 @@ export default class FileInput extends React.Component {
                       htmlFor={`${this.props.name} selector`}
                       className="u-position--relative"
                     >
-                      <p className="u-linkColor u-textDecoration--underlineOnHover u-fontSize--small u-marginLeft--30 u-marginTop--5">
+                      <p className="link u-textDecoration--underlineOnHover u-fontSize--small u-marginLeft--30 u-marginTop--5">
                         Select a different file
                       </p>
                     </label>
@@ -180,7 +180,7 @@ export default class FileInput extends React.Component {
                     className="u-position--relative"
                   >
                     {hasFileOrValue ? (
-                      <p className="u-linkColor u-textDecoration--underlineOnHover u-fontSize--small u-marginLeft--30 u-marginTop--10">
+                      <p className="link u-textDecoration--underlineOnHover u-fontSize--small u-marginLeft--30 u-marginTop--10">
                         Select other files
                       </p>
                     ) : (

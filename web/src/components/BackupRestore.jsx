@@ -118,10 +118,7 @@ class BackupRestore extends React.Component {
     return (
       <div className="flex flex-column">
         <div className="flex-auto">
-          <Link
-            to="/upload-license"
-            className="u-fontSize--normal u-fontWeight--medium u-linkColor u-cursor--pointer"
-          >
+          <Link to="/upload-license" className="u-fontSize--normal link">
             <Icon
               icon="prev-arrow"
               size={12}

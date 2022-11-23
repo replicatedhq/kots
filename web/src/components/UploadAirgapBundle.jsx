@@ -532,7 +532,7 @@ class UploadAirgapBundle extends React.Component {
                         <div className="u-textAlign--center">
                           <p className="u-fontSize--normal u-textColor--secondary u-fontWeight--medium u-lineHeight--normal">
                             Drag your airgap bundle here or{" "}
-                            <span className="u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover">
+                            <span className="link u-textDecoration--underlineOnHover">
                               choose a bundle to upload
                             </span>
                           </p>
@@ -584,11 +584,7 @@ class UploadAirgapBundle extends React.Component {
                     ) : supportBundleCommand ? (
                       <div>
                         <div className="u-marginTop--10">
-                          <a
-                            href="#"
-                            className="link"
-                            onClick={this.toggleShowRun}
-                          >
+                          <a href="#" onClick={this.toggleShowRun}>
                             Click here
                           </a>{" "}
                           to get a command to generate a support bundle.

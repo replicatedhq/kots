@@ -730,7 +730,7 @@ const AppLicenseComponent = (props: Props) => {
                     />
                     <p className="u-fontSize--normal u-textColor--secondary u-fontWeight--medium u-lineHeight--normal">
                       Drag your new license here or{" "}
-                      <span className="u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover">
+                      <span className="link u-textDecoration--underlineOnHover">
                         choose a file
                       </span>
                     </p>

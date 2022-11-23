@@ -1292,7 +1292,7 @@ const DashboardVersionCard = (props: Props) => {
         <p className="u-marginTop--10 u-marginBottom--10 u-fontSize--small u-textColor--error u-fontWeight--medium">
           Error uploading bundle
           <span
-            className="u-linkColor u-textDecoration--underlineOnHover u-marginLeft--5"
+            className="link u-textDecoration--underlineOnHover u-marginLeft--5"
             onClick={props.viewAirgapUploadError}
           >
             See details

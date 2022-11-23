@@ -79,7 +79,7 @@ export default class ConfigSelectOne extends React.Component {
             className="u-marginTop--10"
             onClick={() => this.props.handleAddItem(this.props.name)}
           >
-            <span className="add-btn u-fontSize--small u-fontWeight--bold u-linkColor u-cursor--pointer">
+            <span className="add-btn u-fontSize--small u-fontWeight--bold link">
               <Icon icon="plus" size={14} className="clickable" />
               Add another {this.props.title}
             </span>
