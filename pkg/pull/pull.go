@@ -752,11 +752,10 @@ func findPrivateImages(writeMidstreamOptions midstream.WriteOptions, b *base.Bas
 			Username: dockerHubRegistryCreds.Username,
 			Password: dockerHubRegistryCreds.Password,
 		},
-		Installation:     &kotsKinds.Installation,
 		AllImagesPrivate: allPrivate,
 		HelmChartPath:    b.Path,
 		UseHelmInstall:   writeMidstreamOptions.UseHelmInstall,
-		KotsKindsImages:  kotsutil.GetImagesFromKotsKinds(kotsKinds),
+		KotsKinds:        kotsKinds,
 	}
 	findResult, err := base.FindPrivateImages(findPrivateImagesOptions)
 	if err != nil {

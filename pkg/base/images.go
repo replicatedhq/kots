@@ -11,6 +11,7 @@ import (
 	kotsimage "github.com/replicatedhq/kots/pkg/image"
 	imagetypes "github.com/replicatedhq/kots/pkg/image/types"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
+	"github.com/replicatedhq/kots/pkg/kotsutil"
 	kustomizeimage "sigs.k8s.io/kustomize/api/types"
 )
 
@@ -19,11 +20,10 @@ type FindPrivateImagesOptions struct {
 	AppSlug            string
 	ReplicatedRegistry registrytypes.RegistryOptions
 	DockerHubRegistry  registrytypes.RegistryOptions
-	Installation       *kotsv1beta1.Installation
 	AllImagesPrivate   bool
 	HelmChartPath      string
 	UseHelmInstall     map[string]bool
-	KotsKindsImages    []string
+	KotsKinds          *kotsutil.KotsKinds
 }
 
 type FindPrivateImagesResult struct {
@@ -33,8 +33,10 @@ type FindPrivateImagesResult struct {
 }
 
 func FindPrivateImages(options FindPrivateImagesOptions) (*FindPrivateImagesResult, error) {
-	checkedImages := makeImageInfoMap(options.Installation.Spec.KnownImages)
-	upstreamImages, objects, err := image.GetPrivateImages(options.BaseDir, options.KotsKindsImages, checkedImages, options.AllImagesPrivate, options.DockerHubRegistry, options.HelmChartPath, options.UseHelmInstall)
+	additionalImages := kotsutil.GetImagesFromKotsKinds(options.KotsKinds)
+	checkedImages := makeImageInfoMap(options.KotsKinds.Installation.Spec.KnownImages)
+
+	upstreamImages, objects, err := image.GetPrivateImages(options.BaseDir, additionalImages, checkedImages, options.AllImagesPrivate, options.DockerHubRegistry, options.HelmChartPath, options.UseHelmInstall)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list upstream images")
 	}

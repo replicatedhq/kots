@@ -28,62 +28,62 @@ func Test_RewriteImages(t *testing.T) {
 		Password:      "test-license-id",
 	}
 
-	tests := []struct {
-		name              string
-		processOptions    RewriteImageOptions
-		wantProcessResult RewriteImagesResult
-		findOptions       FindPrivateImagesOptions
-		wantFindResult    FindPrivateImagesResult
-	}{
-		{
-			name: "all unique",
-			processOptions: RewriteImageOptions{
-				BaseDir:        testBaseDir,
-				SourceRegistry: replicatedRegistry,
-				KotsKinds: &kotsutil.KotsKinds{
-					KotsApplication: kotsv1beta1.Application{
-						Spec: kotsv1beta1.ApplicationSpec{
-							AdditionalImages: []string{
-								"registry.replicated.com/appslug/image:version",
-							},
+	kotsKinds := &kotsutil.KotsKinds{
+		KotsApplication: kotsv1beta1.Application{
+			Spec: kotsv1beta1.ApplicationSpec{
+				AdditionalImages: []string{
+					"registry.replicated.com/appslug/image:version",
+				},
+			},
+		},
+		Preflight: &troubleshootv1beta2.Preflight{
+			Spec: troubleshootv1beta2.PreflightSpec{
+				Collectors: []*troubleshootv1beta2.Collect{
+					{
+						Run: &troubleshootv1beta2.Run{
+							Image: "quay.io/replicatedcom/qa-kots-1:alpine-3.5",
 						},
 					},
-					Preflight: &troubleshootv1beta2.Preflight{
-						Spec: troubleshootv1beta2.PreflightSpec{
-							Collectors: []*troubleshootv1beta2.Collect{
-								{
-									Run: &troubleshootv1beta2.Run{
-										Image: "quay.io/replicatedcom/qa-kots-1:alpine-3.5",
-									},
-								},
-								{
-									RunPod: &troubleshootv1beta2.RunPod{
-										PodSpec: corev1.PodSpec{
-											Containers: []corev1.Container{
-												{
-													Image: "nginx:1",
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-					SupportBundle: &troubleshootv1beta2.SupportBundle{
-						Spec: troubleshootv1beta2.SupportBundleSpec{
-							Collectors: []*troubleshootv1beta2.Collect{
-								{
-									Run: &troubleshootv1beta2.Run{
-										Image: "quay.io/replicatedcom/qa-kots-2:alpine-3.4",
+					{
+						RunPod: &troubleshootv1beta2.RunPod{
+							PodSpec: corev1.PodSpec{
+								Containers: []corev1.Container{
+									{
+										Image: "nginx:1",
 									},
 								},
 							},
 						},
 					},
 				},
-				CopyImages: false,
-				AppSlug:    appSlug,
+			},
+		},
+		SupportBundle: &troubleshootv1beta2.SupportBundle{
+			Spec: troubleshootv1beta2.SupportBundleSpec{
+				Collectors: []*troubleshootv1beta2.Collect{
+					{
+						Run: &troubleshootv1beta2.Run{
+							Image: "quay.io/replicatedcom/qa-kots-2:alpine-3.4",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	tests := []struct {
+		name              string
+		processOptions    RewriteImageOptions
+		wantProcessResult RewriteImagesResult
+	}{
+		{
+			name: "all unique",
+			processOptions: RewriteImageOptions{
+				BaseDir:        testBaseDir,
+				SourceRegistry: replicatedRegistry,
+				KotsKinds:      kotsKinds,
+				CopyImages:     false,
+				AppSlug:        appSlug,
 				DestRegistry: registrytypes.RegistryOptions{
 					Endpoint:  "ttl.sh",
 					Namespace: "testing-ns",
@@ -214,12 +214,90 @@ func Test_RewriteImages(t *testing.T) {
 					},
 				},
 			},
+		},
+	}
 
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			req := require.New(t)
+
+			gotResult, err := RewriteImages(test.processOptions)
+			req.NoError(err)
+
+			assert.ElementsMatch(t, test.wantProcessResult.Images, gotResult.Images)
+			assert.ElementsMatch(t, test.wantProcessResult.CheckedImages, gotResult.CheckedImages)
+		})
+	}
+}
+
+func Test_FindPrivateImages(t *testing.T) {
+	testBaseDir := "./testdata/base-specs"
+	appSlug := "test-app-slug"
+
+	replicatedRegistry := registrytypes.RegistryOptions{
+		Endpoint:      "registry.replicated.com",
+		ProxyEndpoint: "proxy.replicated.com",
+		Username:      "test-license-id",
+		Password:      "test-license-id",
+	}
+
+	kotsKinds := &kotsutil.KotsKinds{
+		KotsApplication: kotsv1beta1.Application{
+			Spec: kotsv1beta1.ApplicationSpec{
+				AdditionalImages: []string{
+					"registry.replicated.com/appslug/image:version",
+				},
+			},
+		},
+		Preflight: &troubleshootv1beta2.Preflight{
+			Spec: troubleshootv1beta2.PreflightSpec{
+				Collectors: []*troubleshootv1beta2.Collect{
+					{
+						Run: &troubleshootv1beta2.Run{
+							Image: "quay.io/replicatedcom/qa-kots-1:alpine-3.5",
+						},
+					},
+					{
+						RunPod: &troubleshootv1beta2.RunPod{
+							PodSpec: corev1.PodSpec{
+								Containers: []corev1.Container{
+									{
+										Image: "nginx:1",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		SupportBundle: &troubleshootv1beta2.SupportBundle{
+			Spec: troubleshootv1beta2.SupportBundleSpec{
+				Collectors: []*troubleshootv1beta2.Collect{
+					{
+						Run: &troubleshootv1beta2.Run{
+							Image: "quay.io/replicatedcom/qa-kots-2:alpine-3.4",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	tests := []struct {
+		name              string
+		processOptions    RewriteImageOptions
+		wantProcessResult RewriteImagesResult
+		findOptions       FindPrivateImagesOptions
+		wantFindResult    FindPrivateImagesResult
+	}{
+		{
+			name: "all unique",
 			findOptions: FindPrivateImagesOptions{
 				BaseDir:            testBaseDir,
 				AppSlug:            appSlug,
 				ReplicatedRegistry: replicatedRegistry,
-				Installation:       &kotsv1beta1.Installation{},
+				KotsKinds:          kotsKinds,
 				AllImagesPrivate:   false,
 			},
 			wantFindResult: FindPrivateImagesResult{
@@ -277,13 +355,6 @@ func Test_RewriteImages(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			req := require.New(t)
 
-			gotUpstreamResult, err := RewriteImages(test.processOptions)
-			req.NoError(err)
-
-			assert.ElementsMatch(t, test.wantProcessResult.Images, gotUpstreamResult.Images)
-			assert.ElementsMatch(t, test.wantProcessResult.CheckedImages, gotUpstreamResult.CheckedImages)
-
-			test.findOptions.KotsKindsImages = kotsutil.GetImagesFromKotsKinds(test.processOptions.KotsKinds)
 			gotFindResult, err := FindPrivateImages(test.findOptions)
 			req.NoError(err)
 
@@ -295,7 +366,6 @@ func Test_RewriteImages(t *testing.T) {
 			assert.ElementsMatch(t, test.wantFindResult.CheckedImages, gotFindResult.CheckedImages)
 		})
 	}
-
 }
 
 func loadDocs(basePath string) ([]k8sdoc.K8sDoc, error) {
