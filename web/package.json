@@ -173,6 +173,7 @@
     "react-select": "^2.4.3",
     "react-tooltip": "4.2.6",
     "react-vis": "^1.11.7",
+    "replicated-design-system": "^0.1.23",
     "resumablejs": "^1.1.0",
     "sass": "^1.51.0",
     "semver": "^7.3.5",
