@@ -1,7 +1,10 @@
 import React, { Component } from "react";
 import { Link } from "react-router-dom";
 import { KotsPageTitle } from "@components/Head";
-import { withRouter } from "@src/utilities/react-router-utilities";
+import {
+  withRouter,
+  withRouterType,
+} from "@src/utilities/react-router-utilities";
 import Modal from "react-modal";
 import size from "lodash/size";
 import ReactTooltip from "react-tooltip";
@@ -16,15 +19,40 @@ import "../scss/components/PreflightCheckPage.scss";
 import PreflightsProgress from "./troubleshoot/PreflightsProgress";
 import Icon from "./Icon";
 
-class PreflightResultPage extends Component {
-  state = {
-    showSkipModal: false,
-    showWarningModal: false,
-    getKotsPreflightResultJob: new Repeater(),
-    preflightResultData: null,
-    errorMessage: "",
-    preflightResultCheckCount: 0,
-  };
+import {
+  PreflightError,
+  PreflightProgress,
+  PreflightResult,
+  PreflightResultResponse,
+} from "@types";
+
+type Props = {
+  fromLicenseFlow?: boolean;
+  logo: string;
+  refetchAppsList?: () => void;
+} & withRouterType;
+
+type State = {
+  preflightCurrentStatus?: PreflightProgress | null;
+  errorMessage?: string;
+  getKotsPreflightResultJob: Repeater;
+  preflightResultCheckCount: number;
+  preflightResultData?: PreflightResult | null;
+  showSkipModal: boolean;
+  showWarningModal: boolean;
+};
+
+class PreflightResultPage extends Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+
+    this.state = {
+      getKotsPreflightResultJob: new Repeater(),
+      preflightResultCheckCount: 0,
+      showSkipModal: false,
+      showWarningModal: false,
+    };
+  }
 
   componentDidMount() {
     this.state.getKotsPreflightResultJob.start(
@@ -51,7 +79,7 @@ class PreflightResultPage extends Component {
       const { preflightResultData } = this.state;
 
       if (!isSkipPreflights) {
-        const preflightResults = JSON.parse(preflightResultData?.result);
+        const preflightResults = JSON.parse(preflightResultData?.result || "");
         const preflightState = getPreflightResultState(preflightResults);
         if (preflightState !== "pass") {
           if (!continueWithFailedPreflights) {
@@ -82,9 +110,11 @@ class PreflightResultPage extends Component {
       history.push(`/app/${slug}`);
     } catch (err) {
       console.log(err);
+      const errorMessage =
+        err instanceof Error ? err.message : "Something went wrong";
       this.setState({
         errorMessage: err
-          ? `Encountered an error while trying to deploy downstream version: ${err.message}`
+          ? `Encountered an error while trying to deploy downstream version: ${errorMessage}`
           : "Something went wrong, please try again.",
       });
     }
@@ -133,7 +163,7 @@ class PreflightResultPage extends Component {
         method: "POST",
       }
     )
-      .then(async (res) => {
+      .then(async () => {
         this.setState({
           preflightResultData: null,
         });
@@ -196,7 +226,7 @@ class PreflightResultPage extends Component {
       });
   };
 
-  renderErrors = (errors) => {
+  renderErrors = (errors: PreflightError[] | undefined) => {
     const { preflightResultData } = this.state;
 
     // TODO: why start polling here?
@@ -208,7 +238,6 @@ class PreflightResultPage extends Component {
         ignorePermissionErrors={this.ignorePermissionErrors}
         logo={this.props.logo}
         preflightResultData={preflightResultData}
-        appSlug={this.props.match.params.slug}
       />
     );
   };
@@ -229,7 +258,10 @@ class PreflightResultPage extends Component {
     return this.getLatestKotsPreflightResult();
   };
 
-  getKotsPreflightResultForSequence = async (slug, sequence) => {
+  getKotsPreflightResultForSequence = async (
+    slug: string,
+    sequence: number
+  ) => {
     try {
       const res = await fetch(
         `${process.env.API_ENDPOINT}/app/${slug}/sequence/${sequence}/preflight/result`,
@@ -253,8 +285,9 @@ class PreflightResultPage extends Component {
         this.state.getKotsPreflightResultJob.stop();
         this.setState({ preflightResultCheckCount: 0 });
       }
-      let parsedStatusResults = {};
+      let parsedStatusResults: PreflightProgress | null = null;
       try {
+        // TODO: this is a nested JSON in JSON- should refactor backend
         parsedStatusResults = JSON.parse(response.preflightProgress);
       } catch {
         // empty
@@ -266,9 +299,11 @@ class PreflightResultPage extends Component {
       });
     } catch (err) {
       console.log(err);
+      const errorMessage =
+        err instanceof Error ? err.message : "Something went wrong";
       this.setState({
         errorMessage: err
-          ? `Encountered an error while fetching preflight results: ${err.message}`
+          ? `Encountered an error while fetching preflight results: ${errorMessage}`
           : "Something went wrong, please try again.",
         preflightResultCheckCount: 0,
       });
@@ -304,8 +339,9 @@ class PreflightResultPage extends Component {
         this.state.getKotsPreflightResultJob.stop();
         this.setState({ preflightResultCheckCount: 0 });
       }
-      let parsedStatusResults = {};
+      let parsedStatusResults: PreflightProgress | null = null;
       try {
+        // TODO: this is a nested JSON in JSON- should refactor backend
         parsedStatusResults = JSON.parse(response.preflightProgress);
       } catch {
         // empty
@@ -317,9 +353,11 @@ class PreflightResultPage extends Component {
       });
     } catch (err) {
       console.log(err);
+      const errorMessage =
+        err instanceof Error ? err.message : "Something went wrong";
       this.setState({
         errorMessage: err
-          ? `Encountered an error while fetching preflight results: ${err.message}`
+          ? `Encountered an error while fetching preflight results: ${errorMessage}`
           : "Something went wrong, please try again.",
         preflightResultCheckCount: 0,
       });
@@ -338,7 +376,7 @@ class PreflightResultPage extends Component {
     const preflightSkipped = preflightResultData?.skipped;
     const stopPolling = preflightResultData?.result || preflightSkipped;
     const blockDeployment = preflightResultData?.hasFailingStrictPreflights;
-    let preflightJSON = {};
+    let preflightJSON: PreflightResultResponse = {};
     if (preflightResultData?.result) {
       if (showSkipModal) {
         this.hideSkipModal();
@@ -526,4 +564,6 @@ class PreflightResultPage extends Component {
   }
 }
 
-export default withRouter(PreflightResultPage);
+// @ts-ignore
+// eslint-disable-next-line
+export default withRouter(PreflightResultPage) as any;

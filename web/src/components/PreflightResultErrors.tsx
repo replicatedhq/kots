@@ -7,13 +7,13 @@ import { Utilities } from "../utilities/utilities";
 import { useSelectedApp } from "@features/App";
 import "../scss/components/PreflightCheckPage.scss";
 
-import { KotsParams } from "@types";
+import { KotsParams, PreflightError, PreflightResult } from "@types";
 
 type Props = {
   ignorePermissionErrors: () => void;
   logo: string;
-  preflightResultData: PreflightResultData | null;
-  errors: PreflightError[];
+  preflightResultData?: PreflightResult | null;
+  errors?: PreflightError[];
 };
 
 type State = {
@@ -24,14 +24,6 @@ type State = {
   showErrorDetails: boolean;
 };
 
-type PreflightResultData = {
-  appSlug: string;
-  sequence: number;
-};
-type PreflightError = {
-  error: string;
-  isRbac: boolean;
-};
 const PreflightResultErrors = (props: Props) => {
   const [state, setState] = useReducer(
     (currentState: State, newState: Partial<State>) => ({
@@ -146,11 +138,14 @@ const PreflightResultErrors = (props: Props) => {
   const { errorTitle, errorMsg, displayErrorModal, command } = state;
   const isRbacError = errors?.find((error) => error.isRbac) || false;
 
-  const displayErrorString = errors
-    .map((error) => {
-      return error.error;
-    })
-    .join("\n");
+  const displayErrorString =
+    errors !== undefined
+      ? errors
+          .map((error) => {
+            return error.error;
+          })
+          .join("\n")
+      : "";
 
   return (
     <div className="flex flex1 flex-column">
