@@ -116,12 +116,12 @@ type State = {
   yamlErrorDetails: string[];
 };
 
-const filterNonHelmTabs = (tab: string, isHelmManaged: boolean)=> {
+const filterNonHelmTabs = (tab: string, isHelmManaged: boolean) => {
   if (isHelmManaged) {
     return tab.startsWith("helm");
   }
   return true;
-}
+};
 
 const DashboardVersionCard = (props: Props) => {
   const [state, setState] = useReducer(
@@ -314,8 +314,9 @@ const DashboardVersionCard = (props: Props) => {
         if (isFailing) {
           selectedTab = Utilities.getDeployErrorTab(response.logs);
         } else {
-          selectedTab = Object.keys(response.logs)
-          .filter((tab) => filterNonHelmTabs(tab, isHelmManaged))[0];
+          selectedTab = Object.keys(response.logs).filter((tab) =>
+            filterNonHelmTabs(tab, isHelmManaged)
+          )[0];
         }
         setState({
           logs: response.logs,

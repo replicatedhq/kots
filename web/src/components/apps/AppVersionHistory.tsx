@@ -144,12 +144,12 @@ type State = {
   showHelmDeployModalForSequence: number | null;
 };
 
-const filterNonHelmTabs = (tab: string, isHelmManaged: boolean)=> {
+const filterNonHelmTabs = (tab: string, isHelmManaged: boolean) => {
   if (isHelmManaged) {
     return tab.startsWith("helm");
   }
   return true;
-}
+};
 
 class AppVersionHistory extends Component<Props, State> {
   constructor(props: Props) {
@@ -1147,8 +1147,9 @@ class AppVersionHistory extends Component<Props, State> {
         if (isFailing) {
           selectedTab = Utilities.getDeployErrorTab(response.logs);
         } else {
-          selectedTab = Object.keys(response.logs)
-          .filter((tab) => filterNonHelmTabs(tab, this.props.isHelmManaged))[0];
+          selectedTab = Object.keys(response.logs).filter((tab) =>
+            filterNonHelmTabs(tab, this.props.isHelmManaged)
+          )[0];
         }
         this.setState({
           logs: response.logs,
