@@ -104,3 +104,21 @@
   width: 800px;
   margin: 0 auto;
 }
+.generate-support-modal {
+  width: 700px;
+}
+.analyze-modal {
+  margin-top: 30px;
+  background: #f5f8f9;
+  padding: 15px;
+  border: 1px solid #d8d8d8;
+  border-radius: 6px;
+  span {
+    color: #000;
+  }
+}
+.analyze-content {
+  padding: 15px 0;
+  gap: 40px;
+  color: #4a4a4a;
+}

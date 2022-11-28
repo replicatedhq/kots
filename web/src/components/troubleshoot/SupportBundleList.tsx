@@ -5,6 +5,7 @@ import {
   withRouter,
   withRouterType,
 } from "@src/utilities/react-router-utilities";
+import Modal from "react-modal";
 
 import Toggle from "../shared/Toggle";
 import Loader from "../shared/Loader";
@@ -20,6 +21,7 @@ import Icon from "../Icon";
 import ReactTooltip from "react-tooltip";
 
 import { App, SupportBundle, SupportBundleProgress } from "@types";
+import GenerateSupportBundleModal from "./GenerateSupportBundleModal";
 
 type Props = {
   bundle: SupportBundle;
@@ -50,6 +52,7 @@ type State = {
   loadingSupportBundles: boolean;
   pollForBundleAnalysisProgress: Repeater;
   supportBundles?: SupportBundle[];
+  isGeneratingBundleOpen: boolean;
 };
 
 class SupportBundleList extends React.Component<Props, State> {
@@ -59,6 +62,7 @@ class SupportBundleList extends React.Component<Props, State> {
       displayRedactorModal: false,
       loadingSupportBundles: false,
       pollForBundleAnalysisProgress: new Repeater(),
+      isGeneratingBundleOpen: false,
     };
   }
 
@@ -82,6 +86,12 @@ class SupportBundleList extends React.Component<Props, State> {
       }
     }
   }
+
+  toggleGenerateBundleModal = () => {
+    this.setState({
+      isGeneratingBundleOpen: !this.state.isGeneratingBundleOpen,
+    });
+  };
 
   listSupportBundles = () => {
     this.setState({
@@ -158,7 +168,7 @@ class SupportBundleList extends React.Component<Props, State> {
 
   render() {
     const { watch, loading, loadingBundle } = this.props;
-    const { errorMsg, supportBundles } = this.state;
+    const { errorMsg, supportBundles, isGeneratingBundleOpen } = this.state;
 
     const downstream = watch?.downstream;
 
@@ -273,8 +283,8 @@ class SupportBundleList extends React.Component<Props, State> {
                         />
                       </>
                     ) : (
-                      <Link
-                        to={`${this.props.match.url}/generate`}
+                      <a
+                        onClick={this.toggleGenerateBundleModal}
                         className="replicated-link flex alignItems--center u-fontSize--small"
                       >
                         <Icon
@@ -283,7 +293,7 @@ class SupportBundleList extends React.Component<Props, State> {
                           className="clickable u-marginRight--5"
                         />
                         Generate a support bundle
-                      </Link>
+                      </a>
                     )}
                     <span
                       className="replicated-link flex alignItems--center u-fontSize--small u-marginLeft--20"
@@ -323,6 +333,11 @@ class SupportBundleList extends React.Component<Props, State> {
             appSlug={this.props.match.params.slug}
           />
         )}
+        <GenerateSupportBundleModal
+          appTitle={this.props.watch.name || this.props.watch.watchName}
+          isOpen={isGeneratingBundleOpen}
+          toggleModal={this.toggleGenerateBundleModal}
+        />
       </div>
     );
   }
