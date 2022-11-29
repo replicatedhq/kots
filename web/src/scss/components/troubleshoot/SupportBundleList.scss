@@ -113,12 +113,18 @@
   padding: 15px;
   border: 1px solid #d8d8d8;
   border-radius: 6px;
-  span {
-    color: #000;
-  }
+  color: #4a4a4a;
+  font-size: 14px;
 }
 .analyze-content {
   padding: 15px 0;
   gap: 40px;
   color: #4a4a4a;
+}
+.generating-bundle {
+  opacity: 0.5;
+  cursor: not-allowed !important;
+}
+.generating-bundle:hover {
+  text-decoration: none !important;
 }

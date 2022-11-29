@@ -39,7 +39,7 @@ export default function ShowLogsModal(props) {
             </p>
           </div>
         ) : !logs || !selectedTab || logsLoading ? (
-          <div className="flex-column flex1 alignItems--center justifyContent--center">
+          <div className="flex-column flex1 alignItems--center justifyContent--c enter">
             <Loader size="60" />
           </div>
         ) : (
