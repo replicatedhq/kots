@@ -493,7 +493,7 @@ func IsPrivateImage(image string, dockerHubRegistry registrytypes.RegistryOption
 			continue
 		}
 
-		logger.Infof("Marking image '%s' as private because: %v", image, err.Error())
+		logger.Debugf("Marking image '%s' as private because: %v", image, err.Error())
 
 		// if the registry is unreachable (which might be due to a firewall, proxy, etc..),
 		// we won't be able to determine if the error is due to a missing auth or not.
