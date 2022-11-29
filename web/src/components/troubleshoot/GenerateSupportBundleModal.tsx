@@ -3,30 +3,32 @@ import Modal from "react-modal";
 import CodeSnippet from "@components/shared/CodeSnippet";
 import { Utilities } from "@src/utilities/utilities";
 import { useHistory } from "react-router";
+import { App } from "@types";
+
+type Props = {
+  isOpen: boolean;
+  toggleModal: () => void;
+  watch: App | null;
+  updateBundleSlug: (value: string) => void;
+};
 
 const GenerateSupportBundleModal = ({
   isOpen,
-  appTitle,
   toggleModal,
-  slug,
   watch,
   updateBundleSlug,
-}) => {
+}: Props) => {
   const [showGetBundleSpec, setShowGetBundleSpec] = React.useState(false);
   const [bundleCommand, setBundleCommand] = React.useState("");
   const toggleShowGetBundleSpec = () => {
     setShowGetBundleSpec(!showGetBundleSpec);
   };
-
+  const [generateBundleErrMsg, setGenerateBundleErrMsg] = React.useState("");
   const history = useHistory();
-
-  useEffect(() => {
-    fetchSupportBundleCommand();
-  }, []);
 
   const fetchSupportBundleCommand = async () => {
     const res = await fetch(
-      `${process.env.API_ENDPOINT}/troubleshoot/app/${slug}/supportbundlecommand`,
+      `${process.env.API_ENDPOINT}/troubleshoot/app/${watch?.slug}/supportbundlecommand`,
       {
         method: "POST",
         headers: {
@@ -45,9 +47,13 @@ const GenerateSupportBundleModal = ({
     setBundleCommand(response.command);
   };
 
-  const collectBundle = (clusterId) => {
+  useEffect(() => {
+    fetchSupportBundleCommand();
+  }, []);
+
+  const collectBundle = (clusterId: number | undefined) => {
     let url = `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/app/${watch?.id}/cluster/${clusterId}/collect`;
-    if (!watch.id) {
+    if (!watch?.id) {
       // TODO: check if helm managed, not if id is missing
       url = `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/app/${watch?.slug}/collect`;
     }
@@ -61,36 +67,28 @@ const GenerateSupportBundleModal = ({
     })
       .then(async (res) => {
         if (!res.ok) {
-          // this.setState({
-          //   isGeneratingBundle: false,
-          //   generateBundleErrMsg: `Unable to generate bundle: Status ${res.status}`
-          // });
-          return;
+          setGenerateBundleErrMsg(
+            `Unable to generate bundle: Status ${res.status}`
+          );
         }
         const response = await res.json();
-        console.log(response, "res");
-
         updateBundleSlug(response.slug);
-        // this.setState({ newBundleSlug: response.slug });
 
         history.push(
-          `/app/${watch.slug}/troubleshoot/analyze/${response.slug}`
+          `/app/${watch?.slug}/troubleshoot/analyze/${response.slug}`
         );
-        // this.setState({
-        //   isGeneratingBundle: true,
-        //   generateBundleErrMsg: ""
-        // });
+
+        setGenerateBundleErrMsg("");
       })
       .catch((err) => {
         console.log(err);
-        // this.setState({
-        //   isGeneratingBundle: false,
-        //   generateBundleErrMsg: err
-        //     ? err.message
-        //     : "Something went wrong, please try again."
-        // });
+
+        setGenerateBundleErrMsg(
+          err ? err.message : "Something went wrong, please try again."
+        );
       });
   };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -106,7 +104,7 @@ const GenerateSupportBundleModal = ({
         </span>
         <div className="analyze-modal">
           <span className="u-fontWeight--bold u-textColor--primary">
-            Analyze {appTitle}
+            Analyze {watch?.name}
           </span>
           <div className="flex analyze-content alignItems--center justifyContent--spaceBetween">
             <p
@@ -122,10 +120,15 @@ const GenerateSupportBundleModal = ({
               <button
                 type="button"
                 className="btn primary"
-                onClick={() => collectBundle(watch.downstream?.cluster?.id)}
+                onClick={() => collectBundle(watch?.downstream?.cluster?.id)}
               >
-                Analyze {appTitle}
+                Analyze {watch?.name}
               </button>
+              {generateBundleErrMsg && (
+                <p className="u-textColor--error u-marginTop--10 u-fontSize--normal">
+                  {generateBundleErrMsg}
+                </p>
+              )}
             </div>
           </div>
         </div>
