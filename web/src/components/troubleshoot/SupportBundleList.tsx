@@ -258,43 +258,21 @@ class SupportBundleList extends React.Component<Props, State> {
                     </div>
                   </div>
                   <div className="RightNode flex-auto flex alignItems--center u-position--relative">
-                    {loadingBundle ? (
-                      <>
-                        <p
-                          className="replicated-link flex alignItems--center u-fontSize--small"
-                          style={{
-                            color: "gray",
-                          }}
-                          data-tip={
-                            "Only one support bundle can be generated at a time."
-                          }
-                        >
-                          <Icon
-                            icon="tools"
-                            size={18}
-                            className="clickable u-marginRight--5"
-                            style={{ color: "gray" }}
-                          />
-                          Generate a support bundle
-                        </p>
-                        <ReactTooltip
-                          effect="solid"
-                          className="replicated-tooltip"
-                        />
-                      </>
-                    ) : (
-                      <a
-                        onClick={this.toggleGenerateBundleModal}
-                        className="replicated-link flex alignItems--center u-fontSize--small"
-                      >
-                        <Icon
-                          icon="tools"
-                          size={18}
-                          className="clickable u-marginRight--5"
-                        />
-                        Generate a support bundle
-                      </a>
-                    )}
+                    <a
+                      onClick={() =>
+                        !loadingBundle && this.toggleGenerateBundleModal()
+                      }
+                      className={`replicated-link flex alignItems--center u-fontSize--small ${
+                        loadingBundle ? "generating-bundle" : ""
+                      }`}
+                    >
+                      <Icon
+                        icon="tools"
+                        size={18}
+                        className="clickable u-marginRight--5"
+                      />
+                      Generate a support bundle
+                    </a>
                     <span
                       className="replicated-link flex alignItems--center u-fontSize--small u-marginLeft--20"
                       onClick={this.toggleRedactorModal}
@@ -335,8 +313,11 @@ class SupportBundleList extends React.Component<Props, State> {
         )}
         <GenerateSupportBundleModal
           appTitle={this.props.watch.name || this.props.watch.watchName}
+          slug={this.props.watch.slug}
           isOpen={isGeneratingBundleOpen}
           toggleModal={this.toggleGenerateBundleModal}
+          watch={this.props.watch}
+          updateBundleSlug={this.props.updateBundleSlug}
         />
       </div>
     );
