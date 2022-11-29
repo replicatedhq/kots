@@ -194,7 +194,13 @@ class SupportBundleRow extends React.Component<Props, State> {
   }
 
   render() {
-    const { bundle, isSupportBundleUploadSupported, isAirgap } = this.props;
+    const {
+      bundle,
+      isSupportBundleUploadSupported,
+      isAirgap,
+      progressData,
+      loadingBundle,
+    } = this.props;
     const { errorInsights, warningInsights, otherInsights } = this.state;
 
     const showSendSupportBundleLink =
@@ -225,7 +231,6 @@ class SupportBundleRow extends React.Component<Props, State> {
     }
 
     let progressBar;
-    const { progressData } = this.props;
 
     let statusDiv = (
       <div className="u-fontWeight--bold u-fontSize--small .u-textColor--bodyCopy u-lineHeight--medium u-textAlign--center">
@@ -365,7 +370,7 @@ class SupportBundleRow extends React.Component<Props, State> {
                   </div>
                 ) : this.state.sendingBundle ? (
                   <Loader size="30" className="u-marginRight--10" />
-                ) : showSendSupportBundleLink ? (
+                ) : showSendSupportBundleLink && !loadingBundle ? (
                   <span
                     className="u-fontSize--small u-marginRight--10 u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover u-paddingRight--10"
                     onClick={() =>
@@ -389,7 +394,7 @@ class SupportBundleRow extends React.Component<Props, State> {
                 ) : this.props.loadingBundle ||
                   this.props.progressData?.collectorsCompleted > 0 ? (
                   <div
-                    className="flex alignItems--center u-marginTop--20"
+                    className="flex alignItems--center"
                     style={{ width: "350px" }}
                   >
                     <span className="u-fontWeight--bold u-fontSize--normal u-textColor--secondary u-marginRight--10">
