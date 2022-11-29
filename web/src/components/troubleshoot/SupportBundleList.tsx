@@ -1,11 +1,9 @@
 import * as React from "react";
 import { KotsPageTitle } from "@components/Head";
-import { Link } from "react-router-dom";
 import {
   withRouter,
   withRouterType,
 } from "@src/utilities/react-router-utilities";
-import Modal from "react-modal";
 
 import Toggle from "../shared/Toggle";
 import Loader from "../shared/Loader";
@@ -18,7 +16,6 @@ import { Repeater } from "@src/utilities/repeater";
 
 import "../../scss/components/troubleshoot/SupportBundleList.scss";
 import Icon from "../Icon";
-import ReactTooltip from "react-tooltip";
 
 import { App, SupportBundle, SupportBundleProgress } from "@types";
 import GenerateSupportBundleModal from "./GenerateSupportBundleModal";
@@ -312,8 +309,6 @@ class SupportBundleList extends React.Component<Props, State> {
           />
         )}
         <GenerateSupportBundleModal
-          appTitle={this.props.watch.name || this.props.watch.watchName}
-          slug={this.props.watch.slug}
           isOpen={isGeneratingBundleOpen}
           toggleModal={this.toggleGenerateBundleModal}
           watch={this.props.watch}
