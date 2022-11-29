@@ -162,14 +162,16 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		fetchOptions.License = localLicense
 	}
 
-	verifiedLicense, err := kotslicense.VerifySignature(fetchOptions.License)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to verify signature")
-	}
-	fetchOptions.License = verifiedLicense
+	if fetchOptions.License != nil {
+		verifiedLicense, err := kotslicense.VerifySignature(fetchOptions.License)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to verify signature")
+		}
+		fetchOptions.License = verifiedLicense
 
-	if pullOptions.LicenseEndpointOverride != "" && fetchOptions.License != nil {
-		fetchOptions.License.Spec.Endpoint = pullOptions.LicenseEndpointOverride
+		if pullOptions.LicenseEndpointOverride != "" {
+			fetchOptions.License.Spec.Endpoint = pullOptions.LicenseEndpointOverride
+		}
 	}
 
 	encryptConfig := false
