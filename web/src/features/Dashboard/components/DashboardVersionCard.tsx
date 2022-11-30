@@ -441,6 +441,7 @@ const DashboardVersionCard = (props: Props) => {
           size={24}
           className="clickable"
           data-tip="View release notes"
+          onClick={() => showReleaseNotes(version?.releaseNotes)          }}
         />
         <ReactTooltip effect="solid" className="replicated-tooltip" />
       </div>
@@ -825,7 +826,13 @@ const DashboardVersionCard = (props: Props) => {
     }
   };
 
-  // TODO: finish show release notes- it's never set to true
+  const showReleaseNotes = (releaseNotes: string) => {
+    setState({
+      showReleaseNotes: true,
+      releaseNotes: releaseNotes,
+    });
+  };
+
   const hideReleaseNotes = () => {
     setState({
       showReleaseNotes: false,
