@@ -190,6 +190,14 @@ const GenerateSupportBundleModal = ({
               {bundleCommand}
             </CodeSnippet>
           </div>
+          <div className="flex u-marginTop--30">
+            <button className="btn secondary blue u-marginRight--15">
+              Upload support bundle
+            </button>{" "}
+            <button className="btn primary" onClick={toggleModal}>
+              Ok, got it!
+            </button>
+          </div>
         </div>
       </div>
     </Modal>
