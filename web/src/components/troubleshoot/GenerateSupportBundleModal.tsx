@@ -108,7 +108,7 @@ const GenerateSupportBundleModal = ({
           </span>
           <div className="flex analyze-content alignItems--center justifyContent--spaceBetween">
             <p
-              style={{ maxWidth: "440px" }}
+              style={{ maxWidth: "450px" }}
               className="u-fontSize--normal u-lineHeight--normal"
             >
               Collect logs, resources and other data from the running
@@ -122,7 +122,7 @@ const GenerateSupportBundleModal = ({
                 className="btn primary"
                 onClick={() => collectBundle(watch?.downstream?.cluster?.id)}
               >
-                Analyze {watch?.name}
+                Analyze
               </button>
               {generateBundleErrMsg && (
                 <p className="u-textColor--error u-marginTop--10 u-fontSize--normal">
@@ -148,7 +148,7 @@ const GenerateSupportBundleModal = ({
           <span className="u-fontWeight--bold u-textColor--primary">
             Run a command to generate a support bundle
           </span>
-          <p className="u-marginTop--10 u-textColor--secondary u-fontSize--normal">
+          <p className="u-marginTop--10 u-textColor--secondary u-fontSize--normal u-lineHeight--normal">
             Run the following command passing the correct path to your support
             bundle spec to generate a support bundle. If your vendor did not
             provide a support bundle spec,{" "}
