@@ -510,6 +510,7 @@ jobs:
     needs: [ enable-tests, can-run-ci, build-kots, build-e2e, build-kurl-proxy, build-migrations, push-minio, push-rqlite ]
     container:
       image: replicated/gitops-builder:buildkite-go17-node17
+      options: --user root
     strategy:
       fail-fast: false
       matrix:
