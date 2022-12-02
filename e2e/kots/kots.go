@@ -81,9 +81,10 @@ func (i *Installer) install(kubeconfig string, test inventory.Test) (*gexec.Sess
 func (i *Installer) portForward(kubeconfig, namespace, adminConsolePort string) error {
 	url := fmt.Sprintf("http://localhost:%s", adminConsolePort)
 
-	timeout := time.Minute
+	timeout := 90 * time.Second // a little longer than the command timeout so contex doesn't timeout too early
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 
+	fmt.Printf("portforward - starting :%s\n", time.Now())
 	go func() {
 		defer cancel()
 		_, err := util.RunCommand(exec.Command(
@@ -92,8 +93,9 @@ func (i *Installer) portForward(kubeconfig, namespace, adminConsolePort string) 
 			fmt.Sprintf("--kubeconfig=%s", kubeconfig),
 			fmt.Sprintf("--namespace=%s", namespace),
 			fmt.Sprintf("--port=%s", adminConsolePort),
-			fmt.Sprintf("--wait-duration=%s", timeout),
+			fmt.Sprintf("--wait-duration=%s", time.Minute),
 		))
+		fmt.Printf("portforward - terminated :%s, err=%v\n", time.Now(), err)
 		Expect(err).WithOffset(1).Should(Succeed(), "async port forward")
 	}()
 
@@ -101,12 +103,14 @@ func (i *Installer) portForward(kubeconfig, namespace, adminConsolePort string) 
 	for {
 		select {
 		case <-time.After(2 * time.Second):
+			fmt.Printf("portforward - ping :%s\n", time.Now())
 			_, err = http.Get(fmt.Sprintf("%s/api/v1/ping", url))
 			if err == nil {
 				return nil
 			}
 		case <-ctx.Done():
-			return errors.Wrap(err, "api ping timeout")
+			fmt.Printf("portforward - done :%s\n", time.Now())
+			return errors.New("api ping timeout")
 		}
 	}
 }
