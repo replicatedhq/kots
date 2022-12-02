@@ -8,6 +8,7 @@ import { App, LicenseFile, KotsParams } from "@types";
 import Dropzone from "react-dropzone";
 import Icon from "@components/Icon";
 import isEmpty from "lodash/isEmpty";
+// @ts-ignore
 import randomstring from "randomstring";
 import { useRouteMatch } from "react-router";
 
@@ -23,7 +24,7 @@ type State = {
   fileUploading: boolean;
   generateBundleErrMsg: string;
   showGetBundleSpec: boolean;
-  supportBundle: LicenseFile | null;
+  supportBundleFile: LicenseFile | null;
   uploadBundleErrMsg: string;
 };
 
@@ -43,7 +44,7 @@ const GenerateSupportBundleModal = ({
       fileUploading: false,
       generateBundleErrMsg: "",
       showGetBundleSpec: false,
-      supportBundle: {} as LicenseFile,
+      supportBundleFile: {} as LicenseFile,
       uploadBundleErrMsg: "",
     }
   );
@@ -120,7 +121,9 @@ const GenerateSupportBundleModal = ({
   };
 
   const onDrop = (files: LicenseFile[]) => {
-    setState({ supportBundle: files[0] });
+    console.log(files[0]);
+    setState({ supportBundleFile: files[0] });
+    console.log(state.supportBundleFile);
   };
 
   const uploadAndAnalyze = async () => {
@@ -132,6 +135,8 @@ const GenerateSupportBundleModal = ({
 
       const response = await fetch(uploadBundleUrl, {
         method: "PUT",
+        // using JSON.stringify(supportBundle) here will cause the request to fail
+        // @ts-ignore
         body: state.supportBundle,
         headers: {
           "Content-Type": "application/tar+gzip",
@@ -143,11 +148,14 @@ const GenerateSupportBundleModal = ({
           fileUploading: false,
           uploadBundleErrMsg: `Unable to upload the bundle: Status ${response.status}`,
         });
+
         return;
       }
 
       setState({ fileUploading: false, uploadBundleErrMsg: "" });
       toggleModal();
+      const analyzeBundle = await response.json();
+      console.log(analyzeBundle);
 
       const url = `/app/${match.params.slug}/troubleshoot/analyze/${bundleId}`;
       history.push(url);
@@ -161,15 +169,10 @@ const GenerateSupportBundleModal = ({
     }
   };
 
+  const hasFile = state.supportBundleFile && !isEmpty(state.supportBundleFile);
   const clearFile = () => {
-    console.log("hello");
-    setState({
-      supportBundle: null,
-    });
+    setState({ supportBundleFile: null });
   };
-
-  const hasFile = state.supportBundle && !isEmpty(state.supportBundle);
-  console.log(hasFile);
 
   return (
     <Modal
@@ -252,11 +255,6 @@ const GenerateSupportBundleModal = ({
                 style={{ borderBottom: "1px solid #BEBEBE", width: "180px" }}
               ></div>
             </div>
-            {state.uploadBundleErrMsg && (
-              <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginTop--10 u-marginBottom--10">
-                {state.uploadBundleErrMsg}
-              </p>
-            )}
           </div>
         ) : (
           <div className="u-marginTop--15">
@@ -276,44 +274,18 @@ const GenerateSupportBundleModal = ({
             hasFile ? "has-file" : ""
           }`}
         >
+          {state.uploadBundleErrMsg && (
+            <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">
+              {state.uploadBundleErrMsg}
+            </p>
+          )}
           <Dropzone
             className="Dropzone-wrapper"
             accept="application/gzip, .gz"
             onDropAccepted={onDrop}
             multiple={false}
           >
-            {hasFile ? (
-              <div
-                className="flex flexDirection--column justifyContent--spaceBetween"
-                style={{ gap: "15px" }}
-              >
-                <div className={`${hasFile ? "has-file-border" : ""}`}>
-                  <p className="u-fontSize--normal u-fontWeight--medium ">
-                    {state.supportBundle?.name}
-                  </p>
-                </div>
-                <div className="flex flex-column justifyContent--center">
-                  <button
-                    type="button"
-                    className="btn secondary blue nowrap"
-                    onClick={uploadAndAnalyze}
-                    disabled={state.fileUploading || !hasFile}
-                  >
-                    {state.fileUploading
-                      ? "Uploading"
-                      : "Upload support bundle"}
-                  </button>
-                  {/* <div>
-                    <span
-                      className="replicated-link u-fontSize--small u-marginTop--10 u-textAlign--center"
-                      onClick={clearFile}
-                    >
-                      Select a different file
-                    </span>
-                  </div> */}
-                </div>
-              </div>
-            ) : (
+            {!hasFile && (
               <div className="u-textAlign--center">
                 <Icon
                   icon="yaml-icon"
@@ -329,7 +301,37 @@ const GenerateSupportBundleModal = ({
               </div>
             )}
           </Dropzone>
+          {hasFile && (
+            <div
+              className="flex flexDirection--column justifyContent--spaceBetween"
+              style={{ gap: "15px" }}
+            >
+              <div className={`${hasFile ? "has-file-border" : ""}`}>
+                <p className="u-fontSize--normal u-fontWeight--medium ">
+                  {state.supportBundleFile?.name}
+                </p>
+              </div>
+
+              <div className="flex flex-column justifyContent--center">
+                <button
+                  type="button"
+                  className="btn secondary blue nowrap"
+                  onClick={uploadAndAnalyze}
+                  disabled={state.fileUploading || !hasFile}
+                >
+                  {state.fileUploading ? "Uploading" : "Upload support bundle"}
+                </button>
+                <span
+                  className="replicated-link u-fontSize--small u-marginTop--10 u-textAlign--center"
+                  onClick={clearFile}
+                >
+                  Select a different file
+                </span>
+              </div>
+            </div>
+          )}
         </div>
+
         <div className="flex u-marginTop--30">
           <button className="btn primary" onClick={toggleModal}>
             Ok, got it!
