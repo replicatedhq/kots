@@ -91,10 +91,6 @@ func getUpdatesReplicated(u *url.URL, fetchOptions *types.FetchOptions) (*types.
 		return nil, errors.Wrap(err, "failed to parse replicated upstream")
 	}
 
-	if err := replicatedapp.GetSuccessfulHeadResponse(replicatedUpstream, fetchOptions.License); err != nil {
-		return nil, errors.Wrap(err, "failed to get successful head response")
-	}
-
 	pendingReleases, updateCheckTime, err := listPendingChannelReleases(replicatedUpstream, fetchOptions.License, fetchOptions.LastUpdateCheckAt, currentCursor, fetchOptions.ChannelChanged, fetchOptions.ReportingInfo)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list replicated app releases")
@@ -176,10 +172,6 @@ func downloadReplicated(
 			if replicatedUpstream.VersionLabel == nil && versionLabel != "" {
 				replicatedUpstream.VersionLabel = &versionLabel
 			}
-		}
-
-		if err := replicatedapp.GetSuccessfulHeadResponse(replicatedUpstream, license); err != nil {
-			return nil, errors.Wrap(err, "failed to get successful head response")
 		}
 
 		downloadedRelease, err := downloadReplicatedApp(replicatedUpstream, license, updateCursor, reportingInfo)
