@@ -8,10 +8,11 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/handlers/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/session"
-	"github.com/replicatedhq/kots/pkg/session/types"
+	sessiontypes "github.com/replicatedhq/kots/pkg/session/types"
 	"github.com/replicatedhq/kots/pkg/store"
 	"github.com/replicatedhq/kots/pkg/util"
 	kuberneteserrors "k8s.io/apimachinery/pkg/api/errors"
@@ -46,7 +47,7 @@ func parseClusterAuthorization(authHeader string) (authorization, error) {
 	}, nil
 }
 
-func requireValidSession(kotsStore store.Store, w http.ResponseWriter, r *http.Request) (*types.Session, error) {
+func requireValidSession(kotsStore store.Store, w http.ResponseWriter, r *http.Request) (*sessiontypes.Session, error) {
 	if r.Method == "OPTIONS" {
 		return nil, nil
 	}
@@ -55,14 +56,14 @@ func requireValidSession(kotsStore store.Store, w http.ResponseWriter, r *http.R
 
 	if auth == "" {
 		err := errors.New("authorization header empty")
-		response := ErrorResponse{Error: err.Error()}
+		response := types.ErrorResponse{Error: util.StrPointer(err.Error())}
 		JSON(w, http.StatusUnauthorized, response)
 		return nil, err
 	}
 
 	sess, err := session.Parse(kotsStore, auth)
 	if err != nil {
-		response := ErrorResponse{Error: "failed to parse authorization header"}
+		response := types.ErrorResponse{Error: util.StrPointer("failed to parse authorization header")}
 		JSON(w, http.StatusUnauthorized, response)
 		return nil, errors.Wrap(err, "invalid session")
 	}
@@ -70,7 +71,7 @@ func requireValidSession(kotsStore store.Store, w http.ResponseWriter, r *http.R
 	// we don't currently have roles, all valid tokens are valid sessions
 	if sess == nil || sess.ID == "" {
 		err := errors.New("no session in auth header")
-		response := ErrorResponse{Error: err.Error()}
+		response := types.ErrorResponse{Error: util.StrPointer(err.Error())}
 		JSON(w, http.StatusUnauthorized, response)
 		return nil, err
 	}
@@ -80,14 +81,14 @@ func requireValidSession(kotsStore store.Store, w http.ResponseWriter, r *http.R
 			logger.Error(errors.Wrapf(err, "session expired. failed to delete expired session %s", sess.ID))
 		}
 		err := errors.New("session expired")
-		response := ErrorResponse{Error: err.Error()}
+		response := types.ErrorResponse{Error: util.StrPointer(err.Error())}
 		JSON(w, http.StatusUnauthorized, response)
 		return nil, err
 	}
 
 	passwordUpdatedAt, err := kotsStore.GetPasswordUpdatedAt()
 	if err != nil {
-		response := ErrorResponse{Error: "failed to validate session with current password"}
+		response := types.ErrorResponse{Error: util.StrPointer("failed to validate session with current password")}
 		JSON(w, http.StatusUnauthorized, response)
 		return nil, err
 	}
@@ -96,7 +97,7 @@ func requireValidSession(kotsStore store.Store, w http.ResponseWriter, r *http.R
 			logger.Error(errors.Wrapf(err, "password was updated after session created. failed to delete invalid session %s", sess.ID))
 		}
 		err := errors.New("password changed, please login again")
-		response := ErrorResponse{Error: err.Error()}
+		response := types.ErrorResponse{Error: util.StrPointer(err.Error())}
 		JSON(w, http.StatusUnauthorized, response)
 		return nil, err
 	}
