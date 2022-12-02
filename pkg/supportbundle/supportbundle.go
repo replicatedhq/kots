@@ -15,6 +15,7 @@ import (
 	apptypes "github.com/replicatedhq/kots/pkg/app/types"
 	"github.com/replicatedhq/kots/pkg/helm"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
+	"github.com/replicatedhq/kots/pkg/kurl"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/redact"
 	"github.com/replicatedhq/kots/pkg/render/helper"
@@ -351,8 +352,11 @@ func CreateSupportBundleAnalysis(appID string, archivePath string, bundle *types
 			},
 		}
 	}
-
-	analyzer.Spec.Analyzers = append(analyzer.Spec.Analyzers, getDefaultAnalyzers()...)
+	isKurl, err := kurl.IsKurl()
+	if err != nil {
+		logger.Errorf("Failed to check if cluster is kurl: %v", err)
+	}
+	analyzer.Spec.Analyzers = append(analyzer.Spec.Analyzers, getDefaultAnalyzers(isKurl)...)
 	analyzer.Spec.Analyzers = append(analyzer.Spec.Analyzers, getDefaultDynamicAnalyzers(foundApp)...)
 
 	s := k8sjson.NewYAMLSerializer(k8sjson.DefaultMetaFactory, scheme.Scheme, scheme.Scheme)
