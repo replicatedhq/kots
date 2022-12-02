@@ -488,7 +488,7 @@ const AppLicenseComponent = (props: Props) => {
                     className={`u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-marginLeft--10 ${
                       Utilities.checkIsDateExpired(expiresAt)
                         ? "u-textColor--error"
-                        : "u-textColor--info"
+                        : "u-textColor--bodyCopy"
                     }`}
                   >
                     {expiresAt === "Never"

@@ -1823,7 +1823,7 @@ class AppVersionHistory extends Component<Props, State> {
                   style={{ maxWidth: "370px", marginRight: "20px" }}
                 >
                   <div className="card-bg TableDiff--Wrapper currentVersionCard--wrapper">
-                    <p className="u-fontSize--large card-item-title u-fontWeight--bold">
+                    <p className="u-fontSize--large card-title u-fontWeight--bold">
                       {currentDownstreamVersion?.versionLabel
                         ? "Currently deployed version"
                         : "No current version deployed"}
@@ -2032,7 +2032,7 @@ class AppVersionHistory extends Component<Props, State> {
                       ) : (
                         <div className="TableDiff--Wrapper card-bg u-marginBottom--30">
                           <div className="flex justifyContent--spaceBetween alignItems--center u-marginBottom--15">
-                            <p className="u-fontSize--normal u-fontWeight--medium u-textColor--info ">
+                            <p className="u-fontSize--normal u-fontWeight--medium u-textColor--info">
                               {this.state.updatesAvailable
                                 ? "New version available"
                                 : ""}
