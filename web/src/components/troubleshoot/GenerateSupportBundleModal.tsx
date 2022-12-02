@@ -121,9 +121,7 @@ const GenerateSupportBundleModal = ({
   };
 
   const onDrop = (files: LicenseFile[]) => {
-    console.log(files[0]);
     setState({ supportBundleFile: files[0] });
-    console.log(state.supportBundleFile);
   };
 
   const uploadAndAnalyze = async () => {
@@ -154,9 +152,6 @@ const GenerateSupportBundleModal = ({
 
       setState({ fileUploading: false, uploadBundleErrMsg: "" });
       toggleModal();
-      const analyzeBundle = await response.json();
-      console.log(analyzeBundle);
-
       const url = `/app/${match.params.slug}/troubleshoot/analyze/${bundleId}`;
       history.push(url);
     } catch (err) {
