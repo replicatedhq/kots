@@ -103,6 +103,7 @@ export type GitOps = {
 };
 
 export type KotsParams = {
+  downstreamSlug?: string;
   firstSequence: string | undefined;
   owner: string;
   redactorSlug: string;
@@ -127,6 +128,34 @@ export type Entitlement = {
 export type Metadata = {
   isAirgap: boolean;
   isKurl: boolean;
+};
+
+export type PreflightError = {
+  error: string;
+  isRbac: boolean;
+};
+
+export type PreflightResult = {
+  appSlug: string;
+  clusterSlug: string;
+  createdAt: string;
+  hasFailingStrictPreflights: boolean;
+  result: string;
+  sequence: number;
+  skipped: boolean;
+};
+
+export type PreflightProgress = {
+  completedCount: number;
+  currentName: string;
+  currentStatus: string;
+  totalCount: number;
+  updatedAt: string;
+};
+
+export type PreflightResultResponse = {
+  errors?: PreflightError[];
+  results?: PreflightResult[];
 };
 
 export type ThemeState = {
