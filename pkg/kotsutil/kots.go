@@ -840,8 +840,6 @@ func GetInstallationParams(configMapName string) (InstallationParams, error) {
 		return autoConfig, errors.Wrap(err, "failed to check if cluster is kurl")
 	}
 
-	autoConfig.EnableImageDeletion = isKurl
-
 	kotsadmConfigMap, err := clientset.CoreV1().ConfigMaps(util.PodNamespace).Get(context.TODO(), configMapName, metav1.GetOptions{})
 	if err != nil {
 		if kuberneteserrors.IsNotFound(err) {
@@ -862,6 +860,12 @@ func GetInstallationParams(configMapName string) (InstallationParams, error) {
 	autoConfig.WaitDuration, _ = time.ParseDuration(kotsadmConfigMap.Data["wait-duration"])
 	autoConfig.WithMinio, _ = strconv.ParseBool(kotsadmConfigMap.Data["with-minio"])
 	autoConfig.AppVersionLabel = kotsadmConfigMap.Data["app-version-label"]
+
+	if enableImageDeletion, ok := kotsadmConfigMap.Data["enable-image-deletion"]; ok {
+		autoConfig.EnableImageDeletion, _ = strconv.ParseBool(enableImageDeletion)
+	} else {
+		autoConfig.EnableImageDeletion = isKurl
+	}
 
 	return autoConfig, nil
 }

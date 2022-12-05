@@ -1,6 +1,7 @@
 package base
 
 import (
+	"fmt"
 	"io/ioutil"
 	golog "log"
 	"os"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/util"
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 	"k8s.io/helm/pkg/renderutil"
@@ -58,7 +60,10 @@ func renderHelmV2(chartName string, chartPath string, vals map[string]interface{
 
 	rendered, err := renderutil.Render(c, config, renderOpts)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to render chart")
+		return nil, nil, util.ActionableError{
+			NoRetry: true,
+			Message: fmt.Sprintf("helm v2 render failed with error: %v", err),
+		}
 	}
 
 	baseFiles := []BaseFile{}

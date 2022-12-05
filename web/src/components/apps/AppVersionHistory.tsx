@@ -144,6 +144,13 @@ type State = {
   showHelmDeployModalForSequence: number | null;
 };
 
+const filterNonHelmTabs = (tab: string, isHelmManaged: boolean) => {
+  if (isHelmManaged) {
+    return tab.startsWith("helm");
+  }
+  return true;
+};
+
 class AppVersionHistory extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
@@ -576,12 +583,7 @@ class AppVersionHistory extends Component<Props, State> {
       <div className="flex action-tab-bar u-marginTop--10">
         {tabs
           .filter((tab) => tab !== "renderError")
-          .filter((tab) => {
-            if (this.props.isHelmManaged) {
-              return tab.startsWith("helm");
-            }
-            return true;
-          })
+          .filter((tab) => filterNonHelmTabs(tab, this.props.isHelmManaged))
           .map((tab) => (
             <div
               className={`tab-item blue ${tab === selectedTab && "is-active"}`}
@@ -1145,7 +1147,9 @@ class AppVersionHistory extends Component<Props, State> {
         if (isFailing) {
           selectedTab = Utilities.getDeployErrorTab(response.logs);
         } else {
-          selectedTab = Object.keys(response.logs)[0];
+          selectedTab = Object.keys(response.logs).filter((tab) =>
+            filterNonHelmTabs(tab, this.props.isHelmManaged)
+          )[0];
         }
         this.setState({
           logs: response.logs,

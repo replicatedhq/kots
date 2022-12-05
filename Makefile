@@ -3,7 +3,7 @@ CURRENT_USER := $(shell id -u -n)
 MINIO_TAG ?= RELEASE.2022-10-24T18-35-07Z
 RQLITE_TAG ?= 7.10.0
 DEX_TAG ?= v2.35.3
-LVP_TAG ?= v0.4.1
+LVP_TAG ?= v0.4.2
 
 define sendMetrics
 @if [ -z "${PROJECT_NAME}" ]; then \
@@ -82,6 +82,18 @@ build-real:
 .PHONY: run
 run:
 	./bin/kotsadm api
+
+.PHONY: okteto-dev
+okteto-dev:
+    ## We download all go modules, instead of putting them in the container. This will
+    ## use the PVC that everyone has, and will build a cache.
+    ##
+    ## We also run `make build` here because the initial compilation is slow and
+    ## this enabled `okteto up` to do all of the long-running stuff and give the user
+    ## a pretty good env right after
+	@go mod download -x
+	@make build
+	@printf "\n\n To build and run api, run: \n\n   # make build run\n\n"
 
 # Debugging
 .PHONY: debug-build

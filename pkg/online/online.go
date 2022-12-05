@@ -158,7 +158,9 @@ func CreateAppFromOnline(opts CreateOnlineAppOpts) (_ *kotsutil.KotsKinds, final
 	}
 
 	if _, err := pull.Pull(opts.UpstreamURI, pullOptions); err != nil {
-		return nil, errors.Wrap(err, "failed to pull")
+		if errors.Cause(err) != pull.ErrConfigNeeded {
+			return nil, errors.Wrap(err, "failed to pull")
+		}
 	}
 
 	// Create the downstream
