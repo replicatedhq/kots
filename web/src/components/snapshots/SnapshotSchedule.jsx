@@ -332,6 +332,7 @@ class SnapshotSchedule extends Component {
           });
           return;
         }
+
         this.setState({
           updatingSchedule: false,
           updateConfirm: true,
