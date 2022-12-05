@@ -53,7 +53,34 @@ var secretAnnotations = map[string]string{
 	"helm.sh/hook-weight": "-9999",
 }
 
-func ProxyEndpointFromLicense(license *kotsv1beta1.License) *RegistryProxyInfo {
+func GetRegistryProxyInfo(license *kotsv1beta1.License, app *kotsv1beta1.Application) *RegistryProxyInfo {
+	registryProxyInfo := getRegistryProxyInfoFromLicense(license)
+	proxyEndpoint, _ := getRegistryProxyEndpointFromKotsApplication(app)
+
+	if proxyEndpoint != "" {
+		registryProxyInfo.Proxy = proxyEndpoint
+	}
+
+	return registryProxyInfo
+}
+
+func getRegistryProxyEndpointFromKotsApplication(kotsApplication *kotsv1beta1.Application) (proxyEndpoint string, registryEndpoint string) {
+	if kotsApplication == nil {
+		return "", ""
+	}
+
+	if kotsApplication.Spec.ProxyRegistryDomain != "" {
+		proxyEndpoint = kotsApplication.Spec.ProxyRegistryDomain
+	}
+
+	if kotsApplication.Spec.ReplicatedRegistryDomain != "" {
+		registryEndpoint = kotsApplication.Spec.ReplicatedRegistryDomain
+	}
+
+	return proxyEndpoint, registryEndpoint
+}
+
+func getRegistryProxyInfoFromLicense(license *kotsv1beta1.License) *RegistryProxyInfo {
 	defaultInfo := &RegistryProxyInfo{
 		Registry: "registry.replicated.com",
 		Proxy:    "proxy.replicated.com",

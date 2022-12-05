@@ -22,7 +22,7 @@ import (
 //
 // local registry always overwrites images
 // proxy registry only overwrites private images
-func UpdateCollectorSpecsWithRegistryData(collectors []*troubleshootv1beta2.Collect, localRegistryInfo types.RegistrySettings, knownImages []kotsv1beta1.InstallationImage, license *kotsv1beta1.License) ([]*troubleshootv1beta2.Collect, error) {
+func UpdateCollectorSpecsWithRegistryData(collectors []*troubleshootv1beta2.Collect, localRegistryInfo types.RegistrySettings, knownImages []kotsv1beta1.InstallationImage, license *kotsv1beta1.License, kotsApplication *kotsv1beta1.Application) ([]*troubleshootv1beta2.Collect, error) {
 	if localRegistryInfo.IsValid() {
 		updatedCollectors, err := updateCollectorsWithLocalRegistryData(collectors, localRegistryInfo, knownImages, license)
 		if err != nil {
@@ -32,7 +32,7 @@ func UpdateCollectorSpecsWithRegistryData(collectors []*troubleshootv1beta2.Coll
 		return updatedCollectors, nil
 	}
 
-	updatedCollectors, err := updateCollectorsWithProxyRegistryData(collectors, localRegistryInfo, knownImages, license)
+	updatedCollectors, err := updateCollectorsWithProxyRegistryData(collectors, localRegistryInfo, knownImages, license, kotsApplication)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to update collectors with replicated registry info")
 	}
@@ -107,10 +107,10 @@ func updateCollectorsWithLocalRegistryData(collectors []*troubleshootv1beta2.Col
 	return updatedCollectors, nil
 }
 
-func updateCollectorsWithProxyRegistryData(collectors []*troubleshootv1beta2.Collect, localRegistryInfo types.RegistrySettings, knownImages []kotsv1beta1.InstallationImage, license *kotsv1beta1.License) ([]*troubleshootv1beta2.Collect, error) {
+func updateCollectorsWithProxyRegistryData(collectors []*troubleshootv1beta2.Collect, localRegistryInfo types.RegistrySettings, knownImages []kotsv1beta1.InstallationImage, license *kotsv1beta1.License, kotsApplication *kotsv1beta1.Application) ([]*troubleshootv1beta2.Collect, error) {
 	updatedCollectors := []*troubleshootv1beta2.Collect{}
 
-	registryProxyInfo := kotsregistry.ProxyEndpointFromLicense(license)
+	registryProxyInfo := kotsregistry.GetRegistryProxyInfo(license, kotsApplication)
 
 	makeImagePullSecret := func(namespace string) (*troubleshootv1beta2.ImagePullSecrets, error) {
 		pullSecrets, err := kotsregistry.PullSecretForRegistries(registryProxyInfo.ToSlice(), license.Spec.LicenseID, license.Spec.LicenseID, namespace, "")
