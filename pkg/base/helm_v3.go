@@ -54,7 +54,10 @@ func renderHelmV3(chartName string, chartPath string, vals map[string]interface{
 
 	rel, err := client.Run(chartRequested, vals)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to render chart")
+		return nil, nil, util.ActionableError{
+			NoRetry: true,
+			Message: fmt.Sprintf("helm v3 render failed with error: %v", err),
+		}
 	}
 
 	coalescedValues, err := chartutil.CoalesceValues(rel.Chart, rel.Config)
