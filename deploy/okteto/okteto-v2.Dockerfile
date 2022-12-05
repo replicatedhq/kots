@@ -1,33 +1,8 @@
 # syntax=docker/dockerfile:1.3
-FROM golang:1.19 as builder
-
-ENV GOCACHE "/.cache/gocache/"
-ENV GOMODCACHE "/.cache/gomodcache/"
-ENV DEBUG_KOTSADM=1
-
-ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots
-WORKDIR $PROJECTPATH
-
-RUN --mount=target=$GOMODCACHE,type=cache \
-    --mount=target=$GOCACHE,type=cache \
-    go install github.com/go-delve/delve/cmd/dlv@v1.8.0
-
-COPY go.mod go.sum ./
-RUN --mount=target=$GOMODCACHE,type=cache go mod download
-
-COPY . .
-
-RUN --mount=target=$GOMODCACHE,type=cache \
-    --mount=target=$GOCACHE,type=cache \
-    make build kots
-
-FROM debian:bookworm
+FROM golang:1.19 
 
 EXPOSE 2345
-
-ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots
-WORKDIR $PROJECTPATH
-
+ 
 RUN apt update && apt install --no-install-recommends gnupg2 curl -y \
   && apt update && apt install -y --no-install-recommends python3-pip ca-certificates \
   && pip install s3cmd \
@@ -163,7 +138,28 @@ RUN cd /tmp && curl -fsSL -o helm.tar.gz "${HELM3_URL}" \
   && ln -s "${KOTS_HELM_BIN_DIR}/helm3" "${KOTS_HELM_BIN_DIR}/helm" \
   && rm -rf helm.tar.gz linux-amd64
 
-COPY --from=builder $PROJECTPATH/bin/kotsadm /kotsadm
-COPY --from=builder $PROJECTPATH/bin/kots /kots
+ENV DEBUG_KOTSADM=1
+ENV GOCACHE "/.cache/gocache/"
+ENV GOMODCACHE "/.cache/gomodcache/"
+ENV PROJECTPATH=/go/src/github.com/replicatedhq/kots
 
-ENTRYPOINT [ "/kotsadm", "api"]
+WORKDIR $PROJECTPATH
+
+RUN --mount=target=$GOMODCACHE,id=gomodcache,type=cache \
+    --mount=target=$GOCACHE,id=gocache,type=cache \
+    go install github.com/go-delve/delve/cmd/dlv@v1.9.0 
+
+## Get deps
+COPY go.mod go.sum ./
+RUN --mount=target=$GOMODCACHE,id=kotsadm-gomodcache,type=cache go mod download
+
+
+## Now add the project and compile
+COPY . .
+RUN --mount=target=$GOCACHE,id=kotsadm-gocache,type=cache \
+    --mount=target=$GOMODCACHE,id=kotsadm-gomodcache,type=cache \
+    make build kots
+
+VOLUME [ "$GOCACHE", "$GOMODCACHE" ]
+
+CMD ["make", "run"]
