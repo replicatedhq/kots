@@ -36,7 +36,7 @@ make all-ttl.sh
 make e2e \
     KOTSADM_IMAGE_REGISTRY=ttl.sh \
     KOTSADM_IMAGE_NAMESPACE=$USER \
-    KOTSADM_IMAGE_TAG=12h
+    KOTSADM_IMAGE_TAG=24h
 ```
 
 To run against the okteto dev environment run:
