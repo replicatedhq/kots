@@ -116,6 +116,13 @@ type State = {
   yamlErrorDetails: string[];
 };
 
+const filterNonHelmTabs = (tab: string, isHelmManaged: boolean) => {
+  if (isHelmManaged) {
+    return tab.startsWith("helm");
+  }
+  return true;
+};
+
 const DashboardVersionCard = (props: Props) => {
   const [state, setState] = useReducer(
     (currentState: State, newState: Partial<State>) => ({
@@ -258,12 +265,7 @@ const DashboardVersionCard = (props: Props) => {
       <div className="flex action-tab-bar u-marginTop--10">
         {tabs
           .filter((tab) => tab !== "renderError")
-          .filter((tab) => {
-            if (isHelmManaged) {
-              return tab.startsWith("helm");
-            }
-            return true;
-          })
+          .filter((tab) => filterNonHelmTabs(tab, isHelmManaged))
           .map((tab) => (
             <div
               className={`tab-item blue ${tab === selectedTab && "is-active"}`}
@@ -312,7 +314,9 @@ const DashboardVersionCard = (props: Props) => {
         if (isFailing) {
           selectedTab = Utilities.getDeployErrorTab(response.logs);
         } else {
-          selectedTab = Object.keys(response.logs)[0];
+          selectedTab = Object.keys(response.logs).filter((tab) =>
+            filterNonHelmTabs(tab, isHelmManaged)
+          )[0];
         }
         setState({
           logs: response.logs,
