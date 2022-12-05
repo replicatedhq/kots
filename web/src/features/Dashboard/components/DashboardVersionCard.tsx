@@ -429,6 +429,19 @@ const DashboardVersionCard = (props: Props) => {
       preflightSkipped: version?.preflightSkipped,
     };
   };
+  const showReleaseNotes = (releaseNotes: string) => {
+    setState({
+      showReleaseNotes: true,
+      releaseNotes: releaseNotes,
+    });
+  };
+
+  const hideReleaseNotes = () => {
+    setState({
+      showReleaseNotes: false,
+      releaseNotes: "",
+    });
+  };
 
   const renderReleaseNotes = (version: Version | null) => {
     if (!version?.releaseNotes) {
@@ -441,6 +454,7 @@ const DashboardVersionCard = (props: Props) => {
           size={24}
           className="clickable"
           data-tip="View release notes"
+          onClick={() => showReleaseNotes(version.releaseNotes)}
         />
         <ReactTooltip effect="solid" className="replicated-tooltip" />
       </div>
@@ -823,14 +837,6 @@ const DashboardVersionCard = (props: Props) => {
     } else {
       throw new Error("No version to deploy");
     }
-  };
-
-  // TODO: finish show release notes- it's never set to true
-  const hideReleaseNotes = () => {
-    setState({
-      showReleaseNotes: false,
-      releaseNotes: "",
-    });
   };
 
   const actionButtonStatus = (version: Version) => {
