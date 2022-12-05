@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/gitops"
+	"github.com/replicatedhq/kots/pkg/handlers/types"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/store"
 )
@@ -151,7 +152,7 @@ func (h *Handler) InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 			logger.Error(err)
 		}
 
-		JSON(w, http.StatusBadRequest, NewErrorResponse(err))
+		JSON(w, http.StatusBadRequest, types.NewErrorResponse(err))
 		return
 	}
 
@@ -165,7 +166,7 @@ func (h *Handler) InitGitOpsConnection(w http.ResponseWriter, r *http.Request) {
 			if err := gitops.SetGitOpsError(a.ID, d.ClusterID, err.Error()); err != nil {
 				logger.Error(err)
 			}
-			JSON(w, http.StatusInternalServerError, NewErrorResponse(err))
+			JSON(w, http.StatusInternalServerError, types.NewErrorResponse(err))
 			return
 		}
 		downstreamGitOps.Branch = defaultBranchName
