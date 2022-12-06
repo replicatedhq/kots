@@ -122,6 +122,8 @@ func RqliteStatefulset(deployOptions types.DeployOptions, size resource.Quantity
 								"-bootstrap-expect=1",
 								"-auth=/auth/config.json",
 								"-join-as=kotsadm",
+								"-on-disk",
+								"-on-disk-startup",
 							},
 							Ports: []corev1.ContainerPort{
 								{

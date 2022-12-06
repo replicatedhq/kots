@@ -67,6 +67,8 @@ spec:
         - -bootstrap-expect=1
         - -auth=/auth/config.json
         - -join-as=kotsadm
+        - -on-disk
+        - -on-disk-startup
         ports:
         - name: rqlite
           containerPort: 4001
