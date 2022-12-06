@@ -11,6 +11,7 @@ import isEmpty from "lodash/isEmpty";
 // @ts-ignore
 import randomstring from "randomstring";
 import { useRouteMatch } from "react-router";
+import { useSupportBundleCommand } from "@src/hooks/useSupportBundleCommand";
 
 type Props = {
   isOpen: boolean;
@@ -21,6 +22,7 @@ type Props = {
 
 type State = {
   bundleCommand: string;
+  bundleCommandErrMsg: string;
   fileUploading: boolean;
   generateBundleErrMsg: string;
   showGetBundleSpec: boolean;
@@ -41,6 +43,7 @@ const GenerateSupportBundleModal = ({
     }),
     {
       bundleCommand: "",
+      bundleCommandErrMsg: "",
       fileUploading: false,
       generateBundleErrMsg: "",
       showGetBundleSpec: false,
@@ -56,30 +59,19 @@ const GenerateSupportBundleModal = ({
   const history = useHistory();
   const match = useRouteMatch<KotsParams>();
 
-  const fetchSupportBundleCommand = async () => {
-    const res = await fetch(
-      `${process.env.API_ENDPOINT}/troubleshoot/app/${watch?.slug}/supportbundlecommand`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: Utilities.getToken(),
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          origin: window.location.origin,
-        }),
-      }
-    );
-    if (!res.ok) {
-      throw new Error(`Unexpected status code: ${res.status}`);
-    }
-    const response = await res.json();
-    setState({ bundleCommand: response.command });
-  };
+  const { data, status } = useSupportBundleCommand(watch?.slug, {
+    origin: window.location.origin,
+  });
 
   useEffect(() => {
-    fetchSupportBundleCommand();
-  }, []);
+    if (status === "success" && data) {
+      setState({ bundleCommand: data.command });
+    } else if (status === "error") {
+      setState({
+        bundleCommandErrMsg: "Failed to get bundle command",
+      });
+    }
+  }, [status, data]);
 
   const collectBundle = (clusterId: number | undefined) => {
     let url = `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/app/${watch?.id}/cluster/${clusterId}/collect`;
@@ -224,6 +216,11 @@ const GenerateSupportBundleModal = ({
                     the CLI. You can then upload a support bundle so that it
                     appears in the admin console.
                   </p>
+                  {state.bundleCommandErrMsg && (
+                    <p className="u-textColor--error u-marginTop--10 u-fontSize--normal">
+                      {state.bundleCommandErrMsg}
+                    </p>
+                  )}
                   <CodeSnippet
                     language="bash"
                     canCopy={true}
