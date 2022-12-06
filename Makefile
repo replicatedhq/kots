@@ -107,12 +107,12 @@ debug: debug-build
 .PHONY: build-ttl.sh
 build-ttl.sh: build
 	source .image.env && ${MAKE} -C web build-kotsadm
-	docker build -f deploy/Dockerfile -t ttl.sh/${CURRENT_USER}/kotsadm:12h .
-	docker push ttl.sh/${CURRENT_USER}/kotsadm:12h
+	docker build -f deploy/Dockerfile -t ttl.sh/${CURRENT_USER}/kotsadm:24h .
+	docker push ttl.sh/${CURRENT_USER}/kotsadm:24h
 
 .PHONY: all-ttl.sh
 all-ttl.sh: build-ttl.sh
-	source .image.env && IMAGE=ttl.sh/${CURRENT_USER}/kotsadm-migrations:12h make -C migrations build_schema
+	source .image.env && IMAGE=ttl.sh/${CURRENT_USER}/kotsadm-migrations:24h make -C migrations build_schema
 
 	docker pull minio/minio:${MINIO_TAG}
 	docker tag minio/minio:${MINIO_TAG} ttl.sh/${CURRENT_USER}/minio:${MINIO_TAG}

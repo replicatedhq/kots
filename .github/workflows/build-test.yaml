@@ -143,7 +143,7 @@ jobs:
       - name: build and push kotsadm for e2e
         uses: docker/build-push-action@v2
         with:
-          tags: ttl.sh/automated-${{ github.run_id }}/kotsadm:12h
+          tags: ttl.sh/automated-${{ github.run_id }}/kotsadm:24h
           context: ./
           file: ./deploy/Dockerfile
           push: true
@@ -167,8 +167,8 @@ jobs:
           export $(cat .image.env | sed 's/#.*//g' | xargs)
 
           export CHART_VERSION=0.0.${{ github.run_id }}-automated
-          export KOTS_VERSION=12h
-          export KOTS_TAG=12h
+          export KOTS_VERSION=24h
+          export KOTS_TAG=24h
           export KOTSADM_REGISTRY=ttl.sh/automated-${{ github.run_id }}
 
           envsubst < Chart.yaml.tmpl > Chart.yaml
@@ -245,7 +245,7 @@ jobs:
       - name: build and push kurl_proxy for e2e
         uses: docker/build-push-action@v2
         with:
-          tags: ttl.sh/automated-${{ github.run_id }}/kurl-proxy:12h
+          tags: ttl.sh/automated-${{ github.run_id }}/kurl-proxy:24h
           context: ./kurl_proxy
           file: ./kurl_proxy/deploy/Dockerfile
           push: true
@@ -278,7 +278,7 @@ jobs:
       - name: build and push migrations for e2e
         uses: docker/build-push-action@v2
         with:
-          tags: ttl.sh/automated-${{ github.run_id }}/kotsadm-migrations:12h
+          tags: ttl.sh/automated-${{ github.run_id }}/kotsadm-migrations:24h
           context: ./migrations
           file: ./migrations/deploy/Dockerfile
           push: true
@@ -389,7 +389,7 @@ jobs:
           s3_prefix: ${{ github.event.action == 'workflow_dispatch' && 'test/' || inputs.s3_prefix }}
           kotsadm_image_registry: ttl.sh
           kotsadm_image_namespace: automated-${{ github.run_id }}
-          kotsadm_image_tag: 12h
+          kotsadm_image_tag: 24h
           kotsadm_binary_override: bin/kots.tar.gz
       - name: test kurl add-on
         id: addon-test
@@ -748,7 +748,7 @@ jobs:
             --shared-password password \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
-            --kotsadm-tag 12h \
+            --kotsadm-tag 24h \
             --use-minimal-rbac
           if kubectl get roles -n $APP_SLUG | grep -q kotsadm; then
             echo "Found kotsadm role in ${APP_SLUG}"
@@ -771,7 +771,7 @@ jobs:
             --shared-password password \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
-            --kotsadm-tag 12h
+            --kotsadm-tag 24h
           if kubectl get roles -n $APP_SLUG | grep -q kotsadm; then
             echo "Found kotsadm role in cluster scoped install"
             exit -1
@@ -828,7 +828,7 @@ jobs:
             --shared-password password \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
-            --kotsadm-tag 12h
+            --kotsadm-tag 24h
 
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
@@ -990,7 +990,7 @@ jobs:
             --shared-password password \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
-            --kotsadm-tag 12h
+            --kotsadm-tag 24h
 
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
@@ -1048,7 +1048,7 @@ jobs:
             --shared-password password \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
-            --kotsadm-tag 12h
+            --kotsadm-tag 24h
 
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
@@ -1122,7 +1122,7 @@ jobs:
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --skip-preflights \
-            --kotsadm-tag 12h
+            --kotsadm-tag 24h
 
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
@@ -1196,7 +1196,7 @@ jobs:
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --skip-preflights \
-            --kotsadm-tag 12h
+            --kotsadm-tag 24h
 
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
@@ -1270,7 +1270,7 @@ jobs:
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
             --skip-preflights \
-            --kotsadm-tag 12h
+            --kotsadm-tag 24h
 
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
@@ -1386,7 +1386,7 @@ jobs:
             --shared-password password \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
-            --kotsadm-tag 12h
+            --kotsadm-tag 24h
 
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
@@ -1535,7 +1535,7 @@ jobs:
           testim-branch: ${{ github.head_ref == 'main' && 'master' || github.head_ref }}
           kotsadm-image-registry: ttl.sh
           kotsadm-namespace: automated-${{ github.run_id }}
-          kotsadm-tag: 12h
+          kotsadm-tag: 24h
           aws-access-key-id: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_ACCESS_KEY_ID }}'
           aws-secret-access-key: '${{ secrets.E2E_SUPPORT_BUNDLE_AWS_SECRET_ACCESS_KEY }}'
 
@@ -1725,7 +1725,7 @@ jobs:
             --namespace $APP_SLUG \
             --kotsadm-registry ttl.sh \
             --kotsadm-namespace automated-${{ github.run_id }} \
-            --kotsadm-tag 12h
+            --kotsadm-tag 24h
 
           if ! kubectl logs -l app=kotsadm --namespace $APP_SLUG | grep -q "Migrated from Postgres to rqlite successfully"; then
             echo "Failed to find a successful migration log line"
