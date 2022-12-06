@@ -59,9 +59,12 @@ const GenerateSupportBundleModal = ({
   const history = useHistory();
   const match = useRouteMatch<KotsParams>();
 
-  const { data, status } = useSupportBundleCommand(watch?.slug, {
-    origin: window.location.origin,
-  });
+  const { data, status } = useSupportBundleCommand(
+    watch?.slug,
+    JSON.stringify({
+      origin: window.location.origin,
+    })
+  );
 
   useEffect(() => {
     if (status === "success" && data) {
