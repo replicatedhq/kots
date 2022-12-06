@@ -1,228 +1,227 @@
-/* Color override classes */
-.card-title,
-.u-textColor--primary {
-  color: #3d0c11;
-}
-.card-item-title {
-  color: #eac614;
-}
-.u-textColor--secondary {
-  color: #4a4a4a;
-}
-.u-textColor--info {
-  color: blue;
-}
-// gitops is enabled, which container logs would you like to view
-.u-textColor--header {
-  color: #577981;
-}
-// used during deleting snapshots's title
-.u-textColor--bodyCopy {
-  color: #9c9c9c;
-}
-.u-textColor--error {
-  color: #8f1e2a;
-}
-.u-textColor--success {
-  color: #5b7553;
-}
-.u-textColor--warning {
-  color: #daab18;
-}
-.help-text-color {
-  color: rgb(128, 46, 60);
-}
-.link,
-.link:visited {
-  color: #0a7304;
-}
-.link:hover {
-  color: #2c422b;
-  text-decoration: none;
-}
+// /* Color override classes */
+// .card-title {
+//   color: #3d0c11;
+// }
+// .card-item-title {
+//   color: #eac614;
+// }
+// .u-textColor--primary {
+//   color: #3d0c11;
+// }
+// .u-textColor--secondary {
+//   color: #4a4a4a;
+// }
+// .u-textColor--info {
+//   color: blue;
+// }
+// // gitops is enabled, which container logs would you like to view
+// .u-textColor--header {
+//   color: #577981;
+// }
+// .u-textColor--bodyCopy {
+//   color: #9c9c9c;
+// }
+// .u-textColor--error {
+//   color: #8f1e2a;
+// }
+// .u-textColor--success {
+//   color: #5b7553;
+// }
+// .u-textColor--warning {
+//   color: #daab18;
+// }
+// .help-text-color {
+//   color: rgb(128, 46, 60);
+// }
+// .link,
+// .link:visited {
+//   color: #0a7304;
+// }
+// .link:hover {
+//   color: #2c422b;
+//   text-decoration: none;
+// }
 
-/* Button override classes */
-.btn.primary {
-  background-color: #5b7553;
-}
+// /* Button override classes */
+// .btn.primary {
+//   background-color: #5b7553;
+// }
 
-.btn.primary:not(:disabled):hover {
-  background-color: #7fa274;
-}
+// .btn.primary:not(:disabled):hover {
+//   background-color: #7fa274;
+// }
 
-// either you put not(:disabled):hover in the hover proerty or this in disabled
-//.btn.primary:disabled:hover
-.btn.primary:disabled {
-  background-color: #3e5935;
-  opacity: 0.75;
-}
+// .btn.primary:disabled {
+//   background-color: #3e5935;
+//   opacity: 0.75;
+// }
 
-.btn.primary.red {
-  background-color: #8f1e2a;
-}
-.btn.primary.red:not(:disabled):hover {
-  background-color: #62151d;
-}
+// .btn.primary.red {
+//   background-color: #8f1e2a;
+// }
+// .btn.primary.red:not(:disabled):hover {
+//   background-color: #62151d;
+// }
 
-.btn.primary.red:disabled {
-  background-color: #8f1e2a;
-  opacity: 0.75;
-}
+// .btn.primary.red:disabled {
+//   background-color: #8f1e2a;
+//   opacity: 0.75;
+// }
 
-.btn.secondary {
-  background-color: #ffffff;
-  border-color: #3c3c3c;
-  color: #5b7553;
-}
+// .btn.secondary {
+//   background-color: #ffffff;
+//   border-color: #3c3c3c;
+//   color: #5b7553;
+// }
 
-.btn.secondary:not(:disabled):hover {
-  background-color: #ffffff;
-  border-color: #3c3c3c;
-  color: #e8e8e8;
-}
+// .btn.secondary:not(:disabled):hover {
+//   background-color: #ffffff;
+//   border-color: #3c3c3c;
+//   color: #e8e8e8;
+// }
 
-.btn.secondary.blue {
-  background-color: #ffffff;
-  border-color: #3e83fb;
-  color: #3e83fb;
-}
+// .btn.secondary.blue {
+//   background-color: #ffffff;
+//   border-color: #3e83fb;
+//   color: #3e83fb;
+// }
 
-.btn.secondary.blue:not(:disabled):hover {
-  background-color: #1900ff;
-  border-color: #1900ff;
-  color: #fff;
-}
+// .btn.secondary.blue:not(:disabled):hover {
+//   background-color: #1900ff;
+//   border-color: #1900ff;
+//   color: #fff;
+// }
 
-.btn.secondary.blue:disabled,
-.btn.secondary.disabled {
-  color: #4ee67c;
-  border-color: #6a9eec;
-  opacity: 0.75;
-}
+// .btn.secondary.blue:disabled,
+// .btn.secondary.disabled {
+//   color: #4ee67c;
+//   border-color: #6a9eec;
+//   opacity: 0.75;
+// }
 
-.btn.secondary.red {
-  background-color: #ffffff;
-  border-color: #8f1e2a;
-  color: #8f1e2a;
-}
+// .btn.secondary.red {
+//   background-color: #ffffff;
+//   border-color: #8f1e2a;
+//   color: #8f1e2a;
+// }
 
-.btn.secondary.red:not(:disabled):hover {
-  background-color: #db2b3d;
-  border-color: #62151d;
-  color: #fff;
-}
+// .btn.secondary.red:not(:disabled):hover {
+//   background-color: #db2b3d;
+//   border-color: #62151d;
+//   color: #fff;
+// }
 
-.btn.secondary.red:disabled {
-  color: #6a393e;
-  border-color: #723f44;
-  opacity: 0.75;
-}
+// .btn.secondary.red:disabled {
+//   color: #6a393e;
+//   border-color: #723f44;
+//   opacity: 0.75;
+// }
 
-.btn.secondary.dark {
-  background-color: #ffffff;
-  border-color: #3a4b35;
-  color: #3a4b35;
-}
+// .btn.secondary.dark {
+//   background-color: #ffffff;
+//   border-color: #3a4b35;
+//   color: #3a4b35;
+// }
 
-.btn.secondary.dark:not(:disabled):hover {
-  background-color: #3a4b35;
-  border-color: #253022;
-  color: #fff;
-}
+// .btn.secondary.dark:not(:disabled):hover {
+//   background-color: #3a4b35;
+//   border-color: #253022;
+//   color: #fff;
+// }
 
-.btn.secondary.dark:disabled {
-  color: #3a4b35;
-  border-color: #3a4b35;
-  opacity: 0.75;
-}
+// .btn.secondary.dark:disabled {
+//   color: #3a4b35;
+//   border-color: #3a4b35;
+//   opacity: 0.75;
+// }
 
-/* Form component classes */
+// /* Form component classes */
 
-.Input:active {
-  border-color: green;
-}
+// .Input:active {
+//   border-color: green;
+// }
 
-.Input:focus {
-  border-color: #c5474b;
-}
+// .Input:focus {
+//   border-color: #c5474b;
+// }
 
-// Major Elements
+// // Major Elements
 
-.card-bg {
-  background-color: #faf3dd;
-}
+// .card-bg {
+//   background-color: #faf3dd;
+// }
 
-.Loader path {
-  fill: #5b7553;
-}
+// .Loader path {
+//   fill: #5b7553;
+// }
 
-.progressbar-meter {
-  background-color: #9b6a6c;
-}
-.progressbar-meter.complete {
-  background-color: #5b7553;
-}
+// .progressbar-meter {
+//   background-color: #9b6a6c;
+// }
+// .progressbar-meter.complete {
+//   background-color: #5b7553;
+// }
 
-.dropdown-nav-menu li:hover {
-  color: #9b6a6c;
-  background-color: #faf3dd;
-}
+// .dropdown-nav-menu li:hover {
+//   color: #9b6a6c;
+//   background-color: #faf3dd;
+// }
 
-.status-tag.missing {
-  background-color: #3d0c11;
-  color: #ffffff;
-}
-.status-tag.unavailable {
-  background: orange;
-  color: #8f1e2a;
-}
-.status-tag.success {
-  background: green;
-  color: #faf3dd;
-}
-//degraded, updating, failed, skipped, unknown, required
+// .status-tag.missing {
+//   background-color: #3d0c11;
+//   color: #ffffff;
+// }
+// .status-tag.unavailable {
+//   background: orange;
+//   color: #8f1e2a;
+// }
+// .status-tag.success {
+//   background: green;
+//   color: #faf3dd;
+// }
+// //degraded, updating, failed, skipped, unknown, required
 
-.details-subnav {
-  background-color: #faf3dd;
-}
+// .details-subnav {
+//   background-color: #faf3dd;
+// }
 
-.NavItem.is-active {
-  border-bottom-color: #9b6a6c;
-}
+// .NavItem.is-active {
+//   border-bottom-color: #9b6a6c;
+// }
 
-//for the line underneath the subnav link
-.subnav-item.is-active a:after {
-  background-color: red;
-}
+// //for the line underneath the subnav link
+// .subnav-item.is-active a:after {
+//   background-color: red;
+// }
 
-// icon classes
-.icons {
-  color: #326de6;
-}
-.clickable {
-  cursor: pointer;
-}
-.warning-color {
-  color: #f7b500;
-}
+// // icon classes
+// .icons {
+//   color: #326de6;
+// }
+// .clickable {
+//   cursor: pointer;
+// }
+// .warning-color {
+//   color: #f7b500;
+// }
 
-.success-color {
-  color: #38cc97;
-}
-.no-activity-circle-filled--icon {
-  color: #c4c8ca;
-}
+// .success-color {
+//   color: #38cc97;
+// }
+// .no-activity-circle-filled--icon {
+//   color: #c4c8ca;
+// }
 
-.error-color {
-  color: #f65c5c;
-}
-.gray-color {
-  color: #9b9b9b;
-}
-.darkGray-color {
-  color: #717171;
-}
+// .error-color {
+//   color: #f65c5c;
+// }
+// .gray-color {
+//   color: #9b9b9b;
+// }
+// .darkGray-color {
+//   color: #717171;
+// }
 
-.close-icon:hover {
-  color: #717171;
-}
+// .close-icon:hover {
+//   color: #717171;
+// }
