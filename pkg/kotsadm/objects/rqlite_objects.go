@@ -37,12 +37,12 @@ func RqliteStatefulset(deployOptions types.DeployOptions, size resource.Quantity
 	volumeMounts := getRqliteVolumeMounts()
 
 	cpuRequest, cpuLimit := "100m", "200m"
-	memoryRequest, memoryLimit := "100Mi", "200Mi"
+	memoryRequest, memoryLimit := "100Mi", "1Gi" // rqlite uses an in-memory db by default for a better performance, so the limit should approximately match the pvc size. the pvc is used by rqlite for raft logs and compressed db snapshots.
 
 	if deployOptions.IsGKEAutopilot {
 		// need to increase the cpu and memory request to meet GKE Autopilot's minimum requirement of 500m when using pod anti affinity
 		cpuRequest, cpuLimit = "500m", "500m"
-		memoryRequest, memoryLimit = "512Mi", "512Mi"
+		memoryRequest, memoryLimit = "512Mi", "1Gi"
 	}
 
 	statefulset := &appsv1.StatefulSet{

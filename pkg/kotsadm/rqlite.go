@@ -119,6 +119,7 @@ func ensureRqliteStatefulset(deployOptions types.DeployOptions, clientset *kuber
 	existingRqlite.Spec.Template.Spec.Containers[0].Image = desiredRqlite.Spec.Template.Spec.Containers[0].Image
 	existingRqlite.Spec.Template.Spec.Containers[0].VolumeMounts = desiredVolumeMounts
 	existingRqlite.Spec.Template.Spec.Containers[0].Env = desiredRqlite.Spec.Template.Spec.Containers[0].Env
+	existingRqlite.Spec.Template.Spec.Containers[0].Resources = desiredRqlite.Spec.Template.Spec.Containers[0].Resources
 
 	_, err = clientset.AppsV1().StatefulSets(deployOptions.Namespace).Update(ctx, existingRqlite, metav1.UpdateOptions{})
 	if err != nil {

@@ -86,6 +86,13 @@ spec:
           initialDelaySeconds: 1
           timeoutSeconds: 1
           periodSeconds: 1
+        resources:
+          limits:
+            cpu: 200m
+            memory: 1Gi
+          requests:
+            cpu: 100m
+            memory: 100Mi
         volumeMounts:
         - name: kotsadm-rqlite
           mountPath: /rqlite/file
