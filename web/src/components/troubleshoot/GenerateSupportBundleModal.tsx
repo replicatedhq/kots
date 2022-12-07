@@ -3,7 +3,7 @@ import Modal from "react-modal";
 import CodeSnippet from "@components/shared/CodeSnippet";
 import { Utilities } from "@src/utilities/utilities";
 import { useHistory } from "react-router";
-import { App, LicenseFile, KotsParams } from "@types";
+import { App, LicenseFile, KotsParams, SupportBundle } from "@types";
 // @ts-ignore
 import Dropzone from "react-dropzone";
 import Icon from "@components/Icon";
@@ -11,6 +11,7 @@ import isEmpty from "lodash/isEmpty";
 // @ts-ignore
 import randomstring from "randomstring";
 import { useRouteMatch } from "react-router";
+import { Repeater } from "../../utilities/repeater";
 
 type Props = {
   isOpen: boolean;
@@ -26,6 +27,11 @@ type State = {
   showGetBundleSpec: boolean;
   supportBundleFile: LicenseFile | null;
   uploadBundleErrMsg: string;
+  supportBundles: SupportBundle[] | null;
+  listSupportBundlesJob: Repeater;
+  errorMsg: string;
+  totalBundles: number | null;
+  loadingSupportBundles: boolean;
 };
 
 const GenerateSupportBundleModal = ({
@@ -46,6 +52,11 @@ const GenerateSupportBundleModal = ({
       showGetBundleSpec: false,
       supportBundleFile: {} as LicenseFile,
       uploadBundleErrMsg: "",
+      supportBundles: null,
+      listSupportBundlesJob: new Repeater(),
+      errorMsg: "",
+      totalBundles: null,
+      loadingSupportBundles: false,
     }
   );
 
@@ -77,9 +88,95 @@ const GenerateSupportBundleModal = ({
     setState({ bundleCommand: response.command });
   };
 
+  const listSupportBundles = () => {
+    setState({ loadingSupportBundles: true });
+    return new Promise<void>((resolve, reject) => {
+      fetch(
+        `${process.env.API_ENDPOINT}/troubleshoot/app/${watch?.slug}/supportbundles`,
+        {
+          headers: {
+            Authorization: Utilities.getToken(),
+            "Content-Type": "application/json",
+          },
+          method: "GET",
+        }
+      )
+        .then(async (res) => {
+          if (!res.ok) {
+            setState({
+              errorMsg: `Unable to list support bundles: Status ${res.status}`,
+            });
+            return;
+          }
+          const response = await res.json();
+          let bundleRunning = false;
+          if (response.supportBundles) {
+            bundleRunning = response.supportBundles.find(
+              (bundle: SupportBundle) => bundle.status === "running"
+            );
+          }
+          console.log(response.supportBundles);
+          console.log("bundlerunning", bundleRunning);
+          if (bundleRunning) {
+            setState({
+              loadingSupportBundles: false,
+              errorMsg: "",
+            });
+          } else {
+            setState({
+              supportBundles: response.supportBundles,
+              loadingSupportBundles: false,
+              errorMsg: "",
+            });
+          }
+          resolve();
+        })
+        .catch((err) => {
+          setState({
+            errorMsg: err
+              ? err.message
+              : "Something went wrong, please try again.",
+          });
+          reject(err);
+        });
+    });
+  };
+
   useEffect(() => {
     fetchSupportBundleCommand();
+    listSupportBundles();
+
+    return () => {
+      state.listSupportBundlesJob.stop();
+    };
   }, []);
+
+  useEffect(() => {
+    const { totalBundles, supportBundles, listSupportBundlesJob } = state;
+    if (supportBundles && supportBundles.length > 0) {
+      if (totalBundles === null) {
+        console.log(supportBundles);
+        setState({ totalBundles: supportBundles?.length });
+        console.log("start");
+        listSupportBundlesJob.start(listSupportBundles, 2000);
+        return;
+      } else if (listSupportBundlesJob.isRunning()) {
+        if (supportBundles?.length > totalBundles) {
+          const bundle = supportBundles[0];
+          if (bundle.status !== "running") {
+            listSupportBundlesJob.stop();
+            if (bundle.status === "failed") {
+              history.push(`/app/${watch?.slug}/troubleshoot`);
+            } else {
+              history.push(
+                `/app/${watch?.slug}/troubleshoot/analyze/${bundle.id}`
+              );
+            }
+          }
+        }
+      }
+    }
+  }, [state.supportBundles]);
 
   const collectBundle = (clusterId: number | undefined) => {
     let url = `${process.env.API_ENDPOINT}/troubleshoot/supportbundle/app/${watch?.id}/cluster/${clusterId}/collect`;
@@ -216,6 +313,11 @@ const GenerateSupportBundleModal = ({
             <span className="u-fontWeight--bold u-textColor--primary">
               Run a command to generate a support bundle
             </span>
+            {state.errorMsg && (
+              <p className="u-textColor--error u-fontSize--normal u-fontWeight--medium u-lineHeight--normal u-marginBottom--10">
+                {state.errorMsg}
+              </p>
+            )}
             <div className="u-marginTop--15">
               {state.showGetBundleSpec && (
                 <>
