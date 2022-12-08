@@ -1,6 +1,5 @@
 import * as React from "react";
 import { KotsPageTitle } from "@components/Head";
-import { Link } from "react-router-dom";
 import {
   withRouter,
   withRouterType,
@@ -17,9 +16,9 @@ import { Repeater } from "@src/utilities/repeater";
 
 import "../../scss/components/troubleshoot/SupportBundleList.scss";
 import Icon from "../Icon";
-import ReactTooltip from "react-tooltip";
 
 import { App, SupportBundle, SupportBundleProgress } from "@types";
+import GenerateSupportBundleModal from "./GenerateSupportBundleModal";
 
 type Props = {
   bundle: SupportBundle;
@@ -50,6 +49,7 @@ type State = {
   loadingSupportBundles: boolean;
   pollForBundleAnalysisProgress: Repeater;
   supportBundles?: SupportBundle[];
+  isGeneratingBundleOpen: boolean;
 };
 
 class SupportBundleList extends React.Component<Props, State> {
@@ -59,6 +59,7 @@ class SupportBundleList extends React.Component<Props, State> {
       displayRedactorModal: false,
       loadingSupportBundles: false,
       pollForBundleAnalysisProgress: new Repeater(),
+      isGeneratingBundleOpen: false,
     };
   }
 
@@ -83,6 +84,12 @@ class SupportBundleList extends React.Component<Props, State> {
       }
     }
   }
+
+  toggleGenerateBundleModal = () => {
+    this.setState({
+      isGeneratingBundleOpen: !this.state.isGeneratingBundleOpen,
+    });
+  };
 
   listSupportBundles = () => {
     this.setState({
@@ -158,7 +165,7 @@ class SupportBundleList extends React.Component<Props, State> {
 
   render() {
     const { watch, loading, loadingBundle } = this.props;
-    const { errorMsg, supportBundles } = this.state;
+    const { errorMsg, supportBundles, isGeneratingBundleOpen } = this.state;
 
     const downstream = watch?.downstream;
 
@@ -248,43 +255,21 @@ class SupportBundleList extends React.Component<Props, State> {
                     </div>
                   </div>
                   <div className="RightNode flex-auto flex alignItems--center u-position--relative">
-                    {loadingBundle ? (
-                      <>
-                        <p
-                          className="replicated-link flex alignItems--center u-fontSize--small"
-                          style={{
-                            color: "gray",
-                          }}
-                          data-tip={
-                            "Only one support bundle can be generated at a time."
-                          }
-                        >
-                          <Icon
-                            icon="tools"
-                            size={18}
-                            className="clickable u-marginRight--5"
-                            style={{ color: "gray" }}
-                          />
-                          Generate a support bundle
-                        </p>
-                        <ReactTooltip
-                          effect="solid"
-                          className="replicated-tooltip"
-                        />
-                      </>
-                    ) : (
-                      <Link
-                        to={`${this.props.match.url}/generate`}
-                        className="replicated-link flex alignItems--center u-fontSize--small"
-                      >
-                        <Icon
-                          icon="tools"
-                          size={18}
-                          className="clickable u-marginRight--5"
-                        />
-                        Generate a support bundle
-                      </Link>
-                    )}
+                    <a
+                      onClick={() =>
+                        !loadingBundle && this.toggleGenerateBundleModal()
+                      }
+                      className={`replicated-link flex alignItems--center u-fontSize--small ${
+                        loadingBundle ? "generating-bundle" : ""
+                      }`}
+                    >
+                      <Icon
+                        icon="tools"
+                        size={18}
+                        className="clickable u-marginRight--5"
+                      />
+                      Generate a support bundle
+                    </a>
                     <span
                       className="replicated-link flex alignItems--center u-fontSize--small u-marginLeft--20"
                       onClick={this.toggleRedactorModal}
@@ -323,6 +308,12 @@ class SupportBundleList extends React.Component<Props, State> {
             appSlug={this.props.match.params.slug}
           />
         )}
+        <GenerateSupportBundleModal
+          isOpen={isGeneratingBundleOpen}
+          toggleModal={this.toggleGenerateBundleModal}
+          watch={this.props.watch}
+          updateBundleSlug={this.props.updateBundleSlug}
+        />
       </div>
     );
   }
