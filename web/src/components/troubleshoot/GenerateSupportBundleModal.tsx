@@ -115,8 +115,6 @@ const GenerateSupportBundleModal = ({
               (bundle: SupportBundle) => bundle.status === "running"
             );
           }
-          console.log(response.supportBundles);
-          console.log("bundlerunning", bundleRunning);
           if (bundleRunning) {
             setState({
               loadingSupportBundles: false,
@@ -155,9 +153,7 @@ const GenerateSupportBundleModal = ({
     const { totalBundles, supportBundles, listSupportBundlesJob } = state;
     if (supportBundles && supportBundles.length > 0) {
       if (totalBundles === null) {
-        console.log(supportBundles);
         setState({ totalBundles: supportBundles?.length });
-        console.log("start");
         listSupportBundlesJob.start(listSupportBundles, 2000);
         return;
       } else if (listSupportBundlesJob.isRunning()) {
