@@ -210,7 +210,7 @@ export default class DashboardGraphsCard extends React.Component<Props, State> {
 
     return (
       <div
-        className="dashboard-card card-bg graph GraphCard-content--wrapper flex-column"
+        className="card-item graph GraphCard-content--wrapper flex-column"
         key={chart.title}
       >
         <XYPlot
@@ -290,7 +290,7 @@ export default class DashboardGraphsCard extends React.Component<Props, State> {
       <div
         className={`${
           !prometheusAddress ? "inverse-card" : ""
-        } dashboard-card flex-column flex1`}
+        } dashboard-card card-bg flex-column flex1`}
       >
         <div className="flex justifyContent--spaceBetween alignItems--center">
           <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold">
