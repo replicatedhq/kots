@@ -50,11 +50,24 @@ func (h *Handler) DownloadApp(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	latestSequence, err := store.GetStore().GetLatestAppSequence(a.ID, true)
-	if err != nil {
-		logger.Error(err)
-		w.WriteHeader(500)
-		return
+	//  set sequence from query param if present else get the latest sequence
+	sequence := int64(-1)
+	if r.URL.Query().Get("sequence") != "" {
+		sequence, err = strconv.ParseInt(r.URL.Query().Get("sequence"), 10, 64)
+		if err != nil {
+			errMsg := "failed to parse sequence number"
+			logger.Error(errors.Wrap(err, errMsg))
+			w.WriteHeader(400)
+			w.Write([]byte(errMsg))
+			return
+		}
+	} else {
+		sequence, err = store.GetStore().GetLatestAppSequence(a.ID, true)
+		if err != nil {
+			logger.Error(err)
+			w.WriteHeader(500)
+			return
+		}
 	}
 
 	archivePath, err := ioutil.TempDir("", "kotsadm")
@@ -65,7 +78,7 @@ func (h *Handler) DownloadApp(w http.ResponseWriter, r *http.Request) {
 	}
 	defer os.RemoveAll(archivePath)
 
-	err = store.GetStore().GetAppVersionArchive(a.ID, latestSequence, archivePath)
+	err = store.GetStore().GetAppVersionArchive(a.ID, sequence, archivePath)
 	if err != nil {
 		logger.Error(err)
 		w.WriteHeader(500)

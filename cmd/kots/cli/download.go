@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/kots/pkg/download"
@@ -32,6 +33,7 @@ func DownloadCmd() *cobra.Command {
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := viper.GetViper()
+			log := logger.NewCLILogger(cmd.OutOrStdout())
 
 			appSlug := v.GetString("slug")
 			if appSlug == "" {
@@ -52,12 +54,25 @@ func DownloadCmd() *cobra.Command {
 			if err != nil {
 				return errors.Wrap(err, "failed to get namespace")
 			}
+			
+			sequence := v.GetString("sequence")
+			appSequence := -1
+			if sequence != "" {
+				if appSequence, err = strconv.Atoi(sequence); err != nil {
+					return errors.Wrap(err, "sequence must be a number")
+				}
+				log.ActionWithSpinner("Using sequence %d to download the application", appSequence)
+			}else {
+				log.ActionWithSpinner("Using latest sequence to download the application")
+			}
+			log.FinishSpinner()
 
 			downloadOptions := download.DownloadOptions{
 				Namespace:             namespace,
 				Overwrite:             v.GetBool("overwrite"),
 				Silent:                output != "",
 				DecryptPasswordValues: v.GetBool("decrypt-password-values"),
+				AppSequence:              appSequence,
 			}
 
 			var downloadOutput DownloadOutput
@@ -73,7 +88,6 @@ func DownloadCmd() *cobra.Command {
 				downloadOutput.UploadCommand = fmt.Sprintf("kubectl kots upload --namespace %s --slug %s %s", namespace, appSlug, downloadPath)
 			}
 
-			log := logger.NewCLILogger(cmd.OutOrStdout())
 			if output == "json" {
 				outputJSON, err := json.Marshal(downloadOutput)
 				if err != nil {
@@ -97,6 +111,7 @@ func DownloadCmd() *cobra.Command {
 	cmd.Flags().String("slug", "", "the application slug to download")
 	cmd.Flags().Bool("decrypt-password-values", false, "decrypt password values to plaintext")
 	cmd.Flags().StringP("output", "o", "", "output format (currently supported: json)")
+	cmd.Flags().String("sequence", "", "the application slug's sequence to download(when not specified, the latest sequence will be downloaded)")
 
 	return cmd
 }
