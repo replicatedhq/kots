@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -205,11 +204,6 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		return
 	}
 
-	if err := cleanBaseArchive(archiveDir); err != nil {
-		finalError = errors.Wrap(err, "failed to clean base archive")
-		return
-	}
-
 	pullOptions := kotspull.PullOptions{
 		LicenseObj:          latestLicense,
 		Namespace:           appNamespace,
@@ -238,12 +232,9 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		SkipCompatibilityCheck: skipCompatibilityCheck,
 	}
 
-	_, err = kotspull.Pull(fmt.Sprintf("replicated://%s", beforeKotsKinds.License.Spec.AppSlug), pullOptions)
-	if err != nil {
-		if errors.Cause(err) != kotspull.ErrConfigNeeded {
-			finalError = errors.Wrap(err, "failed to pull")
-			return
-		}
+	if _, err := kotspull.Pull(fmt.Sprintf("replicated://%s", beforeKotsKinds.License.Spec.AppSlug), pullOptions); err != nil {
+		finalError = errors.Wrap(err, "failed to pull")
+		return
 	}
 
 	if update.AppSequence == nil {
@@ -288,28 +279,4 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 	}
 
 	return
-}
-
-func cleanBaseArchive(path string) error {
-	files, err := ioutil.ReadDir(path)
-	if err != nil {
-		return errors.Wrap(err, "failed to read dir")
-	}
-
-	// "overlays" contains manual kustomizations.
-	// "upstream" contains config values, known images, and other important installation info
-	// everything else should be deleted and generated again
-	for _, file := range files {
-		switch file.Name() {
-		case "overlays", "upstream":
-			continue
-		default:
-			err := os.RemoveAll(filepath.Join(path, file.Name()))
-			if err != nil {
-				return errors.Wrapf(err, "failed to delete %s", file.Name())
-			}
-		}
-	}
-
-	return nil
 }
