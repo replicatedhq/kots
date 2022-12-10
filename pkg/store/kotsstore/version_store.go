@@ -242,16 +242,8 @@ func (s *KOTSStore) GetTargetKotsVersionForVersion(appID string, sequence int64)
 func (s *KOTSStore) CreateAppVersionArchive(appID string, sequence int64, archivePath string) error {
 	paths := []string{
 		filepath.Join(archivePath, "upstream"),
-	}
-
-	basePath := filepath.Join(archivePath, "base")
-	if _, err := os.Stat(basePath); err == nil {
-		paths = append(paths, basePath)
-	}
-
-	overlaysPath := filepath.Join(archivePath, "overlays")
-	if _, err := os.Stat(overlaysPath); err == nil {
-		paths = append(paths, overlaysPath)
+		filepath.Join(archivePath, "base"),
+		filepath.Join(archivePath, "overlays"),
 	}
 
 	skippedFilesPath := filepath.Join(archivePath, "skippedFiles")

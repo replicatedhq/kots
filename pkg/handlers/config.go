@@ -190,24 +190,7 @@ func (h *Handler) UpdateAppConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	archiveDir, err := ioutil.TempDir("", "kotsadm")
-	if err != nil {
-		updateAppConfigResponse.Error = "failed to create temp dir"
-		logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
-		JSON(w, http.StatusInternalServerError, updateAppConfigResponse)
-		return
-	}
-	defer os.RemoveAll(archiveDir)
-
-	err = store.GetStore().GetAppVersionArchive(foundApp.ID, updateAppConfigRequest.Sequence, archiveDir)
-	if err != nil {
-		updateAppConfigResponse.Error = "failed to get app version archive"
-		logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
-		JSON(w, http.StatusInternalServerError, updateAppConfigResponse)
-		return
-	}
-
-	createNewVersion, err := shouldCreateNewAppVersion(archiveDir, foundApp.ID, updateAppConfigRequest.Sequence)
+	createNewVersion, err := shouldCreateNewAppVersion(foundApp.ID, updateAppConfigRequest.Sequence)
 	if err != nil {
 		updateAppConfigResponse.Error = "failed to check if version should be created"
 		logger.Error(errors.Wrap(err, updateAppConfigResponse.Error))
@@ -360,7 +343,7 @@ func (h *Handler) LiveAppConfig(w http.ResponseWriter, r *http.Request) {
 			ReadOnly:  registryInfo.IsReadOnly,
 		}
 
-		createNewVersion, err = shouldCreateNewAppVersion(archiveDir, foundApp.GetID(), liveAppConfigRequest.Sequence)
+		createNewVersion, err = shouldCreateNewAppVersion(foundApp.GetID(), liveAppConfigRequest.Sequence)
 		if err != nil {
 			liveAppConfigResponse.Error = "failed to check new version"
 			logger.Error(errors.Wrap(err, liveAppConfigResponse.Error))
@@ -606,7 +589,7 @@ func (h *Handler) CurrentAppConfig(w http.ResponseWriter, r *http.Request) {
 			ReadOnly:  registryInfo.IsReadOnly,
 		}
 
-		createNewVersion, err = shouldCreateNewAppVersion(archiveDir, foundApp.GetID(), sequence)
+		createNewVersion, err = shouldCreateNewAppVersion(foundApp.GetID(), sequence)
 		if err != nil {
 			currentAppConfigResponse.Error = "failed to check new version"
 			logger.Error(errors.Wrap(err, currentAppConfigResponse.Error))
@@ -691,17 +674,8 @@ func isVersionConfigEditable(app *apptypes.App, sequence int64) (bool, error) {
 	return false, nil
 }
 
-func shouldCreateNewAppVersion(archiveDir string, appID string, sequence int64) (bool, error) {
-	// Updates are allowed for any version that does not have base rendered.
-	if _, err := os.Stat(filepath.Join(archiveDir, "base")); err != nil {
-		if os.IsNotExist(err) {
-			return false, nil
-		} else {
-			return false, errors.Wrap(err, "failed to stat base dir")
-		}
-	}
-
-	// If base is rendered, updates are allowed only for sequence 0 and only when it's pending config.
+func shouldCreateNewAppVersion(appID string, sequence int64) (bool, error) {
+	// Updates are allowed only for sequence 0 and only when it's pending config.
 	if sequence > 0 {
 		return true, nil
 	}
@@ -852,12 +826,7 @@ func updateAppConfig(updateApp *apptypes.App, sequence int64, configGroups []kot
 
 	err = render.RenderDir(archiveDir, app, downstreams, registrySettings, renderSequence)
 	if err != nil {
-		cause := errors.Cause(err)
-		if _, ok := cause.(util.ActionableError); ok {
-			updateAppConfigResponse.Error = cause.Error()
-		} else {
-			updateAppConfigResponse.Error = "failed to render archive directory"
-		}
+		updateAppConfigResponse.Error = "failed to render archive directory"
 		return updateAppConfigResponse, err
 	}
 
