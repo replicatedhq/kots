@@ -47,7 +47,11 @@ func UpdateAppFromAirgap(a *apptypes.App, airgapBundlePath string, deploy bool, 
 	defer os.RemoveAll(airgapRoot)
 
 	err = UpdateAppFromPath(a, airgapRoot, airgapBundlePath, deploy, skipPreflights, skipCompatibilityCheck)
-	return errors.Wrap(err, "failed to update app")
+	if err != nil {
+		return errors.Wrap(err, "failed to update app")
+	}
+
+	return nil
 }
 
 func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath string, deploy bool, skipPreflights bool, skipCompatibilityCheck bool) error {
@@ -137,6 +141,10 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 		return errors.Wrap(err, "failed to get stat identity config file")
 	}
 
+	if err := pull.CleanBaseArchive(archiveDir); err != nil {
+		return errors.Wrap(err, "failed to clean base archive")
+	}
+
 	pullOptions := pull.PullOptions{
 		LicenseObj:          license,
 		Namespace:           appNamespace,
@@ -166,7 +174,9 @@ func UpdateAppFromPath(a *apptypes.App, airgapRoot string, airgapBundlePath stri
 	}
 
 	if _, err := pull.Pull(fmt.Sprintf("replicated://%s", beforeKotsKinds.License.Spec.AppSlug), pullOptions); err != nil {
-		return errors.Wrap(err, "failed to pull")
+		if errors.Cause(err) != pull.ErrConfigNeeded {
+			return errors.Wrap(err, "failed to pull")
+		}
 	}
 
 	afterKotsKinds, err := kotsutil.LoadKotsKindsFromPath(archiveDir)

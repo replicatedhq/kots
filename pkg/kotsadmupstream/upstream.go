@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -15,7 +14,7 @@ import (
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/preflight"
-	kotspull "github.com/replicatedhq/kots/pkg/pull"
+	"github.com/replicatedhq/kots/pkg/pull"
 	"github.com/replicatedhq/kots/pkg/render"
 	"github.com/replicatedhq/kots/pkg/reporting"
 	"github.com/replicatedhq/kots/pkg/store"
@@ -205,12 +204,12 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		return
 	}
 
-	if err := cleanBaseArchive(archiveDir); err != nil {
+	if err := pull.CleanBaseArchive(archiveDir); err != nil {
 		finalError = errors.Wrap(err, "failed to clean base archive")
 		return
 	}
 
-	pullOptions := kotspull.PullOptions{
+	pullOptions := pull.PullOptions{
 		LicenseObj:          latestLicense,
 		Namespace:           appNamespace,
 		ConfigFile:          filepath.Join(archiveDir, "upstream", "userdata", "config.yaml"),
@@ -228,7 +227,7 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		IsGitOps:            a.IsGitOps,
 		ReportingInfo:       reporting.GetReportingInfo(a.ID),
 		RewriteImages:       registrySettings.IsValid(),
-		RewriteImageOptions: kotspull.RewriteImageOptions{
+		RewriteImageOptions: pull.RewriteImageOptions{
 			Host:       registrySettings.Hostname,
 			Namespace:  registrySettings.Namespace,
 			Username:   registrySettings.Username,
@@ -238,9 +237,9 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 		SkipCompatibilityCheck: skipCompatibilityCheck,
 	}
 
-	_, err = kotspull.Pull(fmt.Sprintf("replicated://%s", beforeKotsKinds.License.Spec.AppSlug), pullOptions)
+	_, err = pull.Pull(fmt.Sprintf("replicated://%s", beforeKotsKinds.License.Spec.AppSlug), pullOptions)
 	if err != nil {
-		if errors.Cause(err) != kotspull.ErrConfigNeeded {
+		if errors.Cause(err) != pull.ErrConfigNeeded {
 			finalError = errors.Wrap(err, "failed to pull")
 			return
 		}
@@ -288,28 +287,4 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 	}
 
 	return
-}
-
-func cleanBaseArchive(path string) error {
-	files, err := ioutil.ReadDir(path)
-	if err != nil {
-		return errors.Wrap(err, "failed to read dir")
-	}
-
-	// "overlays" contains manual kustomizations.
-	// "upstream" contains config values, known images, and other important installation info
-	// everything else should be deleted and generated again
-	for _, file := range files {
-		switch file.Name() {
-		case "overlays", "upstream":
-			continue
-		default:
-			err := os.RemoveAll(filepath.Join(path, file.Name()))
-			if err != nil {
-				return errors.Wrapf(err, "failed to delete %s", file.Name())
-			}
-		}
-	}
-
-	return nil
 }

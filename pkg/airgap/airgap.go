@@ -234,7 +234,9 @@ func CreateAppFromAirgap(opts CreateAirgapAppOpts) (finalError error) {
 	}
 
 	if _, err := pull.Pull(fmt.Sprintf("replicated://%s", license.Spec.AppSlug), pullOptions); err != nil {
-		return errors.Wrap(err, "failed to pull")
+		if errors.Cause(err) != pull.ErrConfigNeeded {
+			return errors.Wrap(err, "failed to pull")
+		}
 	}
 
 	if err := store.GetStore().AddAppToAllDownstreams(opts.PendingApp.ID); err != nil {
