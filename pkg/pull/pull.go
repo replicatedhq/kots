@@ -17,14 +17,16 @@ import (
 	"github.com/replicatedhq/kots/pkg/base"
 	"github.com/replicatedhq/kots/pkg/crypto"
 	"github.com/replicatedhq/kots/pkg/docker/registry"
-	registrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
+	dockerregistrytypes "github.com/replicatedhq/kots/pkg/docker/registry/types"
 	"github.com/replicatedhq/kots/pkg/downstream"
 	"github.com/replicatedhq/kots/pkg/k8sdoc"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
+	"github.com/replicatedhq/kots/pkg/kotsadmconfig"
 	"github.com/replicatedhq/kots/pkg/kotsutil"
 	kotslicense "github.com/replicatedhq/kots/pkg/license"
 	"github.com/replicatedhq/kots/pkg/logger"
 	"github.com/replicatedhq/kots/pkg/midstream"
+	registrytypes "github.com/replicatedhq/kots/pkg/registry/types"
 	"github.com/replicatedhq/kots/pkg/replicatedapp"
 	"github.com/replicatedhq/kots/pkg/upstream"
 	upstreamtypes "github.com/replicatedhq/kots/pkg/upstream/types"
@@ -76,6 +78,10 @@ type RewriteImageOptions struct {
 	Password   string
 	IsReadOnly bool
 }
+
+var (
+	ErrConfigNeeded = errors.New("version needs config")
+)
 
 // PullApplicationMetadata will return the application metadata yaml, if one is
 // available for the upstream
@@ -292,6 +298,27 @@ func Pull(upstreamURI string, pullOptions PullOptions) (string, error) {
 		return "", errors.Wrap(err, "failed to write upstream")
 	}
 	log.FinishSpinner()
+
+	kotsKinds, err := kotsutil.LoadKotsKindsFromPath(u.GetUpstreamDir(writeUpstreamOptions))
+	if err != nil {
+		return "", errors.Wrap(err, "failed to load kotskinds")
+	}
+
+	registrySettings := registrytypes.RegistrySettings{
+		Hostname:   pullOptions.RewriteImageOptions.Host,
+		Namespace:  pullOptions.RewriteImageOptions.Namespace,
+		Username:   pullOptions.RewriteImageOptions.Username,
+		Password:   pullOptions.RewriteImageOptions.Password,
+		IsReadOnly: pullOptions.RewriteImageOptions.IsReadOnly,
+	}
+
+	needsConfig, err := kotsadmconfig.NeedsConfiguration(pullOptions.AppSlug, pullOptions.AppSequence, pullOptions.AirgapRoot != "", kotsKinds, registrySettings)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to check if version needs configuration")
+	}
+	if needsConfig {
+		return "", ErrConfigNeeded
+	}
 
 	renderDir := pullOptions.RootDir
 	if pullOptions.CreateAppDir {
@@ -656,15 +683,15 @@ func rewriteBaseImages(pullOptions PullOptions, baseDir string, kotsKinds *kotsu
 	rewriteImageOptions := base.RewriteImageOptions{
 		BaseDir: baseDir,
 		Log:     log,
-		SourceRegistry: registrytypes.RegistryOptions{
+		SourceRegistry: dockerregistrytypes.RegistryOptions{
 			Endpoint:      replicatedRegistryInfo.Registry,
 			ProxyEndpoint: replicatedRegistryInfo.Proxy,
 		},
-		DockerHubRegistry: registrytypes.RegistryOptions{
+		DockerHubRegistry: dockerregistrytypes.RegistryOptions{
 			Username: dockerHubRegistryCreds.Username,
 			Password: dockerHubRegistryCreds.Password,
 		},
-		DestRegistry: registrytypes.RegistryOptions{
+		DestRegistry: dockerregistrytypes.RegistryOptions{
 			Endpoint:  pullOptions.RewriteImageOptions.Host,
 			Namespace: pullOptions.RewriteImageOptions.Namespace,
 			Username:  pullOptions.RewriteImageOptions.Username,
@@ -699,12 +726,12 @@ func processAirgapImages(pullOptions PullOptions, pushImages bool, kotsKinds *ko
 		CreateAppDir: pullOptions.CreateAppDir,
 		PushImages:   !pullOptions.RewriteImageOptions.IsReadOnly && pushImages,
 		Log:          log,
-		ReplicatedRegistry: registrytypes.RegistryOptions{
+		ReplicatedRegistry: dockerregistrytypes.RegistryOptions{
 			Endpoint:      replicatedRegistryInfo.Registry,
 			ProxyEndpoint: replicatedRegistryInfo.Proxy,
 		},
 		ReportWriter: pullOptions.ReportWriter,
-		DestinationRegistry: registrytypes.RegistryOptions{
+		DestinationRegistry: dockerregistrytypes.RegistryOptions{
 			Endpoint:  pullOptions.RewriteImageOptions.Host,
 			Namespace: pullOptions.RewriteImageOptions.Namespace,
 			Username:  pullOptions.RewriteImageOptions.Username,
@@ -746,11 +773,11 @@ func findPrivateImages(writeMidstreamOptions midstream.WriteOptions, b *base.Bas
 	findPrivateImagesOptions := base.FindPrivateImagesOptions{
 		BaseDir: writeMidstreamOptions.BaseDir,
 		AppSlug: license.Spec.AppSlug,
-		ReplicatedRegistry: registrytypes.RegistryOptions{
+		ReplicatedRegistry: dockerregistrytypes.RegistryOptions{
 			Endpoint:      replicatedRegistryInfo.Registry,
 			ProxyEndpoint: replicatedRegistryInfo.Proxy,
 		},
-		DockerHubRegistry: registrytypes.RegistryOptions{
+		DockerHubRegistry: dockerregistrytypes.RegistryOptions{
 			Username: dockerHubRegistryCreds.Username,
 			Password: dockerHubRegistryCreds.Password,
 		},
