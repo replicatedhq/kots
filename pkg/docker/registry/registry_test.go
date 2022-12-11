@@ -133,11 +133,11 @@ func Test_getRegistryProxyInfoFromLicense(t *testing.T) {
 				Proxy:    "proxy.staging.replicated.com",
 			},
 		}, {
-			name:    "ProxyEndpointFromLicense with license parameter containing replicated-app spec endpoint returns replicated-app proxy info",
-			license: &kotsv1beta1.License{Spec: kotsv1beta1.LicenseSpec{Endpoint: "protocol://user:pwd@replicated-app"}},
+			name:    "ProxyEndpointFromLicense with license parameter containing a dev (okteto) endpoint returns the same naemspace proxy info",
+			license: &kotsv1beta1.License{Spec: kotsv1beta1.LicenseSpec{Endpoint: "protocol://user:pwd@replicated-app-user1.okteto.repldev.com"}},
 			want: &RegistryProxyInfo{
-				Registry: "registry:3000",
-				Proxy:    "registry-proxy:3000",
+				Registry: "vendor-registry-v2-user1.okteto.repldev.com",
+				Proxy:    "registry-proxy-user1.okteto.repldev.com",
 			},
 		}, {
 			name:    "ProxyEndpointFromLicense returns default info when url parsing fails",

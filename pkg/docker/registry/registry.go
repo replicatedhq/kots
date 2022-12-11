@@ -95,20 +95,28 @@ func getRegistryProxyInfoFromLicense(license *kotsv1beta1.License) *RegistryProx
 		return defaultInfo
 	}
 
-	switch u.Hostname() {
-	case "staging.replicated.app":
+	if u.Hostname() == "staging.replicated.app" {
 		return &RegistryProxyInfo{
 			Registry: "registry.staging.replicated.com",
 			Proxy:    "proxy.staging.replicated.com",
 		}
-	case "replicated-app":
-		return &RegistryProxyInfo{
-			Registry: "registry:3000", // TODO: not real info
-			Proxy:    "registry-proxy:3000",
-		}
-	default:
-		return defaultInfo
 	}
+
+	if strings.HasSuffix(u.Hostname(), ".okteto.repldev.com") {
+		hostnameParts := strings.Split(u.Hostname(), ".")
+		if len(hostnameParts) == 4 {
+			parts := strings.Split(hostnameParts[0], "-")
+			if len(parts) == 3 {
+				namespace := parts[2]
+				return &RegistryProxyInfo{
+					Registry: fmt.Sprintf("vendor-registry-v2-%s.okteto.repldev.com", namespace),
+					Proxy:    fmt.Sprintf("registry-proxy-%s.okteto.repldev.com", namespace),
+				}
+			}
+		}
+	}
+
+	return defaultInfo
 }
 
 func (r *RegistryProxyInfo) ToSlice() []string {
