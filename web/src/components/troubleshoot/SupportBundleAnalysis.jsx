@@ -314,7 +314,7 @@ export class SupportBundleAnalysis extends React.Component {
                     <div className="u-fontSize--small u-fontWeight--medium u-textColor--bodyCopy u-marginBottom--20">
                       <Link
                         to={`/app/${this.props.watch.slug}/troubleshoot`}
-                        className="replicated-link u-marginRight--5"
+                        className="link u-marginRight--5"
                       >
                         Support bundles
                       </Link>{" "}
@@ -325,7 +325,7 @@ export class SupportBundleAnalysis extends React.Component {
                     </div>
                     <div className="flex flex1 justifyContent--spaceBetween">
                       <div className="flex flex-column">
-                        <h2 className="u-fontSize--header2 u-fontWeight--bold u-textColor--primary flex alignContent--center alignItems--center">
+                        <h2 className="u-fontSize--header2 u-fontWeight--bold card-item-title flex alignContent--center alignItems--center">
                           Support bundle analysis
                         </h2>
                       </div>

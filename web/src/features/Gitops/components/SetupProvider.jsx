@@ -116,7 +116,7 @@ const SetupProvider = ({ appName }) => {
               <a
                 disabled={disablingGitOps}
                 onClick={promptToDisableGitOps}
-                className="replicated-link u-fontWeight--normal"
+                className="link u-fontWeight--normal"
               >
                 {disablingGitOps
                   ? "Disabling GitOps"

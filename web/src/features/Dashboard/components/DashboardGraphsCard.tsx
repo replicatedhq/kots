@@ -290,7 +290,7 @@ export default class DashboardGraphsCard extends React.Component<Props, State> {
       <div
         className={`${
           !prometheusAddress ? "inverse-card" : ""
-        } dashboard-card flex-column flex1`}
+        } card-bg flex-column flex1`}
       >
         <div className="flex justifyContent--spaceBetween alignItems--center">
           <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold">
@@ -303,7 +303,7 @@ export default class DashboardGraphsCard extends React.Component<Props, State> {
               className="clickable u-marginRight--5"
             />
             <span
-              className="replicated-link u-fontSize--small"
+              className="link u-fontSize--small"
               onClick={this.toggleConfigureGraphs}
             >
               Configure Prometheus Address

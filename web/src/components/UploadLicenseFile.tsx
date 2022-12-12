@@ -484,7 +484,7 @@ const UploadLicenseFile = (props: Props) => {
                             {licenseFile.name}
                           </p>
                           <span
-                            className="replicated-link u-fontSize--small"
+                            className="link u-fontSize--small"
                             onClick={clearFile}
                           >
                             Select a different file
@@ -538,7 +538,7 @@ const UploadLicenseFile = (props: Props) => {
                         />
                         <p className="u-fontSize--normal u-textColor--secondary u-fontWeight--medium u-lineHeight--normal">
                           Drag your license here or{" "}
-                          <span className="u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover">
+                          <span className="link u-textDecoration--underlineOnHover">
                             choose a file
                           </span>
                         </p>
@@ -571,7 +571,7 @@ const UploadLicenseFile = (props: Props) => {
                     Unable to install license
                   </span>
                   <span
-                    className="u-fontSize--small replicated-link"
+                    className="u-fontSize--small link"
                     onClick={toggleViewErrorMessage}
                   >
                     view more
@@ -591,7 +591,7 @@ const UploadLicenseFile = (props: Props) => {
         <div className="flex u-marginTop--15 alignItems--center">
           <span className="icon restore-icon" />
           <Link
-            className="u-fontSize--normal u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover u-marginRight--5"
+            className="u-fontSize--normal link u-textDecoration--underlineOnHover u-marginRight--5"
             to="/restore"
           >
             {`Restore ${

@@ -524,7 +524,7 @@ class AppVersionHistory extends Component<Props, State> {
           <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-textColor--bodyCopy">
             Unable to generate diff{" "}
             <span
-              className="replicated-link"
+              className="link"
               onClick={() => this.toggleDiffErrModal(version)}
             >
               Why?
@@ -542,7 +542,7 @@ class AppVersionHistory extends Component<Props, State> {
               </span>
               {!this.props.isHelmManaged && !downstream.gitops?.isConnected && (
                 <span
-                  className="u-fontSize--small replicated-link u-marginLeft--5"
+                  className="u-fontSize--small link u-marginLeft--5"
                   onClick={() =>
                     this.setState({
                       showDiffOverlay: true,
@@ -560,7 +560,7 @@ class AppVersionHistory extends Component<Props, State> {
               <span className="files">
                 No changes to show.{" "}
                 <span
-                  className="replicated-link"
+                  className="link"
                   onClick={() => this.toggleNoChangesModal(version)}
                 >
                   Why?
@@ -1233,7 +1233,7 @@ class AppVersionHistory extends Component<Props, State> {
           disableFill={false}
           removeInlineStyle={false}
         />
-        <span className="u-fontSize--small u-fontWeight--medium u-linkColor u-cursor--pointer u-marginLeft--5">
+        <span className="u-fontSize--small link u-marginLeft--5">
           Diff versions
         </span>
       </div>
@@ -1432,13 +1432,13 @@ class AppVersionHistory extends Component<Props, State> {
     const { currentPage, pageSize, totalCount, loadingPage } = this.state;
 
     return (
-      <div className="TableDiff--Wrapper">
+      <div className="TableDiff--Wrapper card-bg">
         <div className="flex u-marginBottom--15 justifyContent--spaceBetween">
-          <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy">
+          <p className="u-fontSize--normal u-fontWeight--medium card-title">
             All versions
           </p>
           <div className="flex flex-auto alignItems--center">
-            <span className="flex-auto u-marginRight--5 u-fontSize--small u-textColor--secondary u-lineHeight--normal u-fontWeight--medium">
+            <span className="flex-auto u-marginRight--5 u-fontSize--small card-title u-lineHeight--normal u-fontWeight--medium">
               Results per page:
             </span>
             <select className="Select" onChange={(e) => this.setPageSize(e)}>
@@ -1822,13 +1822,13 @@ class AppVersionHistory extends Component<Props, State> {
                   className="flex-column flex1"
                   style={{ maxWidth: "370px", marginRight: "20px" }}
                 >
-                  <div className="TableDiff--Wrapper currentVersionCard--wrapper">
-                    <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold">
+                  <div className="card-bg TableDiff--Wrapper currentVersionCard--wrapper">
+                    <p className="u-fontSize--large card-title u-fontWeight--bold">
                       {currentDownstreamVersion?.versionLabel
                         ? "Currently deployed version"
                         : "No current version deployed"}
                     </p>
-                    <div className="currentVersion--wrapper u-marginTop--10">
+                    <div className="currentVersion--wrapper card-item u-marginTop--10">
                       <div className="flex flex1">
                         {app?.iconUri && (
                           <div className="flex-auto u-marginRight--10">
@@ -1842,7 +1842,7 @@ class AppVersionHistory extends Component<Props, State> {
                         )}
                         <div className="flex1 flex-column">
                           <div className="flex alignItems--center u-marginTop--5">
-                            <p className="u-fontSize--header2 u-fontWeight--bold u-textColor--primary">
+                            <p className="u-fontSize--header2 u-fontWeight--bold card-item-title">
                               {" "}
                               {currentDownstreamVersion
                                 ? currentDownstreamVersion.versionLabel
@@ -2030,9 +2030,9 @@ class AppVersionHistory extends Component<Props, State> {
                           />
                         </div>
                       ) : (
-                        <div className="TableDiff--Wrapper u-marginBottom--30">
-                          <div className="flex justifyContent--spaceBetween">
-                            <p className="u-fontSize--normal u-fontWeight--medium u-textColor--header u-marginBottom--15">
+                        <div className="TableDiff--Wrapper card-bg u-marginBottom--30">
+                          <div className="flex justifyContent--spaceBetween alignItems--center u-marginBottom--15">
+                            <p className="u-fontSize--normal u-fontWeight--medium u-textColor--info">
                               {this.state.updatesAvailable
                                 ? "New version available"
                                 : ""}
@@ -2047,7 +2047,7 @@ class AppVersionHistory extends Component<Props, State> {
                                   >
                                     <div className="flex alignItems--center">
                                       <span className="icon clickable dashboard-card-upload-version-icon u-marginRight--5" />
-                                      <span className="replicated-link u-fontSize--small u-lineHeight--default">
+                                      <span className="link u-fontSize--small u-lineHeight--default">
                                         Upload new version
                                       </span>
                                     </div>
@@ -2070,12 +2070,12 @@ class AppVersionHistory extends Component<Props, State> {
                                     ) : (
                                       <div className="flex alignItems--center u-marginRight--20">
                                         <span
-                                          className="replicated-link u-fontSize--small"
+                                          className="flex-auto flex alignItems--center link u-fontSize--small"
                                           onClick={this.onCheckForUpdates}
                                         >
                                           <Icon
                                             icon="check-update"
-                                            size={18}
+                                            size={16}
                                             className="clickable u-marginRight--5"
                                             color={""}
                                             style={{}}
@@ -2087,7 +2087,7 @@ class AppVersionHistory extends Component<Props, State> {
                                       </div>
                                     )}
                                     <span
-                                      className="flex-auto flex alignItems--center replicated-link u-fontSize--small"
+                                      className="flex-auto flex alignItems--center link u-fontSize--small"
                                       onClick={this.toggleAutomaticUpdatesModal}
                                     >
                                       <Icon
@@ -2114,7 +2114,7 @@ class AppVersionHistory extends Component<Props, State> {
                           {pendingVersion ? (
                             this.renderAppVersionHistoryRow(pendingVersion)
                           ) : (
-                            <div className="flex-column flex1 u-marginTop--20 u-marginBottom--10 alignItems--center justifyContent--center u-backgroundColor--white u-borderRadius--rounded">
+                            <div className="card-item flex-column flex1 u-marginTop--20 u-marginBottom--10 alignItems--center justifyContent--center">
                               <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-padding--10">
                                 Application up to date.
                               </p>
@@ -2122,7 +2122,7 @@ class AppVersionHistory extends Component<Props, State> {
                           )}
                           {(this.state.numOfSkippedVersions > 0 ||
                             this.state.numOfRemainingVersions > 0) && (
-                            <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--header u-marginTop--10">
+                            <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--info u-marginTop--10">
                               {this.state.numOfSkippedVersions > 0
                                 ? `${this.state.numOfSkippedVersions} version${
                                     this.state.numOfSkippedVersions > 1
@@ -2289,7 +2289,7 @@ class AppVersionHistory extends Component<Props, State> {
               </p>
               {isPastVersion && this.props.app?.autoDeploy !== "disabled" ? (
                 <div className="info-box">
-                  <span className="u-fontSize--small u-textColor--header u-lineHeight--normal u-fontWeight--medium">
+                  <span className="u-fontSize--small u-textColor--info u-lineHeight--normal u-fontWeight--medium">
                     You have automatic deploys enabled.{" "}
                     {this.state.confirmType === "rollback"
                       ? "Rolling back to"

@@ -269,7 +269,7 @@ class Redactors extends Component {
                 <div className="flex justifyContent--flexEnd">
                   <Link
                     to={`/app/${this.props.appSlug}/troubleshoot/redactors/new`}
-                    className="replicated-link u-fontSize--small flex alignItems--center"
+                    className="link u-fontSize--small flex alignItems--center"
                   >
                     <Icon
                       icon="plus"
@@ -289,7 +289,7 @@ class Redactors extends Component {
                   href="https://troubleshoot.sh/reference/redactors/overview/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="replicated-link"
+                  className="link"
                 >
                   {" "}
                   check out our docs
@@ -329,7 +329,7 @@ class Redactors extends Component {
                     href="https://troubleshoot.sh/reference/redactors/overview/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="replicated-link"
+                    className="link"
                   >
                     {" "}
                     check out our docs

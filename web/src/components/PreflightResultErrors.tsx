@@ -184,7 +184,7 @@ const PreflightResultErrors = (props: Props) => {
               </p>
             )}
             <p
-              className="replicated-link u-fontSize--normal u-marginBottom--10"
+              className="link u-fontSize--normal u-marginBottom--10"
               onClick={toggleShowErrorDetails}
             >
               {state.showErrorDetails ? "Hide details" : "Show details"}
@@ -230,7 +230,7 @@ const PreflightResultErrors = (props: Props) => {
             </div>
             <div className="u-marginTop--30 flex justifyContent--flexEnd">
               <span
-                className="replicated-link u-marginLeft--20 u-fontSize--normal"
+                className="link u-marginLeft--20 u-fontSize--normal"
                 onClick={props.ignorePermissionErrors}
               >
                 Proceed with limited Preflights

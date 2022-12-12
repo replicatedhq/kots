@@ -365,7 +365,7 @@ const DashboardVersionCard = (props: Props) => {
             Deploy Failed
           </span>
           <span
-            className="replicated-link u-fontSize--small"
+            className="link u-fontSize--small"
             onClick={() => handleViewLogs(version, true)}
           >
             View deploy logs
@@ -673,7 +673,7 @@ const DashboardVersionCard = (props: Props) => {
         <div className="flex">
           <div className="flex-column">
             <div className="flex alignItems--center u-marginBottom--5">
-              <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">
+              <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium card-item-title">
                 {currentVersion?.versionLabel || currentVersion?.title}
               </p>
               <p className="u-fontSize--small u-textColor--bodyCopy u-fontWeight--medium u-marginLeft--10">
@@ -761,10 +761,7 @@ const DashboardVersionCard = (props: Props) => {
         <div className="flex flex1 alignItems--center u-marginTop--5">
           <span className="u-fontSize--small u-fontWeight--medium u-lineHeight--normal u-textColor--bodyCopy">
             Unable to generate diff{" "}
-            <span
-              className="replicated-link"
-              onClick={() => toggleDiffErrModal(version)}
-            >
+            <span className="link" onClick={() => toggleDiffErrModal(version)}>
               Why?
             </span>
           </span>
@@ -780,7 +777,7 @@ const DashboardVersionCard = (props: Props) => {
               </span>
               {!isHelmManaged && !downstream?.gitops?.isConnected && (
                 <Link
-                  className="u-fontSize--small replicated-link u-marginLeft--5"
+                  className="u-fontSize--small link u-marginLeft--5"
                   to={`${history.location.pathname}?diff/${props.currentVersion?.sequence}/${version.parentSequence}`}
                 >
                   View diff
@@ -792,7 +789,7 @@ const DashboardVersionCard = (props: Props) => {
               <span className="files">
                 No changes to show.{" "}
                 <span
-                  className="replicated-link"
+                  className="link"
                   onClick={() => toggleNoChangesModal(version)}
                 >
                   Why?
@@ -817,7 +814,7 @@ const DashboardVersionCard = (props: Props) => {
           {version.yamlErrors?.length !== 1 ? "s" : ""}{" "}
         </span>
         <span
-          className="replicated-link u-marginLeft--5 u-fontSize--small"
+          className="link u-marginLeft--5 u-fontSize--small"
           onClick={() =>
             toggleShowDetailsModal(version.yamlErrors, version.sequence)
           }
@@ -1295,7 +1292,7 @@ const DashboardVersionCard = (props: Props) => {
         <p className="u-marginTop--10 u-marginBottom--10 u-fontSize--small u-textColor--error u-fontWeight--medium">
           Error uploading bundle
           <span
-            className="u-linkColor u-textDecoration--underlineOnHover u-marginLeft--5"
+            className="link u-textDecoration--underlineOnHover u-marginLeft--5"
             onClick={props.viewAirgapUploadError}
           >
             See details
@@ -1349,7 +1346,7 @@ const DashboardVersionCard = (props: Props) => {
     }
 
     return (
-      <div className="VersionCard-content--wrapper u-marginTop--15">
+      <div className="VersionCard-content--wrapper card-item u-marginTop--15">
         {updateText}
       </div>
     );
@@ -1381,7 +1378,7 @@ const DashboardVersionCard = (props: Props) => {
 
     return (
       <div className="u-marginTop--20">
-        <p className="u-fontSize--normal u-lineHeight--normal u-textColor--header u-fontWeight--medium">
+        <p className="u-fontSize--normal u-lineHeight--normal u-textColor--info u-fontWeight--medium">
           New version available
         </p>
         {gitopsIsConnected && (
@@ -1395,7 +1392,7 @@ const DashboardVersionCard = (props: Props) => {
               target="_blank"
               rel="noopener noreferrer"
               href={downstream?.gitops?.uri}
-              className="replicated-link"
+              className="link"
             >
               {selectedApp?.isAirgap
                 ? downstream?.gitops?.uri
@@ -1403,7 +1400,7 @@ const DashboardVersionCard = (props: Props) => {
             </a>
           </div>
         )}
-        <div className="VersionCard-content--wrapper u-marginTop--15">
+        <div className="VersionCard-content--wrapper card-item u-marginTop--15">
           <div
             className={`flex ${
               isNew && !selectedApp?.isAirgap ? "is-new" : ""
@@ -1411,7 +1408,7 @@ const DashboardVersionCard = (props: Props) => {
           >
             <div className="flex-column">
               <div className="flex alignItems--center">
-                <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">
+                <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium card-item-title">
                   {latestDeployableVersion.versionLabel ||
                     latestDeployableVersion.title}
                 </p>
@@ -1449,7 +1446,7 @@ const DashboardVersionCard = (props: Props) => {
         </div>
         {(state.numOfSkippedVersions > 0 ||
           state.numOfRemainingVersions > 0) && (
-          <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--header u-marginTop--10">
+          <p className="u-fontSize--small u-fontWeight--medium u-lineHeight--more u-textColor--info u-marginTop--10">
             {state.numOfSkippedVersions > 0
               ? `${state.numOfSkippedVersions} version${
                   state.numOfSkippedVersions > 1 ? "s" : ""
@@ -1514,11 +1511,9 @@ const DashboardVersionCard = (props: Props) => {
   }
 
   return (
-    <div className="flex-column flex1 dashboard-card">
+    <div className="flex-column flex1 dashboard-card card-bg">
       <div className="flex flex1 justifyContent--spaceBetween alignItems--center u-marginBottom--10">
-        <p className="u-fontSize--large u-textColor--primary u-fontWeight--bold">
-          Version
-        </p>
+        <p className="card-title">Version</p>
         <div className="flex alignItems--center">
           {selectedApp?.isAirgap && airgapUploader ? (
             <MountAware
@@ -1526,7 +1521,7 @@ const DashboardVersionCard = (props: Props) => {
             >
               <div className="flex alignItems--center">
                 <span className="icon clickable dashboard-card-upload-version-icon u-marginRight--5" />
-                <span className="replicated-link u-fontSize--small u-lineHeight--default">
+                <span className="link u-fontSize--small u-lineHeight--default">
                   Upload new version
                 </span>
               </div>
@@ -1544,42 +1539,44 @@ const DashboardVersionCard = (props: Props) => {
                 </div>
               ) : props.noUpdatesAvalable ? (
                 <div className="flex alignItems--center u-marginRight--20">
-                  <span className="u-textColor--primary u-fontWeight--medium u-fontSize--small u-lineHeight--default">
+                  <span className="u-textColor--info u-fontWeight--medium u-fontSize--small u-lineHeight--default">
                     Already up to date
                   </span>
                 </div>
               ) : (
-                <div className="flex alignItems--center u-marginRight--20">
+                <div className="flex alignItems--center u-marginRight--20 link">
                   <Icon
                     icon="check-update"
                     size={18}
                     className="clickable u-marginRight--5"
                   />
                   <span
-                    className="replicated-link u-fontSize--small"
+                    className="u-fontSize--small"
                     onClick={props.onCheckForUpdates}
                   >
                     Check for update
                   </span>
                 </div>
               )}
-              <Icon
-                icon="schedule-sync"
-                size={18}
-                className="clickable u-marginRight--5"
-              />
-              <span
-                className="replicated-link u-fontSize--small u-lineHeight--default"
-                onClick={props.showAutomaticUpdatesModal}
-              >
-                Configure automatic updates
-              </span>
+              <div className="flex alignItems--center u-marginRight--20 link">
+                <Icon
+                  icon="schedule-sync"
+                  size={18}
+                  className=" clickable u-marginRight--5"
+                />
+                <span
+                  className="u-fontSize--small u-lineHeight--default"
+                  onClick={props.showAutomaticUpdatesModal}
+                >
+                  Configure automatic updates
+                </span>
+              </div>
             </div>
           )}
         </div>
       </div>
       {currentVersion?.deployedAt ? (
-        <div className="VersionCard-content--wrapper">
+        <div className="VersionCard-content--wrapper card-item">
           {renderCurrentVersion()}
         </div>
       ) : (
@@ -1594,7 +1591,7 @@ const DashboardVersionCard = (props: Props) => {
       <div className="u-marginTop--10">
         <Link
           to={`/app/${selectedApp?.slug}/version-history`}
-          className="replicated-link u-fontSize--small"
+          className="link u-fontSize--small"
         >
           See all versions
           <Icon

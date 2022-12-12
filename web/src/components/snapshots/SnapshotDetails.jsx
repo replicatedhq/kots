@@ -451,7 +451,7 @@ class SnapshotDetails extends Component {
             {hook.stderr !== "" ||
               (hook.stdout !== "" && (
                 <span
-                  className="replicated-link u-fontSize--small alignSelf--flexEnd"
+                  className="link u-fontSize--small alignSelf--flexEnd"
                   onClick={() => this.toggleScriptsOutput(hook)}
                 >
                   {" "}
@@ -674,10 +674,7 @@ class SnapshotDetails extends Component {
     return (
       <div className="container flex-column u-overflow--auto u-paddingTop--30 u-paddingBottom--20">
         <p className="u-marginBottom--30 u-fontSize--small u-textColor--accent u-fontWeight--medium">
-          <span
-            className="replicated-link"
-            onClick={() => this.props.history.goBack()}
-          >
+          <span className="link" onClick={() => this.props.history.goBack()}>
             Snapshots
           </span>
           <span className="u-textColor--bodyCopy"> &gt; </span>
@@ -709,10 +706,7 @@ class SnapshotDetails extends Component {
               </p>
               <div className="u-fontSize--small">
                 {snapshotDetails?.status !== "InProgress" && (
-                  <span
-                    className="replicated-link"
-                    onClick={() => this.viewLogs()}
-                  >
+                  <span className="link" onClick={() => this.viewLogs()}>
                     View logs
                   </span>
                 )}
@@ -759,7 +753,7 @@ class SnapshotDetails extends Component {
                       {snapshotDetails?.volumes?.length > 3 ? (
                         <div className="flex flex1 justifyContent--flexEnd">
                           <span
-                            className="replicated-link u-fontSize--small"
+                            className="link u-fontSize--small"
                             onClick={() => this.toggleShowAllVolumes()}
                           >
                             Show all {snapshotDetails?.volumes?.length} volumes
@@ -790,7 +784,7 @@ class SnapshotDetails extends Component {
                         selectedScriptTab === "Pre-snapshot scripts" ? (
                           <div className="flex flex1 justifyContent--flexEnd">
                             <span
-                              className="replicated-link u-fontSize--small"
+                              className="link u-fontSize--small"
                               onClick={() => this.toggleShowAllPreScripts()}
                             >
                               Show all {this.preSnapshotScripts()?.length}{" "}
@@ -802,7 +796,7 @@ class SnapshotDetails extends Component {
                         selectedScriptTab === "Post-snapshot scripts" ? (
                           <div className="flex flex1 justifyContent--flexEnd">
                             <span
-                              className="replicated-link u-fontSize--small"
+                              className="link u-fontSize--small"
                               onClick={() => this.toggleShowAllPostScripts()}
                             >
                               Show all {this.postSnapshotScripts()?.length}{" "}
@@ -861,7 +855,7 @@ class SnapshotDetails extends Component {
                           selectedErrorsWarningTab === "Errors" ? (
                             <div className="flex flex1 justifyContent--flexEnd">
                               <span
-                                className="replicated-link u-fontSize--small"
+                                className="link u-fontSize--small"
                                 onClick={() => this.toggleShowAllErrors()}
                               >
                                 Show all {snapshotDetails?.errors?.length}{" "}
@@ -873,7 +867,7 @@ class SnapshotDetails extends Component {
                           selectedErrorsWarningTab === "Warnings" ? (
                             <div className="flex flex1 justifyContent--flexEnd">
                               <span
-                                className="replicated-link u-fontSize--small"
+                                className="link u-fontSize--small"
                                 onClick={() => this.toggleShowAllWarnings()}
                               >
                                 Show all {snapshotDetails?.warnings?.length}{" "}

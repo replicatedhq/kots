@@ -429,9 +429,9 @@ const AppLicenseComponent = (props: Props) => {
     <div className="flex flex-column justifyContent--center alignItems--center">
       <KotsPageTitle pageName="License" showAppSlug />
       {size(appLicense) > 0 ? (
-        <div className="License--wrapper flex-column">
+        <div className="License--wrapper flex-column card-bg">
           <div className="flex flex-auto alignItems--center">
-            <span className="u-fontSize--large u-fontWeight--bold u-lineHeight--normal u-textColor--primary">
+            <span className="u-fontSize--large u-fontWeight--bold u-lineHeight--normal card-title">
               {" "}
               License{" "}
             </span>
@@ -452,11 +452,11 @@ const AppLicenseComponent = (props: Props) => {
               </div>
             )}
           </div>
-          <div className="LicenseDetails flex-row">
+          <div className="LicenseDetails flex-row card-item">
             <div className=" flex flex1 justifyContent--spaceBetween">
               <div className="flex1 flex-column u-paddingRight--20">
                 <div className="flex flex-auto alignItems--center">
-                  <span className="u-fontSize--larger u-fontWeight--bold u-lineHeight--normal u-textColor--secondary">
+                  <span className="u-fontSize--larger u-fontWeight--bold u-lineHeight--normal card-item-title">
                     {" "}
                     {appLicense.assignee}{" "}
                   </span>
@@ -488,7 +488,7 @@ const AppLicenseComponent = (props: Props) => {
                     className={`u-fontWeight--medium u-fontSize--small u-lineHeight--normal u-marginLeft--10 ${
                       Utilities.checkIsDateExpired(expiresAt)
                         ? "u-textColor--error"
-                        : "u-textColor--info"
+                        : "u-textColor--bodyCopy"
                     }`}
                   >
                     {expiresAt === "Never"
@@ -585,7 +585,7 @@ const AppLicenseComponent = (props: Props) => {
                   </p>
                 )}
                 {appLicense?.lastSyncedAt && (
-                  <p className="u-fontWeight--bold u-fontSize--small u-textColor--header u-lineHeight--default u-marginTop--10">
+                  <p className="u-fontWeight--bold u-fontSize--small u-textColor--info u-lineHeight--default u-marginTop--10">
                     Last synced {Utilities.dateFromNow(appLicense.lastSyncedAt)}
                   </p>
                 )}
@@ -703,7 +703,7 @@ const AppLicenseComponent = (props: Props) => {
                         {licenseChangeFile.name}
                       </p>
                       <span
-                        className="replicated-link u-fontSize--small"
+                        className="link u-fontSize--small"
                         onClick={clearLicenseChangeFile}
                       >
                         Select a different file
@@ -730,7 +730,7 @@ const AppLicenseComponent = (props: Props) => {
                     />
                     <p className="u-fontSize--normal u-textColor--secondary u-fontWeight--medium u-lineHeight--normal">
                       Drag your new license here or{" "}
-                      <span className="u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover">
+                      <span className="link u-textDecoration--underlineOnHover">
                         choose a file
                       </span>
                     </p>

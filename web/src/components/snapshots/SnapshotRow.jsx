@@ -51,7 +51,7 @@ class SnapshotRow extends React.Component {
             className={`u-fontSize--largest ${
               isExpired || snapshot?.status === "Deleting"
                 ? "u-textColor--bodyCopy"
-                : "u-textColor--primary"
+                : "card-item-title"
             } u-lineHeight--normal u-fontWeight--bold u-marginRight--10`}
           >
             {snapshot?.name}

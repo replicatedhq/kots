@@ -25,7 +25,7 @@ class DeployWarningModal extends React.Component {
           </p>
           {this.props.showAutoDeployWarning && (
             <div className="info-box">
-              <span className="u-fontSize--small u-textColor--header u-lineHeight--normal u-fontWeight--medium">
+              <span className="u-fontSize--small u-textColor--info u-lineHeight--normal u-fontWeight--medium">
                 You have automatic deploys enabled.{" "}
                 {this.props.confirmType === "rollback"
                   ? "Rolling back to"

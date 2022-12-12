@@ -131,7 +131,7 @@ class UploadSupportBundleModal extends React.Component {
                         <span className="icon u-TarFileIcon u-marginBottom--20"></span>
                         <p className="u-fontSize--normal u-textColor--bodyCopy u-fontWeight--medium u-lineHeight--normal">
                           Drag your bundle here or{" "}
-                          <span className="u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover">
+                          <span className="link u-textDecoration--underlineOnHover">
                             choose a file to upload
                           </span>
                         </p>

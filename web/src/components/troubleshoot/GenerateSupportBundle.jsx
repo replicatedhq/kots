@@ -365,7 +365,7 @@ class GenerateSupportBundle extends React.Component {
           {!watch.downstream && !this.state.supportBundles?.length ? (
             <Link
               to={`/watch/${watch.slug}/troubleshoot`}
-              className="replicated-link u-marginRight--5"
+              className="link u-marginRight--5"
             >
               {" "}
               &lt; Support Bundle List{" "}
@@ -398,7 +398,7 @@ class GenerateSupportBundle extends React.Component {
               <div className="flex justifyContent--spaceBetween u-paddingBottom--15">
                 <p className="card-title">Support Bundles</p>
                 <span
-                  className="replicated-link flex alignItems--center u-fontSize--small u-marginLeft--20"
+                  className="link flex alignItems--center u-fontSize--small u-marginLeft--20"
                   onClick={this.toggleRedactorModal}
                 >
                   <Icon
@@ -470,7 +470,6 @@ class GenerateSupportBundle extends React.Component {
                     If you'd prefer,{" "}
                     <a
                       href="#"
-                      className="replicated-link"
                       onClick={(e) => this.fetchSupportBundleCommand()}
                     >
                       click here

@@ -73,7 +73,8 @@
   &.primary.is-disabled,
   &.primary.is-disabled:hover,
   &.primary:disabled,
-  &.primary[disabled] {
+  &.primary[disabled],
+  &.primary:disabled:hover {
     cursor: not-allowed;
     border-color: lighten($primary-color, 25%);
     color: #ffffff;

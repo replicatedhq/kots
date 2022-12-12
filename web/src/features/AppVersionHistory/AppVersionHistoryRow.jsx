@@ -575,7 +575,7 @@ class AppVersionHistoryRow extends Component {
               Deploy Failed
             </span>
             <span
-              className="replicated-link u-fontSize--small"
+              className="link u-fontSize--small"
               onClick={() => this.props.handleViewLogs(version, true)}
             >
               View deploy logs
@@ -639,7 +639,7 @@ class AppVersionHistoryRow extends Component {
               Deploy Failed
             </span>
             <span
-              className="replicated-link u-fontSize--small"
+              className="link u-fontSize--small"
               onClick={() => this.props.handleViewLogs(version, true)}
             >
               View deploy logs
@@ -708,7 +708,7 @@ class AppVersionHistoryRow extends Component {
       <div
         key={version.sequence}
         className={classNames(
-          `VersionHistoryRowWrapper ${version.status} flex-column justifyContent--center`,
+          `card-item VersionHistoryRowWrapper ${version.status} flex-column justifyContent--center u-padding--15`,
           {
             overlay: selectedDiffReleases,
             disabled: nothingToCommit,
@@ -717,6 +717,7 @@ class AppVersionHistoryRow extends Component {
             "show-preflight-passed-text": newPreflightResults,
           }
         )}
+        style={{ minHeight: "60px" }}
         onClick={this.handleSelectReleasesToDiff}
       >
         <div className="VersionHistoryRow flex flex-auto">
@@ -735,7 +736,7 @@ class AppVersionHistoryRow extends Component {
             } flex-column flex1 u-paddingRight--20`}
           >
             <div className="flex alignItems--center">
-              <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium u-textColor--primary">
+              <p className="u-fontSize--header2 u-fontWeight--bold u-lineHeight--medium card-item-title">
                 {version.versionLabel || version.title}
               </p>
               {showSequence && (

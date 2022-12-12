@@ -53,7 +53,7 @@ class ConfigureSnapshots extends React.Component {
         className="Modal ConfigureSnapshots"
       >
         <div className="Modal-body">
-          <p className="u-fontSize--largest u-fontWeight--bold u-textColor--secondary u-marginBottom--20">
+          <p className="u-fontSize--largest u-fontWeight--bold u-textColor--primary u-marginBottom--20">
             Add a new destination
           </p>
           <p className="u-fontSize--normal u-fontWeight--medium u-textColor--bodyCopy u-lineHeight--normal">
@@ -147,7 +147,7 @@ class ConfigureSnapshots extends React.Component {
                         href="https://velero.io/docs/v1.6/basic-install/"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="replicated-link u-marginLeft--5"
+                        className="link u-marginLeft--5"
                       >
                         https://velero.io/docs/v1.6/basic-install/
                       </a>{" "}
@@ -163,7 +163,7 @@ class ConfigureSnapshots extends React.Component {
                         href="https://velero.io/docs/v1.6/basic-install/"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="replicated-link u-marginLeft--5"
+                        className="link u-marginLeft--5"
                       >
                         Velero installation instructions
                       </a>{" "}

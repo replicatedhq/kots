@@ -283,7 +283,7 @@ class SupportBundleRow extends React.Component<Props, State> {
                 <div className="flex">
                   {!this.props.isCustomer ? (
                     <div className="flex-column flex1 flex-verticalCenter">
-                      <span className="u-fontSize--large u-textColor--primary u-fontWeight--medium u-cursor--pointer">
+                      <span className="u-fontSize--large card-item-title u-fontWeight--medium u-cursor--pointer card-item-title">
                         <span>
                           Collected on{" "}
                           <span className="u-fontWeight--bold">
@@ -372,7 +372,7 @@ class SupportBundleRow extends React.Component<Props, State> {
                   <Loader size="30" className="u-marginRight--10" />
                 ) : showSendSupportBundleLink && !loadingBundle ? (
                   <span
-                    className="u-fontSize--small u-marginRight--10 u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover u-paddingRight--10"
+                    className="u-fontSize--small u-marginRight--10 link u-textDecoration--underlineOnHover u-paddingRight--10"
                     onClick={() =>
                       this.sendBundleToVendor(this.props.bundle.slug)
                     }
@@ -407,7 +407,7 @@ class SupportBundleRow extends React.Component<Props, State> {
                   </div>
                 ) : (
                   <span
-                    className="u-fontSize--small u-linkColor u-fontWeight--medium u-textDecoration--underlineOnHover"
+                    className="u-fontSize--small link u-textDecoration--underlineOnHover"
                     onClick={() => this.downloadBundle(bundle)}
                   >
                     <Icon icon="download" size={16} className="clickable" />

@@ -521,14 +521,14 @@ class Snapshots extends Component {
             <div className="flex flex-auto u-marginBottom--15 alignItems--center justifyContent--spaceBetween">
               <div className="flex1 flex-column">
                 <div className="flex justifyContent--spaceBetween">
-                  <p className="u-fontWeight--bold u-textColor--primary u-fontSize--larger u-lineHeight--normal">
+                  <p className="u-fontWeight--bold card-title u-fontSize--larger u-lineHeight--normal">
                     Full Snapshots (Instance){" "}
                   </p>
 
                   <div className="flex alignSelf--flexEnd">
                     <Link
                       to={`/snapshots/settings`}
-                      className="replicated-link u-fontSize--small u-fontWeight--bold u-marginRight--20 flex alignItems--center"
+                      className="link u-fontSize--small u-fontWeight--bold u-marginRight--20 flex alignItems--center"
                     >
                       <Icon
                         icon="settings-gear-outline"
@@ -577,7 +577,7 @@ class Snapshots extends Component {
                   application data. They can be used for full Disaster Recovery;
                   by restoring over top of this instance, or into a new cluster.
                   <span
-                    className="replicated-link"
+                    className="link"
                     onClick={this.toggleSnaphotDifferencesModal}
                   >
                     {" "}
