@@ -137,6 +137,9 @@ func DownloadUpdate(appID string, update types.Update, skipPreflights bool, skip
 	beforeCursor := beforeKotsKinds.Installation.Spec.UpdateCursor
 
 	pipeReader, pipeWriter := io.Pipe()
+	defer func() {
+		pipeWriter.CloseWithError(finalError)
+	}()
 	go func() {
 		scanner := bufio.NewScanner(pipeReader)
 		for scanner.Scan() {

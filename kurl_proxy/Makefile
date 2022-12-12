@@ -20,5 +20,5 @@ build-alpha:
 
 .PHONY: build-ttl.sh
 build-ttl.sh: build
-	docker build --pull -f deploy/Dockerfile -t ttl.sh/${CURRENT_USER}/kurl-proxy:12h .
-	docker push ttl.sh/${CURRENT_USER}/kurl-proxy:12h
+	docker build --pull -f deploy/Dockerfile -t ttl.sh/${CURRENT_USER}/kurl-proxy:24h .
+	docker push ttl.sh/${CURRENT_USER}/kurl-proxy:24h

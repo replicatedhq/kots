@@ -39,6 +39,7 @@ type RewriteOptions struct {
 	Installation       *kotsv1beta1.Installation
 	License            *kotsv1beta1.License
 	ConfigValues       *kotsv1beta1.ConfigValues
+	KotsApplication    *kotsv1beta1.Application
 	ReportWriter       io.Writer
 	CopyImages         bool // can be false even if registry is not read-only
 	IsAirgap           bool
@@ -370,7 +371,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options Rewrit
 		objects = findResult.Docs
 
 		// Use license to create image pull secrets for all objects that have private images.
-		pullSecretRegistries = registry.ProxyEndpointFromLicense(options.License).ToSlice()
+		pullSecretRegistries = registry.GetRegistryProxyInfo(options.License, options.KotsApplication).ToSlice()
 		pullSecretUsername = options.License.Spec.LicenseID
 		pullSecretPassword = options.License.Spec.LicenseID
 	}
@@ -414,7 +415,7 @@ func writeMidstream(writeMidstreamOptions midstream.WriteOptions, options Rewrit
 
 // rewriteBaseImages Will rewrite images found in base and copy them (if necessary) to the configured registry.
 func rewriteBaseImages(rewriteOptions RewriteOptions, baseDir string, kotsKinds *kotsutil.KotsKinds, dockerHubRegistryCreds registry.Credentials, log *logger.CLILogger) (*base.RewriteImagesResult, error) {
-	replicatedRegistryInfo := registry.ProxyEndpointFromLicense(rewriteOptions.License)
+	replicatedRegistryInfo := registry.GetRegistryProxyInfo(rewriteOptions.License, rewriteOptions.KotsApplication)
 
 	rewriteImageOptions := base.RewriteImageOptions{
 		BaseDir:      baseDir,
@@ -455,7 +456,7 @@ func rewriteBaseImages(rewriteOptions RewriteOptions, baseDir string, kotsKinds 
 
 // findPrivateImages Finds and rewrites private images to be proxied through proxy.replicated.com
 func findPrivateImages(writeMidstreamOptions midstream.WriteOptions, rewriteOptions RewriteOptions, b *base.Base, kotsKinds *kotsutil.KotsKinds, dockerHubRegistryCreds registry.Credentials) (*base.FindPrivateImagesResult, error) {
-	replicatedRegistryInfo := registry.ProxyEndpointFromLicense(rewriteOptions.License)
+	replicatedRegistryInfo := registry.GetRegistryProxyInfo(rewriteOptions.License, rewriteOptions.KotsApplication)
 	allPrivate := kotsKinds.KotsApplication.Spec.ProxyPublicImages
 
 	findPrivateImagesOptions := base.FindPrivateImagesOptions{

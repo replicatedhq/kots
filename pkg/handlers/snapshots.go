@@ -12,6 +12,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/kots/pkg/handlers/types"
 	"github.com/replicatedhq/kots/pkg/k8sutil"
 	"github.com/replicatedhq/kots/pkg/kotsadm"
 	kotsadmtypes "github.com/replicatedhq/kots/pkg/kotsadm/types"
@@ -846,7 +847,7 @@ func requiresKotsadmVeleroAccess(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		errMsg := "failed to check if kotsadm requires access to velero"
 		logger.Error(errors.Wrap(err, errMsg))
-		response := ErrorResponse{Error: errMsg}
+		response := types.ErrorResponse{Error: util.StrPointer(errMsg)}
 		JSON(w, http.StatusInternalServerError, response)
 		return errors.New(errMsg)
 	}

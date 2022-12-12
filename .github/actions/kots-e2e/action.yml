@@ -26,7 +26,7 @@ inputs:
     required: false
   kotsadm-image-tag:
     description: 'Kotsadm image tag'
-    default: '12h'
+    default: '24h'
     required: false
   kots-helm-chart-url:
     description: 'KOTS Helm chart URL'

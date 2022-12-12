@@ -1,12 +1,110 @@
 package registry
 
 import (
+	"reflect"
 	"testing"
 
 	kotsv1beta1 "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 )
 
-func Test_ProxyEndpointFromLicense(t *testing.T) {
+func TestGetRegistryProxyInfo(t *testing.T) {
+	customProxy, customRegistry := "custom.proxy.com", "custom.registry.com"
+	type args struct {
+		license *kotsv1beta1.License
+		app     *kotsv1beta1.Application
+	}
+	tests := []struct {
+		name string
+		args args
+		want *RegistryProxyInfo
+	}{
+		{
+			name: "GetRegistryProxyInfo returns default proxy info when app and license are nil",
+			args: args{
+				license: nil,
+				app:     nil,
+			},
+			want: &RegistryProxyInfo{
+				Registry: "registry.replicated.com",
+				Proxy:    "proxy.replicated.com",
+			},
+		}, {
+			name: "GetRegistryProxyInfo returns default proxy info when app has registry settings",
+			args: args{
+				license: nil,
+				app: &kotsv1beta1.Application{
+					Spec: kotsv1beta1.ApplicationSpec{
+						ProxyRegistryDomain:      customProxy,
+						ReplicatedRegistryDomain: customRegistry,
+					},
+				},
+			},
+			want: &RegistryProxyInfo{
+				Registry: "registry.replicated.com",
+				Proxy:    customProxy,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := GetRegistryProxyInfo(tt.args.license, tt.args.app); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetRegistryProxyInfo() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getRegistryProxyEndpointFromKotsApplication(t *testing.T) {
+	customProxy, customRegistry := "custom.proxy.com", "custom.registry.com"
+	type args struct {
+		kotsApplication *kotsv1beta1.Application
+	}
+	tests := []struct {
+		name                 string
+		args                 args
+		wantProxyEndpoint    string
+		wantRegistryEndpoint string
+	}{
+		{
+			name:                 "getRegistryProxyEndpointFromKotsApplication returns nil when kotsApplication is nil",
+			args:                 args{kotsApplication: nil},
+			wantProxyEndpoint:    "",
+			wantRegistryEndpoint: "",
+		},
+		{
+			name:                 "getRegistryProxyEndpointFromKotsApplication returns nil when kotsApplication is not nil but has no registry settings",
+			args:                 args{kotsApplication: &kotsv1beta1.Application{}},
+			wantProxyEndpoint:    "",
+			wantRegistryEndpoint: "",
+		},
+		{
+			name: "getRegistryProxyEndpointFromKotsApplication returns endpoints nil when kotsApplication and registry settings are not nil",
+			args: args{kotsApplication: &kotsv1beta1.Application{
+				Spec: kotsv1beta1.ApplicationSpec{
+					ProxyRegistryDomain:      customProxy,
+					ReplicatedRegistryDomain: customRegistry,
+				},
+			},
+			},
+			wantProxyEndpoint:    customProxy,
+			wantRegistryEndpoint: customRegistry,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotProxyEndpoint, gotRegistryEndpoint := getRegistryProxyEndpointFromKotsApplication(tt.args.kotsApplication)
+			if gotProxyEndpoint != tt.wantProxyEndpoint {
+				t.Errorf("getRegistryProxyEndpointFromKotsApplication() gotProxyEndpoint = %v, want %v", gotProxyEndpoint, tt.wantProxyEndpoint)
+			}
+			if gotRegistryEndpoint != tt.wantRegistryEndpoint {
+				t.Errorf("getRegistryProxyEndpointFromKotsApplication() gotRegistryEndpoint = %v, want %v", gotRegistryEndpoint, tt.wantRegistryEndpoint)
+			}
+		})
+	}
+}
+
+func Test_getRegistryProxyInfoFromLicense(t *testing.T) {
 	tests := []struct {
 		name    string
 		license *kotsv1beta1.License
@@ -35,11 +133,11 @@ func Test_ProxyEndpointFromLicense(t *testing.T) {
 				Proxy:    "proxy.staging.replicated.com",
 			},
 		}, {
-			name:    "ProxyEndpointFromLicense with license parameter containing replicated-app spec endpoint returns replicated-app proxy info",
-			license: &kotsv1beta1.License{Spec: kotsv1beta1.LicenseSpec{Endpoint: "protocol://user:pwd@replicated-app"}},
+			name:    "ProxyEndpointFromLicense with license parameter containing a dev (okteto) endpoint returns the same naemspace proxy info",
+			license: &kotsv1beta1.License{Spec: kotsv1beta1.LicenseSpec{Endpoint: "protocol://user:pwd@replicated-app-user1.okteto.repldev.com"}},
 			want: &RegistryProxyInfo{
-				Registry: "registry:3000",
-				Proxy:    "registry-proxy:3000",
+				Registry: "vendor-registry-v2-user1.okteto.repldev.com",
+				Proxy:    "registry-proxy-user1.okteto.repldev.com",
 			},
 		}, {
 			name:    "ProxyEndpointFromLicense returns default info when url parsing fails",
@@ -52,8 +150,7 @@ func Test_ProxyEndpointFromLicense(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var res *RegistryProxyInfo
-			res = ProxyEndpointFromLicense(tt.license)
+			res := getRegistryProxyInfoFromLicense(tt.license)
 			if res.Registry != tt.want.Registry || res.Proxy != tt.want.Proxy {
 				t.Errorf("ProxyEndpointFromLicense() = %v, want %v", res, tt.want)
 			}

@@ -319,10 +319,10 @@ func (ctx ConfigCtx) localImageName(imageRef string) string {
 		}
 	}
 
-	proxyInfo := registry.ProxyEndpointFromLicense(ctx.license)
+	registryProxyInfo := registry.GetRegistryProxyInfo(ctx.license, ctx.app)
 	registryOptions := registrytypes.RegistryOptions{
-		Endpoint:      proxyInfo.Registry,
-		ProxyEndpoint: proxyInfo.Proxy,
+		Endpoint:      registryProxyInfo.Registry,
+		ProxyEndpoint: registryProxyInfo.Proxy,
 	}
 
 	licenseAppSlug := ""
@@ -363,9 +363,9 @@ func (ctx ConfigCtx) localRegistryImagePullSecret() string {
 			licenseIDString = ctx.license.Spec.LicenseID
 		}
 
-		proxyInfo := registry.ProxyEndpointFromLicense(ctx.license)
+		registryProxyInfo := registry.GetRegistryProxyInfo(ctx.license, ctx.app)
 		secrets, err := registry.PullSecretForRegistries(
-			proxyInfo.ToSlice(),
+			registryProxyInfo.ToSlice(),
 			licenseIDString,
 			licenseIDString,
 			"default", // this value doesn't matter
