@@ -463,8 +463,9 @@ func findPrivateImages(writeMidstreamOptions midstream.WriteOptions, rewriteOpti
 		BaseDir: writeMidstreamOptions.BaseDir,
 		AppSlug: rewriteOptions.License.Spec.AppSlug,
 		ReplicatedRegistry: registrytypes.RegistryOptions{
-			Endpoint:      replicatedRegistryInfo.Registry,
-			ProxyEndpoint: replicatedRegistryInfo.Proxy,
+			Endpoint:         replicatedRegistryInfo.Registry,
+			ProxyEndpoint:    replicatedRegistryInfo.Proxy,
+			UpstreamEndpoint: replicatedRegistryInfo.Upstream,
 		},
 		DockerHubRegistry: registrytypes.RegistryOptions{
 			Username: dockerHubRegistryCreds.Username,

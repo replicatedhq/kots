@@ -20,6 +20,7 @@ import (
 type RegistryProxyInfo struct {
 	Registry string
 	Proxy    string
+	Upstream string
 }
 
 type DockercfgAuth struct {
@@ -62,6 +63,7 @@ func GetRegistryProxyInfo(license *kotsv1beta1.License, app *kotsv1beta1.Applica
 	}
 
 	if registryEndpoint != "" {
+		registryProxyInfo.Upstream = registryProxyInfo.Registry
 		registryProxyInfo.Registry = registryEndpoint
 	}
 

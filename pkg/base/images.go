@@ -1,6 +1,8 @@
 package base
 
 import (
+	"strings"
+
 	dockerref "github.com/containers/image/v5/docker/reference"
 	"github.com/distribution/distribution/v3/reference"
 	"github.com/pkg/errors"
@@ -52,9 +54,19 @@ func FindPrivateImages(options FindPrivateImagesOptions) (*FindPrivateImagesResu
 			continue
 		}
 
-		image := kustomizeimage.Image{
-			Name:    dockerRef.Name(),
-			NewName: registry.MakeProxiedImageURL(options.ReplicatedRegistry.ProxyEndpoint, options.AppSlug, upstreamImage),
+		image := kustomizeimage.Image{}
+		if registryHost == options.ReplicatedRegistry.UpstreamEndpoint {
+			// image is using the upstream replicated registry, but a custom registry domain is configured, so rewrite to use the custom domain
+			image = kustomizeimage.Image{
+				Name:    dockerRef.Name(),
+				NewName: strings.Replace(dockerRef.Name(), registryHost, options.ReplicatedRegistry.Endpoint, 1),
+			}
+		} else {
+			// all other private images are rewritten to use the replicated proxy
+			image = kustomizeimage.Image{
+				Name:    dockerRef.Name(),
+				NewName: registry.MakeProxiedImageURL(options.ReplicatedRegistry.ProxyEndpoint, options.AppSlug, upstreamImage),
+			}
 		}
 
 		if can, ok := dockerRef.(reference.Canonical); ok {
