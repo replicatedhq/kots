@@ -65,7 +65,7 @@ func NewBuilder(opts BuilderOptions) (Builder, map[string]ItemValue, error) {
 
 	b.Ctx = []Ctx{
 		StaticCtx{},
-		licenseCtx{License: opts.License},
+		licenseCtx{License: opts.License, App: opts.Application},
 		newKurlContext("base", "default"), // can be hardcoded because kurl always deploys to the default namespace
 		newVersionCtx(opts.VersionInfo),
 		newIdentityCtx(opts.IdentityConfig, opts.ApplicationInfo),
