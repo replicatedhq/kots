@@ -27,9 +27,10 @@ func TestGetRegistryProxyInfo(t *testing.T) {
 			want: &RegistryProxyInfo{
 				Registry: "registry.replicated.com",
 				Proxy:    "proxy.replicated.com",
+				Upstream: "",
 			},
 		}, {
-			name: "GetRegistryProxyInfo returns default proxy info when app has registry settings",
+			name: "GetRegistryProxyInfo returns custom registry hostnames when app has registry settings",
 			args: args{
 				license: nil,
 				app: &kotsv1beta1.Application{
@@ -40,8 +41,9 @@ func TestGetRegistryProxyInfo(t *testing.T) {
 				},
 			},
 			want: &RegistryProxyInfo{
-				Registry: "registry.replicated.com",
+				Registry: customRegistry,
 				Proxy:    customProxy,
+				Upstream: "registry.replicated.com",
 			},
 		},
 	}
