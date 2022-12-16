@@ -5,7 +5,7 @@ import ErrorModal from "@src/components/modals/ErrorModal";
 
 export default {
   title: "Example/ErrorModal",
-  component: ErrorModal
+  component: ErrorModal,
 } as ComponentMeta<typeof ErrorModal>;
 
 const Template: ComponentStory<typeof ErrorModal> = (args) => (
@@ -23,5 +23,5 @@ ErrorModalExample.args = {
   },
   err: "404",
   errMsg: "Error Message",
-  appSlug: "appSlug"
+  appSlug: "appSlug",
 };
