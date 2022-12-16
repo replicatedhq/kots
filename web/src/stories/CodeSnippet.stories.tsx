@@ -5,7 +5,7 @@ import CodeSnippet from "../components/shared/CodeSnippet";
 
 export default {
   title: "Example/CodeSnippet",
-  component: CodeSnippet,
+  component: CodeSnippet
 } as ComponentMeta<typeof CodeSnippet>;
 
 const Template: ComponentStory<typeof CodeSnippet> = () => (
