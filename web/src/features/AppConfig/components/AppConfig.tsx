@@ -579,7 +579,7 @@ class AppConfig extends Component<Props, State> {
     }
 
     return (
-      <div className="flex flex-column u-padding--20 alignItems--center">
+      <div className="flex flex-column u-paddingLeft--20 u-paddingBottom--20 u-paddingRight--20 alignItems--center">
         <KotsPageTitle pageName="Config" showAppSlug />
         {fromLicenseFlow && app && (
           <Span size="18" weight="bold" mt="30" ml="38">
