@@ -246,12 +246,12 @@ jobs:
         uses: 8398a7/action-slack@v3
         with:
           status: custom
-          fields: repo,ref,workflow,commit
+          fields: repo,ref,workflow,commit,took
           custom_payload: |
             {
               attachments: [{
                 color: '${{ job.status }}' === 'success' ? 'good' : '${{ job.status }}' === 'failure' ? 'danger' : 'warning',
-                text: `Test name: ${{ matrix.test.name }}.\nStatus: ${{ job.status }}. Workflow: ${process.env.AS_WORKFLOW}. Repo: ${process.env.AS_REPO}. Ref: ${process.env.AS_REF}\nCommit: ${process.env.AS_COMMIT}`,
+                text: `Test name: ${{ matrix.test.name }}.\nStatus: ${{ job.status }}. Workflow: ${process.env.AS_WORKFLOW}. Repo: ${process.env.AS_REPO}. Ref: ${process.env.AS_REF}\nCommit: ${process.env.AS_COMMIT}. Took: ${process.env.AS_TOOK}`,
               }]
             }
         env:
