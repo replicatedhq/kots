@@ -46,7 +46,7 @@ func getRqliteYAML(deployOptions types.DeployOptions) (map[string][]byte, error)
 	docs["rqlite-service.yaml"] = service.Bytes()
 
 	var headlessService bytes.Buffer
-	if err := s.Encode(kotsadmobjects.RqliteHeadlessService(deployOptions.Namespace), &service); err != nil {
+	if err := s.Encode(kotsadmobjects.RqliteHeadlessService(deployOptions.Namespace), &headlessService); err != nil {
 		return nil, errors.Wrap(err, "failed to marshal rqlite headless service")
 	}
 	docs["rqlite-headless-service.yaml"] = headlessService.Bytes()
