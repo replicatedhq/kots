@@ -595,12 +595,12 @@ func (ctx StaticCtx) kubernetesVersion() string {
 	clientset, err := ctx.getClientset()
 	if err != nil {
 		// this is so that the linter doesn't complain about semver comparisons when running outside of a k8s cluster
-		return "0.0.0-unknown"
+		return "0.0.0+unknown"
 	}
 	sv, err := getK8sServerVersion(clientset)
 	if err != nil {
 		// this is so that the linter doesn't complain about semver comparisons when running outside of a k8s cluster
-		return "0.0.0-unknown"
+		return "0.0.0+unknown"
 	}
 	return strings.TrimPrefix(sv.GitVersion, "v")
 }
