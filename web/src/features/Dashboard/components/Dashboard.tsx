@@ -26,7 +26,7 @@ import { Paragraph } from "@src/styles/common";
 const COMMON_ERRORS = {
   "HTTP 401": "Registry credentials are invalid",
   "invalid username/password": "Registry credentials are invalid",
-  "no such host": "No such host"
+  "no such host": "No such host",
 };
 
 // Types
@@ -37,7 +37,7 @@ import {
   DashboardResponse,
   DashboardActionLink,
   ResourceStates,
-  Version
+  Version,
 } from "@types";
 //import LicenseTester from "./LicenseTester";
 
@@ -116,7 +116,7 @@ const Dashboard = (props: Props) => {
   const [state, setState] = useReducer(
     (currentState: State, newState: Partial<State>) => ({
       ...currentState,
-      ...newState
+      ...newState,
     }),
     {
       activeChart: null,
@@ -130,7 +130,7 @@ const Dashboard = (props: Props) => {
       dashboard: {
         appStatus: null,
         metrics: [],
-        prometheusAddress: ""
+        prometheusAddress: "",
       },
       currentVersion: null,
       displayErrorModal: false,
@@ -154,7 +154,7 @@ const Dashboard = (props: Props) => {
       startSnapshotOptions: [
         { option: "partial", name: "Start a Partial snapshot" },
         { option: "full", name: "Start a Full snapshot" },
-        { option: "learn", name: "Learn about the difference" }
+        { option: "learn", name: "Learn about the difference" },
       ],
       updateChecker: new Repeater(),
       uploadingAirgapFile: false,
@@ -163,7 +163,7 @@ const Dashboard = (props: Props) => {
       uploadSize: 0,
       viewAirgapUpdateError: false,
       viewAirgapUploadError: false,
-      slowLoader: false
+      slowLoader: false,
     }
   );
 
@@ -181,9 +181,9 @@ const Dashboard = (props: Props) => {
       const res = await fetch(`${process.env.API_ENDPOINT}/app/${app.slug}`, {
         headers: {
           Authorization: Utilities.getToken(),
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
-        method: "GET"
+        method: "GET",
       });
       if (res.ok && res.status == 200) {
         const appResponse = await res.json();
@@ -191,7 +191,7 @@ const Dashboard = (props: Props) => {
           state.fetchAppDownstreamJob.stop();
         }
         setState({
-          downstream: appResponse.downstream
+          downstream: appResponse.downstream,
         });
         // wait a couple of seconds to avoid any race condiditons with the update checker then refetch the app to ensure we have the latest everything
         // this is hacky and I hate it but it's just building up more evidence in my case for having the FE be able to listen to BE envents
@@ -203,7 +203,7 @@ const Dashboard = (props: Props) => {
         setState({
           loadingApp: false,
           gettingAppErrMsg: `Unexpected status code: ${res.status}`,
-          displayErrorModal: true
+          displayErrorModal: true,
         });
       }
     } catch (err) {
@@ -215,7 +215,7 @@ const Dashboard = (props: Props) => {
       setState({
         loadingApp: false,
         gettingAppErrMsg: errorMessage,
-        displayErrorModal: true
+        displayErrorModal: true,
       });
     }
   };
@@ -230,7 +230,7 @@ const Dashboard = (props: Props) => {
       iconUri: newAppState.iconUri,
       currentVersion: newAppState.downstream?.currentVersion,
       downstream: newAppState.downstream,
-      links: newAppState.downstream?.links
+      links: newAppState.downstream?.links,
     });
   };
 
@@ -238,7 +238,7 @@ const Dashboard = (props: Props) => {
     data: licenseWithInterceptResponse,
     error: licenseWithInterceptError,
     refetch: getAppLicense,
-    isSlowLoading: isSlowLoadingLicense
+    isSlowLoading: isSlowLoadingLicense,
   } = useLicenseWithIntercept();
 
   useEffect(() => {
@@ -250,14 +250,14 @@ const Dashboard = (props: Props) => {
     if (licenseWithInterceptResponse.success) {
       setState({
         appLicense: licenseWithInterceptResponse.license,
-        gettingAppLicenseErrMsg: ""
+        gettingAppLicenseErrMsg: "",
       });
       return;
     }
     if (licenseWithInterceptResponse.error) {
       setState({
         appLicense: null,
-        gettingAppLicenseErrMsg: licenseWithInterceptResponse.error
+        gettingAppLicenseErrMsg: licenseWithInterceptResponse.error,
       });
       return;
     }
@@ -267,7 +267,7 @@ const Dashboard = (props: Props) => {
     }
 
     setState({
-      gettingAppLicenseErrMsg: "Something went wrong, please try again."
+      gettingAppLicenseErrMsg: "Something went wrong, please try again.",
     });
   }, [licenseWithInterceptResponse]);
 
@@ -285,7 +285,7 @@ const Dashboard = (props: Props) => {
     setState({
       uploadProgress: progress,
       uploadSize: size,
-      uploadResuming: resuming
+      uploadResuming: resuming,
     });
   };
 
@@ -296,7 +296,7 @@ const Dashboard = (props: Props) => {
       uploadProgress: 0,
       uploadSize: 0,
       uploadResuming: false,
-      airgapUploadError: message || "Error uploading bundle, please try again"
+      airgapUploadError: message || "Error uploading bundle, please try again",
     });
     props.toggleIsBundleUploading(false);
   };
@@ -308,9 +308,9 @@ const Dashboard = (props: Props) => {
         {
           headers: {
             Authorization: Utilities.getToken(),
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
           },
-          method: "GET"
+          method: "GET",
         }
       )
         .then(async (res) => {
@@ -322,7 +322,7 @@ const Dashboard = (props: Props) => {
             setState({
               checkingForUpdates: false,
               checkingUpdateMessage: response.currentMessage,
-              checkingForUpdateError: response.status === "failed"
+              checkingForUpdateError: response.status === "failed",
             });
 
             getAppLicense();
@@ -333,7 +333,7 @@ const Dashboard = (props: Props) => {
           } else {
             setState({
               checkingForUpdates: true,
-              checkingUpdateMessage: response.currentMessage
+              checkingUpdateMessage: response.currentMessage,
             });
           }
           resolve();
@@ -351,7 +351,7 @@ const Dashboard = (props: Props) => {
       uploadingAirgapFile: false,
       uploadProgress: 0,
       uploadSize: 0,
-      uploadResuming: false
+      uploadResuming: false,
     });
     props.toggleIsBundleUploading(false);
   };
@@ -362,13 +362,13 @@ const Dashboard = (props: Props) => {
       airgapUploadError: null,
       uploadProgress: 0,
       uploadSize: 0,
-      uploadResuming: false
+      uploadResuming: false,
     });
 
     props.toggleIsBundleUploading(true);
 
     const params = {
-      appId: props.app?.id
+      appId: props.app?.id,
     };
 
     // TODO: remove after adding type to airgap uploader
@@ -394,7 +394,7 @@ const Dashboard = (props: Props) => {
       checkingForUpdates: false,
       uploadProgress: 0,
       uploadSize: 0,
-      uploadResuming: false
+      uploadResuming: false,
     });
   };
 
@@ -405,7 +405,7 @@ const Dashboard = (props: Props) => {
   const toggleViewAirgapUpdateError = (err?: string) => {
     setState({
       viewAirgapUpdateError: !state.viewAirgapUpdateError,
-      airgapUpdateError: !state.viewAirgapUpdateError && err ? err : ""
+      airgapUpdateError: !state.viewAirgapUpdateError && err ? err : "",
     });
   };
 
@@ -413,7 +413,7 @@ const Dashboard = (props: Props) => {
     setState({
       startingSnapshot: true,
       startSnapshotErr: false,
-      startSnapshotErrorMsg: ""
+      startSnapshotErrorMsg: "",
     });
 
     let url =
@@ -425,15 +425,15 @@ const Dashboard = (props: Props) => {
       method: "POST",
       headers: {
         Authorization: Utilities.getToken(),
-        "Content-Type": "application/json"
-      }
+        "Content-Type": "application/json",
+      },
     })
       .then(async (result) => {
         if (!result.ok && result.status === 409) {
           const res = await result.json();
           if (res.kotsadmRequiresVeleroAccess) {
             setState({
-              startingSnapshot: false
+              startingSnapshot: false,
             });
             history.replace("/snapshots/settings");
             return;
@@ -442,7 +442,7 @@ const Dashboard = (props: Props) => {
 
         if (result.ok) {
           setState({
-            startingSnapshot: false
+            startingSnapshot: false,
           });
           props.ping();
           if (option === "full") {
@@ -455,7 +455,7 @@ const Dashboard = (props: Props) => {
           setState({
             startingSnapshot: false,
             startSnapshotErr: true,
-            startSnapshotErrorMsg: body.error
+            startSnapshotErrorMsg: body.error,
           });
         }
       })
@@ -464,7 +464,7 @@ const Dashboard = (props: Props) => {
         setState({
           startSnapshotErrorMsg: err
             ? err.message
-            : "Something went wrong, please try again."
+            : "Something went wrong, please try again.",
         });
       });
   };
@@ -479,7 +479,7 @@ const Dashboard = (props: Props) => {
 
   const toggleSnaphotDifferencesModal = () => {
     setState({
-      snapshotDifferencesModal: !state.snapshotDifferencesModal
+      snapshotDifferencesModal: !state.snapshotDifferencesModal,
     });
   };
 
@@ -545,7 +545,7 @@ const Dashboard = (props: Props) => {
 
     return {
       statesMap,
-      sortedStates
+      sortedStates,
     };
   };
 
@@ -573,7 +573,7 @@ const Dashboard = (props: Props) => {
     checkingUpdateMessage,
     uploadingAirgapFile,
     airgapUploadError,
-    appLicense
+    appLicense,
   } = state;
 
   let checkingUpdateText = checkingUpdateMessage;
@@ -601,8 +601,8 @@ const Dashboard = (props: Props) => {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          Authorization: Utilities.getToken()
-        }
+          Authorization: Utilities.getToken(),
+        },
       });
       if (res.ok) {
         const response = await res.json();
@@ -622,7 +622,7 @@ const Dashboard = (props: Props) => {
 
   const {
     data: selectedAppClusterDashboardResponse,
-    isSlowLoading: isSlowLoadingSelectedAppClusterDashboard
+    isSlowLoading: isSlowLoadingSelectedAppClusterDashboard,
   } = useSelectedAppClusterDashboardWithIntercept({ refetchInterval: 2000 });
 
   const { isSlowLoading: isSlowLoadingNextAppVersion } =
@@ -657,7 +657,7 @@ const Dashboard = (props: Props) => {
   }, [
     isSlowLoadingLicense,
     isSlowLoadingNextAppVersion,
-    isSlowLoadingSelectedAppClusterDashboard
+    isSlowLoadingSelectedAppClusterDashboard,
   ]);
 
   useEffect(() => {
@@ -667,8 +667,8 @@ const Dashboard = (props: Props) => {
           appStatus: selectedAppClusterDashboardResponse.appStatus,
           prometheusAddress:
             selectedAppClusterDashboardResponse.prometheusAddress,
-          metrics: selectedAppClusterDashboardResponse.metrics
-        }
+          metrics: selectedAppClusterDashboardResponse.metrics,
+        },
       });
     }
   }, [selectedAppClusterDashboardResponse]);
@@ -692,15 +692,15 @@ const Dashboard = (props: Props) => {
   const onCheckForUpdates = async () => {
     setState({
       checkingForUpdates: true,
-      checkingForUpdateError: false
+      checkingForUpdateError: false,
     });
 
     fetch(`${process.env.API_ENDPOINT}/app/${app.slug}/updatecheck`, {
       headers: {
         Authorization: Utilities.getToken(),
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
-      method: "POST"
+      method: "POST",
     })
       .then(async (res) => {
         getAppLicense();
@@ -711,7 +711,7 @@ const Dashboard = (props: Props) => {
             checkingForUpdates: false,
             checkingUpdateMessage: text
               ? text
-              : "There was an error checking for updates."
+              : "There was an error checking for updates.",
           });
           return;
         }
@@ -720,7 +720,7 @@ const Dashboard = (props: Props) => {
         if (response.availableUpdates === 0) {
           setState({
             checkingForUpdates: false,
-            noUpdatesAvalable: true
+            noUpdatesAvalable: true,
           });
           setTimeout(() => {
             setState({ noUpdatesAvalable: false });
@@ -735,20 +735,20 @@ const Dashboard = (props: Props) => {
           checkingForUpdates: false,
           checkingUpdateMessage: err?.message
             ? err?.message
-            : "There was an error checking for updates."
+            : "There was an error checking for updates.",
         });
       });
   };
 
   const hideAutomaticUpdatesModal = () => {
     setState({
-      showAutomaticUpdatesModal: false
+      showAutomaticUpdatesModal: false,
     });
   };
 
   const showAutomaticUpdatesModal = () => {
     setState({
-      showAutomaticUpdatesModal: true
+      showAutomaticUpdatesModal: true,
     });
   };
 
@@ -766,7 +766,7 @@ const Dashboard = (props: Props) => {
               top: 0,
               bottom: 0,
               backgroundColor: "rgba(255,255,255,0.7",
-              zIndex: 100
+              zIndex: 100,
             }}
           >
             <Loader size="60" />
