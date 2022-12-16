@@ -629,23 +629,27 @@ class AppConfig extends Component<Props, State> {
                   </div>
                   {group.items ? (
                     <div className="side-nav-items">
-                      {group.items?.map((item, j) => {
-                        const hash = this.props.location.hash.slice(1);
-                        if (item.hidden || item.when === "false") {
-                          return;
-                        }
-                        return (
-                          <a
-                            className={`u-fontSize--normal u-lineHeight--normal ${
-                              hash === `${item.name}-group` ? "active-item" : ""
-                            }`}
-                            href={`#${item.name}-group`}
-                            key={`${j}-${item.name}-${item.title}`}
-                          >
-                            {item.title}
-                          </a>
-                        );
-                      })}
+                      {group.items
+                        ?.filter((item) => item.type !== "label")
+                        ?.map((item, j) => {
+                          const hash = this.props.location.hash.slice(1);
+                          if (item.hidden || item.when === "false") {
+                            return;
+                          }
+                          return (
+                            <a
+                              className={`u-fontSize--normal u-lineHeight--normal ${
+                                hash === `${item.name}-group`
+                                  ? "active-item"
+                                  : ""
+                              }`}
+                              href={`#${item.name}-group`}
+                              key={`${j}-${item.name}-${item.title}`}
+                            >
+                              {item.title}
+                            </a>
+                          );
+                        })}
                     </div>
                   ) : null}
                 </div>
