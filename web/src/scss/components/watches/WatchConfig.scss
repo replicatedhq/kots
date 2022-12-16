@@ -44,24 +44,17 @@ a:visited {
     color: $success-color;
   }
 }
-.config-sidebar-nav {
-  flex-grow: 1;
-  overflow-x: hidden;
-}
 
 .config-sidebar-wrapper {
   background: $sub-nav-color;
   width: 250px;
   height: fit-content;
   padding: 10px;
-
   top: 60px;
   position: sticky;
-  // max-height: 80vh;
   max-height: calc(100vh - 190px);
   border-radius: 4px;
   overflow: auto;
-
   & .side-nav-group {
     .icon.u-darkDropdownArrow,
     .arrow-down {
