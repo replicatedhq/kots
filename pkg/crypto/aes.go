@@ -81,7 +81,7 @@ func InitFromString(data string) error {
 func addCipher(aesCipher *aesCipher) {
 	foundMatch := false
 	for _, existingCipher := range decryptionCiphers {
-		if bytes.Compare(existingCipher.key, aesCipher.key) == 0 && bytes.Compare(existingCipher.nonce, aesCipher.nonce) == 0 {
+		if bytes.Equal(existingCipher.key, aesCipher.key) && bytes.Equal(existingCipher.nonce, aesCipher.nonce) {
 			foundMatch = true
 		}
 	}
