@@ -26,7 +26,7 @@ export default function ErrorModal(props) {
       className="Modal DefaultSize"
     >
       <div className="Modal-body">
-        <div className="flex justifyContent--flexEnd">
+        <div className="tw-flex tw-justify-end">
           <Icon
             icon="close"
             size={14}
@@ -34,7 +34,7 @@ export default function ErrorModal(props) {
             onClick={() => toggleErrorModal()}
           />
         </div>
-        <div className="flex flex-column justifyContent--center alignItems--center">
+        <div className="tw-flex tw-flex-col tw-justify-center tw-items-center">
           <span className="icon redWarningIcon flex-auto" />
           <div className="flex flex-column alignItems--center u-marginTop--10">
             <p className="u-textColor--error u-fontSize--largest u-fontWeight--bold u-lineHeight--normal">
