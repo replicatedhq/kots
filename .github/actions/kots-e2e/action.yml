@@ -34,6 +34,11 @@ inputs:
   kots-helm-chart-version:
     description: 'KOTS Helm chart version'
     required: false
+  kots-airgap:
+    description: 'Run KOTS with the --airgap flag'
+    type: boolean
+    default: false
+    required: false
   aws-access-key-id:
     description: 'AWS access key id for uploading support bundle'
     required: false
@@ -66,6 +71,7 @@ runs:
           KOTSADM_IMAGE_TAG=${{ inputs.kotsadm-image-tag }} \
           KOTS_HELM_CHART_URL=${{ inputs.kots-helm-chart-url }} \
           KOTS_HELM_CHART_VERSION=${{ inputs.kots-helm-chart-version }} \
+          AIRGAP=${{ inputs.kots-airgap }} \
           SKIP_TEARDOWN=1
         EXIT_CODE=$?
         if [ $EXIT_CODE -ne 0 ]; then
