@@ -20,7 +20,6 @@ build:
 test: export GINKGO_EDITOR_INTEGRATION=1 # disable error on programatic focus
 test: KOTSADM_IMAGE_TAG ?= alpha
 test: TESTIM_BRANCH ?= master
-test: AIRGAP ?= 0
 test: SKIP_TEARDOWN ?= 0
 ifneq ($(EXISTING_KUBECONFIG),)
 test: EXISTING_KUBECONFIG_VOLUME_MOUNT := "-v=$(EXISTING_KUBECONFIG):$(EXISTING_KUBECONFIG)"
@@ -36,14 +35,12 @@ test:
 		e2e-deps \
 		e2e.test \
 			-test.v \
-			--ginkgo.v \
 			--ginkgo.focus="$(FOCUS)" \
 			--testim-branch=$(TESTIM_BRANCH) \
 			--existing-kubeconfig=$(EXISTING_KUBECONFIG) \
 			--kotsadm-image-registry=$(KOTSADM_IMAGE_REGISTRY) \
 			--kotsadm-image-namespace=$(KOTSADM_IMAGE_NAMESPACE) \
 			--kotsadm-image-tag=$(KOTSADM_IMAGE_TAG) \
-			--airgap=$(AIRGAP) \
 			--kots-helm-chart-url=$(KOTS_HELM_CHART_URL) \
 			--kots-helm-chart-version=$(KOTS_HELM_CHART_VERSION) \
 			--skip-teardown=$(SKIP_TEARDOWN)

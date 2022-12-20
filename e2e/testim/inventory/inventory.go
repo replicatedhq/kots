@@ -47,15 +47,6 @@ func NewSmokeTest() Test {
 	}
 }
 
-func NewAirgapSmokeTest() Test {
-	return Test{
-		Name:        "Airgap Smoke Test",
-		Suite:       "airgap-smoke-test",
-		Namespace:   "airgap-smoke-test",
-		UpstreamURI: "airgap-smoke-test/automated",
-	}
-}
-
 func NewStrictPreflightChecks() Test {
 	return Test{
 		Name:        "Strict Preflight Checks",
