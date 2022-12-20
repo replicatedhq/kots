@@ -28,7 +28,10 @@ import { RouteProps } from "react-router";
 import Footer from "./components/shared/Footer";
 import NavBar from "./components/shared/NavBar";
 
+// scss
 import "./scss/index.scss";
+// tailwind
+import "./index.css";
 import connectHistory from "./services/matomo";
 
 // types
