@@ -49,7 +49,7 @@ func NewSmokeTest() Test {
 
 func NewAirgapSmokeTest() Test {
 	return Test{
-		Name:        "Airgap Smoke Test",
+		Name:        "airgap-smoke-test",
 		Suite:       "airgap-smoke-test",
 		Namespace:   "airgap-smoke-test",
 		UpstreamURI: "airgap-smoke-test/automated",

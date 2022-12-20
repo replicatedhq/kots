@@ -1813,7 +1813,7 @@ jobs:
       - run: chmod +x bin/*
       - uses: ./.github/actions/kots-e2e
         with:
-          test-focus: 'Airgap Smoke Test'
+          test-focus: 'airgap-smoke-test'
           kots-namespace: 'airgap-smoke-test'
           k8s-version: '${{ matrix.k8s_version }}'
           testim-access-token: '${{ secrets.TESTIM_ACCESS_TOKEN }}'
